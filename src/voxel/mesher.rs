@@ -4,7 +4,7 @@ use bevy::{
     prelude::Mesh,
 };
 
-use super::chunk::{Chunk, Voxel, CHUNK_SIZE, VOXEL_SIZE};
+use super::chunk::{CHUNK_SIZE, Chunk, VOXEL_SIZE, Voxel};
 
 struct Face {
     neighbor: (isize, isize, isize),
@@ -81,12 +81,7 @@ const FACES: [Face; 6] = [
     },
 ];
 
-const FACE_UVS: [[f32; 2]; 4] = [
-    [0.0, 0.0],
-    [0.0, 1.0],
-    [1.0, 1.0],
-    [1.0, 0.0],
-];
+const FACE_UVS: [[f32; 2]; 4] = [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
 
 pub struct ChunkMesher;
 
@@ -111,12 +106,7 @@ impl ChunkMesher {
                         let neighbor_y = y as isize + face.neighbor.1;
                         let neighbor_z = z as isize + face.neighbor.2;
 
-                        if !Self::is_face_exposed(
-                            chunk,
-                            neighbor_x,
-                            neighbor_y,
-                            neighbor_z,
-                        ) {
+                        if !Self::is_face_exposed(chunk, neighbor_x, neighbor_y, neighbor_z) {
                             continue;
                         }
 
@@ -178,12 +168,7 @@ impl ChunkMesher {
                         let neighbor_y = y as isize + face.neighbor.1;
                         let neighbor_z = z as isize + face.neighbor.2;
 
-                        if Self::is_face_exposed(
-                            chunk,
-                            neighbor_x,
-                            neighbor_y,
-                            neighbor_z,
-                        ) {
+                        if Self::is_face_exposed(chunk, neighbor_x, neighbor_y, neighbor_z) {
                             face_count += 1;
                         }
                     }
@@ -194,12 +179,7 @@ impl ChunkMesher {
         face_count
     }
 
-    fn is_face_exposed(
-        chunk: &Chunk,
-        x: isize,
-        y: isize,
-        z: isize,
-    ) -> bool {
+    fn is_face_exposed(chunk: &Chunk, x: isize, y: isize, z: isize) -> bool {
         if !Chunk::is_inside(x, y, z) {
             return true;
         }

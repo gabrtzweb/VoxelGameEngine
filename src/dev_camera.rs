@@ -46,7 +46,7 @@ fn lock_cursor(mut cursor_options: Single<&mut CursorOptions>) {
 
 fn camera_look(
     mouse_motion: Res<AccumulatedMouseMotion>,
-    mut camera_query: Single<(&mut Transform, &mut DevCamera), With<Camera3d>>,
+    camera_query: Single<(&mut Transform, &mut DevCamera), With<Camera3d>>,
 ) {
     let delta = mouse_motion.delta;
 
@@ -59,23 +59,15 @@ fn camera_look(
     camera.yaw -= delta.x * camera.sensitivity;
     camera.pitch -= delta.y * camera.sensitivity;
 
-    camera.pitch = camera.pitch.clamp(
-        -FRAC_PI_2 + 0.001,
-        FRAC_PI_2 - 0.001,
-    );
+    camera.pitch = camera.pitch.clamp(-FRAC_PI_2 + 0.001, FRAC_PI_2 - 0.001);
 
-    transform.rotation = Quat::from_euler(
-        EulerRot::YXZ,
-        camera.yaw,
-        camera.pitch,
-        0.0,
-    );
+    transform.rotation = Quat::from_euler(EulerRot::YXZ, camera.yaw, camera.pitch, 0.0);
 }
 
 fn camera_movement(
     keyboard: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
-    mut camera_query: Single<(&mut Transform, &DevCamera), With<Camera3d>>,
+    camera_query: Single<(&mut Transform, &DevCamera), With<Camera3d>>,
 ) {
     let (mut transform, camera) = camera_query.into_inner();
 
@@ -104,9 +96,7 @@ fn camera_movement(
         direction += Vec3::Y;
     }
 
-    if keyboard.pressed(KeyCode::ControlLeft)
-        || keyboard.pressed(KeyCode::ControlRight)
-    {
+    if keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight) {
         direction -= Vec3::Y;
     }
 
@@ -114,9 +104,7 @@ fn camera_movement(
         return;
     }
 
-    let is_running =
-        keyboard.pressed(KeyCode::ShiftLeft)
-            || keyboard.pressed(KeyCode::ShiftRight);
+    let is_running = keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight);
 
     let speed = if is_running {
         camera.run_speed
@@ -124,8 +112,7 @@ fn camera_movement(
         camera.walk_speed
     };
 
-    transform.translation +=
-        direction.normalize() * speed * time.delta_secs();
+    transform.translation += direction.normalize() * speed * time.delta_secs();
 }
 
 fn spawn_crosshair(mut commands: Commands) {
