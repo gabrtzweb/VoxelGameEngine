@@ -44,15 +44,6 @@ impl Chunk {
         self.voxels[index] = voxel;
     }
 
-    pub fn is_inside(x: isize, y: isize, z: isize) -> bool {
-        x >= 0
-            && x < CHUNK_SIZE as isize
-            && y >= 0
-            && y < CHUNK_SIZE as isize
-            && z >= 0
-            && z < CHUNK_SIZE as isize
-    }
-
     fn index(x: usize, y: usize, z: usize) -> usize {
         debug_assert!(x < CHUNK_SIZE);
         debug_assert!(y < CHUNK_SIZE);

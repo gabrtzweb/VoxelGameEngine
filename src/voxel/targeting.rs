@@ -7,16 +7,6 @@ use super::{
 
 const MAX_TARGET_DISTANCE: f32 = 10.0;
 const VOXELS_PER_BLOCK: i32 = 2;
-const BLOCK_SIZE: f32 = VOXEL_SIZE * VOXELS_PER_BLOCK as f32;
-
-const NEIGHBOR_DIRECTIONS: [IVec3; 6] = [
-    IVec3::new(1, 0, 0),
-    IVec3::new(-1, 0, 0),
-    IVec3::new(0, 1, 0),
-    IVec3::new(0, -1, 0),
-    IVec3::new(0, 0, 1),
-    IVec3::new(0, 0, -1),
-];
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TargetingSet {
@@ -51,7 +41,7 @@ impl Plugin for TargetingPlugin {
 
 struct RaycastHit {
     voxel: IVec3,
-    previous: Option<IVec3>,
+    face_normal: IVec3,
 }
 
 fn update_current_target(
@@ -62,11 +52,28 @@ fn update_current_target(
     let ray_origin = camera.translation();
     let ray_direction = *camera.forward();
 
+    let camera_voxel = IVec3::new(
+        (ray_origin.x / VOXEL_SIZE).floor() as i32,
+        (ray_origin.y / VOXEL_SIZE).floor() as i32,
+        (ray_origin.z / VOXEL_SIZE).floor() as i32,
+    );
+
+    if world.get_voxel(camera_voxel) == Some(Voxel::Solid) {
+        current_target.hit = None;
+        return;
+    }
+
     current_target.hit =
         raycast_world(&world, ray_origin, ray_direction, MAX_TARGET_DISTANCE).map(|hit| {
+            let place_voxel = if hit.face_normal == IVec3::ZERO {
+                None
+            } else {
+                Some(hit.voxel + hit.face_normal)
+            };
+
             VoxelTarget {
                 hit_voxel: hit.voxel,
-                place_voxel: hit.previous,
+                place_voxel,
                 block_origin: block_origin_from_voxel(hit.voxel),
             }
         });
@@ -81,53 +88,142 @@ fn draw_current_target_highlight(
         return;
     };
 
-    let solid_count = count_solid_voxels(&world, target.block_origin);
-
-    if solid_count == 0 {
+    if count_solid_voxels(&world, target.block_origin) == 0 {
         return;
     }
 
-    let total_voxels = (VOXELS_PER_BLOCK * VOXELS_PER_BLOCK * VOXELS_PER_BLOCK) as usize;
-
-    if solid_count == total_voxels {
-        draw_full_block_highlight(&mut gizmos, target.block_origin);
-    } else {
-        draw_partial_block_highlight(&world, &mut gizmos, target.block_origin);
-    }
-}
-
-fn draw_full_block_highlight(gizmos: &mut Gizmos, block_origin: IVec3) {
-    let center = (block_origin.as_vec3() + Vec3::splat(VOXELS_PER_BLOCK as f32 * 0.5)) * VOXEL_SIZE;
-
-    gizmos.cube(
-        Transform::from_translation(center).with_scale(Vec3::splat(BLOCK_SIZE)),
+    draw_block_shape_outline(
+        &world,
+        &mut gizmos,
+        target.block_origin,
         Color::srgba(1.0, 1.0, 1.0, 0.95),
     );
 }
 
-fn draw_partial_block_highlight(world: &VoxelWorld, gizmos: &mut Gizmos, block_origin: IVec3) {
-    for y in 0..VOXELS_PER_BLOCK {
-        for z in 0..VOXELS_PER_BLOCK {
-            for x in 0..VOXELS_PER_BLOCK {
-                let voxel_position = block_origin + IVec3::new(x, y, z);
+fn draw_block_shape_outline(
+    world: &VoxelWorld,
+    gizmos: &mut Gizmos,
+    block_origin: IVec3,
+    color: Color,
+) {
+    draw_x_edges(world, gizmos, block_origin, color);
 
-                if world.get_voxel(voxel_position) != Some(Voxel::Solid) {
+    draw_y_edges(world, gizmos, block_origin, color);
+
+    draw_z_edges(world, gizmos, block_origin, color);
+}
+
+fn draw_x_edges(world: &VoxelWorld, gizmos: &mut Gizmos, block_origin: IVec3, color: Color) {
+    for x in 0..VOXELS_PER_BLOCK {
+        for y in 0..=VOXELS_PER_BLOCK {
+            for z in 0..=VOXELS_PER_BLOCK {
+                let quadrants = [
+                    is_solid_local(world, block_origin, IVec3::new(x, y - 1, z - 1)),
+                    is_solid_local(world, block_origin, IVec3::new(x, y, z - 1)),
+                    is_solid_local(world, block_origin, IVec3::new(x, y - 1, z)),
+                    is_solid_local(world, block_origin, IVec3::new(x, y, z)),
+                ];
+
+                if !should_draw_edge(quadrants) {
                     continue;
                 }
 
-                if !voxel_is_exposed(world, voxel_position) {
-                    continue;
-                }
+                let start = voxel_grid_point(block_origin, x, y, z);
 
-                let center = (voxel_position.as_vec3() + Vec3::splat(0.5)) * VOXEL_SIZE;
+                let end = voxel_grid_point(block_origin, x + 1, y, z);
 
-                gizmos.cube(
-                    Transform::from_translation(center).with_scale(Vec3::splat(VOXEL_SIZE)),
-                    Color::srgba(1.0, 1.0, 1.0, 0.95),
-                );
+                gizmos.line(start, end, color);
             }
         }
     }
+}
+
+fn draw_y_edges(world: &VoxelWorld, gizmos: &mut Gizmos, block_origin: IVec3, color: Color) {
+    for y in 0..VOXELS_PER_BLOCK {
+        for x in 0..=VOXELS_PER_BLOCK {
+            for z in 0..=VOXELS_PER_BLOCK {
+                let quadrants = [
+                    is_solid_local(world, block_origin, IVec3::new(x - 1, y, z - 1)),
+                    is_solid_local(world, block_origin, IVec3::new(x, y, z - 1)),
+                    is_solid_local(world, block_origin, IVec3::new(x - 1, y, z)),
+                    is_solid_local(world, block_origin, IVec3::new(x, y, z)),
+                ];
+
+                if !should_draw_edge(quadrants) {
+                    continue;
+                }
+
+                let start = voxel_grid_point(block_origin, x, y, z);
+
+                let end = voxel_grid_point(block_origin, x, y + 1, z);
+
+                gizmos.line(start, end, color);
+            }
+        }
+    }
+}
+
+fn draw_z_edges(world: &VoxelWorld, gizmos: &mut Gizmos, block_origin: IVec3, color: Color) {
+    for z in 0..VOXELS_PER_BLOCK {
+        for x in 0..=VOXELS_PER_BLOCK {
+            for y in 0..=VOXELS_PER_BLOCK {
+                let quadrants = [
+                    is_solid_local(world, block_origin, IVec3::new(x - 1, y - 1, z)),
+                    is_solid_local(world, block_origin, IVec3::new(x, y - 1, z)),
+                    is_solid_local(world, block_origin, IVec3::new(x - 1, y, z)),
+                    is_solid_local(world, block_origin, IVec3::new(x, y, z)),
+                ];
+
+                if !should_draw_edge(quadrants) {
+                    continue;
+                }
+
+                let start = voxel_grid_point(block_origin, x, y, z);
+
+                let end = voxel_grid_point(block_origin, x, y, z + 1);
+
+                gizmos.line(start, end, color);
+            }
+        }
+    }
+}
+
+fn should_draw_edge(quadrants: [bool; 4]) -> bool {
+    let solid_count = quadrants.iter().filter(|&&solid| solid).count();
+
+    match solid_count {
+        0 | 4 => false,
+
+        1 | 3 => true,
+
+        2 => {
+            let diagonal_a = quadrants[0] && quadrants[3];
+
+            let diagonal_b = quadrants[1] && quadrants[2];
+
+            diagonal_a || diagonal_b
+        }
+
+        _ => false,
+    }
+}
+
+fn is_solid_local(world: &VoxelWorld, block_origin: IVec3, local_position: IVec3) -> bool {
+    if local_position.x < 0
+        || local_position.x >= VOXELS_PER_BLOCK
+        || local_position.y < 0
+        || local_position.y >= VOXELS_PER_BLOCK
+        || local_position.z < 0
+        || local_position.z >= VOXELS_PER_BLOCK
+    {
+        return false;
+    }
+
+    world.get_voxel(block_origin + local_position) == Some(Voxel::Solid)
+}
+
+fn voxel_grid_point(block_origin: IVec3, x: i32, y: i32, z: i32) -> Vec3 {
+    (block_origin.as_vec3() + Vec3::new(x as f32, y as f32, z as f32)) * VOXEL_SIZE
 }
 
 fn count_solid_voxels(world: &VoxelWorld, block_origin: IVec3) -> usize {
@@ -146,18 +242,6 @@ fn count_solid_voxels(world: &VoxelWorld, block_origin: IVec3) -> usize {
     }
 
     count
-}
-
-fn voxel_is_exposed(world: &VoxelWorld, position: IVec3) -> bool {
-    for direction in NEIGHBOR_DIRECTIONS {
-        let neighbor = position + direction;
-
-        if world.get_voxel(neighbor) != Some(Voxel::Solid) {
-            return true;
-        }
-    }
-
-    false
 }
 
 fn block_origin_from_voxel(voxel: IVec3) -> IVec3 {
@@ -202,30 +286,41 @@ fn raycast_world(
     );
 
     let max_grid_distance = max_distance / VOXEL_SIZE;
+
     let mut traveled_distance = 0.0;
-    let mut previous = None;
+    let mut face_normal = IVec3::ZERO;
 
     while traveled_distance <= max_grid_distance {
         if let Some(current_voxel) = world.get_voxel(voxel) {
             if current_voxel != Voxel::Air {
-                return Some(RaycastHit { voxel, previous });
+                return Some(RaycastHit { voxel, face_normal });
             }
         }
 
-        previous = Some(voxel);
-
         if side_distance.x <= side_distance.y && side_distance.x <= side_distance.z {
             voxel.x += step.x;
+
             traveled_distance = side_distance.x;
+
             side_distance.x += delta_distance.x;
+
+            face_normal = IVec3::new(-step.x, 0, 0);
         } else if side_distance.y <= side_distance.z {
             voxel.y += step.y;
+
             traveled_distance = side_distance.y;
+
             side_distance.y += delta_distance.y;
+
+            face_normal = IVec3::new(0, -step.y, 0);
         } else {
             voxel.z += step.z;
+
             traveled_distance = side_distance.z;
+
             side_distance.z += delta_distance.z;
+
+            face_normal = IVec3::new(0, 0, -step.z);
         }
     }
 

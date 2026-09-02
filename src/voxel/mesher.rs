@@ -1,13 +1,16 @@
 use bevy::{
     asset::RenderAssetUsages,
     mesh::{Indices, PrimitiveTopology},
-    prelude::Mesh,
+    prelude::{IVec3, Mesh},
 };
 
-use super::chunk::{CHUNK_SIZE, Chunk, VOXEL_SIZE, Voxel};
+use super::{
+    chunk::{CHUNK_SIZE, VOXEL_SIZE, Voxel},
+    world::VoxelWorld,
+};
 
 struct Face {
-    neighbor: (isize, isize, isize),
+    neighbor: (i32, i32, i32),
     normal: [f32; 3],
     vertices: [[f32; 3]; 4],
 }
@@ -86,13 +89,19 @@ const FACE_UVS: [[f32; 2]; 4] = [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]]
 pub struct ChunkMesher;
 
 impl ChunkMesher {
-    pub fn build_mesh(chunk: &Chunk) -> Mesh {
-        let face_count = Self::exposed_face_count(chunk);
+    pub fn build_mesh(world: &VoxelWorld, chunk_coordinate: IVec3) -> Mesh {
+        let chunk = world
+            .get_chunk(chunk_coordinate)
+            .expect("Cannot build mesh for an unloaded chunk");
+
+        let face_count = Self::exposed_face_count(world, chunk_coordinate);
 
         let mut positions = Vec::with_capacity(face_count * 4);
         let mut normals = Vec::with_capacity(face_count * 4);
         let mut uvs = Vec::with_capacity(face_count * 4);
         let mut indices = Vec::with_capacity(face_count * 6);
+
+        let chunk_voxel_origin = chunk_coordinate * CHUNK_SIZE as i32;
 
         for y in 0..CHUNK_SIZE {
             for z in 0..CHUNK_SIZE {
@@ -101,12 +110,15 @@ impl ChunkMesher {
                         continue;
                     }
 
-                    for face in &FACES {
-                        let neighbor_x = x as isize + face.neighbor.0;
-                        let neighbor_y = y as isize + face.neighbor.1;
-                        let neighbor_z = z as isize + face.neighbor.2;
+                    let local_voxel = IVec3::new(x as i32, y as i32, z as i32);
 
-                        if !Self::is_face_exposed(chunk, neighbor_x, neighbor_y, neighbor_z) {
+                    let world_voxel = chunk_voxel_origin + local_voxel;
+
+                    for face in &FACES {
+                        let neighbor_world_voxel = world_voxel
+                            + IVec3::new(face.neighbor.0, face.neighbor.1, face.neighbor.2);
+
+                        if !Self::is_face_exposed(world, neighbor_world_voxel) {
                             continue;
                         }
 
@@ -153,7 +165,13 @@ impl ChunkMesher {
         .with_inserted_indices(Indices::U32(indices))
     }
 
-    pub fn exposed_face_count(chunk: &Chunk) -> usize {
+    pub fn exposed_face_count(world: &VoxelWorld, chunk_coordinate: IVec3) -> usize {
+        let Some(chunk) = world.get_chunk(chunk_coordinate) else {
+            return 0;
+        };
+
+        let chunk_voxel_origin = chunk_coordinate * CHUNK_SIZE as i32;
+
         let mut face_count = 0;
 
         for y in 0..CHUNK_SIZE {
@@ -163,12 +181,13 @@ impl ChunkMesher {
                         continue;
                     }
 
-                    for face in &FACES {
-                        let neighbor_x = x as isize + face.neighbor.0;
-                        let neighbor_y = y as isize + face.neighbor.1;
-                        let neighbor_z = z as isize + face.neighbor.2;
+                    let world_voxel = chunk_voxel_origin + IVec3::new(x as i32, y as i32, z as i32);
 
-                        if Self::is_face_exposed(chunk, neighbor_x, neighbor_y, neighbor_z) {
+                    for face in &FACES {
+                        let neighbor_world_voxel = world_voxel
+                            + IVec3::new(face.neighbor.0, face.neighbor.1, face.neighbor.2);
+
+                        if Self::is_face_exposed(world, neighbor_world_voxel) {
                             face_count += 1;
                         }
                     }
@@ -179,11 +198,7 @@ impl ChunkMesher {
         face_count
     }
 
-    fn is_face_exposed(chunk: &Chunk, x: isize, y: isize, z: isize) -> bool {
-        if !Chunk::is_inside(x, y, z) {
-            return true;
-        }
-
-        chunk.get(x as usize, y as usize, z as usize) == Voxel::Air
+    fn is_face_exposed(world: &VoxelWorld, world_voxel: IVec3) -> bool {
+        world.get_voxel(world_voxel) != Some(Voxel::Solid)
     }
 }

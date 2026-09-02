@@ -29,6 +29,7 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let mut world = VoxelWorld::default();
+
     let mut chunk_meshes = ChunkMeshRegistry::default();
 
     let chunk_material = materials.add(StandardMaterial {
@@ -37,38 +38,52 @@ fn setup(
         ..default()
     });
 
-    let mut loaded_chunks = 0;
+    let mut chunk_coordinates = Vec::new();
 
+    // First pass:
+    // Create all chunk voxel data.
     for z in -INITIAL_WORLD_RADIUS..=INITIAL_WORLD_RADIUS {
         for x in -INITIAL_WORLD_RADIUS..=INITIAL_WORLD_RADIUS {
             let chunk_coordinate = IVec3::new(x, 0, z);
 
-            let chunk = Chunk::new_half_solid();
-            let chunk_mesh = ChunkMesher::build_mesh(&chunk);
-            let mesh_handle = meshes.add(chunk_mesh);
+            world.insert_chunk(chunk_coordinate, Chunk::new_half_solid());
 
-            commands.spawn((
-                Mesh3d(mesh_handle.clone()),
-                MeshMaterial3d(chunk_material.clone()),
-                Transform::from_translation(VoxelWorld::chunk_translation(chunk_coordinate)),
-            ));
-
-            world.insert_chunk(chunk_coordinate, chunk);
-
-            chunk_meshes.insert(chunk_coordinate, mesh_handle);
-
-            loaded_chunks += 1;
+            chunk_coordinates.push(chunk_coordinate);
         }
     }
+
+    // Second pass:
+    // Build meshes after all neighboring
+    // chunks already exist in the world.
+    for &chunk_coordinate in &chunk_coordinates {
+        let chunk_mesh = ChunkMesher::build_mesh(&world, chunk_coordinate);
+
+        let mesh_handle = meshes.add(chunk_mesh);
+
+        commands.spawn((
+            Mesh3d(mesh_handle.clone()),
+            MeshMaterial3d(chunk_material.clone()),
+            Transform::from_translation(VoxelWorld::chunk_translation(chunk_coordinate)),
+        ));
+
+        chunk_meshes.insert(chunk_coordinate, mesh_handle);
+    }
+
+    let loaded_chunks = chunk_coordinates.len();
 
     commands.insert_resource(world);
     commands.insert_resource(chunk_meshes);
 
     info!("Voxel size: {} m", VOXEL_SIZE);
+
     info!("Chunk size: {}³", CHUNK_SIZE);
+
     info!("Chunk world size: {} m", CHUNK_WORLD_SIZE);
+
     info!("Chunk volume: {} voxels", CHUNK_VOLUME);
+
     info!("Loaded chunks: {}", loaded_chunks);
+
     info!("Loaded voxel capacity: {}", loaded_chunks * CHUNK_VOLUME);
 
     commands.spawn((
