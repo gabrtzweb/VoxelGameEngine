@@ -4,15 +4,20 @@ mod voxel;
 use bevy::prelude::*;
 
 use dev_camera::{DevCamera, DevCameraPlugin};
+
 use voxel::{
-    ActiveChunk, CHUNK_SIZE, CHUNK_VOLUME, Chunk, ChunkMesher, VOXEL_SIZE, VoxelInteractionPlugin,
+    CHUNK_SIZE, CHUNK_VOLUME, CHUNK_WORLD_SIZE, Chunk, ChunkMeshRegistry, ChunkMesher, VOXEL_SIZE,
+    VoxelDebugPlugin, VoxelInteractionPlugin, VoxelWorld,
 };
+
+const INITIAL_WORLD_RADIUS: i32 = 1;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(DevCameraPlugin)
         .add_plugins(VoxelInteractionPlugin)
+        .add_plugins(VoxelDebugPlugin)
         .add_systems(Startup, setup)
         .run();
 }
@@ -22,34 +27,50 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let chunk = Chunk::new_half_solid();
+    let mut world = VoxelWorld::default();
+    let mut chunk_meshes = ChunkMeshRegistry::default();
 
-    let exposed_faces = ChunkMesher::exposed_face_count(&chunk);
+    let chunk_material = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.28, 0.52, 0.22),
+        perceptual_roughness: 0.9,
+        ..default()
+    });
+
+    let mut loaded_chunks = 0;
+
+    for z in -INITIAL_WORLD_RADIUS..=INITIAL_WORLD_RADIUS {
+        for x in -INITIAL_WORLD_RADIUS..=INITIAL_WORLD_RADIUS {
+            let chunk_coordinate = IVec3::new(x, 0, z);
+
+            let chunk = Chunk::new_half_solid();
+            let chunk_mesh = ChunkMesher::build_mesh(&chunk);
+            let mesh_handle = meshes.add(chunk_mesh);
+
+            commands.spawn((
+                Mesh3d(mesh_handle.clone()),
+                MeshMaterial3d(chunk_material.clone()),
+                Transform::from_translation(VoxelWorld::chunk_translation(chunk_coordinate)),
+            ));
+
+            world.insert_chunk(chunk_coordinate, chunk);
+
+            chunk_meshes.insert(chunk_coordinate, mesh_handle);
+
+            loaded_chunks += 1;
+        }
+    }
+
+    commands.insert_resource(world);
+    commands.insert_resource(chunk_meshes);
 
     info!("Voxel size: {} m", VOXEL_SIZE);
     info!("Chunk size: {}³", CHUNK_SIZE);
+    info!("Chunk world size: {} m", CHUNK_WORLD_SIZE);
     info!("Chunk volume: {} voxels", CHUNK_VOLUME);
-    info!("Exposed faces: {}", exposed_faces);
-    info!("Generated vertices: {}", exposed_faces * 4);
-    info!("Generated triangles: {}", exposed_faces * 2);
+    info!("Loaded chunks: {}", loaded_chunks);
+    info!("Loaded voxel capacity: {}", loaded_chunks * CHUNK_VOLUME);
 
-    // Generate the initial voxel chunk mesh.
-    let chunk_mesh = ChunkMesher::build_mesh(&chunk);
-    let mesh_handle = meshes.add(chunk_mesh);
-
-    commands.spawn((
-        Mesh3d(mesh_handle.clone()),
-        MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: Color::srgb(0.28, 0.52, 0.22),
-            perceptual_roughness: 0.9,
-            ..default()
-        })),
-    ));
-
-    // Keep the voxel data and mesh handle available at runtime.
-    commands.insert_resource(ActiveChunk::new(chunk, mesh_handle));
-
-    // Main scene light.
+    // Main directional light.
     commands.spawn((
         DirectionalLight {
             illuminance: 10_000.0,
@@ -61,7 +82,7 @@ fn setup(
 
     // Development camera.
     let camera_transform =
-        Transform::from_xyz(-6.0, 6.0, 10.0).looking_at(Vec3::new(4.0, 2.0, 4.0), Vec3::Y);
+        Transform::from_xyz(-10.0, 8.0, 14.0).looking_at(Vec3::new(4.0, 2.0, 4.0), Vec3::Y);
 
     let dev_camera = DevCamera::from_transform(&camera_transform);
 

@@ -1,5 +1,5 @@
-pub const VOXEL_SIZE: f32 = 0.25;
-pub const CHUNK_SIZE: usize = 32;
+pub const VOXEL_SIZE: f32 = 0.5;
+pub const CHUNK_SIZE: usize = 16;
 pub const CHUNK_VOLUME: usize = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
 
 #[repr(u8)]

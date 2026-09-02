@@ -1,21 +1,27 @@
+use std::collections::HashMap;
+
 use bevy::prelude::*;
 
 use super::{
-    chunk::{Chunk, VOXEL_SIZE, Voxel},
+    chunk::{VOXEL_SIZE, Voxel},
     mesher::ChunkMesher,
+    world::VoxelWorld,
 };
 
 const MAX_INTERACTION_DISTANCE: f32 = 10.0;
 
-#[derive(Resource)]
-pub struct ActiveChunk {
-    pub chunk: Chunk,
-    pub mesh_handle: Handle<Mesh>,
+#[derive(Resource, Default)]
+pub struct ChunkMeshRegistry {
+    handles: HashMap<IVec3, Handle<Mesh>>,
 }
 
-impl ActiveChunk {
-    pub fn new(chunk: Chunk, mesh_handle: Handle<Mesh>) -> Self {
-        Self { chunk, mesh_handle }
+impl ChunkMeshRegistry {
+    pub fn insert(&mut self, coordinate: IVec3, mesh_handle: Handle<Mesh>) {
+        self.handles.insert(coordinate, mesh_handle);
+    }
+
+    pub fn get(&self, coordinate: IVec3) -> Option<&Handle<Mesh>> {
+        self.handles.get(&coordinate)
     }
 }
 
@@ -35,7 +41,8 @@ struct VoxelHit {
 fn edit_voxels(
     mouse: Res<ButtonInput<MouseButton>>,
     camera: Single<&GlobalTransform, With<Camera3d>>,
-    mut active_chunk: ResMut<ActiveChunk>,
+    mut world: ResMut<VoxelWorld>,
+    chunk_meshes: Res<ChunkMeshRegistry>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     let break_pressed = mouse.just_pressed(MouseButton::Left);
@@ -48,76 +55,74 @@ fn edit_voxels(
     let ray_origin = camera.translation();
     let ray_direction = *camera.forward();
 
-    let Some(hit) = raycast_chunk(
-        &active_chunk.chunk,
-        ray_origin,
-        ray_direction,
-        MAX_INTERACTION_DISTANCE,
-    ) else {
+    let Some(hit) = raycast_world(&world, ray_origin, ray_direction, MAX_INTERACTION_DISTANCE)
+    else {
         return;
     };
 
-    let changed = if break_pressed {
-        remove_voxel(&mut active_chunk.chunk, hit.voxel)
+    let changed_chunk = if break_pressed {
+        remove_voxel(&mut world, hit.voxel)
     } else if let Some(target) = hit.previous {
-        place_voxel(&mut active_chunk.chunk, target)
+        place_voxel(&mut world, target)
     } else {
-        false
+        None
     };
 
-    if !changed {
+    let Some(chunk_coordinate) = changed_chunk else {
         return;
-    }
+    };
 
-    let rebuilt_mesh = ChunkMesher::build_mesh(&active_chunk.chunk);
+    let Some(chunk) = world.get_chunk(chunk_coordinate) else {
+        return;
+    };
 
-    if let Some(mut mesh) = meshes.get_mut(&active_chunk.mesh_handle) {
+    let rebuilt_mesh = ChunkMesher::build_mesh(chunk);
+
+    let Some(mesh_handle) = chunk_meshes.get(chunk_coordinate) else {
+        return;
+    };
+
+    if let Some(mut mesh) = meshes.get_mut(mesh_handle) {
         *mesh = rebuilt_mesh;
     }
 }
 
-fn remove_voxel(chunk: &mut Chunk, position: IVec3) -> bool {
-    if !is_inside_chunk(position) {
-        return false;
+fn remove_voxel(world: &mut VoxelWorld, position: IVec3) -> Option<IVec3> {
+    let voxel = world.get_voxel(position)?;
+
+    if voxel == Voxel::Air {
+        return None;
     }
 
-    let x = position.x as usize;
-    let y = position.y as usize;
-    let z = position.z as usize;
+    let chunk_coordinate = world.set_voxel(position, Voxel::Air)?;
 
-    if chunk.get(x, y, z) == Voxel::Air {
-        return false;
-    }
+    info!(
+        "Removed voxel {:?} from chunk {:?}",
+        position, chunk_coordinate
+    );
 
-    chunk.set(x, y, z, Voxel::Air);
-
-    info!("Removed voxel at {:?}", position);
-
-    true
+    Some(chunk_coordinate)
 }
 
-fn place_voxel(chunk: &mut Chunk, position: IVec3) -> bool {
-    if !is_inside_chunk(position) {
-        return false;
+fn place_voxel(world: &mut VoxelWorld, position: IVec3) -> Option<IVec3> {
+    let voxel = world.get_voxel(position)?;
+
+    if voxel != Voxel::Air {
+        return None;
     }
 
-    let x = position.x as usize;
-    let y = position.y as usize;
-    let z = position.z as usize;
+    let chunk_coordinate = world.set_voxel(position, Voxel::Solid)?;
 
-    if chunk.get(x, y, z) != Voxel::Air {
-        return false;
-    }
+    info!(
+        "Placed voxel {:?} in chunk {:?}",
+        position, chunk_coordinate
+    );
 
-    chunk.set(x, y, z, Voxel::Solid);
-
-    info!("Placed voxel at {:?}", position);
-
-    true
+    Some(chunk_coordinate)
 }
 
-fn raycast_chunk(
-    chunk: &Chunk,
+fn raycast_world(
+    world: &VoxelWorld,
     origin: Vec3,
     direction: Vec3,
     max_distance: f32,
@@ -154,10 +159,8 @@ fn raycast_chunk(
     let mut previous = None;
 
     while traveled_distance <= max_grid_distance {
-        if is_inside_chunk(voxel) {
-            let current = chunk.get(voxel.x as usize, voxel.y as usize, voxel.z as usize);
-
-            if current != Voxel::Air {
+        if let Some(current_voxel) = world.get_voxel(voxel) {
+            if current_voxel != Voxel::Air {
                 return Some(VoxelHit { voxel, previous });
             }
         }
@@ -198,12 +201,4 @@ fn initial_side_distance(origin: f32, voxel: i32, step: i32, delta_distance: f32
     } else {
         f32::INFINITY
     }
-}
-
-fn is_inside_chunk(position: IVec3) -> bool {
-    Chunk::is_inside(
-        position.x as isize,
-        position.y as isize,
-        position.z as isize,
-    )
 }
