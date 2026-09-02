@@ -1,16 +1,15 @@
+mod dev_camera;
 mod voxel;
 
-use bevy::{
-    camera_controller::free_camera::{FreeCamera, FreeCameraPlugin},
-    prelude::*,
-};
+use bevy::prelude::*;
 
+use dev_camera::{DevCamera, DevCameraPlugin};
 use voxel::{Chunk, ChunkMesher, CHUNK_SIZE, CHUNK_VOLUME, VOXEL_SIZE};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins(FreeCameraPlugin)
+        .add_plugins(DevCameraPlugin)
         .add_systems(Startup, setup)
         .run();
 }
@@ -22,54 +21,55 @@ fn setup(
 ) {
     let chunk = Chunk::new_half_solid();
 
+    let exposed_faces = ChunkMesher::exposed_face_count(&chunk);
+
     info!("Voxel size: {} m", VOXEL_SIZE);
     info!("Chunk size: {}³", CHUNK_SIZE);
     info!("Chunk volume: {} voxels", CHUNK_VOLUME);
-    info!(
-        "Exposed faces: {}",
-        ChunkMesher::exposed_face_count(&chunk)
-    );
+    info!("Exposed faces: {}", exposed_faces);
+    info!("Generated vertices: {}", exposed_faces * 4);
+    info!("Generated triangles: {}", exposed_faces * 2);
 
-    // Temporary ground plane
+    // Generate the voxel chunk mesh.
+    let chunk_mesh = ChunkMesher::build_mesh(&chunk);
+
     commands.spawn((
-        Mesh3d(meshes.add(
-            Plane3d::default()
-                .mesh()
-                .size(20.0, 20.0),
-        )),
+        Mesh3d(meshes.add(chunk_mesh)),
         MeshMaterial3d(
-            materials.add(Color::srgb(0.25, 0.45, 0.25))
+            materials.add(StandardMaterial {
+                base_color: Color::srgb(0.28, 0.52, 0.22),
+                perceptual_roughness: 0.9,
+                ..default()
+            }),
         ),
     ));
 
-    // Temporary reference cube
+    // Main scene light.
     commands.spawn((
-        Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
-        MeshMaterial3d(
-            materials.add(Color::srgb(0.7, 0.7, 0.75))
-        ),
-        Transform::from_xyz(0.0, 0.5, 0.0),
-    ));
-
-    // Light
-    commands.spawn((
-        PointLight {
+        DirectionalLight {
+            illuminance: 10_000.0,
             shadow_maps_enabled: true,
             ..default()
         },
-        Transform::from_xyz(4.0, 8.0, 4.0),
+        Transform::from_rotation(
+            Quat::from_euler(
+                EulerRot::XYZ,
+                -0.8,
+                -0.5,
+                0.0,
+            ),
+        ),
     ));
 
-    // Free-fly development camera
+    // Development camera.
+    let camera_transform = Transform::from_xyz(-6.0, 6.0, 10.0)
+        .looking_at(Vec3::new(4.0, 2.0, 4.0), Vec3::Y);
+
+    let dev_camera = DevCamera::from_transform(&camera_transform);
+
     commands.spawn((
         Camera3d::default(),
-        Transform::from_xyz(-4.0, 4.0, 6.0)
-            .looking_at(Vec3::ZERO, Vec3::Y),
-        FreeCamera {
-            walk_speed: 5.0,
-            run_speed: 15.0,
-            sensitivity: 0.15,
-            ..default()
-        },
+        camera_transform,
+        dev_camera,
     ));
 }
