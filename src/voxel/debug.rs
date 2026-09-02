@@ -10,7 +10,6 @@ use super::{
 
 const VOXELS_PER_BLOCK: i32 = 2;
 const BLOCK_SIZE: f32 = VOXEL_SIZE * VOXELS_PER_BLOCK as f32;
-
 const DEBUG_RENDER_DISTANCE: f32 = 24.0;
 
 const NEIGHBOR_DIRECTIONS: [IVec3; 6] = [
@@ -104,8 +103,6 @@ fn draw_chunk_outlines(world: &VoxelWorld, gizmos: &mut Gizmos, camera_position:
 fn draw_block_outlines(world: &VoxelWorld, gizmos: &mut Gizmos, camera_position: Vec3) {
     let block_color = Color::srgba(0.02, 0.02, 0.02, 0.8);
 
-    let voxel_color = Color::srgba(1.0, 0.65, 0.1, 0.95);
-
     let blocks_per_chunk = CHUNK_SIZE as i32 / VOXELS_PER_BLOCK;
 
     for (&chunk_coordinate, _) in world.iter_chunks() {
@@ -127,21 +124,12 @@ fn draw_block_outlines(world: &VoxelWorld, gizmos: &mut Gizmos, camera_position:
                         continue;
                     }
 
-                    let solid_count = count_solid_voxels(world, block_origin);
-
-                    if solid_count == 0 {
+                    if count_solid_voxels(world, block_origin) == 0 {
                         continue;
                     }
 
-                    let total_voxels =
-                        (VOXELS_PER_BLOCK * VOXELS_PER_BLOCK * VOXELS_PER_BLOCK) as usize;
-
-                    if solid_count == total_voxels {
-                        if block_is_exposed(world, block_origin) {
-                            draw_block_outline(gizmos, block_origin, block_color);
-                        }
-                    } else {
-                        draw_partial_block_outlines(world, gizmos, block_origin, voxel_color);
+                    if block_is_exposed(world, block_origin) {
+                        draw_block_outline(gizmos, block_origin, block_color);
                     }
                 }
             }
@@ -156,36 +144,6 @@ fn draw_block_outline(gizmos: &mut Gizmos, block_origin: IVec3, color: Color) {
         Transform::from_translation(center).with_scale(Vec3::splat(BLOCK_SIZE)),
         color,
     );
-}
-
-fn draw_partial_block_outlines(
-    world: &VoxelWorld,
-    gizmos: &mut Gizmos,
-    block_origin: IVec3,
-    color: Color,
-) {
-    for y in 0..VOXELS_PER_BLOCK {
-        for z in 0..VOXELS_PER_BLOCK {
-            for x in 0..VOXELS_PER_BLOCK {
-                let position = block_origin + IVec3::new(x, y, z);
-
-                if world.get_voxel(position) != Some(Voxel::Solid) {
-                    continue;
-                }
-
-                if !voxel_is_exposed(world, position) {
-                    continue;
-                }
-
-                let center = (position.as_vec3() + Vec3::splat(0.5)) * VOXEL_SIZE;
-
-                gizmos.cube(
-                    Transform::from_translation(center).with_scale(Vec3::splat(VOXEL_SIZE)),
-                    color,
-                );
-            }
-        }
-    }
 }
 
 fn count_solid_voxels(world: &VoxelWorld, block_origin: IVec3) -> usize {
@@ -211,6 +169,10 @@ fn block_is_exposed(world: &VoxelWorld, block_origin: IVec3) -> bool {
         for z in 0..VOXELS_PER_BLOCK {
             for x in 0..VOXELS_PER_BLOCK {
                 let position = block_origin + IVec3::new(x, y, z);
+
+                if world.get_voxel(position) != Some(Voxel::Solid) {
+                    continue;
+                }
 
                 if voxel_is_exposed(world, position) {
                     return true;
@@ -239,7 +201,5 @@ fn get_block_center(block_origin: IVec3) -> Vec3 {
 }
 
 fn is_within_debug_distance(camera_position: Vec3, position: Vec3) -> bool {
-    let max_distance_squared = DEBUG_RENDER_DISTANCE * DEBUG_RENDER_DISTANCE;
-
-    camera_position.distance_squared(position) <= max_distance_squared
+    camera_position.distance_squared(position) <= DEBUG_RENDER_DISTANCE * DEBUG_RENDER_DISTANCE
 }

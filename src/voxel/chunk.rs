@@ -21,20 +21,6 @@ impl Chunk {
         }
     }
 
-    pub fn new_half_solid() -> Self {
-        let mut chunk = Self::new();
-
-        for y in 0..CHUNK_SIZE / 2 {
-            for z in 0..CHUNK_SIZE {
-                for x in 0..CHUNK_SIZE {
-                    chunk.set(x, y, z, Voxel::Solid);
-                }
-            }
-        }
-
-        chunk
-    }
-
     pub fn get(&self, x: usize, y: usize, z: usize) -> Voxel {
         self.voxels[Self::index(x, y, z)]
     }

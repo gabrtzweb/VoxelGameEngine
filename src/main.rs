@@ -1,21 +1,27 @@
 mod dev_camera;
+mod dev_stats;
 mod voxel;
 
-use bevy::prelude::*;
+use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
 
 use dev_camera::{DevCamera, DevCameraPlugin};
 
+use dev_stats::DevStatsPlugin;
+
 use voxel::{
-    CHUNK_SIZE, CHUNK_VOLUME, CHUNK_WORLD_SIZE, Chunk, ChunkMeshRegistry, ChunkMesher,
-    TargetingPlugin, VOXEL_SIZE, VoxelDebugPlugin, VoxelInteractionPlugin, VoxelWorld,
+    CHUNK_SIZE, CHUNK_VOLUME, CHUNK_WORLD_SIZE, ChunkMeshRegistry, ChunkMesher, TargetingPlugin,
+    TerrainGenerator, VOXEL_SIZE, VoxelDebugPlugin, VoxelInteractionPlugin, VoxelWorld,
 };
 
-const INITIAL_WORLD_RADIUS: i32 = 1;
+const INITIAL_WORLD_SIZE: i32 = 8;
+const INITIAL_WORLD_HALF_SIZE: i32 = INITIAL_WORLD_SIZE / 2;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(DevCameraPlugin)
+        .add_plugins(DevStatsPlugin)
         .add_plugins(TargetingPlugin)
         .add_plugins(VoxelInteractionPlugin)
         .add_plugins(VoxelDebugPlugin)
@@ -29,8 +35,9 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let mut world = VoxelWorld::default();
-
     let mut chunk_meshes = ChunkMeshRegistry::default();
+
+    let terrain_generator = TerrainGenerator::default();
 
     let chunk_material = materials.add(StandardMaterial {
         base_color: Color::srgb(0.28, 0.52, 0.22),
@@ -40,21 +47,20 @@ fn setup(
 
     let mut chunk_coordinates = Vec::new();
 
-    // First pass:
-    // Create all chunk voxel data.
-    for z in -INITIAL_WORLD_RADIUS..=INITIAL_WORLD_RADIUS {
-        for x in -INITIAL_WORLD_RADIUS..=INITIAL_WORLD_RADIUS {
+    // First pass: generate all chunk voxel data.
+    for z in -INITIAL_WORLD_HALF_SIZE..INITIAL_WORLD_HALF_SIZE {
+        for x in -INITIAL_WORLD_HALF_SIZE..INITIAL_WORLD_HALF_SIZE {
             let chunk_coordinate = IVec3::new(x, 0, z);
 
-            world.insert_chunk(chunk_coordinate, Chunk::new_half_solid());
+            let chunk = terrain_generator.generate_chunk(chunk_coordinate);
+
+            world.insert_chunk(chunk_coordinate, chunk);
 
             chunk_coordinates.push(chunk_coordinate);
         }
     }
 
-    // Second pass:
-    // Build meshes after all neighboring
-    // chunks already exist in the world.
+    // Second pass: build meshes after all neighboring chunks exist.
     for &chunk_coordinate in &chunk_coordinates {
         let chunk_mesh = ChunkMesher::build_mesh(&world, chunk_coordinate);
 
@@ -75,17 +81,14 @@ fn setup(
     commands.insert_resource(chunk_meshes);
 
     info!("Voxel size: {} m", VOXEL_SIZE);
-
     info!("Chunk size: {}³", CHUNK_SIZE);
-
     info!("Chunk world size: {} m", CHUNK_WORLD_SIZE);
-
     info!("Chunk volume: {} voxels", CHUNK_VOLUME);
-
     info!("Loaded chunks: {}", loaded_chunks);
-
     info!("Loaded voxel capacity: {}", loaded_chunks * CHUNK_VOLUME);
+    info!("Terrain seed: {}", terrain_generator.seed);
 
+    // Main directional light.
     commands.spawn((
         DirectionalLight {
             illuminance: 10_000.0,
@@ -95,8 +98,9 @@ fn setup(
         Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.8, -0.5, 0.0)),
     ));
 
+    // Development camera.
     let camera_transform =
-        Transform::from_xyz(-10.0, 8.0, 14.0).looking_at(Vec3::new(4.0, 2.0, 4.0), Vec3::Y);
+        Transform::from_xyz(-10.0, 12.0, 14.0).looking_at(Vec3::new(4.0, 3.0, 4.0), Vec3::Y);
 
     let dev_camera = DevCamera::from_transform(&camera_transform);
 

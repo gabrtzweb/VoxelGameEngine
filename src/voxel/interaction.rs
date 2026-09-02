@@ -25,6 +25,10 @@ impl ChunkMeshRegistry {
     pub fn get(&self, coordinate: IVec3) -> Option<&Handle<Mesh>> {
         self.handles.get(&coordinate)
     }
+
+    pub fn len(&self) -> usize {
+        self.handles.len()
+    }
 }
 
 #[derive(Default)]
