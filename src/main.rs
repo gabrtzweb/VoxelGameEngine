@@ -6,8 +6,8 @@ use bevy::prelude::*;
 use dev_camera::{DevCamera, DevCameraPlugin};
 
 use voxel::{
-    CHUNK_SIZE, CHUNK_VOLUME, CHUNK_WORLD_SIZE, Chunk, ChunkMeshRegistry, ChunkMesher, VOXEL_SIZE,
-    VoxelDebugPlugin, VoxelInteractionPlugin, VoxelWorld,
+    CHUNK_SIZE, CHUNK_VOLUME, CHUNK_WORLD_SIZE, Chunk, ChunkMeshRegistry, ChunkMesher,
+    TargetingPlugin, VOXEL_SIZE, VoxelDebugPlugin, VoxelInteractionPlugin, VoxelWorld,
 };
 
 const INITIAL_WORLD_RADIUS: i32 = 1;
@@ -16,6 +16,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(DevCameraPlugin)
+        .add_plugins(TargetingPlugin)
         .add_plugins(VoxelInteractionPlugin)
         .add_plugins(VoxelDebugPlugin)
         .add_systems(Startup, setup)
@@ -70,7 +71,6 @@ fn setup(
     info!("Loaded chunks: {}", loaded_chunks);
     info!("Loaded voxel capacity: {}", loaded_chunks * CHUNK_VOLUME);
 
-    // Main directional light.
     commands.spawn((
         DirectionalLight {
             illuminance: 10_000.0,
@@ -80,7 +80,6 @@ fn setup(
         Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.8, -0.5, 0.0)),
     ));
 
-    // Development camera.
     let camera_transform =
         Transform::from_xyz(-10.0, 8.0, 14.0).looking_at(Vec3::new(4.0, 2.0, 4.0), Vec3::Y);
 
