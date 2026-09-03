@@ -4,7 +4,10 @@ use bevy::{input::mouse::AccumulatedMouseMotion, prelude::*};
 
 use crate::voxel::VoxelWorld;
 
-use super::{GameMode, PLAYER_EYE_HEIGHT, Player, collision::move_with_collisions};
+use super::{
+    GameMode, PLAYER_EYE_HEIGHT, Player,
+    collision::{is_grounded, move_with_collisions},
+};
 
 const WALK_SPEED: f32 = 5.0;
 const SPRINT_SPEED: f32 = 8.0;
@@ -18,6 +21,10 @@ const JUMP_SPEED: f32 = 8.0;
 
 const DOUBLE_JUMP_WINDOW: f32 = 0.30;
 
+const THIRD_PERSON_DISTANCE: f32 = 3.5;
+
+const STEP_CAMERA_RECOVERY_SPEED: f32 = 14.0;
+
 #[derive(Component)]
 pub struct PlayerCamera {
     pub sensitivity: f32,
@@ -26,6 +33,8 @@ pub struct PlayerCamera {
 
     yaw: f32,
     pitch: f32,
+
+    third_person: bool,
 }
 
 impl PlayerCamera {
@@ -38,7 +47,12 @@ impl PlayerCamera {
             spectator_fast_speed: 15.0,
             yaw,
             pitch,
+            third_person: false,
         }
+    }
+
+    pub fn is_third_person(&self) -> bool {
+        self.third_person
     }
 }
 
@@ -47,6 +61,10 @@ pub struct PlayerMotion {
     pub velocity: Vec3,
     pub grounded: bool,
     pub flying: bool,
+
+    pub(super) facing_yaw: f32,
+
+    camera_step_offset: f32,
 }
 
 impl Default for PlayerMotion {
@@ -55,6 +73,8 @@ impl Default for PlayerMotion {
             velocity: Vec3::ZERO,
             grounded: false,
             flying: false,
+            facing_yaw: 0.0,
+            camera_step_offset: 0.0,
         }
     }
 }
@@ -62,6 +82,33 @@ impl Default for PlayerMotion {
 #[derive(Default)]
 pub(super) struct JumpTapState {
     since_last_press: Option<f32>,
+}
+
+pub(super) fn toggle_camera_view(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    game_mode: Res<GameMode>,
+    camera: Single<&mut PlayerCamera, With<Camera3d>>,
+) {
+    if *game_mode != GameMode::Creative {
+        return;
+    }
+
+    if !keyboard.just_pressed(KeyCode::F5) {
+        return;
+    }
+
+    let mut camera = camera.into_inner();
+
+    camera.third_person = !camera.third_person;
+
+    info!(
+        "Camera view: {}",
+        if camera.third_person {
+            "third person"
+        } else {
+            "first person"
+        }
+    );
 }
 
 pub(super) fn camera_look(
@@ -91,7 +138,7 @@ pub(super) fn creative_movement(
     game_mode: Res<GameMode>,
     world: Res<VoxelWorld>,
     player: Single<(&mut Transform, &mut PlayerMotion), With<Player>>,
-    mut camera: Single<&mut Transform, (With<PlayerCamera>, Without<Player>)>,
+    camera: Single<(&mut Transform, &PlayerCamera), (With<Camera3d>, Without<Player>)>,
     mut jump_tap: Local<JumpTapState>,
 ) {
     if *game_mode != GameMode::Creative {
@@ -108,6 +155,12 @@ pub(super) fn creative_movement(
 
     let (mut player_transform, mut motion) = player.into_inner();
 
+    let (mut camera_transform, camera_controller) = camera.into_inner();
+
+    if !motion.flying {
+        motion.grounded = is_grounded(&world, player_transform.translation);
+    }
+
     if keyboard.just_pressed(KeyCode::Space) {
         let double_tap = jump_tap
             .since_last_press
@@ -118,7 +171,16 @@ pub(super) fn creative_movement(
 
             motion.velocity = Vec3::ZERO;
 
+            motion.grounded = false;
+
+            motion.camera_step_offset = 0.0;
+
             jump_tap.since_last_press = None;
+
+            info!(
+                "Creative flight: {}",
+                if motion.flying { "enabled" } else { "disabled" }
+            );
         } else {
             jump_tap.since_last_press = Some(0.0);
 
@@ -130,9 +192,13 @@ pub(super) fn creative_movement(
         }
     }
 
-    let camera_forward = *camera.forward();
+    let camera_forward = *camera_transform.forward();
 
-    let camera_right = *camera.right();
+    let camera_right = *camera_transform.right();
+
+    let (yaw, _, _) = camera_transform.rotation.to_euler(EulerRot::YXZ);
+
+    motion.facing_yaw = yaw;
 
     let is_fast = keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight);
 
@@ -172,13 +238,15 @@ pub(super) fn creative_movement(
         };
 
         let (new_position, collision) =
-            move_with_collisions(&world, player_transform.translation, movement);
+            move_with_collisions(&world, player_transform.translation, movement, false);
 
         player_transform.translation = new_position;
 
         motion.velocity = Vec3::ZERO;
 
         motion.grounded = collision.grounded;
+
+        motion.camera_step_offset = 0.0;
     } else {
         let mut forward = Vec3::new(camera_forward.x, 0.0, camera_forward.z);
 
@@ -226,8 +294,10 @@ pub(super) fn creative_movement(
 
         let movement = motion.velocity * delta_seconds;
 
+        let allow_step = motion.grounded && motion.velocity.y <= 0.0;
+
         let (new_position, collision) =
-            move_with_collisions(&world, player_transform.translation, movement);
+            move_with_collisions(&world, player_transform.translation, movement, allow_step);
 
         player_transform.translation = new_position;
 
@@ -244,7 +314,28 @@ pub(super) fn creative_movement(
         }
 
         motion.grounded = collision.grounded;
+
+        if collision.step_height > 0.0 {
+            // The physical body moves instantly,
+            // while the camera catches up smoothly.
+            motion.camera_step_offset -= collision.step_height;
+        }
+
+        let smoothing = 1.0 - (-STEP_CAMERA_RECOVERY_SPEED * delta_seconds).exp();
+
+        motion.camera_step_offset += (0.0 - motion.camera_step_offset) * smoothing;
+
+        if motion.camera_step_offset.abs() < 0.001 {
+            motion.camera_step_offset = 0.0;
+        }
     }
 
-    camera.translation = player_transform.translation + Vec3::Y * PLAYER_EYE_HEIGHT;
+    let eye_position =
+        player_transform.translation + Vec3::Y * (PLAYER_EYE_HEIGHT + motion.camera_step_offset);
+
+    if camera_controller.is_third_person() {
+        camera_transform.translation = eye_position - camera_forward * THIRD_PERSON_DISTANCE;
+    } else {
+        camera_transform.translation = eye_position;
+    }
 }

@@ -122,16 +122,16 @@ fn update_dev_stats(
 
     text.0 = format!(
         "FPS: {fps:.1}\n\
-         Frame: {frame_time:.2} ms\n\
-         Mode: {}\n\
-         Flight: {}\n\
-         Position: {}, {}, {}\n\
-         Player chunk: {}, {}, {}\n\
-         Camera: {:.1}, {:.1}, {:.1}\n\
-         Loaded chunks: {}\n\
-         Meshed chunks: {}\n\
-         Voxel capacity: {}\n\
-         Target voxel: {}",
+        Frame: {frame_time:.2} ms\n\
+        Mode: {}\n\
+        Flight: {}\n\
+        Position: {}, {}, {}\n\
+        Player chunk: {}, {}, {}\n\
+        Camera: {:.1}, {:.1}, {:.1}\n\
+        Loaded chunks: {}\n\
+        Meshed chunks: {}\n\
+        Voxel capacity: {}\n\
+        Target voxel: {}",
         game_mode.label(),
         flight_text,
         player_block.x,
