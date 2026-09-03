@@ -80,4 +80,8 @@ impl VoxelWorld {
     pub fn iter_chunks(&self) -> impl Iterator<Item = (&IVec3, &Chunk)> {
         self.chunks.iter()
     }
+
+    pub fn remove_chunk(&mut self, coordinate: IVec3) -> Option<Chunk> {
+        self.chunks.remove(&coordinate)
+    }
 }

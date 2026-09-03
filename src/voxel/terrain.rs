@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use super::chunk::{CHUNK_SIZE, Chunk, Voxel};
 
+#[derive(Resource)]
 pub struct TerrainGenerator {
     pub seed: u32,
     pub base_height: f32,

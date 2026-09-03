@@ -5,6 +5,7 @@ use bevy::prelude::*;
 use super::{
     chunk::{CHUNK_SIZE, Voxel},
     mesher::ChunkMesher,
+    modifications::WorldModificationStore,
     targeting::{CurrentTarget, TargetingSet},
     world::VoxelWorld,
 };
@@ -12,22 +13,40 @@ use super::{
 const HOLD_DELAY: f32 = 0.25;
 const REPEAT_INTERVAL: f32 = 0.16;
 
+#[derive(Clone)]
+pub struct ChunkRenderData {
+    pub entity: Entity,
+    pub mesh_handle: Handle<Mesh>,
+}
+
 #[derive(Resource, Default)]
 pub struct ChunkMeshRegistry {
-    handles: HashMap<IVec3, Handle<Mesh>>,
+    entries: HashMap<IVec3, ChunkRenderData>,
 }
 
 impl ChunkMeshRegistry {
-    pub fn insert(&mut self, coordinate: IVec3, mesh_handle: Handle<Mesh>) {
-        self.handles.insert(coordinate, mesh_handle);
+    pub fn insert(&mut self, coordinate: IVec3, entity: Entity, mesh_handle: Handle<Mesh>) {
+        self.entries.insert(
+            coordinate,
+            ChunkRenderData {
+                entity,
+                mesh_handle,
+            },
+        );
     }
 
     pub fn get(&self, coordinate: IVec3) -> Option<&Handle<Mesh>> {
-        self.handles.get(&coordinate)
+        self.entries
+            .get(&coordinate)
+            .map(|entry| &entry.mesh_handle)
+    }
+
+    pub fn remove(&mut self, coordinate: IVec3) -> Option<ChunkRenderData> {
+        self.entries.remove(&coordinate)
     }
 
     pub fn len(&self) -> usize {
-        self.handles.len()
+        self.entries.len()
     }
 }
 
@@ -87,6 +106,7 @@ fn edit_voxels(
     time: Res<Time>,
     current_target: Res<CurrentTarget>,
     mut world: ResMut<VoxelWorld>,
+    mut modifications: ResMut<WorldModificationStore>,
     chunk_meshes: Res<ChunkMeshRegistry>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut interaction_state: Local<InteractionState>,
@@ -114,14 +134,14 @@ fn edit_voxels(
     };
 
     let edited_voxel = if break_action {
-        if remove_voxel(&mut world, target.hit_voxel) {
+        if remove_voxel(&mut world, &mut modifications, target.hit_voxel) {
             Some(target.hit_voxel)
         } else {
             None
         }
     } else if place_action {
         if let Some(place_position) = target.place_voxel {
-            if place_voxel(&mut world, place_position) {
+            if place_voxel(&mut world, &mut modifications, place_position) {
                 Some(place_position)
             } else {
                 None
@@ -156,7 +176,11 @@ fn edit_voxels(
     }
 }
 
-fn remove_voxel(world: &mut VoxelWorld, position: IVec3) -> bool {
+fn remove_voxel(
+    world: &mut VoxelWorld,
+    modifications: &mut WorldModificationStore,
+    position: IVec3,
+) -> bool {
     let Some(voxel) = world.get_voxel(position) else {
         return false;
     };
@@ -169,6 +193,8 @@ fn remove_voxel(world: &mut VoxelWorld, position: IVec3) -> bool {
         return false;
     };
 
+    modifications.record(position, Voxel::Air);
+
     info!(
         "Removed voxel {:?} from chunk {:?}",
         position, chunk_coordinate
@@ -177,7 +203,11 @@ fn remove_voxel(world: &mut VoxelWorld, position: IVec3) -> bool {
     true
 }
 
-fn place_voxel(world: &mut VoxelWorld, position: IVec3) -> bool {
+fn place_voxel(
+    world: &mut VoxelWorld,
+    modifications: &mut WorldModificationStore,
+    position: IVec3,
+) -> bool {
     let Some(voxel) = world.get_voxel(position) else {
         return false;
     };
@@ -189,6 +219,8 @@ fn place_voxel(world: &mut VoxelWorld, position: IVec3) -> bool {
     let Some(chunk_coordinate) = world.set_voxel(position, Voxel::Solid) else {
         return false;
     };
+
+    modifications.record(position, Voxel::Solid);
 
     info!(
         "Placed voxel {:?} in chunk {:?}",
