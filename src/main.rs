@@ -2,7 +2,7 @@ mod dev_camera;
 mod dev_stats;
 mod voxel;
 
-use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
+use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, window::PresentMode};
 
 use dev_camera::{DevCamera, DevCameraPlugin};
 
@@ -18,7 +18,13 @@ const INITIAL_WORLD_HALF_SIZE: i32 = INITIAL_WORLD_SIZE / 2;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                present_mode: PresentMode::AutoNoVsync,
+                ..default()
+            }),
+            ..default()
+        }))
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(DevCameraPlugin)
         .add_plugins(DevStatsPlugin)
