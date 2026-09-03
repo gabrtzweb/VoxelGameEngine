@@ -10,14 +10,19 @@ pub enum Voxel {
     Solid = 1,
 }
 
+#[derive(Clone)]
 pub struct Chunk {
     voxels: Vec<Voxel>,
 }
 
 impl Chunk {
     pub fn new() -> Self {
+        Self::filled(Voxel::Air)
+    }
+
+    pub fn filled(voxel: Voxel) -> Self {
         Self {
-            voxels: vec![Voxel::Air; CHUNK_VOLUME],
+            voxels: vec![voxel; CHUNK_VOLUME],
         }
     }
 
@@ -27,6 +32,7 @@ impl Chunk {
 
     pub fn set(&mut self, x: usize, y: usize, z: usize, voxel: Voxel) {
         let index = Self::index(x, y, z);
+
         self.voxels[index] = voxel;
     }
 

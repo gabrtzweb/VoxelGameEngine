@@ -10,15 +10,14 @@ use super::{
 };
 
 struct Face {
-    neighbor: (i32, i32, i32),
+    neighbor: IVec3,
     normal: [f32; 3],
     vertices: [[f32; 3]; 4],
 }
 
 const FACES: [Face; 6] = [
-    // Right (+X)
     Face {
-        neighbor: (1, 0, 0),
+        neighbor: IVec3::new(1, 0, 0),
         normal: [1.0, 0.0, 0.0],
         vertices: [
             [1.0, 0.0, 0.0],
@@ -27,9 +26,8 @@ const FACES: [Face; 6] = [
             [1.0, 0.0, 1.0],
         ],
     },
-    // Left (-X)
     Face {
-        neighbor: (-1, 0, 0),
+        neighbor: IVec3::new(-1, 0, 0),
         normal: [-1.0, 0.0, 0.0],
         vertices: [
             [0.0, 0.0, 1.0],
@@ -38,9 +36,8 @@ const FACES: [Face; 6] = [
             [0.0, 0.0, 0.0],
         ],
     },
-    // Top (+Y)
     Face {
-        neighbor: (0, 1, 0),
+        neighbor: IVec3::new(0, 1, 0),
         normal: [0.0, 1.0, 0.0],
         vertices: [
             [0.0, 1.0, 0.0],
@@ -49,9 +46,8 @@ const FACES: [Face; 6] = [
             [1.0, 1.0, 0.0],
         ],
     },
-    // Bottom (-Y)
     Face {
-        neighbor: (0, -1, 0),
+        neighbor: IVec3::new(0, -1, 0),
         normal: [0.0, -1.0, 0.0],
         vertices: [
             [0.0, 0.0, 1.0],
@@ -60,9 +56,8 @@ const FACES: [Face; 6] = [
             [1.0, 0.0, 1.0],
         ],
     },
-    // Front (+Z)
     Face {
-        neighbor: (0, 0, 1),
+        neighbor: IVec3::new(0, 0, 1),
         normal: [0.0, 0.0, 1.0],
         vertices: [
             [1.0, 0.0, 1.0],
@@ -71,9 +66,8 @@ const FACES: [Face; 6] = [
             [0.0, 0.0, 1.0],
         ],
     },
-    // Back (-Z)
     Face {
-        neighbor: (0, 0, -1),
+        neighbor: IVec3::new(0, 0, -1),
         normal: [0.0, 0.0, -1.0],
         vertices: [
             [0.0, 0.0, 0.0],
@@ -89,17 +83,16 @@ const FACE_UVS: [[f32; 2]; 4] = [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]]
 pub struct ChunkMesher;
 
 impl ChunkMesher {
-    pub fn build_mesh(world: &VoxelWorld, chunk_coordinate: IVec3) -> Mesh {
-        let chunk = world
-            .get_chunk(chunk_coordinate)
-            .expect("Cannot build mesh for an unloaded chunk");
+    pub fn build_mesh(world: &VoxelWorld, chunk_coordinate: IVec3) -> Option<Mesh> {
+        let chunk = world.get_chunk(chunk_coordinate)?;
 
-        let face_count = Self::exposed_face_count(world, chunk_coordinate);
+        let mut positions = Vec::new();
 
-        let mut positions = Vec::with_capacity(face_count * 4);
-        let mut normals = Vec::with_capacity(face_count * 4);
-        let mut uvs = Vec::with_capacity(face_count * 4);
-        let mut indices = Vec::with_capacity(face_count * 6);
+        let mut normals = Vec::new();
+
+        let mut uvs = Vec::new();
+
+        let mut indices = Vec::new();
 
         let chunk_voxel_origin = chunk_coordinate * CHUNK_SIZE as i32;
 
@@ -110,15 +103,12 @@ impl ChunkMesher {
                         continue;
                     }
 
-                    let local_voxel = IVec3::new(x as i32, y as i32, z as i32);
-
-                    let world_voxel = chunk_voxel_origin + local_voxel;
+                    let world_voxel = chunk_voxel_origin + IVec3::new(x as i32, y as i32, z as i32);
 
                     for face in &FACES {
-                        let neighbor_world_voxel = world_voxel
-                            + IVec3::new(face.neighbor.0, face.neighbor.1, face.neighbor.2);
+                        let neighbor = world_voxel + face.neighbor;
 
-                        if !Self::is_face_exposed(world, neighbor_world_voxel) {
+                        if world.get_voxel(neighbor) == Some(Voxel::Solid) {
                             continue;
                         }
 
@@ -155,50 +145,19 @@ impl ChunkMesher {
             }
         }
 
-        Mesh::new(
-            PrimitiveTopology::TriangleList,
-            RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
-        )
-        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, positions)
-        .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
-        .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
-        .with_inserted_indices(Indices::U32(indices))
-    }
-
-    pub fn exposed_face_count(world: &VoxelWorld, chunk_coordinate: IVec3) -> usize {
-        let Some(chunk) = world.get_chunk(chunk_coordinate) else {
-            return 0;
-        };
-
-        let chunk_voxel_origin = chunk_coordinate * CHUNK_SIZE as i32;
-
-        let mut face_count = 0;
-
-        for y in 0..CHUNK_SIZE {
-            for z in 0..CHUNK_SIZE {
-                for x in 0..CHUNK_SIZE {
-                    if chunk.get(x, y, z) == Voxel::Air {
-                        continue;
-                    }
-
-                    let world_voxel = chunk_voxel_origin + IVec3::new(x as i32, y as i32, z as i32);
-
-                    for face in &FACES {
-                        let neighbor_world_voxel = world_voxel
-                            + IVec3::new(face.neighbor.0, face.neighbor.1, face.neighbor.2);
-
-                        if Self::is_face_exposed(world, neighbor_world_voxel) {
-                            face_count += 1;
-                        }
-                    }
-                }
-            }
+        if indices.is_empty() {
+            return None;
         }
 
-        face_count
-    }
-
-    fn is_face_exposed(world: &VoxelWorld, world_voxel: IVec3) -> bool {
-        world.get_voxel(world_voxel) != Some(Voxel::Solid)
+        Some(
+            Mesh::new(
+                PrimitiveTopology::TriangleList,
+                RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+            )
+            .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, positions)
+            .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
+            .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
+            .with_inserted_indices(Indices::U32(indices)),
+        )
     }
 }

@@ -1,54 +1,15 @@
-use std::collections::HashMap;
-
 use bevy::prelude::*;
 
 use super::{
     chunk::{CHUNK_SIZE, Voxel},
-    mesher::ChunkMesher,
     modifications::WorldModificationStore,
+    render::{ChunkMaterial, ChunkMeshRegistry, sync_chunk_render},
     targeting::{CurrentTarget, TargetingSet},
     world::VoxelWorld,
 };
 
 const HOLD_DELAY: f32 = 0.25;
 const REPEAT_INTERVAL: f32 = 0.16;
-
-#[derive(Clone)]
-pub struct ChunkRenderData {
-    pub entity: Entity,
-    pub mesh_handle: Handle<Mesh>,
-}
-
-#[derive(Resource, Default)]
-pub struct ChunkMeshRegistry {
-    entries: HashMap<IVec3, ChunkRenderData>,
-}
-
-impl ChunkMeshRegistry {
-    pub fn insert(&mut self, coordinate: IVec3, entity: Entity, mesh_handle: Handle<Mesh>) {
-        self.entries.insert(
-            coordinate,
-            ChunkRenderData {
-                entity,
-                mesh_handle,
-            },
-        );
-    }
-
-    pub fn get(&self, coordinate: IVec3) -> Option<&Handle<Mesh>> {
-        self.entries
-            .get(&coordinate)
-            .map(|entry| &entry.mesh_handle)
-    }
-
-    pub fn remove(&mut self, coordinate: IVec3) -> Option<ChunkRenderData> {
-        self.entries.remove(&coordinate)
-    }
-
-    pub fn len(&self) -> usize {
-        self.entries.len()
-    }
-}
 
 #[derive(Default)]
 struct HoldActionState {
@@ -80,6 +41,7 @@ impl HoldActionState {
 
         if self.repeat_time >= REPEAT_INTERVAL {
             self.repeat_time -= REPEAT_INTERVAL;
+
             return true;
         }
 
@@ -102,12 +64,14 @@ impl Plugin for VoxelInteractionPlugin {
 }
 
 fn edit_voxels(
+    mut commands: Commands,
     mouse: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
     current_target: Res<CurrentTarget>,
+    material: Res<ChunkMaterial>,
     mut world: ResMut<VoxelWorld>,
     mut modifications: ResMut<WorldModificationStore>,
-    chunk_meshes: Res<ChunkMeshRegistry>,
+    mut registry: ResMut<ChunkMeshRegistry>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut interaction_state: Local<InteractionState>,
 ) {
@@ -159,20 +123,19 @@ fn edit_voxels(
 
     let dirty_chunks = affected_chunks(edited_voxel);
 
-    for chunk_coordinate in dirty_chunks {
-        if world.get_chunk(chunk_coordinate).is_none() {
+    for coordinate in dirty_chunks {
+        if world.get_chunk(coordinate).is_none() {
             continue;
         }
 
-        let Some(mesh_handle) = chunk_meshes.get(chunk_coordinate) else {
-            continue;
-        };
-
-        let rebuilt_mesh = ChunkMesher::build_mesh(&world, chunk_coordinate);
-
-        if let Some(mut mesh) = meshes.get_mut(mesh_handle) {
-            *mesh = rebuilt_mesh;
-        }
+        sync_chunk_render(
+            &mut commands,
+            &world,
+            coordinate,
+            &mut registry,
+            &mut meshes,
+            &material,
+        );
     }
 }
 

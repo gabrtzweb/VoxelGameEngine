@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use super::chunk::{CHUNK_SIZE, Chunk, Voxel};
 
-#[derive(Resource)]
+#[derive(Resource, Clone)]
 pub struct TerrainGenerator {
     pub seed: u32,
     pub base_height: f32,
@@ -27,16 +27,55 @@ impl Default for TerrainGenerator {
 
 impl TerrainGenerator {
     pub fn generate_chunk(&self, chunk_coordinate: IVec3) -> Chunk {
-        let mut chunk = Chunk::new();
-
         let chunk_origin = chunk_coordinate * CHUNK_SIZE as i32;
 
+        let chunk_min_y = chunk_origin.y;
+
+        let chunk_max_y = chunk_origin.y + CHUNK_SIZE as i32 - 1;
+
+        let mut heights = [0_i32; CHUNK_SIZE * CHUNK_SIZE];
+
+        let mut minimum_height = i32::MAX;
+
+        let mut maximum_height = i32::MIN;
+
+        // Calculate the terrain height once for
+        // every X/Z column in this chunk.
         for z in 0..CHUNK_SIZE {
             for x in 0..CHUNK_SIZE {
                 let world_x = chunk_origin.x + x as i32;
+
                 let world_z = chunk_origin.z + z as i32;
 
-                let terrain_height = self.height_at(world_x, world_z);
+                let height = self.height_at(world_x, world_z);
+
+                heights[x + z * CHUNK_SIZE] = height;
+
+                minimum_height = minimum_height.min(height);
+
+                maximum_height = maximum_height.max(height);
+            }
+        }
+
+        // Entire chunk is above the highest
+        // terrain column.
+        if chunk_min_y > maximum_height {
+            return Chunk::filled(Voxel::Air);
+        }
+
+        // Entire chunk is below every terrain
+        // column.
+        if chunk_max_y <= minimum_height {
+            return Chunk::filled(Voxel::Solid);
+        }
+
+        // Only mixed surface chunks need
+        // voxel-by-voxel filling.
+        let mut chunk = Chunk::new();
+
+        for z in 0..CHUNK_SIZE {
+            for x in 0..CHUNK_SIZE {
+                let terrain_height = heights[x + z * CHUNK_SIZE];
 
                 for y in 0..CHUNK_SIZE {
                     let world_y = chunk_origin.y + y as i32;
@@ -69,6 +108,7 @@ impl TerrainGenerator {
             amplitude_sum += amplitude;
 
             amplitude *= self.persistence;
+
             frequency *= 2.0;
         }
 
@@ -82,20 +122,26 @@ impl TerrainGenerator {
 
 fn value_noise(x: f32, z: f32, seed: u32) -> f32 {
     let x0 = x.floor() as i32;
+
     let z0 = z.floor() as i32;
 
     let x1 = x0 + 1;
     let z1 = z0 + 1;
 
     let tx = smoothstep(x - x0 as f32);
+
     let tz = smoothstep(z - z0 as f32);
 
     let v00 = hash_value(x0, z0, seed);
+
     let v10 = hash_value(x1, z0, seed);
+
     let v01 = hash_value(x0, z1, seed);
+
     let v11 = hash_value(x1, z1, seed);
 
     let top = lerp(v00, v10, tx);
+
     let bottom = lerp(v01, v11, tx);
 
     lerp(top, bottom, tz)

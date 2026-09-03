@@ -4,6 +4,7 @@ pub mod debug;
 pub mod interaction;
 pub mod mesher;
 pub mod modifications;
+pub mod render;
 pub mod targeting;
 pub mod terrain;
 pub mod world;
@@ -14,7 +15,9 @@ pub use chunk_manager::ChunkManagerPlugin;
 
 pub use debug::VoxelDebugPlugin;
 
-pub use interaction::{ChunkMeshRegistry, VoxelInteractionPlugin};
+pub use interaction::VoxelInteractionPlugin;
+
+pub use render::ChunkMeshRegistry;
 
 pub use targeting::TargetingPlugin;
 

@@ -3,9 +3,12 @@ use bevy::{
     prelude::*,
 };
 
-use super::world::{CHUNK_WORLD_SIZE, VoxelWorld};
+use super::{
+    render::ChunkMeshRegistry,
+    world::{CHUNK_WORLD_SIZE, VoxelWorld},
+};
 
-const DEBUG_RENDER_DISTANCE: f32 = 48.0;
+const DEBUG_RENDER_DISTANCE: f32 = 96.0;
 
 #[derive(Resource)]
 pub struct VoxelDebugSettings {
@@ -51,8 +54,8 @@ fn toggle_debug(keyboard: Res<ButtonInput<KeyCode>>, mut settings: ResMut<VoxelD
 }
 
 fn draw_chunk_outlines(
-    world: Res<VoxelWorld>,
     settings: Res<VoxelDebugSettings>,
+    registry: Res<ChunkMeshRegistry>,
     camera: Single<&GlobalTransform, With<Camera3d>>,
     mut gizmos: Gizmos,
 ) {
@@ -64,8 +67,8 @@ fn draw_chunk_outlines(
 
     let chunk_color = Color::srgba(0.1, 0.75, 1.0, 0.9);
 
-    for (&chunk_coordinate, _) in world.iter_chunks() {
-        let chunk_origin = VoxelWorld::chunk_translation(chunk_coordinate);
+    for &coordinate in registry.iter_coordinates() {
+        let chunk_origin = VoxelWorld::chunk_translation(coordinate);
 
         let chunk_center = chunk_origin + Vec3::splat(CHUNK_WORLD_SIZE * 0.5);
 
