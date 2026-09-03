@@ -13,6 +13,15 @@ use super::{
 const HOLD_DELAY: f32 = 0.25;
 const REPEAT_INTERVAL: f32 = 0.16;
 
+#[derive(Resource, Clone, Copy)]
+pub struct SelectedVoxel(pub Voxel);
+
+impl Default for SelectedVoxel {
+    fn default() -> Self {
+        Self(Voxel::Stone)
+    }
+}
+
 #[derive(Default)]
 struct HoldActionState {
     hold_time: f32,
@@ -24,12 +33,14 @@ impl HoldActionState {
         if just_pressed {
             self.hold_time = 0.0;
             self.repeat_time = 0.0;
+
             return true;
         }
 
         if !pressed {
             self.hold_time = 0.0;
             self.repeat_time = 0.0;
+
             return false;
         }
 
@@ -54,6 +65,7 @@ impl HoldActionState {
 #[derive(Default)]
 struct InteractionState {
     break_action: HoldActionState,
+
     place_action: HoldActionState,
 }
 
@@ -61,13 +73,83 @@ pub struct VoxelInteractionPlugin;
 
 impl Plugin for VoxelInteractionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, edit_voxels.after(TargetingSet::UpdateTarget));
+        app.init_resource::<SelectedVoxel>()
+            .add_systems(Update, select_voxel_type)
+            .add_systems(
+                Update,
+                (pick_targeted_voxel, edit_voxels)
+                    .chain()
+                    .after(TargetingSet::UpdateTarget),
+            );
     }
+}
+
+fn select_voxel_type(keyboard: Res<ButtonInput<KeyCode>>, mut selected: ResMut<SelectedVoxel>) {
+    let next = if keyboard.just_pressed(KeyCode::Digit1) {
+        Some(Voxel::Grass)
+    } else if keyboard.just_pressed(KeyCode::Digit2) {
+        Some(Voxel::Dirt)
+    } else if keyboard.just_pressed(KeyCode::Digit3) {
+        Some(Voxel::Stone)
+    } else if keyboard.just_pressed(KeyCode::Digit4) {
+        Some(Voxel::Sand)
+    } else if keyboard.just_pressed(KeyCode::Digit5) {
+        Some(Voxel::Water)
+    } else {
+        None
+    };
+
+    let Some(next) = next else {
+        return;
+    };
+
+    set_selected_voxel(&mut selected, next);
+}
+
+fn pick_targeted_voxel(
+    game_mode: Res<GameMode>,
+    mouse: Res<ButtonInput<MouseButton>>,
+    current_target: Res<CurrentTarget>,
+    world: Res<VoxelWorld>,
+    mut selected: ResMut<SelectedVoxel>,
+) {
+    if *game_mode != GameMode::Creative {
+        return;
+    }
+
+    if !mouse.just_pressed(MouseButton::Middle) {
+        return;
+    }
+
+    let Some(target) = current_target.hit else {
+        return;
+    };
+
+    let Some(voxel) = world.get_voxel(target.hit_voxel) else {
+        return;
+    };
+
+    if voxel.is_empty() {
+        return;
+    }
+
+    set_selected_voxel(&mut selected, voxel);
+}
+
+fn set_selected_voxel(selected: &mut SelectedVoxel, voxel: Voxel) {
+    if selected.0 == voxel {
+        return;
+    }
+
+    selected.0 = voxel;
+
+    info!("Selected voxel: {}", voxel.label(),);
 }
 
 #[allow(clippy::too_many_arguments)]
 fn edit_voxels(
     game_mode: Res<GameMode>,
+    selected: Res<SelectedVoxel>,
     mut commands: Commands,
     mouse: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
@@ -112,9 +194,9 @@ fn edit_voxels(
             None
         }
     } else if place_action {
-        target
-            .place_voxel
-            .filter(|&place_position| place_voxel(&mut world, &mut modifications, place_position))
+        target.place_voxel.filter(|&place_position| {
+            place_voxel(&mut world, &mut modifications, place_position, selected.0)
+        })
     } else {
         None
     };
@@ -150,20 +232,15 @@ fn remove_voxel(
         return false;
     };
 
-    if voxel == Voxel::Air {
+    if voxel.is_empty() {
         return false;
     }
 
-    let Some(chunk_coordinate) = world.set_voxel(position, Voxel::Air) else {
+    if world.set_voxel(position, Voxel::Air).is_none() {
         return false;
-    };
+    }
 
     modifications.record(position, Voxel::Air);
-
-    info!(
-        "Removed voxel {:?} from chunk {:?}",
-        position, chunk_coordinate
-    );
 
     true
 }
@@ -172,25 +249,21 @@ fn place_voxel(
     world: &mut VoxelWorld,
     modifications: &mut WorldModificationStore,
     position: IVec3,
+    voxel: Voxel,
 ) -> bool {
-    let Some(voxel) = world.get_voxel(position) else {
+    let Some(current_voxel) = world.get_voxel(position) else {
         return false;
     };
 
-    if voxel != Voxel::Air {
+    if !current_voxel.is_empty() {
         return false;
     }
 
-    let Some(chunk_coordinate) = world.set_voxel(position, Voxel::Solid) else {
+    if world.set_voxel(position, voxel).is_none() {
         return false;
-    };
+    }
 
-    modifications.record(position, Voxel::Solid);
-
-    info!(
-        "Placed voxel {:?} in chunk {:?}",
-        position, chunk_coordinate
-    );
+    modifications.record(position, voxel);
 
     true
 }

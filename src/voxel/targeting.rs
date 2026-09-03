@@ -58,7 +58,10 @@ fn update_current_target(
         (ray_origin.z / VOXEL_SIZE).floor() as i32,
     );
 
-    if world.get_voxel(camera_voxel) == Some(Voxel::Solid) {
+    if world
+        .get_voxel(camera_voxel)
+        .is_some_and(Voxel::is_collidable)
+    {
         current_target.hit = None;
         return;
     }
@@ -219,7 +222,9 @@ fn is_solid_local(world: &VoxelWorld, block_origin: IVec3, local_position: IVec3
         return false;
     }
 
-    world.get_voxel(block_origin + local_position) == Some(Voxel::Solid)
+    world
+        .get_voxel(block_origin + local_position)
+        .is_some_and(Voxel::is_collidable)
 }
 
 fn voxel_grid_point(block_origin: IVec3, x: i32, y: i32, z: i32) -> Vec3 {
@@ -234,7 +239,10 @@ fn count_solid_voxels(world: &VoxelWorld, block_origin: IVec3) -> usize {
             for x in 0..VOXELS_PER_BLOCK {
                 let voxel_position = block_origin + IVec3::new(x, y, z);
 
-                if world.get_voxel(voxel_position) == Some(Voxel::Solid) {
+                if world
+                    .get_voxel(voxel_position)
+                    .is_some_and(Voxel::is_collidable)
+                {
                     count += 1;
                 }
             }

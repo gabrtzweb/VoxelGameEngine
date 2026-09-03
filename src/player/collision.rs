@@ -245,7 +245,10 @@ fn collides_at(world: &VoxelWorld, position: Vec3) -> bool {
     for y in min_voxel.y..=max_voxel.y {
         for z in min_voxel.z..=max_voxel.z {
             for x in min_voxel.x..=max_voxel.x {
-                if world.get_voxel(IVec3::new(x, y, z)) == Some(Voxel::Solid) {
+                if world
+                    .get_voxel(IVec3::new(x, y, z))
+                    .is_some_and(Voxel::is_collidable)
+                {
                     return true;
                 }
             }
@@ -265,7 +268,10 @@ fn overlapping_solid_voxels(world: &VoxelWorld, position: Vec3) -> Vec<IVec3> {
             for x in min_voxel.x..=max_voxel.x {
                 let coordinate = IVec3::new(x, y, z);
 
-                if world.get_voxel(coordinate) == Some(Voxel::Solid) {
+                if world
+                    .get_voxel(coordinate)
+                    .is_some_and(Voxel::is_collidable)
+                {
                     voxels.push(coordinate);
                 }
             }

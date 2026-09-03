@@ -2,6 +2,9 @@ use bevy::prelude::*;
 
 use super::chunk::{CHUNK_SIZE, Chunk, Voxel};
 
+const SURFACE_LAYER_DEPTH: i32 = 3;
+const BEACH_HEIGHT: i32 = 1;
+
 #[derive(Resource, Clone)]
 pub struct TerrainGenerator {
     pub seed: u32,
@@ -10,6 +13,8 @@ pub struct TerrainGenerator {
     pub frequency: f32,
     pub octaves: u32,
     pub persistence: f32,
+
+    pub sea_level: i32,
 }
 
 impl Default for TerrainGenerator {
@@ -21,6 +26,8 @@ impl Default for TerrainGenerator {
             frequency: 0.035,
             octaves: 3,
             persistence: 0.5,
+
+            sea_level: 5,
         }
     }
 }
@@ -39,8 +46,6 @@ impl TerrainGenerator {
 
         let mut maximum_height = i32::MIN;
 
-        // Calculate the terrain height once for
-        // every X/Z column in this chunk.
         for z in 0..CHUNK_SIZE {
             for x in 0..CHUNK_SIZE {
                 let world_x = chunk_origin.x + x as i32;
@@ -57,32 +62,62 @@ impl TerrainGenerator {
             }
         }
 
-        // Entire chunk is above the highest
-        // terrain column.
-        if chunk_min_y > maximum_height {
+        // Completely above both terrain
+        // and sea level.
+        if chunk_min_y > maximum_height.max(self.sea_level) {
             return Chunk::filled(Voxel::Air);
         }
 
-        // Entire chunk is below every terrain
-        // column.
-        if chunk_max_y <= minimum_height {
-            return Chunk::filled(Voxel::Solid);
+        // Completely underwater and also
+        // above every terrain column.
+        if chunk_min_y > maximum_height && chunk_max_y <= self.sea_level {
+            return Chunk::filled(Voxel::Water);
         }
 
-        // Only mixed surface chunks need
-        // voxel-by-voxel filling.
+        // Deep enough that no surface material
+        // can exist in this chunk.
+        if chunk_max_y < minimum_height - SURFACE_LAYER_DEPTH {
+            return Chunk::filled(Voxel::Stone);
+        }
+
         let mut chunk = Chunk::new();
 
         for z in 0..CHUNK_SIZE {
             for x in 0..CHUNK_SIZE {
                 let terrain_height = heights[x + z * CHUNK_SIZE];
 
+                let is_beach = terrain_height <= self.sea_level + BEACH_HEIGHT;
+
                 for y in 0..CHUNK_SIZE {
                     let world_y = chunk_origin.y + y as i32;
 
-                    if world_y <= terrain_height {
-                        chunk.set(x, y, z, Voxel::Solid);
+                    if world_y > terrain_height {
+                        if world_y <= self.sea_level {
+                            chunk.set(x, y, z, Voxel::Water);
+                        }
+
+                        continue;
                     }
+
+                    let depth = terrain_height - world_y;
+
+                    let voxel = if is_beach {
+                        if depth <= SURFACE_LAYER_DEPTH {
+                            Voxel::Sand
+                        } else {
+                            Voxel::Stone
+                        }
+                    } else {
+                        match depth {
+                            0 => Voxel::Grass,
+
+                            1..=SURFACE_LAYER_DEPTH => Voxel::Dirt,
+
+                            _ => Voxel::Stone,
+                        }
+                    };
+
+                    chunk.set(x, y, z, voxel);
                 }
             }
         }

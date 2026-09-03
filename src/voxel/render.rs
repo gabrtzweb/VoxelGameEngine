@@ -91,7 +91,7 @@ pub fn setup_chunk_material(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let material = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.28, 0.52, 0.22),
+        base_color: Color::srgb(1.0, 1.0, 1.0),
         perceptual_roughness: 0.9,
         ..default()
     });

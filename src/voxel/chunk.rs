@@ -7,7 +7,60 @@ pub const CHUNK_VOLUME: usize = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
 pub enum Voxel {
     #[default]
     Air = 0,
-    Solid = 1,
+    Grass = 1,
+    Dirt = 2,
+    Stone = 3,
+    Sand = 4,
+    Water = 5,
+}
+
+impl Voxel {
+    pub fn is_empty(self) -> bool {
+        self == Self::Air
+    }
+
+    pub fn is_collidable(self) -> bool {
+        match self {
+            Self::Air => false,
+
+            Self::Grass | Self::Dirt | Self::Stone | Self::Sand | Self::Water => true,
+        }
+    }
+
+    pub fn occludes_faces(self) -> bool {
+        match self {
+            Self::Air => false,
+
+            Self::Grass | Self::Dirt | Self::Stone | Self::Sand | Self::Water => true,
+        }
+    }
+
+    pub fn display_color(self) -> [f32; 4] {
+        match self {
+            Self::Air => [0.0, 0.0, 0.0, 0.0],
+
+            Self::Grass => [0.32, 0.62, 0.25, 1.0],
+
+            Self::Dirt => [0.42, 0.26, 0.13, 1.0],
+
+            Self::Stone => [0.48, 0.50, 0.52, 1.0],
+
+            Self::Sand => [0.82, 0.76, 0.50, 1.0],
+
+            Self::Water => [0.15, 0.38, 0.85, 1.0],
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Air => "Air",
+            Self::Grass => "Grass",
+            Self::Dirt => "Dirt",
+            Self::Stone => "Stone",
+            Self::Sand => "Sand",
+            Self::Water => "Water",
+        }
+    }
 }
 
 #[derive(Clone)]

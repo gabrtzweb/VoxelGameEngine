@@ -57,11 +57,6 @@ const FACE_DIRECTIONS: [FaceDirection; 6] = [
 #[derive(Clone, Copy, Debug)]
 struct FaceKey {
     voxel: Voxel,
-
-    // This is intentionally part of the key already.
-    //
-    // When Texture Arrays are added, faces using
-    // different texture layers must never be merged.
     texture_layer: u16,
 }
 
@@ -78,6 +73,8 @@ struct MeshBuffers {
 
     uvs: Vec<[f32; 2]>,
 
+    colors: Vec<[f32; 4]>,
+
     indices: Vec<u32>,
 }
 
@@ -87,13 +84,16 @@ impl MeshBuffers {
             positions: Vec::new(),
             normals: Vec::new(),
             uvs: Vec::new(),
+            colors: Vec::new(),
             indices: Vec::new(),
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn push_quad(
         &mut self,
         direction: FaceDirection,
+        key: FaceKey,
         slice: usize,
         u: usize,
         v: usize,
@@ -104,6 +104,8 @@ impl MeshBuffers {
 
         let vertices = quad_vertices(direction, slice, u, v, width, height);
 
+        let color = key.voxel.display_color();
+
         for vertex in vertices {
             self.positions.push([
                 vertex[0] * VOXEL_SIZE,
@@ -112,17 +114,10 @@ impl MeshBuffers {
             ]);
 
             self.normals.push(direction.normal_f32());
+
+            self.colors.push(color);
         }
 
-        // UVs intentionally represent the size of the
-        // merged rectangle in voxel units.
-        //
-        // A 4 x 2 merged face therefore gets UVs from:
-        //
-        // (0, 0) -> (4, 2)
-        //
-        // Later, the texture-array shader can repeat
-        // the block texture rather than stretching it.
         let width = width as f32;
 
         let height = height as f32;
@@ -153,6 +148,7 @@ impl MeshBuffers {
             .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, self.positions)
             .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals)
             .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, self.uvs)
+            .with_inserted_attribute(Mesh::ATTRIBUTE_COLOR, self.colors)
             .with_inserted_indices(Indices::U32(self.indices)),
         )
     }
@@ -172,9 +168,6 @@ impl ChunkMesher {
             for slice in 0..CHUNK_SIZE {
                 let mut mask: [Option<FaceKey>; MASK_SIZE] = [None; MASK_SIZE];
 
-                // Build a two-dimensional visibility
-                // mask for one slice and one face
-                // direction.
                 for v in 0..CHUNK_SIZE {
                     for u in 0..CHUNK_SIZE {
                         let local_voxel = mask_to_voxel(direction, slice, u, v);
@@ -185,7 +178,7 @@ impl ChunkMesher {
                             local_voxel.z as usize,
                         );
 
-                        if voxel == Voxel::Air {
+                        if voxel.is_empty() {
                             continue;
                         }
 
@@ -193,11 +186,7 @@ impl ChunkMesher {
 
                         let neighbor = world_voxel + direction.normal();
 
-                        // Neighbor lookup remains
-                        // world-aware, so faces between
-                        // adjacent chunks are still
-                        // removed correctly.
-                        if world.get_voxel(neighbor) == Some(Voxel::Solid) {
+                        if world.get_voxel(neighbor).is_some_and(Voxel::occludes_faces) {
                             continue;
                         }
 
@@ -235,8 +224,6 @@ fn greedy_merge_mask(
                 continue;
             };
 
-            // Find the maximum horizontal width
-            // containing the same face key.
             let mut width = 1;
 
             while u + width < CHUNK_SIZE {
@@ -253,9 +240,6 @@ fn greedy_merge_mask(
                 width += 1;
             }
 
-            // Expand the rectangle vertically for as
-            // long as every cell still has the same
-            // face key.
             let mut height = 1;
 
             'height_search: while v + height < CHUNK_SIZE {
@@ -274,10 +258,8 @@ fn greedy_merge_mask(
                 height += 1;
             }
 
-            buffers.push_quad(direction, slice, u, v, width, height);
+            buffers.push_quad(direction, key, slice, u, v, width, height);
 
-            // Clear every mask cell consumed by the
-            // rectangle so it cannot be emitted again.
             for clear_v in v..v + height {
                 for clear_u in u..u + width {
                     mask[mask_index(clear_u, clear_v)] = None;
@@ -366,26 +348,24 @@ fn quad_vertices(
     }
 }
 
-// Placeholder for the future Texture Array system.
-//
-// For now every Solid face uses texture layer 0.
-//
-// Later this can become something like:
-//
-// Grass:
-//   top    -> layer 0
-//   side   -> layer 1
-//   bottom -> layer 2
-//
-// Dirt:
-//   all    -> layer 2
-//
-// Stone:
-//   all    -> layer 3
-//
-// Because texture_layer is already part of FaceKey,
-// the greedy algorithm will automatically refuse to
-// merge faces using different texture layers.
-fn texture_layer_for(_voxel: Voxel, _direction: FaceDirection) -> u16 {
-    0
+fn texture_layer_for(voxel: Voxel, direction: FaceDirection) -> u16 {
+    match voxel {
+        Voxel::Air => 0,
+
+        Voxel::Grass => match direction {
+            FaceDirection::PositiveY => 0,
+
+            FaceDirection::NegativeY => 2,
+
+            _ => 1,
+        },
+
+        Voxel::Dirt => 2,
+
+        Voxel::Stone => 3,
+
+        Voxel::Sand => 4,
+
+        Voxel::Water => 5,
+    }
 }
