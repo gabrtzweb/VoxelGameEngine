@@ -8,6 +8,9 @@ use super::{mesher::ChunkMesher, world::VoxelWorld};
 pub struct ChunkRenderData {
     pub entity: Entity,
     pub mesh_handle: Handle<Mesh>,
+
+    vertex_count: usize,
+    triangle_count: usize,
 }
 
 #[derive(Resource, Default)]
@@ -22,12 +25,21 @@ impl ChunkMeshRegistry {
             .map(|entry| &entry.mesh_handle)
     }
 
-    pub fn insert(&mut self, coordinate: IVec3, entity: Entity, mesh_handle: Handle<Mesh>) {
+    pub fn insert(
+        &mut self,
+        coordinate: IVec3,
+        entity: Entity,
+        mesh_handle: Handle<Mesh>,
+        vertex_count: usize,
+        triangle_count: usize,
+    ) {
         self.entries.insert(
             coordinate,
             ChunkRenderData {
                 entity,
                 mesh_handle,
+                vertex_count,
+                triangle_count,
             },
         );
     }
@@ -36,8 +48,34 @@ impl ChunkMeshRegistry {
         self.entries.remove(&coordinate)
     }
 
+    pub fn update_geometry_counts(
+        &mut self,
+        coordinate: IVec3,
+        vertex_count: usize,
+        triangle_count: usize,
+    ) {
+        let Some(entry) = self.entries.get_mut(&coordinate) else {
+            return;
+        };
+
+        entry.vertex_count = vertex_count;
+
+        entry.triangle_count = triangle_count;
+    }
+
     pub fn len(&self) -> usize {
         self.entries.len()
+    }
+
+    pub fn total_vertices(&self) -> usize {
+        self.entries.values().map(|entry| entry.vertex_count).sum()
+    }
+
+    pub fn total_triangles(&self) -> usize {
+        self.entries
+            .values()
+            .map(|entry| entry.triangle_count)
+            .sum()
     }
 
     pub fn iter_coordinates(&self) -> impl Iterator<Item = &IVec3> {
@@ -81,9 +119,18 @@ pub fn sync_chunk_render(
         return;
     };
 
+    let vertex_count = rebuilt_mesh.count_vertices();
+
+    let triangle_count = rebuilt_mesh
+        .indices()
+        .map(|indices| indices.len() / 3)
+        .unwrap_or(0);
+
     if let Some(mesh_handle) = registry.get(coordinate).cloned() {
         if let Some(mut mesh) = meshes.get_mut(&mesh_handle) {
             *mesh = rebuilt_mesh;
+
+            registry.update_geometry_counts(coordinate, vertex_count, triangle_count);
 
             return;
         }
@@ -101,7 +148,13 @@ pub fn sync_chunk_render(
         ))
         .id();
 
-    registry.insert(coordinate, entity, mesh_handle);
+    registry.insert(
+        coordinate,
+        entity,
+        mesh_handle,
+        vertex_count,
+        triangle_count,
+    );
 }
 
 pub fn remove_chunk_render(

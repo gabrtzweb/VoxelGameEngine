@@ -79,6 +79,10 @@ fn update_dev_stats(
 
     let meshed_chunks = chunk_meshes.len();
 
+    let mesh_vertices = chunk_meshes.total_vertices();
+
+    let mesh_triangles = chunk_meshes.total_triangles();
+
     let (player_transform, player_motion) = player.into_inner();
 
     let player_position = player_transform.translation;
@@ -109,6 +113,7 @@ fn update_dev_stats(
                 "Off"
             }
         }
+
         GameMode::Spectator => "N/A",
     };
 
@@ -131,6 +136,8 @@ fn update_dev_stats(
         Camera: {:.1}, {:.1}, {:.1}\n\
         Loaded chunks: {}\n\
         Meshed chunks: {}\n\
+        Mesh vertices: {}\n\
+        Mesh triangles: {}\n\
         Voxel capacity: {}\n\
         Target voxel: {}",
         game_mode.label(),
@@ -146,6 +153,8 @@ fn update_dev_stats(
         camera_position.z,
         loaded_chunks,
         meshed_chunks,
+        mesh_vertices,
+        mesh_triangles,
         loaded_chunks * CHUNK_VOLUME,
         target_text,
     );

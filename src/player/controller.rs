@@ -238,8 +238,19 @@ pub(super) fn creative_movement(
             direction.normalize() * speed * delta_seconds
         };
 
+        // Automatic 0.5 m step-up remains active
+        // during horizontal Creative flight.
+        //
+        // When Space or Ctrl is being used, vertical
+        // movement is controlled explicitly instead.
+        let moving_vertically = keyboard.pressed(KeyCode::Space)
+            || keyboard.pressed(KeyCode::ControlLeft)
+            || keyboard.pressed(KeyCode::ControlRight);
+
+        let allow_step = !moving_vertically;
+
         let (new_position, collision) =
-            move_with_collisions(&world, player_transform.translation, movement, false);
+            move_with_collisions(&world, player_transform.translation, movement, allow_step);
 
         player_transform.translation = new_position;
 
@@ -247,7 +258,19 @@ pub(super) fn creative_movement(
 
         motion.grounded = collision.grounded;
 
-        motion.camera_step_offset = 0.0;
+        if collision.step_height > 0.0 {
+            // Keep the physical step immediate,
+            // but smooth the camera transition.
+            motion.camera_step_offset -= collision.step_height;
+        }
+
+        let smoothing = 1.0 - (-STEP_CAMERA_RECOVERY_SPEED * delta_seconds).exp();
+
+        motion.camera_step_offset += (0.0 - motion.camera_step_offset) * smoothing;
+
+        if motion.camera_step_offset.abs() < 0.001 {
+            motion.camera_step_offset = 0.0;
+        }
     } else {
         let mut forward = Vec3::new(camera_forward.x, 0.0, camera_forward.z);
 
