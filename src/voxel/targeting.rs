@@ -224,7 +224,7 @@ fn is_solid_local(world: &VoxelWorld, block_origin: IVec3, local_position: IVec3
 
     world
         .get_voxel(block_origin + local_position)
-        .is_some_and(Voxel::is_collidable)
+        .is_some_and(|voxel| !voxel.is_empty())
 }
 
 fn voxel_grid_point(block_origin: IVec3, x: i32, y: i32, z: i32) -> Vec3 {
@@ -241,7 +241,7 @@ fn count_solid_voxels(world: &VoxelWorld, block_origin: IVec3) -> usize {
 
                 if world
                     .get_voxel(voxel_position)
-                    .is_some_and(Voxel::is_collidable)
+                    .is_some_and(|voxel| !voxel.is_empty())
                 {
                     count += 1;
                 }

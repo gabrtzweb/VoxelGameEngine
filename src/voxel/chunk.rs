@@ -23,18 +23,14 @@ impl Voxel {
 
     pub fn is_collidable(self) -> bool {
         match self {
-            Self::Air => false,
+            Self::Air | Self::Water => false,
 
-            Self::Grass | Self::Dirt | Self::Stone | Self::Sand | Self::Water | Self::Light => true,
+            Self::Grass | Self::Dirt | Self::Stone | Self::Sand | Self::Light => true,
         }
     }
 
-    pub fn occludes_faces(self) -> bool {
-        match self {
-            Self::Air => false,
-
-            Self::Grass | Self::Dirt | Self::Stone | Self::Sand | Self::Water | Self::Light => true,
-        }
+    pub fn is_transparent(self) -> bool {
+        self == Self::Water
     }
 
     pub fn display_color(self) -> [f32; 4] {
@@ -49,7 +45,7 @@ impl Voxel {
 
             Self::Sand => [0.82, 0.76, 0.50, 1.0],
 
-            Self::Water => [0.15, 0.38, 0.85, 1.0],
+            Self::Water => [0.08, 0.35, 0.78, 1.0],
 
             Self::Light => [1.0, 0.78, 0.25, 1.0],
         }

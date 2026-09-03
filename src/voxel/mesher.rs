@@ -25,10 +25,15 @@ impl FaceDirection {
     fn normal(self) -> IVec3 {
         match self {
             Self::PositiveX => IVec3::new(1, 0, 0),
+
             Self::NegativeX => IVec3::new(-1, 0, 0),
+
             Self::PositiveY => IVec3::new(0, 1, 0),
+
             Self::NegativeY => IVec3::new(0, -1, 0),
+
             Self::PositiveZ => IVec3::new(0, 0, 1),
+
             Self::NegativeZ => IVec3::new(0, 0, -1),
         }
     }
@@ -36,10 +41,15 @@ impl FaceDirection {
     fn normal_f32(self) -> [f32; 3] {
         match self {
             Self::PositiveX => [1.0, 0.0, 0.0],
+
             Self::NegativeX => [-1.0, 0.0, 0.0],
+
             Self::PositiveY => [0.0, 1.0, 0.0],
+
             Self::NegativeY => [0.0, -1.0, 0.0],
+
             Self::PositiveZ => [0.0, 0.0, 1.0],
+
             Self::NegativeZ => [0.0, 0.0, -1.0],
         }
     }
@@ -66,6 +76,11 @@ impl FaceKey {
     }
 }
 
+pub struct ChunkMeshes {
+    pub opaque: Option<Mesh>,
+    pub transparent: Option<Mesh>,
+}
+
 struct MeshBuffers {
     positions: Vec<[f32; 3]>,
 
@@ -82,9 +97,13 @@ impl MeshBuffers {
     fn new() -> Self {
         Self {
             positions: Vec::new(),
+
             normals: Vec::new(),
+
             uvs: Vec::new(),
+
             colors: Vec::new(),
+
             indices: Vec::new(),
         }
     }
@@ -157,12 +176,19 @@ impl MeshBuffers {
 pub struct ChunkMesher;
 
 impl ChunkMesher {
-    pub fn build_mesh(world: &VoxelWorld, chunk_coordinate: IVec3) -> Option<Mesh> {
-        let chunk = world.get_chunk(chunk_coordinate)?;
+    pub fn build_meshes(world: &VoxelWorld, chunk_coordinate: IVec3) -> ChunkMeshes {
+        let Some(chunk) = world.get_chunk(chunk_coordinate) else {
+            return ChunkMeshes {
+                opaque: None,
+                transparent: None,
+            };
+        };
 
         let chunk_voxel_origin = chunk_coordinate * CHUNK_SIZE as i32;
 
-        let mut buffers = MeshBuffers::new();
+        let mut opaque_buffers = MeshBuffers::new();
+
+        let mut transparent_buffers = MeshBuffers::new();
 
         for direction in FACE_DIRECTIONS {
             for slice in 0..CHUNK_SIZE {
@@ -178,15 +204,19 @@ impl ChunkMesher {
                             local_voxel.z as usize,
                         );
 
+                        // Light blocks have their own
+                        // emissive render entities.
                         if voxel.is_empty() || voxel == Voxel::Light {
                             continue;
                         }
 
                         let world_voxel = chunk_voxel_origin + local_voxel;
 
-                        let neighbor = world_voxel + direction.normal();
+                        let neighbor_coordinate = world_voxel + direction.normal();
 
-                        if world.get_voxel(neighbor).is_some_and(Voxel::occludes_faces) {
+                        let neighbor = world.get_voxel(neighbor_coordinate).unwrap_or(Voxel::Air);
+
+                        if !should_render_face(voxel, neighbor) {
                             continue;
                         }
 
@@ -199,19 +229,50 @@ impl ChunkMesher {
                     }
                 }
 
-                greedy_merge_mask(&mut mask, direction, slice, &mut buffers);
+                greedy_merge_mask(
+                    &mut mask,
+                    direction,
+                    slice,
+                    &mut opaque_buffers,
+                    &mut transparent_buffers,
+                );
             }
         }
 
-        buffers.into_mesh()
+        ChunkMeshes {
+            opaque: opaque_buffers.into_mesh(),
+
+            transparent: transparent_buffers.into_mesh(),
+        }
     }
+}
+
+fn should_render_face(voxel: Voxel, neighbor: Voxel) -> bool {
+    if voxel.is_transparent() {
+        // Water against Water does not generate
+        // internal geometry.
+        //
+        // Water against solid terrain also does not
+        // need a face because the solid face will be
+        // visible through the transparent material.
+        return neighbor.is_empty();
+    }
+
+    // Opaque terrain next to Water must keep its face
+    // because it needs to remain visible through Water.
+    neighbor.is_empty() || neighbor.is_transparent()
 }
 
 fn greedy_merge_mask(
     mask: &mut [Option<FaceKey>; MASK_SIZE],
+
     direction: FaceDirection,
+
     slice: usize,
-    buffers: &mut MeshBuffers,
+
+    opaque_buffers: &mut MeshBuffers,
+
+    transparent_buffers: &mut MeshBuffers,
 ) {
     for v in 0..CHUNK_SIZE {
         let mut u = 0;
@@ -257,6 +318,12 @@ fn greedy_merge_mask(
 
                 height += 1;
             }
+
+            let buffers = if key.voxel.is_transparent() {
+                &mut *transparent_buffers
+            } else {
+                &mut *opaque_buffers
+            };
 
             buffers.push_quad(direction, key, slice, u, v, width, height);
 
@@ -354,7 +421,9 @@ fn texture_layer_for(voxel: Voxel, direction: FaceDirection) -> u16 {
 
         Voxel::Grass => match direction {
             FaceDirection::PositiveY => 0,
+
             FaceDirection::NegativeY => 2,
+
             _ => 1,
         },
 
