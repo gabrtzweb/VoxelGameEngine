@@ -1,5 +1,7 @@
 use std::collections::{HashSet, VecDeque};
 
+use crate::player::{Player, PlayerSet};
+
 use bevy::{
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task, futures::check_ready},
@@ -52,7 +54,7 @@ impl Default for ChunkStreamingSettings {
 
 #[derive(Resource, Default)]
 struct ChunkStreamingState {
-    last_camera_chunk: Option<IVec3>,
+    last_player_chunk: Option<IVec3>,
 
     desired_chunks: HashSet<IVec3>,
 }
@@ -101,28 +103,29 @@ impl Plugin for ChunkManagerPlugin {
                     process_chunk_meshing,
                 )
                     .chain()
+                    .after(PlayerSet::Movement)
                     .before(TargetingSet::UpdateTarget),
             );
     }
 }
 
 fn plan_chunk_streaming(
-    camera: Single<&GlobalTransform, With<Camera3d>>,
+    player: Single<&Transform, With<Player>>,
     settings: Res<ChunkStreamingSettings>,
     mut state: ResMut<ChunkStreamingState>,
     world: Res<VoxelWorld>,
     generation_tasks: Query<&ChunkGenerationTask>,
     mut queues: ResMut<ChunkStreamingQueues>,
 ) {
-    let camera_chunk = camera_chunk_coordinate(camera.translation());
+    let player_chunk = player_chunk_coordinate(player.translation);
 
-    if state.last_camera_chunk == Some(camera_chunk) {
+    if state.last_player_chunk == Some(player_chunk) {
         return;
     }
 
-    state.last_camera_chunk = Some(camera_chunk);
+    state.last_player_chunk = Some(player_chunk);
 
-    let desired_chunks = desired_chunk_coordinates(camera_chunk, settings.render_distance);
+    let desired_chunks = desired_chunk_coordinates(player_chunk, settings.render_distance);
 
     state.desired_chunks = desired_chunks.clone();
 
@@ -147,10 +150,10 @@ fn plan_chunk_streaming(
     let mut chunks_to_unload: Vec<IVec3> =
         loaded_chunks.difference(&desired_chunks).copied().collect();
 
-    chunks_to_load.sort_by_key(|coordinate| chunk_distance_squared(*coordinate, camera_chunk));
+    chunks_to_load.sort_by_key(|coordinate| chunk_distance_squared(*coordinate, player_chunk));
 
     chunks_to_unload.sort_by_key(|coordinate| {
-        std::cmp::Reverse(chunk_distance_squared(*coordinate, camera_chunk))
+        std::cmp::Reverse(chunk_distance_squared(*coordinate, player_chunk))
     });
 
     queues.load.clear();
@@ -293,7 +296,7 @@ fn enqueue_remesh(queues: &mut ChunkStreamingQueues, coordinate: IVec3) {
     }
 }
 
-fn camera_chunk_coordinate(camera_position: Vec3) -> IVec3 {
+fn player_chunk_coordinate(camera_position: Vec3) -> IVec3 {
     let camera_voxel = IVec3::new(
         (camera_position.x / VOXEL_SIZE).floor() as i32,
         (camera_position.y / VOXEL_SIZE).floor() as i32,

@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::player::GameMode;
+
 use super::{
     chunk::{CHUNK_SIZE, Voxel},
     modifications::WorldModificationStore,
@@ -64,6 +66,7 @@ impl Plugin for VoxelInteractionPlugin {
 }
 
 fn edit_voxels(
+    game_mode: Res<GameMode>,
     mut commands: Commands,
     mouse: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
@@ -75,6 +78,10 @@ fn edit_voxels(
     mut meshes: ResMut<Assets<Mesh>>,
     mut interaction_state: Local<InteractionState>,
 ) {
+    if *game_mode == GameMode::Spectator {
+        return;
+    }
+
     let delta_seconds = time.delta_secs();
 
     let break_action = interaction_state.break_action.update(
