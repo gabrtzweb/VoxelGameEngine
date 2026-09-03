@@ -2,6 +2,7 @@ pub mod collision;
 pub mod controller;
 pub mod game_mode;
 pub mod spectator;
+pub mod water;
 
 use bevy::{
     camera::Exposure,
@@ -11,6 +12,7 @@ use bevy::{
 };
 
 pub use controller::{PlayerCamera, PlayerMotion};
+
 pub use game_mode::GameMode;
 
 pub const PLAYER_WIDTH: f32 = 0.6;
@@ -36,7 +38,14 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GameMode>()
             .configure_sets(Update, PlayerSet::Movement)
-            .add_systems(Startup, (spawn_player_and_camera, spawn_crosshair))
+            .add_systems(
+                Startup,
+                (
+                    spawn_player_and_camera,
+                    spawn_crosshair,
+                    water::spawn_underwater_overlay,
+                ),
+            )
             .add_systems(PostStartup, lock_cursor)
             .add_systems(
                 Update,
@@ -47,6 +56,7 @@ impl Plugin for PlayerPlugin {
                     controller::creative_movement,
                     spectator::spectator_movement,
                     update_player_body,
+                    water::update_underwater_effect,
                 )
                     .chain()
                     .in_set(PlayerSet::Movement),
@@ -56,7 +66,9 @@ impl Plugin for PlayerPlugin {
 
 fn spawn_player_and_camera(
     mut commands: Commands,
+
     mut meshes: ResMut<Assets<Mesh>>,
+
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let player_position = Vec3::new(-10.0, 10.38, 14.0);
@@ -67,12 +79,13 @@ fn spawn_player_and_camera(
         Transform::from_translation(player_position),
     ));
 
-    // Simple temporary player body.
     let body_mesh = meshes.add(Cuboid::new(PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_WIDTH));
 
     let body_material = materials.add(StandardMaterial {
         base_color: Color::srgb(0.2, 0.45, 0.9),
+
         perceptual_roughness: 0.8,
+
         ..default()
     });
 
@@ -109,6 +122,7 @@ fn spawn_player_and_camera(
         Tonemapping::AcesFitted,
         Projection::Perspective(PerspectiveProjection {
             fov: CAMERA_FOV_DEGREES.to_radians(),
+
             ..default()
         }),
         camera_transform,
@@ -119,8 +133,11 @@ fn spawn_player_and_camera(
 #[allow(clippy::type_complexity)]
 fn update_player_body(
     game_mode: Res<GameMode>,
+
     player: Single<(&Transform, &PlayerMotion), With<Player>>,
+
     camera: Single<&PlayerCamera, With<Camera3d>>,
+
     body: Single<(&mut Transform, &mut Visibility), (With<PlayerBody>, Without<Player>)>,
 ) {
     let (player_transform, player_motion) = player.into_inner();
