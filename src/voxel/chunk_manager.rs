@@ -9,6 +9,7 @@ use bevy::{
 
 use super::{
     chunk::{Chunk, VOXEL_SIZE},
+    light::{VoxelLightRegistry, remove_chunk_lights, sync_chunk_lights},
     modifications::WorldModificationStore,
     render::{
         ChunkMaterial, ChunkMeshRegistry, remove_chunk_render, setup_chunk_material,
@@ -91,6 +92,7 @@ impl Plugin for ChunkManagerPlugin {
             .init_resource::<ChunkStreamingState>()
             .init_resource::<ChunkStreamingQueues>()
             .init_resource::<WorldModificationStore>()
+            .init_resource::<VoxelLightRegistry>()
             .insert_resource(TerrainGenerator::default())
             .add_systems(Startup, setup_chunk_material)
             .add_systems(
@@ -168,6 +170,7 @@ fn process_chunk_unloads(
     mut commands: Commands,
     mut queues: ResMut<ChunkStreamingQueues>,
     mut world: ResMut<VoxelWorld>,
+    mut light_registry: ResMut<VoxelLightRegistry>,
     mut registry: ResMut<ChunkMeshRegistry>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
@@ -175,6 +178,14 @@ fn process_chunk_unloads(
         let Some(coordinate) = queues.unload.pop_front() else {
             break;
         };
+
+        if world.get_chunk(coordinate).is_none() {
+            continue;
+        }
+
+        // PointLight entities must disappear before
+        // their voxel chunk is removed from memory.
+        remove_chunk_lights(&mut commands, coordinate, &mut light_registry);
 
         if world.remove_chunk(coordinate).is_none() {
             continue;
@@ -232,6 +243,7 @@ fn collect_generation_tasks(
     modifications: Res<WorldModificationStore>,
     mut world: ResMut<VoxelWorld>,
     mut queues: ResMut<ChunkStreamingQueues>,
+    mut light_registry: ResMut<VoxelLightRegistry>,
 ) {
     for (entity, mut generation_task) in &mut tasks {
         let Some(mut generated) = check_ready(&mut generation_task.task) else {
@@ -240,15 +252,26 @@ fn collect_generation_tasks(
 
         commands.entity(entity).despawn();
 
-        // Player may have moved while the worker
-        // was generating this chunk.
+        // The player may have moved while this chunk
+        // was being generated asynchronously.
         if !state.desired_chunks.contains(&generated.coordinate) {
             continue;
         }
 
+        // Restore runtime edits before inserting the
+        // chunk into the active world.
         modifications.apply_to_chunk(generated.coordinate, &mut generated.chunk);
 
         world.insert_chunk(generated.coordinate, generated.chunk);
+
+        // Any Light voxels contained in the generated
+        // chunk now receive their PointLight entities.
+        sync_chunk_lights(
+            &mut commands,
+            &world,
+            generated.coordinate,
+            &mut light_registry,
+        );
 
         enqueue_remesh(&mut queues, generated.coordinate);
 
@@ -296,14 +319,14 @@ fn enqueue_remesh(queues: &mut ChunkStreamingQueues, coordinate: IVec3) {
     }
 }
 
-fn player_chunk_coordinate(camera_position: Vec3) -> IVec3 {
-    let camera_voxel = IVec3::new(
-        (camera_position.x / VOXEL_SIZE).floor() as i32,
-        (camera_position.y / VOXEL_SIZE).floor() as i32,
-        (camera_position.z / VOXEL_SIZE).floor() as i32,
+fn player_chunk_coordinate(player_position: Vec3) -> IVec3 {
+    let player_voxel = IVec3::new(
+        (player_position.x / VOXEL_SIZE).floor() as i32,
+        (player_position.y / VOXEL_SIZE).floor() as i32,
+        (player_position.z / VOXEL_SIZE).floor() as i32,
     );
 
-    let (chunk_coordinate, _) = VoxelWorld::world_voxel_to_chunk(camera_voxel);
+    let (chunk_coordinate, _) = VoxelWorld::world_voxel_to_chunk(player_voxel);
 
     chunk_coordinate
 }

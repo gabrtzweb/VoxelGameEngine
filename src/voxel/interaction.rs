@@ -4,6 +4,7 @@ use crate::player::GameMode;
 
 use super::{
     chunk::{CHUNK_SIZE, Voxel},
+    light::{VoxelLightRegistry, sync_voxel_light},
     modifications::WorldModificationStore,
     render::{ChunkMaterial, ChunkMeshRegistry, sync_chunk_render},
     targeting::{CurrentTarget, TargetingSet},
@@ -95,6 +96,8 @@ fn select_voxel_type(keyboard: Res<ButtonInput<KeyCode>>, mut selected: ResMut<S
         Some(Voxel::Sand)
     } else if keyboard.just_pressed(KeyCode::Digit5) {
         Some(Voxel::Water)
+    } else if keyboard.just_pressed(KeyCode::Digit6) {
+        Some(Voxel::Light)
     } else {
         None
     };
@@ -157,6 +160,7 @@ fn edit_voxels(
     material: Res<ChunkMaterial>,
     mut world: ResMut<VoxelWorld>,
     mut modifications: ResMut<WorldModificationStore>,
+    mut light_registry: ResMut<VoxelLightRegistry>,
     mut registry: ResMut<ChunkMeshRegistry>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut interaction_state: Local<InteractionState>,
@@ -204,6 +208,8 @@ fn edit_voxels(
     let Some(edited_voxel) = edited_voxel else {
         return;
     };
+
+    sync_voxel_light(&mut commands, &world, edited_voxel, &mut light_registry);
 
     let dirty_chunks = affected_chunks(edited_voxel);
 

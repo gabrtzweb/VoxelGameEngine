@@ -2,6 +2,7 @@ pub mod chunk;
 pub mod chunk_manager;
 pub mod debug;
 pub mod interaction;
+pub mod light;
 pub mod mesher;
 pub mod modifications;
 pub mod render;

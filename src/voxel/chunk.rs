@@ -7,11 +7,13 @@ pub const CHUNK_VOLUME: usize = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
 pub enum Voxel {
     #[default]
     Air = 0,
+
     Grass = 1,
     Dirt = 2,
     Stone = 3,
     Sand = 4,
     Water = 5,
+    Light = 6,
 }
 
 impl Voxel {
@@ -23,7 +25,7 @@ impl Voxel {
         match self {
             Self::Air => false,
 
-            Self::Grass | Self::Dirt | Self::Stone | Self::Sand | Self::Water => true,
+            Self::Grass | Self::Dirt | Self::Stone | Self::Sand | Self::Water | Self::Light => true,
         }
     }
 
@@ -31,7 +33,7 @@ impl Voxel {
         match self {
             Self::Air => false,
 
-            Self::Grass | Self::Dirt | Self::Stone | Self::Sand | Self::Water => true,
+            Self::Grass | Self::Dirt | Self::Stone | Self::Sand | Self::Water | Self::Light => true,
         }
     }
 
@@ -48,6 +50,8 @@ impl Voxel {
             Self::Sand => [0.82, 0.76, 0.50, 1.0],
 
             Self::Water => [0.15, 0.38, 0.85, 1.0],
+
+            Self::Light => [1.0, 0.78, 0.25, 1.0],
         }
     }
 
@@ -59,6 +63,7 @@ impl Voxel {
             Self::Stone => "Stone",
             Self::Sand => "Sand",
             Self::Water => "Water",
+            Self::Light => "Light",
         }
     }
 }
@@ -91,7 +96,9 @@ impl Chunk {
 
     fn index(x: usize, y: usize, z: usize) -> usize {
         debug_assert!(x < CHUNK_SIZE);
+
         debug_assert!(y < CHUNK_SIZE);
+
         debug_assert!(z < CHUNK_SIZE);
 
         x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE

@@ -4,6 +4,8 @@ pub mod game_mode;
 pub mod spectator;
 
 use bevy::{
+    camera::Exposure,
+    core_pipeline::tonemapping::Tonemapping,
     prelude::*,
     window::{CursorGrabMode, CursorOptions},
 };
@@ -91,6 +93,20 @@ fn spawn_player_and_camera(
 
     commands.spawn((
         Camera3d::default(),
+        DistanceFog {
+            color: Color::srgb(0.67, 0.75, 0.82),
+
+            directional_light_color: Color::srgba(1.0, 0.95, 0.88, 0.10),
+
+            directional_light_exponent: 24.0,
+
+            falloff: FogFalloff::Linear {
+                start: 36.0,
+                end: 60.0,
+            },
+        },
+        Exposure { ev100: 11.0 },
+        Tonemapping::AcesFitted,
         Projection::Perspective(PerspectiveProjection {
             fov: CAMERA_FOV_DEGREES.to_radians(),
             ..default()
@@ -126,6 +142,7 @@ fn update_player_body(
 
 fn lock_cursor(mut cursor_options: Single<&mut CursorOptions>) {
     cursor_options.visible = false;
+
     cursor_options.grab_mode = CursorGrabMode::Locked;
 }
 
@@ -133,10 +150,15 @@ fn spawn_crosshair(mut commands: Commands) {
     commands.spawn((
         Node {
             position_type: PositionType::Absolute,
+
             width: percent(100.0),
+
             height: percent(100.0),
+
             justify_content: JustifyContent::Center,
+
             align_items: AlignItems::Center,
+
             ..default()
         },
         ZIndex(100),
@@ -144,8 +166,11 @@ fn spawn_crosshair(mut commands: Commands) {
             (
                 Node {
                     position_type: PositionType::Absolute,
+
                     width: px(2.0),
+
                     height: px(14.0),
+
                     ..default()
                 },
                 BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.9,),),
@@ -153,8 +178,11 @@ fn spawn_crosshair(mut commands: Commands) {
             (
                 Node {
                     position_type: PositionType::Absolute,
+
                     width: px(14.0),
+
                     height: px(2.0),
+
                     ..default()
                 },
                 BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.9,),),

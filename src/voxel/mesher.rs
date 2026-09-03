@@ -354,18 +354,14 @@ fn texture_layer_for(voxel: Voxel, direction: FaceDirection) -> u16 {
 
         Voxel::Grass => match direction {
             FaceDirection::PositiveY => 0,
-
             FaceDirection::NegativeY => 2,
-
             _ => 1,
         },
 
         Voxel::Dirt => 2,
-
         Voxel::Stone => 3,
-
         Voxel::Sand => 4,
-
         Voxel::Water => 5,
+        Voxel::Light => 6,
     }
 }
