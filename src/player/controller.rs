@@ -132,6 +132,7 @@ pub(super) fn camera_look(
     transform.rotation = Quat::from_euler(EulerRot::YXZ, camera.yaw, camera.pitch, 0.0);
 }
 
+#[allow(clippy::type_complexity)]
 pub(super) fn creative_movement(
     keyboard: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,

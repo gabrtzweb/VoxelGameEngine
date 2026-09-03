@@ -44,6 +44,7 @@ fn spawn_dev_stats(mut commands: Commands) {
     ));
 }
 
+#[allow(clippy::too_many_arguments)]
 fn update_dev_stats(
     diagnostics: Res<DiagnosticsStore>,
     time: Res<Time>,

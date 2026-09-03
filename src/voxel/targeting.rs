@@ -291,10 +291,10 @@ fn raycast_world(
     let mut face_normal = IVec3::ZERO;
 
     while traveled_distance <= max_grid_distance {
-        if let Some(current_voxel) = world.get_voxel(voxel) {
-            if current_voxel != Voxel::Air {
-                return Some(RaycastHit { voxel, face_normal });
-            }
+        if let Some(current_voxel) = world.get_voxel(voxel)
+            && current_voxel != Voxel::Air
+        {
+            return Some(RaycastHit { voxel, face_normal });
         }
 
         if side_distance.x <= side_distance.y && side_distance.x <= side_distance.z {

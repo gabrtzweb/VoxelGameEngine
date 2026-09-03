@@ -10,15 +10,9 @@ use super::{
 
 const DEBUG_RENDER_DISTANCE: f32 = 96.0;
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct VoxelDebugSettings {
     pub enabled: bool,
-}
-
-impl Default for VoxelDebugSettings {
-    fn default() -> Self {
-        Self { enabled: false }
-    }
 }
 
 pub struct VoxelDebugPlugin;

@@ -65,6 +65,7 @@ impl Plugin for VoxelInteractionPlugin {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn edit_voxels(
     game_mode: Res<GameMode>,
     mut commands: Commands,
@@ -111,15 +112,9 @@ fn edit_voxels(
             None
         }
     } else if place_action {
-        if let Some(place_position) = target.place_voxel {
-            if place_voxel(&mut world, &mut modifications, place_position) {
-                Some(place_position)
-            } else {
-                None
-            }
-        } else {
-            None
-        }
+        target
+            .place_voxel
+            .filter(|&place_position| place_voxel(&mut world, &mut modifications, place_position))
     } else {
         None
     };

@@ -100,6 +100,7 @@ fn spawn_player_and_camera(
     ));
 }
 
+#[allow(clippy::type_complexity)]
 fn update_player_body(
     game_mode: Res<GameMode>,
     player: Single<(&Transform, &PlayerMotion), With<Player>>,
