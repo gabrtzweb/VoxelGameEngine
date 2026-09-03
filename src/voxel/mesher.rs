@@ -178,7 +178,7 @@ impl ChunkMesher {
                             local_voxel.z as usize,
                         );
 
-                        if voxel.is_empty() {
+                        if voxel.is_empty() || voxel == Voxel::Light {
                             continue;
                         }
 
