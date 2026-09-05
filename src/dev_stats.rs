@@ -5,7 +5,7 @@ use bevy::{
 };
 
 use crate::{
-    player::{GameMode, Player, PlayerMotion},
+    player::{GameMode, Player, PlayerCamera, PlayerMotion},
     voxel::{CHUNK_VOLUME, ChunkMeshRegistry, VOXEL_SIZE, VoxelWorld, targeting::CurrentTarget},
 };
 
@@ -52,7 +52,7 @@ fn update_dev_stats(
     chunk_meshes: Res<ChunkMeshRegistry>,
     game_mode: Res<GameMode>,
     player: Single<(&Transform, &PlayerMotion), With<Player>>,
-    camera: Single<&Transform, (With<Camera3d>, Without<Player>)>,
+    camera: Single<&Transform, With<PlayerCamera>>,
     current_target: Res<CurrentTarget>,
     mut text: Single<&mut Text, With<DevStatsText>>,
     mut update_timer: Local<f32>,

@@ -114,7 +114,7 @@ pub(super) fn toggle_camera_view(
 
     game_mode: Res<GameMode>,
 
-    camera: Single<&mut PlayerCamera, With<Camera3d>>,
+    camera: Single<&mut PlayerCamera, With<PlayerCamera>>,
 ) {
     if *game_mode != GameMode::Creative {
         return;
@@ -141,7 +141,7 @@ pub(super) fn toggle_camera_view(
 pub(super) fn camera_look(
     mouse_motion: Res<AccumulatedMouseMotion>,
 
-    camera: Single<(&mut Transform, &mut PlayerCamera), With<Camera3d>>,
+    camera: Single<(&mut Transform, &mut PlayerCamera), With<PlayerCamera>>,
 ) {
     let delta = mouse_motion.delta;
 
@@ -172,7 +172,7 @@ pub(super) fn creative_movement(
 
     player: Single<(&mut Transform, &mut PlayerMotion), With<Player>>,
 
-    camera: Single<(&mut Transform, &PlayerCamera), (With<Camera3d>, Without<Player>)>,
+    camera: Single<(&mut Transform, &PlayerCamera), (With<PlayerCamera>, Without<Player>)>,
 
     mut jump_tap: Local<JumpTapState>,
 ) {

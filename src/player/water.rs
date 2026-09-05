@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::voxel::{VOXEL_SIZE, VoxelWorld, chunk::Voxel};
 
-use super::{PLAYER_HEIGHT, PLAYER_WIDTH};
+use super::{PLAYER_HEIGHT, PLAYER_WIDTH, PlayerCamera};
 
 const WATER_BOUNDS_EPSILON: f32 = 0.001;
 
@@ -35,7 +35,7 @@ pub(super) fn spawn_underwater_overlay(mut commands: Commands) {
 pub(super) fn update_underwater_effect(
     world: Res<VoxelWorld>,
 
-    camera: Single<&GlobalTransform, With<Camera3d>>,
+    camera: Single<&GlobalTransform, With<PlayerCamera>>,
 
     overlay: Single<&mut Visibility, With<UnderwaterOverlay>>,
 ) {

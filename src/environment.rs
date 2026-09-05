@@ -4,7 +4,10 @@ use bevy::{
     prelude::*,
 };
 
-use crate::voxel::{VOXEL_SIZE, chunk::CHUNK_SIZE, chunk_manager::ChunkStreamingSettings};
+use crate::{
+    player::PlayerCamera,
+    voxel::{VOXEL_SIZE, chunk::CHUNK_SIZE, chunk_manager::ChunkStreamingSettings},
+};
 
 const DAY_SUN_ILLUMINANCE: f32 = 7_000.0;
 const DAY_FILL_ILLUMINANCE: f32 = 2_200.0;
@@ -195,6 +198,7 @@ fn toggle_day_night(
             Without<SkyFill>,
             Without<SunVisual>,
             Without<MoonVisual>,
+            Without<PlayerCamera>,
         ),
     >,
 
@@ -206,6 +210,7 @@ fn toggle_day_night(
             Without<SkyFill>,
             Without<SunVisual>,
             Without<MoonVisual>,
+            Without<PlayerCamera>,
         ),
     >,
 
@@ -217,6 +222,7 @@ fn toggle_day_night(
             Without<Moon>,
             Without<SunVisual>,
             Without<MoonVisual>,
+            Without<PlayerCamera>,
         ),
     >,
 
@@ -228,6 +234,7 @@ fn toggle_day_night(
             Without<Sun>,
             Without<Moon>,
             Without<SkyFill>,
+            Without<PlayerCamera>,
         ),
     >,
 
@@ -239,13 +246,14 @@ fn toggle_day_night(
             Without<Sun>,
             Without<Moon>,
             Without<SkyFill>,
+            Without<PlayerCamera>,
         ),
     >,
 
     camera: Single<
         (&mut DistanceFog, &mut Exposure),
         (
-            With<Camera3d>,
+            With<PlayerCamera>,
             Without<Sun>,
             Without<Moon>,
             Without<SkyFill>,
@@ -363,7 +371,7 @@ fn toggle_day_night(
 fn sync_fog_distance(
     settings: Res<ChunkStreamingSettings>,
 
-    fog: Single<&mut DistanceFog, With<Camera3d>>,
+    fog: Single<&mut DistanceFog, With<PlayerCamera>>,
 ) {
     let mut fog = fog.into_inner();
 
@@ -380,11 +388,17 @@ fn sync_fog_distance(
 
 #[allow(clippy::type_complexity)]
 fn sync_sky_bodies(
-    camera: Single<&Transform, (With<Camera3d>, Without<SunVisual>, Without<MoonVisual>)>,
+    camera: Single<&Transform, With<PlayerCamera>>,
 
-    sun_visual: Single<&mut Transform, (With<SunVisual>, Without<MoonVisual>)>,
+    sun_visual: Single<
+        &mut Transform,
+        (With<SunVisual>, Without<MoonVisual>, Without<PlayerCamera>),
+    >,
 
-    moon_visual: Single<&mut Transform, (With<MoonVisual>, Without<SunVisual>)>,
+    moon_visual: Single<
+        &mut Transform,
+        (With<MoonVisual>, Without<SunVisual>, Without<PlayerCamera>),
+    >,
 ) {
     let camera_transform = camera.into_inner();
 

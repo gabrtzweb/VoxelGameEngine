@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::player::PlayerCamera;
+
 use super::{
     chunk::{VOXEL_SIZE, Voxel},
     world::VoxelWorld,
@@ -45,7 +47,7 @@ struct RaycastHit {
 }
 
 fn update_current_target(
-    camera: Single<&GlobalTransform, With<Camera3d>>,
+    camera: Single<&GlobalTransform, With<PlayerCamera>>,
     world: Res<VoxelWorld>,
     mut current_target: ResMut<CurrentTarget>,
 ) {

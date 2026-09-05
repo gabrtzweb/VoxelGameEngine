@@ -6,7 +6,7 @@ pub(super) fn spectator_movement(
     keyboard: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
     game_mode: Res<GameMode>,
-    camera: Single<(&mut Transform, &PlayerCamera), With<Camera3d>>,
+    camera: Single<(&mut Transform, &PlayerCamera), With<PlayerCamera>>,
 ) {
     if *game_mode != GameMode::Spectator {
         return;

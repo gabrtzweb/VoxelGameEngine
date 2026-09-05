@@ -3,6 +3,8 @@ use bevy::{
     prelude::*,
 };
 
+use crate::player::PlayerCamera;
+
 use super::{
     render::ChunkMeshRegistry,
     world::{CHUNK_WORLD_SIZE, VoxelWorld},
@@ -50,7 +52,7 @@ fn toggle_debug(keyboard: Res<ButtonInput<KeyCode>>, mut settings: ResMut<VoxelD
 fn draw_chunk_outlines(
     settings: Res<VoxelDebugSettings>,
     registry: Res<ChunkMeshRegistry>,
-    camera: Single<&GlobalTransform, With<Camera3d>>,
+    camera: Single<&GlobalTransform, With<PlayerCamera>>,
     mut gizmos: Gizmos,
 ) {
     if !settings.enabled {

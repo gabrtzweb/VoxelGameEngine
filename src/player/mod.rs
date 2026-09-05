@@ -126,7 +126,7 @@ fn update_player_body(
 
     player: Single<(&Transform, &PlayerMotion), With<Player>>,
 
-    camera: Single<&PlayerCamera, With<Camera3d>>,
+    camera: Single<&PlayerCamera, With<PlayerCamera>>,
 
     body: Single<(&mut Transform, &mut Visibility), (With<PlayerBody>, Without<Player>)>,
 ) {
