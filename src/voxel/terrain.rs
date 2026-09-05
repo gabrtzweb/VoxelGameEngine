@@ -2,17 +2,29 @@ use bevy::prelude::*;
 
 use super::chunk::{CHUNK_SIZE, Chunk, Voxel};
 
+const LOGICAL_BLOCK_VOXELS: i32 = 2;
+
 const GRASS_DIRT_DEPTH: i32 = 3;
 const SAND_DEPTH: i32 = 4;
 const BEACH_HEIGHT: i32 = 2;
 
 const MAX_SURFACE_LAYER_DEPTH: i32 = SAND_DEPTH;
 
+const LAKE_WATER_THRESHOLD: f32 = 0.20;
+const LAKE_MATERIAL_THRESHOLD: f32 = 0.05;
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum SurfaceMaterial {
+    #[default]
+    Grass,
+    Sand,
+}
+
 #[derive(Clone, Copy)]
 struct TerrainColumn {
     terrain_height: i32,
     water_level: Option<i32>,
-    lake_strength: f32,
+    surface_material: SurfaceMaterial,
 }
 
 impl Default for TerrainColumn {
@@ -20,7 +32,7 @@ impl Default for TerrainColumn {
         Self {
             terrain_height: 0,
             water_level: None,
-            lake_strength: 0.0,
+            surface_material: SurfaceMaterial::Grass,
         }
     }
 }
@@ -31,7 +43,6 @@ pub struct TerrainGenerator {
 
     // Large-scale terrain.
     pub base_height: f32,
-
     pub macro_amplitude: f32,
     pub macro_frequency: f32,
 
@@ -43,7 +54,6 @@ pub struct TerrainGenerator {
 
     // Lakes.
     pub sea_level: i32,
-
     pub lake_frequency: f32,
     pub lake_threshold: f32,
     pub lake_transition: f32,
@@ -85,8 +95,7 @@ impl Default for TerrainGenerator {
             // transitions into the deep basin.
             lake_transition: 0.45,
 
-            // 10 voxels = up to roughly 5 meters
-            // below the water surface.
+            // 10 voxels = roughly 5 meters.
             lake_max_depth: 10.0,
         }
     }
@@ -103,7 +112,6 @@ impl TerrainGenerator {
         let mut columns = [TerrainColumn::default(); CHUNK_SIZE * CHUNK_SIZE];
 
         let mut minimum_terrain_height = i32::MAX;
-
         let mut maximum_filled_height = i32::MIN;
 
         for z in 0..CHUNK_SIZE {
@@ -128,14 +136,13 @@ impl TerrainGenerator {
         }
 
         // Entire chunk is above both terrain
-        // and any possible lake surface.
+        // and any possible water surface.
         if chunk_min_y > maximum_filled_height {
             return Chunk::filled(Voxel::Air);
         }
 
-        // Entire chunk is sufficiently deep below
-        // every surface layer, so it can be filled
-        // directly with Stone.
+        // Entire chunk is deep enough that all
+        // possible surface layers are above it.
         if chunk_max_y < minimum_terrain_height - MAX_SURFACE_LAYER_DEPTH {
             return Chunk::filled(Voxel::Stone);
         }
@@ -162,48 +169,84 @@ impl TerrainGenerator {
     }
 
     fn sample_column(&self, world_x: i32, world_z: i32) -> TerrainColumn {
-        let natural_height = self.natural_height_at(world_x, world_z);
-
-        let lake_strength = self.lake_strength_at(world_x, world_z);
-
-        if lake_strength <= 0.0 {
-            return TerrainColumn {
-                terrain_height: natural_height.round() as i32,
-
-                water_level: None,
-
-                lake_strength: 0.0,
-            };
-        }
-
-        // At the center of a lake, the desired
-        // floor approaches:
+        // IMPORTANT:
         //
-        // sea_level - lake_max_depth
+        // Geometry stays at the native 0.5 m
+        // resolution.
+        let natural_height = self.natural_height_at(world_x as f32, world_z as f32);
+
+        // Lake geometry also stays at 0.5 m.
         //
-        // Near the shore, the natural terrain and
-        // lake floor are smoothly blended.
-        let deepest_floor = self.sea_level as f32 - self.lake_max_depth;
+        // This must NOT use the logical 1 m material
+        // grid, otherwise lake carving becomes
+        // quantized and produces discontinuities.
+        let lake_strength = self.lake_strength_at(world_x as f32, world_z as f32);
 
-        let carved_height = lerp(natural_height, deepest_floor, lake_strength);
+        let terrain_height = if lake_strength > 0.0 {
+            let deepest_floor = self.sea_level as f32 - self.lake_max_depth;
 
-        let terrain_height = carved_height.round() as i32;
-
-        // Water appears only once the carved terrain
-        // has actually gone below the lake surface.
-        //
-        // This naturally leaves dry sloped margins
-        // around the lake.
-        let water_level = if terrain_height < self.sea_level && lake_strength >= 0.20 {
-            Some(self.sea_level)
+            lerp(natural_height, deepest_floor, lake_strength).round() as i32
         } else {
-            None
+            natural_height.round() as i32
         };
+
+        let water_level =
+            if terrain_height < self.sea_level && lake_strength >= LAKE_WATER_THRESHOLD {
+                Some(self.sea_level)
+            } else {
+                None
+            };
+
+        // Only the natural MATERIAL classification
+        // uses the logical 1 m grid.
+        let surface_material = self.surface_material_at(world_x, world_z);
 
         TerrainColumn {
             terrain_height,
             water_level,
-            lake_strength,
+            surface_material,
+        }
+    }
+
+    fn surface_material_at(&self, world_x: i32, world_z: i32) -> SurfaceMaterial {
+        // 2 voxel columns = one logical 1 m block.
+        //
+        // Euclidean division keeps the grid correct
+        // for negative world coordinates.
+        let logical_x = world_x.div_euclid(LOGICAL_BLOCK_VOXELS);
+
+        let logical_z = world_z.div_euclid(LOGICAL_BLOCK_VOXELS);
+
+        // Sample the center of the logical 1 m cell.
+        //
+        // For example:
+        // voxel columns 0 and 1 -> sample at 0.5
+        // voxel columns 2 and 3 -> sample at 2.5
+        let sample_x = logical_block_sample_position(logical_x);
+
+        let sample_z = logical_block_sample_position(logical_z);
+
+        let lake_strength = self.lake_strength_at(sample_x, sample_z);
+
+        let natural_height = self.natural_height_at(sample_x, sample_z);
+
+        let representative_height = if lake_strength > 0.0 {
+            let deepest_floor = self.sea_level as f32 - self.lake_max_depth;
+
+            lerp(natural_height, deepest_floor, lake_strength)
+        } else {
+            natural_height
+        };
+
+        let near_lake = lake_strength > LAKE_MATERIAL_THRESHOLD;
+
+        let beach =
+            near_lake && representative_height.round() as i32 <= self.sea_level + BEACH_HEIGHT;
+
+        if beach {
+            SurfaceMaterial::Sand
+        } else {
+            SurfaceMaterial::Grass
         }
     }
 
@@ -220,33 +263,29 @@ impl TerrainGenerator {
 
         let depth = column.terrain_height - world_y;
 
-        let underwater = column.water_level.is_some();
+        match column.surface_material {
+            SurfaceMaterial::Grass => match depth {
+                0 => Voxel::Grass,
 
-        let near_lake = column.lake_strength > 0.05;
+                1..=GRASS_DIRT_DEPTH => Voxel::Dirt,
 
-        let beach = near_lake && column.terrain_height <= self.sea_level + BEACH_HEIGHT;
+                _ => Voxel::Stone,
+            },
 
-        if underwater || beach {
-            if depth <= SAND_DEPTH {
-                return Voxel::Sand;
+            SurfaceMaterial::Sand => {
+                if depth <= SAND_DEPTH {
+                    Voxel::Sand
+                } else {
+                    Voxel::Stone
+                }
             }
-
-            return Voxel::Stone;
-        }
-
-        match depth {
-            0 => Voxel::Grass,
-
-            1..=GRASS_DIRT_DEPTH => Voxel::Dirt,
-
-            _ => Voxel::Stone,
         }
     }
 
-    fn natural_height_at(&self, world_x: i32, world_z: i32) -> f32 {
+    fn natural_height_at(&self, world_x: f32, world_z: f32) -> f32 {
         let macro_noise = fractal_noise(
-            world_x as f32,
-            world_z as f32,
+            world_x,
+            world_z,
             self.macro_frequency,
             3,
             0.55,
@@ -254,8 +293,8 @@ impl TerrainGenerator {
         );
 
         let detail_noise = fractal_noise(
-            world_x as f32,
-            world_z as f32,
+            world_x,
+            world_z,
             self.detail_frequency,
             self.detail_octaves,
             self.persistence,
@@ -265,10 +304,10 @@ impl TerrainGenerator {
         self.base_height + macro_noise * self.macro_amplitude + detail_noise * self.detail_amplitude
     }
 
-    fn lake_strength_at(&self, world_x: i32, world_z: i32) -> f32 {
+    fn lake_strength_at(&self, world_x: f32, world_z: f32) -> f32 {
         let lake_noise = fractal_noise(
-            world_x as f32,
-            world_z as f32,
+            world_x,
+            world_z,
             self.lake_frequency,
             2,
             0.55,
@@ -281,6 +320,10 @@ impl TerrainGenerator {
             self.lake_threshold + self.lake_transition,
         )
     }
+}
+
+fn logical_block_sample_position(logical_coordinate: i32) -> f32 {
+    logical_coordinate as f32 * LOGICAL_BLOCK_VOXELS as f32 + 0.5
 }
 
 fn column_index(x: usize, z: usize) -> usize {
@@ -314,7 +357,6 @@ fn fractal_noise(
         amplitude_sum += amplitude;
 
         amplitude *= persistence;
-
         frequency *= 2.0;
     }
 
@@ -331,7 +373,6 @@ fn value_noise(x: f32, z: f32, seed: u32) -> f32 {
     let z0 = z.floor() as i32;
 
     let x1 = x0 + 1;
-
     let z1 = z0 + 1;
 
     let tx = smoothstep(x - x0 as f32);

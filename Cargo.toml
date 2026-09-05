@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 bevy = "0.19"
+bevy_sky_gradient = "0.4.0"
 
 [profile.dev]
 opt-level = 1
