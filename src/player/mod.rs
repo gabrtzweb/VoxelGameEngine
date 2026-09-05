@@ -10,6 +10,7 @@ use bevy::{
     prelude::*,
     window::{CursorGrabMode, CursorOptions},
 };
+use bevy_sky_gradient::prelude::*;
 
 pub use controller::{PlayerCamera, PlayerMotion};
 
@@ -106,18 +107,7 @@ fn spawn_player_and_camera(
 
     commands.spawn((
         Camera3d::default(),
-        DistanceFog {
-            color: Color::srgb(0.67, 0.75, 0.82),
-
-            directional_light_color: Color::srgba(1.0, 0.95, 0.88, 0.10),
-
-            directional_light_exponent: 24.0,
-
-            falloff: FogFalloff::Linear {
-                start: 36.0,
-                end: 60.0,
-            },
-        },
+        SkyboxMagnetTag,
         Exposure { ev100: 11.0 },
         Tonemapping::AcesFitted,
         Projection::Perspective(PerspectiveProjection {

@@ -4,6 +4,7 @@ mod player;
 mod voxel;
 
 use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, window::PresentMode};
+use bevy_sky_gradient::prelude::*;
 
 use dev_stats::DevStatsPlugin;
 use environment::EnvironmentPlugin;
@@ -21,6 +22,7 @@ fn main() {
             ..default()
         }))
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
+        .add_plugins(SkyPlugin::default())
         .add_plugins(EnvironmentPlugin)
         .add_plugins(PlayerPlugin)
         .add_plugins(ChunkManagerPlugin)
