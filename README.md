@@ -12,7 +12,7 @@ The project focuses on a fully editable procedural voxel world with a hybrid blo
 
 The long-term goal is to build a performant procedural voxel game with large-world streaming, runtime terrain editing, configurable generation, multiple gameplay modes, dynamic fluids and extensive development tooling.
 
-## Current Controls
+## Current Game Controls
 
     Mouse             Look
 
@@ -24,6 +24,7 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     Shift             Sprint / Fast swim / Fast flight
 
     Space             Jump / Swim up / Fly up
+    Double Space      Toggle Creative flight
     Ctrl              Swim down / Fly down
 
     Left Mouse        Break voxel
@@ -37,15 +38,16 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     5                 Water
     6                 Light
 
+    F1                Toggle Inspector
     F3                Chunk debug
     F4                Creative / Spectator
     F5                First / Third person
     F6                Day / Night
 
-    Double Space      Toggle Creative flight
 
-## Current project structure
+## Current Project Structure
 
+```text
 src/
 ├── player/
 │   ├── collision.rs
@@ -72,6 +74,7 @@ src/
 ├── dev_stats.rs
 ├── environment.rs
 └── main.rs
+```
 
 ## Development Commands
 
@@ -82,18 +85,6 @@ Run:
 Optimized build:
 
     cargo run --release
-
-Check:
-
-    cargo check
-
-Format:
-
-    cargo fmt
-
-Lint:
-
-    cargo clippy
 
 Recommended before commits:
 
