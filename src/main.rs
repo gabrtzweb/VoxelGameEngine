@@ -5,6 +5,8 @@ mod voxel;
 
 use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, window::PresentMode};
 
+use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
+
 use dev_stats::DevStatsPlugin;
 use environment::EnvironmentPlugin;
 use player::PlayerPlugin;
@@ -21,6 +23,8 @@ fn main() {
             ..default()
         }))
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
+        .add_plugins(EguiPlugin::default())
+        .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(EnvironmentPlugin)
         .add_plugins(PlayerPlugin)
         .add_plugins(ChunkManagerPlugin)
