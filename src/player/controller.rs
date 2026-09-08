@@ -1,6 +1,10 @@
 use std::f32::consts::FRAC_PI_2;
 
-use bevy::{input::mouse::AccumulatedMouseMotion, prelude::*};
+use bevy::{
+    input::mouse::AccumulatedMouseMotion,
+    prelude::*,
+    window::{CursorGrabMode, CursorOptions},
+};
 
 use crate::voxel::VoxelWorld;
 
@@ -40,6 +44,11 @@ const DOUBLE_JUMP_WINDOW: f32 = 0.30;
 const THIRD_PERSON_DISTANCE: f32 = 3.5;
 
 const STEP_CAMERA_RECOVERY_SPEED: f32 = 14.0;
+
+#[derive(Resource, Default)]
+pub struct InspectorInteraction {
+    pub active: bool,
+}
 
 #[derive(Component)]
 pub struct PlayerCamera {
@@ -109,13 +118,45 @@ pub(super) struct JumpTapState {
     since_last_press: Option<f32>,
 }
 
+pub(super) fn toggle_inspector_interaction(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut inspector_interaction: ResMut<InspectorInteraction>,
+    cursor_options: Single<&mut CursorOptions>,
+) {
+    if !keyboard.just_pressed(KeyCode::F1) {
+        return;
+    }
+
+    inspector_interaction.active = !inspector_interaction.active;
+
+    let mut cursor_options = cursor_options.into_inner();
+
+    if inspector_interaction.active {
+        cursor_options.visible = true;
+        cursor_options.grab_mode = CursorGrabMode::None;
+
+        info!("Inspector interaction: enabled");
+    } else {
+        cursor_options.visible = false;
+        cursor_options.grab_mode = CursorGrabMode::Locked;
+
+        info!("Inspector interaction: disabled");
+    }
+}
+
 pub(super) fn toggle_camera_view(
     keyboard: Res<ButtonInput<KeyCode>>,
 
     game_mode: Res<GameMode>,
 
+    inspector_interaction: Res<InspectorInteraction>,
+
     camera: Single<&mut PlayerCamera, With<Camera3d>>,
 ) {
+    if inspector_interaction.active {
+        return;
+    }
+
     if *game_mode != GameMode::Creative {
         return;
     }
@@ -141,8 +182,14 @@ pub(super) fn toggle_camera_view(
 pub(super) fn camera_look(
     mouse_motion: Res<AccumulatedMouseMotion>,
 
+    inspector_interaction: Res<InspectorInteraction>,
+
     camera: Single<(&mut Transform, &mut PlayerCamera), With<Camera3d>>,
 ) {
+    if inspector_interaction.active {
+        return;
+    }
+
     let delta = mouse_motion.delta;
 
     if delta == Vec2::ZERO {
@@ -168,6 +215,8 @@ pub(super) fn creative_movement(
 
     game_mode: Res<GameMode>,
 
+    inspector_interaction: Res<InspectorInteraction>,
+
     world: Res<VoxelWorld>,
 
     player: Single<(&mut Transform, &mut PlayerMotion), With<Player>>,
@@ -176,6 +225,12 @@ pub(super) fn creative_movement(
 
     mut jump_tap: Local<JumpTapState>,
 ) {
+    if inspector_interaction.active {
+        jump_tap.since_last_press = None;
+
+        return;
+    }
+
     if *game_mode != GameMode::Creative {
         jump_tap.since_last_press = None;
 
@@ -200,9 +255,6 @@ pub(super) fn creative_movement(
 
     let in_water = water_submersion > WATER_SUBMERSION_THRESHOLD;
 
-    // Swimming uses Space continuously, so while
-    // submerged we disable the double-space flight
-    // gesture unless flight is already enabled.
     if in_water && !motion.flying {
         jump_tap.since_last_press = None;
     }
@@ -472,15 +524,10 @@ fn update_water_vertical_velocity(
 
     water_submersion: f32,
 ) {
-    // Weak underwater gravity.
     motion.velocity.y -= WATER_GRAVITY * delta_seconds;
 
-    // Buoyancy scales with how much of the player's
-    // body is currently submerged.
     motion.velocity.y += WATER_BUOYANCY * water_submersion * delta_seconds;
 
-    // Water quickly removes vertical momentum,
-    // including high-speed falls into a lake.
     let drag = (-WATER_VERTICAL_DRAG * delta_seconds).exp();
 
     motion.velocity.y *= drag;

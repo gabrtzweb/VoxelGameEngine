@@ -11,7 +11,7 @@ use bevy::{
     window::{CursorGrabMode, CursorOptions},
 };
 
-pub use controller::{PlayerCamera, PlayerMotion};
+pub use controller::{InspectorInteraction, PlayerCamera, PlayerMotion};
 
 pub use game_mode::GameMode;
 
@@ -37,6 +37,7 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GameMode>()
+            .init_resource::<InspectorInteraction>()
             .configure_sets(Update, PlayerSet::Movement)
             .add_systems(
                 Startup,
@@ -50,6 +51,7 @@ impl Plugin for PlayerPlugin {
             .add_systems(
                 Update,
                 (
+                    controller::toggle_inspector_interaction,
                     game_mode::toggle_game_mode,
                     controller::toggle_camera_view,
                     controller::camera_look,
