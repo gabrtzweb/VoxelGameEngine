@@ -47,34 +47,32 @@ The long-term goal is to build a performant procedural voxel game with large-wor
 
 ## Current Project Structure
 
-```text
-src/
-├── player/
-│   ├── collision.rs
-│   ├── controller.rs
-│   ├── game_mode.rs
-│   ├── mod.rs
-│   ├── spectator.rs
-│   └── water.rs
-│
-├── voxel/
-│   ├── chunk_manager.rs
-│   ├── chunk.rs
-│   ├── debug.rs
-│   ├── interaction.rs
-│   ├── light.rs
-│   ├── mesher.rs
-│   ├── mod.rs
-│   ├── modifications.rs
-│   ├── render.rs
-│   ├── targeting.rs
-│   ├── terrain.rs
-│   └── world.rs
-│
-├── dev_stats.rs
-├── environment.rs
-└── main.rs
-```
+    src/
+    ├── player/
+    │   ├── collision.rs
+    │   ├── controller.rs
+    │   ├── game_mode.rs
+    │   ├── mod.rs
+    │   ├── spectator.rs
+    │   └── water.rs
+    │
+    ├── voxel/
+    │   ├── chunk_manager.rs
+    │   ├── chunk.rs
+    │   ├── debug.rs
+    │   ├── interaction.rs
+    │   ├── light.rs
+    │   ├── mesher.rs
+    │   ├── mod.rs
+    │   ├── modifications.rs
+    │   ├── render.rs
+    │   ├── targeting.rs
+    │   ├── terrain.rs
+    │   └── world.rs
+    │
+    ├── dev_stats.rs
+    ├── environment.rs
+    └── main.rs
 
 ## Development Commands
 
