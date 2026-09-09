@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use super::{
     chunk::{VOXEL_SIZE, Voxel},
+    interaction_mode::InteractionMode,
     world::VoxelWorld,
 };
 
@@ -17,6 +18,7 @@ pub enum TargetingSet {
 pub struct VoxelTarget {
     pub hit_voxel: IVec3,
     pub place_voxel: Option<IVec3>,
+    pub face_normal: IVec3,
     pub block_origin: IVec3,
 }
 
@@ -77,12 +79,14 @@ fn update_current_target(
             VoxelTarget {
                 hit_voxel: hit.voxel,
                 place_voxel,
+                face_normal: hit.face_normal,
                 block_origin: block_origin_from_voxel(hit.voxel),
             }
         });
 }
 
 fn draw_current_target_highlight(
+    interaction_mode: Res<InteractionMode>,
     world: Res<VoxelWorld>,
     current_target: Res<CurrentTarget>,
     mut gizmos: Gizmos,
@@ -91,15 +95,40 @@ fn draw_current_target_highlight(
         return;
     };
 
-    if count_solid_voxels(&world, target.block_origin) == 0 {
-        return;
-    }
+    match *interaction_mode {
+        InteractionMode::Block => {
+            draw_block_shape_outline(
+                &world,
+                &mut gizmos,
+                target.block_origin,
+                Color::srgba(1.0, 1.0, 1.0, 0.95),
+            );
+        }
 
-    draw_block_shape_outline(
-        &world,
-        &mut gizmos,
-        target.block_origin,
-        Color::srgba(1.0, 1.0, 1.0, 0.95),
+        InteractionMode::Voxel => {
+            let Some(voxel) = world.get_voxel(target.hit_voxel) else {
+                return;
+            };
+
+            if voxel.is_empty() {
+                return;
+            }
+
+            draw_voxel_outline(
+                &mut gizmos,
+                target.hit_voxel,
+                Color::srgba(1.0, 1.0, 1.0, 0.95),
+            );
+        }
+    }
+}
+
+fn draw_voxel_outline(gizmos: &mut Gizmos, voxel: IVec3, color: Color) {
+    let center = (voxel.as_vec3() + Vec3::splat(0.5)) * VOXEL_SIZE;
+
+    gizmos.cube(
+        Transform::from_translation(center).with_scale(Vec3::splat(VOXEL_SIZE)),
+        color,
     );
 }
 
@@ -110,9 +139,7 @@ fn draw_block_shape_outline(
     color: Color,
 ) {
     draw_x_edges(world, gizmos, block_origin, color);
-
     draw_y_edges(world, gizmos, block_origin, color);
-
     draw_z_edges(world, gizmos, block_origin, color);
 }
 
@@ -127,15 +154,12 @@ fn draw_x_edges(world: &VoxelWorld, gizmos: &mut Gizmos, block_origin: IVec3, co
                     is_solid_local(world, block_origin, IVec3::new(x, y, z)),
                 ];
 
-                if !should_draw_edge(quadrants) {
-                    continue;
+                if should_draw_edge(quadrants) {
+                    let start = voxel_grid_point(block_origin, x, y, z);
+                    let end = voxel_grid_point(block_origin, x + 1, y, z);
+
+                    gizmos.line(start, end, color);
                 }
-
-                let start = voxel_grid_point(block_origin, x, y, z);
-
-                let end = voxel_grid_point(block_origin, x + 1, y, z);
-
-                gizmos.line(start, end, color);
             }
         }
     }
@@ -152,15 +176,12 @@ fn draw_y_edges(world: &VoxelWorld, gizmos: &mut Gizmos, block_origin: IVec3, co
                     is_solid_local(world, block_origin, IVec3::new(x, y, z)),
                 ];
 
-                if !should_draw_edge(quadrants) {
-                    continue;
+                if should_draw_edge(quadrants) {
+                    let start = voxel_grid_point(block_origin, x, y, z);
+                    let end = voxel_grid_point(block_origin, x, y + 1, z);
+
+                    gizmos.line(start, end, color);
                 }
-
-                let start = voxel_grid_point(block_origin, x, y, z);
-
-                let end = voxel_grid_point(block_origin, x, y + 1, z);
-
-                gizmos.line(start, end, color);
             }
         }
     }
@@ -177,37 +198,23 @@ fn draw_z_edges(world: &VoxelWorld, gizmos: &mut Gizmos, block_origin: IVec3, co
                     is_solid_local(world, block_origin, IVec3::new(x, y, z)),
                 ];
 
-                if !should_draw_edge(quadrants) {
-                    continue;
+                if should_draw_edge(quadrants) {
+                    let start = voxel_grid_point(block_origin, x, y, z);
+                    let end = voxel_grid_point(block_origin, x, y, z + 1);
+
+                    gizmos.line(start, end, color);
                 }
-
-                let start = voxel_grid_point(block_origin, x, y, z);
-
-                let end = voxel_grid_point(block_origin, x, y, z + 1);
-
-                gizmos.line(start, end, color);
             }
         }
     }
 }
 
 fn should_draw_edge(quadrants: [bool; 4]) -> bool {
-    let solid_count = quadrants.iter().filter(|&&solid| solid).count();
-
-    match solid_count {
+    match quadrants.iter().filter(|&&solid| solid).count() {
         0 | 4 => false,
-
         1 | 3 => true,
-
-        2 => {
-            let diagonal_a = quadrants[0] && quadrants[3];
-
-            let diagonal_b = quadrants[1] && quadrants[2];
-
-            diagonal_a || diagonal_b
-        }
-
-        _ => false,
+        2 => (quadrants[0] && quadrants[3]) || (quadrants[1] && quadrants[2]),
+        _ => unreachable!(),
     }
 }
 
@@ -231,33 +238,16 @@ fn voxel_grid_point(block_origin: IVec3, x: i32, y: i32, z: i32) -> Vec3 {
     (block_origin.as_vec3() + Vec3::new(x as f32, y as f32, z as f32)) * VOXEL_SIZE
 }
 
-fn count_solid_voxels(world: &VoxelWorld, block_origin: IVec3) -> usize {
-    let mut count = 0;
-
-    for y in 0..VOXELS_PER_BLOCK {
-        for z in 0..VOXELS_PER_BLOCK {
-            for x in 0..VOXELS_PER_BLOCK {
-                let voxel_position = block_origin + IVec3::new(x, y, z);
-
-                if world
-                    .get_voxel(voxel_position)
-                    .is_some_and(|voxel| !voxel.is_empty())
-                {
-                    count += 1;
-                }
-            }
-        }
-    }
-
-    count
-}
-
-fn block_origin_from_voxel(voxel: IVec3) -> IVec3 {
+pub fn block_origin_from_voxel(voxel: IVec3) -> IVec3 {
     IVec3::new(
         voxel.x.div_euclid(VOXELS_PER_BLOCK) * VOXELS_PER_BLOCK,
         voxel.y.div_euclid(VOXELS_PER_BLOCK) * VOXELS_PER_BLOCK,
         voxel.z.div_euclid(VOXELS_PER_BLOCK) * VOXELS_PER_BLOCK,
     )
+}
+
+pub fn adjacent_block_origin(block_origin: IVec3, face_normal: IVec3) -> IVec3 {
+    block_origin + face_normal * VOXELS_PER_BLOCK
 }
 
 fn raycast_world(
@@ -350,5 +340,34 @@ fn initial_side_distance(origin: f32, voxel: i32, step: i32, delta_distance: f32
         (origin - voxel as f32) * delta_distance
     } else {
         f32::INFINITY
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{adjacent_block_origin, block_origin_from_voxel};
+    use bevy::prelude::IVec3;
+
+    #[test]
+    fn block_origin_aligns_positive_and_negative_voxels_to_the_two_voxel_grid() {
+        assert_eq!(
+            block_origin_from_voxel(IVec3::new(3, 2, 1)),
+            IVec3::new(2, 2, 0)
+        );
+        assert_eq!(
+            block_origin_from_voxel(IVec3::new(-1, -2, -3)),
+            IVec3::new(-2, -2, -4)
+        );
+    }
+
+    #[test]
+    fn adjacent_block_origin_moves_one_logical_block_along_the_hit_face() {
+        let origin = IVec3::new(-2, 4, 6);
+
+        assert_eq!(adjacent_block_origin(origin, IVec3::X), IVec3::new(0, 4, 6));
+        assert_eq!(
+            adjacent_block_origin(origin, -IVec3::Z),
+            IVec3::new(-2, 4, 4)
+        );
     }
 }

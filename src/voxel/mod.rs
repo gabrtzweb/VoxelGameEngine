@@ -2,6 +2,7 @@ pub mod chunk;
 pub mod chunk_manager;
 pub mod debug;
 pub mod interaction;
+pub mod interaction_mode;
 pub mod light;
 pub mod mesher;
 pub mod modifications;
@@ -17,6 +18,8 @@ pub use chunk_manager::ChunkManagerPlugin;
 pub use debug::VoxelDebugPlugin;
 
 pub use interaction::VoxelInteractionPlugin;
+
+pub use interaction_mode::InteractionMode;
 
 pub use render::ChunkMeshRegistry;
 

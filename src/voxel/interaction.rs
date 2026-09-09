@@ -3,11 +3,12 @@ use bevy::prelude::*;
 use crate::player::GameMode;
 
 use super::{
+    InteractionMode,
     chunk::{CHUNK_SIZE, Voxel},
     light::{VoxelLightRegistry, sync_voxel_light},
     modifications::WorldModificationStore,
     render::{ChunkMaterial, ChunkMeshRegistry, sync_chunk_render},
-    targeting::{CurrentTarget, TargetingSet},
+    targeting::{CurrentTarget, TargetingSet, adjacent_block_origin},
     world::VoxelWorld,
 };
 
@@ -75,7 +76,11 @@ pub struct VoxelInteractionPlugin;
 impl Plugin for VoxelInteractionPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<SelectedVoxel>()
-            .add_systems(Update, select_voxel_type)
+            .init_resource::<InteractionMode>()
+            .add_systems(
+                Update,
+                (select_voxel_type, toggle_interaction_mode).before(TargetingSet::UpdateTarget),
+            )
             .add_systems(
                 Update,
                 (pick_targeted_voxel, edit_voxels)
@@ -107,6 +112,19 @@ fn select_voxel_type(keyboard: Res<ButtonInput<KeyCode>>, mut selected: ResMut<S
     };
 
     set_selected_voxel(&mut selected, next);
+}
+
+fn toggle_interaction_mode(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut interaction_mode: ResMut<InteractionMode>,
+) {
+    if !keyboard.just_pressed(KeyCode::KeyB) {
+        return;
+    }
+
+    interaction_mode.toggle();
+
+    info!("Interaction mode: {}", interaction_mode.label(),);
 }
 
 fn pick_targeted_voxel(
@@ -153,6 +171,7 @@ fn set_selected_voxel(selected: &mut SelectedVoxel, voxel: Voxel) {
 fn edit_voxels(
     game_mode: Res<GameMode>,
     selected: Res<SelectedVoxel>,
+    interaction_mode: Res<InteractionMode>,
     mut commands: Commands,
     mouse: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
@@ -191,27 +210,63 @@ fn edit_voxels(
         return;
     };
 
-    let edited_voxel = if break_action {
-        if remove_voxel(&mut world, &mut modifications, target.hit_voxel) {
-            Some(target.hit_voxel)
-        } else {
-            None
+    let edited_voxels = if break_action {
+        match *interaction_mode {
+            InteractionMode::Block => {
+                remove_block(&mut world, &mut modifications, target.block_origin)
+            }
+
+            InteractionMode::Voxel => {
+                if remove_voxel(&mut world, &mut modifications, target.hit_voxel) {
+                    vec![target.hit_voxel]
+                } else {
+                    Vec::new()
+                }
+            }
         }
     } else if place_action {
-        target.place_voxel.filter(|&place_position| {
-            place_voxel(&mut world, &mut modifications, place_position, selected.0)
-        })
+        let Some(place_position) = target.place_voxel else {
+            return;
+        };
+
+        match *interaction_mode {
+            InteractionMode::Block => {
+                if target.face_normal == IVec3::ZERO {
+                    Vec::new()
+                } else {
+                    let block_origin =
+                        adjacent_block_origin(target.block_origin, target.face_normal);
+
+                    place_block(&mut world, &mut modifications, block_origin, selected.0)
+                }
+            }
+
+            InteractionMode::Voxel => {
+                if place_voxel(&mut world, &mut modifications, place_position, selected.0) {
+                    vec![place_position]
+                } else {
+                    Vec::new()
+                }
+            }
+        }
     } else {
-        None
+        Vec::new()
     };
 
-    let Some(edited_voxel) = edited_voxel else {
+    if edited_voxels.is_empty() {
         return;
-    };
+    }
 
-    sync_voxel_light(&mut commands, &world, edited_voxel, &mut light_registry);
+    let mut dirty_chunks = Vec::new();
 
-    let dirty_chunks = affected_chunks(edited_voxel);
+    for edited_voxel in edited_voxels {
+        sync_voxel_light(&mut commands, &world, edited_voxel, &mut light_registry);
+
+        dirty_chunks.extend(affected_chunks(edited_voxel));
+    }
+
+    dirty_chunks.sort_by_key(|chunk| (chunk.x, chunk.y, chunk.z));
+    dirty_chunks.dedup();
 
     for coordinate in dirty_chunks {
         if world.get_chunk(coordinate).is_none() {
@@ -251,6 +306,28 @@ fn remove_voxel(
     true
 }
 
+fn remove_block(
+    world: &mut VoxelWorld,
+    modifications: &mut WorldModificationStore,
+    block_origin: IVec3,
+) -> Vec<IVec3> {
+    let mut edited_voxels = Vec::with_capacity(8);
+
+    for y in 0..2 {
+        for z in 0..2 {
+            for x in 0..2 {
+                let position = block_origin + IVec3::new(x, y, z);
+
+                if remove_voxel(world, modifications, position) {
+                    edited_voxels.push(position);
+                }
+            }
+        }
+    }
+
+    edited_voxels
+}
+
 fn place_voxel(
     world: &mut VoxelWorld,
     modifications: &mut WorldModificationStore,
@@ -272,6 +349,41 @@ fn place_voxel(
     modifications.record(position, voxel);
 
     true
+}
+
+fn place_block(
+    world: &mut VoxelWorld,
+    modifications: &mut WorldModificationStore,
+    block_origin: IVec3,
+    voxel: Voxel,
+) -> Vec<IVec3> {
+    let mut positions = Vec::with_capacity(8);
+
+    for y in 0..2 {
+        for z in 0..2 {
+            for x in 0..2 {
+                positions.push(block_origin + IVec3::new(x, y, z));
+            }
+        }
+    }
+
+    if positions.iter().any(|&position| {
+        world
+            .get_voxel(position)
+            .is_none_or(|current_voxel| !current_voxel.is_empty())
+    }) {
+        return Vec::new();
+    }
+
+    let mut edited_voxels = Vec::with_capacity(8);
+
+    for position in positions {
+        if place_voxel(world, modifications, position, voxel) {
+            edited_voxels.push(position);
+        }
+    }
+
+    edited_voxels
 }
 
 fn affected_chunks(world_voxel: IVec3) -> Vec<IVec3> {
@@ -302,4 +414,48 @@ fn affected_chunks(world_voxel: IVec3) -> Vec<IVec3> {
     }
 
     chunks
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Voxel, WorldModificationStore, place_block};
+    use crate::voxel::{chunk::Chunk, world::VoxelWorld};
+    use bevy::prelude::IVec3;
+
+    #[test]
+    fn placing_a_block_fills_all_eight_voxels() {
+        let mut world = VoxelWorld::default();
+        world.insert_chunk(IVec3::ZERO, Chunk::new());
+        let mut modifications = WorldModificationStore::default();
+        let origin = IVec3::new(2, 2, 2);
+
+        let edited = place_block(&mut world, &mut modifications, origin, Voxel::Stone);
+
+        assert_eq!(edited.len(), 8);
+        for y in 0..2 {
+            for z in 0..2 {
+                for x in 0..2 {
+                    assert_eq!(
+                        world.get_voxel(origin + IVec3::new(x, y, z)),
+                        Some(Voxel::Stone)
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn placing_a_block_is_atomic_when_any_voxel_is_occupied() {
+        let mut world = VoxelWorld::default();
+        world.insert_chunk(IVec3::ZERO, Chunk::new());
+        let mut modifications = WorldModificationStore::default();
+        let origin = IVec3::new(2, 2, 2);
+        world.set_voxel(origin + IVec3::ONE, Voxel::Dirt);
+
+        let edited = place_block(&mut world, &mut modifications, origin, Voxel::Stone);
+
+        assert!(edited.is_empty());
+        assert_eq!(world.get_voxel(origin), Some(Voxel::Air));
+        assert_eq!(world.get_voxel(origin + IVec3::ONE), Some(Voxel::Dirt));
+    }
 }

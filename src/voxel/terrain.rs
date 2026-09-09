@@ -169,18 +169,19 @@ impl TerrainGenerator {
     }
 
     fn sample_column(&self, world_x: i32, world_z: i32) -> TerrainColumn {
-        // IMPORTANT:
-        //
-        // Geometry stays at the native 0.5 m
-        // resolution.
-        let natural_height = self.natural_height_at(world_x as f32, world_z as f32);
+        // Every 2 x 2 horizontal voxel area belongs
+        // to one logical 1 m block. Sample the terrain
+        // once at the center of that area so all eight
+        // voxels of a logical block have the same type.
+        let logical_x = world_x.div_euclid(LOGICAL_BLOCK_VOXELS);
+        let logical_z = world_z.div_euclid(LOGICAL_BLOCK_VOXELS);
 
-        // Lake geometry also stays at 0.5 m.
-        //
-        // This must NOT use the logical 1 m material
-        // grid, otherwise lake carving becomes
-        // quantized and produces discontinuities.
-        let lake_strength = self.lake_strength_at(world_x as f32, world_z as f32);
+        let sample_x = logical_block_sample_position(logical_x);
+        let sample_z = logical_block_sample_position(logical_z);
+
+        let natural_height = self.natural_height_at(sample_x, sample_z);
+
+        let lake_strength = self.lake_strength_at(sample_x, sample_z);
 
         let terrain_height = if lake_strength > 0.0 {
             let deepest_floor = self.sea_level as f32 - self.lake_max_depth;
@@ -190,9 +191,11 @@ impl TerrainGenerator {
             natural_height.round() as i32
         };
 
+        let terrain_height = logical_block_top(terrain_height);
+
         let water_level =
             if terrain_height < self.sea_level && lake_strength >= LAKE_WATER_THRESHOLD {
-                Some(self.sea_level)
+                Some(logical_block_top(self.sea_level))
             } else {
                 None
             };
@@ -261,19 +264,23 @@ impl TerrainGenerator {
             return Voxel::Air;
         }
 
-        let depth = column.terrain_height - world_y;
+        let logical_block_top = logical_block_top(world_y);
+
+        let logical_depth = column.terrain_height - logical_block_top;
 
         match column.surface_material {
-            SurfaceMaterial::Grass => match depth {
-                0 => Voxel::Grass,
-
-                1..=GRASS_DIRT_DEPTH => Voxel::Dirt,
-
-                _ => Voxel::Stone,
-            },
+            SurfaceMaterial::Grass => {
+                if logical_depth <= 0 {
+                    Voxel::Grass
+                } else if logical_depth <= GRASS_DIRT_DEPTH {
+                    Voxel::Dirt
+                } else {
+                    Voxel::Stone
+                }
+            }
 
             SurfaceMaterial::Sand => {
-                if depth <= SAND_DEPTH {
+                if logical_depth <= SAND_DEPTH {
                     Voxel::Sand
                 } else {
                     Voxel::Stone
@@ -324,6 +331,14 @@ impl TerrainGenerator {
 
 fn logical_block_sample_position(logical_coordinate: i32) -> f32 {
     logical_coordinate as f32 * LOGICAL_BLOCK_VOXELS as f32 + 0.5
+}
+
+fn logical_block_bottom(world_y: i32) -> i32 {
+    world_y.div_euclid(LOGICAL_BLOCK_VOXELS) * LOGICAL_BLOCK_VOXELS
+}
+
+fn logical_block_top(world_y: i32) -> i32 {
+    logical_block_bottom(world_y) + LOGICAL_BLOCK_VOXELS - 1
 }
 
 fn column_index(x: usize, z: usize) -> usize {
@@ -432,4 +447,39 @@ fn smoothstep(value: f32) -> f32 {
 
 fn lerp(start: f32, end: f32, amount: f32) -> f32 {
     start + (end - start) * amount
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{CHUNK_SIZE, TerrainGenerator};
+    use bevy::prelude::IVec3;
+
+    #[test]
+    fn generated_logical_blocks_are_homogeneous() {
+        let generator = TerrainGenerator::default();
+
+        for chunk_coordinate in [IVec3::ZERO, IVec3::NEG_ONE] {
+            let chunk = generator.generate_chunk(chunk_coordinate);
+
+            for y in (0..CHUNK_SIZE).step_by(2) {
+                for z in (0..CHUNK_SIZE).step_by(2) {
+                    for x in (0..CHUNK_SIZE).step_by(2) {
+                        let expected = chunk.get(x, y, z);
+
+                        for block_y in 0..2 {
+                            for block_z in 0..2 {
+                                for block_x in 0..2 {
+                                    assert_eq!(
+                                        chunk.get(x + block_x, y + block_y, z + block_z),
+                                        expected,
+                                        "mixed voxels at chunk {chunk_coordinate:?}, logical block ({x}, {y}, {z})"
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
