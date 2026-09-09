@@ -3,20 +3,61 @@ mod environment;
 mod player;
 mod voxel;
 
-use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*, window::PresentMode};
+use bevy::{
+    diagnostic::FrameTimeDiagnosticsPlugin,
+    prelude::*,
+    window::{PresentMode, PrimaryWindow},
+    winit::WinitWindows,
+};
 
 use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 
 use dev_stats::DevStatsPlugin;
 use environment::EnvironmentPlugin;
 use player::PlayerPlugin;
+use winit::window::Icon;
 
 use voxel::{ChunkManagerPlugin, TargetingPlugin, VoxelDebugPlugin, VoxelInteractionPlugin};
+
+fn set_window_icon(
+    primary_window: Single<Entity, With<PrimaryWindow>>,
+    windows: Option<NonSend<WinitWindows>>,
+    mut initialized: Local<bool>,
+) {
+    if *initialized {
+        return;
+    }
+
+    let Some(windows) = windows else {
+        return;
+    };
+
+    let entity = *primary_window;
+
+    let Some(window) = windows.get_window(entity) else {
+        return;
+    };
+
+    let image = image::open("assets/icon.ico")
+        .expect("Failed to load window icon")
+        .into_rgba8();
+
+    let (width, height) = image.dimensions();
+    let rgba = image.into_raw();
+
+    let icon = Icon::from_rgba(rgba, width, height).expect("Failed to create window icon");
+
+    window.set_window_icon(Some(icon));
+
+    *initialized = true;
+}
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
+                title: "Voxel Game".to_string(),
+                resolution: (1280, 720).into(),
                 present_mode: PresentMode::AutoNoVsync,
                 ..default()
             }),
@@ -32,5 +73,6 @@ fn main() {
         .add_plugins(TargetingPlugin)
         .add_plugins(VoxelInteractionPlugin)
         .add_plugins(VoxelDebugPlugin)
+        .add_systems(Update, set_window_icon)
         .run();
 }
