@@ -15,11 +15,11 @@ use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 use dev_stats::DevStatsPlugin;
 use environment::EnvironmentPlugin;
 use player::PlayerPlugin;
-use winit::window::Icon;
-
 use voxel::{ChunkManagerPlugin, TargetingPlugin, VoxelDebugPlugin, VoxelInteractionPlugin};
 
-fn set_window_icon(
+use winit::{platform::windows::WindowExtWindows, window::Icon};
+
+fn set_window_icons(
     primary_window: Single<Entity, With<PrimaryWindow>>,
     windows: Option<NonSend<WinitWindows>>,
     mut initialized: Local<bool>,
@@ -39,15 +39,16 @@ fn set_window_icon(
     };
 
     let image = image::open("assets/icon.ico")
-        .expect("Failed to load window icon")
+        .expect("Failed to load application icon")
         .into_rgba8();
 
     let (width, height) = image.dimensions();
     let rgba = image.into_raw();
 
-    let icon = Icon::from_rgba(rgba, width, height).expect("Failed to create window icon");
+    let icon = Icon::from_rgba(rgba, width, height).expect("Failed to create application icon");
 
-    window.set_window_icon(Some(icon));
+    window.set_window_icon(Some(icon.clone()));
+    window.set_taskbar_icon(Some(icon));
 
     *initialized = true;
 }
@@ -73,6 +74,6 @@ fn main() {
         .add_plugins(TargetingPlugin)
         .add_plugins(VoxelInteractionPlugin)
         .add_plugins(VoxelDebugPlugin)
-        .add_systems(Update, set_window_icon)
+        .add_systems(Update, set_window_icons)
         .run();
 }
