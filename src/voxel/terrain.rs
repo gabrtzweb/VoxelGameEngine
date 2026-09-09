@@ -13,6 +13,8 @@ const MAX_SURFACE_LAYER_DEPTH: i32 = SAND_DEPTH;
 const LAKE_WATER_THRESHOLD: f32 = 0.20;
 const LAKE_MATERIAL_THRESHOLD: f32 = 0.05;
 
+const HORIZONTAL_DIRECTIONS: [(i32, i32); 4] = [(1, 0), (-1, 0), (0, 1), (0, -1)];
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 enum SurfaceMaterial {
     #[default]
@@ -22,8 +24,19 @@ enum SurfaceMaterial {
 
 #[derive(Clone, Copy)]
 struct TerrainColumn {
+    // Top voxel of the full 1 m terrain blocks.
     terrain_height: i32,
+
+    // A single 0.5 m layer used only where this
+    // column transitions to a 1 m higher neighbor.
+    slab_height: Option<i32>,
+
     water_level: Option<i32>,
+
+    // The material profile is shared by every
+    // voxel in the same 1 m logical block.
+    material_terrain_height: i32,
+
     surface_material: SurfaceMaterial,
 }
 
@@ -31,7 +44,9 @@ impl Default for TerrainColumn {
     fn default() -> Self {
         Self {
             terrain_height: 0,
+            slab_height: None,
             water_level: None,
+            material_terrain_height: 0,
             surface_material: SurfaceMaterial::Grass,
         }
     }
@@ -169,44 +184,33 @@ impl TerrainGenerator {
     }
 
     fn sample_column(&self, world_x: i32, world_z: i32) -> TerrainColumn {
-        // Every 2 x 2 horizontal voxel area belongs
-        // to one logical 1 m block. Sample the terrain
-        // once at the center of that area so all eight
-        // voxels of a logical block have the same type.
         let logical_x = world_x.div_euclid(LOGICAL_BLOCK_VOXELS);
         let logical_z = world_z.div_euclid(LOGICAL_BLOCK_VOXELS);
 
         let sample_x = logical_block_sample_position(logical_x);
         let sample_z = logical_block_sample_position(logical_z);
 
-        let natural_height = self.natural_height_at(sample_x, sample_z);
-
+        let terrain_height = self.logical_terrain_height_at(logical_x, logical_z);
         let lake_strength = self.lake_strength_at(sample_x, sample_z);
 
-        let terrain_height = if lake_strength > 0.0 {
-            let deepest_floor = self.sea_level as f32 - self.lake_max_depth;
-
-            lerp(natural_height, deepest_floor, lake_strength).round() as i32
-        } else {
-            natural_height.round() as i32
-        };
-
-        let terrain_height = logical_block_top(terrain_height);
+        let slab_height = self
+            .has_one_block_higher_neighbor(logical_x, logical_z, terrain_height)
+            .then_some(terrain_height + 1);
 
         let water_level =
             if terrain_height < self.sea_level && lake_strength >= LAKE_WATER_THRESHOLD {
-                Some(logical_block_top(self.sea_level))
+                Some(self.sea_level)
             } else {
                 None
             };
 
-        // Only the natural MATERIAL classification
-        // uses the logical 1 m grid.
         let surface_material = self.surface_material_at(world_x, world_z);
 
         TerrainColumn {
             terrain_height,
+            slab_height,
             water_level,
+            material_terrain_height: terrain_height,
             surface_material,
         }
     }
@@ -231,20 +235,11 @@ impl TerrainGenerator {
 
         let lake_strength = self.lake_strength_at(sample_x, sample_z);
 
-        let natural_height = self.natural_height_at(sample_x, sample_z);
-
-        let representative_height = if lake_strength > 0.0 {
-            let deepest_floor = self.sea_level as f32 - self.lake_max_depth;
-
-            lerp(natural_height, deepest_floor, lake_strength)
-        } else {
-            natural_height
-        };
+        let representative_height = self.terrain_height_at(sample_x, sample_z);
 
         let near_lake = lake_strength > LAKE_MATERIAL_THRESHOLD;
 
-        let beach =
-            near_lake && representative_height.round() as i32 <= self.sea_level + BEACH_HEIGHT;
+        let beach = near_lake && representative_height <= self.sea_level + BEACH_HEIGHT;
 
         if beach {
             SurfaceMaterial::Sand
@@ -255,6 +250,10 @@ impl TerrainGenerator {
 
     fn voxel_at(&self, column: TerrainColumn, world_y: i32) -> Voxel {
         if world_y > column.terrain_height {
+            if column.slab_height == Some(world_y) {
+                return self.surface_voxel(column, world_y);
+            }
+
             if let Some(water_level) = column.water_level
                 && world_y <= water_level
             {
@@ -264,9 +263,13 @@ impl TerrainGenerator {
             return Voxel::Air;
         }
 
+        self.surface_voxel(column, world_y)
+    }
+
+    fn surface_voxel(&self, column: TerrainColumn, world_y: i32) -> Voxel {
         let logical_block_top = logical_block_top(world_y);
 
-        let logical_depth = column.terrain_height - logical_block_top;
+        let logical_depth = column.material_terrain_height - logical_block_top;
 
         match column.surface_material {
             SurfaceMaterial::Grass => {
@@ -289,6 +292,27 @@ impl TerrainGenerator {
         }
     }
 
+    fn logical_terrain_height_at(&self, logical_x: i32, logical_z: i32) -> i32 {
+        let sample_x = logical_block_sample_position(logical_x);
+        let sample_z = logical_block_sample_position(logical_z);
+
+        logical_block_top(self.terrain_height_at(sample_x, sample_z))
+    }
+
+    fn has_one_block_higher_neighbor(
+        &self,
+        logical_x: i32,
+        logical_z: i32,
+        terrain_height: i32,
+    ) -> bool {
+        HORIZONTAL_DIRECTIONS
+            .into_iter()
+            .any(|(offset_x, offset_z)| {
+                self.logical_terrain_height_at(logical_x + offset_x, logical_z + offset_z)
+                    == terrain_height + LOGICAL_BLOCK_VOXELS
+            })
+    }
+
     fn natural_height_at(&self, world_x: f32, world_z: f32) -> f32 {
         let macro_noise = fractal_noise(
             world_x,
@@ -309,6 +333,19 @@ impl TerrainGenerator {
         );
 
         self.base_height + macro_noise * self.macro_amplitude + detail_noise * self.detail_amplitude
+    }
+
+    fn terrain_height_at(&self, world_x: f32, world_z: f32) -> i32 {
+        let natural_height = self.natural_height_at(world_x, world_z);
+        let lake_strength = self.lake_strength_at(world_x, world_z);
+
+        if lake_strength > 0.0 {
+            let deepest_floor = self.sea_level as f32 - self.lake_max_depth;
+
+            lerp(natural_height, deepest_floor, lake_strength).round() as i32
+        } else {
+            natural_height.round() as i32
+        }
     }
 
     fn lake_strength_at(&self, world_x: f32, world_z: f32) -> f32 {
@@ -451,12 +488,13 @@ fn lerp(start: f32, end: f32, amount: f32) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use super::{CHUNK_SIZE, TerrainGenerator};
+    use super::{CHUNK_SIZE, TerrainGenerator, Voxel};
     use bevy::prelude::IVec3;
 
     #[test]
-    fn generated_logical_blocks_are_homogeneous() {
+    fn generated_logical_blocks_keep_terrain_materials_consistent_but_allow_slabs() {
         let generator = TerrainGenerator::default();
+        let mut found_slab = false;
 
         for chunk_coordinate in [IVec3::ZERO, IVec3::NEG_ONE] {
             let chunk = generator.generate_chunk(chunk_coordinate);
@@ -464,22 +502,64 @@ mod tests {
             for y in (0..CHUNK_SIZE).step_by(2) {
                 for z in (0..CHUNK_SIZE).step_by(2) {
                     for x in (0..CHUNK_SIZE).step_by(2) {
-                        let expected = chunk.get(x, y, z);
+                        let mut material = None;
+                        let mut has_air = false;
 
                         for block_y in 0..2 {
                             for block_z in 0..2 {
                                 for block_x in 0..2 {
-                                    assert_eq!(
-                                        chunk.get(x + block_x, y + block_y, z + block_z),
-                                        expected,
-                                        "mixed voxels at chunk {chunk_coordinate:?}, logical block ({x}, {y}, {z})"
-                                    );
+                                    let voxel = chunk.get(x + block_x, y + block_y, z + block_z);
+
+                                    if voxel == Voxel::Air {
+                                        has_air = true;
+                                    } else if voxel != Voxel::Water {
+                                        assert!(
+                                            material.is_none_or(|expected| expected == voxel),
+                                            "mixed terrain materials at chunk {chunk_coordinate:?}, logical block ({x}, {y}, {z})"
+                                        );
+                                        material = Some(voxel);
+                                    }
                                 }
                             }
                         }
+
+                        found_slab |= has_air && material.is_some();
                     }
                 }
             }
         }
+
+        assert!(found_slab, "expected native-resolution terrain slabs");
+    }
+
+    #[test]
+    fn slabs_only_appear_at_one_block_height_transitions() {
+        let generator = TerrainGenerator::default();
+        let mut found_slab = false;
+
+        for logical_z in -16..=16 {
+            for logical_x in -16..=16 {
+                let column = generator.sample_column(logical_x * 2, logical_z * 2);
+
+                let Some(slab_height) = column.slab_height else {
+                    continue;
+                };
+
+                found_slab = true;
+
+                assert_eq!(slab_height, column.terrain_height + 1);
+                assert!(
+                    super::HORIZONTAL_DIRECTIONS
+                        .into_iter()
+                        .map(|(offset_x, offset_z)| generator.logical_terrain_height_at(
+                            logical_x + offset_x,
+                            logical_z + offset_z,
+                        ))
+                        .any(|neighbor_height| neighbor_height == column.terrain_height + 2)
+                );
+            }
+        }
+
+        assert!(found_slab, "expected at least one transition slab");
     }
 }
