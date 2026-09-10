@@ -90,7 +90,6 @@ Recommended before commits:
     cargo check
     cargo clippy
 
-
 ## License
 
 License not yet defined.
