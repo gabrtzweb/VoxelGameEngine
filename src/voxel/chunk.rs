@@ -33,6 +33,7 @@ impl Voxel {
         self == Self::Water
     }
 
+    #[allow(dead_code)]
     pub fn display_color(self) -> [f32; 4] {
         match self {
             Self::Air => [0.0, 0.0, 0.0, 0.0],

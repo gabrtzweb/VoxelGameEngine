@@ -88,6 +88,8 @@ struct MeshBuffers {
 
     uvs: Vec<[f32; 2]>,
 
+    uv_bs: Vec<[f32; 2]>,
+
     colors: Vec<[f32; 4]>,
 
     indices: Vec<u32>,
@@ -101,6 +103,8 @@ impl MeshBuffers {
             normals: Vec::new(),
 
             uvs: Vec::new(),
+
+            uv_bs: Vec::new(),
 
             colors: Vec::new(),
 
@@ -123,7 +127,8 @@ impl MeshBuffers {
 
         let vertices = quad_vertices(direction, slice, u, v, width, height);
 
-        let color = key.voxel.display_color();
+        let color = [1.0, 1.0, 1.0, 1.0];
+        let layer = key.texture_layer as f32;
 
         for vertex in vertices {
             self.positions.push([
@@ -135,6 +140,8 @@ impl MeshBuffers {
             self.normals.push(direction.normal_f32());
 
             self.colors.push(color);
+
+            self.uv_bs.push([layer, 0.0]);
         }
 
         let width = width as f32;
@@ -167,6 +174,7 @@ impl MeshBuffers {
             .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, self.positions)
             .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals)
             .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, self.uvs)
+            .with_inserted_attribute(Mesh::ATTRIBUTE_UV_1, self.uv_bs)
             .with_inserted_attribute(Mesh::ATTRIBUTE_COLOR, self.colors)
             .with_inserted_indices(Indices::U32(self.indices)),
         )
@@ -416,21 +424,23 @@ fn quad_vertices(
 }
 
 fn texture_layer_for(voxel: Voxel, direction: FaceDirection) -> u16 {
+    use super::texture::*;
+
     match voxel {
         Voxel::Air => 0,
 
         Voxel::Grass => match direction {
-            FaceDirection::PositiveY => 0,
+            FaceDirection::PositiveY => LAYER_GRASS_TOP,
 
-            FaceDirection::NegativeY => 2,
+            FaceDirection::NegativeY => LAYER_DIRT,
 
-            _ => 1,
+            _ => LAYER_GRASS_SIDE,
         },
 
-        Voxel::Dirt => 2,
-        Voxel::Stone => 3,
-        Voxel::Sand => 4,
-        Voxel::Water => 5,
-        Voxel::Light => 6,
+        Voxel::Dirt => LAYER_DIRT,
+        Voxel::Stone => LAYER_STONE,
+        Voxel::Sand => LAYER_SAND,
+        Voxel::Water => LAYER_WATER,
+        Voxel::Light => LAYER_LIGHT,
     }
 }

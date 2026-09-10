@@ -15,7 +15,9 @@ use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 use dev_stats::DevStatsPlugin;
 use environment::EnvironmentPlugin;
 use player::PlayerPlugin;
-use voxel::{ChunkManagerPlugin, TargetingPlugin, VoxelDebugPlugin, VoxelInteractionPlugin};
+use voxel::{
+    ChunkManagerPlugin, TargetingPlugin, VoxelDebugPlugin, VoxelInteractionPlugin, VoxelMaterial,
+};
 
 use winit::{platform::windows::WindowExtWindows, window::Icon};
 
@@ -67,6 +69,7 @@ fn main() {
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(EguiPlugin::default())
         .add_plugins(WorldInspectorPlugin::new())
+        .add_plugins(MaterialPlugin::<VoxelMaterial>::default())
         .add_plugins(EnvironmentPlugin)
         .add_plugins(PlayerPlugin)
         .add_plugins(ChunkManagerPlugin)

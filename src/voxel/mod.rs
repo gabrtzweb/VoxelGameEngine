@@ -9,6 +9,7 @@ pub mod modifications;
 pub mod render;
 pub mod targeting;
 pub mod terrain;
+pub mod texture;
 pub mod world;
 
 pub use chunk::{CHUNK_VOLUME, VOXEL_SIZE};
@@ -21,7 +22,7 @@ pub use interaction::VoxelInteractionPlugin;
 
 pub use interaction_mode::InteractionMode;
 
-pub use render::ChunkMeshRegistry;
+pub use render::{ChunkMeshRegistry, VoxelMaterial};
 
 pub use targeting::TargetingPlugin;
 

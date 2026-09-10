@@ -1,8 +1,34 @@
 use std::collections::HashMap;
 
-use bevy::prelude::*;
+use bevy::{
+    pbr::{ExtendedMaterial, MaterialExtension},
+    prelude::*,
+    render::render_resource::*,
+    shader::ShaderRef,
+};
 
-use super::{mesher::ChunkMesher, world::VoxelWorld};
+use super::{mesher::ChunkMesher, texture::build_voxel_texture_array, world::VoxelWorld};
+
+pub const VOXEL_SHADER_PATH: &str = "shaders/voxel.wgsl";
+
+#[derive(Asset, AsBindGroup, Reflect, Debug, Clone)]
+pub struct VoxelMaterialExtension {
+    #[texture(100, dimension = "2d_array")]
+    #[sampler(101)]
+    pub texture_array: Handle<Image>,
+}
+
+impl MaterialExtension for VoxelMaterialExtension {
+    fn fragment_shader() -> ShaderRef {
+        VOXEL_SHADER_PATH.into()
+    }
+
+    fn deferred_fragment_shader() -> ShaderRef {
+        VOXEL_SHADER_PATH.into()
+    }
+}
+
+pub type VoxelMaterial = ExtendedMaterial<StandardMaterial, VoxelMaterialExtension>;
 
 struct ChunkRenderPart {
     entity: Entity,
@@ -72,31 +98,43 @@ impl ChunkMeshRegistry {
 
 #[derive(Resource)]
 pub struct ChunkMaterial {
-    opaque: Handle<StandardMaterial>,
+    pub opaque: Handle<VoxelMaterial>,
 
-    transparent: Handle<StandardMaterial>,
+    pub transparent: Handle<VoxelMaterial>,
 }
 
 pub fn setup_chunk_material(
     mut commands: Commands,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut images: ResMut<Assets<Image>>,
+    mut materials: ResMut<Assets<VoxelMaterial>>,
 ) {
-    let opaque = materials.add(StandardMaterial {
-        base_color: Color::WHITE,
+    let texture_array_image = build_voxel_texture_array();
+    let texture_array = images.add(texture_array_image);
 
-        perceptual_roughness: 0.9,
+    let opaque = materials.add(ExtendedMaterial {
+        base: StandardMaterial {
+            base_color: Color::WHITE,
 
-        ..default()
+            perceptual_roughness: 0.9,
+
+            ..default()
+        },
+        extension: VoxelMaterialExtension {
+            texture_array: texture_array.clone(),
+        },
     });
 
-    let transparent = materials.add(StandardMaterial {
-        base_color: Color::srgba(1.0, 1.0, 1.0, 0.58),
+    let transparent = materials.add(ExtendedMaterial {
+        base: StandardMaterial {
+            base_color: Color::srgba(1.0, 1.0, 1.0, 0.58),
 
-        alpha_mode: AlphaMode::Blend,
+            alpha_mode: AlphaMode::Blend,
 
-        perceptual_roughness: 0.2,
+            perceptual_roughness: 0.2,
 
-        ..default()
+            ..default()
+        },
+        extension: VoxelMaterialExtension { texture_array },
     });
 
     commands.insert_resource(ChunkMaterial {
@@ -166,7 +204,7 @@ fn sync_render_part(
 
     rebuilt_mesh: Option<Mesh>,
 
-    material: &Handle<StandardMaterial>,
+    material: &Handle<VoxelMaterial>,
 
     translation: Vec3,
 ) {
