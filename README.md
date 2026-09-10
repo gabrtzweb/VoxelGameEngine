@@ -27,6 +27,7 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     Double Space      Toggle Creative flight
     Ctrl              Swim down / Fly down
 
+    B                 Toggle Interaction mode
     Left Mouse        Break voxel
     Right Mouse       Place voxel
     Middle Mouse      Pick voxel
@@ -60,6 +61,7 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     │   ├── chunk_manager.rs
     │   ├── chunk.rs
     │   ├── debug.rs
+    │   ├── interaction_mode.rs
     │   ├── interaction.rs
     │   ├── light.rs
     │   ├── mesher.rs
@@ -89,6 +91,17 @@ Recommended before commits:
     cargo fmt
     cargo check
     cargo clippy
+
+## AI Usage Disclaimer
+
+In the development of this project, I use AI tools as technical assistants. They are utilized across several support workflows, including:
+
+* Code translation and syntax refactoring
+* Bug fixing, debugging assistance, and troubleshooting
+* Brainstorming technical solutions and architectural planning
+* Researching performance optimization strategies and documentation
+
+At the same time, all creative direction, core design concepts, texture creation, and artistic vision remain entirely human-driven.
 
 ## License
 
