@@ -6,6 +6,7 @@ use bevy::{
 
 use super::{
     chunk::{CHUNK_SIZE, VOXEL_SIZE, Voxel},
+    texture::VoxelTextureRegistry,
     world::VoxelWorld,
 };
 
@@ -184,7 +185,11 @@ impl MeshBuffers {
 pub struct ChunkMesher;
 
 impl ChunkMesher {
-    pub fn build_meshes(world: &VoxelWorld, chunk_coordinate: IVec3) -> ChunkMeshes {
+    pub fn build_meshes(
+        world: &VoxelWorld,
+        chunk_coordinate: IVec3,
+        textures: &VoxelTextureRegistry,
+    ) -> ChunkMeshes {
         let Some(chunk) = world.get_chunk(chunk_coordinate) else {
             return ChunkMeshes {
                 opaque: None,
@@ -228,7 +233,7 @@ impl ChunkMesher {
                             continue;
                         }
 
-                        let texture_layer = texture_layer_for(voxel, direction);
+                        let texture_layer = textures.get_layer(voxel, world_voxel);
 
                         mask[mask_index(u, v)] = Some(FaceKey {
                             voxel,
@@ -420,27 +425,5 @@ fn quad_vertices(
 
             [[u0, v0, z], [u0, v1, z], [u1, v1, z], [u1, v0, z]]
         }
-    }
-}
-
-fn texture_layer_for(voxel: Voxel, direction: FaceDirection) -> u16 {
-    use super::texture::*;
-
-    match voxel {
-        Voxel::Air => 0,
-
-        Voxel::Grass => match direction {
-            FaceDirection::PositiveY => LAYER_GRASS_TOP,
-
-            FaceDirection::NegativeY => LAYER_DIRT,
-
-            _ => LAYER_GRASS_SIDE,
-        },
-
-        Voxel::Dirt => LAYER_DIRT,
-        Voxel::Stone => LAYER_STONE,
-        Voxel::Sand => LAYER_SAND,
-        Voxel::Water => LAYER_WATER,
-        Voxel::Light => LAYER_LIGHT,
     }
 }

@@ -3,7 +3,7 @@ pub const CHUNK_SIZE: usize = 16;
 pub const CHUNK_VOLUME: usize = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
 
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum Voxel {
     #[default]
     Air = 0,
@@ -17,6 +17,38 @@ pub enum Voxel {
 }
 
 impl Voxel {
+    pub const ALL: [Voxel; 6] = [
+        Voxel::Grass,
+        Voxel::Dirt,
+        Voxel::Stone,
+        Voxel::Sand,
+        Voxel::Water,
+        Voxel::Light,
+    ];
+
+    pub fn texture_name(self) -> Option<&'static str> {
+        match self {
+            Self::Air => None,
+            Self::Grass => Some("grass"),
+            Self::Dirt => Some("dirt"),
+            Self::Stone => Some("stone"),
+            Self::Sand => Some("sand"),
+            Self::Water => Some("water"),
+            Self::Light => Some("light"),
+        }
+    }
+
+    pub fn fallback_color(self) -> [u8; 4] {
+        match self {
+            Self::Air => [0, 0, 0, 0],
+            Self::Grass => [82, 158, 64, 255],
+            Self::Dirt => [107, 66, 33, 255],
+            Self::Stone => [122, 128, 133, 255],
+            Self::Sand => [209, 194, 128, 255],
+            Self::Water => [20, 89, 199, 180],
+            Self::Light => [255, 199, 64, 255],
+        }
+    }
     pub fn is_empty(self) -> bool {
         self == Self::Air
     }

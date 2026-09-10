@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{collections::HashMap, path::Path};
 
 use bevy::{
     asset::RenderAssetUsages,
@@ -7,62 +7,81 @@ use bevy::{
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 
+use super::chunk::Voxel;
+
 pub const TEXTURE_RESOLUTION: u32 = 16;
 
-pub const LAYER_GRASS_TOP: u16 = 0;
-pub const LAYER_GRASS_SIDE: u16 = 1;
-pub const LAYER_DIRT: u16 = 2;
-pub const LAYER_STONE: u16 = 3;
-pub const LAYER_SAND: u16 = 4;
-pub const LAYER_WATER: u16 = 5;
-pub const LAYER_LIGHT: u16 = 6;
-pub const TOTAL_TEXTURE_LAYERS: u32 = 7;
+#[derive(Resource, Clone, Debug, Default)]
+pub struct VoxelTextureRegistry {
+    variants: HashMap<Voxel, (u16, u16)>,
+    total_layers: u32,
+}
 
-pub fn build_voxel_texture_array() -> Image {
-    let mut raw_layers: Vec<u8> = Vec::with_capacity(
-        (TEXTURE_RESOLUTION * TEXTURE_RESOLUTION * 4 * TOTAL_TEXTURE_LAYERS) as usize,
-    );
+impl VoxelTextureRegistry {
+    pub fn register(&mut self, voxel: Voxel, start_layer: u16, count: u16) {
+        self.variants.insert(voxel, (start_layer, count));
+    }
 
-    let grass_top = load_or_fallback("assets/textures/blocks/block_grass.png", [82, 158, 64, 255]);
+    #[allow(dead_code)]
+    pub fn total_layers(&self) -> u32 {
+        self.total_layers
+    }
 
-    let dirt = load_or_fallback("assets/textures/blocks/block_dirt.png", [107, 66, 33, 255]);
+    #[allow(dead_code)]
+    pub fn variant_count(&self, voxel: Voxel) -> u16 {
+        self.variants.get(&voxel).map_or(0, |&(_, count)| count)
+    }
 
-    let grass_side = load_or_create_grass_side(
-        "assets/textures/blocks/block_grass_side.png",
-        &grass_top,
-        &dirt,
-    );
+    pub fn get_layer(&self, voxel: Voxel, world_voxel: IVec3) -> u16 {
+        let Some(&(start, count)) = self.variants.get(&voxel) else {
+            return 0;
+        };
 
-    let stone = load_or_fallback(
-        "assets/textures/blocks/block_stone.png",
-        [122, 128, 133, 255],
-    );
+        if count <= 1 {
+            return start;
+        }
 
-    let sand = load_or_fallback(
-        "assets/textures/blocks/block_sand.png",
-        [209, 194, 128, 255],
-    );
+        let mut h = (world_voxel.x as u32).wrapping_mul(0x85EB_CA6B);
+        h ^= (world_voxel.y as u32).wrapping_mul(0xC2B2_AE35);
+        h ^= (world_voxel.z as u32).wrapping_mul(0x27D4_EB2D);
+        h ^= h >> 16;
+        h = h.wrapping_mul(0x1656_67B1);
+        h ^= h >> 13;
 
-    let water = load_or_fallback("assets/textures/blocks/block_water.png", [20, 89, 199, 180]);
+        let offset = (h as usize % count as usize) as u16;
+        start + offset
+    }
+}
 
-    let light = load_or_fallback(
-        "assets/textures/blocks/block_light.png",
-        [255, 199, 64, 255],
-    );
+pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
+    let mut raw_layers = Vec::new();
+    let mut registry = VoxelTextureRegistry::default();
+    let mut current_layer: u16 = 0;
 
-    raw_layers.extend_from_slice(&grass_top);
-    raw_layers.extend_from_slice(&grass_side);
-    raw_layers.extend_from_slice(&dirt);
-    raw_layers.extend_from_slice(&stone);
-    raw_layers.extend_from_slice(&sand);
-    raw_layers.extend_from_slice(&water);
-    raw_layers.extend_from_slice(&light);
+    for &voxel in &Voxel::ALL {
+        let Some(base_name) = voxel.texture_name() else {
+            continue;
+        };
+
+        let variants = load_all_variants_for(base_name, voxel.fallback_color());
+        let count = variants.len() as u16;
+
+        registry.register(voxel, current_layer, count);
+        current_layer += count;
+
+        for layer_data in variants {
+            raw_layers.extend_from_slice(&layer_data);
+        }
+    }
+
+    let total_layers = current_layer.max(1) as u32;
+    registry.total_layers = total_layers;
 
     let mut image = Image::new(
         Extent3d {
             width: TEXTURE_RESOLUTION,
             height: TEXTURE_RESOLUTION,
-            depth_or_array_layers: TOTAL_TEXTURE_LAYERS,
+            depth_or_array_layers: total_layers,
         },
         TextureDimension::D2,
         raw_layers,
@@ -72,25 +91,61 @@ pub fn build_voxel_texture_array() -> Image {
 
     image.sampler = ImageSampler::nearest();
 
-    image
+    (image, registry)
 }
 
-fn load_or_fallback(path: &str, fallback_color: [u8; 4]) -> Vec<u8> {
-    if let Ok(opened) = image::open(path) {
-        let rgba = opened.into_rgba8();
-        if rgba.width() == TEXTURE_RESOLUTION && rgba.height() == TEXTURE_RESOLUTION {
-            return rgba.into_raw();
-        }
+fn load_all_variants_for(base_name: &str, fallback_color: [u8; 4]) -> Vec<Vec<u8>> {
+    let mut variants = Vec::new();
 
-        warn!(
-            "Texture at {} was not {}x{}, using fallback",
-            path, TEXTURE_RESOLUTION, TEXTURE_RESOLUTION
-        );
+    let primary_path = format!("assets/textures/blocks/block_{base_name}.png");
+    if let Some(data) = try_load_image(&primary_path) {
+        variants.push(data);
     } else {
-        warn!("Failed to open texture at {}, using fallback", path);
+        let alt_zero = format!("assets/textures/blocks/block_{base_name}0.png");
+        if let Some(data) = try_load_image(&alt_zero) {
+            variants.push(data);
+        }
     }
 
-    solid_color_layer(fallback_color)
+    for i in 1..64 {
+        let path1 = format!("assets/textures/blocks/block_{base_name}{i}.png");
+        let path2 = format!("assets/textures/blocks/block_{base_name}_{i}.png");
+
+        if let Some(data) = try_load_image(&path1) {
+            variants.push(data);
+        } else if let Some(data) = try_load_image(&path2) {
+            variants.push(data);
+        } else {
+            break;
+        }
+    }
+
+    if variants.is_empty() {
+        variants.push(solid_color_layer(fallback_color));
+    }
+
+    variants
+}
+
+fn try_load_image(path: &str) -> Option<Vec<u8>> {
+    if !Path::new(path).exists() {
+        return None;
+    }
+
+    let Ok(opened) = image::open(path) else {
+        return None;
+    };
+
+    let rgba = opened.into_rgba8();
+    if rgba.width() == TEXTURE_RESOLUTION && rgba.height() == TEXTURE_RESOLUTION {
+        Some(rgba.into_raw())
+    } else {
+        warn!(
+            "Texture at {} was not {}x{}, ignoring",
+            path, TEXTURE_RESOLUTION, TEXTURE_RESOLUTION
+        );
+        None
+    }
 }
 
 fn solid_color_layer(color: [u8; 4]) -> Vec<u8> {
@@ -102,57 +157,29 @@ fn solid_color_layer(color: [u8; 4]) -> Vec<u8> {
     data
 }
 
-fn load_or_create_grass_side(path: &str, grass_top: &[u8], dirt: &[u8]) -> Vec<u8> {
-    let file_path = Path::new(path);
-    if file_path.exists()
-        && let Ok(opened) = image::open(file_path)
-    {
-        let rgba = opened.into_rgba8();
-        if rgba.width() == TEXTURE_RESOLUTION && rgba.height() == TEXTURE_RESOLUTION {
-            return rgba.into_raw();
-        }
-    }
-
-    let mut data = dirt.to_vec();
-
-    let fringe_depth: [u32; 16] = [3, 4, 3, 5, 4, 3, 3, 4, 5, 4, 3, 4, 3, 4, 5, 3];
-
-    for x in 0..TEXTURE_RESOLUTION {
-        let max_y = fringe_depth[x as usize];
-        for y in 0..max_y {
-            let index = ((y * TEXTURE_RESOLUTION + x) * 4) as usize;
-            data[index..index + 4].copy_from_slice(&grass_top[index..index + 4]);
-        }
-    }
-
-    if let Some(parent) = file_path.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-
-    let image_buffer =
-        image::RgbaImage::from_raw(TEXTURE_RESOLUTION, TEXTURE_RESOLUTION, data.clone());
-    if let Some(buffer) = image_buffer {
-        let _ = buffer.save(file_path);
-    }
-
-    data
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{TEXTURE_RESOLUTION, TOTAL_TEXTURE_LAYERS, build_voxel_texture_array};
+    use super::{TEXTURE_RESOLUTION, build_voxel_texture_array};
+    use crate::voxel::chunk::Voxel;
+    use bevy::prelude::IVec3;
 
     #[test]
-    fn texture_array_builds_with_correct_dimensions_and_layers() {
-        let image = build_voxel_texture_array();
+    fn texture_array_builds_with_dynamic_variants() {
+        let (image, registry) = build_voxel_texture_array();
         assert_eq!(image.width(), TEXTURE_RESOLUTION);
         assert_eq!(image.height(), TEXTURE_RESOLUTION);
+        assert!(registry.total_layers() >= 6);
         assert_eq!(
             image.texture_descriptor.size.depth_or_array_layers,
-            TOTAL_TEXTURE_LAYERS
+            registry.total_layers()
         );
-        let expected_bytes =
-            (TEXTURE_RESOLUTION * TEXTURE_RESOLUTION * 4 * TOTAL_TEXTURE_LAYERS) as usize;
-        assert_eq!(image.data.as_ref().map(|d| d.len()), Some(expected_bytes));
+
+        let grass_count = registry.variant_count(Voxel::Grass);
+        assert!(grass_count >= 2, "Grass should have at least 2 variants");
+
+        let layer_a = registry.get_layer(Voxel::Grass, IVec3::new(0, 0, 0));
+        let layer_b = registry.get_layer(Voxel::Grass, IVec3::new(1, 0, 0));
+        assert!(layer_a < registry.total_layers() as u16);
+        assert!(layer_b < registry.total_layers() as u16);
     }
 }

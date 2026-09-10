@@ -4,10 +4,21 @@ This document outlines the planned development phases for the voxel game engine,
 
 ---
 
-## Phase 1: Core Rendering & Texture-Array Architecture
-- **Texture-Array Shader & Pipeline**: Introduce `texture_2d_array` in a custom WGSL shader via Bevy's `ExtendedMaterial<StandardMaterial, VoxelMaterialExtension>`.
-- **Pixel-Art Texture Asset Pipeline**: Assemble individual 16×16 block textures (`Grass`, `Dirt`, `Stone`, `Sand`, `Water`, `Light`, and `GrassSide`) into a single 2D texture array with nearest-neighbor sampling.
-- **Mesher Integration**: Pass texture layer indices to `Mesh::ATTRIBUTE_UV_1` and preserve greedy quad UV tiling via `fract()` in the fragment shader.
+## Phase 1: Core Rendering & Texture-Array Architecture (In Progress)
+- [x] **Texture-Array Shader & Pipeline**:
+  - Implemented custom WGSL shader in [assets/shaders/voxel.wgsl](file:///c:/Users/rodri/OneDrive/Documentos/Rodrigo/Projects/VoxelGameEngine/assets/shaders/voxel.wgsl) via Bevy's `ExtendedMaterial<StandardMaterial, VoxelMaterialExtension>`.
+  - Mapped texture array and sampler to `@group(#{MATERIAL_BIND_GROUP})` bindings 100 and 101, preserving standard PBR lighting, directional shadows, and distance fog.
+- [x] **Pixel-Art Texture Asset Pipeline & Dynamic Variant Discovery**:
+  - Implemented in [src/voxel/texture.rs](file:///c:/Users/rodri/OneDrive/Documentos/Rodrigo/Projects/VoxelGameEngine/src/voxel/texture.rs) using `build_voxel_texture_array()`.
+  - Loads 16×16 PNG textures with nearest-neighbor sampling (`ImageSampler::nearest()`) into a hardware 2D Texture Array (`TextureDimension::D2`).
+  - Auto-discovers multiple texture variants per block type (`block_{name}.png`, `block_{name}1.png`, `block_{name}2.png`, etc.) without code changes.
+  - Ensured all 6 faces of a voxel share the same texture (uniform grass styling).
+- [x] **Mesher Integration & Deterministic Spatial Randomization**:
+  - Implemented in [src/voxel/mesher.rs](file:///c:/Users/rodri/OneDrive/Documentos/Rodrigo/Projects/VoxelGameEngine/src/voxel/mesher.rs).
+  - Supplies the layer index per vertex via `Mesh::ATTRIBUTE_UV_1`, with `fract(uv)` in WGSL tiling greedy-meshed quads cleanly without stretching.
+  - Selects variants via an integer spatial hash of each voxel's 3D world coordinate (`world_voxel`), guaranteeing consistent random distributions with zero flickering across chunk remeshes.
+- [ ] **Phase 1 Polish & Additional Refinements**:
+  - Fine-tuning variant distributions, additional block assets, and visual adjustments before proceeding to Phase 2.
 
 ---
 

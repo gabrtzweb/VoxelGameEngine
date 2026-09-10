@@ -7,7 +7,11 @@ use bevy::{
     shader::ShaderRef,
 };
 
-use super::{mesher::ChunkMesher, texture::build_voxel_texture_array, world::VoxelWorld};
+use super::{
+    mesher::ChunkMesher,
+    texture::{VoxelTextureRegistry, build_voxel_texture_array},
+    world::VoxelWorld,
+};
 
 pub const VOXEL_SHADER_PATH: &str = "shaders/voxel.wgsl";
 
@@ -101,6 +105,8 @@ pub struct ChunkMaterial {
     pub opaque: Handle<VoxelMaterial>,
 
     pub transparent: Handle<VoxelMaterial>,
+
+    pub texture_registry: VoxelTextureRegistry,
 }
 
 pub fn setup_chunk_material(
@@ -108,7 +114,7 @@ pub fn setup_chunk_material(
     mut images: ResMut<Assets<Image>>,
     mut materials: ResMut<Assets<VoxelMaterial>>,
 ) {
-    let texture_array_image = build_voxel_texture_array();
+    let (texture_array_image, texture_registry) = build_voxel_texture_array();
     let texture_array = images.add(texture_array_image);
 
     let opaque = materials.add(ExtendedMaterial {
@@ -137,9 +143,11 @@ pub fn setup_chunk_material(
         extension: VoxelMaterialExtension { texture_array },
     });
 
+    commands.insert_resource(texture_registry.clone());
     commands.insert_resource(ChunkMaterial {
         opaque,
         transparent,
+        texture_registry,
     });
 }
 
@@ -162,7 +170,7 @@ pub fn sync_chunk_render(
         return;
     }
 
-    let rebuilt = ChunkMesher::build_meshes(world, coordinate);
+    let rebuilt = ChunkMesher::build_meshes(world, coordinate, &material.texture_registry);
 
     let translation = VoxelWorld::chunk_translation(coordinate);
 
