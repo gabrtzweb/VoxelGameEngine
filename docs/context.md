@@ -132,9 +132,13 @@ I want lighting and atmosphere inspired by shaders or Vibrant Visuals, while mai
 - Create a hotbar GUI with 10 slots (1 through 0 and scrollable)
 - Block shaping tool while looking at it (R key: changes the voxel arrangement—i.e., full block, "stair" shape, or "horizontal/vertical slab" shape)
 - Block rotation tool while looking at it (I haven't thought of a specific keybind yet)
-- Perfomance improvements
+
+## Performance improvements to maybe implement in the future
 - LOD render distance
-- New block types 
+- Extremity bound checking
+- Noise up-sampling
+- Noise Cashing
+- RLE based runtime voxel data
 
 ---
 
