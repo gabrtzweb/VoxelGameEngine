@@ -92,6 +92,9 @@ The project already has:
 - Stylized billboard celestial bodies (sun with radiant coronal ring and 8-phase lunar cycle with additive blending)
 - Dynamic moving cloud layer with wind drift and atmospheric color tinting
 - Sparkling nighttime starfield dome with celestial rotation and smooth twilight fade-in
+- 8-slot hotbar GUI with 2D pixel-art item icons, active selection indicator, direct keybinds (1–8), mouse wheel scrolling, and slot clearing (Q)
+- Sub-voxel block shaping tool (R key) cycling 1m³ blocks through Full, Stair, Slabs, and Column configurations
+- Sub-voxel block rotation tool (T key) rotating shapes 90° clockwise around the Y-axis
 
 ---
 
@@ -114,6 +117,7 @@ I want lighting and atmosphere inspired by shaders or Vibrant Visuals, while mai
 
 ## Next Steps / To Be Implemented
 
+- Radial UI for selecting sub-voxel shapes
 - Custom skybox with procedural sky gradient
 - Dynamic water propagation
 - Support fluid updates across chunk boundaries
@@ -122,9 +126,6 @@ I want lighting and atmosphere inspired by shaders or Vibrant Visuals, while mai
 - Add biome generation
 - Add caves and underground generation
 - Add runtime terrain-generation controls
-- Create a hotbar GUI with 10 slots (1 through 0 and scrollable)
-- Block shaping tool while looking at it (R key: changes the voxel arrangement—i.e., full block, "stair" shape, or "horizontal/vertical slab" shape)
-- Block rotation tool while looking at it (I haven't thought of a specific keybind yet)
 
 ## Performance improvements to maybe implement in the future
 - LOD render distance

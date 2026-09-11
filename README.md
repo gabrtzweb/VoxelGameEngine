@@ -32,12 +32,11 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     Right Mouse       Place voxel
     Middle Mouse      Pick voxel
 
-    1                 Grass
-    2                 Dirt
-    3                 Stone
-    4                 Sand
-    5                 Water
-    6                 Light
+    1 - 8             Hotbar slot selection
+    Mouse Wheel       Scroll hotbar slots
+    Q                 Clear active hotbar slot
+    R                 Cycle block shape (Full, Stair, Slabs, Column)
+    T                 Rotate block shape 90° clockwise
 
     F1                Toggle Inspector
     F3                Chunk debug
@@ -58,6 +57,7 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     │   ├── collision.rs
     │   ├── controller.rs
     │   ├── game_mode.rs
+    │   ├── hotbar.rs
     │   ├── mod.rs
     │   ├── spectator.rs
     │   └── water.rs
@@ -73,6 +73,7 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     │   ├── mod.rs
     │   ├── modifications.rs
     │   ├── render.rs
+    │   ├── shaping.rs
     │   ├── targeting.rs
     │   ├── terrain.rs
     │   └── world.rs

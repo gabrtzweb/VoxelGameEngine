@@ -7,6 +7,7 @@ pub mod light;
 pub mod mesher;
 pub mod modifications;
 pub mod render;
+pub mod shaping;
 pub mod targeting;
 pub mod terrain;
 pub mod texture;
@@ -23,6 +24,8 @@ pub use interaction::VoxelInteractionPlugin;
 pub use interaction_mode::InteractionMode;
 
 pub use render::{ChunkMeshRegistry, VoxelMaterial};
+
+pub use shaping::ShapingPlugin;
 
 pub use targeting::TargetingPlugin;
 

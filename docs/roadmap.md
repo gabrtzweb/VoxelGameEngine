@@ -6,16 +6,16 @@ This document outlines the planned development phases for the voxel game engine,
 
 ## Phase 1: Core Rendering & Texture-Array Architecture (Completed)
 - [x] **Texture-Array Shader & Pipeline**:
-  - Implemented custom WGSL shader in [assets/shaders/voxel.wgsl](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/assets/shaders/voxel.wgsl) via Bevy's `ExtendedMaterial<StandardMaterial, VoxelMaterialExtension>`.
+  - Implemented custom WGSL shader in [assets/shaders/voxel.wgsl](VoxelGameEngine/assets/shaders/voxel.wgsl) via Bevy's `ExtendedMaterial<StandardMaterial, VoxelMaterialExtension>`.
   - Mapped texture array and sampler to `@group(#{MATERIAL_BIND_GROUP})` bindings 100 and 101, preserving standard PBR lighting, directional shadows, and distance fog.
 - [x] **Pixel-Art Texture Asset Pipeline & Dynamic Variant Discovery**:
-  - Implemented in [src/voxel/texture.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/voxel/texture.rs) using `build_voxel_texture_array()`.
+  - Implemented in [src/voxel/texture.rs](VoxelGameEngine/src/voxel/texture.rs) using `build_voxel_texture_array()`.
   - Standardized textures by category prefixes (`terr_`, `rock_`, `liqd_`, `emit_`) in `assets/textures/blocks/`.
   - Loads 16×16 PNG textures with nearest-neighbor sampling (`ImageSampler::nearest()`) into a hardware 2D Texture Array (`TextureDimension::D2`).
   - Auto-discovers multiple texture variants per block type (`{name}.png`, `{name}1.png`, `{name}2.png`, etc.) without code changes, with 4 variants each for grass, dirt, stone, and sand.
   - Ensured all 6 faces of a voxel share the same texture (uniform grass styling).
 - [x] **Mesher Integration, Deterministic Spatial Randomization & Color Tinting**:
-  - Implemented in [src/voxel/mesher.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/voxel/mesher.rs).
+  - Implemented in [src/voxel/mesher.rs](VoxelGameEngine/src/voxel/mesher.rs).
   - Supplies the layer index per vertex via `Mesh::ATTRIBUTE_UV_1`, with `fract(uv)` in WGSL tiling greedy-meshed quads cleanly without stretching.
   - Selects variants via an integer spatial hash of each voxel's 3D world coordinate (`world_voxel`), guaranteeing consistent random distributions with zero flickering across chunk remeshes.
   - Integrates vertex color tinting (`Mesh::ATTRIBUTE_COLOR`) for grayscale textures (grass and water) to support biome and environmental tint variations while preserving greedy-mesh boundaries.
@@ -32,15 +32,16 @@ This document outlines the planned development phases for the voxel game engine,
 
 ## Phase 2: Atmosphere, Celestial Bodies & Dynamic Sky (Completed)
 - [x] **4-Phase Day & Night Cycle**:
-  - Implemented continuous in-game astronomical clock in [src/environment.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/environment.rs) (`time_of_day: 0.0..1.0`, default 600s cycle) categorized into 4 discrete phases (`Morning`, `Noon`, `Evening`, `Night`).
+  - Implemented continuous in-game astronomical clock in [src/environment.rs](VoxelGameEngine/src/environment.rs) (`time_of_day: 0.0..1.0`, default 600s cycle) categorized into 4 discrete phases (`Morning`, `Noon`, `Evening`, `Night`).
   - Automatically tracks day count on midnight-to-morning cycle rollover, advancing the calendar and moon phase.
 - [x] **F6 Time Controls**:
   - Implemented dual-mode input handling: tapping/clicking `F6` (<0.25s) steps immediately to the next discrete phase (`Morning` -> `Noon` -> `Evening` -> `Night`).
   - Holding `F6` (>0.25s) continuously scrubs time forward smoothly at an accelerated pace (0.22 day units/sec).
 - [x] **Flat Textured Celestial Billboards**:
-  - Implemented in [src/environment/celestial.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/environment/celestial.rs).
-  - Celestial bodies are rendered as flat billboard quads facing the camera rather than 3D cubes, scaled with distinct proportions: Sun at 48m and Moon at 40m (at 100m distance).
+  - Implemented in [src/environment/celestial.rs](VoxelGameEngine/src/environment/celestial.rs).
+  - Celestial bodies are rendered as flat billboard quads facing the camera rather than 3D cubes, scaled with distinct proportions: Sun at 52m and Moon at 40m (at 100m distance).
   - Uses Minecraft-style **Additive Blending** (`AlphaMode::Add`): black pixels (`[0, 0, 0]`) act as mathematical zero (leaving sky colors 100% untouched without dark halos), while luminous RGB values physically add light to the skybox.
+  - Enhanced solar corona with HDR base color luminance and non-linear power curve for a prominent, glowing ring and rays against the daytime sky.
   - Set `fog_enabled: false` on celestial materials so distance fog never draws solid boxes over the sun or moon.
   - Sun casts 4-level cascaded directional shadows with daytime sky fill lighting.
 - [x] **8 Moon Phases from Spritesheet**:
@@ -51,9 +52,12 @@ This document outlines the planned development phases for the voxel game engine,
   - Continuous 4-stop piecewise-linear palette interpolation across Morning, Noon, Evening, and Night.
   - Dynamically blends `ClearColor`, `GlobalAmbientLight` (color and brightness), camera `DistanceFog` (color and directional scattering exponent), and camera `Exposure` (EV100).
 - [x] **Night Starfield**:
-  - Procedural star celestial dome implemented in [src/environment/stars.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/environment/stars.rs); currently held off from active runtime schedule per user direction to be refined later.
+  - Implemented in [src/environment/stars.rs](VoxelGameEngine/src/environment/stars.rs).
+  - 250 procedural stars placed at 140m distance (behind clouds at 80m and celestial bodies at 100m in Bevy's back-to-front transparent render queue), ensuring clouds naturally occlude stars.
+  - GPU-batched instanced entities sharing a single quad mesh and procedural 16×16 soft circular texture.
+  - Uses additive blending (`AlphaMode::Add`), `fog_enabled: false`, rotating around the celestial polar axis, and smoothly fades from daytime (0.0) to HDR night sparkle (1.6).
 - [x] **Stylized Cloud System**:
-  - Implemented in [src/environment/clouds.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/environment/clouds.rs).
+  - Implemented in [src/environment/clouds.rs](VoxelGameEngine/src/environment/clouds.rs).
   - Renders the 256×256 texture from `assets/textures/environments/clouds.png` on a large horizontal plane (1600m × 1600m) at altitude Y = 80m.
   - Uses native alpha blending, nearest-neighbor sampling, and `fog_enabled: false`.
   - Drifts at a gentle, relaxed speed (1.8 m/s in X, 0.6 m/s in Z) across the sky without popping, with time-of-day color tinting.
@@ -61,10 +65,17 @@ This document outlines the planned development phases for the voxel game engine,
 ---
 
 ## Phase 3: Gameplay, Inventory & Sub-Voxel Shaping Tools
-- **10-Slot Hotbar GUI**: 10 selectable item slots mapped to keys `1` through `0` and scrollable via the mouse wheel.
-- **Sub-Voxel Block Shaping Tool (`R` Key)**: Cycle targeted 1 m³ blocks between 2×2×2 sub-voxel configurations (Full Block, Stair, Horizontal Slab, Vertical Slab).
-- **Block Rotation Tool**: Rotate the sub-voxel matrix around the block origin to align stairs and slabs with player orientation.
-- **Collision Calibration**: Validate and tune the custom AABB physics stepper (`AUTO_STEP_HEIGHT = 0.5 m`) against sub-voxel stairs and slabs.
+- [x] **8-Slot Hotbar GUI**:
+  - Implemented in [src/player/hotbar.rs](VoxelGameEngine/src/player/hotbar.rs).
+  - 8 selectable item slots rendered with dark translucent backing, active gold selection border, slot indices (1..8), and 2D pixel-art icons from `assets/textures/items/`.
+  - Seamless input handling: select directly via number keys `1`–`8`, scroll forward/backward via the mouse wheel, and clear active slot with `Q`.
+  - Automatically synchronizes with `SelectedVoxel` and middle-click block picking.
+- [x] **Sub-Voxel Block Shaping Tool (`R` Key)**:
+  - Implemented in [src/voxel/shaping.rs](VoxelGameEngine/src/voxel/shaping.rs).
+  - Targets 1m³ blocks in Block interaction mode and cycles their 2×2×2 sub-voxel layout on each `R` press: Full Block (8 voxels) -> Stair (6 voxels) -> Bottom Slab (4 voxels) -> Top Slab (4 voxels) -> Vertical Slab (4 voxels) -> Column (2 voxels).
+  - Preserves the targeted block's material and updates lighting, chunk meshes, and persistence immediately.
+- [x] **Block Rotation Tool (`T` Key)**:
+  - Rotates the targeted block's sub-voxels 90° clockwise around the vertical Y-axis, allowing stairs, slabs, and columns to face in any cardinal direction.
 
 ---
 

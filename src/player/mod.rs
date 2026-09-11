@@ -1,6 +1,7 @@
 pub mod collision;
 pub mod controller;
 pub mod game_mode;
+pub mod hotbar;
 pub mod spectator;
 pub mod water;
 
@@ -38,6 +39,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GameMode>()
             .init_resource::<InspectorInteraction>()
+            .add_plugins(hotbar::HotbarPlugin)
             .configure_sets(Update, PlayerSet::Movement)
             .add_systems(
                 Startup,

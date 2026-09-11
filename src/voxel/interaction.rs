@@ -15,12 +15,12 @@ use super::{
 const HOLD_DELAY: f32 = 0.25;
 const REPEAT_INTERVAL: f32 = 0.16;
 
-#[derive(Resource, Clone, Copy)]
-pub struct SelectedVoxel(pub Voxel);
+#[derive(Resource, Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SelectedVoxel(pub Option<Voxel>);
 
 impl Default for SelectedVoxel {
     fn default() -> Self {
-        Self(Voxel::Stone)
+        Self(Some(Voxel::Grass))
     }
 }
 
@@ -79,7 +79,7 @@ impl Plugin for VoxelInteractionPlugin {
             .init_resource::<InteractionMode>()
             .add_systems(
                 Update,
-                (select_voxel_type, toggle_interaction_mode).before(TargetingSet::UpdateTarget),
+                toggle_interaction_mode.before(TargetingSet::UpdateTarget),
             )
             .add_systems(
                 Update,
@@ -88,30 +88,6 @@ impl Plugin for VoxelInteractionPlugin {
                     .after(TargetingSet::UpdateTarget),
             );
     }
-}
-
-fn select_voxel_type(keyboard: Res<ButtonInput<KeyCode>>, mut selected: ResMut<SelectedVoxel>) {
-    let next = if keyboard.just_pressed(KeyCode::Digit1) {
-        Some(Voxel::Grass)
-    } else if keyboard.just_pressed(KeyCode::Digit2) {
-        Some(Voxel::Dirt)
-    } else if keyboard.just_pressed(KeyCode::Digit3) {
-        Some(Voxel::Stone)
-    } else if keyboard.just_pressed(KeyCode::Digit4) {
-        Some(Voxel::Sand)
-    } else if keyboard.just_pressed(KeyCode::Digit5) {
-        Some(Voxel::Water)
-    } else if keyboard.just_pressed(KeyCode::Digit6) {
-        Some(Voxel::Light)
-    } else {
-        None
-    };
-
-    let Some(next) = next else {
-        return;
-    };
-
-    set_selected_voxel(&mut selected, next);
 }
 
 fn toggle_interaction_mode(
@@ -133,6 +109,7 @@ fn pick_targeted_voxel(
     current_target: Res<CurrentTarget>,
     world: Res<VoxelWorld>,
     mut selected: ResMut<SelectedVoxel>,
+    hotbar: Option<ResMut<crate::player::hotbar::Hotbar>>,
 ) {
     if *game_mode != GameMode::Creative {
         return;
@@ -154,17 +131,13 @@ fn pick_targeted_voxel(
         return;
     }
 
-    set_selected_voxel(&mut selected, voxel);
-}
-
-fn set_selected_voxel(selected: &mut SelectedVoxel, voxel: Voxel) {
-    if selected.0 == voxel {
-        return;
+    selected.0 = Some(voxel);
+    if let Some(mut hotbar) = hotbar {
+        let active = hotbar.active_slot;
+        hotbar.slots[active] = Some(voxel);
     }
 
-    selected.0 = voxel;
-
-    info!("Selected voxel: {}", voxel.label(),);
+    info!("Selected voxel: {}", voxel.label());
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -225,6 +198,10 @@ fn edit_voxels(
             }
         }
     } else if place_action {
+        let Some(place_voxel_type) = selected.0 else {
+            return;
+        };
+
         let Some(place_position) = target.place_voxel else {
             return;
         };
@@ -237,12 +214,22 @@ fn edit_voxels(
                     let block_origin =
                         adjacent_block_origin(target.block_origin, target.face_normal);
 
-                    place_block(&mut world, &mut modifications, block_origin, selected.0)
+                    place_block(
+                        &mut world,
+                        &mut modifications,
+                        block_origin,
+                        place_voxel_type,
+                    )
                 }
             }
 
             InteractionMode::Voxel => {
-                if place_voxel(&mut world, &mut modifications, place_position, selected.0) {
+                if place_voxel(
+                    &mut world,
+                    &mut modifications,
+                    place_position,
+                    place_voxel_type,
+                ) {
                     vec![place_position]
                 } else {
                     Vec::new()
@@ -386,7 +373,7 @@ fn place_block(
     edited_voxels
 }
 
-fn affected_chunks(world_voxel: IVec3) -> Vec<IVec3> {
+pub fn affected_chunks(world_voxel: IVec3) -> Vec<IVec3> {
     let (chunk_coordinate, local_coordinate) = VoxelWorld::world_voxel_to_chunk(world_voxel);
 
     let mut chunks = Vec::with_capacity(4);
