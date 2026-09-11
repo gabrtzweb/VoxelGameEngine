@@ -22,18 +22,21 @@ This document outlines the planned development phases for the voxel game engine,
 - [x] **Phase 1 Polish & Additional Refinements**:
   - Replaced legacy textures with 4-letter categorized variants (`terr_`, `rock_`, `liqd_`, `emit_`).
   - Implemented grayscale tinting pipeline for grass and water in the mesher and shader with calibrated brightness.
-  - Added vertical-strip animated texture pipeline (e.g. 16×576 `liqd_water_still` with 36 frames) driven seamlessly on the GPU using WGSL `globals.time` and vertex frame-count attributes.
-  - Softened shadow contrast by boosting daytime ambient illuminance from 62 to 450 lux.
+  - Added vertical-strip animated texture pipeline (e.g. 16×576 `liqd_water_still` with 36 frames) driven seamlessly on the GPU using WGSL `globals.time` and vertex frame-count attributes at 6.0 FPS.
+  - Softened shadow contrast by boosting daytime ambient illuminance from 62 to 450 lux and tuning exposure.
+  - Calibrated sub-voxel water geometry: surface water voxels have a 40cm height offset (yielding a 90cm water height for 1m blocks matching Minecraft fluids and eliminating shoreline z-fighting).
+  - Enabled Creative flight activation (double-tap Space) while swimming and submerged.
+  - *(Note: Rendering top water faces from underneath while submerged and fluid flow mechanics are deferred to Phase 4).*
 
 ---
 
-## Phase 2: Atmosphere, Celestial Bodies & Dynamic Sky
-- **4-Phase Day & Night Cycle**: Continuous in-game clock with 4 discrete phases (`Morning`, `Noon`, `Evening`, `Night`).
-- **F6 Time Controls**: Click to step between phases; hold to continuously advance/scrub time.
-- **Stylized Celestial Bodies**: Pixelated, cuboid sun and moon meshes honoring the engine's stylized visual identity (no smooth spheres).
-- **8 Moon Phases**: Daily moon phase progression cycling every 8 in-game days.
-- **Atmosphere & Skybox**: Procedural sky gradient, fading nighttime starfield, and dynamic fog/ambient light color transitions.
-- **Stylized Cloud System**: Planar voxel/pixelated cloud grid drifting at constant altitude.
+## Phase 2: Atmosphere, Celestial Bodies & Dynamic Sky (Active)
+- [ ] **4-Phase Day & Night Cycle**: Continuous in-game clock with 4 discrete phases (`Morning`, `Noon`, `Evening`, `Night`).
+- [ ] **F6 Time Controls**: Click to step between phases; hold to continuously advance/scrub time.
+- [ ] **Stylized Celestial Bodies**: Pixelated, cuboid sun and moon meshes honoring the engine's stylized visual identity (no smooth spheres).
+- [ ] **8 Moon Phases**: Daily moon phase progression cycling every 8 in-game days.
+- [ ] **Atmosphere & Skybox**: Procedural sky gradient, fading nighttime starfield, and dynamic fog/ambient light color transitions.
+- [ ] **Stylized Cloud System**: Planar voxel/pixelated cloud grid drifting at constant altitude.
 
 ---
 
