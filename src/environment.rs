@@ -1,444 +1,519 @@
-use bevy::{
-    camera::Exposure,
-    light::{CascadeShadowConfigBuilder, NotShadowCaster, NotShadowReceiver},
-    prelude::*,
-};
+pub mod celestial;
+pub mod clouds;
+pub mod stars;
+
+use bevy::{camera::Exposure, prelude::*};
 
 use crate::voxel::{VOXEL_SIZE, chunk::CHUNK_SIZE, chunk_manager::ChunkStreamingSettings};
 
-const DAY_SUN_ILLUMINANCE: f32 = 6_500.0;
-const DAY_FILL_ILLUMINANCE: f32 = 2_200.0;
-const DAY_AMBIENT_BRIGHTNESS: f32 = 450.0;
-const DAY_EXPOSURE_EV100: f32 = 11.0;
+pub const DAY_SUN_ILLUMINANCE: f32 = 6_500.0;
+pub const DAY_FILL_ILLUMINANCE: f32 = 2_200.0;
+pub const DAY_AMBIENT_BRIGHTNESS: f32 = 450.0;
+pub const DAY_EXPOSURE_EV100: f32 = 11.0;
 
-const NIGHT_MOON_ILLUMINANCE: f32 = 450.0;
-const NIGHT_AMBIENT_BRIGHTNESS: f32 = 30.0;
-const NIGHT_EXPOSURE_EV100: f32 = 9.2;
+pub const NIGHT_MOON_ILLUMINANCE: f32 = 450.0;
+pub const NIGHT_AMBIENT_BRIGHTNESS: f32 = 28.0;
+pub const NIGHT_EXPOSURE_EV100: f32 = 9.2;
 
 const FOG_START_FACTOR: f32 = 0.50;
 const FOG_END_FACTOR: f32 = 0.90;
-
-const SKY_BODY_DISTANCE: f32 = 28.0;
-const SUN_VISUAL_RADIUS: f32 = 1.5;
-const MOON_VISUAL_RADIUS: f32 = 1.2;
+const F6_HOLD_THRESHOLD: f32 = 0.25;
+const F6_SCRUB_SPEED: f32 = 0.22;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub enum EnvironmentPhase {
+pub enum DayPhase {
+    Morning,
     #[default]
-    Day,
+    Noon,
+    Evening,
     Night,
 }
 
-#[derive(Resource, Default)]
-pub struct EnvironmentState {
-    pub phase: EnvironmentPhase,
+impl DayPhase {
+    pub fn target_time(self) -> f32 {
+        match self {
+            DayPhase::Morning => 0.00,
+            DayPhase::Noon => 0.25,
+            DayPhase::Evening => 0.50,
+            DayPhase::Night => 0.75,
+        }
+    }
+
+    pub fn next(self) -> Self {
+        match self {
+            DayPhase::Morning => DayPhase::Noon,
+            DayPhase::Noon => DayPhase::Evening,
+            DayPhase::Evening => DayPhase::Night,
+            DayPhase::Night => DayPhase::Morning,
+        }
+    }
+
+    pub fn from_time(time_of_day: f32) -> Self {
+        let t = time_of_day.rem_euclid(1.0);
+        if !(0.125..0.875).contains(&t) {
+            DayPhase::Morning
+        } else if t < 0.375 {
+            DayPhase::Noon
+        } else if t < 0.625 {
+            DayPhase::Evening
+        } else {
+            DayPhase::Night
+        }
+    }
 }
 
-#[derive(Component)]
-struct Sun;
+pub const MOON_PHASE_NAMES: [&str; 8] = [
+    "Full Moon",
+    "Waning Gibbous",
+    "Third Quarter",
+    "Waning Crescent",
+    "New Moon",
+    "Waxing Crescent",
+    "First Quarter",
+    "Waxing Gibbous",
+];
 
-#[derive(Component)]
-struct Moon;
+#[derive(Resource)]
+pub struct EnvironmentState {
+    pub time_of_day: f32,
+    pub day_length_seconds: f32,
+    pub day_count: u32,
+    pub phase: DayPhase,
+    pub is_time_paused: bool,
+    pub f6_hold_duration: f32,
+}
 
-#[derive(Component)]
-struct SkyFill;
+impl Default for EnvironmentState {
+    fn default() -> Self {
+        Self {
+            time_of_day: 0.20,
+            day_length_seconds: 600.0,
+            day_count: 0,
+            phase: DayPhase::Noon,
+            is_time_paused: false,
+            f6_hold_duration: 0.0,
+        }
+    }
+}
 
-#[derive(Component)]
-struct SunVisual;
+impl EnvironmentState {
+    pub fn moon_phase(&self) -> usize {
+        (self.day_count as usize) % 8
+    }
 
-#[derive(Component)]
-struct MoonVisual;
+    pub fn moon_phase_name(&self) -> &'static str {
+        MOON_PHASE_NAMES[self.moon_phase()]
+    }
+}
 
 pub struct EnvironmentPlugin;
 
 impl Plugin for EnvironmentPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<EnvironmentState>()
+        let default_state = EnvironmentState::default();
+        let initial_clear = sample_sky_color(default_state.time_of_day);
+        let initial_ambient = sample_ambient_color(default_state.time_of_day);
+        let initial_brightness = sample_ambient_brightness(default_state.time_of_day);
+
+        app.insert_resource(default_state)
             .insert_resource(GlobalAmbientLight {
-                color: day_ambient_color(),
-                brightness: DAY_AMBIENT_BRIGHTNESS,
+                color: initial_ambient,
+                brightness: initial_brightness,
                 ..default()
             })
-            .insert_resource(ClearColor(day_clear_color()))
-            .add_systems(Startup, setup_environment)
+            .insert_resource(ClearColor(initial_clear))
+            .add_systems(
+                Startup,
+                (
+                    celestial::setup_celestial,
+                    // Stars held off for now per user request; will revisit after celestial/clouds stabilization.
+                    // stars::setup_starfield,
+                    clouds::setup_clouds,
+                ),
+            )
             .add_systems(
                 Update,
-                (toggle_day_night, sync_fog_distance, sync_sky_bodies).chain(),
+                (
+                    handle_environment_input,
+                    advance_environment_clock,
+                    update_atmosphere,
+                    sync_fog_distance,
+                    sync_celestial_system,
+                    // sync_starfield_system,
+                    sync_cloud_system,
+                )
+                    .chain(),
             );
     }
 }
 
-fn setup_environment(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+fn handle_environment_input(
+    time: Res<Time>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut state: ResMut<EnvironmentState>,
 ) {
-    let sun_mesh = meshes.add(Sphere::new(SUN_VISUAL_RADIUS));
+    let delta = time.delta_secs();
 
-    let moon_mesh = meshes.add(Sphere::new(MOON_VISUAL_RADIUS));
+    if keyboard.pressed(KeyCode::F6) {
+        state.f6_hold_duration += delta;
 
-    let sun_material = materials.add(StandardMaterial {
-        base_color: Color::srgb(1.0, 0.90, 0.55),
-
-        emissive: LinearRgba::rgb(10.0, 7.0, 2.5),
-
-        unlit: true,
-
-        ..default()
-    });
-
-    let moon_material = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.86, 0.90, 1.0),
-
-        emissive: LinearRgba::rgb(1.5, 1.6, 2.2),
-
-        unlit: true,
-
-        ..default()
-    });
-
-    // Main sunlight.
-    commands.spawn((
-        Sun,
-        DirectionalLight {
-            color: Color::srgb(1.0, 0.95, 0.85),
-
-            illuminance: DAY_SUN_ILLUMINANCE,
-
-            shadow_maps_enabled: true,
-
-            ..default()
-        },
-        CascadeShadowConfigBuilder {
-            num_cascades: 4,
-            minimum_distance: 0.1,
-            maximum_distance: 96.0,
-            first_cascade_far_bound: 14.0,
-            overlap_proportion: 0.25,
+        // If held past threshold, scrub time forward continuously.
+        if state.f6_hold_duration > F6_HOLD_THRESHOLD {
+            let prev = state.time_of_day;
+            let next = (prev + delta * F6_SCRUB_SPEED).rem_euclid(1.0);
+            if next < prev {
+                state.day_count = state.day_count.wrapping_add(1);
+            }
+            state.time_of_day = next;
+            state.phase = DayPhase::from_time(next);
         }
-        .build(),
-        day_sun_transform(),
-    ));
+    }
 
-    // Soft blue directional fill light.
-    //
-    // This approximates indirect sky lighting and
-    // prevents sun shadows from becoming pure black.
-    commands.spawn((
-        SkyFill,
-        DirectionalLight {
-            color: Color::srgb(0.62, 0.72, 0.90),
-
-            illuminance: DAY_FILL_ILLUMINANCE,
-
-            shadow_maps_enabled: false,
-
-            ..default()
-        },
-        day_fill_transform(),
-    ));
-
-    // Moonlight.
-    //
-    // The entity stays alive during daytime with zero
-    // illuminance so switching phases remains stable.
-    commands.spawn((
-        Moon,
-        DirectionalLight {
-            color: Color::srgb(0.48, 0.56, 0.88),
-
-            illuminance: 0.0,
-
-            shadow_maps_enabled: false,
-
-            ..default()
-        },
-        night_moon_transform(),
-    ));
-
-    commands.spawn((
-        SunVisual,
-        Mesh3d(sun_mesh),
-        MeshMaterial3d(sun_material),
-        Transform::default(),
-        Visibility::Visible,
-        NotShadowCaster,
-        NotShadowReceiver,
-    ));
-
-    commands.spawn((
-        MoonVisual,
-        Mesh3d(moon_mesh),
-        MeshMaterial3d(moon_material),
-        Transform::default(),
-        Visibility::Hidden,
-        NotShadowCaster,
-        NotShadowReceiver,
-    ));
+    if keyboard.just_released(KeyCode::F6) {
+        // If release happens quickly, treat it as a single-click phase snap.
+        if state.f6_hold_duration <= F6_HOLD_THRESHOLD {
+            let next_phase = state.phase.next();
+            let target_time = next_phase.target_time();
+            if target_time <= state.time_of_day {
+                state.day_count = state.day_count.wrapping_add(1);
+            }
+            state.time_of_day = target_time;
+            state.phase = next_phase;
+            info!(
+                "Phase stepped to {:?} (Day {}, Moon: {})",
+                state.phase,
+                state.day_count,
+                state.moon_phase_name()
+            );
+        }
+        state.f6_hold_duration = 0.0;
+    }
 }
 
-#[allow(clippy::too_many_arguments, clippy::type_complexity)]
-fn toggle_day_night(
-    keyboard: Res<ButtonInput<KeyCode>>,
-
-    mut state: ResMut<EnvironmentState>,
-
-    mut ambient: ResMut<GlobalAmbientLight>,
-
-    mut clear_color: ResMut<ClearColor>,
-
-    sun: Single<
-        (&mut DirectionalLight, &mut Transform),
-        (
-            With<Sun>,
-            Without<Moon>,
-            Without<SkyFill>,
-            Without<SunVisual>,
-            Without<MoonVisual>,
-        ),
-    >,
-
-    moon: Single<
-        (&mut DirectionalLight, &mut Transform),
-        (
-            With<Moon>,
-            Without<Sun>,
-            Without<SkyFill>,
-            Without<SunVisual>,
-            Without<MoonVisual>,
-        ),
-    >,
-
-    sky_fill: Single<
-        (&mut DirectionalLight, &mut Transform),
-        (
-            With<SkyFill>,
-            Without<Sun>,
-            Without<Moon>,
-            Without<SunVisual>,
-            Without<MoonVisual>,
-        ),
-    >,
-
-    sun_visual: Single<
-        &mut Visibility,
-        (
-            With<SunVisual>,
-            Without<MoonVisual>,
-            Without<Sun>,
-            Without<Moon>,
-            Without<SkyFill>,
-        ),
-    >,
-
-    moon_visual: Single<
-        &mut Visibility,
-        (
-            With<MoonVisual>,
-            Without<SunVisual>,
-            Without<Sun>,
-            Without<Moon>,
-            Without<SkyFill>,
-        ),
-    >,
-
-    camera: Single<
-        (&mut DistanceFog, &mut Exposure),
-        (
-            With<Camera3d>,
-            Without<Sun>,
-            Without<Moon>,
-            Without<SkyFill>,
-            Without<SunVisual>,
-            Without<MoonVisual>,
-        ),
-    >,
-) {
-    if !keyboard.just_pressed(KeyCode::F6) {
+fn advance_environment_clock(time: Res<Time>, mut state: ResMut<EnvironmentState>) {
+    if state.is_time_paused || state.day_length_seconds <= 0.0 {
         return;
     }
 
-    state.phase = match state.phase {
-        EnvironmentPhase::Day => EnvironmentPhase::Night,
+    let delta = time.delta_secs();
+    let prev = state.time_of_day;
+    let advance = delta / state.day_length_seconds;
+    let next = prev + advance;
 
-        EnvironmentPhase::Night => EnvironmentPhase::Day,
-    };
-
-    let (mut sun_light, mut sun_transform) = sun.into_inner();
-
-    let (mut moon_light, mut moon_transform) = moon.into_inner();
-
-    let (mut sky_fill_light, mut sky_fill_transform) = sky_fill.into_inner();
-
-    let mut sun_visual_visibility = sun_visual.into_inner();
-
-    let mut moon_visual_visibility = moon_visual.into_inner();
-
-    let (mut fog, mut exposure) = camera.into_inner();
-
-    match state.phase {
-        EnvironmentPhase::Day => {
-            sun_light.illuminance = DAY_SUN_ILLUMINANCE;
-
-            sun_light.shadow_maps_enabled = true;
-
-            *sun_transform = day_sun_transform();
-
-            moon_light.illuminance = 0.0;
-
-            *moon_transform = night_moon_transform();
-
-            sky_fill_light.illuminance = DAY_FILL_ILLUMINANCE;
-
-            *sky_fill_transform = day_fill_transform();
-
-            *sun_visual_visibility = Visibility::Visible;
-
-            *moon_visual_visibility = Visibility::Hidden;
-
-            ambient.color = day_ambient_color();
-
-            ambient.brightness = DAY_AMBIENT_BRIGHTNESS;
-
-            fog.color = day_fog_color();
-
-            fog.directional_light_color = Color::srgba(1.0, 0.92, 0.78, 0.12);
-
-            fog.directional_light_exponent = 20.0;
-
-            exposure.ev100 = DAY_EXPOSURE_EV100;
-
-            clear_color.0 = day_clear_color();
-        }
-
-        EnvironmentPhase::Night => {
-            // Keep the Sun entity alive so its shadow
-            // cascade state survives Day -> Night -> Day.
-            sun_light.illuminance = 0.0;
-
-            *sun_transform = day_sun_transform();
-
-            moon_light.illuminance = NIGHT_MOON_ILLUMINANCE;
-
-            *moon_transform = night_moon_transform();
-
-            sky_fill_light.illuminance = 0.0;
-
-            *sky_fill_transform = day_fill_transform();
-
-            *sun_visual_visibility = Visibility::Hidden;
-
-            *moon_visual_visibility = Visibility::Visible;
-
-            ambient.color = night_ambient_color();
-
-            ambient.brightness = NIGHT_AMBIENT_BRIGHTNESS;
-
-            fog.color = night_fog_color();
-
-            fog.directional_light_color = Color::srgba(0.40, 0.48, 0.75, 0.06);
-
-            fog.directional_light_exponent = 16.0;
-
-            exposure.ev100 = NIGHT_EXPOSURE_EV100;
-
-            clear_color.0 = night_clear_color();
-        }
+    if next >= 1.0 {
+        state.day_count = state.day_count.wrapping_add(next.floor() as u32);
     }
 
-    info!(
-        "Environment: {}",
-        match state.phase {
-            EnvironmentPhase::Day => {
-                "Day"
-            }
+    let wrapped = next.rem_euclid(1.0);
+    state.time_of_day = wrapped;
+    state.phase = DayPhase::from_time(wrapped);
+}
 
-            EnvironmentPhase::Night => {
-                "Night"
-            }
-        }
-    );
+fn update_atmosphere(
+    state: Res<EnvironmentState>,
+    mut clear_color: ResMut<ClearColor>,
+    mut ambient: ResMut<GlobalAmbientLight>,
+    camera: Single<(&mut DistanceFog, &mut Exposure), With<Camera3d>>,
+) {
+    let t = state.time_of_day;
+
+    clear_color.0 = sample_sky_color(t);
+    ambient.color = sample_ambient_color(t);
+    ambient.brightness = sample_ambient_brightness(t);
+
+    let (mut fog, mut exposure) = camera.into_inner();
+    fog.color = sample_fog_color(t);
+    fog.directional_light_color = sample_fog_light_color(t);
+    fog.directional_light_exponent = sample_fog_light_exponent(t);
+    exposure.ev100 = sample_exposure(t);
 }
 
 fn sync_fog_distance(
     settings: Res<ChunkStreamingSettings>,
-
     fog: Single<&mut DistanceFog, With<Camera3d>>,
 ) {
     let mut fog = fog.into_inner();
-
     let chunk_world_size = CHUNK_SIZE as f32 * VOXEL_SIZE;
-
     let render_radius = settings.render_distance.max(1) as f32 * chunk_world_size;
-
     fog.falloff = FogFalloff::Linear {
         start: render_radius * FOG_START_FACTOR,
-
         end: render_radius * FOG_END_FACTOR,
     };
 }
 
-#[allow(clippy::type_complexity)]
-fn sync_sky_bodies(
-    camera: Single<&Transform, (With<Camera3d>, Without<SunVisual>, Without<MoonVisual>)>,
-
-    sun_visual: Single<&mut Transform, (With<SunVisual>, Without<MoonVisual>)>,
-
-    moon_visual: Single<&mut Transform, (With<MoonVisual>, Without<SunVisual>)>,
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
+fn sync_celestial_system(
+    state: Res<EnvironmentState>,
+    camera: Single<&Transform, With<Camera3d>>,
+    sun_visual: Single<
+        (&mut Transform, &mut Visibility),
+        (
+            With<celestial::SunVisual>,
+            Without<celestial::MoonVisual>,
+            Without<Camera3d>,
+        ),
+    >,
+    moon_visual: Single<
+        (&mut Transform, &mut Visibility),
+        (
+            With<celestial::MoonVisual>,
+            Without<celestial::SunVisual>,
+            Without<Camera3d>,
+        ),
+    >,
+    sun_light: Single<
+        (&mut DirectionalLight, &mut Transform),
+        (
+            With<celestial::SunLight>,
+            Without<celestial::MoonLight>,
+            Without<celestial::SkyFillLight>,
+            Without<Camera3d>,
+            Without<celestial::SunVisual>,
+            Without<celestial::MoonVisual>,
+        ),
+    >,
+    moon_light: Single<
+        (&mut DirectionalLight, &mut Transform),
+        (
+            With<celestial::MoonLight>,
+            Without<celestial::SunLight>,
+            Without<celestial::SkyFillLight>,
+            Without<Camera3d>,
+            Without<celestial::SunVisual>,
+            Without<celestial::MoonVisual>,
+        ),
+    >,
+    sky_fill: Single<
+        (&mut DirectionalLight, &mut Transform),
+        (
+            With<celestial::SkyFillLight>,
+            Without<celestial::SunLight>,
+            Without<celestial::MoonLight>,
+            Without<Camera3d>,
+            Without<celestial::SunVisual>,
+            Without<celestial::MoonVisual>,
+        ),
+    >,
+    celestial_materials: Res<celestial::CelestialMaterials>,
+    moon_textures: Res<celestial::MoonPhaseTextures>,
+    materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let camera_transform = camera.into_inner();
-
-    let mut sun_transform = sun_visual.into_inner();
-
-    let mut moon_transform = moon_visual.into_inner();
-
-    sun_transform.translation =
-        camera_transform.translation - day_light_direction() * SKY_BODY_DISTANCE;
-
-    moon_transform.translation =
-        camera_transform.translation - night_light_direction() * SKY_BODY_DISTANCE;
+    celestial::sync_celestial_transforms(
+        camera,
+        sun_visual,
+        moon_visual,
+        sun_light,
+        moon_light,
+        sky_fill,
+        celestial_materials,
+        moon_textures,
+        materials,
+        state.time_of_day,
+        state.moon_phase(),
+        DAY_SUN_ILLUMINANCE,
+        DAY_FILL_ILLUMINANCE,
+        NIGHT_MOON_ILLUMINANCE,
+    );
 }
 
-fn day_sun_transform() -> Transform {
-    Transform::default().looking_to(day_light_direction(), Vec3::Y)
+#[allow(dead_code)]
+fn sync_starfield_system(
+    state: Res<EnvironmentState>,
+    camera: Single<&Transform, With<Camera3d>>,
+    starfield: Single<&mut Transform, (With<stars::StarfieldVisual>, Without<Camera3d>)>,
+    material_handle: Res<stars::StarfieldMaterialHandle>,
+    materials: ResMut<Assets<StandardMaterial>>,
+) {
+    stars::sync_starfield(
+        camera,
+        starfield,
+        material_handle,
+        materials,
+        state.time_of_day,
+    );
 }
 
-fn day_fill_transform() -> Transform {
-    Transform::default().looking_to(Vec3::new(-0.30, -0.45, -0.35).normalize(), Vec3::Y)
+fn sync_cloud_system(
+    time: Res<Time>,
+    state: Res<EnvironmentState>,
+    camera: Single<&Transform, With<Camera3d>>,
+    cloud: Single<&mut Transform, (With<clouds::CloudVisual>, Without<Camera3d>)>,
+    material_handle: Res<clouds::CloudMaterialHandle>,
+    materials: ResMut<Assets<StandardMaterial>>,
+) {
+    clouds::sync_clouds(
+        time,
+        camera,
+        cloud,
+        material_handle,
+        materials,
+        state.time_of_day,
+    );
 }
 
-fn night_moon_transform() -> Transform {
-    Transform::default().looking_to(night_light_direction(), Vec3::Y)
+// -------------------------------------------------------------------------
+// Smooth 4-Phase Palette Interpolation
+// -------------------------------------------------------------------------
+
+fn sample_4stop<T: Copy>(
+    time_of_day: f32,
+    morning: T,
+    noon: T,
+    evening: T,
+    night: T,
+    lerp_fn: impl Fn(T, T, f32) -> T,
+) -> T {
+    let t = time_of_day.rem_euclid(1.0);
+    if t < 0.25 {
+        lerp_fn(morning, noon, t / 0.25)
+    } else if t < 0.50 {
+        lerp_fn(noon, evening, (t - 0.25) / 0.25)
+    } else if t < 0.75 {
+        lerp_fn(evening, night, (t - 0.50) / 0.25)
+    } else {
+        lerp_fn(night, morning, (t - 0.75) / 0.25)
+    }
 }
 
-fn day_light_direction() -> Vec3 {
-    Vec3::new(0.35, -0.88, 0.22).normalize()
+fn lerp_linear_rgba(a: LinearRgba, b: LinearRgba, factor: f32) -> LinearRgba {
+    LinearRgba::new(
+        a.red + (b.red - a.red) * factor,
+        a.green + (b.green - a.green) * factor,
+        a.blue + (b.blue - a.blue) * factor,
+        a.alpha + (b.alpha - a.alpha) * factor,
+    )
 }
 
-fn night_light_direction() -> Vec3 {
-    Vec3::new(-0.22, -0.72, -0.66).normalize()
+fn lerp_f32(a: f32, b: f32, factor: f32) -> f32 {
+    a + (b - a) * factor
 }
 
-fn day_ambient_color() -> Color {
-    Color::srgb(0.85, 0.88, 0.95)
+pub fn sample_sky_color(time_of_day: f32) -> Color {
+    let morning = LinearRgba::new(0.68, 0.48, 0.52, 1.0); // Dawn rosy peach
+    let noon = LinearRgba::new(0.38, 0.62, 0.92, 1.0); // Midday azure blue
+    let evening = LinearRgba::new(0.72, 0.36, 0.24, 1.0); // Sunset amber/crimson
+    let night = LinearRgba::new(0.020, 0.035, 0.080, 1.0); // Midnight dark indigo
+
+    Color::LinearRgba(sample_4stop(
+        time_of_day,
+        morning,
+        noon,
+        evening,
+        night,
+        lerp_linear_rgba,
+    ))
 }
 
-fn night_ambient_color() -> Color {
-    Color::srgb(0.26, 0.30, 0.42)
+pub fn sample_ambient_color(time_of_day: f32) -> Color {
+    let morning = LinearRgba::new(0.92, 0.78, 0.70, 1.0);
+    let noon = LinearRgba::new(0.85, 0.88, 0.95, 1.0);
+    let evening = LinearRgba::new(0.90, 0.65, 0.50, 1.0);
+    let night = LinearRgba::new(0.24, 0.28, 0.44, 1.0);
+
+    Color::LinearRgba(sample_4stop(
+        time_of_day,
+        morning,
+        noon,
+        evening,
+        night,
+        lerp_linear_rgba,
+    ))
 }
 
-fn day_clear_color() -> Color {
-    Color::srgb(0.44, 0.66, 0.92)
+pub fn sample_ambient_brightness(time_of_day: f32) -> f32 {
+    sample_4stop(
+        time_of_day,
+        220.0,
+        DAY_AMBIENT_BRIGHTNESS,
+        200.0,
+        NIGHT_AMBIENT_BRIGHTNESS,
+        lerp_f32,
+    )
 }
 
-fn night_clear_color() -> Color {
-    Color::srgb(0.035, 0.055, 0.11)
+pub fn sample_fog_color(time_of_day: f32) -> Color {
+    let morning = LinearRgba::new(0.75, 0.62, 0.62, 1.0);
+    let noon = LinearRgba::new(0.60, 0.72, 0.84, 1.0);
+    let evening = LinearRgba::new(0.76, 0.48, 0.38, 1.0);
+    let night = LinearRgba::new(0.045, 0.065, 0.12, 1.0);
+
+    Color::LinearRgba(sample_4stop(
+        time_of_day,
+        morning,
+        noon,
+        evening,
+        night,
+        lerp_linear_rgba,
+    ))
 }
 
-fn day_fog_color() -> Color {
-    Color::srgb(0.60, 0.72, 0.84)
+pub fn sample_fog_light_color(time_of_day: f32) -> Color {
+    let morning = LinearRgba::new(1.0, 0.85, 0.65, 0.18);
+    let noon = LinearRgba::new(1.0, 0.92, 0.78, 0.12);
+    let evening = LinearRgba::new(1.0, 0.62, 0.38, 0.22);
+    let night = LinearRgba::new(0.40, 0.48, 0.75, 0.06);
+
+    Color::LinearRgba(sample_4stop(
+        time_of_day,
+        morning,
+        noon,
+        evening,
+        night,
+        lerp_linear_rgba,
+    ))
 }
 
-fn night_fog_color() -> Color {
-    Color::srgb(0.065, 0.085, 0.14)
+pub fn sample_fog_light_exponent(time_of_day: f32) -> f32 {
+    sample_4stop(time_of_day, 18.0, 20.0, 16.0, 14.0, lerp_f32)
+}
+
+pub fn sample_exposure(time_of_day: f32) -> f32 {
+    sample_4stop(
+        time_of_day,
+        10.4,
+        DAY_EXPOSURE_EV100,
+        10.2,
+        NIGHT_EXPOSURE_EV100,
+        lerp_f32,
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn day_phase_progression_loops_cleanly() {
+        assert_eq!(DayPhase::Morning.next(), DayPhase::Noon);
+        assert_eq!(DayPhase::Noon.next(), DayPhase::Evening);
+        assert_eq!(DayPhase::Evening.next(), DayPhase::Night);
+        assert_eq!(DayPhase::Night.next(), DayPhase::Morning);
+    }
+
+    #[test]
+    fn moon_phase_rotates_through_all_eight_variants() {
+        let mut state = EnvironmentState::default();
+        for day in 0..8 {
+            state.day_count = day;
+            assert_eq!(state.moon_phase(), day as usize);
+            assert_eq!(state.moon_phase_name(), MOON_PHASE_NAMES[day as usize]);
+        }
+        state.day_count = 8;
+        assert_eq!(state.moon_phase(), 0);
+    }
+
+    #[test]
+    fn atmosphere_sampler_continuous_at_boundaries() {
+        let eps = 0.0001;
+        let c_before = sample_sky_color(0.25 - eps);
+        let c_at = sample_sky_color(0.25);
+        let c_after = sample_sky_color(0.25 + eps);
+
+        if let (Color::LinearRgba(a), Color::LinearRgba(b), Color::LinearRgba(c)) =
+            (c_before, c_at, c_after)
+        {
+            assert!((a.red - b.red).abs() < 0.01);
+            assert!((b.red - c.red).abs() < 0.01);
+        }
+    }
 }

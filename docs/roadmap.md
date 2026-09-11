@@ -30,13 +30,33 @@ This document outlines the planned development phases for the voxel game engine,
 
 ---
 
-## Phase 2: Atmosphere, Celestial Bodies & Dynamic Sky (Active)
-- [ ] **4-Phase Day & Night Cycle**: Continuous in-game clock with 4 discrete phases (`Morning`, `Noon`, `Evening`, `Night`).
-- [ ] **F6 Time Controls**: Click to step between phases; hold to continuously advance/scrub time.
-- [ ] **Stylized Celestial Bodies**: Pixelated, cuboid sun and moon meshes honoring the engine's stylized visual identity (no smooth spheres).
-- [ ] **8 Moon Phases**: Daily moon phase progression cycling every 8 in-game days.
-- [ ] **Atmosphere & Skybox**: Procedural sky gradient, fading nighttime starfield, and dynamic fog/ambient light color transitions.
-- [ ] **Stylized Cloud System**: Planar voxel/pixelated cloud grid drifting at constant altitude.
+## Phase 2: Atmosphere, Celestial Bodies & Dynamic Sky (Completed)
+- [x] **4-Phase Day & Night Cycle**:
+  - Implemented continuous in-game astronomical clock in [src/environment.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/environment.rs) (`time_of_day: 0.0..1.0`, default 600s cycle) categorized into 4 discrete phases (`Morning`, `Noon`, `Evening`, `Night`).
+  - Automatically tracks day count on midnight-to-morning cycle rollover, advancing the calendar and moon phase.
+- [x] **F6 Time Controls**:
+  - Implemented dual-mode input handling: tapping/clicking `F6` (<0.25s) steps immediately to the next discrete phase (`Morning` -> `Noon` -> `Evening` -> `Night`).
+  - Holding `F6` (>0.25s) continuously scrubs time forward smoothly at an accelerated pace (0.22 day units/sec).
+- [x] **Flat Textured Celestial Billboards**:
+  - Implemented in [src/environment/celestial.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/environment/celestial.rs).
+  - Celestial bodies are rendered as flat billboard quads facing the camera rather than 3D cubes, scaled with distinct proportions: Sun at 48m and Moon at 40m (at 100m distance).
+  - Uses Minecraft-style **Additive Blending** (`AlphaMode::Add`): black pixels (`[0, 0, 0]`) act as mathematical zero (leaving sky colors 100% untouched without dark halos), while luminous RGB values physically add light to the skybox.
+  - Set `fog_enabled: false` on celestial materials so distance fog never draws solid boxes over the sun or moon.
+  - Sun casts 4-level cascaded directional shadows with daytime sky fill lighting.
+- [x] **8 Moon Phases from Spritesheet**:
+  - Automatically slices the 128×64 spritesheet (`assets/textures/environments/moon_phases.png`) into 8 discrete 32×32 pixel textures (Full Moon, Waning Gibbous, Third Quarter, Waning Crescent, New Moon, Waxing Crescent, First Quarter, Waxing Gibbous).
+  - Uses additive blending to render crisp glowing crescents and phases against the night sky without square artifacts.
+  - Active texture swaps dynamically with `day_count % 8`, and directional moonlight intensity/shadows scale based on the active phase's illumination factor.
+- [x] **Atmosphere, Dynamic Fog & Color Transitions**:
+  - Continuous 4-stop piecewise-linear palette interpolation across Morning, Noon, Evening, and Night.
+  - Dynamically blends `ClearColor`, `GlobalAmbientLight` (color and brightness), camera `DistanceFog` (color and directional scattering exponent), and camera `Exposure` (EV100).
+- [ ] **Night Starfield**:
+  - Procedural 1,200-star celestial dome implemented in [src/environment/stars.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/environment/stars.rs); currently held off from active runtime schedule per user direction to be refined later.
+- [x] **Stylized Cloud System**:
+  - Implemented in [src/environment/clouds.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/environment/clouds.rs).
+  - Renders the 256×256 texture from `assets/textures/environments/clouds.png` on a large horizontal plane (1600m × 1600m) at altitude Y = 80m.
+  - Uses native alpha blending, nearest-neighbor sampling, and `fog_enabled: false`.
+  - Drifts at a gentle, relaxed speed (1.8 m/s in X, 0.6 m/s in Z) across the sky without popping, with time-of-day color tinting.
 
 ---
 

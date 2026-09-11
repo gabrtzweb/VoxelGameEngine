@@ -5,6 +5,7 @@ use bevy::{
 };
 
 use crate::{
+    environment::EnvironmentState,
     player::{GameMode, Player, PlayerMotion},
     voxel::{CHUNK_VOLUME, ChunkMeshRegistry, VOXEL_SIZE, VoxelWorld, targeting::CurrentTarget},
 };
@@ -51,6 +52,7 @@ fn update_dev_stats(
     world: Res<VoxelWorld>,
     chunk_meshes: Res<ChunkMeshRegistry>,
     game_mode: Res<GameMode>,
+    environment: Option<Res<EnvironmentState>>,
     player: Single<(&Transform, &PlayerMotion), With<Player>>,
     camera: Single<&Transform, (With<Camera3d>, Without<Player>)>,
     current_target: Res<CurrentTarget>,
@@ -126,11 +128,28 @@ fn update_dev_stats(
         "None".to_string()
     };
 
+    let env_text = if let Some(ref env) = environment {
+        let hours = (env.time_of_day * 24.0 + 6.0).rem_euclid(24.0);
+        let h = hours.floor() as u32;
+        let m = ((hours - hours.floor()) * 60.0).floor() as u32;
+        format!(
+            "{:?} ({:02}:{:02}), Day {}, Moon: {}",
+            env.phase,
+            h,
+            m,
+            env.day_count,
+            env.moon_phase_name()
+        )
+    } else {
+        "N/A".to_string()
+    };
+
     text.0 = format!(
         "FPS: {fps:.1}\n\
         Frame: {frame_time:.2} ms\n\
         Mode: {}\n\
         Flight: {}\n\
+        Time: {}\n\
         Position: {}, {}, {}\n\
         Player chunk: {}, {}, {}\n\
         Camera: {:.1}, {:.1}, {:.1}\n\
@@ -142,6 +161,7 @@ fn update_dev_stats(
         Target voxel: {}",
         game_mode.label(),
         flight_text,
+        env_text,
         player_block.x,
         player_block.y,
         player_block.z,
