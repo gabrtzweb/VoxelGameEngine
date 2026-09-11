@@ -6,13 +6,13 @@ use bevy::{
 
 use crate::voxel::{VOXEL_SIZE, chunk::CHUNK_SIZE, chunk_manager::ChunkStreamingSettings};
 
-const DAY_SUN_ILLUMINANCE: f32 = 7_000.0;
+const DAY_SUN_ILLUMINANCE: f32 = 6_500.0;
 const DAY_FILL_ILLUMINANCE: f32 = 2_200.0;
-const DAY_AMBIENT_BRIGHTNESS: f32 = 62.0;
-const DAY_EXPOSURE_EV100: f32 = 11.4;
+const DAY_AMBIENT_BRIGHTNESS: f32 = 450.0;
+const DAY_EXPOSURE_EV100: f32 = 11.0;
 
 const NIGHT_MOON_ILLUMINANCE: f32 = 450.0;
-const NIGHT_AMBIENT_BRIGHTNESS: f32 = 8.0;
+const NIGHT_AMBIENT_BRIGHTNESS: f32 = 30.0;
 const NIGHT_EXPOSURE_EV100: f32 = 9.2;
 
 const FOG_START_FACTOR: f32 = 0.50;
@@ -420,7 +420,7 @@ fn night_light_direction() -> Vec3 {
 }
 
 fn day_ambient_color() -> Color {
-    Color::srgb(0.80, 0.84, 0.92)
+    Color::srgb(0.85, 0.88, 0.95)
 }
 
 fn night_ambient_color() -> Color {

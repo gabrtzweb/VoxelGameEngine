@@ -1,3 +1,5 @@
+use bevy::prelude::IVec3;
+
 pub const VOXEL_SIZE: f32 = 0.5;
 pub const CHUNK_SIZE: usize = 16;
 pub const CHUNK_VOLUME: usize = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
@@ -29,23 +31,35 @@ impl Voxel {
     pub fn texture_name(self) -> Option<&'static str> {
         match self {
             Self::Air => None,
-            Self::Grass => Some("grass"),
-            Self::Dirt => Some("dirt"),
-            Self::Stone => Some("stone"),
-            Self::Sand => Some("sand"),
-            Self::Water => Some("water"),
-            Self::Light => Some("light"),
+            Self::Grass => Some("terr_grass"),
+            Self::Dirt => Some("terr_dirt"),
+            Self::Stone => Some("rock_stone"),
+            Self::Sand => Some("terr_sand"),
+            Self::Water => Some("liqd_water_still"),
+            Self::Light => Some("emit_light"),
         }
+    }
+
+    pub fn tint_color(self) -> [f32; 4] {
+        match self {
+            Self::Grass => [0.58, 0.90, 0.44, 1.0],
+            Self::Water => [0.40, 0.80, 1.0, 1.0],
+            _ => [1.0, 1.0, 1.0, 1.0],
+        }
+    }
+
+    pub fn tint_color_at(self, _world_voxel: IVec3) -> [f32; 4] {
+        self.tint_color()
     }
 
     pub fn fallback_color(self) -> [u8; 4] {
         match self {
             Self::Air => [0, 0, 0, 0],
-            Self::Grass => [82, 158, 64, 255],
+            Self::Grass => [255, 255, 255, 255],
             Self::Dirt => [107, 66, 33, 255],
             Self::Stone => [122, 128, 133, 255],
             Self::Sand => [209, 194, 128, 255],
-            Self::Water => [20, 89, 199, 180],
+            Self::Water => [255, 255, 255, 255],
             Self::Light => [255, 199, 64, 255],
         }
     }
@@ -70,7 +84,7 @@ impl Voxel {
         match self {
             Self::Air => [0.0, 0.0, 0.0, 0.0],
 
-            Self::Grass => [0.32, 0.62, 0.25, 1.0],
+            Self::Grass => [0.58, 0.90, 0.44, 1.0],
 
             Self::Dirt => [0.42, 0.26, 0.13, 1.0],
 
@@ -78,7 +92,7 @@ impl Voxel {
 
             Self::Sand => [0.82, 0.76, 0.50, 1.0],
 
-            Self::Water => [0.08, 0.35, 0.78, 1.0],
+            Self::Water => [0.40, 0.80, 1.0, 1.0],
 
             Self::Light => [1.0, 0.78, 0.25, 1.0],
         }

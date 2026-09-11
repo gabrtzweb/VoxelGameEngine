@@ -132,9 +132,13 @@ pub fn setup_chunk_material(
 
     let transparent = materials.add(ExtendedMaterial {
         base: StandardMaterial {
-            base_color: Color::srgba(1.0, 1.0, 1.0, 0.58),
+            base_color: Color::srgba(1.0, 1.0, 1.0, 0.80),
 
             alpha_mode: AlphaMode::Blend,
+
+            cull_mode: None,
+
+            double_sided: true,
 
             perceptual_roughness: 0.2,
 

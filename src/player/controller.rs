@@ -255,11 +255,7 @@ pub(super) fn creative_movement(
 
     let in_water = water_submersion > WATER_SUBMERSION_THRESHOLD;
 
-    if in_water && !motion.flying {
-        jump_tap.since_last_press = None;
-    }
-
-    if keyboard.just_pressed(KeyCode::Space) && (!in_water || motion.flying) {
+    if keyboard.just_pressed(KeyCode::Space) {
         let double_tap = jump_tap
             .since_last_press
             .is_some_and(|elapsed| elapsed <= DOUBLE_JUMP_WINDOW);

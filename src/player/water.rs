@@ -85,7 +85,19 @@ pub(super) fn player_submersion(world: &VoxelWorld, position: Vec3) -> f32 {
 fn is_point_in_water(world: &VoxelWorld, position: Vec3) -> bool {
     let coordinate = world_position_to_voxel(position);
 
-    world.get_voxel(coordinate) == Some(Voxel::Water)
+    if world.get_voxel(coordinate) != Some(Voxel::Water) {
+        return false;
+    }
+
+    let above_coordinate = coordinate + IVec3::Y;
+    if world.get_voxel(above_coordinate) != Some(Voxel::Water) {
+        let surface_y = coordinate.y as f32 * VOXEL_SIZE + 0.40;
+        if position.y >= surface_y {
+            return false;
+        }
+    }
+
+    true
 }
 
 fn player_body_bounds(position: Vec3) -> (Vec3, Vec3) {

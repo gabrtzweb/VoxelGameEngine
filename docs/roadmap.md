@@ -4,21 +4,26 @@ This document outlines the planned development phases for the voxel game engine,
 
 ---
 
-## Phase 1: Core Rendering & Texture-Array Architecture (In Progress)
+## Phase 1: Core Rendering & Texture-Array Architecture (Completed)
 - [x] **Texture-Array Shader & Pipeline**:
-  - Implemented custom WGSL shader in [assets/shaders/voxel.wgsl](file:///c:/Users/rodri/OneDrive/Documentos/Rodrigo/Projects/VoxelGameEngine/assets/shaders/voxel.wgsl) via Bevy's `ExtendedMaterial<StandardMaterial, VoxelMaterialExtension>`.
+  - Implemented custom WGSL shader in [assets/shaders/voxel.wgsl](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/assets/shaders/voxel.wgsl) via Bevy's `ExtendedMaterial<StandardMaterial, VoxelMaterialExtension>`.
   - Mapped texture array and sampler to `@group(#{MATERIAL_BIND_GROUP})` bindings 100 and 101, preserving standard PBR lighting, directional shadows, and distance fog.
 - [x] **Pixel-Art Texture Asset Pipeline & Dynamic Variant Discovery**:
-  - Implemented in [src/voxel/texture.rs](file:///c:/Users/rodri/OneDrive/Documentos/Rodrigo/Projects/VoxelGameEngine/src/voxel/texture.rs) using `build_voxel_texture_array()`.
+  - Implemented in [src/voxel/texture.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/voxel/texture.rs) using `build_voxel_texture_array()`.
+  - Standardized textures by category prefixes (`terr_`, `rock_`, `liqd_`, `emit_`) in `assets/textures/blocks/`.
   - Loads 16×16 PNG textures with nearest-neighbor sampling (`ImageSampler::nearest()`) into a hardware 2D Texture Array (`TextureDimension::D2`).
-  - Auto-discovers multiple texture variants per block type (`block_{name}.png`, `block_{name}1.png`, `block_{name}2.png`, etc.) without code changes.
+  - Auto-discovers multiple texture variants per block type (`{name}.png`, `{name}1.png`, `{name}2.png`, etc.) without code changes, with 4 variants each for grass, dirt, stone, and sand.
   - Ensured all 6 faces of a voxel share the same texture (uniform grass styling).
-- [x] **Mesher Integration & Deterministic Spatial Randomization**:
-  - Implemented in [src/voxel/mesher.rs](file:///c:/Users/rodri/OneDrive/Documentos/Rodrigo/Projects/VoxelGameEngine/src/voxel/mesher.rs).
+- [x] **Mesher Integration, Deterministic Spatial Randomization & Color Tinting**:
+  - Implemented in [src/voxel/mesher.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/voxel/mesher.rs).
   - Supplies the layer index per vertex via `Mesh::ATTRIBUTE_UV_1`, with `fract(uv)` in WGSL tiling greedy-meshed quads cleanly without stretching.
   - Selects variants via an integer spatial hash of each voxel's 3D world coordinate (`world_voxel`), guaranteeing consistent random distributions with zero flickering across chunk remeshes.
-- [ ] **Phase 1 Polish & Additional Refinements**:
-  - Fine-tuning variant distributions, additional block assets, and visual adjustments before proceeding to Phase 2.
+  - Integrates vertex color tinting (`Mesh::ATTRIBUTE_COLOR`) for grayscale textures (grass and water) to support biome and environmental tint variations while preserving greedy-mesh boundaries.
+- [x] **Phase 1 Polish & Additional Refinements**:
+  - Replaced legacy textures with 4-letter categorized variants (`terr_`, `rock_`, `liqd_`, `emit_`).
+  - Implemented grayscale tinting pipeline for grass and water in the mesher and shader with calibrated brightness.
+  - Added vertical-strip animated texture pipeline (e.g. 16×576 `liqd_water_still` with 36 frames) driven seamlessly on the GPU using WGSL `globals.time` and vertex frame-count attributes.
+  - Softened shadow contrast by boosting daytime ambient illuminance from 62 to 450 lux.
 
 ---
 

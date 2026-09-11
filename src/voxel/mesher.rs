@@ -65,15 +65,20 @@ const FACE_DIRECTIONS: [FaceDirection; 6] = [
     FaceDirection::NegativeZ,
 ];
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 struct FaceKey {
     voxel: Voxel,
     texture_layer: u16,
+    frame_count: u16,
+    tint_color: [f32; 4],
 }
 
 impl FaceKey {
     fn matches(self, other: Self) -> bool {
-        self.voxel == other.voxel && self.texture_layer == other.texture_layer
+        self.voxel == other.voxel
+            && self.texture_layer == other.texture_layer
+            && self.frame_count == other.frame_count
+            && self.tint_color == other.tint_color
     }
 }
 
@@ -128,25 +133,43 @@ impl MeshBuffers {
 
         let vertices = quad_vertices(direction, slice, u, v, width, height);
 
-        let color = [1.0, 1.0, 1.0, 1.0];
+        let color = key.tint_color;
         let layer = key.texture_layer as f32;
+        let frame_count = key.frame_count as f32;
 
-        for vertex in vertices {
-            self.positions.push([
+        const WATER_SURFACE_OFFSET: f32 = 0.10;
+
+        for (i, vertex) in vertices.iter().enumerate() {
+            let mut pos = [
                 vertex[0] * VOXEL_SIZE,
                 vertex[1] * VOXEL_SIZE,
                 vertex[2] * VOXEL_SIZE,
-            ]);
+            ];
 
+            if key.voxel == Voxel::Water {
+                match direction {
+                    FaceDirection::PositiveY => {
+                        pos[1] -= WATER_SURFACE_OFFSET;
+                    }
+                    FaceDirection::PositiveX
+                    | FaceDirection::NegativeX
+                    | FaceDirection::PositiveZ
+                    | FaceDirection::NegativeZ => {
+                        if i == 1 || i == 2 {
+                            pos[1] -= WATER_SURFACE_OFFSET;
+                        }
+                    }
+                    FaceDirection::NegativeY => {}
+                }
+            }
+
+            self.positions.push(pos);
             self.normals.push(direction.normal_f32());
-
             self.colors.push(color);
-
-            self.uv_bs.push([layer, 0.0]);
+            self.uv_bs.push([layer, frame_count]);
         }
 
         let width = width as f32;
-
         let height = height as f32;
 
         self.uvs
@@ -160,6 +183,34 @@ impl MeshBuffers {
             base_index + 2,
             base_index + 3,
         ]);
+
+        if key.voxel == Voxel::Water && direction == FaceDirection::PositiveY {
+            let under_base_index = self.positions.len() as u32;
+
+            for vertex in &vertices {
+                let pos = [
+                    vertex[0] * VOXEL_SIZE,
+                    vertex[1] * VOXEL_SIZE - WATER_SURFACE_OFFSET,
+                    vertex[2] * VOXEL_SIZE,
+                ];
+                self.positions.push(pos);
+                self.normals.push([0.0, -1.0, 0.0]);
+                self.colors.push(color);
+                self.uv_bs.push([layer, frame_count]);
+            }
+
+            self.uvs
+                .extend_from_slice(&[[0.0, 0.0], [0.0, height], [width, height], [width, 0.0]]);
+
+            self.indices.extend_from_slice(&[
+                under_base_index,
+                under_base_index + 2,
+                under_base_index + 1,
+                under_base_index,
+                under_base_index + 3,
+                under_base_index + 2,
+            ]);
+        }
     }
 
     fn into_mesh(self) -> Option<Mesh> {
@@ -233,11 +284,15 @@ impl ChunkMesher {
                             continue;
                         }
 
-                        let texture_layer = textures.get_layer(voxel, world_voxel);
+                        let (texture_layer, frame_count) =
+                            textures.get_texture_info(voxel, world_voxel);
+                        let tint_color = voxel.tint_color_at(world_voxel);
 
                         mask[mask_index(u, v)] = Some(FaceKey {
                             voxel,
                             texture_layer,
+                            frame_count,
+                            tint_color,
                         });
                     }
                 }
@@ -424,6 +479,97 @@ fn quad_vertices(
             let z = slice;
 
             [[u0, v0, z], [u0, v1, z], [u1, v1, z], [u1, v0, z]]
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::voxel::{chunk::Chunk, texture::build_voxel_texture_array};
+    use bevy::render::mesh::VertexAttributeValues;
+
+    #[test]
+    fn mesher_applies_tint_color_to_vertices() {
+        let mut world = VoxelWorld::default();
+        let mut chunk = Chunk::default();
+        chunk.set(0, 0, 0, Voxel::Grass);
+        world.insert_chunk(IVec3::ZERO, chunk);
+
+        let (_, registry) = build_voxel_texture_array();
+        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
+        let opaque = meshes.opaque.expect("Opaque mesh should exist");
+
+        let colors = opaque
+            .attribute(Mesh::ATTRIBUTE_COLOR)
+            .expect("Mesh should have vertex colors");
+
+        if let VertexAttributeValues::Float32x4(color_data) = colors {
+            assert!(!color_data.is_empty());
+            let grass_tint = Voxel::Grass.tint_color();
+            for vertex_color in color_data {
+                assert_eq!(*vertex_color, grass_tint);
+            }
+        } else {
+            panic!("Expected Float32x4 vertex colors");
+        }
+    }
+
+    #[test]
+    fn mesher_applies_animation_frame_count_metadata() {
+        let mut world = VoxelWorld::default();
+        let mut chunk = Chunk::default();
+        chunk.set(0, 0, 0, Voxel::Water);
+        world.insert_chunk(IVec3::ZERO, chunk);
+
+        let (_, registry) = build_voxel_texture_array();
+        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
+        let transparent = meshes.transparent.expect("Transparent mesh should exist");
+
+        let uv_bs = transparent
+            .attribute(Mesh::ATTRIBUTE_UV_1)
+            .expect("Mesh should have UV_1");
+
+        if let VertexAttributeValues::Float32x2(uv_b_data) = uv_bs {
+            assert!(!uv_b_data.is_empty());
+            for entry in uv_b_data {
+                assert_eq!(entry[1], 36.0, "Water frame count should be 36.0");
+            }
+        } else {
+            panic!("Expected Float32x2 UV_1");
+        }
+
+        let positions = transparent
+            .attribute(Mesh::ATTRIBUTE_POSITION)
+            .expect("Mesh should have positions");
+
+        if let VertexAttributeValues::Float32x3(pos_data) = positions {
+            assert!(!pos_data.is_empty());
+            // Top face (+Y) has max Y at 0.40m rather than 0.50m
+            let max_y = pos_data
+                .iter()
+                .map(|p| p[1])
+                .fold(f32::NEG_INFINITY, f32::max);
+            assert!(
+                (max_y - 0.40).abs() < 1e-4,
+                "Surface water max Y should be 0.40, got {}",
+                max_y
+            );
+        } else {
+            panic!("Expected Float32x3 positions");
+        }
+
+        let normals = transparent
+            .attribute(Mesh::ATTRIBUTE_NORMAL)
+            .expect("Mesh should have normals");
+        if let VertexAttributeValues::Float32x3(norm_data) = normals {
+            let has_down_normal = norm_data.iter().any(|n| n[1] < -0.9);
+            assert!(
+                has_down_normal,
+                "Transparent mesh should have downward-facing normals for underwater view"
+            );
+        } else {
+            panic!("Expected Float32x3 normals");
         }
     }
 }
