@@ -1,4 +1,4 @@
-﻿# VoxelGameEngine
+# VoxelGameEngine
 
 An experimental voxel game engine built from scratch with Rust and Bevy.
 
@@ -43,12 +43,17 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     F3                Chunk debug
     F4                Creative / Spectator
     F5                First / Third person
-    F6                Day / Night
+    F6                Day / Night cycle (Click: step phase / Hold: scrub time)
 
 
 ## Current Project Structure
 
     src/
+    ├── environment/
+    │   ├── celestial.rs
+    │   ├── clouds.rs
+    │   └── stars.rs
+    │
     ├── player/
     │   ├── collision.rs
     │   ├── controller.rs

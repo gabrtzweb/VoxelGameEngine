@@ -126,8 +126,7 @@ impl Plugin for EnvironmentPlugin {
                 Startup,
                 (
                     celestial::setup_celestial,
-                    // Stars held off for now per user request; will revisit after celestial/clouds stabilization.
-                    // stars::setup_starfield,
+                    stars::setup_starfield,
                     clouds::setup_clouds,
                 ),
             )
@@ -139,7 +138,7 @@ impl Plugin for EnvironmentPlugin {
                     update_atmosphere,
                     sync_fog_distance,
                     sync_celestial_system,
-                    // sync_starfield_system,
+                    sync_starfield_system,
                     sync_cloud_system,
                 )
                     .chain(),
@@ -316,17 +315,16 @@ fn sync_celestial_system(
     );
 }
 
-#[allow(dead_code)]
 fn sync_starfield_system(
     state: Res<EnvironmentState>,
     camera: Single<&Transform, With<Camera3d>>,
-    starfield: Single<&mut Transform, (With<stars::StarfieldVisual>, Without<Camera3d>)>,
+    star_query: stars::StarQuery,
     material_handle: Res<stars::StarfieldMaterialHandle>,
     materials: ResMut<Assets<StandardMaterial>>,
 ) {
     stars::sync_starfield(
         camera,
-        starfield,
+        star_query,
         material_handle,
         materials,
         state.time_of_day,

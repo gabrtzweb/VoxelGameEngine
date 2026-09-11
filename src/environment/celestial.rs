@@ -7,7 +7,7 @@ use bevy::{
 };
 
 pub const CELESTIAL_DISTANCE: f32 = 100.0;
-pub const SUN_SIZE: f32 = 48.0;
+pub const SUN_SIZE: f32 = 52.0;
 pub const MOON_SIZE: f32 = 40.0;
 
 #[derive(Component)]
@@ -52,6 +52,7 @@ pub fn setup_celestial(
     let moon_mesh = meshes.add(Rectangle::new(MOON_SIZE, MOON_SIZE));
 
     let sun_material = materials.add(StandardMaterial {
+        base_color: Color::LinearRgba(LinearRgba::new(2.2, 2.0, 1.5, 1.0)),
         base_color_texture: Some(sun_handle),
         unlit: true,
         alpha_mode: AlphaMode::Add,
@@ -62,6 +63,7 @@ pub fn setup_celestial(
     });
 
     let moon_material = materials.add(StandardMaterial {
+        base_color: Color::LinearRgba(LinearRgba::new(1.3, 1.35, 1.5, 1.0)),
         base_color_texture: Some(moon_handles[0].clone()),
         unlit: true,
         alpha_mode: AlphaMode::Add,
@@ -285,9 +287,18 @@ fn load_sun_image() -> Image {
 
         for pixel in rgba.pixels() {
             let [r, g, b, _] = pixel.0;
-            let is_black = r == 0 && g == 0 && b == 0;
-            let alpha = if is_black { 0 } else { 255 };
-            data.extend_from_slice(&[r, g, b, alpha]);
+            let max_b = r.max(g).max(b);
+            if max_b <= 2 {
+                data.extend_from_slice(&[0, 0, 0, 0]);
+            } else {
+                // Boost coronal midtones and rays so the glowing ring is vividly visible against bright daylight sky:
+                let norm = max_b as f32 / 255.0;
+                let boost = (norm.powf(0.36) / norm).clamp(1.0, 4.5);
+                let br = ((r as f32 * boost * 1.35).min(255.0)) as u8;
+                let bg = ((g as f32 * boost * 1.25).min(255.0)) as u8;
+                let bb = ((b as f32 * boost * 1.10).min(255.0)) as u8;
+                data.extend_from_slice(&[br, bg, bb, 255]);
+            }
         }
 
         let mut img = Image::new(
@@ -331,9 +342,21 @@ fn load_moon_phase_images() -> [Image; 8] {
                     for x in start_x..(start_x + 32) {
                         let pixel = rgba.get_pixel(x, y);
                         let [r, g, b, _] = pixel.0;
-                        let is_black = r == 0 && g == 0 && b == 0;
-                        let alpha = if is_black { 0 } else { 255 };
-                        phase_bytes.extend_from_slice(&[r, g, b, alpha]);
+                        let max_b = r.max(g).max(b);
+
+                        if max_b == 0 {
+                            phase_bytes.extend_from_slice(&[0, 0, 0, 0]);
+                        } else {
+                            let boost = if max_b < 60 {
+                                (max_b as f32 / 60.0).powf(0.6) / (max_b as f32 / 60.0)
+                            } else {
+                                1.0
+                            };
+                            let br = ((r as f32 * boost * 1.25).min(255.0)) as u8;
+                            let bg = ((g as f32 * boost * 1.25).min(255.0)) as u8;
+                            let bb = ((b as f32 * boost * 1.25).min(255.0)) as u8;
+                            phase_bytes.extend_from_slice(&[br, bg, bb, 255]);
+                        }
                     }
                 }
 

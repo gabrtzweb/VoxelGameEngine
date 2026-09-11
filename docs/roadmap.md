@@ -50,8 +50,8 @@ This document outlines the planned development phases for the voxel game engine,
 - [x] **Atmosphere, Dynamic Fog & Color Transitions**:
   - Continuous 4-stop piecewise-linear palette interpolation across Morning, Noon, Evening, and Night.
   - Dynamically blends `ClearColor`, `GlobalAmbientLight` (color and brightness), camera `DistanceFog` (color and directional scattering exponent), and camera `Exposure` (EV100).
-- [ ] **Night Starfield**:
-  - Procedural 1,200-star celestial dome implemented in [src/environment/stars.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/environment/stars.rs); currently held off from active runtime schedule per user direction to be refined later.
+- [x] **Night Starfield**:
+  - Procedural star celestial dome implemented in [src/environment/stars.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/environment/stars.rs); currently held off from active runtime schedule per user direction to be refined later.
 - [x] **Stylized Cloud System**:
   - Implemented in [src/environment/clouds.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/environment/clouds.rs).
   - Renders the 256×256 texture from `assets/textures/environments/clouds.png` on a large horizontal plane (1600m × 1600m) at altitude Y = 80m.

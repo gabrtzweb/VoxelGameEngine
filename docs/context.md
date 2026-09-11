@@ -86,6 +86,12 @@ The project already has:
 - Creative and Spectator modes
 - Basic movement and physics
 - HUD and debug overlay
+- 2D Texture-Array voxel rendering with multi-variant randomization (e.g., multiple grass variants)
+- Full 4-phase day and night cycle (Morning, Noon, Evening, Night) with smooth continuous atmospheric transitions
+- Interactive time control (F6: click to advance between phases, hold to scrub time smoothly)
+- Stylized billboard celestial bodies (sun with radiant coronal ring and 8-phase lunar cycle with additive blending)
+- Dynamic moving cloud layer with wind drift and atmospheric color tinting
+- Sparkling nighttime starfield dome with celestial rotation and smooth twilight fade-in
 
 ---
 
@@ -108,20 +114,7 @@ I want lighting and atmosphere inspired by shaders or Vibrant Visuals, while mai
 
 ## Next Steps / To Be Implemented
 
-- Introduce texture-array rendering
-- Individual texture per voxel
-- Pixelated/stylized sun
-- Pixelated/stylized moon
-- Full day and night cycle divided into 4 phases: (the F6 control can be changed to: hold = advance time, click = change between phases)
-    Morning
-    Noon
-    Evening
-    Night
-- Implement the 8 moon phases (can be 1 phase per day, resets after every 8 days)
-- Custom skybox with sky gradient
-- Stars during the night time
-- Cloud system
-- Better lightning and atmosphere
+- Custom skybox with procedural sky gradient
 - Dynamic water propagation
 - Support fluid updates across chunk boundaries
 - Improve underwater visuals and water surface rendering
