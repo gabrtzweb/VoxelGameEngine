@@ -5,7 +5,8 @@ use bevy::{
 };
 
 use super::{
-    chunk::{CHUNK_SIZE, VOXEL_SIZE, Voxel},
+    chunk::{CHUNK_SIZE, Chunk, VOXEL_SIZE, Voxel},
+    shaping::{centered_layer_coordinates, is_centered_layer},
     texture::VoxelTextureRegistry,
     world::VoxelWorld,
 };
@@ -270,7 +271,11 @@ impl ChunkMesher {
 
                         // Light blocks have their own
                         // emissive render entities.
-                        if voxel.is_empty() || voxel == Voxel::Light {
+                        if voxel.is_empty()
+                            || voxel == Voxel::Light
+                            || voxel == Voxel::Occupied
+                            || is_chunk_local_centered_layer(chunk, local_voxel)
+                        {
                             continue;
                         }
 
@@ -280,7 +285,8 @@ impl ChunkMesher {
 
                         let neighbor = world.get_voxel(neighbor_coordinate).unwrap_or(Voxel::Air);
 
-                        if !should_render_face(voxel, neighbor) {
+                        let neighbor_is_centered = is_centered_layer(world, neighbor_coordinate);
+                        if !neighbor_is_centered && !should_render_face(voxel, neighbor) {
                             continue;
                         }
 
@@ -307,6 +313,14 @@ impl ChunkMesher {
             }
         }
 
+        mesh_centered_voxels(
+            world,
+            chunk,
+            chunk_coordinate,
+            textures,
+            &mut opaque_buffers,
+        );
+
         ChunkMeshes {
             opaque: opaque_buffers.into_mesh(),
 
@@ -326,9 +340,9 @@ fn should_render_face(voxel: Voxel, neighbor: Voxel) -> bool {
         return neighbor.is_empty();
     }
 
-    // Opaque terrain next to Water must keep its face
-    // because it needs to remain visible through Water.
-    neighbor.is_empty() || neighbor.is_transparent()
+    // Opaque terrain next to Water or Occupied must keep its face
+    // because it needs to remain visible through Water or across the 0.25m gap.
+    neighbor.is_empty() || neighbor.is_transparent() || neighbor == Voxel::Occupied
 }
 
 fn greedy_merge_mask(
@@ -572,4 +586,310 @@ mod tests {
             panic!("Expected Float32x3 normals");
         }
     }
+
+    #[test]
+    fn mesher_renders_centered_voxels_correctly() {
+        let mut world = VoxelWorld::default();
+        let mut chunk = Chunk::default();
+        // Set up a centered voxel at layer y=0
+        chunk.set(0, 0, 0, Voxel::Stone);
+        chunk.set(1, 0, 0, Voxel::Occupied);
+        chunk.set(0, 0, 1, Voxel::Occupied);
+        chunk.set(1, 0, 1, Voxel::Occupied);
+        world.insert_chunk(IVec3::ZERO, chunk);
+
+        let (_, registry) = build_voxel_texture_array();
+        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
+        let opaque = meshes
+            .opaque
+            .expect("Opaque mesh should exist for centered voxel");
+
+        let positions = opaque
+            .attribute(Mesh::ATTRIBUTE_POSITION)
+            .expect("Mesh should have positions");
+
+        if let VertexAttributeValues::Float32x3(pos_data) = positions {
+            assert!(!pos_data.is_empty());
+            // Centered voxel is 0.5m wide, centered in 1.0m block -> X and Z in [0.25, 0.75]
+            let min_x = pos_data.iter().map(|p| p[0]).fold(f32::INFINITY, f32::min);
+            let max_x = pos_data
+                .iter()
+                .map(|p| p[0])
+                .fold(f32::NEG_INFINITY, f32::max);
+            assert!(
+                (min_x - 0.25).abs() < 1e-4,
+                "min_x should be 0.25, got {}",
+                min_x
+            );
+            assert!(
+                (max_x - 0.75).abs() < 1e-4,
+                "max_x should be 0.75, got {}",
+                max_x
+            );
+        } else {
+            panic!("Expected Float32x3 positions");
+        }
+    }
+
+    #[test]
+    fn ground_below_centered_voxel_renders_top_face() {
+        let mut world = VoxelWorld::default();
+        let mut chunk = Chunk::default();
+        // Ground at y=0 is solid Sand across all 4 quadrants
+        chunk.set(0, 0, 0, Voxel::Sand);
+        chunk.set(1, 0, 0, Voxel::Sand);
+        chunk.set(0, 0, 1, Voxel::Sand);
+        chunk.set(1, 0, 1, Voxel::Sand);
+
+        // Centered voxel directly above at y=1
+        chunk.set(0, 1, 0, Voxel::Stone);
+        chunk.set(1, 1, 0, Voxel::Occupied);
+        chunk.set(0, 1, 1, Voxel::Occupied);
+        chunk.set(1, 1, 1, Voxel::Occupied);
+
+        world.insert_chunk(IVec3::ZERO, chunk);
+
+        let (_, registry) = build_voxel_texture_array();
+        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
+        let opaque = meshes.opaque.expect("Opaque mesh should exist");
+
+        let normals = opaque
+            .attribute(Mesh::ATTRIBUTE_NORMAL)
+            .expect("Mesh should have normals");
+
+        if let VertexAttributeValues::Float32x3(norm_data) = normals {
+            let positions = opaque
+                .attribute(Mesh::ATTRIBUTE_POSITION)
+                .expect("Mesh should have positions");
+            if let VertexAttributeValues::Float32x3(pos_data) = positions {
+                let mut up_faces_at_ground = 0;
+                for (norm, pos) in norm_data.iter().zip(pos_data.iter()) {
+                    if norm[1] > 0.9 && (pos[1] - 0.50).abs() < 1e-4 {
+                        up_faces_at_ground += 1;
+                    }
+                }
+                assert_eq!(
+                    up_faces_at_ground, 16,
+                    "All 4 ground quads under centered column must render their top face (16 vertices), got {}",
+                    up_faces_at_ground
+                );
+            }
+        }
+    }
+}
+
+fn is_chunk_local_centered_layer(chunk: &Chunk, local_voxel: IVec3) -> bool {
+    let bx = (local_voxel.x as usize / 2) * 2;
+    let bz = (local_voxel.z as usize / 2) * 2;
+    let y = local_voxel.y as usize;
+
+    chunk.get(bx, y, bz) == Voxel::Occupied
+        || chunk.get(bx + 1, y, bz) == Voxel::Occupied
+        || chunk.get(bx, y, bz + 1) == Voxel::Occupied
+        || chunk.get(bx + 1, y, bz + 1) == Voxel::Occupied
+}
+
+fn get_chunk_local_centered_material(chunk: &Chunk, local_voxel: IVec3) -> Option<Voxel> {
+    let bx = (local_voxel.x as usize / 2) * 2;
+    let bz = (local_voxel.z as usize / 2) * 2;
+    let y = local_voxel.y as usize;
+
+    for (dx, dz) in [(0, 0), (1, 0), (0, 1), (1, 1)] {
+        let v = chunk.get(bx + dx, y, bz + dz);
+        if !v.is_empty() && v != Voxel::Occupied {
+            return Some(v);
+        }
+    }
+    None
+}
+
+fn mesh_centered_voxels(
+    world: &VoxelWorld,
+    chunk: &Chunk,
+    chunk_coordinate: IVec3,
+    textures: &VoxelTextureRegistry,
+    opaque_buffers: &mut MeshBuffers,
+) {
+    let chunk_voxel_origin = chunk_coordinate * CHUNK_SIZE as i32;
+
+    for bz_idx in 0..(CHUNK_SIZE / 2) {
+        let bz = bz_idx * 2;
+        for y in 0..CHUNK_SIZE {
+            for bx_idx in 0..(CHUNK_SIZE / 2) {
+                let bx = bx_idx * 2;
+
+                let local = IVec3::new(bx as i32, y as i32, bz as i32);
+                if !is_chunk_local_centered_layer(chunk, local) {
+                    continue;
+                }
+
+                let Some(material) = get_chunk_local_centered_material(chunk, local) else {
+                    continue;
+                };
+
+                let world_voxel = chunk_voxel_origin + local;
+                let (texture_layer, frame_count) = textures.get_texture_info(material, world_voxel);
+                let tint_color = material.tint_color_at(world_voxel);
+
+                let min_x = bx as f32 + 0.5;
+                let max_x = bx as f32 + 1.5;
+                let min_y = y as f32;
+                let max_y = (y + 1) as f32;
+                let min_z = bz as f32 + 0.5;
+                let max_z = bz as f32 + 1.5;
+
+                // Check face culling for +Y (top):
+                let top_world = world_voxel + IVec3::Y;
+                let cull_top = if is_centered_layer(world, top_world) {
+                    true
+                } else {
+                    let coords = centered_layer_coordinates(top_world);
+                    coords.iter().all(|&c| {
+                        world
+                            .get_voxel(c)
+                            .is_some_and(|v| !v.is_empty() && !v.is_transparent())
+                    })
+                };
+
+                // Check face culling for -Y (bottom):
+                let bottom_world = world_voxel - IVec3::Y;
+                let cull_bottom = if is_centered_layer(world, bottom_world) {
+                    true
+                } else {
+                    let coords = centered_layer_coordinates(bottom_world);
+                    coords.iter().all(|&c| {
+                        world
+                            .get_voxel(c)
+                            .is_some_and(|v| !v.is_empty() && !v.is_transparent())
+                    })
+                };
+
+                // +X
+                push_centered_quad(
+                    opaque_buffers,
+                    [
+                        [max_x, min_y, min_z],
+                        [max_x, max_y, min_z],
+                        [max_x, max_y, max_z],
+                        [max_x, min_y, max_z],
+                    ],
+                    [1.0, 0.0, 0.0],
+                    texture_layer,
+                    frame_count,
+                    tint_color,
+                );
+                // -X
+                push_centered_quad(
+                    opaque_buffers,
+                    [
+                        [min_x, min_y, max_z],
+                        [min_x, max_y, max_z],
+                        [min_x, max_y, min_z],
+                        [min_x, min_y, min_z],
+                    ],
+                    [-1.0, 0.0, 0.0],
+                    texture_layer,
+                    frame_count,
+                    tint_color,
+                );
+                // +Z
+                push_centered_quad(
+                    opaque_buffers,
+                    [
+                        [max_x, min_y, max_z],
+                        [max_x, max_y, max_z],
+                        [min_x, max_y, max_z],
+                        [min_x, min_y, max_z],
+                    ],
+                    [0.0, 0.0, 1.0],
+                    texture_layer,
+                    frame_count,
+                    tint_color,
+                );
+                // -Z
+                push_centered_quad(
+                    opaque_buffers,
+                    [
+                        [min_x, min_y, min_z],
+                        [min_x, max_y, min_z],
+                        [max_x, max_y, min_z],
+                        [max_x, min_y, min_z],
+                    ],
+                    [0.0, 0.0, -1.0],
+                    texture_layer,
+                    frame_count,
+                    tint_color,
+                );
+
+                if !cull_top {
+                    // +Y
+                    push_centered_quad(
+                        opaque_buffers,
+                        [
+                            [min_x, max_y, min_z],
+                            [min_x, max_y, max_z],
+                            [max_x, max_y, max_z],
+                            [max_x, max_y, min_z],
+                        ],
+                        [0.0, 1.0, 0.0],
+                        texture_layer,
+                        frame_count,
+                        tint_color,
+                    );
+                }
+
+                if !cull_bottom {
+                    // -Y
+                    push_centered_quad(
+                        opaque_buffers,
+                        [
+                            [min_x, min_y, max_z],
+                            [min_x, min_y, min_z],
+                            [max_x, min_y, min_z],
+                            [max_x, min_y, max_z],
+                        ],
+                        [0.0, -1.0, 0.0],
+                        texture_layer,
+                        frame_count,
+                        tint_color,
+                    );
+                }
+            }
+        }
+    }
+}
+
+fn push_centered_quad(
+    buffers: &mut MeshBuffers,
+    vertices: [[f32; 3]; 4],
+    normal: [f32; 3],
+    texture_layer: u16,
+    frame_count: u16,
+    tint_color: [f32; 4],
+) {
+    let base_index = buffers.positions.len() as u32;
+
+    for v in &vertices {
+        buffers
+            .positions
+            .push([v[0] * VOXEL_SIZE, v[1] * VOXEL_SIZE, v[2] * VOXEL_SIZE]);
+        buffers.normals.push(normal);
+        buffers.colors.push(tint_color);
+        buffers
+            .uv_bs
+            .push([texture_layer as f32, frame_count as f32]);
+    }
+
+    buffers
+        .uvs
+        .extend_from_slice(&[[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]]);
+
+    buffers.indices.extend_from_slice(&[
+        base_index,
+        base_index + 1,
+        base_index + 2,
+        base_index,
+        base_index + 2,
+        base_index + 3,
+    ]);
 }

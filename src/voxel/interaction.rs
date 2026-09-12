@@ -123,12 +123,22 @@ fn pick_targeted_voxel(
         return;
     };
 
-    let Some(voxel) = world.get_voxel(target.hit_voxel) else {
+    let Some(mut voxel) = world.get_voxel(target.hit_voxel) else {
         return;
     };
 
     if voxel.is_empty() {
         return;
+    }
+
+    if voxel == Voxel::Occupied {
+        if let Some(material) =
+            crate::voxel::shaping::get_centered_layer_material(&world, target.hit_voxel)
+        {
+            voxel = material;
+        } else {
+            return;
+        }
     }
 
     selected.0 = Some(voxel);
@@ -190,7 +200,17 @@ fn edit_voxels(
             }
 
             InteractionMode::Voxel => {
-                if remove_voxel(&mut world, &mut modifications, target.hit_voxel) {
+                if crate::voxel::shaping::is_centered_layer(&world, target.hit_voxel) {
+                    let coords =
+                        crate::voxel::shaping::centered_layer_coordinates(target.hit_voxel);
+                    let mut removed = Vec::new();
+                    for pos in coords {
+                        if remove_voxel(&mut world, &mut modifications, pos) {
+                            removed.push(pos);
+                        }
+                    }
+                    removed
+                } else if remove_voxel(&mut world, &mut modifications, target.hit_voxel) {
                     vec![target.hit_voxel]
                 } else {
                     Vec::new()
@@ -211,8 +231,11 @@ fn edit_voxels(
                 if target.face_normal == IVec3::ZERO {
                     Vec::new()
                 } else {
-                    let block_origin =
-                        adjacent_block_origin(target.block_origin, target.face_normal);
+                    let block_origin = adjacent_block_origin(
+                        target.block_origin,
+                        target.hit_voxel,
+                        target.face_normal,
+                    );
 
                     place_block(
                         &mut world,
@@ -224,7 +247,37 @@ fn edit_voxels(
             }
 
             InteractionMode::Voxel => {
-                if place_voxel(
+                let is_centered_target =
+                    crate::voxel::shaping::is_centered_layer(&world, place_position + IVec3::Y)
+                        || crate::voxel::shaping::is_centered_layer(
+                            &world,
+                            place_position - IVec3::Y,
+                        );
+
+                if is_centered_target {
+                    let coords = crate::voxel::shaping::centered_layer_coordinates(place_position);
+                    if coords
+                        .iter()
+                        .all(|&pos| world.get_voxel(pos).is_some_and(|v| v.is_empty()))
+                    {
+                        world.set_voxel(coords[0], place_voxel_type);
+                        modifications.record(coords[0], place_voxel_type);
+                        for &pos in &coords[1..4] {
+                            world.set_voxel(pos, Voxel::Occupied);
+                            modifications.record(pos, Voxel::Occupied);
+                        }
+                        coords.to_vec()
+                    } else if place_voxel(
+                        &mut world,
+                        &mut modifications,
+                        place_position,
+                        place_voxel_type,
+                    ) {
+                        vec![place_position]
+                    } else {
+                        Vec::new()
+                    }
+                } else if place_voxel(
                     &mut world,
                     &mut modifications,
                     place_position,
@@ -444,5 +497,84 @@ mod tests {
         assert!(edited.is_empty());
         assert_eq!(world.get_voxel(origin), Some(Voxel::Air));
         assert_eq!(world.get_voxel(origin + IVec3::ONE), Some(Voxel::Dirt));
+    }
+
+    #[test]
+    fn placing_on_top_of_centered_voxel_creates_centered_layer() {
+        let mut world = VoxelWorld::default();
+        world.insert_chunk(IVec3::ZERO, Chunk::new());
+
+        // Setup a bottom centered voxel at y=0
+        world.set_voxel(IVec3::new(0, 0, 0), Voxel::Stone);
+        world.set_voxel(IVec3::new(1, 0, 0), Voxel::Occupied);
+        world.set_voxel(IVec3::new(0, 0, 1), Voxel::Occupied);
+        world.set_voxel(IVec3::new(1, 0, 1), Voxel::Occupied);
+
+        assert!(crate::voxel::shaping::is_centered_layer(
+            &world,
+            IVec3::new(0, 0, 0)
+        ));
+
+        // Simulate placing a centered voxel on top at y=1
+        let coords = crate::voxel::shaping::centered_layer_coordinates(IVec3::new(0, 1, 0));
+        world.set_voxel(coords[0], Voxel::Stone);
+        for &pos in &coords[1..4] {
+            world.set_voxel(pos, Voxel::Occupied);
+        }
+
+        assert!(crate::voxel::shaping::is_centered_layer(
+            &world,
+            IVec3::new(0, 1, 0)
+        ));
+        assert_eq!(world.get_voxel(IVec3::new(0, 1, 0)), Some(Voxel::Stone));
+        assert_eq!(world.get_voxel(IVec3::new(1, 1, 0)), Some(Voxel::Occupied));
+    }
+
+    #[test]
+    fn placing_on_floor_beneath_hanging_centered_column_creates_centered_layer() {
+        let mut world = VoxelWorld::default();
+        world.insert_chunk(IVec3::ZERO, Chunk::new());
+        let mut modifications = WorldModificationStore::default();
+
+        // Floor at y=0 (normal stone block)
+        world.set_voxel(IVec3::new(0, 0, 0), Voxel::Stone);
+        world.set_voxel(IVec3::new(1, 0, 0), Voxel::Stone);
+        world.set_voxel(IVec3::new(0, 0, 1), Voxel::Stone);
+        world.set_voxel(IVec3::new(1, 0, 1), Voxel::Stone);
+
+        // Hanging centered column at y=2
+        world.set_voxel(IVec3::new(0, 2, 0), Voxel::Sand);
+        world.set_voxel(IVec3::new(1, 2, 0), Voxel::Occupied);
+        world.set_voxel(IVec3::new(0, 2, 1), Voxel::Occupied);
+        world.set_voxel(IVec3::new(1, 2, 1), Voxel::Occupied);
+
+        // Space at y=1 is empty (broken bottom voxel)
+        let place_position = IVec3::new(0, 1, 0);
+        let is_centered_target =
+            crate::voxel::shaping::is_centered_layer(&world, place_position + IVec3::Y)
+                || crate::voxel::shaping::is_centered_layer(&world, place_position - IVec3::Y);
+
+        assert!(is_centered_target);
+
+        let coords = crate::voxel::shaping::centered_layer_coordinates(place_position);
+        assert!(
+            coords
+                .iter()
+                .all(|&pos| world.get_voxel(pos).is_some_and(|v| v.is_empty()))
+        );
+
+        world.set_voxel(coords[0], Voxel::Sand);
+        modifications.record(coords[0], Voxel::Sand);
+        for &pos in &coords[1..4] {
+            world.set_voxel(pos, Voxel::Occupied);
+            modifications.record(pos, Voxel::Occupied);
+        }
+
+        assert!(crate::voxel::shaping::is_centered_layer(
+            &world,
+            place_position
+        ));
+        assert_eq!(world.get_voxel(coords[0]), Some(Voxel::Sand));
+        assert_eq!(world.get_voxel(coords[1]), Some(Voxel::Occupied));
     }
 }

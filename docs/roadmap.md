@@ -64,18 +64,24 @@ This document outlines the planned development phases for the voxel game engine,
 
 ---
 
-## Phase 3: Gameplay, Inventory & Sub-Voxel Shaping Tools
+## Phase 3: Gameplay, Inventory & Sub-Voxel Shaping Tools (Completed)
 - [x] **8-Slot Hotbar GUI**:
   - Implemented in [src/player/hotbar.rs](VoxelGameEngine/src/player/hotbar.rs).
   - 8 selectable item slots rendered with dark translucent backing, active gold selection border, slot indices (1..8), and 2D pixel-art icons from `assets/textures/items/`.
   - Seamless input handling: select directly via number keys `1`–`8`, scroll forward/backward via the mouse wheel, and clear active slot with `Q`.
   - Automatically synchronizes with `SelectedVoxel` and middle-click block picking.
 - [x] **Sub-Voxel Block Shaping Tool (`R` Key)**:
-  - Implemented in [src/voxel/shaping.rs](VoxelGameEngine/src/voxel/shaping.rs).
-  - Targets 1m³ blocks in Block interaction mode and cycles their 2×2×2 sub-voxel layout on each `R` press: Full Block (8 voxels) -> Stair (6 voxels) -> Bottom Slab (4 voxels) -> Top Slab (4 voxels) -> Vertical Slab (4 voxels) -> Column (2 voxels).
+  - Implemented in [src/voxel/shaping.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/voxel/shaping.rs).
+  - Targets 1m³ blocks in Block interaction mode and cycles their 2×2×2 sub-voxel layout on each `R` press: Full Block (8 voxels) -> Stair (6 voxels) -> Upside-Down Stair (6 voxels) -> Corner Stair (5 voxels) -> Bottom Slab (4 voxels) -> Top Slab (4 voxels) -> Vertical Slab (4 voxels) -> Column (2 voxels) -> Centered Column (2 stacked centered voxels).
   - Preserves the targeted block's material and updates lighting, chunk meshes, and persistence immediately.
+  - Centered columns are composed of 2 independent stacked centered voxels (0.5m × 0.5m centered footprint with 0.25m margin on all 4 sides), allowing either voxel to be broken or built on top independently.
+  - Bidirectional Voxel-mode centered placement: placing on the floor directly beneath a hanging centered column or stacking vertically automatically aligns and connects centered voxels without falling back to corner grid placement.
+- [x] **Connected Block Placement on Slabs & Sub-Voxels**:
+  - Implemented in [src/voxel/targeting.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/voxel/targeting.rs) and [src/voxel/interaction.rs](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/src/voxel/interaction.rs).
+  - Blocks placed against slabs, stairs, upside-down stairs, or non-full shapes align directly to the hit surface rather than the rigid 2x2x2 block grid, seamlessly completing bottom slabs into full blocks and stacking slabs/blocks above with zero floating air gaps.
+  - Full support for composite emergent structures (e.g. half-column / half-slab blocks), with block-mode outline highlights accurately rendering both the centered column sub-voxel and standard sub-voxel layers simultaneously.
 - [x] **Block Rotation Tool (`T` Key)**:
-  - Rotates the targeted block's sub-voxels 90° clockwise around the vertical Y-axis, allowing stairs, slabs, and columns to face in any cardinal direction.
+  - Rotates the targeted block's sub-voxels 90° clockwise around the vertical Y-axis, allowing stairs, upside-down stairs, corner stairs, slabs, and columns to face in any cardinal direction.
 
 ---
 

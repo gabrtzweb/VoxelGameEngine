@@ -17,10 +17,13 @@ use super::{
 pub enum BlockShape {
     Full,
     Stair,
+    StairUpsideDown,
+    CornerStair,
     SlabBottom,
     SlabTop,
     VerticalSlab,
     Column,
+    CenteredColumn,
 }
 
 pub struct ShapingPlugin;
@@ -65,7 +68,10 @@ fn handle_block_shaping(
     let voxels = get_block_voxels(&world, origin);
 
     // Find the primary non-empty voxel to preserve block material
-    let Some(&block_material) = voxels.iter().find(|v| !v.is_empty()) else {
+    let Some(&block_material) = voxels
+        .iter()
+        .find(|v| !v.is_empty() && **v != Voxel::Occupied)
+    else {
         return;
     };
 
@@ -204,15 +210,83 @@ pub fn get_block_voxels(world: &VoxelWorld, block_origin: IVec3) -> [Voxel; 8] {
     result
 }
 
+pub fn centered_layer_coordinates(world_voxel: IVec3) -> [IVec3; 4] {
+    let bx = world_voxel.x.div_euclid(2) * 2;
+    let bz = world_voxel.z.div_euclid(2) * 2;
+    let y = world_voxel.y;
+    [
+        IVec3::new(bx, y, bz),
+        IVec3::new(bx + 1, y, bz),
+        IVec3::new(bx, y, bz + 1),
+        IVec3::new(bx + 1, y, bz + 1),
+    ]
+}
+
+pub fn is_centered_layer(world: &VoxelWorld, world_voxel: IVec3) -> bool {
+    let coords = centered_layer_coordinates(world_voxel);
+    coords
+        .iter()
+        .any(|&pos| world.get_voxel(pos) == Some(Voxel::Occupied))
+}
+
+pub fn get_centered_layer_material(world: &VoxelWorld, world_voxel: IVec3) -> Option<Voxel> {
+    let coords = centered_layer_coordinates(world_voxel);
+    for pos in coords {
+        if let Some(voxel) = world.get_voxel(pos)
+            && !voxel.is_empty()
+            && voxel != Voxel::Occupied
+        {
+            return Some(voxel);
+        }
+    }
+    None
+}
+
+pub fn is_layer_centered(layer_voxels: &[Voxel]) -> bool {
+    layer_voxels.contains(&Voxel::Occupied)
+}
+
+pub fn is_centered_column(voxels: &[Voxel; 8]) -> bool {
+    is_layer_centered(&voxels[0..4]) || is_layer_centered(&voxels[4..8])
+}
+
 pub fn detect_current_shape(voxels: &[Voxel; 8]) -> BlockShape {
-    let solid_count = voxels.iter().filter(|v| !v.is_empty()).count();
+    if is_centered_column(voxels) {
+        return BlockShape::CenteredColumn;
+    }
+
+    let solid_count = voxels
+        .iter()
+        .filter(|v| !v.is_empty() && **v != Voxel::Occupied)
+        .count();
 
     match solid_count {
         8 => BlockShape::Full,
-        6 => BlockShape::Stair,
+        6 => {
+            let bottom_count = voxels[0..4]
+                .iter()
+                .filter(|v| !v.is_empty() && **v != Voxel::Occupied)
+                .count();
+            let top_count = voxels[4..8]
+                .iter()
+                .filter(|v| !v.is_empty() && **v != Voxel::Occupied)
+                .count();
+            if top_count == 4 && bottom_count == 2 {
+                BlockShape::StairUpsideDown
+            } else {
+                BlockShape::Stair
+            }
+        }
+        5 => BlockShape::CornerStair,
         4 => {
-            let bottom_count = voxels[0..4].iter().filter(|v| !v.is_empty()).count();
-            let top_count = voxels[4..8].iter().filter(|v| !v.is_empty()).count();
+            let bottom_count = voxels[0..4]
+                .iter()
+                .filter(|v| !v.is_empty() && **v != Voxel::Occupied)
+                .count();
+            let top_count = voxels[4..8]
+                .iter()
+                .filter(|v| !v.is_empty() && **v != Voxel::Occupied)
+                .count();
             if bottom_count == 4 {
                 BlockShape::SlabBottom
             } else if top_count == 4 {
@@ -230,11 +304,14 @@ impl BlockShape {
     pub fn next(self) -> Self {
         match self {
             Self::Full => Self::Stair,
-            Self::Stair => Self::SlabBottom,
+            Self::Stair => Self::StairUpsideDown,
+            Self::StairUpsideDown => Self::CornerStair,
+            Self::CornerStair => Self::SlabBottom,
             Self::SlabBottom => Self::SlabTop,
             Self::SlabTop => Self::VerticalSlab,
             Self::VerticalSlab => Self::Column,
-            Self::Column => Self::Full,
+            Self::Column => Self::CenteredColumn,
+            Self::CenteredColumn => Self::Full,
         }
     }
 }
@@ -255,6 +332,25 @@ pub fn generate_shape_voxels(shape: BlockShape, material: Voxel) -> [Voxel; 8] {
             result[3] = fill;
             // Top back 2 voxels solid (y=1, z=1)
             result[6] = fill;
+            result[7] = fill;
+        }
+        BlockShape::StairUpsideDown => {
+            // Top 4 voxels solid (y=1)
+            result[4] = fill;
+            result[5] = fill;
+            result[6] = fill;
+            result[7] = fill;
+            // Bottom back 2 voxels solid (y=0, z=1)
+            result[2] = fill;
+            result[3] = fill;
+        }
+        BlockShape::CornerStair => {
+            // Bottom 4 voxels solid (y=0)
+            result[0] = fill;
+            result[1] = fill;
+            result[2] = fill;
+            result[3] = fill;
+            // Top back-right 1 voxel solid (y=1, z=1, x=1)
             result[7] = fill;
         }
         BlockShape::SlabBottom => {
@@ -282,6 +378,19 @@ pub fn generate_shape_voxels(shape: BlockShape, material: Voxel) -> [Voxel; 8] {
             // 2 voxels tall vertically at x=0, z=0
             result[0] = fill;
             result[4] = fill;
+        }
+        BlockShape::CenteredColumn => {
+            // Bottom centered voxel: layer y=0
+            result[0] = fill;
+            result[1] = Voxel::Occupied;
+            result[2] = Voxel::Occupied;
+            result[3] = Voxel::Occupied;
+
+            // Top centered voxel: layer y=1
+            result[4] = fill;
+            result[5] = Voxel::Occupied;
+            result[6] = Voxel::Occupied;
+            result[7] = Voxel::Occupied;
         }
     }
 
@@ -321,6 +430,14 @@ mod tests {
             6
         );
         assert_eq!(
+            count_solid(generate_shape_voxels(BlockShape::StairUpsideDown, mat)),
+            6
+        );
+        assert_eq!(
+            count_solid(generate_shape_voxels(BlockShape::CornerStair, mat)),
+            5
+        );
+        assert_eq!(
             count_solid(generate_shape_voxels(BlockShape::SlabBottom, mat)),
             4
         );
@@ -336,6 +453,10 @@ mod tests {
             count_solid(generate_shape_voxels(BlockShape::Column, mat)),
             2
         );
+        assert_eq!(
+            count_solid(generate_shape_voxels(BlockShape::CenteredColumn, mat)),
+            8
+        );
     }
 
     #[test]
@@ -343,10 +464,13 @@ mod tests {
         let mut shape = BlockShape::Full;
         let expected = [
             BlockShape::Stair,
+            BlockShape::StairUpsideDown,
+            BlockShape::CornerStair,
             BlockShape::SlabBottom,
             BlockShape::SlabTop,
             BlockShape::VerticalSlab,
             BlockShape::Column,
+            BlockShape::CenteredColumn,
             BlockShape::Full,
         ];
 
@@ -366,5 +490,42 @@ mod tests {
 
         assert_eq!(stair, r4);
         assert_ne!(stair, r1);
+
+        let corner = generate_shape_voxels(BlockShape::CornerStair, Voxel::Stone);
+        let cr1 = rotate_block_90_y(&corner);
+        let cr2 = rotate_block_90_y(&cr1);
+        let cr3 = rotate_block_90_y(&cr2);
+        let cr4 = rotate_block_90_y(&cr3);
+
+        assert_eq!(corner, cr4);
+        assert_ne!(corner, cr1);
+
+        let upside_down = generate_shape_voxels(BlockShape::StairUpsideDown, Voxel::Stone);
+        let ur1 = rotate_block_90_y(&upside_down);
+        let ur2 = rotate_block_90_y(&ur1);
+        let ur3 = rotate_block_90_y(&ur2);
+        let ur4 = rotate_block_90_y(&ur3);
+
+        assert_eq!(upside_down, ur4);
+        assert_ne!(upside_down, ur1);
+    }
+
+    #[test]
+    fn centered_column_detected_and_cycled() {
+        let col = generate_shape_voxels(BlockShape::CenteredColumn, Voxel::Stone);
+        assert_eq!(detect_current_shape(&col), BlockShape::CenteredColumn);
+        assert_eq!(detect_current_shape(&col).next(), BlockShape::Full);
+    }
+
+    #[test]
+    fn new_stairs_shapes_detected_correctly() {
+        let upside_down = generate_shape_voxels(BlockShape::StairUpsideDown, Voxel::Stone);
+        assert_eq!(
+            detect_current_shape(&upside_down),
+            BlockShape::StairUpsideDown
+        );
+
+        let corner = generate_shape_voxels(BlockShape::CornerStair, Voxel::Stone);
+        assert_eq!(detect_current_shape(&corner), BlockShape::CornerStair);
     }
 }

@@ -97,12 +97,47 @@ fn draw_current_target_highlight(
 
     match *interaction_mode {
         InteractionMode::Block => {
-            draw_block_shape_outline(
-                &world,
-                &mut gizmos,
-                target.block_origin,
-                Color::srgba(1.0, 1.0, 1.0, 0.95),
-            );
+            let voxels = crate::voxel::shaping::get_block_voxels(&world, target.block_origin);
+            let layer0_centered = crate::voxel::shaping::is_layer_centered(&voxels[0..4]);
+            let layer1_centered = crate::voxel::shaping::is_layer_centered(&voxels[4..8]);
+
+            if layer0_centered && layer1_centered {
+                let center =
+                    (target.block_origin.as_vec3() + Vec3::new(1.0, 1.0, 1.0)) * VOXEL_SIZE;
+                gizmos.cube(
+                    Transform::from_translation(center).with_scale(Vec3::new(
+                        VOXEL_SIZE,
+                        2.0 * VOXEL_SIZE,
+                        VOXEL_SIZE,
+                    )),
+                    Color::srgba(1.0, 1.0, 1.0, 0.95),
+                );
+            } else {
+                if layer0_centered {
+                    let center =
+                        (target.block_origin.as_vec3() + Vec3::new(1.0, 0.5, 1.0)) * VOXEL_SIZE;
+                    gizmos.cube(
+                        Transform::from_translation(center).with_scale(Vec3::splat(VOXEL_SIZE)),
+                        Color::srgba(1.0, 1.0, 1.0, 0.95),
+                    );
+                }
+                if layer1_centered {
+                    let center =
+                        (target.block_origin.as_vec3() + Vec3::new(1.0, 1.5, 1.0)) * VOXEL_SIZE;
+                    gizmos.cube(
+                        Transform::from_translation(center).with_scale(Vec3::splat(VOXEL_SIZE)),
+                        Color::srgba(1.0, 1.0, 1.0, 0.95),
+                    );
+                }
+                draw_block_shape_outline(
+                    &world,
+                    &mut gizmos,
+                    target.block_origin,
+                    layer0_centered,
+                    layer1_centered,
+                    Color::srgba(1.0, 1.0, 1.0, 0.95),
+                );
+            }
         }
 
         InteractionMode::Voxel => {
@@ -114,11 +149,25 @@ fn draw_current_target_highlight(
                 return;
             }
 
-            draw_voxel_outline(
-                &mut gizmos,
-                target.hit_voxel,
-                Color::srgba(1.0, 1.0, 1.0, 0.95),
-            );
+            if crate::voxel::shaping::is_centered_layer(&world, target.hit_voxel) {
+                let bx = target.hit_voxel.x.div_euclid(2) * 2;
+                let bz = target.hit_voxel.z.div_euclid(2) * 2;
+                let center = Vec3::new(
+                    bx as f32 + 1.0,
+                    target.hit_voxel.y as f32 + 0.5,
+                    bz as f32 + 1.0,
+                ) * VOXEL_SIZE;
+                gizmos.cube(
+                    Transform::from_translation(center).with_scale(Vec3::splat(VOXEL_SIZE)),
+                    Color::srgba(1.0, 1.0, 1.0, 0.95),
+                );
+            } else {
+                draw_voxel_outline(
+                    &mut gizmos,
+                    target.hit_voxel,
+                    Color::srgba(1.0, 1.0, 1.0, 0.95),
+                );
+            }
         }
     }
 }
@@ -136,22 +185,76 @@ fn draw_block_shape_outline(
     world: &VoxelWorld,
     gizmos: &mut Gizmos,
     block_origin: IVec3,
+    layer0_centered: bool,
+    layer1_centered: bool,
     color: Color,
 ) {
-    draw_x_edges(world, gizmos, block_origin, color);
-    draw_y_edges(world, gizmos, block_origin, color);
-    draw_z_edges(world, gizmos, block_origin, color);
+    draw_x_edges(
+        world,
+        gizmos,
+        block_origin,
+        layer0_centered,
+        layer1_centered,
+        color,
+    );
+    draw_y_edges(
+        world,
+        gizmos,
+        block_origin,
+        layer0_centered,
+        layer1_centered,
+        color,
+    );
+    draw_z_edges(
+        world,
+        gizmos,
+        block_origin,
+        layer0_centered,
+        layer1_centered,
+        color,
+    );
 }
 
-fn draw_x_edges(world: &VoxelWorld, gizmos: &mut Gizmos, block_origin: IVec3, color: Color) {
+fn draw_x_edges(
+    world: &VoxelWorld,
+    gizmos: &mut Gizmos,
+    block_origin: IVec3,
+    layer0_centered: bool,
+    layer1_centered: bool,
+    color: Color,
+) {
     for x in 0..VOXELS_PER_BLOCK {
         for y in 0..=VOXELS_PER_BLOCK {
             for z in 0..=VOXELS_PER_BLOCK {
                 let quadrants = [
-                    is_solid_local(world, block_origin, IVec3::new(x, y - 1, z - 1)),
-                    is_solid_local(world, block_origin, IVec3::new(x, y, z - 1)),
-                    is_solid_local(world, block_origin, IVec3::new(x, y - 1, z)),
-                    is_solid_local(world, block_origin, IVec3::new(x, y, z)),
+                    is_solid_local(
+                        world,
+                        block_origin,
+                        IVec3::new(x, y - 1, z - 1),
+                        layer0_centered,
+                        layer1_centered,
+                    ),
+                    is_solid_local(
+                        world,
+                        block_origin,
+                        IVec3::new(x, y, z - 1),
+                        layer0_centered,
+                        layer1_centered,
+                    ),
+                    is_solid_local(
+                        world,
+                        block_origin,
+                        IVec3::new(x, y - 1, z),
+                        layer0_centered,
+                        layer1_centered,
+                    ),
+                    is_solid_local(
+                        world,
+                        block_origin,
+                        IVec3::new(x, y, z),
+                        layer0_centered,
+                        layer1_centered,
+                    ),
                 ];
 
                 if should_draw_edge(quadrants) {
@@ -165,15 +268,46 @@ fn draw_x_edges(world: &VoxelWorld, gizmos: &mut Gizmos, block_origin: IVec3, co
     }
 }
 
-fn draw_y_edges(world: &VoxelWorld, gizmos: &mut Gizmos, block_origin: IVec3, color: Color) {
+fn draw_y_edges(
+    world: &VoxelWorld,
+    gizmos: &mut Gizmos,
+    block_origin: IVec3,
+    layer0_centered: bool,
+    layer1_centered: bool,
+    color: Color,
+) {
     for y in 0..VOXELS_PER_BLOCK {
         for x in 0..=VOXELS_PER_BLOCK {
             for z in 0..=VOXELS_PER_BLOCK {
                 let quadrants = [
-                    is_solid_local(world, block_origin, IVec3::new(x - 1, y, z - 1)),
-                    is_solid_local(world, block_origin, IVec3::new(x, y, z - 1)),
-                    is_solid_local(world, block_origin, IVec3::new(x - 1, y, z)),
-                    is_solid_local(world, block_origin, IVec3::new(x, y, z)),
+                    is_solid_local(
+                        world,
+                        block_origin,
+                        IVec3::new(x - 1, y, z - 1),
+                        layer0_centered,
+                        layer1_centered,
+                    ),
+                    is_solid_local(
+                        world,
+                        block_origin,
+                        IVec3::new(x, y, z - 1),
+                        layer0_centered,
+                        layer1_centered,
+                    ),
+                    is_solid_local(
+                        world,
+                        block_origin,
+                        IVec3::new(x - 1, y, z),
+                        layer0_centered,
+                        layer1_centered,
+                    ),
+                    is_solid_local(
+                        world,
+                        block_origin,
+                        IVec3::new(x, y, z),
+                        layer0_centered,
+                        layer1_centered,
+                    ),
                 ];
 
                 if should_draw_edge(quadrants) {
@@ -187,15 +321,46 @@ fn draw_y_edges(world: &VoxelWorld, gizmos: &mut Gizmos, block_origin: IVec3, co
     }
 }
 
-fn draw_z_edges(world: &VoxelWorld, gizmos: &mut Gizmos, block_origin: IVec3, color: Color) {
+fn draw_z_edges(
+    world: &VoxelWorld,
+    gizmos: &mut Gizmos,
+    block_origin: IVec3,
+    layer0_centered: bool,
+    layer1_centered: bool,
+    color: Color,
+) {
     for z in 0..VOXELS_PER_BLOCK {
         for x in 0..=VOXELS_PER_BLOCK {
             for y in 0..=VOXELS_PER_BLOCK {
                 let quadrants = [
-                    is_solid_local(world, block_origin, IVec3::new(x - 1, y - 1, z)),
-                    is_solid_local(world, block_origin, IVec3::new(x, y - 1, z)),
-                    is_solid_local(world, block_origin, IVec3::new(x - 1, y, z)),
-                    is_solid_local(world, block_origin, IVec3::new(x, y, z)),
+                    is_solid_local(
+                        world,
+                        block_origin,
+                        IVec3::new(x - 1, y - 1, z),
+                        layer0_centered,
+                        layer1_centered,
+                    ),
+                    is_solid_local(
+                        world,
+                        block_origin,
+                        IVec3::new(x, y - 1, z),
+                        layer0_centered,
+                        layer1_centered,
+                    ),
+                    is_solid_local(
+                        world,
+                        block_origin,
+                        IVec3::new(x - 1, y, z),
+                        layer0_centered,
+                        layer1_centered,
+                    ),
+                    is_solid_local(
+                        world,
+                        block_origin,
+                        IVec3::new(x, y, z),
+                        layer0_centered,
+                        layer1_centered,
+                    ),
                 ];
 
                 if should_draw_edge(quadrants) {
@@ -218,7 +383,13 @@ fn should_draw_edge(quadrants: [bool; 4]) -> bool {
     }
 }
 
-fn is_solid_local(world: &VoxelWorld, block_origin: IVec3, local_position: IVec3) -> bool {
+fn is_solid_local(
+    world: &VoxelWorld,
+    block_origin: IVec3,
+    local_position: IVec3,
+    layer0_centered: bool,
+    layer1_centered: bool,
+) -> bool {
     if local_position.x < 0
         || local_position.x >= VOXELS_PER_BLOCK
         || local_position.y < 0
@@ -229,9 +400,13 @@ fn is_solid_local(world: &VoxelWorld, block_origin: IVec3, local_position: IVec3
         return false;
     }
 
+    if (local_position.y == 0 && layer0_centered) || (local_position.y == 1 && layer1_centered) {
+        return false;
+    }
+
     world
         .get_voxel(block_origin + local_position)
-        .is_some_and(|voxel| !voxel.is_empty())
+        .is_some_and(|voxel| !voxel.is_empty() && voxel != Voxel::Occupied)
 }
 
 fn voxel_grid_point(block_origin: IVec3, x: i32, y: i32, z: i32) -> Vec3 {
@@ -246,8 +421,22 @@ pub fn block_origin_from_voxel(voxel: IVec3) -> IVec3 {
     )
 }
 
-pub fn adjacent_block_origin(block_origin: IVec3, face_normal: IVec3) -> IVec3 {
-    block_origin + face_normal * VOXELS_PER_BLOCK
+pub fn adjacent_block_origin(block_origin: IVec3, hit_voxel: IVec3, face_normal: IVec3) -> IVec3 {
+    let mut origin = block_origin;
+    if face_normal.x > 0 {
+        origin.x = hit_voxel.x + 1;
+    } else if face_normal.x < 0 {
+        origin.x = hit_voxel.x - VOXELS_PER_BLOCK;
+    } else if face_normal.y > 0 {
+        origin.y = hit_voxel.y + 1;
+    } else if face_normal.y < 0 {
+        origin.y = hit_voxel.y - VOXELS_PER_BLOCK;
+    } else if face_normal.z > 0 {
+        origin.z = hit_voxel.z + 1;
+    } else if face_normal.z < 0 {
+        origin.z = hit_voxel.z - VOXELS_PER_BLOCK;
+    }
+    origin
 }
 
 fn raycast_world(
@@ -364,10 +553,74 @@ mod tests {
     fn adjacent_block_origin_moves_one_logical_block_along_the_hit_face() {
         let origin = IVec3::new(-2, 4, 6);
 
-        assert_eq!(adjacent_block_origin(origin, IVec3::X), IVec3::new(0, 4, 6));
+        // Full block hit on +X face at x = -1
         assert_eq!(
-            adjacent_block_origin(origin, -IVec3::Z),
+            adjacent_block_origin(origin, IVec3::new(-1, 4, 6), IVec3::X),
+            IVec3::new(0, 4, 6)
+        );
+        // Full block hit on -Z face at z = 6
+        assert_eq!(
+            adjacent_block_origin(origin, IVec3::new(-2, 4, 6), -IVec3::Z),
             IVec3::new(-2, 4, 4)
         );
+        // Bottom slab hit on top (+Y) face at y = 4 (origin is y = 4) -> connects directly at y = 5
+        assert_eq!(
+            adjacent_block_origin(origin, IVec3::new(-2, 4, 6), IVec3::Y),
+            IVec3::new(-2, 5, 6)
+        );
+    }
+
+    #[test]
+    fn is_solid_local_ignores_centered_layer_for_standard_outline() {
+        use super::{Voxel, is_solid_local};
+        use crate::voxel::{chunk::Chunk, world::VoxelWorld};
+
+        let mut world = VoxelWorld::default();
+        world.insert_chunk(IVec3::ZERO, Chunk::new());
+        let origin = IVec3::new(0, 0, 0);
+
+        // Layer 0 is centered
+        world.set_voxel(origin + IVec3::new(0, 0, 0), Voxel::Sand);
+        world.set_voxel(origin + IVec3::new(1, 0, 0), Voxel::Occupied);
+        world.set_voxel(origin + IVec3::new(0, 0, 1), Voxel::Occupied);
+        world.set_voxel(origin + IVec3::new(1, 0, 1), Voxel::Occupied);
+
+        // Layer 1 is a slab (4 sand voxels)
+        world.set_voxel(origin + IVec3::new(0, 1, 0), Voxel::Sand);
+        world.set_voxel(origin + IVec3::new(1, 1, 0), Voxel::Sand);
+        world.set_voxel(origin + IVec3::new(0, 1, 1), Voxel::Sand);
+        world.set_voxel(origin + IVec3::new(1, 1, 1), Voxel::Sand);
+
+        // Layer 0 is treated as non-solid for standard grid outline since layer0_centered = true
+        assert!(!is_solid_local(
+            &world,
+            origin,
+            IVec3::new(0, 0, 0),
+            true,
+            false
+        ));
+        assert!(!is_solid_local(
+            &world,
+            origin,
+            IVec3::new(1, 0, 0),
+            true,
+            false
+        ));
+
+        // Layer 1 is recognized as solid for standard grid outline
+        assert!(is_solid_local(
+            &world,
+            origin,
+            IVec3::new(0, 1, 0),
+            true,
+            false
+        ));
+        assert!(is_solid_local(
+            &world,
+            origin,
+            IVec3::new(1, 1, 1),
+            true,
+            false
+        ));
     }
 }

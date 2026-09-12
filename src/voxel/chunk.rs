@@ -16,6 +16,7 @@ pub enum Voxel {
     Sand = 4,
     Water = 5,
     Light = 6,
+    Occupied = 7,
 }
 
 impl Voxel {
@@ -30,7 +31,7 @@ impl Voxel {
 
     pub fn texture_name(self) -> Option<&'static str> {
         match self {
-            Self::Air => None,
+            Self::Air | Self::Occupied => None,
             Self::Grass => Some("terr_grass"),
             Self::Dirt => Some("terr_dirt"),
             Self::Stone => Some("rock_stone"),
@@ -54,7 +55,7 @@ impl Voxel {
 
     pub fn fallback_color(self) -> [u8; 4] {
         match self {
-            Self::Air => [0, 0, 0, 0],
+            Self::Air | Self::Occupied => [0, 0, 0, 0],
             Self::Grass => [255, 255, 255, 255],
             Self::Dirt => [107, 66, 33, 255],
             Self::Stone => [122, 128, 133, 255],
@@ -71,7 +72,9 @@ impl Voxel {
         match self {
             Self::Air | Self::Water => false,
 
-            Self::Grass | Self::Dirt | Self::Stone | Self::Sand | Self::Light => true,
+            Self::Grass | Self::Dirt | Self::Stone | Self::Sand | Self::Light | Self::Occupied => {
+                true
+            }
         }
     }
 
@@ -82,7 +85,7 @@ impl Voxel {
     #[allow(dead_code)]
     pub fn display_color(self) -> [f32; 4] {
         match self {
-            Self::Air => [0.0, 0.0, 0.0, 0.0],
+            Self::Air | Self::Occupied => [0.0, 0.0, 0.0, 0.0],
 
             Self::Grass => [0.58, 0.90, 0.44, 1.0],
 
@@ -107,6 +110,7 @@ impl Voxel {
             Self::Sand => "Sand",
             Self::Water => "Water",
             Self::Light => "Light",
+            Self::Occupied => "Occupied",
         }
     }
 }
