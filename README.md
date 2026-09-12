@@ -35,7 +35,7 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     1 - 8             Hotbar slot selection
     Mouse Wheel       Scroll hotbar slots
     Q                 Clear active hotbar slot
-    R                 Cycle block shape (Full, Stair, Slabs, Column)
+    R                 Cycle block shape (Full, Stairs, Corner Stairs, Slabs, Columns, Centered Columns)
     T                 Rotate block shape 90° clockwise
 
     F1                Toggle Inspector
@@ -66,6 +66,7 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     │   ├── chunk_manager.rs
     │   ├── chunk.rs
     │   ├── debug.rs
+    │   ├── fluid.rs
     │   ├── interaction_mode.rs
     │   ├── interaction.rs
     │   ├── light.rs

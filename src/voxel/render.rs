@@ -138,7 +138,7 @@ pub fn setup_chunk_material(
 
             cull_mode: None,
 
-            double_sided: true,
+            double_sided: false,
 
             perceptual_roughness: 0.2,
 

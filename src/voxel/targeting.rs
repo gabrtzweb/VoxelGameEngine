@@ -68,21 +68,29 @@ fn update_current_target(
         return;
     }
 
-    current_target.hit =
-        raycast_world(&world, ray_origin, ray_direction, MAX_TARGET_DISTANCE).map(|hit| {
-            let place_voxel = if hit.face_normal == IVec3::ZERO {
-                None
-            } else {
-                Some(hit.voxel + hit.face_normal)
-            };
+    let is_submerged = world.get_voxel(camera_voxel).is_some_and(Voxel::is_water);
 
-            VoxelTarget {
-                hit_voxel: hit.voxel,
-                place_voxel,
-                face_normal: hit.face_normal,
-                block_origin: block_origin_from_voxel(hit.voxel),
-            }
-        });
+    current_target.hit = raycast_world(
+        &world,
+        ray_origin,
+        ray_direction,
+        MAX_TARGET_DISTANCE,
+        is_submerged,
+    )
+    .map(|hit| {
+        let place_voxel = if hit.face_normal == IVec3::ZERO {
+            None
+        } else {
+            Some(hit.voxel + hit.face_normal)
+        };
+
+        VoxelTarget {
+            hit_voxel: hit.voxel,
+            place_voxel,
+            face_normal: hit.face_normal,
+            block_origin: block_origin_from_voxel(hit.voxel),
+        }
+    });
 }
 
 fn draw_current_target_highlight(
@@ -406,7 +414,7 @@ fn is_solid_local(
 
     world
         .get_voxel(block_origin + local_position)
-        .is_some_and(|voxel| !voxel.is_empty() && voxel != Voxel::Occupied)
+        .is_some_and(|voxel| !voxel.is_empty() && !voxel.is_water() && voxel != Voxel::Occupied)
 }
 
 fn voxel_grid_point(block_origin: IVec3, x: i32, y: i32, z: i32) -> Vec3 {
@@ -444,6 +452,7 @@ fn raycast_world(
     origin: Vec3,
     direction: Vec3,
     max_distance: f32,
+    ignore_water: bool,
 ) -> Option<RaycastHit> {
     let direction = direction.normalize();
     let grid_origin = origin / VOXEL_SIZE;
@@ -480,6 +489,7 @@ fn raycast_world(
     while traveled_distance <= max_grid_distance {
         if let Some(current_voxel) = world.get_voxel(voxel)
             && current_voxel != Voxel::Air
+            && (!ignore_water || !current_voxel.is_water())
         {
             return Some(RaycastHit { voxel, face_normal });
         }

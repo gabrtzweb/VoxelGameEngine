@@ -33,7 +33,9 @@ fn fragment(
     pbr_input.material.base_color = tex_color * pbr_input.material.base_color * vertex_output.color;
 
     if (frame_count > 1.5) {
-        pbr_input.material.emissive = vec4<f32>(tex_color.rgb * vertex_output.color.rgb * 0.25, 1.0);
+        pbr_input.material.base_color.a = max(pbr_input.material.base_color.a, 0.72);
+        let water_tint = tex_color.rgb * vertex_output.color.rgb;
+        pbr_input.material.emissive = vec4<f32>(water_tint * 0.55, 1.0);
     }
 
     var out: FragmentOutput;

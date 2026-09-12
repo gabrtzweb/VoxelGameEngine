@@ -72,6 +72,8 @@ struct FaceKey {
     texture_layer: u16,
     frame_count: u16,
     tint_color: [f32; 4],
+    surface_offset_cm: u8,
+    step_bottom_offset_cm: u8,
 }
 
 impl FaceKey {
@@ -80,6 +82,8 @@ impl FaceKey {
             && self.texture_layer == other.texture_layer
             && self.frame_count == other.frame_count
             && self.tint_color == other.tint_color
+            && self.surface_offset_cm == other.surface_offset_cm
+            && self.step_bottom_offset_cm == other.step_bottom_offset_cm
     }
 }
 
@@ -138,7 +142,8 @@ impl MeshBuffers {
         let layer = key.texture_layer as f32;
         let frame_count = key.frame_count as f32;
 
-        const WATER_SURFACE_OFFSET: f32 = 0.10;
+        let surface_offset = key.surface_offset_cm as f32 / 100.0;
+        let step_bottom_offset = key.step_bottom_offset_cm as f32 / 100.0;
 
         for (i, vertex) in vertices.iter().enumerate() {
             let mut pos = [
@@ -147,17 +152,19 @@ impl MeshBuffers {
                 vertex[2] * VOXEL_SIZE,
             ];
 
-            if key.voxel == Voxel::Water {
+            if key.voxel.is_water() {
                 match direction {
                     FaceDirection::PositiveY => {
-                        pos[1] -= WATER_SURFACE_OFFSET;
+                        pos[1] -= surface_offset;
                     }
                     FaceDirection::PositiveX
                     | FaceDirection::NegativeX
                     | FaceDirection::PositiveZ
                     | FaceDirection::NegativeZ => {
                         if i == 1 || i == 2 {
-                            pos[1] -= WATER_SURFACE_OFFSET;
+                            pos[1] -= surface_offset;
+                        } else if key.step_bottom_offset_cm > 0 {
+                            pos[1] += VOXEL_SIZE - step_bottom_offset;
                         }
                     }
                     FaceDirection::NegativeY => {}
@@ -185,13 +192,13 @@ impl MeshBuffers {
             base_index + 3,
         ]);
 
-        if key.voxel == Voxel::Water && direction == FaceDirection::PositiveY {
+        if key.voxel.is_water() && direction == FaceDirection::PositiveY {
             let under_base_index = self.positions.len() as u32;
 
             for vertex in &vertices {
                 let pos = [
                     vertex[0] * VOXEL_SIZE,
-                    vertex[1] * VOXEL_SIZE - WATER_SURFACE_OFFSET,
+                    vertex[1] * VOXEL_SIZE - surface_offset - 0.005,
                     vertex[2] * VOXEL_SIZE,
                 ];
                 self.positions.push(pos);
@@ -205,11 +212,11 @@ impl MeshBuffers {
 
             self.indices.extend_from_slice(&[
                 under_base_index,
-                under_base_index + 2,
                 under_base_index + 1,
-                under_base_index,
-                under_base_index + 3,
                 under_base_index + 2,
+                under_base_index,
+                under_base_index + 2,
+                under_base_index + 3,
             ]);
         }
     }
@@ -286,19 +293,58 @@ impl ChunkMesher {
                         let neighbor = world.get_voxel(neighbor_coordinate).unwrap_or(Voxel::Air);
 
                         let neighbor_is_centered = is_centered_layer(world, neighbor_coordinate);
-                        if !neighbor_is_centered && !should_render_face(voxel, neighbor) {
-                            continue;
+                        let mut step_bottom_offset_cm = 0u8;
+
+                        if !neighbor_is_centered {
+                            if voxel.is_water()
+                                && direction != FaceDirection::PositiveY
+                                && direction != FaceDirection::NegativeY
+                            {
+                                if neighbor.is_water() {
+                                    let v_offset =
+                                        (crate::voxel::fluid::water_surface_height_offset(
+                                            world,
+                                            world_voxel,
+                                        ) * 100.0)
+                                            .round() as u8;
+                                    let n_offset =
+                                        (crate::voxel::fluid::water_surface_height_offset(
+                                            world,
+                                            neighbor_coordinate,
+                                        ) * 100.0)
+                                            .round() as u8;
+                                    if v_offset < n_offset {
+                                        step_bottom_offset_cm = n_offset;
+                                    } else {
+                                        continue;
+                                    }
+                                } else if !neighbor.is_empty() && neighbor != Voxel::Occupied {
+                                    continue;
+                                }
+                            } else if !should_render_face(voxel, neighbor) {
+                                continue;
+                            }
                         }
 
                         let (texture_layer, frame_count) =
                             textures.get_texture_info(voxel, world_voxel);
                         let tint_color = voxel.tint_color_at(world_voxel);
 
+                        let surface_offset_cm = if voxel.is_water() {
+                            (crate::voxel::fluid::water_surface_height_offset(world, world_voxel)
+                                * 100.0)
+                                .round() as u8
+                        } else {
+                            0
+                        };
+
                         mask[mask_index(u, v)] = Some(FaceKey {
                             voxel,
                             texture_layer,
                             frame_count,
                             tint_color,
+                            surface_offset_cm,
+                            step_bottom_offset_cm,
                         });
                     }
                 }
@@ -319,6 +365,7 @@ impl ChunkMesher {
             chunk_coordinate,
             textures,
             &mut opaque_buffers,
+            &mut transparent_buffers,
         );
 
         ChunkMeshes {
@@ -337,7 +384,7 @@ fn should_render_face(voxel: Voxel, neighbor: Voxel) -> bool {
         // Water against solid terrain also does not
         // need a face because the solid face will be
         // visible through the transparent material.
-        return neighbor.is_empty();
+        return neighbor.is_empty() || neighbor == Voxel::Occupied;
     }
 
     // Opaque terrain next to Water or Occupied must keep its face
@@ -559,14 +606,14 @@ mod tests {
 
         if let VertexAttributeValues::Float32x3(pos_data) = positions {
             assert!(!pos_data.is_empty());
-            // Top face (+Y) has max Y at 0.40m rather than 0.50m
+            // Top face (+Y) has max Y at 0.45m rather than 0.50m (single voxel water source offset 0.05m)
             let max_y = pos_data
                 .iter()
                 .map(|p| p[1])
                 .fold(f32::NEG_INFINITY, f32::max);
             assert!(
-                (max_y - 0.40).abs() < 1e-4,
-                "Surface water max Y should be 0.40, got {}",
+                (max_y - 0.45).abs() < 1e-4,
+                "Surface water max Y should be 0.45, got {}",
                 max_y
             );
         } else {
@@ -676,6 +723,70 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn waterlogged_centered_voxel_renders_both_opaque_and_transparent_meshes() {
+        let mut world = VoxelWorld::default();
+        let mut chunk = Chunk::default();
+        // Waterlogged centered column at y=0
+        chunk.set(0, 0, 0, Voxel::Stone);
+        chunk.set(1, 0, 0, Voxel::WaterOccupied);
+        chunk.set(0, 0, 1, Voxel::WaterOccupied);
+        chunk.set(1, 0, 1, Voxel::WaterOccupied);
+
+        world.insert_chunk(IVec3::ZERO, chunk);
+
+        let (_, registry) = build_voxel_texture_array();
+        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
+        assert!(
+            meshes.opaque.is_some(),
+            "Opaque mesh should exist for column post"
+        );
+        assert!(
+            meshes.transparent.is_some(),
+            "Transparent mesh should exist for waterlogging"
+        );
+    }
+
+    #[test]
+    fn water_step_renders_vertical_face_between_different_heights() {
+        let mut world = VoxelWorld::default();
+        let mut chunk = Chunk::default();
+        chunk.set(1, 0, 1, Voxel::Water);
+        chunk.set(2, 0, 1, Voxel::WaterFlowing);
+        world.insert_chunk(IVec3::ZERO, chunk);
+
+        let (_, registry) = build_voxel_texture_array();
+        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
+        let transparent = meshes.transparent.expect("Transparent mesh should exist");
+
+        let normals = transparent
+            .attribute(Mesh::ATTRIBUTE_NORMAL)
+            .expect("Mesh should have normals");
+        let positions = transparent
+            .attribute(Mesh::ATTRIBUTE_POSITION)
+            .expect("Mesh should have positions");
+
+        if let (
+            VertexAttributeValues::Float32x3(norm_data),
+            VertexAttributeValues::Float32x3(pos_data),
+        ) = (normals, positions)
+        {
+            let mut found_step_quad = false;
+            for (norm, pos) in norm_data.iter().zip(pos_data.iter()) {
+                if norm[0] > 0.9 && pos[1] >= 0.39 && pos[1] <= 0.46 {
+                    found_step_quad = true;
+                    break;
+                }
+            }
+            assert!(
+                found_step_quad,
+                "Expected vertical step quad between water levels facing +X"
+            );
+        } else {
+            panic!("Expected Float32x3 attributes");
+        }
+    }
 }
 
 fn is_chunk_local_centered_layer(chunk: &Chunk, local_voxel: IVec3) -> bool {
@@ -683,10 +794,11 @@ fn is_chunk_local_centered_layer(chunk: &Chunk, local_voxel: IVec3) -> bool {
     let bz = (local_voxel.z as usize / 2) * 2;
     let y = local_voxel.y as usize;
 
-    chunk.get(bx, y, bz) == Voxel::Occupied
-        || chunk.get(bx + 1, y, bz) == Voxel::Occupied
-        || chunk.get(bx, y, bz + 1) == Voxel::Occupied
-        || chunk.get(bx + 1, y, bz + 1) == Voxel::Occupied
+    let is_occ = |v: Voxel| v == Voxel::Occupied || v == Voxel::WaterOccupied;
+    is_occ(chunk.get(bx, y, bz))
+        || is_occ(chunk.get(bx + 1, y, bz))
+        || is_occ(chunk.get(bx, y, bz + 1))
+        || is_occ(chunk.get(bx + 1, y, bz + 1))
 }
 
 fn get_chunk_local_centered_material(chunk: &Chunk, local_voxel: IVec3) -> Option<Voxel> {
@@ -696,7 +808,7 @@ fn get_chunk_local_centered_material(chunk: &Chunk, local_voxel: IVec3) -> Optio
 
     for (dx, dz) in [(0, 0), (1, 0), (0, 1), (1, 1)] {
         let v = chunk.get(bx + dx, y, bz + dz);
-        if !v.is_empty() && v != Voxel::Occupied {
+        if !v.is_empty() && v != Voxel::Occupied && v != Voxel::WaterOccupied {
             return Some(v);
         }
     }
@@ -709,6 +821,7 @@ fn mesh_centered_voxels(
     chunk_coordinate: IVec3,
     textures: &VoxelTextureRegistry,
     opaque_buffers: &mut MeshBuffers,
+    transparent_buffers: &mut MeshBuffers,
 ) {
     let chunk_voxel_origin = chunk_coordinate * CHUNK_SIZE as i32;
 
@@ -854,6 +967,181 @@ fn mesh_centered_voxels(
                         tint_color,
                     );
                 }
+
+                // Render water if layer is waterlogged
+                let is_waterlogged = chunk.get(bx, y, bz) == Voxel::WaterOccupied
+                    || chunk.get(bx + 1, y, bz) == Voxel::WaterOccupied
+                    || chunk.get(bx, y, bz + 1) == Voxel::WaterOccupied
+                    || chunk.get(bx + 1, y, bz + 1) == Voxel::WaterOccupied;
+
+                if is_waterlogged {
+                    let (w_layer, w_frame_count) =
+                        textures.get_texture_info(Voxel::WaterFlowing, world_voxel);
+                    let w_tint = Voxel::Water.tint_color_at(world_voxel);
+
+                    let b_min_x = bx as f32;
+                    let b_max_x = (bx + 2) as f32;
+                    let b_min_y = y as f32;
+                    let b_max_y = (y + 1) as f32;
+                    let b_min_z = bz as f32;
+                    let b_max_z = (bz + 2) as f32;
+
+                    let surface_offset =
+                        crate::voxel::fluid::water_surface_height_offset(world, world_voxel);
+                    let water_top_world = world_voxel + IVec3::Y;
+                    let top_has_water = world
+                        .get_voxel(water_top_world)
+                        .is_some_and(Voxel::is_water);
+
+                    let water_surface_y = if top_has_water {
+                        b_max_y * VOXEL_SIZE
+                    } else {
+                        b_max_y * VOXEL_SIZE - surface_offset
+                    };
+
+                    if !top_has_water {
+                        push_water_quad_both_sides(
+                            transparent_buffers,
+                            [
+                                [b_min_x * VOXEL_SIZE, water_surface_y, b_min_z * VOXEL_SIZE],
+                                [b_min_x * VOXEL_SIZE, water_surface_y, b_max_z * VOXEL_SIZE],
+                                [b_max_x * VOXEL_SIZE, water_surface_y, b_max_z * VOXEL_SIZE],
+                                [b_max_x * VOXEL_SIZE, water_surface_y, b_min_z * VOXEL_SIZE],
+                            ],
+                            w_layer,
+                            w_frame_count,
+                            w_tint,
+                        );
+                    }
+
+                    let bottom_coords = centered_layer_coordinates(world_voxel - IVec3::Y);
+                    let bottom_empty = bottom_coords
+                        .iter()
+                        .any(|&c| world.get_voxel(c).is_none_or(|v| v.is_empty()));
+                    if bottom_empty {
+                        push_centered_quad(
+                            transparent_buffers,
+                            [
+                                [b_min_x, b_min_y, b_max_z],
+                                [b_min_x, b_min_y, b_min_z],
+                                [b_max_x, b_min_y, b_min_z],
+                                [b_max_x, b_min_y, b_max_z],
+                            ],
+                            [0.0, -1.0, 0.0],
+                            w_layer,
+                            w_frame_count,
+                            w_tint,
+                        );
+                    }
+
+                    let px_neighbor = world
+                        .get_voxel(world_voxel + IVec3::new(2, 0, 0))
+                        .unwrap_or(Voxel::Air);
+                    if px_neighbor.is_empty() {
+                        push_water_side_quad(
+                            transparent_buffers,
+                            [
+                                [
+                                    b_max_x * VOXEL_SIZE,
+                                    b_min_y * VOXEL_SIZE,
+                                    b_min_z * VOXEL_SIZE,
+                                ],
+                                [b_max_x * VOXEL_SIZE, water_surface_y, b_min_z * VOXEL_SIZE],
+                                [b_max_x * VOXEL_SIZE, water_surface_y, b_max_z * VOXEL_SIZE],
+                                [
+                                    b_max_x * VOXEL_SIZE,
+                                    b_min_y * VOXEL_SIZE,
+                                    b_max_z * VOXEL_SIZE,
+                                ],
+                            ],
+                            [1.0, 0.0, 0.0],
+                            w_layer,
+                            w_frame_count,
+                            w_tint,
+                        );
+                    }
+
+                    let nx_neighbor = world
+                        .get_voxel(world_voxel - IVec3::new(1, 0, 0))
+                        .unwrap_or(Voxel::Air);
+                    if nx_neighbor.is_empty() {
+                        push_water_side_quad(
+                            transparent_buffers,
+                            [
+                                [
+                                    b_min_x * VOXEL_SIZE,
+                                    b_min_y * VOXEL_SIZE,
+                                    b_max_z * VOXEL_SIZE,
+                                ],
+                                [b_min_x * VOXEL_SIZE, water_surface_y, b_max_z * VOXEL_SIZE],
+                                [b_min_x * VOXEL_SIZE, water_surface_y, b_min_z * VOXEL_SIZE],
+                                [
+                                    b_min_x * VOXEL_SIZE,
+                                    b_min_y * VOXEL_SIZE,
+                                    b_min_z * VOXEL_SIZE,
+                                ],
+                            ],
+                            [-1.0, 0.0, 0.0],
+                            w_layer,
+                            w_frame_count,
+                            w_tint,
+                        );
+                    }
+
+                    let pz_neighbor = world
+                        .get_voxel(world_voxel + IVec3::new(0, 0, 2))
+                        .unwrap_or(Voxel::Air);
+                    if pz_neighbor.is_empty() {
+                        push_water_side_quad(
+                            transparent_buffers,
+                            [
+                                [
+                                    b_max_x * VOXEL_SIZE,
+                                    b_min_y * VOXEL_SIZE,
+                                    b_max_z * VOXEL_SIZE,
+                                ],
+                                [b_max_x * VOXEL_SIZE, water_surface_y, b_max_z * VOXEL_SIZE],
+                                [b_min_x * VOXEL_SIZE, water_surface_y, b_max_z * VOXEL_SIZE],
+                                [
+                                    b_min_x * VOXEL_SIZE,
+                                    b_min_y * VOXEL_SIZE,
+                                    b_max_z * VOXEL_SIZE,
+                                ],
+                            ],
+                            [0.0, 0.0, 1.0],
+                            w_layer,
+                            w_frame_count,
+                            w_tint,
+                        );
+                    }
+
+                    let nz_neighbor = world
+                        .get_voxel(world_voxel - IVec3::new(0, 0, 1))
+                        .unwrap_or(Voxel::Air);
+                    if nz_neighbor.is_empty() {
+                        push_water_side_quad(
+                            transparent_buffers,
+                            [
+                                [
+                                    b_min_x * VOXEL_SIZE,
+                                    b_min_y * VOXEL_SIZE,
+                                    b_min_z * VOXEL_SIZE,
+                                ],
+                                [b_min_x * VOXEL_SIZE, water_surface_y, b_min_z * VOXEL_SIZE],
+                                [b_max_x * VOXEL_SIZE, water_surface_y, b_min_z * VOXEL_SIZE],
+                                [
+                                    b_max_x * VOXEL_SIZE,
+                                    b_min_y * VOXEL_SIZE,
+                                    b_min_z * VOXEL_SIZE,
+                                ],
+                            ],
+                            [0.0, 0.0, -1.0],
+                            w_layer,
+                            w_frame_count,
+                            w_tint,
+                        );
+                    }
+                }
             }
         }
     }
@@ -873,6 +1161,95 @@ fn push_centered_quad(
         buffers
             .positions
             .push([v[0] * VOXEL_SIZE, v[1] * VOXEL_SIZE, v[2] * VOXEL_SIZE]);
+        buffers.normals.push(normal);
+        buffers.colors.push(tint_color);
+        buffers
+            .uv_bs
+            .push([texture_layer as f32, frame_count as f32]);
+    }
+
+    buffers
+        .uvs
+        .extend_from_slice(&[[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]]);
+
+    buffers.indices.extend_from_slice(&[
+        base_index,
+        base_index + 1,
+        base_index + 2,
+        base_index,
+        base_index + 2,
+        base_index + 3,
+    ]);
+}
+
+fn push_water_quad_both_sides(
+    buffers: &mut MeshBuffers,
+    vertices: [[f32; 3]; 4],
+    texture_layer: u16,
+    frame_count: u16,
+    tint_color: [f32; 4],
+) {
+    let base_index = buffers.positions.len() as u32;
+
+    for v in &vertices {
+        buffers.positions.push(*v);
+        buffers.normals.push([0.0, 1.0, 0.0]);
+        buffers.colors.push(tint_color);
+        buffers
+            .uv_bs
+            .push([texture_layer as f32, frame_count as f32]);
+    }
+
+    buffers
+        .uvs
+        .extend_from_slice(&[[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]]);
+
+    buffers.indices.extend_from_slice(&[
+        base_index,
+        base_index + 1,
+        base_index + 2,
+        base_index,
+        base_index + 2,
+        base_index + 3,
+    ]);
+
+    let under_base_index = buffers.positions.len() as u32;
+
+    for v in &vertices {
+        buffers.positions.push(*v);
+        buffers.normals.push([0.0, -1.0, 0.0]);
+        buffers.colors.push(tint_color);
+        buffers
+            .uv_bs
+            .push([texture_layer as f32, frame_count as f32]);
+    }
+
+    buffers
+        .uvs
+        .extend_from_slice(&[[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]]);
+
+    buffers.indices.extend_from_slice(&[
+        under_base_index,
+        under_base_index + 2,
+        under_base_index + 1,
+        under_base_index,
+        under_base_index + 3,
+        under_base_index + 2,
+    ]);
+}
+
+fn push_water_side_quad(
+    buffers: &mut MeshBuffers,
+    vertices: [[f32; 3]; 4],
+    normal: [f32; 3],
+    texture_layer: u16,
+    frame_count: u16,
+    tint_color: [f32; 4],
+) {
+    let base_index = buffers.positions.len() as u32;
+
+    for v in &vertices {
+        buffers.positions.push(*v);
         buffers.normals.push(normal);
         buffers.colors.push(tint_color);
         buffers

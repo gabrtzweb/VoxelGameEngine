@@ -86,14 +86,43 @@ This document outlines the planned development phases for the voxel game engine,
 ---
 
 ## Phase 4: Dynamic Fluid Simulation & Boundary Mechanics
-- **Dynamic Water Propagation**: Cellular automaton simulation queue for liquid flow and downward/horizontal spreading.
-- **Cross-Chunk Fluid Updates**: Propagate water across chunk boundaries, ensuring neighbor chunks are updated and remeshed cleanly.
-- **Boundary Handling for Unloaded Chunks**: Queue fluid flow arriving at unloaded boundaries without stalling streaming threads.
-- **Water Surface & Underwater Visuals**: Offset water top faces to eliminate z-fighting, add animated surface flow UVs, and apply underwater camera fog immersion.
+- [x] **Dynamic Water Propagation**:
+  - Cellular automaton simulation queue running at a paced 0.25s tick rate with per-tick queue batching (`FluidUpdateQueue`).
+  - Downward waterfall priority: fluid falls strictly downwards in mid-air (`is_supported_by_ground`), preventing mid-air spread along pillars and cliff edges.
+  - Differential spread limits: 4 voxels (2 blocks) for single-voxel sources, 8 voxels (4 blocks) for full-block sources.
+- [x] **Gradual Height Transitions & Vertical Step Walls**:
+  - Height model decreasing by 10cm per step down to 10cm at the stream boundary.
+  - Vertical step side quads connecting adjacent water levels, seamlessly closing any gaps/holes between steps.
+- [x] **Cross-Chunk Fluid Updates & Waterlogging**:
+  - Seamless propagation across chunk boundaries updating lighting, mesh registry, and neighbor chunks.
+  - Automatic waterlogging of cutouts during underwater shaping (`R` key) and rotating (`T` key) without trapping dry air or breaking shape detection.
+- [x] **Water Surface & Underwater Visuals**:
+  - Dynamic surface offsets eliminating z-fighting.
+  - Animated surface and flowing water textures with correct frame count metadata.
+  - Full underwater visibility looking up from below with counter-clockwise winding ceiling geometry.
+  - Submerged blue fog immersion and camera-in-water detection with sky/cloud handling.
 
 ---
 
-## Phase 5: Advanced World Generation, Biomes & Caves
+## Phase 5: General Polish, Revisions & In-Game Interface (Menu)
+- **In-Game Settings, Inventory (`E` Key) & Pause Menu (`ESC` Key)**:
+  - Stylized UI overlay pausing gameplay/freeing mouse cursor when pressing `ESC`.
+  - In-game configurable settings:
+    - Render Distance (chunk radius slider/stepper, dynamically resizing active chunk streaming).
+    - Field of View (FOV) slider.
+    - Fog toggles and density controls.
+    - Toggle in-game time to be paused.
+  - In game "creative inventory" (`E` Key) - with all new available blocks that I added, to be able to be picked up and dragged via mouse button to the hotbar.
+- **Cross-Phase Refinements & Mechanics Polish**:
+  - Reviewing, tuning, and polishing features from Phases 1–4 (movement feel, camera transitions, lighting balance, colors, textures, new blocks).
+  - Sub-voxel shaping preview / radial selection UI for fast shape selection.
+  - Visual micro-details, maybe a player model (can be the exact same model as a Minecraft player to be compatible with existing skins).
+  - Texture blending for shapes—for example: a full block (8 voxels) uses a single texture across its entire surface, whereas a single voxel uses the whole texture on itself; however, if I add another voxel, they combine the texture as if they were one, rather than each voxel having its own texture.
+- **And much more that I can't think of right now**
+
+---
+
+## Phase 6: Advanced World Generation, Biomes & Caves
 - **Biome System**: Macro-scale climate noise (continentalness, temperature, humidity) driving diverse surface palettes and height profiles.
 - **3D Caves & Underground Generation**: 3D noise functions for caverns, ravines, and underground aquifers.
 - **Realistic Strata**: Deeper rock layers, mineral deposits, and varied surface soil depths.
@@ -101,7 +130,7 @@ This document outlines the planned development phases for the voxel game engine,
 
 ---
 
-## Phase 6: Engine Optimization & Scalability (Future Milestone)
+## Phase 7: Engine Optimization & Scalability (Future Milestone)
 - **LOD Render Distance**: Downsampled greedy meshes for distant chunks.
 - **Extremity Bound Checking**: Early skipping of completely empty or solid chunks during collision and meshing.
 - **Noise Up-sampling & Caching**: Coarse 3D noise sampling with trilinear interpolation.

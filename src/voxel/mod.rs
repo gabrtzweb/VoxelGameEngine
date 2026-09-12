@@ -1,6 +1,7 @@
 pub mod chunk;
 pub mod chunk_manager;
 pub mod debug;
+pub mod fluid;
 pub mod interaction;
 pub mod interaction_mode;
 pub mod light;
@@ -18,6 +19,8 @@ pub use chunk::{CHUNK_VOLUME, VOXEL_SIZE};
 pub use chunk_manager::ChunkManagerPlugin;
 
 pub use debug::VoxelDebugPlugin;
+
+pub use fluid::FluidSimulationPlugin;
 
 pub use interaction::VoxelInteractionPlugin;
 

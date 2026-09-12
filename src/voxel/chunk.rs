@@ -17,26 +17,30 @@ pub enum Voxel {
     Water = 5,
     Light = 6,
     Occupied = 7,
+    WaterFlowing = 8,
+    WaterOccupied = 9,
 }
 
 impl Voxel {
-    pub const ALL: [Voxel; 6] = [
+    pub const ALL: [Voxel; 7] = [
         Voxel::Grass,
         Voxel::Dirt,
         Voxel::Stone,
         Voxel::Sand,
         Voxel::Water,
+        Voxel::WaterFlowing,
         Voxel::Light,
     ];
 
     pub fn texture_name(self) -> Option<&'static str> {
         match self {
-            Self::Air | Self::Occupied => None,
+            Self::Air | Self::Occupied | Self::WaterOccupied => None,
             Self::Grass => Some("terr_grass"),
             Self::Dirt => Some("terr_dirt"),
             Self::Stone => Some("rock_stone"),
             Self::Sand => Some("terr_sand"),
             Self::Water => Some("liqd_water_still"),
+            Self::WaterFlowing => Some("liqd_water_flow"),
             Self::Light => Some("emit_light"),
         }
     }
@@ -44,7 +48,7 @@ impl Voxel {
     pub fn tint_color(self) -> [f32; 4] {
         match self {
             Self::Grass => [0.58, 0.90, 0.44, 1.0],
-            Self::Water => [0.40, 0.80, 1.0, 1.0],
+            Self::Water | Self::WaterFlowing | Self::WaterOccupied => [0.40, 0.80, 1.0, 1.0],
             _ => [1.0, 1.0, 1.0, 1.0],
         }
     }
@@ -55,37 +59,46 @@ impl Voxel {
 
     pub fn fallback_color(self) -> [u8; 4] {
         match self {
-            Self::Air | Self::Occupied => [0, 0, 0, 0],
+            Self::Air | Self::Occupied | Self::WaterOccupied => [0, 0, 0, 0],
             Self::Grass => [255, 255, 255, 255],
             Self::Dirt => [107, 66, 33, 255],
             Self::Stone => [122, 128, 133, 255],
             Self::Sand => [209, 194, 128, 255],
-            Self::Water => [255, 255, 255, 255],
+            Self::Water | Self::WaterFlowing => [255, 255, 255, 255],
             Self::Light => [255, 199, 64, 255],
         }
     }
+
     pub fn is_empty(self) -> bool {
         self == Self::Air
     }
 
+    pub fn is_water(self) -> bool {
+        matches!(self, Self::Water | Self::WaterFlowing | Self::WaterOccupied)
+    }
+
     pub fn is_collidable(self) -> bool {
         match self {
-            Self::Air | Self::Water => false,
+            Self::Air | Self::Water | Self::WaterFlowing => false,
 
-            Self::Grass | Self::Dirt | Self::Stone | Self::Sand | Self::Light | Self::Occupied => {
-                true
-            }
+            Self::Grass
+            | Self::Dirt
+            | Self::Stone
+            | Self::Sand
+            | Self::Light
+            | Self::Occupied
+            | Self::WaterOccupied => true,
         }
     }
 
     pub fn is_transparent(self) -> bool {
-        self == Self::Water
+        self.is_water()
     }
 
     #[allow(dead_code)]
     pub fn display_color(self) -> [f32; 4] {
         match self {
-            Self::Air | Self::Occupied => [0.0, 0.0, 0.0, 0.0],
+            Self::Air | Self::Occupied | Self::WaterOccupied => [0.0, 0.0, 0.0, 0.0],
 
             Self::Grass => [0.58, 0.90, 0.44, 1.0],
 
@@ -95,7 +108,7 @@ impl Voxel {
 
             Self::Sand => [0.82, 0.76, 0.50, 1.0],
 
-            Self::Water => [0.40, 0.80, 1.0, 1.0],
+            Self::Water | Self::WaterFlowing => [0.40, 0.80, 1.0, 1.0],
 
             Self::Light => [1.0, 0.78, 0.25, 1.0],
         }
@@ -109,8 +122,10 @@ impl Voxel {
             Self::Stone => "Stone",
             Self::Sand => "Sand",
             Self::Water => "Water",
+            Self::WaterFlowing => "Flowing Water",
             Self::Light => "Light",
             Self::Occupied => "Occupied",
+            Self::WaterOccupied => "Waterlogged Occupied",
         }
     }
 }

@@ -16,8 +16,8 @@ use dev_stats::DevStatsPlugin;
 use environment::EnvironmentPlugin;
 use player::PlayerPlugin;
 use voxel::{
-    ChunkManagerPlugin, ShapingPlugin, TargetingPlugin, VoxelDebugPlugin, VoxelInteractionPlugin,
-    VoxelMaterial,
+    ChunkManagerPlugin, FluidSimulationPlugin, ShapingPlugin, TargetingPlugin, VoxelDebugPlugin,
+    VoxelInteractionPlugin, VoxelMaterial,
 };
 
 use winit::{platform::windows::WindowExtWindows, window::Icon};
@@ -79,6 +79,7 @@ fn main() {
         .add_plugins(VoxelInteractionPlugin)
         .add_plugins(VoxelDebugPlugin)
         .add_plugins(ShapingPlugin)
+        .add_plugins(FluidSimulationPlugin)
         .add_systems(Update, set_window_icons)
         .run();
 }

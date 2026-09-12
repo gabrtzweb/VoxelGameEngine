@@ -217,19 +217,45 @@ fn try_load_image(path: &str) -> Option<LoadedTexture> {
         return None;
     };
 
-    let rgba = opened.into_rgba8();
+    let mut rgba = opened.into_rgba8();
     let width = rgba.width();
     let height = rgba.height();
 
-    if width != TEXTURE_RESOLUTION || height == 0 || height % TEXTURE_RESOLUTION != 0 {
+    if width == 0 || height == 0 {
+        return None;
+    }
+
+    // If texture is not 16px wide (e.g. 32x256 water flow with 32x32 frames),
+    // scale each frame proportionally to TEXTURE_RESOLUTION (16px)
+    if width != TEXTURE_RESOLUTION {
+        if height % width == 0 {
+            let frame_count = height / width;
+            let target_height = frame_count * TEXTURE_RESOLUTION;
+            rgba = image::imageops::resize(
+                &rgba,
+                TEXTURE_RESOLUTION,
+                target_height,
+                image::imageops::FilterType::Nearest,
+            );
+        } else {
+            warn!(
+                "Texture at {} was {}x{}, expected height multiple of width {}, ignoring",
+                path, width, height, width
+            );
+            return None;
+        }
+    }
+
+    let final_height = rgba.height();
+    if final_height == 0 || final_height % TEXTURE_RESOLUTION != 0 {
         warn!(
-            "Texture at {} was {}x{}, expected width {} and height multiple of {}, ignoring",
-            path, width, height, TEXTURE_RESOLUTION, TEXTURE_RESOLUTION
+            "Texture at {} was {}x{}, expected height multiple of {}, ignoring",
+            path, width, final_height, TEXTURE_RESOLUTION
         );
         return None;
     }
 
-    let frame_count = (height / TEXTURE_RESOLUTION) as usize;
+    let frame_count = (final_height / TEXTURE_RESOLUTION) as usize;
     let mut frames = Vec::with_capacity(frame_count);
     let frame_pixel_count = (TEXTURE_RESOLUTION * TEXTURE_RESOLUTION) as usize;
     let raw = rgba.into_raw();
@@ -275,7 +301,7 @@ mod tests {
         );
 
         let grass_count = registry.variant_count(Voxel::Grass);
-        assert_eq!(grass_count, 4, "Grass should have 4 variants");
+        assert_eq!(grass_count, 8, "Grass should have 8 variants");
 
         let stone_count = registry.variant_count(Voxel::Stone);
         assert_eq!(stone_count, 4, "Stone should have 4 variants");
@@ -288,6 +314,12 @@ mod tests {
 
         let water_count = registry.variant_count(Voxel::Water);
         assert_eq!(water_count, 1, "Water should have 1 variant");
+
+        let water_flow_count = registry.variant_count(Voxel::WaterFlowing);
+        assert_eq!(water_flow_count, 1, "WaterFlowing should have 1 variant");
+
+        let water_flow_frames = registry.frame_count(Voxel::WaterFlowing);
+        assert_eq!(water_flow_frames, 8, "WaterFlowing should have 8 frames");
 
         let water_frames = registry.frame_count(Voxel::Water);
         assert_eq!(water_frames, 36, "Water should have 36 animation frames");

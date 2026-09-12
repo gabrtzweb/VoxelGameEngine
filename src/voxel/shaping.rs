@@ -5,6 +5,7 @@ use crate::player::GameMode;
 use super::{
     InteractionMode,
     chunk::Voxel,
+    fluid::FluidUpdateQueue,
     interaction::affected_chunks,
     light::{VoxelLightRegistry, sync_voxel_light},
     modifications::WorldModificationStore,
@@ -41,6 +42,7 @@ fn handle_block_shaping(
     interaction_mode: Res<InteractionMode>,
     current_target: Res<CurrentTarget>,
     material: Res<ChunkMaterial>,
+    mut fluid_queue: Option<ResMut<FluidUpdateQueue>>,
     mut commands: Commands,
     mut world: ResMut<VoxelWorld>,
     mut modifications: ResMut<WorldModificationStore>,
@@ -68,10 +70,9 @@ fn handle_block_shaping(
     let voxels = get_block_voxels(&world, origin);
 
     // Find the primary non-empty voxel to preserve block material
-    let Some(&block_material) = voxels
-        .iter()
-        .find(|v| !v.is_empty() && **v != Voxel::Occupied)
-    else {
+    let Some(&block_material) = voxels.iter().find(|v| {
+        !v.is_empty() && !v.is_water() && **v != Voxel::Occupied && **v != Voxel::WaterOccupied
+    }) else {
         return;
     };
 
@@ -86,6 +87,7 @@ fn handle_block_shaping(
         &mut registry,
         &mut meshes,
         &material,
+        &mut fluid_queue,
         origin,
         new_voxels,
     );
@@ -98,6 +100,7 @@ fn handle_block_rotation(
     interaction_mode: Res<InteractionMode>,
     current_target: Res<CurrentTarget>,
     material: Res<ChunkMaterial>,
+    mut fluid_queue: Option<ResMut<FluidUpdateQueue>>,
     mut commands: Commands,
     mut world: ResMut<VoxelWorld>,
     mut modifications: ResMut<WorldModificationStore>,
@@ -124,7 +127,7 @@ fn handle_block_rotation(
     let origin = target.block_origin;
     let voxels = get_block_voxels(&world, origin);
 
-    if voxels.iter().all(|v| v.is_empty()) {
+    if voxels.iter().all(|v| v.is_empty() || v.is_water()) {
         return;
     }
 
@@ -138,9 +141,57 @@ fn handle_block_rotation(
         &mut registry,
         &mut meshes,
         &material,
+        &mut fluid_queue,
         origin,
         rotated_voxels,
     );
+}
+
+pub fn is_block_submerged_or_adjacent_to_water(world: &VoxelWorld, origin: IVec3) -> bool {
+    // 1. Any voxel currently within the block is water
+    for dy in 0..2 {
+        for dz in 0..2 {
+            for dx in 0..2 {
+                if world
+                    .get_voxel(origin + IVec3::new(dx, dy, dz))
+                    .is_some_and(Voxel::is_water)
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    // 2. Or any immediate outer neighbor of the 2x2x2 block is water
+    for dy in 0..2 {
+        for dz in 0..2 {
+            for dx in 0..2 {
+                let pos = origin + IVec3::new(dx, dy, dz);
+                let neighbors = [
+                    pos + IVec3::X,
+                    pos - IVec3::X,
+                    pos + IVec3::Y,
+                    pos - IVec3::Y,
+                    pos + IVec3::Z,
+                    pos - IVec3::Z,
+                ];
+                for n in neighbors {
+                    let local = n - origin;
+                    if (0..2).contains(&local.x)
+                        && (0..2).contains(&local.y)
+                        && (0..2).contains(&local.z)
+                    {
+                        continue;
+                    }
+                    if world.get_voxel(n).is_some_and(Voxel::is_water) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    false
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -152,23 +203,35 @@ fn apply_block_subvoxels(
     registry: &mut ChunkMeshRegistry,
     meshes: &mut Assets<Mesh>,
     material: &ChunkMaterial,
+    fluid_queue: &mut Option<ResMut<FluidUpdateQueue>>,
     block_origin: IVec3,
-    new_voxels: [Voxel; 8],
+    mut new_voxels: [Voxel; 8],
 ) {
+    let is_waterlogged = is_block_submerged_or_adjacent_to_water(world, block_origin);
+    if is_waterlogged {
+        for v in &mut new_voxels {
+            if *v == Voxel::Air {
+                *v = Voxel::Water;
+            } else if *v == Voxel::Occupied {
+                *v = Voxel::WaterOccupied;
+            }
+        }
+    }
     let mut edited_voxels = Vec::with_capacity(8);
 
     for y in 0..2 {
         for z in 0..2 {
             for x in 0..2 {
                 let idx = (y * 4 + z * 2 + x) as usize;
-                let pos = block_origin + IVec3::new(x, y, z);
-                let target_voxel = new_voxels[idx];
-                let current_voxel = world.get_voxel(pos).unwrap_or(Voxel::Air);
+                let position = block_origin + IVec3::new(x, y, z);
+                let new_voxel = new_voxels[idx];
 
-                if current_voxel != target_voxel {
-                    world.set_voxel(pos, target_voxel);
-                    modifications.record(pos, target_voxel);
-                    edited_voxels.push(pos);
+                if let Some(current) = world.get_voxel(position)
+                    && current != new_voxel
+                {
+                    world.set_voxel(position, new_voxel);
+                    modifications.record(position, new_voxel);
+                    edited_voxels.push(position);
                 }
             }
         }
@@ -178,8 +241,15 @@ fn apply_block_subvoxels(
         return;
     }
 
+    if let Some(queue) = fluid_queue.as_deref_mut() {
+        for &pos in &edited_voxels {
+            queue.enqueue_with_neighbors(pos);
+        }
+    }
+
     let mut dirty_chunks = Vec::new();
-    for &edited_voxel in &edited_voxels {
+
+    for edited_voxel in edited_voxels {
         sync_voxel_light(commands, world, edited_voxel, light_registry);
         dirty_chunks.extend(affected_chunks(edited_voxel));
     }
@@ -197,17 +267,19 @@ fn apply_block_subvoxels(
 }
 
 pub fn get_block_voxels(world: &VoxelWorld, block_origin: IVec3) -> [Voxel; 8] {
-    let mut result = [Voxel::Air; 8];
+    let mut voxels = [Voxel::Air; 8];
+
     for y in 0..2 {
         for z in 0..2 {
             for x in 0..2 {
                 let idx = (y * 4 + z * 2 + x) as usize;
-                let pos = block_origin + IVec3::new(x, y, z);
-                result[idx] = world.get_voxel(pos).unwrap_or(Voxel::Air);
+                let position = block_origin + IVec3::new(x, y, z);
+                voxels[idx] = world.get_voxel(position).unwrap_or(Voxel::Air);
             }
         }
     }
-    result
+
+    voxels
 }
 
 pub fn centered_layer_coordinates(world_voxel: IVec3) -> [IVec3; 4] {
@@ -224,9 +296,10 @@ pub fn centered_layer_coordinates(world_voxel: IVec3) -> [IVec3; 4] {
 
 pub fn is_centered_layer(world: &VoxelWorld, world_voxel: IVec3) -> bool {
     let coords = centered_layer_coordinates(world_voxel);
-    coords
-        .iter()
-        .any(|&pos| world.get_voxel(pos) == Some(Voxel::Occupied))
+    coords.iter().any(|&pos| {
+        world.get_voxel(pos) == Some(Voxel::Occupied)
+            || world.get_voxel(pos) == Some(Voxel::WaterOccupied)
+    })
 }
 
 pub fn get_centered_layer_material(world: &VoxelWorld, world_voxel: IVec3) -> Option<Voxel> {
@@ -235,6 +308,7 @@ pub fn get_centered_layer_material(world: &VoxelWorld, world_voxel: IVec3) -> Op
         if let Some(voxel) = world.get_voxel(pos)
             && !voxel.is_empty()
             && voxel != Voxel::Occupied
+            && voxel != Voxel::WaterOccupied
         {
             return Some(voxel);
         }
@@ -243,7 +317,7 @@ pub fn get_centered_layer_material(world: &VoxelWorld, world_voxel: IVec3) -> Op
 }
 
 pub fn is_layer_centered(layer_voxels: &[Voxel]) -> bool {
-    layer_voxels.contains(&Voxel::Occupied)
+    layer_voxels.contains(&Voxel::Occupied) || layer_voxels.contains(&Voxel::WaterOccupied)
 }
 
 pub fn is_centered_column(voxels: &[Voxel; 8]) -> bool {
@@ -255,22 +329,17 @@ pub fn detect_current_shape(voxels: &[Voxel; 8]) -> BlockShape {
         return BlockShape::CenteredColumn;
     }
 
-    let solid_count = voxels
-        .iter()
-        .filter(|v| !v.is_empty() && **v != Voxel::Occupied)
-        .count();
+    let is_solid = |v: &Voxel| {
+        !v.is_empty() && !v.is_water() && *v != Voxel::Occupied && *v != Voxel::WaterOccupied
+    };
+
+    let solid_count = voxels.iter().filter(|v| is_solid(v)).count();
 
     match solid_count {
         8 => BlockShape::Full,
         6 => {
-            let bottom_count = voxels[0..4]
-                .iter()
-                .filter(|v| !v.is_empty() && **v != Voxel::Occupied)
-                .count();
-            let top_count = voxels[4..8]
-                .iter()
-                .filter(|v| !v.is_empty() && **v != Voxel::Occupied)
-                .count();
+            let bottom_count = voxels[0..4].iter().filter(|v| is_solid(v)).count();
+            let top_count = voxels[4..8].iter().filter(|v| is_solid(v)).count();
             if top_count == 4 && bottom_count == 2 {
                 BlockShape::StairUpsideDown
             } else {
@@ -279,14 +348,8 @@ pub fn detect_current_shape(voxels: &[Voxel; 8]) -> BlockShape {
         }
         5 => BlockShape::CornerStair,
         4 => {
-            let bottom_count = voxels[0..4]
-                .iter()
-                .filter(|v| !v.is_empty() && **v != Voxel::Occupied)
-                .count();
-            let top_count = voxels[4..8]
-                .iter()
-                .filter(|v| !v.is_empty() && **v != Voxel::Occupied)
-                .count();
+            let bottom_count = voxels[0..4].iter().filter(|v| is_solid(v)).count();
+            let top_count = voxels[4..8].iter().filter(|v| is_solid(v)).count();
             if bottom_count == 4 {
                 BlockShape::SlabBottom
             } else if top_count == 4 {
@@ -527,5 +590,35 @@ mod tests {
 
         let corner = generate_shape_voxels(BlockShape::CornerStair, Voxel::Stone);
         assert_eq!(detect_current_shape(&corner), BlockShape::CornerStair);
+    }
+
+    #[test]
+    fn submerged_block_detected_as_waterlogged() {
+        use crate::voxel::chunk::Chunk;
+        let mut world = VoxelWorld::default();
+        world.insert_chunk(IVec3::ZERO, Chunk::new());
+
+        let origin = IVec3::new(2, 2, 2);
+        // Initially dry
+        assert!(!is_block_submerged_or_adjacent_to_water(&world, origin));
+
+        // Water above the block (submerged)
+        world.set_voxel(origin + IVec3::new(0, 2, 0), Voxel::Water);
+        assert!(is_block_submerged_or_adjacent_to_water(&world, origin));
+    }
+
+    #[test]
+    fn waterlogged_stair_detected_as_stair() {
+        let mut stair = generate_shape_voxels(BlockShape::Stair, Voxel::Stone);
+        for v in &mut stair {
+            if *v == Voxel::Air {
+                *v = Voxel::Water;
+            }
+        }
+        assert_eq!(detect_current_shape(&stair), BlockShape::Stair);
+        assert_eq!(
+            detect_current_shape(&stair).next(),
+            BlockShape::StairUpsideDown
+        );
     }
 }

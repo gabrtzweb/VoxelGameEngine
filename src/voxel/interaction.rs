@@ -5,6 +5,7 @@ use crate::player::GameMode;
 use super::{
     InteractionMode,
     chunk::{CHUNK_SIZE, Voxel},
+    fluid::FluidUpdateQueue,
     light::{VoxelLightRegistry, sync_voxel_light},
     modifications::WorldModificationStore,
     render::{ChunkMaterial, ChunkMeshRegistry, sync_chunk_render},
@@ -131,7 +132,7 @@ fn pick_targeted_voxel(
         return;
     }
 
-    if voxel == Voxel::Occupied {
+    if voxel == Voxel::Occupied || voxel == Voxel::WaterOccupied {
         if let Some(material) =
             crate::voxel::shaping::get_centered_layer_material(&world, target.hit_voxel)
         {
@@ -166,6 +167,7 @@ fn edit_voxels(
     mut registry: ResMut<ChunkMeshRegistry>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut interaction_state: Local<InteractionState>,
+    fluid_queue: Option<ResMut<FluidUpdateQueue>>,
 ) {
     if *game_mode == GameMode::Spectator {
         return;
@@ -256,15 +258,25 @@ fn edit_voxels(
 
                 if is_centered_target {
                     let coords = crate::voxel::shaping::centered_layer_coordinates(place_position);
-                    if coords
-                        .iter()
-                        .all(|&pos| world.get_voxel(pos).is_some_and(|v| v.is_empty()))
-                    {
+                    if coords.iter().all(|&pos| {
+                        world
+                            .get_voxel(pos)
+                            .is_some_and(|v| v.is_empty() || v.is_water())
+                    }) {
+                        let is_waterlogged = coords
+                            .iter()
+                            .any(|&pos| world.get_voxel(pos).is_some_and(Voxel::is_water));
+                        let occ_type = if is_waterlogged {
+                            Voxel::WaterOccupied
+                        } else {
+                            Voxel::Occupied
+                        };
+
                         world.set_voxel(coords[0], place_voxel_type);
                         modifications.record(coords[0], place_voxel_type);
                         for &pos in &coords[1..4] {
-                            world.set_voxel(pos, Voxel::Occupied);
-                            modifications.record(pos, Voxel::Occupied);
+                            world.set_voxel(pos, occ_type);
+                            modifications.record(pos, occ_type);
                         }
                         coords.to_vec()
                     } else if place_voxel(
@@ -295,6 +307,12 @@ fn edit_voxels(
 
     if edited_voxels.is_empty() {
         return;
+    }
+
+    if let Some(mut fq) = fluid_queue {
+        for &edited_voxel in &edited_voxels {
+            fq.enqueue_with_neighbors(edited_voxel);
+        }
     }
 
     let mut dirty_chunks = Vec::new();
@@ -378,7 +396,7 @@ fn place_voxel(
         return false;
     };
 
-    if !current_voxel.is_empty() {
+    if !current_voxel.is_empty() && !current_voxel.is_water() {
         return false;
     }
 
@@ -410,7 +428,7 @@ fn place_block(
     if positions.iter().any(|&position| {
         world
             .get_voxel(position)
-            .is_none_or(|current_voxel| !current_voxel.is_empty())
+            .is_none_or(|current_voxel| !current_voxel.is_empty() && !current_voxel.is_water())
     }) {
         return Vec::new();
     }

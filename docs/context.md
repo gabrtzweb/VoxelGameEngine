@@ -93,8 +93,15 @@ The project already has:
 - Dynamic moving cloud layer with wind drift and atmospheric color tinting
 - Sparkling nighttime starfield dome with celestial rotation and smooth twilight fade-in
 - 8-slot hotbar GUI with 2D pixel-art item icons, active selection indicator, direct keybinds (1–8), mouse wheel scrolling, and slot clearing (Q)
-- Sub-voxel block shaping tool (R key) cycling 1m³ blocks through Full, Stair, Slabs, and Column configurations
+- Sub-voxel block shaping tool (R key) cycling 1m³ blocks through Full, Stair, Upside-Down Stair, Corner Stair, Bottom Slab, Top Slab, Vertical Slab, Column, and Centered Column configurations
 - Sub-voxel block rotation tool (T key) rotating shapes 90° clockwise around the Y-axis
+- Connected block placement against non-full sub-voxels (slabs, stairs) without floating gaps, and bi-directional centered column stacking
+- Dynamic cellular automaton fluid simulation with 0.25s wave-by-wave propagation pacing
+- Differential fluid spread: 4 voxels (2 blocks) for single-voxel sources, 8 voxels (4 blocks) for full-block sources
+- Stepped water surface height gradient (10cm steps down to 10cm) with vertical step walls sealing all level transitions
+- Straight-down waterfall physics (ground-support verification) preventing mid-air spreading on pillars and cliff drops
+- Automatic sub-voxel waterlogging during underwater shaping and rotation
+- Full underwater visibility from below with counter-clockwise winding ceiling geometry and submerged fog immersion
 
 ---
 
@@ -115,24 +122,29 @@ I want lighting and atmosphere inspired by shaders or Vibrant Visuals, while mai
 
 ---
 
-## Next Steps / To Be Implemented
+## Next Steps / Upcoming Phases
 
-- Radial UI for selecting sub-voxel shapes
-- Custom skybox with procedural sky gradient
-- Dynamic water propagation
-- Support fluid updates across chunk boundaries
-- Improve underwater visuals and water surface rendering
-- Better and more realistic terrain
-- Add biome generation
-- Add caves and underground generation
-- Add runtime terrain-generation controls
+### Phase 5: General Polish, Revisions & In-Game Interface (Menu)
+- In-game pause & settings menu triggered by `ESC` key (pauses gameplay, unlocks mouse cursor)
+- Configurable settings in menu:
+  - Render distance slider/stepper (dynamically resizing active chunk streaming radius)
+  - FOV slider
+  - Fog toggles and density controls
+  - Creative movement & flight speed adjustments
+- Cross-phase polish and mechanics review (movement feel, camera transitions, lighting balance)
+- Sub-voxel shaping preview / radial selection UI for fast shape selection
 
-## Performance improvements to maybe implement in the future
-- LOD render distance
-- Extremity bound checking
-- Noise up-sampling
-- Noise Cashing
-- RLE based runtime voxel data
+### Phase 6: Advanced World Generation, Biomes & Caves
+- Biome system driven by macro-scale climate noise (continentalness, temperature, humidity)
+- 3D cave & underground generation (caverns, ravines, aquifers)
+- Realistic strata (deeper rock layers, mineral deposits, soil depth)
+- Runtime terrain-generation controls via `bevy_inspector_egui`
+
+### Phase 7: Engine Optimization & Scalability (Future Milestone)
+- LOD render distance (downsampled greedy meshes for distant chunks)
+- Extremity bound checking (early skipping during collision and meshing)
+- Noise up-sampling and caching (coarse 3D noise with trilinear interpolation)
+- RLE-based runtime voxel storage to minimize memory footprint
 
 ---
 

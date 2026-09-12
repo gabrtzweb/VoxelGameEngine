@@ -89,8 +89,8 @@ impl Default for TerrainGenerator {
             detail_octaves: 3,
             persistence: 0.5,
 
-            // 8 voxels = 4 meters.
-            sea_level: 8,
+            // 9 voxels = 4.5 meters (aligns with top of logical block 4 at y=9).
+            sea_level: 9,
 
             // Very low frequency so lakes become
             // wide features instead of tiny puddles.
@@ -179,6 +179,10 @@ impl TerrainGenerator {
         chunk
     }
 
+    pub fn effective_sea_level(&self) -> i32 {
+        logical_block_top(self.sea_level)
+    }
+
     fn sample_column(&self, world_x: i32, world_z: i32) -> TerrainColumn {
         let logical_x = world_x.div_euclid(LOGICAL_BLOCK_VOXELS);
         let logical_z = world_z.div_euclid(LOGICAL_BLOCK_VOXELS);
@@ -187,13 +191,13 @@ impl TerrainGenerator {
         // so terrain can form slabs and steps.
         let terrain_height = self.terrain_height_at(world_x as f32, world_z as f32);
         let lake_strength = self.lake_strength_at(world_x as f32, world_z as f32);
+        let sea_level = self.effective_sea_level();
 
-        let water_level =
-            if terrain_height < self.sea_level && lake_strength >= LAKE_WATER_THRESHOLD {
-                Some(self.sea_level)
-            } else {
-                None
-            };
+        let water_level = if terrain_height < sea_level && lake_strength >= LAKE_WATER_THRESHOLD {
+            Some(sea_level)
+        } else {
+            None
+        };
 
         let surface_material = self.surface_material_at(world_x, world_z);
 
@@ -229,7 +233,7 @@ impl TerrainGenerator {
 
         let near_lake = lake_strength > LAKE_MATERIAL_THRESHOLD;
 
-        let beach = near_lake && representative_height <= self.sea_level + BEACH_HEIGHT;
+        let beach = near_lake && representative_height <= self.effective_sea_level() + BEACH_HEIGHT;
 
         if beach {
             SurfaceMaterial::Sand
@@ -325,9 +329,10 @@ impl TerrainGenerator {
             return false;
         }
 
-        let water_fills_voxel = terrain_height < self.sea_level
+        let sea_level = self.effective_sea_level();
+        let water_fills_voxel = terrain_height < sea_level
             && self.lake_strength_at(world_x as f32, world_z as f32) >= LAKE_WATER_THRESHOLD
-            && world_y <= self.sea_level;
+            && world_y <= sea_level;
 
         !water_fills_voxel
     }
@@ -366,7 +371,7 @@ impl TerrainGenerator {
         let lake_strength = self.lake_strength_at(world_x, world_z);
 
         if lake_strength > 0.0 {
-            let deepest_floor = self.sea_level as f32 - self.lake_max_depth;
+            let deepest_floor = self.effective_sea_level() as f32 - self.lake_max_depth;
 
             lerp(natural_height, deepest_floor, lake_strength).round() as i32
         } else {
@@ -583,5 +588,14 @@ mod tests {
         }
 
         panic!("expected at least one exposed Dirt voxel");
+    }
+
+    #[test]
+    fn sea_level_aligns_with_full_logical_block() {
+        let generator = TerrainGenerator::default();
+        let sea_level = generator.effective_sea_level();
+
+        // Must be an odd index so both bottom (sea_level - 1) and top (sea_level) are within the 1m block
+        assert_eq!(sea_level % 2, 1, "sea level must be top of logical block");
     }
 }

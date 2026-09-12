@@ -41,7 +41,7 @@ pub fn setup_clouds(
         alpha_mode: AlphaMode::Blend,
         cull_mode: None,
         double_sided: true,
-        fog_enabled: false,
+        fog_enabled: true,
         ..default()
     });
 
@@ -58,17 +58,31 @@ pub fn setup_clouds(
     ));
 }
 
+pub type CloudQuery<'w, 's> = Single<
+    'w,
+    's,
+    (&'static mut Transform, &'static mut Visibility),
+    (With<CloudVisual>, Without<Camera3d>),
+>;
+
 pub fn sync_clouds(
     time: Res<Time>,
-    camera: Single<&Transform, With<Camera3d>>,
-    cloud: Single<&mut Transform, (With<CloudVisual>, Without<Camera3d>)>,
+    camera: Single<(&Transform, &GlobalTransform), With<Camera3d>>,
+    mut cloud: CloudQuery,
     material_handle: Res<CloudMaterialHandle>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     time_of_day: f32,
+    is_underwater: bool,
 ) {
+    let (ref mut cloud_transform, ref mut visibility) = *cloud;
+    if is_underwater {
+        **visibility = Visibility::Hidden;
+        return;
+    }
+    **visibility = Visibility::Visible;
+
     let elapsed = time.elapsed_secs();
-    let camera_translation = camera.translation;
-    let mut cloud_transform = cloud.into_inner();
+    let camera_translation = camera.0.translation;
 
     // Drift clouds horizontally with the wind while keeping the plane centered on the player.
     // Offsetting by the tile modulo gives seamless continuous movement without edge boundary popping.

@@ -212,32 +212,62 @@ fn update_atmosphere(
     state: Res<EnvironmentState>,
     mut clear_color: ResMut<ClearColor>,
     mut ambient: ResMut<GlobalAmbientLight>,
-    camera: Single<(&mut DistanceFog, &mut Exposure), With<Camera3d>>,
+    camera: Single<(&GlobalTransform, &mut DistanceFog, &mut Exposure), With<Camera3d>>,
+    world: Option<Res<crate::voxel::VoxelWorld>>,
 ) {
     let t = state.time_of_day;
+    let (cam_transform, mut fog, mut exposure) = camera.into_inner();
 
-    clear_color.0 = sample_sky_color(t);
-    ambient.color = sample_ambient_color(t);
-    ambient.brightness = sample_ambient_brightness(t);
+    let is_underwater = world
+        .as_ref()
+        .is_some_and(|w| crate::player::water::is_point_in_water(w, cam_transform.translation()));
 
-    let (mut fog, mut exposure) = camera.into_inner();
-    fog.color = sample_fog_color(t);
-    fog.directional_light_color = sample_fog_light_color(t);
-    fog.directional_light_exponent = sample_fog_light_exponent(t);
-    exposure.ev100 = sample_exposure(t);
+    if is_underwater {
+        let water_fog_color = Color::srgb(0.04, 0.20, 0.35);
+        clear_color.0 = Color::srgb(0.02, 0.12, 0.24);
+        ambient.color = Color::srgb(0.15, 0.40, 0.60);
+        ambient.brightness = sample_ambient_brightness(t).max(250.0);
+
+        fog.color = water_fog_color;
+        fog.directional_light_color = water_fog_color;
+        fog.directional_light_exponent = 4.0;
+        exposure.ev100 = sample_exposure(t);
+    } else {
+        clear_color.0 = sample_sky_color(t);
+        ambient.color = sample_ambient_color(t);
+        ambient.brightness = sample_ambient_brightness(t);
+
+        fog.color = sample_fog_color(t);
+        fog.directional_light_color = sample_fog_light_color(t);
+        fog.directional_light_exponent = sample_fog_light_exponent(t);
+        exposure.ev100 = sample_exposure(t);
+    }
 }
 
 fn sync_fog_distance(
     settings: Res<ChunkStreamingSettings>,
-    fog: Single<&mut DistanceFog, With<Camera3d>>,
+    camera: Single<(&GlobalTransform, &mut DistanceFog), With<Camera3d>>,
+    world: Option<Res<crate::voxel::VoxelWorld>>,
 ) {
-    let mut fog = fog.into_inner();
-    let chunk_world_size = CHUNK_SIZE as f32 * VOXEL_SIZE;
-    let render_radius = settings.render_distance.max(1) as f32 * chunk_world_size;
-    fog.falloff = FogFalloff::Linear {
-        start: render_radius * FOG_START_FACTOR,
-        end: render_radius * FOG_END_FACTOR,
-    };
+    let (cam_transform, mut fog) = camera.into_inner();
+
+    let is_underwater = world
+        .as_ref()
+        .is_some_and(|w| crate::player::water::is_point_in_water(w, cam_transform.translation()));
+
+    if is_underwater {
+        fog.falloff = FogFalloff::Linear {
+            start: 1.0,
+            end: 22.0,
+        };
+    } else {
+        let chunk_world_size = CHUNK_SIZE as f32 * VOXEL_SIZE;
+        let render_radius = settings.render_distance.max(1) as f32 * chunk_world_size;
+        fog.falloff = FogFalloff::Linear {
+            start: render_radius * FOG_START_FACTOR,
+            end: render_radius * FOG_END_FACTOR,
+        };
+    }
 }
 
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
@@ -334,11 +364,16 @@ fn sync_starfield_system(
 fn sync_cloud_system(
     time: Res<Time>,
     state: Res<EnvironmentState>,
-    camera: Single<&Transform, With<Camera3d>>,
-    cloud: Single<&mut Transform, (With<clouds::CloudVisual>, Without<Camera3d>)>,
+    camera: Single<(&Transform, &GlobalTransform), With<Camera3d>>,
+    cloud: clouds::CloudQuery,
     material_handle: Res<clouds::CloudMaterialHandle>,
     materials: ResMut<Assets<StandardMaterial>>,
+    world: Option<Res<crate::voxel::VoxelWorld>>,
 ) {
+    let is_underwater = world
+        .as_ref()
+        .is_some_and(|w| crate::player::water::is_point_in_water(w, camera.1.translation()));
+
     clouds::sync_clouds(
         time,
         camera,
@@ -346,6 +381,7 @@ fn sync_cloud_system(
         material_handle,
         materials,
         state.time_of_day,
+        is_underwater,
     );
 }
 
