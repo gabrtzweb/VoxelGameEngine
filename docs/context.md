@@ -124,7 +124,7 @@ I want lighting and atmosphere inspired by shaders or Vibrant Visuals, while mai
 
 ## Next Steps / Upcoming Phases
 
-- Phase 5: General Polish, Revisions & In-Game Interface (Menu)
+- Phase 5: General Polish, Revisions & In-Game Interfaces
 - Phase 6: Advanced World Generation, Biomes & Caves
 - Phase 7: Engine Optimization & Scalability (Future Milestone)
 - Phase 8: To be decided
