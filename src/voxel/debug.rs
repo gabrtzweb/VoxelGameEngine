@@ -33,7 +33,7 @@ fn configure_gizmos(mut config_store: ResMut<GizmoConfigStore>) {
 }
 
 fn toggle_debug(keyboard: Res<ButtonInput<KeyCode>>, mut settings: ResMut<VoxelDebugSettings>) {
-    if keyboard.just_pressed(KeyCode::F3) {
+    if keyboard.just_pressed(KeyCode::F2) {
         settings.enabled = !settings.enabled;
 
         info!(

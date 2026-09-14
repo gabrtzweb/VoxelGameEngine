@@ -154,6 +154,7 @@ pub fn calculate_sun_direction(time_of_day: f32) -> Vec3 {
     Vec3::new(-angle.sin(), angle.cos(), -angle.cos() * tilt).normalize()
 }
 
+#[allow(dead_code)]
 pub fn moon_phase_factor(phase: usize) -> f32 {
     match phase % 8 {
         0 => 1.0,
@@ -213,7 +214,8 @@ pub fn sync_celestial_transforms(
     moon_textures: Res<MoonPhaseTextures>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     time_of_day: f32,
-    moon_phase: usize,
+    moon_texture_index: usize,
+    moon_phase_illuminance_factor: f32,
     day_sun_illuminance: f32,
     day_fill_illuminance: f32,
     night_moon_illuminance: f32,
@@ -248,7 +250,7 @@ pub fn sync_celestial_transforms(
 
     // Update active moon phase texture if needed.
     if let Some(mut mat) = materials.get_mut(&celestial_materials.moon) {
-        let target_handle = &moon_textures.0[moon_phase % 8];
+        let target_handle = &moon_textures.0[moon_texture_index % 8];
         if mat.base_color_texture.as_ref() != Some(target_handle) {
             mat.base_color_texture = Some(target_handle.clone());
         }
@@ -262,9 +264,9 @@ pub fn sync_celestial_transforms(
 
     // Directional moonlight shining from moon towards the world (-moon_dir).
     let moon_elev = moon_dir.y.max(0.0);
-    let phase_factor = moon_phase_factor(moon_phase);
-    moon_l.illuminance = moon_elev.powf(0.6) * (phase_factor * night_moon_illuminance);
-    moon_l.shadow_maps_enabled = moon_elev > 0.04 && phase_factor > 0.20;
+    moon_l.illuminance =
+        moon_elev.powf(0.6) * (moon_phase_illuminance_factor * night_moon_illuminance);
+    moon_l.shadow_maps_enabled = moon_elev > 0.04 && moon_phase_illuminance_factor > 0.20;
     *moon_lt = Transform::default().looking_to(-moon_dir, Vec3::Y);
 
     // Sky fill light softens shadows during daytime.

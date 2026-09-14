@@ -39,7 +39,9 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     T                 Rotate block shape 90° clockwise
 
     F1                Toggle Inspector
-    F3                Chunk debug
+    F2                Chunk debug borders
+    F3                Toggle HUD (Minimal / Extended debug)
+    Shift + F3        Toggle HUD visibility (Show / Hide)
     F4                Creative / Spectator
     F5                First / Third person
     F6                Day / Night cycle (Click: step phase / Hold: scrub time)
