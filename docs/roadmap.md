@@ -104,7 +104,16 @@ This document outlines the planned development phases for the voxel game engine,
 
 ---
 
-## Phase 5: General Polish, Revisions & In-Game Interface (Menu)
+## Phase 5: General Polish, Revisions & In-Game Interfaces
+- **Environment & Calendar System Implementation**:
+  - Set day duration to 24 minutes in real time.
+  - Implement a 28-day month and a 4-season year (Spring, Summer, Autumn, Winter), with each season lasting exactly 3 months (84 days).
+  - Set the game to always start on Day 1 of Month 1, marking the exact beginning of Spring.
+  - Implement the 8-phase lunar cycle synchronized with the 28-day month. Alternate phase durations strictly between 3 and 4 days.
+- **Debug Screen (F3) & HUD Refactor**:
+  - Refactor the current debug text to have toggleable states instead of a single cluttered view.
+  - Minimal HUD: Show only essential gameplay info like FPS, Current Time, Day, Season, XYZ Position and Game Mode.
+  - Extended Debug (F3 Mode): Show the full technical layout including Frame time, Moon Phase, Flight status, Player chunk, Camera coordinates, Loaded/Meshed chunks, Mesh vertices/triangles, Voxel capacity, and Target voxel (Currently, the F3 key is assigned to toggle Chunk debug; change it to F2).
 - **In-Game Settings, Inventory (`E` Key) & Pause Menu (`ESC` Key)**:
   - Stylized UI overlay pausing gameplay/freeing mouse cursor when pressing `ESC`.
   - In-game configurable settings:
@@ -115,7 +124,7 @@ This document outlines the planned development phases for the voxel game engine,
   - In game "creative inventory" (`E` Key) - with all new available blocks that I added, to be able to be picked up and dragged via mouse button to the hotbar.
 - **Cross-Phase Refinements & Mechanics Polish**:
   - Reviewing, tuning, and polishing features from Phases 1–4 (movement feel, camera transitions, lighting balance, colors, textures, new blocks).
-  - Sub-voxel shaping preview / radial selection UI for fast shape selection.
+  - Sub-voxel shaping preview / radial selection UI for fast shape selection (hold R).
   - Visual micro-details, maybe a player model (can be the exact same model as a Minecraft player to be compatible with existing skins).
   - Texture blending for shapes—for example: a full block (8 voxels) uses a single texture across its entire surface, whereas a single voxel uses the whole texture on itself; however, if I add another voxel, they combine the texture as if they were one, rather than each voxel having its own texture.
 - **And much more that I can't think of right now**
@@ -131,7 +140,9 @@ This document outlines the planned development phases for the voxel game engine,
 ---
 
 ## Phase 7: Engine Optimization & Scalability (Future Milestone)
-- **LOD Render Distance**: Downsampled greedy meshes for distant chunks.
+- **LOD Render Distance**: Downsampled greedy meshes for distant chunks (maybe not a priority = can be skipped).
 - **Extremity Bound Checking**: Early skipping of completely empty or solid chunks during collision and meshing.
 - **Noise Up-sampling & Caching**: Coarse 3D noise sampling with trilinear interpolation.
 - **RLE Runtime Voxel Data**: Run-Length Encoded chunk storage to minimize memory footprint.
+
+## Phase 8: To be decided

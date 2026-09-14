@@ -124,27 +124,10 @@ I want lighting and atmosphere inspired by shaders or Vibrant Visuals, while mai
 
 ## Next Steps / Upcoming Phases
 
-### Phase 5: General Polish, Revisions & In-Game Interface (Menu)
-- In-game pause & settings menu triggered by `ESC` key (pauses gameplay, unlocks mouse cursor)
-- Configurable settings in menu:
-  - Render distance slider/stepper (dynamically resizing active chunk streaming radius)
-  - FOV slider
-  - Fog toggles and density controls
-  - Creative movement & flight speed adjustments
-- Cross-phase polish and mechanics review (movement feel, camera transitions, lighting balance)
-- Sub-voxel shaping preview / radial selection UI for fast shape selection
-
-### Phase 6: Advanced World Generation, Biomes & Caves
-- Biome system driven by macro-scale climate noise (continentalness, temperature, humidity)
-- 3D cave & underground generation (caverns, ravines, aquifers)
-- Realistic strata (deeper rock layers, mineral deposits, soil depth)
-- Runtime terrain-generation controls via `bevy_inspector_egui`
-
-### Phase 7: Engine Optimization & Scalability (Future Milestone)
-- LOD render distance (downsampled greedy meshes for distant chunks)
-- Extremity bound checking (early skipping during collision and meshing)
-- Noise up-sampling and caching (coarse 3D noise with trilinear interpolation)
-- RLE-based runtime voxel storage to minimize memory footprint
+- Phase 5: General Polish, Revisions & In-Game Interface (Menu)
+- Phase 6: Advanced World Generation, Biomes & Caves
+- Phase 7: Engine Optimization & Scalability (Future Milestone)
+- Phase 8: To be decided
 
 ---
 
