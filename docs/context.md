@@ -107,7 +107,11 @@ The project already has:
 - Dual-state debug HUD: Minimal non-intrusive HUD by default, Extended technical debug screen on F3, HUD visibility toggle on Shift+F3, and chunk boundary debug remapped to F2
 - Pause menu (ESC key) pausing in-game clock and player actions, with Resume, in-game Settings, Restart Game (resets day, teleports to spawn, rolls back placed/destroyed blocks), and Quit to desktop
 - In-game settings menu with live render distance stepper (2..=16 chunks), FOV stepper (60°..=110°), distance fog toggle, and time flow toggle
-- Creative inventory menu (E key) with 8×4 (32-slot) item grid, crisp pixel-art textures, hotbar mirror, left-click drag/place, right-click drop, middle-click clear, quick-assign hotkeys (1–8), and continuous time flow while open
+- In-game inventory menu (E key) with clean 8×4 (32-slot) item grid, hotbar mirror row, Mouse Tweaks controls (Shift-click quick transfer/clear, Shift+LMB drag, LMB drag painting across slots, RMB stamp/deselect), backdrop click deselect, Q/middle-click clear, and digit hotkeys (1–8)
+- Subtle photographic camera background blur (Depth of Field post-processing with gentle circle of confusion and high f-stop) when opening the Inventory or Pause menus
+- World Inspector egui run condition preventing inspector flickering when opening in-game menus
+- Procedural Minecraft-style 3D isometric pixel-art block icon renderer on-the-fly with 1.0/0.8/0.6 directional face shading and tints
+- Dedicated blocks architecture (`src/voxel/blocks.rs`) supporting 28+ block types, texture IDs, and future survival properties (durability, tools)
 - Custom stylized pixel-art mouse cursor (cursor_default.png) with floating block preview when holding items
 
 ---

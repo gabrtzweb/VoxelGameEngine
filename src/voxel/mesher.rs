@@ -279,7 +279,7 @@ impl ChunkMesher {
                         // Light blocks have their own
                         // emissive render entities.
                         if voxel.is_empty()
-                            || voxel == Voxel::Light
+                            || voxel.is_light()
                             || voxel == Voxel::Occupied
                             || is_chunk_local_centered_layer(chunk, local_voxel)
                         {

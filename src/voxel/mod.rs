@@ -1,7 +1,9 @@
+pub mod blocks;
 pub mod chunk;
 pub mod chunk_manager;
 pub mod debug;
 pub mod fluid;
+pub mod icon;
 pub mod interaction;
 pub mod interaction_mode;
 pub mod light;
@@ -13,6 +15,11 @@ pub mod targeting;
 pub mod terrain;
 pub mod texture;
 pub mod world;
+
+#[allow(unused_imports)]
+pub use blocks::{ToolType, Voxel};
+#[allow(unused_imports)]
+pub use icon::{BlockIconPlugin, BlockIcons};
 
 pub use chunk::{CHUNK_VOLUME, VOXEL_SIZE};
 

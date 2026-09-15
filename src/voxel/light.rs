@@ -14,8 +14,6 @@ const LIGHT_INTENSITY: f32 = 65_000.0;
 const LIGHT_RANGE: f32 = 16.0;
 const LIGHT_RADIUS: f32 = 0.25;
 
-const LIGHT_COLOR: Color = Color::srgb(1.0, 0.82, 0.42);
-
 #[derive(Clone, Copy)]
 struct VoxelLightEntities {
     visual: Entity,
@@ -72,13 +70,16 @@ pub fn sync_voxel_light(
     world_voxel: IVec3,
     registry: &mut VoxelLightRegistry,
 ) {
-    let should_exist = world.get_voxel(world_voxel) == Some(Voxel::Light);
+    let voxel = world.get_voxel(world_voxel);
+    let should_exist = voxel.is_some_and(|v| v.is_light());
 
     let existing = registry.entries.get(&world_voxel).copied();
 
     match (should_exist, existing) {
         (true, None) => {
-            spawn_voxel_light(commands, world_voxel, registry);
+            if let Some(v) = voxel {
+                spawn_voxel_light(commands, world_voxel, v, registry);
+            }
         }
 
         (false, Some(entities)) => {
@@ -106,13 +107,14 @@ pub fn sync_chunk_lights(
     for y in 0..CHUNK_SIZE {
         for z in 0..CHUNK_SIZE {
             for x in 0..CHUNK_SIZE {
-                if chunk.get(x, y, z) != Voxel::Light {
+                let voxel = chunk.get(x, y, z);
+                if !voxel.is_light() {
                     continue;
                 }
 
                 let world_voxel = chunk_origin + IVec3::new(x as i32, y as i32, z as i32);
 
-                spawn_voxel_light(commands, world_voxel, registry);
+                spawn_voxel_light(commands, world_voxel, voxel, registry);
             }
         }
     }
@@ -145,6 +147,7 @@ pub fn remove_chunk_lights(
 fn spawn_voxel_light(
     commands: &mut Commands,
     world_voxel: IVec3,
+    voxel: Voxel,
     registry: &mut VoxelLightRegistry,
 ) {
     if registry.entries.contains_key(&world_voxel) {
@@ -154,9 +157,6 @@ fn spawn_voxel_light(
     let position = world_voxel.as_vec3() * VOXEL_SIZE + Vec3::splat(VOXEL_SIZE * 0.5);
 
     // Visual entity.
-    //
-    // This can be frustum culled normally without
-    // affecting the actual light source.
     let visual = commands
         .spawn((
             Mesh3d(registry.mesh.clone()),
@@ -167,15 +167,11 @@ fn spawn_voxel_light(
         ))
         .id();
 
-    // Lighting entity.
-    //
-    // Deliberately separate from the visible mesh so
-    // lighting does not disappear when the block itself
-    // leaves the camera frustum.
+    // Lighting entity with block-specific color.
     let light = commands
         .spawn((
             PointLight {
-                color: LIGHT_COLOR,
+                color: voxel.light_color(),
 
                 intensity: LIGHT_INTENSITY,
 

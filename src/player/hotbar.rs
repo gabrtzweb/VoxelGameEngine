@@ -1,6 +1,6 @@
 use bevy::{input::mouse::AccumulatedMouseScroll, prelude::*};
 
-use crate::voxel::{chunk::Voxel, interaction::SelectedVoxel};
+use crate::voxel::{chunk::Voxel, icon::BlockIcons, interaction::SelectedVoxel};
 
 pub const HOTBAR_SLOT_COUNT: usize = 8;
 
@@ -19,7 +19,7 @@ impl Default for Hotbar {
                 Some(Voxel::Stone),
                 Some(Voxel::Sand),
                 Some(Voxel::Water),
-                Some(Voxel::Light),
+                Some(Voxel::LightWarm),
                 None,
                 None,
             ],
@@ -38,36 +38,20 @@ pub struct HotbarSlotIcon {
     pub index: usize,
 }
 
-#[derive(Resource)]
-pub struct HotbarTextures {
-    pub grass: Handle<Image>,
-    pub dirt: Handle<Image>,
-    pub stone: Handle<Image>,
-    pub sand: Handle<Image>,
-    pub water: Handle<Image>,
-    pub light: Handle<Image>,
-}
-
 pub struct HotbarPlugin;
 
 impl Plugin for HotbarPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Hotbar>()
-            .add_systems(Startup, setup_hotbar_ui)
+            .add_systems(
+                Startup,
+                setup_hotbar_ui.after(crate::voxel::icon::setup_block_icons),
+            )
             .add_systems(Update, (handle_hotbar_input, sync_hotbar_ui).chain());
     }
 }
 
-fn setup_hotbar_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let textures = HotbarTextures {
-        grass: asset_server.load("textures/items/item_grass.png"),
-        dirt: asset_server.load("textures/items/item_dirt.png"),
-        stone: asset_server.load("textures/items/item_stone.png"),
-        sand: asset_server.load("textures/items/item_sand.png"),
-        water: asset_server.load("textures/items/item_water.png"),
-        light: asset_server.load("textures/items/item_light.png"),
-    };
-
+fn setup_hotbar_ui(mut commands: Commands, icons: Res<BlockIcons>) {
     let initial_hotbar = Hotbar::default();
 
     // Centered bottom container spanning screen width
@@ -118,15 +102,9 @@ fn setup_hotbar_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                             Color::srgba(0.12, 0.12, 0.14, 0.75)
                         };
 
-                        let icon_handle = match initial_voxel {
-                            Some(Voxel::Grass) => textures.grass.clone(),
-                            Some(Voxel::Dirt) => textures.dirt.clone(),
-                            Some(Voxel::Stone) => textures.stone.clone(),
-                            Some(Voxel::Sand) => textures.sand.clone(),
-                            Some(Voxel::Water) => textures.water.clone(),
-                            Some(Voxel::Light) => textures.light.clone(),
-                            _ => textures.stone.clone(),
-                        };
+                        let icon_handle = initial_voxel
+                            .map(|v| icons.get(v))
+                            .unwrap_or_else(|| icons.get(Voxel::Stone));
 
                         let icon_visibility = if initial_voxel.is_some() {
                             Visibility::Visible
@@ -185,8 +163,6 @@ fn setup_hotbar_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                     }
                 });
         });
-
-    commands.insert_resource(textures);
 }
 
 fn handle_hotbar_input(
@@ -237,7 +213,7 @@ fn handle_hotbar_input(
 
 fn sync_hotbar_ui(
     hotbar: Res<Hotbar>,
-    icons: Res<HotbarTextures>,
+    icons: Res<BlockIcons>,
     mut slot_query: Query<(&HotbarSlotUi, &mut BorderColor, &mut BackgroundColor)>,
     mut icon_query: Query<(&HotbarSlotIcon, &mut ImageNode, &mut Visibility)>,
 ) {
@@ -258,16 +234,7 @@ fn sync_hotbar_ui(
     for (icon, mut img_node, mut visibility) in &mut icon_query {
         match hotbar.slots[icon.index] {
             Some(voxel) => {
-                let handle = match voxel {
-                    Voxel::Grass => icons.grass.clone(),
-                    Voxel::Dirt => icons.dirt.clone(),
-                    Voxel::Stone => icons.stone.clone(),
-                    Voxel::Sand => icons.sand.clone(),
-                    Voxel::Water => icons.water.clone(),
-                    Voxel::Light => icons.light.clone(),
-                    _ => icons.stone.clone(),
-                };
-                img_node.image = handle;
+                img_node.image = icons.get(voxel);
                 *visibility = Visibility::Visible;
             }
             None => {
@@ -298,7 +265,7 @@ mod tests {
         let hotbar = Hotbar::default();
         assert_eq!(hotbar.slots.len(), 8);
         assert_eq!(hotbar.slots[0], Some(Voxel::Grass));
-        assert_eq!(hotbar.slots[5], Some(Voxel::Light));
+        assert_eq!(hotbar.slots[5], Some(Voxel::LightWarm));
         assert_eq!(hotbar.slots[6], None);
         assert_eq!(hotbar.slots[7], None);
     }

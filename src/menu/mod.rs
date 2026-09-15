@@ -3,13 +3,14 @@ pub mod pause;
 pub mod settings;
 
 use bevy::{
+    post_process::dof::{DepthOfField, DepthOfFieldMode},
     prelude::*,
     window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
 
 use crate::{
-    player::{InspectorInteraction, hotbar::HotbarTextures},
-    voxel::chunk::Voxel,
+    player::InspectorInteraction,
+    voxel::{chunk::Voxel, icon::BlockIcons},
 };
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
@@ -73,6 +74,7 @@ impl Plugin for MenuPlugin {
                     manage_cursor_grab_mode,
                     update_custom_cursor,
                     sync_camera_fov,
+                    manage_menu_blur,
                 ),
             );
     }
@@ -183,7 +185,7 @@ fn update_custom_cursor(
     window: Option<Single<&Window, With<PrimaryWindow>>>,
     menu_state: Res<State<MenuState>>,
     held_item: Res<HeldInventoryItem>,
-    hotbar_textures: Option<Res<HotbarTextures>>,
+    block_icons: Option<Res<BlockIcons>>,
     cursor_query: Single<(&mut Node, &mut Visibility), With<CustomCursor>>,
     held_icon_query: Single<
         (&mut ImageNode, &mut Visibility),
@@ -210,23 +212,42 @@ fn update_custom_cursor(
         cursor_node.left = px(pos.x);
         cursor_node.top = px(pos.y);
 
-        if let (Some(voxel), Some(ref textures)) = (held_item.voxel, hotbar_textures) {
+        if let (Some(voxel), Some(ref icons)) = (held_item.voxel, block_icons) {
             *held_vis = Visibility::Visible;
-            held_icon.image = match voxel {
-                Voxel::Grass => textures.grass.clone(),
-                Voxel::Dirt => textures.dirt.clone(),
-                Voxel::Stone => textures.stone.clone(),
-                Voxel::Sand => textures.sand.clone(),
-                Voxel::Water => textures.water.clone(),
-                Voxel::Light => textures.light.clone(),
-                _ => textures.stone.clone(),
-            };
+            held_icon.image = icons.get(voxel);
         } else {
             *held_vis = Visibility::Hidden;
         }
     } else {
         *cursor_vis = Visibility::Hidden;
         *held_vis = Visibility::Hidden;
+    }
+}
+
+fn manage_menu_blur(
+    mut commands: Commands,
+    menu_state: Res<State<MenuState>>,
+    camera_query: Query<Entity, With<Camera3d>>,
+) {
+    if !menu_state.is_changed() {
+        return;
+    }
+
+    let is_in_menu = *menu_state.get() != MenuState::None;
+
+    for camera_entity in &camera_query {
+        if is_in_menu {
+            commands.entity(camera_entity).insert(DepthOfField {
+                mode: DepthOfFieldMode::Gaussian,
+                focal_distance: 0.1,
+                aperture_f_stops: 2.0,
+                max_circle_of_confusion_diameter: 8.0,
+                max_depth: 100.0,
+                ..default()
+            });
+        } else {
+            commands.entity(camera_entity).remove::<DepthOfField>();
+        }
     }
 }
 

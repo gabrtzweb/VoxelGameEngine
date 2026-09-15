@@ -18,8 +18,8 @@ use environment::EnvironmentPlugin;
 use menu::MenuPlugin;
 use player::PlayerPlugin;
 use voxel::{
-    ChunkManagerPlugin, FluidSimulationPlugin, ShapingPlugin, TargetingPlugin, VoxelDebugPlugin,
-    VoxelInteractionPlugin, VoxelMaterial,
+    BlockIconPlugin, ChunkManagerPlugin, FluidSimulationPlugin, ShapingPlugin, TargetingPlugin,
+    VoxelDebugPlugin, VoxelInteractionPlugin, VoxelMaterial,
 };
 
 use winit::{platform::windows::WindowExtWindows, window::Icon};
@@ -71,7 +71,10 @@ fn main() {
         }))
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(EguiPlugin::default())
-        .add_plugins(WorldInspectorPlugin::new())
+        .add_plugins(
+            WorldInspectorPlugin::default()
+                .run_if(|inspector: Res<player::InspectorInteraction>| inspector.active),
+        )
         .add_plugins(MaterialPlugin::<VoxelMaterial>::default())
         .add_plugins(EnvironmentPlugin)
         .add_plugins(PlayerPlugin)
@@ -83,6 +86,7 @@ fn main() {
         .add_plugins(VoxelDebugPlugin)
         .add_plugins(ShapingPlugin)
         .add_plugins(FluidSimulationPlugin)
+        .add_plugins(BlockIconPlugin)
         .add_systems(Update, set_window_icons)
         .run();
 }

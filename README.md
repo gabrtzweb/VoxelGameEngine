@@ -39,7 +39,14 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     T                 Rotate block shape 90° clockwise
 
     ESC               Pause Menu (Settings, Restart Game, Quit)
-    E                 Creative Inventory (32-slot grid, hotbar assignment)
+    E                 Inventory (32-slot palette, 3D isometric icons, Mouse Tweaks controls)
+                      • Shift + Click: Quick transfer from palette to hotbar / quick clear
+                      • Shift + LMB Drag: Rapid transfer into hotbar / rapid hotbar wipe
+                      • LMB Drag: Paint held block across multiple hotbar slots
+                      • Click outside / same block: Deselect held item
+                      • Right Click: Stamp block into slot / deselect on empty space
+                      • Q / Middle Click: Clear hovered hotbar slot
+                      • 1 - 8: Quick assign or swap slots
 
     F1                Toggle Inspector
     F2                Chunk debug borders
@@ -58,6 +65,12 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     │   ├── clouds.rs
     │   └── stars.rs
     │
+    ├── menu/
+    │   ├── inventory.rs
+    │   ├── mod.rs
+    │   ├── pause.rs
+    │   └── settings.rs
+    │
     ├── player/
     │   ├── collision.rs
     │   ├── controller.rs
@@ -68,10 +81,12 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     │   └── water.rs
     │
     ├── voxel/
+    │   ├── blocks.rs
     │   ├── chunk_manager.rs
     │   ├── chunk.rs
     │   ├── debug.rs
     │   ├── fluid.rs
+    │   ├── icon.rs
     │   ├── interaction_mode.rs
     │   ├── interaction.rs
     │   ├── light.rs
@@ -82,6 +97,7 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     │   ├── shaping.rs
     │   ├── targeting.rs
     │   ├── terrain.rs
+    │   ├── texture.rs
     │   └── world.rs
     │
     ├── dev_stats.rs

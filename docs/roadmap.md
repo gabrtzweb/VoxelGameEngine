@@ -123,12 +123,13 @@ This document outlines the planned development phases for the voxel game engine,
     - Toggle in-game time to be paused.
   - In game "creative inventory" (`E` Key) - 8×4 (32 slots) grid matching hotbar width, item pickup/swap/clearing, quick-assign (1–8 keys), and custom mouse cursor with floating item previews.
 - [ ] **Cross-Phase Refinements & Mechanics Polish**:
-  - **Priority A: Block Palette Expansion (Creative Inventory & Texture Array)**:
-    - Register new voxel types and multi-variant textures from `assets/textures/blocks/`:
-      - Natural & Soils: Clay (2 variants), Gravel (4 variants), Moss (2 variants), Mud (6 variants), Mulch (4 variants), Packed Dirt (4 variants), Packed Mud (4 variants), Snow (4 variants).
-      - Stones & Minerals: Slate (4 variants), Flint (2 variants), Magma, Mossy Stone (2 variants).
-      - Liquids: Lava (`liqd_lava`, `liqd_lava_still`, `liqd_lava_flow`) with cellular automaton spread, slower viscous flow pacing, emissive lighting, and fluid interaction (Water + Lava reaction).
-    - Populate all 32 creative inventory slots with items, crisp icons, and hover tooltips.
+  - [x] **Priority A: Block Palette Expansion, 3D Block Icons & Inventory Simplification**:
+    - Extracted block definitions into dedicated [src/voxel/blocks.rs](VoxelGameEngine/src/voxel/blocks.rs), supporting 28+ block types, texture IDs, and future survival properties (durability, preferred tool).
+    - Integrated new blocks: Blackstone, Cobbleblackstone, Slate, Cobbleslate, Cobblestone, Mossy Cobblestone/Stone, Magma, Flint, Mud, Packed Dirt/Mud, Mulch, Moss, Snow, Clay, Gravel, and RGB/temperature lights (Warm, Cold, Red, Green, Blue).
+    - Implemented Minecraft-style 3D isometric pixel-art icon rasterizer in [src/voxel/icon.rs](VoxelGameEngine/src/voxel/icon.rs) generating 32×32 icons on-the-fly with 1.0/0.8/0.6 directional face shading and tints.
+    - Cleaned up inventory UI: simplified title to "INVENTORY", removed "HOTBAR" label, and eliminated explanatory tooltip/hover text.
+    - Added cinematic camera background blur (`DepthOfField`) whenever the inventory or pause menu is opened.
+    - Removed legacy static icons in `assets/textures/items/` while preserving directory for future item sprites.
   - **Priority B: Sub-Voxel UV Blending & Seamless Texturing**:
     - Full 1m³ block face unification: A full 1m² face (composed of 2×2 co-planar sub-voxels) maps a single continuous 16×16 texture across the entire surface rather than repeating 4 times.
     - Adaptive sub-voxel UV mapping: Isolated voxels and columns retain clean full [0, 1] texture mapping to avoid awkward corner cropping, while contiguous sub-voxels (slabs, steps) seamlessly blend across their shared plane.
