@@ -105,29 +105,48 @@ This document outlines the planned development phases for the voxel game engine,
 ---
 
 ## Phase 5: General Polish, Revisions & In-Game Interfaces (Current)
-- **Environment & Calendar System Implementation**:
+- [x] **Environment & Calendar System Implementation**:
   - Set day duration to 24 minutes in real time.
   - Implement a 28-day month and a 4-season year (Spring, Summer, Autumn, Winter), with each season lasting exactly 3 months (84 days).
   - Set the game to always start on Day 1 of Month 1, marking the exact beginning of Spring.
   - Implement the 8-phase lunar cycle synchronized with the 28-day month. Alternate phase durations strictly between 3 and 4 days.
-- **Debug Screen (F3) & HUD Refactor**:
+- [x] **Debug Screen (F3) & HUD Refactor**:
   - Refactor the current debug text to have toggleable states instead of a single cluttered view.
   - Minimal HUD: Show only essential gameplay info like FPS, Current Time, Day, Season, XYZ Position and Game Mode.
   - Extended Debug (F3 Mode): Show the full technical layout including Frame time, Moon Phase, Flight status, Player chunk, Camera coordinates, Loaded/Meshed chunks, Mesh vertices/triangles, Voxel capacity, and Target voxel (Currently, the F3 key is assigned to toggle Chunk debug; change it to F2).
-- **In-Game Settings, Inventory (`E` Key) & Pause Menu (`ESC` Key)**:
+- [x] **In-Game Settings, Inventory (`E` Key) & Pause Menu (`ESC` Key)**:
   - Stylized UI overlay pausing gameplay/freeing mouse cursor when pressing `ESC`.
   - In-game configurable settings:
     - Render Distance (chunk radius slider/stepper, dynamically resizing active chunk streaming).
     - Field of View (FOV) slider.
     - Fog toggles and density controls.
     - Toggle in-game time to be paused.
-  - In game "creative inventory" (`E` Key) - with all new available blocks that I added, to be able to be picked up and dragged via mouse button to the hotbar.
-- **Cross-Phase Refinements & Mechanics Polish**:
-  - Reviewing, tuning, and polishing features from Phases 1–4 and 5 (movement feel, camera transitions, lighting balance, colors, textures, new blocks, inventory system, unified design, etc).
-  - Sub-voxel shaping preview / radial selection UI for fast shape selection (hold R).
-  - Visual micro-details, maybe a player model (can be the exact same model as a Minecraft player to be compatible with existing skins).
-  - Texture blending for shapes—for example: a full block (8 voxels) uses a single texture across its entire surface, whereas a single voxel uses the whole texture on itself; however, if I add another voxel, they combine the texture as if they were one, rather than each voxel having its own texture.
-  - **And much more that I can't think of right now**
+  - In game "creative inventory" (`E` Key) - 8×4 (32 slots) grid matching hotbar width, item pickup/swap/clearing, quick-assign (1–8 keys), and custom mouse cursor with floating item previews.
+- [ ] **Cross-Phase Refinements & Mechanics Polish**:
+  - **Priority A: Block Palette Expansion (Creative Inventory & Texture Array)**:
+    - Register new voxel types and multi-variant textures from `assets/textures/blocks/`:
+      - Natural & Soils: Clay (2 variants), Gravel (4 variants), Moss (2 variants), Mud (6 variants), Mulch (4 variants), Packed Dirt (4 variants), Packed Mud (4 variants), Snow (4 variants).
+      - Stones & Minerals: Slate (4 variants), Flint (2 variants), Magma, Mossy Stone (2 variants).
+      - Liquids: Lava (`liqd_lava`, `liqd_lava_still`, `liqd_lava_flow`) with cellular automaton spread, slower viscous flow pacing, emissive lighting, and fluid interaction (Water + Lava reaction).
+    - Populate all 32 creative inventory slots with items, crisp icons, and hover tooltips.
+  - **Priority B: Sub-Voxel UV Blending & Seamless Texturing**:
+    - Full 1m³ block face unification: A full 1m² face (composed of 2×2 co-planar sub-voxels) maps a single continuous 16×16 texture across the entire surface rather than repeating 4 times.
+    - Adaptive sub-voxel UV mapping: Isolated voxels and columns retain clean full [0, 1] texture mapping to avoid awkward corner cropping, while contiguous sub-voxels (slabs, steps) seamlessly blend across their shared plane.
+  - **Priority C: Radial Shape Selection Menu & Ghost Hologram Preview (<kbd>Hold R</kbd>)**:
+    - Short tap <kbd>R</kbd>: Quick-cycles to the next shape in sequence (retaining rapid muscle memory).
+    - Hold <kbd>R</kbd>: Sleek circular/radial selection wheel centered on screen showing all 9 sub-voxel shapes with directional mouse hovering and instant release-to-select.
+    - Ghost Hologram Preview: Translucent wireframe / shape preview in the world highlighting the targeted block and its active rotation before committing placement or transformation.
+  - **Priority D: Third-Person Player Model & Animations (<kbd>F5</kbd>)**:
+    - Classic cuboid player hierarchy (Head, Torso, Left/Right Arm, Left/Right Leg) mapped to `assets/textures/mobs/player_skin.png`.
+    - Procedural locomotion animations: Arm and leg pendulum swings synchronized with walking/sprinting speed, head yaw/pitch tracking camera view, and swimming posture underwater.
+  - **Priority E: Movement & Camera Juice**:
+    - View Bobbing: Subtle sinusoidal head bobbing during walking and sprinting (toggleable in Settings).
+    - Dynamic FOV Kick: Smooth camera FOV zoom-out when sprinting or flying fast.
+    - Sneak / Crouch (<kbd>Shift</kbd>): Lowers eye height to 1.3m and prevents walking off precarious block edges (ledge clamping).
+  - **Priority F: Visual Polish, Atmosphere & Audio Foundations**:
+    - Underwater visual immersion: subtle caustic ripples, screen vignette, and water surface wave distortion.
+    - Sound foundations: Step audio (grass, dirt, stone, sand, water splash) and block break/placement feedback.
+    - UI unification and micro-polish across all menus, hotbar active selection indicators, and crosshair states.
 
 ---
 
