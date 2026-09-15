@@ -123,11 +123,11 @@ This document outlines the planned development phases for the voxel game engine,
     - Toggle in-game time to be paused.
   - In game "creative inventory" (`E` Key) - with all new available blocks that I added, to be able to be picked up and dragged via mouse button to the hotbar.
 - **Cross-Phase Refinements & Mechanics Polish**:
-  - Reviewing, tuning, and polishing features from Phases 1–4 (movement feel, camera transitions, lighting balance, colors, textures, new blocks).
+  - Reviewing, tuning, and polishing features from Phases 1–4 and 5 (movement feel, camera transitions, lighting balance, colors, textures, new blocks, inventory system, unified design, etc).
   - Sub-voxel shaping preview / radial selection UI for fast shape selection (hold R).
   - Visual micro-details, maybe a player model (can be the exact same model as a Minecraft player to be compatible with existing skins).
   - Texture blending for shapes—for example: a full block (8 voxels) uses a single texture across its entire surface, whereas a single voxel uses the whole texture on itself; however, if I add another voxel, they combine the texture as if they were one, rather than each voxel having its own texture.
-- **And much more that I can't think of right now**
+  - **And much more that I can't think of right now**
 
 ---
 

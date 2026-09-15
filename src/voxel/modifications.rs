@@ -36,4 +36,12 @@ impl WorldModificationStore {
             );
         }
     }
+
+    pub fn clear(&mut self) {
+        self.chunks.clear();
+    }
+
+    pub fn modified_chunks(&self) -> Vec<IVec3> {
+        self.chunks.keys().copied().collect()
+    }
 }

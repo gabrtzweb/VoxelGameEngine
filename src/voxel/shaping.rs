@@ -49,7 +49,12 @@ fn handle_block_shaping(
     mut light_registry: ResMut<VoxelLightRegistry>,
     mut registry: ResMut<ChunkMeshRegistry>,
     mut meshes: ResMut<Assets<Mesh>>,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
 ) {
+    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+        return;
+    }
+
     if *game_mode != GameMode::Creative {
         return;
     }
@@ -107,7 +112,12 @@ fn handle_block_rotation(
     mut light_registry: ResMut<VoxelLightRegistry>,
     mut registry: ResMut<ChunkMeshRegistry>,
     mut meshes: ResMut<Assets<Mesh>>,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
 ) {
+    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+        return;
+    }
+
     if *game_mode != GameMode::Creative {
         return;
     }

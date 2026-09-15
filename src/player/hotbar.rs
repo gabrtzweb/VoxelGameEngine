@@ -192,9 +192,13 @@ fn setup_hotbar_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
 fn handle_hotbar_input(
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse_scroll: Res<AccumulatedMouseScroll>,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
     mut hotbar: ResMut<Hotbar>,
     mut selected: ResMut<SelectedVoxel>,
 ) {
+    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+        return;
+    }
     let digit_keys = [
         KeyCode::Digit1,
         KeyCode::Digit2,

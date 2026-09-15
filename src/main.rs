@@ -1,5 +1,6 @@
 mod dev_stats;
 mod environment;
+mod menu;
 mod player;
 mod voxel;
 
@@ -14,6 +15,7 @@ use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 
 use dev_stats::DevStatsPlugin;
 use environment::EnvironmentPlugin;
+use menu::MenuPlugin;
 use player::PlayerPlugin;
 use voxel::{
     ChunkManagerPlugin, FluidSimulationPlugin, ShapingPlugin, TargetingPlugin, VoxelDebugPlugin,
@@ -75,6 +77,7 @@ fn main() {
         .add_plugins(PlayerPlugin)
         .add_plugins(ChunkManagerPlugin)
         .add_plugins(DevStatsPlugin)
+        .add_plugins(MenuPlugin)
         .add_plugins(TargetingPlugin)
         .add_plugins(VoxelInteractionPlugin)
         .add_plugins(VoxelDebugPlugin)

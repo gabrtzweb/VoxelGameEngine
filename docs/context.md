@@ -47,7 +47,7 @@ Current dimensions:
 - Eye height: 1.62 m
 
 Camera FOV:
-- 90 degrees
+- 80 degrees (configurable 60°..=110° via in-game Settings)
 
 Game Modes Currently Implemented:
 - Creative (currently the main gameplay and development mode)
@@ -102,6 +102,13 @@ The project already has:
 - Straight-down waterfall physics (ground-support verification) preventing mid-air spreading on pillars and cliff drops
 - Automatic sub-voxel waterlogging during underwater shaping and rotation
 - Full underwater visibility from below with counter-clockwise winding ceiling geometry and submerged fog immersion
+- In-game calendar and seasonal progression: 24-minute real-time day cycle, 28-day months, 4 seasons (Spring, Summer, Autumn, Winter) lasting 84 days each, starting on Day 1 Month 1 Spring
+- 8-phase lunar cycle strictly synchronized with the 28-day calendar, alternating between 3-day and 4-day phase durations
+- Dual-state debug HUD: Minimal non-intrusive HUD by default, Extended technical debug screen on F3, HUD visibility toggle on Shift+F3, and chunk boundary debug remapped to F2
+- Pause menu (ESC key) pausing in-game clock and player actions, with Resume, in-game Settings, Restart Game (resets day, teleports to spawn, rolls back placed/destroyed blocks), and Quit to desktop
+- In-game settings menu with live render distance stepper (2..=16 chunks), FOV stepper (60°..=110°), distance fog toggle, and time flow toggle
+- Creative inventory menu (E key) with 8×4 (32-slot) item grid, crisp pixel-art textures, hotbar mirror, left-click drag/place, right-click drop, middle-click clear, quick-assign hotkeys (1–8), and continuous time flow while open
+- Custom stylized pixel-art mouse cursor (cursor_default.png) with floating block preview when holding items
 
 ---
 

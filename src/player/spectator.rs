@@ -6,8 +6,13 @@ pub(super) fn spectator_movement(
     keyboard: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
     game_mode: Res<GameMode>,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
     camera: Single<(&mut Transform, &PlayerCamera), With<Camera3d>>,
 ) {
+    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+        return;
+    }
+
     if *game_mode != GameMode::Spectator {
         return;
     }

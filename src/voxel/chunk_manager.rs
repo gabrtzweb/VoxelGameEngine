@@ -121,7 +121,7 @@ fn plan_chunk_streaming(
 ) {
     let player_chunk = player_chunk_coordinate(player.translation);
 
-    if state.last_player_chunk == Some(player_chunk) {
+    if !settings.is_changed() && state.last_player_chunk == Some(player_chunk) {
         return;
     }
 

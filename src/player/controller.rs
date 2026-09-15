@@ -146,14 +146,14 @@ pub(super) fn toggle_inspector_interaction(
 
 pub(super) fn toggle_camera_view(
     keyboard: Res<ButtonInput<KeyCode>>,
-
     game_mode: Res<GameMode>,
-
     inspector_interaction: Res<InspectorInteraction>,
-
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
     camera: Single<&mut PlayerCamera, With<Camera3d>>,
 ) {
-    if inspector_interaction.active {
+    if inspector_interaction.active
+        || menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None)
+    {
         return;
     }
 
@@ -181,12 +181,13 @@ pub(super) fn toggle_camera_view(
 
 pub(super) fn camera_look(
     mouse_motion: Res<AccumulatedMouseMotion>,
-
     inspector_interaction: Res<InspectorInteraction>,
-
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
     camera: Single<(&mut Transform, &mut PlayerCamera), With<Camera3d>>,
 ) {
-    if inspector_interaction.active {
+    if inspector_interaction.active
+        || menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None)
+    {
         return;
     }
 
@@ -210,22 +211,18 @@ pub(super) fn camera_look(
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub(super) fn creative_movement(
     keyboard: Res<ButtonInput<KeyCode>>,
-
     time: Res<Time>,
-
     game_mode: Res<GameMode>,
-
     inspector_interaction: Res<InspectorInteraction>,
-
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
     world: Res<VoxelWorld>,
-
     player: Single<(&mut Transform, &mut PlayerMotion), With<Player>>,
-
     camera: Single<(&mut Transform, &PlayerCamera), (With<Camera3d>, Without<Player>)>,
-
     mut jump_tap: Local<JumpTapState>,
 ) {
-    if inspector_interaction.active {
+    if inspector_interaction.active
+        || menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None)
+    {
         jump_tap.since_last_press = None;
 
         return;

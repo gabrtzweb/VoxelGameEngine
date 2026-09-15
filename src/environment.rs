@@ -274,8 +274,13 @@ impl Plugin for EnvironmentPlugin {
 fn handle_environment_input(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
     mut state: ResMut<EnvironmentState>,
 ) {
+    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+        return;
+    }
+
     let delta = time.delta_secs();
 
     if keyboard.pressed(KeyCode::F6) {
@@ -316,8 +321,19 @@ fn handle_environment_input(
     }
 }
 
-fn advance_environment_clock(time: Res<Time>, mut state: ResMut<EnvironmentState>) {
+fn advance_environment_clock(
+    time: Res<Time>,
+    mut state: ResMut<EnvironmentState>,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
+) {
     if state.is_time_paused || state.day_length_seconds <= 0.0 {
+        return;
+    }
+
+    if let Some(ref menu) = menu_state
+        && (*menu.get() == crate::menu::MenuState::Pause
+            || *menu.get() == crate::menu::MenuState::Settings)
+    {
         return;
     }
 
@@ -373,10 +389,21 @@ fn update_atmosphere(
 
 fn sync_fog_distance(
     settings: Res<ChunkStreamingSettings>,
+    game_settings: Option<Res<crate::menu::GameSettings>>,
     camera: Single<(&GlobalTransform, &mut DistanceFog), With<Camera3d>>,
     world: Option<Res<crate::voxel::VoxelWorld>>,
 ) {
     let (cam_transform, mut fog) = camera.into_inner();
+
+    if let Some(ref gs) = game_settings
+        && !gs.fog_enabled
+    {
+        fog.falloff = FogFalloff::Linear {
+            start: 99999.0,
+            end: 100000.0,
+        };
+        return;
+    }
 
     let is_underwater = world
         .as_ref()

@@ -38,6 +38,9 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     R                 Cycle block shape (Full, Stairs, Corner Stairs, Slabs, Columns, Centered Columns)
     T                 Rotate block shape 90° clockwise
 
+    ESC               Pause Menu (Settings, Restart Game, Quit)
+    E                 Creative Inventory (32-slot grid, hotbar assignment)
+
     F1                Toggle Inspector
     F2                Chunk debug borders
     F3                Toggle HUD (Minimal / Extended debug)

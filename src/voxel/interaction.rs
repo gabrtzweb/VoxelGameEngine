@@ -93,8 +93,13 @@ impl Plugin for VoxelInteractionPlugin {
 
 fn toggle_interaction_mode(
     keyboard: Res<ButtonInput<KeyCode>>,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
     mut interaction_mode: ResMut<InteractionMode>,
 ) {
+    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+        return;
+    }
+
     if !keyboard.just_pressed(KeyCode::KeyB) {
         return;
     }
@@ -107,11 +112,16 @@ fn toggle_interaction_mode(
 fn pick_targeted_voxel(
     game_mode: Res<GameMode>,
     mouse: Res<ButtonInput<MouseButton>>,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
     current_target: Res<CurrentTarget>,
     world: Res<VoxelWorld>,
     mut selected: ResMut<SelectedVoxel>,
     hotbar: Option<ResMut<crate::player::hotbar::Hotbar>>,
 ) {
+    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+        return;
+    }
+
     if *game_mode != GameMode::Creative {
         return;
     }
@@ -168,7 +178,12 @@ fn edit_voxels(
     mut meshes: ResMut<Assets<Mesh>>,
     mut interaction_state: Local<InteractionState>,
     fluid_queue: Option<ResMut<FluidUpdateQueue>>,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
 ) {
+    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+        return;
+    }
+
     if *game_mode == GameMode::Spectator {
         return;
     }
