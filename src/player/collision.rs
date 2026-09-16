@@ -140,7 +140,7 @@ fn resolve_x(
 
     let half_width = PLAYER_WIDTH * 0.5;
 
-    for voxel in voxels {
+    for voxel in &voxels {
         let voxel_min_x = voxel.x as f32 * VOXEL_SIZE;
 
         let voxel_max_x = voxel_min_x + VOXEL_SIZE;
@@ -196,7 +196,7 @@ fn resolve_z(
 
     let half_width = PLAYER_WIDTH * 0.5;
 
-    for voxel in voxels {
+    for voxel in &voxels {
         let voxel_min_z = voxel.z as f32 * VOXEL_SIZE;
 
         let voxel_max_z = voxel_min_z + VOXEL_SIZE;
@@ -230,7 +230,7 @@ fn resolve_y(world: &VoxelWorld, position: Vec3, movement: f32, height: f32) -> 
         return (candidate, false, false);
     }
 
-    for voxel in voxels {
+    for voxel in &voxels {
         let voxel_min_y = voxel.y as f32 * VOXEL_SIZE;
 
         let voxel_max_y = voxel_min_y + VOXEL_SIZE;
@@ -264,10 +264,62 @@ pub fn collides_at(world: &VoxelWorld, position: Vec3, height: f32) -> bool {
     false
 }
 
-fn overlapping_solid_voxels(world: &VoxelWorld, position: Vec3, height: f32) -> Vec<IVec3> {
+pub const MAX_OVERLAPPING_VOXELS: usize = 64;
+
+#[derive(Clone, Copy)]
+pub struct SolidVoxelBuffer {
+    voxels: [IVec3; MAX_OVERLAPPING_VOXELS],
+    len: usize,
+}
+
+impl Default for SolidVoxelBuffer {
+    fn default() -> Self {
+        Self {
+            voxels: [IVec3::ZERO; MAX_OVERLAPPING_VOXELS],
+            len: 0,
+        }
+    }
+}
+
+impl SolidVoxelBuffer {
+    #[inline]
+    pub fn push(&mut self, voxel: IVec3) {
+        if self.len < MAX_OVERLAPPING_VOXELS {
+            self.voxels[self.len] = voxel;
+            self.len += 1;
+        }
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    #[inline]
+    pub fn as_slice(&self) -> &[IVec3] {
+        &self.voxels[..self.len]
+    }
+}
+
+impl<'a> IntoIterator for &'a SolidVoxelBuffer {
+    type Item = &'a IVec3;
+    type IntoIter = std::slice::Iter<'a, IVec3>;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.as_slice().iter()
+    }
+}
+
+fn overlapping_solid_voxels(world: &VoxelWorld, position: Vec3, height: f32) -> SolidVoxelBuffer {
     let (min_voxel, max_voxel) = body_voxel_bounds(position, height);
 
-    let mut voxels = Vec::new();
+    let mut voxels = SolidVoxelBuffer::default();
 
     for y in min_voxel.y..=max_voxel.y {
         for z in min_voxel.z..=max_voxel.z {
@@ -331,5 +383,23 @@ mod tests {
         assert!(has_headroom(&world, player_pos, 0.45));
         // Clearance at 1.8m (standing) collides with ceiling
         assert!(!has_headroom(&world, player_pos, 1.8));
+    }
+
+    #[test]
+    fn overlapping_solid_voxels_uses_stack_buffer_correctly() {
+        let mut world = VoxelWorld::default();
+        world.insert_chunk(IVec3::ZERO, Chunk::new());
+
+        let pos = Vec3::new(1.0, 1.0, 1.0);
+        let empty_buf = overlapping_solid_voxels(&world, pos, 1.8);
+        assert!(empty_buf.is_empty());
+        assert_eq!(empty_buf.len(), 0);
+
+        // Place a solid stone block inside the player bounds
+        world.set_voxel(IVec3::new(2, 2, 2), Voxel::Stone);
+        let filled_buf = overlapping_solid_voxels(&world, pos, 1.8);
+        assert!(!filled_buf.is_empty());
+        assert_eq!(filled_buf.len(), 1);
+        assert_eq!(filled_buf.as_slice()[0], IVec3::new(2, 2, 2));
     }
 }

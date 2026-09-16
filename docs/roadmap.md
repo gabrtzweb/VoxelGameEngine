@@ -206,9 +206,9 @@ Detailed technical review and diagnostic report available in [docs/technical_rev
   - [x] Split `src/voxel/shaping.rs` (1,038 lines) into `shaping.rs`, `radial_menu.rs`, and sub-voxel geometry helpers.
   - [x] Clean up `src/environment.rs` (798 lines) into modular domain files (`atmosphere.rs`, `celestial.rs`, `clouds.rs`, `stars.rs`, `time.rs`).
 
-- [ ] **Stage 7.4: Collision & Memory Micro-Optimizations**
-  - [ ] Replace `Vec<IVec3>` allocations in `overlapping_solid_voxels` with a stack-allocated small buffer or visitor closure.
-  - [ ] Add early-exit bounds check for fully empty or solid chunks during meshing.
+- [x] **Stage 7.4: Collision & Memory Micro-Optimizations**
+  - [x] Replace `Vec<IVec3>` allocations in `overlapping_solid_voxels` with a stack-allocated small buffer or visitor closure.
+  - [x] Add early-exit bounds check for fully empty or solid chunks during meshing.
 
 ## Phase 8: Engine Optimization & Scalability (Future Milestone)
 - **LOD Render Distance**: Downsampled greedy meshes for distant chunks (maybe not a priority = can be skipped).

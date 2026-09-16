@@ -11,7 +11,7 @@ use super::{
 use crate::{
     gameplay::shaping::is_centered_layer,
     simulation::fluid::water_surface_height_offset,
-    world::{CHUNK_SIZE, VOXEL_SIZE, Voxel, VoxelAccess},
+    world::{CHUNK_SIZE, Chunk, VOXEL_SIZE, Voxel, VoxelAccess},
 };
 
 const MASK_SIZE: usize = CHUNK_SIZE * CHUNK_SIZE;
@@ -264,13 +264,65 @@ impl ChunkMesher {
             };
         };
 
+        // Early-exit 1: A chunk with zero non-air voxels contains no geometry.
+        if chunk.is_empty() {
+            return ChunkMeshes {
+                opaque: None,
+                transparent: None,
+            };
+        }
+
+        // Early-exit 2: A chunk that is 100% solid opaque and surrounded on all 6 faces by
+        // other 100% solid opaque chunks has zero exposed boundary or internal faces.
+        let is_fully_solid = chunk.is_fully_solid_opaque();
+        if is_fully_solid {
+            let all_neighbors_solid = FACE_DIRECTIONS.iter().all(|&direction| {
+                let neighbor_chunk_coord = chunk_coordinate + direction.normal();
+                world
+                    .get_chunk(neighbor_chunk_coord)
+                    .is_some_and(Chunk::is_fully_solid_opaque)
+            });
+
+            if all_neighbors_solid {
+                return ChunkMeshes {
+                    opaque: None,
+                    transparent: None,
+                };
+            }
+        }
+
         let chunk_voxel_origin = chunk_coordinate * CHUNK_SIZE as i32;
 
         let mut opaque_buffers = MeshBuffers::new();
         let mut transparent_buffers = MeshBuffers::new();
 
         for direction in FACE_DIRECTIONS {
-            for slice in 0..CHUNK_SIZE {
+            // Optimization for solid chunks: if the chunk is solid opaque and the neighbor
+            // in `direction` is also solid opaque, the boundary slice towards it has 0 faces.
+            if is_fully_solid {
+                let neighbor_chunk_coord = chunk_coordinate + direction.normal();
+                if world
+                    .get_chunk(neighbor_chunk_coord)
+                    .is_some_and(Chunk::is_fully_solid_opaque)
+                {
+                    continue;
+                }
+            }
+
+            let slice_range = if is_fully_solid {
+                match direction {
+                    FaceDirection::PositiveX
+                    | FaceDirection::PositiveY
+                    | FaceDirection::PositiveZ => (CHUNK_SIZE - 1)..CHUNK_SIZE,
+                    FaceDirection::NegativeX
+                    | FaceDirection::NegativeY
+                    | FaceDirection::NegativeZ => 0..1,
+                }
+            } else {
+                0..CHUNK_SIZE
+            };
+
+            for slice in slice_range {
                 let mut mask: [Option<FaceKey>; MASK_SIZE] = [None; MASK_SIZE];
 
                 for v in 0..CHUNK_SIZE {
@@ -362,14 +414,16 @@ impl ChunkMesher {
             }
         }
 
-        mesh_centered_voxels(
-            world,
-            chunk,
-            chunk_coordinate,
-            textures,
-            &mut opaque_buffers,
-            &mut transparent_buffers,
-        );
+        if !is_fully_solid {
+            mesh_centered_voxels(
+                world,
+                chunk,
+                chunk_coordinate,
+                textures,
+                &mut opaque_buffers,
+                &mut transparent_buffers,
+            );
+        }
 
         ChunkMeshes {
             opaque: opaque_buffers.into_mesh(),
@@ -990,6 +1044,65 @@ mod tests {
             }
         } else {
             panic!("Expected Float32x2 UV_1");
+        }
+    }
+
+    #[test]
+    fn mesher_early_exits_on_empty_air_chunk() {
+        let mut world = VoxelWorld::default();
+        world.insert_chunk(IVec3::ZERO, Chunk::new());
+
+        let (_, registry) = build_voxel_texture_array();
+        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
+        assert!(meshes.opaque.is_none());
+        assert!(meshes.transparent.is_none());
+    }
+
+    #[test]
+    fn mesher_early_exits_on_fully_solid_chunk_surrounded_by_solid() {
+        let mut world = VoxelWorld::default();
+        // Insert central solid chunk
+        world.insert_chunk(IVec3::ZERO, Chunk::filled(Voxel::Stone));
+
+        // Insert all 6 neighbors as solid chunks
+        for direction in FACE_DIRECTIONS {
+            world.insert_chunk(direction.normal(), Chunk::filled(Voxel::Stone));
+        }
+
+        let (_, registry) = build_voxel_texture_array();
+        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
+        assert!(meshes.opaque.is_none());
+        assert!(meshes.transparent.is_none());
+    }
+
+    #[test]
+    fn mesher_solid_chunk_adjacent_to_air_renders_only_exposed_boundary() {
+        let mut world = VoxelWorld::default();
+        // Insert central solid chunk
+        world.insert_chunk(IVec3::ZERO, Chunk::filled(Voxel::Stone));
+
+        // Insert 5 neighbors as solid, leave +Y (top) as air
+        world.insert_chunk(IVec3::X, Chunk::filled(Voxel::Stone));
+        world.insert_chunk(IVec3::NEG_X, Chunk::filled(Voxel::Stone));
+        world.insert_chunk(IVec3::NEG_Y, Chunk::filled(Voxel::Stone));
+        world.insert_chunk(IVec3::Z, Chunk::filled(Voxel::Stone));
+        world.insert_chunk(IVec3::NEG_Z, Chunk::filled(Voxel::Stone));
+        world.insert_chunk(IVec3::Y, Chunk::new()); // Empty air chunk on top
+
+        let (_, registry) = build_voxel_texture_array();
+        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
+        let opaque = meshes.opaque.expect("Should render top face against air");
+        assert!(meshes.transparent.is_none());
+
+        // Every vertex must point strictly upwards (Positive Y) because all other 5 sides are occluded!
+        let normals = opaque.attribute(Mesh::ATTRIBUTE_NORMAL).unwrap();
+        if let VertexAttributeValues::Float32x3(norm_data) = normals {
+            assert!(!norm_data.is_empty());
+            for norm in norm_data {
+                assert_eq!(*norm, [0.0, 1.0, 0.0], "Only Positive Y faces should be rendered");
+            }
+        } else {
+            panic!("Expected Float32x3 normals");
         }
     }
 }
