@@ -27,7 +27,8 @@ pub use icon::{BlockIconPlugin, BlockIcons};
 
 pub use chunk::{CHUNK_VOLUME, VOXEL_SIZE};
 
-pub use chunk_manager::ChunkManagerPlugin;
+#[allow(unused_imports)]
+pub use chunk_manager::{ChunkManagerPlugin, ChunkStreamingQueues};
 
 pub use debug::VoxelDebugPlugin;
 

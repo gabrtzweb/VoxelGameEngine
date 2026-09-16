@@ -12,9 +12,8 @@ use crate::{
 };
 
 use super::{
-    GameMode, PLAYER_EYE_HEIGHT, PLAYER_HEIGHT, Player,
+    GameMode, PLAYER_EYE_HEIGHT, PLAYER_HEIGHT, Player, PlayerEnvironmentStatus,
     collision::{has_headroom, is_grounded, move_with_collisions},
-    water::player_submersion,
 };
 
 const WALK_SPEED: f32 = 5.0;
@@ -288,6 +287,7 @@ pub(super) fn creative_movement(
         (&mut Transform, &mut PlayerCamera, &mut Projection),
         (With<Camera3d>, Without<Player>),
     >,
+    env_status: Res<PlayerEnvironmentStatus>,
     mut jump_tap: Local<JumpTapState>,
 ) {
     let is_paused = menu_state.as_ref().is_some_and(|s| {
@@ -324,7 +324,7 @@ pub(super) fn creative_movement(
         motion.grounded = is_grounded(&world, player_transform.translation, motion.stance_height());
     }
 
-    let water_submersion = player_submersion(&world, player_transform.translation);
+    let water_submersion = env_status.submersion;
 
     let in_water = water_submersion > WATER_SUBMERSION_THRESHOLD;
 

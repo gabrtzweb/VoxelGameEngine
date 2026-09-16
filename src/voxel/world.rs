@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use bevy::platform::collections::HashMap;
 
 use bevy::prelude::*;
 
@@ -85,3 +85,92 @@ impl VoxelWorld {
         self.chunks.remove(&coordinate)
     }
 }
+
+pub trait VoxelAccess {
+    fn get_chunk(&self, coordinate: IVec3) -> Option<&Chunk>;
+    fn get_voxel(&self, world_voxel: IVec3) -> Option<Voxel>;
+}
+
+impl VoxelAccess for VoxelWorld {
+    fn get_chunk(&self, coordinate: IVec3) -> Option<&Chunk> {
+        self.get_chunk(coordinate)
+    }
+
+    fn get_voxel(&self, world_voxel: IVec3) -> Option<Voxel> {
+        self.get_voxel(world_voxel)
+    }
+}
+
+impl VoxelAccess for Res<'_, VoxelWorld> {
+    fn get_chunk(&self, coordinate: IVec3) -> Option<&Chunk> {
+        self.as_ref().get_chunk(coordinate)
+    }
+
+    fn get_voxel(&self, world_voxel: IVec3) -> Option<Voxel> {
+        self.as_ref().get_voxel(world_voxel)
+    }
+}
+
+impl VoxelAccess for ResMut<'_, VoxelWorld> {
+    fn get_chunk(&self, coordinate: IVec3) -> Option<&Chunk> {
+        self.as_ref().get_chunk(coordinate)
+    }
+
+    fn get_voxel(&self, world_voxel: IVec3) -> Option<Voxel> {
+        self.as_ref().get_voxel(world_voxel)
+    }
+}
+
+/// A 3x3x3 neighborhood of chunks centered on a specific chunk coordinate.
+///
+/// Enables thread-safe chunk meshing on worker threads without locking
+/// or accessing the entire `VoxelWorld`.
+#[derive(Clone)]
+pub struct ChunkNeighborhood {
+    center: IVec3,
+    chunks: [Option<Chunk>; 27],
+}
+
+impl ChunkNeighborhood {
+    pub fn new(world: &VoxelWorld, center: IVec3) -> Self {
+        let mut chunks: [Option<Chunk>; 27] = Default::default();
+        for dz in -1..=1 {
+            for dy in -1..=1 {
+                for dx in -1..=1 {
+                    let coord = center + IVec3::new(dx, dy, dz);
+                    let idx = ((dx + 1) + (dy + 1) * 3 + (dz + 1) * 9) as usize;
+                    chunks[idx] = world.get_chunk(coord).cloned();
+                }
+            }
+        }
+        Self { center, chunks }
+    }
+
+    #[allow(dead_code)]
+    pub fn center(&self) -> IVec3 {
+        self.center
+    }
+}
+
+impl VoxelAccess for ChunkNeighborhood {
+    fn get_chunk(&self, coordinate: IVec3) -> Option<&Chunk> {
+        let diff = coordinate - self.center;
+        if diff.x >= -1 && diff.x <= 1 && diff.y >= -1 && diff.y <= 1 && diff.z >= -1 && diff.z <= 1 {
+            let idx = ((diff.x + 1) + (diff.y + 1) * 3 + (diff.z + 1) * 9) as usize;
+            self.chunks[idx].as_ref()
+        } else {
+            None
+        }
+    }
+
+    fn get_voxel(&self, world_voxel: IVec3) -> Option<Voxel> {
+        let (chunk_coordinate, local_coordinate) = VoxelWorld::world_voxel_to_chunk(world_voxel);
+        let chunk = self.get_chunk(chunk_coordinate)?;
+        Some(chunk.get(
+            local_coordinate.x as usize,
+            local_coordinate.y as usize,
+            local_coordinate.z as usize,
+        ))
+    }
+}
+

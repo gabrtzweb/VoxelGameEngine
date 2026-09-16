@@ -5,10 +5,10 @@ use crate::player::GameMode;
 use super::{
     InteractionMode,
     chunk::{CHUNK_SIZE, Voxel},
+    chunk_manager::ChunkStreamingQueues,
     fluid::FluidUpdateQueue,
     light::{VoxelLightRegistry, sync_voxel_light},
     modifications::WorldModificationStore,
-    render::{ChunkMaterial, ChunkMeshRegistry, sync_chunk_render},
     targeting::{CurrentTarget, TargetingSet, adjacent_block_origin},
     world::VoxelWorld,
 };
@@ -170,12 +170,10 @@ fn edit_voxels(
     mouse: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
     current_target: Res<CurrentTarget>,
-    material: Res<ChunkMaterial>,
     mut world: ResMut<VoxelWorld>,
     mut modifications: ResMut<WorldModificationStore>,
     mut light_registry: ResMut<VoxelLightRegistry>,
-    mut registry: ResMut<ChunkMeshRegistry>,
-    mut meshes: ResMut<Assets<Mesh>>,
+    mut queues: ResMut<ChunkStreamingQueues>,
     mut interaction_state: Local<InteractionState>,
     fluid_queue: Option<ResMut<FluidUpdateQueue>>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
@@ -342,18 +340,9 @@ fn edit_voxels(
     dirty_chunks.dedup();
 
     for coordinate in dirty_chunks {
-        if world.get_chunk(coordinate).is_none() {
-            continue;
+        if world.get_chunk(coordinate).is_some() {
+            queues.enqueue_priority_remesh(coordinate);
         }
-
-        sync_chunk_render(
-            &mut commands,
-            &world,
-            coordinate,
-            &mut registry,
-            &mut meshes,
-            &material,
-        );
     }
 }
 

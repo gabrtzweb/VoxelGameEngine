@@ -7,13 +7,13 @@ use crate::player::GameMode;
 use super::{
     InteractionMode,
     chunk::Voxel,
+    chunk_manager::ChunkStreamingQueues,
     fluid::FluidUpdateQueue,
     interaction::affected_chunks,
     light::{VoxelLightRegistry, sync_voxel_light},
     modifications::WorldModificationStore,
-    render::{ChunkMaterial, ChunkMeshRegistry, sync_chunk_render},
     targeting::CurrentTarget,
-    world::VoxelWorld,
+    world::{VoxelAccess, VoxelWorld},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -155,15 +155,13 @@ fn handle_block_shaping(
     game_mode: Res<GameMode>,
     interaction_mode: Res<InteractionMode>,
     current_target: Res<CurrentTarget>,
-    material: Res<ChunkMaterial>,
     mut fluid_queue: Option<ResMut<FluidUpdateQueue>>,
     mut commands: Commands,
-    (mut world, mut modifications, mut light_registry, mut registry, mut meshes): (
+    (mut world, mut modifications, mut light_registry, mut queues): (
         ResMut<VoxelWorld>,
         ResMut<WorldModificationStore>,
         ResMut<VoxelLightRegistry>,
-        ResMut<ChunkMeshRegistry>,
-        ResMut<Assets<Mesh>>,
+        ResMut<ChunkStreamingQueues>,
     ),
     mut radial_state: ResMut<RadialMenuState>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
@@ -266,9 +264,7 @@ fn handle_block_shaping(
                     &mut world,
                     &mut modifications,
                     &mut light_registry,
-                    &mut registry,
-                    &mut meshes,
-                    &material,
+                    &mut queues,
                     &mut fluid_queue,
                     origin,
                     new_voxels,
@@ -286,9 +282,7 @@ fn handle_block_shaping(
                     &mut world,
                     &mut modifications,
                     &mut light_registry,
-                    &mut registry,
-                    &mut meshes,
-                    &material,
+                    &mut queues,
                     &mut fluid_queue,
                     origin,
                     new_voxels,
@@ -306,14 +300,12 @@ fn handle_block_rotation(
     game_mode: Res<GameMode>,
     interaction_mode: Res<InteractionMode>,
     current_target: Res<CurrentTarget>,
-    material: Res<ChunkMaterial>,
     mut fluid_queue: Option<ResMut<FluidUpdateQueue>>,
     mut commands: Commands,
     mut world: ResMut<VoxelWorld>,
     mut modifications: ResMut<WorldModificationStore>,
     mut light_registry: ResMut<VoxelLightRegistry>,
-    mut registry: ResMut<ChunkMeshRegistry>,
-    mut meshes: ResMut<Assets<Mesh>>,
+    mut queues: ResMut<ChunkStreamingQueues>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
 ) {
     if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
@@ -350,16 +342,14 @@ fn handle_block_rotation(
         &mut world,
         &mut modifications,
         &mut light_registry,
-        &mut registry,
-        &mut meshes,
-        &material,
+        &mut queues,
         &mut fluid_queue,
         origin,
         rotated_voxels,
     );
 }
 
-pub fn is_block_submerged_or_adjacent_to_water(world: &VoxelWorld, origin: IVec3) -> bool {
+pub fn is_block_submerged_or_adjacent_to_water(world: &impl VoxelAccess, origin: IVec3) -> bool {
     // 1. Any voxel currently within the block is water
     for dy in 0..2 {
         for dz in 0..2 {
@@ -412,9 +402,7 @@ fn apply_block_subvoxels(
     world: &mut VoxelWorld,
     modifications: &mut WorldModificationStore,
     light_registry: &mut VoxelLightRegistry,
-    registry: &mut ChunkMeshRegistry,
-    meshes: &mut Assets<Mesh>,
-    material: &ChunkMaterial,
+    queues: &mut ChunkStreamingQueues,
     fluid_queue: &mut Option<ResMut<FluidUpdateQueue>>,
     block_origin: IVec3,
     mut new_voxels: [Voxel; 8],
@@ -470,15 +458,13 @@ fn apply_block_subvoxels(
     dirty_chunks.dedup();
 
     for coordinate in dirty_chunks {
-        if world.get_chunk(coordinate).is_none() {
-            continue;
+        if world.get_chunk(coordinate).is_some() {
+            queues.enqueue_priority_remesh(coordinate);
         }
-
-        sync_chunk_render(commands, world, coordinate, registry, meshes, material);
     }
 }
 
-pub fn get_block_voxels(world: &VoxelWorld, block_origin: IVec3) -> [Voxel; 8] {
+pub fn get_block_voxels(world: &impl VoxelAccess, block_origin: IVec3) -> [Voxel; 8] {
     let mut voxels = [Voxel::Air; 8];
 
     for y in 0..2 {
@@ -506,7 +492,7 @@ pub fn centered_layer_coordinates(world_voxel: IVec3) -> [IVec3; 4] {
     ]
 }
 
-pub fn is_centered_layer(world: &VoxelWorld, world_voxel: IVec3) -> bool {
+pub fn is_centered_layer(world: &impl VoxelAccess, world_voxel: IVec3) -> bool {
     let coords = centered_layer_coordinates(world_voxel);
     coords.iter().any(|&pos| {
         world.get_voxel(pos) == Some(Voxel::Occupied)
@@ -514,7 +500,7 @@ pub fn is_centered_layer(world: &VoxelWorld, world_voxel: IVec3) -> bool {
     })
 }
 
-pub fn get_centered_layer_material(world: &VoxelWorld, world_voxel: IVec3) -> Option<Voxel> {
+pub fn get_centered_layer_material(world: &impl VoxelAccess, world_voxel: IVec3) -> Option<Voxel> {
     let coords = centered_layer_coordinates(world_voxel);
     for pos in coords {
         if let Some(voxel) = world.get_voxel(pos)

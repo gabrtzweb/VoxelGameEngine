@@ -10,12 +10,11 @@ use bevy::{
     },
 };
 
-use crate::{menu::MenuState, voxel::VoxelWorld};
+use crate::menu::MenuState;
 
 use super::{
-    GameMode, PLAYER_HEIGHT, Player, PlayerStance,
+    GameMode, PLAYER_HEIGHT, Player, PlayerEnvironmentStatus, PlayerStance,
     controller::{PlayerCamera, PlayerMotion},
-    water::player_submersion,
 };
 
 const SKIN_RESOLUTION: f32 = 64.0;
@@ -222,7 +221,7 @@ pub fn setup_player_model(
 #[allow(clippy::type_complexity, clippy::too_many_arguments)]
 pub fn update_player_model(
     time: Res<Time>,
-    world: Res<VoxelWorld>,
+    env_status: Res<PlayerEnvironmentStatus>,
     game_mode: Res<GameMode>,
     menu_state: Option<Res<State<MenuState>>>,
     player: Single<(&Transform, &PlayerMotion), With<Player>>,
@@ -288,7 +287,7 @@ pub fn update_player_model(
     root_transform.translation = player_transform.translation;
     root_transform.rotation = Quat::from_rotation_y(anim_state.body_yaw + PI);
 
-    let water_submersion = player_submersion(&world, player_transform.translation);
+    let water_submersion = env_status.submersion;
     let in_deep_water = water_submersion > 0.45;
     let is_swimming = in_deep_water
         && (!motion.grounded || h_speed > 1.2 || motion.velocity.y.abs() > 0.3 || motion.flying);

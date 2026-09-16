@@ -33,13 +33,10 @@ pub(super) fn spawn_underwater_overlay(mut commands: Commands) {
 }
 
 pub(super) fn update_underwater_effect(
-    world: Res<VoxelWorld>,
-
-    camera: Single<&GlobalTransform, With<Camera3d>>,
-
+    env_status: Res<super::PlayerEnvironmentStatus>,
     overlay: Single<&mut Visibility, With<UnderwaterOverlay>>,
 ) {
-    let underwater = is_point_in_water(&world, camera.translation());
+    let underwater = env_status.is_camera_in_water;
 
     let mut visibility = overlay.into_inner();
 

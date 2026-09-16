@@ -11,6 +11,10 @@ pub const STAR_DISTANCE: f32 = 140.0;
 pub const STAR_BASE_SIZE: f32 = 0.9;
 
 #[derive(Component)]
+pub struct StarfieldRoot;
+
+#[derive(Component)]
+#[allow(dead_code)]
 pub struct StarInstance {
     pub initial_dir: Vec3,
 }
@@ -43,6 +47,7 @@ pub fn setup_starfield(
     commands.insert_resource(StarfieldMaterialHandle(material_handle.clone()));
 
     let star_data = generate_star_directions(STAR_COUNT);
+    let mut star_entities = Vec::with_capacity(STAR_COUNT);
 
     for (initial_dir, size) in star_data {
         let up = if initial_dir.y.abs() > 0.95 {
@@ -51,26 +56,37 @@ pub fn setup_starfield(
             Vec3::Y
         };
 
-        commands.spawn((
-            StarInstance { initial_dir },
-            Mesh3d(quad_mesh.clone()),
-            MeshMaterial3d(material_handle.clone()),
-            Transform::from_translation(initial_dir * STAR_DISTANCE)
-                .looking_to(-initial_dir, up)
-                .with_scale(Vec3::splat(size)),
-            Visibility::Visible,
-            NotShadowCaster,
-            NotShadowReceiver,
-        ));
+        let star_entity = commands
+            .spawn((
+                StarInstance { initial_dir },
+                Mesh3d(quad_mesh.clone()),
+                MeshMaterial3d(material_handle.clone()),
+                Transform::from_translation(initial_dir * STAR_DISTANCE)
+                    .looking_to(-initial_dir, up)
+                    .with_scale(Vec3::splat(size)),
+                Visibility::Inherited,
+                NotShadowCaster,
+                NotShadowReceiver,
+            ))
+            .id();
+        star_entities.push(star_entity);
     }
+
+    commands
+        .spawn((
+            StarfieldRoot,
+            Transform::default(),
+            Visibility::Visible,
+        ))
+        .add_children(&star_entities);
 }
 
-pub type StarQuery<'w, 's> =
-    Query<'w, 's, (&'static StarInstance, &'static mut Transform), Without<Camera3d>>;
+pub type StarfieldRootQuery<'w, 's> =
+    Single<'w, 's, &'static mut Transform, (With<StarfieldRoot>, Without<Camera3d>)>;
 
 pub fn sync_starfield(
     camera: Single<&Transform, With<Camera3d>>,
-    mut stars: StarQuery,
+    mut starfield_root: StarfieldRootQuery,
     material_handle: Res<StarfieldMaterialHandle>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     time_of_day: f32,
@@ -78,21 +94,20 @@ pub fn sync_starfield(
     let camera_translation = camera.translation;
     let rotation = Quat::from_rotation_y(time_of_day * core::f32::consts::TAU);
 
-    for (star, mut transform) in &mut stars {
-        let dir = rotation * star.initial_dir;
-        let up = if dir.y.abs() > 0.95 { Vec3::Z } else { Vec3::Y };
-        let scale = transform.scale;
-        *transform = Transform::from_translation(camera_translation + dir * STAR_DISTANCE)
-            .looking_to(-dir, up)
-            .with_scale(scale);
-    }
+    starfield_root.translation = camera_translation;
+    starfield_root.rotation = rotation;
 
     let sun_elevation = calculate_sun_elevation(time_of_day);
     let fade = ((0.05 - sun_elevation) / 0.18).clamp(0.0, 1.0);
     let intensity = fade * 1.6;
+    let target_color = Color::LinearRgba(LinearRgba::new(intensity, intensity, intensity, 1.0));
 
-    if let Some(mut mat) = materials.get_mut(&material_handle.0) {
-        mat.base_color = Color::LinearRgba(LinearRgba::new(intensity, intensity, intensity, 1.0));
+    if let Some(mat) = materials.get(&material_handle.0) {
+        if mat.base_color != target_color {
+            if let Some(mut mat_mut) = materials.get_mut(&material_handle.0) {
+                mat_mut.base_color = target_color;
+            }
+        }
     }
 }
 

@@ -4,6 +4,7 @@ pub mod game_mode;
 pub mod hotbar;
 pub mod model;
 pub mod spectator;
+pub mod state;
 pub mod water;
 
 use bevy::{
@@ -18,6 +19,7 @@ pub use controller::PlayerStance;
 pub use controller::{InspectorInteraction, PlayerCamera, PlayerMotion};
 
 pub use game_mode::GameMode;
+pub use state::PlayerEnvironmentStatus;
 
 pub const PLAYER_WIDTH: f32 = 0.6;
 pub const PLAYER_HEIGHT: f32 = 1.8;
@@ -39,6 +41,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GameMode>()
             .init_resource::<InspectorInteraction>()
+            .init_resource::<PlayerEnvironmentStatus>()
             .add_plugins(hotbar::HotbarPlugin)
             .add_plugins(model::PlayerModelPlugin)
             .configure_sets(Update, PlayerSet::Movement)
@@ -54,6 +57,7 @@ impl Plugin for PlayerPlugin {
             .add_systems(
                 Update,
                 (
+                    state::update_player_environment_status,
                     controller::toggle_inspector_interaction,
                     game_mode::toggle_game_mode,
                     controller::toggle_camera_view,

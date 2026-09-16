@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use bevy::platform::collections::HashMap;
 
 use bevy::{
     pbr::{ExtendedMaterial, MaterialExtension},
@@ -8,7 +8,7 @@ use bevy::{
 };
 
 use super::{
-    mesher::ChunkMesher,
+    mesher::{ChunkMesher, ChunkMeshes},
     texture::{VoxelTextureRegistry, build_voxel_texture_array},
     world::VoxelWorld,
 };
@@ -175,7 +175,17 @@ pub fn sync_chunk_render(
     }
 
     let rebuilt = ChunkMesher::build_meshes(world, coordinate, &material.texture_registry);
+    apply_chunk_mesh(commands, coordinate, rebuilt, registry, meshes, material);
+}
 
+pub fn apply_chunk_mesh(
+    commands: &mut Commands,
+    coordinate: IVec3,
+    rebuilt: ChunkMeshes,
+    registry: &mut ChunkMeshRegistry,
+    meshes: &mut Assets<Mesh>,
+    material: &ChunkMaterial,
+) {
     let translation = VoxelWorld::chunk_translation(coordinate);
 
     let is_empty = {

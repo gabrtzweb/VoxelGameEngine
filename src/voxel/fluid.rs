@@ -6,9 +6,9 @@ use super::{
     chunk::{VOXEL_SIZE, Voxel},
     interaction::affected_chunks,
     light::{VoxelLightRegistry, sync_voxel_light},
+    chunk_manager::ChunkStreamingQueues,
     modifications::WorldModificationStore,
-    render::{ChunkMaterial, ChunkMeshRegistry, sync_chunk_render},
-    world::VoxelWorld,
+    world::{VoxelAccess, VoxelWorld},
 };
 
 pub const MAX_FULL_WATER_SPREAD: u8 = 8;
@@ -87,9 +87,7 @@ fn run_fluid_simulation(
     mut world: ResMut<VoxelWorld>,
     mut modifications: ResMut<WorldModificationStore>,
     mut light_registry: ResMut<VoxelLightRegistry>,
-    mut registry: ResMut<ChunkMeshRegistry>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    material: Res<ChunkMaterial>,
+    mut queues: ResMut<ChunkStreamingQueues>,
 ) {
     if !timer.0.tick(time.delta()).just_finished() {
         return;
@@ -166,18 +164,9 @@ fn run_fluid_simulation(
     dirty_chunks.dedup();
 
     for coordinate in dirty_chunks {
-        if world.get_chunk(coordinate).is_none() {
-            continue;
+        if world.get_chunk(coordinate).is_some() {
+            queues.enqueue_remesh(coordinate);
         }
-
-        sync_chunk_render(
-            &mut commands,
-            &world,
-            coordinate,
-            &mut registry,
-            &mut meshes,
-            &material,
-        );
     }
 }
 
@@ -446,14 +435,14 @@ fn is_supported_by_ground(world: &VoxelWorld, pos: IVec3) -> bool {
     false
 }
 
-pub fn is_full_block_source(world: &VoxelWorld, pos: IVec3) -> bool {
+pub fn is_full_block_source(world: &impl VoxelAccess, pos: IVec3) -> bool {
     let above = pos + IVec3::Y;
     let below = pos - IVec3::Y;
     world.get_voxel(above).is_some_and(Voxel::is_water)
         || world.get_voxel(below).is_some_and(Voxel::is_water)
 }
 
-pub fn compute_water_info(world: &VoxelWorld, pos: IVec3) -> Option<WaterInfo> {
+pub fn compute_water_info(world: &impl VoxelAccess, pos: IVec3) -> Option<WaterInfo> {
     let above = pos + IVec3::Y;
     if let Some(v_above) = world.get_voxel(above)
         && (v_above == Voxel::Water || v_above == Voxel::WaterFlowing)
@@ -534,11 +523,11 @@ pub fn compute_water_info(world: &VoxelWorld, pos: IVec3) -> Option<WaterInfo> {
 }
 
 #[allow(dead_code)]
-pub fn compute_water_distance(world: &VoxelWorld, pos: IVec3) -> u8 {
+pub fn compute_water_distance(world: &impl VoxelAccess, pos: IVec3) -> u8 {
     compute_water_info(world, pos).map_or(u8::MAX, |info| info.distance)
 }
 
-pub fn water_surface_height_offset(world: &VoxelWorld, world_voxel: IVec3) -> f32 {
+pub fn water_surface_height_offset(world: &impl VoxelAccess, world_voxel: IVec3) -> f32 {
     let voxel = world.get_voxel(world_voxel).unwrap_or(Voxel::Air);
     if !voxel.is_water() {
         return 0.0;

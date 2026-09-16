@@ -188,17 +188,17 @@ This document outlines the planned development phases for the voxel game engine,
 ## Phase 7: Project Organization and Refactor (Current Milestone)
 Detailed technical review and diagnostic report available in [docs/technical_review.md](technical_review.md).
 
-- [ ] **Stage 7.1: Immediate Bottleneck Elimination (High FPS Impact)**
-  - [ ] **Optimize `logical_block_has_exposed_dirt`**: Eliminate the 8×5 nested neighborhood loop in terrain generation. Cache column height samples or only sample the top surface of the logical block, eliminating up to 80,000+ redundant noise calls per chunk.
-  - [ ] **Turn Off Asset Dirtying in Environment Systems**: In `stars.rs`, `clouds.rs`, and `celestial.rs`, inspect if material properties actually changed before calling `materials.get_mut()` to avoid invalidating GPU bind groups and uniform buffers every frame.
-  - [ ] **Parent Starfield to Single Root Entity**: Eliminate the 250-entity loop in `sync_starfield` by parenting all star quads to a single rotating `StarfieldRoot` entity.
-  - [ ] **Direct Indexing for Texture Registry**: Replace `HashMap<Voxel, VoxelTextureMapping>` with a fixed array `[Option<VoxelTextureMapping>; 34]` for O(1) direct memory indexing without SipHash in the greedy mesher loop.
-  - [ ] **Cache Submersion and Water Checks**: Introduce a lightweight `PlayerEnvironmentStatus` resource updated once per frame, eliminating 4 duplicate `is_point_in_water` and `player_submersion` evaluations.
+- [x] **Stage 7.1: Immediate Bottleneck Elimination (High FPS Impact)**:
+  - [x] **Optimize `logical_block_has_exposed_dirt`**: Eliminate the 8×5 nested neighborhood loop in terrain generation. Cache column height samples or only sample the top surface of the logical block, eliminating up to 80,000+ redundant noise calls per chunk.
+  - [x] **Turn Off Asset Dirtying in Environment Systems**: In `stars.rs`, `clouds.rs`, and `celestial.rs`, inspect if material properties actually changed before calling `materials.get_mut()` to avoid invalidating GPU bind groups and uniform buffers every frame.
+  - [x] **Parent Starfield to Single Root Entity**: Eliminate the 250-entity loop in `sync_starfield` by parenting all star quads to a single rotating `StarfieldRoot` entity.
+  - [x] **Direct Indexing for Texture Registry**: Replace `HashMap<Voxel, VoxelTextureMapping>` with a fixed array `[Option<VoxelTextureMapping>; 34]` for O(1) direct memory indexing without SipHash in the greedy mesher loop.
+  - [x] **Cache Submersion and Water Checks**: Introduce a lightweight `PlayerEnvironmentStatus` resource updated once per frame, eliminating 4 duplicate `is_point_in_water` and `player_submersion` evaluations.
 
-- [ ] **Stage 7.2: Background Thread Meshing & Frame Throttling**
-  - [ ] **Move `ChunkMesher::build_meshes` to `AsyncComputeTaskPool`**: Run greedy meshing in worker threads using snapshot voxel data; main thread only receives finished `Mesh` buffers and binds them to Bevy entities.
-  - [ ] **Remove Direct Synchronous Meshing from Gameplay Systems**: Route fluid simulation, player edits, shaping tools, and pause restarts through the remesh queue rather than executing unbuffered synchronous remeshing on the main thread.
-  - [ ] **Switch to Fast Hasher for `VoxelWorld`**: Replace `std::collections::HashMap` with `bevy::platform_support::collections::HashMap` or `FxHashMap` for 3x–5x faster chunk lookups.
+- [x] **Stage 7.2: Background Thread Meshing & Frame Throttling**
+  - [x] **Move `ChunkMesher::build_meshes` to `AsyncComputeTaskPool`**: Run greedy meshing in worker threads using snapshot voxel data; main thread only receives finished `Mesh` buffers and binds them to Bevy entities.
+  - [x] **Remove Direct Synchronous Meshing from Gameplay Systems**: Route fluid simulation, player edits, shaping tools, and pause restarts through the remesh queue rather than executing unbuffered synchronous remeshing on the main thread.
+  - [x] **Switch to Fast Hasher for `VoxelWorld`**: Replace `std::collections::HashMap` with `bevy::platform_support::collections::HashMap` or `FxHashMap` for 3x–5x faster chunk lookups.
 
 - [ ] **Stage 7.3: Codebase Modularization & Directory Restructure**
   - [ ] Reorganize codebase into domain subdirectories: `core/`, `environment/`, `menu/`, `player/`, `world/`, `generation/`, `meshing/`, `simulation/`, and `gameplay/`.

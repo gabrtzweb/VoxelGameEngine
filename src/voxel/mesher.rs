@@ -8,7 +8,7 @@ use super::{
     chunk::{CHUNK_SIZE, Chunk, VOXEL_SIZE, Voxel},
     shaping::{centered_layer_coordinates, is_centered_layer},
     texture::VoxelTextureRegistry,
-    world::VoxelWorld,
+    world::VoxelAccess,
 };
 
 const MASK_SIZE: usize = CHUNK_SIZE * CHUNK_SIZE;
@@ -268,7 +268,7 @@ pub struct ChunkMesher;
 
 impl ChunkMesher {
     pub fn build_meshes(
-        world: &VoxelWorld,
+        world: &impl VoxelAccess,
         chunk_coordinate: IVec3,
         textures: &VoxelTextureRegistry,
     ) -> ChunkMeshes {
@@ -580,7 +580,7 @@ fn quad_vertices(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::voxel::{chunk::Chunk, texture::build_voxel_texture_array};
+    use crate::voxel::{chunk::Chunk, texture::build_voxel_texture_array, world::VoxelWorld};
     use bevy::render::mesh::VertexAttributeValues;
 
     #[test]
@@ -1111,7 +1111,7 @@ fn get_chunk_local_centered_material(chunk: &Chunk, local_voxel: IVec3) -> Optio
 }
 
 fn mesh_centered_voxels(
-    world: &VoxelWorld,
+    world: &impl VoxelAccess,
     chunk: &Chunk,
     chunk_coordinate: IVec3,
     textures: &VoxelTextureRegistry,

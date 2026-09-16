@@ -96,8 +96,13 @@ pub fn sync_clouds(
     );
 
     // Dynamic atmospheric cloud tinting across the day-night cycle.
-    if let Some(mut mat) = materials.get_mut(&material_handle.0) {
-        mat.base_color = sample_cloud_color(time_of_day);
+    let target_color = sample_cloud_color(time_of_day);
+    if let Some(mat) = materials.get(&material_handle.0) {
+        if mat.base_color != target_color {
+            if let Some(mut mat_mut) = materials.get_mut(&material_handle.0) {
+                mat_mut.base_color = target_color;
+            }
+        }
     }
 }
 

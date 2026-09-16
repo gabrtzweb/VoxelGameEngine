@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::Path};
+use std::path::Path;
 
 use bevy::{
     asset::RenderAssetUsages,
@@ -10,6 +10,7 @@ use bevy::{
 use super::chunk::Voxel;
 
 pub const TEXTURE_RESOLUTION: u32 = 16;
+pub const MAX_VOXEL_VARIANTS: usize = 34;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct VoxelTextureMapping {
@@ -18,10 +19,19 @@ pub struct VoxelTextureMapping {
     pub frame_count: u16,
 }
 
-#[derive(Resource, Clone, Debug, Default)]
+#[derive(Resource, Clone, Debug)]
 pub struct VoxelTextureRegistry {
-    mappings: HashMap<Voxel, VoxelTextureMapping>,
+    mappings: [Option<VoxelTextureMapping>; MAX_VOXEL_VARIANTS],
     total_layers: u32,
+}
+
+impl Default for VoxelTextureRegistry {
+    fn default() -> Self {
+        Self {
+            mappings: [None; MAX_VOXEL_VARIANTS],
+            total_layers: 0,
+        }
+    }
 }
 
 impl VoxelTextureRegistry {
@@ -32,14 +42,14 @@ impl VoxelTextureRegistry {
         variant_count: u16,
         frame_count: u16,
     ) {
-        self.mappings.insert(
-            voxel,
-            VoxelTextureMapping {
+        let index = voxel as usize;
+        if index < MAX_VOXEL_VARIANTS {
+            self.mappings[index] = Some(VoxelTextureMapping {
                 start_layer,
                 variant_count,
                 frame_count,
-            },
-        );
+            });
+        }
     }
 
     #[allow(dead_code)]
@@ -49,16 +59,23 @@ impl VoxelTextureRegistry {
 
     #[allow(dead_code)]
     pub fn variant_count(&self, voxel: Voxel) -> u16 {
-        self.mappings.get(&voxel).map_or(0, |m| m.variant_count)
+        self.mappings
+            .get(voxel as usize)
+            .and_then(|m| *m)
+            .map_or(0, |m| m.variant_count)
     }
 
     #[allow(dead_code)]
     pub fn frame_count(&self, voxel: Voxel) -> u16 {
-        self.mappings.get(&voxel).map_or(1, |m| m.frame_count)
+        self.mappings
+            .get(voxel as usize)
+            .and_then(|m| *m)
+            .map_or(1, |m| m.frame_count)
     }
 
+    #[inline(always)]
     pub fn get_texture_info(&self, voxel: Voxel, world_voxel: IVec3) -> (u16, u16) {
-        let Some(&m) = self.mappings.get(&voxel) else {
+        let Some(m) = self.mappings.get(voxel as usize).and_then(|m| *m) else {
             return (0, 1);
         };
 

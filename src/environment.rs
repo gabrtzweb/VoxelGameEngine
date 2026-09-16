@@ -355,15 +355,13 @@ fn update_atmosphere(
     state: Res<EnvironmentState>,
     mut clear_color: ResMut<ClearColor>,
     mut ambient: ResMut<GlobalAmbientLight>,
-    camera: Single<(&GlobalTransform, &mut DistanceFog, &mut Exposure), With<Camera3d>>,
-    world: Option<Res<crate::voxel::VoxelWorld>>,
+    camera: Single<(&mut DistanceFog, &mut Exposure), With<Camera3d>>,
+    env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
 ) {
     let t = state.time_of_day;
-    let (cam_transform, mut fog, mut exposure) = camera.into_inner();
+    let (mut fog, mut exposure) = camera.into_inner();
 
-    let is_underwater = world
-        .as_ref()
-        .is_some_and(|w| crate::player::water::is_point_in_water(w, cam_transform.translation()));
+    let is_underwater = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
 
     if is_underwater {
         let water_fog_color = Color::srgb(0.04, 0.20, 0.35);
@@ -390,10 +388,10 @@ fn update_atmosphere(
 fn sync_fog_distance(
     settings: Res<ChunkStreamingSettings>,
     game_settings: Option<Res<crate::menu::GameSettings>>,
-    camera: Single<(&GlobalTransform, &mut DistanceFog), With<Camera3d>>,
-    world: Option<Res<crate::voxel::VoxelWorld>>,
+    camera: Single<&mut DistanceFog, With<Camera3d>>,
+    env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
 ) {
-    let (cam_transform, mut fog) = camera.into_inner();
+    let mut fog = camera.into_inner();
 
     if let Some(ref gs) = game_settings
         && !gs.fog_enabled
@@ -405,9 +403,7 @@ fn sync_fog_distance(
         return;
     }
 
-    let is_underwater = world
-        .as_ref()
-        .is_some_and(|w| crate::player::water::is_point_in_water(w, cam_transform.translation()));
+    let is_underwater = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
 
     if is_underwater {
         fog.falloff = FogFalloff::Linear {
@@ -503,13 +499,13 @@ fn sync_celestial_system(
 fn sync_starfield_system(
     state: Res<EnvironmentState>,
     camera: Single<&Transform, With<Camera3d>>,
-    star_query: stars::StarQuery,
+    starfield_root: stars::StarfieldRootQuery,
     material_handle: Res<stars::StarfieldMaterialHandle>,
     materials: ResMut<Assets<StandardMaterial>>,
 ) {
     stars::sync_starfield(
         camera,
-        star_query,
+        starfield_root,
         material_handle,
         materials,
         state.time_of_day,
@@ -523,11 +519,9 @@ fn sync_cloud_system(
     cloud: clouds::CloudQuery,
     material_handle: Res<clouds::CloudMaterialHandle>,
     materials: ResMut<Assets<StandardMaterial>>,
-    world: Option<Res<crate::voxel::VoxelWorld>>,
+    env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
 ) {
-    let is_underwater = world
-        .as_ref()
-        .is_some_and(|w| crate::player::water::is_point_in_water(w, camera.1.translation()));
+    let is_underwater = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
 
     clouds::sync_clouds(
         time,

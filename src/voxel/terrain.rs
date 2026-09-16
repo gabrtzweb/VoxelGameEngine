@@ -253,7 +253,7 @@ impl TerrainGenerator {
 
         // Check if exposed subsoil (e.g. Dirt) on hill slopes should be promoted to surface grass / snow
         if solid_voxel == Voxel::Dirt
-            && self.logical_block_has_exposed_dirt(world_x, world_y, world_z)
+            && self.logical_block_has_exposed_dirt(column, world_x, world_y, world_z)
         {
             if column.biome == BiomeType::SnowyTundra {
                 Voxel::Snow
@@ -283,44 +283,51 @@ impl TerrainGenerator {
         [(0, 1, 0), (1, 0, 0), (-1, 0, 0), (0, 0, 1), (0, 0, -1)]
             .into_iter()
             .any(|(offset_x, offset_y, offset_z)| {
-                self.is_air_at(world_x + offset_x, world_y + offset_y, world_z + offset_z)
+                self.is_surface_air_at(world_x + offset_x, world_y + offset_y, world_z + offset_z)
             })
     }
 
-    fn is_air_at(&self, world_x: i32, world_y: i32, world_z: i32) -> bool {
+    fn is_surface_air_at(&self, world_x: i32, world_y: i32, world_z: i32) -> bool {
         let column = self.sample_column(world_x, world_z);
         if world_y > column.terrain_height {
             let water_fills_voxel = column.water_level.is_some_and(|wl| world_y <= wl);
             !water_fills_voxel
         } else {
-            // Air inside hollowed 3D cave chambers
-            self.caves
-                .is_cave(world_x, world_y, world_z, column.terrain_height, self.seed)
-                && self.caves.cave_voxel(
-                    world_x,
-                    world_y,
-                    world_z,
-                    self.effective_sea_level(),
-                    self.seed,
-                ) == Voxel::Air
+            false
         }
     }
 
-    fn logical_block_has_exposed_dirt(&self, world_x: i32, world_y: i32, world_z: i32) -> bool {
-        let block_origin_x = world_x.div_euclid(LOGICAL_BLOCK_VOXELS) * LOGICAL_BLOCK_VOXELS;
+    fn logical_block_has_exposed_dirt(
+        &self,
+        column: TerrainColumn,
+        world_x: i32,
+        world_y: i32,
+        world_z: i32,
+    ) -> bool {
         let block_origin_y = world_y.div_euclid(LOGICAL_BLOCK_VOXELS) * LOGICAL_BLOCK_VOXELS;
+        // If the top of this logical block is deeper than 2 voxels below the column surface,
+        // it cannot be exposed to surface air.
+        if column.terrain_height - (block_origin_y + 1) > 2 {
+            return false;
+        }
+
+        let block_origin_x = world_x.div_euclid(LOGICAL_BLOCK_VOXELS) * LOGICAL_BLOCK_VOXELS;
         let block_origin_z = world_z.div_euclid(LOGICAL_BLOCK_VOXELS) * LOGICAL_BLOCK_VOXELS;
 
-        for local_y in 0..LOGICAL_BLOCK_VOXELS {
+        for local_y in (0..LOGICAL_BLOCK_VOXELS).rev() {
+            let voxel_y = block_origin_y + local_y;
             for local_z in 0..LOGICAL_BLOCK_VOXELS {
                 for local_x in 0..LOGICAL_BLOCK_VOXELS {
                     let voxel_x = block_origin_x + local_x;
-                    let voxel_y = block_origin_y + local_y;
                     let voxel_z = block_origin_z + local_z;
-                    let column = self.sample_column(voxel_x, voxel_z);
+                    let col = if voxel_x == world_x && voxel_z == world_z {
+                        column
+                    } else {
+                        self.sample_column(voxel_x, voxel_z)
+                    };
 
-                    if voxel_y <= column.terrain_height
-                        && self.surface_voxel(column, voxel_y) == Voxel::Dirt
+                    if voxel_y <= col.terrain_height
+                        && self.surface_voxel(col, voxel_y) == Voxel::Dirt
                         && self.is_exposed_to_air(voxel_x, voxel_y, voxel_z)
                     {
                         return true;
