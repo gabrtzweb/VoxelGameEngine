@@ -200,11 +200,11 @@ Detailed technical review and diagnostic report available in [docs/technical_rev
   - [x] **Remove Direct Synchronous Meshing from Gameplay Systems**: Route fluid simulation, player edits, shaping tools, and pause restarts through the remesh queue rather than executing unbuffered synchronous remeshing on the main thread.
   - [x] **Switch to Fast Hasher for `VoxelWorld`**: Replace `std::collections::HashMap` with `bevy::platform_support::collections::HashMap` or `FxHashMap` for 3x–5x faster chunk lookups.
 
-- [ ] **Stage 7.3: Codebase Modularization & Directory Restructure**
-  - [ ] Reorganize codebase into domain subdirectories: `core/`, `environment/`, `menu/`, `player/`, `world/`, `generation/`, `meshing/`, `simulation/`, and `gameplay/`.
-  - [ ] Split monolithic `src/voxel/mesher.rs` (1,571 lines) into `greedy.rs`, `shapes.rs`, and `pipeline.rs`. Move tests to external module or dedicated test files.
-  - [ ] Split `src/voxel/shaping.rs` (1,038 lines) into `shaping.rs`, `radial_menu.rs`, and sub-voxel geometry helpers.
-  - [ ] Clean up `src/environment.rs` (798 lines) into modular domain files (`atmosphere.rs`, `celestial.rs`, `clouds.rs`, `stars.rs`, `time.rs`).
+- [x] **Stage 7.3: Codebase Modularization & Directory Restructure**
+  - [x] Reorganize codebase into domain subdirectories: `core/`, `environment/`, `menu/`, `player/`, `world/`, `generation/`, `meshing/`, `simulation/`, and `gameplay/`.
+  - [x] Split monolithic `src/voxel/mesher.rs` (1,571 lines) into `greedy.rs`, `shapes.rs`, and `pipeline.rs`. Move tests to external module or dedicated test files.
+  - [x] Split `src/voxel/shaping.rs` (1,038 lines) into `shaping.rs`, `radial_menu.rs`, and sub-voxel geometry helpers.
+  - [x] Clean up `src/environment.rs` (798 lines) into modular domain files (`atmosphere.rs`, `celestial.rs`, `clouds.rs`, `stars.rs`, `time.rs`).
 
 - [ ] **Stage 7.4: Collision & Memory Micro-Optimizations**
   - [ ] Replace `Vec<IVec3>` allocations in `overlapping_solid_voxels` with a stack-allocated small buffer or visitor closure.

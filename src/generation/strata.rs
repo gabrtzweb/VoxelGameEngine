@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
-use super::{biome::BiomeConfig, blocks::Voxel, noise::gradient_noise_3d};
+use super::biome::BiomeConfig;
+use crate::{core::noise::gradient_noise_3d, world::Voxel};
 
 /// Generates depth-based geological layers (strata) and localized mineral/sedimentary veins.
 #[derive(Debug, Clone, Reflect)]
@@ -13,11 +14,8 @@ pub struct StrataGenerator {
 impl Default for StrataGenerator {
     fn default() -> Self {
         Self {
-            // Transition from standard stone to Slate at y = -16 voxels (-8m)
             mid_crust_y: -16,
-            // Transition to Blackstone / Magma depths at y = -64 voxels (-32m)
             deep_crust_y: -64,
-            // Higher frequency 3D noise for compact ore/mineral vein clusters
             vein_frequency: 0.085,
         }
     }
@@ -108,7 +106,7 @@ impl StrataGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::voxel::biome::BiomeType;
+    use crate::generation::biome::BiomeType;
 
     #[test]
     fn strata_materials_change_with_depth() {
@@ -116,22 +114,18 @@ mod tests {
         let plains = BiomeType::Plains.config();
         let seed = 1337;
 
-        // Surface is grass
         let surface = generator.solid_voxel_at(0, 10, 0, 0, &plains, seed);
         assert_eq!(surface, Voxel::Grass);
 
-        // Subsoil is dirt
         let subsoil = generator.solid_voxel_at(0, 8, 0, 2, &plains, seed);
         assert_eq!(subsoil, Voxel::Dirt);
 
-        // Mid crust includes slate/cobbleslate/flint
         let mid = generator.solid_voxel_at(0, -30, 0, 15, &plains, seed);
         assert!(matches!(
             mid,
             Voxel::Slate | Voxel::Cobbleslate | Voxel::Flint
         ));
 
-        // Deep crust includes blackstone/cobbleblackstone/magma
         let deep = generator.solid_voxel_at(0, -80, 0, 40, &plains, seed);
         assert!(matches!(
             deep,

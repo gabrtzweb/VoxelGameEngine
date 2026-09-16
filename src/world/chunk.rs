@@ -2,7 +2,7 @@ pub const VOXEL_SIZE: f32 = 0.5;
 pub const CHUNK_SIZE: usize = 16;
 pub const CHUNK_VOLUME: usize = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
 
-pub use super::blocks::Voxel;
+pub use super::block::Voxel;
 
 #[derive(Clone)]
 pub struct Chunk {

@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 
 use super::{
-    chunk::{Chunk, Voxel},
-    world::VoxelWorld,
+    block::Voxel,
+    chunk::Chunk,
+    storage::VoxelWorld,
 };
 
 #[derive(Resource, Default)]

@@ -1,16 +1,20 @@
 use bevy::prelude::*;
 
-use crate::player::GameMode;
-
 use super::{
-    InteractionMode,
-    chunk::{CHUNK_SIZE, Voxel},
-    chunk_manager::ChunkStreamingQueues,
-    fluid::FluidUpdateQueue,
-    light::{VoxelLightRegistry, sync_voxel_light},
-    modifications::WorldModificationStore,
+    interaction_mode::InteractionMode,
+    shaping::{centered_layer_coordinates, get_centered_layer_material, is_centered_layer},
     targeting::{CurrentTarget, TargetingSet, adjacent_block_origin},
-    world::VoxelWorld,
+};
+use crate::{
+    menu::MenuState,
+    player::{GameMode, hotbar::Hotbar},
+    simulation::{
+        fluid::FluidUpdateQueue,
+        lighting::{VoxelLightRegistry, sync_voxel_light},
+    },
+    world::{
+        ChunkStreamingQueues, Voxel, VoxelWorld, WorldModificationStore, affected_chunks,
+    },
 };
 
 const HOLD_DELAY: f32 = 0.25;
@@ -36,14 +40,12 @@ impl HoldActionState {
         if just_pressed {
             self.hold_time = 0.0;
             self.repeat_time = 0.0;
-
             return true;
         }
 
         if !pressed {
             self.hold_time = 0.0;
             self.repeat_time = 0.0;
-
             return false;
         }
 
@@ -57,7 +59,6 @@ impl HoldActionState {
 
         if self.repeat_time >= REPEAT_INTERVAL {
             self.repeat_time -= REPEAT_INTERVAL;
-
             return true;
         }
 
@@ -68,7 +69,6 @@ impl HoldActionState {
 #[derive(Default)]
 struct InteractionState {
     break_action: HoldActionState,
-
     place_action: HoldActionState,
 }
 
@@ -93,10 +93,10 @@ impl Plugin for VoxelInteractionPlugin {
 
 fn toggle_interaction_mode(
     keyboard: Res<ButtonInput<KeyCode>>,
-    menu_state: Option<Res<State<crate::menu::MenuState>>>,
+    menu_state: Option<Res<State<MenuState>>>,
     mut interaction_mode: ResMut<InteractionMode>,
 ) {
-    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+    if menu_state.is_some_and(|s| *s.get() != MenuState::None) {
         return;
     }
 
@@ -105,20 +105,19 @@ fn toggle_interaction_mode(
     }
 
     interaction_mode.toggle();
-
-    info!("Interaction mode: {}", interaction_mode.label(),);
+    info!("Interaction mode: {}", interaction_mode.label());
 }
 
 fn pick_targeted_voxel(
     game_mode: Res<GameMode>,
     mouse: Res<ButtonInput<MouseButton>>,
-    menu_state: Option<Res<State<crate::menu::MenuState>>>,
+    menu_state: Option<Res<State<MenuState>>>,
     current_target: Res<CurrentTarget>,
     world: Res<VoxelWorld>,
     mut selected: ResMut<SelectedVoxel>,
-    hotbar: Option<ResMut<crate::player::hotbar::Hotbar>>,
+    hotbar: Option<ResMut<Hotbar>>,
 ) {
-    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+    if menu_state.is_some_and(|s| *s.get() != MenuState::None) {
         return;
     }
 
@@ -143,9 +142,7 @@ fn pick_targeted_voxel(
     }
 
     if voxel == Voxel::Occupied || voxel == Voxel::WaterOccupied {
-        if let Some(material) =
-            crate::voxel::shaping::get_centered_layer_material(&world, target.hit_voxel)
-        {
+        if let Some(material) = get_centered_layer_material(&world, target.hit_voxel) {
             voxel = material;
         } else {
             return;
@@ -176,9 +173,9 @@ fn edit_voxels(
     mut queues: ResMut<ChunkStreamingQueues>,
     mut interaction_state: Local<InteractionState>,
     fluid_queue: Option<ResMut<FluidUpdateQueue>>,
-    menu_state: Option<Res<State<crate::menu::MenuState>>>,
+    menu_state: Option<Res<State<MenuState>>>,
 ) {
-    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+    if menu_state.is_some_and(|s| *s.get() != MenuState::None) {
         return;
     }
 
@@ -213,11 +210,9 @@ fn edit_voxels(
             InteractionMode::Block => {
                 remove_block(&mut world, &mut modifications, target.block_origin)
             }
-
             InteractionMode::Voxel => {
-                if crate::voxel::shaping::is_centered_layer(&world, target.hit_voxel) {
-                    let coords =
-                        crate::voxel::shaping::centered_layer_coordinates(target.hit_voxel);
+                if is_centered_layer(&world, target.hit_voxel) {
+                    let coords = centered_layer_coordinates(target.hit_voxel);
                     let mut removed = Vec::new();
                     for pos in coords {
                         if remove_voxel(&mut world, &mut modifications, pos) {
@@ -262,15 +257,11 @@ fn edit_voxels(
             }
 
             InteractionMode::Voxel => {
-                let is_centered_target =
-                    crate::voxel::shaping::is_centered_layer(&world, place_position + IVec3::Y)
-                        || crate::voxel::shaping::is_centered_layer(
-                            &world,
-                            place_position - IVec3::Y,
-                        );
+                let is_centered_target = is_centered_layer(&world, place_position + IVec3::Y)
+                    || is_centered_layer(&world, place_position - IVec3::Y);
 
                 if is_centered_target {
-                    let coords = crate::voxel::shaping::centered_layer_coordinates(place_position);
+                    let coords = centered_layer_coordinates(place_position);
                     if coords.iter().all(|&pos| {
                         world
                             .get_voxel(pos)
@@ -332,7 +323,6 @@ fn edit_voxels(
 
     for edited_voxel in edited_voxels {
         sync_voxel_light(&mut commands, &world, edited_voxel, &mut light_registry);
-
         dirty_chunks.extend(affected_chunks(edited_voxel));
     }
 
@@ -349,21 +339,50 @@ fn edit_voxels(
 fn remove_voxel(
     world: &mut VoxelWorld,
     modifications: &mut WorldModificationStore,
-    position: IVec3,
+    world_voxel: IVec3,
 ) -> bool {
-    let Some(voxel) = world.get_voxel(position) else {
+    let Some(current_voxel) = world.get_voxel(world_voxel) else {
         return false;
     };
 
-    if voxel.is_empty() {
+    if current_voxel.is_empty() {
         return false;
     }
 
-    if world.set_voxel(position, Voxel::Air).is_none() {
+    let replacement = if current_voxel == Voxel::WaterOccupied {
+        Voxel::Water
+    } else {
+        Voxel::Air
+    };
+
+    world.set_voxel(world_voxel, replacement);
+    modifications.record(world_voxel, replacement);
+
+    true
+}
+
+fn place_voxel(
+    world: &mut VoxelWorld,
+    modifications: &mut WorldModificationStore,
+    world_voxel: IVec3,
+    voxel: Voxel,
+) -> bool {
+    let Some(current_voxel) = world.get_voxel(world_voxel) else {
+        return false;
+    };
+
+    if !current_voxel.is_empty() && !current_voxel.is_water() {
         return false;
     }
 
-    modifications.record(position, Voxel::Air);
+    let final_voxel = if current_voxel.is_water() && voxel == Voxel::Occupied {
+        Voxel::WaterOccupied
+    } else {
+        voxel
+    };
+
+    world.set_voxel(world_voxel, final_voxel);
+    modifications.record(world_voxel, final_voxel);
 
     true
 }
@@ -373,68 +392,47 @@ fn remove_block(
     modifications: &mut WorldModificationStore,
     block_origin: IVec3,
 ) -> Vec<IVec3> {
-    let mut edited_voxels = Vec::with_capacity(8);
+    let mut removed_voxels = Vec::with_capacity(8);
 
     for y in 0..2 {
         for z in 0..2 {
             for x in 0..2 {
                 let position = block_origin + IVec3::new(x, y, z);
-
                 if remove_voxel(world, modifications, position) {
-                    edited_voxels.push(position);
+                    removed_voxels.push(position);
                 }
             }
         }
     }
 
-    edited_voxels
+    removed_voxels
 }
 
-fn place_voxel(
-    world: &mut VoxelWorld,
-    modifications: &mut WorldModificationStore,
-    position: IVec3,
-    voxel: Voxel,
-) -> bool {
-    let Some(current_voxel) = world.get_voxel(position) else {
-        return false;
-    };
-
-    if !current_voxel.is_empty() && !current_voxel.is_water() {
-        return false;
-    }
-
-    if world.set_voxel(position, voxel).is_none() {
-        return false;
-    }
-
-    modifications.record(position, voxel);
-
-    true
-}
-
-fn place_block(
+pub fn place_block(
     world: &mut VoxelWorld,
     modifications: &mut WorldModificationStore,
     block_origin: IVec3,
     voxel: Voxel,
 ) -> Vec<IVec3> {
-    let mut positions = Vec::with_capacity(8);
+    let mut positions = [IVec3::ZERO; 8];
+    let mut index = 0;
 
     for y in 0..2 {
         for z in 0..2 {
             for x in 0..2 {
-                positions.push(block_origin + IVec3::new(x, y, z));
+                let position = block_origin + IVec3::new(x, y, z);
+                let Some(current_voxel) = world.get_voxel(position) else {
+                    return Vec::new();
+                };
+
+                if !current_voxel.is_empty() && !current_voxel.is_water() {
+                    return Vec::new();
+                }
+
+                positions[index] = position;
+                index += 1;
             }
         }
-    }
-
-    if positions.iter().any(|&position| {
-        world
-            .get_voxel(position)
-            .is_none_or(|current_voxel| !current_voxel.is_empty() && !current_voxel.is_water())
-    }) {
-        return Vec::new();
     }
 
     let mut edited_voxels = Vec::with_capacity(8);
@@ -448,40 +446,10 @@ fn place_block(
     edited_voxels
 }
 
-pub fn affected_chunks(world_voxel: IVec3) -> Vec<IVec3> {
-    let (chunk_coordinate, local_coordinate) = VoxelWorld::world_voxel_to_chunk(world_voxel);
-
-    let mut chunks = Vec::with_capacity(4);
-
-    chunks.push(chunk_coordinate);
-
-    let max_local = (CHUNK_SIZE - 1) as u32;
-
-    if local_coordinate.x == 0 {
-        chunks.push(chunk_coordinate + IVec3::new(-1, 0, 0));
-    } else if local_coordinate.x == max_local {
-        chunks.push(chunk_coordinate + IVec3::new(1, 0, 0));
-    }
-
-    if local_coordinate.y == 0 {
-        chunks.push(chunk_coordinate + IVec3::new(0, -1, 0));
-    } else if local_coordinate.y == max_local {
-        chunks.push(chunk_coordinate + IVec3::new(0, 1, 0));
-    }
-
-    if local_coordinate.z == 0 {
-        chunks.push(chunk_coordinate + IVec3::new(0, 0, -1));
-    } else if local_coordinate.z == max_local {
-        chunks.push(chunk_coordinate + IVec3::new(0, 0, 1));
-    }
-
-    chunks
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{Voxel, WorldModificationStore, place_block};
-    use crate::voxel::{chunk::Chunk, world::VoxelWorld};
+    use super::*;
+    use crate::world::{Chunk, VoxelWorld};
     use bevy::prelude::IVec3;
 
     #[test]
@@ -526,28 +494,20 @@ mod tests {
         let mut world = VoxelWorld::default();
         world.insert_chunk(IVec3::ZERO, Chunk::new());
 
-        // Setup a bottom centered voxel at y=0
         world.set_voxel(IVec3::new(0, 0, 0), Voxel::Stone);
         world.set_voxel(IVec3::new(1, 0, 0), Voxel::Occupied);
         world.set_voxel(IVec3::new(0, 0, 1), Voxel::Occupied);
         world.set_voxel(IVec3::new(1, 0, 1), Voxel::Occupied);
 
-        assert!(crate::voxel::shaping::is_centered_layer(
-            &world,
-            IVec3::new(0, 0, 0)
-        ));
+        assert!(is_centered_layer(&world, IVec3::new(0, 0, 0)));
 
-        // Simulate placing a centered voxel on top at y=1
-        let coords = crate::voxel::shaping::centered_layer_coordinates(IVec3::new(0, 1, 0));
+        let coords = centered_layer_coordinates(IVec3::new(0, 1, 0));
         world.set_voxel(coords[0], Voxel::Stone);
         for &pos in &coords[1..4] {
             world.set_voxel(pos, Voxel::Occupied);
         }
 
-        assert!(crate::voxel::shaping::is_centered_layer(
-            &world,
-            IVec3::new(0, 1, 0)
-        ));
+        assert!(is_centered_layer(&world, IVec3::new(0, 1, 0)));
         assert_eq!(world.get_voxel(IVec3::new(0, 1, 0)), Some(Voxel::Stone));
         assert_eq!(world.get_voxel(IVec3::new(1, 1, 0)), Some(Voxel::Occupied));
     }
@@ -558,27 +518,23 @@ mod tests {
         world.insert_chunk(IVec3::ZERO, Chunk::new());
         let mut modifications = WorldModificationStore::default();
 
-        // Floor at y=0 (normal stone block)
         world.set_voxel(IVec3::new(0, 0, 0), Voxel::Stone);
         world.set_voxel(IVec3::new(1, 0, 0), Voxel::Stone);
         world.set_voxel(IVec3::new(0, 0, 1), Voxel::Stone);
         world.set_voxel(IVec3::new(1, 0, 1), Voxel::Stone);
 
-        // Hanging centered column at y=2
         world.set_voxel(IVec3::new(0, 2, 0), Voxel::Sand);
         world.set_voxel(IVec3::new(1, 2, 0), Voxel::Occupied);
         world.set_voxel(IVec3::new(0, 2, 1), Voxel::Occupied);
         world.set_voxel(IVec3::new(1, 2, 1), Voxel::Occupied);
 
-        // Space at y=1 is empty (broken bottom voxel)
         let place_position = IVec3::new(0, 1, 0);
-        let is_centered_target =
-            crate::voxel::shaping::is_centered_layer(&world, place_position + IVec3::Y)
-                || crate::voxel::shaping::is_centered_layer(&world, place_position - IVec3::Y);
+        let is_centered_target = is_centered_layer(&world, place_position + IVec3::Y)
+            || is_centered_layer(&world, place_position - IVec3::Y);
 
         assert!(is_centered_target);
 
-        let coords = crate::voxel::shaping::centered_layer_coordinates(place_position);
+        let coords = centered_layer_coordinates(place_position);
         assert!(
             coords
                 .iter()
@@ -592,10 +548,7 @@ mod tests {
             modifications.record(pos, Voxel::Occupied);
         }
 
-        assert!(crate::voxel::shaping::is_centered_layer(
-            &world,
-            place_position
-        ));
+        assert!(is_centered_layer(&world, place_position));
         assert_eq!(world.get_voxel(coords[0]), Some(Voxel::Sand));
         assert_eq!(world.get_voxel(coords[1]), Some(Voxel::Occupied));
     }

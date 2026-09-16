@@ -2,11 +2,10 @@ use bevy::prelude::*;
 
 use super::{
     biome::{BiomeType, ClimateGenerator, ClimateSample},
-    blocks::Voxel,
     caves::CaveGenerator,
-    chunk::{CHUNK_SIZE, Chunk},
     strata::StrataGenerator,
 };
+use crate::world::{CHUNK_SIZE, Chunk, Voxel};
 
 pub const LOGICAL_BLOCK_VOXELS: i32 = 2;
 
@@ -187,7 +186,6 @@ impl TerrainGenerator {
     }
 
     fn is_beach_at(&self, world_x: i32, world_z: i32, biome: BiomeType) -> bool {
-        // High mountain peaks and frozen tundras do not generate sandy beaches
         if matches!(biome, BiomeType::SnowyTundra | BiomeType::Highlands) {
             return false;
         }
@@ -217,7 +215,6 @@ impl TerrainGenerator {
             return Voxel::Air;
         }
 
-        // 3D Cave carving: check if this subterranean position is hollowed out by caves
         if self
             .caves
             .is_cave(world_x, world_y, world_z, column.terrain_height, self.seed)
@@ -231,7 +228,6 @@ impl TerrainGenerator {
             );
         }
 
-        // Solid subterranean ground: evaluate geological strata and surface layers
         let logical_block_top = logical_block_top(world_y);
         let logical_depth =
             (column.material_terrain_height - logical_block_top) / LOGICAL_BLOCK_VOXELS;
@@ -251,7 +247,6 @@ impl TerrainGenerator {
             self.seed,
         );
 
-        // Check if exposed subsoil (e.g. Dirt) on hill slopes should be promoted to surface grass / snow
         if solid_voxel == Voxel::Dirt
             && self.logical_block_has_exposed_dirt(column, world_x, world_y, world_z)
         {
@@ -305,8 +300,6 @@ impl TerrainGenerator {
         world_z: i32,
     ) -> bool {
         let block_origin_y = world_y.div_euclid(LOGICAL_BLOCK_VOXELS) * LOGICAL_BLOCK_VOXELS;
-        // If the top of this logical block is deeper than 2 voxels below the column surface,
-        // it cannot be exposed to surface air.
         if column.terrain_height - (block_origin_y + 1) > 2 {
             return false;
         }
@@ -372,11 +365,9 @@ impl TerrainGenerator {
 
         let biome_cfg = climate.biome.config();
 
-        // Non-linear continentalness lift for towering highlands and peaks
         let continental_factor = (climate.continentalness - 0.10).max(0.0) / 0.90;
         let mountain_lift = continental_factor.powf(1.3) * 32.0;
 
-        // Sharp jagged mountain ridges when in high terrain
         let ridge = (1.0 - macro_noise.abs()).powi(2) * 18.0 * continental_factor;
 
         let base = self.base_height + biome_cfg.base_height_offset + mountain_lift;
@@ -595,7 +586,6 @@ mod tests {
         let generator = TerrainGenerator::default();
         let sea_level = generator.effective_sea_level();
 
-        // Must be an odd index so both bottom (sea_level - 1) and top (sea_level) are within the 1m block
         assert_eq!(sea_level % 2, 1, "sea level must be top of logical block");
     }
 
@@ -604,7 +594,6 @@ mod tests {
         let generator = TerrainGenerator::default();
         let mut found_cave_air = false;
 
-        // Sample subterranean coordinates across several chunks below sea level
         'outer: for y in -40..0 {
             for z in -32..32 {
                 for x in -32..32 {
@@ -638,7 +627,6 @@ mod tests {
         let generator = TerrainGenerator::default();
         let mut max_height = 0;
 
-        // Sample a wide area to find mountain summits
         for z in (-200..200).step_by(10) {
             for x in (-200..200).step_by(10) {
                 let column = generator.sample_column(x, z);

@@ -7,7 +7,7 @@ use bevy::{
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 
-use super::chunk::Voxel;
+use crate::world::Voxel;
 
 pub const TEXTURE_RESOLUTION: u32 = 16;
 pub const MAX_VOXEL_VARIANTS: usize = 34;
@@ -246,8 +246,6 @@ fn try_load_image(path: &str) -> Option<LoadedTexture> {
         return None;
     }
 
-    // If texture is not 16px wide (e.g. 32x256 water flow with 32x32 frames),
-    // scale each frame proportionally to TEXTURE_RESOLUTION (16px)
     if width != TEXTURE_RESOLUTION {
         if height % width == 0 {
             let frame_count = height / width;
@@ -306,8 +304,8 @@ fn solid_color_texture(color: [u8; 4]) -> LoadedTexture {
 
 #[cfg(test)]
 mod tests {
-    use super::{TEXTURE_RESOLUTION, build_voxel_texture_array};
-    use crate::voxel::chunk::Voxel;
+    use super::*;
+    use crate::world::Voxel;
     use bevy::prelude::IVec3;
 
     #[test]

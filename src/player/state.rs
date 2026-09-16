@@ -4,7 +4,7 @@ use super::{
     Player,
     water::{is_point_in_water, player_submersion},
 };
-use crate::voxel::VoxelWorld;
+use crate::world::VoxelWorld;
 
 #[derive(Resource, Default, Debug, Clone, Copy)]
 pub struct PlayerEnvironmentStatus {

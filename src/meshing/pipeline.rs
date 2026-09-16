@@ -8,10 +8,10 @@ use bevy::{
 };
 
 use super::{
-    mesher::{ChunkMesher, ChunkMeshes},
-    texture::{VoxelTextureRegistry, build_voxel_texture_array},
-    world::VoxelWorld,
+    greedy::{ChunkMesher, ChunkMeshes},
+    textures::{VoxelTextureRegistry, build_voxel_texture_array},
 };
+use crate::world::VoxelWorld;
 
 pub const VOXEL_SHADER_PATH: &str = "shaders/voxel.wgsl";
 
@@ -34,27 +34,25 @@ impl MaterialExtension for VoxelMaterialExtension {
 
 pub type VoxelMaterial = ExtendedMaterial<StandardMaterial, VoxelMaterialExtension>;
 
-struct ChunkRenderPart {
-    entity: Entity,
-    mesh_handle: Handle<Mesh>,
-
-    vertex_count: usize,
-    triangle_count: usize,
+pub struct ChunkRenderPart {
+    pub entity: Entity,
+    pub mesh_handle: Handle<Mesh>,
+    pub vertex_count: usize,
+    pub triangle_count: usize,
 }
 
 #[derive(Default)]
-struct ChunkRenderData {
-    opaque: Option<ChunkRenderPart>,
-
-    transparent: Option<ChunkRenderPart>,
+pub struct ChunkRenderData {
+    pub opaque: Option<ChunkRenderPart>,
+    pub transparent: Option<ChunkRenderPart>,
 }
 
 impl ChunkRenderData {
-    fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.opaque.is_none() && self.transparent.is_none()
     }
 
-    fn vertex_count(&self) -> usize {
+    pub fn vertex_count(&self) -> usize {
         self.opaque.as_ref().map_or(0, |part| part.vertex_count)
             + self
                 .transparent
@@ -62,7 +60,7 @@ impl ChunkRenderData {
                 .map_or(0, |part| part.vertex_count)
     }
 
-    fn triangle_count(&self) -> usize {
+    pub fn triangle_count(&self) -> usize {
         self.opaque.as_ref().map_or(0, |part| part.triangle_count)
             + self
                 .transparent
@@ -79,6 +77,11 @@ pub struct ChunkMeshRegistry {
 impl ChunkMeshRegistry {
     pub fn len(&self) -> usize {
         self.entries.len()
+    }
+
+    #[allow(dead_code)]
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
     }
 
     pub fn total_vertices(&self) -> usize {
@@ -103,9 +106,7 @@ impl ChunkMeshRegistry {
 #[derive(Resource)]
 pub struct ChunkMaterial {
     pub opaque: Handle<VoxelMaterial>,
-
     pub transparent: Handle<VoxelMaterial>,
-
     pub texture_registry: VoxelTextureRegistry,
 }
 
@@ -120,9 +121,7 @@ pub fn setup_chunk_material(
     let opaque = materials.add(ExtendedMaterial {
         base: StandardMaterial {
             base_color: Color::WHITE,
-
             perceptual_roughness: 0.9,
-
             ..default()
         },
         extension: VoxelMaterialExtension {
@@ -133,15 +132,10 @@ pub fn setup_chunk_material(
     let transparent = materials.add(ExtendedMaterial {
         base: StandardMaterial {
             base_color: Color::srgba(1.0, 1.0, 1.0, 0.80),
-
             alpha_mode: AlphaMode::Blend,
-
             cull_mode: None,
-
             double_sided: false,
-
             perceptual_roughness: 0.2,
-
             ..default()
         },
         extension: VoxelMaterialExtension { texture_array },
@@ -157,20 +151,14 @@ pub fn setup_chunk_material(
 
 pub fn sync_chunk_render(
     commands: &mut Commands,
-
     world: &VoxelWorld,
-
     coordinate: IVec3,
-
     registry: &mut ChunkMeshRegistry,
-
     meshes: &mut Assets<Mesh>,
-
     material: &ChunkMaterial,
 ) {
     if world.get_chunk(coordinate).is_none() {
         remove_chunk_render(commands, coordinate, registry, meshes);
-
         return;
     }
 
@@ -219,25 +207,18 @@ pub fn apply_chunk_mesh(
 
 fn sync_render_part(
     commands: &mut Commands,
-
     meshes: &mut Assets<Mesh>,
-
     part: &mut Option<ChunkRenderPart>,
-
     rebuilt_mesh: Option<Mesh>,
-
     material: &Handle<VoxelMaterial>,
-
     translation: Vec3,
 ) {
     let Some(rebuilt_mesh) = rebuilt_mesh else {
         remove_render_part(commands, meshes, part);
-
         return;
     };
 
     let vertex_count = rebuilt_mesh.count_vertices();
-
     let triangle_count = rebuilt_mesh
         .indices()
         .map(|indices| indices.len() / 3)
@@ -247,11 +228,8 @@ fn sync_render_part(
         && let Some(mut mesh) = meshes.get_mut(&existing.mesh_handle)
     {
         *mesh = rebuilt_mesh;
-
         existing.vertex_count = vertex_count;
-
         existing.triangle_count = triangle_count;
-
         return;
     }
 
@@ -277,9 +255,7 @@ fn sync_render_part(
 
 fn remove_render_part(
     commands: &mut Commands,
-
     meshes: &mut Assets<Mesh>,
-
     part: &mut Option<ChunkRenderPart>,
 ) {
     let Some(render_part) = part.take() else {
@@ -287,17 +263,13 @@ fn remove_render_part(
     };
 
     commands.entity(render_part.entity).despawn();
-
     meshes.remove(render_part.mesh_handle.id());
 }
 
 pub fn remove_chunk_render(
     commands: &mut Commands,
-
     coordinate: IVec3,
-
     registry: &mut ChunkMeshRegistry,
-
     meshes: &mut Assets<Mesh>,
 ) {
     let Some(mut render_data) = registry.entries.remove(&coordinate) else {
@@ -305,6 +277,5 @@ pub fn remove_chunk_render(
     };
 
     remove_render_part(commands, meshes, &mut render_data.opaque);
-
     remove_render_part(commands, meshes, &mut render_data.transparent);
 }

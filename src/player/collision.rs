@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::voxel::{VOXEL_SIZE, VoxelWorld, chunk::Voxel};
+use crate::world::{VOXEL_SIZE, Voxel, VoxelWorld};
 
 use super::PLAYER_WIDTH;
 
@@ -316,7 +316,7 @@ fn body_voxel_bounds(position: Vec3, height: f32) -> (IVec3, IVec3) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::voxel::chunk::Chunk;
+    use crate::world::Chunk;
 
     #[test]
     fn headroom_check_detects_low_ceiling() {

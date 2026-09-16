@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{environment::EnvironmentState, voxel::chunk_manager::ChunkStreamingSettings};
+use crate::{environment::EnvironmentState, world::ChunkStreamingSettings};
 
 use super::{GameSettings, MenuState};
 

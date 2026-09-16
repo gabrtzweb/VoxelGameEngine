@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
-use super::{
-    blocks::Voxel,
-    noise::{fbm_3d, gradient_noise_2d, gradient_noise_3d},
+use crate::{
+    core::noise::{fbm_3d, gradient_noise_2d, gradient_noise_3d},
+    world::Voxel,
 };
 
 /// 3D Cave, ravine, and cavern generator using dual-noise worms, chasms, and cheese chambers.
@@ -21,21 +21,12 @@ pub struct CaveGenerator {
 impl Default for CaveGenerator {
     fn default() -> Self {
         Self {
-            // Dual 3D noise frequency for worm tunnels (spaghetti caves)
             spaghetti_freq: 0.028,
             spaghetti_threshold: 0.075,
-
-            // Low frequency 3D FBM for expansive cavern chambers
             cheese_freq: 0.016,
             cheese_threshold: 0.46,
-
-            // Distance below surface before full side-carving expands
             surface_buffer_voxels: 4,
-
-            // Magma and lava pools in deep underground crust (chunk y <= -4, y <= -60 voxels)
             deep_lava_y: -60,
-
-            // 3D Ravines / Canyons cutting down from the surface
             ravine_freq: 0.007,
             ravine_width: 0.024,
         }
@@ -52,7 +43,6 @@ impl CaveGenerator {
         surface_height: i32,
         seed: u32,
     ) -> bool {
-        // Caves only carve into solid ground at or beneath surface
         if world_y > surface_height {
             return false;
         }
@@ -77,7 +67,6 @@ impl CaveGenerator {
             let ravine_active =
                 gradient_noise_2d(fx * 0.0025, fz * 0.0025, seed.wrapping_add(44_444));
 
-            // Ravines generate in regions where ravine_active > 0.10
             if ravine_active > 0.10 {
                 let wall_jitter = gradient_noise_3d(
                     fx * 0.045,
@@ -88,7 +77,6 @@ impl CaveGenerator {
 
                 let half_width = self.ravine_width + wall_jitter;
                 if ravine_path.abs() < half_width {
-                    // Slight tapering at the very bottom floor of the ravine
                     let bottom_dist = 40 - depth_below_surface;
                     if bottom_dist > 1 {
                         return true;
@@ -112,7 +100,6 @@ impl CaveGenerator {
             seed.wrapping_add(80_009),
         );
 
-        // Core of the tunnel punctures the surface creating natural cave mouths and openings
         let is_tunnel_core = worm_a.abs() < 0.042 && worm_b.abs() < 0.042;
         if depth_below_surface <= self.surface_buffer_voxels {
             if is_tunnel_core {
@@ -148,7 +135,6 @@ impl CaveGenerator {
     }
 
     /// Returns the filler voxel for a hollowed cave position.
-    /// Caves are dry Air by default, with localized subterranean water aquifers and deep magma/lava.
     pub fn cave_voxel(
         &self,
         world_x: i32,
@@ -157,16 +143,13 @@ impl CaveGenerator {
         sea_level: i32,
         seed: u32,
     ) -> Voxel {
-        // 1. Deep volcanic magma & lava layer
         if world_y <= self.deep_lava_y {
             if world_y <= self.deep_lava_y - 4 {
                 Voxel::Lava
             } else {
                 Voxel::Magma
             }
-        }
-        // 2. Localized underground aquifers (flooded subterranean lakes)
-        else if world_y <= sea_level - 10 {
+        } else if world_y <= sea_level - 10 {
             let aquifer_noise = gradient_noise_3d(
                 world_x as f32 * 0.035,
                 world_y as f32 * 0.035,
@@ -174,15 +157,12 @@ impl CaveGenerator {
                 seed.wrapping_add(108_888),
             );
 
-            // Only specific flooded chambers contain water (roughly 12% of deep caves)
             if aquifer_noise > 0.48 {
                 Voxel::Water
             } else {
                 Voxel::Air
             }
-        }
-        // 3. Dry, walkable/flyable air cave
-        else {
+        } else {
             Voxel::Air
         }
     }
@@ -204,11 +184,9 @@ mod tests {
         let generator = CaveGenerator::default();
         let sea_level = 9;
 
-        // Normal underground caves are Air
         assert_eq!(generator.cave_voxel(0, 5, 0, sea_level, 1337), Voxel::Air);
         assert_eq!(generator.cave_voxel(0, -10, 0, sea_level, 1337), Voxel::Air);
 
-        // Deep subterranean is magma / lava
         assert_eq!(
             generator.cave_voxel(0, -60, 0, sea_level, 1337),
             Voxel::Magma

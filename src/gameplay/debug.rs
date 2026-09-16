@@ -3,8 +3,8 @@ use bevy::{
     prelude::*,
 };
 
-use super::{
-    render::ChunkMeshRegistry,
+use crate::{
+    meshing::ChunkMeshRegistry,
     world::{CHUNK_WORLD_SIZE, VoxelWorld},
 };
 
@@ -58,12 +58,10 @@ fn draw_chunk_outlines(
     }
 
     let camera_position = camera.translation();
-
     let chunk_color = Color::srgba(0.1, 0.75, 1.0, 0.9);
 
     for &coordinate in registry.iter_coordinates() {
         let chunk_origin = VoxelWorld::chunk_translation(coordinate);
-
         let chunk_center = chunk_origin + Vec3::splat(CHUNK_WORLD_SIZE * 0.5);
 
         if camera_position.distance_squared(chunk_center)

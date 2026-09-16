@@ -2,13 +2,10 @@ use std::collections::{HashSet, VecDeque};
 
 use bevy::prelude::*;
 
-use super::{
-    chunk::{VOXEL_SIZE, Voxel},
-    interaction::affected_chunks,
-    light::{VoxelLightRegistry, sync_voxel_light},
-    chunk_manager::ChunkStreamingQueues,
-    modifications::WorldModificationStore,
-    world::{VoxelAccess, VoxelWorld},
+use super::lighting::{VoxelLightRegistry, sync_voxel_light};
+use crate::world::{
+    ChunkStreamingQueues, VOXEL_SIZE, Voxel, VoxelAccess, VoxelWorld, WorldModificationStore,
+    affected_chunks,
 };
 
 pub const MAX_FULL_WATER_SPREAD: u8 = 8;
@@ -117,32 +114,24 @@ fn run_fluid_simulation(
 
         match current_voxel {
             Voxel::Water => {
-                // Water source block: spreads downward, or horizontally if supported
                 let changed = process_water_source(&mut world, &mut modifications, &mut queue, pos);
                 edited_voxels.extend(changed);
             }
-
             Voxel::WaterFlowing => {
-                // Flowing water: checks if source still supplies it, otherwise evaporates; spreads downward/horizontally
                 let changed =
                     process_water_flowing(&mut world, &mut modifications, &mut queue, pos);
                 edited_voxels.extend(changed);
             }
-
             Voxel::WaterOccupied => {
-                // Waterlogged occupied space in centered column: checks if water is still present
                 let changed =
                     process_water_occupied(&mut world, &mut modifications, &mut queue, pos);
                 edited_voxels.extend(changed);
             }
-
             Voxel::Air => {
-                // Check infinite source creation: 2+ adjacent source blocks over solid/water
                 let changed =
                     check_infinite_source(&mut world, &mut modifications, &mut queue, pos);
                 edited_voxels.extend(changed);
             }
-
             _ => {}
         }
 
@@ -178,7 +167,6 @@ fn process_water_source(
 ) -> Vec<IVec3> {
     let mut edited = Vec::new();
 
-    // 1. Downward spread priority
     let below = pos - IVec3::Y;
     if let Some(voxel_below) = world.get_voxel(below) {
         if voxel_below == Voxel::Air {
@@ -196,7 +184,6 @@ fn process_water_source(
         }
     }
 
-    // 2. Horizontal spread if downward is blocked or already water, AND supported by ground
     if !is_supported_by_ground(world, pos) {
         return edited;
     }
@@ -235,12 +222,15 @@ fn process_water_flowing(
 ) -> Vec<IVec3> {
     let mut edited = Vec::new();
 
-    let below = pos - IVec3::Y;
-    let voxel_below = world.get_voxel(below);
-    let is_top_layer = voxel_below.is_some_and(Voxel::is_water);
+    if !has_adjacent_water(world, pos) {
+        world.set_voxel(pos, Voxel::Air);
+        modifications.record(pos, Voxel::Air);
+        queue.enqueue_with_neighbors(pos);
+        edited.push(pos);
+        return edited;
+    }
 
     let Some(info) = compute_water_info(world, pos) else {
-        // Evaporate / recede
         world.set_voxel(pos, Voxel::Air);
         modifications.record(pos, Voxel::Air);
         queue.enqueue_with_neighbors(pos);
@@ -248,59 +238,28 @@ fn process_water_flowing(
         return edited;
     };
 
-    // If this is a top layer of a stream, it only exists for full block sources at distance <= 3
-    if is_top_layer && (!info.is_full_block || info.distance > 3) {
-        let two_below = pos - IVec3::new(0, 2, 0);
-        let is_falling_column = world.get_voxel(two_below) == Some(Voxel::Air);
-        if !is_falling_column {
-            world.set_voxel(pos, Voxel::Air);
-            modifications.record(pos, Voxel::Air);
-            queue.enqueue_with_neighbors(pos);
-            edited.push(pos);
-            return edited;
-        }
-    }
-
-    if !is_top_layer && info.distance > info.max_spread() {
-        world.set_voxel(pos, Voxel::Air);
-        modifications.record(pos, Voxel::Air);
-        queue.enqueue_with_neighbors(pos);
-        edited.push(pos);
-        return edited;
-    }
-
-    // Downward spread priority
-    if let Some(v_below) = voxel_below {
-        if v_below == Voxel::Air {
+    let below = pos - IVec3::Y;
+    if let Some(voxel_below) = world.get_voxel(below) {
+        if voxel_below == Voxel::Air {
             world.set_voxel(below, Voxel::WaterFlowing);
             modifications.record(below, Voxel::WaterFlowing);
             queue.enqueue_with_neighbors(below);
             edited.push(below);
             return edited;
-        } else if v_below == Voxel::Occupied {
+        } else if voxel_below == Voxel::Occupied {
             world.set_voxel(below, Voxel::WaterOccupied);
             modifications.record(below, Voxel::WaterOccupied);
             queue.enqueue_with_neighbors(below);
             edited.push(below);
             return edited;
-        } else if v_below == Voxel::WaterFlowing {
-            let two_below = pos - IVec3::new(0, 2, 0);
-            if world.get_voxel(two_below) == Some(Voxel::Air) {
-                // Falling column in mid-air
-                return edited;
-            }
         }
     }
 
-    // Horizontal spread: allowed only if supported by solid ground (not mid-air)
-    let can_spread = is_supported_by_ground(world, pos)
-        && if is_top_layer {
-            info.is_full_block && info.distance < 3
-        } else {
-            info.distance < info.max_spread()
-        };
+    if !is_supported_by_ground(world, pos) {
+        return edited;
+    }
 
-    if can_spread {
+    if info.distance < info.max_spread() {
         let horizontals = [
             pos + IVec3::X,
             pos - IVec3::X,
@@ -335,13 +294,67 @@ fn process_water_occupied(
     pos: IVec3,
 ) -> Vec<IVec3> {
     let mut edited = Vec::new();
-    let has_water_neighbor = has_adjacent_water(world, pos);
 
-    if !has_water_neighbor {
+    if !has_adjacent_water(world, pos) {
         world.set_voxel(pos, Voxel::Occupied);
         modifications.record(pos, Voxel::Occupied);
         queue.enqueue_with_neighbors(pos);
         edited.push(pos);
+        return edited;
+    }
+
+    let Some(info) = compute_water_info(world, pos) else {
+        world.set_voxel(pos, Voxel::Occupied);
+        modifications.record(pos, Voxel::Occupied);
+        queue.enqueue_with_neighbors(pos);
+        edited.push(pos);
+        return edited;
+    };
+
+    let below = pos - IVec3::Y;
+    if let Some(voxel_below) = world.get_voxel(below) {
+        if voxel_below == Voxel::Air {
+            world.set_voxel(below, Voxel::WaterFlowing);
+            modifications.record(below, Voxel::WaterFlowing);
+            queue.enqueue_with_neighbors(below);
+            edited.push(below);
+            return edited;
+        } else if voxel_below == Voxel::Occupied {
+            world.set_voxel(below, Voxel::WaterOccupied);
+            modifications.record(below, Voxel::WaterOccupied);
+            queue.enqueue_with_neighbors(below);
+            edited.push(below);
+            return edited;
+        }
+    }
+
+    if !is_supported_by_ground(world, pos) {
+        return edited;
+    }
+
+    if info.distance < info.max_spread() {
+        let horizontals = [
+            pos + IVec3::X,
+            pos - IVec3::X,
+            pos + IVec3::Z,
+            pos - IVec3::Z,
+        ];
+
+        for neighbor in horizontals {
+            if let Some(v) = world.get_voxel(neighbor) {
+                if v == Voxel::Air {
+                    world.set_voxel(neighbor, Voxel::WaterFlowing);
+                    modifications.record(neighbor, Voxel::WaterFlowing);
+                    queue.enqueue_with_neighbors(neighbor);
+                    edited.push(neighbor);
+                } else if v == Voxel::Occupied {
+                    world.set_voxel(neighbor, Voxel::WaterOccupied);
+                    modifications.record(neighbor, Voxel::WaterOccupied);
+                    queue.enqueue_with_neighbors(neighbor);
+                    edited.push(neighbor);
+                }
+            }
+        }
     }
 
     edited
@@ -355,7 +368,6 @@ fn check_infinite_source(
 ) -> Vec<IVec3> {
     let mut edited = Vec::new();
 
-    // Check floor below: must be solid or water
     let below = pos - IVec3::Y;
     let Some(v_below) = world.get_voxel(below) else {
         return edited;
@@ -364,7 +376,6 @@ fn check_infinite_source(
         return edited;
     }
 
-    // Count horizontal source water neighbors
     let horizontals = [
         pos + IVec3::X,
         pos - IVec3::X,
@@ -564,7 +575,7 @@ pub fn water_surface_height_offset(world: &impl VoxelAccess, world_voxel: IVec3)
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::voxel::chunk::Chunk;
+    use crate::world::Chunk;
 
     #[test]
     fn infinite_source_creates_water_with_two_sources_over_floor() {
@@ -574,10 +585,8 @@ mod tests {
         let mut queue = FluidUpdateQueue::default();
 
         let center = IVec3::new(2, 1, 2);
-        // Floor at y=0
         world.set_voxel(center - IVec3::Y, Voxel::Stone);
 
-        // Sources at +X and +Z
         world.set_voxel(center + IVec3::X, Voxel::Water);
         world.set_voxel(center + IVec3::Z, Voxel::Water);
 
@@ -609,9 +618,7 @@ mod tests {
         let mut world = VoxelWorld::default();
         world.insert_chunk(IVec3::ZERO, Chunk::new());
 
-        // Place single-voxel source at (1, 1, 1)
         world.set_voxel(IVec3::new(1, 1, 1), Voxel::Water);
-        // Place flowing water in a line along +X
         world.set_voxel(IVec3::new(2, 1, 1), Voxel::WaterFlowing);
         world.set_voxel(IVec3::new(3, 1, 1), Voxel::WaterFlowing);
         world.set_voxel(IVec3::new(4, 1, 1), Voxel::WaterFlowing);
@@ -619,9 +626,7 @@ mod tests {
         assert_eq!(compute_water_distance(&world, IVec3::new(2, 1, 1)), 1);
         assert_eq!(compute_water_distance(&world, IVec3::new(3, 1, 1)), 2);
         assert_eq!(compute_water_distance(&world, IVec3::new(4, 1, 1)), 3);
-        // Position 5 is air next to 4, its distance to nearest source is 4
         assert_eq!(compute_water_distance(&world, IVec3::new(5, 1, 1)), 4);
-        // Position 6 is air, exceeds single-voxel max spread of 4
         assert_eq!(compute_water_distance(&world, IVec3::new(6, 1, 1)), u8::MAX);
     }
 
@@ -630,19 +635,15 @@ mod tests {
         let mut world = VoxelWorld::default();
         world.insert_chunk(IVec3::ZERO, Chunk::new());
 
-        // Place full block source (2 voxels tall) at (1, 1, 1) and (1, 2, 1)
         world.set_voxel(IVec3::new(1, 1, 1), Voxel::Water);
         world.set_voxel(IVec3::new(1, 2, 1), Voxel::Water);
 
-        // Place flowing water along +X from 2 to 8
         for x in 2..=8 {
             world.set_voxel(IVec3::new(x, 1, 1), Voxel::WaterFlowing);
         }
 
         assert_eq!(compute_water_distance(&world, IVec3::new(8, 1, 1)), 7);
-        // Position 9 is air next to 8, distance 8 is within full-block spread (8)
         assert_eq!(compute_water_distance(&world, IVec3::new(9, 1, 1)), 8);
-        // Position 10 exceeds max spread of 8
         assert_eq!(
             compute_water_distance(&world, IVec3::new(10, 1, 1)),
             u8::MAX
@@ -654,21 +655,15 @@ mod tests {
         let mut world = VoxelWorld::default();
         world.insert_chunk(IVec3::ZERO, Chunk::new());
 
-        // Single-voxel stream along +X: source at (1, 1, 1)
         world.set_voxel(IVec3::new(1, 1, 1), Voxel::Water);
         for x in 2..=5 {
             world.set_voxel(IVec3::new(x, 1, 1), Voxel::WaterFlowing);
         }
 
-        // Source has 0.05 offset (height 45cm)
         assert!((water_surface_height_offset(&world, IVec3::new(1, 1, 1)) - 0.05).abs() < 1e-4);
-        // Distance 1: 0.10 offset (height 40cm)
         assert!((water_surface_height_offset(&world, IVec3::new(2, 1, 1)) - 0.10).abs() < 1e-4);
-        // Distance 2: 0.20 offset (height 30cm)
         assert!((water_surface_height_offset(&world, IVec3::new(3, 1, 1)) - 0.20).abs() < 1e-4);
-        // Distance 3: 0.30 offset (height 20cm)
         assert!((water_surface_height_offset(&world, IVec3::new(4, 1, 1)) - 0.30).abs() < 1e-4);
-        // Distance 4: 0.40 offset (height 10cm)
         assert!((water_surface_height_offset(&world, IVec3::new(5, 1, 1)) - 0.40).abs() < 1e-4);
     }
 
@@ -687,7 +682,6 @@ mod tests {
         assert_eq!(world.get_voxel(source + IVec3::X), Some(Voxel::Air));
         assert_eq!(world.get_voxel(source + IVec3::Z), Some(Voxel::Air));
 
-        // When source is processed again while hanging over air, it must not spread horizontally
         let changed2 = process_water_source(&mut world, &mut modifications, &mut queue, source);
         assert!(changed2.is_empty());
         assert_eq!(world.get_voxel(source + IVec3::X), Some(Voxel::Air));

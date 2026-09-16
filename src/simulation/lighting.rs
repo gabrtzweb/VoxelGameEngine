@@ -2,24 +2,21 @@ use std::collections::{HashMap, HashSet};
 
 use bevy::prelude::*;
 
-use super::{
-    chunk::{CHUNK_SIZE, VOXEL_SIZE, Voxel},
-    world::VoxelWorld,
-};
+use crate::world::{CHUNK_SIZE, VOXEL_SIZE, Voxel, VoxelWorld};
 
 const LIGHT_INTENSITY: f32 = 750_000.0;
 const LIGHT_RANGE: f32 = 26.0;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-struct LightState {
-    entity: Entity,
-    voxel: Voxel,
-    count: u8,
+pub struct LightState {
+    pub entity: Entity,
+    pub voxel: Voxel,
+    pub count: u8,
 }
 
 #[derive(Resource, Default)]
 pub struct VoxelLightRegistry {
-    entries: HashMap<IVec3, LightState>,
+    pub entries: HashMap<IVec3, LightState>,
 }
 
 pub fn sync_voxel_light(
@@ -169,7 +166,7 @@ fn sync_block_light(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::voxel::chunk::Chunk;
+    use crate::world::Chunk;
 
     #[test]
     fn block_light_consolidates_eight_subvoxels_into_single_point_light() {
@@ -188,7 +185,6 @@ mod tests {
         let mut registry = VoxelLightRegistry::default();
         let mut commands = app.world_mut().commands();
 
-        // Sync for all 8 sub-voxels
         for dy in 0..2 {
             for dz in 0..2 {
                 for dx in 0..2 {

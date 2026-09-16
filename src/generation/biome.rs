@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use super::{blocks::Voxel, noise::fbm_2d};
+use crate::{core::noise::fbm_2d, world::Voxel};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Reflect, Default)]
 pub enum BiomeType {
@@ -139,7 +139,6 @@ pub struct ClimateGenerator {
 impl Default for ClimateGenerator {
     fn default() -> Self {
         Self {
-            // Very low frequencies (~0.002 to 0.003) produce large, coherent biomes spanning 300–600 meters
             continentalness_freq: 0.0025,
             temperature_freq: 0.0018,
             humidity_freq: 0.0022,
@@ -225,7 +224,6 @@ mod tests {
     fn biome_classification_covers_all_variants() {
         let mut found = std::collections::HashSet::new();
 
-        // Sample across the 3D climate cube
         for c in -10..=10 {
             for t in -10..=10 {
                 for h in -10..=10 {

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::voxel::{VOXEL_SIZE, VoxelWorld, chunk::Voxel};
+use crate::world::{VOXEL_SIZE, Voxel, VoxelWorld};
 
 use super::{PLAYER_HEIGHT, PLAYER_WIDTH};
 

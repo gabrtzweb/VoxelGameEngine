@@ -1,5 +1,4 @@
 use bevy::platform::collections::HashMap;
-
 use bevy::prelude::*;
 
 use super::chunk::{CHUNK_SIZE, Chunk, VOXEL_SIZE, Voxel};
@@ -172,5 +171,34 @@ impl VoxelAccess for ChunkNeighborhood {
             local_coordinate.z as usize,
         ))
     }
+}
+
+pub fn affected_chunks(world_voxel: IVec3) -> Vec<IVec3> {
+    let (chunk_coordinate, local_coordinate) = VoxelWorld::world_voxel_to_chunk(world_voxel);
+
+    let mut chunks = Vec::with_capacity(4);
+    chunks.push(chunk_coordinate);
+
+    let max_local = (CHUNK_SIZE - 1) as u32;
+
+    if local_coordinate.x == 0 {
+        chunks.push(chunk_coordinate + IVec3::new(-1, 0, 0));
+    } else if local_coordinate.x == max_local {
+        chunks.push(chunk_coordinate + IVec3::new(1, 0, 0));
+    }
+
+    if local_coordinate.y == 0 {
+        chunks.push(chunk_coordinate + IVec3::new(0, -1, 0));
+    } else if local_coordinate.y == max_local {
+        chunks.push(chunk_coordinate + IVec3::new(0, 1, 0));
+    }
+
+    if local_coordinate.z == 0 {
+        chunks.push(chunk_coordinate + IVec3::new(0, 0, -1));
+    } else if local_coordinate.z == max_local {
+        chunks.push(chunk_coordinate + IVec3::new(0, 0, 1));
+    }
+
+    chunks
 }
 

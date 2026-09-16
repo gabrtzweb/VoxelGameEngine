@@ -2,15 +2,12 @@ use bevy::prelude::*;
 
 use crate::{
     environment::{DayPhase, EnvironmentState},
+    gameplay::SelectedVoxel,
+    generation::TerrainGenerator,
+    meshing::{ChunkMaterial, ChunkMeshRegistry, sync_chunk_render},
     player::{PLAYER_EYE_HEIGHT, Player, PlayerCamera, PlayerMotion, hotbar::Hotbar},
-    voxel::{
-        interaction::SelectedVoxel,
-        light::{VoxelLightRegistry, sync_chunk_lights},
-        modifications::WorldModificationStore,
-        render::{ChunkMaterial, ChunkMeshRegistry, sync_chunk_render},
-        terrain::TerrainGenerator,
-        world::VoxelWorld,
-    },
+    simulation::{VoxelLightRegistry, sync_chunk_lights},
+    world::{Voxel, VoxelWorld, WorldModificationStore},
 };
 
 use super::MenuState;
@@ -240,7 +237,7 @@ fn handle_pause_menu_buttons(
                             **hotbar = Hotbar::default();
                         }
                         if let Some(ref mut selected) = selected_voxel_query {
-                            selected.0 = Some(crate::voxel::chunk::Voxel::Grass);
+                            selected.0 = Some(Voxel::Grass);
                         }
 
                         info!(

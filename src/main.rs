@@ -1,8 +1,12 @@
-mod dev_stats;
+mod core;
 mod environment;
+mod gameplay;
+mod generation;
 mod menu;
+mod meshing;
 mod player;
-mod voxel;
+mod simulation;
+mod world;
 
 use bevy::{
     diagnostic::FrameTimeDiagnosticsPlugin,
@@ -13,14 +17,14 @@ use bevy::{
 
 use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 
-use dev_stats::DevStatsPlugin;
+use core::DevStatsPlugin;
 use environment::EnvironmentPlugin;
+use gameplay::GameplayPlugin;
 use menu::MenuPlugin;
+use meshing::MeshingPlugin;
 use player::PlayerPlugin;
-use voxel::{
-    BlockIconPlugin, ChunkManagerPlugin, FluidSimulationPlugin, ShapingPlugin, TargetingPlugin,
-    VoxelDebugPlugin, VoxelInteractionPlugin, VoxelMaterial,
-};
+use simulation::SimulationPlugin;
+use world::WorldPlugin;
 
 use winit::{platform::windows::WindowExtWindows, window::Icon};
 
@@ -79,18 +83,14 @@ fn main() {
             WorldInspectorPlugin::default()
                 .run_if(|inspector: Res<player::InspectorInteraction>| inspector.active),
         )
-        .add_plugins(MaterialPlugin::<VoxelMaterial>::default())
         .add_plugins(EnvironmentPlugin)
         .add_plugins(PlayerPlugin)
-        .add_plugins(ChunkManagerPlugin)
+        .add_plugins(WorldPlugin)
+        .add_plugins(MeshingPlugin)
+        .add_plugins(SimulationPlugin)
+        .add_plugins(GameplayPlugin)
         .add_plugins(DevStatsPlugin)
         .add_plugins(MenuPlugin)
-        .add_plugins(TargetingPlugin)
-        .add_plugins(VoxelInteractionPlugin)
-        .add_plugins(VoxelDebugPlugin)
-        .add_plugins(ShapingPlugin)
-        .add_plugins(FluidSimulationPlugin)
-        .add_plugins(BlockIconPlugin)
         .add_systems(Update, set_window_icons)
         .run();
 }

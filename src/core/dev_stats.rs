@@ -6,11 +6,11 @@ use bevy::{
 
 use crate::{
     environment::EnvironmentState,
+    gameplay::{CurrentTarget, InteractionMode},
+    generation::TerrainGenerator,
+    meshing::ChunkMeshRegistry,
     player::{GameMode, Player, PlayerMotion},
-    voxel::{
-        CHUNK_VOLUME, ChunkMeshRegistry, InteractionMode, VOXEL_SIZE, VoxelWorld,
-        targeting::CurrentTarget,
-    },
+    world::{CHUNK_VOLUME, VOXEL_SIZE, VoxelWorld},
 };
 
 const STATS_UPDATE_INTERVAL: f32 = 0.25;
@@ -139,7 +139,7 @@ fn update_dev_stats(
     player: Single<(&Transform, &PlayerMotion), With<Player>>,
     camera: Single<&Transform, (With<Camera3d>, Without<Player>)>,
     current_target: Res<CurrentTarget>,
-    terrain_generator: Option<Res<crate::voxel::terrain::TerrainGenerator>>,
+    terrain_generator: Option<Res<TerrainGenerator>>,
     text_query: Single<
         (
             &mut Text,

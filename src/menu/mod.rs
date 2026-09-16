@@ -9,8 +9,9 @@ use bevy::{
 };
 
 use crate::{
+    gameplay::BlockIcons,
     player::InspectorInteraction,
-    voxel::{chunk::Voxel, icon::BlockIcons},
+    world::Voxel,
 };
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]

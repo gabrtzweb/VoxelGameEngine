@@ -1,6 +1,7 @@
 use bevy::{input::mouse::AccumulatedMouseScroll, prelude::*};
 
-use crate::voxel::{chunk::Voxel, icon::BlockIcons, interaction::SelectedVoxel};
+use crate::gameplay::{BlockIcons, SelectedVoxel};
+use crate::world::Voxel;
 
 pub const HOTBAR_SLOT_COUNT: usize = 8;
 
@@ -45,7 +46,7 @@ impl Plugin for HotbarPlugin {
         app.init_resource::<Hotbar>()
             .add_systems(
                 Startup,
-                setup_hotbar_ui.after(crate::voxel::icon::setup_block_icons),
+                setup_hotbar_ui.after(crate::gameplay::setup_block_icons),
             )
             .add_systems(Update, (handle_hotbar_input, sync_hotbar_ui).chain());
     }

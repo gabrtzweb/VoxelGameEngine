@@ -7,8 +7,9 @@ use bevy::{
 };
 
 use crate::{
+    gameplay::RadialMenuState,
     menu::GameSettings,
-    voxel::{VOXEL_SIZE, Voxel, VoxelWorld, shaping::RadialMenuState},
+    world::{VOXEL_SIZE, Voxel, VoxelWorld},
 };
 
 use super::{

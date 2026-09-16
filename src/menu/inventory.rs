@@ -1,8 +1,9 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 
 use crate::{
+    gameplay::BlockIcons,
     player::hotbar::{HOTBAR_SLOT_COUNT, Hotbar},
-    voxel::{chunk::Voxel, icon::BlockIcons},
+    world::Voxel,
 };
 
 use super::{HeldInventoryItem, MenuState};

@@ -7,7 +7,7 @@ use bevy::{
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 
-use super::blocks::Voxel;
+use crate::world::Voxel;
 
 pub const ICON_SIZE: u32 = 32;
 
@@ -85,7 +85,6 @@ fn load_voxel_raw_16x16(voxel: Voxel) -> Vec<u8> {
                 let rgba = img.into_rgba8();
                 let (w, h) = rgba.dimensions();
                 if w >= 16 && h >= 16 {
-                    // Extract first 16x16 frame
                     let mut frame = Vec::with_capacity(16 * 16 * 4);
                     for y in 0..16 {
                         for x in 0..16 {
@@ -99,7 +98,6 @@ fn load_voxel_raw_16x16(voxel: Voxel) -> Vec<u8> {
         }
     }
 
-    // Fallback: 16x16 solid color using voxel fallback color
     let color = voxel.fallback_color();
     let mut frame = Vec::with_capacity(16 * 16 * 4);
     for _ in 0..256 {
@@ -113,7 +111,6 @@ fn load_voxel_raw_16x16(voxel: Voxel) -> Vec<u8> {
 pub fn render_isometric_block_icon(tex_16x16: &[u8], tint: [f32; 4]) -> Image {
     let mut canvas = vec![0u8; (ICON_SIZE * ICON_SIZE * 4) as usize];
 
-    // Rasterize Top, Left, Right faces
     for y in 0..ICON_SIZE {
         for x in 0..ICON_SIZE {
             let x_f = x as f32;
@@ -160,7 +157,6 @@ pub fn render_isometric_block_icon(tex_16x16: &[u8], tint: [f32; 4]) -> Image {
         }
     }
 
-    // Apply subtle dark silhouette outline to make the 3D block pop against dark backgrounds
     apply_silhouette_outline(&mut canvas);
 
     let mut image = Image::new_fill(
@@ -208,7 +204,6 @@ fn draw_texel(
     canvas[out_idx + 3] = ((a * tint[3]).clamp(0.0, 1.0) * 255.0) as u8;
 }
 
-/// Applies a 1-pixel dark outline around the transparent perimeter of the cube.
 fn apply_silhouette_outline(canvas: &mut [u8]) {
     let original = canvas.to_vec();
 
@@ -216,10 +211,9 @@ fn apply_silhouette_outline(canvas: &mut [u8]) {
         for x in 1..(ICON_SIZE - 1) {
             let idx = ((y * ICON_SIZE + x) * 4) as usize;
             if original[idx + 3] > 0 {
-                continue; // Already non-transparent
+                continue;
             }
 
-            // Check neighbors
             let mut has_opaque_neighbor = false;
             for dy in [-1i32, 0, 1] {
                 for dx in [-1i32, 0, 1] {
@@ -264,11 +258,9 @@ mod tests {
         let data = image.data.as_ref().expect("Image data must be present");
         assert_eq!(data.len(), 32 * 32 * 4);
 
-        // Center pixel (15, 16) should be non-transparent (part of the cube)
         let center_idx = (16 * 32 + 15) * 4;
         assert!(data[center_idx + 3] > 0);
 
-        // Corner pixel (0, 0) should be transparent
         assert_eq!(data[3], 0);
     }
 }

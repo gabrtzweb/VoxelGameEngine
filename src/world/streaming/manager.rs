@@ -1,39 +1,35 @@
-use std::collections::{HashSet, VecDeque};
-
-use crate::player::{Player, PlayerSet};
+use std::collections::HashSet;
 
 use bevy::{
     prelude::*,
     tasks::{AsyncComputeTaskPool, Task, futures::check_ready},
 };
 
-use super::{
-    chunk::{Chunk, VOXEL_SIZE},
-    light::{VoxelLightRegistry, remove_chunk_lights, sync_chunk_lights},
-    mesher::{ChunkMesher, ChunkMeshes},
-    modifications::WorldModificationStore,
-    render::{
-        ChunkMaterial, ChunkMeshRegistry, apply_chunk_mesh, remove_chunk_render,
-        setup_chunk_material,
+use crate::{
+    generation::{BiomeType, CaveGenerator, ClimateGenerator, StrataGenerator, TerrainGenerator},
+    meshing::{ChunkMeshRegistry, remove_chunk_render},
+    player::{Player, PlayerSet},
+    simulation::lighting::{VoxelLightRegistry, remove_chunk_lights, sync_chunk_lights},
+    world::{
+        VOXEL_SIZE,
+        chunk::Chunk,
+        modifications::WorldModificationStore,
+        storage::VoxelWorld,
+        streaming::queues::ChunkStreamingQueues,
     },
-    targeting::TargetingSet,
-    terrain::TerrainGenerator,
-    world::{ChunkNeighborhood, VoxelWorld},
 };
 
 const DEFAULT_RENDER_DISTANCE: i32 = 8;
 
-const WORLD_MIN_CHUNK_Y: i32 = -8;
-const WORLD_MAX_CHUNK_Y: i32 = 7;
+pub const WORLD_MIN_CHUNK_Y: i32 = -8;
+pub const WORLD_MAX_CHUNK_Y: i32 = 7;
 
 const MAX_GENERATION_TASKS_IN_FLIGHT: usize = 24;
 const MAX_GENERATION_TASKS_STARTED_PER_FRAME: usize = 8;
 
 const MAX_CHUNK_UNLOADS_PER_FRAME: usize = 24;
-const MAX_MESHING_TASKS_IN_FLIGHT: usize = 32;
-const MAX_MESHING_TASKS_STARTED_PER_FRAME: usize = 8;
 
-const NEIGHBOR_DIRECTIONS: [IVec3; 6] = [
+pub const NEIGHBOR_DIRECTIONS: [IVec3; 6] = [
     IVec3::new(1, 0, 0),
     IVec3::new(-1, 0, 0),
     IVec3::new(0, 1, 0),
@@ -56,68 +52,27 @@ impl Default for ChunkStreamingSettings {
 }
 
 #[derive(Resource, Default)]
-struct ChunkStreamingState {
-    last_player_chunk: Option<IVec3>,
-
-    desired_chunks: HashSet<IVec3>,
-}
-
-#[derive(Resource, Default)]
-pub struct ChunkStreamingQueues {
-    load: VecDeque<IVec3>,
-
-    unload: VecDeque<IVec3>,
-
-    remesh: VecDeque<IVec3>,
-
-    remesh_set: HashSet<IVec3>,
-}
-
-impl ChunkStreamingQueues {
-    pub fn enqueue_remesh(&mut self, coordinate: IVec3) {
-        if self.remesh_set.insert(coordinate) {
-            self.remesh.push_back(coordinate);
-        }
-    }
-
-    pub fn enqueue_priority_remesh(&mut self, coordinate: IVec3) {
-        if self.remesh_set.insert(coordinate) {
-            self.remesh.push_front(coordinate);
-        } else if let Some(idx) = self.remesh.iter().position(|&c| c == coordinate) {
-            self.remesh.remove(idx);
-            self.remesh.push_front(coordinate);
-        }
-    }
+pub struct ChunkStreamingState {
+    pub last_player_chunk: Option<IVec3>,
+    pub desired_chunks: HashSet<IVec3>,
 }
 
 #[derive(Component)]
-struct ChunkGenerationTask {
-    coordinate: IVec3,
-    task: Task<GeneratedChunk>,
+pub struct ChunkGenerationTask {
+    pub coordinate: IVec3,
+    pub task: Task<GeneratedChunk>,
 }
 
-struct GeneratedChunk {
-    coordinate: IVec3,
-    chunk: Chunk,
+pub struct GeneratedChunk {
+    pub coordinate: IVec3,
+    pub chunk: Chunk,
 }
 
-#[derive(Component)]
-struct ChunkMeshingTask {
-    coordinate: IVec3,
-    task: Task<CompletedChunkMesh>,
-}
+pub struct ChunkStreamingPlugin;
 
-struct CompletedChunkMesh {
-    coordinate: IVec3,
-    meshes: ChunkMeshes,
-}
-
-pub struct ChunkManagerPlugin;
-
-impl Plugin for ChunkManagerPlugin {
+impl Plugin for ChunkStreamingPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<VoxelWorld>()
-            .init_resource::<ChunkMeshRegistry>()
             .init_resource::<ChunkStreamingSettings>()
             .init_resource::<ChunkStreamingState>()
             .init_resource::<ChunkStreamingQueues>()
@@ -125,11 +80,10 @@ impl Plugin for ChunkManagerPlugin {
             .init_resource::<VoxelLightRegistry>()
             .insert_resource(TerrainGenerator::default())
             .register_type::<TerrainGenerator>()
-            .register_type::<super::biome::ClimateGenerator>()
-            .register_type::<super::caves::CaveGenerator>()
-            .register_type::<super::strata::StrataGenerator>()
-            .register_type::<super::biome::BiomeType>()
-            .add_systems(Startup, setup_chunk_material)
+            .register_type::<ClimateGenerator>()
+            .register_type::<CaveGenerator>()
+            .register_type::<StrataGenerator>()
+            .register_type::<BiomeType>()
             .add_systems(
                 Update,
                 (
@@ -138,25 +92,18 @@ impl Plugin for ChunkManagerPlugin {
                     process_chunk_unloads,
                     start_generation_tasks,
                     collect_generation_tasks,
-                    collect_meshing_tasks,
                 )
                     .chain()
-                    .after(PlayerSet::Movement)
-                    .before(TargetingSet::UpdateTarget),
-            )
-            .add_systems(
-                PostUpdate,
-                (collect_meshing_tasks, start_meshing_tasks).chain(),
+                    .after(PlayerSet::Movement),
             );
     }
 }
 
-fn handle_terrain_generator_reload(
+pub fn handle_terrain_generator_reload(
     generator: Res<TerrainGenerator>,
     mut state: ResMut<ChunkStreamingState>,
     world: Res<VoxelWorld>,
     generation_tasks: Query<(Entity, &ChunkGenerationTask)>,
-    meshing_tasks: Query<(Entity, &ChunkMeshingTask)>,
     mut commands: Commands,
     mut queues: ResMut<ChunkStreamingQueues>,
 ) {
@@ -167,9 +114,6 @@ fn handle_terrain_generator_reload(
     state.last_player_chunk = None;
 
     for (entity, _) in &generation_tasks {
-        commands.entity(entity).despawn();
-    }
-    for (entity, _) in &meshing_tasks {
         commands.entity(entity).despawn();
     }
 
@@ -184,7 +128,7 @@ fn handle_terrain_generator_reload(
     }
 }
 
-fn plan_chunk_streaming(
+pub fn plan_chunk_streaming(
     player: Single<&Transform, With<Player>>,
     settings: Res<ChunkStreamingSettings>,
     mut state: ResMut<ChunkStreamingState>,
@@ -239,7 +183,7 @@ fn plan_chunk_streaming(
     queues.unload.extend(chunks_to_unload);
 }
 
-fn process_chunk_unloads(
+pub fn process_chunk_unloads(
     mut commands: Commands,
     mut queues: ResMut<ChunkStreamingQueues>,
     mut world: ResMut<VoxelWorld>,
@@ -256,8 +200,6 @@ fn process_chunk_unloads(
             continue;
         }
 
-        // PointLight entities must disappear before
-        // their voxel chunk is removed from memory.
         remove_chunk_lights(&mut commands, coordinate, &mut light_registry);
 
         if world.remove_chunk(coordinate).is_none() {
@@ -276,7 +218,7 @@ fn process_chunk_unloads(
     }
 }
 
-fn start_generation_tasks(
+pub fn start_generation_tasks(
     mut commands: Commands,
     terrain_generator: Res<TerrainGenerator>,
     active_tasks: Query<&ChunkGenerationTask>,
@@ -311,7 +253,7 @@ fn start_generation_tasks(
     }
 }
 
-fn collect_generation_tasks(
+pub fn collect_generation_tasks(
     mut commands: Commands,
     mut tasks: Query<(Entity, &mut ChunkGenerationTask)>,
     state: Res<ChunkStreamingState>,
@@ -327,20 +269,14 @@ fn collect_generation_tasks(
 
         commands.entity(entity).despawn();
 
-        // The player may have moved while this chunk
-        // was being generated asynchronously.
         if !state.desired_chunks.contains(&generated.coordinate) {
             continue;
         }
 
-        // Restore runtime edits before inserting the
-        // chunk into the active world.
         modifications.apply_to_chunk(generated.coordinate, &mut generated.chunk);
 
         world.insert_chunk(generated.coordinate, generated.chunk);
 
-        // Any Light voxels contained in the generated
-        // chunk now receive their PointLight entities.
         sync_chunk_lights(
             &mut commands,
             &world,
@@ -358,96 +294,7 @@ fn collect_generation_tasks(
     }
 }
 
-fn start_meshing_tasks(
-    mut commands: Commands,
-    active_tasks: Query<&ChunkMeshingTask>,
-    mut queues: ResMut<ChunkStreamingQueues>,
-    world: Res<VoxelWorld>,
-    material: Res<ChunkMaterial>,
-) {
-    let active_count = active_tasks.iter().count();
-    if active_count >= MAX_MESHING_TASKS_IN_FLIGHT {
-        return;
-    }
-
-    let in_flight: HashSet<IVec3> = active_tasks.iter().map(|t| t.coordinate).collect();
-    let available_slots =
-        (MAX_MESHING_TASKS_IN_FLIGHT - active_count).min(MAX_MESHING_TASKS_STARTED_PER_FRAME);
-
-    let pool = AsyncComputeTaskPool::get();
-    let mut started = 0;
-    let mut deferred = Vec::new();
-
-    while started < available_slots {
-        let Some(coordinate) = queues.remesh.pop_front() else {
-            break;
-        };
-
-        if in_flight.contains(&coordinate) {
-            deferred.push(coordinate);
-            continue;
-        }
-
-        queues.remesh_set.remove(&coordinate);
-
-        if world.get_chunk(coordinate).is_none() {
-            continue;
-        }
-
-        let neighborhood = ChunkNeighborhood::new(&world, coordinate);
-        let textures = material.texture_registry.clone();
-
-        let task = pool.spawn(async move {
-            let meshes = ChunkMesher::build_meshes(&neighborhood, coordinate, &textures);
-            CompletedChunkMesh { coordinate, meshes }
-        });
-
-        commands.spawn(ChunkMeshingTask { coordinate, task });
-        started += 1;
-    }
-
-    for coord in deferred.into_iter().rev() {
-        queues.remesh.push_front(coord);
-    }
-}
-
-fn collect_meshing_tasks(
-    mut commands: Commands,
-    mut tasks: Query<(Entity, &mut ChunkMeshingTask)>,
-    world: Res<VoxelWorld>,
-    material: Res<ChunkMaterial>,
-    mut registry: ResMut<ChunkMeshRegistry>,
-    mut meshes: ResMut<Assets<Mesh>>,
-) {
-    for (entity, mut meshing_task) in &mut tasks {
-        let Some(completed) = check_ready(&mut meshing_task.task) else {
-            continue;
-        };
-
-        commands.entity(entity).despawn();
-
-        if world.get_chunk(completed.coordinate).is_none() {
-            remove_chunk_render(
-                &mut commands,
-                completed.coordinate,
-                &mut registry,
-                &mut meshes,
-            );
-            continue;
-        }
-
-        apply_chunk_mesh(
-            &mut commands,
-            completed.coordinate,
-            completed.meshes,
-            &mut registry,
-            &mut meshes,
-            &material,
-        );
-    }
-}
-
-fn player_chunk_coordinate(player_position: Vec3) -> IVec3 {
+pub fn player_chunk_coordinate(player_position: Vec3) -> IVec3 {
     let player_voxel = IVec3::new(
         (player_position.x / VOXEL_SIZE).floor() as i32,
         (player_position.y / VOXEL_SIZE).floor() as i32,
@@ -459,7 +306,7 @@ fn player_chunk_coordinate(player_position: Vec3) -> IVec3 {
     chunk_coordinate
 }
 
-fn desired_chunk_coordinates(center: IVec3, render_distance: i32) -> HashSet<IVec3> {
+pub fn desired_chunk_coordinates(center: IVec3, render_distance: i32) -> HashSet<IVec3> {
     let radius_squared = render_distance * render_distance;
 
     let mut chunks = HashSet::new();
@@ -487,13 +334,13 @@ fn desired_chunk_coordinates(center: IVec3, render_distance: i32) -> HashSet<IVe
     chunks
 }
 
-fn neighbors(coordinate: IVec3) -> impl Iterator<Item = IVec3> {
+pub fn neighbors(coordinate: IVec3) -> impl Iterator<Item = IVec3> {
     NEIGHBOR_DIRECTIONS
         .into_iter()
         .map(move |direction| coordinate + direction)
 }
 
-fn chunk_distance_squared(a: IVec3, b: IVec3) -> i32 {
+pub fn chunk_distance_squared(a: IVec3, b: IVec3) -> i32 {
     let delta = a - b;
 
     delta.x * delta.x + delta.y * delta.y + delta.z * delta.z

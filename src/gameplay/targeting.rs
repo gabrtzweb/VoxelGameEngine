@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 
 use super::{
-    chunk::{VOXEL_SIZE, Voxel},
     interaction_mode::InteractionMode,
-    world::VoxelWorld,
+    shaping::{get_block_voxels, is_centered_layer, is_layer_centered},
 };
+use crate::world::{VOXEL_SIZE, Voxel, VoxelWorld};
 
 const MAX_TARGET_DISTANCE: f32 = 10.0;
 const VOXELS_PER_BLOCK: i32 = 2;
@@ -105,9 +105,9 @@ fn draw_current_target_highlight(
 
     match *interaction_mode {
         InteractionMode::Block => {
-            let voxels = crate::voxel::shaping::get_block_voxels(&world, target.block_origin);
-            let layer0_centered = crate::voxel::shaping::is_layer_centered(&voxels[0..4]);
-            let layer1_centered = crate::voxel::shaping::is_layer_centered(&voxels[4..8]);
+            let voxels = get_block_voxels(&world, target.block_origin);
+            let layer0_centered = is_layer_centered(&voxels[0..4]);
+            let layer1_centered = is_layer_centered(&voxels[4..8]);
 
             if layer0_centered && layer1_centered {
                 let center =
@@ -157,7 +157,7 @@ fn draw_current_target_highlight(
                 return;
             }
 
-            if crate::voxel::shaping::is_centered_layer(&world, target.hit_voxel) {
+            if is_centered_layer(&world, target.hit_voxel) {
                 let bx = target.hit_voxel.x.div_euclid(2) * 2;
                 let bz = target.hit_voxel.z.div_euclid(2) * 2;
                 let center = Vec3::new(
@@ -496,27 +496,18 @@ fn raycast_world(
 
         if side_distance.x <= side_distance.y && side_distance.x <= side_distance.z {
             voxel.x += step.x;
-
             traveled_distance = side_distance.x;
-
             side_distance.x += delta_distance.x;
-
             face_normal = IVec3::new(-step.x, 0, 0);
         } else if side_distance.y <= side_distance.z {
             voxel.y += step.y;
-
             traveled_distance = side_distance.y;
-
             side_distance.y += delta_distance.y;
-
             face_normal = IVec3::new(0, -step.y, 0);
         } else {
             voxel.z += step.z;
-
             traveled_distance = side_distance.z;
-
             side_distance.z += delta_distance.z;
-
             face_normal = IVec3::new(0, 0, -step.z);
         }
     }
@@ -544,7 +535,8 @@ fn initial_side_distance(origin: f32, voxel: i32, step: i32, delta_distance: f32
 
 #[cfg(test)]
 mod tests {
-    use super::{adjacent_block_origin, block_origin_from_voxel};
+    use super::*;
+    use crate::world::{Chunk, VoxelWorld};
     use bevy::prelude::IVec3;
 
     #[test]
@@ -563,17 +555,14 @@ mod tests {
     fn adjacent_block_origin_moves_one_logical_block_along_the_hit_face() {
         let origin = IVec3::new(-2, 4, 6);
 
-        // Full block hit on +X face at x = -1
         assert_eq!(
             adjacent_block_origin(origin, IVec3::new(-1, 4, 6), IVec3::X),
             IVec3::new(0, 4, 6)
         );
-        // Full block hit on -Z face at z = 6
         assert_eq!(
             adjacent_block_origin(origin, IVec3::new(-2, 4, 6), -IVec3::Z),
             IVec3::new(-2, 4, 4)
         );
-        // Bottom slab hit on top (+Y) face at y = 4 (origin is y = 4) -> connects directly at y = 5
         assert_eq!(
             adjacent_block_origin(origin, IVec3::new(-2, 4, 6), IVec3::Y),
             IVec3::new(-2, 5, 6)
@@ -582,26 +571,20 @@ mod tests {
 
     #[test]
     fn is_solid_local_ignores_centered_layer_for_standard_outline() {
-        use super::{Voxel, is_solid_local};
-        use crate::voxel::{chunk::Chunk, world::VoxelWorld};
-
         let mut world = VoxelWorld::default();
         world.insert_chunk(IVec3::ZERO, Chunk::new());
         let origin = IVec3::new(0, 0, 0);
 
-        // Layer 0 is centered
         world.set_voxel(origin + IVec3::new(0, 0, 0), Voxel::Sand);
         world.set_voxel(origin + IVec3::new(1, 0, 0), Voxel::Occupied);
         world.set_voxel(origin + IVec3::new(0, 0, 1), Voxel::Occupied);
         world.set_voxel(origin + IVec3::new(1, 0, 1), Voxel::Occupied);
 
-        // Layer 1 is a slab (4 sand voxels)
         world.set_voxel(origin + IVec3::new(0, 1, 0), Voxel::Sand);
         world.set_voxel(origin + IVec3::new(1, 1, 0), Voxel::Sand);
         world.set_voxel(origin + IVec3::new(0, 1, 1), Voxel::Sand);
         world.set_voxel(origin + IVec3::new(1, 1, 1), Voxel::Sand);
 
-        // Layer 0 is treated as non-solid for standard grid outline since layer0_centered = true
         assert!(!is_solid_local(
             &world,
             origin,
@@ -617,7 +600,6 @@ mod tests {
             false
         ));
 
-        // Layer 1 is recognized as solid for standard grid outline
         assert!(is_solid_local(
             &world,
             origin,

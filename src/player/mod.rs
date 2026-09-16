@@ -74,13 +74,13 @@ impl Plugin for PlayerPlugin {
 
 fn spawn_player_and_camera(
     mut commands: Commands,
-    terrain_generator: Option<Res<crate::voxel::terrain::TerrainGenerator>>,
+    terrain_generator: Option<Res<crate::generation::TerrainGenerator>>,
 ) {
     let spawn_x = -10.0;
     let spawn_z = 14.0;
     let player_y = if let Some(ref generator) = terrain_generator {
         let col = generator.sample_column(spawn_x as i32, spawn_z as i32);
-        ((col.terrain_height + 2) as f32 * crate::voxel::VOXEL_SIZE).max(10.38)
+        ((col.terrain_height + 2) as f32 * crate::world::VOXEL_SIZE).max(10.38)
     } else {
         10.38
     };
