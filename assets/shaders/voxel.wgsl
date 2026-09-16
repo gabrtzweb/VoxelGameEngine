@@ -32,14 +32,20 @@ fn fragment(
 
     pbr_input.material.base_color = tex_color * pbr_input.material.base_color * vertex_output.color;
 
-    if (frame_count > 1.5) {
-        pbr_input.material.base_color.a = max(pbr_input.material.base_color.a, 0.72);
-        let water_tint = tex_color.rgb * vertex_output.color.rgb;
-        pbr_input.material.emissive = vec4<f32>(water_tint * 0.55, 1.0);
-    }
-
     var out: FragmentOutput;
-    out.color = apply_pbr_lighting(pbr_input);
+    if (frame_count < -0.5) {
+        // Light-emitting blocks are self-illuminated:
+        // Always maintains full, vivid texture visibility day and night,
+        // unaffected by external shadows or darkness.
+        out.color = vec4<f32>(tex_color.rgb * vertex_output.color.rgb * 1.15, 1.0);
+    } else {
+        if (frame_count > 1.5) {
+            pbr_input.material.base_color.a = max(pbr_input.material.base_color.a, 0.72);
+            let water_tint = tex_color.rgb * vertex_output.color.rgb;
+            pbr_input.material.emissive = vec4<f32>(water_tint * 0.55, 1.0);
+        }
+        out.color = apply_pbr_lighting(pbr_input);
+    }
     out.color = main_pass_post_lighting_processing(pbr_input, out.color);
     return out;
 }

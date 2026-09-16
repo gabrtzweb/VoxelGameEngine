@@ -129,6 +129,7 @@ This document outlines the planned development phases for the voxel game engine,
     - Implemented Minecraft-style 3D isometric pixel-art icon rasterizer in [src/voxel/icon.rs](VoxelGameEngine/src/voxel/icon.rs) generating 32×32 icons on-the-fly with 1.0/0.8/0.6 directional face shading and tints.
     - Cleaned up inventory UI: simplified title to "INVENTORY", removed "HOTBAR" label, and eliminated explanatory tooltip/hover text.
     - Added cinematic camera background blur (`DepthOfField`) whenever the pause or settings menu is opened, while keeping the world alive and unblurred during inventory interactions.
+    - Fixed light-emitting blocks: integrated into chunk mesher with actual textures, added shader self-illumination radiance (`emissive`), and consolidated to 1 high-intensity 3D point light per block.
     - Removed legacy static icons in `assets/textures/items/` while preserving directory for future item sprites.
   - [x] **Priority B: Sub-Voxel UV Blending & Seamless Texturing**:
     - Full 1m³ block face unification: A full 1m² face (composed of 2×2 co-planar sub-voxels) maps a single continuous 16×16 texture across the entire surface rather than repeating 4 times.

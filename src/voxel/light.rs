@@ -1,67 +1,25 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-use bevy::{
-    light::{NotShadowCaster, NotShadowReceiver},
-    prelude::*,
-};
+use bevy::prelude::*;
 
 use super::{
     chunk::{CHUNK_SIZE, VOXEL_SIZE, Voxel},
     world::VoxelWorld,
 };
 
-const LIGHT_INTENSITY: f32 = 65_000.0;
-const LIGHT_RANGE: f32 = 16.0;
-const LIGHT_RADIUS: f32 = 0.25;
+const LIGHT_INTENSITY: f32 = 750_000.0;
+const LIGHT_RANGE: f32 = 26.0;
 
-#[derive(Clone, Copy)]
-struct VoxelLightEntities {
-    visual: Entity,
-    light: Entity,
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+struct LightState {
+    entity: Entity,
+    voxel: Voxel,
+    count: u8,
 }
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct VoxelLightRegistry {
-    entries: HashMap<IVec3, VoxelLightEntities>,
-
-    mesh: Handle<Mesh>,
-
-    material: Handle<StandardMaterial>,
-}
-
-impl FromWorld for VoxelLightRegistry {
-    fn from_world(world: &mut World) -> Self {
-        let mesh = {
-            let mut meshes = world.resource_mut::<Assets<Mesh>>();
-
-            meshes.add(Cuboid::new(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE))
-        };
-
-        let material = {
-            let mut materials = world.resource_mut::<Assets<StandardMaterial>>();
-
-            materials.add(StandardMaterial {
-                base_color: Color::srgb(1.0, 0.78, 0.28),
-
-                emissive: LinearRgba::rgb(8.0, 5.0, 1.2),
-
-                // Keeps every face of the block
-                // visually bright.
-                unlit: true,
-
-                perceptual_roughness: 0.7,
-
-                ..default()
-            })
-        };
-
-        Self {
-            entries: HashMap::new(),
-
-            mesh,
-            material,
-        }
-    }
+    entries: HashMap<IVec3, LightState>,
 }
 
 pub fn sync_voxel_light(
@@ -70,24 +28,12 @@ pub fn sync_voxel_light(
     world_voxel: IVec3,
     registry: &mut VoxelLightRegistry,
 ) {
-    let voxel = world.get_voxel(world_voxel);
-    let should_exist = voxel.is_some_and(|v| v.is_light());
-
-    let existing = registry.entries.get(&world_voxel).copied();
-
-    match (should_exist, existing) {
-        (true, None) => {
-            if let Some(v) = voxel {
-                spawn_voxel_light(commands, world_voxel, v, registry);
-            }
-        }
-
-        (false, Some(entities)) => {
-            despawn_voxel_light(commands, world_voxel, entities, registry);
-        }
-
-        _ => {}
-    }
+    let block_coord = IVec3::new(
+        world_voxel.x.div_euclid(2),
+        world_voxel.y.div_euclid(2),
+        world_voxel.z.div_euclid(2),
+    );
+    sync_block_light(commands, world, block_coord, registry);
 }
 
 pub fn sync_chunk_lights(
@@ -103,20 +49,26 @@ pub fn sync_chunk_lights(
     };
 
     let chunk_origin = chunk_coordinate * CHUNK_SIZE as i32;
+    let mut block_coords = HashSet::new();
 
     for y in 0..CHUNK_SIZE {
         for z in 0..CHUNK_SIZE {
             for x in 0..CHUNK_SIZE {
                 let voxel = chunk.get(x, y, z);
-                if !voxel.is_light() {
-                    continue;
+                if voxel.is_light() {
+                    let world_voxel = chunk_origin + IVec3::new(x as i32, y as i32, z as i32);
+                    block_coords.insert(IVec3::new(
+                        world_voxel.x.div_euclid(2),
+                        world_voxel.y.div_euclid(2),
+                        world_voxel.z.div_euclid(2),
+                    ));
                 }
-
-                let world_voxel = chunk_origin + IVec3::new(x as i32, y as i32, z as i32);
-
-                spawn_voxel_light(commands, world_voxel, voxel, registry);
             }
         }
+    }
+
+    for block_coord in block_coords {
+        sync_block_light(commands, world, block_coord, registry);
     }
 }
 
@@ -125,82 +77,137 @@ pub fn remove_chunk_lights(
     chunk_coordinate: IVec3,
     registry: &mut VoxelLightRegistry,
 ) {
-    let lights_to_remove: Vec<(IVec3, VoxelLightEntities)> = registry
+    let lights_to_remove: Vec<(IVec3, Entity)> = registry
         .entries
         .iter()
-        .filter_map(|(&world_voxel, &entities)| {
-            let (light_chunk, _) = VoxelWorld::world_voxel_to_chunk(world_voxel);
+        .filter_map(|(&block_coord, &state)| {
+            let (light_chunk, _) = VoxelWorld::world_voxel_to_chunk(block_coord * 2);
 
             if light_chunk == chunk_coordinate {
-                Some((world_voxel, entities))
+                Some((block_coord, state.entity))
             } else {
                 None
             }
         })
         .collect();
 
-    for (world_voxel, entities) in lights_to_remove {
-        despawn_voxel_light(commands, world_voxel, entities, registry);
+    for (block_coord, entity) in lights_to_remove {
+        commands.entity(entity).despawn();
+        registry.entries.remove(&block_coord);
     }
 }
 
-fn spawn_voxel_light(
+fn sync_block_light(
     commands: &mut Commands,
-    world_voxel: IVec3,
-    voxel: Voxel,
+    world: &VoxelWorld,
+    block_coord: IVec3,
     registry: &mut VoxelLightRegistry,
 ) {
-    if registry.entries.contains_key(&world_voxel) {
-        return;
+    let block_origin = block_coord * 2;
+    let mut light_positions = Vec::new();
+    let mut dominant_voxel = None;
+
+    for dy in 0..2 {
+        for dz in 0..2 {
+            for dx in 0..2 {
+                let sub_pos = block_origin + IVec3::new(dx, dy, dz);
+                if let Some(v) = world.get_voxel(sub_pos)
+                    && v.is_light()
+                {
+                    light_positions.push(sub_pos);
+                    if dominant_voxel.is_none() {
+                        dominant_voxel = Some(v);
+                    }
+                }
+            }
+        }
     }
 
-    let position = world_voxel.as_vec3() * VOXEL_SIZE + Vec3::splat(VOXEL_SIZE * 0.5);
+    let count = light_positions.len() as u8;
 
-    // Visual entity.
-    let visual = commands
-        .spawn((
-            Mesh3d(registry.mesh.clone()),
-            MeshMaterial3d(registry.material.clone()),
-            Transform::from_translation(position),
-            NotShadowCaster,
-            NotShadowReceiver,
-        ))
-        .id();
+    if let Some(voxel) = dominant_voxel {
+        if let Some(&existing) = registry.entries.get(&block_coord) {
+            if existing.count == count && existing.voxel == voxel {
+                return;
+            }
+            commands.entity(existing.entity).despawn();
+        }
 
-    // Lighting entity with block-specific color.
-    let light = commands
-        .spawn((
-            PointLight {
-                color: voxel.light_color(),
+        let avg_pos = light_positions
+            .iter()
+            .map(|p| p.as_vec3() * VOXEL_SIZE + Vec3::splat(VOXEL_SIZE * 0.5))
+            .sum::<Vec3>()
+            / (count as f32);
 
-                intensity: LIGHT_INTENSITY,
+        let entity = commands
+            .spawn((
+                PointLight {
+                    color: voxel.light_color(),
+                    intensity: LIGHT_INTENSITY,
+                    range: LIGHT_RANGE,
+                    radius: 0.0,
+                    shadow_maps_enabled: false,
+                    ..default()
+                },
+                Transform::from_translation(avg_pos),
+            ))
+            .id();
 
-                range: LIGHT_RANGE,
-
-                radius: LIGHT_RADIUS,
-
-                shadow_maps_enabled: false,
-
-                ..default()
+        registry.entries.insert(
+            block_coord,
+            LightState {
+                entity,
+                voxel,
+                count,
             },
-            Transform::from_translation(position),
-        ))
-        .id();
-
-    registry
-        .entries
-        .insert(world_voxel, VoxelLightEntities { visual, light });
+        );
+    } else if let Some(existing) = registry.entries.remove(&block_coord) {
+        commands.entity(existing.entity).despawn();
+    }
 }
 
-fn despawn_voxel_light(
-    commands: &mut Commands,
-    world_voxel: IVec3,
-    entities: VoxelLightEntities,
-    registry: &mut VoxelLightRegistry,
-) {
-    commands.entity(entities.visual).despawn();
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::voxel::chunk::Chunk;
 
-    commands.entity(entities.light).despawn();
+    #[test]
+    fn block_light_consolidates_eight_subvoxels_into_single_point_light() {
+        let mut app = App::new();
+        let mut world = VoxelWorld::default();
+        let mut chunk = Chunk::default();
+        for dy in 0..2 {
+            for dz in 0..2 {
+                for dx in 0..2 {
+                    chunk.set(dx, dy, dz, Voxel::LightWarm);
+                }
+            }
+        }
+        world.insert_chunk(IVec3::ZERO, chunk);
 
-    registry.entries.remove(&world_voxel);
+        let mut registry = VoxelLightRegistry::default();
+        let mut commands = app.world_mut().commands();
+
+        // Sync for all 8 sub-voxels
+        for dy in 0..2 {
+            for dz in 0..2 {
+                for dx in 0..2 {
+                    sync_voxel_light(&mut commands, &world, IVec3::new(dx, dy, dz), &mut registry);
+                }
+            }
+        }
+
+        assert_eq!(
+            registry.entries.len(),
+            1,
+            "Exactly 1 light entity should be registered for the full 1m block"
+        );
+        let block_coord = IVec3::ZERO;
+        let state = registry
+            .entries
+            .get(&block_coord)
+            .expect("Light state should exist");
+        assert_eq!(state.count, 8);
+        assert_eq!(state.voxel, Voxel::LightWarm);
+    }
 }

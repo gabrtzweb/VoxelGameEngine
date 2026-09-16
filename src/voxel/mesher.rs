@@ -142,7 +142,11 @@ impl MeshBuffers {
 
         let color = key.tint_color;
         let layer = key.texture_layer as f32;
-        let frame_count = key.frame_count as f32;
+        let frame_count = if key.voxel.is_light() {
+            -4.0
+        } else {
+            key.frame_count as f32
+        };
 
         let surface_offset = key.surface_offset_cm as f32 / 100.0;
         let step_bottom_offset = key.step_bottom_offset_cm as f32 / 100.0;
@@ -295,10 +299,7 @@ impl ChunkMesher {
                             local_voxel.z as usize,
                         );
 
-                        // Light blocks have their own
-                        // emissive render entities.
                         if voxel.is_empty()
-                            || voxel.is_light()
                             || voxel == Voxel::Occupied
                             || is_chunk_local_centered_layer(chunk, local_voxel)
                         {
@@ -1023,6 +1024,39 @@ mod tests {
             panic!("Expected Float32x3 normals and Float32x2 UV_0 attributes");
         }
     }
+
+    #[test]
+    fn mesher_emissive_light_blocks_include_faces_and_emissive_metadata() {
+        let mut world = VoxelWorld::default();
+        let mut chunk = Chunk::default();
+        for dy in 0..2 {
+            for dz in 0..2 {
+                for dx in 0..2 {
+                    chunk.set(dx, dy, dz, Voxel::LightWarm);
+                }
+            }
+        }
+        world.insert_chunk(IVec3::ZERO, chunk);
+
+        let (_, registry) = build_voxel_texture_array();
+        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
+        let opaque = meshes
+            .opaque
+            .expect("Opaque mesh should exist for light block");
+
+        let uv_bs = opaque
+            .attribute(Mesh::ATTRIBUTE_UV_1)
+            .expect("Mesh should have UV_1");
+
+        if let VertexAttributeValues::Float32x2(uv_b_data) = uv_bs {
+            assert!(!uv_b_data.is_empty());
+            for entry in uv_b_data {
+                assert_eq!(entry[1], -4.0, "Light block emission metadata must be -4.0");
+            }
+        } else {
+            panic!("Expected Float32x2 UV_1");
+        }
+    }
 }
 
 fn is_chunk_local_isolated_voxel(chunk: &Chunk, local_voxel: IVec3) -> bool {
@@ -1103,6 +1137,11 @@ fn mesh_centered_voxels(
 
                 let world_voxel = chunk_voxel_origin + local;
                 let (texture_layer, frame_count) = textures.get_texture_info(material, world_voxel);
+                let frame_count_f32 = if material.is_light() {
+                    -4.0
+                } else {
+                    frame_count as f32
+                };
                 let tint_color = material.tint_color_at(world_voxel);
 
                 let min_x = bx as f32 + 0.5;
@@ -1149,7 +1188,7 @@ fn mesh_centered_voxels(
                     ],
                     [1.0, 0.0, 0.0],
                     texture_layer,
-                    frame_count,
+                    frame_count_f32,
                     tint_color,
                 );
                 // -X
@@ -1163,7 +1202,7 @@ fn mesh_centered_voxels(
                     ],
                     [-1.0, 0.0, 0.0],
                     texture_layer,
-                    frame_count,
+                    frame_count_f32,
                     tint_color,
                 );
                 // +Z
@@ -1177,7 +1216,7 @@ fn mesh_centered_voxels(
                     ],
                     [0.0, 0.0, 1.0],
                     texture_layer,
-                    frame_count,
+                    frame_count_f32,
                     tint_color,
                 );
                 // -Z
@@ -1191,7 +1230,7 @@ fn mesh_centered_voxels(
                     ],
                     [0.0, 0.0, -1.0],
                     texture_layer,
-                    frame_count,
+                    frame_count_f32,
                     tint_color,
                 );
 
@@ -1207,7 +1246,7 @@ fn mesh_centered_voxels(
                         ],
                         [0.0, 1.0, 0.0],
                         texture_layer,
-                        frame_count,
+                        frame_count_f32,
                         tint_color,
                     );
                 }
@@ -1224,7 +1263,7 @@ fn mesh_centered_voxels(
                         ],
                         [0.0, -1.0, 0.0],
                         texture_layer,
-                        frame_count,
+                        frame_count_f32,
                         tint_color,
                     );
                 }
@@ -1290,7 +1329,7 @@ fn mesh_centered_voxels(
                             ],
                             [0.0, -1.0, 0.0],
                             w_layer,
-                            w_frame_count,
+                            w_frame_count as f32,
                             w_tint,
                         );
                     }
@@ -1413,7 +1452,7 @@ fn push_centered_quad(
     vertices: [[f32; 3]; 4],
     normal: [f32; 3],
     texture_layer: u16,
-    frame_count: u16,
+    frame_count: f32,
     tint_color: [f32; 4],
 ) {
     let base_index = buffers.positions.len() as u32;
@@ -1424,9 +1463,7 @@ fn push_centered_quad(
             .push([v[0] * VOXEL_SIZE, v[1] * VOXEL_SIZE, v[2] * VOXEL_SIZE]);
         buffers.normals.push(normal);
         buffers.colors.push(tint_color);
-        buffers
-            .uv_bs
-            .push([texture_layer as f32, frame_count as f32]);
+        buffers.uv_bs.push([texture_layer as f32, frame_count]);
     }
 
     buffers
