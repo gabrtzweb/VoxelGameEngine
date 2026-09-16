@@ -84,7 +84,9 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     │   └── water.rs
     │
     ├── voxel/
+    │   ├── biome.rs
     │   ├── blocks.rs
+    │   ├── caves.rs
     │   ├── chunk_manager.rs
     │   ├── chunk.rs
     │   ├── debug.rs
@@ -96,8 +98,10 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     │   ├── mesher.rs
     │   ├── mod.rs
     │   ├── modifications.rs
+    │   ├── noise.rs
     │   ├── render.rs
     │   ├── shaping.rs
+    │   ├── strata.rs
     │   ├── targeting.rs
     │   ├── terrain.rs
     │   ├── texture.rs

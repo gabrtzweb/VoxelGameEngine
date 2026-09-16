@@ -94,10 +94,16 @@ impl Plugin for ChunkManagerPlugin {
             .init_resource::<WorldModificationStore>()
             .init_resource::<VoxelLightRegistry>()
             .insert_resource(TerrainGenerator::default())
+            .register_type::<TerrainGenerator>()
+            .register_type::<super::biome::ClimateGenerator>()
+            .register_type::<super::caves::CaveGenerator>()
+            .register_type::<super::strata::StrataGenerator>()
+            .register_type::<super::biome::BiomeType>()
             .add_systems(Startup, setup_chunk_material)
             .add_systems(
                 Update,
                 (
+                    handle_terrain_generator_reload,
                     plan_chunk_streaming,
                     process_chunk_unloads,
                     start_generation_tasks,
@@ -108,6 +114,32 @@ impl Plugin for ChunkManagerPlugin {
                     .after(PlayerSet::Movement)
                     .before(TargetingSet::UpdateTarget),
             );
+    }
+}
+
+fn handle_terrain_generator_reload(
+    generator: Res<TerrainGenerator>,
+    mut state: ResMut<ChunkStreamingState>,
+    world: Res<VoxelWorld>,
+    generation_tasks: Query<(Entity, &ChunkGenerationTask)>,
+    mut commands: Commands,
+    mut queues: ResMut<ChunkStreamingQueues>,
+) {
+    if !generator.is_changed() || generator.is_added() {
+        return;
+    }
+
+    state.last_player_chunk = None;
+
+    for (entity, _) in &generation_tasks {
+        commands.entity(entity).despawn();
+    }
+
+    let loaded: Vec<IVec3> = world.iter_chunks().map(|(&c, _)| c).collect();
+    for coordinate in loaded {
+        if !queues.unload.contains(&coordinate) {
+            queues.unload.push_back(coordinate);
+        }
     }
 }
 

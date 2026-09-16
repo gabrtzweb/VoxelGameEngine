@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 #[allow(dead_code)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default, Reflect)]
 pub enum ToolType {
     #[default]
     None,
@@ -11,7 +11,7 @@ pub enum ToolType {
 }
 
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Reflect)]
 pub enum Voxel {
     #[default]
     Air = 0,

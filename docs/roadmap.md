@@ -153,10 +153,35 @@ This document outlines the planned development phases for the voxel game engine,
 ---
 
 ## Phase 6: Advanced World Generation, Biomes & Caves
-- **Biome System**: Macro-scale climate noise (continentalness, temperature, humidity) driving diverse surface palettes and height profiles.
-- **3D Caves & Underground Generation**: 3D noise functions for caverns, ravines, and underground aquifers.
-- **Realistic Strata**: Deeper rock layers, mineral deposits, and varied surface soil depths.
-- **Runtime Generation Controls**: Live tuning of world seeds, frequencies, and cave thresholds via `bevy_inspector_egui`.
+- [x] **Multi-Noise Biome System**:
+  - Macro-scale continuous 2D climate noise in [src/voxel/biome.rs](VoxelGameEngine/src/voxel/biome.rs) for Continentalness, Temperature, and Humidity.
+  - 6 distinct biomes with individual surface, subsoil, and elevation profiles:
+    - **Plains**: Temperate, moderate humidity, rolling green hills, grass surface, dirt sublayer.
+    - **Desert**: Warm, arid, wind-swept sand dunes, sandstone/sand sublayer.
+    - **Snowy Tundra & Frost Peaks**: Frigid high altitudes, snow-covered surface, frost-cracked stone.
+    - **Wetlands / Swamps**: Low-lying coastal flats, high moisture, mud, packed mud, clay beds, shallow water.
+    - **Rocky Highlands**: Rugged mountain ridges, exposed slate, cobbleslate, flint, and scree slopes.
+    - **Woodland**: High humidity, mulch forest floors, packed dirt, mossy stone.
+- [x] **3D Caves & Underground Caverns**:
+  - High-performance native 3D gradient noise in [src/voxel/caves.rs](VoxelGameEngine/src/voxel/caves.rs).
+  - Spaghetti worm tunnels via dual-noise zero-crossing intersections ($|\text{NoiseA}| < t \land |\text{NoiseB}| < t$).
+  - Cheese caverns creating large subterranean chambers and grottos.
+  - Subterranean water aquifers below sea level, and deep magma/lava pools at the lowest crust boundaries.
+  - Surface attenuation buffer preserving flat surface plains while allowing cave entrances at steep cliffs.
+- [x] **Realistic Geological Strata & Mineral Vein Deposits**:
+  - Depth-based geological layering in [src/voxel/strata.rs](VoxelGameEngine/src/voxel/strata.rs):
+    - Topsoil & Subsoil: Biome-specific topsoil and subsoil down to 4 logical blocks.
+    - Upper Crust: Standard Stone with gravel pockets, flint veins, and cobblestone fractures.
+    - Mid Crust: Metamorphic transition into Slate, Cobbleslate, and Flint clusters.
+    - Deep Crust: Volcanic plutonic layer of Blackstone, Cobbleblackstone, Magma veins, and molten pools.
+  - 3D mineral deposit noise quantized to 1m³ logical blocks for perfect sub-voxel material consistency.
+- [] **Runtime Generation Controls & World Inspector Integration**:
+  - Registered `TerrainGenerator`, `ClimateGenerator`, `CaveGenerator`, `StrataGenerator`, and `BiomeType` with Bevy's `AppTypeRegistry`.
+  - Live parameter tuning in `bevy_inspector_egui` (<kbd>F1</kbd>) with automatic chunk reloading and remeshing while preserving player modifications.
+  (NOT WORKING)
+- [x] **Extended Debug HUD & Spawn Safety Polish**: 
+  - Extended Debug HUD (<kbd>F3</kbd>) displays active Biome name, continentalness, temperature, and moisture metrics.
+  - Dynamic spawn height calculation in [src/player/mod.rs](VoxelGameEngine/src/player/mod.rs) ensuring safe arrival on solid surface ground.
 
 ---
 

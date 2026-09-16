@@ -139,6 +139,7 @@ fn update_dev_stats(
     player: Single<(&Transform, &PlayerMotion), With<Player>>,
     camera: Single<&Transform, (With<Camera3d>, Without<Player>)>,
     current_target: Res<CurrentTarget>,
+    terrain_generator: Option<Res<crate::voxel::terrain::TerrainGenerator>>,
     text_query: Single<
         (
             &mut Text,
@@ -209,9 +210,20 @@ fn update_dev_stats(
                 (0, 0, 1, 1, "Spring")
             };
 
+            let biome_name = if let Some(ref generator) = terrain_generator {
+                let climate =
+                    generator
+                        .climate
+                        .sample(player_position.x, player_position.z, generator.seed);
+                climate.biome.name()
+            } else {
+                "Plains"
+            };
+
             text.0 = format!(
                 "FPS: {fps:.0} ({frame_time:.2} ms)\n\
                 Time: {h:02}:{m:02} | Day {day_of_month} (M{month}, {season_str})\n\
+                Biome: {biome_name}\n\
                 Pos: {:.1} / {:.1} / {:.1}\n\
                 Edit Mode: {}\n\
                 Target: {target_text}",
@@ -274,12 +286,29 @@ fn update_dev_stats(
                 "N/A".to_string()
             };
 
+            let biome_text = if let Some(ref generator) = terrain_generator {
+                let climate =
+                    generator
+                        .climate
+                        .sample(player_position.x, player_position.z, generator.seed);
+                format!(
+                    "{} (Cont: {:.2}, Temp: {:.2}, Hum: {:.2})",
+                    climate.biome.name(),
+                    climate.continentalness,
+                    climate.temperature,
+                    climate.humidity,
+                )
+            } else {
+                "Unknown".to_string()
+            };
+
             text.0 = format!(
                 "FPS: {fps:.1}\n\
                 Frame: {frame_time:.2} ms\n\
                 Mode: {}\n\
                 Flight: {}\n\
                 Time: {env_text}\n\
+                Biome: {biome_text}\n\
                 Position: {}, {}, {}\n\
                 Player chunk: {}, {}, {}\n\
                 Camera: {:.1}, {:.1}, {:.1}\n\

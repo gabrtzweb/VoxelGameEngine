@@ -124,6 +124,11 @@ The project already has:
 - Dedicated blocks architecture (`src/voxel/blocks.rs`) supporting 28+ block types, texture IDs, and future survival properties (durability, tools)
 - Custom stylized pixel-art mouse cursor (cursor_default.png) with floating block preview when holding items
 - Minecraft 64×64 skin body model with true first-person visibility, third-person mode, and procedural animations for walk, sprint, idle breathing, crouch, crawl, swim, and flight
+- Continuous macro-climate noise generator (Continentalness, Temperature, Humidity) driving 6 distinct biomes (Plains, Desert, Snowy Tundra, Wetlands, Highlands, Woodland) with unique surface materials and elevation profiles
+- 3D cave system featuring dual-noise spaghetti worm tunnels, expansive subterranean cheese caverns, surface attenuation buffering, underground water aquifers, and deep magma/lava basins
+- Realistic geological strata layers (Topsoil, Subsoil, Upper Stone, Mid Slate/Cobbleslate, Deep Blackstone/Magma) with 3D mineral deposits (Gravel, Flint, Cobblestone, Clay, Magma) quantized to 1m³ logical blocks for sub-voxel material consistency
+- Live world generation controls registered in `bevy_inspector_egui` (F1) with real-time chunk reloading and remeshing while preserving player edits
+- Extended Debug HUD (F3) displaying live Biome identification and climate parameters
 
 ---
 
@@ -146,8 +151,8 @@ I want lighting and atmosphere inspired by shaders or Vibrant Visuals, while mai
 
 ## Next Steps / Upcoming Phases
 
-- [ ] Phase 6: Advanced World Generation, Biomes & Caves (Next)
-- [ ] Phase 7: Engine Optimization & Scalability (Future Milestone)
+- [x] Phase 6: Advanced World Generation, Biomes & Caves (Completed)
+- [ ] Phase 7: Engine Optimization & Scalability (Next Milestone)
 - [ ] Phase 8: To be decided
 
 ---
