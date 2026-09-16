@@ -25,20 +25,22 @@ The long-term goal is to build a performant procedural voxel game with large-wor
 
     Space             Jump / Swim up / Fly up
     Double Space      Toggle Creative flight
-    Ctrl              Swim down / Fly down
+    Ctrl              Crouch (with ledge-fall prevention) / Swim down / Fly down
+    C                 Crawl (0.45m prone posture through 1-voxel gaps)
+    Z                 Camera Zoom (Hold Z + Mouse Wheel to adjust magnification)
 
-    B                 Toggle Interaction mode
-    Left Mouse        Break voxel
-    Right Mouse       Place voxel
-    Middle Mouse      Pick voxel
+    B                 Toggle Interaction mode (1m³ Block vs 0.5m Sub-voxel)
+    Left Mouse        Break voxel / block
+    Right Mouse       Place voxel / block
+    Middle Mouse      Pick voxel / block
 
     1 - 8             Hotbar slot selection
-    Mouse Wheel       Scroll hotbar slots
+    Mouse Wheel       Scroll hotbar slots (when not zooming)
     Q                 Clear active hotbar slot
-    R                 Cycle block shape (Full, Stairs, Corner Stairs, Slabs, Columns, Centered Columns)
+    R                 Block shape (Tap: cycle sequentially / Hold: 10-shape circular radial menu)
     T                 Rotate block shape 90° clockwise
 
-    ESC               Pause Menu (Settings, Restart Game, Quit)
+    ESC               Pause Menu (Settings, Restart Game, Quit) with Depth of Field blur
     E                 Inventory (32-slot palette, 3D isometric icons, Mouse Tweaks controls)
                       • Shift + Click: Quick transfer from palette to hotbar / quick clear
                       • Shift + LMB Drag: Rapid transfer into hotbar / rapid hotbar wipe
@@ -48,12 +50,12 @@ The long-term goal is to build a performant procedural voxel game with large-wor
                       • Q / Middle Click: Clear hovered hotbar slot
                       • 1 - 8: Quick assign or swap slots
 
-    F1                Toggle Inspector
+    F1                Toggle Inspector (bevy_inspector_egui)
     F2                Chunk debug borders
     F3                Toggle HUD (Minimal / Extended debug)
     Shift + F3        Toggle HUD visibility (Show / Hide)
     F4                Creative / Spectator
-    F5                First / Third person
+    F5                First / Third person (64×64 Minecraft skin body model, head tracking, overlay layers, animations)
     F6                Day / Night cycle (Click: step phase / Hold: scrub time)
 
 
@@ -77,6 +79,7 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     │   ├── game_mode.rs
     │   ├── hotbar.rs
     │   ├── mod.rs
+    │   ├── model.rs
     │   ├── spectator.rs
     │   └── water.rs
     │

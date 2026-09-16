@@ -41,13 +41,24 @@ The engine focuses on a fully editable procedural voxel world with a hybrid bloc
 
 The engine has a dedicated player system separate from the voxel engine.
 
-Current dimensions:
+Current dimensions & stances:
 - Width: 0.60 m
-- Height: 1.80 m
-- Eye height: 1.62 m
+- Standing: height 1.80 m, eye height 1.62 m
+- Crouching: height 1.30 m, eye height 1.20 m, speed reduced to 55%, edge drop/ledge prevention
+- Crawling: height 0.45 m, eye height 0.40 m, speed reduced to 35%, 1-voxel high openings (0.5 m) with headroom safety checks preventing uncrawling under ceilings
 
-Camera FOV:
-- 80 degrees (configurable 60°..=110° via in-game Settings)
+Camera System:
+- Default FOV: 90 degrees (configurable 60°..=110° via in-game Settings)
+- Dynamic FOV Kick: smooth +8° expansion when sprinting or flying fast
+- View Bobbing: subtle sinusoidal head bobbing during grounded movement (toggleable in Settings)
+- Camera Zoom: dynamic magnification (<kbd>Z</kbd> + Mouse Wheel up to 20x zoom) with mouse sensitivity dampening
+- First-Person Camera: true first-person body view (head hidden to prevent interior clipping, looking down reveals animated chest, arms, and legs)
+- Third-Person Camera (<kbd>F5</kbd>): orbiting camera with dynamic raycast block collision prevention to avoid clipping underground/walls, and independent head pitch/yaw tracking
+
+Player Model & Procedural Animations:
+- Minecraft 64×64 skin compatible humanoid mesh hierarchy (Head, Torso, Left/Right Arm, Left/Right Leg) mapped to `assets/textures/mobs/player_skin.png`
+- Full support for base skin and 3D outer layers (hat/hair, jacket, sleeves, pants) with alpha masking
+- Procedural locomotion: dynamic walk/sprint leg & arm pendulum swings, idle breathing sway, crouch torso tilt, prone crawling strokes, streamlined flutter-kick swimming, airborne jump poses, and 4-state flight animations (ascent, descent, fast flight, hover)
 
 Game Modes Currently Implemented:
 - Creative (currently the main gameplay and development mode)
@@ -56,17 +67,15 @@ Game Modes Currently Implemented:
 The player uses a custom AABB collision system that directly queries voxel data. Individual physics colliders are not created for terrain voxels.
 
 Player Features:
-- Gravity
-- Ground detection
-- Voxel collisions
-- Wall collisions
+- Gravity & terminal velocity
+- Ground detection & ledge clamping (crouching)
+- Voxel collisions & wall sliding
+- Headroom detection for stance transitions
 - Jumping
-- Automatic terrain stepping
-- Creative flight
-- Swimming
-- First-person camera
-- Third-person camera
-- Automatic Step-Up (0.5 meters)
+- Automatic terrain stepping (0.5 meters)
+- Creative flight (double-space toggle, fly up/down, fast sprint flight)
+- Realistic swimming & wading with buoyancy, drag, and submersion detection
+- First-person & third-person cameras with raycast occlusion prevention
 
 ---
 
@@ -80,20 +89,22 @@ The project already has:
 - Traversable water and basic physics
 - Destructible and placeable blocks
 - Dynamic lighting
-- Light-emitting blocks
+- Light-emitting blocks (with true textures, shader emissive radiance, and consolidated 3D point lights)
 - Directional shadows
 - Distance fog
 - Creative and Spectator modes
 - Basic movement and physics
 - HUD and debug overlay
 - 2D Texture-Array voxel rendering with multi-variant randomization (e.g., multiple grass variants)
+- Sub-voxel UV blending & seamless 1m² face texture unifications (continuous 16×16 texture across 2×2 sub-voxels)
 - Full 4-phase day and night cycle (Morning, Noon, Evening, Night) with smooth continuous atmospheric transitions
 - Interactive time control (F6: click to advance between phases, hold to scrub time smoothly)
 - Stylized billboard celestial bodies (sun with radiant coronal ring and 8-phase lunar cycle with additive blending)
 - Dynamic moving cloud layer with wind drift and atmospheric color tinting
 - Sparkling nighttime starfield dome with celestial rotation and smooth twilight fade-in
 - 8-slot hotbar GUI with 2D pixel-art item icons, active selection indicator, direct keybinds (1–8), mouse wheel scrolling, and slot clearing (Q)
-- Sub-voxel block shaping tool (R key) cycling 1m³ blocks through Full, Stair, Upside-Down Stair, Corner Stair, Bottom Slab, Top Slab, Vertical Slab, Column, and Centered Column configurations
+- Sub-voxel block shaping tool with 10 configurations: Full, Stair, Upside-Down Stair, Corner Stair, Inverted Corner Stair, Bottom Slab, Top Slab, Vertical Slab, Column, and Centered Column
+- Circular radial shape selection menu (<kbd>Hold R</kbd> >0.2s) with directional slice selection and center preview card
 - Sub-voxel block rotation tool (T key) rotating shapes 90° clockwise around the Y-axis
 - Connected block placement against non-full sub-voxels (slabs, stairs) without floating gaps, and bi-directional centered column stacking
 - Dynamic cellular automaton fluid simulation with 0.25s wave-by-wave propagation pacing
@@ -105,14 +116,14 @@ The project already has:
 - In-game calendar and seasonal progression: 24-minute real-time day cycle, 28-day months, 4 seasons (Spring, Summer, Autumn, Winter) lasting 84 days each, starting on Day 1 Month 1 Spring
 - 8-phase lunar cycle strictly synchronized with the 28-day calendar, alternating between 3-day and 4-day phase durations
 - Dual-state debug HUD: Minimal non-intrusive HUD by default, Extended technical debug screen on F3, HUD visibility toggle on Shift+F3, and chunk boundary debug remapped to F2
-- Pause menu (ESC key) pausing in-game clock and player actions, with Resume, in-game Settings, Restart Game (resets day, teleports to spawn, rolls back placed/destroyed blocks), and Quit to desktop
-- In-game settings menu with live render distance stepper (2..=16 chunks), FOV stepper (60°..=110°), distance fog toggle, and time flow toggle
-- In-game inventory menu (E key) with clean 8×4 (32-slot) item grid, hotbar mirror row, Mouse Tweaks controls (Shift-click quick transfer/clear, Shift+LMB drag, LMB drag painting across slots, RMB stamp/deselect), backdrop click deselect, Q/middle-click clear, and digit hotkeys (1–8)
-- Subtle photographic camera background blur (Depth of Field post-processing with gentle circle of confusion and high f-stop) when opening the Inventory or Pause menus
+- Pause menu (ESC key) pausing in-game clock and player actions, with Resume, in-game Settings, Restart Game (resets day, teleports to spawn, rolls back placed/destroyed blocks), Quit to desktop, and camera Depth of Field blur
+- In-game settings menu with live render distance stepper (2..=16 chunks), FOV stepper (60°..=110°), distance fog toggle, camera bobbing toggle, and time flow toggle
+- In-game inventory menu (E key) with clean 8×4 (32-slot) item grid, non-pausing live world interaction, hotbar mirror row, Mouse Tweaks controls (Shift-click quick transfer/clear, Shift+LMB drag, LMB drag painting across slots, RMB stamp/deselect), backdrop click deselect, Q/middle-click clear, and digit hotkeys (1–8)
 - World Inspector egui run condition preventing inspector flickering when opening in-game menus
 - Procedural Minecraft-style 3D isometric pixel-art block icon renderer on-the-fly with 1.0/0.8/0.6 directional face shading and tints
 - Dedicated blocks architecture (`src/voxel/blocks.rs`) supporting 28+ block types, texture IDs, and future survival properties (durability, tools)
 - Custom stylized pixel-art mouse cursor (cursor_default.png) with floating block preview when holding items
+- Minecraft 64×64 skin body model with true first-person visibility, third-person mode, and procedural animations for walk, sprint, idle breathing, crouch, crawl, swim, and flight
 
 ---
 
@@ -135,10 +146,9 @@ I want lighting and atmosphere inspired by shaders or Vibrant Visuals, while mai
 
 ## Next Steps / Upcoming Phases
 
-- Phase 5: General Polish, Revisions & In-Game Interfaces
-- Phase 6: Advanced World Generation, Biomes & Caves
-- Phase 7: Engine Optimization & Scalability (Future Milestone)
-- Phase 8: To be decided
+- [ ] Phase 6: Advanced World Generation, Biomes & Caves (Next)
+- [ ] Phase 7: Engine Optimization & Scalability (Future Milestone)
+- [ ] Phase 8: To be decided
 
 ---
 
