@@ -8,7 +8,7 @@ use bevy::{
 
 use crate::{
     menu::GameSettings,
-    voxel::{VoxelWorld, shaping::RadialMenuState},
+    voxel::{VOXEL_SIZE, Voxel, VoxelWorld, shaping::RadialMenuState},
 };
 
 use super::{
@@ -23,7 +23,7 @@ const SPRINT_SPEED: f32 = 8.0;
 pub const CROUCH_HEIGHT: f32 = 1.30;
 pub const CRAWL_HEIGHT: f32 = 0.45;
 
-pub const CROUCH_EYE_HEIGHT: f32 = 1.15;
+pub const CROUCH_EYE_HEIGHT: f32 = 1.20;
 pub const CRAWL_EYE_HEIGHT: f32 = 0.40;
 
 const CROUCH_SPEED: f32 = WALK_SPEED * 0.55;
@@ -77,8 +77,8 @@ pub struct PlayerCamera {
     pub spectator_speed: f32,
     pub spectator_fast_speed: f32,
 
-    yaw: f32,
-    pitch: f32,
+    pub yaw: f32,
+    pub pitch: f32,
 
     third_person: bool,
 
@@ -511,9 +511,26 @@ pub(super) fn creative_movement(
         + motion.bob_offset;
 
     if camera_controller.is_third_person() {
-        camera_transform.translation = eye_position - camera_forward * THIRD_PERSON_DISTANCE;
+        let actual_distance = resolve_third_person_camera_distance(
+            &world,
+            eye_position,
+            camera_forward,
+            THIRD_PERSON_DISTANCE,
+        );
+        camera_transform.translation = eye_position - camera_forward * actual_distance;
     } else {
-        camera_transform.translation = eye_position;
+        let forward_horiz = Vec3::new(
+            -camera_controller.yaw.sin(),
+            0.0,
+            -camera_controller.yaw.cos(),
+        )
+        .normalize_or_zero();
+        let eye_forward_offset = match motion.stance {
+            PlayerStance::Standing => 0.16,
+            PlayerStance::Crouching => 0.10,
+            PlayerStance::Crawling => 0.18,
+        };
+        camera_transform.translation = eye_position + forward_horiz * eye_forward_offset;
     }
 
     camera_transform.rotation = Quat::from_euler(
@@ -522,6 +539,61 @@ pub(super) fn creative_movement(
         camera_controller.pitch,
         motion.bob_roll,
     );
+}
+
+fn resolve_third_person_camera_distance(
+    world: &VoxelWorld,
+    eye_position: Vec3,
+    camera_forward: Vec3,
+    max_distance: f32,
+) -> f32 {
+    let camera_dir = -camera_forward;
+    let camera_margin = 0.25; // 25 cm cushion from any solid block
+    let step = 0.05; // 5 cm ray step
+    let mut dist = 0.0;
+
+    while dist < max_distance {
+        dist += step;
+        let test_pos = eye_position + camera_dir * dist;
+
+        // Check if test_pos or near box overlaps any solid collidable voxel
+        let min_p = test_pos - Vec3::splat(camera_margin);
+        let max_p = test_pos + Vec3::splat(camera_margin);
+
+        let min_vx = (min_p.x / VOXEL_SIZE).floor() as i32;
+        let max_vx = (max_p.x / VOXEL_SIZE).floor() as i32;
+        let min_vy = (min_p.y / VOXEL_SIZE).floor() as i32;
+        let max_vy = (max_p.y / VOXEL_SIZE).floor() as i32;
+        let min_vz = (min_p.z / VOXEL_SIZE).floor() as i32;
+        let max_vz = (max_p.z / VOXEL_SIZE).floor() as i32;
+
+        let mut hit = false;
+        for y in min_vy..=max_vy {
+            for z in min_vz..=max_vz {
+                for x in min_vx..=max_vx {
+                    if world
+                        .get_voxel(IVec3::new(x, y, z))
+                        .is_some_and(Voxel::is_collidable)
+                    {
+                        hit = true;
+                        break;
+                    }
+                }
+                if hit {
+                    break;
+                }
+            }
+            if hit {
+                break;
+            }
+        }
+
+        if hit {
+            return (dist - step - 0.05).max(0.20);
+        }
+    }
+
+    max_distance
 }
 
 #[allow(clippy::too_many_arguments)]

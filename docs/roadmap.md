@@ -1,6 +1,6 @@
 # Voxel Game Engine - Development Roadmap
 
-This document outlines the planned development phases for the voxel game engine, prioritizing foundational architectural systems before gameplay tools, fluids, and procedural generation.
+This document outlines the planned development phases for the voxel game engine, with foundational architectural systems, gameplay tools, fluids, and procedural generation.
 
 ---
 
@@ -122,7 +122,7 @@ This document outlines the planned development phases for the voxel game engine,
     - Fog toggles and density controls.
     - Toggle in-game time to be paused.
   - In game "creative inventory" (`E` Key) - 8×4 (32 slots) grid matching hotbar width, item pickup/swap/clearing, quick-assign (1–8 keys), and custom mouse cursor with floating item previews.
-- [ ] **Cross-Phase Refinements & Mechanics Polish**:
+- [x] **Cross-Phase Refinements & Mechanics Polish**:
   - [x] **Priority A: Block Palette Expansion, 3D Block Icons & Inventory Simplification**:
     - Extracted block definitions into dedicated [src/voxel/blocks.rs](VoxelGameEngine/src/voxel/blocks.rs), supporting 28+ block types, texture IDs, and future survival properties (durability, preferred tool).
     - Integrated new blocks: Blackstone, Cobbleblackstone, Slate, Cobbleslate, Cobblestone, Mossy Cobblestone/Stone, Magma, Flint, Mud, Packed Dirt/Mud, Mulch, Moss, Snow, Clay, Gravel, and RGB/temperature lights (Warm, Cold, Red, Green, Blue).
@@ -138,21 +138,18 @@ This document outlines the planned development phases for the voxel game engine,
     - Added new shape `CornerStairInverted`: 4 base voxels + 3 top voxels (7 solid sub-voxels) leaving a single corner cutout, with full 4-way 90° Y-rotation support.
     - Short tap <kbd>R</kbd>: Quick-cycles to the next shape sequentially (Full -> Stair -> StairUpsideDown -> CornerStair -> CornerStairInverted -> SlabBottom -> SlabTop -> VerticalSlab -> Column -> CenteredColumn -> Full).
     - Hold <kbd>R</kbd> (>0.2s): Sleek circular radial wheel centered on screen showing all 10 shapes with directional mouse selection, center preview card, and instant release-to-apply.
-  - **Priority D: Third-Person Player Model & Animations (<kbd>F5</kbd>)**:
-    - Classic cuboid player hierarchy (Head, Torso, Left/Right Arm, Left/Right Leg) mapped to `assets/textures/mobs/player_skin.png`.
-    - Procedural locomotion animations: Arm and leg pendulum swings synchronized with walking/sprinting speed, head yaw/pitch tracking camera view, and swimming posture underwater.
+  - [x] **Priority D: Player Body Model, Minecraft Skin Support & Procedural Animations (<kbd>F5</kbd>)**:
+    - Classic humanoid limb hierarchy (Head, Torso, Left/Right Arm, Left/Right Leg) mapped to standard Minecraft 64×64 skin textures (`assets/textures/mobs/player_skin.png`), supporting both base skin and 3D outer overlays (hat/hair, jacket, sleeves, pants).
+    - True first-person body visibility: Head is automatically hidden to prevent camera interior clipping, while looking down reveals animated arms, chest, and legs beneath the player.
+    - Third-person view toggle (<kbd>F5</kbd>): Full body and head become visible with camera orbiting behind and head yaw/pitch tracking camera view.
+    - Procedural animations: Dynamic walk/sprint leg & arm pendulum swings, idle breathing sway, crouch torso tilt (<kbd>Ctrl</kbd>), prone crawl locomotion (<kbd>C</kbd>), airborne jump poses, and aquatic swimming strokes.
   - [x] **Priority E: Movement & Camera Juice**:
     - Default FOV: Set baseline camera FOV to 90.0° with settings slider adjustment.
-    - Crouch (<kbd>Control</kbd>): Lowers collision height to 1.3m and eye height to 1.15m, reduces speed, and prevents walking off precarious block edges (ledge clamping).
+    - Crouch (<kbd>Control</kbd>): Lowers collision height to 1.3m and eye height to 1.20m, reduces speed, and prevents walking off precarious block edges (ledge clamping).
     - Crawl (<kbd>C</kbd>): Lowers collision height to 0.45m and eye height to 0.40m, allowing crawling through 1-voxel high openings (0.5m) and under low overhangs, with headroom safety checks preventing uncrawling under ceilings.
     - Camera Zoom (<kbd>Z</kbd>): Holding <kbd>Z</kbd> zooms smoothly with dynamic mouse scroll wheel control (scroll up zooms in closer up to 20x magnification, scroll down zooms out), automatically suppressing hotbar slot cycling during zoom and smoothly scaling mouse sensitivity.
     - View Bobbing: Subtle sinusoidal head bobbing during grounded walking and sprinting, toggleable in In-Game Settings.
     - Dynamic FOV Kick: Smooth camera FOV expansion (+8°) when sprinting or flying fast.
-  - **Priority F: Visual Polish, Atmosphere & Audio Foundations**:
-    - Underwater visual immersion: subtle caustic ripples, screen vignette, and water surface wave distortion.
-    - Sound foundations: Step audio (grass, dirt, stone, sand, water splash) and block break/placement feedback.
-    - UI unification and micro-polish across all menus, hotbar active selection indicators, and crosshair states.
-
 ---
 
 ## Phase 6: Advanced World Generation, Biomes & Caves

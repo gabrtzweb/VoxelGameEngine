@@ -2,6 +2,7 @@ pub mod collision;
 pub mod controller;
 pub mod game_mode;
 pub mod hotbar;
+pub mod model;
 pub mod spectator;
 pub mod water;
 
@@ -27,9 +28,6 @@ const CAMERA_FOV_DEGREES: f32 = 90.0;
 #[derive(Component)]
 pub struct Player;
 
-#[derive(Component)]
-struct PlayerBody;
-
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum PlayerSet {
     Movement,
@@ -42,6 +40,7 @@ impl Plugin for PlayerPlugin {
         app.init_resource::<GameMode>()
             .init_resource::<InspectorInteraction>()
             .add_plugins(hotbar::HotbarPlugin)
+            .add_plugins(model::PlayerModelPlugin)
             .configure_sets(Update, PlayerSet::Movement)
             .add_systems(
                 Startup,
@@ -61,7 +60,6 @@ impl Plugin for PlayerPlugin {
                     controller::camera_look,
                     controller::creative_movement,
                     spectator::spectator_movement,
-                    update_player_body,
                     water::update_underwater_effect,
                 )
                     .chain()
@@ -70,37 +68,13 @@ impl Plugin for PlayerPlugin {
     }
 }
 
-fn spawn_player_and_camera(
-    mut commands: Commands,
-
-    mut meshes: ResMut<Assets<Mesh>>,
-
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
+fn spawn_player_and_camera(mut commands: Commands) {
     let player_position = Vec3::new(-10.0, 10.38, 14.0);
 
     commands.spawn((
         Player,
         PlayerMotion::default(),
         Transform::from_translation(player_position),
-    ));
-
-    let body_mesh = meshes.add(Cuboid::new(PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_WIDTH));
-
-    let body_material = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.2, 0.45, 0.9),
-
-        perceptual_roughness: 0.8,
-
-        ..default()
-    });
-
-    commands.spawn((
-        PlayerBody,
-        Mesh3d(body_mesh),
-        MeshMaterial3d(body_material),
-        Transform::from_translation(player_position + Vec3::Y * (PLAYER_HEIGHT * 0.5)),
-        Visibility::Hidden,
     ));
 
     let camera_position = player_position + Vec3::Y * PLAYER_EYE_HEIGHT;
@@ -128,41 +102,12 @@ fn spawn_player_and_camera(
         Tonemapping::AcesFitted,
         Projection::Perspective(PerspectiveProjection {
             fov: CAMERA_FOV_DEGREES.to_radians(),
-
+            near: 0.05,
             ..default()
         }),
         camera_transform,
         player_camera,
     ));
-}
-
-#[allow(clippy::type_complexity)]
-fn update_player_body(
-    game_mode: Res<GameMode>,
-
-    player: Single<(&Transform, &PlayerMotion), With<Player>>,
-
-    camera: Single<&PlayerCamera, With<Camera3d>>,
-
-    body: Single<(&mut Transform, &mut Visibility), (With<PlayerBody>, Without<Player>)>,
-) {
-    let (player_transform, player_motion) = player.into_inner();
-
-    let (mut body_transform, mut visibility) = body.into_inner();
-
-    let height = player_motion.stance_height();
-    body_transform.translation = player_transform.translation + Vec3::Y * (height * 0.5);
-    body_transform.scale = Vec3::new(1.0, height / PLAYER_HEIGHT, 1.0);
-
-    body_transform.rotation = Quat::from_rotation_y(player_motion.facing_yaw);
-
-    let should_be_visible = *game_mode == GameMode::Spectator || camera.is_third_person();
-
-    *visibility = if should_be_visible {
-        Visibility::Visible
-    } else {
-        Visibility::Hidden
-    };
 }
 
 fn lock_cursor(mut cursor_options: Single<&mut CursorOptions>) {
