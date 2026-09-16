@@ -119,10 +119,9 @@ The project already has:
 - Pause menu (ESC key) pausing in-game clock and player actions, with Resume, in-game Settings, Restart Game (resets day, teleports to spawn, rolls back placed/destroyed blocks), Quit to desktop, and camera Depth of Field blur
 - In-game settings menu with live render distance stepper (2..=16 chunks), FOV stepper (60°..=110°), distance fog toggle, camera bobbing toggle, and time flow toggle
 - In-game inventory menu (E key) with clean 8×4 (32-slot) item grid, non-pausing live world interaction, hotbar mirror row, Mouse Tweaks controls (Shift-click quick transfer/clear, Shift+LMB drag, LMB drag painting across slots, RMB stamp/deselect), backdrop click deselect, Q/middle-click clear, and digit hotkeys (1–8)
-- World Inspector egui run condition preventing inspector flickering when opening in-game menus
 - Procedural Minecraft-style 3D isometric pixel-art block icon renderer on-the-fly with 1.0/0.8/0.6 directional face shading and tints
 - Dedicated blocks architecture (`src/voxel/blocks.rs`) supporting 28+ block types, texture IDs, and future survival properties (durability, tools)
-- Custom stylized pixel-art mouse cursor (cursor_default.png) with floating block preview when holding items
+- Custom stylized pixel-art mouse cursor states (default, pointing_hand, grabbing, shift, busy with 13-frame animation, resize, ibeam, crosshair, not_allowed) with floating block preview when holding items
 - Minecraft 64×64 skin body model with true first-person visibility, third-person mode, and procedural animations for walk, sprint, idle breathing, crouch, crawl, swim, and flight
 - Continuous macro-climate noise generator (Continentalness, Temperature, Humidity) driving 6 distinct biomes (Plains, Desert, Snowy Tundra, Wetlands, Highlands, Woodland) with unique surface materials and elevation profiles
 - 3D cave system featuring dual-noise spaghetti worm tunnels, expansive subterranean cheese caverns, surface attenuation buffering, underground water aquifers, and deep magma/lava basins

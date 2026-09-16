@@ -152,7 +152,7 @@ This document outlines the planned development phases for the voxel game engine,
     - Dynamic FOV Kick: Smooth camera FOV expansion (+8°) when sprinting or flying fast.
 ---
 
-## Phase 6: Advanced World Generation, Biomes & Caves
+## Phase 6: Advanced World Generation, Biomes & Caves (NOT GOOD YET)
 - [x] **Multi-Noise Biome System**:
   - Macro-scale continuous 2D climate noise in [src/voxel/biome.rs](VoxelGameEngine/src/voxel/biome.rs) for Continentalness, Temperature, and Humidity.
   - 6 distinct biomes with individual surface, subsoil, and elevation profiles:
@@ -185,10 +185,14 @@ This document outlines the planned development phases for the voxel game engine,
 
 ---
 
-## Phase 7: Engine Optimization & Scalability (Future Milestone)
+## Phase 7: Project Organization and Refactor (We are here, basically)
+- Better organized files and folder structure.
+- Code cleanup.
+- Search for bottlenecks, inconsistencies and problems.
+- Code fixes and improvements.
+
+## Phase 8: Engine Optimization & Scalability (Future Milestone)
 - **LOD Render Distance**: Downsampled greedy meshes for distant chunks (maybe not a priority = can be skipped).
 - **Extremity Bound Checking**: Early skipping of completely empty or solid chunks during collision and meshing.
 - **Noise Up-sampling & Caching**: Coarse 3D noise sampling with trilinear interpolation.
 - **RLE Runtime Voxel Data**: Run-Length Encoded chunk storage to minimize memory footprint.
-
-## Phase 8: To be decided
