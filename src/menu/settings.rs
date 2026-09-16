@@ -14,6 +14,7 @@ enum SettingsAction {
     DecFov,
     IncFov,
     ToggleFog,
+    ToggleViewBobbing,
     ToggleTimePause,
     Back,
 }
@@ -26,6 +27,9 @@ struct FovLabel;
 
 #[derive(Component)]
 struct FogLabel;
+
+#[derive(Component)]
+struct ViewBobbingLabel;
 
 #[derive(Component)]
 struct TimePauseLabel;
@@ -132,7 +136,22 @@ fn spawn_settings_menu(
                         FogLabel,
                     );
 
-                    // 4. Time Pause Toggle Button
+                    // 4. View Bobbing Toggle Button
+                    spawn_toggle_button(
+                        card,
+                        SettingsAction::ToggleViewBobbing,
+                        format!(
+                            "View Bobbing: {}",
+                            if game_settings.view_bobbing {
+                                "Enabled"
+                            } else {
+                                "Disabled"
+                            }
+                        ),
+                        ViewBobbingLabel,
+                    );
+
+                    // 5. Time Pause Toggle Button
                     spawn_toggle_button(
                         card,
                         SettingsAction::ToggleTimePause,
@@ -143,7 +162,7 @@ fn spawn_settings_menu(
                         TimePauseLabel,
                     );
 
-                    // 5. Back Button
+                    // 6. Back Button
                     card.spawn((
                         Button,
                         SettingsAction::Back,
@@ -374,6 +393,9 @@ fn handle_settings_buttons(
                     SettingsAction::ToggleFog => {
                         game_settings.fog_enabled = !game_settings.fog_enabled;
                     }
+                    SettingsAction::ToggleViewBobbing => {
+                        game_settings.view_bobbing = !game_settings.view_bobbing;
+                    }
                     SettingsAction::ToggleTimePause => {
                         if let Some(ref mut env) = env_state {
                             env.is_time_paused = !env.is_time_paused;
@@ -396,7 +418,7 @@ fn handle_settings_buttons(
     }
 }
 
-#[allow(clippy::type_complexity)]
+#[allow(clippy::type_complexity, clippy::too_many_arguments)]
 fn update_settings_labels(
     chunk_settings: Res<ChunkStreamingSettings>,
     game_settings: Res<GameSettings>,
@@ -407,6 +429,7 @@ fn update_settings_labels(
             With<RenderDistanceLabel>,
             Without<FovLabel>,
             Without<FogLabel>,
+            Without<ViewBobbingLabel>,
             Without<TimePauseLabel>,
         ),
     >,
@@ -416,6 +439,7 @@ fn update_settings_labels(
             With<FovLabel>,
             Without<RenderDistanceLabel>,
             Without<FogLabel>,
+            Without<ViewBobbingLabel>,
             Without<TimePauseLabel>,
         ),
     >,
@@ -425,6 +449,17 @@ fn update_settings_labels(
             With<FogLabel>,
             Without<RenderDistanceLabel>,
             Without<FovLabel>,
+            Without<ViewBobbingLabel>,
+            Without<TimePauseLabel>,
+        ),
+    >,
+    mut view_bobbing_query: Query<
+        &mut Text,
+        (
+            With<ViewBobbingLabel>,
+            Without<RenderDistanceLabel>,
+            Without<FovLabel>,
+            Without<FogLabel>,
             Without<TimePauseLabel>,
         ),
     >,
@@ -435,6 +470,7 @@ fn update_settings_labels(
             Without<RenderDistanceLabel>,
             Without<FovLabel>,
             Without<FogLabel>,
+            Without<ViewBobbingLabel>,
         ),
     >,
 ) {
@@ -452,6 +488,16 @@ fn update_settings_labels(
             text.0 = format!(
                 "Fog: {}",
                 if game_settings.fog_enabled {
+                    "Enabled"
+                } else {
+                    "Disabled"
+                }
+            );
+        }
+        for mut text in &mut view_bobbing_query {
+            text.0 = format!(
+                "View Bobbing: {}",
+                if game_settings.view_bobbing {
                     "Enabled"
                 } else {
                     "Disabled"

@@ -130,7 +130,7 @@ fn handle_debug_hud_input(
 fn update_dev_stats(
     hud_settings: Res<DebugHudSettings>,
     diagnostics: Res<DiagnosticsStore>,
-    time: Res<Time>,
+    time: Res<Time<Real>>,
     world: Res<VoxelWorld>,
     chunk_meshes: Res<ChunkMeshRegistry>,
     game_mode: Res<GameMode>,

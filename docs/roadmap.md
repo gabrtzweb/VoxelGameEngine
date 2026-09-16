@@ -128,22 +128,25 @@ This document outlines the planned development phases for the voxel game engine,
     - Integrated new blocks: Blackstone, Cobbleblackstone, Slate, Cobbleslate, Cobblestone, Mossy Cobblestone/Stone, Magma, Flint, Mud, Packed Dirt/Mud, Mulch, Moss, Snow, Clay, Gravel, and RGB/temperature lights (Warm, Cold, Red, Green, Blue).
     - Implemented Minecraft-style 3D isometric pixel-art icon rasterizer in [src/voxel/icon.rs](VoxelGameEngine/src/voxel/icon.rs) generating 32×32 icons on-the-fly with 1.0/0.8/0.6 directional face shading and tints.
     - Cleaned up inventory UI: simplified title to "INVENTORY", removed "HOTBAR" label, and eliminated explanatory tooltip/hover text.
-    - Added cinematic camera background blur (`DepthOfField`) whenever the inventory or pause menu is opened.
+    - Added cinematic camera background blur (`DepthOfField`) whenever the pause or settings menu is opened, while keeping the world alive and unblurred during inventory interactions.
     - Removed legacy static icons in `assets/textures/items/` while preserving directory for future item sprites.
-  - **Priority B: Sub-Voxel UV Blending & Seamless Texturing**:
+  - [x] **Priority B: Sub-Voxel UV Blending & Seamless Texturing**:
     - Full 1m³ block face unification: A full 1m² face (composed of 2×2 co-planar sub-voxels) maps a single continuous 16×16 texture across the entire surface rather than repeating 4 times.
     - Adaptive sub-voxel UV mapping: Isolated voxels and columns retain clean full [0, 1] texture mapping to avoid awkward corner cropping, while contiguous sub-voxels (slabs, steps) seamlessly blend across their shared plane.
-  - **Priority C: Radial Shape Selection Menu & Ghost Hologram Preview (<kbd>Hold R</kbd>)**:
-    - Short tap <kbd>R</kbd>: Quick-cycles to the next shape in sequence (retaining rapid muscle memory).
-    - Hold <kbd>R</kbd>: Sleek circular/radial selection wheel centered on screen showing all 9 sub-voxel shapes with directional mouse hovering and instant release-to-select.
-    - Ghost Hologram Preview: Translucent wireframe / shape preview in the world highlighting the targeted block and its active rotation before committing placement or transformation.
+  - [x] **Priority C: Radial Shape Selection Menu (<kbd>Hold R</kbd>) & Inverted Corner Stairs**:
+    - Added new shape `CornerStairInverted`: 4 base voxels + 3 top voxels (7 solid sub-voxels) leaving a single corner cutout, with full 4-way 90° Y-rotation support.
+    - Short tap <kbd>R</kbd>: Quick-cycles to the next shape sequentially (Full -> Stair -> StairUpsideDown -> CornerStair -> CornerStairInverted -> SlabBottom -> SlabTop -> VerticalSlab -> Column -> CenteredColumn -> Full).
+    - Hold <kbd>R</kbd> (>0.2s): Sleek circular radial wheel centered on screen showing all 10 shapes with directional mouse selection, center preview card, and instant release-to-apply.
   - **Priority D: Third-Person Player Model & Animations (<kbd>F5</kbd>)**:
     - Classic cuboid player hierarchy (Head, Torso, Left/Right Arm, Left/Right Leg) mapped to `assets/textures/mobs/player_skin.png`.
     - Procedural locomotion animations: Arm and leg pendulum swings synchronized with walking/sprinting speed, head yaw/pitch tracking camera view, and swimming posture underwater.
-  - **Priority E: Movement & Camera Juice**:
-    - View Bobbing: Subtle sinusoidal head bobbing during walking and sprinting (toggleable in Settings).
-    - Dynamic FOV Kick: Smooth camera FOV zoom-out when sprinting or flying fast.
-    - Sneak / Crouch (<kbd>Shift</kbd>): Lowers eye height to 1.3m and prevents walking off precarious block edges (ledge clamping).
+  - [x] **Priority E: Movement & Camera Juice**:
+    - Default FOV: Set baseline camera FOV to 90.0° with settings slider adjustment.
+    - Crouch (<kbd>Control</kbd>): Lowers collision height to 1.3m and eye height to 1.15m, reduces speed, and prevents walking off precarious block edges (ledge clamping).
+    - Crawl (<kbd>C</kbd>): Lowers collision height to 0.45m and eye height to 0.40m, allowing crawling through 1-voxel high openings (0.5m) and under low overhangs, with headroom safety checks preventing uncrawling under ceilings.
+    - Camera Zoom (<kbd>Z</kbd>): Holding <kbd>Z</kbd> zooms smoothly with dynamic mouse scroll wheel control (scroll up zooms in closer up to 20x magnification, scroll down zooms out), automatically suppressing hotbar slot cycling during zoom and smoothly scaling mouse sensitivity.
+    - View Bobbing: Subtle sinusoidal head bobbing during grounded walking and sprinting, toggleable in In-Game Settings.
+    - Dynamic FOV Kick: Smooth camera FOV expansion (+8°) when sprinting or flying fast.
   - **Priority F: Visual Polish, Atmosphere & Audio Foundations**:
     - Underwater visual immersion: subtle caustic ripples, screen vignette, and water surface wave distortion.
     - Sound foundations: Step audio (grass, dirt, stone, sand, water splash) and block break/placement feedback.

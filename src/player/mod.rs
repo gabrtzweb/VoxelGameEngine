@@ -12,6 +12,8 @@ use bevy::{
     window::{CursorGrabMode, CursorOptions},
 };
 
+#[allow(unused_imports)]
+pub use controller::PlayerStance;
 pub use controller::{InspectorInteraction, PlayerCamera, PlayerMotion};
 
 pub use game_mode::GameMode;
@@ -148,7 +150,9 @@ fn update_player_body(
 
     let (mut body_transform, mut visibility) = body.into_inner();
 
-    body_transform.translation = player_transform.translation + Vec3::Y * (PLAYER_HEIGHT * 0.5);
+    let height = player_motion.stance_height();
+    body_transform.translation = player_transform.translation + Vec3::Y * (height * 0.5);
+    body_transform.scale = Vec3::new(1.0, height / PLAYER_HEIGHT, 1.0);
 
     body_transform.rotation = Quat::from_rotation_y(player_motion.facing_yaw);
 

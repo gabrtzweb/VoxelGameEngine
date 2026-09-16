@@ -26,13 +26,15 @@ pub enum MenuState {
 pub struct GameSettings {
     pub fov_degrees: f32,
     pub fog_enabled: bool,
+    pub view_bobbing: bool,
 }
 
 impl Default for GameSettings {
     fn default() -> Self {
         Self {
-            fov_degrees: 75.0,
+            fov_degrees: 90.0,
             fog_enabled: true,
+            view_bobbing: true,
         }
     }
 }
@@ -75,6 +77,7 @@ impl Plugin for MenuPlugin {
                     update_custom_cursor,
                     sync_camera_fov,
                     manage_menu_blur,
+                    manage_menu_time_pause,
                 ),
             );
     }
@@ -233,10 +236,13 @@ fn manage_menu_blur(
         return;
     }
 
-    let is_in_menu = *menu_state.get() != MenuState::None;
+    // World depth-of-field blur applies only to Pause and Settings menus, keeping the world
+    // visually clear when interacting with the inventory.
+    let is_in_pause_menu =
+        *menu_state.get() == MenuState::Pause || *menu_state.get() == MenuState::Settings;
 
     for camera_entity in &camera_query {
-        if is_in_menu {
+        if is_in_pause_menu {
             commands.entity(camera_entity).insert(DepthOfField {
                 mode: DepthOfFieldMode::Gaussian,
                 focal_distance: 0.1,
@@ -247,6 +253,24 @@ fn manage_menu_blur(
             });
         } else {
             commands.entity(camera_entity).remove::<DepthOfField>();
+        }
+    }
+}
+
+fn manage_menu_time_pause(
+    menu_state: Res<State<MenuState>>,
+    mut virtual_time: ResMut<Time<Virtual>>,
+) {
+    if !menu_state.is_changed() {
+        return;
+    }
+
+    match *menu_state.get() {
+        MenuState::Pause | MenuState::Settings => {
+            virtual_time.pause();
+        }
+        MenuState::None | MenuState::Inventory => {
+            virtual_time.unpause();
         }
     }
 }
@@ -275,8 +299,9 @@ mod tests {
     #[test]
     fn game_settings_has_sensible_defaults() {
         let settings = GameSettings::default();
-        assert_eq!(settings.fov_degrees, 75.0);
+        assert_eq!(settings.fov_degrees, 90.0);
         assert!(settings.fog_enabled);
+        assert!(settings.view_bobbing);
     }
 
     #[test]

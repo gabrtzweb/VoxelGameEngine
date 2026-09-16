@@ -66,9 +66,13 @@ impl VoxelTextureRegistry {
             return (m.start_layer, m.frame_count);
         }
 
-        let mut h = (world_voxel.x as u32).wrapping_mul(0x85EB_CA6B);
-        h ^= (world_voxel.y as u32).wrapping_mul(0xC2B2_AE35);
-        h ^= (world_voxel.z as u32).wrapping_mul(0x27D4_EB2D);
+        let bx = world_voxel.x.div_euclid(2);
+        let by = world_voxel.y.div_euclid(2);
+        let bz = world_voxel.z.div_euclid(2);
+
+        let mut h = (bx as u32).wrapping_mul(0x85EB_CA6B);
+        h ^= (by as u32).wrapping_mul(0xC2B2_AE35);
+        h ^= (bz as u32).wrapping_mul(0x27D4_EB2D);
         h ^= h >> 16;
         h = h.wrapping_mul(0x1656_67B1);
         h ^= h >> 13;

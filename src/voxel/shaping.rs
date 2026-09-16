@@ -1,4 +1,6 @@
-use bevy::prelude::*;
+use std::f32::consts::{FRAC_PI_2, TAU};
+
+use bevy::{input::mouse::AccumulatedMouseMotion, prelude::*};
 
 use crate::player::GameMode;
 
@@ -14,12 +16,14 @@ use super::{
     world::VoxelWorld,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum BlockShape {
+    #[default]
     Full,
     Stair,
     StairUpsideDown,
     CornerStair,
+    CornerStairInverted,
     SlabBottom,
     SlabTop,
     VerticalSlab,
@@ -27,75 +31,273 @@ pub enum BlockShape {
     CenteredColumn,
 }
 
+impl BlockShape {
+    pub const fn all() -> [BlockShape; 10] {
+        [
+            BlockShape::Full,
+            BlockShape::Stair,
+            BlockShape::StairUpsideDown,
+            BlockShape::CornerStair,
+            BlockShape::CornerStairInverted,
+            BlockShape::SlabBottom,
+            BlockShape::SlabTop,
+            BlockShape::VerticalSlab,
+            BlockShape::Column,
+            BlockShape::CenteredColumn,
+        ]
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Full => "Full Block",
+            Self::Stair => "Stairs",
+            Self::StairUpsideDown => "Upside-Down Stairs",
+            Self::CornerStair => "Corner Stairs",
+            Self::CornerStairInverted => "Inverted Corner Stairs",
+            Self::SlabBottom => "Bottom Slab",
+            Self::SlabTop => "Top Slab",
+            Self::VerticalSlab => "Vertical Slab",
+            Self::Column => "Column",
+            Self::CenteredColumn => "Centered Column",
+        }
+    }
+
+    pub fn short_name(self) -> &'static str {
+        match self {
+            Self::Full => "FULL",
+            Self::Stair => "STAIR",
+            Self::StairUpsideDown => "STAIR-UD",
+            Self::CornerStair => "CORNER",
+            Self::CornerStairInverted => "INV-CORNER",
+            Self::SlabBottom => "SLAB-B",
+            Self::SlabTop => "SLAB-T",
+            Self::VerticalSlab => "VERT-SLAB",
+            Self::Column => "COLUMN",
+            Self::CenteredColumn => "CTR-COL",
+        }
+    }
+
+    pub fn voxel_count(self) -> usize {
+        match self {
+            Self::Full => 8,
+            Self::Stair => 6,
+            Self::StairUpsideDown => 6,
+            Self::CornerStair => 5,
+            Self::CornerStairInverted => 7,
+            Self::SlabBottom => 4,
+            Self::SlabTop => 4,
+            Self::VerticalSlab => 4,
+            Self::Column => 2,
+            Self::CenteredColumn => 8,
+        }
+    }
+
+    pub fn next(self) -> Self {
+        match self {
+            Self::Full => Self::Stair,
+            Self::Stair => Self::StairUpsideDown,
+            Self::StairUpsideDown => Self::CornerStair,
+            Self::CornerStair => Self::CornerStairInverted,
+            Self::CornerStairInverted => Self::SlabBottom,
+            Self::SlabBottom => Self::SlabTop,
+            Self::SlabTop => Self::VerticalSlab,
+            Self::VerticalSlab => Self::Column,
+            Self::Column => Self::CenteredColumn,
+            Self::CenteredColumn => Self::Full,
+        }
+    }
+}
+
+#[derive(Resource, Default)]
+pub struct RadialMenuState {
+    pub is_open: bool,
+    pub pressing: bool,
+    pub hold_timer: f32,
+    pub mouse_offset: Vec2,
+    pub target_origin: Option<IVec3>,
+    pub target_material: Option<Voxel>,
+    pub initial_shape: BlockShape,
+    pub selected_shape: BlockShape,
+}
+
+#[derive(Component)]
+struct RadialMenuRoot;
+
+#[derive(Component)]
+struct RadialMenuSlice(usize);
+
+#[derive(Component)]
+struct RadialMenuTitleText;
+
+#[derive(Component)]
+struct RadialMenuSubtitleText;
+
 pub struct ShapingPlugin;
 
 impl Plugin for ShapingPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (handle_block_shaping, handle_block_rotation));
+        app.init_resource::<RadialMenuState>().add_systems(
+            Update,
+            (
+                handle_block_shaping,
+                handle_block_rotation,
+                update_radial_menu_ui,
+            ),
+        );
     }
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn handle_block_shaping(
+    time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
+    mouse_motion: Res<AccumulatedMouseMotion>,
     game_mode: Res<GameMode>,
     interaction_mode: Res<InteractionMode>,
     current_target: Res<CurrentTarget>,
     material: Res<ChunkMaterial>,
     mut fluid_queue: Option<ResMut<FluidUpdateQueue>>,
     mut commands: Commands,
-    mut world: ResMut<VoxelWorld>,
-    mut modifications: ResMut<WorldModificationStore>,
-    mut light_registry: ResMut<VoxelLightRegistry>,
-    mut registry: ResMut<ChunkMeshRegistry>,
-    mut meshes: ResMut<Assets<Mesh>>,
+    (mut world, mut modifications, mut light_registry, mut registry, mut meshes): (
+        ResMut<VoxelWorld>,
+        ResMut<WorldModificationStore>,
+        ResMut<VoxelLightRegistry>,
+        ResMut<ChunkMeshRegistry>,
+        ResMut<Assets<Mesh>>,
+    ),
+    mut radial_state: ResMut<RadialMenuState>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
+    radial_root_query: Query<Entity, With<RadialMenuRoot>>,
 ) {
-    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+    if menu_state
+        .as_ref()
+        .is_some_and(|s| *s.get() != crate::menu::MenuState::None)
+    {
+        if radial_state.is_open {
+            for entity in &radial_root_query {
+                commands.entity(entity).despawn();
+            }
+        }
+        *radial_state = RadialMenuState::default();
         return;
     }
 
-    if *game_mode != GameMode::Creative {
+    if *game_mode != GameMode::Creative || *interaction_mode != InteractionMode::Block {
+        if radial_state.is_open {
+            for entity in &radial_root_query {
+                commands.entity(entity).despawn();
+            }
+        }
+        *radial_state = RadialMenuState::default();
         return;
     }
 
-    if *interaction_mode != InteractionMode::Block {
+    if keyboard.just_pressed(KeyCode::Escape) && radial_state.is_open {
+        for entity in &radial_root_query {
+            commands.entity(entity).despawn();
+        }
+        *radial_state = RadialMenuState::default();
         return;
     }
 
-    if !keyboard.just_pressed(KeyCode::KeyR) {
-        return;
+    if keyboard.just_pressed(KeyCode::KeyR)
+        && let Some(target) = current_target.hit
+    {
+        let origin = target.block_origin;
+        let voxels = get_block_voxels(&world, origin);
+
+        if let Some(&block_mat) = voxels.iter().find(|v| {
+            !v.is_empty() && !v.is_water() && **v != Voxel::Occupied && **v != Voxel::WaterOccupied
+        }) {
+            let current_shape = detect_current_shape(&voxels);
+            radial_state.pressing = true;
+            radial_state.hold_timer = 0.0;
+            radial_state.mouse_offset = Vec2::ZERO;
+            radial_state.target_origin = Some(origin);
+            radial_state.target_material = Some(block_mat);
+            radial_state.initial_shape = current_shape;
+            radial_state.selected_shape = current_shape;
+        }
     }
 
-    let Some(target) = current_target.hit else {
-        return;
-    };
+    if keyboard.pressed(KeyCode::KeyR) && radial_state.pressing {
+        radial_state.hold_timer += time.delta_secs();
 
-    let origin = target.block_origin;
-    let voxels = get_block_voxels(&world, origin);
+        if radial_state.hold_timer >= 0.20 && !radial_state.is_open {
+            radial_state.is_open = true;
+            spawn_radial_menu(&mut commands, radial_state.selected_shape);
+        }
 
-    // Find the primary non-empty voxel to preserve block material
-    let Some(&block_material) = voxels.iter().find(|v| {
-        !v.is_empty() && !v.is_water() && **v != Voxel::Occupied && **v != Voxel::WaterOccupied
-    }) else {
-        return;
-    };
+        if radial_state.is_open {
+            radial_state.mouse_offset += mouse_motion.delta;
 
-    let next_shape = detect_current_shape(&voxels).next();
-    let new_voxels = generate_shape_voxels(next_shape, block_material);
+            if radial_state.mouse_offset.length() > 20.0 {
+                let angle = radial_state
+                    .mouse_offset
+                    .y
+                    .atan2(radial_state.mouse_offset.x);
+                let mut rel_angle = angle - (-FRAC_PI_2);
+                while rel_angle < 0.0 {
+                    rel_angle += TAU;
+                }
+                while rel_angle >= TAU {
+                    rel_angle -= TAU;
+                }
+                let slice_step = TAU / 10.0;
+                let slice_idx =
+                    ((rel_angle + (slice_step * 0.5)) / slice_step).floor() as usize % 10;
+                radial_state.selected_shape = BlockShape::all()[slice_idx];
+            }
+        }
+    }
 
-    apply_block_subvoxels(
-        &mut commands,
-        &mut world,
-        &mut modifications,
-        &mut light_registry,
-        &mut registry,
-        &mut meshes,
-        &material,
-        &mut fluid_queue,
-        origin,
-        new_voxels,
-    );
+    if keyboard.just_released(KeyCode::KeyR) && radial_state.pressing {
+        if radial_state.is_open {
+            for entity in &radial_root_query {
+                commands.entity(entity).despawn();
+            }
+
+            if let (Some(origin), Some(mat)) =
+                (radial_state.target_origin, radial_state.target_material)
+            {
+                let new_voxels = generate_shape_voxels(radial_state.selected_shape, mat);
+                apply_block_subvoxels(
+                    &mut commands,
+                    &mut world,
+                    &mut modifications,
+                    &mut light_registry,
+                    &mut registry,
+                    &mut meshes,
+                    &material,
+                    &mut fluid_queue,
+                    origin,
+                    new_voxels,
+                );
+            }
+        } else if radial_state.hold_timer < 0.20 {
+            // Quick tap: cycle to next shape
+            if let (Some(origin), Some(mat)) =
+                (radial_state.target_origin, radial_state.target_material)
+            {
+                let next_shape = radial_state.initial_shape.next();
+                let new_voxels = generate_shape_voxels(next_shape, mat);
+                apply_block_subvoxels(
+                    &mut commands,
+                    &mut world,
+                    &mut modifications,
+                    &mut light_registry,
+                    &mut registry,
+                    &mut meshes,
+                    &material,
+                    &mut fluid_queue,
+                    origin,
+                    new_voxels,
+                );
+            }
+        }
+
+        *radial_state = RadialMenuState::default();
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -347,6 +549,7 @@ pub fn detect_current_shape(voxels: &[Voxel; 8]) -> BlockShape {
 
     match solid_count {
         8 => BlockShape::Full,
+        7 => BlockShape::CornerStairInverted,
         6 => {
             let bottom_count = voxels[0..4].iter().filter(|v| is_solid(v)).count();
             let top_count = voxels[4..8].iter().filter(|v| is_solid(v)).count();
@@ -370,22 +573,6 @@ pub fn detect_current_shape(voxels: &[Voxel; 8]) -> BlockShape {
         }
         2 => BlockShape::Column,
         _ => BlockShape::Full,
-    }
-}
-
-impl BlockShape {
-    pub fn next(self) -> Self {
-        match self {
-            Self::Full => Self::Stair,
-            Self::Stair => Self::StairUpsideDown,
-            Self::StairUpsideDown => Self::CornerStair,
-            Self::CornerStair => Self::SlabBottom,
-            Self::SlabBottom => Self::SlabTop,
-            Self::SlabTop => Self::VerticalSlab,
-            Self::VerticalSlab => Self::Column,
-            Self::Column => Self::CenteredColumn,
-            Self::CenteredColumn => Self::Full,
-        }
     }
 }
 
@@ -424,6 +611,17 @@ pub fn generate_shape_voxels(shape: BlockShape, material: Voxel) -> [Voxel; 8] {
             result[2] = fill;
             result[3] = fill;
             // Top back-right 1 voxel solid (y=1, z=1, x=1)
+            result[7] = fill;
+        }
+        BlockShape::CornerStairInverted => {
+            // Bottom 4 voxels solid (y=0)
+            result[0] = fill;
+            result[1] = fill;
+            result[2] = fill;
+            result[3] = fill;
+            // Top 3 voxels solid (y=1): leaving [4] (x=0, z=0, y=1) empty
+            result[5] = fill;
+            result[6] = fill;
             result[7] = fill;
         }
         BlockShape::SlabBottom => {
@@ -488,6 +686,191 @@ pub fn rotate_block_90_y(voxels: &[Voxel; 8]) -> [Voxel; 8] {
     rotated
 }
 
+fn spawn_radial_menu(commands: &mut Commands, selected_shape: BlockShape) {
+    let shapes = BlockShape::all();
+
+    commands
+        .spawn((
+            RadialMenuRoot,
+            Node {
+                position_type: PositionType::Absolute,
+                left: px(0.0),
+                top: px(0.0),
+                right: px(0.0),
+                bottom: px(0.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.45)),
+            ZIndex(250),
+        ))
+        .with_children(|root| {
+            // Center wheel hub
+            root.spawn(Node {
+                position_type: PositionType::Relative,
+                width: px(0.0),
+                height: px(0.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            })
+            .with_children(|hub| {
+                // Central Preview Card
+                hub.spawn((
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: px(-75.0),
+                        top: px(-65.0),
+                        width: px(150.0),
+                        height: px(130.0),
+                        flex_direction: FlexDirection::Column,
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        row_gap: px(4.0),
+                        padding: UiRect::all(px(8.0)),
+                        border: UiRect::all(px(2.0)),
+                        border_radius: BorderRadius::all(px(12.0)),
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgba(0.06, 0.08, 0.12, 0.95)),
+                    BorderColor::all(Color::srgba(0.35, 0.65, 0.95, 0.8)),
+                ))
+                .with_children(|card| {
+                    card.spawn((
+                        Text::new(selected_shape.name()),
+                        TextFont {
+                            font_size: FontSize::Px(15.0),
+                            ..default()
+                        },
+                        TextColor(Color::srgb(1.0, 0.9, 0.4)),
+                        RadialMenuTitleText,
+                    ));
+
+                    card.spawn((
+                        Text::new(format!("{} / 8 Sub-voxels", selected_shape.voxel_count())),
+                        TextFont {
+                            font_size: FontSize::Px(12.0),
+                            ..default()
+                        },
+                        TextColor(Color::srgb(0.75, 0.8, 0.9)),
+                        RadialMenuSubtitleText,
+                    ));
+
+                    card.spawn((
+                        Text::new("Hold R + Move Mouse\nRelease R to Select"),
+                        TextFont {
+                            font_size: FontSize::Px(10.0),
+                            ..default()
+                        },
+                        TextColor(Color::srgba(0.6, 0.8, 1.0, 0.7)),
+                    ));
+                });
+
+                // 10 Radial Slices
+                let radius = 155.0;
+                let card_size = 56.0;
+                let slice_step = TAU / 10.0;
+
+                for (i, &shape) in shapes.iter().enumerate() {
+                    let angle = -FRAC_PI_2 + (i as f32) * slice_step;
+                    let cx = angle.cos() * radius - (card_size * 0.5);
+                    let cy = angle.sin() * radius - (card_size * 0.5);
+                    let is_selected = shape == selected_shape;
+
+                    hub.spawn((
+                        RadialMenuSlice(i),
+                        Node {
+                            position_type: PositionType::Absolute,
+                            left: px(cx),
+                            top: px(cy),
+                            width: px(card_size),
+                            height: px(card_size),
+                            flex_direction: FlexDirection::Column,
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            border: UiRect::all(if is_selected { px(2.5) } else { px(1.5) }),
+                            border_radius: BorderRadius::all(px(8.0)),
+                            ..default()
+                        },
+                        BackgroundColor(if is_selected {
+                            Color::srgba(0.2, 0.5, 0.85, 0.95)
+                        } else {
+                            Color::srgba(0.07, 0.09, 0.13, 0.88)
+                        }),
+                        BorderColor::all(if is_selected {
+                            Color::srgb(0.5, 0.9, 1.0)
+                        } else {
+                            Color::srgba(0.3, 0.35, 0.45, 0.6)
+                        }),
+                    ))
+                    .with_children(|slice_card| {
+                        slice_card.spawn((
+                            Text::new(shape.short_name()),
+                            TextFont {
+                                font_size: FontSize::Px(10.0),
+                                ..default()
+                            },
+                            TextColor(if is_selected {
+                                Color::srgb(1.0, 1.0, 1.0)
+                            } else {
+                                Color::srgb(0.8, 0.85, 0.9)
+                            }),
+                        ));
+
+                        slice_card.spawn((
+                            Text::new(format!("{}v", shape.voxel_count())),
+                            TextFont {
+                                font_size: FontSize::Px(9.0),
+                                ..default()
+                            },
+                            TextColor(Color::srgba(0.6, 0.65, 0.75, 0.8)),
+                        ));
+                    });
+                }
+            });
+        });
+}
+
+fn update_radial_menu_ui(
+    radial_state: Res<RadialMenuState>,
+    mut slice_query: Query<(&RadialMenuSlice, &mut BackgroundColor, &mut BorderColor)>,
+    mut title_query: Query<&mut Text, (With<RadialMenuTitleText>, Without<RadialMenuSubtitleText>)>,
+    mut sub_query: Query<&mut Text, (With<RadialMenuSubtitleText>, Without<RadialMenuTitleText>)>,
+) {
+    if !radial_state.is_open {
+        return;
+    }
+
+    let shapes = BlockShape::all();
+    let selected_idx = shapes
+        .iter()
+        .position(|&s| s == radial_state.selected_shape)
+        .unwrap_or(0);
+
+    for (slice, mut bg, mut border) in &mut slice_query {
+        let is_selected = slice.0 == selected_idx;
+        if is_selected {
+            bg.0 = Color::srgba(0.2, 0.5, 0.85, 0.95);
+            *border = BorderColor::all(Color::srgb(0.5, 0.9, 1.0));
+        } else {
+            bg.0 = Color::srgba(0.07, 0.09, 0.13, 0.88);
+            *border = BorderColor::all(Color::srgba(0.3, 0.35, 0.45, 0.6));
+        }
+    }
+
+    for mut text in &mut title_query {
+        text.0 = radial_state.selected_shape.name().to_string();
+    }
+
+    for mut text in &mut sub_query {
+        text.0 = format!(
+            "{} / 8 Sub-voxels",
+            radial_state.selected_shape.voxel_count()
+        );
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -509,6 +892,10 @@ mod tests {
         assert_eq!(
             count_solid(generate_shape_voxels(BlockShape::CornerStair, mat)),
             5
+        );
+        assert_eq!(
+            count_solid(generate_shape_voxels(BlockShape::CornerStairInverted, mat)),
+            7
         );
         assert_eq!(
             count_solid(generate_shape_voxels(BlockShape::SlabBottom, mat)),
@@ -539,6 +926,7 @@ mod tests {
             BlockShape::Stair,
             BlockShape::StairUpsideDown,
             BlockShape::CornerStair,
+            BlockShape::CornerStairInverted,
             BlockShape::SlabBottom,
             BlockShape::SlabTop,
             BlockShape::VerticalSlab,
@@ -573,6 +961,15 @@ mod tests {
         assert_eq!(corner, cr4);
         assert_ne!(corner, cr1);
 
+        let inv_corner = generate_shape_voxels(BlockShape::CornerStairInverted, Voxel::Stone);
+        let icr1 = rotate_block_90_y(&inv_corner);
+        let icr2 = rotate_block_90_y(&icr1);
+        let icr3 = rotate_block_90_y(&icr2);
+        let icr4 = rotate_block_90_y(&icr3);
+
+        assert_eq!(inv_corner, icr4);
+        assert_ne!(inv_corner, icr1);
+
         let upside_down = generate_shape_voxels(BlockShape::StairUpsideDown, Voxel::Stone);
         let ur1 = rotate_block_90_y(&upside_down);
         let ur2 = rotate_block_90_y(&ur1);
@@ -600,6 +997,12 @@ mod tests {
 
         let corner = generate_shape_voxels(BlockShape::CornerStair, Voxel::Stone);
         assert_eq!(detect_current_shape(&corner), BlockShape::CornerStair);
+
+        let inv_corner = generate_shape_voxels(BlockShape::CornerStairInverted, Voxel::Stone);
+        assert_eq!(
+            detect_current_shape(&inv_corner),
+            BlockShape::CornerStairInverted
+        );
     }
 
     #[test]

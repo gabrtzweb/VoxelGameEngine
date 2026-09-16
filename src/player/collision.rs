@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::voxel::{VOXEL_SIZE, VoxelWorld, chunk::Voxel};
 
-use super::{PLAYER_HEIGHT, PLAYER_WIDTH};
+use super::PLAYER_WIDTH;
 
 const COLLISION_EPSILON: f32 = 0.001;
 
@@ -21,10 +21,14 @@ pub struct CollisionResult {
     pub step_height: f32,
 }
 
-pub fn is_grounded(world: &VoxelWorld, position: Vec3) -> bool {
+pub fn is_grounded(world: &VoxelWorld, position: Vec3, height: f32) -> bool {
     let probe_position = position - Vec3::Y * GROUND_PROBE_DISTANCE;
 
-    collides_at(world, probe_position)
+    collides_at(world, probe_position, height)
+}
+
+pub fn has_headroom(world: &VoxelWorld, position: Vec3, target_height: f32) -> bool {
+    !collides_at(world, position, target_height)
 }
 
 pub fn move_with_collisions(
@@ -32,6 +36,7 @@ pub fn move_with_collisions(
     position: Vec3,
     movement: Vec3,
     allow_step: bool,
+    height: f32,
 ) -> (Vec3, CollisionResult) {
     let largest_movement = movement.abs().max_element();
 
@@ -47,7 +52,7 @@ pub fn move_with_collisions(
         let mut stepped_this_iteration = false;
 
         let (new_position, blocked, stepped) =
-            resolve_x(world, position, movement_step.x, allow_step);
+            resolve_x(world, position, movement_step.x, allow_step, height);
 
         position = new_position;
 
@@ -65,6 +70,7 @@ pub fn move_with_collisions(
             position,
             movement_step.z,
             allow_step && !stepped_this_iteration,
+            height,
         );
 
         position = new_position;
@@ -77,7 +83,7 @@ pub fn move_with_collisions(
             result.step_height += AUTO_STEP_HEIGHT;
         }
 
-        let (new_position, blocked, grounded) = resolve_y(world, position, movement_step.y);
+        let (new_position, blocked, grounded) = resolve_y(world, position, movement_step.y, height);
 
         position = new_position;
 
@@ -90,7 +96,7 @@ pub fn move_with_collisions(
         }
     }
 
-    if is_grounded(world, position) {
+    if is_grounded(world, position, height) {
         result.grounded = true;
     }
 
@@ -102,6 +108,7 @@ fn resolve_x(
     position: Vec3,
     movement: f32,
     allow_step: bool,
+    height: f32,
 ) -> (Vec3, bool, bool) {
     if movement == 0.0 {
         return (position, false, false);
@@ -111,7 +118,7 @@ fn resolve_x(
 
     candidate.x += movement;
 
-    let voxels = overlapping_solid_voxels(world, candidate);
+    let voxels = overlapping_solid_voxels(world, candidate, height);
 
     if voxels.is_empty() {
         return (candidate, false, false);
@@ -122,10 +129,10 @@ fn resolve_x(
 
         stepped_position.y += AUTO_STEP_HEIGHT;
 
-        if !collides_at(world, stepped_position) {
+        if !collides_at(world, stepped_position, height) {
             stepped_position.x += movement;
 
-            if !collides_at(world, stepped_position) {
+            if !collides_at(world, stepped_position, height) {
                 return (stepped_position, false, true);
             }
         }
@@ -157,6 +164,7 @@ fn resolve_z(
     position: Vec3,
     movement: f32,
     allow_step: bool,
+    height: f32,
 ) -> (Vec3, bool, bool) {
     if movement == 0.0 {
         return (position, false, false);
@@ -166,7 +174,7 @@ fn resolve_z(
 
     candidate.z += movement;
 
-    let voxels = overlapping_solid_voxels(world, candidate);
+    let voxels = overlapping_solid_voxels(world, candidate, height);
 
     if voxels.is_empty() {
         return (candidate, false, false);
@@ -177,10 +185,10 @@ fn resolve_z(
 
         stepped_position.y += AUTO_STEP_HEIGHT;
 
-        if !collides_at(world, stepped_position) {
+        if !collides_at(world, stepped_position, height) {
             stepped_position.z += movement;
 
-            if !collides_at(world, stepped_position) {
+            if !collides_at(world, stepped_position, height) {
                 return (stepped_position, false, true);
             }
         }
@@ -207,7 +215,7 @@ fn resolve_z(
     (candidate, true, false)
 }
 
-fn resolve_y(world: &VoxelWorld, position: Vec3, movement: f32) -> (Vec3, bool, bool) {
+fn resolve_y(world: &VoxelWorld, position: Vec3, movement: f32, height: f32) -> (Vec3, bool, bool) {
     if movement == 0.0 {
         return (position, false, false);
     }
@@ -216,7 +224,7 @@ fn resolve_y(world: &VoxelWorld, position: Vec3, movement: f32) -> (Vec3, bool, 
 
     candidate.y += movement;
 
-    let voxels = overlapping_solid_voxels(world, candidate);
+    let voxels = overlapping_solid_voxels(world, candidate, height);
 
     if voxels.is_empty() {
         return (candidate, false, false);
@@ -228,9 +236,7 @@ fn resolve_y(world: &VoxelWorld, position: Vec3, movement: f32) -> (Vec3, bool, 
         let voxel_max_y = voxel_min_y + VOXEL_SIZE;
 
         if movement > 0.0 {
-            candidate.y = candidate
-                .y
-                .min(voxel_min_y - PLAYER_HEIGHT - COLLISION_EPSILON);
+            candidate.y = candidate.y.min(voxel_min_y - height - COLLISION_EPSILON);
         } else {
             candidate.y = candidate.y.max(voxel_max_y + COLLISION_EPSILON);
         }
@@ -239,8 +245,8 @@ fn resolve_y(world: &VoxelWorld, position: Vec3, movement: f32) -> (Vec3, bool, 
     (candidate, true, movement < 0.0)
 }
 
-fn collides_at(world: &VoxelWorld, position: Vec3) -> bool {
-    let (min_voxel, max_voxel) = body_voxel_bounds(position);
+pub fn collides_at(world: &VoxelWorld, position: Vec3, height: f32) -> bool {
+    let (min_voxel, max_voxel) = body_voxel_bounds(position, height);
 
     for y in min_voxel.y..=max_voxel.y {
         for z in min_voxel.z..=max_voxel.z {
@@ -258,8 +264,8 @@ fn collides_at(world: &VoxelWorld, position: Vec3) -> bool {
     false
 }
 
-fn overlapping_solid_voxels(world: &VoxelWorld, position: Vec3) -> Vec<IVec3> {
-    let (min_voxel, max_voxel) = body_voxel_bounds(position);
+fn overlapping_solid_voxels(world: &VoxelWorld, position: Vec3, height: f32) -> Vec<IVec3> {
+    let (min_voxel, max_voxel) = body_voxel_bounds(position, height);
 
     let mut voxels = Vec::new();
 
@@ -281,14 +287,14 @@ fn overlapping_solid_voxels(world: &VoxelWorld, position: Vec3) -> Vec<IVec3> {
     voxels
 }
 
-fn body_voxel_bounds(position: Vec3) -> (IVec3, IVec3) {
+fn body_voxel_bounds(position: Vec3, height: f32) -> (IVec3, IVec3) {
     let half_width = PLAYER_WIDTH * 0.5;
 
     let min = Vec3::new(position.x - half_width, position.y, position.z - half_width);
 
     let max = Vec3::new(
         position.x + half_width,
-        position.y + PLAYER_HEIGHT,
+        position.y + height,
         position.z + half_width,
     );
 
@@ -305,4 +311,25 @@ fn body_voxel_bounds(position: Vec3) -> (IVec3, IVec3) {
     );
 
     (min_voxel, max_voxel)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::voxel::chunk::Chunk;
+
+    #[test]
+    fn headroom_check_detects_low_ceiling() {
+        let mut world = VoxelWorld::default();
+        world.insert_chunk(IVec3::ZERO, Chunk::new());
+
+        let player_pos = Vec3::new(2.0, 0.0, 2.0);
+        // Ceiling at y=1.0m (voxel y=2)
+        world.set_voxel(IVec3::new(4, 2, 4), Voxel::Stone);
+
+        // Clearance at 0.45m (crawling) is clear
+        assert!(has_headroom(&world, player_pos, 0.45));
+        // Clearance at 1.8m (standing) collides with ceiling
+        assert!(!has_headroom(&world, player_pos, 1.8));
+    }
 }

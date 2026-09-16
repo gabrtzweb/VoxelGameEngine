@@ -192,13 +192,16 @@ fn handle_hotbar_input(
         }
     }
 
-    let scroll = mouse_scroll.delta.y;
-    if scroll > 0.05 {
-        // Scroll up = previous slot
-        hotbar.active_slot = (hotbar.active_slot + HOTBAR_SLOT_COUNT - 1) % HOTBAR_SLOT_COUNT;
-    } else if scroll < -0.05 {
-        // Scroll down = next slot
-        hotbar.active_slot = (hotbar.active_slot + 1) % HOTBAR_SLOT_COUNT;
+    // When holding Z (camera zoom), mouse wheel scroll adjusts zoom level instead of cycling hotbar
+    if !keyboard.pressed(KeyCode::KeyZ) {
+        let scroll = mouse_scroll.delta.y;
+        if scroll > 0.05 {
+            // Scroll up = previous slot
+            hotbar.active_slot = (hotbar.active_slot + HOTBAR_SLOT_COUNT - 1) % HOTBAR_SLOT_COUNT;
+        } else if scroll < -0.05 {
+            // Scroll down = next slot
+            hotbar.active_slot = (hotbar.active_slot + 1) % HOTBAR_SLOT_COUNT;
+        }
     }
 
     // Q key clears the active hotbar slot (giving the player an empty hand)
