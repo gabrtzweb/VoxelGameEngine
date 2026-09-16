@@ -1,7 +1,7 @@
 use bevy::{camera::Exposure, prelude::*};
 
-use crate::world::{CHUNK_SIZE, VOXEL_SIZE, streaming::ChunkStreamingSettings};
 use super::time::EnvironmentState;
+use crate::world::{CHUNK_SIZE, VOXEL_SIZE, streaming::ChunkStreamingSettings};
 
 pub const DAY_SUN_ILLUMINANCE: f32 = 6_500.0;
 pub const DAY_FILL_ILLUMINANCE: f32 = 2_200.0;

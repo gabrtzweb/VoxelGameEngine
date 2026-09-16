@@ -185,33 +185,89 @@ This document outlines the planned development phases for the voxel game engine,
 
 ---
 
-## Phase 7: Project Organization and Refactor (Current Milestone)
-Detailed technical review and diagnostic report available in [docs/technical_review.md](technical_review.md).
+## Phase 7: Project Organization, Architecture Audit & Refactor (Completed)
+Comprehensive technical review, bottleneck diagnostics, and optimization plan successfully executed across all engine domains.
 
 - [x] **Stage 7.1: Immediate Bottleneck Elimination (High FPS Impact)**:
-  - [x] **Optimize `logical_block_has_exposed_dirt`**: Eliminate the 8×5 nested neighborhood loop in terrain generation. Cache column height samples or only sample the top surface of the logical block, eliminating up to 80,000+ redundant noise calls per chunk.
-  - [x] **Turn Off Asset Dirtying in Environment Systems**: In `stars.rs`, `clouds.rs`, and `celestial.rs`, inspect if material properties actually changed before calling `materials.get_mut()` to avoid invalidating GPU bind groups and uniform buffers every frame.
-  - [x] **Parent Starfield to Single Root Entity**: Eliminate the 250-entity loop in `sync_starfield` by parenting all star quads to a single rotating `StarfieldRoot` entity.
-  - [x] **Direct Indexing for Texture Registry**: Replace `HashMap<Voxel, VoxelTextureMapping>` with a fixed array `[Option<VoxelTextureMapping>; 34]` for O(1) direct memory indexing without SipHash in the greedy mesher loop.
-  - [x] **Cache Submersion and Water Checks**: Introduce a lightweight `PlayerEnvironmentStatus` resource updated once per frame, eliminating 4 duplicate `is_point_in_water` and `player_submersion` evaluations.
+  - [x] **Optimize `logical_block_has_exposed_dirt`**: Eliminated the 8×5 nested neighborhood loop in terrain generation. Cached column height samples and sampled only the top surface of the logical block, eliminating up to 80,000+ redundant noise calls per chunk.
+  - [x] **Turn Off Asset Dirtying in Environment Systems**: In `stars.rs`, `clouds.rs`, and `celestial.rs`, inspected if material properties actually changed before calling `materials.get_mut()`, preventing constant GPU bind group and uniform buffer invalidations.
+  - [x] **Parent Starfield to Single Root Entity**: Eliminated the 250-entity mutation loop in `sync_starfield` by parenting all star quads to a single rotating `StarfieldRoot` entity.
+  - [x] **Direct Indexing for Texture Registry**: Replaced `HashMap<Voxel, VoxelTextureMapping>` with a fixed array `[Option<VoxelTextureMapping>; 34]` for O(1) direct memory indexing without SipHash in the greedy mesher loop.
+  - [x] **Cache Submersion and Water Checks**: Introduced a lightweight `PlayerEnvironmentStatus` resource updated once per frame, eliminating 4 duplicate `is_point_in_water` and `player_submersion` evaluations.
 
-- [x] **Stage 7.2: Background Thread Meshing & Frame Throttling**
+- [x] **Stage 7.2: Background Thread Meshing & Frame Throttling**:
   - [x] **Move `ChunkMesher::build_meshes` to `AsyncComputeTaskPool`**: Run greedy meshing in worker threads using snapshot voxel data; main thread only receives finished `Mesh` buffers and binds them to Bevy entities.
-  - [x] **Remove Direct Synchronous Meshing from Gameplay Systems**: Route fluid simulation, player edits, shaping tools, and pause restarts through the remesh queue rather than executing unbuffered synchronous remeshing on the main thread.
-  - [x] **Switch to Fast Hasher for `VoxelWorld`**: Replace `std::collections::HashMap` with `bevy::platform_support::collections::HashMap` or `FxHashMap` for 3x–5x faster chunk lookups.
+  - [x] **Remove Direct Synchronous Meshing from Gameplay Systems**: Routed fluid simulation, player edits, shaping tools, and pause restarts through the remesh queue rather than executing unbuffered synchronous remeshing on the main thread.
+  - [x] **Switch to Fast Hasher for `VoxelWorld`**: Replaced `std::collections::HashMap` with `bevy::platform_support::collections::HashMap` / `FxHashMap` for 3x–5x faster chunk lookups.
 
-- [x] **Stage 7.3: Codebase Modularization & Directory Restructure**
-  - [x] Reorganize codebase into domain subdirectories: `core/`, `environment/`, `menu/`, `player/`, `world/`, `generation/`, `meshing/`, `simulation/`, and `gameplay/`.
-  - [x] Split monolithic `src/voxel/mesher.rs` (1,571 lines) into `greedy.rs`, `shapes.rs`, and `pipeline.rs`. Move tests to external module or dedicated test files.
+- [x] **Stage 7.3: Codebase Modularization & Directory Restructure**:
+  - [x] Reorganized codebase into domain subdirectories: `core/`, `environment/`, `menu/`, `player/`, `world/`, `generation/`, `meshing/`, `simulation/`, and `gameplay/`.
+  - [x] Split monolithic `src/voxel/mesher.rs` (1,571 lines) into `greedy.rs`, `shapes.rs`, and `pipeline.rs`.
   - [x] Split `src/voxel/shaping.rs` (1,038 lines) into `shaping.rs`, `radial_menu.rs`, and sub-voxel geometry helpers.
-  - [x] Clean up `src/environment.rs` (798 lines) into modular domain files (`atmosphere.rs`, `celestial.rs`, `clouds.rs`, `stars.rs`, `time.rs`).
+  - [x] Cleaned up `src/environment.rs` into modular domain files (`atmosphere.rs`, `celestial.rs`, `clouds.rs`, `stars.rs`, `time.rs`).
 
-- [x] **Stage 7.4: Collision & Memory Micro-Optimizations**
-  - [x] Replace `Vec<IVec3>` allocations in `overlapping_solid_voxels` with a stack-allocated small buffer or visitor closure.
-  - [x] Add early-exit bounds check for fully empty or solid chunks during meshing.
+- [x] **Stage 7.4: Collision & Memory Micro-Optimizations**:
+  - [x] Replaced `Vec<IVec3>` allocations in `overlapping_solid_voxels` with stack-allocated buffers and visitor closures.
+  - [x] Added early-exit bounds check for fully empty or solid chunks during meshing.
 
-## Phase 8: Engine Optimization & Scalability (Future Milestone)
-- **LOD Render Distance**: Downsampled greedy meshes for distant chunks (maybe not a priority = can be skipped).
-- **Extremity Bound Checking**: Early skipping of completely empty or solid chunks during collision and meshing.
-- **Noise Up-sampling & Caching**: Coarse 3D noise sampling with trilinear interpolation.
-- **RLE Runtime Voxel Data**: Run-Length Encoded chunk storage to minimize memory footprint.
+---
+
+## Phase 8: Engine Optimization & Scalability (Next Milestone)
+
+Phase 8 focuses on deep algorithmic and memory optimizations to scale chunk throughput, slash generation latency, and compress the memory footprint for high render distances and smooth 144+ FPS gameplay.
+
+### Strategic Priorities & Recommended Order
+1. **Priority 1: Extremity Bound Checking & Chunk Homogeneity Metadata** (Highest ROI / Immediate O(1) skips across meshing, collision, and raycasting)
+2. **Priority 2: Noise Up-Sampling & 3D Trilinear Interpolation** (Massive generation speedup, 97% reduction in 3D noise evaluations per chunk)
+3. **Priority 3: RLE & Paletted Runtime Voxel Data** (Drastic RAM reduction for loaded worlds, foundations for future disk saves)
+4. **Priority 4: LOD Render Distance** (Complex boundary stitching, low immediate benefit at current render distances; candidate to defer or simplify)
+
+---
+
+### Detailed Analysis & Implementation Breakdown
+
+- [ ] **Stage 8.1: Extremity Bound Checking & Chunk Homogeneity Flags**:
+  - **The Problem**: Currently, collision checks, raycasting, and meshing still traverse coordinate ranges inside chunks that are 100% open sky (`Air`) or 100% subterranean rock (`Stone`/`Slate`). Although greedy meshing has early-exit counts, player collision tests (`overlapping_solid_voxels`) and targeting raycasts still query chunk storage coordinate by coordinate.
+  - **Architecture**:
+    - Introduce chunk state metadata: `ChunkHomogeneity::Empty` (100% Air), `ChunkHomogeneity::Solid(Voxel)` (100% single solid material), or `ChunkHomogeneity::Mixed`.
+    - Maintain non-air voxel count and unique voxel variant counters during procedural generation and runtime edits in O(1).
+  - **Engine Benefits**:
+    - **Meshing**: Completely bypass chunk mesher task spawning for `Empty` chunks and fully occluded `Solid` chunks surrounded by solid neighbors (zero background tasks scheduled, zero memory allocations).
+    - **Raycasting**: O(1) skip across empty chunks during line-of-sight ray traversal; O(1) hit on bounding box faces of solid chunks without voxel-level ray marching.
+    - **Collision**: Player movement queries can immediately skip empty chunks without iterating over coordinate ranges.
+  - **Complexity / Risk**: Low complexity, zero visual trade-offs, immediate CPU saving.
+
+- [ ] **Stage 8.2: Noise Up-Sampling & Caching (Trilinear Interpolation)**:
+  - **The Problem**: Procedural chunk generation evaluates complex multi-octave 3D Simplex/Perlin noise (caves, worm tunnels, cheese chambers, strata veins) independently for all 4,096 voxels in a chunk. This is the single largest CPU load on the `AsyncComputeTaskPool`, causing thread pool starvation during fast flight or streaming spikes.
+  - **Architecture**:
+    - Compute 3D cave/density noise only at a coarse lattice of sample points (e.g. 4×4×4 or 2×2×2 voxel cells) within the chunk grid.
+    - For each cell, evaluate the 8 corner lattice points, then interpolate the inner 64 voxel densities using fast trilinear interpolation (`lerp` across X, Y, Z).
+    - Leverage SIMD / vectorized math for the interpolation pass.
+  - **Engine Benefits**:
+    - Reduces expensive 3D noise evaluations from **4,096 down to 125 samples per chunk** (a **97% reduction** in mathematical noise evaluations!).
+    - Drastically accelerates async chunk generation speed, eliminating chunk streaming pop-in during flight.
+  - **Complexity / Risk**: Moderate complexity. May slightly smooth sharp micro-crevices in caves, but in practice yields more organic and aesthetically pleasing cave tunnels with virtually zero visual degradation.
+
+- [ ] **Stage 8.3: RLE Runtime Voxel Data & Paletted Chunk Storage**:
+  - **The Problem**: Every loaded chunk currently stores a flat `[Voxel; 4096]` array (4,096 bytes). At render distance 10–12, several thousand chunks are held in memory simultaneously, consuming tens of megabytes of uncompressed RAM and causing cache pressure during iteration.
+  - **Architecture**:
+    - Implement a two-tiered or paletted chunk representation:
+      - `ChunkStorage::Uniform(Voxel)`: 1 byte of data for 100% Air or 100% Stone chunks.
+      - `ChunkStorage::Paletted`: Chunks with <= 16 distinct block types use 4-bit indices pointing into a local 16-element palette (shrinking 4,096 bytes down to ~2,048 bytes).
+      - `ChunkStorage::Rle(Vec<(Voxel, u16)>)`: Run-Length Encoded runs for layered horizontal strata and cave air pockets.
+      - `ChunkStorage::Dense(Box<[Voxel; 4096]>)`: Flat uncompressed buffer used only during active multi-voxel player editing or when complexity warrants.
+  - **Engine Benefits**:
+    - Cuts overall world memory footprint by **70% to 85%**.
+    - Prepares the data structures directly for fast binary disk serialization (world saving and loading).
+  - **Complexity / Risk**: Moderate. Needs careful abstraction so `get(x, y, z)` and `set(x, y, z)` remain fast and inline-friendly without branch mispredictions.
+
+- [ ] **Stage 8.4: LOD Render Distance (Downsampled Greedy Meshes for Distant Chunks)**:
+  - **The Problem**: Distant chunks beyond standard render distance (e.g. 10–16 chunks away) still generate full 0.5m sub-voxel meshes, increasing triangle count and GPU draw call overhead.
+  - **Architecture**:
+    - For chunks at distance $D > R_{\text{mid}}$, generate a Level of Detail (LOD 1) mesh where 2×2×2 sub-voxels (1m³ block) or 4×4×4 sub-voxels are merged into a single macro-voxel before running the greedy mesher.
+    - Textures use averaged or dominant block materials.
+  - **Analysis & Trade-Offs (Why it can be deferred/skipped)**:
+    - Because our greedy mesher already merges co-planar voxel faces into single rectangular quads, large flat areas (grass plains, oceans, stone cliffs) are already drawn as minimal 1–2 quad meshes!
+    - Introducing geometric LOD creates **T-junction seams and visible cracks** at the boundary where high-detail chunks meet low-detail chunks, requiring complex stitching skirts or transition meshes.
+    - Since modern GPUs easily handle hundreds of thousands of quads, and our bottlenecks have historically been CPU-bound rather than GPU vertex bound, LOD offers lower ROI relative to its implementation complexity.
+  - **Recommendation**: Keep as lowest priority or defer until render distance targets 24–32+ chunks.

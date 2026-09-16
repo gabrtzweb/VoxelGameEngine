@@ -8,11 +8,7 @@ use bevy::{
     window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
 
-use crate::{
-    gameplay::BlockIcons,
-    player::InspectorInteraction,
-    world::Voxel,
-};
+use crate::{gameplay::BlockIcons, player::InspectorInteraction, world::Voxel};
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum MenuState {

@@ -17,8 +17,9 @@ pub use pipeline::{
     setup_chunk_material, sync_chunk_render,
 };
 pub use shapes::{
-    get_chunk_local_centered_material, is_chunk_local_centered_layer, is_chunk_local_isolated_voxel,
-    mesh_centered_voxels, push_centered_quad, push_water_quad_both_sides, push_water_side_quad,
+    get_chunk_local_centered_material, is_chunk_local_centered_layer,
+    is_chunk_local_isolated_voxel, mesh_centered_voxels, push_centered_quad,
+    push_water_quad_both_sides, push_water_side_quad,
 };
 pub use textures::{
     LoadedTexture, MAX_VOXEL_VARIANTS, TEXTURE_RESOLUTION, VoxelTextureMapping,

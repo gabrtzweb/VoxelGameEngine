@@ -358,11 +358,10 @@ impl ChunkMesher {
                                     let v_offset =
                                         (water_surface_height_offset(world, world_voxel) * 100.0)
                                             .round() as u8;
-                                    let n_offset = (water_surface_height_offset(
-                                        world,
-                                        neighbor_coordinate,
-                                    ) * 100.0)
-                                        .round() as u8;
+                                    let n_offset =
+                                        (water_surface_height_offset(world, neighbor_coordinate)
+                                            * 100.0)
+                                            .round() as u8;
                                     if v_offset < n_offset {
                                         step_bottom_offset_cm = n_offset;
                                     } else {
@@ -1099,7 +1098,11 @@ mod tests {
         if let VertexAttributeValues::Float32x3(norm_data) = normals {
             assert!(!norm_data.is_empty());
             for norm in norm_data {
-                assert_eq!(*norm, [0.0, 1.0, 0.0], "Only Positive Y faces should be rendered");
+                assert_eq!(
+                    *norm,
+                    [0.0, 1.0, 0.0],
+                    "Only Positive Y faces should be rendered"
+                );
             }
         } else {
             panic!("Expected Float32x3 normals");

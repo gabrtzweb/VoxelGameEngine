@@ -73,11 +73,7 @@ pub fn setup_starfield(
     }
 
     commands
-        .spawn((
-            StarfieldRoot,
-            Transform::default(),
-            Visibility::Visible,
-        ))
+        .spawn((StarfieldRoot, Transform::default(), Visibility::Visible))
         .add_children(&star_entities);
 }
 
@@ -102,12 +98,11 @@ pub fn sync_starfield(
     let intensity = fade * 1.6;
     let target_color = Color::LinearRgba(LinearRgba::new(intensity, intensity, intensity, 1.0));
 
-    if let Some(mat) = materials.get(&material_handle.0) {
-        if mat.base_color != target_color {
-            if let Some(mut mat_mut) = materials.get_mut(&material_handle.0) {
-                mat_mut.base_color = target_color;
-            }
-        }
+    if let Some(mat) = materials.get(&material_handle.0)
+        && mat.base_color != target_color
+        && let Some(mut mat_mut) = materials.get_mut(&material_handle.0)
+    {
+        mat_mut.base_color = target_color;
     }
 }
 

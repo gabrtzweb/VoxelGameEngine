@@ -12,10 +12,7 @@ use super::{
         setup_chunk_material,
     },
 };
-use crate::world::{
-    ChunkNeighborhood, VoxelWorld,
-    streaming::queues::ChunkStreamingQueues,
-};
+use crate::world::{ChunkNeighborhood, VoxelWorld, streaming::queues::ChunkStreamingQueues};
 
 const MAX_MESHING_TASKS_IN_FLIGHT: usize = 32;
 const MAX_MESHING_TASKS_STARTED_PER_FRAME: usize = 8;

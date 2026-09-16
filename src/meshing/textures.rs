@@ -10,7 +10,7 @@ use bevy::{
 use crate::world::Voxel;
 
 pub const TEXTURE_RESOLUTION: u32 = 16;
-pub const MAX_VOXEL_VARIANTS: usize = 34;
+pub const MAX_VOXEL_VARIANTS: usize = 64;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct VoxelTextureMapping {

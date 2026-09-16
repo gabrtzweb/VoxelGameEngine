@@ -62,101 +62,111 @@ Player Model & Procedural Animations:
 
 Game Modes Currently Implemented:
 - Creative (currently the main gameplay and development mode)
-- Spectator
+- Spectator (noclip flight mode)
 
 The player uses a custom AABB collision system that directly queries voxel data. Individual physics colliders are not created for terrain voxels.
 
-Player Features:
-- Gravity & terminal velocity
-- Ground detection & ledge clamping (crouching)
-- Voxel collisions & wall sliding
-- Headroom detection for stance transitions
-- Jumping
-- Automatic terrain stepping (0.5 meters)
-- Creative flight (double-space toggle, fly up/down, fast sprint flight)
-- Realistic swimming & wading with buoyancy, drag, and submersion detection
-- First-person & third-person cameras with raycast occlusion prevention
-
 ---
 
-## Implemented Features / Currently Working
+## Implemented Architecture & Features by Domain
 
-The project already has:
-- Procedural terrain generation
-- Chunks and streaming
-- Terrain with vertical variation
-- Lakes and water bodies
-- Traversable water and basic physics
-- Destructible and placeable blocks
-- Dynamic lighting
-- Light-emitting blocks (with true textures, shader emissive radiance, and consolidated 3D point lights)
-- Directional shadows
-- Distance fog
-- Creative and Spectator modes
-- Basic movement and physics
-- HUD and debug overlay
-- 2D Texture-Array voxel rendering with multi-variant randomization (e.g., multiple grass variants)
-- Sub-voxel UV blending & seamless 1m² face texture unifications (continuous 16×16 texture across 2×2 sub-voxels)
-- Full 4-phase day and night cycle (Morning, Noon, Evening, Night) with smooth continuous atmospheric transitions
-- Interactive time control (F6: click to advance between phases, hold to scrub time smoothly)
-- Stylized billboard celestial bodies (sun with radiant coronal ring and 8-phase lunar cycle with additive blending)
-- Dynamic moving cloud layer with wind drift and atmospheric color tinting
-- Sparkling nighttime starfield dome with celestial rotation and smooth twilight fade-in
-- 8-slot hotbar GUI with 2D pixel-art item icons, active selection indicator, direct keybinds (1–8), mouse wheel scrolling, and slot clearing (Q)
-- Sub-voxel block shaping tool with 10 configurations: Full, Stair, Upside-Down Stair, Corner Stair, Inverted Corner Stair, Bottom Slab, Top Slab, Vertical Slab, Column, and Centered Column
-- Circular radial shape selection menu (<kbd>Hold R</kbd> >0.2s) with directional slice selection and center preview card
-- Sub-voxel block rotation tool (T key) rotating shapes 90° clockwise around the Y-axis
-- Connected block placement against non-full sub-voxels (slabs, stairs) without floating gaps, and bi-directional centered column stacking
-- Dynamic cellular automaton fluid simulation with 0.25s wave-by-wave propagation pacing
-- Differential fluid spread: 4 voxels (2 blocks) for single-voxel sources, 8 voxels (4 blocks) for full-block sources
-- Stepped water surface height gradient (10cm steps down to 10cm) with vertical step walls sealing all level transitions
-- Straight-down waterfall physics (ground-support verification) preventing mid-air spreading on pillars and cliff drops
-- Automatic sub-voxel waterlogging during underwater shaping and rotation
-- Full underwater visibility from below with counter-clockwise winding ceiling geometry and submerged fog immersion
-- In-game calendar and seasonal progression: 24-minute real-time day cycle, 28-day months, 4 seasons (Spring, Summer, Autumn, Winter) lasting 84 days each, starting on Day 1 Month 1 Spring
-- 8-phase lunar cycle strictly synchronized with the 28-day calendar, alternating between 3-day and 4-day phase durations
-- Dual-state debug HUD: Minimal non-intrusive HUD by default, Extended technical debug screen on F3, HUD visibility toggle on Shift+F3, and chunk boundary debug remapped to F2
-- Pause menu (ESC key) pausing in-game clock and player actions, with Resume, in-game Settings, Restart Game (resets day, teleports to spawn, rolls back placed/destroyed blocks), Quit to desktop, and camera Depth of Field blur
-- In-game settings menu with live render distance stepper (2..=16 chunks), FOV stepper (60°..=110°), distance fog toggle, camera bobbing toggle, and time flow toggle
-- In-game inventory menu (E key) with clean 8×4 (32-slot) item grid, non-pausing live world interaction, hotbar mirror row, Mouse Tweaks controls (Shift-click quick transfer/clear, Shift+LMB drag, LMB drag painting across slots, RMB stamp/deselect), backdrop click deselect, Q/middle-click clear, and digit hotkeys (1–8)
-- Procedural Minecraft-style 3D isometric pixel-art block icon renderer on-the-fly with 1.0/0.8/0.6 directional face shading and tints
-- Dedicated blocks architecture (`src/voxel/blocks.rs`) supporting 28+ block types, texture IDs, and future survival properties (durability, tools)
-- Custom stylized pixel-art mouse cursor states (default, pointing_hand, grabbing, shift, busy with 13-frame animation, resize, ibeam, crosshair, not_allowed) with floating block preview when holding items
-- Minecraft 64×64 skin body model with true first-person visibility, third-person mode, and procedural animations for walk, sprint, idle breathing, crouch, crawl, swim, and flight
-- Continuous macro-climate noise generator (Continentalness, Temperature, Humidity) driving 6 distinct biomes (Plains, Desert, Snowy Tundra, Wetlands, Highlands, Woodland) with unique surface materials and elevation profiles
-- 3D cave system featuring dual-noise spaghetti worm tunnels, expansive subterranean cheese caverns, surface attenuation buffering, underground water aquifers, and deep magma/lava basins
-- Realistic geological strata layers (Topsoil, Subsoil, Upper Stone, Mid Slate/Cobbleslate, Deep Blackstone/Magma) with 3D mineral deposits (Gravel, Flint, Cobblestone, Clay, Magma) quantized to 1m³ logical blocks for sub-voxel material consistency
-- Live world generation controls registered in `bevy_inspector_egui` (F1) with real-time chunk reloading and remeshing while preserving player edits
-- Extended Debug HUD (F3) displaying live Biome identification and climate parameters
+### 1. Core Voxel Architecture & World Representation
+- **Hybrid Voxel-Block Model**: The world is stored using 0.5 m physical voxels. A traditional 1 m³ logical block is composed of 2 × 2 × 2 (8) individually editable voxels. Supports both 1 m³ block manipulation (default) and 0.5 m sub-voxel editing (<kbd>B</kbd> key).
+- **Chunk Geometry**: 16 × 16 × 16 voxels (4,096 voxels per chunk) spanning 8 m × 8 m × 8 m physical space.
+- **Procedural 3D Streaming**: Dynamic spherical chunk streaming in X, Y, and Z around the player. Default render distance of 8 chunks (configurable 2..=16 chunks in settings). Configurable vertical limits (currently chunks Y = -8 to +7).
+- **Block Registry & Properties**: Dedicated blocks architecture in `src/world/block.rs` supporting 38+ block types, texture IDs, tool tiers (Pickaxe, Shovel, Axe), and material durability values.
 
----
+### 2. Meshing & GPU Rendering Pipeline
+- **Asynchronous Greedy Meshing**: Chunk meshing offloaded to Bevy's `AsyncComputeTaskPool` with background worker tasks and throttled main-thread mesh uploading (`src/meshing/async_mesher.rs`), eliminating frame-rate drops.
+- **Custom WGSL Voxel Shader**: Extended PBR material (`ExtendedMaterial<StandardMaterial, VoxelMaterialExtension>`) preserving PBR lighting, directional shadows, distance fog, and emissive block radiance.
+- **Hardware 2D Texture Array with Variant Auto-Discovery**: 16×16 texture array with automated discovery of multi-variant textures (e.g., 8 grass variants, 4 stone variants, 4 dirt variants).
+- **Deterministic Spatial Randomization & Vertex Tinting**: Integer spatial hashing of 3D world coordinates for consistent variant selection across remeshes, and vertex color tinting (`ATTRIBUTE_COLOR`) for biome grass and water.
+- **Sub-Voxel UV Blending & Face Unification**: Contiguous 2×2 sub-voxels merge into a single seamless 16×16 texture across 1m² block faces. Isolated sub-voxels retain complete [0, 1] texture mapping to avoid awkward corner cropping.
+- **Animated Liquid Shaders**: GPU-driven vertical strip animation (36 frames for still water, 8 frames for flowing water) driven by `globals.time` in WGSL at 6 FPS.
 
-## Desired Visual Identity
+### 3. Procedural World Generation, Biomes & Caves
+- **Continuous Macro-Climate Noise**: Deterministic 2D gradient noise driving Continentalness, Temperature, and Humidity.
+- **6 Distinct Biomes**: Plains (rolling hills, grass), Desert (sand dunes, sandstone), Snowy Tundra & Frost Peaks (snow, packed ice, frost stone), Wetlands / Swamps (shallow water, mud, packed mud, clay), Rocky Highlands (mountain ridges, slate, cobbleslate, scree), and Woodland (mulch, packed dirt, mossy stone).
+- **3D Cave Systems**: High-performance 3D gradient noise generating dual-noise spaghetti worm tunnels, subterranean cheese caverns, surface attenuation buffering, underground aquifers, and deep magma/lava basins.
+- **Geological Strata & Mineral Veins**: Depth-based geological layering (Topsoil & Subsoil, Upper Stone, Mid Slate/Cobbleslate, Deep Blackstone/Magma) with 3D mineral deposits (Gravel, Flint, Cobblestone, Clay, Magma) quantized to 1m³ logical blocks for sub-voxel consistency.
+- **Live World Generation Tuning**: Generator structs registered with Bevy's `AppTypeRegistry`, allowing live parameter inspection via `bevy_inspector_egui` (<kbd>F1</kbd>).
 
-I do not want a photorealistic look, but rather an aesthetic that is:
-- Voxel-based
-- Pixel art
-- Stylized
-- Inspired by voxel games
+### 4. Player Physics, Collision & Locomotion
+- **Custom Voxel AABB Collision**: Zero-allocation AABB collision system querying chunk voxel data directly without rigid bodies or external physics engine overhead.
+- **0.5m Terrain Auto-Stepping**: Automatically steps up 0.5m voxel elevation changes smoothly during grounded traversal.
+- **Stance Hierarchy & Dimensions**:
+  - Standing: height 1.80 m, eye height 1.62 m.
+  - Crouching (<kbd>Ctrl</kbd>): height 1.30 m, eye height 1.20 m, speed reduced to 55%, with ledge-fall clamping preventing drops off steep edges.
+  - Crawling (<kbd>C</kbd>): prone height 0.45 m, eye height 0.40 m, speed reduced to 35%, enables moving through 1-voxel high openings (0.5m) with headroom safety checks.
+- **Creative Flight**: Double-tap Space toggle, fast sprint flight, vertical ascent/descent, and drag damping.
+- **Fluid Locomotion**: Realistic water wading, swimming buoyancy, drag forces, and submersion detection.
+- **Game Modes**: Creative mode (unrestricted flight, instant block edits) and Spectator mode (noclip through voxels).
 
-I want to avoid:
-- Perfect circles
-- Non-cuboid models
-- Photorealism
+### 5. Camera System & Procedural Humanoid Model
+- **Minecraft 64×64 Skin Pipeline**: Humanoid mesh hierarchy (Head, Torso, Left/Right Arm, Left/Right Leg) mapped to `assets/textures/mobs/player_skin.png` with full support for base skins and 3D outer layers (hat, jacket, sleeves, pants) with alpha masking.
+- **Procedural Locomotion Animations**: Walk/sprint limb swings, idle breathing sway, crouch torso tilt, crawling prone strokes, streamlined flutter-kick swimming, jump poses, and 4-state flight animations.
+- **First-Person Body View**: True first-person visibility where the player's head is culled to avoid interior clipping, while looking down naturally reveals animated chest, arms, and legs.
+- **Third-Person Orbit Camera (<kbd>F5</kbd>)**: Raycast occlusion prevention preventing camera from clipping underground or through walls, with independent head pitch/yaw tracking.
+- **Camera Juice & Ergonomics**: Default 90° FOV (slider 60°..=110°), dynamic FOV kick (+8°) on sprint/fast flight, view bobbing during grounded walking, and continuous zoom (<kbd>Z</kbd> + wheel up to 20x).
 
-I want lighting and atmosphere inspired by shaders or Vibrant Visuals, while maintaining a voxel and pixel art aesthetic.
+### 6. Cellular Automata & Fluid Simulation
+- **Wave-Paced Water Propagation**: Cellular automaton simulation running at a calibrated 0.25s tick rate with queued updates.
+- **Differential Spread Limits**: 4 voxels (2 blocks) spread for single-voxel sources; 8 voxels (4 blocks) spread for full 1m³ block sources.
+- **Downward Waterfall Priority**: Water falls strictly downwards when unsupported by solid ground, preventing mid-air spread on pillars or cliffs.
+- **Stepped Water Height & Vertical Step Walls**: Gradient decreasing by 10cm per step down to 10cm, with vertical step quads sealing level transitions without air gaps.
+- **Cross-Chunk Waterlogging**: Dynamic waterlogging during underwater sub-voxel shaping (<kbd>R</kbd>) and rotation (<kbd>T</kbd>).
+- **Submerged Visibility**: Counter-clockwise ceiling geometry allowing clear upward visibility from below water surfaces, paired with submerged blue fog immersion.
+
+### 7. Atmosphere, Celestial Systems & Calendar
+- **Astronomical Clock & Calendar**: 24-minute real-time day cycle, 28-day months, 4 seasons (Spring, Summer, Autumn, Winter) lasting 84 days each, starting on Day 1 Month 1 Spring.
+- **8-Phase Synchronized Lunar Cycle**: Spritesheet-sliced 32×32 moon phases with additive blending, synchronized with the 28-day calendar and alternating 3-day and 4-day phase durations.
+- **Stylized Billboard Sun**: Flat billboard quad with additive blending and HDR coronal ring, casting 4-cascade directional shadows.
+- **Dynamic Clouds & Starfield**: 1600m horizontal cloud plane with wind drift and atmospheric tinting; single-root hierarchical starfield dome with celestial rotation and smooth twilight fade.
+- **Atmospheric Transitions & Time Control**: Continuous 4-stop piecewise-linear palette interpolation across Morning, Noon, Evening, and Night. Interactive time control (<kbd>F6</kbd>: tap to advance phase, hold to scrub time).
+
+### 8. Gameplay Tools & Sub-Voxel Shaping
+- **Interaction Modes (<kbd>B</kbd> Key)**: Toggle between 1m³ Logical Block mode (default) and 0.5m Sub-voxel mode.
+- **Sub-Voxel Block Shaping Tool (<kbd>R</kbd> Key)**: Tap <kbd>R</kbd> to sequentially cycle 10 configurations (Full, Stair, Upside-Down Stair, Corner Stair, Inverted Corner Stair, Bottom Slab, Top Slab, Vertical Slab, Column, Centered Column).
+- **Circular Radial Menu (<kbd>Hold R</kbd> >0.2s)**: 10-slice circular wheel with directional mouse selection and center preview card.
+- **Block Rotation Tool (<kbd>T</kbd> Key)**: Rotates targeted block sub-voxels 90° clockwise around the vertical Y-axis.
+- **Connected Placement**: Placing against non-full shapes (slabs, stairs) aligns to the hit surface without floating air gaps, with bi-directional centered column stacking.
+- **Block Interactions**: Left-click break, right-click place, middle-click block pick.
+
+### 9. User Interface, Menus & Developer Tooling
+- **8-Slot Hotbar GUI**: Dark translucent backing, active gold selection border, slot numbers (1..8), mouse wheel scrolling, and <kbd>Q</kbd> slot clearing.
+- **In-Game Creative Inventory (<kbd>E</kbd> Key)**: 40-slot item grid (8×5), non-pausing live world interaction, hotbar mirror row, and Mouse Tweaks controls (Shift-click transfer/clear, Shift+LMB drag, LMB drag painting, RMB stamp, digit key quick-assign).
+- **3D Isometric Pixel-Art Block Icons**: Generated on-the-fly with 1.0 / 0.80 / 0.60 directional face shading, vertex tinting, and silhouette outlines.
+- **Pause Menu (<kbd>ESC</kbd> Key)**: Game pause with Resume, Settings, Restart Game, Quit to Desktop, and camera Depth-of-Field blur.
+- **In-Game Settings**: Live steppers for Render Distance (2..=16 chunks), FOV (60°..=110°), Distance Fog toggle, Camera Bobbing toggle, and Time Flow toggle.
+- **Custom Mouse Cursors**: 9 cursor states including 13-frame animated busy spinner and floating held-block preview.
+- **Debug Overlays**: Minimal HUD by default, Extended Technical Debug HUD on <kbd>F3</kbd> (FPS, frame time, player XYZ/chunk, biome climate, chunk stats), HUD toggle on <kbd>Shift+F3</kbd>, and chunk debug borders on <kbd>F2</kbd>.
+
+### 10. Engine Optimizations & Scalability (Phase 7 Milestones)
+- **Async Compute Greedy Meshing**: Decoupled from main thread `Update` loop to `AsyncComputeTaskPool`.
+- **Decoupled Remesh Queues**: Routed fluid simulation, player edits, shaping, and pause reload through chunk streaming queues instead of unbuffered synchronous remeshing.
+- **Single-Root Starfield Hierarchy**: Single rotating `StarfieldRoot` entity replacing 250 individual entity transform mutations per frame.
+- **Direct-Indexed Texture Registry**: `[Option<VoxelTextureMapping>; 64]` array eliminating SipHash in greedy mesher loops.
+- **Fast Chunk Hashing**: High-performance fast hasher (`FxHashMap`) for 3x–5x faster chunk lookups in `VoxelWorld`.
+- **Optimized Terrain Exposure Sampling**: Eliminated 8×5 nested loops in dirt exposure checks, preventing thread pool starvation.
+- **Zero Asset Dirtying in Environment**: Checking property changes before `materials.get_mut()` prevents constant GPU bind group invalidations.
+- **Zero-Alloc Collision Checks**: Stack-allocated buffer for `overlapping_solid_voxels`.
 
 ---
 
 ## Next Steps / Upcoming Phases
 
+- [x] Phase 1: Core Rendering & Texture-Array Architecture (Completed)
+- [x] Phase 2: Atmosphere, Celestial Bodies & Dynamic Sky (Completed)
+- [x] Phase 3: Player Tools & Block Shapes (Completed)
+- [x] Phase 4: Fluid Dynamics, Underwater Visibility & World Persistence (Completed)
+- [x] Phase 5: Procedural Voxel Meshing & Texture-Array Optimization (Completed)
 - [x] Phase 6: Advanced World Generation, Biomes & Caves (Completed)
-- [ ] Phase 7: Engine Optimization & Scalability (Next Milestone)
-- [ ] Phase 8: To be decided
+- [x] Phase 7: Engine Optimization, Architecture Audit & Scalability (Completed)
+- [ ] Phase 8: Engine Optimization & Scalability (Next Milestone)
 
 ---
 
-## Important Rules for Assistance
+## Important Rules for Assistance and Collaboration
 
 - Inspect current files first before replacing systems.
 - Current controls and project Structure can be found inside the "README.md" file.

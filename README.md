@@ -61,55 +61,83 @@ The long-term goal is to build a performant procedural voxel game with large-wor
 
 ## Current Project Structure
 
-    src/
-    ├── environment/
-    │   ├── celestial.rs
-    │   ├── clouds.rs
-    │   └── stars.rs
-    │
-    ├── menu/
-    │   ├── inventory.rs
-    │   ├── mod.rs
-    │   ├── pause.rs
-    │   └── settings.rs
-    │
-    ├── player/
-    │   ├── collision.rs
-    │   ├── controller.rs
-    │   ├── game_mode.rs
-    │   ├── hotbar.rs
-    │   ├── mod.rs
-    │   ├── model.rs
-    │   ├── spectator.rs
-    │   └── water.rs
-    │
-    ├── voxel/
-    │   ├── biome.rs
-    │   ├── blocks.rs
-    │   ├── caves.rs
-    │   ├── chunk_manager.rs
-    │   ├── chunk.rs
-    │   ├── debug.rs
-    │   ├── fluid.rs
-    │   ├── icon.rs
-    │   ├── interaction_mode.rs
-    │   ├── interaction.rs
-    │   ├── light.rs
-    │   ├── mesher.rs
-    │   ├── mod.rs
-    │   ├── modifications.rs
-    │   ├── noise.rs
-    │   ├── render.rs
-    │   ├── shaping.rs
-    │   ├── strata.rs
-    │   ├── targeting.rs
-    │   ├── terrain.rs
-    │   ├── texture.rs
-    │   └── world.rs
-    │
-    ├── dev_stats.rs
-    ├── environment.rs
-    └── main.rs
+```text
+src/
+├── core/
+│   ├── dev_stats.rs
+│   ├── mod.rs
+│   └── noise.rs
+├── environment/
+│   ├── atmosphere.rs
+│   ├── celestial.rs
+│   ├── clouds.rs
+│   ├── mod.rs
+│   ├── stars.rs
+│   └── time.rs
+├── gameplay/
+│   ├── debug.rs
+│   ├── icon.rs
+│   ├── interaction.rs
+│   ├── interaction_mode.rs
+│   ├── mod.rs
+│   ├── radial_menu.rs
+│   ├── shaping.rs
+│   └── targeting.rs
+├── generation/
+│   ├── biome.rs
+│   ├── caves.rs
+│   ├── generator.rs
+│   ├── mod.rs
+│   └── strata.rs
+├── menu/
+│   ├── inventory.rs
+│   ├── mod.rs
+│   ├── pause.rs
+│   └── settings.rs
+├── meshing/
+│   ├── async_mesher.rs
+│   ├── greedy.rs
+│   ├── mod.rs
+│   ├── pipeline.rs
+│   ├── shapes.rs
+│   └── textures.rs
+├── player/
+│   ├── collision.rs
+│   ├── controller.rs
+│   ├── game_mode.rs
+│   ├── hotbar.rs
+│   ├── mod.rs
+│   ├── model.rs
+│   ├── spectator.rs
+│   ├── state.rs
+│   └── water.rs
+├── simulation/
+│   ├── fluid.rs
+│   ├── lighting.rs
+│   └── mod.rs
+├── world/
+│   ├── streaming/
+│   │   ├── manager.rs
+│   │   ├── mod.rs
+│   │   └── queues.rs
+│   ├── block.rs
+│   ├── chunk.rs
+│   ├── mod.rs
+│   ├── modifications.rs
+│   └── storage.rs
+└── main.rs
+
+assets/textures/
+├── blocks/
+├── environments/
+├── gui/
+│   └── cursors/
+└── mobs/
+
+docs/
+├── context.md
+└── roadmap.md
+```
 
 ## Development Commands
 

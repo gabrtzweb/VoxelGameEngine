@@ -8,11 +8,11 @@ use crate::{
 
 use super::{HeldInventoryItem, MenuState};
 
-pub const INVENTORY_TOTAL_SLOTS: usize = 32; // 8 wide x 4 high
+pub const INVENTORY_TOTAL_SLOTS: usize = 40; // 8 wide x 5 high
 pub const INVENTORY_COLS: usize = 8;
-pub const INVENTORY_ROWS: usize = 4;
+pub const INVENTORY_ROWS: usize = 5;
 
-pub const AVAILABLE_BLOCKS: [Voxel; 28] = [
+pub const AVAILABLE_BLOCKS: [Voxel; 38] = [
     Voxel::Grass,
     Voxel::Dirt,
     Voxel::PackedDirt,
@@ -26,6 +26,7 @@ pub const AVAILABLE_BLOCKS: [Voxel; 28] = [
     Voxel::Cobbleblackstone,
     Voxel::Flint,
     Voxel::Sand,
+    Voxel::RedSand,
     Voxel::Gravel,
     Voxel::Clay,
     Voxel::Mud,
@@ -33,6 +34,15 @@ pub const AVAILABLE_BLOCKS: [Voxel; 28] = [
     Voxel::Mulch,
     Voxel::Moss,
     Voxel::Snow,
+    Voxel::Ice,
+    Voxel::PackedIce,
+    Voxel::Andesite,
+    Voxel::Diorite,
+    Voxel::Granite,
+    Voxel::Dreadstone,
+    Voxel::Tuff,
+    Voxel::Sandstone,
+    Voxel::RedSandstone,
     Voxel::Magma,
     Voxel::Water,
     Voxel::Lava,
@@ -557,7 +567,7 @@ mod tests {
     #[test]
     fn test_inventory_dimensions_and_blocks() {
         assert_eq!(INVENTORY_COLS * INVENTORY_ROWS, INVENTORY_TOTAL_SLOTS);
-        assert_eq!(AVAILABLE_BLOCKS.len(), 28);
+        assert_eq!(AVAILABLE_BLOCKS.len(), 38);
         assert!(AVAILABLE_BLOCKS.len() <= INVENTORY_TOTAL_SLOTS);
     }
 

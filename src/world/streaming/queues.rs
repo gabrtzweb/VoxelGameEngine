@@ -1,5 +1,5 @@
-use std::collections::{HashSet, VecDeque};
 use bevy::prelude::*;
+use std::collections::{HashSet, VecDeque};
 
 #[derive(Resource, Default)]
 pub struct ChunkStreamingQueues {

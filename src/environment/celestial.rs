@@ -250,12 +250,11 @@ pub fn sync_celestial_transforms(
 
     // Update active moon phase texture if needed.
     let target_handle = &moon_textures.0[moon_texture_index % 8];
-    if let Some(mat) = materials.get(&celestial_materials.moon) {
-        if mat.base_color_texture.as_ref() != Some(target_handle) {
-            if let Some(mut mat_mut) = materials.get_mut(&celestial_materials.moon) {
-                mat_mut.base_color_texture = Some(target_handle.clone());
-            }
-        }
+    if let Some(mat) = materials.get(&celestial_materials.moon)
+        && mat.base_color_texture.as_ref() != Some(target_handle)
+        && let Some(mut mat_mut) = materials.get_mut(&celestial_materials.moon)
+    {
+        mat_mut.base_color_texture = Some(target_handle.clone());
     }
 
     // Directional sunlight shining from sun towards the world (-sun_dir).

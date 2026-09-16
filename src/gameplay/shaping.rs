@@ -147,7 +147,10 @@ fn handle_block_shaping(
     menu_state: Option<Res<State<MenuState>>>,
     radial_root_query: Query<Entity, With<RadialMenuRoot>>,
 ) {
-    if menu_state.as_ref().is_some_and(|s| *s.get() != MenuState::None) {
+    if menu_state
+        .as_ref()
+        .is_some_and(|s| *s.get() != MenuState::None)
+    {
         if radial_state.is_open {
             for entity in &radial_root_query {
                 commands.entity(entity).despawn();
@@ -247,23 +250,22 @@ fn handle_block_shaping(
                     new_voxels,
                 );
             }
-        } else if radial_state.hold_timer < 0.20 {
-            if let (Some(origin), Some(mat)) =
+        } else if radial_state.hold_timer < 0.20
+            && let (Some(origin), Some(mat)) =
                 (radial_state.target_origin, radial_state.target_material)
-            {
-                let next_shape = radial_state.initial_shape.next();
-                let new_voxels = generate_shape_voxels(next_shape, mat);
-                apply_block_subvoxels(
-                    &mut commands,
-                    &mut world,
-                    &mut modifications,
-                    &mut light_registry,
-                    &mut queues,
-                    &mut fluid_queue,
-                    origin,
-                    new_voxels,
-                );
-            }
+        {
+            let next_shape = radial_state.initial_shape.next();
+            let new_voxels = generate_shape_voxels(next_shape, mat);
+            apply_block_subvoxels(
+                &mut commands,
+                &mut world,
+                &mut modifications,
+                &mut light_registry,
+                &mut queues,
+                &mut fluid_queue,
+                origin,
+                new_voxels,
+            );
         }
 
         *radial_state = RadialMenuState::default();

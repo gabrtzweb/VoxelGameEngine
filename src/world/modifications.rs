@@ -2,11 +2,7 @@ use std::collections::HashMap;
 
 use bevy::prelude::*;
 
-use super::{
-    block::Voxel,
-    chunk::Chunk,
-    storage::VoxelWorld,
-};
+use super::{block::Voxel, chunk::Chunk, storage::VoxelWorld};
 
 #[derive(Resource, Default)]
 pub struct WorldModificationStore {

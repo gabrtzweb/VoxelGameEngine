@@ -12,9 +12,7 @@ use crate::{
         fluid::FluidUpdateQueue,
         lighting::{VoxelLightRegistry, sync_voxel_light},
     },
-    world::{
-        ChunkStreamingQueues, Voxel, VoxelWorld, WorldModificationStore, affected_chunks,
-    },
+    world::{ChunkStreamingQueues, Voxel, VoxelWorld, WorldModificationStore, affected_chunks},
 };
 
 const HOLD_DELAY: f32 = 0.25;

@@ -154,7 +154,8 @@ impl ChunkNeighborhood {
 impl VoxelAccess for ChunkNeighborhood {
     fn get_chunk(&self, coordinate: IVec3) -> Option<&Chunk> {
         let diff = coordinate - self.center;
-        if diff.x >= -1 && diff.x <= 1 && diff.y >= -1 && diff.y <= 1 && diff.z >= -1 && diff.z <= 1 {
+        if diff.x >= -1 && diff.x <= 1 && diff.y >= -1 && diff.y <= 1 && diff.z >= -1 && diff.z <= 1
+        {
             let idx = ((diff.x + 1) + (diff.y + 1) * 3 + (diff.z + 1) * 9) as usize;
             self.chunks[idx].as_ref()
         } else {
@@ -201,4 +202,3 @@ pub fn affected_chunks(world_voxel: IVec3) -> Vec<IVec3> {
 
     chunks
 }
-

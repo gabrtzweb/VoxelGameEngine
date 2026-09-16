@@ -11,10 +11,7 @@ use crate::{
     player::{Player, PlayerSet},
     simulation::lighting::{VoxelLightRegistry, remove_chunk_lights, sync_chunk_lights},
     world::{
-        VOXEL_SIZE,
-        chunk::Chunk,
-        modifications::WorldModificationStore,
-        storage::VoxelWorld,
+        VOXEL_SIZE, chunk::Chunk, modifications::WorldModificationStore, storage::VoxelWorld,
         streaming::queues::ChunkStreamingQueues,
     },
 };
