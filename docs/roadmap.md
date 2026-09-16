@@ -185,11 +185,30 @@ This document outlines the planned development phases for the voxel game engine,
 
 ---
 
-## Phase 7: Project Organization and Refactor (We are here, basically)
-- Better organized files and folder structure.
-- Code cleanup.
-- Search for bottlenecks, inconsistencies and problems.
-- Code fixes and improvements.
+## Phase 7: Project Organization and Refactor (Current Milestone)
+Detailed technical review and diagnostic report available in [docs/technical_review.md](technical_review.md).
+
+- [ ] **Stage 7.1: Immediate Bottleneck Elimination (High FPS Impact)**
+  - [ ] **Optimize `logical_block_has_exposed_dirt`**: Eliminate the 8×5 nested neighborhood loop in terrain generation. Cache column height samples or only sample the top surface of the logical block, eliminating up to 80,000+ redundant noise calls per chunk.
+  - [ ] **Turn Off Asset Dirtying in Environment Systems**: In `stars.rs`, `clouds.rs`, and `celestial.rs`, inspect if material properties actually changed before calling `materials.get_mut()` to avoid invalidating GPU bind groups and uniform buffers every frame.
+  - [ ] **Parent Starfield to Single Root Entity**: Eliminate the 250-entity loop in `sync_starfield` by parenting all star quads to a single rotating `StarfieldRoot` entity.
+  - [ ] **Direct Indexing for Texture Registry**: Replace `HashMap<Voxel, VoxelTextureMapping>` with a fixed array `[Option<VoxelTextureMapping>; 34]` for O(1) direct memory indexing without SipHash in the greedy mesher loop.
+  - [ ] **Cache Submersion and Water Checks**: Introduce a lightweight `PlayerEnvironmentStatus` resource updated once per frame, eliminating 4 duplicate `is_point_in_water` and `player_submersion` evaluations.
+
+- [ ] **Stage 7.2: Background Thread Meshing & Frame Throttling**
+  - [ ] **Move `ChunkMesher::build_meshes` to `AsyncComputeTaskPool`**: Run greedy meshing in worker threads using snapshot voxel data; main thread only receives finished `Mesh` buffers and binds them to Bevy entities.
+  - [ ] **Remove Direct Synchronous Meshing from Gameplay Systems**: Route fluid simulation, player edits, shaping tools, and pause restarts through the remesh queue rather than executing unbuffered synchronous remeshing on the main thread.
+  - [ ] **Switch to Fast Hasher for `VoxelWorld`**: Replace `std::collections::HashMap` with `bevy::platform_support::collections::HashMap` or `FxHashMap` for 3x–5x faster chunk lookups.
+
+- [ ] **Stage 7.3: Codebase Modularization & Directory Restructure**
+  - [ ] Reorganize codebase into domain subdirectories: `core/`, `environment/`, `menu/`, `player/`, `world/`, `generation/`, `meshing/`, `simulation/`, and `gameplay/`.
+  - [ ] Split monolithic `src/voxel/mesher.rs` (1,571 lines) into `greedy.rs`, `shapes.rs`, and `pipeline.rs`. Move tests to external module or dedicated test files.
+  - [ ] Split `src/voxel/shaping.rs` (1,038 lines) into `shaping.rs`, `radial_menu.rs`, and sub-voxel geometry helpers.
+  - [ ] Clean up `src/environment.rs` (798 lines) into modular domain files (`atmosphere.rs`, `celestial.rs`, `clouds.rs`, `stars.rs`, `time.rs`).
+
+- [ ] **Stage 7.4: Collision & Memory Micro-Optimizations**
+  - [ ] Replace `Vec<IVec3>` allocations in `overlapping_solid_voxels` with a stack-allocated small buffer or visitor closure.
+  - [ ] Add early-exit bounds check for fully empty or solid chunks during meshing.
 
 ## Phase 8: Engine Optimization & Scalability (Future Milestone)
 - **LOD Render Distance**: Downsampled greedy meshes for distant chunks (maybe not a priority = can be skipped).
