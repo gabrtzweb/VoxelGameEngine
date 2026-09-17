@@ -306,7 +306,22 @@ impl TerrainGenerator {
                     Voxel::Sand
                 }
             }
-            _ => column.biome.config().surface_material,
+            BiomeType::SnowyTundra => {
+                if surface_noise > 0.40 {
+                    Voxel::Stone
+                } else {
+                    Voxel::Snow
+                }
+            }
+            BiomeType::Highlands => {
+                if surface_noise > 0.35 {
+                    Voxel::Stone
+                } else if surface_noise < -0.35 {
+                    Voxel::Cobbleslate
+                } else {
+                    Voxel::Slate
+                }
+            }
         }
     }
 
@@ -466,22 +481,46 @@ impl TerrainGenerator {
         logical_block_top(self.terrain_height_at(sample_x, sample_z, climate))
     }
 
-    fn continental_elevation(continentalness: f32) -> f32 {
-        if continentalness < -0.45 {
-            // Deep Ocean: base -22.0 to -16.0
-            -22.0 + (continentalness + 0.45) * 15.0
-        } else if continentalness < -0.15 {
-            // Ocean: base -15.0 to -3.0
-            -15.0 + (continentalness + 0.15) * 40.0
-        } else if continentalness < -0.02 {
-            // Coastal shelf & Archipelago (islands emerge where noise peaks > 9)
-            -2.0 + (continentalness + 0.02) * 50.0
-        } else if continentalness < 0.40 {
-            // Inland continent: gentle rolling terrain (base 12.0 to 24.0)
-            12.0 + continentalness * 28.0
+    pub fn continental_elevation(continentalness: f32) -> f32 {
+        const SPLINE_NODES: [(f32, f32); 10] = [
+            (-1.00, -24.0), // Deep abyssal trench
+            (-0.55, -20.0), // Deep ocean basin
+            (-0.25, -12.0), // Open ocean floor
+            (-0.08, -2.5),  // Continental shelf / shallow coastal waters
+            (0.00, 1.5),    // Coastline / beach (right around sea level = 9.0)
+            (0.12, 6.0),    // Low coastal plains
+            (0.28, 14.0),   // Inland rolling plains
+            (0.48, 26.0),   // Foothills & plateau
+            (0.72, 48.0),   // Rugged mountain ranges
+            (1.00, 72.0),   // Extreme alpine peaks
+        ];
+
+        let c = continentalness.clamp(-1.0, 1.0);
+
+        for i in 0..(SPLINE_NODES.len() - 1) {
+            let (c0, y0) = SPLINE_NODES[i];
+            let (c1, y1) = SPLINE_NODES[i + 1];
+            if c <= c1 {
+                let t = (c - c0) / (c1 - c0);
+                let t_smooth = t * t * (3.0 - 2.0 * t);
+                return y0 + (y1 - y0) * t_smooth;
+            }
+        }
+
+        SPLINE_NODES[SPLINE_NODES.len() - 1].1
+    }
+
+    pub fn continental_roughness(continentalness: f32) -> f32 {
+        if continentalness < 0.0 {
+            0.55
+        } else if continentalness < 0.35 {
+            let t = continentalness / 0.35;
+            let t_smooth = t * t * (3.0 - 2.0 * t);
+            0.55 + 0.50 * t_smooth
         } else {
-            // Mountain Highlands: rises sharply (base 24.0 to 75.0+)
-            24.0 + (continentalness - 0.40).powf(1.2) * 68.0
+            let t = ((continentalness - 0.35) / 0.50).min(1.0);
+            let t_smooth = t * t * (3.0 - 2.0 * t);
+            1.05 + 1.75 * t_smooth
         }
     }
 
@@ -504,15 +543,26 @@ impl TerrainGenerator {
             self.seed.wrapping_add(81_731),
         );
 
-        let biome_cfg = climate.biome.config();
         let cont_base = Self::continental_elevation(climate.continentalness);
+        let roughness = Self::continental_roughness(climate.continentalness);
 
-        let mountain_factor = (climate.continentalness - 0.20).max(0.0) / 0.80;
-        let ridge = (1.0 - macro_noise.abs()).powi(2) * 20.0 * mountain_factor;
+        let mountain_factor = ((climate.continentalness - 0.28) / 0.45).clamp(0.0, 1.0);
+        let ridge = (1.0 - macro_noise.abs()).powi(2) * 22.0 * mountain_factor;
 
-        let base = self.base_height + cont_base + biome_cfg.base_height_offset * 0.4;
+        let swamp_depression = if climate.continentalness > 0.02
+            && climate.continentalness < 0.25
+            && climate.humidity > 0.15
+        {
+            let wetness = ((climate.humidity - 0.15) / 0.20).clamp(0.0, 1.0);
+            let inland_factor = (1.0 - ((climate.continentalness - 0.12).abs() / 0.12)).clamp(0.0, 1.0);
+            wetness * inland_factor * 3.5
+        } else {
+            0.0
+        };
+
+        let base = self.base_height + cont_base - swamp_depression;
         let amplitude = (self.macro_amplitude * macro_noise + self.detail_amplitude * detail_noise)
-            * biome_cfg.amplitude_multiplier
+            * roughness
             + ridge;
 
         base + amplitude

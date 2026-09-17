@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::bevy_egui::{EguiContexts, egui};
+use bevy_inspector_egui::bevy_egui::{EguiContexts, EguiPrimaryContextPass, egui};
 
 use super::generator::TerrainGenerator;
 use crate::player::InspectorInteraction;
@@ -9,7 +9,7 @@ pub struct TerrainInspectorPlugin;
 impl Plugin for TerrainInspectorPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            Update,
+            EguiPrimaryContextPass,
             terrain_inspector_ui.run_if(|inspector: Res<InspectorInteraction>| inspector.active),
         );
     }

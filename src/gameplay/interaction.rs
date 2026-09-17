@@ -7,7 +7,7 @@ use super::{
 };
 use crate::{
     menu::MenuState,
-    player::{GameMode, hotbar::Hotbar},
+    player::{GameMode, hotbar::Hotbar, InspectorInteraction},
     simulation::{
         fluid::FluidUpdateQueue,
         lighting::{VoxelLightRegistry, sync_voxel_light},
@@ -106,16 +106,20 @@ fn toggle_interaction_mode(
     info!("Interaction mode: {}", interaction_mode.label());
 }
 
+#[allow(clippy::too_many_arguments)]
 fn pick_targeted_voxel(
     game_mode: Res<GameMode>,
     mouse: Res<ButtonInput<MouseButton>>,
     menu_state: Option<Res<State<MenuState>>>,
+    inspector: Option<Res<InspectorInteraction>>,
     current_target: Res<CurrentTarget>,
     world: Res<VoxelWorld>,
     mut selected: ResMut<SelectedVoxel>,
     hotbar: Option<ResMut<Hotbar>>,
 ) {
-    if menu_state.is_some_and(|s| *s.get() != MenuState::None) {
+    if menu_state.is_some_and(|s| *s.get() != MenuState::None)
+        || inspector.is_some_and(|i| i.active)
+    {
         return;
     }
 
@@ -172,8 +176,11 @@ fn edit_voxels(
     mut interaction_state: Local<InteractionState>,
     fluid_queue: Option<ResMut<FluidUpdateQueue>>,
     menu_state: Option<Res<State<MenuState>>>,
+    inspector: Option<Res<InspectorInteraction>>,
 ) {
-    if menu_state.is_some_and(|s| *s.get() != MenuState::None) {
+    if menu_state.is_some_and(|s| *s.get() != MenuState::None)
+        || inspector.is_some_and(|i| i.active)
+    {
         return;
     }
 

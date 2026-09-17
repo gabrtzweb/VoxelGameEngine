@@ -86,12 +86,12 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - **Animated Liquid Shaders**: GPU-driven vertical strip animation (36 frames for still water, 8 frames for flowing water) driven by `globals.time` in WGSL at 6 FPS.
 
 ### 3. Procedural World Generation, Biomes & Caves
-- **Continuous Macro-Climate Noise & Geography**: Deterministic 2D gradient noise driving Continentalness, Temperature, and Humidity across deep ocean depressions, coastal archipelagos with natural islands, vast rolling inland continents, and towering mountain summits.
+- **Continuous Macro-Climate Noise & Geography**: Deterministic 2D gradient noise driving Continentalness, Temperature, and Humidity. Uses a continuous $C^1$ smooth cubic spline curve for continental base elevation and a continuous roughness multiplier, eliminating abrupt vertical cliffs and harsh elevation cuts across biome borders.
 - **11 Distinct Biomes**: Plains (rolling hills, grass), Meadow (rich flowering grass transition), Desert (sand dunes, red sand accents, sandstone), Snowy Tundra & Frost Peaks (snow, packed ice, frost stone), Wetlands / Swamps (swamp grass mixed with mud, packed mud, clay), Rocky Highlands (mountain ridges, slate, cobbleslate, scree), Woodland (rich forest floor with grass mixed with mulch, packed dirt, and moss), Beach (sand coastlines), River (winding fluvial ribbons), Ocean (continental seabed), and Deep Ocean (abyssal gravel and blackstone trenches).
 - **Surface Material Mixing & Natural Strata Transitions**: Natural multi-material noise blends across biomes (no uniform 100% mulch or mud); 3D noise dithering across all strata boundaries (subsoil-to-stone, slate, blackstone).
 - **Dreadstone Bedrock Layer**: Unbreakable Dreadstone bedrock forming the bottom layer ($Y = -80$ blocks / $-160$ voxels), blending naturally into Blackstone across the bottom 3 layers. Completely immune to breaking and shaping.
 - **Walkable 3D Caves & Suppressed Water Ravines**: Spacious 3–5 block wide spaghetti tunnels with wide walkable mouths at the surface; rare dramatic ravines that are strictly suppressed underwater in rivers, lakes, and oceans.
-- **Dedicated Live Terrain & World Inspector GUI**: Custom egui tuning window bound to <kbd>F1</kbd> with sliders for seed, sea level, elevation, rivers, caves, and strata, plus an instant "Regenerate World" button.
+- **Dedicated Live Terrain & World Inspector GUI**: Custom egui tuning window bound to <kbd>F1</kbd> running in `EguiPrimaryContextPass` with full interactive sliders and buttons, with automated isolation of hotbar mouse scrolling and block interactions while open, plus an instant "Regenerate World" button.
 
 ### 4. Player Physics, Collision & Locomotion
 - **Custom Voxel AABB Collision**: Zero-allocation AABB collision system querying chunk voxel data directly without rigid bodies or external physics engine overhead.
@@ -165,6 +165,14 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - [x] Phase 6: Advanced World Generation, Biomes & Caves (Completed)
 - [x] Phase 7: Engine Optimization, Architecture Audit & Scalability (Completed)
 - [ ] Phase 8: Engine Optimization & Scalability (Next Milestone)
+- [ ] Phase 9: Flora, Procedural Trees & Surface Vegetation
+- [ ] Phase 10: Gameplay Polish, Audio Foundation & Quality-of-Life Tweaks
+
+---
+
+## Known Issues & Backlog for Future Fixes
+
+- **Inspector "Regenerate World" Live Reload**: Sliders and options in the <kbd>F1</kbd> Terrain Inspector interact smoothly and update procedural generator parameters in real time. However, clicking the "Regenerate World" button does not yet immediately reload existing chunk meshes on screen because loaded chunk mesh entities need an explicit despawn/re-mesh trigger in `src/world/streaming/manager.rs`. (Paused and noted for a future fix per user direction).
 
 ---
 

@@ -62,6 +62,21 @@ The long-term goal is to build a performant procedural voxel game with large-wor
 ## Current Project Structure
 
 ```text
+assets/
+├── shaders/
+│   └── voxel.wgsl
+├── textures/
+│   ├── blocks/       (blocks textures)
+│   ├── environments/ (skybox, sun, moon)
+│   ├── gui/
+│   │   └── cursors/  (cursors states)
+│   └── mobs/         (player textures)
+└── icon.ico
+
+docs/
+├── context.md
+└── roadmap.md
+
 src/
 ├── core/
 │   ├── dev_stats.rs
@@ -77,8 +92,8 @@ src/
 ├── gameplay/
 │   ├── debug.rs
 │   ├── icon.rs
-│   ├── interaction.rs
 │   ├── interaction_mode.rs
+│   ├── interaction.rs
 │   ├── mod.rs
 │   ├── radial_menu.rs
 │   ├── shaping.rs
@@ -87,6 +102,7 @@ src/
 │   ├── biome.rs
 │   ├── caves.rs
 │   ├── generator.rs
+│   ├── inspector.rs
 │   ├── mod.rs
 │   └── strata.rs
 ├── menu/
@@ -126,17 +142,6 @@ src/
 │   ├── modifications.rs
 │   └── storage.rs
 └── main.rs
-
-assets/textures/
-├── blocks/
-├── environments/
-├── gui/
-│   └── cursors/
-└── mobs/
-
-docs/
-├── context.md
-└── roadmap.md
 ```
 
 ## Development Commands

@@ -152,15 +152,16 @@ This document outlines the planned development phases for the voxel game engine,
     - Dynamic FOV Kick: Smooth camera FOV expansion (+8°) when sprinting or flying fast.
 ---
 
-## Phase 6: Advanced World Generation, Biomes & Caves (NOT GOOD YET)
+## Phase 6: Advanced World Generation, Biomes & Caves (Completed)
 - [x] **Multi-Noise Biome System**:
-  - Macro-scale continuous 2D climate noise in [src/voxel/biome.rs](VoxelGameEngine/src/voxel/biome.rs) for Continentalness, Temperature, and Humidity.
-  - 6 distinct biomes with individual surface, subsoil, and elevation profiles:
+  - Macro-scale continuous 2D climate noise in [src/generation/biome.rs](VoxelGameEngine/src/generation/biome.rs) for Continentalness, Temperature, and Humidity.
+  - Continuous $C^1$ smooth cubic spline curve for continental base elevation and continuous roughness multiplier, completely eliminating harsh elevation cuts and abrupt vertical cliffs across biome boundaries.
+  - 11 distinct biomes with individual surface, subsoil, and elevation profiles:
     - **Plains**: Temperate, moderate humidity, rolling green hills, grass surface, dirt sublayer.
     - **Desert**: Warm, arid, wind-swept sand dunes, sandstone/sand sublayer, red sand accents.
-    - **Snowy Tundra & Frost Peaks**: Frigid high altitudes, snow-covered surface, frost-cracked stone.
-    - **Wetlands / Swamps**: Low-lying flats, high moisture, natural mix of swamp grass (40%), mud (35%), packed mud (15%), and clay (10%).
-    - **Rocky Highlands**: Rugged towering mountain ridges, exposed slate, cobbleslate, flint, and scree slopes.
+    - **Snowy Tundra & Frost Peaks**: Frigid high altitudes, snow-covered surface with stone outcrops.
+    - **Wetlands / Swamps**: Low-lying smooth swamp basins, natural mix of swamp grass (40%), mud (35%), packed mud (15%), and clay (10%).
+    - **Rocky Highlands**: Rugged towering mountain ridges, organic mix of slate, stone, and cobbleslate.
     - **Woodland**: High humidity, living forest floor with natural blend of grass (50%), mulch (30%), packed dirt (10%), and moss (10%).
     - **Meadow**: Gentle transition between woodland and plains with vibrant flora.
     - **Beach & Coast**: Sand coastlines wrapping all sea-level land borders.
@@ -179,7 +180,8 @@ This document outlines the planned development phases for the voxel game engine,
   - Mid Crust: Metamorphic transition into Slate, Cobbleslate, and Flint clusters.
   - Deep Crust: Volcanic plutonic layer of Blackstone, Cobbleblackstone, Magma veins, and molten pools.
 - [x] **Runtime Generation Controls & Dedicated World Inspector GUI**:
-  - Custom egui tuning window bound to <kbd>F1</kbd> with noise, river, cave, and strata sliders.
+  - Custom egui tuning window bound to <kbd>F1</kbd> running in `EguiPrimaryContextPass` with full interactive clicking and dragging for noise, river, cave, and strata sliders.
+  - Automated game input isolation while inspector is open: suppresses hotbar mouse wheel scrolling, number key slot cycling, crosshair display, spectator movement, and block break/place clicks.
   - Instant **"Regenerate World"** live reload button that purges and re-streams world chunks with new seed/parameters.
 - [x] **Extended Debug HUD & Default Settings Polish**: 
   - Minimal and Extended Debug HUD accurately displays column biome name (Plains, Beach, River, Ocean, Woodland, etc.).
@@ -221,8 +223,11 @@ Phase 8 focuses on deep algorithmic and memory optimizations to scale chunk thro
 ### Strategic Priorities & Recommended Order
 1. **Priority 1: Extremity Bound Checking & Chunk Homogeneity Metadata** (Highest ROI / Immediate O(1) skips across meshing, collision, and raycasting)
 2. **Priority 2: Noise Up-Sampling & 3D Trilinear Interpolation** (Massive generation speedup, 97% reduction in 3D noise evaluations per chunk)
-3. **Priority 3: RLE & Paletted Runtime Voxel Data** (Drastic RAM reduction for loaded worlds, foundations for future disk saves)
-4. **Priority 4: LOD Render Distance** (Complex boundary stitching, low immediate benefit at current render distances; candidate to defer or simplify)
+3. **Priority 3: RLE & Paletted Runtime Voxel Data + Cache Locality Layout** (Drastic RAM reduction, cache-friendly iteration, foundations for disk saves)
+4. **Priority 4: Decoupled Simulation Radius vs. Render Distance** (Simulate fluids & ticking only in inner 4–6 chunks; outer 12–16 chunks remain static meshes)
+5. **Priority 5: Bitwise Bitmask Acceleration for Face Culling & Greedy Mesher** (64-bit bitboards for sub-millisecond chunk meshing)
+6. **Priority 6: Static Lookup Tables (LUTs) for Shape Transforms & Face Offsets** (Eliminates runtime coordinate math in inner loops)
+7. **Priority 7: LOD Render Distance** (Lowest priority; deferred or simplified due to T-junction boundary seams and low GPU vertex bottlenecks)
 
 ---
 
@@ -250,26 +255,104 @@ Phase 8 focuses on deep algorithmic and memory optimizations to scale chunk thro
     - Drastically accelerates async chunk generation speed, eliminating chunk streaming pop-in during flight.
   - **Complexity / Risk**: Moderate complexity. May slightly smooth sharp micro-crevices in caves, but in practice yields more organic and aesthetically pleasing cave tunnels with virtually zero visual degradation.
 
-- [ ] **Stage 8.3: RLE Runtime Voxel Data & Paletted Chunk Storage**:
+- [ ] **Stage 8.3: RLE Runtime Voxel Data, Paletted Storage & Cache Locality**:
   - **The Problem**: Every loaded chunk currently stores a flat `[Voxel; 4096]` array (4,096 bytes). At render distance 10–12, several thousand chunks are held in memory simultaneously, consuming tens of megabytes of uncompressed RAM and causing cache pressure during iteration.
   - **Architecture**:
-    - Implement a two-tiered or paletted chunk representation:
+    - Implement a two-tiered paletted chunk representation:
       - `ChunkStorage::Uniform(Voxel)`: 1 byte of data for 100% Air or 100% Stone chunks.
       - `ChunkStorage::Paletted`: Chunks with <= 16 distinct block types use 4-bit indices pointing into a local 16-element palette (shrinking 4,096 bytes down to ~2,048 bytes).
       - `ChunkStorage::Rle(Vec<(Voxel, u16)>)`: Run-Length Encoded runs for layered horizontal strata and cave air pockets.
       - `ChunkStorage::Dense(Box<[Voxel; 4096]>)`: Flat uncompressed buffer used only during active multi-voxel player editing or when complexity warrants.
+    - **Cache Locality Optimization**: Ensure chunk indexing order matches CPU L1 cache line stride (64 bytes) during raycast marching and meshing passes.
   - **Engine Benefits**:
     - Cuts overall world memory footprint by **70% to 85%**.
     - Prepares the data structures directly for fast binary disk serialization (world saving and loading).
   - **Complexity / Risk**: Moderate. Needs careful abstraction so `get(x, y, z)` and `set(x, y, z)` remain fast and inline-friendly without branch mispredictions.
 
-- [ ] **Stage 8.4: LOD Render Distance (Downsampled Greedy Meshes for Distant Chunks)**:
-  - **The Problem**: Distant chunks beyond standard render distance (e.g. 10–16 chunks away) still generate full 0.5m sub-voxel meshes, increasing triangle count and GPU draw call overhead.
+- [ ] **Stage 8.4: Decoupled Simulation Radius vs. Render Distance**:
+  - **The Problem**: When the player raises render distance to 12 or 16 chunks, the world holds 2,000+ active chunks. Running fluid propagation, cellular automaton ticks, and dynamic updates across all loaded chunks wastes CPU cycles on distant, non-visible activity.
   - **Architecture**:
-    - For chunks at distance $D > R_{\text{mid}}$, generate a Level of Detail (LOD 1) mesh where 2×2×2 sub-voxels (1m³ block) or 4×4×4 sub-voxels are merged into a single macro-voxel before running the greedy mesher.
-    - Textures use averaged or dominant block materials.
-  - **Analysis & Trade-Offs (Why it can be deferred/skipped)**:
-    - Because our greedy mesher already merges co-planar voxel faces into single rectangular quads, large flat areas (grass plains, oceans, stone cliffs) are already drawn as minimal 1–2 quad meshes!
-    - Introducing geometric LOD creates **T-junction seams and visible cracks** at the boundary where high-detail chunks meet low-detail chunks, requiring complex stitching skirts or transition meshes.
-    - Since modern GPUs easily handle hundreds of thousands of quads, and our bottlenecks have historically been CPU-bound rather than GPU vertex bound, LOD offers lower ROI relative to its implementation complexity.
-  - **Recommendation**: Keep as lowest priority or defer until render distance targets 24–32+ chunks.
+    - Decouple `simulation_distance` (default: 4–6 chunks, ~32–48m radius around player) from visual `render_distance` (10–16+ chunks).
+    - Chunks within the simulation radius actively process fluid ticks, falling sand, and dynamic neighbor updates. Chunks beyond the simulation radius remain purely static mesh renderables.
+  - **Engine Benefits**:
+    - Caps active fluid/simulation CPU budget to a fixed, small local bubble regardless of how high the player sets their visual render distance.
+  - **Complexity / Risk**: Low complexity. Requires a simple radius test when scheduling simulation ticks.
+
+- [ ] **Stage 8.5: Bitwise Bitmask Acceleration for Face Culling & Greedy Mesher**:
+  - **The Problem**: Greedy meshing checks adjacent voxel solid/air states through millions of individual 3D index calls in nested loops.
+  - **Architecture**:
+    - Represent each 16-voxel row or 16×16 slice as 64-bit integer bitboards (`u64`).
+    - Compute exposed face visibility across entire rows simultaneously using bitwise boolean operations:
+      `visible_faces = current_row & ~neighbor_row`.
+    - Extract contiguous runs using CPU intrinsic instructions (`trailing_zeros`, `leading_zeros`) to feed directly into quad generation.
+  - **Engine Benefits**:
+    - Cuts CPU time spent in face extraction by **4x–8x**, enabling near-instantaneous chunk remeshes when placing or breaking blocks.
+  - **Complexity / Risk**: Moderate. Requires low-level bitwise manipulation logic.
+
+- [ ] **Stage 8.6: Static Lookup Tables (LUTs) for Shape Transforms & Face Offsets**:
+  - **The Problem**: Sub-voxel shaping tools (<kbd>R</kbd>), block rotations (<kbd>T</kbd>), and face normal transforms perform coordinate arithmetic and rotation matrix operations at runtime.
+  - **Architecture**:
+    - Precompute static lookup tables for all 10 sub-voxel shapes across 4 rotation orientations (`[SubVoxelMask; 40]`).
+    - Precompute face normal vectors, UV quadrant offsets, and neighbor chunk coordinate offsets into `const` LUT arrays.
+  - **Engine Benefits**:
+    - Replaces runtime trigonometric calculations and branch trees with zero-cost table lookups.
+  - **Complexity / Risk**: Very low. Standard compile-time constant arrays.
+
+- [ ] **Stage 8.7: LOD Render Distance (Downsampled Greedy Meshes for Distant Chunks)**:
+  - **Status**: Kept as lowest priority / deferred.
+  - **Analysis**: Co-planar greedy meshing already merges flat terrain into minimal quads. Geometric LOD introduces T-junction cracks and boundary seam artifacts with minimal performance upside at render distance 12–16. Re-evaluate if render distance expands to 24–32+ chunks in future milestones.
+
+---
+
+## Phase 9: Flora, Procedural Trees & Surface Vegetation
+
+Phase 9 breathes organic life and color into the procedural world by generating biome-specific trees, flowering ground cover, shrubs, and dynamic wind-swayed foliage.
+
+- [ ] **Stage 9.1: Procedural Trees & Canopy Architecture**:
+  - **Trunk & Branch Structure**: Multi-block vertical and branching wood logs (`Voxel::OakWood`, `Voxel::BirchWood`, `Voxel::PineWood`, `Voxel::PalmWood`).
+  - **Leaf Canopy Generators**:
+    - **Oak Trees** (Woodland / Plains): Sturdy 4–6 block trunks topped with rounded spherical/ellipsoid leaf crowns (`Voxel::OakLeaves`).
+    - **Birch Trees** (Meadow / Plains): Slender white-barked trunks with light, airy leaf clusters.
+    - **Pine & Spruce Trees** (Snowy Tundra / Mountain Foothills): Tall conical/pyramidal needle canopies with snow-dusted variants.
+    - **Palm Trees** (Beach / Coastlines): Gently curved, sloped trunks leaning toward the water with fan-like palm fronds.
+    - **Swamp Willows** (Wetlands): Wide gnarly trunks with hanging moss and vines draped over marsh water.
+    - **Desert Cacti** (Desert): Columnar saguaro cacti with right-angled branching arms.
+  - **Spawn Validation**: Trees spawn strictly on compatible soil (Grass, Dirt, Packed Dirt, Sand for palms) with clearance checks preventing growth inside caves or underwater.
+
+- [ ] **Stage 9.2: Ground Flora, Flowers & Biome Foliage**:
+  - **Wild Grass & Ferns**: Single and double-tall grass tufts scattered across Plains, Meadows, and Woodlands using cross-quad alpha cutouts.
+  - **Flowering Plants**: Biome-specific flowers:
+    - Meadows: High-density vibrant carpets of Poppies, Dandelions, Cornflowers, and Blue Orchids.
+    - Woodlands: Woodland bluebells and wild ferns.
+    - Wetlands: Water lily pads floating on marsh pools, reeds/sugar cane along muddy riverbanks.
+    - Caves & Shadows: Red and brown mushrooms flourishing in low-light subterranean grottos and damp overhangs.
+    - Deserts: Dead tumbleweeds and dry shrubs.
+
+- [ ] **Stage 9.3: Alpha-Cutout Cross-Quad Meshing & Wind Sway Shader**:
+  - **Cross-Quad Plant Geometry**: Efficient 2-quad (X-pattern) billboard meshes for wild grass, flowers, and crops.
+  - **Alpha-to-Coverage / Cutout Transparency**: Clean silhouette rendering without sorting artifacts or depth-buffer clipping.
+  - **Subtle Wind Sway (WGSL)**: Vertex shader displacement in `voxel.wgsl` using a gentle sine wave driven by `globals.time` to add organic swaying movement to leaves, tall grass, and flowers.
+
+---
+
+## Phase 10: Gameplay Polish, Audio Foundation & Quality-of-Life Tweaks
+
+Phase 10 delivers core game feel improvements, sensory feedback, and quality-of-life additions.
+
+- [ ] **Stage 10.1: Block Interaction Feedback & Particle FX**:
+  - **Block Breaking Particle Bursts**: Scattering sub-voxel debris particles matching the texture of the broken block, bouncing briefly before fading out.
+  - **Block Placement Feedback**: Subtle scale pop / bounce animation and placement dust puff.
+  - **Sound Event Hooks**: Audio trigger events for:
+    - Footstep sounds by surface type (Grass, Stone, Sand, Wood, Snow, Water wading).
+    - Block breaking and placement audio (crunchy dirt, resonant stone, snappy wood, splashing water).
+    - Ambient wind gusts on mountain summits and subterranean cavern echoes.
+
+- [ ] **Stage 10.2: Quality-of-Life & Inspector Live Reload Fix**:
+  - **Fix Live "Regenerate World" Chunk Reload**: Ensure that clicking "Regenerate World" in the <kbd>F1</kbd> Inspector cleanly despawns existing chunk mesh entities and re-triggers async mesh generation in real time.
+  - **Clean Screenshot Hotkey (<kbd>F11</kbd> / <kbd>F7</kbd>)**: Captures high-res screenshots while temporarily hiding all HUD elements, crosshairs, and inspector windows.
+  - **Block Item Drops / Hand Bob**: Floating rotating mini-block pickups when blocks are broken in survival/adventure context, and subtle hand swing animation when placing or breaking blocks.
+
+- [ ] **Stage 10.3: World Persistence & Binary Save/Load Foundation**:
+  - **Chunk Region File Format**: Simple binary serialization format storing modified chunk data in a dedicated world save folder.
+  - **Save on Exit & Auto-Save**: Seamlessly serializes player block edits and inventory state, restoring the player's world exactly as built upon launch.
+

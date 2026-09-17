@@ -315,7 +315,7 @@ fn manage_cursor_grab_mode(
     inspector: Res<InspectorInteraction>,
     cursor_options: Option<Single<&mut CursorOptions>>,
 ) {
-    if !menu_state.is_changed() {
+    if !menu_state.is_changed() && !inspector.is_changed() {
         return;
     }
 

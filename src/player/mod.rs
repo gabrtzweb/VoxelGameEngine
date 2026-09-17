@@ -65,6 +65,7 @@ impl Plugin for PlayerPlugin {
                     controller::creative_movement,
                     spectator::spectator_movement,
                     water::update_underwater_effect,
+                    update_crosshair_visibility,
                 )
                     .chain()
                     .in_set(PlayerSet::Movement),
@@ -132,19 +133,18 @@ fn lock_cursor(mut cursor_options: Single<&mut CursorOptions>) {
     cursor_options.grab_mode = CursorGrabMode::Locked;
 }
 
+#[derive(Component)]
+pub struct CrosshairUi;
+
 fn spawn_crosshair(mut commands: Commands) {
     commands.spawn((
+        CrosshairUi,
         Node {
             position_type: PositionType::Absolute,
-
             width: percent(100.0),
-
             height: percent(100.0),
-
             justify_content: JustifyContent::Center,
-
             align_items: AlignItems::Center,
-
             ..default()
         },
         ZIndex(100),
@@ -152,27 +152,41 @@ fn spawn_crosshair(mut commands: Commands) {
             (
                 Node {
                     position_type: PositionType::Absolute,
-
                     width: px(2.0),
-
                     height: px(14.0),
-
                     ..default()
                 },
-                BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.9,),),
+                BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.9)),
             ),
             (
                 Node {
                     position_type: PositionType::Absolute,
-
                     width: px(14.0),
-
                     height: px(2.0),
-
                     ..default()
                 },
-                BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.9,),),
+                BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.9)),
             ),
         ],
     ));
+}
+
+fn update_crosshair_visibility(
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
+    inspector: Option<Res<InspectorInteraction>>,
+    mut crosshair_query: Query<&mut Visibility, With<CrosshairUi>>,
+) {
+    let hide = menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None)
+        || inspector.is_some_and(|i| i.active);
+
+    for mut vis in crosshair_query.iter_mut() {
+        let target_vis = if hide {
+            Visibility::Hidden
+        } else {
+            Visibility::Visible
+        };
+        if *vis != target_vis {
+            *vis = target_vis;
+        }
+    }
 }

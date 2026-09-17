@@ -1,15 +1,18 @@
 use bevy::prelude::*;
 
-use super::{GameMode, PlayerCamera};
+use super::{GameMode, InspectorInteraction, PlayerCamera};
 
 pub(super) fn spectator_movement(
     keyboard: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
     game_mode: Res<GameMode>,
+    inspector: Option<Res<InspectorInteraction>>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
     camera: Single<(&mut Transform, &PlayerCamera), With<Camera3d>>,
 ) {
-    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None)
+        || inspector.is_some_and(|i| i.active)
+    {
         return;
     }
 

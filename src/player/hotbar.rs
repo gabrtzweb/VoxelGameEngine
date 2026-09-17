@@ -1,6 +1,7 @@
 use bevy::{input::mouse::AccumulatedMouseScroll, prelude::*};
 
 use crate::gameplay::{BlockIcons, SelectedVoxel};
+use crate::player::InspectorInteraction;
 use crate::world::Voxel;
 
 pub const HOTBAR_SLOT_COUNT: usize = 8;
@@ -170,10 +171,13 @@ fn handle_hotbar_input(
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse_scroll: Res<AccumulatedMouseScroll>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
+    inspector: Option<Res<InspectorInteraction>>,
     mut hotbar: ResMut<Hotbar>,
     mut selected: ResMut<SelectedVoxel>,
 ) {
-    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None)
+        || inspector.is_some_and(|i| i.active)
+    {
         return;
     }
     let digit_keys = [
