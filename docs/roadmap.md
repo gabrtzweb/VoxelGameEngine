@@ -289,7 +289,7 @@ Phase 8 focuses on deep algorithmic and memory optimizations to scale chunk thro
     - Cuts CPU time spent in face extraction by **4x–8x**, enabling near-instantaneous chunk remeshes when placing or breaking blocks.
   - **Complexity / Risk**: Moderate. Requires low-level bitwise manipulation logic.
 
-- [ ] **Stage 8.6: Static Lookup Tables (LUTs) for Shape Transforms & Face Offsets**:
+- [x] **Stage 8.6: Static Lookup Tables (LUTs) for Shape Transforms & Face Offsets**:
   - **The Problem**: Sub-voxel shaping tools (<kbd>R</kbd>), block rotations (<kbd>T</kbd>), and face normal transforms perform coordinate arithmetic and rotation matrix operations at runtime.
   - **Architecture**:
     - Precompute static lookup tables for all 10 sub-voxel shapes across 4 rotation orientations (`[SubVoxelMask; 40]`).

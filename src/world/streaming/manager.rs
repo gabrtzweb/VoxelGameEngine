@@ -35,6 +35,8 @@ pub const NEIGHBOR_DIRECTIONS: [IVec3; 6] = [
     IVec3::new(0, 0, 1),
     IVec3::new(0, 0, -1),
 ];
+#[allow(dead_code)]
+pub const NEIGHBOR_CHUNK_OFFSETS: [IVec3; 6] = NEIGHBOR_DIRECTIONS;
 
 #[derive(Resource)]
 pub struct ChunkStreamingSettings {

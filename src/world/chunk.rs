@@ -231,6 +231,7 @@ impl ChunkStorage {
     }
 
     /// Returns the exact heap memory allocated by this chunk storage in bytes.
+    #[allow(dead_code)]
     pub fn memory_size(&self) -> usize {
         match self {
             Self::Uniform(_) => 0,
@@ -332,6 +333,7 @@ impl Chunk {
         self.homogeneity
     }
 
+    #[allow(dead_code)]
     #[inline]
     pub fn storage(&self) -> &ChunkStorage {
         &self.storage
@@ -365,6 +367,7 @@ impl Chunk {
         self.unique_voxel_count
     }
 
+    #[allow(dead_code)]
     #[inline]
     pub fn memory_size(&self) -> usize {
         self.storage.memory_size()
@@ -430,6 +433,7 @@ impl Chunk {
         self.storage.to_rle()
     }
 
+    #[allow(dead_code)]
     pub fn from_rle(runs: &[(Voxel, u16)]) -> Self {
         let storage = ChunkStorage::from_rle(runs);
         let mut voxels = Vec::with_capacity(CHUNK_VOLUME);

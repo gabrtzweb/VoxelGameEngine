@@ -12,8 +12,8 @@ pub use modifications::WorldModificationStore;
 pub use storage::{CHUNK_WORLD_SIZE, ChunkNeighborhood, VoxelAccess, VoxelWorld, affected_chunks};
 pub use streaming::{
     ChunkStreamingPlugin, ChunkStreamingQueues, ChunkStreamingSettings, ChunkStreamingState,
-    NEIGHBOR_DIRECTIONS, WORLD_MAX_CHUNK_Y, WORLD_MIN_CHUNK_Y, desired_chunk_coordinates,
-    neighbors, player_chunk_coordinate,
+    NEIGHBOR_CHUNK_OFFSETS, NEIGHBOR_DIRECTIONS, WORLD_MAX_CHUNK_Y, WORLD_MIN_CHUNK_Y,
+    desired_chunk_coordinates, neighbors, player_chunk_coordinate,
 };
 
 use bevy::prelude::*;

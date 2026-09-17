@@ -51,6 +51,26 @@ impl BlockShape {
         ]
     }
 
+    pub const fn index(self) -> usize {
+        match self {
+            Self::Full => 0,
+            Self::Stair => 1,
+            Self::StairUpsideDown => 2,
+            Self::CornerStair => 3,
+            Self::CornerStairInverted => 4,
+            Self::SlabBottom => 5,
+            Self::SlabTop => 6,
+            Self::VerticalSlab => 7,
+            Self::Column => 8,
+            Self::CenteredColumn => 9,
+        }
+    }
+
+    #[allow(dead_code)]
+    pub const fn from_index(index: usize) -> Self {
+        Self::all()[index % 10]
+    }
+
     pub fn name(self) -> &'static str {
         match self {
             Self::Full => "Full Block",
@@ -553,100 +573,120 @@ pub fn detect_current_shape(voxels: &[Voxel; 8]) -> BlockShape {
     }
 }
 
-pub fn generate_shape_voxels(shape: BlockShape, material: Voxel) -> [Voxel; 8] {
-    let mut result = [Voxel::Air; 8];
-    let fill = material;
-
-    match shape {
-        BlockShape::Full => {
-            result = [fill; 8];
-        }
-        BlockShape::Stair => {
-            result[0] = fill;
-            result[1] = fill;
-            result[2] = fill;
-            result[3] = fill;
-            result[6] = fill;
-            result[7] = fill;
-        }
-        BlockShape::StairUpsideDown => {
-            result[4] = fill;
-            result[5] = fill;
-            result[6] = fill;
-            result[7] = fill;
-            result[2] = fill;
-            result[3] = fill;
-        }
-        BlockShape::CornerStair => {
-            result[0] = fill;
-            result[1] = fill;
-            result[2] = fill;
-            result[3] = fill;
-            result[7] = fill;
-        }
-        BlockShape::CornerStairInverted => {
-            result[0] = fill;
-            result[1] = fill;
-            result[2] = fill;
-            result[3] = fill;
-            result[5] = fill;
-            result[6] = fill;
-            result[7] = fill;
-        }
-        BlockShape::SlabBottom => {
-            result[0] = fill;
-            result[1] = fill;
-            result[2] = fill;
-            result[3] = fill;
-        }
-        BlockShape::SlabTop => {
-            result[4] = fill;
-            result[5] = fill;
-            result[6] = fill;
-            result[7] = fill;
-        }
-        BlockShape::VerticalSlab => {
-            result[2] = fill;
-            result[3] = fill;
-            result[6] = fill;
-            result[7] = fill;
-        }
-        BlockShape::Column => {
-            result[0] = fill;
-            result[4] = fill;
-        }
-        BlockShape::CenteredColumn => {
-            result[0] = fill;
-            result[1] = Voxel::Occupied;
-            result[2] = Voxel::Occupied;
-            result[3] = Voxel::Occupied;
-
-            result[4] = fill;
-            result[5] = Voxel::Occupied;
-            result[6] = Voxel::Occupied;
-            result[7] = Voxel::Occupied;
-        }
-    }
-
-    result
+/// Represents the 8 sub-voxels of a logical block.
+/// Bit i is set if sub-voxel i is filled with the primary material.
+/// Centered column sub-voxels also track Occupied companion voxels.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SubVoxelMask {
+    pub fill_mask: u8,
+    pub occupied_mask: u8,
 }
 
-pub fn rotate_block_90_y(voxels: &[Voxel; 8]) -> [Voxel; 8] {
-    let mut rotated = [Voxel::Air; 8];
-
-    for y in 0..2 {
-        for z in 0..2 {
-            for x in 0..2 {
-                let old_idx = (y * 4 + z * 2 + x) as usize;
-                let new_x = 1 - z;
-                let new_z = x;
-                let new_idx = (y * 4 + new_z * 2 + new_x) as usize;
-                rotated[new_idx] = voxels[old_idx];
-            }
+impl SubVoxelMask {
+    pub const fn new(fill_mask: u8, occupied_mask: u8) -> Self {
+        Self {
+            fill_mask,
+            occupied_mask,
         }
     }
 
-    rotated
+    pub const fn rotate_90(self) -> Self {
+        Self {
+            fill_mask: rotate_mask_90(self.fill_mask),
+            occupied_mask: rotate_mask_90(self.occupied_mask),
+        }
+    }
+
+    pub fn to_voxels(self, material: Voxel) -> [Voxel; 8] {
+        let mut result = [Voxel::Air; 8];
+        let mut i = 0;
+        while i < 8 {
+            let bit = 1 << i;
+            if (self.fill_mask & bit) != 0 {
+                result[i] = material;
+            } else if (self.occupied_mask & bit) != 0 {
+                result[i] = Voxel::Occupied;
+            }
+            i += 1;
+        }
+        result
+    }
+}
+
+pub const fn rotate_mask_90(mask: u8) -> u8 {
+    let mut rot = 0u8;
+    let map = [1, 3, 0, 2, 5, 7, 4, 6];
+    let mut i = 0;
+    while i < 8 {
+        if (mask & (1 << i)) != 0 {
+            rot |= 1 << map[i];
+        }
+        i += 1;
+    }
+    rot
+}
+
+const fn make_shape_rotations(fill_mask: u8, occupied_mask: u8) -> [SubVoxelMask; 4] {
+    let m0 = SubVoxelMask::new(fill_mask, occupied_mask);
+    let m1 = m0.rotate_90();
+    let m2 = m1.rotate_90();
+    let m3 = m2.rotate_90();
+    [m0, m1, m2, m3]
+}
+
+/// Static Lookup Table for all 10 BlockShapes across 4 rotation orientations (0°, 90°, 180°, 270°).
+pub const SHAPE_ROTATION_MASKS: [[SubVoxelMask; 4]; 10] = [
+    // 0: Full
+    make_shape_rotations(0xFF, 0x00),
+    // 1: Stair
+    make_shape_rotations(0xCF, 0x00),
+    // 2: StairUpsideDown
+    make_shape_rotations(0xFC, 0x00),
+    // 3: CornerStair
+    make_shape_rotations(0x8F, 0x00),
+    // 4: CornerStairInverted
+    make_shape_rotations(0xEF, 0x00),
+    // 5: SlabBottom
+    make_shape_rotations(0x0F, 0x00),
+    // 6: SlabTop
+    make_shape_rotations(0xF0, 0x00),
+    // 7: VerticalSlab
+    make_shape_rotations(0xCC, 0x00),
+    // 8: Column
+    make_shape_rotations(0x11, 0x00),
+    // 9: CenteredColumn
+    make_shape_rotations(0x11, 0xEE),
+];
+
+pub const ROTATION_PERMUTATION_Y: [usize; 8] = [2, 0, 3, 1, 6, 4, 7, 5];
+
+#[inline]
+pub fn generate_shape_voxels(shape: BlockShape, material: Voxel) -> [Voxel; 8] {
+    SHAPE_ROTATION_MASKS[shape.index()][0].to_voxels(material)
+}
+
+#[inline]
+#[allow(dead_code)]
+pub fn generate_shape_voxels_rotated(
+    shape: BlockShape,
+    rotation: usize,
+    material: Voxel,
+) -> [Voxel; 8] {
+    SHAPE_ROTATION_MASKS[shape.index()][rotation % 4].to_voxels(material)
+}
+
+#[inline]
+pub fn rotate_block_90_y(voxels: &[Voxel; 8]) -> [Voxel; 8] {
+    [
+        voxels[ROTATION_PERMUTATION_Y[0]],
+        voxels[ROTATION_PERMUTATION_Y[1]],
+        voxels[ROTATION_PERMUTATION_Y[2]],
+        voxels[ROTATION_PERMUTATION_Y[3]],
+        voxels[ROTATION_PERMUTATION_Y[4]],
+        voxels[ROTATION_PERMUTATION_Y[5]],
+        voxels[ROTATION_PERMUTATION_Y[6]],
+        voxels[ROTATION_PERMUTATION_Y[7]],
+    ]
 }
 
 #[cfg(test)]
@@ -809,5 +849,29 @@ mod tests {
             detect_current_shape(&stair).next(),
             BlockShape::StairUpsideDown
         );
+    }
+
+    #[test]
+    fn test_shape_rotation_luts_match_rotations() {
+        for shape in BlockShape::all() {
+            let base = generate_shape_voxels(shape, Voxel::Stone);
+            let mut rotated = base;
+            for rot in 0..4 {
+                let from_lut = generate_shape_voxels_rotated(shape, rot, Voxel::Stone);
+                assert_eq!(
+                    from_lut, rotated,
+                    "Mismatch for shape {shape:?} at rotation {rot}"
+                );
+                rotated = rotate_block_90_y(&rotated);
+            }
+        }
+    }
+
+    #[test]
+    fn test_subvoxel_mask_coverage() {
+        assert_eq!(SHAPE_ROTATION_MASKS.len(), 10);
+        for row in SHAPE_ROTATION_MASKS {
+            assert_eq!(row.len(), 4);
+        }
     }
 }

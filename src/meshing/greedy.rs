@@ -26,27 +26,52 @@ pub enum FaceDirection {
     NegativeZ,
 }
 
+pub const FACE_NORMALS_IVEC3: [IVec3; 6] = [
+    IVec3::new(1, 0, 0),
+    IVec3::new(-1, 0, 0),
+    IVec3::new(0, 1, 0),
+    IVec3::new(0, -1, 0),
+    IVec3::new(0, 0, 1),
+    IVec3::new(0, 0, -1),
+];
+
+pub const FACE_NORMALS_F32: [[f32; 3]; 6] = [
+    [1.0, 0.0, 0.0],
+    [-1.0, 0.0, 0.0],
+    [0.0, 1.0, 0.0],
+    [0.0, -1.0, 0.0],
+    [0.0, 0.0, 1.0],
+    [0.0, 0.0, -1.0],
+];
+
+pub const ISOLATED_VOXEL_UVS: [[f32; 2]; 4] = [
+    [0.0, 0.0],
+    [0.0, 1.0],
+    [1.0, 1.0],
+    [1.0, 0.0],
+];
+
+#[allow(dead_code)]
+pub const UV_QUADRANT_OFFSETS: [[[f32; 2]; 4]; 4] = [
+    // Quadrant (0, 0)
+    [[0.0, 0.0], [0.0, 0.5], [0.5, 0.5], [0.5, 0.0]],
+    // Quadrant (1, 0)
+    [[0.5, 0.0], [0.5, 0.5], [1.0, 0.5], [1.0, 0.0]],
+    // Quadrant (0, 1)
+    [[0.0, 0.5], [0.0, 1.0], [0.5, 1.0], [0.5, 0.5]],
+    // Quadrant (1, 1)
+    [[0.5, 0.5], [0.5, 1.0], [1.0, 1.0], [1.0, 0.5]],
+];
+
 impl FaceDirection {
+    #[inline(always)]
     pub fn normal(self) -> IVec3 {
-        match self {
-            Self::PositiveX => IVec3::new(1, 0, 0),
-            Self::NegativeX => IVec3::new(-1, 0, 0),
-            Self::PositiveY => IVec3::new(0, 1, 0),
-            Self::NegativeY => IVec3::new(0, -1, 0),
-            Self::PositiveZ => IVec3::new(0, 0, 1),
-            Self::NegativeZ => IVec3::new(0, 0, -1),
-        }
+        FACE_NORMALS_IVEC3[self as usize]
     }
 
+    #[inline(always)]
     pub fn normal_f32(self) -> [f32; 3] {
-        match self {
-            Self::PositiveX => [1.0, 0.0, 0.0],
-            Self::NegativeX => [-1.0, 0.0, 0.0],
-            Self::PositiveY => [0.0, 1.0, 0.0],
-            Self::NegativeY => [0.0, -1.0, 0.0],
-            Self::PositiveZ => [0.0, 0.0, 1.0],
-            Self::NegativeZ => [0.0, 0.0, -1.0],
-        }
+        FACE_NORMALS_F32[self as usize]
     }
 }
 
@@ -167,7 +192,7 @@ impl MeshBuffers {
         }
 
         let uvs_to_push = if key.is_isolated_voxel {
-            [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]]
+            ISOLATED_VOXEL_UVS
         } else {
             let scale = if key.voxel == Voxel::WaterFlowing {
                 4.0
