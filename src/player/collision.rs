@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::world::{VOXEL_SIZE, Voxel, VoxelWorld};
+use crate::world::{ChunkHomogeneity, VOXEL_SIZE, Voxel, VoxelWorld};
 
 use super::PLAYER_WIDTH;
 
@@ -318,6 +318,45 @@ impl<'a> IntoIterator for &'a SolidVoxelBuffer {
 
 fn overlapping_solid_voxels(world: &VoxelWorld, position: Vec3, height: f32) -> SolidVoxelBuffer {
     let (min_voxel, max_voxel) = body_voxel_bounds(position, height);
+
+    let (min_chunk, _) = VoxelWorld::world_voxel_to_chunk(min_voxel);
+    let (max_chunk, _) = VoxelWorld::world_voxel_to_chunk(max_voxel);
+
+    // Fast O(1) path: If the bounding box lies entirely within an Empty chunk (e.g. open sky / airborne),
+    // we can immediately return with zero collisions without scanning voxel coordinates.
+    if min_chunk == max_chunk {
+        if let Some(chunk) = world.get_chunk(min_chunk) {
+            if chunk.homogeneity() == ChunkHomogeneity::Empty {
+                return SolidVoxelBuffer::default();
+            }
+        } else {
+            return SolidVoxelBuffer::default();
+        }
+    } else {
+        let mut all_empty = true;
+        for cy in min_chunk.y..=max_chunk.y {
+            for cz in min_chunk.z..=max_chunk.z {
+                for cx in min_chunk.x..=max_chunk.x {
+                    if let Some(chunk) = world.get_chunk(IVec3::new(cx, cy, cz)) {
+                        if chunk.homogeneity() != ChunkHomogeneity::Empty {
+                            all_empty = false;
+                            break;
+                        }
+                    }
+                }
+                if !all_empty {
+                    break;
+                }
+            }
+            if !all_empty {
+                break;
+            }
+        }
+
+        if all_empty {
+            return SolidVoxelBuffer::default();
+        }
+    }
 
     let mut voxels = SolidVoxelBuffer::default();
 

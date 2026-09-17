@@ -12,7 +12,10 @@ use super::{
         setup_chunk_material,
     },
 };
-use crate::world::{ChunkNeighborhood, VoxelWorld, streaming::queues::ChunkStreamingQueues};
+use crate::world::{
+    Chunk, ChunkHomogeneity, ChunkNeighborhood, NEIGHBOR_DIRECTIONS, VoxelWorld,
+    streaming::queues::ChunkStreamingQueues,
+};
 
 const MAX_MESHING_TASKS_IN_FLIGHT: usize = 32;
 const MAX_MESHING_TASKS_STARTED_PER_FRAME: usize = 8;
@@ -48,6 +51,8 @@ pub fn start_meshing_tasks(
     mut queues: ResMut<ChunkStreamingQueues>,
     world: Res<VoxelWorld>,
     material: Res<ChunkMaterial>,
+    mut registry: ResMut<ChunkMeshRegistry>,
+    mut meshes: ResMut<Assets<Mesh>>,
 ) {
     let active_count = active_tasks.iter().count();
     if active_count >= MAX_MESHING_TASKS_IN_FLIGHT {
@@ -74,8 +79,31 @@ pub fn start_meshing_tasks(
 
         queues.remesh_set.remove(&coordinate);
 
-        if world.get_chunk(coordinate).is_none() {
+        let Some(chunk) = world.get_chunk(coordinate) else {
             continue;
+        };
+
+        // Early skip 1: completely empty chunk (100% Air) has no geometry.
+        if chunk.homogeneity() == ChunkHomogeneity::Empty {
+            if registry.contains(&coordinate) {
+                remove_chunk_render(&mut commands, coordinate, &mut registry, &mut meshes);
+            }
+            continue;
+        }
+
+        // Early skip 2: 100% solid chunk surrounded on all 6 faces by solid opaque chunks has zero exposed faces.
+        if chunk.is_fully_solid_opaque() {
+            let all_neighbors_solid = NEIGHBOR_DIRECTIONS.iter().all(|&dir| {
+                world
+                    .get_chunk(coordinate + dir)
+                    .is_some_and(Chunk::is_fully_solid_opaque)
+            });
+            if all_neighbors_solid {
+                if registry.contains(&coordinate) {
+                    remove_chunk_render(&mut commands, coordinate, &mut registry, &mut meshes);
+                }
+                continue;
+            }
         }
 
         let neighborhood = ChunkNeighborhood::new(&world, coordinate);

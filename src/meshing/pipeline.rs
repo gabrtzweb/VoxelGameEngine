@@ -98,6 +98,10 @@ impl ChunkMeshRegistry {
             .sum()
     }
 
+    pub fn contains(&self, coordinate: &IVec3) -> bool {
+        self.entries.contains_key(coordinate)
+    }
+
     pub fn iter_coordinates(&self) -> impl Iterator<Item = &IVec3> {
         self.entries.keys()
     }

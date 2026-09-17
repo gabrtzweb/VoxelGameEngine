@@ -4,7 +4,7 @@ use super::{
     interaction_mode::InteractionMode,
     shaping::{get_block_voxels, is_centered_layer, is_layer_centered},
 };
-use crate::world::{VOXEL_SIZE, Voxel, VoxelWorld};
+use crate::world::{ChunkHomogeneity, VOXEL_SIZE, Voxel, VoxelWorld};
 
 const MAX_TARGET_DISTANCE: f32 = 10.0;
 const VOXELS_PER_BLOCK: i32 = 2;
@@ -486,12 +486,35 @@ fn raycast_world(
     let mut traveled_distance = 0.0;
     let mut face_normal = IVec3::ZERO;
 
+    let mut cached_chunk_coord = IVec3::new(i32::MIN, i32::MIN, i32::MIN);
+    let mut cached_chunk_homogeneity = ChunkHomogeneity::Mixed;
+
     while traveled_distance <= max_grid_distance {
-        if let Some(current_voxel) = world.get_voxel(voxel)
-            && current_voxel != Voxel::Air
-            && (!ignore_water || !current_voxel.is_water())
-        {
-            return Some(RaycastHit { voxel, face_normal });
+        let (chunk_coord, _) = VoxelWorld::world_voxel_to_chunk(voxel);
+        if chunk_coord != cached_chunk_coord {
+            cached_chunk_coord = chunk_coord;
+            cached_chunk_homogeneity = world
+                .get_chunk(chunk_coord)
+                .map_or(ChunkHomogeneity::Empty, |c| c.homogeneity());
+        }
+
+        match cached_chunk_homogeneity {
+            ChunkHomogeneity::Empty => {
+                // Chunk is 100% air; skip individual voxel lookups entirely
+            }
+            ChunkHomogeneity::Solid(solid_mat) => {
+                if !ignore_water || !solid_mat.is_water() {
+                    return Some(RaycastHit { voxel, face_normal });
+                }
+            }
+            ChunkHomogeneity::Mixed => {
+                if let Some(current_voxel) = world.get_voxel(voxel)
+                    && current_voxel != Voxel::Air
+                    && (!ignore_water || !current_voxel.is_water())
+                {
+                    return Some(RaycastHit { voxel, face_normal });
+                }
+            }
         }
 
         if side_distance.x <= side_distance.y && side_distance.x <= side_distance.z {

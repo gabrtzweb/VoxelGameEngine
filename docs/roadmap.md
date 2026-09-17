@@ -233,7 +233,7 @@ Phase 8 focuses on deep algorithmic and memory optimizations to scale chunk thro
 
 ### Detailed Analysis & Implementation Breakdown
 
-- [ ] **Stage 8.1: Extremity Bound Checking & Chunk Homogeneity Flags**:
+- [x] **Stage 8.1: Extremity Bound Checking & Chunk Homogeneity Flags**:
   - **The Problem**: Currently, collision checks, raycasting, and meshing still traverse coordinate ranges inside chunks that are 100% open sky (`Air`) or 100% subterranean rock (`Stone`/`Slate`). Although greedy meshing has early-exit counts, player collision tests (`overlapping_solid_voxels`) and targeting raycasts still query chunk storage coordinate by coordinate.
   - **Architecture**:
     - Introduce chunk state metadata: `ChunkHomogeneity::Empty` (100% Air), `ChunkHomogeneity::Solid(Voxel)` (100% single solid material), or `ChunkHomogeneity::Mixed`.
@@ -244,7 +244,7 @@ Phase 8 focuses on deep algorithmic and memory optimizations to scale chunk thro
     - **Collision**: Player movement queries can immediately skip empty chunks without iterating over coordinate ranges.
   - **Complexity / Risk**: Low complexity, zero visual trade-offs, immediate CPU saving.
 
-- [ ] **Stage 8.2: Noise Up-Sampling & Caching (Trilinear Interpolation)**:
+- [x] **Stage 8.2: Noise Up-Sampling & Caching (Trilinear Interpolation)**:
   - **The Problem**: Procedural chunk generation evaluates complex multi-octave 3D Simplex/Perlin noise (caves, worm tunnels, cheese chambers, strata veins) independently for all 4,096 voxels in a chunk. This is the single largest CPU load on the `AsyncComputeTaskPool`, causing thread pool starvation during fast flight or streaming spikes.
   - **Architecture**:
     - Compute 3D cave/density noise only at a coarse lattice of sample points (e.g. 4×4×4 or 2×2×2 voxel cells) within the chunk grid.

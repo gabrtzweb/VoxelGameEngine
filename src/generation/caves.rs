@@ -2,8 +2,41 @@ use bevy::prelude::*;
 
 use crate::{
     core::noise::{fbm_3d, gradient_noise_2d, gradient_noise_3d},
-    world::Voxel,
+    world::{CHUNK_SIZE, CHUNK_VOLUME, Voxel},
 };
+
+/// 4-component continuous density noise vector evaluated at 3D coordinates.
+#[derive(Clone, Copy, Default, Debug, PartialEq)]
+#[repr(C)]
+pub struct CaveNoiseSample {
+    pub worm_a: f32,
+    pub worm_b: f32,
+    pub cheese: f32,
+    pub aquifer: f32,
+}
+
+#[inline(always)]
+fn lerp_sample(a: CaveNoiseSample, b: CaveNoiseSample, t: f32) -> CaveNoiseSample {
+    CaveNoiseSample {
+        worm_a: a.worm_a + t * (b.worm_a - a.worm_a),
+        worm_b: a.worm_b + t * (b.worm_b - a.worm_b),
+        cheese: a.cheese + t * (b.cheese - a.cheese),
+        aquifer: a.aquifer + t * (b.aquifer - a.aquifer),
+    }
+}
+
+/// Pre-interpolated 16x16x16 cave density sampler for a single chunk.
+#[derive(Clone)]
+pub struct ChunkCaveSampler {
+    samples: Vec<CaveNoiseSample>,
+}
+
+impl ChunkCaveSampler {
+    #[inline]
+    pub fn sample(&self, x: usize, y: usize, z: usize) -> CaveNoiseSample {
+        self.samples[x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE]
+    }
+}
 
 /// 3D Cave, ravine, and cavern generator using dual-noise worms, chasms, and cheese chambers.
 #[derive(Debug, Clone, Reflect)]
@@ -34,13 +67,122 @@ impl Default for CaveGenerator {
 }
 
 impl CaveGenerator {
-    /// Determines whether a subterranean or ravine coordinate should be hollowed out by cave generation.
+    /// Evaluates the 4 continuous 3D noise fields at a specific floating-point coordinate.
+    #[inline]
+    pub fn sample_noise_point(&self, fx: f32, fy: f32, fz: f32, seed: u32) -> CaveNoiseSample {
+        let worm_a = gradient_noise_3d(
+            fx * self.spaghetti_freq,
+            fy * self.spaghetti_freq,
+            fz * self.spaghetti_freq,
+            seed.wrapping_add(70_001),
+        );
+
+        let worm_b = gradient_noise_3d(
+            fx * self.spaghetti_freq,
+            fy * self.spaghetti_freq,
+            fz * self.spaghetti_freq,
+            seed.wrapping_add(80_009),
+        );
+
+        let cheese = fbm_3d(
+            fx,
+            fy,
+            fz,
+            self.cheese_freq,
+            2,
+            0.5,
+            2.0,
+            seed.wrapping_add(90_013),
+        );
+
+        let aquifer = gradient_noise_3d(
+            fx * 0.035,
+            fy * 0.035,
+            fz * 0.035,
+            seed.wrapping_add(108_888),
+        );
+
+        CaveNoiseSample {
+            worm_a,
+            worm_b,
+            cheese,
+            aquifer,
+        }
+    }
+
+    /// Evaluates 3D noise on a 5x5x5 lattice (125 samples) and up-samples across
+    /// all 4,096 voxels in the chunk using SIMD-friendly trilinear interpolation.
+    pub fn build_chunk_sampler(&self, chunk_origin: IVec3, seed: u32) -> ChunkCaveSampler {
+        const LATTICE_DIM: usize = 5;
+        const CELL_SIZE: usize = 4;
+
+        let mut lattice = [[[CaveNoiseSample::default(); LATTICE_DIM]; LATTICE_DIM]; LATTICE_DIM];
+
+        for lz in 0..LATTICE_DIM {
+            let fz = (chunk_origin.z + (lz * CELL_SIZE) as i32) as f32;
+            for ly in 0..LATTICE_DIM {
+                let fy = (chunk_origin.y + (ly * CELL_SIZE) as i32) as f32;
+                for lx in 0..LATTICE_DIM {
+                    let fx = (chunk_origin.x + (lx * CELL_SIZE) as i32) as f32;
+                    lattice[lx][ly][lz] = self.sample_noise_point(fx, fy, fz, seed);
+                }
+            }
+        }
+
+        let mut samples = vec![CaveNoiseSample::default(); CHUNK_VOLUME];
+
+        for cz in 0..4 {
+            for cy in 0..4 {
+                for cx in 0..4 {
+                    let c000 = lattice[cx][cy][cz];
+                    let c100 = lattice[cx + 1][cy][cz];
+                    let c010 = lattice[cx][cy + 1][cz];
+                    let c110 = lattice[cx + 1][cy + 1][cz];
+                    let c001 = lattice[cx][cy][cz + 1];
+                    let c101 = lattice[cx + 1][cy][cz + 1];
+                    let c011 = lattice[cx][cy + 1][cz + 1];
+                    let c111 = lattice[cx + 1][cy + 1][cz + 1];
+
+                    for dz in 0..CELL_SIZE {
+                        let tz = dz as f32 * 0.25;
+                        let c00 = lerp_sample(c000, c001, tz);
+                        let c10 = lerp_sample(c100, c101, tz);
+                        let c01 = lerp_sample(c010, c011, tz);
+                        let c11 = lerp_sample(c110, c111, tz);
+
+                        let z = cz * CELL_SIZE + dz;
+
+                        for dy in 0..CELL_SIZE {
+                            let ty = dy as f32 * 0.25;
+                            let c0 = lerp_sample(c00, c01, ty);
+                            let c1 = lerp_sample(c10, c11, ty);
+
+                            let y = cy * CELL_SIZE + dy;
+
+                            for dx in 0..CELL_SIZE {
+                                let tx = dx as f32 * 0.25;
+                                let sample = lerp_sample(c0, c1, tx);
+
+                                let x = cx * CELL_SIZE + dx;
+                                samples[x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE] = sample;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ChunkCaveSampler { samples }
+    }
+
+    /// Determines whether a subterranean or ravine coordinate should be hollowed out using a precomputed sample.
     #[allow(clippy::too_many_arguments)]
-    pub fn is_cave(
+    pub fn is_cave_sampled(
         &self,
         world_x: i32,
         world_y: i32,
         world_z: i32,
+        sample: CaveNoiseSample,
         surface_height: i32,
         is_underwater: bool,
         sea_level: i32,
@@ -89,62 +231,59 @@ impl CaveGenerator {
         }
 
         // 2. Worm / Spaghetti tunnels: intersection of two zero-crossings
-        let worm_a = gradient_noise_3d(
-            fx * self.spaghetti_freq,
-            fy * self.spaghetti_freq,
-            fz * self.spaghetti_freq,
-            seed.wrapping_add(70_001),
-        );
-
-        let worm_b = gradient_noise_3d(
-            fx * self.spaghetti_freq,
-            fy * self.spaghetti_freq,
-            fz * self.spaghetti_freq,
-            seed.wrapping_add(80_009),
-        );
-
         if depth_below_surface <= self.surface_buffer_voxels {
             // Wide walkable opening at the surface
-            if worm_a.abs() < 0.12 && worm_b.abs() < 0.12 {
+            if sample.worm_a.abs() < 0.12 && sample.worm_b.abs() < 0.12 {
                 return true;
             }
         } else {
-            let is_worm =
-                worm_a.abs() < self.spaghetti_threshold && worm_b.abs() < self.spaghetti_threshold;
+            let is_worm = sample.worm_a.abs() < self.spaghetti_threshold
+                && sample.worm_b.abs() < self.spaghetti_threshold;
             if is_worm {
                 return true;
             }
         }
 
         // 3. Cheese Caverns (large chambers deep underground)
-        if depth_below_surface > 8 {
-            let cheese = fbm_3d(
-                fx,
-                fy,
-                fz,
-                self.cheese_freq,
-                2,
-                0.5,
-                2.0,
-                seed.wrapping_add(90_013),
-            );
-
-            if cheese > self.cheese_threshold {
-                return true;
-            }
+        if depth_below_surface > 8 && sample.cheese > self.cheese_threshold {
+            return true;
         }
 
         false
     }
 
-    /// Returns the filler voxel for a hollowed cave position.
-    pub fn cave_voxel(
+    /// Determines whether a subterranean or ravine coordinate should be hollowed out by cave generation.
+    #[allow(dead_code, clippy::too_many_arguments)]
+    pub fn is_cave(
         &self,
         world_x: i32,
         world_y: i32,
         world_z: i32,
+        surface_height: i32,
+        is_underwater: bool,
         sea_level: i32,
         seed: u32,
+    ) -> bool {
+        let sample = self.sample_noise_point(world_x as f32, world_y as f32, world_z as f32, seed);
+        self.is_cave_sampled(
+            world_x,
+            world_y,
+            world_z,
+            sample,
+            surface_height,
+            is_underwater,
+            sea_level,
+            seed,
+        )
+    }
+
+    /// Returns the filler voxel for a hollowed cave position using an up-sampled noise sample.
+    #[inline]
+    pub fn cave_voxel_sampled(
+        &self,
+        world_y: i32,
+        sample: CaveNoiseSample,
+        sea_level: i32,
     ) -> Voxel {
         if world_y <= self.deep_lava_y {
             if world_y <= self.deep_lava_y - 4 {
@@ -153,14 +292,7 @@ impl CaveGenerator {
                 Voxel::Magma
             }
         } else if world_y <= sea_level - 10 {
-            let aquifer_noise = gradient_noise_3d(
-                world_x as f32 * 0.035,
-                world_y as f32 * 0.035,
-                world_z as f32 * 0.035,
-                seed.wrapping_add(108_888),
-            );
-
-            if aquifer_noise > 0.48 {
+            if sample.aquifer > 0.48 {
                 Voxel::Water
             } else {
                 Voxel::Air
@@ -168,6 +300,20 @@ impl CaveGenerator {
         } else {
             Voxel::Air
         }
+    }
+
+    /// Returns the filler voxel for a hollowed cave position.
+    #[allow(dead_code)]
+    pub fn cave_voxel(
+        &self,
+        world_x: i32,
+        world_y: i32,
+        world_z: i32,
+        sea_level: i32,
+        seed: u32,
+    ) -> Voxel {
+        let sample = self.sample_noise_point(world_x as f32, world_y as f32, world_z as f32, seed);
+        self.cave_voxel_sampled(world_y, sample, sea_level)
     }
 }
 
@@ -208,5 +354,36 @@ mod tests {
         // Submerged surface (surface_height <= sea_level) must never trigger ravine carving
         let at_sea = generator.is_cave(100, 8, 100, 8, true, sea_level, 1337);
         assert!(!at_sea);
+    }
+
+    #[test]
+    fn trilinear_chunk_sampler_continuity_and_dimensions() {
+        let generator = CaveGenerator::default();
+        let chunk_origin = IVec3::new(16, -32, 16);
+        let sampler = generator.build_chunk_sampler(chunk_origin, 1337);
+
+        assert_eq!(sampler.samples.len(), CHUNK_VOLUME);
+
+        // Check continuity across cell boundary (e.g. at x = 3 and x = 4)
+        let s_3 = sampler.sample(3, 0, 0);
+        let s_4 = sampler.sample(4, 0, 0);
+
+        // The values must be close (continuous smoothly varying scalar field)
+        assert!((s_3.worm_a - s_4.worm_a).abs() < 0.25);
+        assert!((s_3.worm_b - s_4.worm_b).abs() < 0.25);
+        assert!((s_3.cheese - s_4.cheese).abs() < 0.25);
+
+        // Exact lattice point comparison: at (0, 0, 0), sample must exactly equal sample_noise_point
+        let exact = generator.sample_noise_point(
+            chunk_origin.x as f32,
+            chunk_origin.y as f32,
+            chunk_origin.z as f32,
+            1337,
+        );
+        let sampled = sampler.sample(0, 0, 0);
+        assert!((exact.worm_a - sampled.worm_a).abs() < 1e-5);
+        assert!((exact.worm_b - sampled.worm_b).abs() < 1e-5);
+        assert!((exact.cheese - sampled.cheese).abs() < 1e-5);
+        assert!((exact.aquifer - sampled.aquifer).abs() < 1e-5);
     }
 }

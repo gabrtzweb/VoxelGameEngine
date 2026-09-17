@@ -2,10 +2,10 @@ use bevy::prelude::*;
 
 use super::{
     biome::{BiomeType, ClimateGenerator, ClimateSample},
-    caves::CaveGenerator,
+    caves::{CaveGenerator, CaveNoiseSample},
     strata::StrataGenerator,
 };
-use crate::world::{CHUNK_SIZE, Chunk, Voxel};
+use crate::world::{CHUNK_SIZE, CHUNK_VOLUME, Chunk, Voxel};
 
 pub const LOGICAL_BLOCK_VOXELS: i32 = 2;
 
@@ -122,7 +122,8 @@ impl TerrainGenerator {
             return Chunk::filled(Voxel::Air);
         }
 
-        let mut chunk = Chunk::new();
+        let chunk_caves = self.caves.build_chunk_sampler(chunk_origin, self.seed);
+        let mut voxels = vec![Voxel::Air; CHUNK_VOLUME];
 
         for z in 0..CHUNK_SIZE {
             for x in 0..CHUNK_SIZE {
@@ -133,15 +134,23 @@ impl TerrainGenerator {
                     let world_x = chunk_origin.x + x as i32;
                     let world_z = chunk_origin.z + z as i32;
 
-                    let voxel = self.voxel_at(column, world_x, world_y, world_z);
+                    let cave_sample = chunk_caves.sample(x, y, z);
+                    let voxel = self.voxel_at_sampled(
+                        column,
+                        world_x,
+                        world_y,
+                        world_z,
+                        cave_sample,
+                    );
                     if voxel != Voxel::Air {
-                        chunk.set(x, y, z, voxel);
+                        let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
+                        voxels[idx] = voxel;
                     }
                 }
             }
         }
 
-        chunk
+        Chunk::from_voxels(voxels)
     }
 
     pub fn effective_sea_level(&self) -> i32 {
@@ -325,7 +334,14 @@ impl TerrainGenerator {
         }
     }
 
-    fn voxel_at(&self, column: TerrainColumn, world_x: i32, world_y: i32, world_z: i32) -> Voxel {
+    fn voxel_at_sampled(
+        &self,
+        column: TerrainColumn,
+        world_x: i32,
+        world_y: i32,
+        world_z: i32,
+        cave_sample: CaveNoiseSample,
+    ) -> Voxel {
         if world_y > column.terrain_height {
             if let Some(water_level) = column.water_level
                 && world_y <= water_level
@@ -339,21 +355,20 @@ impl TerrainGenerator {
         let is_underwater =
             column.water_level.is_some() || column.terrain_height <= self.effective_sea_level() + 2;
 
-        if self.caves.is_cave(
+        if self.caves.is_cave_sampled(
             world_x,
             world_y,
             world_z,
+            cave_sample,
             column.terrain_height,
             is_underwater,
             self.effective_sea_level(),
             self.seed,
         ) {
-            return self.caves.cave_voxel(
-                world_x,
+            return self.caves.cave_voxel_sampled(
                 world_y,
-                world_z,
+                cave_sample,
                 self.effective_sea_level(),
-                self.seed,
             );
         }
 
@@ -391,6 +406,17 @@ impl TerrainGenerator {
         } else {
             solid_voxel
         }
+    }
+
+    #[allow(dead_code)]
+    fn voxel_at(&self, column: TerrainColumn, world_x: i32, world_y: i32, world_z: i32) -> Voxel {
+        let sample = self.caves.sample_noise_point(
+            world_x as f32,
+            world_y as f32,
+            world_z as f32,
+            self.seed,
+        );
+        self.voxel_at_sampled(column, world_x, world_y, world_z, sample)
     }
 
     pub fn surface_voxel(&self, column: TerrainColumn, world_y: i32) -> Voxel {
