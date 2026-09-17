@@ -7,7 +7,7 @@ pub mod storage;
 pub mod streaming;
 
 pub use block::{ToolType, Voxel};
-pub use chunk::{CHUNK_SIZE, CHUNK_VOLUME, Chunk, ChunkHomogeneity, VOXEL_SIZE};
+pub use chunk::{CHUNK_SIZE, CHUNK_VOLUME, Chunk, ChunkHomogeneity, ChunkStorage, VOXEL_SIZE};
 pub use modifications::WorldModificationStore;
 pub use storage::{CHUNK_WORLD_SIZE, ChunkNeighborhood, VoxelAccess, VoxelWorld, affected_chunks};
 pub use streaming::{

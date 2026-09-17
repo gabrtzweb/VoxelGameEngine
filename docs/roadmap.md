@@ -255,7 +255,7 @@ Phase 8 focuses on deep algorithmic and memory optimizations to scale chunk thro
     - Drastically accelerates async chunk generation speed, eliminating chunk streaming pop-in during flight.
   - **Complexity / Risk**: Moderate complexity. May slightly smooth sharp micro-crevices in caves, but in practice yields more organic and aesthetically pleasing cave tunnels with virtually zero visual degradation.
 
-- [ ] **Stage 8.3: RLE Runtime Voxel Data, Paletted Storage & Cache Locality**:
+- [x] **Stage 8.3: RLE Runtime Voxel Data, Paletted Storage & Cache Locality**:
   - **The Problem**: Every loaded chunk currently stores a flat `[Voxel; 4096]` array (4,096 bytes). At render distance 10–12, several thousand chunks are held in memory simultaneously, consuming tens of megabytes of uncompressed RAM and causing cache pressure during iteration.
   - **Architecture**:
     - Implement a two-tiered paletted chunk representation:
