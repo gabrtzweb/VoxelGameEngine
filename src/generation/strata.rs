@@ -8,6 +8,7 @@ use crate::{core::noise::gradient_noise_3d, world::Voxel};
 pub struct StrataGenerator {
     pub mid_crust_y: i32,
     pub deep_crust_y: i32,
+    pub bedrock_min_block_y: i32,
     pub vein_frequency: f32,
 }
 
@@ -16,6 +17,7 @@ impl Default for StrataGenerator {
         Self {
             mid_crust_y: -16,
             deep_crust_y: -64,
+            bedrock_min_block_y: -80,
             vein_frequency: 0.085,
         }
     }
@@ -32,23 +34,45 @@ impl StrataGenerator {
         biome: &BiomeConfig,
         seed: u32,
     ) -> Voxel {
+        let block_y = world_y.div_euclid(2);
+        let bx = world_x.div_euclid(2) as f32 + 0.5;
+        let by = ly_coord(world_y);
+        let bz = world_z.div_euclid(2) as f32 + 0.5;
+
+        // Bedrock (Dreadstone) bottom 3 layers with natural blend
+        if block_y <= self.bedrock_min_block_y {
+            return Voxel::Dreadstone;
+        } else if block_y <= self.bedrock_min_block_y + 2 {
+            let bedrock_noise =
+                gradient_noise_3d(bx * 0.35, by * 0.35, bz * 0.35, seed.wrapping_add(234_567));
+            if block_y == self.bedrock_min_block_y + 1 {
+                if bedrock_noise > -0.30 {
+                    return Voxel::Dreadstone;
+                }
+            } else if block_y == self.bedrock_min_block_y + 2 && bedrock_noise > 0.20 {
+                return Voxel::Dreadstone;
+            }
+        }
+
         // 1. Surface layer (top logical block)
         if logical_depth <= 0 {
             return biome.surface_material;
         }
 
-        // 2. Subsoil layer (depth 1 to subsoil_depth logical blocks)
-        let lx = world_x.div_euclid(2) as f32 + 0.5;
-        let ly = world_y.div_euclid(2) as f32 + 0.5;
-        let lz = world_z.div_euclid(2) as f32 + 0.5;
+        // 2. Subsoil layer with natural dithered transition to stone
+        let transition_noise =
+            gradient_noise_3d(bx * 0.22, by * 0.22, bz * 0.22, seed.wrapping_add(99_111));
 
-        if logical_depth <= biome.subsoil_depth {
+        let dithered_subsoil_depth =
+            (biome.subsoil_depth as f32 + transition_noise * 1.6).round() as i32;
+
+        if logical_depth <= dithered_subsoil_depth.max(1) {
             // Check for clay veins in wetlands subsoil
             if biome.surface_material == Voxel::Mud {
                 let clay_noise = gradient_noise_3d(
-                    lx * self.vein_frequency,
-                    ly * self.vein_frequency,
-                    lz * self.vein_frequency,
+                    bx * self.vein_frequency,
+                    by * self.vein_frequency,
+                    bz * self.vein_frequency,
                     seed.wrapping_add(104_729),
                 );
                 if clay_noise > 0.45 {
@@ -58,18 +82,19 @@ impl StrataGenerator {
             return biome.subsoil_material;
         }
 
-        // 3. Deep geological strata & veins based on absolute Y level
+        // 3. Deep geological strata & veins based on modulated Y level
         let vein = gradient_noise_3d(
-            lx * self.vein_frequency,
-            ly * self.vein_frequency,
-            lz * self.vein_frequency,
+            bx * self.vein_frequency,
+            by * self.vein_frequency,
+            bz * self.vein_frequency,
             seed.wrapping_add(120_007),
         );
 
-        let block_top_y = world_y.div_euclid(2) * 2 + 1;
+        let block_top_y = block_y * 2 + 1;
+        let strata_dither = transition_noise * 6.0;
 
         // A. Deep Crust (Blackstone, Magma, Cobbleblackstone)
-        if block_top_y <= self.deep_crust_y {
+        if (block_top_y as f32 + strata_dither) <= self.deep_crust_y as f32 {
             if vein > 0.65 {
                 Voxel::Magma
             } else if vein > 0.45 {
@@ -79,7 +104,7 @@ impl StrataGenerator {
             }
         }
         // B. Mid Crust (Slate, Cobbleslate, Flint)
-        else if block_top_y <= self.mid_crust_y {
+        else if (block_top_y as f32 + strata_dither) <= self.mid_crust_y as f32 {
             if vein > 0.72 {
                 Voxel::Flint
             } else if vein > 0.45 {
@@ -101,6 +126,11 @@ impl StrataGenerator {
             }
         }
     }
+}
+
+#[inline]
+fn ly_coord(world_y: i32) -> f32 {
+    world_y.div_euclid(2) as f32 + 0.5
 }
 
 #[cfg(test)]
@@ -131,5 +161,28 @@ mod tests {
             deep,
             Voxel::Blackstone | Voxel::Cobbleblackstone | Voxel::Magma
         ));
+
+        // Bottom layer of blocks must always be unbreakable Dreadstone
+        let bedrock_bottom = generator.solid_voxel_at(0, -160, 0, 80, &plains, seed);
+        assert_eq!(bedrock_bottom, Voxel::Dreadstone);
+        assert!(bedrock_bottom.is_unbreakable());
+    }
+
+    #[test]
+    fn dreadstone_bedrock_spawns_in_bottom_layers() {
+        let generator = StrataGenerator::default();
+        let plains = BiomeType::Plains.config();
+        let seed = 42;
+
+        for x in -5..=5 {
+            for z in -5..=5 {
+                let bottom = generator.solid_voxel_at(x, -160, z, 90, &plains, seed);
+                assert_eq!(
+                    bottom,
+                    Voxel::Dreadstone,
+                    "Layer -80 must be 100% Dreadstone"
+                );
+            }
+        }
     }
 }

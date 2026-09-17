@@ -6,32 +6,47 @@ use crate::{core::noise::fbm_2d, world::Voxel};
 pub enum BiomeType {
     #[default]
     Plains,
-    Desert,
-    SnowyTundra,
+    Meadow,
+    Woodland,
     Wetlands,
     Highlands,
-    Woodland,
+    SnowyTundra,
+    Desert,
+    Beach,
+    River,
+    Ocean,
+    DeepOcean,
 }
 
 impl BiomeType {
     #[allow(dead_code)]
-    pub const ALL: [BiomeType; 6] = [
+    pub const ALL: [BiomeType; 11] = [
         BiomeType::Plains,
-        BiomeType::Desert,
-        BiomeType::SnowyTundra,
+        BiomeType::Meadow,
+        BiomeType::Woodland,
         BiomeType::Wetlands,
         BiomeType::Highlands,
-        BiomeType::Woodland,
+        BiomeType::SnowyTundra,
+        BiomeType::Desert,
+        BiomeType::Beach,
+        BiomeType::River,
+        BiomeType::Ocean,
+        BiomeType::DeepOcean,
     ];
 
     pub fn name(self) -> &'static str {
         match self {
             BiomeType::Plains => "Plains",
-            BiomeType::Desert => "Desert",
-            BiomeType::SnowyTundra => "Snowy Tundra",
+            BiomeType::Meadow => "Meadow",
+            BiomeType::Woodland => "Woodland",
             BiomeType::Wetlands => "Wetlands",
             BiomeType::Highlands => "Highlands",
-            BiomeType::Woodland => "Woodland",
+            BiomeType::SnowyTundra => "Snowy Tundra",
+            BiomeType::Desert => "Desert",
+            BiomeType::Beach => "Beach",
+            BiomeType::River => "River",
+            BiomeType::Ocean => "Ocean",
+            BiomeType::DeepOcean => "Deep Ocean",
         }
     }
 
@@ -48,6 +63,17 @@ impl BiomeType {
                 primary_stone: Voxel::Stone,
                 cliff_material: Voxel::Stone,
             },
+            BiomeType::Meadow => BiomeConfig {
+                biome_type: BiomeType::Meadow,
+                name: "Meadow",
+                surface_material: Voxel::Grass,
+                subsoil_material: Voxel::Dirt,
+                subsoil_depth: 3,
+                base_height_offset: 2.0,
+                amplitude_multiplier: 0.8,
+                primary_stone: Voxel::Stone,
+                cliff_material: Voxel::Stone,
+            },
             BiomeType::Desert => BiomeConfig {
                 biome_type: BiomeType::Desert,
                 name: "Desert",
@@ -57,7 +83,7 @@ impl BiomeType {
                 base_height_offset: 3.0,
                 amplitude_multiplier: 1.5,
                 primary_stone: Voxel::Stone,
-                cliff_material: Voxel::Stone,
+                cliff_material: Voxel::Sandstone,
             },
             BiomeType::SnowyTundra => BiomeConfig {
                 biome_type: BiomeType::SnowyTundra,
@@ -65,7 +91,7 @@ impl BiomeType {
                 surface_material: Voxel::Snow,
                 subsoil_material: Voxel::Dirt,
                 subsoil_depth: 2,
-                base_height_offset: 22.0,
+                base_height_offset: 24.0,
                 amplitude_multiplier: 2.6,
                 primary_stone: Voxel::Stone,
                 cliff_material: Voxel::Stone,
@@ -73,10 +99,10 @@ impl BiomeType {
             BiomeType::Wetlands => BiomeConfig {
                 biome_type: BiomeType::Wetlands,
                 name: "Wetlands",
-                surface_material: Voxel::Mud,
+                surface_material: Voxel::Grass,
                 subsoil_material: Voxel::PackedMud,
                 subsoil_depth: 3,
-                base_height_offset: -4.0,
+                base_height_offset: -3.0,
                 amplitude_multiplier: 0.35,
                 primary_stone: Voxel::Stone,
                 cliff_material: Voxel::Clay,
@@ -87,21 +113,65 @@ impl BiomeType {
                 surface_material: Voxel::Slate,
                 subsoil_material: Voxel::Cobbleslate,
                 subsoil_depth: 2,
-                base_height_offset: 28.0,
-                amplitude_multiplier: 3.2,
+                base_height_offset: 32.0,
+                amplitude_multiplier: 3.4,
                 primary_stone: Voxel::Slate,
                 cliff_material: Voxel::Slate,
             },
             BiomeType::Woodland => BiomeConfig {
                 biome_type: BiomeType::Woodland,
                 name: "Woodland",
-                surface_material: Voxel::Mulch,
+                surface_material: Voxel::Grass,
                 subsoil_material: Voxel::PackedDirt,
                 subsoil_depth: 3,
-                base_height_offset: 4.0,
+                base_height_offset: 5.0,
                 amplitude_multiplier: 1.3,
                 primary_stone: Voxel::Stone,
                 cliff_material: Voxel::MossyStone,
+            },
+            BiomeType::Beach => BiomeConfig {
+                biome_type: BiomeType::Beach,
+                name: "Beach",
+                surface_material: Voxel::Sand,
+                subsoil_material: Voxel::Sand,
+                subsoil_depth: 4,
+                base_height_offset: -1.0,
+                amplitude_multiplier: 0.4,
+                primary_stone: Voxel::Stone,
+                cliff_material: Voxel::Sandstone,
+            },
+            BiomeType::River => BiomeConfig {
+                biome_type: BiomeType::River,
+                name: "River",
+                surface_material: Voxel::Sand,
+                subsoil_material: Voxel::Gravel,
+                subsoil_depth: 2,
+                base_height_offset: -5.0,
+                amplitude_multiplier: 0.3,
+                primary_stone: Voxel::Stone,
+                cliff_material: Voxel::Stone,
+            },
+            BiomeType::Ocean => BiomeConfig {
+                biome_type: BiomeType::Ocean,
+                name: "Ocean",
+                surface_material: Voxel::Sand,
+                subsoil_material: Voxel::Gravel,
+                subsoil_depth: 3,
+                base_height_offset: -14.0,
+                amplitude_multiplier: 0.5,
+                primary_stone: Voxel::Stone,
+                cliff_material: Voxel::Stone,
+            },
+            BiomeType::DeepOcean => BiomeConfig {
+                biome_type: BiomeType::DeepOcean,
+                name: "Deep Ocean",
+                surface_material: Voxel::Gravel,
+                subsoil_material: Voxel::Blackstone,
+                subsoil_depth: 3,
+                base_height_offset: -26.0,
+                amplitude_multiplier: 0.5,
+                primary_stone: Voxel::Blackstone,
+                cliff_material: Voxel::Blackstone,
             },
         }
     }
@@ -189,27 +259,47 @@ impl ClimateGenerator {
     }
 
     pub fn classify_biome(continentalness: f32, temperature: f32, humidity: f32) -> BiomeType {
-        // 1. Extreme cold or high mountains freezing
-        if temperature < -0.22 || (continentalness > 0.65 && temperature < 0.10) {
+        // 1. Deep Oceanic Abyss
+        if continentalness < -0.45 {
+            BiomeType::DeepOcean
+        }
+        // 2. Open Ocean
+        else if continentalness < -0.20 {
+            BiomeType::Ocean
+        }
+        // 3. Coastal Beaches
+        else if continentalness < -0.05 {
+            BiomeType::Beach
+        }
+        // 4. Coastal river estuaries
+        else if continentalness < 0.03 && humidity > 0.18 {
+            BiomeType::River
+        }
+        // 5. Extreme cold or high frozen peaks
+        else if temperature < -0.22 || (continentalness > 0.65 && temperature < 0.10) {
             BiomeType::SnowyTundra
         }
-        // 2. High continentalness creates rugged mountain highlands
+        // 6. High continentalness creates rugged mountain highlands
         else if continentalness > 0.40 {
             BiomeType::Highlands
         }
-        // 3. Hot and dry creates desert dunes
+        // 7. Hot and dry creates desert dunes
         else if humidity < -0.18 && temperature > 0.15 {
             BiomeType::Desert
         }
-        // 4. Low coastal elevation with high moisture creates wetlands/swamps
+        // 8. Low inland elevation with high moisture creates wetlands/swamps
         else if continentalness < 0.15 && humidity > 0.25 {
             BiomeType::Wetlands
         }
-        // 5. High moisture inland creates rich woodland
+        // 9. High moisture inland creates rich woodland
         else if humidity > 0.18 {
             BiomeType::Woodland
         }
-        // 6. Default temperate rolling plains
+        // 10. Gentle transition meadow
+        else if humidity > 0.02 {
+            BiomeType::Meadow
+        }
+        // 11. Default temperate rolling plains
         else {
             BiomeType::Plains
         }

@@ -9,11 +9,6 @@ use crate::world::{CHUNK_SIZE, Chunk, Voxel};
 
 pub const LOGICAL_BLOCK_VOXELS: i32 = 2;
 
-const BEACH_HEIGHT: i32 = 2;
-
-const LAKE_WATER_THRESHOLD: f32 = 0.20;
-const LAKE_MATERIAL_THRESHOLD: f32 = 0.05;
-
 #[derive(Clone, Copy, Debug)]
 pub struct TerrainColumn {
     pub terrain_height: i32,
@@ -50,12 +45,10 @@ pub struct TerrainGenerator {
     pub detail_octaves: u32,
     pub persistence: f32,
 
-    // Lakes.
+    // Water, rivers & oceans.
     pub sea_level: i32,
-    pub lake_frequency: f32,
-    pub lake_threshold: f32,
-    pub lake_transition: f32,
-    pub lake_max_depth: f32,
+    pub river_frequency: f32,
+    pub river_width: f32,
 
     // Advanced Phase 6 procedural systems
     pub climate: ClimateGenerator,
@@ -71,26 +64,24 @@ impl Default for TerrainGenerator {
         Self {
             seed: 1337,
 
-            // 13 voxels = 6.5 meters baseline.
-            base_height: 13.0,
+            // Baseline elevation in voxels
+            base_height: 10.0,
 
-            // Broad hills and plains.
-            macro_amplitude: 7.0,
-            macro_frequency: 0.010,
+            // Broad continental landforms
+            macro_amplitude: 8.0,
+            macro_frequency: 0.008,
 
-            // Smaller local variation.
-            detail_amplitude: 2.5,
-            detail_frequency: 0.045,
+            // Local terrain relief
+            detail_amplitude: 3.0,
+            detail_frequency: 0.038,
             detail_octaves: 3,
             persistence: 0.5,
 
             // 9 voxels = 4.5 meters (aligns with top of logical block 4 at y=9).
             sea_level: 9,
 
-            lake_frequency: 0.008,
-            lake_threshold: 0.10,
-            lake_transition: 0.45,
-            lake_max_depth: 10.0,
+            river_frequency: 0.0035,
+            river_width: 0.040,
 
             climate: ClimateGenerator::default(),
             caves: CaveGenerator::default(),
@@ -163,45 +154,160 @@ impl TerrainGenerator {
         let sample_x = logical_block_sample_position(logical_x);
         let sample_z = logical_block_sample_position(logical_z);
 
-        let climate = self.climate.sample(sample_x, sample_z, self.seed);
-        let terrain_height = self.terrain_height_at(world_x as f32, world_z as f32, &climate);
-        let lake_strength = self.lake_strength_at(world_x as f32, world_z as f32);
+        let mut climate = self.climate.sample(sample_x, sample_z, self.seed);
         let sea_level = self.effective_sea_level();
 
-        let water_level = if terrain_height < sea_level && lake_strength >= LAKE_WATER_THRESHOLD {
+        let mut terrain_height = self.terrain_height_at(world_x as f32, world_z as f32, &climate);
+
+        let (river_factor, is_river_path) = self.river_sample(sample_x, sample_z);
+        let is_inland = climate.continentalness >= -0.05;
+        let is_river = is_river_path && is_inland && river_factor > 0.05;
+
+        if is_river {
+            let river_bed = sea_level - 4;
+            let target_height = lerp(
+                terrain_height as f32,
+                river_bed as f32,
+                (river_factor * 1.25).min(1.0),
+            )
+            .round() as i32;
+            terrain_height = terrain_height.min(target_height);
+            climate.biome = BiomeType::River;
+        }
+
+        let water_level = if terrain_height < sea_level {
             Some(sea_level)
         } else {
             None
         };
 
-        let is_beach = self.is_beach_at(world_x, world_z, climate.biome);
+        let is_beach = self.is_beach_at(logical_x, logical_z, climate.biome, sea_level, &climate);
+        let final_biome = if is_beach && !is_river {
+            BiomeType::Beach
+        } else {
+            climate.biome
+        };
 
         TerrainColumn {
             terrain_height,
             water_level,
             material_terrain_height: self.logical_terrain_height_at(logical_x, logical_z, &climate),
-            biome: climate.biome,
+            biome: final_biome,
             is_beach,
         }
     }
 
-    fn is_beach_at(&self, world_x: i32, world_z: i32, biome: BiomeType) -> bool {
-        if matches!(biome, BiomeType::SnowyTundra | BiomeType::Highlands) {
+    pub fn river_sample(&self, world_x: f32, world_z: f32) -> (f32, bool) {
+        let river_noise = fractal_noise(
+            world_x,
+            world_z,
+            self.river_frequency,
+            3,
+            0.5,
+            self.seed.wrapping_add(555_123),
+        );
+        let dist = river_noise.abs();
+        if dist < self.river_width {
+            let depth_factor = 1.0 - (dist / self.river_width);
+            (depth_factor, true)
+        } else {
+            (0.0, false)
+        }
+    }
+
+    fn is_beach_at(
+        &self,
+        logical_x: i32,
+        logical_z: i32,
+        biome: BiomeType,
+        sea_level: i32,
+        climate: &ClimateSample,
+    ) -> bool {
+        if matches!(
+            biome,
+            BiomeType::SnowyTundra | BiomeType::Highlands | BiomeType::DeepOcean
+        ) {
             return false;
         }
 
-        let logical_x = world_x.div_euclid(LOGICAL_BLOCK_VOXELS);
-        let logical_z = world_z.div_euclid(LOGICAL_BLOCK_VOXELS);
+        let rep_height = self.logical_terrain_height_at(logical_x, logical_z, climate);
+        rep_height >= sea_level - 1 && rep_height <= sea_level + 3
+    }
 
-        let sample_x = logical_block_sample_position(logical_x);
-        let sample_z = logical_block_sample_position(logical_z);
+    fn surface_material_at(
+        &self,
+        world_x: i32,
+        _world_y: i32,
+        world_z: i32,
+        column: TerrainColumn,
+    ) -> Voxel {
+        if column.is_beach {
+            return Voxel::Sand;
+        }
 
-        let lake_strength = self.lake_strength_at(sample_x, sample_z);
-        let climate = self.climate.sample(sample_x, sample_z, self.seed);
-        let representative_height = self.terrain_height_at(sample_x, sample_z, &climate);
+        let bx = world_x.div_euclid(LOGICAL_BLOCK_VOXELS) as f32 + 0.5;
+        let bz = world_z.div_euclid(LOGICAL_BLOCK_VOXELS) as f32 + 0.5;
+        let surface_noise = crate::core::noise::gradient_noise_2d(
+            bx * 0.12,
+            bz * 0.12,
+            self.seed.wrapping_add(88_221),
+        );
 
-        let near_lake = lake_strength > LAKE_MATERIAL_THRESHOLD;
-        near_lake && representative_height <= self.effective_sea_level() + BEACH_HEIGHT
+        match column.biome {
+            BiomeType::Woodland => {
+                // Mix Grass (50%), Mulch (30%), Packed Dirt (10%), Moss (10%)
+                if surface_noise > 0.35 {
+                    Voxel::Mulch
+                } else if surface_noise > 0.18 {
+                    Voxel::PackedDirt
+                } else if surface_noise < -0.38 {
+                    Voxel::Moss
+                } else {
+                    Voxel::Grass
+                }
+            }
+            BiomeType::Wetlands => {
+                // Mix Grass (40%), Mud (35%), Packed Mud (15%), Clay (10%)
+                if surface_noise > 0.25 {
+                    Voxel::Mud
+                } else if surface_noise > 0.05 {
+                    Voxel::PackedMud
+                } else if surface_noise < -0.35 {
+                    Voxel::Clay
+                } else {
+                    Voxel::Grass
+                }
+            }
+            BiomeType::Plains | BiomeType::Meadow => {
+                if surface_noise > 0.46 {
+                    Voxel::PackedDirt
+                } else if surface_noise < -0.46 {
+                    Voxel::Moss
+                } else {
+                    Voxel::Grass
+                }
+            }
+            BiomeType::Beach => Voxel::Sand,
+            BiomeType::Desert => {
+                if surface_noise > 0.42 {
+                    Voxel::RedSand
+                } else {
+                    Voxel::Sand
+                }
+            }
+            BiomeType::Ocean => Voxel::Sand,
+            BiomeType::DeepOcean => Voxel::Gravel,
+            BiomeType::River => {
+                if surface_noise > 0.20 {
+                    Voxel::Gravel
+                } else if surface_noise < -0.20 {
+                    Voxel::Clay
+                } else {
+                    Voxel::Sand
+                }
+            }
+            _ => column.biome.config().surface_material,
+        }
     }
 
     fn voxel_at(&self, column: TerrainColumn, world_x: i32, world_y: i32, world_z: i32) -> Voxel {
@@ -215,10 +321,18 @@ impl TerrainGenerator {
             return Voxel::Air;
         }
 
-        if self
-            .caves
-            .is_cave(world_x, world_y, world_z, column.terrain_height, self.seed)
-        {
+        let is_underwater =
+            column.water_level.is_some() || column.terrain_height <= self.effective_sea_level() + 2;
+
+        if self.caves.is_cave(
+            world_x,
+            world_y,
+            world_z,
+            column.terrain_height,
+            is_underwater,
+            self.effective_sea_level(),
+            self.seed,
+        ) {
             return self.caves.cave_voxel(
                 world_x,
                 world_y,
@@ -236,6 +350,10 @@ impl TerrainGenerator {
 
         if column.is_beach && logical_depth <= 2 {
             return Voxel::Sand;
+        }
+
+        if logical_depth <= 0 {
+            return self.surface_material_at(world_x, world_y, world_z, column);
         }
 
         let solid_voxel = self.strata.solid_voxel_at(
@@ -264,12 +382,16 @@ impl TerrainGenerator {
         let logical_block_top = logical_block_top(world_y);
         let logical_depth =
             (column.material_terrain_height - logical_block_top) / LOGICAL_BLOCK_VOXELS;
-        let biome_cfg = column.biome.config();
 
         if column.is_beach && logical_depth <= 2 {
             return Voxel::Sand;
         }
 
+        if logical_depth <= 0 {
+            return self.surface_material_at(0, world_y, 0, column);
+        }
+
+        let biome_cfg = column.biome.config();
         self.strata
             .solid_voxel_at(0, world_y, 0, logical_depth, &biome_cfg, self.seed)
     }
@@ -344,6 +466,25 @@ impl TerrainGenerator {
         logical_block_top(self.terrain_height_at(sample_x, sample_z, climate))
     }
 
+    fn continental_elevation(continentalness: f32) -> f32 {
+        if continentalness < -0.45 {
+            // Deep Ocean: base -22.0 to -16.0
+            -22.0 + (continentalness + 0.45) * 15.0
+        } else if continentalness < -0.15 {
+            // Ocean: base -15.0 to -3.0
+            -15.0 + (continentalness + 0.15) * 40.0
+        } else if continentalness < -0.02 {
+            // Coastal shelf & Archipelago (islands emerge where noise peaks > 9)
+            -2.0 + (continentalness + 0.02) * 50.0
+        } else if continentalness < 0.40 {
+            // Inland continent: gentle rolling terrain (base 12.0 to 24.0)
+            12.0 + continentalness * 28.0
+        } else {
+            // Mountain Highlands: rises sharply (base 24.0 to 75.0+)
+            24.0 + (continentalness - 0.40).powf(1.2) * 68.0
+        }
+    }
+
     fn natural_height_at(&self, world_x: f32, world_z: f32, climate: &ClimateSample) -> f32 {
         let macro_noise = fractal_noise(
             world_x,
@@ -364,13 +505,12 @@ impl TerrainGenerator {
         );
 
         let biome_cfg = climate.biome.config();
+        let cont_base = Self::continental_elevation(climate.continentalness);
 
-        let continental_factor = (climate.continentalness - 0.10).max(0.0) / 0.90;
-        let mountain_lift = continental_factor.powf(1.3) * 32.0;
+        let mountain_factor = (climate.continentalness - 0.20).max(0.0) / 0.80;
+        let ridge = (1.0 - macro_noise.abs()).powi(2) * 20.0 * mountain_factor;
 
-        let ridge = (1.0 - macro_noise.abs()).powi(2) * 18.0 * continental_factor;
-
-        let base = self.base_height + biome_cfg.base_height_offset + mountain_lift;
+        let base = self.base_height + cont_base + biome_cfg.base_height_offset * 0.4;
         let amplitude = (self.macro_amplitude * macro_noise + self.detail_amplitude * detail_noise)
             * biome_cfg.amplitude_multiplier
             + ridge;
@@ -379,32 +519,7 @@ impl TerrainGenerator {
     }
 
     fn terrain_height_at(&self, world_x: f32, world_z: f32, climate: &ClimateSample) -> i32 {
-        let natural_height = self.natural_height_at(world_x, world_z, climate);
-        let lake_strength = self.lake_strength_at(world_x, world_z);
-
-        if lake_strength > 0.0 {
-            let deepest_floor = self.effective_sea_level() as f32 - self.lake_max_depth;
-            lerp(natural_height, deepest_floor, lake_strength).round() as i32
-        } else {
-            natural_height.round() as i32
-        }
-    }
-
-    fn lake_strength_at(&self, world_x: f32, world_z: f32) -> f32 {
-        let lake_noise = fractal_noise(
-            world_x,
-            world_z,
-            self.lake_frequency,
-            2,
-            0.55,
-            self.seed.wrapping_add(420_911),
-        );
-
-        smooth_range(
-            lake_noise,
-            self.lake_threshold,
-            self.lake_threshold + self.lake_transition,
-        )
+        self.natural_height_at(world_x, world_z, climate).round() as i32
     }
 }
 
@@ -491,6 +606,7 @@ fn hash_value(x: i32, z: i32, seed: u32) -> f32 {
     normalized * 2.0 - 1.0
 }
 
+#[allow(dead_code)]
 fn smooth_range(value: f32, start: f32, end: f32) -> f32 {
     if end <= start {
         return if value >= start { 1.0 } else { 0.0 };
@@ -599,9 +715,15 @@ mod tests {
                 for x in -32..32 {
                     let column = generator.sample_column(x, z);
                     if y < column.terrain_height - 6
-                        && generator
-                            .caves
-                            .is_cave(x, y, z, column.terrain_height, generator.seed)
+                        && generator.caves.is_cave(
+                            x,
+                            y,
+                            z,
+                            column.terrain_height,
+                            false,
+                            generator.effective_sea_level(),
+                            generator.seed,
+                        )
                     {
                         let fill = generator.caves.cave_voxel(
                             x,
@@ -638,5 +760,81 @@ mod tests {
             max_height >= 40,
             "expected mountain summits to reach at least 40 voxels, got {max_height}"
         );
+    }
+
+    #[test]
+    fn oceans_and_deep_oceans_generate_proper_depth() {
+        let generator = TerrainGenerator::default();
+        let sea_level = generator.effective_sea_level();
+
+        let mut found_deep_ocean = false;
+        let mut found_ocean = false;
+
+        for z in (-600..600).step_by(25) {
+            for x in (-600..600).step_by(25) {
+                let col = generator.sample_column(x, z);
+                if col.biome == BiomeType::DeepOcean {
+                    found_deep_ocean = true;
+                    assert!(col.water_level.is_some());
+                    assert!(col.terrain_height < sea_level - 10);
+                } else if col.biome == BiomeType::Ocean {
+                    found_ocean = true;
+                    assert!(col.water_level.is_some());
+                    assert!(col.terrain_height < sea_level);
+                }
+            }
+        }
+
+        assert!(found_deep_ocean, "expected DeepOcean biomes to generate");
+        assert!(found_ocean, "expected Ocean biomes to generate");
+    }
+
+    #[test]
+    fn woodland_surface_mixes_grass_with_mulch_and_dirt() {
+        let generator = TerrainGenerator::default();
+        let mut found_grass = false;
+        let mut found_mulch = false;
+
+        for z in (-400..400).step_by(10) {
+            for x in (-400..400).step_by(10) {
+                let col = generator.sample_column(x, z);
+                if col.biome == BiomeType::Woodland {
+                    let surface = generator.surface_material_at(x, col.terrain_height, z, col);
+                    if surface == Voxel::Grass {
+                        found_grass = true;
+                    } else if surface == Voxel::Mulch {
+                        found_mulch = true;
+                    }
+                }
+            }
+        }
+
+        assert!(
+            found_grass && found_mulch,
+            "Woodland must mix Grass and Mulch"
+        );
+    }
+
+    #[test]
+    fn wetlands_surface_mixes_grass_with_mud() {
+        let generator = TerrainGenerator::default();
+        let mut found_grass = false;
+        let mut found_mud = false;
+
+        for z in (-400..400).step_by(10) {
+            for x in (-400..400).step_by(10) {
+                let col = generator.sample_column(x, z);
+                if col.biome == BiomeType::Wetlands {
+                    let surface = generator.surface_material_at(x, col.terrain_height, z, col);
+                    if surface == Voxel::Grass {
+                        found_grass = true;
+                    } else if surface == Voxel::Mud {
+                        found_mud = true;
+                    }
+                }
+            }
+        }
+
+        assert!(found_grass && found_mud, "Wetlands must mix Grass and Mud");
     }
 }

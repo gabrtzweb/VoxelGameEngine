@@ -15,11 +15,12 @@ use bevy::{
     winit::WinitWindows,
 };
 
-use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
+use bevy_inspector_egui::bevy_egui::EguiPlugin;
 
 use core::DevStatsPlugin;
 use environment::EnvironmentPlugin;
 use gameplay::GameplayPlugin;
+use generation::TerrainInspectorPlugin;
 use menu::MenuPlugin;
 use meshing::MeshingPlugin;
 use player::PlayerPlugin;
@@ -79,10 +80,7 @@ fn main() {
         )
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(EguiPlugin::default())
-        .add_plugins(
-            WorldInspectorPlugin::default()
-                .run_if(|inspector: Res<player::InspectorInteraction>| inspector.active),
-        )
+        .add_plugins(TerrainInspectorPlugin)
         .add_plugins(EnvironmentPlugin)
         .add_plugins(PlayerPlugin)
         .add_plugins(WorldPlugin)

@@ -16,15 +16,15 @@ use crate::{
     },
 };
 
-const DEFAULT_RENDER_DISTANCE: i32 = 8;
+const DEFAULT_RENDER_DISTANCE: i32 = 12;
 
-pub const WORLD_MIN_CHUNK_Y: i32 = -8;
-pub const WORLD_MAX_CHUNK_Y: i32 = 7;
+pub const WORLD_MIN_CHUNK_Y: i32 = -10;
+pub const WORLD_MAX_CHUNK_Y: i32 = 10;
 
 const MAX_GENERATION_TASKS_IN_FLIGHT: usize = 24;
 const MAX_GENERATION_TASKS_STARTED_PER_FRAME: usize = 8;
 
-const MAX_CHUNK_UNLOADS_PER_FRAME: usize = 24;
+const MAX_CHUNK_UNLOADS_PER_FRAME: usize = 64;
 
 pub const NEIGHBOR_DIRECTIONS: [IVec3; 6] = [
     IVec3::new(1, 0, 0),

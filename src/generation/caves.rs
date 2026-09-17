@@ -21,26 +21,29 @@ pub struct CaveGenerator {
 impl Default for CaveGenerator {
     fn default() -> Self {
         Self {
-            spaghetti_freq: 0.028,
-            spaghetti_threshold: 0.075,
+            spaghetti_freq: 0.024,
+            spaghetti_threshold: 0.14,
             cheese_freq: 0.016,
-            cheese_threshold: 0.46,
-            surface_buffer_voxels: 4,
+            cheese_threshold: 0.44,
+            surface_buffer_voxels: 5,
             deep_lava_y: -60,
-            ravine_freq: 0.007,
-            ravine_width: 0.024,
+            ravine_freq: 0.005,
+            ravine_width: 0.022,
         }
     }
 }
 
 impl CaveGenerator {
     /// Determines whether a subterranean or ravine coordinate should be hollowed out by cave generation.
+    #[allow(clippy::too_many_arguments)]
     pub fn is_cave(
         &self,
         world_x: i32,
         world_y: i32,
         world_z: i32,
         surface_height: i32,
+        is_underwater: bool,
+        sea_level: i32,
         seed: u32,
     ) -> bool {
         if world_y > surface_height {
@@ -56,18 +59,18 @@ impl CaveGenerator {
         let fy = world_y as f32;
         let fz = world_z as f32;
 
-        // 1. 3D Ravines / Chasms (dramatic surface-breaching fissures down to 40 voxels deep)
-        if depth_below_surface <= 40 {
-            let ravine_path = gradient_noise_2d(
-                fx * self.ravine_freq,
-                fz * self.ravine_freq,
-                seed.wrapping_add(33_333),
-            );
-
+        // 1. 3D Ravines / Chasms (dramatic fissures, strictly prohibited underwater in rivers/oceans)
+        if !is_underwater && surface_height > sea_level + 2 && depth_below_surface <= 36 {
             let ravine_active =
-                gradient_noise_2d(fx * 0.0025, fz * 0.0025, seed.wrapping_add(44_444));
+                gradient_noise_2d(fx * 0.0020, fz * 0.0020, seed.wrapping_add(44_444));
 
-            if ravine_active > 0.10 {
+            if ravine_active > 0.58 {
+                let ravine_path = gradient_noise_2d(
+                    fx * self.ravine_freq,
+                    fz * self.ravine_freq,
+                    seed.wrapping_add(33_333),
+                );
+
                 let wall_jitter = gradient_noise_3d(
                     fx * 0.045,
                     fy * 0.045,
@@ -77,7 +80,7 @@ impl CaveGenerator {
 
                 let half_width = self.ravine_width + wall_jitter;
                 if ravine_path.abs() < half_width {
-                    let bottom_dist = 40 - depth_below_surface;
+                    let bottom_dist = 36 - depth_below_surface;
                     if bottom_dist > 1 {
                         return true;
                     }
@@ -100,9 +103,9 @@ impl CaveGenerator {
             seed.wrapping_add(80_009),
         );
 
-        let is_tunnel_core = worm_a.abs() < 0.042 && worm_b.abs() < 0.042;
         if depth_below_surface <= self.surface_buffer_voxels {
-            if is_tunnel_core {
+            // Wide walkable opening at the surface
+            if worm_a.abs() < 0.12 && worm_b.abs() < 0.12 {
                 return true;
             }
         } else {
@@ -175,8 +178,8 @@ mod tests {
     #[test]
     fn caves_do_not_carve_above_surface() {
         let generator = CaveGenerator::default();
-        assert!(!generator.is_cave(0, 20, 0, 15, 1337));
-        assert!(!generator.is_cave(0, 16, 0, 15, 1337));
+        assert!(!generator.is_cave(0, 20, 0, 15, false, 9, 1337));
+        assert!(!generator.is_cave(0, 16, 0, 15, false, 9, 1337));
     }
 
     #[test]
@@ -195,5 +198,15 @@ mod tests {
             generator.cave_voxel(0, -68, 0, sea_level, 1337),
             Voxel::Lava
         );
+    }
+
+    #[test]
+    fn ravines_are_suppressed_underwater() {
+        let generator = CaveGenerator::default();
+        let sea_level = 9;
+
+        // Submerged surface (surface_height <= sea_level) must never trigger ravine carving
+        let at_sea = generator.is_cave(100, 8, 100, 8, true, sea_level, 1337);
+        assert!(!at_sea);
     }
 }

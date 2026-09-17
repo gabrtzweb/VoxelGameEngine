@@ -320,11 +320,17 @@ impl Voxel {
         }
     }
 
+    /// Whether this voxel is completely unbreakable (like bedrock).
+    pub fn is_unbreakable(self) -> bool {
+        self == Self::Dreadstone
+    }
+
     /// Hardness/durability value for breaking times.
     #[allow(dead_code)]
     pub fn durability(self) -> f32 {
         match self {
             Self::Air | Self::Occupied | Self::WaterOccupied => 0.0,
+            Self::Dreadstone => f32::INFINITY,
             Self::Grass
             | Self::Dirt
             | Self::Mud
@@ -348,11 +354,7 @@ impl Voxel {
             | Self::Diorite
             | Self::Granite
             | Self::Tuff => 2.0,
-            Self::Slate
-            | Self::Cobbleslate
-            | Self::Blackstone
-            | Self::Cobbleblackstone
-            | Self::Dreadstone => 2.5,
+            Self::Slate | Self::Cobbleslate | Self::Blackstone | Self::Cobbleblackstone => 2.5,
             Self::Flint | Self::Magma => 3.0,
             Self::Light
             | Self::LightWarm
@@ -368,6 +370,8 @@ impl Voxel {
     #[allow(dead_code)]
     pub fn required_tool(self) -> ToolType {
         match self {
+            Self::Dreadstone => ToolType::None,
+
             Self::Stone
             | Self::Cobblestone
             | Self::MossyCobblestone
@@ -381,7 +385,6 @@ impl Voxel {
             | Self::Andesite
             | Self::Diorite
             | Self::Granite
-            | Self::Dreadstone
             | Self::Tuff
             | Self::Sandstone
             | Self::RedSandstone
@@ -403,5 +406,18 @@ impl Voxel {
 
             _ => ToolType::None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dreadstone_is_unbreakable_bedrock() {
+        assert!(Voxel::Dreadstone.is_unbreakable());
+        assert!(Voxel::Dreadstone.durability().is_infinite());
+        assert!(!Voxel::Stone.is_unbreakable());
+        assert!(!Voxel::Dirt.is_unbreakable());
     }
 }

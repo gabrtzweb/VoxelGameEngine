@@ -343,7 +343,7 @@ fn remove_voxel(
         return false;
     };
 
-    if current_voxel.is_empty() {
+    if current_voxel.is_empty() || current_voxel.is_unbreakable() {
         return false;
     }
 
@@ -390,6 +390,19 @@ fn remove_block(
     modifications: &mut WorldModificationStore,
     block_origin: IVec3,
 ) -> Vec<IVec3> {
+    for y in 0..2 {
+        for z in 0..2 {
+            for x in 0..2 {
+                let position = block_origin + IVec3::new(x, y, z);
+                if let Some(v) = world.get_voxel(position)
+                    && v.is_unbreakable()
+                {
+                    return Vec::new();
+                }
+            }
+        }
+    }
+
     let mut removed_voxels = Vec::with_capacity(8);
 
     for y in 0..2 {

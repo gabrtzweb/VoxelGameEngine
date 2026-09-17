@@ -25,11 +25,12 @@ The stack I am using for my project:
 - The world streams procedurally and is effectively unlimited horizontally:
     - X: procedural streaming
     - Z: procedural streaming
-- Vertical world limits are currently (These limits are intentionally configurable and may be expanded later):
-    - Minimum chunk Y: -8
-    - Maximum chunk Y: +7
+- Vertical world limits are currently:
+    - Minimum chunk Y: -10 (-160 voxels / -80 logical blocks)
+    - Maximum chunk Y: +10 (+175 voxels / +87 logical blocks)
+- Bottom-most layer of blocks: 100% unbreakable Dreadstone bedrock, blending naturally into Blackstone across the bottom 3 block layers.
 - Chunk streaming operates in three dimensions around the player.
-- Current default render distance: 8 chunks.
+- Current default render distance: 12 chunks (distance fog disabled by default).
 - The desired chunk region uses spherical distance rather than loading a full cube.
 - Chunks are generated and unloaded dynamically as the Creative player moves through the world.
 
@@ -85,11 +86,12 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - **Animated Liquid Shaders**: GPU-driven vertical strip animation (36 frames for still water, 8 frames for flowing water) driven by `globals.time` in WGSL at 6 FPS.
 
 ### 3. Procedural World Generation, Biomes & Caves
-- **Continuous Macro-Climate Noise**: Deterministic 2D gradient noise driving Continentalness, Temperature, and Humidity.
-- **6 Distinct Biomes**: Plains (rolling hills, grass), Desert (sand dunes, sandstone), Snowy Tundra & Frost Peaks (snow, packed ice, frost stone), Wetlands / Swamps (shallow water, mud, packed mud, clay), Rocky Highlands (mountain ridges, slate, cobbleslate, scree), and Woodland (mulch, packed dirt, mossy stone).
-- **3D Cave Systems**: High-performance 3D gradient noise generating dual-noise spaghetti worm tunnels, subterranean cheese caverns, surface attenuation buffering, underground aquifers, and deep magma/lava basins.
-- **Geological Strata & Mineral Veins**: Depth-based geological layering (Topsoil & Subsoil, Upper Stone, Mid Slate/Cobbleslate, Deep Blackstone/Magma) with 3D mineral deposits (Gravel, Flint, Cobblestone, Clay, Magma) quantized to 1m³ logical blocks for sub-voxel consistency.
-- **Live World Generation Tuning**: Generator structs registered with Bevy's `AppTypeRegistry`, allowing live parameter inspection via `bevy_inspector_egui` (<kbd>F1</kbd>).
+- **Continuous Macro-Climate Noise & Geography**: Deterministic 2D gradient noise driving Continentalness, Temperature, and Humidity across deep ocean depressions, coastal archipelagos with natural islands, vast rolling inland continents, and towering mountain summits.
+- **11 Distinct Biomes**: Plains (rolling hills, grass), Meadow (rich flowering grass transition), Desert (sand dunes, red sand accents, sandstone), Snowy Tundra & Frost Peaks (snow, packed ice, frost stone), Wetlands / Swamps (swamp grass mixed with mud, packed mud, clay), Rocky Highlands (mountain ridges, slate, cobbleslate, scree), Woodland (rich forest floor with grass mixed with mulch, packed dirt, and moss), Beach (sand coastlines), River (winding fluvial ribbons), Ocean (continental seabed), and Deep Ocean (abyssal gravel and blackstone trenches).
+- **Surface Material Mixing & Natural Strata Transitions**: Natural multi-material noise blends across biomes (no uniform 100% mulch or mud); 3D noise dithering across all strata boundaries (subsoil-to-stone, slate, blackstone).
+- **Dreadstone Bedrock Layer**: Unbreakable Dreadstone bedrock forming the bottom layer ($Y = -80$ blocks / $-160$ voxels), blending naturally into Blackstone across the bottom 3 layers. Completely immune to breaking and shaping.
+- **Walkable 3D Caves & Suppressed Water Ravines**: Spacious 3–5 block wide spaghetti tunnels with wide walkable mouths at the surface; rare dramatic ravines that are strictly suppressed underwater in rivers, lakes, and oceans.
+- **Dedicated Live Terrain & World Inspector GUI**: Custom egui tuning window bound to <kbd>F1</kbd> with sliders for seed, sea level, elevation, rivers, caves, and strata, plus an instant "Regenerate World" button.
 
 ### 4. Player Physics, Collision & Locomotion
 - **Custom Voxel AABB Collision**: Zero-allocation AABB collision system querying chunk voxel data directly without rigid bodies or external physics engine overhead.

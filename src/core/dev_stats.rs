@@ -211,11 +211,9 @@ fn update_dev_stats(
             };
 
             let biome_name = if let Some(ref generator) = terrain_generator {
-                let climate =
-                    generator
-                        .climate
-                        .sample(player_position.x, player_position.z, generator.seed);
-                climate.biome.name()
+                let vx = (player_position.x / VOXEL_SIZE).floor() as i32;
+                let vz = (player_position.z / VOXEL_SIZE).floor() as i32;
+                generator.sample_column(vx, vz).biome.name()
             } else {
                 "Plains"
             };
@@ -287,13 +285,15 @@ fn update_dev_stats(
             };
 
             let biome_text = if let Some(ref generator) = terrain_generator {
-                let climate =
-                    generator
-                        .climate
-                        .sample(player_position.x, player_position.z, generator.seed);
+                let col = generator.sample_column(player_voxel.x, player_voxel.z);
+                let climate = generator.climate.sample(
+                    player_voxel.x as f32,
+                    player_voxel.z as f32,
+                    generator.seed,
+                );
                 format!(
                     "{} (Cont: {:.2}, Temp: {:.2}, Hum: {:.2})",
-                    climate.biome.name(),
+                    col.biome.name(),
                     climate.continentalness,
                     climate.temperature,
                     climate.humidity,

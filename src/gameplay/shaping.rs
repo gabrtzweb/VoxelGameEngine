@@ -393,6 +393,21 @@ fn apply_block_subvoxels(
             }
         }
     }
+
+    // Do not allow shaping unbreakable bedrock/dreadstone blocks
+    for y in 0..2 {
+        for z in 0..2 {
+            for x in 0..2 {
+                let position = block_origin + IVec3::new(x, y, z);
+                if let Some(current) = world.get_voxel(position)
+                    && current.is_unbreakable()
+                {
+                    return;
+                }
+            }
+        }
+    }
+
     let mut edited_voxels = Vec::with_capacity(8);
 
     for y in 0..2 {

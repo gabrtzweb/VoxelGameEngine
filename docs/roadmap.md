@@ -157,31 +157,33 @@ This document outlines the planned development phases for the voxel game engine,
   - Macro-scale continuous 2D climate noise in [src/voxel/biome.rs](VoxelGameEngine/src/voxel/biome.rs) for Continentalness, Temperature, and Humidity.
   - 6 distinct biomes with individual surface, subsoil, and elevation profiles:
     - **Plains**: Temperate, moderate humidity, rolling green hills, grass surface, dirt sublayer.
-    - **Desert**: Warm, arid, wind-swept sand dunes, sandstone/sand sublayer.
+    - **Desert**: Warm, arid, wind-swept sand dunes, sandstone/sand sublayer, red sand accents.
     - **Snowy Tundra & Frost Peaks**: Frigid high altitudes, snow-covered surface, frost-cracked stone.
-    - **Wetlands / Swamps**: Low-lying coastal flats, high moisture, mud, packed mud, clay beds, shallow water.
-    - **Rocky Highlands**: Rugged mountain ridges, exposed slate, cobbleslate, flint, and scree slopes.
-    - **Woodland**: High humidity, mulch forest floors, packed dirt, mossy stone.
+    - **Wetlands / Swamps**: Low-lying flats, high moisture, natural mix of swamp grass (40%), mud (35%), packed mud (15%), and clay (10%).
+    - **Rocky Highlands**: Rugged towering mountain ridges, exposed slate, cobbleslate, flint, and scree slopes.
+    - **Woodland**: High humidity, living forest floor with natural blend of grass (50%), mulch (30%), packed dirt (10%), and moss (10%).
+    - **Meadow**: Gentle transition between woodland and plains with vibrant flora.
+    - **Beach & Coast**: Sand coastlines wrapping all sea-level land borders.
+    - **River**: Winding fluvial ribbons carved with 2D ridge noise zero-crossings.
+    - **Ocean & Deep Ocean**: Continental seabed depression with abyssal gravel and blackstone beds.
 - [x] **3D Caves & Underground Caverns**:
-  - High-performance native 3D gradient noise in [src/voxel/caves.rs](VoxelGameEngine/src/voxel/caves.rs).
-  - Spaghetti worm tunnels via dual-noise zero-crossing intersections ($|\text{NoiseA}| < t \land |\text{NoiseB}| < t$).
+  - High-performance native 3D gradient noise in [src/generation/caves.rs](VoxelGameEngine/src/generation/caves.rs).
+  - Walkable spaghetti worm tunnels (3–5 blocks wide) with wide surface entrances.
   - Cheese caverns creating large subterranean chambers and grottos.
-  - Subterranean water aquifers below sea level, and deep magma/lava pools at the lowest crust boundaries.
-  - Surface attenuation buffer preserving flat surface plains while allowing cave entrances at steep cliffs.
-- [x] **Realistic Geological Strata & Mineral Vein Deposits**:
-  - Depth-based geological layering in [src/voxel/strata.rs](VoxelGameEngine/src/voxel/strata.rs):
-    - Topsoil & Subsoil: Biome-specific topsoil and subsoil down to 4 logical blocks.
-    - Upper Crust: Standard Stone with gravel pockets, flint veins, and cobblestone fractures.
-    - Mid Crust: Metamorphic transition into Slate, Cobbleslate, and Flint clusters.
-    - Deep Crust: Volcanic plutonic layer of Blackstone, Cobbleblackstone, Magma veins, and molten pools.
-  - 3D mineral deposit noise quantized to 1m³ logical blocks for perfect sub-voxel material consistency.
-- [] **Runtime Generation Controls & World Inspector Integration**:
-  - Registered `TerrainGenerator`, `ClimateGenerator`, `CaveGenerator`, `StrataGenerator`, and `BiomeType` with Bevy's `AppTypeRegistry`.
-  - Live parameter tuning in `bevy_inspector_egui` (<kbd>F1</kbd>) with automatic chunk reloading and remeshing while preserving player modifications.
-  (NOT WORKING)
-- [x] **Extended Debug HUD & Spawn Safety Polish**: 
-  - Extended Debug HUD (<kbd>F3</kbd>) displays active Biome name, continentalness, temperature, and moisture metrics.
-  - Dynamic spawn height calculation in [src/player/mod.rs](VoxelGameEngine/src/player/mod.rs) ensuring safe arrival on solid surface ground.
+  - Subterranean water aquifers below sea level, and deep magma/lava pools at lowest crust boundaries.
+  - Ravines tuned to rare dramatic chasms, strictly suppressed underwater in rivers, lakes, and oceans.
+- [x] **Realistic Geological Strata, Bedrock & Mineral Deposits**:
+  - Depth-based geological layering in [src/generation/strata.rs](VoxelGameEngine/src/generation/strata.rs) with natural 3D noise dithering at all layer transitions.
+  - **Dreadstone Bedrock**: Unbreakable bedrock layer at the bottom of the world ($Y = -80$ blocks / $-160$ voxels), blending naturally into Blackstone across the bottom 3 layers.
+  - Upper Crust: Standard Stone with gravel pockets, flint veins, and cobblestone fractures.
+  - Mid Crust: Metamorphic transition into Slate, Cobbleslate, and Flint clusters.
+  - Deep Crust: Volcanic plutonic layer of Blackstone, Cobbleblackstone, Magma veins, and molten pools.
+- [x] **Runtime Generation Controls & Dedicated World Inspector GUI**:
+  - Custom egui tuning window bound to <kbd>F1</kbd> with noise, river, cave, and strata sliders.
+  - Instant **"Regenerate World"** live reload button that purges and re-streams world chunks with new seed/parameters.
+- [x] **Extended Debug HUD & Default Settings Polish**: 
+  - Minimal and Extended Debug HUD accurately displays column biome name (Plains, Beach, River, Ocean, Woodland, etc.).
+  - Default render distance set to **12 chunks**; distance fog disabled by default.
 
 ---
 

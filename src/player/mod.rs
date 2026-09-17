@@ -110,8 +110,8 @@ fn spawn_player_and_camera(
             directional_light_exponent: 24.0,
 
             falloff: FogFalloff::Linear {
-                start: 36.0,
-                end: 60.0,
+                start: 99999.0,
+                end: 100000.0,
             },
         },
         Exposure { ev100: 11.0 },

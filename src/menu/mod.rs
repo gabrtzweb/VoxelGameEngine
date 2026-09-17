@@ -30,7 +30,7 @@ impl Default for GameSettings {
     fn default() -> Self {
         Self {
             fov_degrees: 90.0,
-            fog_enabled: true,
+            fog_enabled: false,
             view_bobbing: true,
         }
     }
@@ -467,7 +467,7 @@ mod tests {
     fn game_settings_has_sensible_defaults() {
         let settings = GameSettings::default();
         assert_eq!(settings.fov_degrees, 90.0);
-        assert!(settings.fog_enabled);
+        assert!(!settings.fog_enabled);
         assert!(settings.view_bobbing);
     }
 
