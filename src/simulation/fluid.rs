@@ -3,15 +3,33 @@ use std::collections::{HashSet, VecDeque};
 use bevy::prelude::*;
 
 use super::lighting::{VoxelLightRegistry, sync_voxel_light};
-use crate::world::{
-    ChunkStreamingQueues, VOXEL_SIZE, Voxel, VoxelAccess, VoxelWorld, WorldModificationStore,
-    affected_chunks,
+use crate::{
+    player::Player,
+    world::{
+        ChunkStreamingQueues, VOXEL_SIZE, Voxel, VoxelAccess, VoxelWorld, WorldModificationStore,
+        affected_chunks,
+        streaming::manager::{ChunkStreamingSettings, DEFAULT_SIMULATION_DISTANCE},
+    },
 };
 
 pub const MAX_FULL_WATER_SPREAD: u8 = 8;
 pub const MAX_SINGLE_WATER_SPREAD: u8 = 4;
 const FLUID_TICK_SECONDS: f32 = 0.25;
 const MAX_UPDATES_PER_TICK: usize = 256;
+
+/// Returns true if `voxel_pos` is within `simulation_distance` chunks of `player_chunk`.
+/// Uses horizontal Euclidean distance squared `dx*dx + dz*dz <= sim_dist*sim_dist` and vertical delta `dy <= sim_dist`.
+pub fn is_in_simulation_radius(
+    voxel_pos: IVec3,
+    player_chunk: IVec3,
+    simulation_distance: i32,
+) -> bool {
+    let (chunk_coord, _) = VoxelWorld::world_voxel_to_chunk(voxel_pos);
+    let dx = chunk_coord.x - player_chunk.x;
+    let dz = chunk_coord.z - player_chunk.z;
+    let dy = (chunk_coord.y - player_chunk.y).abs();
+    dx * dx + dz * dz <= simulation_distance * simulation_distance && dy <= simulation_distance
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct WaterInfo {
@@ -85,6 +103,8 @@ fn run_fluid_simulation(
     mut modifications: ResMut<WorldModificationStore>,
     mut light_registry: ResMut<VoxelLightRegistry>,
     mut queues: ResMut<ChunkStreamingQueues>,
+    player_query: Query<&Transform, With<Player>>,
+    settings: Option<Res<ChunkStreamingSettings>>,
 ) {
     if !timer.0.tick(time.delta()).just_finished() {
         return;
@@ -93,6 +113,15 @@ fn run_fluid_simulation(
     if queue.queue.is_empty() {
         return;
     }
+
+    let player_sim_ctx = player_query.iter().next().map(|transform| {
+        let player_voxel = (transform.translation / VOXEL_SIZE).floor().as_ivec3();
+        let (player_chunk, _) = VoxelWorld::world_voxel_to_chunk(player_voxel);
+        let sim_distance = settings
+            .as_ref()
+            .map_or(DEFAULT_SIMULATION_DISTANCE, |s| s.simulation_distance);
+        (player_chunk, sim_distance)
+    });
 
     let mut edited_voxels = Vec::new();
     let count = queue.queue.len();
@@ -107,6 +136,13 @@ fn run_fluid_simulation(
             break;
         };
         queue.in_queue.remove(&pos);
+
+        if let Some((player_chunk, sim_dist)) = player_sim_ctx {
+            if !is_in_simulation_radius(pos, player_chunk, sim_dist) {
+                // Beyond decoupled simulation radius: drop non-visible dynamic fluid tick
+                continue;
+            }
+        }
 
         let Some(current_voxel) = world.get_voxel(pos) else {
             continue;
@@ -686,5 +722,50 @@ mod tests {
         assert!(changed2.is_empty());
         assert_eq!(world.get_voxel(source + IVec3::X), Some(Voxel::Air));
         assert_eq!(world.get_voxel(source + IVec3::Z), Some(Voxel::Air));
+    }
+
+    #[test]
+    fn simulation_radius_bounds_check() {
+        let player_chunk = IVec3::new(0, 0, 0);
+        let sim_dist = 4;
+
+        // Voxel in player's chunk (0, 0, 0) is inside
+        assert!(is_in_simulation_radius(
+            IVec3::new(5, 5, 5),
+            player_chunk,
+            sim_dist
+        ));
+
+        // Voxel in chunk (3, 0, 2): dx=3, dz=2 -> 9+4=13 <= 16 -> inside
+        let inside_voxel = IVec3::new(3 * 16 + 2, 8, 2 * 16 + 4);
+        assert!(is_in_simulation_radius(
+            inside_voxel,
+            player_chunk,
+            sim_dist
+        ));
+
+        // Voxel in chunk (4, 0, 0): dx=4, dz=0 -> 16 <= 16 -> inside boundary
+        let boundary_voxel = IVec3::new(4 * 16 + 1, 8, 4);
+        assert!(is_in_simulation_radius(
+            boundary_voxel,
+            player_chunk,
+            sim_dist
+        ));
+
+        // Voxel in chunk (4, 0, 4): dx=4, dz=4 -> 16+16=32 > 16 -> outside
+        let outside_diagonal = IVec3::new(4 * 16 + 1, 8, 4 * 16 + 1);
+        assert!(!is_in_simulation_radius(
+            outside_diagonal,
+            player_chunk,
+            sim_dist
+        ));
+
+        // Voxel in chunk (0, 5, 0): dy=5 > sim_dist=4 -> outside vertical
+        let outside_vertical = IVec3::new(5, 5 * 16 + 2, 5);
+        assert!(!is_in_simulation_radius(
+            outside_vertical,
+            player_chunk,
+            sim_dist
+        ));
     }
 }

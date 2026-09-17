@@ -249,6 +249,64 @@ impl MeshBuffers {
     }
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct SliceBitmask {
+    pub opaque: [u16; CHUNK_SIZE],
+    pub special: [u16; CHUNK_SIZE],
+}
+
+pub fn extract_slice_bitmask(
+    chunk: &Chunk,
+    direction: FaceDirection,
+    slice: usize,
+) -> SliceBitmask {
+    if chunk.is_empty() {
+        return SliceBitmask::default();
+    }
+
+    if chunk.is_fully_solid_opaque() {
+        return SliceBitmask {
+            opaque: [0xFFFF; CHUNK_SIZE],
+            special: [0; CHUNK_SIZE],
+        };
+    }
+
+    let mut mask = SliceBitmask::default();
+
+    for v in 0..CHUNK_SIZE {
+        let mut row_opaque = 0u16;
+        let mut row_special = 0u16;
+
+        for u in 0..CHUNK_SIZE {
+            let local_voxel = mask_to_voxel(direction, slice, u, v);
+            let voxel = chunk.get(
+                local_voxel.x as usize,
+                local_voxel.y as usize,
+                local_voxel.z as usize,
+            );
+
+            if voxel.is_empty()
+                || voxel == Voxel::Occupied
+                || is_chunk_local_centered_layer(chunk, local_voxel)
+            {
+                continue;
+            }
+
+            let bit = 1u16 << u;
+            if !voxel.is_transparent() {
+                row_opaque |= bit;
+            } else {
+                row_special |= bit;
+            }
+        }
+
+        mask.opaque[v] = row_opaque;
+        mask.special[v] = row_special;
+    }
+
+    mask
+}
+
 pub struct ChunkMesher;
 
 impl ChunkMesher {
@@ -322,11 +380,73 @@ impl ChunkMesher {
                 0..CHUNK_SIZE
             };
 
+            // Pre-extract slice bitmasks for the current chunk along this direction
+            let chunk_slices: [SliceBitmask; CHUNK_SIZE] =
+                std::array::from_fn(|s| extract_slice_bitmask(chunk, direction, s));
+
+            // Boundary neighbor slice bitmask (from adjacent chunk)
+            let neighbor_boundary_slice = {
+                let neighbor_chunk_coord = chunk_coordinate + direction.normal();
+                if let Some(neighbor_chunk) = world.get_chunk(neighbor_chunk_coord) {
+                    let boundary_s = match direction {
+                        FaceDirection::PositiveX
+                        | FaceDirection::PositiveY
+                        | FaceDirection::PositiveZ => 0,
+                        FaceDirection::NegativeX
+                        | FaceDirection::NegativeY
+                        | FaceDirection::NegativeZ => CHUNK_SIZE - 1,
+                    };
+                    extract_slice_bitmask(neighbor_chunk, direction, boundary_s)
+                } else {
+                    SliceBitmask::default()
+                }
+            };
+
             for slice in slice_range {
+                let current_slice = chunk_slices[slice];
+                let neighbor_slice = match direction {
+                    FaceDirection::PositiveX
+                    | FaceDirection::PositiveY
+                    | FaceDirection::PositiveZ => {
+                        if slice + 1 < CHUNK_SIZE {
+                            chunk_slices[slice + 1]
+                        } else {
+                            neighbor_boundary_slice
+                        }
+                    }
+                    FaceDirection::NegativeX
+                    | FaceDirection::NegativeY
+                    | FaceDirection::NegativeZ => {
+                        if slice > 0 {
+                            chunk_slices[slice - 1]
+                        } else {
+                            neighbor_boundary_slice
+                        }
+                    }
+                };
+
                 let mut mask: [Option<FaceKey>; MASK_SIZE] = [None; MASK_SIZE];
 
                 for v in 0..CHUNK_SIZE {
-                    for u in 0..CHUNK_SIZE {
+                    let current_opaque = current_slice.opaque[v];
+                    let neighbor_opaque = neighbor_slice.opaque[v];
+
+                    // Bitwise Face Culling across all 16 voxels in the row:
+                    // An opaque face is visible ONLY if neighbor is NOT opaque.
+                    let visible_opaque = current_opaque & !neighbor_opaque;
+                    let special_voxels = current_slice.special[v];
+
+                    let mut candidate_bits = visible_opaque | special_voxels;
+                    if candidate_bits == 0 {
+                        // Entire 16-voxel row has 0 exposed faces: skip all world queries
+                        continue;
+                    }
+
+                    // Extract candidate positions using CPU intrinsic trailing_zeros
+                    while candidate_bits != 0 {
+                        let u = candidate_bits.trailing_zeros() as usize;
+                        candidate_bits &= candidate_bits - 1; // Clear lowest set bit
+
                         let local_voxel = mask_to_voxel(direction, slice, u, v);
 
                         let voxel = chunk.get(
@@ -446,14 +566,24 @@ pub fn greedy_merge_mask(
     opaque_buffers: &mut MeshBuffers,
     transparent_buffers: &mut MeshBuffers,
 ) {
+    let mut populated = [0u16; CHUNK_SIZE];
     for v in 0..CHUNK_SIZE {
-        let mut u = 0;
+        let mut row_bits = 0u16;
+        for u in 0..CHUNK_SIZE {
+            if mask[mask_index(u, v)].is_some() {
+                row_bits |= 1 << u;
+            }
+        }
+        populated[v] = row_bits;
+    }
 
-        while u < CHUNK_SIZE {
+    for v in 0..CHUNK_SIZE {
+        while populated[v] != 0 {
+            let u = populated[v].trailing_zeros() as usize;
+
             let index = mask_index(u, v);
-
             let Some(key) = mask[index] else {
-                u += 1;
+                populated[v] &= !(1 << u);
                 continue;
             };
 
@@ -489,7 +619,15 @@ pub fn greedy_merge_mask(
                 (width, height)
             };
 
+            let width_mask = if width >= 16 {
+                0xFFFFu16
+            } else {
+                ((1u16 << width) - 1) << u
+            };
+            let clear_mask = !width_mask;
+
             for dv in 0..height {
+                populated[v + dv] &= clear_mask;
                 for du in 0..width {
                     mask[mask_index(u + du, v + dv)] = None;
                 }
@@ -502,8 +640,6 @@ pub fn greedy_merge_mask(
             };
 
             target_buffers.push_quad(direction, key, slice, u, v, width, height);
-
-            u += width;
         }
     }
 }
@@ -1106,6 +1242,52 @@ mod tests {
             }
         } else {
             panic!("Expected Float32x3 normals");
+        }
+    }
+
+    #[test]
+    fn test_extract_slice_bitmask_uniform_and_paletted() {
+        let empty_chunk = Chunk::new();
+        let mask = extract_slice_bitmask(&empty_chunk, FaceDirection::PositiveY, 0);
+        assert_eq!(mask.opaque, [0u16; CHUNK_SIZE]);
+        assert_eq!(mask.special, [0u16; CHUNK_SIZE]);
+
+        let solid_chunk = Chunk::filled(Voxel::Stone);
+        let mask = extract_slice_bitmask(&solid_chunk, FaceDirection::PositiveY, 0);
+        assert_eq!(mask.opaque, [0xFFFFu16; CHUNK_SIZE]);
+        assert_eq!(mask.special, [0u16; CHUNK_SIZE]);
+
+        let mut custom_chunk = Chunk::new();
+        // Set row 0 (u from 0..8) on slice y=5
+        for x in 0..8 {
+            custom_chunk.set(x, 5, 0, Voxel::Stone);
+        }
+        // FaceDirection::PositiveY: u = x, v = z
+        let mask = extract_slice_bitmask(&custom_chunk, FaceDirection::PositiveY, 5);
+        assert_eq!(mask.opaque[0], 0x00FF);
+        for v in 1..CHUNK_SIZE {
+            assert_eq!(mask.opaque[v], 0);
+        }
+    }
+
+    #[test]
+    fn test_bitwise_face_culling_occluded_internal_faces() {
+        let solid_chunk = Chunk::filled(Voxel::Stone);
+        let current = extract_slice_bitmask(&solid_chunk, FaceDirection::PositiveX, 5);
+        let neighbor = extract_slice_bitmask(&solid_chunk, FaceDirection::PositiveX, 6);
+
+        // Between two solid slices, visible opaque face bitmask must be 0
+        for v in 0..CHUNK_SIZE {
+            let visible = current.opaque[v] & !neighbor.opaque[v];
+            assert_eq!(visible, 0, "Occluded internal faces must be 0");
+        }
+
+        let empty_chunk = Chunk::new();
+        let air_neighbor = extract_slice_bitmask(&empty_chunk, FaceDirection::PositiveX, 0);
+        // Between solid slice and air slice, all 16 bits must be visible
+        for v in 0..CHUNK_SIZE {
+            let visible = current.opaque[v] & !air_neighbor.opaque[v];
+            assert_eq!(visible, 0xFFFF, "Boundary face against air must be fully visible");
         }
     }
 }

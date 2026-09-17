@@ -17,6 +17,7 @@ use crate::{
 };
 
 const DEFAULT_RENDER_DISTANCE: i32 = 12;
+pub const DEFAULT_SIMULATION_DISTANCE: i32 = 4;
 
 pub const WORLD_MIN_CHUNK_Y: i32 = -10;
 pub const WORLD_MAX_CHUNK_Y: i32 = 10;
@@ -38,12 +39,14 @@ pub const NEIGHBOR_DIRECTIONS: [IVec3; 6] = [
 #[derive(Resource)]
 pub struct ChunkStreamingSettings {
     pub render_distance: i32,
+    pub simulation_distance: i32,
 }
 
 impl Default for ChunkStreamingSettings {
     fn default() -> Self {
         Self {
             render_distance: DEFAULT_RENDER_DISTANCE,
+            simulation_distance: DEFAULT_SIMULATION_DISTANCE,
         }
     }
 }

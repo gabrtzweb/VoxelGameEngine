@@ -269,7 +269,7 @@ Phase 8 focuses on deep algorithmic and memory optimizations to scale chunk thro
     - Prepares the data structures directly for fast binary disk serialization (world saving and loading).
   - **Complexity / Risk**: Moderate. Needs careful abstraction so `get(x, y, z)` and `set(x, y, z)` remain fast and inline-friendly without branch mispredictions.
 
-- [ ] **Stage 8.4: Decoupled Simulation Radius vs. Render Distance**:
+- [x] **Stage 8.4: Decoupled Simulation Radius vs. Render Distance**:
   - **The Problem**: When the player raises render distance to 12 or 16 chunks, the world holds 2,000+ active chunks. Running fluid propagation, cellular automaton ticks, and dynamic updates across all loaded chunks wastes CPU cycles on distant, non-visible activity.
   - **Architecture**:
     - Decouple `simulation_distance` (default: 4–6 chunks, ~32–48m radius around player) from visual `render_distance` (10–16+ chunks).
@@ -278,7 +278,7 @@ Phase 8 focuses on deep algorithmic and memory optimizations to scale chunk thro
     - Caps active fluid/simulation CPU budget to a fixed, small local bubble regardless of how high the player sets their visual render distance.
   - **Complexity / Risk**: Low complexity. Requires a simple radius test when scheduling simulation ticks.
 
-- [ ] **Stage 8.5: Bitwise Bitmask Acceleration for Face Culling & Greedy Mesher**:
+- [x] **Stage 8.5: Bitwise Bitmask Acceleration for Face Culling & Greedy Mesher**:
   - **The Problem**: Greedy meshing checks adjacent voxel solid/air states through millions of individual 3D index calls in nested loops.
   - **Architecture**:
     - Represent each 16-voxel row or 16×16 slice as 64-bit integer bitboards (`u64`).

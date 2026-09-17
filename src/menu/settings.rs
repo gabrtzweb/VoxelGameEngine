@@ -11,6 +11,8 @@ struct SettingsMenuRoot;
 enum SettingsAction {
     DecRenderDistance,
     IncRenderDistance,
+    DecSimulationDistance,
+    IncSimulationDistance,
     DecFov,
     IncFov,
     ToggleFog,
@@ -21,6 +23,9 @@ enum SettingsAction {
 
 #[derive(Component)]
 struct RenderDistanceLabel;
+
+#[derive(Component)]
+struct SimulationDistanceLabel;
 
 #[derive(Component)]
 struct FovLabel;
@@ -55,6 +60,7 @@ fn spawn_settings_menu(
     env_state: Option<Res<EnvironmentState>>,
 ) {
     let render_dist = chunk_settings.render_distance;
+    let sim_dist = chunk_settings.simulation_distance;
     let fov = game_settings.fov_degrees as i32;
     let fog_enabled = game_settings.fog_enabled;
     let time_paused = env_state.as_ref().is_some_and(|e| e.is_time_paused);
@@ -83,14 +89,13 @@ fn spawn_settings_menu(
                         display: Display::Flex,
                         flex_direction: FlexDirection::Column,
                         align_items: AlignItems::Center,
-                        row_gap: px(12.0),
-                        width: px(340.0),
-                        padding: UiRect::axes(px(24.0), px(24.0)),
+                        padding: UiRect::axes(px(24.0), px(18.0)),
+                        row_gap: px(10.0),
                         border: UiRect::all(px(2.0)),
-                        border_radius: BorderRadius::all(px(10.0)),
+                        border_radius: BorderRadius::all(px(8.0)),
                         ..default()
                     },
-                    BackgroundColor(Color::srgba(0.07, 0.07, 0.10, 0.95)),
+                    BackgroundColor(Color::srgba(0.10, 0.10, 0.13, 0.95)),
                     BorderColor::all(Color::srgba(0.35, 0.35, 0.42, 0.80)),
                 ))
                 .with_children(|card| {
@@ -116,6 +121,16 @@ fn spawn_settings_menu(
                         SettingsAction::DecRenderDistance,
                         SettingsAction::IncRenderDistance,
                         RenderDistanceLabel,
+                    );
+
+                    // 1b. Simulation Distance Stepper
+                    spawn_stepper_row(
+                        card,
+                        "Simulation Distance",
+                        format!("{sim_dist} Chunks"),
+                        SettingsAction::DecSimulationDistance,
+                        SettingsAction::IncSimulationDistance,
+                        SimulationDistanceLabel,
                     );
 
                     // 2. Field of View Stepper
@@ -384,6 +399,14 @@ fn handle_settings_buttons(
                         chunk_settings.render_distance =
                             (chunk_settings.render_distance + 1).min(16);
                     }
+                    SettingsAction::DecSimulationDistance => {
+                        chunk_settings.simulation_distance =
+                            (chunk_settings.simulation_distance - 1).max(2);
+                    }
+                    SettingsAction::IncSimulationDistance => {
+                        chunk_settings.simulation_distance =
+                            (chunk_settings.simulation_distance + 1).min(8);
+                    }
                     SettingsAction::DecFov => {
                         game_settings.fov_degrees = (game_settings.fov_degrees - 5.0).max(60.0);
                     }
@@ -427,6 +450,18 @@ fn update_settings_labels(
         &mut Text,
         (
             With<RenderDistanceLabel>,
+            Without<SimulationDistanceLabel>,
+            Without<FovLabel>,
+            Without<FogLabel>,
+            Without<ViewBobbingLabel>,
+            Without<TimePauseLabel>,
+        ),
+    >,
+    mut sim_dist_query: Query<
+        &mut Text,
+        (
+            With<SimulationDistanceLabel>,
+            Without<RenderDistanceLabel>,
             Without<FovLabel>,
             Without<FogLabel>,
             Without<ViewBobbingLabel>,
@@ -438,6 +473,7 @@ fn update_settings_labels(
         (
             With<FovLabel>,
             Without<RenderDistanceLabel>,
+            Without<SimulationDistanceLabel>,
             Without<FogLabel>,
             Without<ViewBobbingLabel>,
             Without<TimePauseLabel>,
@@ -448,6 +484,7 @@ fn update_settings_labels(
         (
             With<FogLabel>,
             Without<RenderDistanceLabel>,
+            Without<SimulationDistanceLabel>,
             Without<FovLabel>,
             Without<ViewBobbingLabel>,
             Without<TimePauseLabel>,
@@ -458,6 +495,7 @@ fn update_settings_labels(
         (
             With<ViewBobbingLabel>,
             Without<RenderDistanceLabel>,
+            Without<SimulationDistanceLabel>,
             Without<FovLabel>,
             Without<FogLabel>,
             Without<TimePauseLabel>,
@@ -468,6 +506,7 @@ fn update_settings_labels(
         (
             With<TimePauseLabel>,
             Without<RenderDistanceLabel>,
+            Without<SimulationDistanceLabel>,
             Without<FovLabel>,
             Without<FogLabel>,
             Without<ViewBobbingLabel>,
@@ -477,6 +516,9 @@ fn update_settings_labels(
     if chunk_settings.is_changed() {
         for mut text in &mut render_dist_query {
             text.0 = format!("{} Chunks", chunk_settings.render_distance);
+        }
+        for mut text in &mut sim_dist_query {
+            text.0 = format!("{} Chunks", chunk_settings.simulation_distance);
         }
     }
 
