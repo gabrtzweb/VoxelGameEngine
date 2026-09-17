@@ -75,6 +75,8 @@ fn load_voxel_raw_16x16(voxel: Voxel) -> Vec<u8> {
             format!("assets/textures/blocks/{name}.png"),
             format!("assets/textures/blocks/{name}0.png"),
             format!("assets/textures/blocks/{name}_0.png"),
+            format!("assets/textures/blocks/{name}_1.png"),
+            format!("assets/textures/blocks/{name}1.png"),
             format!("assets/textures/blocks/block_{name}.png"),
         ];
 

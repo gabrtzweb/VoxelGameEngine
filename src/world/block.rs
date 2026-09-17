@@ -71,11 +71,21 @@ pub enum Voxel {
     RedSand = 40,
     Ice = 41,
     PackedIce = 42,
+
+    // Additional Geologies & Organics
+    Blueschist = 43,
+    Calcite = 44,
+    Dripstone = 45,
+    Limestone = 46,
+    Ochrestone = 47,
+    Rhodonite = 48,
+    Serpentinite = 49,
+    RedMoss = 50,
 }
 
 impl Voxel {
     /// All voxels that map to a texture and are loaded into the terrain texture array.
-    pub const ALL: [Voxel; 41] = [
+    pub const ALL: [Voxel; 49] = [
         Voxel::Grass,
         Voxel::Dirt,
         Voxel::Stone,
@@ -115,6 +125,14 @@ impl Voxel {
         Voxel::RedSand,
         Voxel::Ice,
         Voxel::PackedIce,
+        Voxel::Blueschist,
+        Voxel::Calcite,
+        Voxel::Dripstone,
+        Voxel::Limestone,
+        Voxel::Ochrestone,
+        Voxel::Rhodonite,
+        Voxel::Serpentinite,
+        Voxel::RedMoss,
         Voxel::Occupied,
         Voxel::WaterOccupied,
     ];
@@ -158,6 +176,14 @@ impl Voxel {
             Self::Tuff => Some("rock_tuff"),
             Self::Sandstone => Some("rock_sandstone"),
             Self::RedSandstone => Some("rock_red_sandstone"),
+            Self::Blueschist => Some("rock_blueschist"),
+            Self::Calcite => Some("rock_calcite"),
+            Self::Dripstone => Some("rock_dripstone"),
+            Self::Limestone => Some("rock_limestone"),
+            Self::Ochrestone => Some("rock_ochrestone"),
+            Self::Rhodonite => Some("rock_rhodonite"),
+            Self::Serpentinite => Some("rock_serpentinite"),
+            Self::RedMoss => Some("terr_red_moss"),
 
             // Fluids
             Self::Water => Some("liqd_water_still"),
@@ -216,6 +242,14 @@ impl Voxel {
             Self::RedSand => [190, 100, 50, 255],
             Self::Ice => [140, 185, 235, 220],
             Self::PackedIce => [160, 200, 245, 255],
+            Self::Blueschist => [75, 95, 115, 255],
+            Self::Calcite => [220, 220, 225, 255],
+            Self::Dripstone => [135, 105, 90, 255],
+            Self::Limestone => [195, 185, 165, 255],
+            Self::Ochrestone => [185, 135, 55, 255],
+            Self::Rhodonite => [195, 110, 135, 255],
+            Self::Serpentinite => [70, 115, 85, 255],
+            Self::RedMoss => [175, 45, 45, 255],
             Self::Water | Self::WaterFlowing => [60, 140, 220, 255],
             Self::Lava => [230, 100, 20, 255],
             Self::Light | Self::LightWarm => [255, 199, 64, 255],
@@ -307,6 +341,14 @@ impl Voxel {
             Self::RedSand => "Red Sand",
             Self::Ice => "Ice",
             Self::PackedIce => "Packed Ice",
+            Self::Blueschist => "Blueschist",
+            Self::Calcite => "Calcite",
+            Self::Dripstone => "Dripstone",
+            Self::Limestone => "Limestone",
+            Self::Ochrestone => "Ochrestone",
+            Self::Rhodonite => "Rhodonite",
+            Self::Serpentinite => "Serpentinite",
+            Self::RedMoss => "Red Moss",
             Self::Water => "Water",
             Self::WaterFlowing => "Flowing Water",
             Self::Lava => "Lava",
@@ -346,6 +388,7 @@ impl Voxel {
             | Self::Snow
             | Self::PackedIce => 0.8,
             Self::Sandstone | Self::RedSandstone => 1.5,
+            Self::Calcite => 1.5,
             Self::Stone
             | Self::Cobblestone
             | Self::MossyCobblestone
@@ -353,8 +396,18 @@ impl Voxel {
             | Self::Andesite
             | Self::Diorite
             | Self::Granite
-            | Self::Tuff => 2.0,
-            Self::Slate | Self::Cobbleslate | Self::Blackstone | Self::Cobbleblackstone => 2.5,
+            | Self::Tuff
+            | Self::Blueschist
+            | Self::Dripstone
+            | Self::Limestone
+            | Self::Ochrestone
+            | Self::Serpentinite => 2.0,
+            Self::Slate
+            | Self::Cobbleslate
+            | Self::Blackstone
+            | Self::Cobbleblackstone
+            | Self::Rhodonite => 2.5,
+            Self::RedMoss => 0.6,
             Self::Flint | Self::Magma => 3.0,
             Self::Light
             | Self::LightWarm
@@ -389,7 +442,14 @@ impl Voxel {
             | Self::Sandstone
             | Self::RedSandstone
             | Self::Ice
-            | Self::PackedIce => ToolType::Pickaxe,
+            | Self::PackedIce
+            | Self::Blueschist
+            | Self::Calcite
+            | Self::Dripstone
+            | Self::Limestone
+            | Self::Ochrestone
+            | Self::Rhodonite
+            | Self::Serpentinite => ToolType::Pickaxe,
 
             Self::Dirt
             | Self::Grass
@@ -400,7 +460,8 @@ impl Voxel {
             | Self::PackedDirt
             | Self::PackedMud
             | Self::Snow
-            | Self::RedSand => ToolType::Shovel,
+            | Self::RedSand
+            | Self::RedMoss => ToolType::Shovel,
 
             Self::Mulch => ToolType::Axe,
 

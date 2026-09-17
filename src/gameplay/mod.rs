@@ -6,6 +6,7 @@ pub mod interaction;
 pub mod interaction_mode;
 pub mod radial_menu;
 pub mod shaping;
+pub mod target_hud;
 pub mod targeting;
 
 pub use debug::{VoxelDebugPlugin, VoxelDebugSettings};
@@ -21,6 +22,9 @@ pub use shaping::{
     BlockShape, ShapingPlugin, centered_layer_coordinates, detect_current_shape,
     generate_shape_voxels, get_block_voxels, get_centered_layer_material, is_centered_column,
     is_centered_layer, is_layer_centered, rotate_block_90_y,
+};
+pub use target_hud::{
+    TargetHudPlugin, TargetHudRoot, format_target_hud_title, resolve_target_block_info,
 };
 pub use targeting::{
     CurrentTarget, TargetingPlugin, TargetingSet, VoxelTarget, adjacent_block_origin,
@@ -39,6 +43,7 @@ impl Plugin for GameplayPlugin {
             ShapingPlugin,
             BlockIconPlugin,
             VoxelDebugPlugin,
+            TargetHudPlugin,
         ));
     }
 }
