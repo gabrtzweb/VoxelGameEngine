@@ -118,8 +118,8 @@ impl TerrainGenerator {
             }
         }
 
-        // Entire chunk is above terrain, water, and possible tree trunks (max trunk height 20 voxels).
-        if chunk_min_y > maximum_filled_height + 24 {
+        // Entire chunk is above terrain, water, and tall tree canopies (max tree height 42 voxels + 6 margin).
+        if chunk_min_y > maximum_filled_height + 56 {
             return Chunk::filled(Voxel::Air);
         }
 

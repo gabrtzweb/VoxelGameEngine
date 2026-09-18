@@ -92,11 +92,15 @@ pub enum Voxel {
     OakLeaves = 57,
     BirchLeaves = 58,
     PineLeaves = 59,
+
+    // Volcanic & Desert Flora
+    Basalt = 60,
+    Cactus = 61,
 }
 
 impl Voxel {
     /// All voxels that map to a texture and are loaded into the terrain texture array.
-    pub const ALL: [Voxel; 58] = [
+    pub const ALL: [Voxel; 60] = [
         Voxel::Grass,
         Voxel::Dirt,
         Voxel::Stone,
@@ -144,6 +148,8 @@ impl Voxel {
         Voxel::Rhodonite,
         Voxel::Serpentinite,
         Voxel::RedMoss,
+        Voxel::Basalt,
+        Voxel::Cactus,
         Voxel::OakWood,
         Voxel::OakWoodLog,
         Voxel::BirchWood,
@@ -212,6 +218,8 @@ impl Voxel {
             Self::Rhodonite => Some("rock_rhodonite"),
             Self::Serpentinite => Some("rock_serpentinite"),
             Self::RedMoss => Some("terr_red_moss"),
+            Self::Basalt => Some("rock_basalt"),
+            Self::Cactus => Some("tree_cactus_side"),
 
             // Fluids
             Self::Water => Some("liqd_water_still"),
@@ -227,6 +235,18 @@ impl Voxel {
         }
     }
 
+    /// Optional texture override for the side faces (+X, -X, +Z, -Z).
+    /// If None, falls back to `texture_name()`.
+    pub fn side_texture_name(self) -> Option<&'static str> {
+        match self {
+            Self::Basalt => Some("rock_basalt_side"),
+            Self::Cactus => Some("tree_cactus_side"),
+            Self::Mulch => Some("terr_mulch_side"),
+            Self::Grass => Some("terr_grass_side"),
+            _ => None,
+        }
+    }
+
     /// Optional texture override for the top face (+Y).
     /// If None, falls back to `texture_name()`.
     pub fn top_texture_name(self) -> Option<&'static str> {
@@ -234,6 +254,7 @@ impl Voxel {
             Self::OakWoodLog => Some("tree_oakwood_log"),
             Self::BirchWoodLog => Some("tree_birchwood_log"),
             Self::PineWoodLog => Some("tree_pinewood_log"),
+            Self::Cactus => Some("tree_cactus_top"),
             _ => None,
         }
     }
@@ -245,6 +266,9 @@ impl Voxel {
             Self::OakWoodLog => Some("tree_oakwood_log"),
             Self::BirchWoodLog => Some("tree_birchwood_log"),
             Self::PineWoodLog => Some("tree_pinewood_log"),
+            Self::Cactus => Some("tree_cactus_bottom"),
+            Self::Mulch => Some("terr_dirt"),
+            Self::Grass => Some("terr_dirt"),
             _ => None,
         }
     }
@@ -309,6 +333,8 @@ impl Voxel {
             Self::Rhodonite => [195, 110, 135, 255],
             Self::Serpentinite => [70, 115, 85, 255],
             Self::RedMoss => [175, 45, 45, 255],
+            Self::Basalt => [75, 75, 80, 255],
+            Self::Cactus => [85, 135, 45, 255],
             Self::Water | Self::WaterFlowing => [60, 140, 220, 255],
             Self::Lava => [230, 100, 20, 255],
             Self::Light | Self::LightWarm => [255, 199, 64, 255],
@@ -421,6 +447,8 @@ impl Voxel {
             Self::Rhodonite => "Rhodonite",
             Self::Serpentinite => "Serpentinite",
             Self::RedMoss => "Red Moss",
+            Self::Basalt => "Basalt",
+            Self::Cactus => "Cactus",
             Self::OakWood => "Oak Wood",
             Self::OakWoodLog => "Oak Log",
             Self::BirchWood => "Birch Wood",
@@ -496,7 +524,9 @@ impl Voxel {
             | Self::Cobbleslate
             | Self::Blackstone
             | Self::Cobbleblackstone
+            | Self::Basalt
             | Self::Rhodonite => 2.5,
+            Self::Cactus => 0.4,
             Self::RedMoss => 0.6,
             Self::Flint | Self::Magma => 3.0,
             Self::Light
@@ -523,6 +553,7 @@ impl Voxel {
             | Self::Cobbleslate
             | Self::Blackstone
             | Self::Cobbleblackstone
+            | Self::Basalt
             | Self::Flint
             | Self::Magma
             | Self::Andesite

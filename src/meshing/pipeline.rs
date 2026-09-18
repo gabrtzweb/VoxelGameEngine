@@ -125,7 +125,7 @@ pub fn setup_chunk_material(
     let opaque = materials.add(ExtendedMaterial {
         base: StandardMaterial {
             base_color: Color::WHITE,
-            alpha_mode: AlphaMode::Mask(0.5),
+            alpha_mode: AlphaMode::Opaque,
             perceptual_roughness: 0.9,
             ..default()
         },

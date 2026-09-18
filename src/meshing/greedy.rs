@@ -192,7 +192,15 @@ impl MeshBuffers {
         }
 
         let uvs_to_push = if key.is_isolated_voxel {
-            ISOLATED_VOXEL_UVS
+            match direction {
+                FaceDirection::PositiveY | FaceDirection::NegativeY => ISOLATED_VOXEL_UVS,
+                _ => [
+                    [0.0, 1.0],
+                    [0.0, 0.0],
+                    [1.0, 0.0],
+                    [1.0, 1.0],
+                ],
+            }
         } else {
             let scale = if key.voxel == Voxel::WaterFlowing {
                 4.0
@@ -205,12 +213,20 @@ impl MeshBuffers {
             let v_min = (v as f32) / scale;
             let v_max = ((v + height) as f32) / scale;
 
-            [
-                [u_min, v_min],
-                [u_min, v_max],
-                [u_max, v_max],
-                [u_max, v_min],
-            ]
+            match direction {
+                FaceDirection::PositiveY | FaceDirection::NegativeY => [
+                    [u_min, v_min],
+                    [u_min, v_max],
+                    [u_max, v_max],
+                    [u_max, v_min],
+                ],
+                _ => [
+                    [u_min, v_max],
+                    [u_min, v_min],
+                    [u_max, v_min],
+                    [u_max, v_max],
+                ],
+            }
         };
 
         self.uvs.extend_from_slice(&uvs_to_push);
@@ -522,7 +538,21 @@ impl ChunkMesher {
 
                         let (texture_layer, frame_count) =
                             textures.get_face_texture_info(voxel, world_voxel, direction);
-                        let tint_color = voxel.tint_color_at(world_voxel);
+                        let tint_color = if voxel == Voxel::Grass {
+                            match direction {
+                                FaceDirection::PositiveY => voxel.tint_color_at(world_voxel),
+                                FaceDirection::NegativeY => [1.0, 1.0, 1.0, 1.0],
+                                _ => {
+                                    if textures.full_grass {
+                                        voxel.tint_color_at(world_voxel)
+                                    } else {
+                                        [1.0, 1.0, 1.0, 1.0]
+                                    }
+                                }
+                            }
+                        } else {
+                            voxel.tint_color_at(world_voxel)
+                        };
 
                         let surface_offset_cm = if voxel.is_water() {
                             (water_surface_height_offset(world, world_voxel) * 100.0).round() as u8
@@ -763,8 +793,30 @@ mod tests {
         if let VertexAttributeValues::Float32x4(color_data) = colors {
             assert!(!color_data.is_empty());
             let grass_tint = Voxel::Grass.tint_color();
-            for vertex_color in color_data {
-                assert_eq!(*vertex_color, grass_tint);
+            let untinted = [1.0, 1.0, 1.0, 1.0];
+
+            // In default mode (!full_grass), top face is tinted, side and bottom faces are untinted (side has pre-baked overlay)
+            assert!(
+                color_data.contains(&grass_tint),
+                "Top face must receive grass_tint"
+            );
+            assert!(
+                color_data.contains(&untinted),
+                "Bottom (dirt) and side faces must receive untinted color"
+            );
+
+            // In full_grass mode, sides receive grass_tint as well
+            let mut full_registry = registry.clone();
+            full_registry.full_grass = true;
+            let full_meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &full_registry);
+            let full_opaque = full_meshes.opaque.expect("Opaque mesh should exist");
+            let full_colors = full_opaque
+                .attribute(Mesh::ATTRIBUTE_COLOR)
+                .expect("Mesh should have vertex colors");
+            if let VertexAttributeValues::Float32x4(full_color_data) = full_colors {
+                let tinted_count = full_color_data.iter().filter(|c| **c == grass_tint).count();
+                // 5 faces (top + 4 sides) * 4 vertices = 20 tinted vertices; 1 bottom face * 4 vertices = 4 untinted vertices
+                assert_eq!(tinted_count, 20, "Top and 4 sides should receive grass_tint in full_grass mode");
             }
         } else {
             panic!("Expected Float32x4 vertex colors");

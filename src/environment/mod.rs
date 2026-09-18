@@ -49,7 +49,8 @@ impl Plugin for EnvironmentPlugin {
                     sync_starfield_system,
                     sync_cloud_system,
                 )
-                    .chain(),
+                    .chain()
+                    .after(crate::player::PlayerSet::Movement),
             );
     }
 }

@@ -24,6 +24,7 @@ pub struct GameSettings {
     pub fov_degrees: f32,
     pub fog_enabled: bool,
     pub view_bobbing: bool,
+    pub full_grass: bool,
 }
 
 impl Default for GameSettings {
@@ -32,6 +33,7 @@ impl Default for GameSettings {
             fov_degrees: 90.0,
             fog_enabled: false,
             view_bobbing: true,
+            full_grass: false,
         }
     }
 }

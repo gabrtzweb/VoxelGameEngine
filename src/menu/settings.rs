@@ -1,6 +1,10 @@
 use bevy::prelude::*;
 
-use crate::{environment::EnvironmentState, world::ChunkStreamingSettings};
+use crate::{
+    environment::EnvironmentState,
+    meshing::{ChunkMaterial, VoxelTextureRegistry},
+    world::{ChunkStreamingQueues, ChunkStreamingSettings, VoxelWorld},
+};
 
 use super::{GameSettings, MenuState};
 
@@ -17,6 +21,7 @@ enum SettingsAction {
     IncFov,
     ToggleFog,
     ToggleViewBobbing,
+    ToggleFullGrass,
     ToggleTimePause,
     Back,
 }
@@ -35,6 +40,9 @@ struct FogLabel;
 
 #[derive(Component)]
 struct ViewBobbingLabel;
+
+#[derive(Component)]
+struct FullGrassLabel;
 
 #[derive(Component)]
 struct TimePauseLabel;
@@ -164,6 +172,21 @@ fn spawn_settings_menu(
                             }
                         ),
                         ViewBobbingLabel,
+                    );
+
+                    // 4b. Grass Sides Toggle Button
+                    spawn_toggle_button(
+                        card,
+                        SettingsAction::ToggleFullGrass,
+                        format!(
+                            "Grass Sides: {}",
+                            if game_settings.full_grass {
+                                "Full Grass"
+                            } else {
+                                "Side Textures"
+                            }
+                        ),
+                        FullGrassLabel,
                     );
 
                     // 5. Time Pause Toggle Button
@@ -383,6 +406,10 @@ fn handle_settings_buttons(
     mut game_settings: ResMut<GameSettings>,
     mut env_state: Option<ResMut<EnvironmentState>>,
     mut next_state: ResMut<NextState<MenuState>>,
+    mut chunk_material: Option<ResMut<ChunkMaterial>>,
+    mut texture_registry: Option<ResMut<VoxelTextureRegistry>>,
+    mut streaming_queues: Option<ResMut<ChunkStreamingQueues>>,
+    world: Option<Res<VoxelWorld>>,
 ) {
     for (interaction, action, mut bg_color, mut border_color) in &mut interaction_query {
         match *interaction {
@@ -418,6 +445,22 @@ fn handle_settings_buttons(
                     }
                     SettingsAction::ToggleViewBobbing => {
                         game_settings.view_bobbing = !game_settings.view_bobbing;
+                    }
+                    SettingsAction::ToggleFullGrass => {
+                        game_settings.full_grass = !game_settings.full_grass;
+                        if let Some(ref mut reg) = texture_registry {
+                            reg.full_grass = game_settings.full_grass;
+                        }
+                        if let Some(ref mut mat) = chunk_material {
+                            mat.texture_registry.full_grass = game_settings.full_grass;
+                        }
+                        if let Some(ref world) = world
+                            && let Some(ref mut queues) = streaming_queues
+                        {
+                            for (&coord, _) in world.iter_chunks() {
+                                queues.enqueue_remesh(coord);
+                            }
+                        }
                     }
                     SettingsAction::ToggleTimePause => {
                         if let Some(ref mut env) = env_state {
@@ -498,6 +541,19 @@ fn update_settings_labels(
             Without<SimulationDistanceLabel>,
             Without<FovLabel>,
             Without<FogLabel>,
+            Without<FullGrassLabel>,
+            Without<TimePauseLabel>,
+        ),
+    >,
+    mut full_grass_query: Query<
+        &mut Text,
+        (
+            With<FullGrassLabel>,
+            Without<RenderDistanceLabel>,
+            Without<SimulationDistanceLabel>,
+            Without<FovLabel>,
+            Without<FogLabel>,
+            Without<ViewBobbingLabel>,
             Without<TimePauseLabel>,
         ),
     >,
@@ -510,6 +566,7 @@ fn update_settings_labels(
             Without<FovLabel>,
             Without<FogLabel>,
             Without<ViewBobbingLabel>,
+            Without<FullGrassLabel>,
         ),
     >,
 ) {
@@ -543,6 +600,16 @@ fn update_settings_labels(
                     "Enabled"
                 } else {
                     "Disabled"
+                }
+            );
+        }
+        for mut text in &mut full_grass_query {
+            text.0 = format!(
+                "Grass Sides: {}",
+                if game_settings.full_grass {
+                    "Full Grass"
+                } else {
+                    "Side Textures"
                 }
             );
         }

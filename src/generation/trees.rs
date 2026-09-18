@@ -10,6 +10,7 @@ pub enum TreeSpecies {
     Oak,
     Birch,
     Pine,
+    Cactus,
 }
 
 impl TreeSpecies {
@@ -18,6 +19,7 @@ impl TreeSpecies {
             Self::Oak => Voxel::OakWoodLog,
             Self::Birch => Voxel::BirchWoodLog,
             Self::Pine => Voxel::PineWoodLog,
+            Self::Cactus => Voxel::Cactus,
         }
     }
 
@@ -26,6 +28,7 @@ impl TreeSpecies {
             Self::Oak => Voxel::OakWood,
             Self::Birch => Voxel::BirchWood,
             Self::Pine => Voxel::PineWood,
+            Self::Cactus => Voxel::Cactus,
         }
     }
 
@@ -34,6 +37,7 @@ impl TreeSpecies {
             Self::Oak => Voxel::OakLeaves,
             Self::Birch => Voxel::BirchLeaves,
             Self::Pine => Voxel::PineLeaves,
+            Self::Cactus => Voxel::Cactus,
         }
     }
 }
@@ -96,13 +100,14 @@ pub fn sample_tree_candidate(
 
     // Biome probability filter (evaluated per 8x8 cell)
     let chance_percent = match column.biome {
-        BiomeType::Woodland => 75,
-        BiomeType::PlainsForest => 55,
-        BiomeType::Wetlands => 35,
-        BiomeType::SnowyTundra => 32,
-        BiomeType::Highlands => 22,
-        BiomeType::Meadow => 18,
-        BiomeType::Plains => 16,
+        BiomeType::Woodland => 46,
+        BiomeType::PlainsForest => 36,
+        BiomeType::Wetlands => 24,
+        BiomeType::SnowyTundra => 22,
+        BiomeType::Highlands => 16,
+        BiomeType::Meadow => 14,
+        BiomeType::Plains => 12,
+        BiomeType::Desert => 12,
         _ => 0,
     };
 
@@ -114,6 +119,7 @@ pub fn sample_tree_candidate(
     // Determine species based on biome
     let species_roll = (h >> 12) % 100;
     let species = match column.biome {
+        BiomeType::Desert => TreeSpecies::Cactus,
         BiomeType::SnowyTundra => TreeSpecies::Pine,
         BiomeType::Highlands => {
             if species_roll < 85 {
@@ -159,6 +165,11 @@ pub fn sample_tree_candidate(
     // Determine trunk shape and height according to species rules
     let type_roll = (h >> 16) % 100;
     let (trunk_type, height) = match species {
+        TreeSpecies::Cactus => {
+            // Desert Cacti: 2 to 4 blocks tall (4 to 8 voxels tall)
+            let height = 4 + ((h >> 20) % 5) as i32; // 4..=8 (2.0m - 4.0m)
+            (TrunkType::Normal, height)
+        }
         TreeSpecies::Oak => {
             // Small oaks are rarer (Thin ~15%), Normal ~60%, Large ~25%
             // Heights significantly increased so oaks are tall, grand, and majestic
@@ -310,8 +321,54 @@ fn place_tree_trunk_in_chunk(chunk_origin: IVec3, tree: &TreeFeature, voxels: &m
     let log = tree.species.log_voxel();
     let wood = tree.species.wood_voxel();
 
-    // Early vertical reject: if the tree doesn't reach or touch this chunk vertically (with leaf margin), skip
-    if (top_y + 6) < chunk_origin.y || (base_y - 2) > (chunk_origin.y + CHUNK_SIZE as i32 - 1) {
+    // Early vertical reject: if the tree doesn't reach or touch this chunk vertically (with leaf/root margin), skip
+    if (top_y + 8) < chunk_origin.y || (base_y - 4) > (chunk_origin.y + CHUNK_SIZE as i32 - 1) {
+        return;
+    }
+
+    if tree.species == TreeSpecies::Cactus {
+        // Desert Cactus: Straight 2x2 column (1m x 1m block) of Voxel::Cactus
+        // Anchor 2 voxels into the ground with Sand so it seamlessly seats on dunes
+        for y in (base_y - 2)..base_y {
+            for dx in 0..2 {
+                for dz in 0..2 {
+                    set_chunk_voxel(chunk_origin, voxels, tx + dx, y, tz + dz, Voxel::Sand);
+                }
+            }
+        }
+        for y in base_y..=top_y {
+            for dx in 0..2 {
+                for dz in 0..2 {
+                    set_chunk_voxel(chunk_origin, voxels, tx + dx, y, tz + dz, Voxel::Cactus);
+                }
+            }
+        }
+
+        // Procedural lateral arm for taller cacti (height >= 6)
+        if tree.height >= 6 && (tree.seed % 3 != 0) {
+            let arm_dir = match (tree.seed >> 4) % 4 {
+                0 => (2, 0),  // +X
+                1 => (-2, 0), // -X
+                2 => (0, 2),  // +Z
+                _ => (0, -2), // -Z
+            };
+            let arm_y = base_y + 2;
+            if arm_y <= top_y - 1 {
+                for dx in 0..2 {
+                    for dz in 0..2 {
+                        let ax = tx + arm_dir.0 + dx;
+                        let az = tz + arm_dir.1 + dz;
+                        // Horizontal arm connector
+                        set_chunk_voxel(chunk_origin, voxels, ax, arm_y, az, Voxel::Cactus);
+                        // Vertical arm segment going up 2 blocks
+                        set_chunk_voxel(chunk_origin, voxels, ax, arm_y + 1, az, Voxel::Cactus);
+                        if arm_y + 2 <= top_y {
+                            set_chunk_voxel(chunk_origin, voxels, ax, arm_y + 2, az, Voxel::Cactus);
+                        }
+                    }
+                }
+            }
+        }
         return;
     }
 
@@ -341,7 +398,13 @@ fn place_tree_trunk_in_chunk(chunk_origin: IVec3, tree: &TreeFeature, voxels: &m
                     }
                 }
             }
-            for y in base_y..=top_y {
+            // For Pine, stop the 2x2 log core 2 voxels below top_y so the needle spire completely envelopes the apex
+            let core_top_y = if tree.species == TreeSpecies::Pine {
+                (top_y - 2).max(base_y)
+            } else {
+                top_y
+            };
+            for y in base_y..=core_top_y {
                 for dx in 0..2 {
                     for dz in 0..2 {
                         set_chunk_voxel(chunk_origin, voxels, tx + dx, y, tz + dz, log);
@@ -351,7 +414,7 @@ fn place_tree_trunk_in_chunk(chunk_origin: IVec3, tree: &TreeFeature, voxels: &m
         }
         TrunkType::Large => {
             // Large trunk:
-            // 1. Central 2x2 core of log_voxel across the full height
+            // 1. Central 2x2 core of log_voxel
             for y in (base_y - 2)..base_y {
                 for dx in 0..2 {
                     for dz in 0..2 {
@@ -359,7 +422,13 @@ fn place_tree_trunk_in_chunk(chunk_origin: IVec3, tree: &TreeFeature, voxels: &m
                     }
                 }
             }
-            for y in base_y..=top_y {
+            // For Pine, stop the 2x2 log core 2 voxels below top_y so the needle spire completely envelopes the apex
+            let core_top_y = if tree.species == TreeSpecies::Pine {
+                (top_y - 2).max(base_y)
+            } else {
+                top_y
+            };
+            for y in base_y..=core_top_y {
                 for dx in 0..2 {
                     for dz in 0..2 {
                         set_chunk_voxel(chunk_origin, voxels, tx + dx, y, tz + dz, log);
@@ -368,7 +437,13 @@ fn place_tree_trunk_in_chunk(chunk_origin: IVec3, tree: &TreeFeature, voxels: &m
             }
 
             // 2. Cardinal Vertical Slabs made of wood_voxel (bark-only) attached to the 4 sides
-            for y in base_y..=top_y {
+            // For Pine, vertical slabs taper off at 65% height so the upper canopy is fully enveloped in needles!
+            let slab_top_y = if tree.species == TreeSpecies::Pine {
+                base_y + (tree.height * 65 / 100)
+            } else {
+                top_y
+            };
+            for y in base_y..=slab_top_y {
                 // +X wing (x = tx + 2, z in [tz, tz + 1])
                 set_chunk_voxel(chunk_origin, voxels, tx + 2, y, tz, wood);
                 set_chunk_voxel(chunk_origin, voxels, tx + 2, y, tz + 1, wood);
@@ -471,6 +546,7 @@ fn place_tree_branches(chunk_origin: IVec3, tree: &TreeFeature, voxels: &mut [Vo
     ];
 
     match tree.species {
+        TreeSpecies::Cactus => {}
         TreeSpecies::Pine => {
             // Pine: Branches are short stubs strictly on lower 55% of tree,
             // completely concealed within the wide needle skirts (never sticking out!).
@@ -675,20 +751,21 @@ fn place_tree_leaves(chunk_origin: IVec3, tree: &TreeFeature, voxels: &mut [Voxe
     ];
 
     match tree.species {
+        TreeSpecies::Cactus => {}
         TreeSpecies::Pine => {
             // Pine: Conical needle skirts starting low (~25% height) and tapering up to a sharp spire
             let start_y = base_y + (height * 25 / 100).max(3);
-            let max_r: f32 = match tree.trunk_type {
-                TrunkType::Thin => 3.2,
-                TrunkType::Normal => 4.4,
-                TrunkType::Large => 5.6,
+            let (max_r, min_top_r): (f32, f32) = match tree.trunk_type {
+                TrunkType::Thin => (3.2, 1.6),
+                TrunkType::Normal => (4.4, 2.0),
+                TrunkType::Large => (5.6, 2.4),
             };
 
             let foliage_span = (top_y - start_y).max(4);
             let mut y = start_y;
             while y <= top_y {
                 let progress = (y - start_y) as f32 / foliage_span as f32;
-                let tier_r = (1.0 - progress) * (max_r - 1.2) + 1.2;
+                let tier_r = (1.0 - progress) * (max_r - min_top_r) + min_top_r;
 
                 // Conical skirt with smooth Euclidean circular layers
                 place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, y - 1, tier_r, leaves);
@@ -698,11 +775,18 @@ fn place_tree_leaves(chunk_origin: IVec3, tree: &TreeFeature, voxels: &mut [Voxe
                 y += 2;
             }
 
-            // Needle spire at summit
-            place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, top_y + 1, 1.4, leaves);
-            place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, top_y + 2, 0.9, leaves);
-            place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, top_y + 3, 0.2, leaves);
-            place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, top_y + 4, 0.2, leaves);
+            // Needle spire at summit completely capping the upper trunk
+            place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, top_y + 1, (min_top_r * 0.85).max(1.4), leaves);
+            place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, top_y + 2, (min_top_r * 0.65).max(1.1), leaves);
+            place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, top_y + 3, (min_top_r * 0.45).max(0.85), leaves);
+            match tree.trunk_type {
+                TrunkType::Thin => {
+                    set_leaf_voxel(chunk_origin, voxels, tx, top_y + 4, tz, leaves);
+                }
+                _ => {
+                    place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, top_y + 4, 0.85, leaves);
+                }
+            }
         }
 
         TreeSpecies::Birch => {
@@ -787,11 +871,13 @@ mod tests {
         for cz in -10..10 {
             for cx in -10..10 {
                 if let Some(tree) = sample_tree_candidate(cx, cz, &generator) {
-                    // Player is 1.8m (3.6 sub-voxels). Height must be at least 6 voxels (3.0m).
+                    // Player is 1.8m (3.6 sub-voxels). Cacti are >= 4 voxels (2.0m), trees are >= 10 voxels (5.0m).
+                    let min_h = if tree.species == TreeSpecies::Cactus { 4 } else { 10 };
                     assert!(
-                        tree.height >= 6,
-                        "Tree height {} must be >= 6 voxels (3.0m), taller than player (1.8m)",
-                        tree.height
+                        tree.height >= min_h,
+                        "Tree/cactus height {} must be >= {} voxels, taller than player (1.8m)",
+                        tree.height,
+                        min_h
                     );
                 }
             }
@@ -987,5 +1073,74 @@ mod tests {
 
         // Tree top (world Y = 21, local y = 5 in chunk_upper) must be OakWoodLog
         assert_eq!(chunk_upper[idx(6, 5, 6)], Voxel::OakWoodLog);
+    }
+
+    #[test]
+    fn cactus_generates_correct_voxels_and_no_leaves() {
+        let cactus = TreeFeature {
+            species: TreeSpecies::Cactus,
+            trunk_type: TrunkType::Normal,
+            world_x: 4,
+            base_y: 2,
+            world_z: 4,
+            height: 6,
+            seed: 42,
+        };
+
+        let mut voxels = vec![Voxel::Air; CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
+        place_tree_trunk_in_chunk(IVec3::ZERO, &cactus, &mut voxels);
+
+        let idx = |x: usize, y: usize, z: usize| x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
+
+        // Sand roots under cactus (base_y - 1 = 1)
+        assert_eq!(voxels[idx(4, 1, 4)], Voxel::Sand);
+        assert_eq!(voxels[idx(5, 1, 5)], Voxel::Sand);
+
+        // Cactus body from base_y (2) to base_y + 5 (7)
+        for y in 2..=7 {
+            assert_eq!(voxels[idx(4, y, 4)], Voxel::Cactus);
+            assert_eq!(voxels[idx(5, y, 4)], Voxel::Cactus);
+            assert_eq!(voxels[idx(4, y, 5)], Voxel::Cactus);
+            assert_eq!(voxels[idx(5, y, 5)], Voxel::Cactus);
+        }
+
+        // Must never place leaf voxels
+        for v in voxels {
+            assert_ne!(v, Voxel::OakLeaves);
+            assert_ne!(v, Voxel::BirchLeaves);
+            assert_ne!(v, Voxel::PineLeaves);
+        }
+    }
+
+    #[test]
+    fn large_pine_summit_has_foliage_covering_trunk() {
+        let pine = TreeFeature {
+            species: TreeSpecies::Pine,
+            trunk_type: TrunkType::Large,
+            world_x: 6,
+            base_y: 2,
+            world_z: 6,
+            height: 20,
+            seed: 5555,
+        };
+
+        let mut voxels = vec![Voxel::Air; CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
+        // Height 20: base_y = 2, top_y = 21. Needs chunk spanning up to y=26.
+        // Chunk origin (0, 16, 0) covers y from 16 to 31
+        place_tree_trunk_in_chunk(IVec3::new(0, 16, 0), &pine, &mut voxels);
+
+        let idx = |x: usize, y: usize, z: usize| x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
+
+        // top_y is 21 (local y = 5). Foliage should be present above top_y at top_y + 1 (local y = 6)
+        let mut summit_foliage_found = false;
+        for x in 4..=10 {
+            for z in 4..=10 {
+                if voxels[idx(x, 6, z)] == Voxel::PineLeaves {
+                    summit_foliage_found = true;
+                    break;
+                }
+            }
+        }
+        assert!(summit_foliage_found, "Large pine summit must have pine leaves at top_y + 1");
     }
 }

@@ -43,14 +43,55 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
             continue;
         }
 
-        let raw_side = load_voxel_raw_16x16(voxel);
+        let mut raw_side = if let Some(side_name) = voxel.side_texture_name() {
+            load_raw_16x16_by_name(side_name, voxel.fallback_color())
+        } else {
+            load_voxel_raw_16x16(voxel)
+        };
+
+        if voxel == Voxel::Grass {
+            let overlay_path = "assets/textures/blocks/terr_grass_side_overlay.png";
+            if Path::new(overlay_path).exists()
+                && let Ok(img) = image::open(overlay_path)
+            {
+                let rgba = img.into_rgba8();
+                let tint = [0.58f32, 0.90, 0.44];
+                let raw = rgba.into_raw();
+                for idx in (0..raw_side.len().min(raw.len())).step_by(4) {
+                    let ov_a = (raw[idx + 3] as f32) / 255.0;
+                    if ov_a > 0.001 {
+                        let ov_r = raw[idx] as f32 * tint[0];
+                        let ov_g = raw[idx + 1] as f32 * tint[1];
+                        let ov_b = raw[idx + 2] as f32 * tint[2];
+
+                        let base_r = raw_side[idx] as f32;
+                        let base_g = raw_side[idx + 1] as f32;
+                        let base_b = raw_side[idx + 2] as f32;
+
+                        raw_side[idx] = (base_r * (1.0 - ov_a) + ov_r * ov_a).round().clamp(0.0, 255.0) as u8;
+                        raw_side[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a).round().clamp(0.0, 255.0) as u8;
+                        raw_side[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a).round().clamp(0.0, 255.0) as u8;
+                    }
+                }
+            }
+        }
+
         let raw_top = if let Some(top_name) = voxel.top_texture_name() {
             load_raw_16x16_by_name(top_name, voxel.fallback_color())
+        } else if voxel.side_texture_name().is_some() {
+            load_voxel_raw_16x16(voxel)
         } else {
             raw_side.clone()
         };
 
-        let icon_image = render_isometric_block_icon_multi(&raw_side, &raw_top, voxel.tint_color());
+        let side_tint = if voxel == Voxel::Grass {
+            [1.0, 1.0, 1.0, 1.0]
+        } else {
+            voxel.tint_color()
+        };
+        let top_tint = voxel.tint_color();
+
+        let icon_image = render_isometric_block_icon_multi(&raw_side, &raw_top, side_tint, top_tint);
         let handle = images.add(icon_image);
 
         if fallback_image.is_none() {
@@ -127,14 +168,15 @@ fn solid_raw_16x16(color: [u8; 4]) -> Vec<u8> {
 /// directional face shading (1.0 / 0.80 / 0.60), vertex tinting, and a subtle silhouette outline.
 #[allow(dead_code)]
 pub fn render_isometric_block_icon(tex_16x16: &[u8], tint: [f32; 4]) -> Image {
-    render_isometric_block_icon_multi(tex_16x16, tex_16x16, tint)
+    render_isometric_block_icon_multi(tex_16x16, tex_16x16, tint, tint)
 }
 
-/// Renders an authentic 2:1 pixel-art isometric cube with distinct Top and Side textures.
+/// Renders an authentic 2:1 pixel-art isometric cube with distinct Top and Side textures and tints.
 pub fn render_isometric_block_icon_multi(
     side_16x16: &[u8],
     top_16x16: &[u8],
-    tint: [f32; 4],
+    side_tint: [f32; 4],
+    top_tint: [f32; 4],
 ) -> Image {
     let mut canvas = vec![0u8; (ICON_SIZE * ICON_SIZE * 4) as usize];
 
@@ -150,7 +192,7 @@ pub fn render_isometric_block_icon_multi(
             if (0.0..1.0).contains(&u_top) && (0.0..1.0).contains(&v_top) {
                 let tx = (u_top * 16.0).floor().clamp(0.0, 15.0) as usize;
                 let ty = (v_top * 16.0).floor().clamp(0.0, 15.0) as usize;
-                draw_texel(&mut canvas, x, y, top_16x16, tx, ty, tint, 1.00);
+                draw_texel(&mut canvas, x, y, top_16x16, tx, ty, top_tint, 1.00);
                 continue;
             }
 
@@ -163,7 +205,7 @@ pub fn render_isometric_block_icon_multi(
                 if (0.0..1.0).contains(&u_left) && (0.0..1.0).contains(&v_left) {
                     let tx = (u_left * 16.0).floor().clamp(0.0, 15.0) as usize;
                     let ty = (v_left * 16.0).floor().clamp(0.0, 15.0) as usize;
-                    draw_texel(&mut canvas, x, y, side_16x16, tx, ty, tint, 0.80);
+                    draw_texel(&mut canvas, x, y, side_16x16, tx, ty, side_tint, 0.80);
                     continue;
                 }
             }
@@ -177,7 +219,7 @@ pub fn render_isometric_block_icon_multi(
                 if (0.0..1.0).contains(&u_right) && (0.0..1.0).contains(&v_right) {
                     let tx = (u_right * 16.0).floor().clamp(0.0, 15.0) as usize;
                     let ty = (v_right * 16.0).floor().clamp(0.0, 15.0) as usize;
-                    draw_texel(&mut canvas, x, y, side_16x16, tx, ty, tint, 0.60);
+                    draw_texel(&mut canvas, x, y, side_16x16, tx, ty, side_tint, 0.60);
                     continue;
                 }
             }

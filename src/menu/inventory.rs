@@ -1,4 +1,4 @@
-use bevy::{prelude::*, window::PrimaryWindow};
+use bevy::{input::mouse::AccumulatedMouseScroll, prelude::*, window::PrimaryWindow};
 
 use crate::{
     gameplay::BlockIcons,
@@ -8,38 +8,42 @@ use crate::{
 
 use super::{HeldInventoryItem, MenuState};
 
-pub const INVENTORY_TOTAL_SLOTS: usize = 48; // 8 wide x 6 high
 pub const INVENTORY_COLS: usize = 8;
-pub const INVENTORY_ROWS: usize = 6;
+pub const INVENTORY_VISIBLE_ROWS: usize = 4;
+pub const INVENTORY_VISIBLE_SLOTS: usize = INVENTORY_COLS * INVENTORY_VISIBLE_ROWS; // 32 slots
 
-pub const AVAILABLE_BLOCKS: [Voxel; 46] = [
+pub const AVAILABLE_BLOCKS: [Voxel; 57] = [
+    // Soils, Organics & Fine Sediment
     Voxel::Grass,
     Voxel::Dirt,
     Voxel::PackedDirt,
+    Voxel::Mud,
+    Voxel::PackedMud,
+    Voxel::Mulch,
+    Voxel::Moss,
+    Voxel::RedMoss,
+    Voxel::Clay,
+    Voxel::Gravel,
+    Voxel::Sand,
+    Voxel::RedSand,
+    Voxel::Snow,
+    Voxel::Ice,
+    Voxel::PackedIce,
+
+    // Stones, Rocks & Minerals
     Voxel::Stone,
     Voxel::Cobblestone,
-    Voxel::MossyCobblestone,
     Voxel::MossyStone,
+    Voxel::MossyCobblestone,
     Voxel::Slate,
     Voxel::Cobbleslate,
     Voxel::Blackstone,
     Voxel::Cobbleblackstone,
     Voxel::Flint,
-    Voxel::Sand,
-    Voxel::RedSand,
-    Voxel::Gravel,
-    Voxel::Clay,
-    Voxel::Mud,
-    Voxel::PackedMud,
-    Voxel::Mulch,
-    Voxel::Moss,
-    Voxel::Snow,
-    Voxel::Ice,
-    Voxel::PackedIce,
+    Voxel::Basalt,
     Voxel::Andesite,
     Voxel::Diorite,
     Voxel::Granite,
-    Voxel::Dreadstone,
     Voxel::Tuff,
     Voxel::Sandstone,
     Voxel::RedSandstone,
@@ -50,16 +54,46 @@ pub const AVAILABLE_BLOCKS: [Voxel; 46] = [
     Voxel::Ochrestone,
     Voxel::Rhodonite,
     Voxel::Serpentinite,
-    Voxel::RedMoss,
-    Voxel::Magma,
+    Voxel::Dreadstone,
+
+    // Woods & Foliage
+    Voxel::OakWoodLog,
+    Voxel::OakWood,
+    Voxel::OakLeaves,
+    Voxel::BirchWoodLog,
+    Voxel::BirchWood,
+    Voxel::BirchLeaves,
+    Voxel::PineWoodLog,
+    Voxel::PineWood,
+    Voxel::PineLeaves,
+    Voxel::Cactus,
+
+    // Fluids & Volcanics
     Voxel::Water,
     Voxel::Lava,
+    Voxel::Magma,
+
+    // Illumination
     Voxel::LightWarm,
     Voxel::LightCold,
     Voxel::LightRed,
     Voxel::LightGreen,
     Voxel::LightBlue,
 ];
+
+pub fn total_inventory_rows() -> usize {
+    (AVAILABLE_BLOCKS.len() + INVENTORY_COLS - 1) / INVENTORY_COLS
+}
+
+pub fn max_scroll_row() -> usize {
+    total_inventory_rows().saturating_sub(INVENTORY_VISIBLE_ROWS)
+}
+
+#[derive(Resource, Default)]
+pub struct InventoryScrollState {
+    pub scroll_row: usize,
+    pub is_dragging_thumb: bool,
+}
 
 #[derive(Component)]
 struct InventoryMenuRoot;
@@ -69,9 +103,20 @@ struct InventoryCard;
 
 #[derive(Component)]
 struct InventoryPaletteSlot {
-    index: usize,
+    slot_index: usize,
     voxel: Option<Voxel>,
 }
+
+#[derive(Component)]
+struct InventoryPaletteSlotIcon {
+    slot_index: usize,
+}
+
+#[derive(Component)]
+struct InventoryScrollTrack;
+
+#[derive(Component)]
+struct InventoryScrollThumb;
 
 #[derive(Component)]
 struct InventoryHotbarSlot {
@@ -87,7 +132,8 @@ pub struct InventoryMenuPlugin;
 
 impl Plugin for InventoryMenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(MenuState::Inventory), spawn_inventory_menu)
+        app.init_resource::<InventoryScrollState>()
+            .add_systems(OnEnter(MenuState::Inventory), spawn_inventory_menu)
             .add_systems(OnExit(MenuState::Inventory), despawn_inventory_menu)
             .add_systems(
                 Update,
@@ -97,7 +143,25 @@ impl Plugin for InventoryMenuPlugin {
     }
 }
 
-fn spawn_inventory_menu(mut commands: Commands, hotbar: Res<Hotbar>, icons: Res<BlockIcons>) {
+fn spawn_inventory_menu(
+    mut commands: Commands,
+    hotbar: Res<Hotbar>,
+    icons: Res<BlockIcons>,
+    scroll_state: Res<InventoryScrollState>,
+) {
+    let start_row = scroll_state.scroll_row;
+    let total_rows = total_inventory_rows();
+    let max_scroll = max_scroll_row();
+
+    let track_height = 210.0;
+    let thumb_height = (track_height * (INVENTORY_VISIBLE_ROWS as f32 / total_rows as f32)).clamp(40.0, track_height);
+    let max_travel = (track_height - thumb_height).max(1.0);
+    let thumb_top = if max_scroll > 0 {
+        (start_row as f32 / max_scroll as f32) * max_travel
+    } else {
+        0.0
+    };
+
     commands
         .spawn((
             InventoryMenuRoot,
@@ -124,7 +188,7 @@ fn spawn_inventory_menu(mut commands: Commands, hotbar: Res<Hotbar>, icons: Res<
                         flex_direction: FlexDirection::Column,
                         align_items: AlignItems::Center,
                         row_gap: px(14.0),
-                        width: px(450.0),
+                        width: px(480.0),
                         padding: UiRect::all(px(20.0)),
                         border: UiRect::all(px(2.0)),
                         border_radius: BorderRadius::all(px(10.0)),
@@ -134,9 +198,9 @@ fn spawn_inventory_menu(mut commands: Commands, hotbar: Res<Hotbar>, icons: Res<
                     BorderColor::all(Color::srgba(0.35, 0.35, 0.42, 0.80)),
                 ))
                 .with_children(|panel| {
-                    // Clean Header Title
+                    // Header Title
                     panel.spawn((
-                        Text::new("INVENTORY"),
+                        Text::new("CREATIVE INVENTORY"),
                         TextFont {
                             font_size: FontSize::Px(20.0),
                             ..default()
@@ -148,74 +212,129 @@ fn spawn_inventory_menu(mut commands: Commands, hotbar: Res<Hotbar>, icons: Res<
                         },
                     ));
 
-                    // 8x4 Grid Container
+                    // Palette + Scrollbar Row Container
                     panel
-                        .spawn((
-                            Node {
-                                display: Display::Grid,
-                                grid_template_columns: RepeatedGridTrack::px(
-                                    INVENTORY_COLS as u16,
-                                    44.0,
-                                ),
-                                grid_template_rows: RepeatedGridTrack::px(
-                                    INVENTORY_ROWS as u16,
-                                    44.0,
-                                ),
-                                row_gap: px(6.0),
-                                column_gap: px(6.0),
-                                padding: UiRect::all(px(8.0)),
-                                border: UiRect::all(px(1.5)),
-                                border_radius: BorderRadius::all(px(6.0)),
-                                ..default()
-                            },
-                            BackgroundColor(Color::srgba(0.05, 0.05, 0.07, 0.85)),
-                            BorderColor::all(Color::srgba(0.22, 0.22, 0.26, 0.70)),
-                        ))
-                        .with_children(|grid| {
-                            for slot_idx in 0..INVENTORY_TOTAL_SLOTS {
-                                let voxel = AVAILABLE_BLOCKS.get(slot_idx).copied();
-                                let icon_handle = voxel.map(|v| icons.get(v));
-
-                                grid.spawn((
-                                    Button,
-                                    InventoryPaletteSlot {
-                                        index: slot_idx,
-                                        voxel,
-                                    },
+                        .spawn(Node {
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Row,
+                            align_items: AlignItems::Center,
+                            column_gap: px(8.0),
+                            ..default()
+                        })
+                        .with_children(|palette_row| {
+                            // 8x4 Grid Container
+                            palette_row
+                                .spawn((
                                     Node {
-                                        width: px(44.0),
-                                        height: px(44.0),
+                                        display: Display::Grid,
+                                        grid_template_columns: RepeatedGridTrack::px(
+                                            INVENTORY_COLS as u16,
+                                            44.0,
+                                        ),
+                                        grid_template_rows: RepeatedGridTrack::px(
+                                            INVENTORY_VISIBLE_ROWS as u16,
+                                            44.0,
+                                        ),
+                                        row_gap: px(6.0),
+                                        column_gap: px(6.0),
+                                        padding: UiRect::all(px(8.0)),
+                                        border: UiRect::all(px(1.5)),
+                                        border_radius: BorderRadius::all(px(6.0)),
+                                        ..default()
+                                    },
+                                    BackgroundColor(Color::srgba(0.05, 0.05, 0.07, 0.85)),
+                                    BorderColor::all(Color::srgba(0.22, 0.22, 0.26, 0.70)),
+                                ))
+                                .with_children(|grid| {
+                                    for slot_idx in 0..INVENTORY_VISIBLE_SLOTS {
+                                        let block_idx = start_row * INVENTORY_COLS + slot_idx;
+                                        let voxel = AVAILABLE_BLOCKS.get(block_idx).copied();
+                                        let icon_handle = voxel
+                                            .map(|v| icons.get(v))
+                                            .unwrap_or_else(|| icons.get(Voxel::Stone));
+                                        let icon_vis = if voxel.is_some() {
+                                            Visibility::Visible
+                                        } else {
+                                            Visibility::Hidden
+                                        };
+
+                                        grid.spawn((
+                                            Button,
+                                            InventoryPaletteSlot {
+                                                slot_index: slot_idx,
+                                                voxel,
+                                            },
+                                            Node {
+                                                width: px(44.0),
+                                                height: px(44.0),
+                                                display: Display::Flex,
+                                                justify_content: JustifyContent::Center,
+                                                align_items: AlignItems::Center,
+                                                border: UiRect::all(px(1.5)),
+                                                border_radius: BorderRadius::all(px(4.0)),
+                                                ..default()
+                                            },
+                                            BackgroundColor(Color::srgba(0.12, 0.12, 0.15, 0.85)),
+                                            BorderColor::all(Color::srgba(0.25, 0.25, 0.30, 0.60)),
+                                        ))
+                                        .with_children(|slot| {
+                                            slot.spawn((
+                                                InventoryPaletteSlotIcon { slot_index: slot_idx },
+                                                ImageNode {
+                                                    image: icon_handle,
+                                                    ..default()
+                                                },
+                                                Node {
+                                                    width: px(32.0),
+                                                    height: px(32.0),
+                                                    ..default()
+                                                },
+                                                icon_vis,
+                                            ));
+                                        });
+                                    }
+                                });
+
+                            // Minecraft-style Scrollbar Track
+                            palette_row
+                                .spawn((
+                                    Button,
+                                    InventoryScrollTrack,
+                                    Node {
+                                        width: px(16.0),
+                                        height: px(track_height),
                                         display: Display::Flex,
-                                        justify_content: JustifyContent::Center,
-                                        align_items: AlignItems::Center,
+                                        position_type: PositionType::Relative,
                                         border: UiRect::all(px(1.5)),
                                         border_radius: BorderRadius::all(px(4.0)),
                                         ..default()
                                     },
-                                    BackgroundColor(Color::srgba(0.12, 0.12, 0.15, 0.85)),
-                                    BorderColor::all(Color::srgba(0.25, 0.25, 0.30, 0.60)),
+                                    BackgroundColor(Color::srgba(0.04, 0.04, 0.06, 0.90)),
+                                    BorderColor::all(Color::srgba(0.22, 0.22, 0.26, 0.70)),
                                 ))
-                                .with_children(|slot| {
-                                    if let Some(handle) = icon_handle {
-                                        slot.spawn((
-                                            ImageNode {
-                                                image: handle,
-                                                ..default()
-                                            },
-                                            Node {
-                                                width: px(32.0),
-                                                height: px(32.0),
-                                                ..default()
-                                            },
-                                        ));
-                                    }
+                                .with_children(|track| {
+                                    track.spawn((
+                                        Button,
+                                        InventoryScrollThumb,
+                                        Node {
+                                            position_type: PositionType::Absolute,
+                                            left: px(1.0),
+                                            right: px(1.0),
+                                            top: px(thumb_top),
+                                            height: px(thumb_height),
+                                            border: UiRect::all(px(1.5)),
+                                            border_radius: BorderRadius::all(px(3.0)),
+                                            ..default()
+                                        },
+                                        BackgroundColor(Color::srgba(0.35, 0.36, 0.42, 0.95)),
+                                        BorderColor::all(Color::srgba(0.55, 0.56, 0.65, 0.90)),
+                                    ));
                                 });
-                            }
                         });
 
                     // Divider
                     panel.spawn(Node {
-                        width: px(390.0),
+                        width: px(434.0),
                         height: px(1.5),
                         margin: UiRect::axes(px(0.0), px(6.0)),
                         border: UiRect::all(px(1.0)),
@@ -289,7 +408,7 @@ fn spawn_inventory_menu(mut commands: Commands, hotbar: Res<Hotbar>, icons: Res<
                                         InventoryHotbarSlotIcon { index: slot_idx },
                                         ImageNode {
                                             image: icon_handle,
-                                            ..default()
+                                             ..default()
                                         },
                                         Node {
                                             width: px(30.0),
@@ -309,8 +428,11 @@ fn despawn_inventory_menu(
     mut commands: Commands,
     query: Query<Entity, With<InventoryMenuRoot>>,
     mut held_item: ResMut<HeldInventoryItem>,
+    mut scroll_state: ResMut<InventoryScrollState>,
 ) {
     held_item.voxel = None;
+    scroll_state.scroll_row = 0;
+    scroll_state.is_dragging_thumb = false;
     for entity in &query {
         commands.entity(entity).despawn();
     }
@@ -327,19 +449,37 @@ struct InventoryDragState {
 fn handle_inventory_interaction(
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse: Res<ButtonInput<MouseButton>>,
+    mouse_scroll: Res<AccumulatedMouseScroll>,
     mut held_item: ResMut<HeldInventoryItem>,
     mut hotbar: ResMut<Hotbar>,
+    mut scroll_state: ResMut<InventoryScrollState>,
+    icons: Res<BlockIcons>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     card_query: Query<(&GlobalTransform, &ComputedNode), With<InventoryCard>>,
+    track_query: Query<(&GlobalTransform, &ComputedNode), With<InventoryScrollTrack>>,
+    thumb_query: Query<&Interaction, With<InventoryScrollThumb>>,
+    mut thumb_node_query: Query<
+        (&mut Node, &mut BackgroundColor, &mut BorderColor),
+        (
+            With<InventoryScrollThumb>,
+            Without<InventoryPaletteSlot>,
+            Without<InventoryHotbarSlot>,
+        ),
+    >,
     mut palette_query: Query<
         (
             &Interaction,
-            &InventoryPaletteSlot,
+            &mut InventoryPaletteSlot,
             &mut BorderColor,
             &mut BackgroundColor,
         ),
-        With<Button>,
+        (
+            With<InventoryPaletteSlot>,
+            Without<InventoryScrollThumb>,
+            Without<InventoryHotbarSlot>,
+        ),
     >,
+    mut slot_icon_query: Query<(&InventoryPaletteSlotIcon, &mut ImageNode, &mut Visibility)>,
     mut hotbar_slot_query: Query<
         (
             &Interaction,
@@ -347,7 +487,11 @@ fn handle_inventory_interaction(
             &mut BorderColor,
             &mut BackgroundColor,
         ),
-        (With<Button>, Without<InventoryPaletteSlot>),
+        (
+            With<InventoryHotbarSlot>,
+            Without<InventoryPaletteSlot>,
+            Without<InventoryScrollThumb>,
+        ),
     >,
     mut drag_state: Local<InventoryDragState>,
 ) {
@@ -357,7 +501,56 @@ fn handle_inventory_interaction(
     let middle_just_pressed = mouse.just_pressed(MouseButton::Middle);
     let left_pressed = mouse.pressed(MouseButton::Left);
 
-    // 1. Deselect held item if clicking outside the central inventory card (on the backdrop)
+    let max_row = max_scroll_row();
+    let mut row_changed = false;
+
+    // 1. Mouse wheel scrolling
+    let scroll_y = mouse_scroll.delta.y;
+    if scroll_y > 0.05 {
+        if scroll_state.scroll_row > 0 {
+            scroll_state.scroll_row -= 1;
+            row_changed = true;
+        }
+    } else if scroll_y < -0.05 && scroll_state.scroll_row < max_row {
+        scroll_state.scroll_row += 1;
+        row_changed = true;
+    }
+
+    // 2. Scrollbar Dragging / Track Clicking
+    let track_height = 210.0;
+    let thumb_height = (track_height * (INVENTORY_VISIBLE_ROWS as f32 / total_inventory_rows() as f32)).clamp(40.0, track_height);
+    let max_travel = (track_height - thumb_height).max(1.0);
+
+    if let (Some(window), Some((track_tf, track_computed))) =
+        (window_query.iter().next(), track_query.iter().next())
+    {
+        let track_center = track_tf.translation().truncate();
+        let track_half = track_computed.size() * 0.5;
+        let track_rect = Rect::from_corners(track_center - track_half, track_center + track_half);
+
+        if left_just_pressed && let Some(cursor_pos) = window.cursor_position() {
+            if track_rect.contains(cursor_pos) {
+                scroll_state.is_dragging_thumb = true;
+            }
+        }
+
+        if left_pressed && scroll_state.is_dragging_thumb && let Some(cursor_pos) = window.cursor_position() {
+            let track_top_y = track_center.y - track_half.y;
+            let rel_y = (cursor_pos.y - track_top_y - thumb_height * 0.5).clamp(0.0, max_travel);
+            let progress = rel_y / max_travel;
+            let target_row = (progress * max_row as f32).round() as usize;
+            if target_row != scroll_state.scroll_row {
+                scroll_state.scroll_row = target_row.min(max_row);
+                row_changed = true;
+            }
+        }
+    }
+
+    if mouse.just_released(MouseButton::Left) {
+        scroll_state.is_dragging_thumb = false;
+    }
+
+    // 3. Deselect held item if clicking outside the central inventory card (on the backdrop)
     if (left_just_pressed || right_just_pressed)
         && held_item.voxel.is_some()
         && let (Some(window), Some((transform, computed))) =
@@ -372,7 +565,7 @@ fn handle_inventory_interaction(
         }
     }
 
-    // 2. Right-click deselect if not hovering over any hotbar slot
+    // 4. Right-click deselect if not hovering over any hotbar slot
     let any_hotbar_hovered = hotbar_slot_query
         .iter()
         .any(|(i, _, _, _)| *i == Interaction::Hovered || *i == Interaction::Pressed);
@@ -402,7 +595,48 @@ fn handle_inventory_interaction(
         None
     };
 
-    // 3. Process Palette Slots
+    // 5. Update slots if scroll row changed
+    if row_changed {
+        let cur_row = scroll_state.scroll_row;
+        for (_, mut slot, _, _) in &mut palette_query {
+            let block_idx = cur_row * INVENTORY_COLS + slot.slot_index;
+            slot.voxel = AVAILABLE_BLOCKS.get(block_idx).copied();
+        }
+
+        for (icon, mut img, mut vis) in &mut slot_icon_query {
+            let block_idx = cur_row * INVENTORY_COLS + icon.slot_index;
+            if let Some(&voxel) = AVAILABLE_BLOCKS.get(block_idx) {
+                *vis = Visibility::Visible;
+                img.image = icons.get(voxel);
+            } else {
+                *vis = Visibility::Hidden;
+            }
+        }
+    }
+
+    // Update thumb position and visual feedback
+    for (mut thumb_node, mut thumb_bg, mut thumb_border) in &mut thumb_node_query {
+        let progress = if max_row > 0 {
+            scroll_state.scroll_row as f32 / max_row as f32
+        } else {
+            0.0
+        };
+        thumb_node.top = px(progress * max_travel);
+
+        let is_thumb_hovered = thumb_query.iter().any(|i| *i == Interaction::Hovered);
+        if scroll_state.is_dragging_thumb {
+            *thumb_bg = BackgroundColor(Color::srgb(1.0, 0.85, 0.30));
+            *thumb_border = BorderColor::all(Color::srgb(1.0, 1.0, 0.60));
+        } else if is_thumb_hovered {
+            *thumb_bg = BackgroundColor(Color::srgba(0.50, 0.52, 0.60, 1.0));
+            *thumb_border = BorderColor::all(Color::srgba(0.70, 0.72, 0.80, 1.0));
+        } else {
+            *thumb_bg = BackgroundColor(Color::srgba(0.35, 0.36, 0.42, 0.95));
+            *thumb_border = BorderColor::all(Color::srgba(0.55, 0.56, 0.65, 0.90));
+        }
+    }
+
+    // 6. Process Palette Slots
     for (interaction, slot, mut border, mut bg) in &mut palette_query {
         let is_hovered = *interaction == Interaction::Hovered;
         let is_pressed = *interaction == Interaction::Pressed;
@@ -420,9 +654,9 @@ fn handle_inventory_interaction(
                 // Mouse Tweaks: Shift + Click / Shift + Drag quick-transfer into hotbar
                 if is_shift {
                     if (left_just_pressed || left_pressed)
-                        && drag_state.last_shift_palette_slot != Some(slot.index)
+                        && drag_state.last_shift_palette_slot != Some(slot.slot_index)
                     {
-                        drag_state.last_shift_palette_slot = Some(slot.index);
+                        drag_state.last_shift_palette_slot = Some(slot.slot_index);
                         if let Some(empty_idx) = hotbar.slots.iter().position(|s| s.is_none()) {
                             hotbar.slots[empty_idx] = Some(v);
                         } else {
@@ -454,7 +688,7 @@ fn handle_inventory_interaction(
         }
     }
 
-    // 4. Process Hotbar Slots
+    // 7. Process Hotbar Slots
     for (interaction, hotbar_slot, mut border, mut bg) in &mut hotbar_slot_query {
         let is_hovered = *interaction == Interaction::Hovered;
         let is_pressed = *interaction == Interaction::Pressed;
@@ -536,7 +770,7 @@ fn handle_inventory_interaction(
         }
     }
 
-    // 5. Mouse release cleanup
+    // 8. Mouse release cleanup
     if mouse.just_released(MouseButton::Left) {
         if drag_state.hotbar_drag_start_slot.is_some() {
             // Placing into hotbar slot clears held item from cursor
@@ -574,9 +808,30 @@ mod tests {
 
     #[test]
     fn test_inventory_dimensions_and_blocks() {
-        assert_eq!(INVENTORY_COLS * INVENTORY_ROWS, INVENTORY_TOTAL_SLOTS);
-        assert_eq!(AVAILABLE_BLOCKS.len(), 46);
-        assert!(AVAILABLE_BLOCKS.len() <= INVENTORY_TOTAL_SLOTS);
+        assert_eq!(INVENTORY_COLS * INVENTORY_VISIBLE_ROWS, INVENTORY_VISIBLE_SLOTS);
+        assert_eq!(INVENTORY_VISIBLE_ROWS, 4);
+        assert_eq!(AVAILABLE_BLOCKS.len(), 57);
+        assert_eq!(total_inventory_rows(), 8);
+        assert_eq!(max_scroll_row(), 4);
+    }
+
+    #[test]
+    fn test_inventory_scroll_bounds() {
+        let max_row = max_scroll_row();
+        assert_eq!(max_row, 4);
+
+        // At scroll_row 0: items 0..32
+        let first_block = AVAILABLE_BLOCKS[0];
+        assert_eq!(first_block, Voxel::Grass);
+
+        // At scroll_row 4 (bottom): items 32..57
+        let last_row_first_block_idx = max_row * INVENTORY_COLS;
+        assert_eq!(last_row_first_block_idx, 32);
+        assert!(last_row_first_block_idx < AVAILABLE_BLOCKS.len());
+
+        let last_block_row = (AVAILABLE_BLOCKS.len() - 1) / INVENTORY_COLS;
+        assert_eq!(last_block_row, 7);
+        assert!(last_block_row < total_inventory_rows());
     }
 
     #[test]
@@ -627,7 +882,7 @@ mod tests {
     #[test]
     fn test_card_bounds_detection() {
         let center = Vec2::new(640.0, 360.0);
-        let size = Vec2::new(450.0, 300.0);
+        let size = Vec2::new(480.0, 300.0);
         let half = size * 0.5;
         let card_rect = Rect::from_corners(center - half, center + half);
 

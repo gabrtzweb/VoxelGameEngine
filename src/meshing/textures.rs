@@ -47,6 +47,7 @@ impl VoxelTextureMapping {
 pub struct VoxelTextureRegistry {
     mappings: [Option<VoxelTextureMapping>; MAX_VOXEL_VARIANTS],
     total_layers: u32,
+    pub full_grass: bool,
 }
 
 impl Default for VoxelTextureRegistry {
@@ -54,6 +55,7 @@ impl Default for VoxelTextureRegistry {
         Self {
             mappings: [None; MAX_VOXEL_VARIANTS],
             total_layers: 0,
+            full_grass: false,
         }
     }
 }
@@ -104,6 +106,14 @@ impl VoxelTextureRegistry {
     }
 
     #[allow(dead_code)]
+    pub fn top_variant_count(&self, voxel: Voxel) -> u16 {
+        self.mappings
+            .get(voxel as usize)
+            .and_then(|m| *m)
+            .map_or(0, |m| m.top.variant_count)
+    }
+
+    #[allow(dead_code)]
     pub fn frame_count(&self, voxel: Voxel) -> u16 {
         self.mappings
             .get(voxel as usize)
@@ -125,7 +135,13 @@ impl VoxelTextureRegistry {
         let face = match direction {
             FaceDirection::PositiveY => m.top,
             FaceDirection::NegativeY => m.bottom,
-            _ => m.side,
+            _ => {
+                if voxel == Voxel::Grass && self.full_grass {
+                    m.top
+                } else {
+                    m.side
+                }
+            }
         };
 
         if face.variant_count <= 1 {
@@ -169,7 +185,43 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
             continue;
         };
 
-        let side_variants = load_all_variants_for(base_name, voxel.fallback_color());
+        let side_name = voxel.side_texture_name().unwrap_or(base_name);
+        let mut side_variants = load_all_variants_for(side_name, voxel.fallback_color());
+
+        // Composite grass side overlay if this is Grass
+        if voxel == Voxel::Grass {
+            if let Some(overlay) = try_load_image("assets/textures/blocks/terr_grass_side_overlay.png") {
+                if let Some(overlay_frame) = overlay.frames.first() {
+                    let tint = voxel.tint_color();
+                    for variant in &mut side_variants {
+                        for frame in &mut variant.frames {
+                            for i in 0..256 {
+                                let idx = i * 4;
+                                let ov_a = overlay_frame[idx + 3] as f32 / 255.0;
+                                if ov_a > 0.0 {
+                                    let ov_r = overlay_frame[idx] as f32 * tint[0];
+                                    let ov_g = overlay_frame[idx + 1] as f32 * tint[1];
+                                    let ov_b = overlay_frame[idx + 2] as f32 * tint[2];
+
+                                    let base_r = frame[idx] as f32;
+                                    let base_g = frame[idx + 1] as f32;
+                                    let base_b = frame[idx + 2] as f32;
+
+                                    let out_r = (base_r * (1.0 - ov_a) + ov_r * ov_a).round().clamp(0.0, 255.0) as u8;
+                                    let out_g = (base_g * (1.0 - ov_a) + ov_g * ov_a).round().clamp(0.0, 255.0) as u8;
+                                    let out_b = (base_b * (1.0 - ov_a) + ov_b * ov_a).round().clamp(0.0, 255.0) as u8;
+
+                                    frame[idx] = out_r;
+                                    frame[idx + 1] = out_g;
+                                    frame[idx + 2] = out_b;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         let side_variant_count = side_variants.len() as u16;
         let side_frame_count = side_variants.first().map_or(1, |v| v.frames.len() as u16);
         let side_start_layer = current_layer;
@@ -205,12 +257,33 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
                 variant_count: top_variant_count,
                 frame_count: top_frame_count,
             }
+        } else if voxel.side_texture_name().is_some() && voxel.side_texture_name() != Some(base_name) {
+            // If side was overridden, base_name is used for the top texture (e.g. Basalt, Mulch, Grass)
+            let top_variants = load_all_variants_for(base_name, voxel.fallback_color());
+            let top_variant_count = top_variants.len() as u16;
+            let top_frame_count = top_variants.first().map_or(1, |v| v.frames.len() as u16);
+            let top_start_layer = current_layer;
+
+            for variant in top_variants {
+                for frame in variant.frames {
+                    raw_layers.extend_from_slice(&frame);
+                    current_layer += 1;
+                }
+            }
+
+            FaceTextureInfo {
+                start_layer: top_start_layer,
+                variant_count: top_variant_count,
+                frame_count: top_frame_count,
+            }
         } else {
             side_info
         };
 
         let bottom_info = if let Some(bot_name) = voxel.bottom_texture_name() {
-            if Some(bot_name) == voxel.top_texture_name() {
+            if Some(bot_name) == voxel.top_texture_name()
+                || (voxel.top_texture_name().is_none() && Some(bot_name) == Some(base_name))
+            {
                 top_info
             } else {
                 let bot_variants = load_all_variants_for(bot_name, voxel.fallback_color());
@@ -231,6 +304,8 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
                     frame_count: bot_frame_count,
                 }
             }
+        } else if voxel.side_texture_name().is_some() {
+            top_info
         } else {
             side_info
         };
@@ -428,8 +503,11 @@ mod tests {
             registry.total_layers()
         );
 
-        let grass_count = registry.variant_count(Voxel::Grass);
-        assert_eq!(grass_count, 8, "Grass should have 8 variants");
+        let grass_side_count = registry.variant_count(Voxel::Grass);
+        assert_eq!(grass_side_count, 4, "Grass sides should have 4 variants");
+
+        let grass_top_count = registry.top_variant_count(Voxel::Grass);
+        assert_eq!(grass_top_count, 8, "Grass top should have 8 variants");
 
         let stone_count = registry.variant_count(Voxel::Stone);
         assert_eq!(stone_count, 4, "Stone should have 4 variants");

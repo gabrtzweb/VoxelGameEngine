@@ -99,7 +99,17 @@ pub fn mesh_centered_voxels(
                 } else {
                     frame_count as f32
                 };
-                let tint_color = material.tint_color_at(world_voxel);
+                let top_tint = material.tint_color_at(world_voxel);
+                let side_tint = if material == Voxel::Grass && !textures.full_grass {
+                    [1.0, 1.0, 1.0, 1.0]
+                } else {
+                    material.tint_color_at(world_voxel)
+                };
+                let bottom_tint = if material == Voxel::Grass {
+                    [1.0, 1.0, 1.0, 1.0]
+                } else {
+                    material.tint_color_at(world_voxel)
+                };
 
                 let min_x = bx as f32 + 0.5;
                 let max_x = bx as f32 + 1.5;
@@ -146,7 +156,7 @@ pub fn mesh_centered_voxels(
                     [1.0, 0.0, 0.0],
                     side_layer,
                     frame_count_f32,
-                    tint_color,
+                    side_tint,
                 );
                 // -X
                 push_centered_quad(
@@ -160,7 +170,7 @@ pub fn mesh_centered_voxels(
                     [-1.0, 0.0, 0.0],
                     side_layer,
                     frame_count_f32,
-                    tint_color,
+                    side_tint,
                 );
                 // +Z
                 push_centered_quad(
@@ -174,7 +184,7 @@ pub fn mesh_centered_voxels(
                     [0.0, 0.0, 1.0],
                     side_layer,
                     frame_count_f32,
-                    tint_color,
+                    side_tint,
                 );
                 // -Z
                 push_centered_quad(
@@ -188,7 +198,7 @@ pub fn mesh_centered_voxels(
                     [0.0, 0.0, -1.0],
                     side_layer,
                     frame_count_f32,
-                    tint_color,
+                    side_tint,
                 );
 
                 if !cull_top {
@@ -204,7 +214,7 @@ pub fn mesh_centered_voxels(
                         [0.0, 1.0, 0.0],
                         top_layer,
                         frame_count_f32,
-                        tint_color,
+                        top_tint,
                     );
                 }
 
@@ -221,7 +231,7 @@ pub fn mesh_centered_voxels(
                         [0.0, -1.0, 0.0],
                         bottom_layer,
                         frame_count_f32,
-                        tint_color,
+                        bottom_tint,
                     );
                 }
 
@@ -422,9 +432,13 @@ pub fn push_centered_quad(
         buffers.uv_bs.push([texture_layer as f32, frame_count]);
     }
 
-    buffers
-        .uvs
-        .extend_from_slice(&[[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]]);
+    let uvs = if normal[1].abs() > 0.5 {
+        [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]]
+    } else {
+        [[0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]
+    };
+
+    buffers.uvs.extend_from_slice(&uvs);
 
     buffers.indices.extend_from_slice(&[
         base_index,
