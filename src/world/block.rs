@@ -81,11 +81,22 @@ pub enum Voxel {
     Rhodonite = 48,
     Serpentinite = 49,
     RedMoss = 50,
+
+    // Woods & Foliage
+    OakWood = 51,
+    OakWoodLog = 52,
+    BirchWood = 53,
+    BirchWoodLog = 54,
+    PineWood = 55,
+    PineWoodLog = 56,
+    OakLeaves = 57,
+    BirchLeaves = 58,
+    PineLeaves = 59,
 }
 
 impl Voxel {
     /// All voxels that map to a texture and are loaded into the terrain texture array.
-    pub const ALL: [Voxel; 49] = [
+    pub const ALL: [Voxel; 58] = [
         Voxel::Grass,
         Voxel::Dirt,
         Voxel::Stone,
@@ -133,6 +144,15 @@ impl Voxel {
         Voxel::Rhodonite,
         Voxel::Serpentinite,
         Voxel::RedMoss,
+        Voxel::OakWood,
+        Voxel::OakWoodLog,
+        Voxel::BirchWood,
+        Voxel::BirchWoodLog,
+        Voxel::PineWood,
+        Voxel::PineWoodLog,
+        Voxel::OakLeaves,
+        Voxel::BirchLeaves,
+        Voxel::PineLeaves,
         Voxel::Occupied,
         Voxel::WaterOccupied,
     ];
@@ -141,6 +161,14 @@ impl Voxel {
     pub fn texture_name(self) -> Option<&'static str> {
         match self {
             Self::Air | Self::Occupied | Self::WaterOccupied => None,
+
+            // Woods & Foliage
+            Self::OakWood | Self::OakWoodLog => Some("tree_oakwood"),
+            Self::BirchWood | Self::BirchWoodLog => Some("tree_birchwood"),
+            Self::PineWood | Self::PineWoodLog => Some("tree_pinewood"),
+            Self::OakLeaves => Some("tree_oakwood_leaves"),
+            Self::BirchLeaves => Some("tree_birchwood_leaves"),
+            Self::PineLeaves => Some("tree_pinewood_leaves"),
 
             // Natural terrain
             Self::Grass => Some("terr_grass"),
@@ -199,11 +227,36 @@ impl Voxel {
         }
     }
 
+    /// Optional texture override for the top face (+Y).
+    /// If None, falls back to `texture_name()`.
+    pub fn top_texture_name(self) -> Option<&'static str> {
+        match self {
+            Self::OakWoodLog => Some("tree_oakwood_log"),
+            Self::BirchWoodLog => Some("tree_birchwood_log"),
+            Self::PineWoodLog => Some("tree_pinewood_log"),
+            _ => None,
+        }
+    }
+
+    /// Optional texture override for the bottom face (-Y).
+    /// If None, falls back to `texture_name()`.
+    pub fn bottom_texture_name(self) -> Option<&'static str> {
+        match self {
+            Self::OakWoodLog => Some("tree_oakwood_log"),
+            Self::BirchWoodLog => Some("tree_birchwood_log"),
+            Self::PineWoodLog => Some("tree_pinewood_log"),
+            _ => None,
+        }
+    }
+
     /// Color tint applied to vertices for biome / atmospheric coloring.
     pub fn tint_color(self) -> [f32; 4] {
         match self {
             Self::Grass => [0.58, 0.90, 0.44, 1.0],
             Self::Water | Self::WaterFlowing | Self::WaterOccupied => [0.40, 0.80, 1.0, 1.0],
+            Self::OakLeaves => [0.60, 1.15, 0.35, 1.0],
+            Self::BirchLeaves => [0.85, 1.25, 0.40, 1.0],
+            Self::PineLeaves => [0.40, 0.90, 0.55, 1.0],
             _ => [1.0, 1.0, 1.0, 1.0],
         }
     }
@@ -216,6 +269,12 @@ impl Voxel {
     pub fn fallback_color(self) -> [u8; 4] {
         match self {
             Self::Air | Self::Occupied | Self::WaterOccupied => [0, 0, 0, 0],
+            Self::OakWood | Self::OakWoodLog => [133, 94, 56, 255],
+            Self::BirchWood | Self::BirchWoodLog => [225, 222, 210, 255],
+            Self::PineWood | Self::PineWoodLog => [74, 48, 28, 255],
+            Self::OakLeaves => [87, 166, 46, 255],
+            Self::BirchLeaves => [133, 199, 56, 255],
+            Self::PineLeaves => [46, 107, 66, 255],
             Self::Grass => [110, 180, 80, 255],
             Self::Dirt | Self::PackedDirt => [107, 66, 33, 255],
             Self::Stone => [122, 128, 133, 255],
@@ -284,6 +343,19 @@ impl Voxel {
         self.is_water()
     }
 
+    pub fn is_leaves(self) -> bool {
+        matches!(self, Self::OakLeaves | Self::BirchLeaves | Self::PineLeaves)
+    }
+
+    /// Solid opaque blocks that completely occlude light and adjacent faces (not leaves, water, or air).
+    pub fn is_solid_opaque(self) -> bool {
+        !self.is_empty()
+            && !self.is_water()
+            && !self.is_leaves()
+            && self != Self::Occupied
+            && self != Self::WaterOccupied
+    }
+
     pub fn is_light(self) -> bool {
         matches!(
             self,
@@ -349,6 +421,15 @@ impl Voxel {
             Self::Rhodonite => "Rhodonite",
             Self::Serpentinite => "Serpentinite",
             Self::RedMoss => "Red Moss",
+            Self::OakWood => "Oak Wood",
+            Self::OakWoodLog => "Oak Log",
+            Self::BirchWood => "Birch Wood",
+            Self::BirchWoodLog => "Birch Log",
+            Self::PineWood => "Pine Wood",
+            Self::PineWoodLog => "Pine Log",
+            Self::OakLeaves => "Oak Leaves",
+            Self::BirchLeaves => "Birch Leaves",
+            Self::PineLeaves => "Pine Leaves",
             Self::Water => "Water",
             Self::WaterFlowing => "Flowing Water",
             Self::Lava => "Lava",
@@ -373,6 +454,9 @@ impl Voxel {
         match self {
             Self::Air | Self::Occupied | Self::WaterOccupied => 0.0,
             Self::Dreadstone => f32::INFINITY,
+            Self::OakLeaves
+            | Self::BirchLeaves
+            | Self::PineLeaves => 0.3,
             Self::Grass
             | Self::Dirt
             | Self::Mud
@@ -387,6 +471,12 @@ impl Voxel {
             | Self::Moss
             | Self::Snow
             | Self::PackedIce => 0.8,
+            Self::OakWood
+            | Self::OakWoodLog
+            | Self::BirchWood
+            | Self::BirchWoodLog
+            | Self::PineWood
+            | Self::PineWoodLog => 1.2,
             Self::Sandstone | Self::RedSandstone => 1.5,
             Self::Calcite => 1.5,
             Self::Stone
@@ -463,7 +553,13 @@ impl Voxel {
             | Self::RedSand
             | Self::RedMoss => ToolType::Shovel,
 
-            Self::Mulch => ToolType::Axe,
+            Self::Mulch
+            | Self::OakWood
+            | Self::OakWoodLog
+            | Self::BirchWood
+            | Self::BirchWoodLog
+            | Self::PineWood
+            | Self::PineWoodLog => ToolType::Axe,
 
             _ => ToolType::None,
         }
@@ -480,5 +576,22 @@ mod tests {
         assert!(Voxel::Dreadstone.durability().is_infinite());
         assert!(!Voxel::Stone.is_unbreakable());
         assert!(!Voxel::Dirt.is_unbreakable());
+    }
+
+    #[test]
+    fn leaf_solid_opaque_and_culling_invariants() {
+        assert!(!Voxel::OakLeaves.is_solid_opaque());
+        assert!(!Voxel::BirchLeaves.is_solid_opaque());
+        assert!(!Voxel::PineLeaves.is_solid_opaque());
+        assert!(Voxel::OakLeaves.is_leaves());
+        assert!(Voxel::BirchLeaves.is_leaves());
+        assert!(Voxel::PineLeaves.is_leaves());
+
+        assert!(Voxel::OakWoodLog.is_solid_opaque());
+        assert!(Voxel::BirchWoodLog.is_solid_opaque());
+        assert!(Voxel::PineWoodLog.is_solid_opaque());
+        assert!(Voxel::Stone.is_solid_opaque());
+        assert!(!Voxel::Air.is_solid_opaque());
+        assert!(!Voxel::Water.is_solid_opaque());
     }
 }

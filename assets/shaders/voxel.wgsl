@@ -30,6 +30,11 @@ fn fragment(
 
     let tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, layer);
 
+    // Alpha Cutout: Discard see-through pixels (e.g. foliage leaves, alpha-cutout quads)
+    if (tex_color.a < 0.5) {
+        discard;
+    }
+
     pbr_input.material.base_color = tex_color * pbr_input.material.base_color * vertex_output.color;
 
     var out: FragmentOutput;

@@ -6,6 +6,7 @@ use crate::{core::noise::fbm_2d, world::Voxel};
 pub enum BiomeType {
     #[default]
     Plains,
+    PlainsForest,
     Meadow,
     Woodland,
     Wetlands,
@@ -20,8 +21,9 @@ pub enum BiomeType {
 
 impl BiomeType {
     #[allow(dead_code)]
-    pub const ALL: [BiomeType; 11] = [
+    pub const ALL: [BiomeType; 12] = [
         BiomeType::Plains,
+        BiomeType::PlainsForest,
         BiomeType::Meadow,
         BiomeType::Woodland,
         BiomeType::Wetlands,
@@ -37,6 +39,7 @@ impl BiomeType {
     pub fn name(self) -> &'static str {
         match self {
             BiomeType::Plains => "Plains",
+            BiomeType::PlainsForest => "Plains Forest",
             BiomeType::Meadow => "Meadow",
             BiomeType::Woodland => "Woodland",
             BiomeType::Wetlands => "Wetlands",
@@ -59,6 +62,17 @@ impl BiomeType {
                 subsoil_material: Voxel::Dirt,
                 subsoil_depth: 3,
                 base_height_offset: 0.0,
+                amplitude_multiplier: 1.0,
+                primary_stone: Voxel::Stone,
+                cliff_material: Voxel::Stone,
+            },
+            BiomeType::PlainsForest => BiomeConfig {
+                biome_type: BiomeType::PlainsForest,
+                name: "Plains Forest",
+                surface_material: Voxel::Grass,
+                subsoil_material: Voxel::Dirt,
+                subsoil_depth: 3,
+                base_height_offset: 0.5,
                 amplitude_multiplier: 1.0,
                 primary_stone: Voxel::Stone,
                 cliff_material: Voxel::Stone,
@@ -292,14 +306,18 @@ impl ClimateGenerator {
             BiomeType::Wetlands
         }
         // 9. High moisture inland creates rich woodland
-        else if humidity > 0.18 {
+        else if humidity > 0.25 {
             BiomeType::Woodland
         }
-        // 10. Gentle transition meadow
+        // 10. Intermediate moisture creates temperate plains forest
+        else if humidity > 0.12 {
+            BiomeType::PlainsForest
+        }
+        // 11. Gentle transition meadow
         else if humidity > 0.02 {
             BiomeType::Meadow
         }
-        // 11. Default temperate rolling plains
+        // 12. Default temperate rolling plains
         else {
             BiomeType::Plains
         }

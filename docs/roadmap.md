@@ -308,15 +308,23 @@ Phase 8 focuses on deep algorithmic and memory optimizations to scale chunk thro
 
 Phase 9 breathes organic life and color into the procedural world by generating biome-specific trees, flowering ground cover, shrubs, and dynamic wind-swayed foliage.
 
-- [ ] **Stage 9.1: Procedural Trees & Canopy Architecture**:
-  - **Trunk & Branch Structure**: Multi-block vertical and branching wood logs (`Voxel::OakWood`, `Voxel::BirchWood`, `Voxel::PineWood`, `Voxel::PalmWood`).
-  - **Leaf Canopy Generators**:
-    - **Oak Trees** (Woodland / Plains): Sturdy 4–6 block trunks topped with rounded spherical/ellipsoid leaf crowns (`Voxel::OakLeaves`).
-    - **Birch Trees** (Meadow / Plains): Slender white-barked trunks with light, airy leaf clusters.
-    - **Pine & Spruce Trees** (Snowy Tundra / Mountain Foothills): Tall conical/pyramidal needle canopies with snow-dusted variants.
-    - **Palm Trees** (Beach / Coastlines): Gently curved, sloped trunks leaning toward the water with fan-like palm fronds.
-    - **Swamp Willows** (Wetlands): Wide gnarly trunks with hanging moss and vines draped over marsh water.
-    - **Desert Cacti** (Desert): Columnar saguaro cacti with right-angled branching arms.
+- [x] **Stage 9.1: Procedural Trees & Canopy Architecture (Completed)**:
+  - **Trunk Shapes, Species & Wood Types**:
+    - Registered 3 wood species: Oak (`OakWood`, `OakWoodLog`), Birch (`BirchWood`, `BirchWoodLog`), and Pine (`PineWood`, `PineWoodLog`), following the bark-only sides vs top/bottom log-ring architecture.
+    - Multi-face directional texture mapping in `VoxelTextureRegistry` and greedy mesher with `MAX_VOXEL_VARIANTS = 128`.
+    - 3 trunk shapes: **Normal** (1m x 1m full block), **Thin** (1 voxel wide centered column), and **Large** (central log trunk + cardinal vertical bark slabs + flared root base at ground level).
+    - Tuned species rarities & heights: Oak (Thin 15% 5–7m, Normal 60% 7–11m, Large 25% 11–16m), Birch (Thin 45% 7–10m, Normal 55% 10–14m), Pine (Thin 35% 8–11m, Normal 45% 12–16m, Large 20% 16–21m).
+    - Dense forest grid (4m / 8-voxel cells) with non-overlapping jittered positioning and Woodland generating ~3 trees per chunk.
+    - Concealed pine branches: 1-voxel stubs strictly within lower needle skirts (never sticking out into open air).
+    - Euclidean curved foliage: true 3D spherical clouds for Oak, continuous sinusoidal flame/oval profile for Birch, and smooth conical skirts for Pine.
+    - Seamless multi-chunk boundary generation with a 12-voxel margin.
+  - **Canopy Foliage, Volumetric Depth & Alpha Cutouts**:
+    - Registered `Voxel::OakLeaves`, `Voxel::BirchLeaves`, and `Voxel::PineLeaves` with grayscale texture discovery.
+    - Tailored foliage tint colors: Oak (lush temperate green `[0.60, 1.15, 0.35]`), Birch (bright chartreuse `[0.85, 1.25, 0.40]`), Pine (boreal evergreen `[0.40, 0.90, 0.55]`).
+    - GPU-level alpha cutout via `discard` on `tex_color.a < 0.5` in `voxel.wgsl` and `AlphaMode::Mask(0.5)` on chunk materials for crisp, see-through foliage with full depth testing and zero sorting artifacts.
+    - Volumetric interior leaf rendering (`should_render_face(leaf, leaf) = true`) preventing hollow netting shells while GPU backface culling preserves performance.
+    - Trunk occlusion fix (`is_solid_opaque`): solid trunks and branches adjacent to leaves render their faces, making the tree skeleton visible through cutout holes throughout the canopy.
+    - Species-tailored canopies: Oak (massive billowing leaf clouds, radius 4–5), Birch (full tall columnar/ellipsoid canopy, radius 2–3), Pine (tiered dense conical skirts, radius 4–5, tapering to a needle spire).
   - **Spawn Validation**: Trees spawn strictly on compatible soil (Grass, Dirt, Packed Dirt, Sand for palms) with clearance checks preventing growth inside caves or underwater.
 
 - [ ] **Stage 9.2: Ground Flora, Flowers & Biome Foliage**:

@@ -4,6 +4,7 @@ use super::{
     biome::{BiomeType, ClimateGenerator, ClimateSample},
     caves::{CaveGenerator, CaveNoiseSample},
     strata::StrataGenerator,
+    trees::generate_chunk_trees,
 };
 use crate::world::{CHUNK_SIZE, CHUNK_VOLUME, Chunk, Voxel};
 
@@ -117,38 +118,44 @@ impl TerrainGenerator {
             }
         }
 
-        // Entire chunk is above both terrain and any possible water surface.
-        if chunk_min_y > maximum_filled_height {
+        // Entire chunk is above terrain, water, and possible tree trunks (max trunk height 20 voxels).
+        if chunk_min_y > maximum_filled_height + 24 {
             return Chunk::filled(Voxel::Air);
         }
 
-        let chunk_caves = self.caves.build_chunk_sampler(chunk_origin, self.seed);
         let mut voxels = vec![Voxel::Air; CHUNK_VOLUME];
 
-        for z in 0..CHUNK_SIZE {
-            for x in 0..CHUNK_SIZE {
-                let column = columns[column_index(x, z)];
+        if chunk_min_y <= maximum_filled_height {
+            let chunk_caves = self.caves.build_chunk_sampler(chunk_origin, self.seed);
 
-                for y in 0..CHUNK_SIZE {
-                    let world_y = chunk_origin.y + y as i32;
-                    let world_x = chunk_origin.x + x as i32;
-                    let world_z = chunk_origin.z + z as i32;
+            for z in 0..CHUNK_SIZE {
+                for x in 0..CHUNK_SIZE {
+                    let column = columns[column_index(x, z)];
 
-                    let cave_sample = chunk_caves.sample(x, y, z);
-                    let voxel = self.voxel_at_sampled(
-                        column,
-                        world_x,
-                        world_y,
-                        world_z,
-                        cave_sample,
-                    );
-                    if voxel != Voxel::Air {
-                        let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
-                        voxels[idx] = voxel;
+                    for y in 0..CHUNK_SIZE {
+                        let world_y = chunk_origin.y + y as i32;
+                        let world_x = chunk_origin.x + x as i32;
+                        let world_z = chunk_origin.z + z as i32;
+
+                        let cave_sample = chunk_caves.sample(x, y, z);
+                        let voxel = self.voxel_at_sampled(
+                            column,
+                            world_x,
+                            world_y,
+                            world_z,
+                            cave_sample,
+                        );
+                        if voxel != Voxel::Air {
+                            let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
+                            voxels[idx] = voxel;
+                        }
                     }
                 }
             }
         }
+
+        // Post-terrain pass: Generate tree trunks
+        generate_chunk_trees(chunk_origin, self, &mut voxels);
 
         Chunk::from_voxels(voxels)
     }
@@ -287,7 +294,7 @@ impl TerrainGenerator {
                     Voxel::Grass
                 }
             }
-            BiomeType::Plains | BiomeType::Meadow => {
+            BiomeType::Plains | BiomeType::Meadow | BiomeType::PlainsForest => {
                 if surface_noise > 0.46 {
                     Voxel::PackedDirt
                 } else if surface_noise < -0.46 {
@@ -726,7 +733,7 @@ mod tests {
 
                                     if voxel == Voxel::Air {
                                         has_air = true;
-                                    } else if voxel != Voxel::Water {
+                                    } else if voxel != Voxel::Water && voxel != Voxel::Occupied {
                                         assert!(
                                             material.is_none_or(|expected| expected == voxel),
                                             "mixed terrain materials at chunk {chunk_coordinate:?}, logical block ({x}, {y}, {z})"

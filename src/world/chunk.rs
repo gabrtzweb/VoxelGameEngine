@@ -261,7 +261,7 @@ impl Chunk {
         let mut variant_counts = [0u16; 64];
         variant_counts[voxel as usize] = CHUNK_VOLUME as u16;
         let non_air_count = if voxel.is_empty() { 0 } else { CHUNK_VOLUME };
-        let solid_opaque_count = if !voxel.is_empty() && !voxel.is_transparent() {
+        let solid_opaque_count = if voxel.is_solid_opaque() {
             CHUNK_VOLUME
         } else {
             0
@@ -302,7 +302,7 @@ impl Chunk {
 
             if !v.is_empty() {
                 non_air_count += 1;
-                if !v.is_transparent() {
+                if v.is_solid_opaque() {
                     solid_opaque_count += 1;
                 }
             }
@@ -408,8 +408,8 @@ impl Chunk {
             self.non_air_count -= 1;
         }
 
-        let old_is_solid_opaque = !old.is_empty() && !old.is_transparent();
-        let new_is_solid_opaque = !voxel.is_empty() && !voxel.is_transparent();
+        let old_is_solid_opaque = old.is_solid_opaque();
+        let new_is_solid_opaque = voxel.is_solid_opaque();
         if !old_is_solid_opaque && new_is_solid_opaque {
             self.solid_opaque_count += 1;
         } else if old_is_solid_opaque && !new_is_solid_opaque {

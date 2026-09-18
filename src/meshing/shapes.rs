@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use super::{greedy::MeshBuffers, textures::VoxelTextureRegistry};
+use super::{
+    greedy::{FaceDirection, MeshBuffers},
+    textures::VoxelTextureRegistry,
+};
 use crate::{
     gameplay::shaping::{centered_layer_coordinates, is_centered_layer},
     simulation::fluid::water_surface_height_offset,
@@ -84,7 +87,13 @@ pub fn mesh_centered_voxels(
                 };
 
                 let world_voxel = chunk_voxel_origin + local;
-                let (texture_layer, frame_count) = textures.get_texture_info(material, world_voxel);
+                let (side_layer, frame_count) =
+                    textures.get_face_texture_info(material, world_voxel, FaceDirection::PositiveX);
+                let (top_layer, _) =
+                    textures.get_face_texture_info(material, world_voxel, FaceDirection::PositiveY);
+                let (bottom_layer, _) =
+                    textures.get_face_texture_info(material, world_voxel, FaceDirection::NegativeY);
+
                 let frame_count_f32 = if material.is_light() {
                     -4.0
                 } else {
@@ -135,7 +144,7 @@ pub fn mesh_centered_voxels(
                         [max_x, min_y, max_z],
                     ],
                     [1.0, 0.0, 0.0],
-                    texture_layer,
+                    side_layer,
                     frame_count_f32,
                     tint_color,
                 );
@@ -149,7 +158,7 @@ pub fn mesh_centered_voxels(
                         [min_x, min_y, min_z],
                     ],
                     [-1.0, 0.0, 0.0],
-                    texture_layer,
+                    side_layer,
                     frame_count_f32,
                     tint_color,
                 );
@@ -163,7 +172,7 @@ pub fn mesh_centered_voxels(
                         [min_x, min_y, max_z],
                     ],
                     [0.0, 0.0, 1.0],
-                    texture_layer,
+                    side_layer,
                     frame_count_f32,
                     tint_color,
                 );
@@ -177,7 +186,7 @@ pub fn mesh_centered_voxels(
                         [max_x, min_y, min_z],
                     ],
                     [0.0, 0.0, -1.0],
-                    texture_layer,
+                    side_layer,
                     frame_count_f32,
                     tint_color,
                 );
@@ -193,7 +202,7 @@ pub fn mesh_centered_voxels(
                             [max_x, max_y, min_z],
                         ],
                         [0.0, 1.0, 0.0],
-                        texture_layer,
+                        top_layer,
                         frame_count_f32,
                         tint_color,
                     );
@@ -210,7 +219,7 @@ pub fn mesh_centered_voxels(
                             [max_x, min_y, max_z],
                         ],
                         [0.0, -1.0, 0.0],
-                        texture_layer,
+                        bottom_layer,
                         frame_count_f32,
                         tint_color,
                     );

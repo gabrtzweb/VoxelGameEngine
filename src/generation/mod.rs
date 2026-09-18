@@ -5,6 +5,7 @@ pub mod caves;
 pub mod generator;
 pub mod inspector;
 pub mod strata;
+pub mod trees;
 
 pub use biome::{BiomeConfig, BiomeType, ClimateGenerator, ClimateSample};
 pub use caves::CaveGenerator;
@@ -14,3 +15,4 @@ pub use generator::{
 };
 pub use inspector::TerrainInspectorPlugin;
 pub use strata::StrataGenerator;
+pub use trees::{TreeFeature, TrunkType, generate_chunk_trees, sample_tree_candidate};

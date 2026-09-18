@@ -318,7 +318,7 @@ pub fn extract_slice_bitmask(
             }
 
             let bit = 1u16 << u;
-            if !voxel.is_transparent() {
+            if voxel.is_solid_opaque() {
                 row_opaque |= bit;
             } else {
                 row_special |= bit;
@@ -521,7 +521,7 @@ impl ChunkMesher {
                         }
 
                         let (texture_layer, frame_count) =
-                            textures.get_texture_info(voxel, world_voxel);
+                            textures.get_face_texture_info(voxel, world_voxel, direction);
                         let tint_color = voxel.tint_color_at(world_voxel);
 
                         let surface_offset_cm = if voxel.is_water() {
@@ -581,7 +581,14 @@ pub fn should_render_face(voxel: Voxel, neighbor: Voxel) -> bool {
         return neighbor.is_empty() || neighbor == Voxel::Occupied;
     }
 
-    neighbor.is_empty() || neighbor.is_transparent() || neighbor == Voxel::Occupied
+    if voxel.is_leaves() {
+        // Leaves cull against solid opaque blocks (trunks, branches, dirt, stone)
+        // but render against air, water, and adjacent leaves for dense volumetric foliage.
+        return !neighbor.is_solid_opaque();
+    }
+
+    // Solid opaque blocks render against air, water, leaves, or occupied cells
+    neighbor.is_empty() || neighbor.is_transparent() || neighbor.is_leaves() || neighbor == Voxel::Occupied
 }
 
 pub fn greedy_merge_mask(
@@ -1314,5 +1321,32 @@ mod tests {
             let visible = current.opaque[v] & !air_neighbor.opaque[v];
             assert_eq!(visible, 0xFFFF, "Boundary face against air must be fully visible");
         }
+    }
+
+    #[test]
+    fn leaf_face_rendering_and_trunk_visibility() {
+        // 1. Trunk wood touching leaves must render its face!
+        assert!(should_render_face(Voxel::OakWoodLog, Voxel::OakLeaves));
+        assert!(should_render_face(Voxel::BirchWoodLog, Voxel::BirchLeaves));
+        assert!(should_render_face(Voxel::PineWoodLog, Voxel::PineLeaves));
+        assert!(should_render_face(Voxel::OakWood, Voxel::OakLeaves));
+
+        // 2. Interior leaves touching adjacent leaves must render for 3D volumetric foliage!
+        assert!(should_render_face(Voxel::OakLeaves, Voxel::OakLeaves));
+        assert!(should_render_face(Voxel::BirchLeaves, Voxel::BirchLeaves));
+        assert!(should_render_face(Voxel::PineLeaves, Voxel::PineLeaves));
+
+        // 3. Exterior leaves touching air or water must render
+        assert!(should_render_face(Voxel::OakLeaves, Voxel::Air));
+        assert!(should_render_face(Voxel::OakLeaves, Voxel::Water));
+
+        // 4. Leaves touching solid trunk/dirt cull against the solid block to prevent z-fighting
+        assert!(!should_render_face(Voxel::OakLeaves, Voxel::OakWoodLog));
+        assert!(!should_render_face(Voxel::OakLeaves, Voxel::Dirt));
+        assert!(!should_render_face(Voxel::OakLeaves, Voxel::Stone));
+
+        // 5. Solid trunk touching another solid trunk culls
+        assert!(!should_render_face(Voxel::OakWoodLog, Voxel::OakWoodLog));
+        assert!(!should_render_face(Voxel::Stone, Voxel::Stone));
     }
 }

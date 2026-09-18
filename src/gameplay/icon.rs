@@ -43,8 +43,14 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
             continue;
         }
 
-        let raw_16x16 = load_voxel_raw_16x16(voxel);
-        let icon_image = render_isometric_block_icon(&raw_16x16, voxel.tint_color());
+        let raw_side = load_voxel_raw_16x16(voxel);
+        let raw_top = if let Some(top_name) = voxel.top_texture_name() {
+            load_raw_16x16_by_name(top_name, voxel.fallback_color())
+        } else {
+            raw_side.clone()
+        };
+
+        let icon_image = render_isometric_block_icon_multi(&raw_side, &raw_top, voxel.tint_color());
         let handle = images.add(icon_image);
 
         if fallback_image.is_none() {
@@ -71,36 +77,45 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
 
 fn load_voxel_raw_16x16(voxel: Voxel) -> Vec<u8> {
     if let Some(name) = voxel.texture_name() {
-        let candidate_paths = [
-            format!("assets/textures/blocks/{name}.png"),
-            format!("assets/textures/blocks/{name}0.png"),
-            format!("assets/textures/blocks/{name}_0.png"),
-            format!("assets/textures/blocks/{name}_1.png"),
-            format!("assets/textures/blocks/{name}1.png"),
-            format!("assets/textures/blocks/block_{name}.png"),
-        ];
+        load_raw_16x16_by_name(name, voxel.fallback_color())
+    } else {
+        solid_raw_16x16(voxel.fallback_color())
+    }
+}
 
-        for path in &candidate_paths {
-            if Path::new(path).exists()
-                && let Ok(img) = image::open(path)
-            {
-                let rgba = img.into_rgba8();
-                let (w, h) = rgba.dimensions();
-                if w >= 16 && h >= 16 {
-                    let mut frame = Vec::with_capacity(16 * 16 * 4);
-                    for y in 0..16 {
-                        for x in 0..16 {
-                            let p = rgba.get_pixel(x, y);
-                            frame.extend_from_slice(&p.0);
-                        }
+fn load_raw_16x16_by_name(name: &str, fallback_color: [u8; 4]) -> Vec<u8> {
+    let candidate_paths = [
+        format!("assets/textures/blocks/{name}.png"),
+        format!("assets/textures/blocks/{name}0.png"),
+        format!("assets/textures/blocks/{name}_0.png"),
+        format!("assets/textures/blocks/{name}_1.png"),
+        format!("assets/textures/blocks/{name}1.png"),
+        format!("assets/textures/blocks/block_{name}.png"),
+    ];
+
+    for path in &candidate_paths {
+        if Path::new(path).exists()
+            && let Ok(img) = image::open(path)
+        {
+            let rgba = img.into_rgba8();
+            let (w, h) = rgba.dimensions();
+            if w >= 16 && h >= 16 {
+                let mut frame = Vec::with_capacity(16 * 16 * 4);
+                for y in 0..16 {
+                    for x in 0..16 {
+                        let p = rgba.get_pixel(x, y);
+                        frame.extend_from_slice(&p.0);
                     }
-                    return frame;
                 }
+                return frame;
             }
         }
     }
 
-    let color = voxel.fallback_color();
+    solid_raw_16x16(fallback_color)
+}
+
+fn solid_raw_16x16(color: [u8; 4]) -> Vec<u8> {
     let mut frame = Vec::with_capacity(16 * 16 * 4);
     for _ in 0..256 {
         frame.extend_from_slice(&color);
@@ -110,7 +125,17 @@ fn load_voxel_raw_16x16(voxel: Voxel) -> Vec<u8> {
 
 /// Renders an authentic 2:1 pixel-art isometric cube with Top, Left, and Right faces,
 /// directional face shading (1.0 / 0.80 / 0.60), vertex tinting, and a subtle silhouette outline.
+#[allow(dead_code)]
 pub fn render_isometric_block_icon(tex_16x16: &[u8], tint: [f32; 4]) -> Image {
+    render_isometric_block_icon_multi(tex_16x16, tex_16x16, tint)
+}
+
+/// Renders an authentic 2:1 pixel-art isometric cube with distinct Top and Side textures.
+pub fn render_isometric_block_icon_multi(
+    side_16x16: &[u8],
+    top_16x16: &[u8],
+    tint: [f32; 4],
+) -> Image {
     let mut canvas = vec![0u8; (ICON_SIZE * ICON_SIZE * 4) as usize];
 
     for y in 0..ICON_SIZE {
@@ -125,7 +150,7 @@ pub fn render_isometric_block_icon(tex_16x16: &[u8], tint: [f32; 4]) -> Image {
             if (0.0..1.0).contains(&u_top) && (0.0..1.0).contains(&v_top) {
                 let tx = (u_top * 16.0).floor().clamp(0.0, 15.0) as usize;
                 let ty = (v_top * 16.0).floor().clamp(0.0, 15.0) as usize;
-                draw_texel(&mut canvas, x, y, tex_16x16, tx, ty, tint, 1.00);
+                draw_texel(&mut canvas, x, y, top_16x16, tx, ty, tint, 1.00);
                 continue;
             }
 
@@ -138,7 +163,7 @@ pub fn render_isometric_block_icon(tex_16x16: &[u8], tint: [f32; 4]) -> Image {
                 if (0.0..1.0).contains(&u_left) && (0.0..1.0).contains(&v_left) {
                     let tx = (u_left * 16.0).floor().clamp(0.0, 15.0) as usize;
                     let ty = (v_left * 16.0).floor().clamp(0.0, 15.0) as usize;
-                    draw_texel(&mut canvas, x, y, tex_16x16, tx, ty, tint, 0.80);
+                    draw_texel(&mut canvas, x, y, side_16x16, tx, ty, tint, 0.80);
                     continue;
                 }
             }
@@ -152,7 +177,7 @@ pub fn render_isometric_block_icon(tex_16x16: &[u8], tint: [f32; 4]) -> Image {
                 if (0.0..1.0).contains(&u_right) && (0.0..1.0).contains(&v_right) {
                     let tx = (u_right * 16.0).floor().clamp(0.0, 15.0) as usize;
                     let ty = (v_right * 16.0).floor().clamp(0.0, 15.0) as usize;
-                    draw_texel(&mut canvas, x, y, tex_16x16, tx, ty, tint, 0.60);
+                    draw_texel(&mut canvas, x, y, side_16x16, tx, ty, tint, 0.60);
                     continue;
                 }
             }
