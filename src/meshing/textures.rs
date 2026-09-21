@@ -148,9 +148,9 @@ impl VoxelTextureRegistry {
             return (face.start_layer, face.frame_count);
         }
 
-        let bx = world_voxel.x.div_euclid(2);
-        let by = world_voxel.y.div_euclid(2);
-        let bz = world_voxel.z.div_euclid(2);
+        let bx = world_voxel.x;
+        let by = world_voxel.y;
+        let bz = world_voxel.z;
 
         let mut h = (bx as u32).wrapping_mul(0x85EB_CA6B);
         h ^= (by as u32).wrapping_mul(0xC2B2_AE35);
@@ -190,7 +190,9 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
         // Composite grass side overlay if this is Grass
         if voxel == Voxel::Grass {
-            if let Some(overlay) = try_load_image("assets/textures/blocks/terr_grass_side_overlay.png") {
+            if let Some(overlay) =
+                try_load_image("assets/textures/blocks/terr_grass_side_overlay.png")
+            {
                 if let Some(overlay_frame) = overlay.frames.first() {
                     let tint = voxel.tint_color();
                     for variant in &mut side_variants {
@@ -207,9 +209,18 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
                                     let base_g = frame[idx + 1] as f32;
                                     let base_b = frame[idx + 2] as f32;
 
-                                    let out_r = (base_r * (1.0 - ov_a) + ov_r * ov_a).round().clamp(0.0, 255.0) as u8;
-                                    let out_g = (base_g * (1.0 - ov_a) + ov_g * ov_a).round().clamp(0.0, 255.0) as u8;
-                                    let out_b = (base_b * (1.0 - ov_a) + ov_b * ov_a).round().clamp(0.0, 255.0) as u8;
+                                    let out_r = (base_r * (1.0 - ov_a) + ov_r * ov_a)
+                                        .round()
+                                        .clamp(0.0, 255.0)
+                                        as u8;
+                                    let out_g = (base_g * (1.0 - ov_a) + ov_g * ov_a)
+                                        .round()
+                                        .clamp(0.0, 255.0)
+                                        as u8;
+                                    let out_b = (base_b * (1.0 - ov_a) + ov_b * ov_a)
+                                        .round()
+                                        .clamp(0.0, 255.0)
+                                        as u8;
 
                                     frame[idx] = out_r;
                                     frame[idx + 1] = out_g;
@@ -257,7 +268,9 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
                 variant_count: top_variant_count,
                 frame_count: top_frame_count,
             }
-        } else if voxel.side_texture_name().is_some() && voxel.side_texture_name() != Some(base_name) {
+        } else if voxel.side_texture_name().is_some()
+            && voxel.side_texture_name() != Some(base_name)
+        {
             // If side was overridden, base_name is used for the top texture (e.g. Basalt, Mulch, Grass)
             let top_variants = load_all_variants_for(base_name, voxel.fallback_color());
             let top_variant_count = top_variants.len() as u16;
@@ -542,40 +555,107 @@ mod tests {
         // Verify OakWood has 6 side bark variants and uniform top/side layers
         let oak_wood_variants = registry.variant_count(Voxel::OakWood);
         assert_eq!(oak_wood_variants, 6, "OakWood should have 6 bark variants");
-        let (oak_wood_side, _) = registry.get_face_texture_info(Voxel::OakWood, IVec3::ZERO, FaceDirection::PositiveX);
-        let (oak_wood_top, _) = registry.get_face_texture_info(Voxel::OakWood, IVec3::ZERO, FaceDirection::PositiveY);
-        assert_eq!(oak_wood_side, oak_wood_top, "OakWood bark-only has identical top and side start layer");
+        let (oak_wood_side, _) =
+            registry.get_face_texture_info(Voxel::OakWood, IVec3::ZERO, FaceDirection::PositiveX);
+        let (oak_wood_top, _) =
+            registry.get_face_texture_info(Voxel::OakWood, IVec3::ZERO, FaceDirection::PositiveY);
+        assert_eq!(
+            oak_wood_side, oak_wood_top,
+            "OakWood bark-only has identical top and side start layer"
+        );
 
         // Verify OakWoodLog has distinct top log ring layer and side bark layer
-        let (log_side, _) = registry.get_face_texture_info(Voxel::OakWoodLog, IVec3::ZERO, FaceDirection::PositiveX);
-        let (log_top, _) = registry.get_face_texture_info(Voxel::OakWoodLog, IVec3::ZERO, FaceDirection::PositiveY);
-        let (log_bot, _) = registry.get_face_texture_info(Voxel::OakWoodLog, IVec3::ZERO, FaceDirection::NegativeY);
-        assert_ne!(log_side, log_top, "OakWoodLog top ring layer must differ from side bark layer");
-        assert_eq!(log_top, log_bot, "OakWoodLog top and bottom share the log ring layer");
+        let (log_side, _) = registry.get_face_texture_info(
+            Voxel::OakWoodLog,
+            IVec3::ZERO,
+            FaceDirection::PositiveX,
+        );
+        let (log_top, _) = registry.get_face_texture_info(
+            Voxel::OakWoodLog,
+            IVec3::ZERO,
+            FaceDirection::PositiveY,
+        );
+        let (log_bot, _) = registry.get_face_texture_info(
+            Voxel::OakWoodLog,
+            IVec3::ZERO,
+            FaceDirection::NegativeY,
+        );
+        assert_ne!(
+            log_side, log_top,
+            "OakWoodLog top ring layer must differ from side bark layer"
+        );
+        assert_eq!(
+            log_top, log_bot,
+            "OakWoodLog top and bottom share the log ring layer"
+        );
 
         // Verify BirchWood (4 variants) and BirchWoodLog
         let birch_variants = registry.variant_count(Voxel::BirchWood);
         assert_eq!(birch_variants, 4, "BirchWood should have 4 bark variants");
-        let (birch_side, _) = registry.get_face_texture_info(Voxel::BirchWood, IVec3::ZERO, FaceDirection::PositiveX);
-        let (birch_top, _) = registry.get_face_texture_info(Voxel::BirchWood, IVec3::ZERO, FaceDirection::PositiveY);
-        assert_eq!(birch_side, birch_top, "BirchWood bark-only has identical top and side start layer");
-        let (b_log_side, _) = registry.get_face_texture_info(Voxel::BirchWoodLog, IVec3::ZERO, FaceDirection::PositiveX);
-        let (b_log_top, _) = registry.get_face_texture_info(Voxel::BirchWoodLog, IVec3::ZERO, FaceDirection::PositiveY);
-        assert_ne!(b_log_side, b_log_top, "BirchWoodLog top ring must differ from bark side");
+        let (birch_side, _) =
+            registry.get_face_texture_info(Voxel::BirchWood, IVec3::ZERO, FaceDirection::PositiveX);
+        let (birch_top, _) =
+            registry.get_face_texture_info(Voxel::BirchWood, IVec3::ZERO, FaceDirection::PositiveY);
+        assert_eq!(
+            birch_side, birch_top,
+            "BirchWood bark-only has identical top and side start layer"
+        );
+        let (b_log_side, _) = registry.get_face_texture_info(
+            Voxel::BirchWoodLog,
+            IVec3::ZERO,
+            FaceDirection::PositiveX,
+        );
+        let (b_log_top, _) = registry.get_face_texture_info(
+            Voxel::BirchWoodLog,
+            IVec3::ZERO,
+            FaceDirection::PositiveY,
+        );
+        assert_ne!(
+            b_log_side, b_log_top,
+            "BirchWoodLog top ring must differ from bark side"
+        );
 
         // Verify PineWood (5 variants) and PineWoodLog
         let pine_variants = registry.variant_count(Voxel::PineWood);
         assert_eq!(pine_variants, 5, "PineWood should have 5 bark variants");
-        let (pine_side, _) = registry.get_face_texture_info(Voxel::PineWood, IVec3::ZERO, FaceDirection::PositiveX);
-        let (pine_top, _) = registry.get_face_texture_info(Voxel::PineWood, IVec3::ZERO, FaceDirection::PositiveY);
-        assert_eq!(pine_side, pine_top, "PineWood bark-only has identical top and side start layer");
-        let (p_log_side, _) = registry.get_face_texture_info(Voxel::PineWoodLog, IVec3::ZERO, FaceDirection::PositiveX);
-        let (p_log_top, _) = registry.get_face_texture_info(Voxel::PineWoodLog, IVec3::ZERO, FaceDirection::PositiveY);
-        assert_ne!(p_log_side, p_log_top, "PineWoodLog top ring must differ from bark side");
+        let (pine_side, _) =
+            registry.get_face_texture_info(Voxel::PineWood, IVec3::ZERO, FaceDirection::PositiveX);
+        let (pine_top, _) =
+            registry.get_face_texture_info(Voxel::PineWood, IVec3::ZERO, FaceDirection::PositiveY);
+        assert_eq!(
+            pine_side, pine_top,
+            "PineWood bark-only has identical top and side start layer"
+        );
+        let (p_log_side, _) = registry.get_face_texture_info(
+            Voxel::PineWoodLog,
+            IVec3::ZERO,
+            FaceDirection::PositiveX,
+        );
+        let (p_log_top, _) = registry.get_face_texture_info(
+            Voxel::PineWoodLog,
+            IVec3::ZERO,
+            FaceDirection::PositiveY,
+        );
+        assert_ne!(
+            p_log_side, p_log_top,
+            "PineWoodLog top ring must differ from bark side"
+        );
 
         // Verify Leaf textures and variants
-        assert_eq!(registry.variant_count(Voxel::OakLeaves), 2, "OakLeaves should have 2 variants");
-        assert_eq!(registry.variant_count(Voxel::BirchLeaves), 2, "BirchLeaves should have 2 variants");
-        assert_eq!(registry.variant_count(Voxel::PineLeaves), 4, "PineLeaves should have 4 variants");
+        assert_eq!(
+            registry.variant_count(Voxel::OakLeaves),
+            2,
+            "OakLeaves should have 2 variants"
+        );
+        assert_eq!(
+            registry.variant_count(Voxel::BirchLeaves),
+            2,
+            "BirchLeaves should have 2 variants"
+        );
+        assert_eq!(
+            registry.variant_count(Voxel::PineLeaves),
+            4,
+            "PineLeaves should have 4 variants"
+        );
     }
 }

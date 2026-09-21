@@ -13,28 +13,24 @@ The stack I am using for my project:
 - Git/GitHub
 
 ## Current World Scale
-- The world is stored using 0.5 m voxels.
-- A traditional 1 m³ logical block is composed of 2 × 2 × 2 voxels.
-- Each 1 m³ block therefore contains 8 individually editable voxels.
-- Individual 0.5 m voxels can be destroyed and placed at runtime (alternative mode, B key).
-- The 1 m³ logical block can also be destroyed and placed at runtime (default mode).
-- 1 m blocks remain useful as a visual, gameplay, and coordinate abstraction.
-- Each chunk contains: 16 × 16 × 16 voxels
-- Total voxel capacity per chunk: 4,096 voxels
-- Physical chunk size: 8 m × 8 m × 8 m
+- The world is stored using 1.0 m voxels (identical to Minecraft blocks).
+- Full 1 m³ blocks form the base unit of the world; 0.5 m sub-voxels are completely removed.
+- Each chunk contains: 16 × 16 × 16 voxels (logical blocks).
+- Total voxel capacity per chunk: 4,096 voxels.
+- Physical chunk size: 16 m × 16 m × 16 m.
 - The world streams procedurally and is effectively unlimited horizontally:
     - X: procedural streaming
     - Z: procedural streaming
 - Vertical world limits are currently:
-    - Minimum chunk Y: -10 (-160 voxels / -80 logical blocks)
-    - Maximum chunk Y: +10 (+175 voxels / +87 logical blocks)
+    - Minimum chunk Y: -10 (-160 blocks)
+    - Maximum chunk Y: +10 (+160 blocks)
 - Bottom-most layer of blocks: 100% unbreakable Dreadstone bedrock, blending naturally into Blackstone across the bottom 3 block layers.
 - Chunk streaming operates in three dimensions around the player.
 - Current default render distance: 12 chunks (distance fog disabled by default).
 - The desired chunk region uses spherical distance rather than loading a full cube.
 - Chunks are generated and unloaded dynamically as the Creative player moves through the world.
 
-The engine focuses on a fully editable procedural voxel world with a hybrid block structure. It takes inspiration from voxel games like Minecraft but features its own architecture and mechanics.
+The engine focuses on a fully editable procedural voxel world composed of full 1.0 m³ blocks. It takes inspiration from voxel games like Minecraft but features its own architecture and mechanics.
 
 ---
 
@@ -72,18 +68,18 @@ The player uses a custom AABB collision system that directly queries voxel data.
 ## Implemented Architecture & Features by Domain
 
 ### 1. Core Voxel Architecture & World Representation
-- **Hybrid Voxel-Block Model**: The world is stored using 0.5 m physical voxels. A traditional 1 m³ logical block is composed of 2 × 2 × 2 (8) individually editable voxels. Supports both 1 m³ block manipulation (default) and 0.5 m sub-voxel editing (<kbd>B</kbd> key).
-- **Chunk Geometry**: 16 × 16 × 16 voxels (4,096 voxels per chunk) spanning 8 m × 8 m × 8 m physical space.
+- **1.0m³ Block Architecture**: The world is stored using 1.0 m voxels (identical to Minecraft blocks). Full 1 m³ blocks form the base unit of the world; 0.5 m sub-voxels and the former interaction mode toggle are completely removed.
+- **Chunk Geometry**: 16 × 16 × 16 voxels/blocks (4,096 voxels per chunk) spanning 16 m × 16 m × 16 m physical space.
 - **Procedural 3D Streaming**: Dynamic spherical chunk streaming in X, Y, and Z around the player. Default render distance of 8 chunks (configurable 2..=16 chunks in settings). Configurable vertical limits (currently chunks Y = -8 to +7).
 - **Block Registry & Properties**: Dedicated blocks architecture in `src/world/block.rs` supporting 50+ block types, texture IDs, tool tiers (Pickaxe, Shovel, Axe), and material durability values. Includes `Voxel::OakWood` (all-around bark) and `Voxel::OakWoodLog` (log rings on top/bottom, bark on sides).
 
 ### 2. Meshing & GPU Rendering Pipeline
 - **Asynchronous Greedy Meshing**: Chunk meshing offloaded to Bevy's `AsyncComputeTaskPool` with background worker tasks and throttled main-thread mesh uploading (`src/meshing/async_mesher.rs`), eliminating frame-rate drops.
-- **Multi-Face Directional Textures**: `VoxelTextureRegistry` and greedy mesher support distinct textures per face direction (e.g. `PositiveY`/`NegativeY` log rings vs `PositiveX`/`Z` side bark), seamlessly integrating with greedy quad merging and centered column rendering.
+- **Multi-Face Directional Textures**: `VoxelTextureRegistry` and greedy mesher support distinct textures per face direction (e.g. `PositiveY`/`NegativeY` log rings vs `PositiveX`/`Z` side bark), seamlessly integrating with greedy quad merging.
 - **Custom WGSL Voxel Shader**: Extended PBR material (`ExtendedMaterial<StandardMaterial, VoxelMaterialExtension>`) preserving PBR lighting, directional shadows, distance fog, and emissive block radiance.
 - **Hardware 2D Texture Array with Variant Auto-Discovery**: 16×16 texture array with automated discovery of multi-variant textures (e.g., 8 grass variants, 6 oak bark variants, 4 stone variants, 4 dirt variants).
 - **Deterministic Spatial Randomization & Vertex Tinting**: Integer spatial hashing of 3D world coordinates for consistent variant selection across remeshes, and vertex color tinting (`ATTRIBUTE_COLOR`) for biome grass and water.
-- **Sub-Voxel UV Blending & Face Unification**: Contiguous 2×2 sub-voxels merge into a single seamless 16×16 texture across 1m² block faces. Isolated sub-voxels and centered columns retain complete [0, 1] texture mapping to avoid awkward corner cropping.
+- **1.0m Block UV Tiling & Face Unification**: Quads merge seamlessly across 1m block faces with 1:1 UV texture coordinate mapping.
 - **Animated Liquid Shaders**: GPU-driven vertical strip animation (36 frames for still water, 8 frames for flowing water) driven by `globals.time` in WGSL at 6 FPS.
 
 ### 3. Procedural World Generation, Biomes & Caves
@@ -93,33 +89,33 @@ The player uses a custom AABB collision system that directly queries voxel data.
   - **Three Tree Species & Proportions**:
     - **Oak** (`OakWood` bark, `OakWoodLog` core, `OakLeaves` canopy): Sprawling gnarled lateral/diagonal boughs with huge billowing 3D spherical leaf clouds starting low along the trunk (~35% height) tinted rich sunlit green (`[0.60, 1.15, 0.35]`). Small trees are rare; Thin ~15% ($5.0\text{m} \dots 7.0\text{m}$), Normal ~60% ($7.0\text{m} \dots 11.0\text{m}$), Large ~25% ($11.0\text{m} \dots 16.0\text{m}$).
     - **Birch** (`BirchWood` bark, `BirchWoodLog` core, `BirchLeaves` canopy): Slender upward-sweeping limbs with full, continuous curved oval/flame foliage following a sinusoidal profile starting at ~40% height tinted bright sunny chartreuse/lime (`[0.85, 1.25, 0.40]`). No large version; Thin ~45% ($7.0\text{m} \dots 10.0\text{m}$), Normal ~55% ($10.0\text{m} \dots 14.0\text{m}$).
-    - **Pine** (`PineWood` bark, `PineWoodLog` core, `PineLeaves` needles): Conical tiered needle skirts with dense overlapping vertical depth starting at ~25% height tinted deep boreal evergreen (`[0.40, 0.90, 0.55]`), tapering to a needle spire summit. Concealed 1-voxel branch stubs strictly on the lower 55% of the tree (never poking out of foliage). Thin ~35% ($8.0\text{m} \dots 11.0\text{m}$), Normal ~45% ($12.0\text{m} \dots 16.0\text{m}$), Large ~20% ($16.0\text{m} \dots 21.0\text{m}$).
+    - **Pine** (`PineWood` bark, `PineWoodLog` core, `PineLeaves` needles): Conical tiered needle skirts with dense overlapping vertical depth starting at ~25% height tinted deep boreal evergreen (`[0.40, 0.90, 0.55]`), tapering to a needle spire summit. Concealed 1-block branch stubs strictly on the lower 55% of the tree (never poking out of foliage). Thin ~35% ($8.0\text{m} \dots 11.0\text{m}$), Normal ~45% ($12.0\text{m} \dots 16.0\text{m}$), Large ~20% ($16.0\text{m} \dots 21.0\text{m}$).
   - **High-Density Forest Grids & Non-Overlapping Placement**:
-    - 8-voxel (4m) candidate sampling grid (`TREE_CELL_SIZE = 8`) with deterministic internal cell offsets guaranteeing a minimum 6-voxel (3m) trunk spacing.
+    - 8-block candidate sampling grid (`TREE_CELL_SIZE = 8`) with deterministic internal cell offsets guaranteeing trunk spacing.
     - Woodland forests generate ~3 trees per chunk, creating a genuine continuous canopy.
   - **Volumetric 3D Foliage & Trunk Occlusion Invariants**:
     - `Voxel::is_solid_opaque()` distinguishes true occluding terrain blocks from alpha-cutout foliage.
     - Solid wood trunks and branches adjacent to leaves always render their faces, making the trunk and branch structure visible through leaf cutout holes throughout the canopy interior.
     - Leaf voxels render faces against neighboring leaf voxels, providing true 3D volumetric depth with GPU backface culling (`AlphaMode::Mask(0.5)` with shader `discard`), avoiding hollow-box netting artifacts.
     - Leaves cull only against solid opaque blocks (trunks, terrain) to prevent z-fighting.
-  - **Three Trunk Shapes**:
-    - **Normal Trunk**: 1m $\times$ 1m ($2 \times 2$ sub-voxels) full block column of species log.
-    - **Thin Trunk**: 1-voxel wide ($0.5\text{m} \times 0.5\text{m}$) centered column of species log with log rings on top.
-    - **Large Trunk**: Central $2 \times 2$ log trunk with 4 cardinal vertical slabs of bark-only wood and a flared root base with corner steps anchored into the ground.
-  - **Procedural Organic Branching & Foliage**: Branches generated using species bark-only wood blocks and leafy canopies placed strictly in Air/Snow (preserving solid cores/ground). Seamless multi-chunk boundary generation with a 12-voxel margin.
+  - **Trunk Shapes**:
+    - **Normal Trunk**: 1m $\times$ 1m single block column of species log.
+    - **Thin Trunk**: 1-voxel wide single block column of species log.
+    - **Large Trunk**: Central $2 \times 2$ block log trunk with flared root base anchored into the ground.
+  - **Procedural Organic Branching & Foliage**: Branches generated using species bark-only wood blocks and leafy canopies placed strictly in Air/Snow (preserving solid cores/ground). Seamless multi-chunk boundary generation with a 12-block margin.
   - All heights are strictly taller than the player ($1.8\text{m}$), and trunks cross chunk boundaries seamlessly in X, Y, and Z.
 - **Surface Material Mixing & Natural Strata Transitions**: Natural multi-material noise blends across biomes (no uniform 100% mulch or mud); 3D noise dithering across all strata boundaries (subsoil-to-stone, slate, blackstone).
-- **Dreadstone Bedrock Layer**: Unbreakable Dreadstone bedrock forming the bottom layer ($Y = -80$ blocks / $-160$ voxels), blending naturally into Blackstone across the bottom 3 layers. Completely immune to breaking and shaping.
+- **Dreadstone Bedrock Layer**: Unbreakable Dreadstone bedrock forming the bottom layer ($Y = -80$ chunks / $-160$ blocks), blending naturally into Blackstone across the bottom 3 layers. Completely immune to breaking and shaping.
 - **Walkable 3D Caves & Suppressed Water Ravines**: Spacious 3–5 block wide spaghetti tunnels with wide walkable mouths at the surface; rare dramatic ravines that are strictly suppressed underwater in rivers, lakes, and oceans.
 - **Dedicated Live Terrain & World Inspector GUI**: Custom egui tuning window bound to <kbd>F1</kbd> running in `EguiPrimaryContextPass` with full interactive sliders and buttons, with automated isolation of hotbar mouse scrolling and block interactions while open, plus an instant "Regenerate World" button.
 
 ### 4. Player Physics, Collision & Locomotion
 - **Custom Voxel AABB Collision**: Zero-allocation AABB collision system querying chunk voxel data directly without rigid bodies or external physics engine overhead.
-- **0.5m Terrain Auto-Stepping**: Automatically steps up 0.5m voxel elevation changes smoothly during grounded traversal.
+- **0.50m Auto-Stepping**: Automatically steps up to 0.50m (50cm) elevation changes (calibrated for future slab stepping), requiring jumping over full 1m blocks.
 - **Stance Hierarchy & Dimensions**:
   - Standing: height 1.80 m, eye height 1.62 m.
   - Crouching (<kbd>Ctrl</kbd>): height 1.30 m, eye height 1.20 m, speed reduced to 55%, with ledge-fall clamping preventing drops off steep edges.
-  - Crawling (<kbd>C</kbd>): prone height 0.45 m, eye height 0.40 m, speed reduced to 35%, enables moving through 1-voxel high openings (0.5m) with headroom safety checks.
+  - Crawling (<kbd>C</kbd>): prone height 0.45 m, eye height 0.40 m, speed reduced to 35%, enables moving through low openings with headroom safety checks.
 - **Creative Flight**: Double-tap Space toggle, fast sprint flight, vertical ascent/descent, and drag damping.
 - **Fluid Locomotion**: Realistic water wading, swimming buoyancy, drag forces, and submersion detection.
 - **Game Modes**: Creative mode (unrestricted flight, instant block edits) and Spectator mode (noclip through voxels).
@@ -133,10 +129,9 @@ The player uses a custom AABB collision system that directly queries voxel data.
 
 ### 6. Cellular Automata & Fluid Simulation
 - **Wave-Paced Water Propagation**: Cellular automaton simulation running at a calibrated 0.25s tick rate with queued updates.
-- **Differential Spread Limits**: 4 voxels (2 blocks) spread for single-voxel sources; 8 voxels (4 blocks) spread for full 1m³ block sources.
+- **Spread Limits**: Up to 8 blocks spread for 1m³ full block water sources.
 - **Downward Waterfall Priority**: Water falls strictly downwards when unsupported by solid ground, preventing mid-air spread on pillars or cliffs.
 - **Stepped Water Height & Vertical Step Walls**: Gradient decreasing by 10cm per step down to 10cm, with vertical step quads sealing level transitions without air gaps.
-- **Cross-Chunk Waterlogging**: Dynamic waterlogging during underwater sub-voxel shaping (<kbd>R</kbd>) and rotation (<kbd>T</kbd>).
 - **Submerged Visibility**: Counter-clockwise ceiling geometry allowing clear upward visibility from below water surfaces, paired with submerged blue fog immersion.
 
 ### 7. Atmosphere, Celestial Systems & Calendar
@@ -146,12 +141,10 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - **Dynamic Clouds & Starfield**: 1600m horizontal cloud plane with wind drift and atmospheric tinting; single-root hierarchical starfield dome with celestial rotation and smooth twilight fade.
 - **Atmospheric Transitions & Time Control**: Continuous 4-stop piecewise-linear palette interpolation across Morning, Noon, Evening, and Night. Interactive time control (<kbd>F6</kbd>: tap to advance phase, hold to scrub time).
 
-### 8. Gameplay Tools & Sub-Voxel Shaping
-- **Interaction Modes (<kbd>B</kbd> Key)**: Toggle between 1m³ Logical Block mode (default) and 0.5m Sub-voxel mode.
-- **Sub-Voxel Block Shaping Tool (<kbd>R</kbd> Key)**: Tap <kbd>R</kbd> to sequentially cycle 10 configurations (Full, Stair, Upside-Down Stair, Corner Stair, Inverted Corner Stair, Bottom Slab, Top Slab, Vertical Slab, Column, Centered Column).
+### 8. Gameplay Tools & Shaping
+- **Block Shaping Tool (<kbd>R</kbd> Key)**: Tap <kbd>R</kbd> to sequentially cycle configurations; held for 10-shape radial menu.
 - **Circular Radial Menu (<kbd>Hold R</kbd> >0.2s)**: 10-slice circular wheel with directional mouse selection and center preview card.
-- **Block Rotation Tool (<kbd>T</kbd> Key)**: Rotates targeted block sub-voxels 90° clockwise around the vertical Y-axis.
-- **Connected Placement**: Placing against non-full shapes (slabs, stairs) aligns to the hit surface without floating air gaps, with bi-directional centered column stacking.
+- **Block Rotation Tool (<kbd>T</kbd> Key)**: Rotates targeted block shape 90° clockwise around the vertical Y-axis.
 - **Block Interactions**: Left-click break, right-click place, middle-click block pick.
 
 ### 9. User Interface, Menus & Developer Tooling

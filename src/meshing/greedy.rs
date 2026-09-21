@@ -44,12 +44,8 @@ pub const FACE_NORMALS_F32: [[f32; 3]; 6] = [
     [0.0, 0.0, -1.0],
 ];
 
-pub const ISOLATED_VOXEL_UVS: [[f32; 2]; 4] = [
-    [0.0, 0.0],
-    [0.0, 1.0],
-    [1.0, 1.0],
-    [1.0, 0.0],
-];
+#[allow(dead_code)]
+pub const ISOLATED_VOXEL_UVS: [[f32; 2]; 4] = [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
 
 #[allow(dead_code)]
 pub const UV_QUADRANT_OFFSETS: [[[f32; 2]; 4]; 4] = [
@@ -191,42 +187,24 @@ impl MeshBuffers {
             self.uv_bs.push([layer, frame_count]);
         }
 
-        let uvs_to_push = if key.is_isolated_voxel {
-            match direction {
-                FaceDirection::PositiveY | FaceDirection::NegativeY => ISOLATED_VOXEL_UVS,
-                _ => [
-                    [0.0, 1.0],
-                    [0.0, 0.0],
-                    [1.0, 0.0],
-                    [1.0, 1.0],
-                ],
-            }
-        } else {
-            let scale = if key.voxel == Voxel::WaterFlowing {
-                4.0
-            } else {
-                2.0
-            };
+        let u_min = u as f32;
+        let u_max = (u + width) as f32;
+        let v_min = v as f32;
+        let v_max = (v + height) as f32;
 
-            let u_min = (u as f32) / scale;
-            let u_max = ((u + width) as f32) / scale;
-            let v_min = (v as f32) / scale;
-            let v_max = ((v + height) as f32) / scale;
-
-            match direction {
-                FaceDirection::PositiveY | FaceDirection::NegativeY => [
-                    [u_min, v_min],
-                    [u_min, v_max],
-                    [u_max, v_max],
-                    [u_max, v_min],
-                ],
-                _ => [
-                    [u_min, v_max],
-                    [u_min, v_min],
-                    [u_max, v_min],
-                    [u_max, v_max],
-                ],
-            }
+        let uvs_to_push = match direction {
+            FaceDirection::PositiveY | FaceDirection::NegativeY => [
+                [u_min, v_min],
+                [u_min, v_max],
+                [u_max, v_max],
+                [u_max, v_min],
+            ],
+            _ => [
+                [u_min, v_max],
+                [u_min, v_min],
+                [u_max, v_min],
+                [u_max, v_max],
+            ],
         };
 
         self.uvs.extend_from_slice(&uvs_to_push);
@@ -560,11 +538,7 @@ impl ChunkMesher {
                             0
                         };
 
-                        let is_isolated_voxel = if voxel.is_water() {
-                            false
-                        } else {
-                            is_chunk_local_isolated_voxel(chunk, local_voxel)
-                        };
+                        let is_isolated_voxel = false;
 
                         mask[mask_index(u, v)] = Some(FaceKey {
                             voxel,
@@ -618,7 +592,10 @@ pub fn should_render_face(voxel: Voxel, neighbor: Voxel) -> bool {
     }
 
     // Solid opaque blocks render against air, water, leaves, or occupied cells
-    neighbor.is_empty() || neighbor.is_transparent() || neighbor.is_leaves() || neighbor == Voxel::Occupied
+    neighbor.is_empty()
+        || neighbor.is_transparent()
+        || neighbor.is_leaves()
+        || neighbor == Voxel::Occupied
 }
 
 pub fn greedy_merge_mask(
@@ -816,7 +793,10 @@ mod tests {
             if let VertexAttributeValues::Float32x4(full_color_data) = full_colors {
                 let tinted_count = full_color_data.iter().filter(|c| **c == grass_tint).count();
                 // 5 faces (top + 4 sides) * 4 vertices = 20 tinted vertices; 1 bottom face * 4 vertices = 4 untinted vertices
-                assert_eq!(tinted_count, 20, "Top and 4 sides should receive grass_tint in full_grass mode");
+                assert_eq!(
+                    tinted_count, 20,
+                    "Top and 4 sides should receive grass_tint in full_grass mode"
+                );
             }
         } else {
             panic!("Expected Float32x4 vertex colors");
@@ -858,8 +838,8 @@ mod tests {
                 .map(|p| p[1])
                 .fold(f32::NEG_INFINITY, f32::max);
             assert!(
-                (max_y - 0.45).abs() < 1e-4,
-                "Surface water max Y should be 0.45, got {}",
+                (max_y - 0.90).abs() < 1e-4,
+                "Surface water max Y should be 0.90, got {}",
                 max_y
             );
         } else {
@@ -908,13 +888,13 @@ mod tests {
                 .map(|p| p[0])
                 .fold(f32::NEG_INFINITY, f32::max);
             assert!(
-                (min_x - 0.25).abs() < 1e-4,
-                "min_x should be 0.25, got {}",
+                (min_x - 0.50).abs() < 1e-4,
+                "min_x should be 0.50, got {}",
                 min_x
             );
             assert!(
-                (max_x - 0.75).abs() < 1e-4,
-                "max_x should be 0.75, got {}",
+                (max_x - 1.50).abs() < 1e-4,
+                "max_x should be 1.50, got {}",
                 max_x
             );
         } else {
@@ -953,7 +933,7 @@ mod tests {
             if let VertexAttributeValues::Float32x3(pos_data) = positions {
                 let mut up_faces_at_ground = 0;
                 for (norm, pos) in norm_data.iter().zip(pos_data.iter()) {
-                    if norm[1] > 0.9 && (pos[1] - 0.50).abs() < 1e-4 {
+                    if norm[1] > 0.9 && (pos[1] - 1.00).abs() < 1e-4 {
                         up_faces_at_ground += 1;
                     }
                 }
@@ -979,14 +959,8 @@ mod tests {
 
         let (_, registry) = build_voxel_texture_array();
         let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
-        assert!(
-            meshes.opaque.is_some(),
-            "Opaque mesh should exist for column post"
-        );
-        assert!(
-            meshes.transparent.is_some(),
-            "Transparent mesh should exist for waterlogging"
-        );
+        assert!(meshes.opaque.is_some());
+        assert!(meshes.transparent.is_some());
     }
 
     #[test]
@@ -1015,7 +989,7 @@ mod tests {
         {
             let mut found_step_quad = false;
             for (norm, pos) in norm_data.iter().zip(pos_data.iter()) {
-                if norm[0] > 0.9 && pos[1] >= 0.39 && pos[1] <= 0.46 {
+                if norm[0] > 0.9 && pos[1] >= 0.79 && pos[1] <= 0.91 {
                     found_step_quad = true;
                     break;
                 }
@@ -1033,13 +1007,7 @@ mod tests {
     fn mesher_full_block_face_maps_single_texture_uv() {
         let mut world = VoxelWorld::default();
         let mut chunk = Chunk::default();
-        for dy in 0..2 {
-            for dz in 0..2 {
-                for dx in 0..2 {
-                    chunk.set(dx, dy, dz, Voxel::Stone);
-                }
-            }
-        }
+        chunk.set(0, 0, 0, Voxel::Stone);
         world.insert_chunk(IVec3::ZERO, chunk);
 
         let (_, registry) = build_voxel_texture_array();
@@ -1181,7 +1149,7 @@ mod tests {
     }
 
     #[test]
-    fn mesher_slab_sides_map_half_texture_uv() {
+    fn mesher_block_sides_map_full_texture_uv() {
         let mut world = VoxelWorld::default();
         let mut chunk = Chunk::default();
         chunk.set(0, 0, 0, Voxel::Stone);
@@ -1218,12 +1186,12 @@ mod tests {
                         .fold(f32::NEG_INFINITY, f32::max);
                     assert!(
                         (min_v - 0.0).abs() < 1e-4,
-                        "Bottom slab side min V must be 0.0, got {}",
+                        "Block side min V must be 0.0, got {}",
                         min_v
                     );
                     assert!(
-                        (max_v - 0.5).abs() < 1e-4,
-                        "Bottom slab side max V must be 0.5, got {}",
+                        (max_v - 1.0).abs() < 1e-4,
+                        "Block side max V must be 1.0, got {}",
                         max_v
                     );
                 }
@@ -1371,7 +1339,10 @@ mod tests {
         // Between solid slice and air slice, all 16 bits must be visible
         for v in 0..CHUNK_SIZE {
             let visible = current.opaque[v] & !air_neighbor.opaque[v];
-            assert_eq!(visible, 0xFFFF, "Boundary face against air must be fully visible");
+            assert_eq!(
+                visible, 0xFFFF,
+                "Boundary face against air must be fully visible"
+            );
         }
     }
 

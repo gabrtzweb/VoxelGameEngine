@@ -29,7 +29,6 @@ pub const AVAILABLE_BLOCKS: [Voxel; 57] = [
     Voxel::Snow,
     Voxel::Ice,
     Voxel::PackedIce,
-
     // Stones, Rocks & Minerals
     Voxel::Stone,
     Voxel::Cobblestone,
@@ -55,7 +54,6 @@ pub const AVAILABLE_BLOCKS: [Voxel; 57] = [
     Voxel::Rhodonite,
     Voxel::Serpentinite,
     Voxel::Dreadstone,
-
     // Woods & Foliage
     Voxel::OakWoodLog,
     Voxel::OakWood,
@@ -67,12 +65,10 @@ pub const AVAILABLE_BLOCKS: [Voxel; 57] = [
     Voxel::PineWood,
     Voxel::PineLeaves,
     Voxel::Cactus,
-
     // Fluids & Volcanics
     Voxel::Water,
     Voxel::Lava,
     Voxel::Magma,
-
     // Illumination
     Voxel::LightWarm,
     Voxel::LightCold,
@@ -154,7 +150,8 @@ fn spawn_inventory_menu(
     let max_scroll = max_scroll_row();
 
     let track_height = 210.0;
-    let thumb_height = (track_height * (INVENTORY_VISIBLE_ROWS as f32 / total_rows as f32)).clamp(40.0, track_height);
+    let thumb_height = (track_height * (INVENTORY_VISIBLE_ROWS as f32 / total_rows as f32))
+        .clamp(40.0, track_height);
     let max_travel = (track_height - thumb_height).max(1.0);
     let thumb_top = if max_scroll > 0 {
         (start_row as f32 / max_scroll as f32) * max_travel
@@ -277,21 +274,25 @@ fn spawn_inventory_menu(
                                             BackgroundColor(Color::srgba(0.12, 0.12, 0.15, 0.85)),
                                             BorderColor::all(Color::srgba(0.25, 0.25, 0.30, 0.60)),
                                         ))
-                                        .with_children(|slot| {
-                                            slot.spawn((
-                                                InventoryPaletteSlotIcon { slot_index: slot_idx },
-                                                ImageNode {
-                                                    image: icon_handle,
-                                                    ..default()
-                                                },
-                                                Node {
-                                                    width: px(32.0),
-                                                    height: px(32.0),
-                                                    ..default()
-                                                },
-                                                icon_vis,
-                                            ));
-                                        });
+                                        .with_children(
+                                            |slot| {
+                                                slot.spawn((
+                                                    InventoryPaletteSlotIcon {
+                                                        slot_index: slot_idx,
+                                                    },
+                                                    ImageNode {
+                                                        image: icon_handle,
+                                                        ..default()
+                                                    },
+                                                    Node {
+                                                        width: px(32.0),
+                                                        height: px(32.0),
+                                                        ..default()
+                                                    },
+                                                    icon_vis,
+                                                ));
+                                            },
+                                        );
                                     }
                                 });
 
@@ -408,7 +409,7 @@ fn spawn_inventory_menu(
                                         InventoryHotbarSlotIcon { index: slot_idx },
                                         ImageNode {
                                             image: icon_handle,
-                                             ..default()
+                                            ..default()
                                         },
                                         Node {
                                             width: px(30.0),
@@ -518,7 +519,9 @@ fn handle_inventory_interaction(
 
     // 2. Scrollbar Dragging / Track Clicking
     let track_height = 210.0;
-    let thumb_height = (track_height * (INVENTORY_VISIBLE_ROWS as f32 / total_inventory_rows() as f32)).clamp(40.0, track_height);
+    let thumb_height = (track_height
+        * (INVENTORY_VISIBLE_ROWS as f32 / total_inventory_rows() as f32))
+        .clamp(40.0, track_height);
     let max_travel = (track_height - thumb_height).max(1.0);
 
     if let (Some(window), Some((track_tf, track_computed))) =
@@ -534,7 +537,10 @@ fn handle_inventory_interaction(
             }
         }
 
-        if left_pressed && scroll_state.is_dragging_thumb && let Some(cursor_pos) = window.cursor_position() {
+        if left_pressed
+            && scroll_state.is_dragging_thumb
+            && let Some(cursor_pos) = window.cursor_position()
+        {
             let track_top_y = track_center.y - track_half.y;
             let rel_y = (cursor_pos.y - track_top_y - thumb_height * 0.5).clamp(0.0, max_travel);
             let progress = rel_y / max_travel;
@@ -808,7 +814,10 @@ mod tests {
 
     #[test]
     fn test_inventory_dimensions_and_blocks() {
-        assert_eq!(INVENTORY_COLS * INVENTORY_VISIBLE_ROWS, INVENTORY_VISIBLE_SLOTS);
+        assert_eq!(
+            INVENTORY_COLS * INVENTORY_VISIBLE_ROWS,
+            INVENTORY_VISIBLE_SLOTS
+        );
         assert_eq!(INVENTORY_VISIBLE_ROWS, 4);
         assert_eq!(AVAILABLE_BLOCKS.len(), 57);
         assert_eq!(total_inventory_rows(), 8);

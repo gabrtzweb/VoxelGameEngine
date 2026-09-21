@@ -34,10 +34,10 @@ impl StrataGenerator {
         biome: &BiomeConfig,
         seed: u32,
     ) -> Voxel {
-        let block_y = world_y.div_euclid(2);
-        let bx = world_x.div_euclid(2) as f32 + 0.5;
+        let block_y = world_y;
+        let bx = world_x as f32 + 0.5;
         let by = ly_coord(world_y);
-        let bz = world_z.div_euclid(2) as f32 + 0.5;
+        let bz = world_z as f32 + 0.5;
 
         // Bedrock (Dreadstone) bottom 3 layers with natural blend
         if block_y <= self.bedrock_min_block_y {
@@ -130,7 +130,7 @@ impl StrataGenerator {
 
 #[inline]
 fn ly_coord(world_y: i32) -> f32 {
-    world_y.div_euclid(2) as f32 + 0.5
+    world_y as f32 + 0.5
 }
 
 #[cfg(test)]
@@ -156,14 +156,14 @@ mod tests {
             Voxel::Slate | Voxel::Cobbleslate | Voxel::Flint
         ));
 
-        let deep = generator.solid_voxel_at(0, -80, 0, 40, &plains, seed);
+        let deep = generator.solid_voxel_at(0, -70, 0, 40, &plains, seed);
         assert!(matches!(
             deep,
             Voxel::Blackstone | Voxel::Cobbleblackstone | Voxel::Magma
         ));
 
         // Bottom layer of blocks must always be unbreakable Dreadstone
-        let bedrock_bottom = generator.solid_voxel_at(0, -160, 0, 80, &plains, seed);
+        let bedrock_bottom = generator.solid_voxel_at(0, -80, 0, 80, &plains, seed);
         assert_eq!(bedrock_bottom, Voxel::Dreadstone);
         assert!(bedrock_bottom.is_unbreakable());
     }
@@ -176,7 +176,7 @@ mod tests {
 
         for x in -5..=5 {
             for z in -5..=5 {
-                let bottom = generator.solid_voxel_at(x, -160, z, 90, &plains, seed);
+                let bottom = generator.solid_voxel_at(x, -80, z, 90, &plains, seed);
                 assert_eq!(
                     bottom,
                     Voxel::Dreadstone,

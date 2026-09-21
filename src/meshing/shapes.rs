@@ -10,6 +10,7 @@ use crate::{
     world::{CHUNK_SIZE, Chunk, VOXEL_SIZE, Voxel, VoxelAccess},
 };
 
+#[allow(dead_code)]
 pub fn is_chunk_local_isolated_voxel(chunk: &Chunk, local_voxel: IVec3) -> bool {
     let bx = (local_voxel.x as usize / 2) * 2;
     let by = (local_voxel.y as usize / 2) * 2;

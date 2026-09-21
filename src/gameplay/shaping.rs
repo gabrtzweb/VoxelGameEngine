@@ -3,7 +3,6 @@ use std::f32::consts::{FRAC_PI_2, TAU};
 use bevy::{input::mouse::AccumulatedMouseMotion, prelude::*};
 
 use super::{
-    interaction_mode::InteractionMode,
     radial_menu::{RadialMenuRoot, RadialMenuState, spawn_radial_menu, update_radial_menu_ui},
     targeting::CurrentTarget,
 };
@@ -153,7 +152,6 @@ fn handle_block_shaping(
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse_motion: Res<AccumulatedMouseMotion>,
     game_mode: Res<GameMode>,
-    interaction_mode: Res<InteractionMode>,
     current_target: Res<CurrentTarget>,
     mut fluid_queue: Option<ResMut<FluidUpdateQueue>>,
     mut commands: Commands,
@@ -180,7 +178,7 @@ fn handle_block_shaping(
         return;
     }
 
-    if *game_mode != GameMode::Creative || *interaction_mode != InteractionMode::Block {
+    if *game_mode != GameMode::Creative {
         if radial_state.is_open {
             for entity in &radial_root_query {
                 commands.entity(entity).despawn();
@@ -296,7 +294,6 @@ fn handle_block_shaping(
 fn handle_block_rotation(
     keyboard: Res<ButtonInput<KeyCode>>,
     game_mode: Res<GameMode>,
-    interaction_mode: Res<InteractionMode>,
     current_target: Res<CurrentTarget>,
     mut fluid_queue: Option<ResMut<FluidUpdateQueue>>,
     mut commands: Commands,
@@ -311,10 +308,6 @@ fn handle_block_rotation(
     }
 
     if *game_mode != GameMode::Creative {
-        return;
-    }
-
-    if *interaction_mode != InteractionMode::Block {
         return;
     }
 
@@ -347,6 +340,7 @@ fn handle_block_rotation(
     );
 }
 
+#[allow(dead_code)]
 pub fn is_block_submerged_or_adjacent_to_water(world: &impl VoxelAccess, origin: IVec3) -> bool {
     for dy in 0..2 {
         for dz in 0..2 {
@@ -401,94 +395,44 @@ fn apply_block_subvoxels(
     queues: &mut ChunkStreamingQueues,
     fluid_queue: &mut Option<ResMut<FluidUpdateQueue>>,
     block_origin: IVec3,
-    mut new_voxels: [Voxel; 8],
+    new_voxels: [Voxel; 8],
 ) {
-    let is_waterlogged = is_block_submerged_or_adjacent_to_water(world, block_origin);
-    if is_waterlogged {
-        for v in &mut new_voxels {
-            if *v == Voxel::Air {
-                *v = Voxel::Water;
-            } else if *v == Voxel::Occupied {
-                *v = Voxel::WaterOccupied;
-            }
-        }
-    }
-
-    // Do not allow shaping unbreakable bedrock/dreadstone blocks
-    for y in 0..2 {
-        for z in 0..2 {
-            for x in 0..2 {
-                let position = block_origin + IVec3::new(x, y, z);
-                if let Some(current) = world.get_voxel(position)
-                    && current.is_unbreakable()
-                {
-                    return;
-                }
-            }
-        }
-    }
-
-    let mut edited_voxels = Vec::with_capacity(8);
-
-    for y in 0..2 {
-        for z in 0..2 {
-            for x in 0..2 {
-                let idx = (y * 4 + z * 2 + x) as usize;
-                let position = block_origin + IVec3::new(x, y, z);
-                let new_voxel = new_voxels[idx];
-
-                if let Some(current) = world.get_voxel(position)
-                    && current != new_voxel
-                {
-                    world.set_voxel(position, new_voxel);
-                    modifications.record(position, new_voxel);
-                    edited_voxels.push(position);
-                }
-            }
-        }
-    }
-
-    if edited_voxels.is_empty() {
+    let Some(current) = world.get_voxel(block_origin) else {
+        return;
+    };
+    if current.is_unbreakable() {
         return;
     }
 
-    if let Some(queue) = fluid_queue.as_deref_mut() {
-        for &pos in &edited_voxels {
-            queue.enqueue_with_neighbors(pos);
+    let primary = new_voxels
+        .iter()
+        .copied()
+        .find(|v| {
+            !v.is_empty() && !v.is_water() && *v != Voxel::Occupied && *v != Voxel::WaterOccupied
+        })
+        .unwrap_or(current);
+
+    if current != primary {
+        world.set_voxel(block_origin, primary);
+        modifications.record(block_origin, primary);
+
+        if let Some(queue) = fluid_queue.as_deref_mut() {
+            queue.enqueue_with_neighbors(block_origin);
         }
-    }
 
-    let mut dirty_chunks = Vec::new();
+        sync_voxel_light(commands, world, block_origin, light_registry);
 
-    for edited_voxel in edited_voxels {
-        sync_voxel_light(commands, world, edited_voxel, light_registry);
-        dirty_chunks.extend(affected_chunks(edited_voxel));
-    }
-
-    dirty_chunks.sort_by_key(|chunk| (chunk.x, chunk.y, chunk.z));
-    dirty_chunks.dedup();
-
-    for coordinate in dirty_chunks {
-        if world.get_chunk(coordinate).is_some() {
-            queues.enqueue_priority_remesh(coordinate);
+        for coordinate in affected_chunks(block_origin) {
+            if world.get_chunk(coordinate).is_some() {
+                queues.enqueue_priority_remesh(coordinate);
+            }
         }
     }
 }
 
 pub fn get_block_voxels(world: &impl VoxelAccess, block_origin: IVec3) -> [Voxel; 8] {
-    let mut voxels = [Voxel::Air; 8];
-
-    for y in 0..2 {
-        for z in 0..2 {
-            for x in 0..2 {
-                let idx = (y * 4 + z * 2 + x) as usize;
-                let position = block_origin + IVec3::new(x, y, z);
-                voxels[idx] = world.get_voxel(position).unwrap_or(Voxel::Air);
-            }
-        }
-    }
-
-    voxels
+    let v = world.get_voxel(block_origin).unwrap_or(Voxel::Air);
+    [v; 8]
 }
 
 pub fn centered_layer_coordinates(world_voxel: IVec3) -> [IVec3; 4] {

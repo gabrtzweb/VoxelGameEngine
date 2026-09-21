@@ -6,11 +6,11 @@ use super::PLAYER_WIDTH;
 
 const COLLISION_EPSILON: f32 = 0.001;
 
-const MAX_MOVEMENT_STEP: f32 = VOXEL_SIZE * 0.45;
+const MAX_MOVEMENT_STEP: f32 = 0.45;
 
 const GROUND_PROBE_DISTANCE: f32 = 0.025;
 
-pub(super) const AUTO_STEP_HEIGHT: f32 = VOXEL_SIZE;
+pub(super) const AUTO_STEP_HEIGHT: f32 = 0.50;
 
 #[derive(Default)]
 pub struct CollisionResult {
@@ -337,11 +337,11 @@ fn overlapping_solid_voxels(world: &VoxelWorld, position: Vec3, height: f32) -> 
         for cy in min_chunk.y..=max_chunk.y {
             for cz in min_chunk.z..=max_chunk.z {
                 for cx in min_chunk.x..=max_chunk.x {
-                    if let Some(chunk) = world.get_chunk(IVec3::new(cx, cy, cz)) {
-                        if chunk.homogeneity() != ChunkHomogeneity::Empty {
-                            all_empty = false;
-                            break;
-                        }
+                    if let Some(chunk) = world.get_chunk(IVec3::new(cx, cy, cz))
+                        && chunk.homogeneity() != ChunkHomogeneity::Empty
+                    {
+                        all_empty = false;
+                        break;
                     }
                 }
                 if !all_empty {
@@ -415,8 +415,8 @@ mod tests {
         world.insert_chunk(IVec3::ZERO, Chunk::new());
 
         let player_pos = Vec3::new(2.0, 0.0, 2.0);
-        // Ceiling at y=1.0m (voxel y=2)
-        world.set_voxel(IVec3::new(4, 2, 4), Voxel::Stone);
+        // Ceiling at y=1.0m (voxel y=1)
+        world.set_voxel(IVec3::new(2, 1, 2), Voxel::Stone);
 
         // Clearance at 0.45m (crawling) is clear
         assert!(has_headroom(&world, player_pos, 0.45));
@@ -435,10 +435,10 @@ mod tests {
         assert_eq!(empty_buf.len(), 0);
 
         // Place a solid stone block inside the player bounds
-        world.set_voxel(IVec3::new(2, 2, 2), Voxel::Stone);
+        world.set_voxel(IVec3::new(1, 1, 1), Voxel::Stone);
         let filled_buf = overlapping_solid_voxels(&world, pos, 1.8);
         assert!(!filled_buf.is_empty());
         assert_eq!(filled_buf.len(), 1);
-        assert_eq!(filled_buf.as_slice()[0], IVec3::new(2, 2, 2));
+        assert_eq!(filled_buf.as_slice()[0], IVec3::new(1, 1, 1));
     }
 }

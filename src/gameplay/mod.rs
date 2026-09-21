@@ -3,7 +3,6 @@
 pub mod debug;
 pub mod icon;
 pub mod interaction;
-pub mod interaction_mode;
 pub mod radial_menu;
 pub mod shaping;
 pub mod target_hud;
@@ -14,7 +13,6 @@ pub use icon::{
     BlockIconPlugin, BlockIcons, ICON_SIZE, render_isometric_block_icon, setup_block_icons,
 };
 pub use interaction::{SelectedVoxel, VoxelInteractionPlugin, place_block};
-pub use interaction_mode::InteractionMode;
 pub use radial_menu::{
     RadialMenuRoot, RadialMenuSlice, RadialMenuState, RadialMenuSubtitleText, RadialMenuTitleText,
 };

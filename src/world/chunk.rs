@@ -1,4 +1,4 @@
-pub const VOXEL_SIZE: f32 = 0.5;
+pub const VOXEL_SIZE: f32 = 1.0;
 pub const CHUNK_SIZE: usize = 16;
 pub const CHUNK_VOLUME: usize = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
 
@@ -236,7 +236,7 @@ impl ChunkStorage {
         match self {
             Self::Uniform(_) => 0,
             Self::Paletted { .. } => CHUNK_VOLUME / 2, // 2,048 bytes
-            Self::Dense(_) => CHUNK_VOLUME,             // 4,096 bytes
+            Self::Dense(_) => CHUNK_VOLUME,            // 4,096 bytes
             Self::Rle(runs) => runs.len() * std::mem::size_of::<(Voxel, u16)>(),
         }
     }
@@ -532,10 +532,7 @@ mod tests {
     #[test]
     fn chunk_homogeneity_transitions() {
         let mut chunk = Chunk::filled(Voxel::Stone);
-        assert_eq!(
-            chunk.homogeneity(),
-            ChunkHomogeneity::Solid(Voxel::Stone)
-        );
+        assert_eq!(chunk.homogeneity(), ChunkHomogeneity::Solid(Voxel::Stone));
         assert_eq!(chunk.memory_size(), 0);
 
         // Edit one voxel to air -> Mixed & Paletted (2048 bytes)
@@ -547,10 +544,7 @@ mod tests {
 
         // Edit it back to stone -> Solid(Stone) & Uniform (0 bytes)
         chunk.set(0, 0, 0, Voxel::Stone);
-        assert_eq!(
-            chunk.homogeneity(),
-            ChunkHomogeneity::Solid(Voxel::Stone)
-        );
+        assert_eq!(chunk.homogeneity(), ChunkHomogeneity::Solid(Voxel::Stone));
         assert_eq!(chunk.memory_size(), 0);
 
         // Edit all to Granite via from_voxels

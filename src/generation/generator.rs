@@ -8,7 +8,7 @@ use super::{
 };
 use crate::world::{CHUNK_SIZE, CHUNK_VOLUME, Chunk, Voxel};
 
-pub const LOGICAL_BLOCK_VOXELS: i32 = 2;
+pub const LOGICAL_BLOCK_VOXELS: i32 = 1;
 
 #[derive(Clone, Copy, Debug)]
 pub struct TerrainColumn {
@@ -138,13 +138,8 @@ impl TerrainGenerator {
                         let world_z = chunk_origin.z + z as i32;
 
                         let cave_sample = chunk_caves.sample(x, y, z);
-                        let voxel = self.voxel_at_sampled(
-                            column,
-                            world_x,
-                            world_y,
-                            world_z,
-                            cave_sample,
-                        );
+                        let voxel =
+                            self.voxel_at_sampled(column, world_x, world_y, world_z, cave_sample);
                         if voxel != Voxel::Air {
                             let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
                             voxels[idx] = voxel;
@@ -372,11 +367,9 @@ impl TerrainGenerator {
             self.effective_sea_level(),
             self.seed,
         ) {
-            return self.caves.cave_voxel_sampled(
-                world_y,
-                cave_sample,
-                self.effective_sea_level(),
-            );
+            return self
+                .caves
+                .cave_voxel_sampled(world_y, cave_sample, self.effective_sea_level());
         }
 
         let logical_block_top = logical_block_top(world_y);
@@ -587,7 +580,8 @@ impl TerrainGenerator {
             && climate.humidity > 0.15
         {
             let wetness = ((climate.humidity - 0.15) / 0.20).clamp(0.0, 1.0);
-            let inland_factor = (1.0 - ((climate.continentalness - 0.12).abs() / 0.12)).clamp(0.0, 1.0);
+            let inland_factor =
+                (1.0 - ((climate.continentalness - 0.12).abs() / 0.12)).clamp(0.0, 1.0);
             wetness * inland_factor * 3.5
         } else {
             0.0
@@ -713,44 +707,28 @@ mod tests {
     use bevy::prelude::IVec3;
 
     #[test]
-    fn generated_logical_blocks_keep_terrain_materials_consistent_but_allow_slabs() {
+    fn generated_chunks_produce_valid_terrain_blocks() {
         let generator = TerrainGenerator::default();
-        let mut found_slab = false;
-
         for chunk_coordinate in [IVec3::ZERO, IVec3::NEG_ONE, IVec3::new(-1, 0, 1)] {
             let chunk = generator.generate_chunk(chunk_coordinate);
-
-            for y in (0..CHUNK_SIZE).step_by(2) {
-                for z in (0..CHUNK_SIZE).step_by(2) {
-                    for x in (0..CHUNK_SIZE).step_by(2) {
-                        let mut material = None;
-                        let mut has_air = false;
-
-                        for block_y in 0..2 {
-                            for block_z in 0..2 {
-                                for block_x in 0..2 {
-                                    let voxel = chunk.get(x + block_x, y + block_y, z + block_z);
-
-                                    if voxel == Voxel::Air {
-                                        has_air = true;
-                                    } else if voxel != Voxel::Water && voxel != Voxel::Occupied {
-                                        assert!(
-                                            material.is_none_or(|expected| expected == voxel),
-                                            "mixed terrain materials at chunk {chunk_coordinate:?}, logical block ({x}, {y}, {z})"
-                                        );
-                                        material = Some(voxel);
-                                    }
-                                }
-                            }
+            let mut solid_count = 0;
+            for y in 0..CHUNK_SIZE {
+                for z in 0..CHUNK_SIZE {
+                    for x in 0..CHUNK_SIZE {
+                        let voxel = chunk.get(x, y, z);
+                        if !voxel.is_empty() && voxel != Voxel::Water {
+                            solid_count += 1;
                         }
-
-                        found_slab |= has_air && material.is_some();
                     }
                 }
             }
+            if chunk_coordinate.y <= 0 {
+                assert!(
+                    solid_count > 0,
+                    "Expected subterranean chunks to have solid blocks"
+                );
+            }
         }
-
-        assert!(found_slab, "expected native-resolution terrain slabs");
     }
 
     #[test]

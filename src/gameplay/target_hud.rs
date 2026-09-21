@@ -34,10 +34,7 @@ impl Plugin for TargetHudPlugin {
             Startup,
             setup_target_hud.after(crate::gameplay::setup_block_icons),
         )
-        .add_systems(
-            Update,
-            update_target_hud.after(TargetingSet::UpdateTarget),
-        );
+        .add_systems(Update, update_target_hud.after(TargetingSet::UpdateTarget));
     }
 }
 
@@ -52,11 +49,8 @@ pub fn resolve_target_block_info(
     }
 
     if raw_voxel == Voxel::Occupied || raw_voxel == Voxel::WaterOccupied {
-        if let Some(material) = get_centered_layer_material(world, target.hit_voxel) {
-            raw_voxel = material;
-        } else {
-            return None;
-        }
+        let material = get_centered_layer_material(world, target.hit_voxel)?;
+        raw_voxel = material;
     }
 
     let shape = if raw_voxel.is_fluid() {
@@ -136,27 +130,27 @@ fn setup_target_hud(mut commands: Commands, icons: Res<BlockIcons>) {
                         row_gap: px(2.0),
                         ..default()
                     },))
-                    .with_children(|col| {
-                        col.spawn((
-                            TargetHudTitle,
-                            Text::new(""),
-                            TextFont {
-                                font_size: FontSize::Px(14.0),
-                                ..default()
-                            },
-                            TextColor(Color::srgb(0.96, 0.96, 0.98)),
-                        ));
+                        .with_children(|col| {
+                            col.spawn((
+                                TargetHudTitle,
+                                Text::new(""),
+                                TextFont {
+                                    font_size: FontSize::Px(14.0),
+                                    ..default()
+                                },
+                                TextColor(Color::srgb(0.96, 0.96, 0.98)),
+                            ));
 
-                        col.spawn((
-                            TargetHudSubtitle,
-                            Text::new("Voxel Engine"),
-                            TextFont {
-                                font_size: FontSize::Px(11.0),
-                                ..default()
-                            },
-                            TextColor(Color::srgb(0.42, 0.65, 0.96)),
-                        ));
-                    });
+                            col.spawn((
+                                TargetHudSubtitle,
+                                Text::new("Voxel Engine"),
+                                TextFont {
+                                    font_size: FontSize::Px(11.0),
+                                    ..default()
+                                },
+                                TextColor(Color::srgb(0.42, 0.65, 0.96)),
+                            ));
+                        });
                 });
         });
 }
@@ -255,10 +249,7 @@ mod tests {
             format_target_hud_title(Voxel::Cobblestone, Some(BlockShape::Stair)),
             "Cobblestone (Stairs)"
         );
-        assert_eq!(
-            format_target_hud_title(Voxel::Water, None),
-            "Water"
-        );
+        assert_eq!(format_target_hud_title(Voxel::Water, None), "Water");
         assert_eq!(
             format_target_hud_title(Voxel::Ochrestone, Some(BlockShape::Full)),
             "Ochrestone"

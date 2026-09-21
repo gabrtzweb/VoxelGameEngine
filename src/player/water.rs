@@ -94,7 +94,7 @@ pub(crate) fn is_point_in_water(world: &VoxelWorld, position: Vec3) -> bool {
         .get_voxel(above_coordinate)
         .is_some_and(Voxel::is_water)
     {
-        let surface_y = coordinate.y as f32 * VOXEL_SIZE + 0.40;
+        let surface_y = coordinate.y as f32 * VOXEL_SIZE + 0.90;
         if position.y >= surface_y {
             return false;
         }

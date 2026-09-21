@@ -137,11 +137,11 @@ fn run_fluid_simulation(
         };
         queue.in_queue.remove(&pos);
 
-        if let Some((player_chunk, sim_dist)) = player_sim_ctx {
-            if !is_in_simulation_radius(pos, player_chunk, sim_dist) {
-                // Beyond decoupled simulation radius: drop non-visible dynamic fluid tick
-                continue;
-            }
+        if let Some((player_chunk, sim_dist)) = player_sim_ctx
+            && !is_in_simulation_radius(pos, player_chunk, sim_dist)
+        {
+            // Beyond decoupled simulation radius: drop non-visible dynamic fluid tick
+            continue;
         }
 
         let Some(current_voxel) = world.get_voxel(pos) else {
@@ -581,31 +581,15 @@ pub fn water_surface_height_offset(world: &impl VoxelAccess, world_voxel: IVec3)
     }
 
     if voxel == Voxel::Water {
-        let is_full = is_full_block_source(world, world_voxel);
-        return if is_full { 0.10 } else { 0.05 };
+        return 0.10;
     }
 
     let Some(info) = compute_water_info(world, world_voxel) else {
-        return 0.40;
+        return 0.50;
     };
 
-    let below = world_voxel - IVec3::Y;
-    let is_top_layer = world.get_voxel(below).is_some_and(Voxel::is_water);
-
-    if info.is_full_block {
-        let total_height = (0.90 - info.distance as f32 * 0.10).clamp(0.10, 0.90);
-        if is_top_layer {
-            let voxel_height = (total_height - 0.50).max(0.10);
-            (VOXEL_SIZE - voxel_height).clamp(0.0, 0.40)
-        } else {
-            let voxel_height = total_height.min(VOXEL_SIZE);
-            (VOXEL_SIZE - voxel_height).clamp(0.0, 0.40)
-        }
-    } else {
-        let total_height = (0.50 - info.distance as f32 * 0.10).clamp(0.10, 0.50);
-        let voxel_height = total_height.min(VOXEL_SIZE);
-        (VOXEL_SIZE - voxel_height).clamp(0.0, 0.40)
-    }
+    let total_offset = 0.10 + (info.distance as f32) * 0.10;
+    total_offset.clamp(0.10, 0.85)
 }
 
 #[cfg(test)]
@@ -696,11 +680,11 @@ mod tests {
             world.set_voxel(IVec3::new(x, 1, 1), Voxel::WaterFlowing);
         }
 
-        assert!((water_surface_height_offset(&world, IVec3::new(1, 1, 1)) - 0.05).abs() < 1e-4);
-        assert!((water_surface_height_offset(&world, IVec3::new(2, 1, 1)) - 0.10).abs() < 1e-4);
-        assert!((water_surface_height_offset(&world, IVec3::new(3, 1, 1)) - 0.20).abs() < 1e-4);
-        assert!((water_surface_height_offset(&world, IVec3::new(4, 1, 1)) - 0.30).abs() < 1e-4);
-        assert!((water_surface_height_offset(&world, IVec3::new(5, 1, 1)) - 0.40).abs() < 1e-4);
+        assert!((water_surface_height_offset(&world, IVec3::new(1, 1, 1)) - 0.10).abs() < 1e-4);
+        assert!((water_surface_height_offset(&world, IVec3::new(2, 1, 1)) - 0.20).abs() < 1e-4);
+        assert!((water_surface_height_offset(&world, IVec3::new(3, 1, 1)) - 0.30).abs() < 1e-4);
+        assert!((water_surface_height_offset(&world, IVec3::new(4, 1, 1)) - 0.40).abs() < 1e-4);
+        assert!((water_surface_height_offset(&world, IVec3::new(5, 1, 1)) - 0.50).abs() < 1e-4);
     }
 
     #[test]

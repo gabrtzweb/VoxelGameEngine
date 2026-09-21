@@ -166,44 +166,43 @@ pub fn sample_tree_candidate(
     let type_roll = (h >> 16) % 100;
     let (trunk_type, height) = match species {
         TreeSpecies::Cactus => {
-            // Desert Cacti: 2 to 4 blocks tall (4 to 8 voxels tall)
-            let height = 4 + ((h >> 20) % 5) as i32; // 4..=8 (2.0m - 4.0m)
+            // Desert Cacti: 2 to 4 blocks tall (2.0m - 4.0m)
+            let height = 2 + ((h >> 20) % 3) as i32; // 2..=4
             (TrunkType::Normal, height)
         }
         TreeSpecies::Oak => {
             // Small oaks are rarer (Thin ~15%), Normal ~60%, Large ~25%
-            // Heights significantly increased so oaks are tall, grand, and majestic
             if type_roll < 15 {
-                let height = 10 + ((h >> 20) % 5) as i32; // 10..=14 (5.0m - 7.0m)
+                let height = 5 + ((h >> 20) % 3) as i32; // 5..=7 (5.0m - 7.0m)
                 (TrunkType::Thin, height)
             } else if type_roll < 75 {
-                let height = 14 + ((h >> 20) % 9) as i32; // 14..=22 (7.0m - 11.0m)
+                let height = 7 + ((h >> 20) % 5) as i32; // 7..=11 (7.0m - 11.0m)
                 (TrunkType::Normal, height)
             } else {
-                let height = 22 + ((h >> 20) % 11) as i32; // 22..=32 (11.0m - 16.0m)
+                let height = 11 + ((h >> 20) % 6) as i32; // 11..=16 (11.0m - 16.0m)
                 (TrunkType::Large, height)
             }
         }
         TreeSpecies::Birch => {
             // No Large version. Thin ~45%, Normal ~55%. Tall, elegant birch trees.
             if type_roll < 45 {
-                let height = 14 + ((h >> 20) % 7) as i32; // 14..=20 (7.0m - 10.0m)
+                let height = 7 + ((h >> 20) % 4) as i32; // 7..=10 (7.0m - 10.0m)
                 (TrunkType::Thin, height)
             } else {
-                let height = 20 + ((h >> 20) % 9) as i32; // 20..=28 (10.0m - 14.0m)
+                let height = 10 + ((h >> 20) % 5) as i32; // 10..=14 (10.0m - 14.0m)
                 (TrunkType::Normal, height)
             }
         }
         TreeSpecies::Pine => {
             // Thin ~35%, Normal ~45%, Large ~20%
             if type_roll < 35 {
-                let height = 16 + ((h >> 20) % 7) as i32; // 16..=22 (8.0m - 11.0m)
+                let height = 8 + ((h >> 20) % 4) as i32; // 8..=11 (8.0m - 11.0m)
                 (TrunkType::Thin, height)
             } else if type_roll < 80 {
-                let height = 24 + ((h >> 20) % 9) as i32; // 24..=32 (12.0m - 16.0m)
+                let height = 12 + ((h >> 20) % 5) as i32; // 12..=16 (12.0m - 16.0m)
                 (TrunkType::Normal, height)
             } else {
-                let height = 32 + ((h >> 20) % 11) as i32; // 32..=42 (16.0m - 21.0m)
+                let height = 16 + ((h >> 20) % 6) as i32; // 16..=21 (16.0m - 21.0m)
                 (TrunkType::Large, height)
             }
         }
@@ -322,50 +321,36 @@ fn place_tree_trunk_in_chunk(chunk_origin: IVec3, tree: &TreeFeature, voxels: &m
     let wood = tree.species.wood_voxel();
 
     // Early vertical reject: if the tree doesn't reach or touch this chunk vertically (with leaf/root margin), skip
-    if (top_y + 8) < chunk_origin.y || (base_y - 4) > (chunk_origin.y + CHUNK_SIZE as i32 - 1) {
+    if (top_y + 4) < chunk_origin.y || (base_y - 2) > (chunk_origin.y + CHUNK_SIZE as i32 - 1) {
         return;
     }
 
     if tree.species == TreeSpecies::Cactus {
-        // Desert Cactus: Straight 2x2 column (1m x 1m block) of Voxel::Cactus
-        // Anchor 2 voxels into the ground with Sand so it seamlessly seats on dunes
-        for y in (base_y - 2)..base_y {
-            for dx in 0..2 {
-                for dz in 0..2 {
-                    set_chunk_voxel(chunk_origin, voxels, tx + dx, y, tz + dz, Voxel::Sand);
-                }
-            }
-        }
+        // Desert Cactus: Straight 1x1 column (1m x 1m block) of Voxel::Cactus
+        // Anchor 1 block into the ground with Sand so it seamlessly seats on dunes
+        set_chunk_voxel(chunk_origin, voxels, tx, base_y - 1, tz, Voxel::Sand);
         for y in base_y..=top_y {
-            for dx in 0..2 {
-                for dz in 0..2 {
-                    set_chunk_voxel(chunk_origin, voxels, tx + dx, y, tz + dz, Voxel::Cactus);
-                }
-            }
+            set_chunk_voxel(chunk_origin, voxels, tx, y, tz, Voxel::Cactus);
         }
 
-        // Procedural lateral arm for taller cacti (height >= 6)
-        if tree.height >= 6 && (tree.seed % 3 != 0) {
+        // Procedural lateral arm for taller cacti (height >= 3)
+        if tree.height >= 3 && !tree.seed.is_multiple_of(3) {
             let arm_dir = match (tree.seed >> 4) % 4 {
-                0 => (2, 0),  // +X
-                1 => (-2, 0), // -X
-                2 => (0, 2),  // +Z
-                _ => (0, -2), // -Z
+                0 => (1, 0),  // +X
+                1 => (-1, 0), // -X
+                2 => (0, 1),  // +Z
+                _ => (0, -1), // -Z
             };
-            let arm_y = base_y + 2;
-            if arm_y <= top_y - 1 {
-                for dx in 0..2 {
-                    for dz in 0..2 {
-                        let ax = tx + arm_dir.0 + dx;
-                        let az = tz + arm_dir.1 + dz;
-                        // Horizontal arm connector
-                        set_chunk_voxel(chunk_origin, voxels, ax, arm_y, az, Voxel::Cactus);
-                        // Vertical arm segment going up 2 blocks
-                        set_chunk_voxel(chunk_origin, voxels, ax, arm_y + 1, az, Voxel::Cactus);
-                        if arm_y + 2 <= top_y {
-                            set_chunk_voxel(chunk_origin, voxels, ax, arm_y + 2, az, Voxel::Cactus);
-                        }
-                    }
+            let arm_y = base_y + 1;
+            if arm_y < top_y {
+                let ax = tx + arm_dir.0;
+                let az = tz + arm_dir.1;
+                // Horizontal arm connector
+                set_chunk_voxel(chunk_origin, voxels, ax, arm_y, az, Voxel::Cactus);
+                // Vertical arm segment going up
+                set_chunk_voxel(chunk_origin, voxels, ax, arm_y + 1, az, Voxel::Cactus);
+                if arm_y + 2 <= top_y {
+                    set_chunk_voxel(chunk_origin, voxels, ax, arm_y + 2, az, Voxel::Cactus);
                 }
             }
         }
@@ -374,57 +359,40 @@ fn place_tree_trunk_in_chunk(chunk_origin: IVec3, tree: &TreeFeature, voxels: &m
 
     match tree.trunk_type {
         TrunkType::Thin => {
-            // Thin trunk: Centered column of log_voxel (1 voxel wide)
-            // Anchor roots 2 voxels into the ground with solid dirt to eliminate hovering on slopes
-            for y in (base_y - 2)..base_y {
-                set_chunk_voxel(chunk_origin, voxels, tx, y, tz, Voxel::Dirt);
-                set_chunk_voxel(chunk_origin, voxels, tx + 1, y, tz, Voxel::Dirt);
-                set_chunk_voxel(chunk_origin, voxels, tx, y, tz + 1, Voxel::Dirt);
-                set_chunk_voxel(chunk_origin, voxels, tx + 1, y, tz + 1, Voxel::Dirt);
-            }
+            // Thin trunk: Single column of log_voxel (1m x 1m block)
+            set_chunk_voxel(chunk_origin, voxels, tx, base_y - 1, tz, Voxel::Dirt);
             for y in base_y..=top_y {
                 set_chunk_voxel(chunk_origin, voxels, tx, y, tz, log);
-                set_chunk_voxel(chunk_origin, voxels, tx + 1, y, tz, Voxel::Occupied);
-                set_chunk_voxel(chunk_origin, voxels, tx, y, tz + 1, Voxel::Occupied);
-                set_chunk_voxel(chunk_origin, voxels, tx + 1, y, tz + 1, Voxel::Occupied);
             }
         }
         TrunkType::Normal => {
-            // Normal trunk: Full 2x2 voxel column of log_voxel
-            for y in (base_y - 2)..base_y {
-                for dx in 0..2 {
-                    for dz in 0..2 {
-                        set_chunk_voxel(chunk_origin, voxels, tx + dx, y, tz + dz, Voxel::Dirt);
-                    }
-                }
-            }
-            // For Pine, stop the 2x2 log core 2 voxels below top_y so the needle spire completely envelopes the apex
+            // Normal trunk: Single column of log_voxel (1m x 1m block)
+            set_chunk_voxel(chunk_origin, voxels, tx, base_y - 1, tz, Voxel::Dirt);
             let core_top_y = if tree.species == TreeSpecies::Pine {
-                (top_y - 2).max(base_y)
+                (top_y - 1).max(base_y)
             } else {
                 top_y
             };
             for y in base_y..=core_top_y {
-                for dx in 0..2 {
-                    for dz in 0..2 {
-                        set_chunk_voxel(chunk_origin, voxels, tx + dx, y, tz + dz, log);
-                    }
-                }
+                set_chunk_voxel(chunk_origin, voxels, tx, y, tz, log);
             }
         }
         TrunkType::Large => {
-            // Large trunk:
-            // 1. Central 2x2 core of log_voxel
-            for y in (base_y - 2)..base_y {
-                for dx in 0..2 {
-                    for dz in 0..2 {
-                        set_chunk_voxel(chunk_origin, voxels, tx + dx, y, tz + dz, Voxel::Dirt);
-                    }
+            // Large trunk: 2x2 core of log_voxel
+            for dx in 0..2 {
+                for dz in 0..2 {
+                    set_chunk_voxel(
+                        chunk_origin,
+                        voxels,
+                        tx + dx,
+                        base_y - 1,
+                        tz + dz,
+                        Voxel::Dirt,
+                    );
                 }
             }
-            // For Pine, stop the 2x2 log core 2 voxels below top_y so the needle spire completely envelopes the apex
             let core_top_y = if tree.species == TreeSpecies::Pine {
-                (top_y - 2).max(base_y)
+                (top_y - 1).max(base_y)
             } else {
                 top_y
             };
@@ -436,80 +404,16 @@ fn place_tree_trunk_in_chunk(chunk_origin: IVec3, tree: &TreeFeature, voxels: &m
                 }
             }
 
-            // 2. Cardinal Vertical Slabs made of wood_voxel (bark-only) attached to the 4 sides
-            // For Pine, vertical slabs taper off at 65% height so the upper canopy is fully enveloped in needles!
-            let slab_top_y = if tree.species == TreeSpecies::Pine {
-                base_y + (tree.height * 65 / 100)
-            } else {
-                top_y
-            };
-            for y in base_y..=slab_top_y {
-                // +X wing (x = tx + 2, z in [tz, tz + 1])
-                set_chunk_voxel(chunk_origin, voxels, tx + 2, y, tz, wood);
-                set_chunk_voxel(chunk_origin, voxels, tx + 2, y, tz + 1, wood);
-
-                // -X wing (x = tx - 1, z in [tz, tz + 1])
-                set_chunk_voxel(chunk_origin, voxels, tx - 1, y, tz, wood);
-                set_chunk_voxel(chunk_origin, voxels, tx - 1, y, tz + 1, wood);
-
-                // +Z wing (z = tz + 2, x in [tx, tx + 1])
-                set_chunk_voxel(chunk_origin, voxels, tx, y, tz + 2, wood);
-                set_chunk_voxel(chunk_origin, voxels, tx + 1, y, tz + 2, wood);
-
-                // -Z wing (z = tz - 1, x in [tx, tx + 1])
-                set_chunk_voxel(chunk_origin, voxels, tx, y, tz - 1, wood);
-                set_chunk_voxel(chunk_origin, voxels, tx + 1, y, tz - 1, wood);
-            }
-
-            // Anchor under vertical slabs so they don't float if on a small slope
-            for dx in [-1, 2] {
-                for dz in 0..2 {
-                    set_chunk_voxel(chunk_origin, voxels, tx + dx, base_y - 1, tz + dz, Voxel::Dirt);
-                }
-            }
-            for dz in [-1, 2] {
-                for dx in 0..2 {
-                    set_chunk_voxel(chunk_origin, voxels, tx + dx, base_y - 1, tz + dz, Voxel::Dirt);
-                }
-            }
-
-            // 3. Flared Root Base: low root steps extending outward at ground level (base_y)
+            // Flared root base at ground level
             let root_y = base_y;
-
-            // +X root flare (x = tx + 3)
-            set_chunk_voxel(chunk_origin, voxels, tx + 3, root_y, tz, wood);
-            set_chunk_voxel(chunk_origin, voxels, tx + 3, root_y, tz + 1, wood);
-            set_chunk_voxel(chunk_origin, voxels, tx + 3, root_y - 1, tz, Voxel::Dirt);
-            set_chunk_voxel(chunk_origin, voxels, tx + 3, root_y - 1, tz + 1, Voxel::Dirt);
-
-            // -X root flare (x = tx - 2)
-            set_chunk_voxel(chunk_origin, voxels, tx - 2, root_y, tz, wood);
-            set_chunk_voxel(chunk_origin, voxels, tx - 2, root_y, tz + 1, wood);
-            set_chunk_voxel(chunk_origin, voxels, tx - 2, root_y - 1, tz, Voxel::Dirt);
-            set_chunk_voxel(chunk_origin, voxels, tx - 2, root_y - 1, tz + 1, Voxel::Dirt);
-
-            // +Z root flare (z = tz + 3)
-            set_chunk_voxel(chunk_origin, voxels, tx, root_y, tz + 3, wood);
-            set_chunk_voxel(chunk_origin, voxels, tx + 1, root_y, tz + 3, wood);
-            set_chunk_voxel(chunk_origin, voxels, tx + 1, root_y - 1, tz + 3, Voxel::Dirt);
-            set_chunk_voxel(chunk_origin, voxels, tx, root_y - 1, tz + 3, Voxel::Dirt);
-
-            // -Z root flare (z = tz - 2)
-            set_chunk_voxel(chunk_origin, voxels, tx, root_y, tz - 2, wood);
-            set_chunk_voxel(chunk_origin, voxels, tx + 1, root_y, tz - 2, wood);
-            set_chunk_voxel(chunk_origin, voxels, tx + 1, root_y - 1, tz - 2, Voxel::Dirt);
-            set_chunk_voxel(chunk_origin, voxels, tx, root_y - 1, tz - 2, Voxel::Dirt);
-
-            // Diagonal corner root steps at base_y
-            set_chunk_voxel(chunk_origin, voxels, tx - 1, root_y, tz - 1, wood);
-            set_chunk_voxel(chunk_origin, voxels, tx + 2, root_y, tz - 1, wood);
-            set_chunk_voxel(chunk_origin, voxels, tx - 1, root_y, tz + 2, wood);
-            set_chunk_voxel(chunk_origin, voxels, tx + 2, root_y, tz + 2, wood);
-
-            set_chunk_voxel(chunk_origin, voxels, tx - 1, root_y - 1, tz - 1, Voxel::Dirt);
-            set_chunk_voxel(chunk_origin, voxels, tx + 2, root_y - 1, tz - 1, Voxel::Dirt);
-            set_chunk_voxel(chunk_origin, voxels, tx - 1, root_y - 1, tz + 2, Voxel::Dirt);
-            set_chunk_voxel(chunk_origin, voxels, tx + 2, root_y - 1, tz + 2, Voxel::Dirt);
+            set_chunk_voxel(chunk_origin, voxels, tx + 2, root_y, tz, wood);
+            set_chunk_voxel(chunk_origin, voxels, tx - 1, root_y, tz, wood);
+            set_chunk_voxel(chunk_origin, voxels, tx, root_y, tz + 2, wood);
+            set_chunk_voxel(chunk_origin, voxels, tx, root_y, tz - 1, wood);
+            set_chunk_voxel(chunk_origin, voxels, tx + 2, root_y - 1, tz, Voxel::Dirt);
+            set_chunk_voxel(chunk_origin, voxels, tx - 1, root_y - 1, tz, Voxel::Dirt);
+            set_chunk_voxel(chunk_origin, voxels, tx, root_y - 1, tz + 2, Voxel::Dirt);
+            set_chunk_voxel(chunk_origin, voxels, tx, root_y - 1, tz - 1, Voxel::Dirt);
         }
     }
 
@@ -548,28 +452,25 @@ fn place_tree_branches(chunk_origin: IVec3, tree: &TreeFeature, voxels: &mut [Vo
     match tree.species {
         TreeSpecies::Cactus => {}
         TreeSpecies::Pine => {
-            // Pine: Branches are short stubs strictly on lower 55% of tree,
-            // completely concealed within the wide needle skirts (never sticking out!).
-            let start_y = base_y + (height * 25 / 100).max(3);
+            let start_y = base_y + (height * 25 / 100).max(2);
             let branch_max_y = base_y + (height * 55 / 100);
             let tier_step = 2;
             let mut y = start_y;
             while y < branch_max_y {
                 let offset = (next_rand() % 4) as usize;
-                let branch_count = 2 + ((next_rand() % 2) as usize); // 2..3
+                let branch_count = 1 + ((next_rand() % 2) as usize);
 
                 for b in 0..branch_count {
                     let (dx, dz) = dirs[(offset + b * 3) % 8];
                     let (start_x, start_z) = match tree.trunk_type {
-                        TrunkType::Thin => (tx, tz),
-                        _ => {
+                        TrunkType::Large => {
                             let ox = if dx > 0 { tx + 1 } else { tx };
                             let oz = if dz > 0 { tz + 1 } else { tz };
                             (ox, oz)
                         }
+                        _ => (tx, tz),
                     };
 
-                    // Only 1 voxel reach: strictly stays inside the needle skirt!
                     set_branch_voxel(chunk_origin, voxels, start_x + dx, y, start_z + dz, wood);
                 }
 
@@ -577,36 +478,24 @@ fn place_tree_branches(chunk_origin: IVec3, tree: &TreeFeature, voxels: &mut [Vo
             }
         }
         TreeSpecies::Birch => {
-            // Birch: Slender ascending limbs in upper 45%
-            let start_y = base_y + (height * 50 / 100).max(5);
-            let branch_count = 2 + ((next_rand() % 3) as usize);
+            let start_y = base_y + (height * 50 / 100).max(3);
+            let branch_count = 1 + ((next_rand() % 2) as usize);
             let start_dir_idx = (next_rand() % 8) as usize;
 
             for b in 0..branch_count {
                 let (dx, dz) = dirs[(start_dir_idx + b * 3) % 8];
                 let by = start_y + ((next_rand() % ((top_y - start_y).max(1) as u32)) as i32);
-                let (start_x, start_z) = match tree.trunk_type {
-                    TrunkType::Thin => (tx, tz),
-                    _ => {
-                        let ox = if dx > 0 { tx + 1 } else { tx };
-                        let oz = if dz > 0 { tz + 1 } else { tz };
-                        (ox, oz)
-                    }
-                };
+                let (start_x, start_z) = (tx, tz);
 
-                // Step 1: outward
                 set_branch_voxel(chunk_origin, voxels, start_x + dx, by, start_z + dz, wood);
-                // Step 2: outward and upward
-                set_branch_voxel(chunk_origin, voxels, start_x + dx * 2, by + 1, start_z + dz * 2, wood);
             }
         }
         TreeSpecies::Oak => {
-            // Oak: Sprawling gnarled lateral and diagonal boughs in upper 60%
-            let start_y = base_y + (height * 35 / 100).max(4);
+            let start_y = base_y + (height * 35 / 100).max(3);
             let branch_count = match tree.trunk_type {
-                TrunkType::Thin => 3 + ((next_rand() % 2) as usize), // 3..4
-                TrunkType::Normal => 4 + ((next_rand() % 3) as usize), // 4..6
-                TrunkType::Large => 5 + ((next_rand() % 3) as usize), // 5..7
+                TrunkType::Thin => 2 + ((next_rand() % 2) as usize),
+                TrunkType::Normal => 3 + ((next_rand() % 2) as usize),
+                TrunkType::Large => 4 + ((next_rand() % 3) as usize),
             };
             let start_dir_idx = (next_rand() % 8) as usize;
 
@@ -614,29 +503,28 @@ fn place_tree_branches(chunk_origin: IVec3, tree: &TreeFeature, voxels: &mut [Vo
                 let (dx, dz) = dirs[(start_dir_idx + b * 2) % 8];
                 let by = start_y + ((next_rand() % ((top_y - start_y).max(1) as u32)) as i32);
                 let (start_x, start_z) = match tree.trunk_type {
-                    TrunkType::Thin => (tx, tz),
-                    TrunkType::Normal => {
-                        let ox = if dx > 0 { tx + 1 } else if dx < 0 { tx } else { tx + (next_rand() % 2) as i32 };
-                        let oz = if dz > 0 { tz + 1 } else if dz < 0 { tz } else { tz + (next_rand() % 2) as i32 };
-                        (ox, oz)
-                    }
                     TrunkType::Large => {
-                        let ox = if dx > 0 { tx + 2 } else if dx < 0 { tx - 1 } else { tx + (next_rand() % 2) as i32 };
-                        let oz = if dz > 0 { tz + 2 } else if dz < 0 { tz - 1 } else { tz + (next_rand() % 2) as i32 };
+                        let ox = if dx > 0 { tx + 1 } else { tx };
+                        let oz = if dz > 0 { tz + 1 } else { tz };
                         (ox, oz)
                     }
+                    _ => (tx, tz),
                 };
 
                 let reach = match tree.trunk_type {
-                    TrunkType::Thin => 2 + (next_rand() % 2) as i32, // 2..3
-                    TrunkType::Normal => 3 + (next_rand() % 2) as i32, // 3..4
-                    TrunkType::Large => 4 + (next_rand() % 3) as i32, // 4..6
+                    TrunkType::Thin => 1,
+                    TrunkType::Normal => 1 + (next_rand() % 2) as i32,
+                    TrunkType::Large => 2 + (next_rand() % 2) as i32,
                 };
 
                 for step in 1..=reach {
                     let bx = start_x + dx * step;
                     let bz = start_z + dz * step;
-                    let py = if step >= (reach - 1) && (next_rand() % 2 == 0) { by + 1 } else { by };
+                    let py = if step >= reach && (next_rand() % 2 == 0) {
+                        by + 1
+                    } else {
+                        by
+                    };
                     set_branch_voxel(chunk_origin, voxels, bx, py, bz, wood);
                 }
             }
@@ -729,8 +617,8 @@ fn place_tree_leaves(chunk_origin: IVec3, tree: &TreeFeature, voxels: &mut [Voxe
     let leaves = tree.species.leaves_voxel();
 
     let (center_x, center_z) = match tree.trunk_type {
-        TrunkType::Thin => (tx as f32 + 0.5, tz as f32 + 0.5),
-        TrunkType::Normal | TrunkType::Large => (tx as f32 + 1.0, tz as f32 + 1.0),
+        TrunkType::Large => (tx as f32 + 1.0, tz as f32 + 1.0),
+        _ => (tx as f32 + 0.5, tz as f32 + 0.5),
     };
 
     let mut rng = (tree.seed ^ 0x5A5A_A5A5).wrapping_mul(0x9E37_79B9);
@@ -753,53 +641,54 @@ fn place_tree_leaves(chunk_origin: IVec3, tree: &TreeFeature, voxels: &mut [Voxe
     match tree.species {
         TreeSpecies::Cactus => {}
         TreeSpecies::Pine => {
-            // Pine: Conical needle skirts starting low (~25% height) and tapering up to a sharp spire
-            let start_y = base_y + (height * 25 / 100).max(3);
+            let start_y = base_y + (height * 25 / 100).max(2);
             let (max_r, min_top_r): (f32, f32) = match tree.trunk_type {
-                TrunkType::Thin => (3.2, 1.6),
-                TrunkType::Normal => (4.4, 2.0),
-                TrunkType::Large => (5.6, 2.4),
+                TrunkType::Thin => (1.8, 0.9),
+                TrunkType::Normal => (2.4, 1.1),
+                TrunkType::Large => (3.2, 1.3),
             };
 
-            let foliage_span = (top_y - start_y).max(4);
+            let foliage_span = (top_y - start_y).max(3);
             let mut y = start_y;
             while y <= top_y {
                 let progress = (y - start_y) as f32 / foliage_span as f32;
                 let tier_r = (1.0 - progress) * (max_r - min_top_r) + min_top_r;
 
-                // Conical skirt with smooth Euclidean circular layers
-                place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, y - 1, tier_r, leaves);
-                place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, y, tier_r * 0.85, leaves);
-                place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, y + 1, tier_r * 0.65, leaves);
+                place_leaf_layer_circle(
+                    chunk_origin,
+                    voxels,
+                    center_x,
+                    center_z,
+                    y,
+                    tier_r,
+                    leaves,
+                );
 
-                y += 2;
+                y += 1;
             }
 
-            // Needle spire at summit completely capping the upper trunk
-            place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, top_y + 1, (min_top_r * 0.85).max(1.4), leaves);
-            place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, top_y + 2, (min_top_r * 0.65).max(1.1), leaves);
-            place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, top_y + 3, (min_top_r * 0.45).max(0.85), leaves);
-            match tree.trunk_type {
-                TrunkType::Thin => {
-                    set_leaf_voxel(chunk_origin, voxels, tx, top_y + 4, tz, leaves);
-                }
-                _ => {
-                    place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, top_y + 4, 0.85, leaves);
-                }
-            }
+            place_leaf_layer_circle(
+                chunk_origin,
+                voxels,
+                center_x,
+                center_z,
+                top_y + 1,
+                min_top_r * 0.8,
+                leaves,
+            );
+            set_leaf_voxel(chunk_origin, voxels, tx, top_y + 2, tz, leaves);
         }
 
         TreeSpecies::Birch => {
-            // Birch: Continuous organic oval/flame canopy following a sinusoidal curve (no blocky steps!)
-            let start_y = base_y + (height * 40 / 100).max(4);
+            let start_y = base_y + (height * 40 / 100).max(3);
             let max_r: f32 = match tree.trunk_type {
-                TrunkType::Thin => 2.7,
-                _ => 3.7,
+                TrunkType::Thin => 1.5,
+                _ => 2.0,
             };
-            let canopy_len = ((top_y + 4) - start_y).max(4);
+            let canopy_len = ((top_y + 2) - start_y).max(3);
 
-            for ly in start_y..=(top_y + 4) {
-                let t = (ly - start_y) as f32 / canopy_len as f32; // 0.0 to 1.0
+            for ly in start_y..=(top_y + 2) {
+                let t = (ly - start_y) as f32 / canopy_len as f32;
                 let curve = (std::f32::consts::PI * t).sin().powf(0.55);
                 let r = max_r * curve;
                 place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, ly, r, leaves);
@@ -807,54 +696,52 @@ fn place_tree_leaves(chunk_origin: IVec3, tree: &TreeFeature, voxels: &mut [Voxe
         }
 
         TreeSpecies::Oak => {
-            // Oak: Magnificent billowing organic canopy formed by multiple overlapping 3D spherical
-            // leaf clouds along each sprawling branch bough, plus a rounded central crown dome
-            let start_y = base_y + (height * 35 / 100).max(4);
+            let start_y = base_y + (height * 35 / 100).max(3);
             let branch_count = match tree.trunk_type {
-                TrunkType::Thin => 3 + ((next_rand() % 2) as usize), // 3..4
-                TrunkType::Normal => 4 + ((next_rand() % 3) as usize), // 4..6
-                TrunkType::Large => 5 + ((next_rand() % 3) as usize), // 5..7
+                TrunkType::Thin => 2 + ((next_rand() % 2) as usize),
+                TrunkType::Normal => 3 + ((next_rand() % 2) as usize),
+                TrunkType::Large => 4 + ((next_rand() % 3) as usize),
             };
             let start_dir_idx = (next_rand() % 8) as usize;
 
-            // 1. Billowing 3D leaf spheres along each branch bough and tip
             for b in 0..branch_count {
                 let (dx, dz) = dirs[(start_dir_idx + b * 2) % 8];
                 let by = start_y + ((next_rand() % ((top_y - start_y).max(1) as u32)) as i32);
                 let reach = match tree.trunk_type {
-                    TrunkType::Thin => 2 + (next_rand() % 2) as i32, // 2..3
-                    TrunkType::Normal => 3 + (next_rand() % 2) as i32, // 3..4
-                    TrunkType::Large => 4 + (next_rand() % 3) as i32, // 4..6
+                    TrunkType::Thin => 1,
+                    TrunkType::Normal => 1 + (next_rand() % 2) as i32,
+                    TrunkType::Large => 2 + (next_rand() % 2) as i32,
                 };
 
                 let tip_x = center_x + (dx * reach) as f32;
                 let tip_z = center_z + (dz * reach) as f32;
                 let tip_y = (by + (if next_rand() % 2 == 0 { 1 } else { 0 })) as f32 + 0.5;
 
-                // Spherical leaf cloud around branch tip
                 let tip_radius: f32 = match tree.trunk_type {
-                    TrunkType::Thin => 2.5,
-                    TrunkType::Normal => 3.0,
-                    TrunkType::Large => 3.5,
+                    TrunkType::Thin => 1.4,
+                    TrunkType::Normal => 1.8,
+                    TrunkType::Large => 2.2,
                 };
-                place_leaf_sphere(chunk_origin, voxels, tip_x, tip_y, tip_z, tip_radius, leaves);
-
-                // Mid-bough leaf cloud
-                let mid_x = (center_x + tip_x) * 0.5;
-                let mid_z = (center_z + tip_z) * 0.5;
-                place_leaf_sphere(chunk_origin, voxels, mid_x, by as f32 + 0.5, mid_z, tip_radius * 0.85, leaves);
+                place_leaf_sphere(
+                    chunk_origin,
+                    voxels,
+                    tip_x,
+                    tip_y,
+                    tip_z,
+                    tip_radius,
+                    leaves,
+                );
             }
 
-            // 2. Rounded central crown dome capping the upper trunk
             let crown_max_r: f32 = match tree.trunk_type {
-                TrunkType::Thin => 3.4,
-                TrunkType::Normal => 4.6,
-                TrunkType::Large => 5.8,
+                TrunkType::Thin => 1.8,
+                TrunkType::Normal => 2.4,
+                TrunkType::Large => 3.2,
             };
 
-            for ly in (top_y - 2)..=(top_y + 4) {
+            for ly in (top_y - 1)..=(top_y + 2) {
                 let dy = (ly - top_y) as f32;
-                let r = crown_max_r * (1.0 - (dy / 5.5).powi(2)).max(0.0).sqrt();
+                let r = crown_max_r * (1.0 - (dy / 3.0).powi(2)).max(0.0).sqrt();
                 place_leaf_layer_circle(chunk_origin, voxels, center_x, center_z, ly, r, leaves);
             }
         }
@@ -871,11 +758,15 @@ mod tests {
         for cz in -10..10 {
             for cx in -10..10 {
                 if let Some(tree) = sample_tree_candidate(cx, cz, &generator) {
-                    // Player is 1.8m (3.6 sub-voxels). Cacti are >= 4 voxels (2.0m), trees are >= 10 voxels (5.0m).
-                    let min_h = if tree.species == TreeSpecies::Cactus { 4 } else { 10 };
+                    // Player is 1.8m. Cacti are >= 2 blocks (2.0m), trees are >= 5 blocks (5.0m).
+                    let min_h = if tree.species == TreeSpecies::Cactus {
+                        2
+                    } else {
+                        5
+                    };
                     assert!(
                         tree.height >= min_h,
-                        "Tree/cactus height {} must be >= {} voxels, taller than player (1.8m)",
+                        "Tree/cactus height {} must be >= {} blocks, taller than player (1.8m)",
                         tree.height,
                         min_h
                     );
@@ -911,12 +802,16 @@ mod tests {
                 let h = hash_tree_cell(cx, cz, 42);
                 let type_roll = (h >> 16) % 100;
                 let (trunk_type, height) = if type_roll < 45 {
-                    (TrunkType::Thin, 14 + ((h >> 20) % 7) as i32)
+                    (TrunkType::Thin, 7 + ((h >> 20) % 4) as i32)
                 } else {
-                    (TrunkType::Normal, 20 + ((h >> 20) % 9) as i32)
+                    (TrunkType::Normal, 10 + ((h >> 20) % 5) as i32)
                 };
-                assert_ne!(trunk_type, TrunkType::Large, "Birch must never generate Large trunk");
-                assert!(height >= 14, "Birch height must be >= 14");
+                assert_ne!(
+                    trunk_type,
+                    TrunkType::Large,
+                    "Birch must never generate Large trunk"
+                );
+                assert!(height >= 7, "Birch height must be >= 7");
                 found_birch += 1;
             }
         }
@@ -982,14 +877,13 @@ mod tests {
             world_x: 4,
             base_y: 2,
             world_z: 4,
-            height: 10,
+            height: 7,
             seed: 12345,
         };
         let mut voxels_birch = vec![Voxel::Air; CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
         place_tree_trunk_in_chunk(IVec3::ZERO, &birch_thin, &mut voxels_birch);
         let idx = |x: usize, y: usize, z: usize| x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
         assert_eq!(voxels_birch[idx(4, 2, 4)], Voxel::BirchWoodLog);
-        assert_eq!(voxels_birch[idx(5, 2, 4)], Voxel::Occupied);
 
         // Test Pine Large
         let pine_large = TreeFeature {
@@ -998,7 +892,7 @@ mod tests {
             world_x: 8,
             base_y: 2,
             world_z: 8,
-            height: 18,
+            height: 12,
             seed: 67890,
         };
         let mut voxels_pine = vec![Voxel::Air; CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
@@ -1006,9 +900,9 @@ mod tests {
         // Center is PineWoodLog
         assert_eq!(voxels_pine[idx(8, 5, 8)], Voxel::PineWoodLog);
         assert_eq!(voxels_pine[idx(9, 5, 9)], Voxel::PineWoodLog);
-        // Cardinal slabs are PineWood (bark-only)
-        assert_eq!(voxels_pine[idx(10, 5, 8)], Voxel::PineWood);
-        assert_eq!(voxels_pine[idx(7, 5, 8)], Voxel::PineWood);
+        // Cardinal root flare is PineWood (bark-only) at base_y = 2
+        assert_eq!(voxels_pine[idx(10, 2, 8)], Voxel::PineWood);
+        assert_eq!(voxels_pine[idx(7, 2, 8)], Voxel::PineWood);
     }
 
     #[test]
@@ -1019,7 +913,7 @@ mod tests {
             world_x: 8,
             base_y: 2,
             world_z: 8,
-            height: 10,
+            height: 7,
             seed: 7777,
         };
         let mut voxels = vec![Voxel::Air; CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
@@ -1028,13 +922,12 @@ mod tests {
         let idx = |x: usize, y: usize, z: usize| x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
         // Central trunk at y=5 must be OakWoodLog, NOT OakLeaves
         assert_eq!(voxels[idx(8, 5, 8)], Voxel::OakWoodLog);
-        assert_eq!(voxels[idx(9, 5, 8)], Voxel::OakWoodLog);
 
         // Surrounding voxels should contain OakLeaves
         let mut leaf_found = false;
-        for y in 6..=13 {
-            for x in 6..=11 {
-                for z in 6..=11 {
+        for y in 4..=10 {
+            for x in 6..=10 {
+                for z in 6..=10 {
                     if voxels[idx(x, y, z)] == Voxel::OakLeaves {
                         leaf_found = true;
                         break;
@@ -1042,7 +935,10 @@ mod tests {
                 }
             }
         }
-        assert!(leaf_found, "Canopy should have placed OakLeaves around the crown");
+        assert!(
+            leaf_found,
+            "Canopy should have placed OakLeaves around the crown"
+        );
     }
 
     #[test]
@@ -1083,7 +979,7 @@ mod tests {
             world_x: 4,
             base_y: 2,
             world_z: 4,
-            height: 6,
+            height: 3,
             seed: 42,
         };
 
@@ -1092,16 +988,12 @@ mod tests {
 
         let idx = |x: usize, y: usize, z: usize| x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
 
-        // Sand roots under cactus (base_y - 1 = 1)
+        // Sand root under cactus (base_y - 1 = 1)
         assert_eq!(voxels[idx(4, 1, 4)], Voxel::Sand);
-        assert_eq!(voxels[idx(5, 1, 5)], Voxel::Sand);
 
-        // Cactus body from base_y (2) to base_y + 5 (7)
-        for y in 2..=7 {
+        // Cactus body from base_y (2) to base_y + 2 (4)
+        for y in 2..=4 {
             assert_eq!(voxels[idx(4, y, 4)], Voxel::Cactus);
-            assert_eq!(voxels[idx(5, y, 4)], Voxel::Cactus);
-            assert_eq!(voxels[idx(4, y, 5)], Voxel::Cactus);
-            assert_eq!(voxels[idx(5, y, 5)], Voxel::Cactus);
         }
 
         // Must never place leaf voxels
@@ -1120,27 +1012,30 @@ mod tests {
             world_x: 6,
             base_y: 2,
             world_z: 6,
-            height: 20,
+            height: 12,
             seed: 5555,
         };
 
         let mut voxels = vec![Voxel::Air; CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
-        // Height 20: base_y = 2, top_y = 21. Needs chunk spanning up to y=26.
-        // Chunk origin (0, 16, 0) covers y from 16 to 31
-        place_tree_trunk_in_chunk(IVec3::new(0, 16, 0), &pine, &mut voxels);
+        // Height 12: base_y = 2, top_y = 13.
+        // Chunk origin (0, 0, 0) covers y from 0 to 15
+        place_tree_trunk_in_chunk(IVec3::ZERO, &pine, &mut voxels);
 
         let idx = |x: usize, y: usize, z: usize| x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
 
-        // top_y is 21 (local y = 5). Foliage should be present above top_y at top_y + 1 (local y = 6)
+        // top_y is 13. Foliage should be present above top_y at top_y + 1 (y = 14)
         let mut summit_foliage_found = false;
-        for x in 4..=10 {
-            for z in 4..=10 {
-                if voxels[idx(x, 6, z)] == Voxel::PineLeaves {
+        for x in 4..=8 {
+            for z in 4..=8 {
+                if voxels[idx(x, 14, z)] == Voxel::PineLeaves {
                     summit_foliage_found = true;
                     break;
                 }
             }
         }
-        assert!(summit_foliage_found, "Large pine summit must have pine leaves at top_y + 1");
+        assert!(
+            summit_foliage_found,
+            "Large pine summit must have pine leaves at top_y + 1"
+        );
     }
 }

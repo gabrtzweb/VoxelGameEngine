@@ -6,7 +6,7 @@ use bevy::{
 
 use crate::{
     environment::EnvironmentState,
-    gameplay::{CurrentTarget, InteractionMode},
+    gameplay::CurrentTarget,
     generation::TerrainGenerator,
     meshing::ChunkMeshRegistry,
     player::{GameMode, Player, PlayerMotion},
@@ -134,7 +134,6 @@ fn update_dev_stats(
     world: Res<VoxelWorld>,
     chunk_meshes: Res<ChunkMeshRegistry>,
     game_mode: Res<GameMode>,
-    interaction_mode: Res<InteractionMode>,
     environment: Option<Res<EnvironmentState>>,
     player: Single<(&Transform, &PlayerMotion), With<Player>>,
     camera: Single<&Transform, (With<Camera3d>, Without<Player>)>,
@@ -223,12 +222,8 @@ fn update_dev_stats(
                 Time: {h:02}:{m:02} | Day {day_of_month} (M{month}, {season_str})\n\
                 Biome: {biome_name}\n\
                 Pos: {:.1} / {:.1} / {:.1}\n\
-                Edit Mode: {}\n\
                 Target: {target_text}",
-                player_position.x,
-                player_position.y,
-                player_position.z,
-                interaction_mode.label(),
+                player_position.x, player_position.y, player_position.z,
             );
         }
         DebugHudMode::Extended => {
@@ -317,8 +312,7 @@ fn update_dev_stats(
                 Mesh vertices: {}\n\
                 Mesh triangles: {}\n\
                 Voxel capacity: {}\n\
-                Target voxel: {}\n\
-                Edit Mode: {} [F3: Minimal | Shift+F3: Hide]",
+                Target voxel: {} [F3: Minimal | Shift+F3: Hide]",
                 game_mode.label(),
                 flight_text,
                 player_block.x,
@@ -336,7 +330,6 @@ fn update_dev_stats(
                 mesh_triangles,
                 loaded_chunks * CHUNK_VOLUME,
                 target_text,
-                interaction_mode.label(),
             );
         }
         DebugHudMode::Hidden => {}

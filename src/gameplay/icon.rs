@@ -68,9 +68,15 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
                         let base_g = raw_side[idx + 1] as f32;
                         let base_b = raw_side[idx + 2] as f32;
 
-                        raw_side[idx] = (base_r * (1.0 - ov_a) + ov_r * ov_a).round().clamp(0.0, 255.0) as u8;
-                        raw_side[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a).round().clamp(0.0, 255.0) as u8;
-                        raw_side[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a).round().clamp(0.0, 255.0) as u8;
+                        raw_side[idx] = (base_r * (1.0 - ov_a) + ov_r * ov_a)
+                            .round()
+                            .clamp(0.0, 255.0) as u8;
+                        raw_side[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a)
+                            .round()
+                            .clamp(0.0, 255.0) as u8;
+                        raw_side[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a)
+                            .round()
+                            .clamp(0.0, 255.0) as u8;
                     }
                 }
             }
@@ -91,7 +97,8 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
         };
         let top_tint = voxel.tint_color();
 
-        let icon_image = render_isometric_block_icon_multi(&raw_side, &raw_top, side_tint, top_tint);
+        let icon_image =
+            render_isometric_block_icon_multi(&raw_side, &raw_top, side_tint, top_tint);
         let handle = images.add(icon_image);
 
         if fallback_image.is_none() {

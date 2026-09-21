@@ -2,13 +2,12 @@
 
 An experimental voxel game engine built from scratch with Rust and Bevy.
 
-The project focuses on a fully editable procedural voxel world with a hybrid block structure:
+The project focuses on a fully editable procedural voxel world with 1.0 m³ blocks:
 
-- The world is stored using 0.5 m voxels.
-- A traditional 1 m³ logical block is composed of 2 × 2 × 2 voxels.
-- Each 1 m³ block therefore contains 8 individually editable voxels.
-- Individual 0.5 m voxels can be destroyed and placed at runtime.
-- 1 m blocks remain useful as a visual, gameplay and coordinate abstraction.
+- The world is stored using 1.0 m voxels (identical to Minecraft blocks).
+- Chunks have 16 × 16 × 16 voxels (16 m × 16 m × 16 m physical sections).
+- Complete removal of single 0.5 m sub-voxels.
+- Auto-step is calibrated to 0.50 m (50 cm) for smooth future slab stepping, requiring jumping over full 1 m blocks.
 
 The long-term goal is to build a performant procedural voxel game with large-world streaming, runtime terrain editing, configurable generation, multiple gameplay modes, dynamic fluids and extensive development tooling.
 
@@ -26,13 +25,12 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     Space             Jump / Swim up / Fly up
     Double Space      Toggle Creative flight
     Ctrl              Crouch (with ledge-fall prevention) / Swim down / Fly down
-    C                 Crawl (0.45m prone posture through 1-voxel gaps)
+    C                 Crawl (0.45m prone posture through low openings)
     Z                 Camera Zoom (Hold Z + Mouse Wheel to adjust magnification)
 
-    B                 Toggle Interaction mode (1m³ Block vs 0.5m Sub-voxel)
-    Left Mouse        Break voxel / block
-    Right Mouse       Place voxel / block
-    Middle Mouse      Pick voxel / block
+    Left Mouse        Break block
+    Right Mouse       Place block
+    Middle Mouse      Pick block
 
     1 - 8             Hotbar slot selection
     Mouse Wheel       Scroll hotbar slots (when not zooming)
@@ -92,7 +90,6 @@ src/
 ├── gameplay/
 │   ├── debug.rs
 │   ├── icon.rs
-│   ├── interaction_mode.rs
 │   ├── interaction.rs
 │   ├── mod.rs
 │   ├── radial_menu.rs
@@ -104,7 +101,8 @@ src/
 │   ├── generator.rs
 │   ├── inspector.rs
 │   ├── mod.rs
-│   └── strata.rs
+│   ├── strata.rs
+│   └── trees.rs
 ├── menu/
 │   ├── inventory.rs
 │   ├── mod.rs

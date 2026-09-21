@@ -482,9 +482,7 @@ impl Voxel {
         match self {
             Self::Air | Self::Occupied | Self::WaterOccupied => 0.0,
             Self::Dreadstone => f32::INFINITY,
-            Self::OakLeaves
-            | Self::BirchLeaves
-            | Self::PineLeaves => 0.3,
+            Self::OakLeaves | Self::BirchLeaves | Self::PineLeaves => 0.3,
             Self::Grass
             | Self::Dirt
             | Self::Mud
