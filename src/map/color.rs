@@ -105,7 +105,7 @@ pub fn voxel_map_color_at(voxel: Voxel, water_depth: u8, world_x: i32, world_z: 
                 (tint[2] * 255.0 * depth_factor).clamp(0.0, 255.0) as u8,
                 255,
             ];
-        } else if voxel == Voxel::Grass || voxel == Voxel::SnowyGrass {
+        } else if voxel == Voxel::Grass {
             return [
                 (tint[0] * 175.0).clamp(0.0, 255.0) as u8,
                 (tint[1] * 185.0).clamp(0.0, 255.0) as u8,

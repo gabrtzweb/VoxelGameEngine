@@ -286,7 +286,6 @@ impl Voxel {
         matches!(
             self,
             Self::Grass
-                | Self::SnowyGrass
                 | Self::Water
                 | Self::WaterFlowing
                 | Self::WaterOccupied
@@ -300,7 +299,6 @@ impl Voxel {
     pub fn tint_color(self) -> [f32; 4] {
         match self {
             Self::Grass => [0.55, 0.94, 0.42, 1.0],
-            Self::SnowyGrass => [0.52, 0.80, 0.70, 1.0],
             Self::Water | Self::WaterFlowing | Self::WaterOccupied => [0.35, 0.65, 0.92, 1.0],
             Self::OakLeaves => [0.60, 1.15, 0.35, 1.0],
             Self::BirchLeaves => [0.85, 1.25, 0.40, 1.0],

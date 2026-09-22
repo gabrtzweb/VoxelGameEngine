@@ -287,7 +287,7 @@ impl BiomeType {
     /// Primary tint color for a voxel in this biome.
     pub fn voxel_tint(self, voxel: Voxel) -> [f32; 4] {
         match voxel {
-            Voxel::Grass | Voxel::SnowyGrass => self.grass_color(),
+            Voxel::Grass => self.grass_color(),
             Voxel::Water | Voxel::WaterFlowing | Voxel::WaterOccupied => self.water_color(),
             Voxel::OakLeaves | Voxel::BirchLeaves | Voxel::PineLeaves => self.foliage_color(voxel),
             _ => [1.0, 1.0, 1.0, 1.0],
@@ -417,8 +417,9 @@ impl ClimateGenerator {
     }
 }
 
-/// Smoothly blends biome colors across biome transitions using a 5-point cross kernel
-/// and quantizes the result into 64 discrete steps per channel to preserve greedy meshing merges.
+/// Smoothly blends biome colors across biome transitions using a 13-point circular Gaussian kernel
+/// (covering an organic 20-block transition zone) and quantizes the result into 128 discrete steps
+/// per channel to preserve high greedy meshing merges while eliminating harsh stepped borders.
 pub fn sample_blended_biome_color(voxel: Voxel, world_x: f32, world_z: f32, seed: u32) -> [f32; 4] {
     if !voxel.is_tinted() {
         return [1.0, 1.0, 1.0, 1.0];
@@ -426,14 +427,31 @@ pub fn sample_blended_biome_color(voxel: Voxel, world_x: f32, world_z: f32, seed
 
     let generator = ClimateGenerator::default();
 
-    // 5-point cross pattern sampling with radius 4.0 voxels for smooth transition bands
-    const BLEND_RADIUS: f32 = 4.0;
-    let offsets: [(f32, f32, f32); 5] = [
-        (0.0, 0.0, 0.36),
-        (BLEND_RADIUS, 0.0, 0.16),
-        (-BLEND_RADIUS, 0.0, 0.16),
-        (0.0, BLEND_RADIUS, 0.16),
-        (0.0, -BLEND_RADIUS, 0.16),
+    // 13-point symmetric circular Gaussian kernel:
+    // Center point (d = 0.0), inner ring (8 points at radius 5.0 in cardinal and diagonal directions),
+    // and outer ring (4 points at radius 10.0 in cardinal directions).
+    const R_INNER: f32 = 5.0;
+    const R_DIAG: f32 = 3.5355; // 5.0 / sqrt(2)
+    const R_OUTER: f32 = 10.0;
+
+    let offsets: [(f32, f32, f32); 13] = [
+        // Center
+        (0.0, 0.0, 0.152),
+        // Inner ring cardinal (r = 5.0)
+        (R_INNER, 0.0, 0.092),
+        (-R_INNER, 0.0, 0.092),
+        (0.0, R_INNER, 0.092),
+        (0.0, -R_INNER, 0.092),
+        // Inner ring diagonal (r = 5.0)
+        (R_DIAG, R_DIAG, 0.092),
+        (-R_DIAG, R_DIAG, 0.092),
+        (R_DIAG, -R_DIAG, 0.092),
+        (-R_DIAG, -R_DIAG, 0.092),
+        // Outer ring cardinal (r = 10.0)
+        (R_OUTER, 0.0, 0.028),
+        (-R_OUTER, 0.0, 0.028),
+        (0.0, R_OUTER, 0.028),
+        (0.0, -R_OUTER, 0.028),
     ];
 
     let mut r = 0.0f32;
@@ -450,9 +468,9 @@ pub fn sample_blended_biome_color(voxel: Voxel, world_x: f32, world_z: f32, seed
         a += color[3] * weight;
     }
 
-    // Quantize to 64 steps (1/64 = 0.015625) per channel to allow greedy meshing
-    // to merge quads smoothly across transition zones.
-    const QUANTIZE_STEPS: f32 = 64.0;
+    // Quantize to 128 steps (1/128 = ~0.0078) per channel: imperceptible steps to the human eye,
+    // producing a silky-smooth gradual transition while still allowing greedy meshing to merge quads.
+    const QUANTIZE_STEPS: f32 = 128.0;
     [
         (r * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
         (g * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
