@@ -115,6 +115,7 @@ pub fn handle_terrain_generator_reload(
     meshing_tasks: Query<(Entity, &ChunkMeshingTask)>,
     mut commands: Commands,
     mut queues: ResMut<ChunkStreamingQueues>,
+    mut map_cache: Option<ResMut<crate::map::MapCache>>,
 ) {
     if generator.version == *last_version {
         return;
@@ -151,6 +152,9 @@ pub fn handle_terrain_generator_reload(
     // 5. Purge world storage and recorded modifications
     world.clear();
     modifications.clear();
+    if let Some(ref mut cache) = map_cache {
+        cache.clear();
+    }
 
     // 6. Clear streaming queues
     queues.load.clear();
@@ -296,6 +300,7 @@ pub fn collect_generation_tasks(
     mut world: ResMut<VoxelWorld>,
     mut queues: ResMut<ChunkStreamingQueues>,
     mut light_registry: ResMut<VoxelLightRegistry>,
+    mut map_cache: Option<ResMut<crate::map::MapCache>>,
 ) {
     for (entity, mut generation_task) in &mut tasks {
         let Some(mut generated) = check_ready(&mut generation_task.task) else {
@@ -311,6 +316,10 @@ pub fn collect_generation_tasks(
         modifications.apply_to_chunk(generated.coordinate, &mut generated.chunk);
 
         world.insert_chunk(generated.coordinate, generated.chunk);
+
+        if let Some(ref mut cache) = map_cache {
+            cache.mark_dirty(IVec2::new(generated.coordinate.x, generated.coordinate.z));
+        }
 
         sync_chunk_lights(
             &mut commands,

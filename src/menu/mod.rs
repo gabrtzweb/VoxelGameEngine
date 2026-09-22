@@ -17,6 +17,7 @@ pub enum MenuState {
     Pause,
     Settings,
     Inventory,
+    WorldMap,
 }
 
 #[derive(Resource, Debug, Clone)]
@@ -297,6 +298,9 @@ fn handle_menu_key_inputs(
                 held_item.voxel = None;
                 next_state.set(MenuState::None);
             }
+            MenuState::WorldMap => {
+                next_state.set(MenuState::None);
+            }
         }
     }
 
@@ -307,6 +311,14 @@ fn handle_menu_key_inputs(
                 held_item.voxel = None;
                 next_state.set(MenuState::None);
             }
+            _ => {}
+        }
+    }
+
+    if keyboard.just_pressed(KeyCode::KeyM) {
+        match current {
+            MenuState::None => next_state.set(MenuState::WorldMap),
+            MenuState::WorldMap => next_state.set(MenuState::None),
             _ => {}
         }
     }
@@ -438,7 +450,7 @@ fn manage_menu_time_pause(
         MenuState::Pause | MenuState::Settings => {
             virtual_time.pause();
         }
-        MenuState::None | MenuState::Inventory => {
+        MenuState::None | MenuState::Inventory | MenuState::WorldMap => {
             virtual_time.unpause();
         }
     }

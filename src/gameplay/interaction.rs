@@ -144,6 +144,7 @@ fn edit_voxels(
     fluid_queue: Option<ResMut<FluidUpdateQueue>>,
     menu_state: Option<Res<State<MenuState>>>,
     inspector: Option<Res<InspectorInteraction>>,
+    mut map_cache: Option<ResMut<crate::map::MapCache>>,
 ) {
     if menu_state.is_some_and(|s| *s.get() != MenuState::None)
         || inspector.is_some_and(|i| i.active)
@@ -209,6 +210,12 @@ fn edit_voxels(
     }
 
     let mut dirty_chunks = Vec::new();
+
+    if let Some(ref mut cache) = map_cache {
+        for &edited_voxel in &edited_voxels {
+            cache.mark_block_dirty(edited_voxel);
+        }
+    }
 
     for edited_voxel in edited_voxels {
         sync_voxel_light(&mut commands, &world, edited_voxel, &mut light_registry);

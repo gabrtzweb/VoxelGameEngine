@@ -155,6 +155,7 @@ fn handle_pause_menu_buttons(
     chunk_material_query: Option<Res<ChunkMaterial>>,
     mut hotbar_query: Option<ResMut<Hotbar>>,
     mut selected_voxel_query: Option<ResMut<SelectedVoxel>>,
+    mut map_cache_query: Option<ResMut<crate::map::MapCache>>,
     mut commands: Commands,
 ) {
     for (interaction, action, mut bg_color, mut border_color) in &mut interaction_query {
@@ -238,6 +239,9 @@ fn handle_pause_menu_buttons(
                         }
                         if let Some(ref mut selected) = selected_voxel_query {
                             selected.0 = Some(Voxel::Grass);
+                        }
+                        if let Some(ref mut cache) = map_cache_query {
+                            cache.clear();
                         }
 
                         info!(

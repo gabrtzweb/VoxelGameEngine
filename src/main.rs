@@ -2,6 +2,7 @@ mod core;
 mod environment;
 mod gameplay;
 mod generation;
+mod map;
 mod menu;
 mod meshing;
 mod player;
@@ -21,6 +22,7 @@ use core::DevStatsPlugin;
 use environment::EnvironmentPlugin;
 use gameplay::GameplayPlugin;
 use generation::TerrainInspectorPlugin;
+use map::MapPlugin;
 use menu::MenuPlugin;
 use meshing::MeshingPlugin;
 use player::PlayerPlugin;
@@ -88,6 +90,7 @@ fn main() {
         .add_plugins(SimulationPlugin)
         .add_plugins(GameplayPlugin)
         .add_plugins(DevStatsPlugin)
+        .add_plugins(MapPlugin)
         .add_plugins(MenuPlugin)
         .add_systems(Update, set_window_icons)
         .run();

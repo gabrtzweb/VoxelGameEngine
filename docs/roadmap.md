@@ -379,3 +379,21 @@ Phase 10 is currently active. Development is intentionally not strictly followin
   - **Chunk Region File Format**: Simple binary serialization format storing modified chunk data in a dedicated world save folder.
   - **Save on Exit & Auto-Save**: Seamlessly serializes player block edits and inventory state, restoring the player's world exactly as built upon launch.
 
+- [ ] **Stage 10.4: Minimap & Interactive World Map (Minecraft/Xaero-Style)**:
+  - **Shared Map Data & Topographic Cache Layer**:
+    - High-performance 2D column surface extraction (`MapCache`) caching explored chunk terrain.
+    - Incremental dirty-column updates when chunks stream in or blocks are placed/broken.
+    - Surface voxel detection, water depth computation, and North-up topographic relief hill-shading.
+    - Persistent exploration history even when 3D chunks are unloaded from memory; dark grid background for unexplored areas.
+  - **Gameplay Minimap (Square HUD)**:
+    - Square HUD minimap permanently visible during gameplay in the top-right corner.
+    - Player-centered, North-up orientation with live player directional heading marker.
+    - Stylized metallic border frame with N/S/E/W cardinal indicators.
+    - Real-time player coordinate display ($X, Y, Z$).
+  - **Full-Screen World Map**:
+    - Opened and toggled via <kbd>M</kbd> or <kbd>ESC</kbd> with seamless `MenuState::WorldMap` integration.
+    - Smooth click-and-drag panning and mouse scroll wheel zooming (0.25x to 4.0x).
+    - Live player position marker, heading chevron, and compass indicator.
+    - Real-time coordinate HUD (Player coordinates, cursor coordinates under pointer, zoom level).
+    - Center-on-player quick snap hotkey (<kbd>Space</kbd>).
+
