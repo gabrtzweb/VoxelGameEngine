@@ -14,7 +14,7 @@ use crate::{
 
 use super::{
     cache::MapCache,
-    color::{apply_relief_shading, unexplored_color, voxel_map_color},
+    color::{apply_relief_shading, unexplored_color, voxel_map_color_at},
 };
 
 pub const MINIMAP_SIZE: u32 = 192;
@@ -45,25 +45,21 @@ pub struct MinimapPlugin;
 
 impl Plugin for MinimapPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_minimap)
-            .add_systems(
-                Update,
-                (
-                    sync_minimap_terrain,
-                    sync_minimap_marker,
-                    update_minimap_ui,
-                    manage_minimap_visibility,
-                ),
-            );
+        app.add_systems(Startup, setup_minimap).add_systems(
+            Update,
+            (
+                sync_minimap_terrain,
+                sync_minimap_marker,
+                update_minimap_ui,
+                manage_minimap_visibility,
+            ),
+        );
     }
 }
 
-fn setup_minimap(
-    mut commands: Commands,
-    mut images: ResMut<Assets<Image>>,
-) {
+fn setup_minimap(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     // 1. Create dynamic 192x192 terrain map texture
-    let terrain_pixels = vec![18u8, 19u8, 24u8, 255u8].repeat((MINIMAP_SIZE * MINIMAP_SIZE) as usize);
+    let terrain_pixels = [18u8, 19u8, 24u8, 255u8].repeat((MINIMAP_SIZE * MINIMAP_SIZE) as usize);
     let mut terrain_img = Image::new_fill(
         Extent3d {
             width: MINIMAP_SIZE,
@@ -309,7 +305,7 @@ fn sync_minimap_terrain(
 
             let color = if let Some(pixel) = map_cache.get_pixel(wx, wz) {
                 if pixel.voxel != Voxel::Air {
-                    let base = voxel_map_color(pixel.voxel, pixel.water_depth);
+                    let base = voxel_map_color_at(pixel.voxel, pixel.water_depth, wx, wz);
                     let north_h = map_cache.get_pixel(wx, wz - 1).map(|p| p.height);
                     apply_relief_shading(base, pixel.height, north_h)
                 } else {
@@ -435,10 +431,10 @@ pub fn draw_player_arrow(canvas: &mut [u8], yaw: f32) {
                 canvas[idx + 3] = 255;
             } else {
                 // 1px Dark border outline
-                let d_left = dist_to_segment(p, tip, left_wing)
-                    .min(dist_to_segment(p, left_wing, notch));
-                let d_right = dist_to_segment(p, tip, right_wing)
-                    .min(dist_to_segment(p, right_wing, notch));
+                let d_left =
+                    dist_to_segment(p, tip, left_wing).min(dist_to_segment(p, left_wing, notch));
+                let d_right =
+                    dist_to_segment(p, tip, right_wing).min(dist_to_segment(p, right_wing, notch));
                 let d_min = d_left.min(d_right);
 
                 if d_min <= 1.25 {

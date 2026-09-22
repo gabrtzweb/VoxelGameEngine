@@ -281,11 +281,27 @@ impl Voxel {
         }
     }
 
+    /// Whether this voxel receives custom biome or foliage tinting.
+    pub fn is_tinted(self) -> bool {
+        matches!(
+            self,
+            Self::Grass
+                | Self::SnowyGrass
+                | Self::Water
+                | Self::WaterFlowing
+                | Self::WaterOccupied
+                | Self::OakLeaves
+                | Self::BirchLeaves
+                | Self::PineLeaves
+        )
+    }
+
     /// Color tint applied to vertices for biome / atmospheric coloring.
     pub fn tint_color(self) -> [f32; 4] {
         match self {
-            Self::Grass => [0.58, 0.90, 0.44, 1.0],
-            Self::Water | Self::WaterFlowing | Self::WaterOccupied => [0.40, 0.80, 1.0, 1.0],
+            Self::Grass => [0.55, 0.94, 0.42, 1.0],
+            Self::SnowyGrass => [0.52, 0.80, 0.70, 1.0],
+            Self::Water | Self::WaterFlowing | Self::WaterOccupied => [0.35, 0.65, 0.92, 1.0],
             Self::OakLeaves => [0.60, 1.15, 0.35, 1.0],
             Self::BirchLeaves => [0.85, 1.25, 0.40, 1.0],
             Self::PineLeaves => [0.40, 0.90, 0.55, 1.0],
@@ -293,8 +309,17 @@ impl Voxel {
         }
     }
 
-    pub fn tint_color_at(self, _world_voxel: IVec3) -> [f32; 4] {
-        self.tint_color()
+    /// Biome-aware blended color tint at a specific world coordinate.
+    pub fn tint_color_at(self, world_voxel: IVec3) -> [f32; 4] {
+        if !self.is_tinted() {
+            return [1.0, 1.0, 1.0, 1.0];
+        }
+        crate::generation::sample_blended_biome_color(
+            self,
+            world_voxel.x as f32,
+            world_voxel.z as f32,
+            1337,
+        )
     }
 
     /// Fallback 1x1 solid RGBA pixel if the texture file is not found on disk.

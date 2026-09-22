@@ -228,6 +228,71 @@ impl BiomeType {
             },
         }
     }
+
+    /// Calibrated grass tint color per biome.
+    pub fn grass_color(self) -> [f32; 4] {
+        match self {
+            Self::Plains => [0.55, 0.94, 0.42, 1.0], // Vibrant, lively emerald
+            Self::PlainsForest => [0.46, 0.88, 0.38, 1.0], // Rich lush forest
+            Self::Meadow => [0.52, 0.98, 0.46, 1.0], // Ultra-vivid sunny green
+            Self::Woodland => [0.40, 0.82, 0.34, 1.0], // Deep canopy green
+            Self::Wetlands => [0.42, 0.68, 0.36, 1.0], // Murky swamp olive
+            Self::Highlands => [0.48, 0.84, 0.52, 1.0], // Alpine cool muted sage
+            Self::SnowyTundra => [0.52, 0.80, 0.70, 1.0], // Glacial frosty pale blue-green
+            Self::ColdPlains => [0.52, 0.84, 0.50, 1.0], // Cold subpolar muted green
+            Self::Savanna => [0.68, 0.80, 0.35, 1.0], // Warm dry golden-olive
+            Self::Desert => [0.72, 0.76, 0.38, 1.0], // Sun-baked arid olive
+            Self::Beach => [0.65, 0.86, 0.45, 1.0],  // Sandy coastal green
+            Self::River => [0.50, 0.92, 0.44, 1.0],  // Fresh lush riverbank
+            Self::Ocean | Self::DeepOcean => [0.40, 0.82, 0.62, 1.0], // Aquatic muted turquoise
+        }
+    }
+
+    /// Calibrated water tint color per biome.
+    pub fn water_color(self) -> [f32; 4] {
+        match self {
+            Self::DeepOcean => [0.15, 0.32, 0.70, 1.0], // Dark marine navy abyss
+            Self::Ocean => [0.24, 0.48, 0.88, 1.0],     // Deep ocean blue
+            Self::Beach => [0.28, 0.74, 0.92, 1.0],     // Tropical turquoise coastal
+            Self::River => [0.32, 0.68, 0.96, 1.0],     // Crystal clear river
+            Self::Wetlands => [0.30, 0.55, 0.48, 1.0],  // Murky swamp teal
+            Self::Desert => [0.22, 0.80, 0.88, 1.0],    // Vivid warm oasis aqua
+            Self::ColdPlains => [0.42, 0.68, 0.94, 1.0], // Frigid pale blue
+            Self::SnowyTundra => [0.48, 0.74, 0.98, 1.0], // Crisp glacial cyan-blue
+            Self::Highlands => [0.30, 0.64, 0.95, 1.0], // Pristine alpine blue
+            _ => [0.35, 0.65, 0.92, 1.0],               // Balanced temperate water
+        }
+    }
+
+    /// Calibrated foliage (leaves) tint color per biome.
+    pub fn foliage_color(self, voxel: Voxel) -> [f32; 4] {
+        match voxel {
+            Voxel::OakLeaves => match self {
+                Self::Plains | Self::Meadow => [0.60, 1.15, 0.35, 1.0],
+                Self::Woodland | Self::PlainsForest => [0.52, 1.05, 0.32, 1.0],
+                Self::Wetlands => [0.45, 0.85, 0.30, 1.0],
+                Self::Desert | Self::Savanna => [0.70, 1.00, 0.32, 1.0],
+                Self::SnowyTundra | Self::ColdPlains => [0.48, 0.95, 0.50, 1.0],
+                _ => [0.60, 1.15, 0.35, 1.0],
+            },
+            Voxel::BirchLeaves => [0.85, 1.25, 0.40, 1.0],
+            Voxel::PineLeaves => match self {
+                Self::SnowyTundra | Self::ColdPlains => [0.35, 0.82, 0.60, 1.0],
+                _ => [0.40, 0.90, 0.55, 1.0],
+            },
+            _ => [1.0, 1.0, 1.0, 1.0],
+        }
+    }
+
+    /// Primary tint color for a voxel in this biome.
+    pub fn voxel_tint(self, voxel: Voxel) -> [f32; 4] {
+        match voxel {
+            Voxel::Grass | Voxel::SnowyGrass => self.grass_color(),
+            Voxel::Water | Voxel::WaterFlowing | Voxel::WaterOccupied => self.water_color(),
+            Voxel::OakLeaves | Voxel::BirchLeaves | Voxel::PineLeaves => self.foliage_color(voxel),
+            _ => [1.0, 1.0, 1.0, 1.0],
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Reflect)]
@@ -352,6 +417,50 @@ impl ClimateGenerator {
     }
 }
 
+/// Smoothly blends biome colors across biome transitions using a 5-point cross kernel
+/// and quantizes the result into 64 discrete steps per channel to preserve greedy meshing merges.
+pub fn sample_blended_biome_color(voxel: Voxel, world_x: f32, world_z: f32, seed: u32) -> [f32; 4] {
+    if !voxel.is_tinted() {
+        return [1.0, 1.0, 1.0, 1.0];
+    }
+
+    let generator = ClimateGenerator::default();
+
+    // 5-point cross pattern sampling with radius 4.0 voxels for smooth transition bands
+    const BLEND_RADIUS: f32 = 4.0;
+    let offsets: [(f32, f32, f32); 5] = [
+        (0.0, 0.0, 0.36),
+        (BLEND_RADIUS, 0.0, 0.16),
+        (-BLEND_RADIUS, 0.0, 0.16),
+        (0.0, BLEND_RADIUS, 0.16),
+        (0.0, -BLEND_RADIUS, 0.16),
+    ];
+
+    let mut r = 0.0f32;
+    let mut g = 0.0f32;
+    let mut b = 0.0f32;
+    let mut a = 0.0f32;
+
+    for (dx, dz, weight) in offsets {
+        let sample = generator.sample(world_x + dx, world_z + dz, seed);
+        let color = sample.biome.voxel_tint(voxel);
+        r += color[0] * weight;
+        g += color[1] * weight;
+        b += color[2] * weight;
+        a += color[3] * weight;
+    }
+
+    // Quantize to 64 steps (1/64 = 0.015625) per channel to allow greedy meshing
+    // to merge quads smoothly across transition zones.
+    const QUANTIZE_STEPS: f32 = 64.0;
+    [
+        (r * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
+        (g * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
+        (b * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
+        (a * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -387,5 +496,39 @@ mod tests {
         let s1 = generator.sample(150.0, -250.0, 1337);
         let s2 = generator.sample(150.0, -250.0, 1337);
         assert_eq!(s1, s2);
+    }
+
+    #[test]
+    fn biome_colors_differ_between_climates() {
+        let plains_grass = BiomeType::Plains.grass_color();
+        let desert_grass = BiomeType::Desert.grass_color();
+        let tundra_grass = BiomeType::SnowyTundra.grass_color();
+
+        // Desert grass is warmer and yellower (higher red, lower green) than vibrant Plains grass
+        assert!(desert_grass[0] > plains_grass[0]);
+        // Tundra grass is cold and desaturated (higher blue/cyan tone)
+        assert!(tundra_grass[2] > plains_grass[2]);
+
+        let ocean_water = BiomeType::Ocean.water_color();
+        let desert_water = BiomeType::Desert.water_color();
+        let swamp_water = BiomeType::Wetlands.water_color();
+
+        // Desert oasis water is vibrant turquoise (high green/blue)
+        assert!(desert_water[1] > ocean_water[1]);
+        // Swamp water is murky/greenish
+        assert!(swamp_water[1] > swamp_water[0]);
+    }
+
+    #[test]
+    fn blended_biome_color_is_smooth_and_deterministic() {
+        let c1 = sample_blended_biome_color(Voxel::Grass, 100.0, 200.0, 1337);
+        let c2 = sample_blended_biome_color(Voxel::Grass, 100.0, 200.0, 1337);
+        assert_eq!(c1, c2);
+
+        let water = sample_blended_biome_color(Voxel::Water, 0.0, 0.0, 1337);
+        assert!(water[3] > 0.99);
+
+        let stone = sample_blended_biome_color(Voxel::Stone, 50.0, 50.0, 1337);
+        assert_eq!(stone, [1.0, 1.0, 1.0, 1.0]);
     }
 }

@@ -79,7 +79,7 @@ pub const AVAILABLE_BLOCKS: [Voxel; 58] = [
 ];
 
 pub fn total_inventory_rows() -> usize {
-    (AVAILABLE_BLOCKS.len() + INVENTORY_COLS - 1) / INVENTORY_COLS
+    AVAILABLE_BLOCKS.len().div_ceil(INVENTORY_COLS)
 }
 
 pub fn max_scroll_row() -> usize {
@@ -532,10 +532,11 @@ fn handle_inventory_interaction(
         let track_half = track_computed.size() * 0.5;
         let track_rect = Rect::from_corners(track_center - track_half, track_center + track_half);
 
-        if left_just_pressed && let Some(cursor_pos) = window.cursor_position() {
-            if track_rect.contains(cursor_pos) {
-                scroll_state.is_dragging_thumb = true;
-            }
+        if left_just_pressed
+            && let Some(cursor_pos) = window.cursor_position()
+            && track_rect.contains(cursor_pos)
+        {
+            scroll_state.is_dragging_thumb = true;
         }
 
         if left_pressed

@@ -8,8 +8,8 @@ pub use cache::{MapCache, MapChunk, MapPixel};
 pub use minimap::MinimapPlugin;
 pub use world_map::WorldMapPlugin;
 
-use bevy::prelude::*;
 use crate::world::VoxelWorld;
+use bevy::prelude::*;
 
 pub struct MapPlugin;
 

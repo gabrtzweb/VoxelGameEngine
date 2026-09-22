@@ -372,14 +372,10 @@ Phase 10 is currently active. Development is intentionally not strictly followin
 - [ ] **Stage 10.2: Quality-of-Life & Additional Tooling**:
   - [x] **Fix Live "Regenerate World" Chunk Reload**: Ensure that clicking "Regenerate World" in the <kbd>F1</kbd> Inspector cleanly despawns existing chunk mesh entities and re-triggers async mesh generation in real time.
   - [x] **4-Row Scrollable Creative Inventory**: Compact 4-row inventory grid with scrollbar navigation supporting all blocks.
-  - **Clean Screenshot Hotkey (<kbd>F11</kbd> / <kbd>F7</kbd>)**: Captures high-res screenshots while temporarily hiding all HUD elements, crosshairs, and inspector windows.
   - **Block Item Drops / Hand Bob**: Floating rotating mini-block pickups when blocks are broken in survival/adventure context, and subtle hand swing animation when placing or breaking blocks.
 
-- [ ] **Stage 10.3: World Persistence & Binary Save/Load Foundation**:
-  - **Chunk Region File Format**: Simple binary serialization format storing modified chunk data in a dedicated world save folder.
-  - **Save on Exit & Auto-Save**: Seamlessly serializes player block edits and inventory state, restoring the player's world exactly as built upon launch.
-
-- [ ] **Stage 10.4: Minimap & Interactive World Map (Minecraft/Xaero-Style)**:
+- [x] **Stage 10.3: Minimap & Interactive World Map (Minecraft/Xaero-Style)**:
+  - *Note*: Completed and fully functional. Foundational 2D cache layer, square minimap HUD, and interactive world map are operating cleanly; reserved for future incremental enhancements (entity blips, waypoints, cave mode).
   - **Shared Map Data & Topographic Cache Layer**:
     - High-performance 2D column surface extraction (`MapCache`) caching explored chunk terrain.
     - Incremental dirty-column updates when chunks stream in or blocks are placed/broken.
@@ -397,3 +393,14 @@ Phase 10 is currently active. Development is intentionally not strictly followin
     - Real-time coordinate HUD (Player coordinates, cursor coordinates under pointer, zoom level).
     - Center-on-player quick snap hotkey (<kbd>Space</kbd>).
 
+- [x] **Stage 10.4: Biome Color Variation & Ambient Environment Noise ("Ambient Environment" Mod Style)**:
+  - **Procedural Ambient Color Noise**: Procedural 2-octave smooth value noise computed in `voxel.wgsl` via `world_position.xz` modulating tinted vertex colors by $\pm 8\%$ to break up flat monochromatic plains and foliage expanses without fragmenting greedy-meshed quads.
+  - **Biome-Specific Grass & Foliage Tints**: Calibrated base grass and leaf tints dynamically across biomes (vibrant emerald for Plains and Meadow, dry golden-olive for Savanna, sun-baked olive for Desert, cold glacial blue-green for Snowy Tundra and Cold Plains).
+  - **Biome-Specific Water Hues**: Distinct water coloration across aquatic climates (warm turquoise for tropical beaches and desert oases, deep marine navy for oceans/deep oceans, crisp crystal blue for mountain streams and rivers, murky teal for wetlands).
+  - **Natural Biome Blend Transitions**: Multi-sample 5-point cross kernel ($R = 4.0$ blocks) smoothly blending climate colors across biome boundaries with 64-step channel quantization to preserve high greedy-meshing merging efficiency. Minimap and full-screen world map updated with live biome colors.
+
+- [x] **Stage 10.5: Dynamic Resource Throttling & Power Conservation ("Dynamic FPS" Mod Style)**:
+  - **Unfocused / Background Window Throttling**: Automatically drops rendering framerate to 15 FPS and sleeps execution when the game window loses OS focus or is minimized, radically slashing GPU/CPU temperature and fan noise.
+  - **Idle / AFK Detection**: Detects inactivity across keyboard, mouse clicks, mouse motion, and scroll wheel; gently throttles render frequency to 30 FPS after 60s of inactivity.
+  - **Power & Battery Conservation**: Native Win32 `GetSystemPowerStatus` battery detection caps frame pacing to 60 FPS on laptop battery power to maximize device battery longevity.
+  - **Instant Focus Recovery**: Zero-latency wakeup restoring full unthrottled framerate the microsecond the window regains focus or any input is received. Status visible on extended <kbd>F3</kbd> HUD.

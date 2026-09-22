@@ -657,7 +657,11 @@ mod tests {
                         world_z,
                         column,
                     );
-                    assert_ne!(surface, Voxel::Grass, "Underwater surface must never be Grass");
+                    assert_ne!(
+                        surface,
+                        Voxel::Grass,
+                        "Underwater surface must never be Grass"
+                    );
                     assert_ne!(
                         surface,
                         Voxel::SnowyGrass,

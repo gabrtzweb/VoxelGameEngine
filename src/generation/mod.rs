@@ -7,7 +7,9 @@ pub mod inspector;
 pub mod strata;
 pub mod trees;
 
-pub use biome::{BiomeConfig, BiomeType, ClimateGenerator, ClimateSample};
+pub use biome::{
+    BiomeConfig, BiomeType, ClimateGenerator, ClimateSample, sample_blended_biome_color,
+};
 pub use caves::CaveGenerator;
 pub use generator::{
     LOGICAL_BLOCK_VOXELS, TerrainColumn, TerrainGenerator, logical_block_bottom,

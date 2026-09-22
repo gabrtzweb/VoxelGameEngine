@@ -114,6 +114,7 @@ impl CaveGenerator {
 
     /// Evaluates 3D noise on a 5x5x5 lattice (125 samples) and up-samples across
     /// all 4,096 voxels in the chunk using SIMD-friendly trilinear interpolation.
+    #[allow(clippy::needless_range_loop)]
     pub fn build_chunk_sampler(&self, chunk_origin: IVec3, seed: u32) -> ChunkCaveSampler {
         const LATTICE_DIM: usize = 5;
         const CELL_SIZE: usize = 4;
@@ -263,8 +264,7 @@ impl CaveGenerator {
 
         // 4. Natural Mountain Arches: horizontal cavern hollows tunneling through ridges
         if surface_height >= 34
-            && depth_below_surface >= 6
-            && depth_below_surface <= 24
+            && (6..=24).contains(&depth_below_surface)
             && world_y > sea_level + 10
         {
             let arch_noise_a = gradient_noise_3d(

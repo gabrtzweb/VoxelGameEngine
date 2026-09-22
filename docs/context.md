@@ -149,7 +149,11 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - **Pause Menu (<kbd>ESC</kbd> Key)**: Game pause with Resume, Settings, Restart Game, Quit to Desktop, and camera Depth-of-Field blur.
 - **In-Game Settings**: Live steppers for Render Distance (2..=16 chunks), FOV (60°..=110°), Distance Fog toggle, Camera Bobbing toggle, and Time Flow toggle.
 - **Custom Mouse Cursors**: 9 cursor states including 13-frame animated busy spinner and floating held-block preview.
-- **Debug Overlays**: Minimal HUD by default, Extended Technical Debug HUD on <kbd>F3</kbd> (FPS, frame time, player XYZ/chunk, biome climate, chunk stats), HUD toggle on <kbd>Shift+F3</kbd>, and chunk debug borders on <kbd>F2</kbd>.
+- **Minecraft/Xaero-Style Minimap HUD**: Top-right square HUD (192×192 dynamic canvas) with metallic beveled border, cardinal indicators (<kbd>N</kbd>, <kbd>S</kbd>, <kbd>E</kbd>, <kbd>W</kbd>), real-time player coordinates pill ($X, Y, Z$), and live directional player heading chevron. Powered by an asynchronous 2D cache (`MapCache`) with North-up topographic hill shading and bathymetric water tinting.
+- **Full-Screen Interactive World Map (<kbd>M</kbd> Key)**: Seamless `MenuState::WorldMap` integration with smooth mouse drag panning, scroll wheel zooming (0.20x to 4.0x), keyboard panning (<kbd>WASD</kbd> / arrows), snap-to-player quick key (<kbd>Space</kbd>), real-time cursor coordinate tracking under pointer, and live player marker.
+- **Ambient Environment & Biome Coloration**: Procedural 2-octave smooth color noise in `voxel.wgsl` via `world_position.xz` modulating tinted block vertices by $\pm 8\%$ to break up flat monochromatic plains, coupled with calibrated biome palettes (emerald Plains, golden Savanna, pale Desert, icy Tundra, turquoise coastal waters, deep navy oceans) and 5-point cross-kernel boundary blending.
+- **Dynamic FPS & Power Throttling**: Automatic background frame throttling (15 FPS), idle/AFK detection (30 FPS after 60s), and native Win32 laptop battery detection (60 FPS cap) with instantaneous wakeup upon focus or input.
+- **Debug Overlays**: Minimal HUD by default, Extended Technical Debug HUD on <kbd>F3</kbd> (FPS, frame time, power source, dynamic throttle status, player XYZ/chunk, biome climate, chunk stats), HUD toggle on <kbd>Shift+F3</kbd>, and chunk debug borders on <kbd>F2</kbd>.
 
 ### 10. Engine Optimizations & Scalability (Phase 7 Milestones)
 - **Async Compute Greedy Meshing**: Decoupled from main thread `Update` loop to `AsyncComputeTaskPool`.
@@ -175,12 +179,17 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - [ ] Phase 8: Engine Optimization & Scalability (Deferred / Backlog)
 - [ ] Phase 9: Flora, Procedural Trees & Surface Vegetation (Stage 9.1 paused/reverted to focus on foundational terrain polish)
 - [ ] Phase 10: Gameplay Polish, Audio Foundation & Quality-of-Life Tweaks (Currently Active: Agile, user-directed polish and terrain refinement tasks; not strictly linear)
+  - [x] Stage 10.0: Terrain & World Polish (Agile / Quality-of-Life)
+  - [x] Stage 10.2: Quality-of-Life (Live Chunk Reload, 4-Row Scrollable Creative Inventory)
+  - [x] Stage 10.3: Minimap & Interactive World Map (Minecraft/Xaero-Style)
+  - [x] Stage 10.4: Biome Color Variation & Ambient Environment Noise ("Ambient Environment" Mod Style)
+  - [x] Stage 10.5: Dynamic Resource Throttling & Power Conservation ("Dynamic FPS" Mod Style)
 
 ---
 
 ## Known Issues & Backlog for Future Fixes
 
-- **Terrain Polish & Gameplay Tuning**: World generation, cave density, and strata are currently undergoing agile tuning as gameplay testing dictates. Future polish targets include particle bursts on block break/place, audio trigger hooks (footsteps, ambient wind, cavern echoes), and binary world persistence (Stages 10.1–10.3).
+- **Terrain Polish & Gameplay Tuning**: World generation, cave density, and strata are currently undergoing agile tuning as gameplay testing dictates. Completed milestones include Stage 10.3 Minimap & World Map (foundational functionality operational, reserved for future incremental enhancements), Stage 10.4 Ambient Environment noise with biome-specific color tinting and blending, and Stage 10.5 Dynamic FPS resource throttling. Upcoming targets include particle bursts on block break/place and audio trigger hooks.
 
 ---
 

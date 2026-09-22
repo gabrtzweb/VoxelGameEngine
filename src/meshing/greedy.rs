@@ -769,7 +769,7 @@ mod tests {
 
         if let VertexAttributeValues::Float32x4(color_data) = colors {
             assert!(!color_data.is_empty());
-            let grass_tint = Voxel::Grass.tint_color();
+            let grass_tint = Voxel::Grass.tint_color_at(IVec3::ZERO);
             let untinted = [1.0, 1.0, 1.0, 1.0];
 
             // In default mode (!full_grass), top face is tinted, side and bottom faces are untinted (side has pre-baked overlay)

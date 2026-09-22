@@ -16,7 +16,7 @@ use crate::{
 
 use super::{
     cache::MapCache,
-    color::{apply_relief_shading, unexplored_color, voxel_map_color},
+    color::{apply_relief_shading, unexplored_color, voxel_map_color_at},
     minimap::{MARKER_SIZE, draw_player_arrow},
 };
 
@@ -72,12 +72,9 @@ impl Plugin for WorldMapPlugin {
     }
 }
 
-fn setup_world_map_resources(
-    mut commands: Commands,
-    mut images: ResMut<Assets<Image>>,
-) {
+fn setup_world_map_resources(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     let terrain_pixels =
-        vec![18u8, 19u8, 24u8, 255u8].repeat((WORLD_MAP_WIDTH * WORLD_MAP_HEIGHT) as usize);
+        [18u8, 19u8, 24u8, 255u8].repeat((WORLD_MAP_WIDTH * WORLD_MAP_HEIGHT) as usize);
 
     let mut terrain_img = Image::new_fill(
         Extent3d {
@@ -192,54 +189,52 @@ fn spawn_world_map_ui(
             });
 
             // Center Interactive Map Canvas Area
-            root.spawn((
-                Node {
-                    width: percent(100.0),
-                    height: percent(84.0),
-                    display: Display::Flex,
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    overflow: Overflow::clip(),
-                    ..default()
-                },
-            ))
-            .with_children(|canvas_container| {
-                canvas_container
-                    .spawn((
-                        WorldMapViewport,
-                        ImageNode {
-                            image: map_state.terrain_image.clone(),
-                            ..default()
-                        },
-                        Node {
-                            width: percent(96.0),
-                            height: percent(94.0),
-                            border: UiRect::all(px(2.0)),
-                            border_radius: BorderRadius::all(px(4.0)),
-                            ..default()
-                        },
-                        BorderColor::all(Color::srgba(0.35, 0.38, 0.48, 0.85)),
-                    ))
-                    .with_children(|viewport| {
-                        // Player Directional Marker
-                        viewport.spawn((
-                            WorldMapPlayerMarker,
+            root.spawn((Node {
+                width: percent(100.0),
+                height: percent(84.0),
+                display: Display::Flex,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                overflow: Overflow::clip(),
+                ..default()
+            },))
+                .with_children(|canvas_container| {
+                    canvas_container
+                        .spawn((
+                            WorldMapViewport,
                             ImageNode {
-                                image: map_state.marker_image.clone(),
+                                image: map_state.terrain_image.clone(),
                                 ..default()
                             },
                             Node {
-                                position_type: PositionType::Absolute,
-                                width: px(MARKER_SIZE as f32),
-                                height: px(MARKER_SIZE as f32),
-                                left: px(0.0),
-                                top: px(0.0),
+                                width: percent(96.0),
+                                height: percent(94.0),
+                                border: UiRect::all(px(2.0)),
+                                border_radius: BorderRadius::all(px(4.0)),
                                 ..default()
                             },
-                            ZIndex(30),
-                        ));
-                    });
-            });
+                            BorderColor::all(Color::srgba(0.35, 0.38, 0.48, 0.85)),
+                        ))
+                        .with_children(|viewport| {
+                            // Player Directional Marker
+                            viewport.spawn((
+                                WorldMapPlayerMarker,
+                                ImageNode {
+                                    image: map_state.marker_image.clone(),
+                                    ..default()
+                                },
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    width: px(MARKER_SIZE as f32),
+                                    height: px(MARKER_SIZE as f32),
+                                    left: px(0.0),
+                                    top: px(0.0),
+                                    ..default()
+                                },
+                                ZIndex(30),
+                            ));
+                        });
+                });
 
             // Footer HUD Bar
             root.spawn((
@@ -317,11 +312,11 @@ fn handle_world_map_input(
     let cursor_pos = window.cursor_position();
 
     // 1. Center on player on Spacebar
-    if keyboard.just_pressed(KeyCode::Space) {
-        if let Ok(player_transform) = player_query.single() {
-            let p = player_transform.translation;
-            map_state.center = Vec2::new(p.x / VOXEL_SIZE, p.z / VOXEL_SIZE);
-        }
+    if keyboard.just_pressed(KeyCode::Space)
+        && let Ok(player_transform) = player_query.single()
+    {
+        let p = player_transform.translation;
+        map_state.center = Vec2::new(p.x / VOXEL_SIZE, p.z / VOXEL_SIZE);
     }
 
     // 2. Pan with Arrow keys or WASD
@@ -414,7 +409,7 @@ fn sync_world_map_terrain(
 
             let color = if let Some(pixel) = map_cache.get_pixel(wx, wz) {
                 if pixel.voxel != Voxel::Air {
-                    let base = voxel_map_color(pixel.voxel, pixel.water_depth);
+                    let base = voxel_map_color_at(pixel.voxel, pixel.water_depth, wx, wz);
                     let north_h = map_cache.get_pixel(wx, wz - 1).map(|p| p.height);
                     apply_relief_shading(base, pixel.height, north_h)
                 } else {
@@ -479,7 +474,10 @@ fn update_world_map_ui(
 
     // 1. Update Player position readout
     for mut text in &mut player_text_query {
-        **text = format!("Player: X: {:>4}  Y: {:>3}  Z: {:>4}", px_block, py_block, pz_block);
+        **text = format!(
+            "Player: X: {:>4}  Y: {:>3}  Z: {:>4}",
+            px_block, py_block, pz_block
+        );
     }
 
     let Ok((vp_node, vp_transform)) = viewport_query.single() else {

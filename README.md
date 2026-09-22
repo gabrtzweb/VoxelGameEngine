@@ -8,6 +8,9 @@ The project focuses on a fully editable procedural voxel world with 1.0 m³ bloc
 - Chunks have 16 × 16 × 16 voxels (16 m × 16 m × 16 m physical sections).
 - Complete removal of single 0.5 m sub-voxels.
 - Auto-step is calibrated to 0.50 m (50 cm) for smooth future slab stepping, requiring jumping over full 1 m blocks.
+- Square gameplay Minimap HUD (North-up, coordinates, live player heading chevron) and full-screen interactive World Map (<kbd>M</kbd>).
+- Ambient Environment procedural color noise and climate-driven biome palettes (grass, foliage, water) with smooth 5-point cross-kernel boundary blending.
+- Dynamic FPS intelligent power management: background window throttling (15 FPS), idle/AFK detection (30 FPS), and laptop battery conservation (60 FPS cap) with zero input latency wakeup.
 
 The long-term goal is to build a performant procedural voxel game with large-world streaming, runtime terrain editing, configurable generation, multiple gameplay modes, dynamic fluids and extensive development tooling.
 
@@ -47,6 +50,7 @@ The long-term goal is to build a performant procedural voxel game with large-wor
                       • Right Click: Stamp block into slot / deselect on empty space
                       • Q / Middle Click: Clear hovered hotbar slot
                       • 1 - 8: Quick assign or swap slots
+    M                 World Map (Full-screen interactive map, pan & zoom, player tracking)
 
     F1                Toggle Inspector (bevy_inspector_egui)
     F2                Chunk debug borders
@@ -78,6 +82,7 @@ docs/
 src/
 ├── core/
 │   ├── dev_stats.rs
+│   ├── dynamic_fps.rs
 │   ├── mod.rs
 │   └── noise.rs
 ├── environment/
@@ -103,6 +108,12 @@ src/
 │   ├── mod.rs
 │   ├── strata.rs
 │   └── trees.rs
+├── map/
+│   ├── cache.rs
+│   ├── color.rs
+│   ├── minimap.rs
+│   ├── mod.rs
+│   └── world_map.rs
 ├── menu/
 │   ├── inventory.rs
 │   ├── mod.rs

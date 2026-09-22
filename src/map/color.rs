@@ -79,9 +79,58 @@ pub fn voxel_map_color(voxel: Voxel, water_depth: u8) -> [u8; 4] {
     }
 }
 
+/// Returns the RGBA map color for a voxel at world coordinates (world_x, world_z),
+/// applying biome-specific palettes and smooth multi-sample transitions.
+pub fn voxel_map_color_at(voxel: Voxel, water_depth: u8, world_x: i32, world_z: i32) -> [u8; 4] {
+    if voxel.is_tinted() {
+        let tint = crate::generation::sample_blended_biome_color(
+            voxel,
+            world_x as f32,
+            world_z as f32,
+            1337,
+        );
+        if voxel.is_water() {
+            let depth_factor = if water_depth <= 2 {
+                1.15
+            } else if water_depth <= 5 {
+                1.00
+            } else if water_depth <= 10 {
+                0.85
+            } else {
+                0.70
+            };
+            return [
+                (tint[0] * 255.0 * depth_factor).clamp(0.0, 255.0) as u8,
+                (tint[1] * 255.0 * depth_factor).clamp(0.0, 255.0) as u8,
+                (tint[2] * 255.0 * depth_factor).clamp(0.0, 255.0) as u8,
+                255,
+            ];
+        } else if voxel == Voxel::Grass || voxel == Voxel::SnowyGrass {
+            return [
+                (tint[0] * 175.0).clamp(0.0, 255.0) as u8,
+                (tint[1] * 185.0).clamp(0.0, 255.0) as u8,
+                (tint[2] * 145.0).clamp(0.0, 255.0) as u8,
+                255,
+            ];
+        } else if voxel.is_leaves() {
+            return [
+                (tint[0] * 120.0).clamp(0.0, 255.0) as u8,
+                (tint[1] * 130.0).clamp(0.0, 255.0) as u8,
+                (tint[2] * 110.0).clamp(0.0, 255.0) as u8,
+                255,
+            ];
+        }
+    }
+    voxel_map_color(voxel, water_depth)
+}
+
 /// Applies authentic North-up topographic hill shading to simulate sunlight and elevation relief.
 #[inline]
-pub fn apply_relief_shading(color: [u8; 4], current_height: i16, north_height: Option<i16>) -> [u8; 4] {
+pub fn apply_relief_shading(
+    color: [u8; 4],
+    current_height: i16,
+    north_height: Option<i16>,
+) -> [u8; 4] {
     let Some(north_h) = north_height else {
         return color;
     };
@@ -161,4 +210,3 @@ mod tests {
         assert_eq!(void_pixel, [18, 19, 24, 255]);
     }
 }
-

@@ -391,7 +391,7 @@ fn despawn_settings_menu(mut commands: Commands, query: Query<Entity, With<Setti
     }
 }
 
-#[allow(clippy::type_complexity)]
+#[allow(clippy::type_complexity, clippy::too_many_arguments)]
 fn handle_settings_buttons(
     mut interaction_query: Query<
         (

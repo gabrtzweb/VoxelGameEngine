@@ -139,6 +139,7 @@ fn update_dev_stats(
     camera: Single<&Transform, (With<Camera3d>, Without<Player>)>,
     current_target: Res<CurrentTarget>,
     terrain_generator: Option<Res<TerrainGenerator>>,
+    dynamic_fps: Option<Res<super::dynamic_fps::DynamicFpsState>>,
     text_query: Single<
         (
             &mut Text,
@@ -297,9 +298,28 @@ fn update_dev_stats(
                 "Unknown".to_string()
             };
 
+            let power_text = if let Some(ref fps_state) = dynamic_fps {
+                let power_src = if fps_state.on_battery {
+                    "Battery"
+                } else {
+                    "AC"
+                };
+                if let Some(target) = fps_state.target_fps {
+                    format!(
+                        "{power_src} [{}] -> {target} FPS",
+                        fps_state.state_kind.label()
+                    )
+                } else {
+                    format!("{power_src} [{}]", fps_state.state_kind.label())
+                }
+            } else {
+                "N/A".to_string()
+            };
+
             text.0 = format!(
                 "FPS: {fps:.1}\n\
                 Frame: {frame_time:.2} ms\n\
+                Power: {power_text}\n\
                 Mode: {}\n\
                 Flight: {}\n\
                 Time: {env_text}\n\

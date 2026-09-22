@@ -292,6 +292,7 @@ pub fn start_generation_tasks(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn collect_generation_tasks(
     mut commands: Commands,
     mut tasks: Query<(Entity, &mut ChunkGenerationTask)>,

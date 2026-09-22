@@ -189,44 +189,39 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
         let mut side_variants = load_all_variants_for(side_name, voxel.fallback_color());
 
         // Composite grass side overlay if this is Grass
-        if voxel == Voxel::Grass {
-            if let Some(overlay) =
+        if voxel == Voxel::Grass
+            && let Some(overlay) =
                 try_load_image("assets/textures/blocks/terr_grass_side_overlay.png")
-            {
-                if let Some(overlay_frame) = overlay.frames.first() {
-                    let tint = voxel.tint_color();
-                    for variant in &mut side_variants {
-                        for frame in &mut variant.frames {
-                            for i in 0..256 {
-                                let idx = i * 4;
-                                let ov_a = overlay_frame[idx + 3] as f32 / 255.0;
-                                if ov_a > 0.0 {
-                                    let ov_r = overlay_frame[idx] as f32 * tint[0];
-                                    let ov_g = overlay_frame[idx + 1] as f32 * tint[1];
-                                    let ov_b = overlay_frame[idx + 2] as f32 * tint[2];
+            && let Some(overlay_frame) = overlay.frames.first()
+        {
+            let tint = voxel.tint_color();
+            for variant in &mut side_variants {
+                for frame in &mut variant.frames {
+                    for i in 0..256 {
+                        let idx = i * 4;
+                        let ov_a = overlay_frame[idx + 3] as f32 / 255.0;
+                        if ov_a > 0.0 {
+                            let ov_r = overlay_frame[idx] as f32 * tint[0];
+                            let ov_g = overlay_frame[idx + 1] as f32 * tint[1];
+                            let ov_b = overlay_frame[idx + 2] as f32 * tint[2];
 
-                                    let base_r = frame[idx] as f32;
-                                    let base_g = frame[idx + 1] as f32;
-                                    let base_b = frame[idx + 2] as f32;
+                            let base_r = frame[idx] as f32;
+                            let base_g = frame[idx + 1] as f32;
+                            let base_b = frame[idx + 2] as f32;
 
-                                    let out_r = (base_r * (1.0 - ov_a) + ov_r * ov_a)
-                                        .round()
-                                        .clamp(0.0, 255.0)
-                                        as u8;
-                                    let out_g = (base_g * (1.0 - ov_a) + ov_g * ov_a)
-                                        .round()
-                                        .clamp(0.0, 255.0)
-                                        as u8;
-                                    let out_b = (base_b * (1.0 - ov_a) + ov_b * ov_a)
-                                        .round()
-                                        .clamp(0.0, 255.0)
-                                        as u8;
+                            let out_r = (base_r * (1.0 - ov_a) + ov_r * ov_a)
+                                .round()
+                                .clamp(0.0, 255.0) as u8;
+                            let out_g = (base_g * (1.0 - ov_a) + ov_g * ov_a)
+                                .round()
+                                .clamp(0.0, 255.0) as u8;
+                            let out_b = (base_b * (1.0 - ov_a) + ov_b * ov_a)
+                                .round()
+                                .clamp(0.0, 255.0) as u8;
 
-                                    frame[idx] = out_r;
-                                    frame[idx + 1] = out_g;
-                                    frame[idx + 2] = out_b;
-                                }
-                            }
+                            frame[idx] = out_r;
+                            frame[idx + 1] = out_g;
+                            frame[idx + 2] = out_b;
                         }
                     }
                 }

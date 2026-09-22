@@ -318,4 +318,3 @@ mod tests {
         assert!(cache.get_pixel(0, 0).is_none());
     }
 }
-
