@@ -189,7 +189,7 @@ This project is currently an experimental engine and game in active early develo
 A subset of the block textures currently present in the codebase are used strictly as temporary internal placeholders for prototyping, testing meshing pipelines, and visual debugging. All credit and copyright belong to their respective original creators:
 
 * **Ashen** by [Aim_Boot](https://modrinth.com/resourcepack/ashen) (All Rights Reserved)
-* **Excalibur** by [Maffhew)](https://modrinth.com/resourcepack/excal) (Licensed under CC BY-NC-ND 3.0)
+* **Excalibur** by [Maffhew](https://modrinth.com/resourcepack/excal) (Licensed under CC BY-NC-ND 3.0)
 
 These assets will be replaced with original artwork or permissively licensed open assets (e.g., CC0) prior to any public demo, distribution, or release.
 
