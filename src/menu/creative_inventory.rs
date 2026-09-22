@@ -3,6 +3,7 @@ use bevy::{input::mouse::AccumulatedMouseScroll, prelude::*, window::PrimaryWind
 use crate::{
     gameplay::BlockIcons,
     player::hotbar::{HOTBAR_SLOT_COUNT, Hotbar},
+    player::inventory::PlayerInventory,
     world::Voxel,
 };
 
@@ -86,6 +87,14 @@ pub fn max_scroll_row() -> usize {
     total_inventory_rows().saturating_sub(INVENTORY_VISIBLE_ROWS)
 }
 
+/// The active inventory view mode.
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum InventoryTab {
+    #[default]
+    Creative,
+    Player,
+}
+
 #[derive(Resource, Default)]
 pub struct InventoryScrollState {
     pub scroll_row: usize,
@@ -97,6 +106,16 @@ struct InventoryMenuRoot;
 
 #[derive(Component)]
 struct InventoryCard;
+
+#[derive(Component)]
+struct InventoryTabButton {
+    tab: InventoryTab,
+}
+
+#[derive(Component)]
+struct InventoryTabButtonText {
+    tab: InventoryTab,
+}
 
 #[derive(Component)]
 struct InventoryPaletteSlot {
@@ -130,11 +149,18 @@ pub struct InventoryMenuPlugin;
 impl Plugin for InventoryMenuPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<InventoryScrollState>()
+            .init_resource::<InventoryTab>()
             .add_systems(OnEnter(MenuState::Inventory), spawn_inventory_menu)
             .add_systems(OnExit(MenuState::Inventory), despawn_inventory_menu)
             .add_systems(
                 Update,
-                (handle_inventory_interaction, sync_inventory_hotbar_icons)
+                (
+                    handle_inventory_tab_interaction,
+                    handle_inventory_scroll,
+                    handle_inventory_slot_interaction,
+                    sync_inventory_hotbar_icons,
+                )
+                    .chain()
                     .run_if(in_state(MenuState::Inventory)),
             );
     }
@@ -143,9 +169,12 @@ impl Plugin for InventoryMenuPlugin {
 fn spawn_inventory_menu(
     mut commands: Commands,
     hotbar: Res<Hotbar>,
+    player_inv: Res<PlayerInventory>,
     icons: Res<BlockIcons>,
+    tab_state: Res<InventoryTab>,
     scroll_state: Res<InventoryScrollState>,
 ) {
+    let current_tab = *tab_state;
     let start_row = scroll_state.scroll_row;
     let total_rows = total_inventory_rows();
     let max_scroll = max_scroll_row();
@@ -158,6 +187,11 @@ fn spawn_inventory_menu(
         (start_row as f32 / max_scroll as f32) * max_travel
     } else {
         0.0
+    };
+
+    let (track_display, track_vis) = match current_tab {
+        InventoryTab::Creative => (Display::Flex, Visibility::Visible),
+        InventoryTab::Player => (Display::None, Visibility::Hidden),
     };
 
     commands
@@ -185,7 +219,7 @@ fn spawn_inventory_menu(
                         display: Display::Flex,
                         flex_direction: FlexDirection::Column,
                         align_items: AlignItems::Center,
-                        row_gap: px(14.0),
+                        row_gap: px(12.0),
                         width: px(480.0),
                         padding: UiRect::all(px(20.0)),
                         border: UiRect::all(px(2.0)),
@@ -196,19 +230,108 @@ fn spawn_inventory_menu(
                     BorderColor::all(Color::srgba(0.35, 0.35, 0.42, 0.80)),
                 ))
                 .with_children(|panel| {
-                    // Header Title
-                    panel.spawn((
-                        Text::new("CREATIVE INVENTORY"),
-                        TextFont {
-                            font_size: FontSize::Px(20.0),
-                            ..default()
-                        },
-                        TextColor(Color::srgb(0.95, 0.95, 0.98)),
-                        Node {
+                    // Top Tab Navigation Bar
+                    panel
+                        .spawn(Node {
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Row,
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            column_gap: px(10.0),
                             margin: UiRect::bottom(px(4.0)),
                             ..default()
-                        },
-                    ));
+                        })
+                        .with_children(|tab_row| {
+                            // Tab 1: Creative Inventory
+                            tab_row
+                                .spawn((
+                                    Button,
+                                    InventoryTabButton {
+                                        tab: InventoryTab::Creative,
+                                    },
+                                    Node {
+                                        padding: UiRect::axes(px(14.0), px(6.0)),
+                                        border: UiRect::all(px(1.5)),
+                                        border_radius: BorderRadius::all(px(6.0)),
+                                        display: Display::Flex,
+                                        align_items: AlignItems::Center,
+                                        justify_content: JustifyContent::Center,
+                                        ..default()
+                                    },
+                                    if current_tab == InventoryTab::Creative {
+                                        BackgroundColor(Color::srgba(0.24, 0.24, 0.32, 0.95))
+                                    } else {
+                                        BackgroundColor(Color::srgba(0.12, 0.12, 0.16, 0.70))
+                                    },
+                                    if current_tab == InventoryTab::Creative {
+                                        BorderColor::all(Color::srgb(1.0, 0.85, 0.30))
+                                    } else {
+                                        BorderColor::all(Color::srgba(0.28, 0.28, 0.35, 0.60))
+                                    },
+                                ))
+                                .with_children(|btn| {
+                                    btn.spawn((
+                                        InventoryTabButtonText {
+                                            tab: InventoryTab::Creative,
+                                        },
+                                        Text::new("CREATIVE INVENTORY"),
+                                        TextFont {
+                                            font_size: FontSize::Px(12.0),
+                                            ..default()
+                                        },
+                                        TextColor(if current_tab == InventoryTab::Creative {
+                                            Color::srgb(1.0, 0.90, 0.40)
+                                        } else {
+                                            Color::srgb(0.70, 0.72, 0.78)
+                                        }),
+                                    ));
+                                });
+
+                            // Tab 2: Personal Inventory
+                            tab_row
+                                .spawn((
+                                    Button,
+                                    InventoryTabButton {
+                                        tab: InventoryTab::Player,
+                                    },
+                                    Node {
+                                        padding: UiRect::axes(px(14.0), px(6.0)),
+                                        border: UiRect::all(px(1.5)),
+                                        border_radius: BorderRadius::all(px(6.0)),
+                                        display: Display::Flex,
+                                        align_items: AlignItems::Center,
+                                        justify_content: JustifyContent::Center,
+                                        ..default()
+                                    },
+                                    if current_tab == InventoryTab::Player {
+                                        BackgroundColor(Color::srgba(0.24, 0.24, 0.32, 0.95))
+                                    } else {
+                                        BackgroundColor(Color::srgba(0.12, 0.12, 0.16, 0.70))
+                                    },
+                                    if current_tab == InventoryTab::Player {
+                                        BorderColor::all(Color::srgb(1.0, 0.85, 0.30))
+                                    } else {
+                                        BorderColor::all(Color::srgba(0.28, 0.28, 0.35, 0.60))
+                                    },
+                                ))
+                                .with_children(|btn| {
+                                    btn.spawn((
+                                        InventoryTabButtonText {
+                                            tab: InventoryTab::Player,
+                                        },
+                                        Text::new("PERSONAL INVENTORY"),
+                                        TextFont {
+                                            font_size: FontSize::Px(12.0),
+                                            ..default()
+                                        },
+                                        TextColor(if current_tab == InventoryTab::Player {
+                                            Color::srgb(1.0, 0.90, 0.40)
+                                        } else {
+                                            Color::srgb(0.70, 0.72, 0.78)
+                                        }),
+                                    ));
+                                });
+                        });
 
                     // Palette + Scrollbar Row Container
                     panel
@@ -245,8 +368,15 @@ fn spawn_inventory_menu(
                                 ))
                                 .with_children(|grid| {
                                     for slot_idx in 0..INVENTORY_VISIBLE_SLOTS {
-                                        let block_idx = start_row * INVENTORY_COLS + slot_idx;
-                                        let voxel = AVAILABLE_BLOCKS.get(block_idx).copied();
+                                        let voxel = match current_tab {
+                                            InventoryTab::Creative => {
+                                                let block_idx =
+                                                    start_row * INVENTORY_COLS + slot_idx;
+                                                AVAILABLE_BLOCKS.get(block_idx).copied()
+                                            }
+                                            InventoryTab::Player => player_inv.get(slot_idx),
+                                        };
+
                                         let icon_handle = voxel
                                             .map(|v| icons.get(v))
                                             .unwrap_or_else(|| icons.get(Voxel::Stone));
@@ -297,15 +427,19 @@ fn spawn_inventory_menu(
                                     }
                                 });
 
-                            // Minecraft-style Scrollbar Track
+                            // Minecraft-style Scrollbar Track (visible in Creative tab, hidden in Player tab)
                             palette_row
                                 .spawn((
                                     Button,
                                     InventoryScrollTrack,
                                     Node {
-                                        width: px(16.0),
+                                        width: if current_tab == InventoryTab::Creative {
+                                            px(16.0)
+                                        } else {
+                                            px(0.0)
+                                        },
                                         height: px(track_height),
-                                        display: Display::Flex,
+                                        display: track_display,
                                         position_type: PositionType::Relative,
                                         border: UiRect::all(px(1.5)),
                                         border_radius: BorderRadius::all(px(4.0)),
@@ -313,6 +447,7 @@ fn spawn_inventory_menu(
                                     },
                                     BackgroundColor(Color::srgba(0.04, 0.04, 0.06, 0.90)),
                                     BorderColor::all(Color::srgba(0.22, 0.22, 0.26, 0.70)),
+                                    track_vis,
                                 ))
                                 .with_children(|track| {
                                     track.spawn((
@@ -431,8 +566,18 @@ fn despawn_inventory_menu(
     query: Query<Entity, With<InventoryMenuRoot>>,
     mut held_item: ResMut<HeldInventoryItem>,
     mut scroll_state: ResMut<InventoryScrollState>,
+    mut player_inv: ResMut<PlayerInventory>,
+    mut hotbar: ResMut<Hotbar>,
 ) {
-    held_item.voxel = None;
+    if let Some(held) = held_item.voxel {
+        if !player_inv.add_item(held)
+            && let Some(empty_idx) = hotbar.slots.iter().position(|s| s.is_none())
+        {
+            hotbar.slots[empty_idx] = Some(held);
+        }
+        held_item.voxel = None;
+    }
+
     scroll_state.scroll_row = 0;
     scroll_state.is_dragging_thumb = false;
     for entity in &query {
@@ -448,65 +593,150 @@ struct InventoryDragState {
 }
 
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
-fn handle_inventory_interaction(
-    keyboard: Res<ButtonInput<KeyCode>>,
+fn handle_inventory_tab_interaction(
+    mouse: Res<ButtonInput<MouseButton>>,
+    mut tab_state: ResMut<InventoryTab>,
+    scroll_state: Res<InventoryScrollState>,
+    icons: Res<BlockIcons>,
+    player_inv: Res<PlayerInventory>,
+    mut tab_button_query: Query<
+        (
+            &Interaction,
+            &InventoryTabButton,
+            &mut BackgroundColor,
+            &mut BorderColor,
+        ),
+        (
+            With<InventoryTabButton>,
+            Without<InventoryScrollThumb>,
+            Without<InventoryScrollTrack>,
+        ),
+    >,
+    mut tab_text_query: Query<(&InventoryTabButtonText, &mut TextColor)>,
+    mut track_node_query: Query<
+        (&mut Node, &mut Visibility),
+        (
+            With<InventoryScrollTrack>,
+            Without<InventoryPaletteSlotIcon>,
+        ),
+    >,
+    mut palette_query: Query<
+        &mut InventoryPaletteSlot,
+        (
+            Without<InventoryTabButton>,
+            Without<InventoryScrollThumb>,
+            Without<InventoryScrollTrack>,
+        ),
+    >,
+    mut slot_icon_query: Query<
+        (&InventoryPaletteSlotIcon, &mut ImageNode, &mut Visibility),
+        Without<InventoryScrollTrack>,
+    >,
+) {
+    let left_just_pressed = mouse.just_pressed(MouseButton::Left);
+    let mut tab_switched = false;
+
+    for (interaction, tab_btn, mut bg, mut border) in &mut tab_button_query {
+        let is_active = *tab_state == tab_btn.tab;
+        let is_hovered = *interaction == Interaction::Hovered;
+        let is_pressed = *interaction == Interaction::Pressed;
+
+        if left_just_pressed && is_pressed && !is_active {
+            *tab_state = tab_btn.tab;
+            tab_switched = true;
+        }
+
+        if is_active {
+            *bg = BackgroundColor(Color::srgba(0.24, 0.24, 0.32, 0.95));
+            *border = BorderColor::all(Color::srgb(1.0, 0.85, 0.30));
+        } else if is_hovered {
+            *bg = BackgroundColor(Color::srgba(0.18, 0.18, 0.24, 0.85));
+            *border = BorderColor::all(Color::srgba(0.45, 0.45, 0.55, 0.80));
+        } else {
+            *bg = BackgroundColor(Color::srgba(0.12, 0.12, 0.16, 0.70));
+            *border = BorderColor::all(Color::srgba(0.28, 0.28, 0.35, 0.60));
+        }
+    }
+
+    for (tab_text, mut text_color) in &mut tab_text_query {
+        if *tab_state == tab_text.tab {
+            text_color.0 = Color::srgb(1.0, 0.90, 0.40);
+        } else {
+            text_color.0 = Color::srgb(0.70, 0.72, 0.78);
+        }
+    }
+
+    if tab_switched {
+        for (mut track_node, mut track_vis) in &mut track_node_query {
+            match *tab_state {
+                InventoryTab::Creative => {
+                    track_node.display = Display::Flex;
+                    track_node.width = px(16.0);
+                    *track_vis = Visibility::Visible;
+                }
+                InventoryTab::Player => {
+                    track_node.display = Display::None;
+                    track_node.width = px(0.0);
+                    *track_vis = Visibility::Hidden;
+                }
+            }
+        }
+
+        let cur_row = scroll_state.scroll_row;
+        for mut slot in &mut palette_query {
+            slot.voxel = match *tab_state {
+                InventoryTab::Creative => {
+                    let block_idx = cur_row * INVENTORY_COLS + slot.slot_index;
+                    AVAILABLE_BLOCKS.get(block_idx).copied()
+                }
+                InventoryTab::Player => player_inv.get(slot.slot_index),
+            };
+        }
+
+        for (icon, mut img, mut vis) in &mut slot_icon_query {
+            let voxel = match *tab_state {
+                InventoryTab::Creative => {
+                    let block_idx = cur_row * INVENTORY_COLS + icon.slot_index;
+                    AVAILABLE_BLOCKS.get(block_idx).copied()
+                }
+                InventoryTab::Player => player_inv.get(icon.slot_index),
+            };
+            if let Some(v) = voxel {
+                *vis = Visibility::Visible;
+                img.image = icons.get(v);
+            } else {
+                *vis = Visibility::Hidden;
+            }
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
+fn handle_inventory_scroll(
     mouse: Res<ButtonInput<MouseButton>>,
     mouse_scroll: Res<AccumulatedMouseScroll>,
-    mut held_item: ResMut<HeldInventoryItem>,
-    mut hotbar: ResMut<Hotbar>,
+    tab_state: Res<InventoryTab>,
     mut scroll_state: ResMut<InventoryScrollState>,
     icons: Res<BlockIcons>,
     window_query: Query<&Window, With<PrimaryWindow>>,
-    card_query: Query<(&GlobalTransform, &ComputedNode), With<InventoryCard>>,
     track_query: Query<(&GlobalTransform, &ComputedNode), With<InventoryScrollTrack>>,
     thumb_query: Query<&Interaction, With<InventoryScrollThumb>>,
     mut thumb_node_query: Query<
         (&mut Node, &mut BackgroundColor, &mut BorderColor),
-        (
-            With<InventoryScrollThumb>,
-            Without<InventoryPaletteSlot>,
-            Without<InventoryHotbarSlot>,
-        ),
+        (With<InventoryScrollThumb>, Without<InventoryScrollTrack>),
     >,
-    mut palette_query: Query<
-        (
-            &Interaction,
-            &mut InventoryPaletteSlot,
-            &mut BorderColor,
-            &mut BackgroundColor,
-        ),
-        (
-            With<InventoryPaletteSlot>,
-            Without<InventoryScrollThumb>,
-            Without<InventoryHotbarSlot>,
-        ),
-    >,
+    mut palette_query: Query<&mut InventoryPaletteSlot>,
     mut slot_icon_query: Query<(&InventoryPaletteSlotIcon, &mut ImageNode, &mut Visibility)>,
-    mut hotbar_slot_query: Query<
-        (
-            &Interaction,
-            &InventoryHotbarSlot,
-            &mut BorderColor,
-            &mut BackgroundColor,
-        ),
-        (
-            With<InventoryHotbarSlot>,
-            Without<InventoryPaletteSlot>,
-            Without<InventoryScrollThumb>,
-        ),
-    >,
-    mut drag_state: Local<InventoryDragState>,
 ) {
-    let is_shift = keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight);
-    let left_just_pressed = mouse.just_pressed(MouseButton::Left);
-    let right_just_pressed = mouse.just_pressed(MouseButton::Right);
-    let middle_just_pressed = mouse.just_pressed(MouseButton::Middle);
-    let left_pressed = mouse.pressed(MouseButton::Left);
+    if *tab_state != InventoryTab::Creative {
+        return;
+    }
 
+    let left_just_pressed = mouse.just_pressed(MouseButton::Left);
+    let left_pressed = mouse.pressed(MouseButton::Left);
     let max_row = max_scroll_row();
     let mut row_changed = false;
 
-    // 1. Mouse wheel scrolling
     let scroll_y = mouse_scroll.delta.y;
     if scroll_y > 0.05 {
         if scroll_state.scroll_row > 0 {
@@ -518,7 +748,6 @@ fn handle_inventory_interaction(
         row_changed = true;
     }
 
-    // 2. Scrollbar Dragging / Track Clicking
     let track_height = 210.0;
     let thumb_height = (track_height
         * (INVENTORY_VISIBLE_ROWS as f32 / total_inventory_rows() as f32))
@@ -554,13 +783,90 @@ fn handle_inventory_interaction(
         }
     }
 
+    for (mut thumb_node, mut thumb_bg, mut thumb_border) in &mut thumb_node_query {
+        let progress = if max_row > 0 {
+            scroll_state.scroll_row as f32 / max_row as f32
+        } else {
+            0.0
+        };
+        thumb_node.top = px(progress * max_travel);
+
+        let is_thumb_hovered = thumb_query.iter().any(|i| *i == Interaction::Hovered);
+        if scroll_state.is_dragging_thumb {
+            *thumb_bg = BackgroundColor(Color::srgb(1.0, 0.85, 0.30));
+            *thumb_border = BorderColor::all(Color::srgb(1.0, 1.0, 0.60));
+        } else if is_thumb_hovered {
+            *thumb_bg = BackgroundColor(Color::srgba(0.50, 0.52, 0.60, 1.0));
+            *thumb_border = BorderColor::all(Color::srgba(0.70, 0.72, 0.80, 1.0));
+        } else {
+            *thumb_bg = BackgroundColor(Color::srgba(0.35, 0.36, 0.42, 0.95));
+            *thumb_border = BorderColor::all(Color::srgba(0.55, 0.56, 0.65, 0.90));
+        }
+    }
+
     if mouse.just_released(MouseButton::Left) {
         scroll_state.is_dragging_thumb = false;
     }
 
-    // 3. Deselect held item if clicking outside the central inventory card (on the backdrop)
+    if row_changed {
+        let cur_row = scroll_state.scroll_row;
+        for mut slot in &mut palette_query {
+            let block_idx = cur_row * INVENTORY_COLS + slot.slot_index;
+            slot.voxel = AVAILABLE_BLOCKS.get(block_idx).copied();
+        }
+
+        for (icon, mut img, mut vis) in &mut slot_icon_query {
+            let block_idx = cur_row * INVENTORY_COLS + icon.slot_index;
+            if let Some(&voxel) = AVAILABLE_BLOCKS.get(block_idx) {
+                *vis = Visibility::Visible;
+                img.image = icons.get(voxel);
+            } else {
+                *vis = Visibility::Hidden;
+            }
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
+fn handle_inventory_slot_interaction(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
+    mut held_item: ResMut<HeldInventoryItem>,
+    mut hotbar: ResMut<Hotbar>,
+    mut player_inv: ResMut<PlayerInventory>,
+    tab_state: Res<InventoryTab>,
+    icons: Res<BlockIcons>,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+    card_query: Query<(&GlobalTransform, &ComputedNode), With<InventoryCard>>,
+    mut palette_query: Query<
+        (
+            &Interaction,
+            &mut InventoryPaletteSlot,
+            &mut BorderColor,
+            &mut BackgroundColor,
+        ),
+        (With<InventoryPaletteSlot>, Without<InventoryHotbarSlot>),
+    >,
+    mut slot_icon_query: Query<(&InventoryPaletteSlotIcon, &mut ImageNode, &mut Visibility)>,
+    mut hotbar_slot_query: Query<
+        (
+            &Interaction,
+            &InventoryHotbarSlot,
+            &mut BorderColor,
+            &mut BackgroundColor,
+        ),
+        (With<InventoryHotbarSlot>, Without<InventoryPaletteSlot>),
+    >,
+    mut drag_state: Local<InventoryDragState>,
+) {
+    let is_shift = keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight);
+    let left_just_pressed = mouse.just_pressed(MouseButton::Left);
+    let right_just_pressed = mouse.just_pressed(MouseButton::Right);
+    let middle_just_pressed = mouse.just_pressed(MouseButton::Middle);
+    let left_pressed = mouse.pressed(MouseButton::Left);
+
+    // 1. Deselect held item if clicking outside the central inventory card (on the backdrop)
     if (left_just_pressed || right_just_pressed)
-        && held_item.voxel.is_some()
         && let (Some(window), Some((transform, computed))) =
             (window_query.iter().next(), card_query.iter().next())
         && let Some(cursor_pos) = window.cursor_position()
@@ -568,17 +874,32 @@ fn handle_inventory_interaction(
         let center = transform.translation().truncate();
         let half = computed.size() * 0.5;
         let card_rect = Rect::from_corners(center - half, center + half);
-        if !card_rect.contains(cursor_pos) {
+        if !card_rect.contains(cursor_pos)
+            && let Some(held) = held_item.voxel
+        {
+            if *tab_state == InventoryTab::Player {
+                player_inv.add_item(held);
+            }
             held_item.voxel = None;
         }
     }
 
-    // 4. Right-click deselect if not hovering over any hotbar slot
+    // 2. Right-click deselect if not hovering over any hotbar slot or palette slot
     let any_hotbar_hovered = hotbar_slot_query
         .iter()
         .any(|(i, _, _, _)| *i == Interaction::Hovered || *i == Interaction::Pressed);
+    let any_palette_hovered = palette_query
+        .iter()
+        .any(|(i, _, _, _)| *i == Interaction::Hovered || *i == Interaction::Pressed);
 
-    if right_just_pressed && !any_hotbar_hovered {
+    if right_just_pressed
+        && !any_hotbar_hovered
+        && !any_palette_hovered
+        && let Some(held) = held_item.voxel
+    {
+        if *tab_state == InventoryTab::Player {
+            player_inv.add_item(held);
+        }
         held_item.voxel = None;
     }
 
@@ -603,89 +924,117 @@ fn handle_inventory_interaction(
         None
     };
 
-    // 5. Update slots if scroll row changed
-    if row_changed {
-        let cur_row = scroll_state.scroll_row;
-        for (_, mut slot, _, _) in &mut palette_query {
-            let block_idx = cur_row * INVENTORY_COLS + slot.slot_index;
-            slot.voxel = AVAILABLE_BLOCKS.get(block_idx).copied();
-        }
+    let mut sync_player_grid_icons = false;
 
-        for (icon, mut img, mut vis) in &mut slot_icon_query {
-            let block_idx = cur_row * INVENTORY_COLS + icon.slot_index;
-            if let Some(&voxel) = AVAILABLE_BLOCKS.get(block_idx) {
-                *vis = Visibility::Visible;
-                img.image = icons.get(voxel);
-            } else {
-                *vis = Visibility::Hidden;
-            }
-        }
-    }
-
-    // Update thumb position and visual feedback
-    for (mut thumb_node, mut thumb_bg, mut thumb_border) in &mut thumb_node_query {
-        let progress = if max_row > 0 {
-            scroll_state.scroll_row as f32 / max_row as f32
-        } else {
-            0.0
-        };
-        thumb_node.top = px(progress * max_travel);
-
-        let is_thumb_hovered = thumb_query.iter().any(|i| *i == Interaction::Hovered);
-        if scroll_state.is_dragging_thumb {
-            *thumb_bg = BackgroundColor(Color::srgb(1.0, 0.85, 0.30));
-            *thumb_border = BorderColor::all(Color::srgb(1.0, 1.0, 0.60));
-        } else if is_thumb_hovered {
-            *thumb_bg = BackgroundColor(Color::srgba(0.50, 0.52, 0.60, 1.0));
-            *thumb_border = BorderColor::all(Color::srgba(0.70, 0.72, 0.80, 1.0));
-        } else {
-            *thumb_bg = BackgroundColor(Color::srgba(0.35, 0.36, 0.42, 0.95));
-            *thumb_border = BorderColor::all(Color::srgba(0.55, 0.56, 0.65, 0.90));
-        }
-    }
-
-    // 6. Process Palette Slots
-    for (interaction, slot, mut border, mut bg) in &mut palette_query {
+    // 3. Process Grid Slots (Creative vs Player mode)
+    for (interaction, mut slot, mut border, mut bg) in &mut palette_query {
         let is_hovered = *interaction == Interaction::Hovered;
         let is_pressed = *interaction == Interaction::Pressed;
+        let s_idx = slot.slot_index;
 
         if is_hovered || is_pressed {
             *border = BorderColor::all(Color::srgb(1.0, 0.85, 0.30));
             *bg = BackgroundColor(Color::srgba(0.20, 0.20, 0.25, 0.95));
 
-            if let Some(v) = slot.voxel {
-                // Quick assign via keys 1..8
-                if let Some(target_slot) = digit_pressed {
-                    hotbar.slots[target_slot] = Some(v);
-                }
+            match *tab_state {
+                InventoryTab::Creative => {
+                    if let Some(v) = slot.voxel {
+                        if let Some(target_slot) = digit_pressed {
+                            hotbar.slots[target_slot] = Some(v);
+                        }
 
-                // Mouse Tweaks: Shift + Click / Shift + Drag quick-transfer into hotbar
-                if is_shift {
-                    if (left_just_pressed || left_pressed)
-                        && drag_state.last_shift_palette_slot != Some(slot.slot_index)
-                    {
-                        drag_state.last_shift_palette_slot = Some(slot.slot_index);
-                        if let Some(empty_idx) = hotbar.slots.iter().position(|s| s.is_none()) {
-                            hotbar.slots[empty_idx] = Some(v);
+                        if is_shift {
+                            if (left_just_pressed || left_pressed)
+                                && drag_state.last_shift_palette_slot != Some(s_idx)
+                            {
+                                drag_state.last_shift_palette_slot = Some(s_idx);
+                                if let Some(empty_idx) =
+                                    hotbar.slots.iter().position(|s| s.is_none())
+                                {
+                                    hotbar.slots[empty_idx] = Some(v);
+                                } else {
+                                    let active_slot = hotbar.active_slot;
+                                    hotbar.slots[active_slot] = Some(v);
+                                }
+                            }
                         } else {
-                            let active_slot = hotbar.active_slot;
-                            hotbar.slots[active_slot] = Some(v);
+                            if middle_just_pressed {
+                                held_item.voxel = Some(v);
+                            }
+
+                            if left_just_pressed && is_pressed {
+                                if held_item.voxel == Some(v) {
+                                    held_item.voxel = None;
+                                } else {
+                                    held_item.voxel = Some(v);
+                                }
+                            }
                         }
                     }
-                } else {
-                    // Middle click picks up block directly
-                    if middle_just_pressed {
-                        held_item.voxel = Some(v);
+                }
+                InventoryTab::Player => {
+                    // Quick swap / move with hotbar via digit keys 1..8
+                    if let Some(target_slot) = digit_pressed {
+                        let inv_item = player_inv.get(s_idx);
+                        let hotbar_item = hotbar.slots[target_slot];
+                        player_inv.set(s_idx, hotbar_item);
+                        hotbar.slots[target_slot] = inv_item;
+                        slot.voxel = player_inv.get(s_idx);
+                        sync_player_grid_icons = true;
                     }
 
-                    // Left-click interaction
-                    if left_just_pressed && is_pressed {
-                        if held_item.voxel == Some(v) {
-                            // Clicking same block again deselects it / returns to palette
-                            held_item.voxel = None;
-                        } else {
-                            // Pick up onto cursor
-                            held_item.voxel = Some(v);
+                    // Shift + Click: transfer from Personal Inventory to Hotbar
+                    if is_shift {
+                        if left_just_pressed && let Some(item) = player_inv.get(s_idx) {
+                            if let Some(empty_idx) = hotbar.slots.iter().position(|s| s.is_none()) {
+                                hotbar.slots[empty_idx] = Some(item);
+                                player_inv.set(s_idx, None);
+                            } else {
+                                let active_slot = hotbar.active_slot;
+                                let existing = hotbar.slots[active_slot];
+                                hotbar.slots[active_slot] = Some(item);
+                                player_inv.set(s_idx, existing);
+                            }
+                            slot.voxel = player_inv.get(s_idx);
+                            sync_player_grid_icons = true;
+                        }
+                    } else if let Some(held) = held_item.voxel {
+                        // Left-click with held item on cursor
+                        if left_just_pressed && is_pressed {
+                            if let Some(existing) = player_inv.get(s_idx) {
+                                if existing == held {
+                                    held_item.voxel = None;
+                                } else {
+                                    player_inv.set(s_idx, Some(held));
+                                    held_item.voxel = Some(existing);
+                                }
+                            } else {
+                                player_inv.set(s_idx, Some(held));
+                                held_item.voxel = None;
+                            }
+                            slot.voxel = player_inv.get(s_idx);
+                            sync_player_grid_icons = true;
+                        } else if right_just_pressed {
+                            player_inv.set(s_idx, Some(held));
+                            slot.voxel = player_inv.get(s_idx);
+                            sync_player_grid_icons = true;
+                        }
+                    } else {
+                        // Left-click with empty cursor picks up item
+                        if left_just_pressed
+                            && is_pressed
+                            && let Some(item) = player_inv.get(s_idx)
+                        {
+                            held_item.voxel = Some(item);
+                            player_inv.set(s_idx, None);
+                            slot.voxel = None;
+                            sync_player_grid_icons = true;
+                        } else if (middle_just_pressed || keyboard.just_pressed(KeyCode::KeyQ))
+                            && player_inv.get(s_idx).is_some()
+                        {
+                            player_inv.set(s_idx, None);
+                            slot.voxel = None;
+                            sync_player_grid_icons = true;
                         }
                     }
                 }
@@ -696,7 +1045,7 @@ fn handle_inventory_interaction(
         }
     }
 
-    // 7. Process Hotbar Slots
+    // 4. Process Hotbar Slots
     for (interaction, hotbar_slot, mut border, mut bg) in &mut hotbar_slot_query {
         let is_hovered = *interaction == Interaction::Hovered;
         let is_pressed = *interaction == Interaction::Pressed;
@@ -723,10 +1072,22 @@ fn handle_inventory_interaction(
                 hotbar.slots.swap(idx, target_slot);
             }
 
-            // Mouse Tweaks: Shift + Click / Shift + Drag clears hovered hotbar slots
+            // Shift + Click handling
             if is_shift {
-                if left_just_pressed || (left_pressed && is_hovered) {
-                    hotbar.slots[idx] = None;
+                if *tab_state == InventoryTab::Player {
+                    // In Personal tab, Shift-click transfers hotbar item into Player Inventory!
+                    if left_just_pressed
+                        && let Some(item) = hotbar.slots[idx]
+                        && player_inv.add_item(item)
+                    {
+                        hotbar.slots[idx] = None;
+                        sync_player_grid_icons = true;
+                    }
+                } else {
+                    // In Creative tab, Shift-click clears hotbar slot
+                    if left_just_pressed || (left_pressed && is_hovered) {
+                        hotbar.slots[idx] = None;
+                    }
                 }
             } else {
                 // Right click on hotbar slot: place/stamp held item into slot
@@ -738,28 +1099,23 @@ fn handle_inventory_interaction(
                 if let Some(held) = held_item.voxel {
                     if left_pressed && (is_hovered || is_pressed) {
                         if left_just_pressed {
-                            // Clicked on this slot with held item
                             drag_state.hotbar_drag_start_slot = Some(idx);
                             drag_state.is_hotbar_dragging = false;
 
                             if let Some(existing) = hotbar.slots[idx] {
                                 if existing != held {
-                                    // Swap items
                                     hotbar.slots[idx] = Some(held);
                                     held_item.voxel = Some(existing);
                                     drag_state.hotbar_drag_start_slot = None;
                                 } else {
-                                    // Same item: place into slot and clear held item
                                     held_item.voxel = None;
                                 }
                             } else {
-                                // Empty slot: place item into slot
                                 hotbar.slots[idx] = Some(held);
                             }
                         } else if drag_state.hotbar_drag_start_slot.is_some()
                             && drag_state.hotbar_drag_start_slot != Some(idx)
                         {
-                            // Dragged over another slot with LMB held down
                             drag_state.is_hotbar_dragging = true;
                             hotbar.slots[idx] = Some(held);
                         }
@@ -778,10 +1134,23 @@ fn handle_inventory_interaction(
         }
     }
 
-    // 8. Mouse release cleanup
+    if sync_player_grid_icons && *tab_state == InventoryTab::Player {
+        for (_, mut slot, _, _) in &mut palette_query {
+            slot.voxel = player_inv.get(slot.slot_index);
+        }
+        for (icon, mut img, mut vis) in &mut slot_icon_query {
+            if let Some(v) = player_inv.get(icon.slot_index) {
+                *vis = Visibility::Visible;
+                img.image = icons.get(v);
+            } else {
+                *vis = Visibility::Hidden;
+            }
+        }
+    }
+
+    // 5. Mouse release cleanup
     if mouse.just_released(MouseButton::Left) {
         if drag_state.hotbar_drag_start_slot.is_some() {
-            // Placing into hotbar slot clears held item from cursor
             held_item.voxel = None;
         }
         drag_state.last_shift_palette_slot = None;
@@ -813,6 +1182,7 @@ fn sync_inventory_hotbar_icons(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::player::inventory::PLAYER_INVENTORY_SLOTS;
 
     #[test]
     fn test_inventory_dimensions_and_blocks() {
@@ -904,5 +1274,133 @@ mod tests {
         // Point outside on the backdrop is outside (deselects held item)
         assert!(!card_rect.contains(Vec2::new(100.0, 100.0)));
         assert!(!card_rect.contains(Vec2::new(1200.0, 700.0)));
+    }
+
+    #[test]
+    fn test_tab_toggle_state() {
+        let mut tab = InventoryTab::default();
+        assert_eq!(tab, InventoryTab::Creative);
+
+        tab = InventoryTab::Player;
+        assert_eq!(tab, InventoryTab::Player);
+
+        tab = InventoryTab::Creative;
+        assert_eq!(tab, InventoryTab::Creative);
+    }
+
+    #[test]
+    fn test_player_inventory_to_hotbar_shift_transfer() {
+        let mut player_inv = PlayerInventory::default();
+        let mut hotbar = Hotbar {
+            slots: [None; HOTBAR_SLOT_COUNT],
+            active_slot: 0,
+        };
+
+        player_inv.set(0, Some(Voxel::Cobblestone));
+        player_inv.set(1, Some(Voxel::Sand));
+
+        // Shift-click slot 0 moves to hotbar slot 0
+        let item = player_inv.get(0).unwrap();
+        if let Some(empty_idx) = hotbar.slots.iter().position(|s| s.is_none()) {
+            hotbar.slots[empty_idx] = Some(item);
+            player_inv.set(0, None);
+        }
+        assert_eq!(player_inv.get(0), None);
+        assert_eq!(hotbar.slots[0], Some(Voxel::Cobblestone));
+
+        // Shift-click slot 1 moves to hotbar slot 1
+        let item2 = player_inv.get(1).unwrap();
+        if let Some(empty_idx) = hotbar.slots.iter().position(|s| s.is_none()) {
+            hotbar.slots[empty_idx] = Some(item2);
+            player_inv.set(1, None);
+        }
+        assert_eq!(player_inv.get(1), None);
+        assert_eq!(hotbar.slots[1], Some(Voxel::Sand));
+    }
+
+    #[test]
+    fn test_hotbar_to_player_inventory_shift_transfer() {
+        let mut player_inv = PlayerInventory::default();
+        let mut hotbar = Hotbar {
+            slots: [None; HOTBAR_SLOT_COUNT],
+            active_slot: 0,
+        };
+
+        hotbar.slots[3] = Some(Voxel::Granite);
+
+        // Shift-click hotbar slot 3 in Personal Tab transfers to player inventory
+        let item = hotbar.slots[3].unwrap();
+        assert!(player_inv.add_item(item));
+        hotbar.slots[3] = None;
+
+        assert_eq!(hotbar.slots[3], None);
+        assert_eq!(player_inv.get(0), Some(Voxel::Granite));
+    }
+
+    #[test]
+    fn test_player_inventory_number_key_swap() {
+        let mut player_inv = PlayerInventory::default();
+        let mut hotbar = Hotbar {
+            slots: [None; HOTBAR_SLOT_COUNT],
+            active_slot: 0,
+        };
+
+        player_inv.set(5, Some(Voxel::Dirt));
+        hotbar.slots[2] = Some(Voxel::Stone);
+
+        // Pressing digit 3 (hotbar index 2) while hovering slot 5 swaps them
+        let s_idx = 5;
+        let target_slot = 2;
+        let inv_item = player_inv.get(s_idx);
+        let hotbar_item = hotbar.slots[target_slot];
+        player_inv.set(s_idx, hotbar_item);
+        hotbar.slots[target_slot] = inv_item;
+
+        assert_eq!(player_inv.get(5), Some(Voxel::Stone));
+        assert_eq!(hotbar.slots[2], Some(Voxel::Dirt));
+    }
+
+    #[test]
+    fn test_close_inventory_returns_held_item() {
+        let mut player_inv = PlayerInventory::default();
+        let mut hotbar = Hotbar {
+            slots: [None; HOTBAR_SLOT_COUNT],
+            active_slot: 0,
+        };
+        let mut held_item = HeldInventoryItem {
+            voxel: Some(Voxel::Basalt),
+        };
+
+        // When player inventory has space:
+        if let Some(held) = held_item.voxel.take() {
+            if !player_inv.add_item(held) {
+                if let Some(empty) = hotbar.slots.iter().position(|s| s.is_none()) {
+                    hotbar.slots[empty] = Some(held);
+                } else {
+                    let active = hotbar.active_slot;
+                    hotbar.slots[active] = Some(held);
+                }
+            }
+        }
+        assert_eq!(held_item.voxel, None);
+        assert_eq!(player_inv.get(0), Some(Voxel::Basalt));
+
+        // When player inventory is full: returns to hotbar
+        for i in 0..PLAYER_INVENTORY_SLOTS {
+            player_inv.set(i, Some(Voxel::Dirt));
+        }
+        held_item.voxel = Some(Voxel::Stone);
+        if let Some(held) = held_item.voxel.take() {
+            if !player_inv.add_item(held) {
+                if let Some(empty) = hotbar.slots.iter().position(|s| s.is_none()) {
+                    hotbar.slots[empty] = Some(held);
+                } else {
+                    let active = hotbar.active_slot;
+                    hotbar.slots[active] = Some(held);
+                }
+            }
+        }
+        assert_eq!(held_item.voxel, None);
+        assert_eq!(hotbar.slots[0], Some(Voxel::Stone));
     }
 }

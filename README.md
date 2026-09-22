@@ -42,13 +42,14 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     T                 Rotate block shape 90° clockwise
 
     ESC               Pause Menu (Settings, Restart Game, Quit) with Depth of Field blur
-    E                 Inventory (4-row scrollable palette, 3D isometric icons, Mouse Tweaks controls)
-                      • Shift + Click: Quick transfer from palette to hotbar / quick clear
+    E                 Inventory (Dual-tab: Creative 4-row scrollable palette & Personal 8×4 storage)
+                      • Tabs at top: Toggle between Creative and Personal inventory
+                      • Shift + Click: Quick transfer between inventory and hotbar
                       • Shift + LMB Drag: Rapid transfer into hotbar / rapid hotbar wipe
                       • LMB Drag: Paint held block across multiple hotbar slots
-                      • Click outside / same block: Deselect held item
+                      • Click outside / backdrop: Return held item to inventory / deselect
                       • Right Click: Stamp block into slot / deselect on empty space
-                      • Q / Middle Click: Clear hovered hotbar slot
+                      • Q / Middle Click: Clear hovered hotbar slot / drop item
                       • 1 - 8: Quick assign or swap slots
     M                 World Map (Full-screen interactive map, pan & zoom, player tracking)
 
@@ -115,7 +116,7 @@ src/
 │   ├── mod.rs
 │   └── world_map.rs
 ├── menu/
-│   ├── inventory.rs
+│   ├── creative_inventory.rs
 │   ├── mod.rs
 │   ├── pause.rs
 │   └── settings.rs
@@ -131,6 +132,7 @@ src/
 │   ├── controller.rs
 │   ├── game_mode.rs
 │   ├── hotbar.rs
+│   ├── inventory.rs
 │   ├── mod.rs
 │   ├── model.rs
 │   ├── spectator.rs

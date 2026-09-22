@@ -2,6 +2,7 @@ pub mod collision;
 pub mod controller;
 pub mod game_mode;
 pub mod hotbar;
+pub mod inventory;
 pub mod model;
 pub mod spectator;
 pub mod state;
@@ -19,6 +20,7 @@ pub use controller::PlayerStance;
 pub use controller::{InspectorInteraction, PlayerCamera, PlayerMotion};
 
 pub use game_mode::GameMode;
+pub use inventory::PlayerInventory;
 pub use state::PlayerEnvironmentStatus;
 
 pub const PLAYER_WIDTH: f32 = 0.6;
@@ -42,6 +44,7 @@ impl Plugin for PlayerPlugin {
         app.init_resource::<GameMode>()
             .init_resource::<InspectorInteraction>()
             .init_resource::<PlayerEnvironmentStatus>()
+            .init_resource::<PlayerInventory>()
             .add_plugins(hotbar::HotbarPlugin)
             .add_plugins(model::PlayerModelPlugin)
             .configure_sets(Update, PlayerSet::Movement)

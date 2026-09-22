@@ -372,6 +372,7 @@ Phase 10 is currently active. Development is intentionally not strictly followin
 - [ ] **Stage 10.2: Quality-of-Life & Additional Tooling**:
   - [x] **Fix Live "Regenerate World" Chunk Reload**: Ensure that clicking "Regenerate World" in the <kbd>F1</kbd> Inspector cleanly despawns existing chunk mesh entities and re-triggers async mesh generation in real time.
   - [x] **4-Row Scrollable Creative Inventory**: Compact 4-row inventory grid with scrollbar navigation supporting all blocks.
+  - [x] **Player Personal Inventory & Creative Dual-Tab Toggle**: Dedicated 8x4 grid (32 visible slots) for the player's personal storage without scrollbar, with toggle button tabs at the top switching seamlessly between Personal Inventory and Creative Inventory, supporting item movement, slot swapping, and Shift-click transfer to/from hotbar.
   - **Block Item Drops / Hand Bob**: Floating rotating mini-block pickups when blocks are broken in survival/adventure context, and subtle hand swing animation when placing or breaking blocks.
 
 - [x] **Stage 10.3: Minimap & Interactive World Map (Minecraft/Xaero-Style)**:

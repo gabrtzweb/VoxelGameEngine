@@ -144,7 +144,7 @@ The player uses a custom AABB collision system that directly queries voxel data.
 
 ### 9. User Interface, Menus & Developer Tooling
 - **8-Slot Hotbar GUI**: Dark translucent backing, active gold selection border, slot numbers (1..8), mouse wheel scrolling, and <kbd>Q</kbd> slot clearing.
-- **In-Game Creative Inventory (<kbd>E</kbd> Key)**: Modernized 4-row item grid (8×4 = 32 visible slots) with a smooth vertical scrollbar matching Minecraft UX, cleanly accommodating all 58 available blocks without UI overflow, non-pausing live world interaction, hotbar mirror row, and Mouse Tweaks controls (Shift-click transfer/clear, Shift+LMB drag, LMB drag painting, RMB stamp, digit key quick-assign).
+- **Dual-Tab Creative & Personal Inventory (<kbd>E</kbd> Key)**: Minecraft-style dual-tab window (`src/menu/creative_inventory.rs`) seamlessly toggling between the **Creative Palette** (scrollable 4-row grid with all 58 blocks) and the **Personal Inventory** (fixed 8×4 = 32 slots with no scrollbar, backed by the persistent `PlayerInventory` resource in `src/player/inventory.rs`). Features hotbar mirror row, Mouse Tweaks controls (Shift-click transfer/clear, Shift+LMB drag, LMB drag painting, RMB stamp, digit key 1..8 quick-swap), and safe return of cursor-held items upon closing.
 - **3D Isometric Pixel-Art Block Icons**: Generated on-the-fly with 1.0 / 0.80 / 0.60 directional face shading, vertex tinting, and silhouette outlines.
 - **Pause Menu (<kbd>ESC</kbd> Key)**: Game pause with Resume, Settings, Restart Game, Quit to Desktop, and camera Depth-of-Field blur.
 - **In-Game Settings**: Live steppers for Render Distance (2..=16 chunks), FOV (60°..=110°), Distance Fog toggle, Camera Bobbing toggle, and Time Flow toggle.
@@ -180,7 +180,7 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - [ ] Phase 9: Flora, Procedural Trees & Surface Vegetation (Stage 9.1 paused/reverted to focus on foundational terrain polish)
 - [ ] Phase 10: Gameplay Polish, Audio Foundation & Quality-of-Life Tweaks (Currently Active: Agile, user-directed polish and terrain refinement tasks; not strictly linear)
   - [x] Stage 10.0: Terrain & World Polish (Agile / Quality-of-Life)
-  - [x] Stage 10.2: Quality-of-Life (Live Chunk Reload, 4-Row Scrollable Creative Inventory)
+  - [x] Stage 10.2: Quality-of-Life (Live Chunk Reload, 4-Row Scrollable Creative Inventory, Player Personal Inventory & Creative Dual-Tab Toggle)
   - [x] Stage 10.3: Minimap & Interactive World Map (Minecraft/Xaero-Style)
   - [x] Stage 10.4: Biome Color Variation & Ambient Environment Noise ("Ambient Environment" Mod Style)
   - [x] Stage 10.5: Dynamic Resource Throttling & Power Conservation ("Dynamic FPS" Mod Style)

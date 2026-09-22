@@ -1,4 +1,4 @@
-pub mod inventory;
+pub mod creative_inventory;
 pub mod pause;
 pub mod settings;
 
@@ -140,7 +140,7 @@ impl Plugin for MenuPlugin {
             .add_plugins((
                 pause::PauseMenuPlugin,
                 settings::SettingsMenuPlugin,
-                inventory::InventoryMenuPlugin,
+                creative_inventory::InventoryMenuPlugin,
             ))
             .add_systems(Startup, setup_custom_cursor)
             .add_systems(
@@ -285,7 +285,6 @@ fn handle_menu_key_inputs(
     keyboard: Res<ButtonInput<KeyCode>>,
     menu_state: Res<State<MenuState>>,
     mut next_state: ResMut<NextState<MenuState>>,
-    mut held_item: ResMut<HeldInventoryItem>,
 ) {
     let current = *menu_state.get();
 
@@ -295,7 +294,6 @@ fn handle_menu_key_inputs(
             MenuState::Pause => next_state.set(MenuState::None),
             MenuState::Settings => next_state.set(MenuState::Pause),
             MenuState::Inventory => {
-                held_item.voxel = None;
                 next_state.set(MenuState::None);
             }
             MenuState::WorldMap => {
@@ -308,7 +306,6 @@ fn handle_menu_key_inputs(
         match current {
             MenuState::None => next_state.set(MenuState::Inventory),
             MenuState::Inventory => {
-                held_item.voxel = None;
                 next_state.set(MenuState::None);
             }
             _ => {}
