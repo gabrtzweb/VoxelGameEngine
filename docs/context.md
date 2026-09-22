@@ -22,12 +22,13 @@ The stack I am using for my project:
     - X: procedural streaming
     - Z: procedural streaming
 - Vertical world limits are currently:
-    - Minimum chunk Y: -10 (-160 blocks)
-    - Maximum chunk Y: +10 (+160 blocks)
-- Bottom-most layer of blocks: 100% unbreakable Dreadstone bedrock, blending naturally into Blackstone across the bottom 3 block layers.
-- Chunk streaming operates in three dimensions around the player.
+    - Minimum chunk Y: -6 (-96 blocks)
+    - Maximum chunk Y: +16 (+256 blocks)
+- Bottom-most layer of blocks: 100% unbreakable Dreadstone bedrock strictly confined to the bottom 3–4 layers of the world ($Y \le -94$, dithered blend up to $Y = -91$).
+- Upper underground crust ($Y > -41$) is uniform `Stone`, smoothly transitioning at the underground depth midpoint ($Y \le -41$) down to `Slate` (`rock_slate`).
+- Chunk streaming operates using a horizontal cylindrical distance ($X^2 + Z^2 \le R^2$) within the vertical range of chunk Y $-6$ to $+16$. This guarantees that soaring mountain summits ($Y \le 256$) and deep caverns are never truncated or sliced off by spherical distance clipping.
+- Cloud plane altitude: 220.0 m (floating high above the tallest mountain peaks).
 - Current default render distance: 12 chunks (distance fog disabled by default).
-- The desired chunk region uses spherical distance rather than loading a full cube.
 - Chunks are generated and unloaded dynamically as the Creative player moves through the world.
 
 The engine focuses on a fully editable procedural voxel world composed of full 1.0 m³ blocks. It takes inspiration from voxel games like Minecraft but features its own architecture and mechanics.
@@ -70,8 +71,8 @@ The player uses a custom AABB collision system that directly queries voxel data.
 ### 1. Core Voxel Architecture & World Representation
 - **1.0m³ Block Architecture**: The world is stored using 1.0 m voxels (identical to Minecraft blocks). Full 1 m³ blocks form the base unit of the world; 0.5 m sub-voxels and the former interaction mode toggle are completely removed.
 - **Chunk Geometry**: 16 × 16 × 16 voxels/blocks (4,096 voxels per chunk) spanning 16 m × 16 m × 16 m physical space.
-- **Procedural 3D Streaming**: Dynamic spherical chunk streaming in X, Y, and Z around the player. Default render distance of 8 chunks (configurable 2..=16 chunks in settings). Configurable vertical limits (currently chunks Y = -8 to +7).
-- **Block Registry & Properties**: Dedicated blocks architecture in `src/world/block.rs` supporting 50+ block types, texture IDs, tool tiers (Pickaxe, Shovel, Axe), and material durability values. Includes `Voxel::OakWood` (all-around bark) and `Voxel::OakWoodLog` (log rings on top/bottom, bark on sides).
+- **Procedural Cylindrical Streaming**: Dynamic horizontal radius streaming ($X^2 + Z^2 \le R^2$) spanning vertical chunk bounds from chunk $Y = -6$ ($-96$ blocks) up to chunk $Y = +16$ ($+256$ blocks). Default render distance of 12 chunks (configurable 2..=16 chunks in settings). Prevents mountain peaks and subterranean caverns from being truncated.
+- **Block Registry & Properties**: Dedicated blocks architecture in `src/world/block.rs` supporting 63 block types, texture IDs, tool tiers (Pickaxe, Shovel, Axe), and material durability values. Includes multi-face blocks such as `Voxel::OakWoodLog` (log rings on top/bottom, bark on sides) and `Voxel::SnowyGrass` (snow top, snowy grass sides, dirt bottom).
 
 ### 2. Meshing & GPU Rendering Pipeline
 - **Asynchronous Greedy Meshing**: Chunk meshing offloaded to Bevy's `AsyncComputeTaskPool` with background worker tasks and throttled main-thread mesh uploading (`src/meshing/async_mesher.rs`), eliminating frame-rate drops.
@@ -83,31 +84,25 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - **Animated Liquid Shaders**: GPU-driven vertical strip animation (36 frames for still water, 8 frames for flowing water) driven by `globals.time` in WGSL at 6 FPS.
 
 ### 3. Procedural World Generation, Biomes & Caves
-- **Continuous Macro-Climate Noise & Geography**: Deterministic 2D gradient noise driving Continentalness, Temperature, and Humidity. Uses a continuous $C^1$ smooth cubic spline curve for continental base elevation and a continuous roughness multiplier, eliminating abrupt vertical cliffs and harsh elevation cuts across biome borders.
-- **12 Distinct Biomes**: Plains (rolling hills, grass), Plains Forest (temperate forested plains transition with 65% tree density), Meadow (rich flowering grass transition), Desert (sand dunes, red sand accents, sandstone), Snowy Tundra & Frost Peaks (snow, packed ice, frost stone), Wetlands / Swamps (swamp grass mixed with mud, packed mud, clay), Rocky Highlands (mountain ridges, slate, cobbleslate, scree), Woodland (rich forest floor with grass mixed with mulch, packed dirt, and moss), Beach (sand coastlines), River (winding fluvial ribbons), Ocean (continental seabed), and Deep Ocean (abyssal gravel and blackstone trenches).
-- **Procedural Tree Generation, Volumetric Foliage & Canopy Architecture**: Deterministic, cell-based tree generation across Woodland, Plains Forest, Plains, Meadow, Wetlands, Snowy Tundra, and Highlands biomes:
-  - **Three Tree Species & Proportions**:
-    - **Oak** (`OakWood` bark, `OakWoodLog` core, `OakLeaves` canopy): Sprawling gnarled lateral/diagonal boughs with huge billowing 3D spherical leaf clouds starting low along the trunk (~35% height) tinted rich sunlit green (`[0.60, 1.15, 0.35]`). Small trees are rare; Thin ~15% ($5.0\text{m} \dots 7.0\text{m}$), Normal ~60% ($7.0\text{m} \dots 11.0\text{m}$), Large ~25% ($11.0\text{m} \dots 16.0\text{m}$).
-    - **Birch** (`BirchWood` bark, `BirchWoodLog` core, `BirchLeaves` canopy): Slender upward-sweeping limbs with full, continuous curved oval/flame foliage following a sinusoidal profile starting at ~40% height tinted bright sunny chartreuse/lime (`[0.85, 1.25, 0.40]`). No large version; Thin ~45% ($7.0\text{m} \dots 10.0\text{m}$), Normal ~55% ($10.0\text{m} \dots 14.0\text{m}$).
-    - **Pine** (`PineWood` bark, `PineWoodLog` core, `PineLeaves` needles): Conical tiered needle skirts with dense overlapping vertical depth starting at ~25% height tinted deep boreal evergreen (`[0.40, 0.90, 0.55]`), tapering to a needle spire summit. Concealed 1-block branch stubs strictly on the lower 55% of the tree (never poking out of foliage). Thin ~35% ($8.0\text{m} \dots 11.0\text{m}$), Normal ~45% ($12.0\text{m} \dots 16.0\text{m}$), Large ~20% ($16.0\text{m} \dots 21.0\text{m}$).
-  - **High-Density Forest Grids & Non-Overlapping Placement**:
-    - 8-block candidate sampling grid (`TREE_CELL_SIZE = 8`) with deterministic internal cell offsets guaranteeing trunk spacing.
-    - Woodland forests generate ~3 trees per chunk, creating a genuine continuous canopy.
-  - **Volumetric 3D Foliage & Trunk Occlusion Invariants**:
-    - `Voxel::is_solid_opaque()` distinguishes true occluding terrain blocks from alpha-cutout foliage.
-    - Solid wood trunks and branches adjacent to leaves always render their faces, making the trunk and branch structure visible through leaf cutout holes throughout the canopy interior.
-    - Leaf voxels render faces against neighboring leaf voxels, providing true 3D volumetric depth with GPU backface culling (`AlphaMode::Mask(0.5)` with shader `discard`), avoiding hollow-box netting artifacts.
-    - Leaves cull only against solid opaque blocks (trunks, terrain) to prevent z-fighting.
-  - **Trunk Shapes**:
-    - **Normal Trunk**: 1m $\times$ 1m single block column of species log.
-    - **Thin Trunk**: 1-voxel wide single block column of species log.
-    - **Large Trunk**: Central $2 \times 2$ block log trunk with flared root base anchored into the ground.
-  - **Procedural Organic Branching & Foliage**: Branches generated using species bark-only wood blocks and leafy canopies placed strictly in Air/Snow (preserving solid cores/ground). Seamless multi-chunk boundary generation with a 12-block margin.
-  - All heights are strictly taller than the player ($1.8\text{m}$), and trunks cross chunk boundaries seamlessly in X, Y, and Z.
-- **Surface Material Mixing & Natural Strata Transitions**: Natural multi-material noise blends across biomes (no uniform 100% mulch or mud); 3D noise dithering across all strata boundaries (subsoil-to-stone, slate, blackstone).
-- **Dreadstone Bedrock Layer**: Unbreakable Dreadstone bedrock forming the bottom layer ($Y = -80$ chunks / $-160$ blocks), blending naturally into Blackstone across the bottom 3 layers. Completely immune to breaking and shaping.
-- **Walkable 3D Caves & Suppressed Water Ravines**: Spacious 3–5 block wide spaghetti tunnels with wide walkable mouths at the surface; rare dramatic ravines that are strictly suppressed underwater in rivers, lakes, and oceans.
-- **Dedicated Live Terrain & World Inspector GUI**: Custom egui tuning window bound to <kbd>F1</kbd> running in `EguiPrimaryContextPass` with full interactive sliders and buttons, with automated isolation of hotbar mouse scrolling and block interactions while open, plus an instant "Regenerate World" button.
+- **Continuous Macro-Climate Noise & Geography**: Deterministic 2D gradient noise driving Continentalness, Temperature, and Humidity. Recalibrated continental scale ($0.0012$ frequency) producing vast landmasses (1000+ blocks wide) and grand mountain peaks rising to $Y = 80\text{--}140+$, eliminating abrupt vertical cliffs and harsh elevation cuts across biome borders.
+- **Focused Core Biomes & Clean Strata**:
+  - Core biomes active in terrain generation: Plains, Snowy Tundra & Frost Peaks (featuring multi-face `SnowyGrass` and snow summits), Desert, Beaches/Coasts, Rivers, Oceans, and Deep Oceans.
+  - Baseline terrain palette uses clean core materials: `Grass`, `Dirt`, `Stone`, `Water`, `Snow`/`SnowyGrass`, and `Sand`, with underground `Slate` and bedrock `Dreadstone`.
+- **Eliminated Grass Stacking**: Surface grass is strictly placed at `depth == 0` with air exposure above it. Side-exposure dirt promotion has been removed, preventing stacked grass blocks on cliff steps and slopes.
+- **Underwater Beach Protection**: Submerged surfaces (`world_y <= water_level`) never generate Grass, placing Sand down to `sea_level - 6` to eliminate offshore green grass rings.
+- **Clean Subterranean Strata & Bedrock Floor**:
+  - Subsoil is uniform `Dirt` (or `Sand` in Desert/Beach) with gravel/blackstone clutter completely removed.
+  - Upper underground crust ($Y > -41$) is uniform `Stone`.
+  - Lower crust ($Y \le -41$) transitions at depth midpoint down to `Slate` (`rock_slate`) via 3D dithered noise.
+  - Bedrock (`Dreadstone`) is strictly confined to the bottom 3–4 layers of the world ($Y \le -94$, dithered blend up to $Y = -91$).
+- **Natural Mountain Arches, Cave Mouths & Subterranean Rivers**:
+  - Spacious 3–5 block wide 3D caves with natural cave mouth breaches on dry hillsides ($0.18$ mask threshold).
+  - Horizontal ridge-tunneling arches carving hollow openings through tall mountain ridges ($Y \ge 34$).
+  - Rivers flowing into high peaks ($Y > \text{sea\_level} + 14$) preserve the standing mountain mass while tunneling subterranean river caverns at sea level.
+  - Removed subterranean water aquifers for clean, walkable cave exploration.
+- **Paused Procedural Tree Generation (Stage 9.1)**:
+  - Procedural tree and clutter block generation (packed dirt, moss, etc.) has been temporarily paused and reverted from terrain chunk building during Phase 10 foundational terrain polishing. Trees, canopy architecture, and multi-face logs remain registered in block/inventory definitions, ready to be re-introduced once core terrain polish is settled.
+- **Dedicated Live Terrain & World Inspector GUI**: Custom egui tuning window bound to <kbd>F1</kbd> running in `EguiPrimaryContextPass` with full interactive sliders and an instant "Regenerate World" button that cleanly despawns existing chunk mesh entities and re-triggers async mesh generation in real time.
 
 ### 4. Player Physics, Collision & Locomotion
 - **Custom Voxel AABB Collision**: Zero-allocation AABB collision system querying chunk voxel data directly without rigid bodies or external physics engine overhead.
@@ -149,7 +144,7 @@ The player uses a custom AABB collision system that directly queries voxel data.
 
 ### 9. User Interface, Menus & Developer Tooling
 - **8-Slot Hotbar GUI**: Dark translucent backing, active gold selection border, slot numbers (1..8), mouse wheel scrolling, and <kbd>Q</kbd> slot clearing.
-- **In-Game Creative Inventory (<kbd>E</kbd> Key)**: 40-slot item grid (8×5), non-pausing live world interaction, hotbar mirror row, and Mouse Tweaks controls (Shift-click transfer/clear, Shift+LMB drag, LMB drag painting, RMB stamp, digit key quick-assign).
+- **In-Game Creative Inventory (<kbd>E</kbd> Key)**: Modernized 4-row item grid (8×4 = 32 visible slots) with a smooth vertical scrollbar matching Minecraft UX, cleanly accommodating all 58 available blocks without UI overflow, non-pausing live world interaction, hotbar mirror row, and Mouse Tweaks controls (Shift-click transfer/clear, Shift+LMB drag, LMB drag painting, RMB stamp, digit key quick-assign).
 - **3D Isometric Pixel-Art Block Icons**: Generated on-the-fly with 1.0 / 0.80 / 0.60 directional face shading, vertex tinting, and silhouette outlines.
 - **Pause Menu (<kbd>ESC</kbd> Key)**: Game pause with Resume, Settings, Restart Game, Quit to Desktop, and camera Depth-of-Field blur.
 - **In-Game Settings**: Live steppers for Render Distance (2..=16 chunks), FOV (60°..=110°), Distance Fog toggle, Camera Bobbing toggle, and Time Flow toggle.
@@ -177,15 +172,15 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - [x] Phase 5: Procedural Voxel Meshing & Texture-Array Optimization (Completed)
 - [x] Phase 6: Advanced World Generation, Biomes & Caves (Completed)
 - [x] Phase 7: Engine Optimization, Architecture Audit & Scalability (Completed)
-- [ ] Phase 8: Engine Optimization & Scalability (Next Milestone)
-- [ ] Phase 9: Flora, Procedural Trees & Surface Vegetation
-- [ ] Phase 10: Gameplay Polish, Audio Foundation & Quality-of-Life Tweaks
+- [ ] Phase 8: Engine Optimization & Scalability (Deferred / Backlog)
+- [ ] Phase 9: Flora, Procedural Trees & Surface Vegetation (Stage 9.1 paused/reverted to focus on foundational terrain polish)
+- [ ] Phase 10: Gameplay Polish, Audio Foundation & Quality-of-Life Tweaks (Currently Active: Agile, user-directed polish and terrain refinement tasks; not strictly linear)
 
 ---
 
 ## Known Issues & Backlog for Future Fixes
 
-- **Inspector "Regenerate World" Live Reload**: Sliders and options in the <kbd>F1</kbd> Terrain Inspector interact smoothly and update procedural generator parameters in real time. However, clicking the "Regenerate World" button does not yet immediately reload existing chunk meshes on screen because loaded chunk mesh entities need an explicit despawn/re-mesh trigger in `src/world/streaming/manager.rs`. (Paused and noted for a future fix per user direction).
+- **Terrain Polish & Gameplay Tuning**: World generation, cave density, and strata are currently undergoing agile tuning as gameplay testing dictates. Future polish targets include particle bursts on block break/place, audio trigger hooks (footsteps, ambient wind, cavern echoes), and binary world persistence (Stages 10.1–10.3).
 
 ---
 

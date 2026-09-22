@@ -308,7 +308,8 @@ Phase 8 focuses on deep algorithmic and memory optimizations to scale chunk thro
 
 Phase 9 breathes organic life and color into the procedural world by generating biome-specific trees, flowering ground cover, shrubs, and dynamic wind-swayed foliage.
 
-- [x] **Stage 9.1: Procedural Trees & Canopy Architecture (Completed)**:
+- [ ] **Stage 9.1: Procedural Trees & Canopy Architecture (Paused / Reverted for Foundational Polishing)**:
+  - *Note*: Tree and organic vegetation generation during terrain chunk building has been temporarily paused and reverted. The decision was made to set aside tree generation for now in order to concentrate fully on foundational terrain sculpting, clean geological strata, and core world polish before re-integrating organic flora later.
   - **Trunk Shapes, Species & Wood Types**:
     - Registered 3 wood species: Oak (`OakWood`, `OakWoodLog`), Birch (`BirchWood`, `BirchWoodLog`), and Pine (`PineWood`, `PineWoodLog`), following the bark-only sides vs top/bottom log-ring architecture.
     - Multi-face directional texture mapping in `VoxelTextureRegistry` and greedy mesher with `MAX_VOXEL_VARIANTS = 128`.
@@ -345,7 +346,20 @@ Phase 9 breathes organic life and color into the procedural world by generating 
 
 ## Phase 10: Gameplay Polish, Audio Foundation & Quality-of-Life Tweaks
 
-Phase 10 delivers core game feel improvements, sensory feedback, and quality-of-life additions.
+Phase 10 is currently active. Development is intentionally not strictly following the linear order originally outlined; rather, we are dynamically addressing user-directed terrain refinement, aesthetic polish, and engine adjustments as needs arise during gameplay testing. Nothing is set in stone yet, allowing rapid iteration on whatever feels right to adjust.
+
+- [x] **Stage 10.0: Terrain & World Polish (Agile / Quality-of-Life)**:
+  - **Paused Stage 9.1 Tree Generation**: Temporarily removed tree and clutter block generation (packed dirt, moss, etc.) from chunk building to focus on a clean baseline world (dirt, stone, grass, water, snow/snowy grass, sand) while tuning terrain parameters.
+  - **Eliminated Grass Stacking**: Fixed bug where subsoil dirt was promoted to Grass on cliff steps; grass is strictly placed at `depth == 0` with air above it.
+  - **Underwater Beach Protection**: Prevented green grass rings offshore by generating Sand underwater and extending beach shelves down to `sea_level - 6`.
+  - **Clean Subterranean Strata**: Upper underground is pure `Stone`, transitioning at depth midpoint ($Y \le -41$) to `Slate` (`rock_slate`), with `Dreadstone` bedrock strictly confined to the bottom 3–4 layers of the world ($Y \le -94$). Removed gravel/cobblestone clutter from dirt subsoils.
+  - **Snowy Grass Block (`SnowyGrass`)**: Added multi-face block with snow top, dirt bottom, and newly integrated snowy grass side textures (`terr_snowy_grass_side`) for snowy biomes and peaks.
+  - **Scrollable Creative Inventory (Stage 10.2 QoL)**: Restructured inventory to 4 rows (8×4 grid = 32 visible slots) with a smooth scrollbar matching Minecraft UX, cleanly accommodating all 58 available blocks.
+  - **Live "Regenerate World" Chunk Reload (Stage 10.2 QoL)**: Ensured clicking "Regenerate World" in the <kbd>F1</kbd> Inspector cleanly despawns existing chunk mesh entities and re-triggers async generation and meshing live.
+  - **Grand 3D Mountains & Continents**: Recalibrated continental scale ($0.0012$ frequency) for vast landmasses (1000+ blocks), peaks rising up to $Y = 80\text{--}140+$, cylindrical chunk streaming ($X^2 + Z^2 \le R^2$), and world chunk height raised to chunk 16 ($Y = 256$, bottom chunk $-6$ at $Y = -96$).
+  - **Subterranean Mountain Rivers**: Rivers flowing into tall mountains ($Y > \text{sea\_level} + 14$) preserve the standing mountain peaks while carving an underground river cavern tunnel at sea level.
+  - **Natural Mountain Arches & Cave Mouths**: Added horizontal ridge-tunneling arches, tuned cave mouths for dry hillsides ($0.18$ threshold), and removed subterranean water aquifers for clean cave exploration.
+  - **Atmospheric Clouds**: Moved cloud altitude from $80.0$ to $220.0$, floating high above all mountain peaks.
 
 - [ ] **Stage 10.1: Block Interaction Feedback & Particle FX**:
   - **Block Breaking Particle Bursts**: Scattering sub-voxel debris particles matching the texture of the broken block, bouncing briefly before fading out.
@@ -355,8 +369,9 @@ Phase 10 delivers core game feel improvements, sensory feedback, and quality-of-
     - Block breaking and placement audio (crunchy dirt, resonant stone, snappy wood, splashing water).
     - Ambient wind gusts on mountain summits and subterranean cavern echoes.
 
-- [ ] **Stage 10.2: Quality-of-Life & Inspector Live Reload Fix**:
-  - **Fix Live "Regenerate World" Chunk Reload**: Ensure that clicking "Regenerate World" in the <kbd>F1</kbd> Inspector cleanly despawns existing chunk mesh entities and re-triggers async mesh generation in real time.
+- [ ] **Stage 10.2: Quality-of-Life & Additional Tooling**:
+  - [x] **Fix Live "Regenerate World" Chunk Reload**: Ensure that clicking "Regenerate World" in the <kbd>F1</kbd> Inspector cleanly despawns existing chunk mesh entities and re-triggers async mesh generation in real time.
+  - [x] **4-Row Scrollable Creative Inventory**: Compact 4-row inventory grid with scrollbar navigation supporting all blocks.
   - **Clean Screenshot Hotkey (<kbd>F11</kbd> / <kbd>F7</kbd>)**: Captures high-res screenshots while temporarily hiding all HUD elements, crosshairs, and inspector windows.
   - **Block Item Drops / Hand Bob**: Floating rotating mini-block pickups when blocks are broken in survival/adventure context, and subtle hand swing animation when placing or breaking blocks.
 

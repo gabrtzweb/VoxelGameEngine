@@ -39,7 +39,7 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     T                 Rotate block shape 90° clockwise
 
     ESC               Pause Menu (Settings, Restart Game, Quit) with Depth of Field blur
-    E                 Inventory (32-slot palette, 3D isometric icons, Mouse Tweaks controls)
+    E                 Inventory (4-row scrollable palette, 3D isometric icons, Mouse Tweaks controls)
                       • Shift + Click: Quick transfer from palette to hotbar / quick clear
                       • Shift + LMB Drag: Rapid transfer into hotbar / rapid hotbar wipe
                       • LMB Drag: Paint held block across multiple hotbar slots

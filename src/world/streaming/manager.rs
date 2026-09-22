@@ -7,7 +7,7 @@ use bevy::{
 
 use crate::{
     generation::{BiomeType, CaveGenerator, ClimateGenerator, StrataGenerator, TerrainGenerator},
-    meshing::{ChunkMeshRegistry, remove_chunk_render},
+    meshing::{ChunkMeshRegistry, ChunkMeshingTask, remove_chunk_render},
     player::{Player, PlayerSet},
     simulation::lighting::{VoxelLightRegistry, remove_chunk_lights, sync_chunk_lights},
     world::{
@@ -19,8 +19,8 @@ use crate::{
 const DEFAULT_RENDER_DISTANCE: i32 = 12;
 pub const DEFAULT_SIMULATION_DISTANCE: i32 = 4;
 
-pub const WORLD_MIN_CHUNK_Y: i32 = -10;
-pub const WORLD_MAX_CHUNK_Y: i32 = 10;
+pub const WORLD_MIN_CHUNK_Y: i32 = -6;
+pub const WORLD_MAX_CHUNK_Y: i32 = 16;
 
 const MAX_GENERATION_TASKS_IN_FLIGHT: usize = 24;
 const MAX_GENERATION_TASKS_STARTED_PER_FRAME: usize = 8;
@@ -101,33 +101,66 @@ impl Plugin for ChunkStreamingPlugin {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn handle_terrain_generator_reload(
     generator: Res<TerrainGenerator>,
+    mut last_version: Local<u32>,
     mut state: ResMut<ChunkStreamingState>,
-    world: Res<VoxelWorld>,
+    mut world: ResMut<VoxelWorld>,
+    mut modifications: ResMut<WorldModificationStore>,
+    mut mesh_registry: ResMut<ChunkMeshRegistry>,
+    mut light_registry: ResMut<VoxelLightRegistry>,
+    mut meshes: ResMut<Assets<Mesh>>,
     generation_tasks: Query<(Entity, &ChunkGenerationTask)>,
+    meshing_tasks: Query<(Entity, &ChunkMeshingTask)>,
     mut commands: Commands,
     mut queues: ResMut<ChunkStreamingQueues>,
 ) {
-    if !generator.is_changed() || generator.is_added() {
+    if generator.version == *last_version {
         return;
     }
 
-    state.last_player_chunk = None;
+    *last_version = generator.version;
 
+    // 1. Despawn all in-flight generation tasks
     for (entity, _) in &generation_tasks {
-        commands.entity(entity).despawn();
+        if let Ok(mut entity_cmds) = commands.get_entity(entity) {
+            entity_cmds.despawn();
+        }
     }
 
+    // 2. Despawn all in-flight meshing tasks
+    for (entity, _) in &meshing_tasks {
+        if let Ok(mut entity_cmds) = commands.get_entity(entity) {
+            entity_cmds.despawn();
+        }
+    }
+
+    // 3. Despawn and remove all existing chunk meshes
+    let mesh_coords: Vec<IVec3> = mesh_registry.iter_coordinates().copied().collect();
+    for coordinate in mesh_coords {
+        remove_chunk_render(&mut commands, coordinate, &mut mesh_registry, &mut meshes);
+    }
+
+    // 4. Remove all chunk point lights
+    let light_coords: Vec<IVec3> = world.iter_chunks().map(|(&c, _)| c).collect();
+    for coordinate in light_coords {
+        remove_chunk_lights(&mut commands, coordinate, &mut light_registry);
+    }
+
+    // 5. Purge world storage and recorded modifications
+    world.clear();
+    modifications.clear();
+
+    // 6. Clear streaming queues
+    queues.load.clear();
+    queues.unload.clear();
     queues.remesh.clear();
     queues.remesh_set.clear();
 
-    let loaded: Vec<IVec3> = world.iter_chunks().map(|(&c, _)| c).collect();
-    for coordinate in loaded {
-        if !queues.unload.contains(&coordinate) {
-            queues.unload.push_back(coordinate);
-        }
-    }
+    // 7. Reset player tracking so plan_chunk_streaming immediately queues full reload around player
+    state.last_player_chunk = None;
+    state.desired_chunks.clear();
 }
 
 pub fn plan_chunk_streaming(
@@ -313,22 +346,19 @@ pub fn desired_chunk_coordinates(center: IVec3, render_distance: i32) -> HashSet
 
     let mut chunks = HashSet::new();
 
-    for y in -render_distance..=render_distance {
-        for z in -render_distance..=render_distance {
-            for x in -render_distance..=render_distance {
-                let distance_squared = x * x + y * y + z * z;
+    // Use cylindrical horizontal distance so vertical mountain peaks are not sliced off
+    let min_y = (center.y - render_distance).max(WORLD_MIN_CHUNK_Y);
+    let max_y = (center.y + render_distance).min(WORLD_MAX_CHUNK_Y);
 
-                if distance_squared > radius_squared {
-                    continue;
-                }
+    for z in -render_distance..=render_distance {
+        for x in -render_distance..=render_distance {
+            let horizontal_dist_sq = x * x + z * z;
+            if horizontal_dist_sq > radius_squared {
+                continue;
+            }
 
-                let coordinate = center + IVec3::new(x, y, z);
-
-                if coordinate.y < WORLD_MIN_CHUNK_Y || coordinate.y > WORLD_MAX_CHUNK_Y {
-                    continue;
-                }
-
-                chunks.insert(coordinate);
+            for y in min_y..=max_y {
+                chunks.insert(IVec3::new(center.x + x, y, center.z + z));
             }
         }
     }

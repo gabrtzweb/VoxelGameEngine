@@ -220,6 +220,7 @@ pub fn sample_tree_candidate(
 }
 
 /// Applies all tree trunks, branches, and leaves that intersect this chunk.
+#[allow(dead_code)]
 pub fn generate_chunk_trees(
     chunk_origin: IVec3,
     generator: &TerrainGenerator,

@@ -49,6 +49,7 @@ pub struct CaveGenerator {
     pub deep_lava_y: i32,
     pub ravine_freq: f32,
     pub ravine_width: f32,
+    pub ravine_abundance: f32,
 }
 
 impl Default for CaveGenerator {
@@ -58,10 +59,11 @@ impl Default for CaveGenerator {
             spaghetti_threshold: 0.14,
             cheese_freq: 0.016,
             cheese_threshold: 0.44,
-            surface_buffer_voxels: 5,
+            surface_buffer_voxels: 4,
             deep_lava_y: -60,
-            ravine_freq: 0.005,
+            ravine_freq: 0.003,
             ravine_width: 0.022,
+            ravine_abundance: 0.15,
         }
     }
 }
@@ -202,11 +204,16 @@ impl CaveGenerator {
         let fz = world_z as f32;
 
         // 1. 3D Ravines / Chasms (dramatic fissures, strictly prohibited underwater in rivers/oceans)
-        if !is_underwater && surface_height > sea_level + 2 && depth_below_surface <= 36 {
+        if !is_underwater
+            && surface_height > sea_level + 2
+            && depth_below_surface <= 36
+            && self.ravine_abundance > 0.001
+        {
+            let active_threshold = (1.0 - self.ravine_abundance).clamp(0.50, 0.99);
             let ravine_active =
                 gradient_noise_2d(fx * 0.0020, fz * 0.0020, seed.wrapping_add(44_444));
 
-            if ravine_active > 0.58 {
+            if ravine_active > active_threshold {
                 let ravine_path = gradient_noise_2d(
                     fx * self.ravine_freq,
                     fz * self.ravine_freq,
@@ -230,23 +237,51 @@ impl CaveGenerator {
             }
         }
 
-        // 2. Worm / Spaghetti tunnels: intersection of two zero-crossings
+        // 2. Worm / Spaghetti tunnels: subterranean tubes with natural surface cave mouths
+        let is_worm = sample.worm_a.abs() < self.spaghetti_threshold
+            && sample.worm_b.abs() < self.spaghetti_threshold;
+
         if depth_below_surface <= self.surface_buffer_voxels {
-            // Wide walkable opening at the surface
-            if sample.worm_a.abs() < 0.12 && sample.worm_b.abs() < 0.12 {
-                return true;
+            // Surface buffer protects hillsides from craters/gullies.
+            // Natural cave mouths breach the surface where a subterranean worm tunnel reaches
+            // the surface within designated entrance zones.
+            if !is_underwater && is_worm {
+                let entrance_mask =
+                    gradient_noise_2d(fx * 0.010, fz * 0.010, seed.wrapping_add(77_777));
+                if entrance_mask > 0.18 {
+                    return true;
+                }
             }
-        } else {
-            let is_worm = sample.worm_a.abs() < self.spaghetti_threshold
-                && sample.worm_b.abs() < self.spaghetti_threshold;
-            if is_worm {
-                return true;
-            }
+        } else if is_worm {
+            return true;
         }
 
         // 3. Cheese Caverns (large chambers deep underground)
         if depth_below_surface > 8 && sample.cheese > self.cheese_threshold {
             return true;
+        }
+
+        // 4. Natural Mountain Arches: horizontal cavern hollows tunneling through ridges
+        if surface_height >= 34
+            && depth_below_surface >= 6
+            && depth_below_surface <= 24
+            && world_y > sea_level + 10
+        {
+            let arch_noise_a = gradient_noise_3d(
+                fx * 0.025,
+                fy * 0.040,
+                fz * 0.025,
+                seed.wrapping_add(61_234),
+            );
+            let arch_noise_b = gradient_noise_3d(
+                fx * 0.025,
+                fy * 0.040,
+                fz * 0.025,
+                seed.wrapping_add(71_567),
+            );
+            if arch_noise_a.abs() < 0.13 && arch_noise_b.abs() < 0.22 {
+                return true;
+            }
         }
 
         false
@@ -281,25 +316,11 @@ impl CaveGenerator {
     #[inline]
     pub fn cave_voxel_sampled(
         &self,
-        world_y: i32,
-        sample: CaveNoiseSample,
-        sea_level: i32,
+        _world_y: i32,
+        _sample: CaveNoiseSample,
+        _sea_level: i32,
     ) -> Voxel {
-        if world_y <= self.deep_lava_y {
-            if world_y <= self.deep_lava_y - 4 {
-                Voxel::Lava
-            } else {
-                Voxel::Magma
-            }
-        } else if world_y <= sea_level - 10 {
-            if sample.aquifer > 0.48 {
-                Voxel::Water
-            } else {
-                Voxel::Air
-            }
-        } else {
-            Voxel::Air
-        }
+        Voxel::Air
     }
 
     /// Returns the filler voxel for a hollowed cave position.
@@ -335,15 +356,8 @@ mod tests {
 
         assert_eq!(generator.cave_voxel(0, 5, 0, sea_level, 1337), Voxel::Air);
         assert_eq!(generator.cave_voxel(0, -10, 0, sea_level, 1337), Voxel::Air);
-
-        assert_eq!(
-            generator.cave_voxel(0, -60, 0, sea_level, 1337),
-            Voxel::Magma
-        );
-        assert_eq!(
-            generator.cave_voxel(0, -68, 0, sea_level, 1337),
-            Voxel::Lava
-        );
+        assert_eq!(generator.cave_voxel(0, -60, 0, sea_level, 1337), Voxel::Air);
+        assert_eq!(generator.cave_voxel(0, -68, 0, sea_level, 1337), Voxel::Air);
     }
 
     #[test]

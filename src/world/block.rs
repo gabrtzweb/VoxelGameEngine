@@ -96,11 +96,14 @@ pub enum Voxel {
     // Volcanic & Desert Flora
     Basalt = 60,
     Cactus = 61,
+
+    // Snowy biomes
+    SnowyGrass = 62,
 }
 
 impl Voxel {
     /// All voxels that map to a texture and are loaded into the terrain texture array.
-    pub const ALL: [Voxel; 60] = [
+    pub const ALL: [Voxel; 61] = [
         Voxel::Grass,
         Voxel::Dirt,
         Voxel::Stone,
@@ -161,6 +164,7 @@ impl Voxel {
         Voxel::PineLeaves,
         Voxel::Occupied,
         Voxel::WaterOccupied,
+        Voxel::SnowyGrass,
     ];
 
     /// The base texture name under `assets/textures/blocks/` without extension.
@@ -178,6 +182,7 @@ impl Voxel {
 
             // Natural terrain
             Self::Grass => Some("terr_grass"),
+            Self::SnowyGrass => Some("terr_snow"),
             Self::Dirt => Some("terr_dirt"),
             Self::Stone => Some("rock_stone"),
             Self::Sand => Some("terr_sand"),
@@ -243,6 +248,7 @@ impl Voxel {
             Self::Cactus => Some("tree_cactus_side"),
             Self::Mulch => Some("terr_mulch_side"),
             Self::Grass => Some("terr_grass_side"),
+            Self::SnowyGrass => Some("terr_snowy_grass_side"),
             _ => None,
         }
     }
@@ -255,6 +261,7 @@ impl Voxel {
             Self::BirchWoodLog => Some("tree_birchwood_log"),
             Self::PineWoodLog => Some("tree_pinewood_log"),
             Self::Cactus => Some("tree_cactus_top"),
+            Self::SnowyGrass => Some("terr_snow"),
             _ => None,
         }
     }
@@ -269,6 +276,7 @@ impl Voxel {
             Self::Cactus => Some("tree_cactus_bottom"),
             Self::Mulch => Some("terr_dirt"),
             Self::Grass => Some("terr_dirt"),
+            Self::SnowyGrass => Some("terr_dirt"),
             _ => None,
         }
     }
@@ -300,6 +308,7 @@ impl Voxel {
             Self::BirchLeaves => [133, 199, 56, 255],
             Self::PineLeaves => [46, 107, 66, 255],
             Self::Grass => [110, 180, 80, 255],
+            Self::SnowyGrass => [240, 245, 255, 255],
             Self::Dirt | Self::PackedDirt => [107, 66, 33, 255],
             Self::Stone => [122, 128, 133, 255],
             Self::Cobblestone => [110, 110, 115, 255],
@@ -409,6 +418,7 @@ impl Voxel {
         match self {
             Self::Air => "Air",
             Self::Grass => "Grass",
+            Self::SnowyGrass => "Snowy Grass",
             Self::Dirt => "Dirt",
             Self::PackedDirt => "Packed Dirt",
             Self::Stone => "Stone",
@@ -484,6 +494,7 @@ impl Voxel {
             Self::Dreadstone => f32::INFINITY,
             Self::OakLeaves | Self::BirchLeaves | Self::PineLeaves => 0.3,
             Self::Grass
+            | Self::SnowyGrass
             | Self::Dirt
             | Self::Mud
             | Self::Sand
@@ -572,6 +583,7 @@ impl Voxel {
 
             Self::Dirt
             | Self::Grass
+            | Self::SnowyGrass
             | Self::Sand
             | Self::Gravel
             | Self::Clay

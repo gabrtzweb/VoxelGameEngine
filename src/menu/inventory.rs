@@ -12,9 +12,10 @@ pub const INVENTORY_COLS: usize = 8;
 pub const INVENTORY_VISIBLE_ROWS: usize = 4;
 pub const INVENTORY_VISIBLE_SLOTS: usize = INVENTORY_COLS * INVENTORY_VISIBLE_ROWS; // 32 slots
 
-pub const AVAILABLE_BLOCKS: [Voxel; 57] = [
+pub const AVAILABLE_BLOCKS: [Voxel; 58] = [
     // Soils, Organics & Fine Sediment
     Voxel::Grass,
+    Voxel::SnowyGrass,
     Voxel::Dirt,
     Voxel::PackedDirt,
     Voxel::Mud,
@@ -819,7 +820,7 @@ mod tests {
             INVENTORY_VISIBLE_SLOTS
         );
         assert_eq!(INVENTORY_VISIBLE_ROWS, 4);
-        assert_eq!(AVAILABLE_BLOCKS.len(), 57);
+        assert_eq!(AVAILABLE_BLOCKS.len(), 58);
         assert_eq!(total_inventory_rows(), 8);
         assert_eq!(max_scroll_row(), 4);
     }

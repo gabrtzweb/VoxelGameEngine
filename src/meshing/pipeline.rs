@@ -267,7 +267,9 @@ fn remove_render_part(
         return;
     };
 
-    commands.entity(render_part.entity).despawn();
+    if let Ok(mut entity_cmds) = commands.get_entity(render_part.entity) {
+        entity_cmds.despawn();
+    }
     meshes.remove(render_part.mesh_handle.id());
 }
 

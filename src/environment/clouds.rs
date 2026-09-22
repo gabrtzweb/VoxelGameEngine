@@ -9,7 +9,7 @@ use bevy::{
     },
 };
 
-pub const CLOUD_ALTITUDE: f32 = 80.0;
+pub const CLOUD_ALTITUDE: f32 = 220.0;
 pub const CLOUD_PLANE_SIZE: f32 = 1600.0;
 pub const CLOUD_TILE_WORLD_SIZE: f32 = 280.0;
 const WIND_SPEED_X: f32 = 1.8;

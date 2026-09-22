@@ -12,6 +12,8 @@ pub enum BiomeType {
     Wetlands,
     Highlands,
     SnowyTundra,
+    ColdPlains,
+    Savanna,
     Desert,
     Beach,
     River,
@@ -36,6 +38,19 @@ impl BiomeType {
         BiomeType::DeepOcean,
     ];
 
+    #[allow(dead_code)]
+    pub const ACTIVE: [BiomeType; 9] = [
+        BiomeType::SnowyTundra,
+        BiomeType::ColdPlains,
+        BiomeType::Plains,
+        BiomeType::Savanna,
+        BiomeType::Desert,
+        BiomeType::Beach,
+        BiomeType::River,
+        BiomeType::Ocean,
+        BiomeType::DeepOcean,
+    ];
+
     pub fn name(self) -> &'static str {
         match self {
             BiomeType::Plains => "Plains",
@@ -45,6 +60,8 @@ impl BiomeType {
             BiomeType::Wetlands => "Wetlands",
             BiomeType::Highlands => "Highlands",
             BiomeType::SnowyTundra => "Snowy Tundra",
+            BiomeType::ColdPlains => "Cold Plains",
+            BiomeType::Savanna => "Savanna",
             BiomeType::Desert => "Desert",
             BiomeType::Beach => "Beach",
             BiomeType::River => "River",
@@ -102,11 +119,33 @@ impl BiomeType {
             BiomeType::SnowyTundra => BiomeConfig {
                 biome_type: BiomeType::SnowyTundra,
                 name: "Snowy Tundra",
-                surface_material: Voxel::Snow,
+                surface_material: Voxel::SnowyGrass,
                 subsoil_material: Voxel::Dirt,
                 subsoil_depth: 2,
                 base_height_offset: 24.0,
                 amplitude_multiplier: 2.6,
+                primary_stone: Voxel::Stone,
+                cliff_material: Voxel::Stone,
+            },
+            BiomeType::ColdPlains => BiomeConfig {
+                biome_type: BiomeType::ColdPlains,
+                name: "Cold Plains",
+                surface_material: Voxel::Grass,
+                subsoil_material: Voxel::Dirt,
+                subsoil_depth: 3,
+                base_height_offset: 1.0,
+                amplitude_multiplier: 1.0,
+                primary_stone: Voxel::Stone,
+                cliff_material: Voxel::Stone,
+            },
+            BiomeType::Savanna => BiomeConfig {
+                biome_type: BiomeType::Savanna,
+                name: "Savanna",
+                surface_material: Voxel::Grass,
+                subsoil_material: Voxel::Dirt,
+                subsoil_depth: 3,
+                base_height_offset: 1.5,
+                amplitude_multiplier: 1.1,
                 primary_stone: Voxel::Stone,
                 cliff_material: Voxel::Stone,
             },
@@ -158,7 +197,7 @@ impl BiomeType {
                 biome_type: BiomeType::River,
                 name: "River",
                 surface_material: Voxel::Sand,
-                subsoil_material: Voxel::Gravel,
+                subsoil_material: Voxel::Dirt,
                 subsoil_depth: 2,
                 base_height_offset: -5.0,
                 amplitude_multiplier: 0.3,
@@ -169,7 +208,7 @@ impl BiomeType {
                 biome_type: BiomeType::Ocean,
                 name: "Ocean",
                 surface_material: Voxel::Sand,
-                subsoil_material: Voxel::Gravel,
+                subsoil_material: Voxel::Sand,
                 subsoil_depth: 3,
                 base_height_offset: -14.0,
                 amplitude_multiplier: 0.5,
@@ -179,13 +218,13 @@ impl BiomeType {
             BiomeType::DeepOcean => BiomeConfig {
                 biome_type: BiomeType::DeepOcean,
                 name: "Deep Ocean",
-                surface_material: Voxel::Gravel,
-                subsoil_material: Voxel::Blackstone,
+                surface_material: Voxel::Sand,
+                subsoil_material: Voxel::Sand,
                 subsoil_depth: 3,
                 base_height_offset: -26.0,
                 amplitude_multiplier: 0.5,
-                primary_stone: Voxel::Blackstone,
-                cliff_material: Voxel::Blackstone,
+                primary_stone: Voxel::Stone,
+                cliff_material: Voxel::Stone,
             },
         }
     }
@@ -223,9 +262,9 @@ pub struct ClimateGenerator {
 impl Default for ClimateGenerator {
     fn default() -> Self {
         Self {
-            continentalness_freq: 0.0025,
-            temperature_freq: 0.0018,
-            humidity_freq: 0.0022,
+            continentalness_freq: 0.0012,
+            temperature_freq: 0.0012,
+            humidity_freq: 0.0016,
         }
     }
 }
@@ -289,35 +328,24 @@ impl ClimateGenerator {
         else if continentalness < 0.03 && humidity > 0.18 {
             BiomeType::River
         }
-        // 5. Extreme cold or high frozen peaks
-        else if temperature < -0.22 || (continentalness > 0.65 && temperature < 0.10) {
+        // --- Land biomes arranged smoothly along the continuous Temperature gradient ---
+        // 5. Frigid / Glacial: Snowy Tundra
+        else if temperature < -0.20 {
             BiomeType::SnowyTundra
         }
-        // 6. High continentalness creates rugged mountain highlands
-        else if continentalness > 0.40 {
-            BiomeType::Highlands
+        // 6. Cold sub-polar transition: Cold Plains
+        else if temperature < -0.05 {
+            BiomeType::ColdPlains
         }
-        // 7. Hot and dry creates desert dunes
-        else if humidity < -0.18 && temperature > 0.15 {
+        // 7. Warm & Arid: Desert (strictly warm and dry)
+        else if temperature > 0.20 && humidity < -0.05 {
             BiomeType::Desert
         }
-        // 8. Low inland elevation with high moisture creates wetlands/swamps
-        else if continentalness < 0.15 && humidity > 0.25 {
-            BiomeType::Wetlands
+        // 8. Warm sub-tropical: Savanna
+        else if temperature > 0.20 {
+            BiomeType::Savanna
         }
-        // 9. High moisture inland creates rich woodland
-        else if humidity > 0.25 {
-            BiomeType::Woodland
-        }
-        // 10. Intermediate moisture creates temperate plains forest
-        else if humidity > 0.12 {
-            BiomeType::PlainsForest
-        }
-        // 11. Gentle transition meadow
-        else if humidity > 0.02 {
-            BiomeType::Meadow
-        }
-        // 12. Default temperate rolling plains
+        // 9. Temperate core: Plains
         else {
             BiomeType::Plains
         }
@@ -344,10 +372,10 @@ mod tests {
             }
         }
 
-        for expected in BiomeType::ALL {
+        for expected in BiomeType::ACTIVE {
             assert!(
                 found.contains(&expected),
-                "Missing classification for biome: {:?}",
+                "Missing classification for active biome: {:?}",
                 expected
             );
         }

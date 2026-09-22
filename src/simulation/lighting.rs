@@ -80,7 +80,9 @@ pub fn remove_chunk_lights(
         .collect();
 
     for (block_coord, entity) in lights_to_remove {
-        commands.entity(entity).despawn();
+        if let Ok(mut entity_cmds) = commands.get_entity(entity) {
+            entity_cmds.despawn();
+        }
         registry.entries.remove(&block_coord);
     }
 }

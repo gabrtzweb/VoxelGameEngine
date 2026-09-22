@@ -64,6 +64,7 @@ pub fn terrain_inspector_ui(mut contexts: EguiContexts, mut generator: ResMut<Te
                     ui.add(egui::Slider::new(&mut generator.caves.spaghetti_threshold, 0.06..=0.25).text("Tunnel Width (Spaghetti)"));
                     ui.add(egui::Slider::new(&mut generator.caves.spaghetti_freq, 0.01..=0.06).text("Tunnel Freq"));
                     ui.add(egui::Slider::new(&mut generator.caves.cheese_threshold, 0.20..=0.60).text("Cavern Openness (Cheese)"));
+                    ui.add(egui::Slider::new(&mut generator.caves.ravine_abundance, 0.00..=0.50).text("Ravine Abundance"));
                     ui.add(egui::Slider::new(&mut generator.caves.ravine_freq, 0.001..=0.015).text("Ravine Freq"));
                     ui.add(egui::Slider::new(&mut generator.caves.ravine_width, 0.01..=0.05).text("Ravine Width"));
                     ui.add(egui::Slider::new(&mut generator.caves.deep_lava_y, -120..=-20).text("Deep Lava Y"));

@@ -83,6 +83,10 @@ impl VoxelWorld {
     pub fn remove_chunk(&mut self, coordinate: IVec3) -> Option<Chunk> {
         self.chunks.remove(&coordinate)
     }
+
+    pub fn clear(&mut self) {
+        self.chunks.clear();
+    }
 }
 
 pub trait VoxelAccess {
