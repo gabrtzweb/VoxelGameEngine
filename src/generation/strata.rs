@@ -15,9 +15,9 @@ pub struct StrataGenerator {
 impl Default for StrataGenerator {
     fn default() -> Self {
         Self {
-            mid_crust_y: -41,
-            deep_crust_y: -75,
-            bedrock_min_block_y: -94,
+            mid_crust_y: -120,
+            deep_crust_y: -200,
+            bedrock_min_block_y: -254,
             vein_frequency: 0.085,
         }
     }
@@ -74,13 +74,25 @@ impl StrataGenerator {
             return biome.subsoil_material;
         }
 
-        // 3. Subterranean stone down to midpoint, then switching to Slate
-        let slate_transition =
-            gradient_noise_3d(bx * 0.15, by * 0.15, bz * 0.15, seed.wrapping_add(77_889)) * 3.0;
-        if (block_y as f32) < (self.mid_crust_y as f32 + slate_transition) {
-            Voxel::Slate
+        // 3. Subterranean stone:
+        // - Highlands biome uniquely features Slate and Cobbleslate
+        // - Standard biomes switch from Stone to Blackstone halfway down the world (mid_crust_y)
+        if biome.biome_type == crate::generation::BiomeType::Highlands {
+            let cobbleslate_noise =
+                gradient_noise_3d(bx * 0.20, by * 0.20, bz * 0.20, seed.wrapping_add(88_222));
+            if cobbleslate_noise > 0.35 {
+                Voxel::Cobbleslate
+            } else {
+                Voxel::Slate
+            }
         } else {
-            Voxel::Stone
+            let blackstone_transition =
+                gradient_noise_3d(bx * 0.15, by * 0.15, bz * 0.15, seed.wrapping_add(77_889)) * 4.0;
+            if (block_y as f32) < (self.mid_crust_y as f32 + blackstone_transition) {
+                Voxel::Blackstone
+            } else {
+                biome.primary_stone
+            }
         }
     }
 }
@@ -110,12 +122,17 @@ mod tests {
         let mid = generator.solid_voxel_at(0, -20, 0, 15, &plains, seed);
         assert_eq!(mid, Voxel::Stone);
 
-        // Below mid_crust_y (-41), subterranean stone transitions to Slate
-        let deep = generator.solid_voxel_at(0, -65, 0, 40, &plains, seed);
-        assert_eq!(deep, Voxel::Slate);
+        // Below mid_crust_y (-120), subterranean stone transitions to Blackstone
+        let deep = generator.solid_voxel_at(0, -150, 0, 40, &plains, seed);
+        assert_eq!(deep, Voxel::Blackstone);
+
+        // Highlands biome keeps Slate and Cobbleslate exclusive
+        let highlands = BiomeType::Highlands.config();
+        let highlands_rock = generator.solid_voxel_at(0, 40, 0, 5, &highlands, seed);
+        assert!(highlands_rock == Voxel::Slate || highlands_rock == Voxel::Cobbleslate);
 
         // Bottom layer of blocks must always be unbreakable Dreadstone
-        let bedrock_bottom = generator.solid_voxel_at(0, -94, 0, 80, &plains, seed);
+        let bedrock_bottom = generator.solid_voxel_at(0, -254, 0, 80, &plains, seed);
         assert_eq!(bedrock_bottom, Voxel::Dreadstone);
         assert!(bedrock_bottom.is_unbreakable());
     }
@@ -128,11 +145,11 @@ mod tests {
 
         for x in -5..=5 {
             for z in -5..=5 {
-                let bottom = generator.solid_voxel_at(x, -94, z, 90, &plains, seed);
+                let bottom = generator.solid_voxel_at(x, -254, z, 90, &plains, seed);
                 assert_eq!(
                     bottom,
                     Voxel::Dreadstone,
-                    "Layer -94 must be 100% Dreadstone"
+                    "Layer -254 must be 100% Dreadstone"
                 );
             }
         }

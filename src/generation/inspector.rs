@@ -73,8 +73,8 @@ pub fn terrain_inspector_ui(mut contexts: EguiContexts, mut generator: ResMut<Te
             egui::CollapsingHeader::new("Strata & Minerals")
                 .default_open(false)
                 .show(ui, |ui| {
-                    ui.add(egui::Slider::new(&mut generator.strata.mid_crust_y, -50..=0).text("Slate Level Y"));
-                    ui.add(egui::Slider::new(&mut generator.strata.deep_crust_y, -120..=-30).text("Blackstone Level Y"));
+                    ui.add(egui::Slider::new(&mut generator.strata.mid_crust_y, -200..=0).text("Blackstone Level Y"));
+                    ui.add(egui::Slider::new(&mut generator.strata.deep_crust_y, -250..=-50).text("Deep Crust Y"));
                     ui.add(egui::Slider::new(&mut generator.strata.vein_frequency, 0.02..=0.20).text("Vein Freq"));
                 });
 

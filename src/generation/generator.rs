@@ -354,6 +354,21 @@ impl TerrainGenerator {
             return Voxel::Sand;
         }
 
+        if column.biome == BiomeType::Highlands {
+            let slate_noise = crate::core::noise::gradient_noise_2d(
+                world_x as f32 * 0.15,
+                world_z as f32 * 0.15,
+                self.seed.wrapping_add(45_678),
+            );
+            if slate_noise > 0.05 {
+                return Voxel::Slate;
+            } else if slate_noise > -0.25 {
+                return Voxel::Cobbleslate;
+            } else {
+                return Voxel::Grass;
+            }
+        }
+
         Voxel::Grass
     }
 

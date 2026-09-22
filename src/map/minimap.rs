@@ -7,6 +7,7 @@ use bevy::{
 };
 
 use crate::{
+    generation::TerrainGenerator,
     menu::MenuState,
     player::Player,
     world::{VOXEL_SIZE, Voxel},
@@ -25,6 +26,9 @@ pub struct MinimapRoot;
 
 #[derive(Component)]
 pub struct MinimapCoordsText;
+
+#[derive(Component)]
+pub struct MinimapBiomeText;
 
 #[derive(Component)]
 pub struct MinimapDisplayImage;
@@ -232,19 +236,21 @@ fn setup_minimap(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
                 ));
             });
 
-            // Coordinate Readout Footer Pill
+            // Information Readout Footer Pill (Coordinates & Biome)
             root.spawn((
                 Node {
                     display: Display::Flex,
+                    flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
-                    padding: UiRect::axes(px(10.0), px(3.0)),
+                    row_gap: px(2.0),
+                    padding: UiRect::axes(px(12.0), px(4.0)),
                     border: UiRect::all(px(1.0)),
                     border_radius: BorderRadius::all(px(4.0)),
                     ..default()
                 },
-                BackgroundColor(Color::srgba(0.06, 0.07, 0.09, 0.85)),
-                BorderColor::all(Color::srgba(0.28, 0.30, 0.36, 0.70)),
+                BackgroundColor(Color::srgba(0.06, 0.07, 0.09, 0.88)),
+                BorderColor::all(Color::srgba(0.28, 0.30, 0.36, 0.75)),
             ))
             .with_children(|pill| {
                 pill.spawn((
@@ -255,6 +261,15 @@ fn setup_minimap(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
                         ..default()
                     },
                     TextColor(Color::srgb(0.88, 0.90, 0.94)),
+                ));
+                pill.spawn((
+                    MinimapBiomeText,
+                    Text::new("Plains"),
+                    TextFont {
+                        font_size: FontSize::Px(10.0),
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.70, 0.84, 0.65)),
                 ));
             });
         });
@@ -351,20 +366,31 @@ fn sync_minimap_marker(
 
 fn update_minimap_ui(
     player_query: Query<&Transform, With<Player>>,
-    mut text_query: Query<&mut Text, With<MinimapCoordsText>>,
+    mut coords_query: Query<&mut Text, (With<MinimapCoordsText>, Without<MinimapBiomeText>)>,
+    mut biome_query: Query<&mut Text, (With<MinimapBiomeText>, Without<MinimapCoordsText>)>,
+    terrain_generator: Option<Res<TerrainGenerator>>,
 ) {
     let Ok(player_transform) = player_query.single() else {
         return;
     };
 
     let p = player_transform.translation;
-    for mut text in &mut text_query {
-        **text = format!(
-            "X: {:>4}  Y: {:>3}  Z: {:>4}",
-            (p.x / VOXEL_SIZE).floor() as i32,
-            (p.y / VOXEL_SIZE).floor() as i32,
-            (p.z / VOXEL_SIZE).floor() as i32,
-        );
+    let vx = (p.x / VOXEL_SIZE).floor() as i32;
+    let vy = (p.y / VOXEL_SIZE).floor() as i32;
+    let vz = (p.z / VOXEL_SIZE).floor() as i32;
+
+    for mut text in &mut coords_query {
+        **text = format!("X: {:>4}  Y: {:>3}  Z: {:>4}", vx, vy, vz);
+    }
+
+    let biome_name = if let Some(ref generator) = terrain_generator {
+        generator.sample_column(vx, vz).biome.name()
+    } else {
+        "Plains"
+    };
+
+    for mut text in &mut biome_query {
+        **text = biome_name.to_string();
     }
 }
 

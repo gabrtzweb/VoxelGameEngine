@@ -23,7 +23,7 @@ pub enum BiomeType {
 
 impl BiomeType {
     #[allow(dead_code)]
-    pub const ALL: [BiomeType; 12] = [
+    pub const ALL: [BiomeType; 14] = [
         BiomeType::Plains,
         BiomeType::PlainsForest,
         BiomeType::Meadow,
@@ -31,6 +31,8 @@ impl BiomeType {
         BiomeType::Wetlands,
         BiomeType::Highlands,
         BiomeType::SnowyTundra,
+        BiomeType::ColdPlains,
+        BiomeType::Savanna,
         BiomeType::Desert,
         BiomeType::Beach,
         BiomeType::River,
@@ -39,17 +41,7 @@ impl BiomeType {
     ];
 
     #[allow(dead_code)]
-    pub const ACTIVE: [BiomeType; 9] = [
-        BiomeType::SnowyTundra,
-        BiomeType::ColdPlains,
-        BiomeType::Plains,
-        BiomeType::Savanna,
-        BiomeType::Desert,
-        BiomeType::Beach,
-        BiomeType::River,
-        BiomeType::Ocean,
-        BiomeType::DeepOcean,
-    ];
+    pub const ACTIVE: [BiomeType; 14] = Self::ALL;
 
     pub fn name(self) -> &'static str {
         match self {
@@ -393,7 +385,7 @@ impl ClimateGenerator {
         else if continentalness < 0.03 && humidity > 0.18 {
             BiomeType::River
         }
-        // --- Land biomes arranged smoothly along the continuous Temperature gradient ---
+        // --- Land biomes arranged smoothly across Continentalness, Temperature & Humidity ---
         // 5. Frigid / Glacial: Snowy Tundra
         else if temperature < -0.20 {
             BiomeType::SnowyTundra
@@ -402,15 +394,35 @@ impl ClimateGenerator {
         else if temperature < -0.05 {
             BiomeType::ColdPlains
         }
-        // 7. Warm & Arid: Desert (strictly warm and dry)
+        // 7. Mountain Highlands: inland elevated crags (high continentalness, cool/temperate)
+        else if continentalness > 0.35 && temperature < 0.25 {
+            BiomeType::Highlands
+        }
+        // 8. Warm & Arid: Desert (strictly warm and dry)
         else if temperature > 0.20 && humidity < -0.05 {
             BiomeType::Desert
         }
-        // 8. Warm sub-tropical: Savanna
+        // 9. Warm sub-tropical: Savanna
         else if temperature > 0.20 {
             BiomeType::Savanna
         }
-        // 9. Temperate core: Plains
+        // 10. Temperate Wetlands: lowlands with high moisture
+        else if humidity > 0.25 {
+            BiomeType::Wetlands
+        }
+        // 11. Temperate Woodland: rich canopy forest with high-moderate moisture
+        else if humidity > 0.10 {
+            BiomeType::Woodland
+        }
+        // 12. Temperate Plains Forest: transitional forest-plains
+        else if humidity > -0.05 {
+            BiomeType::PlainsForest
+        }
+        // 13. Meadow: lush open upland hills with low-moderate humidity
+        else if continentalness > 0.15 {
+            BiomeType::Meadow
+        }
+        // 14. Temperate core: Plains
         else {
             BiomeType::Plains
         }

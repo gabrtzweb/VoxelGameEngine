@@ -22,11 +22,12 @@ The stack I am using for my project:
     - X: procedural streaming
     - Z: procedural streaming
 - Vertical world limits are currently:
-    - Minimum chunk Y: -6 (-96 blocks)
+    - Minimum chunk Y: -16 (-256 blocks)
     - Maximum chunk Y: +16 (+256 blocks)
-- Bottom-most layer of blocks: 100% unbreakable Dreadstone bedrock strictly confined to the bottom 3–4 layers of the world ($Y \le -94$, dithered blend up to $Y = -91$).
-- Upper underground crust ($Y > -41$) is uniform `Stone`, smoothly transitioning at the underground depth midpoint ($Y \le -41$) down to `Slate` (`rock_slate`).
-- Chunk streaming operates using a horizontal cylindrical distance ($X^2 + Z^2 \le R^2$) within the vertical range of chunk Y $-6$ to $+16$. This guarantees that soaring mountain summits ($Y \le 256$) and deep caverns are never truncated or sliced off by spherical distance clipping.
+    - Total playable vertical height: 512 blocks.
+- Bottom-most layer of blocks: 100% unbreakable Dreadstone bedrock strictly confined to the bottom 3–4 layers of the world ($Y \le -254$).
+- Upper underground crust ($Y > -120$) is uniform `Stone`, smoothly transitioning at the underground depth midpoint ($Y \le -120$) down to `Blackstone` (`rock_blackstone`). `Slate` and `Cobbleslate` are reserved exclusively for the `Highlands` biome.
+- Chunk streaming operates using a horizontal cylindrical distance ($X^2 + Z^2 \le R^2$) within the vertical range of chunk Y $-16$ to $+16$. This guarantees that soaring mountain summits ($Y \le 256$) and deep caverns are never truncated or sliced off by spherical distance clipping.
 - Cloud plane altitude: 220.0 m (floating high above the tallest mountain peaks).
 - Current default render distance: 12 chunks (distance fog disabled by default).
 - Chunks are generated and unloaded dynamically as the Creative player moves through the world.
@@ -85,16 +86,16 @@ The player uses a custom AABB collision system that directly queries voxel data.
 
 ### 3. Procedural World Generation, Biomes & Caves
 - **Continuous Macro-Climate Noise & Geography**: Deterministic 2D gradient noise driving Continentalness, Temperature, and Humidity. Recalibrated continental scale ($0.0012$ frequency) producing vast landmasses (1000+ blocks wide) and grand mountain peaks rising to $Y = 80\text{--}140+$, eliminating abrupt vertical cliffs and harsh elevation cuts across biome borders.
-- **Focused Core Biomes & Clean Strata**:
-  - Core biomes active in terrain generation: Plains, Snowy Tundra & Frost Peaks (featuring multi-face `SnowyGrass` and snow summits), Desert, Beaches/Coasts, Rivers, Oceans, and Deep Oceans.
-  - Baseline terrain palette uses clean core materials: `Grass`, `Dirt`, `Stone`, `Water`, `Snow`/`SnowyGrass`, and `Sand`, with underground `Slate` and bedrock `Dreadstone`.
+- **Comprehensive 14-Biome Climate Suite & Stratified Geology**:
+  - Full suite of 14 active biomes: Plains, Cold Plains, Snowy Tundra & Frost Peaks (featuring multi-face `SnowyGrass` and snow summits), Meadow, Woodland, Wetlands, Highlands (featuring exclusive `Slate` and `Cobbleslate`), Plains Forest, Savanna, Desert, Beach, River, Ocean, and Deep Ocean.
+  - Baseline terrain palette uses clean core materials: `Grass`, `Dirt`, `Stone`, `Water`, `Snow`/`SnowyGrass`, `Sand`, with lower subterranean `Blackstone` and bottom bedrock `Dreadstone`.
 - **Eliminated Grass Stacking**: Surface grass is strictly placed at `depth == 0` with air exposure above it. Side-exposure dirt promotion has been removed, preventing stacked grass blocks on cliff steps and slopes.
 - **Underwater Beach Protection**: Submerged surfaces (`world_y <= water_level`) never generate Grass, placing Sand down to `sea_level - 6` to eliminate offshore green grass rings.
 - **Clean Subterranean Strata & Bedrock Floor**:
   - Subsoil is uniform `Dirt` (or `Sand` in Desert/Beach) with gravel/blackstone clutter completely removed.
-  - Upper underground crust ($Y > -41$) is uniform `Stone`.
-  - Lower crust ($Y \le -41$) transitions at depth midpoint down to `Slate` (`rock_slate`) via 3D dithered noise.
-  - Bedrock (`Dreadstone`) is strictly confined to the bottom 3–4 layers of the world ($Y \le -94$, dithered blend up to $Y = -91$).
+  - Upper underground crust ($Y > -120$) is uniform `Stone`.
+  - Lower crust ($Y \le -120$) transitions at depth midpoint down to `Blackstone` (`rock_blackstone`) via 3D dithered noise.
+  - Bedrock (`Dreadstone`) is strictly confined to the bottom 3–4 layers of the world ($Y \le -254$).
 - **Natural Mountain Arches, Cave Mouths & Subterranean Rivers**:
   - Spacious 3–5 block wide 3D caves with natural cave mouth breaches on dry hillsides ($0.18$ mask threshold).
   - Horizontal ridge-tunneling arches carving hollow openings through tall mountain ridges ($Y \ge 34$).
@@ -181,9 +182,10 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - [ ] Phase 10: Gameplay Polish, Audio Foundation & Quality-of-Life Tweaks (Currently Active: Agile, user-directed polish and terrain refinement tasks; not strictly linear)
   - [x] Stage 10.0: Terrain & World Polish (Agile / Quality-of-Life)
   - [x] Stage 10.2: Quality-of-Life (Live Chunk Reload, 4-Row Scrollable Creative Inventory, Player Personal Inventory & Creative Dual-Tab Toggle)
-  - [x] Stage 10.3: Minimap & Interactive World Map (Minecraft/Xaero-Style)
+  - [x] Stage 10.3: Minimap & Interactive World Map (Minecraft/Xaero-Style, with live coordinate readout and biome identifier)
   - [x] Stage 10.4: Biome Color Variation & Ambient Environment Noise ("Ambient Environment" Mod Style)
   - [x] Stage 10.5: Dynamic Resource Throttling & Power Conservation ("Dynamic FPS" Mod Style)
+- [ ] Phase 11: World Generation & Worldbuilding Expansion (High Fantasy & Dark Fantasy Realism)
 
 ---
 

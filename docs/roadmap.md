@@ -407,3 +407,51 @@ Phase 10 is currently active. Development is intentionally not strictly followin
   - **Idle / AFK Detection**: Detects inactivity across keyboard, mouse clicks, mouse motion, and scroll wheel; gently throttles render frequency to 30 FPS after 60s of inactivity.
   - **Power & Battery Conservation**: Native Win32 `GetSystemPowerStatus` battery detection caps frame pacing to 60 FPS on laptop battery power to maximize device battery longevity.
   - **Instant Focus Recovery**: Zero-latency wakeup restoring full unthrottled framerate the microsecond the window regains focus or any input is received. Status visible on extended <kbd>F3</kbd> HUD.
+
+---
+
+## Phase 11: World Generation & Worldbuilding Expansion (High Fantasy & Dark Fantasy Realism)
+
+A focused overhaul and expansion of procedural world generation, terrain topography, and geological worldbuilding inspired by classic dark and high fantasy settings (*The Witcher*, *D&D*, and *Lord of the Rings*). This phase prioritizes perfecting terrain layout, relief height, surface blocks, and smooth biome transitions before flora and fauna are reintroduced in Phase 9.
+
+- [x] **Stage 11.0: Foundational Geology & World Depth Calibration (Completed)**:
+  - **Symmetric 512-Block Vertical Height**: Set minimum chunk level to `WORLD_MIN_CHUNK_Y = -16`, establishing a symmetric vertical world range spanning $-256$ to $+256$ (512 total playable blocks).
+  - **Underground Blackstone Stratum**: Standard subterranean stone transitions halfway down the crust ($Y \le -120$) into dense `Blackstone`, while unbreakable `Dreadstone` bedrock forms the floor of the world ($Y \le -254$).
+  - **Exclusive Highlands Slate**: Reserved `Slate` and `Cobbleslate` exclusively for the `Highlands` biome, establishing its unique geological identity as steep alpine crags and scree slopes.
+  - **Reactivated Core Biome Suite**: Activated all 14 baseline biomes in `BiomeType::ACTIVE` and `ClimateGenerator::classify_biome` (`Plains`, `Cold Plains`, `Snowy Tundra`, `Meadow`, `Woodland`, `Wetlands`, `Highlands`, `Plains Forest`, `Savanna`, `Desert`, `Beach`, `River`, `Ocean`, `Deep Ocean`).
+
+- [ ] **Stage 11.1: Surface Fantasy Biome Catalog (Terrain & Surface Palettes)**:
+  *Note: Only existing engine blocks are utilized (`Grass`, `SnowyGrass`, `Dirt`, `PackedDirt`, `Mud`, `PackedMud`, `Mulch`, `Moss`, `RedMoss`, `Clay`, `Gravel`, `Flint`, `Sand`, `RedSand`, `Stone`, `MossyStone`, `Cobblestone`, `Slate`, `Basalt`, `Blackstone`, `Sandstone`, `RedSandstone`, `Limestone`, `Calcite`, `Ice`, `PackedIce`). No flora/fauna features at this stage.*
+
+  - **1. Frigid & Subpolar Climates**:
+    - *Glacial Spire & Nunataks*: Soaring vertical ice peaks and nunatak crags. Surface: `PackedIce`, `Ice`, `Snow`, and `Blueschist`. Subsoil: `PackedIce`. Water: Frigid navy (`#1B3F73`).
+    - *Frost Scree & Permafrost Slope*: High wind-swept scree slopes. Surface: `SnowyGrass`, loose `Gravel`, `Stone`, and `Snow`. Subsoil: `Dirt` and `Flint`. Water: Frigid cyan (`#48B2DE`).
+  - **2. Temperate & Maritime Climates**:
+    - *Ancient Grove (Brokilon/Fangorn style)*: Deep shaded lowland forest floor. Surface: `Moss`, `Grass`, and `PackedDirt`. Subsoil: `Mulch` and `Dirt`. Water: Dark tannin green (`#327A58`).
+    - *Old-Growth Pine Taiga*: Cool conifer valleys and hills. Surface: `Mulch`, `PackedDirt`, and cold `Grass`. Subsoil: `PackedDirt`. Water: Clear mountain blue (`#3E8AB8`).
+    - *Rolling Moors & Heathlands*: Wind-swept undulating hills. Surface: `Grass` with scattered `Gravel` patches and `Dirt`. Subsoil: `Dirt` and `Stone`. Water: Temperate blue (`#356592`).
+  - **3. Waterlogged Mires & Wetlands**:
+    - *Crookback Mire (Velen / Dead Marshes style)*: Stagnant depressions and peat banks. Surface: Wet `Mud`, `PackedMud`, `Clay`, and olive `Moss`. Subsoil: Deep `PackedMud`. Water: Murky brown-green (`#3D4A30`).
+    - *Brackish Estuary*: Low-lying braided channels. Surface: `Mud`, `Clay`, and river `Sand`. Subsoil: Layered `Clay` and `Gravel`. Water: Silty teal (`#3B827E`).
+  - **4. Arid & Scorched Climates**:
+    - *Red Mesa & Slot Canyons*: Layered flat-topped plateaus and dry arroyos. Surface: `RedSandstone`, `RedSand`, and `Ochrestone`. Subsoil: `RedSandstone`. Water: Rare oasis turquoise (`#2AC4C4`).
+    - *Volcanic Ashlands & Basalt Sinks (Mordor style)*: Scorched volcanic plains with fissures. Surface: `Basalt`, `Blackstone`, `Magma` seams, and dark `PackedDirt`. Subsoil: `Basalt`. Water/Fluids: Glowing `Lava`.
+  - **5. Coastal & Marine Boundaries**:
+    - *Rocky Sea-Cliffs*: Sheer ocean precipices battered by surf. Surface: `Stone`, `Cobblestone`, `Gravel`, and sea-spray `Grass`. Subsoil: Solid `Stone`. Water: Deep marine blue (`#244C8E`).
+
+- [ ] **Stage 11.2: Multi-Parameter Climate Noise & Spline Mapping**:
+  - **Multi-Noise Climate Coordinates**: Continuous multi-octave 2D noise mapping Continentalness, Temperature, and Humidity with expanded parameter curves.
+  - **Smooth Spline / Voronoi Climate Blending**: Multi-octave jittered cellular partitioning ensuring biomes transition naturally without artificial geometric borders.
+
+- [ ] **Stage 11.3: Natural Biome Transitions & Edge Dithering**:
+  - **Surface Block Dithering**: Expand organic block transitions (similar to Grass vs. SnowyGrass and Sand vs. Grass) across all adjacent biome borders (e.g. Mud fingers blending into Moor grass, RedSand drifts meeting Sandstone).
+  - **Height & Slope Blending**: Natural elevation interpolation preventing sudden cliff cuts across biome boundaries.
+
+- [ ] **Stage 11.4: Atmospheric Biome Weather, Volumetric Fog & Environment Grading**:
+  - **Biome-Specific Ambient Palettes**:
+    - Low-altitude eerie mist in wetlands and mires.
+    - Crisp high-exposure distance fog on alpine and glacial heights.
+    - Dark ash haze in volcanic wastelands.
+    - Soft warm golden lighting across temperate plains and moors.
+
+
