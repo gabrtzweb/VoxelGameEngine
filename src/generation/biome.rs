@@ -468,9 +468,9 @@ pub fn sample_blended_biome_color(voxel: Voxel, world_x: f32, world_z: f32, seed
         a += color[3] * weight;
     }
 
-    // Quantize to 128 steps (1/128 = ~0.0078) per channel: imperceptible steps to the human eye,
-    // producing a silky-smooth gradual transition while still allowing greedy meshing to merge quads.
-    const QUANTIZE_STEPS: f32 = 128.0;
+    // Quantize to 64 steps (1/64 = 0.015625) per channel: provides smooth color transitions
+    // while maximizing greedy meshing quad merges across biome transition spans.
+    const QUANTIZE_STEPS: f32 = 64.0;
     [
         (r * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
         (g * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,

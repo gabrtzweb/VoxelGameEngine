@@ -16,6 +16,7 @@ pub struct TerrainColumn {
     pub biome: BiomeType,
     pub is_beach: bool,
     pub is_underground_river: bool,
+    pub climate: ClimateSample,
 }
 
 impl Default for TerrainColumn {
@@ -26,6 +27,12 @@ impl Default for TerrainColumn {
             biome: BiomeType::Plains,
             is_beach: false,
             is_underground_river: false,
+            climate: ClimateSample {
+                continentalness: 0.0,
+                temperature: 0.0,
+                humidity: 0.0,
+                biome: BiomeType::Plains,
+            },
         }
     }
 }
@@ -208,6 +215,7 @@ impl TerrainGenerator {
             biome: final_biome,
             is_beach,
             is_underground_river,
+            climate,
         }
     }
 
@@ -245,7 +253,13 @@ impl TerrainGenerator {
         }
 
         let rep_height = self.logical_terrain_height_at(logical_x, logical_z, climate);
-        rep_height >= sea_level - 6 && rep_height <= sea_level + 3
+        let beach_noise = crate::core::noise::gradient_noise_2d(
+            logical_x as f32 * 0.12,
+            logical_z as f32 * 0.12,
+            self.seed.wrapping_add(88_411),
+        ) * 1.5;
+        let max_beach_height = (sea_level as f32 + 2.5 + beach_noise).round() as i32;
+        rep_height >= sea_level - 6 && rep_height <= max_beach_height
     }
 
     fn surface_material_at(
@@ -255,7 +269,7 @@ impl TerrainGenerator {
         world_z: i32,
         column: TerrainColumn,
     ) -> Voxel {
-        // Submerged terrain (underwater) is NEVER Grass!
+        // Submerged terrain (underwater) is NEVER Grass or SnowyGrass!
         let is_submerged = column.water_level.is_some_and(|wl| world_y <= wl);
         if is_submerged {
             return Voxel::Sand;
@@ -265,12 +279,7 @@ impl TerrainGenerator {
             return Voxel::Sand;
         }
 
-        // 1. Frigid biome: covered in Snowy Grass
-        if column.biome == BiomeType::SnowyTundra {
-            return Voxel::SnowyGrass;
-        }
-
-        // 2. High alpine elevation snowline: mountains above y >= 48 receive snowcaps
+        // High alpine elevation snowline: mountains above y >= 48 receive snowcaps
         if column.biome != BiomeType::Desert
             && column.biome != BiomeType::Ocean
             && column.biome != BiomeType::DeepOcean
@@ -296,14 +305,56 @@ impl TerrainGenerator {
             }
         }
 
-        match column.biome {
-            BiomeType::Desert
-            | BiomeType::Beach
-            | BiomeType::Ocean
-            | BiomeType::DeepOcean
-            | BiomeType::River => Voxel::Sand,
-            _ => Voxel::Grass,
+        // 1. Organic Frigid Transition (Snowy Grass <-> Grass):
+        // Nominal Snowy Tundra threshold is temperature < -0.20.
+        // Multi-frequency 2D noise blends snow patches and grass tongues smoothly across the transition.
+        let snow_noise_macro = crate::core::noise::gradient_noise_2d(
+            world_x as f32 * 0.08,
+            world_z as f32 * 0.08,
+            self.seed.wrapping_add(14_337),
+        );
+        let snow_noise_micro = crate::core::noise::gradient_noise_2d(
+            world_x as f32 * 0.25,
+            world_z as f32 * 0.25,
+            self.seed.wrapping_add(28_991),
+        );
+        let snow_jitter = snow_noise_macro * 0.045 + snow_noise_micro * 0.025;
+        let is_snowy = column.climate.temperature + snow_jitter < -0.20;
+
+        if is_snowy {
+            return Voxel::SnowyGrass;
         }
+
+        // 2. Organic Arid Transition (Sand <-> Grass for Desert):
+        // Nominal Desert is temperature > 0.20 && humidity < -0.05.
+        // We compute distance to the desert boundary and blend with organic noise so sand dunes taper naturally.
+        let temp_dist = column.climate.temperature - 0.20;
+        let hum_dist = -0.05 - column.climate.humidity;
+        let desert_margin = temp_dist.min(hum_dist);
+
+        let desert_noise_macro = crate::core::noise::gradient_noise_2d(
+            world_x as f32 * 0.09,
+            world_z as f32 * 0.09,
+            self.seed.wrapping_add(33_881),
+        );
+        let desert_noise_micro = crate::core::noise::gradient_noise_2d(
+            world_x as f32 * 0.26,
+            world_z as f32 * 0.26,
+            self.seed.wrapping_add(51_223),
+        );
+        let desert_jitter = desert_noise_macro * 0.035 + desert_noise_micro * 0.020;
+        let is_desert = (desert_margin + desert_jitter) > 0.0;
+
+        if is_desert
+            || column.biome == BiomeType::Beach
+            || column.biome == BiomeType::Ocean
+            || column.biome == BiomeType::DeepOcean
+            || column.biome == BiomeType::River
+        {
+            return Voxel::Sand;
+        }
+
+        Voxel::Grass
     }
 
     fn voxel_at_sampled(
@@ -365,6 +416,13 @@ impl TerrainGenerator {
 
         if column.is_beach && logical_depth <= 3 {
             return Voxel::Sand;
+        }
+
+        if logical_depth <= 2 {
+            let surface = self.surface_material_at(world_x, column.terrain_height, world_z, column);
+            if surface == Voxel::Sand {
+                return Voxel::Sand;
+            }
         }
 
         self.strata.solid_voxel_at(
@@ -830,5 +888,40 @@ mod tests {
         }
 
         assert!(found_sand, "Desert must generate Sand surface");
+    }
+
+    #[test]
+    fn biome_material_transition_blending_produces_organic_fringe() {
+        let generator = TerrainGenerator::default();
+        let mut found_snowy_in_transition = false;
+        let mut found_grass_in_transition = false;
+
+        for z in (-800..800).step_by(8) {
+            for x in (-800..800).step_by(8) {
+                let col = generator.sample_column(x, z);
+                if col.water_level.is_none() && !col.is_beach {
+                    let temp = col.climate.temperature;
+                    if (-0.25..-0.15).contains(&temp) {
+                        let surface = generator.surface_material_at(x, col.terrain_height, z, col);
+                        if surface == Voxel::SnowyGrass {
+                            found_snowy_in_transition = true;
+                        } else if surface == Voxel::Grass {
+                            found_grass_in_transition = true;
+                        }
+                    }
+                }
+                if found_snowy_in_transition && found_grass_in_transition {
+                    break;
+                }
+            }
+            if found_snowy_in_transition && found_grass_in_transition {
+                break;
+            }
+        }
+
+        assert!(
+            found_snowy_in_transition && found_grass_in_transition,
+            "Expected both SnowyGrass and Grass to organically coexist in transition zone"
+        );
     }
 }
