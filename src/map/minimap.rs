@@ -87,9 +87,9 @@ fn setup_minimap(
     terrain_img.sampler = ImageSampler::nearest();
     let terrain_handle = images.add(terrain_img);
 
-    // 2. Load textures from assets/textures/gui/map/
-    let bg_handle: Handle<Image> = asset_server.load("textures/gui/map/map_background.png");
-    let marker_handle: Handle<Image> = asset_server.load("textures/gui/map/red_marker.png");
+    // 2. Load textures from assets/textures/gui/atlases/
+    let bg_handle: Handle<Image> = asset_server.load("textures/gui/atlases/map_background.png");
+    let marker_handle: Handle<Image> = asset_server.load("textures/gui/atlases/marker_red.png");
 
     commands.insert_resource(MinimapState {
         terrain_image: terrain_handle.clone(),

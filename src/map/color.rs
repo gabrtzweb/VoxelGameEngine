@@ -41,14 +41,17 @@ pub fn voxel_map_color(voxel: Voxel, water_depth: u8) -> [u8; 4] {
         Voxel::Rhodonite => [195, 110, 135, 255],
         Voxel::Serpentinite => [70, 115, 85, 255],
         Voxel::Basalt => [75, 75, 80, 255],
+        Voxel::Terracotta => [165, 95, 65, 255],
 
         // Woods & Foliage
         Voxel::OakWood | Voxel::OakWoodLog => [133, 94, 56, 255],
         Voxel::BirchWood | Voxel::BirchWoodLog => [215, 210, 198, 255],
         Voxel::PineWood | Voxel::PineWoodLog => [74, 48, 28, 255],
+        Voxel::RainwoodWood | Voxel::RainwoodWoodLog => [118, 76, 52, 255],
         Voxel::OakLeaves => [72, 140, 42, 255],
         Voxel::BirchLeaves => [115, 165, 50, 255],
         Voxel::PineLeaves => [40, 95, 55, 255],
+        Voxel::RainwoodLeaves => [60, 135, 55, 255],
         Voxel::Cactus => [85, 135, 45, 255],
 
         // Fluids with depth tinting

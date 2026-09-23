@@ -44,8 +44,8 @@ This document outlines the planned development phases for the voxel game engine,
   - Enhanced solar corona with HDR base color luminance and non-linear power curve for a prominent, glowing ring and rays against the daytime sky.
   - Set `fog_enabled: false` on celestial materials so distance fog never draws solid boxes over the sun or moon.
   - Sun casts 4-level cascaded directional shadows with daytime sky fill lighting.
-- [x] **8 Moon Phases from Spritesheet**:
-  - Automatically slices the 128×64 spritesheet (`assets/textures/environments/moon_phases.png`) into 8 discrete 32×32 pixel textures (Full Moon, Waning Gibbous, Third Quarter, Waning Crescent, New Moon, Waxing Crescent, First Quarter, Waxing Gibbous).
+- [x] **8 Individual Moon Phases**:
+  - Dedicated individual textures for each phase loaded from `assets/textures/environments/celestial/moon/` (Full Moon, Waning Gibbous, Third Quarter, Waning Crescent, New Moon, Waxing Crescent, First Quarter, Waxing Gibbous).
   - Uses additive blending to render crisp glowing crescents and phases against the night sky without square artifacts.
   - Active texture swaps dynamically with `day_count % 8`, and directional moonlight intensity/shadows scale based on the active phase's illumination factor.
 - [x] **Atmosphere, Dynamic Fog & Color Transitions**:
@@ -409,12 +409,15 @@ Phase 10 is currently active. Development is intentionally not strictly followin
   - **Screen Mode Settings**:
     - Added live screen mode switching stepper to Settings Menu: **Windowed**, **Exclusive Fullscreen**, and **Borderless Fullscreen**, updating Bevy's `PrimaryWindow` mode seamlessly in real time.
   - **Minimap Visual Enhancements**:
-    - **Parchment Background Frame**: Loaded `assets/textures/gui/map/map_background.png` as an authentic cartographic border extending slightly outward behind the 192×192 terrain view.
-    - **Red Player Marker**: Loaded `assets/textures/gui/map/red_marker.png` replacing the procedural arrow, dynamically rotated with player camera yaw using native `UiTransform` and `Rot2`.
+    - **Parchment Background Frame**: Loaded `assets/textures/gui/atlases/map_background.png` as an authentic cartographic border extending slightly outward behind the 192×192 terrain view.
+    - **Red Player Marker**: Loaded `assets/textures/gui/atlases/marker_red.png` replacing the procedural arrow, dynamically rotated with player camera yaw using native `UiTransform` and `Rot2`.
     - **Informative Readout Labels**: Added explicit `"Coordinates:"` and `"Biome:"` prefixes to the minimap footer pill.
   - **World Map Marker Fix & Rotation**:
     - Separated viewport container from the terrain image node in `src/map/world_map.rs`, eliminating Taffy leaf node child clipping bugs.
     - Fixed marker positioning to accurately track world coordinates and center on player upon opening, with zero-size viewport initialization guards and yaw rotation.
+  - **Environment Assets & Block Registry Expansion**:
+    - Migrated celestial assets from legacy spritesheets to dedicated folders: individual 64×64 moon phase images in `assets/textures/environments/celestial/moon/` and sun texture at `assets/textures/environments/celestial/sun.png`.
+    - Added `Terracotta` (with 5 organic variants `terr_terracotta.png` .. `4`) and the `Rainwood` block family (`RainwoodWood` with 4 variants, `RainwoodWoodLog` with log ring tops, and `RainwoodLeaves` with 2 foliage variants) to the voxel registry, terrain texture array, creative inventory, and map coloration.
 
 ---
 

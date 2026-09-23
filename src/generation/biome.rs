@@ -272,6 +272,7 @@ impl BiomeType {
                 Self::SnowyTundra | Self::ColdPlains => [0.35, 0.82, 0.60, 1.0],
                 _ => [0.40, 0.90, 0.55, 1.0],
             },
+            Voxel::RainwoodLeaves => [0.45, 1.10, 0.65, 1.0],
             _ => [1.0, 1.0, 1.0, 1.0],
         }
     }
@@ -281,7 +282,10 @@ impl BiomeType {
         match voxel {
             Voxel::Grass => self.grass_color(),
             Voxel::Water | Voxel::WaterFlowing | Voxel::WaterOccupied => self.water_color(),
-            Voxel::OakLeaves | Voxel::BirchLeaves | Voxel::PineLeaves => self.foliage_color(voxel),
+            Voxel::OakLeaves
+            | Voxel::BirchLeaves
+            | Voxel::PineLeaves
+            | Voxel::RainwoodLeaves => self.foliage_color(voxel),
             _ => [1.0, 1.0, 1.0, 1.0],
         }
     }

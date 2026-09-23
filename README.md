@@ -69,11 +69,15 @@ assets/
 ├── shaders/
 │   └── voxel.wgsl
 ├── textures/
-│   ├── blocks/       (blocks textures)
-│   ├── environments/ (skybox, sun, moon)
+│   ├── blocks/
+│   ├── environments/   
+│   │   └── celestial/
+│   │       └── moon/
 │   ├── gui/
-│   │   └── cursors/  (cursors states)
-│   └── mobs/         (player textures)
+│   │   ├── atlases/
+│   │   └── cursors/
+│   ├── items/
+│   └── mobs/
 └── icon.ico
 
 docs/

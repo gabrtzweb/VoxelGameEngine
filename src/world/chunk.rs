@@ -1,6 +1,7 @@
 pub const VOXEL_SIZE: f32 = 1.0;
 pub const CHUNK_SIZE: usize = 16;
 pub const CHUNK_VOLUME: usize = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
+pub const MAX_VOXEL_TYPES: usize = 256;
 
 pub use super::block::Voxel;
 
@@ -148,7 +149,7 @@ impl ChunkStorage {
 
         let mut palette = [Voxel::Air; 16];
         let mut palette_len: u8 = 0;
-        let mut voxel_to_pal = [0xFFu8; 64];
+        let mut voxel_to_pal = [0xFFu8; MAX_VOXEL_TYPES];
 
         for &v in voxels {
             let idx = v as usize;
@@ -247,7 +248,7 @@ pub struct Chunk {
     storage: ChunkStorage,
     non_air_count: usize,
     solid_opaque_count: usize,
-    variant_counts: [u16; 64],
+    variant_counts: [u16; MAX_VOXEL_TYPES],
     unique_voxel_count: u16,
     homogeneity: ChunkHomogeneity,
 }
@@ -258,7 +259,7 @@ impl Chunk {
     }
 
     pub fn filled(voxel: Voxel) -> Self {
-        let mut variant_counts = [0u16; 64];
+        let mut variant_counts = [0u16; MAX_VOXEL_TYPES];
         variant_counts[voxel as usize] = CHUNK_VOLUME as u16;
         let non_air_count = if voxel.is_empty() { 0 } else { CHUNK_VOLUME };
         let solid_opaque_count = if voxel.is_solid_opaque() {
@@ -290,7 +291,7 @@ impl Chunk {
         assert_eq!(voxels.len(), CHUNK_VOLUME);
         let mut non_air_count = 0;
         let mut solid_opaque_count = 0;
-        let mut variant_counts = [0u16; 64];
+        let mut variant_counts = [0u16; MAX_VOXEL_TYPES];
         let mut unique_voxel_count = 0;
 
         for &v in &voxels {
@@ -634,5 +635,28 @@ mod tests {
                 "Mismatch at index {i}"
             );
         }
+    }
+
+    #[test]
+    fn test_high_index_voxel_placement() {
+        let mut chunk = Chunk::new();
+        // Index 66: RainwoodLeaves
+        chunk.set(0, 0, 0, Voxel::RainwoodLeaves);
+        assert_eq!(chunk.get(0, 0, 0), Voxel::RainwoodLeaves);
+        assert_eq!(chunk.non_air_count(), 1);
+
+        chunk.set(0, 0, 0, Voxel::Air);
+        assert_eq!(chunk.get(0, 0, 0), Voxel::Air);
+        assert_eq!(chunk.non_air_count(), 0);
+
+        // Also test from_voxels with RainwoodLeaves
+        let mut voxels = vec![Voxel::Air; CHUNK_VOLUME];
+        voxels[10] = Voxel::RainwoodLeaves;
+        voxels[20] = Voxel::RainwoodWood;
+        voxels[30] = Voxel::RainwoodWoodLog;
+        voxels[40] = Voxel::Terracotta;
+        let c2 = Chunk::from_voxels(voxels);
+        assert_eq!(c2.get(10, 0, 0), Voxel::RainwoodLeaves);
+        assert_eq!(c2.get(4, 0, 1), Voxel::RainwoodWood);
     }
 }

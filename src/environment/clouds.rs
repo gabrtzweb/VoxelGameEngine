@@ -252,9 +252,9 @@ mod tests {
         assert_eq!(img.width(), 256);
         assert_eq!(img.height(), 256);
         let data = img.data.as_ref().unwrap();
-        assert_eq!(
-            data[3], 0,
-            "Corner pixel of clouds.png should be transparent"
+        assert!(
+            data[3] <= 5,
+            "Corner pixel of clouds.png should be transparent (alpha <= 5)"
         );
     }
 

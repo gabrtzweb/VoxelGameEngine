@@ -282,7 +282,7 @@ fn load_celestial_images() -> (Image, [Image; 8]) {
 }
 
 fn load_sun_image() -> Image {
-    let path = "assets/textures/environments/sun.png";
+    let path = "assets/textures/environments/celestial/sun.png";
     if let Ok(opened) = image::open(path) {
         let rgba = opened.into_rgba8();
         let (width, height) = (rgba.width(), rgba.height());
@@ -326,67 +326,66 @@ fn load_sun_image() -> Image {
     solid_color_image(32, 32, [255, 230, 120, 255])
 }
 
+pub const MOON_PHASE_PATHS: [&str; 8] = [
+    "assets/textures/environments/celestial/moon/full_moon.png",
+    "assets/textures/environments/celestial/moon/waning_gibbous.png",
+    "assets/textures/environments/celestial/moon/third_quarter.png",
+    "assets/textures/environments/celestial/moon/waning_crescent.png",
+    "assets/textures/environments/celestial/moon/new_moon.png",
+    "assets/textures/environments/celestial/moon/waxing_crescent.png",
+    "assets/textures/environments/celestial/moon/first_quarter.png",
+    "assets/textures/environments/celestial/moon/waxing_gibbous.png",
+];
+
 fn load_moon_phase_images() -> [Image; 8] {
-    let path = "assets/textures/environments/moon_phases.png";
+    core::array::from_fn(|i| load_single_moon_phase(MOON_PHASE_PATHS[i]))
+}
+
+fn load_single_moon_phase(path: &str) -> Image {
     if let Ok(opened) = image::open(path) {
         let rgba = opened.into_rgba8();
-        if rgba.width() >= 128 && rgba.height() >= 64 {
-            let mut phases: [Option<Image>; 8] = [None, None, None, None, None, None, None, None];
+        let (width, height) = (rgba.width(), rgba.height());
+        let mut data = Vec::with_capacity((width * height * 4) as usize);
 
-            for (phase, slot) in phases.iter_mut().enumerate() {
-                let row = (phase / 4) as u32;
-                let col = (phase % 4) as u32;
+        for pixel in rgba.pixels() {
+            let [r, g, b, a] = pixel.0;
+            let max_b = r.max(g).max(b);
 
-                let start_x = col * 32;
-                let start_y = row * 32;
-
-                let mut phase_bytes = Vec::with_capacity(32 * 32 * 4);
-                for y in start_y..(start_y + 32) {
-                    for x in start_x..(start_x + 32) {
-                        let pixel = rgba.get_pixel(x, y);
-                        let [r, g, b, _] = pixel.0;
-                        let max_b = r.max(g).max(b);
-
-                        if max_b == 0 {
-                            phase_bytes.extend_from_slice(&[0, 0, 0, 0]);
-                        } else {
-                            let boost = if max_b < 60 {
-                                (max_b as f32 / 60.0).powf(0.6) / (max_b as f32 / 60.0)
-                            } else {
-                                1.0
-                            };
-                            let br = ((r as f32 * boost * 1.25).min(255.0)) as u8;
-                            let bg = ((g as f32 * boost * 1.25).min(255.0)) as u8;
-                            let bb = ((b as f32 * boost * 1.25).min(255.0)) as u8;
-                            phase_bytes.extend_from_slice(&[br, bg, bb, 255]);
-                        }
-                    }
-                }
-
-                let mut img = Image::new(
-                    Extent3d {
-                        width: 32,
-                        height: 32,
-                        depth_or_array_layers: 1,
-                    },
-                    TextureDimension::D2,
-                    phase_bytes,
-                    TextureFormat::Rgba8UnormSrgb,
-                    RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
-                );
-                img.sampler = ImageSampler::nearest();
-                *slot = Some(img);
+            if a == 0 || max_b == 0 {
+                data.extend_from_slice(&[0, 0, 0, 0]);
+            } else {
+                let boost = if max_b < 60 {
+                    (max_b as f32 / 60.0).powf(0.6) / (max_b as f32 / 60.0)
+                } else {
+                    1.0
+                };
+                let br = ((r as f32 * boost * 1.25).min(255.0)) as u8;
+                let bg = ((g as f32 * boost * 1.25).min(255.0)) as u8;
+                let bb = ((b as f32 * boost * 1.25).min(255.0)) as u8;
+                data.extend_from_slice(&[br, bg, bb, 255]);
             }
-
-            return phases.map(|opt| opt.unwrap());
         }
+
+        let mut img = Image::new(
+            Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            TextureDimension::D2,
+            data,
+            TextureFormat::Rgba8UnormSrgb,
+            RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+        );
+        img.sampler = ImageSampler::nearest();
+        return img;
     }
 
     warn!(
-        "Failed to slice moon phases at {}, using fallback array",
+        "Failed to load moon phase texture at {}, using fallback",
         path
     );
-    core::array::from_fn(|_| solid_color_image(32, 32, [220, 230, 255, 255]))
+    solid_color_image(32, 32, [220, 230, 255, 255])
 }
 
 fn solid_color_image(width: u32, height: u32, color: [u8; 4]) -> Image {
@@ -416,12 +415,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn moon_phases_are_sliced_into_eight_discrete_images() {
+    fn moon_phases_are_loaded_into_eight_discrete_images() {
         let phases = load_moon_phase_images();
         assert_eq!(phases.len(), 8);
         for (idx, img) in phases.iter().enumerate() {
-            assert_eq!(img.width(), 32, "Phase {} width should be 32", idx);
-            assert_eq!(img.height(), 32, "Phase {} height should be 32", idx);
+            assert_eq!(img.width(), 64, "Phase {} width should be 64", idx);
+            assert_eq!(img.height(), 64, "Phase {} height should be 64", idx);
         }
     }
 
@@ -435,11 +434,14 @@ mod tests {
         assert_eq!(sun_data[2], 0);
         assert_eq!(sun_data[3], 0);
 
-        // Center pixel (16, 16) should be bright yellow sun core
-        let center_idx = (16 * 32 + 16) * 4;
+        // Center pixel should be bright yellow sun core
+        let w = sun.width();
+        let h = sun.height();
+        let center_idx = ((h / 2 * w + w / 2) * 4) as usize;
         assert!(sun_data[center_idx] > 200, "Sun center red should be > 200");
-        assert!(
-            sun_data[center_idx + 3] == 255,
+        assert_eq!(
+            sun_data[center_idx + 3],
+            255,
             "Sun center alpha should be 255"
         );
 

@@ -11,7 +11,7 @@ use super::greedy::FaceDirection;
 use crate::world::Voxel;
 
 pub const TEXTURE_RESOLUTION: u32 = 16;
-pub const MAX_VOXEL_VARIANTS: usize = 128;
+pub const MAX_VOXEL_VARIANTS: usize = 256;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FaceTextureInfo {
@@ -651,6 +651,46 @@ mod tests {
             registry.variant_count(Voxel::PineLeaves),
             4,
             "PineLeaves should have 4 variants"
+        );
+
+        // Verify Terracotta and Rainwood variants
+        assert_eq!(
+            registry.variant_count(Voxel::Terracotta),
+            5,
+            "Terracotta should have 5 variants"
+        );
+        assert_eq!(
+            registry.variant_count(Voxel::RainwoodWood),
+            4,
+            "RainwoodWood should have 4 variants"
+        );
+        assert_eq!(
+            registry.variant_count(Voxel::RainwoodLeaves),
+            2,
+            "RainwoodLeaves should have 2 variants"
+        );
+        let (rw_log_side, _) = registry.get_face_texture_info(
+            Voxel::RainwoodWoodLog,
+            IVec3::ZERO,
+            FaceDirection::PositiveX,
+        );
+        let (rw_log_top, _) = registry.get_face_texture_info(
+            Voxel::RainwoodWoodLog,
+            IVec3::ZERO,
+            FaceDirection::PositiveY,
+        );
+        let (rw_log_bot, _) = registry.get_face_texture_info(
+            Voxel::RainwoodWoodLog,
+            IVec3::ZERO,
+            FaceDirection::NegativeY,
+        );
+        assert_ne!(
+            rw_log_side, rw_log_top,
+            "RainwoodWoodLog top ring must differ from bark side"
+        );
+        assert_eq!(
+            rw_log_top, rw_log_bot,
+            "RainwoodWoodLog top and bottom share the log ring layer"
         );
     }
 }
