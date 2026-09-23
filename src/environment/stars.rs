@@ -7,8 +7,8 @@ use bevy::{
 };
 
 pub const STAR_COUNT: usize = 250;
-pub const STAR_DISTANCE: f32 = 140.0;
-pub const STAR_BASE_SIZE: f32 = 0.9;
+pub const STAR_DISTANCE: f32 = 850.0;
+pub const STAR_BASE_SIZE: f32 = 5.5;
 
 #[derive(Component)]
 pub struct StarfieldRoot;

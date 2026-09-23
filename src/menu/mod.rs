@@ -20,12 +20,69 @@ pub enum MenuState {
     WorldMap,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
+pub enum ScreenMode {
+    #[default]
+    Windowed,
+    ExclusiveFullscreen,
+    BorderlessFullscreen,
+}
+
+impl ScreenMode {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Windowed => "Windowed",
+            Self::ExclusiveFullscreen => "Exclusive Fullscreen",
+            Self::BorderlessFullscreen => "Borderless Fullscreen",
+        }
+    }
+
+    pub fn to_window_mode(self) -> bevy::window::WindowMode {
+        match self {
+            Self::Windowed => bevy::window::WindowMode::Windowed,
+            Self::ExclusiveFullscreen => bevy::window::WindowMode::Fullscreen(
+                bevy::window::MonitorSelection::Current,
+                bevy::window::VideoModeSelection::Current,
+            ),
+            Self::BorderlessFullscreen => {
+                bevy::window::WindowMode::BorderlessFullscreen(bevy::window::MonitorSelection::Current)
+            }
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn from_window_mode(mode: &bevy::window::WindowMode) -> Self {
+        match mode {
+            bevy::window::WindowMode::Windowed => Self::Windowed,
+            bevy::window::WindowMode::Fullscreen(_, _) => Self::ExclusiveFullscreen,
+            bevy::window::WindowMode::BorderlessFullscreen(_) => Self::BorderlessFullscreen,
+        }
+    }
+
+    pub fn next(self) -> Self {
+        match self {
+            Self::Windowed => Self::ExclusiveFullscreen,
+            Self::ExclusiveFullscreen => Self::BorderlessFullscreen,
+            Self::BorderlessFullscreen => Self::Windowed,
+        }
+    }
+
+    pub fn prev(self) -> Self {
+        match self {
+            Self::Windowed => Self::BorderlessFullscreen,
+            Self::ExclusiveFullscreen => Self::Windowed,
+            Self::BorderlessFullscreen => Self::ExclusiveFullscreen,
+        }
+    }
+}
+
 #[derive(Resource, Debug, Clone)]
 pub struct GameSettings {
     pub fov_degrees: f32,
     pub fog_enabled: bool,
     pub view_bobbing: bool,
     pub full_grass: bool,
+    pub screen_mode: ScreenMode,
 }
 
 impl Default for GameSettings {
@@ -35,6 +92,7 @@ impl Default for GameSettings {
             fog_enabled: false,
             view_bobbing: true,
             full_grass: false,
+            screen_mode: ScreenMode::Windowed,
         }
     }
 }
@@ -503,5 +561,20 @@ mod tests {
             assert_eq!(anim.frame, i % 13);
         }
         assert_eq!(anim.frame, 0);
+    }
+
+    #[test]
+    fn screen_mode_cycle_and_conversions() {
+        let m = ScreenMode::Windowed;
+        assert_eq!(m.label(), "Windowed");
+        let m = m.next();
+        assert_eq!(m, ScreenMode::ExclusiveFullscreen);
+        assert_eq!(m.label(), "Exclusive Fullscreen");
+        let m = m.next();
+        assert_eq!(m, ScreenMode::BorderlessFullscreen);
+        assert_eq!(m.label(), "Borderless Fullscreen");
+        let m = m.next();
+        assert_eq!(m, ScreenMode::Windowed);
+        assert_eq!(m.prev(), ScreenMode::BorderlessFullscreen);
     }
 }

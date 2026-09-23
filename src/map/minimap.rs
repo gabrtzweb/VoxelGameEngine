@@ -1,9 +1,11 @@
 use bevy::{
     asset::RenderAssetUsages,
     image::ImageSampler,
+    math::Rot2,
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
     text::FontSize,
+    ui::UiTransform,
 };
 
 use crate::{
@@ -14,11 +16,12 @@ use crate::{
 };
 
 use super::{
-    cache::MapCache,
+    cache::{MapCache, MapChunk},
     color::{apply_relief_shading, unexplored_color, voxel_map_color_at},
 };
 
 pub const MINIMAP_SIZE: u32 = 192;
+pub const MINIMAP_FRAME_SIZE: f32 = 216.0;
 pub const MARKER_SIZE: u32 = 24;
 
 #[derive(Component)]
@@ -39,10 +42,12 @@ pub struct MinimapPlayerMarker;
 #[derive(Resource)]
 pub struct MinimapState {
     pub terrain_image: Handle<Image>,
+    #[allow(dead_code)]
     pub marker_image: Handle<Image>,
     pub last_player_block: IVec2,
     pub last_cache_version: u64,
     pub last_marker_yaw: f32,
+    pub last_update_time: f32,
 }
 
 pub struct MinimapPlugin;
@@ -61,7 +66,11 @@ impl Plugin for MinimapPlugin {
     }
 }
 
-fn setup_minimap(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
+fn setup_minimap(
+    mut commands: Commands,
+    mut images: ResMut<Assets<Image>>,
+    asset_server: Res<AssetServer>,
+) {
     // 1. Create dynamic 192x192 terrain map texture
     let terrain_pixels = [18u8, 19u8, 24u8, 255u8].repeat((MINIMAP_SIZE * MINIMAP_SIZE) as usize);
     let mut terrain_img = Image::new_fill(
@@ -78,22 +87,9 @@ fn setup_minimap(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     terrain_img.sampler = ImageSampler::nearest();
     let terrain_handle = images.add(terrain_img);
 
-    // 2. Create dynamic 24x24 player marker arrow texture
-    let mut marker_pixels = vec![0u8; (MARKER_SIZE * MARKER_SIZE * 4) as usize];
-    draw_player_arrow(&mut marker_pixels, 0.0);
-    let mut marker_img = Image::new_fill(
-        Extent3d {
-            width: MARKER_SIZE,
-            height: MARKER_SIZE,
-            depth_or_array_layers: 1,
-        },
-        TextureDimension::D2,
-        &marker_pixels,
-        TextureFormat::Rgba8UnormSrgb,
-        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
-    );
-    marker_img.sampler = ImageSampler::nearest();
-    let marker_handle = images.add(marker_img);
+    // 2. Load textures from assets/textures/gui/map/
+    let bg_handle: Handle<Image> = asset_server.load("textures/gui/map/map_background.png");
+    let marker_handle: Handle<Image> = asset_server.load("textures/gui/map/red_marker.png");
 
     commands.insert_resource(MinimapState {
         terrain_image: terrain_handle.clone(),
@@ -101,6 +97,7 @@ fn setup_minimap(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
         last_player_block: IVec2::new(i32::MAX, i32::MAX),
         last_cache_version: u64::MAX,
         last_marker_yaw: f32::MAX,
+        last_update_time: 0.0,
     });
 
     // 3. Spawn Minimap Square HUD in top-right corner
@@ -120,88 +117,35 @@ fn setup_minimap(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
             ZIndex(150),
         ))
         .with_children(|root| {
-            // Square Frame container
-            root.spawn((
-                Node {
-                    position_type: PositionType::Relative,
-                    width: px(MINIMAP_SIZE as f32 + 8.0),
-                    height: px(MINIMAP_SIZE as f32 + 8.0),
-                    display: Display::Flex,
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    border: UiRect::all(px(3.0)),
-                    border_radius: BorderRadius::all(px(6.0)),
-                    ..default()
-                },
-                BackgroundColor(Color::srgba(0.06, 0.07, 0.09, 0.95)),
-                BorderColor::all(Color::srgba(0.32, 0.35, 0.44, 0.95)),
-            ))
+            // Container with map_background texture extending outward
+            root.spawn(Node {
+                position_type: PositionType::Relative,
+                width: px(MINIMAP_FRAME_SIZE),
+                height: px(MINIMAP_FRAME_SIZE),
+                display: Display::Flex,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            })
             .with_children(|frame| {
-                // North Cardinal Indicator
+                // Background parchment image filling the frame
                 frame.spawn((
-                    Text::new("N"),
-                    TextFont {
-                        font_size: FontSize::Px(11.0),
+                    ImageNode {
+                        image: bg_handle,
                         ..default()
                     },
-                    TextColor(Color::srgb(0.95, 0.40, 0.40)), // Classic red North marker
                     Node {
                         position_type: PositionType::Absolute,
-                        top: px(2.0),
+                        left: px(0.0),
+                        top: px(0.0),
+                        right: px(0.0),
+                        bottom: px(0.0),
                         ..default()
                     },
-                    ZIndex(10),
+                    ZIndex(1),
                 ));
 
-                // South Cardinal Indicator
-                frame.spawn((
-                    Text::new("S"),
-                    TextFont {
-                        font_size: FontSize::Px(10.0),
-                        ..default()
-                    },
-                    TextColor(Color::srgb(0.75, 0.78, 0.85)),
-                    Node {
-                        position_type: PositionType::Absolute,
-                        bottom: px(2.0),
-                        ..default()
-                    },
-                    ZIndex(10),
-                ));
-
-                // West Cardinal Indicator
-                frame.spawn((
-                    Text::new("W"),
-                    TextFont {
-                        font_size: FontSize::Px(10.0),
-                        ..default()
-                    },
-                    TextColor(Color::srgb(0.75, 0.78, 0.85)),
-                    Node {
-                        position_type: PositionType::Absolute,
-                        left: px(3.0),
-                        ..default()
-                    },
-                    ZIndex(10),
-                ));
-
-                // East Cardinal Indicator
-                frame.spawn((
-                    Text::new("E"),
-                    TextFont {
-                        font_size: FontSize::Px(10.0),
-                        ..default()
-                    },
-                    TextColor(Color::srgb(0.75, 0.78, 0.85)),
-                    Node {
-                        position_type: PositionType::Absolute,
-                        right: px(3.0),
-                        ..default()
-                    },
-                    ZIndex(10),
-                ));
-
-                // Minimap Terrain Viewport Image
+                // Minimap Terrain Viewport Image (192x192) centered on top of background
                 frame.spawn((
                     MinimapDisplayImage,
                     ImageNode {
@@ -211,13 +155,77 @@ fn setup_minimap(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
                     Node {
                         width: px(MINIMAP_SIZE as f32),
                         height: px(MINIMAP_SIZE as f32),
-                        border_radius: BorderRadius::all(px(3.0)),
                         ..default()
                     },
+                    ZIndex(5),
                 ));
 
-                // Center Directional Player Marker Arrow
-                let marker_offset = (MINIMAP_SIZE as f32 - MARKER_SIZE as f32) / 2.0;
+                // North Cardinal Indicator
+                frame.spawn((
+                    Text::new("N"),
+                    TextFont {
+                        font_size: FontSize::Px(11.0),
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.95, 0.40, 0.40)),
+                    Node {
+                        position_type: PositionType::Absolute,
+                        top: px(1.0),
+                        ..default()
+                    },
+                    ZIndex(15),
+                ));
+
+                // South Cardinal Indicator
+                frame.spawn((
+                    Text::new("S"),
+                    TextFont {
+                        font_size: FontSize::Px(10.0),
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.35, 0.28, 0.22)),
+                    Node {
+                        position_type: PositionType::Absolute,
+                        bottom: px(1.0),
+                        ..default()
+                    },
+                    ZIndex(15),
+                ));
+
+                // West Cardinal Indicator
+                frame.spawn((
+                    Text::new("W"),
+                    TextFont {
+                        font_size: FontSize::Px(10.0),
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.35, 0.28, 0.22)),
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: px(2.0),
+                        ..default()
+                    },
+                    ZIndex(15),
+                ));
+
+                // East Cardinal Indicator
+                frame.spawn((
+                    Text::new("E"),
+                    TextFont {
+                        font_size: FontSize::Px(10.0),
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.35, 0.28, 0.22)),
+                    Node {
+                        position_type: PositionType::Absolute,
+                        right: px(2.0),
+                        ..default()
+                    },
+                    ZIndex(15),
+                ));
+
+                // Center Directional Player Red Marker
+                let marker_offset = (MINIMAP_FRAME_SIZE - MARKER_SIZE as f32) / 2.0;
                 frame.spawn((
                     MinimapPlayerMarker,
                     ImageNode {
@@ -226,50 +234,45 @@ fn setup_minimap(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
                     },
                     Node {
                         position_type: PositionType::Absolute,
-                        left: px(marker_offset + 4.0),
-                        top: px(marker_offset + 4.0),
+                        left: px(marker_offset),
+                        top: px(marker_offset),
                         width: px(MARKER_SIZE as f32),
                         height: px(MARKER_SIZE as f32),
                         ..default()
                     },
-                    ZIndex(20),
+                    UiTransform::IDENTITY,
+                    ZIndex(25),
                 ));
             });
 
-            // Information Readout Footer Pill (Coordinates & Biome)
-            root.spawn((
-                Node {
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    row_gap: px(2.0),
-                    padding: UiRect::axes(px(12.0), px(4.0)),
-                    border: UiRect::all(px(1.0)),
-                    border_radius: BorderRadius::all(px(4.0)),
-                    ..default()
-                },
-                BackgroundColor(Color::srgba(0.06, 0.07, 0.09, 0.88)),
-                BorderColor::all(Color::srgba(0.28, 0.30, 0.36, 0.75)),
-            ))
+            // Information Readout Footer (Transparent, cleanly spaced)
+            root.spawn(Node {
+                display: Display::Flex,
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                row_gap: px(2.0),
+                padding: UiRect::axes(px(8.0), px(2.0)),
+                ..default()
+            })
             .with_children(|pill| {
                 pill.spawn((
                     MinimapCoordsText,
-                    Text::new("X: 0  Y: 0  Z: 0"),
+                    Text::new("Coordinates: X: 0 Y: 0 Z: 0"),
                     TextFont {
                         font_size: FontSize::Px(11.0),
                         ..default()
                     },
-                    TextColor(Color::srgb(0.88, 0.90, 0.94)),
+                    TextColor(Color::srgb(0.95, 0.95, 0.98)),
                 ));
                 pill.spawn((
                     MinimapBiomeText,
-                    Text::new("Plains"),
+                    Text::new("Biome: Plains"),
                     TextFont {
                         font_size: FontSize::Px(10.0),
                         ..default()
                     },
-                    TextColor(Color::srgb(0.70, 0.84, 0.65)),
+                    TextColor(Color::srgb(0.95, 0.95, 0.98)),
                 ));
             });
         });
@@ -278,6 +281,7 @@ fn setup_minimap(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
 fn sync_minimap_terrain(
     player_query: Query<&Transform, With<Player>>,
     map_cache: Res<MapCache>,
+    time: Res<Time>,
     mut minimap_state: ResMut<MinimapState>,
     mut images: ResMut<Assets<Image>>,
 ) {
@@ -291,15 +295,22 @@ fn sync_minimap_terrain(
         (p_pos.z / VOXEL_SIZE).floor() as i32,
     );
 
-    let needs_update = player_block != minimap_state.last_player_block
-        || map_cache.version != minimap_state.last_cache_version;
+    let cache_changed = map_cache.version != minimap_state.last_cache_version;
+    let moved = player_block != minimap_state.last_player_block;
 
-    if !needs_update {
+    if !moved && !cache_changed {
+        return;
+    }
+
+    let now = time.elapsed_secs();
+    // Rate limit minimap generation to at most 12.5 Hz (every 0.08s) while moving
+    if moved && !cache_changed && (now - minimap_state.last_update_time) < 0.08 {
         return;
     }
 
     minimap_state.last_player_block = player_block;
     minimap_state.last_cache_version = map_cache.version;
+    minimap_state.last_update_time = now;
 
     let Some(mut image) = images.get_mut(&minimap_state.terrain_image) else {
         return;
@@ -312,16 +323,41 @@ fn sync_minimap_terrain(
 
     for py in 0..MINIMAP_SIZE as i32 {
         let wz = player_block.y + (py - half);
+        let chunk_z = wz.div_euclid(16);
+        let lz = wz.rem_euclid(16) as usize;
+
+        let north_wz = wz - 1;
+        let north_chunk_z = north_wz.div_euclid(16);
+        let north_lz = north_wz.rem_euclid(16) as usize;
+
         let row_offset = (py as usize) * (MINIMAP_SIZE as usize) * 4;
+
+        let mut cached_chunk_x = i32::MIN;
+        let mut cached_chunk: Option<&MapChunk> = None;
+        let mut cached_north_chunk: Option<&MapChunk> = None;
 
         for px in 0..MINIMAP_SIZE as i32 {
             let wx = player_block.x + (px - half);
+            let chunk_x = wx.div_euclid(16);
+            let lx = wx.rem_euclid(16) as usize;
+
+            if chunk_x != cached_chunk_x {
+                cached_chunk_x = chunk_x;
+                cached_chunk = map_cache.get_chunk(IVec2::new(chunk_x, chunk_z));
+                cached_north_chunk = if chunk_z == north_chunk_z {
+                    cached_chunk
+                } else {
+                    map_cache.get_chunk(IVec2::new(chunk_x, north_chunk_z))
+                };
+            }
+
             let idx = row_offset + (px as usize) * 4;
 
-            let color = if let Some(pixel) = map_cache.get_pixel(wx, wz) {
+            let color = if let Some(chunk) = cached_chunk {
+                let pixel = chunk.get(lx, lz);
                 if pixel.voxel != Voxel::Air {
                     let base = voxel_map_color_at(pixel.voxel, pixel.water_depth, wx, wz);
-                    let north_h = map_cache.get_pixel(wx, wz - 1).map(|p| p.height);
+                    let north_h = cached_north_chunk.map(|nc| nc.get(lx, north_lz).height);
                     apply_relief_shading(base, pixel.height, north_h)
                 } else {
                     unexplored_color(wx, wz)
@@ -340,8 +376,8 @@ fn sync_minimap_terrain(
 
 fn sync_minimap_marker(
     camera_query: Query<&Transform, With<Camera3d>>,
+    mut marker_query: Query<&mut UiTransform, With<MinimapPlayerMarker>>,
     mut minimap_state: ResMut<MinimapState>,
-    mut images: ResMut<Assets<Image>>,
 ) {
     let Ok(camera_transform) = camera_query.single() else {
         return;
@@ -355,12 +391,8 @@ fn sync_minimap_marker(
 
     minimap_state.last_marker_yaw = yaw;
 
-    let Some(mut marker_img) = images.get_mut(&minimap_state.marker_image) else {
-        return;
-    };
-
-    if let Some(ref mut data) = marker_img.data {
-        draw_player_arrow(data, yaw);
+    for mut ui_transform in &mut marker_query {
+        ui_transform.rotation = Rot2::radians(-yaw);
     }
 }
 
@@ -380,7 +412,7 @@ fn update_minimap_ui(
     let vz = (p.z / VOXEL_SIZE).floor() as i32;
 
     for mut text in &mut coords_query {
-        **text = format!("X: {:>4}  Y: {:>3}  Z: {:>4}", vx, vy, vz);
+        **text = format!("Coordinates: X: {} Y: {} Z: {}", vx, vy, vz);
     }
 
     let biome_name = if let Some(ref generator) = terrain_generator {
@@ -390,7 +422,7 @@ fn update_minimap_ui(
     };
 
     for mut text in &mut biome_query {
-        **text = biome_name.to_string();
+        **text = format!("Biome: {}", biome_name);
     }
 }
 
@@ -421,6 +453,7 @@ fn manage_minimap_visibility(
 }
 
 /// Renders a sharp, anti-aliased red directional chevron arrow into a 24x24 RGBA buffer.
+#[allow(dead_code)]
 pub fn draw_player_arrow(canvas: &mut [u8], yaw: f32) {
     canvas.fill(0);
 
@@ -502,4 +535,25 @@ fn dist_to_segment(p: Vec2, a: Vec2, b: Vec2) -> f32 {
     let t = (ap.dot(ab) / len_sq).clamp(0.0, 1.0);
     let projection = a + ab * t;
     (p - projection).length()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn minimap_constants_and_marker_offset() {
+        assert_eq!(MARKER_SIZE, 24);
+        assert_eq!(MINIMAP_FRAME_SIZE, 216.0);
+        let offset = (MINIMAP_FRAME_SIZE - MARKER_SIZE as f32) / 2.0;
+        assert_eq!(offset, 96.0);
+    }
+
+    #[test]
+    fn minimap_coordinate_formatting_compact() {
+        let (vx, vy, vz) = (171, 22, -132);
+        let formatted = format!("Coordinates: X: {} Y: {} Z: {}", vx, vy, vz);
+        assert_eq!(formatted, "Coordinates: X: 171 Y: 22 Z: -132");
+        assert!(!formatted.contains("X:    171"));
+    }
 }

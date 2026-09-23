@@ -148,12 +148,12 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - **Dual-Tab Creative & Personal Inventory (<kbd>E</kbd> Key)**: Minecraft-style dual-tab window (`src/menu/creative_inventory.rs`) seamlessly toggling between the **Creative Palette** (scrollable 4-row grid with all 58 blocks) and the **Personal Inventory** (fixed 8×4 = 32 slots with no scrollbar, backed by the persistent `PlayerInventory` resource in `src/player/inventory.rs`). Features hotbar mirror row, Mouse Tweaks controls (Shift-click transfer/clear, Shift+LMB drag, LMB drag painting, RMB stamp, digit key 1..8 quick-swap), and safe return of cursor-held items upon closing.
 - **3D Isometric Pixel-Art Block Icons**: Generated on-the-fly with 1.0 / 0.80 / 0.60 directional face shading, vertex tinting, and silhouette outlines.
 - **Pause Menu (<kbd>ESC</kbd> Key)**: Game pause with Resume, Settings, Restart Game, Quit to Desktop, and camera Depth-of-Field blur.
-- **In-Game Settings**: Live steppers for Render Distance (2..=16 chunks), FOV (60°..=110°), Distance Fog toggle, Camera Bobbing toggle, and Time Flow toggle.
+- **In-Game Settings**: Live steppers for Screen Mode (Windowed, Exclusive Fullscreen, Borderless Fullscreen), Render Distance (2..=16 chunks), FOV (60°..=110°), Distance Fog toggle, Camera Bobbing toggle, Grass Sides toggle, Dynamic FPS toggle, and Time Flow toggle.
 - **Custom Mouse Cursors**: 9 cursor states including 13-frame animated busy spinner and floating held-block preview.
-- **Minecraft/Xaero-Style Minimap HUD**: Top-right square HUD (192×192 dynamic canvas) with metallic beveled border, cardinal indicators (<kbd>N</kbd>, <kbd>S</kbd>, <kbd>E</kbd>, <kbd>W</kbd>), real-time player coordinates pill ($X, Y, Z$), and live directional player heading chevron. Powered by an asynchronous 2D cache (`MapCache`) with North-up topographic hill shading and bathymetric water tinting.
-- **Full-Screen Interactive World Map (<kbd>M</kbd> Key)**: Seamless `MenuState::WorldMap` integration with smooth mouse drag panning, scroll wheel zooming (0.20x to 4.0x), keyboard panning (<kbd>WASD</kbd> / arrows), snap-to-player quick key (<kbd>Space</kbd>), real-time cursor coordinate tracking under pointer, and live player marker.
+- **Minecraft/Xaero-Style Minimap HUD**: Top-right square HUD with parchment `map_background.png` frame extending outward around the 192×192 dynamic canvas, cardinal indicators (<kbd>N</kbd>, <kbd>S</kbd>, <kbd>E</kbd>, <kbd>W</kbd>), real-time readout pill (`Coordinates: X: ... Y: ... Z: ...` and `Biome: ...`), and live directional player `red_marker.png` rotating with camera yaw via GPU `UiTransform`. Powered by an asynchronous 2D cache (`MapCache`) with North-up topographic hill shading and bathymetric water tinting.
+- **Full-Screen Interactive World Map (<kbd>M</kbd> Key)**: Seamless `MenuState::WorldMap` integration with smooth mouse drag panning, scroll wheel zooming (0.20x to 4.0x), keyboard panning (<kbd>WASD</kbd> / arrows), snap-to-player quick key (<kbd>Space</kbd>), real-time cursor coordinate tracking under pointer, and accurately centered `red_marker.png` tracking player coordinates and rotating with camera yaw.
 - **Ambient Environment & Biome Coloration**: Procedural 2-octave smooth color noise in `voxel.wgsl` via `world_position.xz` modulating tinted block vertices by $\pm 8\%$ to break up flat monochromatic plains, coupled with calibrated biome palettes (emerald Plains, golden Savanna, pale Desert, icy Tundra, turquoise coastal waters, deep navy oceans) and 5-point cross-kernel boundary blending.
-- **Dynamic FPS & Power Throttling**: Automatic background frame throttling (15 FPS), idle/AFK detection (30 FPS after 60s), and native Win32 laptop battery detection (60 FPS cap) with instantaneous wakeup upon focus or input.
+- **Dynamic FPS & Power Throttling**: Automatic background frame throttling (15 FPS), idle/AFK detection (30 FPS after 60s), and physical battery detection (60 FPS cap on laptop battery power). Active input priority (`idle_elapsed < 1.0s`) and zero thread sleeping during normal gameplay guarantees unthrottled 300+ FPS performance even in windowed mode.
 - **Debug Overlays**: Minimal HUD by default, Extended Technical Debug HUD on <kbd>F3</kbd> (FPS, frame time, power source, dynamic throttle status, player XYZ/chunk, biome climate, chunk stats), HUD toggle on <kbd>Shift+F3</kbd>, and chunk debug borders on <kbd>F2</kbd>.
 
 ### 10. Engine Optimizations & Scalability (Phase 7 Milestones)
@@ -184,14 +184,14 @@ The player uses a custom AABB collision system that directly queries voxel data.
   - [x] Stage 10.2: Quality-of-Life (Live Chunk Reload, 4-Row Scrollable Creative Inventory, Player Personal Inventory & Creative Dual-Tab Toggle)
   - [x] Stage 10.3: Minimap & Interactive World Map (Minecraft/Xaero-Style, with live coordinate readout and biome identifier)
   - [x] Stage 10.4: Biome Color Variation & Ambient Environment Noise ("Ambient Environment" Mod Style)
-  - [x] Stage 10.5: Dynamic Resource Throttling & Power Conservation ("Dynamic FPS" Mod Style)
+  - [x] Stage 10.5: Screen Modes & Map Polish (Dynamic FPS throttling removed to ensure unconstrained performance)
 - [ ] Phase 11: World Generation & Worldbuilding Expansion (High Fantasy & Dark Fantasy Realism)
 
 ---
 
 ## Known Issues & Backlog for Future Fixes
 
-- **Terrain Polish & Gameplay Tuning**: World generation, cave density, and strata are currently undergoing agile tuning as gameplay testing dictates. Completed milestones include Stage 10.3 Minimap & World Map (foundational functionality operational, reserved for future incremental enhancements), Stage 10.4 Ambient Environment noise with biome-specific color tinting and blending, and Stage 10.5 Dynamic FPS resource throttling. Upcoming targets include particle bursts on block break/place and audio trigger hooks.
+- **Terrain Polish & Gameplay Tuning**: World generation, cave density, and strata are currently undergoing agile tuning as gameplay testing dictates. Completed milestones include Stage 10.3 Minimap & World Map (foundational functionality operational, reserved for future incremental enhancements), Stage 10.4 Ambient Environment noise with biome-specific color tinting and blending, and Stage 10.5 Screen Modes & Map Polish. Upcoming targets include particle bursts on block break/place and audio trigger hooks.
 
 ---
 

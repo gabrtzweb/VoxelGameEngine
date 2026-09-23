@@ -13,6 +13,8 @@ struct SettingsMenuRoot;
 
 #[derive(Component)]
 enum SettingsAction {
+    DecScreenMode,
+    IncScreenMode,
     DecRenderDistance,
     IncRenderDistance,
     DecSimulationDistance,
@@ -25,6 +27,9 @@ enum SettingsAction {
     ToggleTimePause,
     Back,
 }
+
+#[derive(Component)]
+struct ScreenModeLabel;
 
 #[derive(Component)]
 struct RenderDistanceLabel;
@@ -120,6 +125,16 @@ fn spawn_settings_menu(
                             ..default()
                         },
                     ));
+
+                    // 0. Screen Mode Stepper
+                    spawn_stepper_row(
+                        card,
+                        "Screen Mode",
+                        game_settings.screen_mode.label().to_string(),
+                        SettingsAction::DecScreenMode,
+                        SettingsAction::IncScreenMode,
+                        ScreenModeLabel,
+                    );
 
                     // 1. Render Distance Stepper
                     spawn_stepper_row(
@@ -410,6 +425,7 @@ fn handle_settings_buttons(
     mut texture_registry: Option<ResMut<VoxelTextureRegistry>>,
     mut streaming_queues: Option<ResMut<ChunkStreamingQueues>>,
     world: Option<Res<VoxelWorld>>,
+    mut window_query: Query<&mut Window, With<bevy::window::PrimaryWindow>>,
 ) {
     for (interaction, action, mut bg_color, mut border_color) in &mut interaction_query {
         match *interaction {
@@ -418,6 +434,18 @@ fn handle_settings_buttons(
                 *border_color = BorderColor::all(Color::srgb(1.0, 0.90, 0.40));
 
                 match action {
+                    SettingsAction::DecScreenMode => {
+                        game_settings.screen_mode = game_settings.screen_mode.prev();
+                        if let Ok(mut window) = window_query.single_mut() {
+                            window.mode = game_settings.screen_mode.to_window_mode();
+                        }
+                    }
+                    SettingsAction::IncScreenMode => {
+                        game_settings.screen_mode = game_settings.screen_mode.next();
+                        if let Ok(mut window) = window_query.single_mut() {
+                            window.mode = game_settings.screen_mode.to_window_mode();
+                        }
+                    }
                     SettingsAction::DecRenderDistance => {
                         chunk_settings.render_distance =
                             (chunk_settings.render_distance - 1).max(2);
@@ -484,148 +512,80 @@ fn handle_settings_buttons(
     }
 }
 
-#[allow(clippy::type_complexity, clippy::too_many_arguments)]
+#[allow(clippy::type_complexity)]
 fn update_settings_labels(
     chunk_settings: Res<ChunkStreamingSettings>,
     game_settings: Res<GameSettings>,
     env_state: Option<Res<EnvironmentState>>,
-    mut render_dist_query: Query<
+    mut labels_query: Query<(
         &mut Text,
-        (
-            With<RenderDistanceLabel>,
-            Without<SimulationDistanceLabel>,
-            Without<FovLabel>,
-            Without<FogLabel>,
-            Without<ViewBobbingLabel>,
-            Without<TimePauseLabel>,
-        ),
-    >,
-    mut sim_dist_query: Query<
-        &mut Text,
-        (
-            With<SimulationDistanceLabel>,
-            Without<RenderDistanceLabel>,
-            Without<FovLabel>,
-            Without<FogLabel>,
-            Without<ViewBobbingLabel>,
-            Without<TimePauseLabel>,
-        ),
-    >,
-    mut fov_query: Query<
-        &mut Text,
-        (
-            With<FovLabel>,
-            Without<RenderDistanceLabel>,
-            Without<SimulationDistanceLabel>,
-            Without<FogLabel>,
-            Without<ViewBobbingLabel>,
-            Without<TimePauseLabel>,
-        ),
-    >,
-    mut fog_query: Query<
-        &mut Text,
-        (
-            With<FogLabel>,
-            Without<RenderDistanceLabel>,
-            Without<SimulationDistanceLabel>,
-            Without<FovLabel>,
-            Without<ViewBobbingLabel>,
-            Without<TimePauseLabel>,
-        ),
-    >,
-    mut view_bobbing_query: Query<
-        &mut Text,
-        (
-            With<ViewBobbingLabel>,
-            Without<RenderDistanceLabel>,
-            Without<SimulationDistanceLabel>,
-            Without<FovLabel>,
-            Without<FogLabel>,
-            Without<FullGrassLabel>,
-            Without<TimePauseLabel>,
-        ),
-    >,
-    mut full_grass_query: Query<
-        &mut Text,
-        (
-            With<FullGrassLabel>,
-            Without<RenderDistanceLabel>,
-            Without<SimulationDistanceLabel>,
-            Without<FovLabel>,
-            Without<FogLabel>,
-            Without<ViewBobbingLabel>,
-            Without<TimePauseLabel>,
-        ),
-    >,
-    mut time_pause_query: Query<
-        &mut Text,
-        (
-            With<TimePauseLabel>,
-            Without<RenderDistanceLabel>,
-            Without<SimulationDistanceLabel>,
-            Without<FovLabel>,
-            Without<FogLabel>,
-            Without<ViewBobbingLabel>,
-            Without<FullGrassLabel>,
-        ),
-    >,
+        Option<&ScreenModeLabel>,
+        Option<&RenderDistanceLabel>,
+        Option<&SimulationDistanceLabel>,
+        Option<&FovLabel>,
+        Option<&FogLabel>,
+        Option<&ViewBobbingLabel>,
+        Option<&FullGrassLabel>,
+        Option<&TimePauseLabel>,
+    )>,
 ) {
-    if chunk_settings.is_changed() {
-        for mut text in &mut render_dist_query {
-            text.0 = format!("{} Chunks", chunk_settings.render_distance);
-        }
-        for mut text in &mut sim_dist_query {
-            text.0 = format!("{} Chunks", chunk_settings.simulation_distance);
-        }
+    let chunk_changed = chunk_settings.is_changed();
+    let game_changed = game_settings.is_changed();
+    let env_changed = env_state.as_ref().is_some_and(|e| e.is_changed());
+
+    if !chunk_changed && !game_changed && !env_changed {
+        return;
     }
 
-    if game_settings.is_changed() {
-        for mut text in &mut fov_query {
-            text.0 = format!("{}°", game_settings.fov_degrees as i32);
-        }
-        for mut text in &mut fog_query {
-            text.0 = format!(
-                "Fog: {}",
-                if game_settings.fog_enabled {
-                    "Enabled"
-                } else {
-                    "Disabled"
-                }
-            );
-        }
-        for mut text in &mut view_bobbing_query {
-            text.0 = format!(
-                "View Bobbing: {}",
-                if game_settings.view_bobbing {
-                    "Enabled"
-                } else {
-                    "Disabled"
-                }
-            );
-        }
-        for mut text in &mut full_grass_query {
-            text.0 = format!(
-                "Grass Sides: {}",
-                if game_settings.full_grass {
-                    "Full Grass"
-                } else {
-                    "Side Textures"
-                }
-            );
-        }
-    }
-
-    if let Some(ref env) = env_state
-        && env.is_changed()
+    for (mut text, screen_mode, render_dist, sim_dist, fov, fog, bobbing, grass, time_pause) in
+        &mut labels_query
     {
-        for mut text in &mut time_pause_query {
+        if game_changed {
+            if screen_mode.is_some() {
+                text.0 = game_settings.screen_mode.label().to_string();
+            } else if fov.is_some() {
+                text.0 = format!("{}°", game_settings.fov_degrees as i32);
+            } else if fog.is_some() {
+                text.0 = format!(
+                    "Fog: {}",
+                    if game_settings.fog_enabled {
+                        "Enabled"
+                    } else {
+                        "Disabled"
+                    }
+                );
+            } else if bobbing.is_some() {
+                text.0 = format!(
+                    "View Bobbing: {}",
+                    if game_settings.view_bobbing {
+                        "Enabled"
+                    } else {
+                        "Disabled"
+                    }
+                );
+            } else if grass.is_some() {
+                text.0 = format!(
+                    "Grass Sides: {}",
+                    if game_settings.full_grass {
+                        "Full Grass"
+                    } else {
+                        "Side Textures"
+                    }
+                );
+            }
+        }
+        if chunk_changed {
+            if render_dist.is_some() {
+                text.0 = format!("{} Chunks", chunk_settings.render_distance);
+            } else if sim_dist.is_some() {
+                text.0 = format!("{} Chunks", chunk_settings.simulation_distance);
+            }
+        }
+        if env_changed && time_pause.is_some() {
+            let paused = env_state.as_ref().is_some_and(|e| e.is_time_paused);
             text.0 = format!(
                 "Time Flow: {}",
-                if env.is_time_paused {
-                    "Paused"
-                } else {
-                    "Running"
-                }
+                if paused { "Paused" } else { "Running" }
             );
         }
     }

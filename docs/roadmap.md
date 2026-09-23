@@ -402,11 +402,19 @@ Phase 10 is currently active. Development is intentionally not strictly followin
     - **Vertex & Map Tint Blending**: 13-point symmetric circular Gaussian kernel ($R = 10.0$ blocks) smoothly blending climate colors across biome boundaries with 64-step channel quantization to preserve maximum greedy-meshing quad merging efficiency. Minimap and full-screen world map updated with live biome colors.
     - **Organic Surface Block Transitions**: Multi-octave 2D coherent noise dithering and threshold perturbation seamlessly intermingling surface block types across biome boundaries (Grass vs SnowyGrass patches and tongues across Snowy Tundra borders, Sand vs Grass dunes and drifts across Desert margins, and organic undulating beach shorelines).
 
-- [x] **Stage 10.5: Dynamic Resource Throttling & Power Conservation ("Dynamic FPS" Mod Style)**:
-  - **Unfocused / Background Window Throttling**: Automatically drops rendering framerate to 15 FPS and sleeps execution when the game window loses OS focus or is minimized, radically slashing GPU/CPU temperature and fan noise.
-  - **Idle / AFK Detection**: Detects inactivity across keyboard, mouse clicks, mouse motion, and scroll wheel; gently throttles render frequency to 30 FPS after 60s of inactivity.
-  - **Power & Battery Conservation**: Native Win32 `GetSystemPowerStatus` battery detection caps frame pacing to 60 FPS on laptop battery power to maximize device battery longevity.
-  - **Instant Focus Recovery**: Zero-latency wakeup restoring full unthrottled framerate the microsecond the window regains focus or any input is received. Status visible on extended <kbd>F3</kbd> HUD.
+- [x] **Stage 10.5: Screen Modes, Map Polish & Dynamic FPS Removal**:
+  - **Dynamic FPS Removal & Unconstrained Performance**:
+    - Completely removed experimental dynamic frame throttling and thread sleep frame pacing to eliminate OS timer jitter and framerate lock at 40-50 FPS, keeping rendering unconstrained at maximum hardware performance (300+ FPS).
+    - Removed dynamic FPS toggles from the settings menu and F3 dev HUD.
+  - **Screen Mode Settings**:
+    - Added live screen mode switching stepper to Settings Menu: **Windowed**, **Exclusive Fullscreen**, and **Borderless Fullscreen**, updating Bevy's `PrimaryWindow` mode seamlessly in real time.
+  - **Minimap Visual Enhancements**:
+    - **Parchment Background Frame**: Loaded `assets/textures/gui/map/map_background.png` as an authentic cartographic border extending slightly outward behind the 192×192 terrain view.
+    - **Red Player Marker**: Loaded `assets/textures/gui/map/red_marker.png` replacing the procedural arrow, dynamically rotated with player camera yaw using native `UiTransform` and `Rot2`.
+    - **Informative Readout Labels**: Added explicit `"Coordinates:"` and `"Biome:"` prefixes to the minimap footer pill.
+  - **World Map Marker Fix & Rotation**:
+    - Separated viewport container from the terrain image node in `src/map/world_map.rs`, eliminating Taffy leaf node child clipping bugs.
+    - Fixed marker positioning to accurately track world coordinates and center on player upon opening, with zero-size viewport initialization guards and yaw rotation.
 
 ---
 

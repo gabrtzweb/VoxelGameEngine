@@ -83,7 +83,6 @@ docs/
 src/
 ├── core/
 │   ├── dev_stats.rs
-│   ├── dynamic_fps.rs
 │   ├── mod.rs
 │   └── noise.rs
 ├── environment/

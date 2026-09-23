@@ -6,9 +6,9 @@ use bevy::{
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 
-pub const CELESTIAL_DISTANCE: f32 = 100.0;
-pub const SUN_SIZE: f32 = 52.0;
-pub const MOON_SIZE: f32 = 40.0;
+pub const CELESTIAL_DISTANCE: f32 = 800.0;
+pub const SUN_SIZE: f32 = 416.0;
+pub const MOON_SIZE: f32 = 320.0;
 
 #[derive(Component)]
 pub struct SunVisual;
@@ -452,5 +452,14 @@ mod tests {
             assert_eq!(data[2], 0, "Phase {} corner blue should be 0", idx);
             assert_eq!(data[3], 0, "Phase {} corner alpha should be 0", idx);
         }
+    }
+
+    #[test]
+    fn celestial_distance_and_angular_scale() {
+        assert_eq!(CELESTIAL_DISTANCE, 800.0);
+        let sun_angular_ratio = SUN_SIZE / CELESTIAL_DISTANCE;
+        assert!((sun_angular_ratio - 0.52).abs() < 1e-4);
+        let moon_angular_ratio = MOON_SIZE / CELESTIAL_DISTANCE;
+        assert!((moon_angular_ratio - 0.40).abs() < 1e-4);
     }
 }
