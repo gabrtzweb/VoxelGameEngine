@@ -1,7 +1,7 @@
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 
-use super::chunk::{CHUNK_SIZE, Chunk, VOXEL_SIZE, Voxel};
+use super::chunk::{BlockShape, CHUNK_SIZE, Chunk, VOXEL_SIZE, Voxel};
 
 pub const CHUNK_WORLD_SIZE: f32 = CHUNK_SIZE as f32 * VOXEL_SIZE;
 
@@ -54,6 +54,28 @@ impl VoxelWorld {
         Some(chunk_coordinate)
     }
 
+    pub fn get_shape(&self, world_voxel: IVec3) -> (BlockShape, u8) {
+        VoxelAccess::get_shape(self, world_voxel)
+    }
+
+    pub fn set_shape(
+        &mut self,
+        world_voxel: IVec3,
+        shape: BlockShape,
+        orientation: u8,
+    ) -> Option<IVec3> {
+        let (chunk_coordinate, local_coordinate) = Self::world_voxel_to_chunk(world_voxel);
+        let chunk = self.get_chunk_mut(chunk_coordinate)?;
+        chunk.set_shape(
+            local_coordinate.x as usize,
+            local_coordinate.y as usize,
+            local_coordinate.z as usize,
+            shape,
+            orientation,
+        );
+        Some(chunk_coordinate)
+    }
+
     pub fn world_voxel_to_chunk(world_voxel: IVec3) -> (IVec3, UVec3) {
         let chunk_size = CHUNK_SIZE as i32;
 
@@ -96,6 +118,17 @@ impl VoxelWorld {
 pub trait VoxelAccess {
     fn get_chunk(&self, coordinate: IVec3) -> Option<&Chunk>;
     fn get_voxel(&self, world_voxel: IVec3) -> Option<Voxel>;
+    fn get_shape(&self, world_voxel: IVec3) -> (BlockShape, u8) {
+        let (chunk_coordinate, local_coordinate) = VoxelWorld::world_voxel_to_chunk(world_voxel);
+        let Some(chunk) = self.get_chunk(chunk_coordinate) else {
+            return (BlockShape::Full, 0);
+        };
+        chunk.get_shape(
+            local_coordinate.x as usize,
+            local_coordinate.y as usize,
+            local_coordinate.z as usize,
+        )
+    }
 }
 
 impl VoxelAccess for VoxelWorld {

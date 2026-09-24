@@ -48,9 +48,9 @@ impl ScreenMode {
                 bevy::window::MonitorSelection::Current,
                 bevy::window::VideoModeSelection::Current,
             ),
-            Self::BorderlessFullscreen => {
-                bevy::window::WindowMode::BorderlessFullscreen(bevy::window::MonitorSelection::Current)
-            }
+            Self::BorderlessFullscreen => bevy::window::WindowMode::BorderlessFullscreen(
+                bevy::window::MonitorSelection::Current,
+            ),
         }
     }
 

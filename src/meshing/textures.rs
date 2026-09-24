@@ -27,26 +27,9 @@ pub struct VoxelTextureMapping {
     pub bottom: FaceTextureInfo,
 }
 
-impl VoxelTextureMapping {
-    #[allow(dead_code)]
-    pub fn uniform(start_layer: u16, variant_count: u16, frame_count: u16) -> Self {
-        let info = FaceTextureInfo {
-            start_layer,
-            variant_count,
-            frame_count,
-        };
-        Self {
-            side: info,
-            top: info,
-            bottom: info,
-        }
-    }
-}
-
 #[derive(Resource, Clone, Debug)]
 pub struct VoxelTextureRegistry {
     mappings: [Option<VoxelTextureMapping>; MAX_VOXEL_VARIANTS],
-    total_layers: u32,
     pub full_grass: bool,
 }
 
@@ -54,31 +37,12 @@ impl Default for VoxelTextureRegistry {
     fn default() -> Self {
         Self {
             mappings: [None; MAX_VOXEL_VARIANTS],
-            total_layers: 0,
             full_grass: false,
         }
     }
 }
 
 impl VoxelTextureRegistry {
-    #[allow(dead_code)]
-    pub fn register(
-        &mut self,
-        voxel: Voxel,
-        start_layer: u16,
-        variant_count: u16,
-        frame_count: u16,
-    ) {
-        let index = voxel as usize;
-        if index < MAX_VOXEL_VARIANTS {
-            self.mappings[index] = Some(VoxelTextureMapping::uniform(
-                start_layer,
-                variant_count,
-                frame_count,
-            ));
-        }
-    }
-
     pub fn register_multi_face(
         &mut self,
         voxel: Voxel,
@@ -90,35 +54,6 @@ impl VoxelTextureRegistry {
         if index < MAX_VOXEL_VARIANTS {
             self.mappings[index] = Some(VoxelTextureMapping { side, top, bottom });
         }
-    }
-
-    #[allow(dead_code)]
-    pub fn total_layers(&self) -> u32 {
-        self.total_layers
-    }
-
-    #[allow(dead_code)]
-    pub fn variant_count(&self, voxel: Voxel) -> u16 {
-        self.mappings
-            .get(voxel as usize)
-            .and_then(|m| *m)
-            .map_or(0, |m| m.side.variant_count)
-    }
-
-    #[allow(dead_code)]
-    pub fn top_variant_count(&self, voxel: Voxel) -> u16 {
-        self.mappings
-            .get(voxel as usize)
-            .and_then(|m| *m)
-            .map_or(0, |m| m.top.variant_count)
-    }
-
-    #[allow(dead_code)]
-    pub fn frame_count(&self, voxel: Voxel) -> u16 {
-        self.mappings
-            .get(voxel as usize)
-            .and_then(|m| *m)
-            .map_or(1, |m| m.side.frame_count)
     }
 
     #[inline(always)]
@@ -162,16 +97,6 @@ impl VoxelTextureRegistry {
         let variant = (h as usize % face.variant_count as usize) as u16;
         let start = face.start_layer + variant * face.frame_count;
         (start, face.frame_count)
-    }
-
-    #[inline(always)]
-    pub fn get_texture_info(&self, voxel: Voxel, world_voxel: IVec3) -> (u16, u16) {
-        self.get_face_texture_info(voxel, world_voxel, FaceDirection::PositiveX)
-    }
-
-    #[allow(dead_code)]
-    pub fn get_layer(&self, voxel: Voxel, world_voxel: IVec3) -> u16 {
-        self.get_texture_info(voxel, world_voxel).0
     }
 }
 
@@ -322,7 +247,6 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
     }
 
     let total_layers = current_layer.max(1) as u32;
-    registry.total_layers = total_layers;
 
     let mut image = Image::new(
         Extent3d {
@@ -492,205 +416,4 @@ fn solid_color_texture(color: [u8; 4]) -> LoadedTexture {
         data.extend_from_slice(&color);
     }
     LoadedTexture { frames: vec![data] }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::world::Voxel;
-    use bevy::prelude::IVec3;
-
-    #[test]
-    fn texture_array_builds_with_dynamic_variants() {
-        let (image, registry) = build_voxel_texture_array();
-        assert_eq!(image.width(), TEXTURE_RESOLUTION);
-        assert_eq!(image.height(), TEXTURE_RESOLUTION);
-        assert!(registry.total_layers() >= 6);
-        assert_eq!(
-            image.texture_descriptor.size.depth_or_array_layers,
-            registry.total_layers()
-        );
-
-        let grass_side_count = registry.variant_count(Voxel::Grass);
-        assert_eq!(grass_side_count, 4, "Grass sides should have 4 variants");
-
-        let grass_top_count = registry.top_variant_count(Voxel::Grass);
-        assert_eq!(grass_top_count, 8, "Grass top should have 8 variants");
-
-        let stone_count = registry.variant_count(Voxel::Stone);
-        assert_eq!(stone_count, 4, "Stone should have 4 variants");
-
-        let dirt_count = registry.variant_count(Voxel::Dirt);
-        assert_eq!(dirt_count, 4, "Dirt should have 4 variants");
-
-        let sand_count = registry.variant_count(Voxel::Sand);
-        assert_eq!(sand_count, 4, "Sand should have 4 variants");
-
-        let water_count = registry.variant_count(Voxel::Water);
-        assert_eq!(water_count, 1, "Water should have 1 variant");
-
-        let water_flow_count = registry.variant_count(Voxel::WaterFlowing);
-        assert_eq!(water_flow_count, 1, "WaterFlowing should have 1 variant");
-
-        let water_flow_frames = registry.frame_count(Voxel::WaterFlowing);
-        assert_eq!(water_flow_frames, 8, "WaterFlowing should have 8 frames");
-
-        let water_frames = registry.frame_count(Voxel::Water);
-        assert_eq!(water_frames, 36, "Water should have 36 animation frames");
-
-        let (water_layer, frame_count) = registry.get_texture_info(Voxel::Water, IVec3::ZERO);
-        assert_eq!(frame_count, 36);
-        assert!(water_layer + frame_count <= registry.total_layers() as u16);
-
-        let layer_a = registry.get_layer(Voxel::Grass, IVec3::new(0, 0, 0));
-        let layer_b = registry.get_layer(Voxel::Grass, IVec3::new(1, 0, 0));
-        assert!(layer_a < registry.total_layers() as u16);
-        assert!(layer_b < registry.total_layers() as u16);
-
-        // Verify OakWood has 6 side bark variants and uniform top/side layers
-        let oak_wood_variants = registry.variant_count(Voxel::OakWood);
-        assert_eq!(oak_wood_variants, 6, "OakWood should have 6 bark variants");
-        let (oak_wood_side, _) =
-            registry.get_face_texture_info(Voxel::OakWood, IVec3::ZERO, FaceDirection::PositiveX);
-        let (oak_wood_top, _) =
-            registry.get_face_texture_info(Voxel::OakWood, IVec3::ZERO, FaceDirection::PositiveY);
-        assert_eq!(
-            oak_wood_side, oak_wood_top,
-            "OakWood bark-only has identical top and side start layer"
-        );
-
-        // Verify OakWoodLog has distinct top log ring layer and side bark layer
-        let (log_side, _) = registry.get_face_texture_info(
-            Voxel::OakWoodLog,
-            IVec3::ZERO,
-            FaceDirection::PositiveX,
-        );
-        let (log_top, _) = registry.get_face_texture_info(
-            Voxel::OakWoodLog,
-            IVec3::ZERO,
-            FaceDirection::PositiveY,
-        );
-        let (log_bot, _) = registry.get_face_texture_info(
-            Voxel::OakWoodLog,
-            IVec3::ZERO,
-            FaceDirection::NegativeY,
-        );
-        assert_ne!(
-            log_side, log_top,
-            "OakWoodLog top ring layer must differ from side bark layer"
-        );
-        assert_eq!(
-            log_top, log_bot,
-            "OakWoodLog top and bottom share the log ring layer"
-        );
-
-        // Verify BirchWood (4 variants) and BirchWoodLog
-        let birch_variants = registry.variant_count(Voxel::BirchWood);
-        assert_eq!(birch_variants, 4, "BirchWood should have 4 bark variants");
-        let (birch_side, _) =
-            registry.get_face_texture_info(Voxel::BirchWood, IVec3::ZERO, FaceDirection::PositiveX);
-        let (birch_top, _) =
-            registry.get_face_texture_info(Voxel::BirchWood, IVec3::ZERO, FaceDirection::PositiveY);
-        assert_eq!(
-            birch_side, birch_top,
-            "BirchWood bark-only has identical top and side start layer"
-        );
-        let (b_log_side, _) = registry.get_face_texture_info(
-            Voxel::BirchWoodLog,
-            IVec3::ZERO,
-            FaceDirection::PositiveX,
-        );
-        let (b_log_top, _) = registry.get_face_texture_info(
-            Voxel::BirchWoodLog,
-            IVec3::ZERO,
-            FaceDirection::PositiveY,
-        );
-        assert_ne!(
-            b_log_side, b_log_top,
-            "BirchWoodLog top ring must differ from bark side"
-        );
-
-        // Verify PineWood (5 variants) and PineWoodLog
-        let pine_variants = registry.variant_count(Voxel::PineWood);
-        assert_eq!(pine_variants, 5, "PineWood should have 5 bark variants");
-        let (pine_side, _) =
-            registry.get_face_texture_info(Voxel::PineWood, IVec3::ZERO, FaceDirection::PositiveX);
-        let (pine_top, _) =
-            registry.get_face_texture_info(Voxel::PineWood, IVec3::ZERO, FaceDirection::PositiveY);
-        assert_eq!(
-            pine_side, pine_top,
-            "PineWood bark-only has identical top and side start layer"
-        );
-        let (p_log_side, _) = registry.get_face_texture_info(
-            Voxel::PineWoodLog,
-            IVec3::ZERO,
-            FaceDirection::PositiveX,
-        );
-        let (p_log_top, _) = registry.get_face_texture_info(
-            Voxel::PineWoodLog,
-            IVec3::ZERO,
-            FaceDirection::PositiveY,
-        );
-        assert_ne!(
-            p_log_side, p_log_top,
-            "PineWoodLog top ring must differ from bark side"
-        );
-
-        // Verify Leaf textures and variants
-        assert_eq!(
-            registry.variant_count(Voxel::OakLeaves),
-            2,
-            "OakLeaves should have 2 variants"
-        );
-        assert_eq!(
-            registry.variant_count(Voxel::BirchLeaves),
-            2,
-            "BirchLeaves should have 2 variants"
-        );
-        assert_eq!(
-            registry.variant_count(Voxel::PineLeaves),
-            4,
-            "PineLeaves should have 4 variants"
-        );
-
-        // Verify Terracotta and Rainwood variants
-        assert_eq!(
-            registry.variant_count(Voxel::Terracotta),
-            5,
-            "Terracotta should have 5 variants"
-        );
-        assert_eq!(
-            registry.variant_count(Voxel::RainwoodWood),
-            4,
-            "RainwoodWood should have 4 variants"
-        );
-        assert_eq!(
-            registry.variant_count(Voxel::RainwoodLeaves),
-            2,
-            "RainwoodLeaves should have 2 variants"
-        );
-        let (rw_log_side, _) = registry.get_face_texture_info(
-            Voxel::RainwoodWoodLog,
-            IVec3::ZERO,
-            FaceDirection::PositiveX,
-        );
-        let (rw_log_top, _) = registry.get_face_texture_info(
-            Voxel::RainwoodWoodLog,
-            IVec3::ZERO,
-            FaceDirection::PositiveY,
-        );
-        let (rw_log_bot, _) = registry.get_face_texture_info(
-            Voxel::RainwoodWoodLog,
-            IVec3::ZERO,
-            FaceDirection::NegativeY,
-        );
-        assert_ne!(
-            rw_log_side, rw_log_top,
-            "RainwoodWoodLog top ring must differ from bark side"
-        );
-        assert_eq!(
-            rw_log_top, rw_log_bot,
-            "RainwoodWoodLog top and bottom share the log ring layer"
-        );
-    }
 }

@@ -282,10 +282,9 @@ impl BiomeType {
         match voxel {
             Voxel::Grass => self.grass_color(),
             Voxel::Water | Voxel::WaterFlowing | Voxel::WaterOccupied => self.water_color(),
-            Voxel::OakLeaves
-            | Voxel::BirchLeaves
-            | Voxel::PineLeaves
-            | Voxel::RainwoodLeaves => self.foliage_color(voxel),
+            Voxel::OakLeaves | Voxel::BirchLeaves | Voxel::PineLeaves | Voxel::RainwoodLeaves => {
+                self.foliage_color(voxel)
+            }
             _ => [1.0, 1.0, 1.0, 1.0],
         }
     }

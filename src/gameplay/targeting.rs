@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     player::PlayerCamera,
-    world::{ChunkHomogeneity, VOXEL_SIZE, Voxel, VoxelWorld},
+    world::{BlockShape, ChunkHomogeneity, VOXEL_SIZE, Voxel, VoxelAccess, VoxelWorld},
 };
 
 const MAX_TARGET_DISTANCE: f32 = 10.0;
@@ -109,18 +109,31 @@ fn draw_current_target_highlight(
         return;
     }
 
-    draw_voxel_outline(
-        &mut gizmos,
-        target.hit_voxel,
-        Color::srgba(1.0, 1.0, 1.0, 0.95),
-    );
+    let (shape, orientation) = world.get_shape(target.block_origin);
+    let origin = target.block_origin.as_vec3() * VOXEL_SIZE;
+    let color = Color::srgba(1.0, 1.0, 1.0, 0.95);
+
+    let (box_a, maybe_box_b) = shape.local_boxes(orientation);
+    draw_box_outline(&mut gizmos, origin, box_a[0], box_a[1], color);
+    if let Some(box_b) = maybe_box_b {
+        draw_box_outline(&mut gizmos, origin, box_b[0], box_b[1], color);
+    }
 }
 
-fn draw_voxel_outline(gizmos: &mut Gizmos, voxel: IVec3, color: Color) {
-    let center = (voxel.as_vec3() + Vec3::splat(0.5)) * VOXEL_SIZE;
+fn draw_box_outline(
+    gizmos: &mut Gizmos,
+    block_origin: Vec3,
+    local_min: Vec3,
+    local_max: Vec3,
+    color: Color,
+) {
+    let world_min = block_origin + local_min * VOXEL_SIZE;
+    let world_max = block_origin + local_max * VOXEL_SIZE;
+    let center = (world_min + world_max) * 0.5;
+    let size = world_max - world_min;
 
     gizmos.cube(
-        Transform::from_translation(center).with_scale(Vec3::splat(VOXEL_SIZE)),
+        Transform::from_translation(center).with_scale(size),
         color,
     );
 }
@@ -199,7 +212,31 @@ fn raycast_world(
                     && current_voxel != Voxel::Air
                     && (!ignore_water || !current_voxel.is_water())
                 {
-                    return Some(RaycastHit { voxel, face_normal });
+                    let (shape, orientation) = world.get_shape(voxel);
+                    if shape == BlockShape::Full {
+                        return Some(RaycastHit { voxel, face_normal });
+                    }
+
+                    let (box_a, maybe_box_b) = shape.local_boxes(orientation);
+                    let mut best =
+                        ray_hit_local_box(grid_origin, direction, voxel, box_a[0], box_a[1]);
+                    if let Some(box_b) = maybe_box_b {
+                        if let Some(hit_b) =
+                            ray_hit_local_box(grid_origin, direction, voxel, box_b[0], box_b[1])
+                        {
+                            best = match best {
+                                Some(hit_a) if hit_a.0 <= hit_b.0 => Some(hit_a),
+                                _ => Some(hit_b),
+                            };
+                        }
+                    }
+
+                    if let Some((_, hit_normal)) = best {
+                        return Some(RaycastHit {
+                            voxel,
+                            face_normal: hit_normal,
+                        });
+                    }
                 }
             }
         }
@@ -240,6 +277,93 @@ fn initial_side_distance(origin: f32, voxel: i32, step: i32, delta_distance: f32
         (origin - voxel as f32) * delta_distance
     } else {
         f32::INFINITY
+    }
+}
+
+fn ray_hit_local_box(
+    origin: Vec3,
+    direction: Vec3,
+    voxel: IVec3,
+    local_min: Vec3,
+    local_max: Vec3,
+) -> Option<(f32, IVec3)> {
+    let box_min = voxel.as_vec3() + local_min;
+    let box_max = voxel.as_vec3() + local_max;
+
+    let inv_x = if direction.x.abs() > 1e-6 {
+        1.0 / direction.x
+    } else {
+        f32::INFINITY
+    };
+    let inv_y = if direction.y.abs() > 1e-6 {
+        1.0 / direction.y
+    } else {
+        f32::INFINITY
+    };
+    let inv_z = if direction.z.abs() > 1e-6 {
+        1.0 / direction.z
+    } else {
+        f32::INFINITY
+    };
+
+    let mut t1_x = (box_min.x - origin.x) * inv_x;
+    let mut t2_x = (box_max.x - origin.x) * inv_x;
+    let mut norm_x = if direction.x < 0.0 {
+        IVec3::X
+    } else {
+        IVec3::NEG_X
+    };
+    if t1_x > t2_x {
+        std::mem::swap(&mut t1_x, &mut t2_x);
+        norm_x = -norm_x;
+    }
+
+    let mut t1_y = (box_min.y - origin.y) * inv_y;
+    let mut t2_y = (box_max.y - origin.y) * inv_y;
+    let mut norm_y = if direction.y < 0.0 {
+        IVec3::Y
+    } else {
+        IVec3::NEG_Y
+    };
+    if t1_y > t2_y {
+        std::mem::swap(&mut t1_y, &mut t2_y);
+        norm_y = -norm_y;
+    }
+
+    if (t1_x > t2_y) || (t1_y > t2_x) {
+        return None;
+    }
+
+    let mut t_enter = t1_x.max(t1_y);
+    let mut hit_normal = if t1_y > t1_x { norm_y } else { norm_x };
+
+    let mut t1_z = (box_min.z - origin.z) * inv_z;
+    let mut t2_z = (box_max.z - origin.z) * inv_z;
+    let mut norm_z = if direction.z < 0.0 {
+        IVec3::Z
+    } else {
+        IVec3::NEG_Z
+    };
+    if t1_z > t2_z {
+        std::mem::swap(&mut t1_z, &mut t2_z);
+        norm_z = -norm_z;
+    }
+
+    if (t_enter > t2_z) || (t1_z > t2_x.min(t2_y)) {
+        return None;
+    }
+
+    if t1_z > t_enter {
+        t_enter = t1_z;
+        hit_normal = norm_z;
+    }
+
+    let t_exit = t2_x.min(t2_y).min(t2_z);
+
+    if t_enter <= t_exit && t_exit >= 0.0 {
+        Some((t_enter.max(0.0), hit_normal))
+    } else {
+        None
     }
 }
 

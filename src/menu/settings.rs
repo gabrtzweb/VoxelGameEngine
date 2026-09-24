@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    core::{text_shadow_default, AppFont, DynamicFpsSettings},
+    core::{AppFont, DynamicFpsSettings, text_shadow_default},
     environment::EnvironmentState,
     meshing::{ChunkMaterial, VoxelTextureRegistry},
     world::{ChunkStreamingQueues, ChunkStreamingSettings, VoxelWorld},
@@ -712,10 +712,7 @@ fn update_settings_labels(
         }
         if env_changed && time_pause.is_some() {
             let paused = env_state.as_ref().is_some_and(|e| e.is_time_paused);
-            text.0 = format!(
-                "Time Flow: {}",
-                if paused { "Paused" } else { "Running" }
-            );
+            text.0 = format!("Time Flow: {}", if paused { "Paused" } else { "Running" });
         }
     }
 }

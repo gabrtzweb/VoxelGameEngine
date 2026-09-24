@@ -1,6 +1,6 @@
 use bevy::{input::mouse::AccumulatedMouseScroll, prelude::*};
 
-use crate::core::{text_shadow_default, AppFont};
+use crate::core::{AppFont, text_shadow_default};
 use crate::gameplay::{BlockIcons, SelectedVoxel};
 use crate::player::InspectorInteraction;
 use crate::world::Voxel;

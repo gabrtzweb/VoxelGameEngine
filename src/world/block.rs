@@ -11,6 +11,153 @@ pub enum ToolType {
 }
 
 #[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default, Reflect)]
+pub enum BlockShape {
+    #[default]
+    Full = 0,
+    Slab = 1,
+    Stair = 2,
+    Column = 3,
+}
+
+impl BlockShape {
+    pub const fn all() -> [BlockShape; 4] {
+        [
+            BlockShape::Full,
+            BlockShape::Slab,
+            BlockShape::Stair,
+            BlockShape::Column,
+        ]
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Full => "Full Block",
+            Self::Slab => "Slab",
+            Self::Stair => "Stairs",
+            Self::Column => "Column",
+        }
+    }
+
+    pub fn short_name(self) -> &'static str {
+        match self {
+            Self::Full => "FULL",
+            Self::Slab => "SLAB",
+            Self::Stair => "STAIR",
+            Self::Column => "COLUMN",
+        }
+    }
+
+    pub const fn orientation_count(self) -> u8 {
+        match self {
+            Self::Full => 1,
+            Self::Slab => 6,
+            Self::Stair => 8,
+            Self::Column => 6,
+        }
+    }
+
+    pub fn orientation_name(self, orientation: u8) -> &'static str {
+        match self {
+            Self::Full => "Standard",
+            Self::Slab => match orientation % 6 {
+                0 => "Bottom (Floor)",
+                1 => "Top (Ceiling)",
+                2 => "North Wall (-Z)",
+                3 => "South Wall (+Z)",
+                4 => "West Wall (-X)",
+                5 => "East Wall (+X)",
+                _ => "Unknown",
+            },
+            Self::Stair => match orientation % 8 {
+                0 => "Upright (+X)",
+                1 => "Upright (-X)",
+                2 => "Upright (+Z)",
+                3 => "Upright (-Z)",
+                4 => "Inverted (+X)",
+                5 => "Inverted (-X)",
+                6 => "Inverted (+Z)",
+                7 => "Inverted (-Z)",
+                _ => "Unknown",
+            },
+            Self::Column => match orientation % 6 {
+                0 => "Centered Vertical",
+                1 => "Corner (Min X, Min Z)",
+                2 => "Corner (Max X, Min Z)",
+                3 => "Corner (Min X, Max Z)",
+                4 => "Corner (Max X, Max Z)",
+                5 => "Centered Horizontal",
+                _ => "Unknown",
+            },
+        }
+    }
+
+    pub fn next(self) -> Self {
+        match self {
+            Self::Full => Self::Slab,
+            Self::Slab => Self::Stair,
+            Self::Stair => Self::Column,
+            Self::Column => Self::Full,
+        }
+    }
+
+    /// Returns the local AABB bounding boxes ([min, max] in 0.0..=1.0 coordinates) for this shape and orientation.
+    /// Full, Slab, and Column have 1 box; Stair has 2 boxes (base slab + step).
+    pub fn local_boxes(self, orientation: u8) -> ([Vec3; 2], Option<[Vec3; 2]>) {
+        match self {
+            Self::Full => ([Vec3::ZERO, Vec3::ONE], None),
+            Self::Slab => {
+                let bbox = match orientation % 6 {
+                    0 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 0.5, 1.0)], // Floor
+                    1 => [Vec3::new(0.0, 0.5, 0.0), Vec3::new(1.0, 1.0, 1.0)], // Ceiling
+                    2 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 1.0, 0.5)], // North (-Z)
+                    3 => [Vec3::new(0.0, 0.0, 0.5), Vec3::new(1.0, 1.0, 1.0)], // South (+Z)
+                    4 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.5, 1.0, 1.0)], // West (-X)
+                    _ => [Vec3::new(0.5, 0.0, 0.0), Vec3::new(1.0, 1.0, 1.0)], // East (+X)
+                };
+                (bbox, None)
+            }
+            Self::Column => {
+                let bbox = match orientation % 6 {
+                    0 => [Vec3::new(0.25, 0.0, 0.25), Vec3::new(0.75, 1.0, 0.75)], // Centered Vert
+                    1 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.5, 1.0, 0.5)],     // MinX, MinZ
+                    2 => [Vec3::new(0.5, 0.0, 0.0), Vec3::new(1.0, 1.0, 0.5)],     // MaxX, MinZ
+                    3 => [Vec3::new(0.0, 0.0, 0.5), Vec3::new(0.5, 1.0, 1.0)],     // MinX, MaxZ
+                    4 => [Vec3::new(0.5, 0.0, 0.5), Vec3::new(1.0, 1.0, 1.0)],     // MaxX, MaxZ
+                    _ => [Vec3::new(0.0, 0.25, 0.25), Vec3::new(1.0, 0.75, 0.75)], // Centered Horiz
+                };
+                (bbox, None)
+            }
+            Self::Stair => {
+                let is_inverted = orientation >= 4;
+                let step_dir = orientation % 4;
+
+                let base = if !is_inverted {
+                    [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 0.5, 1.0)]
+                } else {
+                    [Vec3::new(0.0, 0.5, 0.0), Vec3::new(1.0, 1.0, 1.0)]
+                };
+
+                let step = match (is_inverted, step_dir) {
+                    (false, 0) => [Vec3::new(0.5, 0.5, 0.0), Vec3::new(1.0, 1.0, 1.0)], // +X
+                    (false, 1) => [Vec3::new(0.0, 0.5, 0.0), Vec3::new(0.5, 1.0, 1.0)], // -X
+                    (false, 2) => [Vec3::new(0.0, 0.5, 0.5), Vec3::new(1.0, 1.0, 1.0)], // +Z
+                    (false, 3) => [Vec3::new(0.0, 0.5, 0.0), Vec3::new(1.0, 1.0, 0.5)], // -Z
+
+                    (true, 0) => [Vec3::new(0.5, 0.0, 0.0), Vec3::new(1.0, 0.5, 1.0)],  // +X
+                    (true, 1) => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.5, 0.5, 1.0)],  // -X
+                    (true, 2) => [Vec3::new(0.0, 0.0, 0.5), Vec3::new(1.0, 0.5, 1.0)],  // +Z
+                    (true, 3) => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 0.5, 0.5)],  // -Z
+                    _ => unreachable!(),
+                };
+
+                (base, Some(step))
+            }
+        }
+    }
+}
+
+#[repr(u8)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Reflect)]
 pub enum Voxel {
     #[default]
@@ -701,5 +848,31 @@ mod tests {
         assert!(Voxel::Stone.is_solid_opaque());
         assert!(!Voxel::Air.is_solid_opaque());
         assert!(!Voxel::Water.is_solid_opaque());
+    }
+
+    #[test]
+    fn test_block_shape_local_boxes() {
+        let (full, extra) = BlockShape::Full.local_boxes(0);
+        assert_eq!(full[0], Vec3::ZERO);
+        assert_eq!(full[1], Vec3::ONE);
+        assert!(extra.is_none());
+
+        let (slab_bottom, extra) = BlockShape::Slab.local_boxes(0);
+        assert_eq!(slab_bottom[0], Vec3::ZERO);
+        assert_eq!(slab_bottom[1], Vec3::new(1.0, 0.5, 1.0));
+        assert!(extra.is_none());
+
+        let (slab_top, extra) = BlockShape::Slab.local_boxes(1);
+        assert_eq!(slab_top[0], Vec3::new(0.0, 0.5, 0.0));
+        assert_eq!(slab_top[1], Vec3::ONE);
+        assert!(extra.is_none());
+
+        let (stair_base, stair_step) = BlockShape::Stair.local_boxes(0);
+        assert_eq!(stair_base[0], Vec3::ZERO);
+        assert_eq!(stair_base[1], Vec3::new(1.0, 0.5, 1.0));
+        assert!(stair_step.is_some());
+        let step = stair_step.unwrap();
+        assert_eq!(step[0], Vec3::new(0.5, 0.5, 0.0));
+        assert_eq!(step[1], Vec3::ONE);
     }
 }

@@ -3,7 +3,9 @@ pub const CHUNK_SIZE: usize = 16;
 pub const CHUNK_VOLUME: usize = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
 pub const MAX_VOXEL_TYPES: usize = 256;
 
-pub use super::block::Voxel;
+use bevy::platform::collections::HashMap;
+
+pub use super::block::{BlockShape, Voxel};
 
 /// Homogeneity classification of a chunk.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -251,6 +253,7 @@ pub struct Chunk {
     variant_counts: [u16; MAX_VOXEL_TYPES],
     unique_voxel_count: u16,
     homogeneity: ChunkHomogeneity,
+    shapes: HashMap<usize, (BlockShape, u8)>,
 }
 
 impl Chunk {
@@ -283,6 +286,7 @@ impl Chunk {
             variant_counts,
             unique_voxel_count: 1,
             homogeneity,
+            shapes: HashMap::default(),
         }
     }
 
@@ -326,6 +330,7 @@ impl Chunk {
             variant_counts,
             unique_voxel_count,
             homogeneity,
+            shapes: HashMap::default(),
         }
     }
 
@@ -419,6 +424,10 @@ impl Chunk {
 
         self.storage.set(index, voxel, self.unique_voxel_count);
 
+        if voxel.is_empty() {
+            self.shapes.remove(&index);
+        }
+
         self.homogeneity = if self.non_air_count == 0 {
             self.storage = ChunkStorage::Uniform(Voxel::Air);
             ChunkHomogeneity::Empty
@@ -428,6 +437,37 @@ impl Chunk {
         } else {
             ChunkHomogeneity::Mixed
         };
+    }
+
+    #[inline]
+    pub fn get_shape(&self, x: usize, y: usize, z: usize) -> (BlockShape, u8) {
+        if self.shapes.is_empty() {
+            (BlockShape::Full, 0)
+        } else {
+            self.shapes
+                .get(&Self::index(x, y, z))
+                .copied()
+                .unwrap_or((BlockShape::Full, 0))
+        }
+    }
+
+    pub fn set_shape(&mut self, x: usize, y: usize, z: usize, shape: BlockShape, orientation: u8) {
+        let index = Self::index(x, y, z);
+        if shape == BlockShape::Full {
+            self.shapes.remove(&index);
+        } else {
+            self.shapes.insert(index, (shape, orientation));
+        }
+    }
+
+    #[inline]
+    pub fn has_shapes(&self) -> bool {
+        !self.shapes.is_empty()
+    }
+
+    #[inline]
+    pub fn shapes(&self) -> &HashMap<usize, (BlockShape, u8)> {
+        &self.shapes
     }
 
     pub fn to_rle(&self) -> Vec<(Voxel, u16)> {
@@ -466,6 +506,14 @@ impl Chunk {
         debug_assert!(z < CHUNK_SIZE);
 
         x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE
+    }
+
+    #[inline]
+    pub fn index_to_xyz(index: usize) -> (usize, usize, usize) {
+        let x = index % CHUNK_SIZE;
+        let z = (index / CHUNK_SIZE) % CHUNK_SIZE;
+        let y = index / (CHUNK_SIZE * CHUNK_SIZE);
+        (x, y, z)
     }
 }
 
@@ -658,5 +706,18 @@ mod tests {
         let c2 = Chunk::from_voxels(voxels);
         assert_eq!(c2.get(10, 0, 0), Voxel::RainwoodLeaves);
         assert_eq!(c2.get(4, 0, 1), Voxel::RainwoodWood);
+    }
+
+    #[test]
+    fn test_index_to_xyz_roundtrip() {
+        for y in 0..CHUNK_SIZE {
+            for z in 0..CHUNK_SIZE {
+                for x in 0..CHUNK_SIZE {
+                    let idx = Chunk::index(x, y, z);
+                    let (rx, ry, rz) = Chunk::index_to_xyz(idx);
+                    assert_eq!((rx, ry, rz), (x, y, z), "Mismatch for index {}", idx);
+                }
+            }
+        }
     }
 }

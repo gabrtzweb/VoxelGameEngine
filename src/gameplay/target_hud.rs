@@ -1,12 +1,9 @@
 use bevy::prelude::*;
 
-use super::{
-    BlockIcons, BlockShape, CurrentTarget, TargetingSet, VoxelTarget, detect_current_shape,
-    get_block_voxels, get_centered_layer_material,
-};
+use super::{BlockIcons, CurrentTarget, TargetingSet, VoxelTarget};
 use crate::{
     menu::MenuState,
-    world::{Voxel, VoxelAccess, VoxelWorld},
+    world::{BlockShape, Voxel, VoxelAccess, VoxelWorld},
 };
 
 #[derive(Component)]
@@ -42,32 +39,32 @@ impl Plugin for TargetHudPlugin {
 pub fn resolve_target_block_info(
     world: &impl VoxelAccess,
     target: VoxelTarget,
-) -> Option<(Voxel, Option<BlockShape>)> {
-    let mut raw_voxel = world.get_voxel(target.hit_voxel)?;
+) -> Option<(Voxel, Option<(BlockShape, u8)>)> {
+    let raw_voxel = world.get_voxel(target.hit_voxel)?;
     if raw_voxel.is_empty() {
         return None;
-    }
-
-    if raw_voxel == Voxel::Occupied || raw_voxel == Voxel::WaterOccupied {
-        let material = get_centered_layer_material(world, target.hit_voxel)?;
-        raw_voxel = material;
     }
 
     let shape = if raw_voxel.is_fluid() {
         None
     } else {
-        let voxels = get_block_voxels(world, target.block_origin);
-        Some(detect_current_shape(&voxels))
+        let (shape, orientation) = world.get_shape(target.block_origin);
+        Some((shape, orientation))
     };
 
     Some((raw_voxel, shape))
 }
 
-/// Formats the target block title, appending shape name if not a standard full block.
-pub fn format_target_hud_title(voxel: Voxel, shape: Option<BlockShape>) -> String {
+/// Formats the target block title, appending shape and orientation name if not a standard full block.
+pub fn format_target_hud_title(voxel: Voxel, shape: Option<(BlockShape, u8)>) -> String {
     match shape {
-        Some(s) if s != BlockShape::Full && !voxel.is_fluid() => {
-            format!("{} ({})", voxel.label(), s.name())
+        Some((s, orientation)) if s != BlockShape::Full && !voxel.is_fluid() => {
+            format!(
+                "{} ({} - {})",
+                voxel.label(),
+                s.name(),
+                s.orientation_name(orientation)
+            )
         }
         _ => voxel.label().to_string(),
     }
@@ -257,16 +254,16 @@ mod tests {
     #[test]
     fn test_format_target_hud_title() {
         assert_eq!(
-            format_target_hud_title(Voxel::Stone, Some(BlockShape::Full)),
+            format_target_hud_title(Voxel::Stone, Some((BlockShape::Full, 0))),
             "Stone"
         );
         assert_eq!(
-            format_target_hud_title(Voxel::Cobblestone, Some(BlockShape::Stair)),
-            "Cobblestone (Stairs)"
+            format_target_hud_title(Voxel::Cobblestone, Some((BlockShape::Stair, 0))),
+            "Cobblestone (Stairs - Upright (+X))"
         );
         assert_eq!(format_target_hud_title(Voxel::Water, None), "Water");
         assert_eq!(
-            format_target_hud_title(Voxel::Ochrestone, Some(BlockShape::Full)),
+            format_target_hud_title(Voxel::Ochrestone, Some((BlockShape::Full, 0))),
             "Ochrestone"
         );
     }
@@ -290,14 +287,7 @@ mod tests {
     #[test]
     fn test_resolve_target_block_info_full_block() {
         let mut voxels = HashMap::new();
-        // 1x1x1 block origin at (0, 0, 0)
-        for y in 0..2 {
-            for z in 0..2 {
-                for x in 0..2 {
-                    voxels.insert(IVec3::new(x, y, z), Voxel::Granite);
-                }
-            }
-        }
+        voxels.insert(IVec3::new(0, 0, 0), Voxel::Granite);
 
         let world = MockWorld { voxels };
         let target = VoxelTarget {
@@ -308,29 +298,6 @@ mod tests {
         };
 
         let result = resolve_target_block_info(&world, target);
-        assert_eq!(result, Some((Voxel::Granite, Some(BlockShape::Full))));
-    }
-
-    #[test]
-    fn test_resolve_target_block_info_centered_material() {
-        let mut voxels = HashMap::new();
-        // Centered layer at y = 0
-        voxels.insert(IVec3::new(0, 0, 0), Voxel::Occupied);
-        voxels.insert(IVec3::new(1, 0, 0), Voxel::Occupied);
-        voxels.insert(IVec3::new(0, 0, 1), Voxel::Occupied);
-        voxels.insert(IVec3::new(1, 0, 1), Voxel::Calcite);
-
-        let world = MockWorld { voxels };
-        let target = VoxelTarget {
-            hit_voxel: IVec3::new(0, 0, 0),
-            place_voxel: None,
-            face_normal: IVec3::Y,
-            block_origin: IVec3::ZERO,
-        };
-
-        let result = resolve_target_block_info(&world, target);
-        assert!(result.is_some());
-        let (voxel, _) = result.unwrap();
-        assert_eq!(voxel, Voxel::Calcite);
+        assert_eq!(result, Some((Voxel::Granite, Some((BlockShape::Full, 0)))));
     }
 }

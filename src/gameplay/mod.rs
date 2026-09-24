@@ -1,5 +1,3 @@
-#![allow(unused_imports)]
-
 pub mod debug;
 pub mod icon;
 pub mod interaction;
@@ -8,28 +6,18 @@ pub mod shaping;
 pub mod target_hud;
 pub mod targeting;
 
-pub use debug::{VoxelDebugPlugin, VoxelDebugSettings};
-pub use icon::{
-    BlockIconPlugin, BlockIcons, ICON_SIZE, render_isometric_block_icon, setup_block_icons,
-};
-pub use interaction::{SelectedVoxel, VoxelInteractionPlugin, place_block};
-pub use radial_menu::{
-    RadialMenuRoot, RadialMenuSlice, RadialMenuState, RadialMenuSubtitleText, RadialMenuTitleText,
-};
-pub use shaping::{
-    BlockShape, ShapingPlugin, centered_layer_coordinates, detect_current_shape,
-    generate_shape_voxels, get_block_voxels, get_centered_layer_material, is_centered_column,
-    is_centered_layer, is_layer_centered, rotate_block_90_y,
-};
-pub use target_hud::{
-    TargetHudPlugin, TargetHudRoot, format_target_hud_title, resolve_target_block_info,
-};
-pub use targeting::{
-    CurrentTarget, TargetingPlugin, TargetingSet, VoxelTarget, adjacent_block_origin,
-    block_origin_from_voxel,
-};
+pub use icon::{BlockIcons, setup_block_icons};
+pub use interaction::SelectedVoxel;
+pub use radial_menu::RadialMenuState;
+pub use targeting::{CurrentTarget, TargetingSet, VoxelTarget};
 
 use bevy::prelude::*;
+use debug::VoxelDebugPlugin;
+use icon::BlockIconPlugin;
+use interaction::VoxelInteractionPlugin;
+use shaping::ShapingPlugin;
+use target_hud::TargetHudPlugin;
+use targeting::TargetingPlugin;
 
 pub struct GameplayPlugin;
 

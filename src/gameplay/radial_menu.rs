@@ -2,7 +2,7 @@ use std::f32::consts::{FRAC_PI_2, TAU};
 
 use bevy::prelude::*;
 
-use super::shaping::BlockShape;
+use crate::world::BlockShape;
 
 #[derive(Resource, Default)]
 pub struct RadialMenuState {
@@ -14,6 +14,7 @@ pub struct RadialMenuState {
     pub target_material: Option<crate::world::Voxel>,
     pub initial_shape: BlockShape,
     pub selected_shape: BlockShape,
+    pub current_orientation: u8,
 }
 
 #[derive(Component)]
@@ -48,7 +49,7 @@ pub fn spawn_radial_menu(
         ..default()
     };
     let mut slice_name_font = TextFont {
-        font_size: FontSize::Px(10.0),
+        font_size: FontSize::Px(11.0),
         ..default()
     };
     let mut slice_v_font = TextFont {
@@ -95,9 +96,9 @@ pub fn spawn_radial_menu(
                 hub.spawn((
                     Node {
                         position_type: PositionType::Absolute,
-                        left: px(-75.0),
+                        left: px(-80.0),
                         top: px(-65.0),
-                        width: px(150.0),
+                        width: px(160.0),
                         height: px(130.0),
                         flex_direction: FlexDirection::Column,
                         justify_content: JustifyContent::Center,
@@ -121,7 +122,10 @@ pub fn spawn_radial_menu(
                     ));
 
                     card.spawn((
-                        Text::new(format!("{} / 8 Sub-voxels", selected_shape.voxel_count())),
+                        Text::new(format!(
+                            "{} Orientations",
+                            selected_shape.orientation_count()
+                        )),
                         subtitle_font,
                         TextColor(Color::srgb(0.75, 0.8, 0.9)),
                         crate::core::text_shadow_default(),
@@ -129,17 +133,17 @@ pub fn spawn_radial_menu(
                     ));
 
                     card.spawn((
-                        Text::new("Hold R + Move Mouse\nRelease R to Select"),
+                        Text::new("Hold R + Move Mouse\nPress T to Rotate"),
                         tip_font,
                         TextColor(Color::srgba(0.6, 0.8, 1.0, 0.7)),
                         crate::core::text_shadow_default(),
                     ));
                 });
 
-                // 10 Radial Slices
-                let radius = 155.0;
-                let card_size = 56.0;
-                let slice_step = TAU / 10.0;
+                // 4 Radial Slices (Up: Full, Right: Slab, Down: Stair, Left: Column)
+                let radius = 145.0;
+                let card_size = 64.0;
+                let slice_step = TAU / 4.0;
 
                 for (i, &shape) in shapes.iter().enumerate() {
                     let angle = -FRAC_PI_2 + (i as f32) * slice_step;
@@ -186,7 +190,7 @@ pub fn spawn_radial_menu(
                         ));
 
                         slice_card.spawn((
-                            Text::new(format!("{}v", shape.voxel_count())),
+                            Text::new(format!("{} rot", shape.orientation_count())),
                             slice_v_font.clone(),
                             TextColor(Color::srgba(0.6, 0.65, 0.75, 0.8)),
                             crate::core::text_shadow_default(),
@@ -230,8 +234,8 @@ pub fn update_radial_menu_ui(
 
     for mut text in &mut sub_query {
         text.0 = format!(
-            "{} / 8 Sub-voxels",
-            radial_state.selected_shape.voxel_count()
+            "{} Orientations",
+            radial_state.selected_shape.orientation_count()
         );
     }
 }

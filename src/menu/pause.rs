@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    core::{text_shadow_default, AppFont},
+    core::{AppFont, text_shadow_default},
     environment::{DayPhase, EnvironmentState},
     gameplay::SelectedVoxel,
     generation::TerrainGenerator,
@@ -96,10 +96,30 @@ fn spawn_pause_menu(mut commands: Commands, app_font: Option<Res<AppFont>>) {
                     ));
 
                     // Buttons
-                    spawn_menu_button(card, "Resume Game", PauseMenuAction::Resume, font_handle.as_ref());
-                    spawn_menu_button(card, "Settings", PauseMenuAction::Settings, font_handle.as_ref());
-                    spawn_menu_button(card, "Restart Game", PauseMenuAction::Restart, font_handle.as_ref());
-                    spawn_menu_button(card, "Quit to Desktop", PauseMenuAction::Quit, font_handle.as_ref());
+                    spawn_menu_button(
+                        card,
+                        "Resume Game",
+                        PauseMenuAction::Resume,
+                        font_handle.as_ref(),
+                    );
+                    spawn_menu_button(
+                        card,
+                        "Settings",
+                        PauseMenuAction::Settings,
+                        font_handle.as_ref(),
+                    );
+                    spawn_menu_button(
+                        card,
+                        "Restart Game",
+                        PauseMenuAction::Restart,
+                        font_handle.as_ref(),
+                    );
+                    spawn_menu_button(
+                        card,
+                        "Quit to Desktop",
+                        PauseMenuAction::Quit,
+                        font_handle.as_ref(),
+                    );
                 });
         });
 }

@@ -519,7 +519,8 @@ fn update_world_map_ui(
                 let in_vp_x = cursor.x - vp_pos.x;
                 let in_vp_y = cursor.y - vp_pos.y;
 
-                if in_vp_x >= 0.0 && in_vp_x <= vp_size.x && in_vp_y >= 0.0 && in_vp_y <= vp_size.y {
+                if in_vp_x >= 0.0 && in_vp_x <= vp_size.x && in_vp_y >= 0.0 && in_vp_y <= vp_size.y
+                {
                     let scale_x = vp_size.x / (WORLD_MAP_WIDTH as f32);
                     let scale_y = vp_size.y / (WORLD_MAP_HEIGHT as f32);
                     let tex_x = in_vp_x / scale_x;

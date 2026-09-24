@@ -1,9 +1,6 @@
 use bevy::prelude::*;
 
-use super::{
-    shaping::{centered_layer_coordinates, is_centered_layer},
-    targeting::{CurrentTarget, TargetingSet},
-};
+use super::targeting::{CurrentTarget, TargetingSet};
 use crate::{
     menu::MenuState,
     player::{GameMode, InspectorInteraction, hotbar::Hotbar},
@@ -339,28 +336,5 @@ mod tests {
 
         assert!(edited.is_empty());
         assert_eq!(world.get_voxel(pos), Some(Voxel::Dirt));
-    }
-
-    #[test]
-    fn placing_on_top_of_centered_voxel_creates_centered_layer() {
-        let mut world = VoxelWorld::default();
-        world.insert_chunk(IVec3::ZERO, Chunk::new());
-
-        world.set_voxel(IVec3::new(0, 0, 0), Voxel::Stone);
-        world.set_voxel(IVec3::new(1, 0, 0), Voxel::Occupied);
-        world.set_voxel(IVec3::new(0, 0, 1), Voxel::Occupied);
-        world.set_voxel(IVec3::new(1, 0, 1), Voxel::Occupied);
-
-        assert!(is_centered_layer(&world, IVec3::new(0, 0, 0)));
-
-        let coords = centered_layer_coordinates(IVec3::new(0, 1, 0));
-        world.set_voxel(coords[0], Voxel::Stone);
-        for &pos in &coords[1..4] {
-            world.set_voxel(pos, Voxel::Occupied);
-        }
-
-        assert!(is_centered_layer(&world, IVec3::new(0, 1, 0)));
-        assert_eq!(world.get_voxel(IVec3::new(0, 1, 0)), Some(Voxel::Stone));
-        assert_eq!(world.get_voxel(IVec3::new(1, 1, 0)), Some(Voxel::Occupied));
     }
 }

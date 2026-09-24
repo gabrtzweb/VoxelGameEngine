@@ -497,4 +497,70 @@ A focused overhaul and expansion of procedural world generation, terrain topogra
     - Dark ash haze in volcanic wastelands.
     - Soft warm golden lighting across temperate plains and moors.
 
+---
+
+## Phase 12: Codebase Cleanup, Systems Modernization & Block Shaping (Active)
+
+This phase tracks the comprehensive cleanup, technical debt reduction, dead code removal, and systems modernization across the codebase. It transitions the engine away from the legacy 50cm sub-voxel architecture (where 1m blocks were composed of 8 individual 50cm sub-voxels) into a native 1x1m voxel paradigm with explicit shapes, orientations, and clean meshing, while preserving pristine build integrity (zero compiler warnings and 100% passing tests).
+
+- [x] **Stage 12.1: Meshing Subsystem Cleanup & Textures Decoupling (Completed)**:
+  - **`src/meshing/textures.rs`**:
+    - Removed 272 lines of dead code, redundant variant count assertions (`assert_eq!(dirt_count, 4)`), and hardcoded test suites.
+    - Decoupled texture array generation from fixed variant assumptions: texture arrays dynamically load any number of texture variants per block type (`{name}.png`, `{name}1.png`, etc.) without artificial constraints.
+    - Removed unused `get_texture_info()` helper.
+  - **`src/meshing/greedy.rs`**:
+    - Purged 646 lines of obsolete tests and unused constants.
+    - Integrated shape filtering in greedy bitmask extraction: non-full blocks (`BlockShape != Full`) bypass greedy quad merging so that custom shape geometry is rendered with correct silhouettes and face culling.
+    - Linked `mesh_shaped_voxels` hook into chunk meshing pipeline.
+  - **`src/meshing/shapes.rs`**:
+    - Replaced legacy 50cm 8-subvoxel logic with high-performance geometry generators for 1x1m shaped blocks:
+      - **Slab**: 6 orientations (Bottom/Floor, Top/Ceiling, North Wall, South Wall, West Wall, East Wall).
+      - **Column**: 6 orientations (Centered Vertical, 4 Corner Vertical columns, Centered Horizontal).
+      - **Stair**: 8 orientations (4 upright cardinal directions + 4 inverted cardinal directions).
+    - **Invisible Block Bug Fix**: Fixed coordinate unpacking bug where $Y$ and $Z$ strides were inverted (`(index / 16) % 16` vs `index / 256`), which caused non-full blocks to query empty air and fail to generate vertices. Added `Chunk::index_to_xyz(index)` with comprehensive roundtrip verification.
+    - Automatic neighbor face culling against adjacent solid full blocks.
+    - Purged obsolete compatibility stubs (`is_chunk_local_isolated_voxel`, `mesh_centered_voxels`, `push_water_quad_both_sides`, etc.).
+  - **`src/meshing/mod.rs`**:
+    - Removed `#![allow(unused_imports)]`.
+    - Pruned dead re-exports to strictly export active pipeline types (`ChunkMeshingTask`, `ChunkMaterial`, `ChunkMeshRegistry`, `remove_chunk_render`, `sync_chunk_render`, `VoxelTextureRegistry`, `MeshingPlugin`).
+
+- [x] **Stage 12.2: Gameplay Subsystem Cleanup & Block Shaping Overhaul (Completed)**:
+  - **`src/world/block.rs` & `src/world/chunk.rs`**:
+    - Defined `BlockShape` enum (`Full`, `Slab`, `Stair`, `Column`) with orientation counts, naming helpers, and sequential cycling.
+    - Added `BlockShape::local_boxes(orientation)` returning exact $[0..1]^3$ sub-box bounding boxes for all shapes and orientations.
+    - Implemented sparse chunk shape storage (`HashMap<usize, (BlockShape, u8)>`) for memory efficiency and future serialization.
+    - Added `get_shape` and `set_shape` accessors across `Chunk`, `VoxelWorld`, and `VoxelAccess`.
+    - Integrated shape persistence into `WorldModificationStore` so player edits survive chunk unload and reload.
+  - **`src/gameplay/targeting.rs`**:
+    - **Adaptive Shape Highlight**: Updated wireframe gizmo highlight to draw the precise sub-box outlines defined by `shape.local_boxes(orientation)` instead of a generic full 1x1x1 cube.
+    - **Accurate Sub-Box Raycasting**: Integrated `ray_hit_local_box` intersection so player line of sight tests against actual physical shape geometry, allowing rays to pass through the empty negative space of slabs, stairs, and columns.
+  - **`src/gameplay/shaping.rs`**:
+    - Overhauled from ~900 lines down to ~250 lines.
+    - Removed legacy 8-subvoxel bitmask tables (`FULL_BLOCK_MASK`, `HALF_SLAB_BOTTOM_MASK`, etc.) and voxel-index arithmetic.
+    - Implemented direct shaping controls:
+      - **Hold `R` + Move Mouse**: 4-slice Radial Menu wheel to select between `Full`, `Slab`, `Stair`, and `Column`.
+      - **Tap `R`**: Rapid sequential shape cycle.
+      - **Press `T`**: Cycles through orientations for the targeted block.
+    - Purged all obsolete compatibility stubs (`detect_current_shape`, `get_block_voxels`, `is_centered_layer`, etc.) and unused imports (`FluidUpdateQueue`, `Voxel`).
+  - **`src/gameplay/radial_menu.rs`**:
+    - Replaced legacy 8-subvoxel descriptions and redundant slices with a clean 4-slice radial wheel.
+    - Center preview card displays shape title, total orientation count, and control tips with responsive hover and selection highlights.
+  - **`src/gameplay/target_hud.rs`**:
+    - Modernized targeted block info resolution to inspect chunk shape storage.
+    - HUD title formats dynamically with shape and orientation name (e.g. `Stone (Slab - Bottom (Floor))` or `Oak Planks (Stairs - Upright (+X))`).
+    - Pruned obsolete 8-subvoxel unit tests and replaced with clean 1x1m block tests.
+  - **`src/gameplay/interaction.rs`**:
+    - Cleaned up obsolete 8-subvoxel placement tests referencing `Voxel::Occupied`.
+    - Removed dead imports.
+  - **`src/gameplay/mod.rs`**:
+    - Removed `#![allow(unused_imports)]`.
+    - Streamlined exports to only include active types used across modules (`BlockIcons`, `setup_block_icons`, `SelectedVoxel`, `RadialMenuState`, `CurrentTarget`, `TargetingSet`, `VoxelTarget`).
+
+- [ ] **Stage 12.3: Next Cleanup & Subsystem Reviews (Planned)**:
+  - **`src/world/` Subsystem**: Audit chunk serialization, RLE compression, and lighting storage for obsolete fields or unused methods.
+  - **`src/player/` Subsystem**: Review controller and collision resolution against non-cube collision boxes (slab, stair, column).
+  - **`src/generation/` Subsystem**: Prepare terrain generator hooks for spawning shaped blocks (slabs, stairs, columns) once terrain passes are finalized.
+  - **Engine-Wide Hygiene**: Maintain zero compiler warnings (`#[warn(unused)]`), zero dead code, and fast test runs on any target machine.
+
+
 

@@ -1,11 +1,7 @@
-use bevy::{
-    input::mouse::AccumulatedMouseScroll,
-    prelude::*,
-    window::PrimaryWindow,
-};
+use bevy::{input::mouse::AccumulatedMouseScroll, prelude::*, window::PrimaryWindow};
 
 use crate::{
-    core::{text_shadow_default, AppFont, FontSource},
+    core::{AppFont, FontSource, text_shadow_default},
     gameplay::BlockIcons,
     player::hotbar::{HOTBAR_SLOT_COUNT, Hotbar},
     player::inventory::PlayerInventory,
@@ -126,7 +122,9 @@ pub fn filtered_creative_blocks(query: &str) -> Vec<Voxel> {
 }
 
 pub fn total_filtered_rows(filtered_count: usize) -> usize {
-    filtered_count.div_ceil(INVENTORY_COLS).max(INVENTORY_VISIBLE_ROWS)
+    filtered_count
+        .div_ceil(INVENTORY_COLS)
+        .max(INVENTORY_VISIBLE_ROWS)
 }
 
 pub fn max_filtered_scroll(filtered_count: usize) -> usize {
@@ -259,14 +257,8 @@ impl Plugin for InventoryMenuPlugin {
         app.init_resource::<InventoryScrollState>()
             .init_resource::<InventoryTab>()
             .init_resource::<CreativeSearchQuery>()
-            .add_systems(
-                OnEnter(MenuState::Inventory),
-                spawn_inventory_menu,
-            )
-            .add_systems(
-                OnExit(MenuState::Inventory),
-                despawn_inventory_menu,
-            )
+            .add_systems(OnEnter(MenuState::Inventory), spawn_inventory_menu)
+            .add_systems(OnExit(MenuState::Inventory), despawn_inventory_menu)
             .add_systems(
                 Update,
                 (
@@ -550,8 +542,8 @@ fn build_inventory_ui(
                                             position_type: PositionType::Absolute,
                                             left: px(62.0 * GUI_SCALE - 1.0), // 185.0 (moved 1px left)
                                             top: px(top_y - 1.0),             // (moved 1px up)
-                                            width: px(18.0 * GUI_SCALE),  // 54.0
-                                            height: px(18.0 * GUI_SCALE), // 54.0
+                                            width: px(18.0 * GUI_SCALE),      // 54.0
+                                            height: px(18.0 * GUI_SCALE),     // 54.0
                                             display: Display::Flex,
                                             justify_content: JustifyContent::Center,
                                             align_items: AlignItems::Center,
@@ -592,7 +584,7 @@ fn build_inventory_ui(
                                         width: px(RIGHT_CARD_STD_TEX_W * GUI_SCALE),  // 474.0
                                         height: px(RIGHT_CARD_STD_TEX_H * GUI_SCALE), // 378.0
                                         position_type: PositionType::Relative,
-                                        margin: UiRect::top(px(18.0 * GUI_SCALE)),    // 54.0
+                                        margin: UiRect::top(px(18.0 * GUI_SCALE)), // 54.0
                                         ..default()
                                     },
                                 ))
@@ -622,9 +614,9 @@ fn build_inventory_ui(
                                             Button,
                                             Node {
                                                 position_type: PositionType::Absolute,
-                                                left: px(118.0 * GUI_SCALE),   // 354.0
-                                                top: px(8.0 * GUI_SCALE),     // 24.0
-                                                width: px(14.0 * GUI_SCALE),  // 42.0
+                                                left: px(118.0 * GUI_SCALE), // 354.0
+                                                top: px(8.0 * GUI_SCALE),    // 24.0
+                                                width: px(14.0 * GUI_SCALE), // 42.0
                                                 height: px(12.0 * GUI_SCALE), // 36.0
                                                 display: Display::Flex,
                                                 justify_content: JustifyContent::Center,
@@ -648,9 +640,9 @@ fn build_inventory_ui(
                                             Button,
                                             Node {
                                                 position_type: PositionType::Absolute,
-                                                left: px(136.0 * GUI_SCALE),   // 408.0
-                                                top: px(8.0 * GUI_SCALE),     // 24.0
-                                                width: px(14.0 * GUI_SCALE),  // 42.0
+                                                left: px(136.0 * GUI_SCALE), // 408.0
+                                                top: px(8.0 * GUI_SCALE),    // 24.0
+                                                width: px(14.0 * GUI_SCALE), // 42.0
                                                 height: px(12.0 * GUI_SCALE), // 36.0
                                                 display: Display::Flex,
                                                 justify_content: JustifyContent::Center,
@@ -682,8 +674,10 @@ fn build_inventory_ui(
                                                 Visibility::Hidden
                                             };
 
-                                            let slot_left = (6.0 + c as f32 * 18.0) * GUI_SCALE + 1.0;
-                                            let slot_top = (26.0 + r as f32 * 18.0) * GUI_SCALE - 1.0;
+                                            let slot_left =
+                                                (6.0 + c as f32 * 18.0) * GUI_SCALE + 1.0;
+                                            let slot_top =
+                                                (26.0 + r as f32 * 18.0) * GUI_SCALE - 1.0;
 
                                             right_card
                                                 .spawn((
@@ -768,9 +762,7 @@ fn build_inventory_ui(
                                                 slot.spawn((
                                                     Text::new(format!("{}", c + 1)),
                                                     num_font,
-                                                    TextColor(Color::srgba(
-                                                        0.90, 0.90, 0.90, 0.75,
-                                                    )),
+                                                    TextColor(Color::srgba(0.90, 0.90, 0.90, 0.75)),
                                                     text_shadow_default(),
                                                     Node {
                                                         position_type: PositionType::Absolute,
@@ -813,7 +805,7 @@ fn build_inventory_ui(
                                         width: px(RIGHT_CARD_CRE_TEX_W * GUI_SCALE),  // 528.0
                                         height: px(RIGHT_CARD_CRE_TEX_H * GUI_SCALE), // 378.0
                                         position_type: PositionType::Relative,
-                                        margin: UiRect::top(px(18.0 * GUI_SCALE)),    // 54.0
+                                        margin: UiRect::top(px(18.0 * GUI_SCALE)), // 54.0
                                         ..default()
                                     },
                                 ))
@@ -882,15 +874,13 @@ fn build_inventory_ui(
                                         });
 
                                     // 8x4 Grid Slots for Creative Blocks
-                                    let filtered =
-                                        filtered_creative_blocks(&search_query.query);
+                                    let filtered = filtered_creative_blocks(&search_query.query);
                                     let start_row = scroll_state.scroll_row;
 
                                     for r in 0..INVENTORY_VISIBLE_ROWS {
                                         for c in 0..INVENTORY_COLS {
                                             let slot_idx = r * INVENTORY_COLS + c;
-                                            let block_idx =
-                                                start_row * INVENTORY_COLS + slot_idx;
+                                            let block_idx = start_row * INVENTORY_COLS + slot_idx;
                                             let voxel = filtered.get(block_idx).copied();
                                             let icon_handle = voxel
                                                 .map(|v| icons.get(v))
@@ -920,13 +910,10 @@ fn build_inventory_ui(
                                                         width: px(18.0 * GUI_SCALE),
                                                         height: px(18.0 * GUI_SCALE),
                                                         display: Display::Flex,
-                                                        justify_content:
-                                                            JustifyContent::Center,
+                                                        justify_content: JustifyContent::Center,
                                                         align_items: AlignItems::Center,
                                                         border: UiRect::all(px(2.0)),
-                                                        border_radius: BorderRadius::all(
-                                                            px(2.0),
-                                                        ),
+                                                        border_radius: BorderRadius::all(px(2.0)),
                                                         ..default()
                                                     },
                                                     BackgroundColor(Color::NONE),
@@ -978,13 +965,10 @@ fn build_inventory_ui(
                                                     width: px(18.0 * GUI_SCALE),
                                                     height: px(18.0 * GUI_SCALE),
                                                     display: Display::Flex,
-                                                    justify_content:
-                                                        JustifyContent::Center,
+                                                    justify_content: JustifyContent::Center,
                                                     align_items: AlignItems::Center,
                                                     border: UiRect::all(px(2.0)),
-                                                    border_radius: BorderRadius::all(
-                                                        px(2.0),
-                                                    ),
+                                                    border_radius: BorderRadius::all(px(2.0)),
                                                     ..default()
                                                 },
                                                 BackgroundColor(Color::NONE),
@@ -995,9 +979,7 @@ fn build_inventory_ui(
                                                 slot.spawn((
                                                     Text::new(format!("{}", c + 1)),
                                                     num_font,
-                                                    TextColor(Color::srgba(
-                                                        0.90, 0.90, 0.90, 0.75,
-                                                    )),
+                                                    TextColor(Color::srgba(0.90, 0.90, 0.90, 0.75)),
                                                     text_shadow_default(),
                                                     Node {
                                                         position_type: PositionType::Absolute,
@@ -1027,8 +1009,7 @@ fn build_inventory_ui(
                                     let track_height = 305.0; // fits trough nicely with top 33.0
                                     let thumb_height = 45.0;
                                     let max_travel = track_height - thumb_height; // 260.0
-                                    let max_scroll =
-                                        max_filtered_scroll(filtered.len());
+                                    let max_scroll = max_filtered_scroll(filtered.len());
                                     let thumb_top = if max_scroll > 0 {
                                         (start_row as f32 / max_scroll as f32) * max_travel
                                     } else {
@@ -1162,7 +1143,12 @@ fn handle_inventory_tab_interaction(
     search_query: Res<CreativeSearchQuery>,
     app_font: Option<Res<AppFont>>,
     mut tab_button_query: Query<
-        (&Interaction, &InventoryTabButton, &mut BackgroundColor, &mut BorderColor),
+        (
+            &Interaction,
+            &InventoryTabButton,
+            &mut BackgroundColor,
+            &mut BorderColor,
+        ),
         With<InventoryTabButton>,
     >,
     mut tab_text_query: Query<(&InventoryTabButtonText, &mut TextColor)>,
@@ -1226,10 +1212,7 @@ fn handle_creative_search_input(
     mut search_query: ResMut<CreativeSearchQuery>,
     mut scroll_state: ResMut<InventoryScrollState>,
     mut search_text_query: Query<(&mut Text, &mut TextColor), With<CreativeSearchText>>,
-    mut search_bar_query: Query<
-        (&Interaction, &mut BorderColor),
-        With<CreativeSearchBar>,
-    >,
+    mut search_bar_query: Query<(&Interaction, &mut BorderColor), With<CreativeSearchBar>>,
     mut palette_query: Query<&mut InventoryPaletteSlot>,
     mut slot_icon_query: Query<(&InventoryPaletteSlotIcon, &mut ImageNode, &mut Visibility)>,
     icons: Res<BlockIcons>,
@@ -1446,7 +1429,11 @@ fn handle_inventory_scroll(
             thumb_node.top = px(clamped_y);
         }
 
-        let fraction = if max_travel > 0.0 { clamped_y / max_travel } else { 0.0 };
+        let fraction = if max_travel > 0.0 {
+            clamped_y / max_travel
+        } else {
+            0.0
+        };
         let target_row = (fraction * max_scroll as f32).round() as usize;
 
         if target_row != scroll_state.scroll_row {
@@ -1504,7 +1491,11 @@ fn handle_inventory_slot_interaction(
             &mut BorderColor,
             &mut BackgroundColor,
         ),
-        (With<InventoryPaletteSlot>, Without<InventoryHotbarSlot>, Without<ArmorSlotUi>),
+        (
+            With<InventoryPaletteSlot>,
+            Without<InventoryHotbarSlot>,
+            Without<ArmorSlotUi>,
+        ),
     >,
     mut slot_icon_query: Query<(&InventoryPaletteSlotIcon, &mut ImageNode, &mut Visibility)>,
     mut hotbar_slot_query: Query<
@@ -1514,10 +1505,19 @@ fn handle_inventory_slot_interaction(
             &mut BorderColor,
             &mut BackgroundColor,
         ),
-        (With<InventoryHotbarSlot>, Without<InventoryPaletteSlot>, Without<ArmorSlotUi>),
+        (
+            With<InventoryHotbarSlot>,
+            Without<InventoryPaletteSlot>,
+            Without<ArmorSlotUi>,
+        ),
     >,
     mut armor_slot_query: Query<
-        (&Interaction, &ArmorSlotUi, &mut BorderColor, &mut BackgroundColor),
+        (
+            &Interaction,
+            &ArmorSlotUi,
+            &mut BorderColor,
+            &mut BackgroundColor,
+        ),
         With<ArmorSlotUi>,
     >,
     mut drag_state: Local<InventoryDragState>,
@@ -1537,7 +1537,9 @@ fn handle_inventory_slot_interaction(
         let center = transform.translation().truncate();
         let half = computed.size() * 0.5;
         let card_rect = Rect::from_corners(center - half, center + half);
-        if !card_rect.contains(cursor_pos) && let Some(held) = held_item.voxel {
+        if !card_rect.contains(cursor_pos)
+            && let Some(held) = held_item.voxel
+        {
             if *tab_state == InventoryTab::Player {
                 player_inv.add_item(held);
             }
@@ -2089,4 +2091,3 @@ mod tests {
         assert_eq!(hotbar.slots[0], Some(Voxel::Stone));
     }
 }
-

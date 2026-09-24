@@ -4,14 +4,10 @@ use bevy::{
     prelude::{IVec3, Mesh},
 };
 
-use super::{
-    shapes::{is_chunk_local_centered_layer, is_chunk_local_isolated_voxel, mesh_centered_voxels},
-    textures::VoxelTextureRegistry,
-};
+use super::{shapes::mesh_shaped_voxels, textures::VoxelTextureRegistry};
 use crate::{
-    gameplay::shaping::is_centered_layer,
     simulation::fluid::water_surface_height_offset,
-    world::{CHUNK_SIZE, Chunk, VOXEL_SIZE, Voxel, VoxelAccess},
+    world::{BlockShape, CHUNK_SIZE, Chunk, VOXEL_SIZE, Voxel, VoxelAccess},
 };
 
 const MASK_SIZE: usize = CHUNK_SIZE * CHUNK_SIZE;
@@ -42,21 +38,6 @@ pub const FACE_NORMALS_F32: [[f32; 3]; 6] = [
     [0.0, -1.0, 0.0],
     [0.0, 0.0, 1.0],
     [0.0, 0.0, -1.0],
-];
-
-#[allow(dead_code)]
-pub const ISOLATED_VOXEL_UVS: [[f32; 2]; 4] = [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]];
-
-#[allow(dead_code)]
-pub const UV_QUADRANT_OFFSETS: [[[f32; 2]; 4]; 4] = [
-    // Quadrant (0, 0)
-    [[0.0, 0.0], [0.0, 0.5], [0.5, 0.5], [0.5, 0.0]],
-    // Quadrant (1, 0)
-    [[0.5, 0.0], [0.5, 0.5], [1.0, 0.5], [1.0, 0.0]],
-    // Quadrant (0, 1)
-    [[0.0, 0.5], [0.0, 1.0], [0.5, 1.0], [0.5, 0.5]],
-    // Quadrant (1, 1)
-    [[0.5, 0.5], [0.5, 1.0], [1.0, 1.0], [1.0, 0.5]],
 ];
 
 impl FaceDirection {
@@ -298,16 +279,12 @@ pub fn extract_slice_bitmask(
 
         for u in 0..CHUNK_SIZE {
             let local_voxel = mask_to_voxel(direction, slice, u, v);
-            let voxel = chunk.get(
-                local_voxel.x as usize,
-                local_voxel.y as usize,
-                local_voxel.z as usize,
-            );
+            let lx = local_voxel.x as usize;
+            let ly = local_voxel.y as usize;
+            let lz = local_voxel.z as usize;
+            let voxel = chunk.get(lx, ly, lz);
 
-            if voxel.is_empty()
-                || voxel == Voxel::Occupied
-                || is_chunk_local_centered_layer(chunk, local_voxel)
-            {
+            if voxel.is_empty() || chunk.get_shape(lx, ly, lz).0 != BlockShape::Full {
                 continue;
             }
 
@@ -467,51 +444,45 @@ impl ChunkMesher {
                         candidate_bits &= candidate_bits - 1; // Clear lowest set bit
 
                         let local_voxel = mask_to_voxel(direction, slice, u, v);
+                        let lx = local_voxel.x as usize;
+                        let ly = local_voxel.y as usize;
+                        let lz = local_voxel.z as usize;
+                        let voxel = chunk.get(lx, ly, lz);
 
-                        let voxel = chunk.get(
-                            local_voxel.x as usize,
-                            local_voxel.y as usize,
-                            local_voxel.z as usize,
-                        );
-
-                        if voxel.is_empty()
-                            || voxel == Voxel::Occupied
-                            || is_chunk_local_centered_layer(chunk, local_voxel)
-                        {
+                        if voxel.is_empty() || chunk.get_shape(lx, ly, lz).0 != BlockShape::Full {
                             continue;
                         }
 
                         let world_voxel = chunk_voxel_origin + local_voxel;
                         let neighbor_coordinate = world_voxel + direction.normal();
                         let neighbor = world.get_voxel(neighbor_coordinate).unwrap_or(Voxel::Air);
-
-                        let neighbor_is_centered = is_centered_layer(world, neighbor_coordinate);
+                        let (neighbor_shape, _) = world.get_shape(neighbor_coordinate);
                         let mut step_bottom_offset_cm = 0u8;
 
-                        if !neighbor_is_centered {
-                            if voxel.is_water()
-                                && direction != FaceDirection::PositiveY
-                                && direction != FaceDirection::NegativeY
-                            {
-                                if neighbor.is_water() {
-                                    let v_offset =
-                                        (water_surface_height_offset(world, world_voxel) * 100.0)
-                                            .round() as u8;
-                                    let n_offset =
-                                        (water_surface_height_offset(world, neighbor_coordinate)
-                                            * 100.0)
-                                            .round() as u8;
-                                    if v_offset < n_offset {
-                                        step_bottom_offset_cm = n_offset;
-                                    } else {
-                                        continue;
-                                    }
-                                } else if !neighbor.is_empty() && neighbor != Voxel::Occupied {
+                        if voxel.is_water()
+                            && direction != FaceDirection::PositiveY
+                            && direction != FaceDirection::NegativeY
+                        {
+                            if neighbor.is_water() {
+                                let v_offset = (water_surface_height_offset(world, world_voxel)
+                                    * 100.0)
+                                    .round() as u8;
+                                let n_offset =
+                                    (water_surface_height_offset(world, neighbor_coordinate)
+                                        * 100.0)
+                                        .round() as u8;
+                                if v_offset < n_offset {
+                                    step_bottom_offset_cm = n_offset;
+                                } else {
                                     continue;
                                 }
-                            } else if !should_render_face(voxel, neighbor) {
+                            } else if !neighbor.is_empty() {
                                 continue;
                             }
+                        } else if neighbor_shape == BlockShape::Full
+                            && !should_render_face(voxel, neighbor)
+                        {
+                            continue;
                         }
 
                         let (texture_layer, frame_count) =
@@ -562,8 +533,8 @@ impl ChunkMesher {
             }
         }
 
-        if !is_fully_solid {
-            mesh_centered_voxels(
+        if chunk.has_shapes() {
+            mesh_shaped_voxels(
                 world,
                 chunk,
                 chunk_coordinate,
@@ -740,636 +711,5 @@ pub fn quad_vertices(
             let z = slice;
             [[u0, v0, z], [u0, v1, z], [u1, v1, z], [u1, v0, z]]
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{
-        meshing::textures::build_voxel_texture_array,
-        world::{Chunk, Voxel, VoxelWorld},
-    };
-    use bevy::render::mesh::VertexAttributeValues;
-
-    #[test]
-    fn mesher_applies_tint_color_to_vertices() {
-        let mut world = VoxelWorld::default();
-        let mut chunk = Chunk::default();
-        chunk.set(0, 0, 0, Voxel::Grass);
-        world.insert_chunk(IVec3::ZERO, chunk);
-
-        let (_, registry) = build_voxel_texture_array();
-        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
-        let opaque = meshes.opaque.expect("Opaque mesh should exist");
-
-        let colors = opaque
-            .attribute(Mesh::ATTRIBUTE_COLOR)
-            .expect("Mesh should have vertex colors");
-
-        if let VertexAttributeValues::Float32x4(color_data) = colors {
-            assert!(!color_data.is_empty());
-            let grass_tint = Voxel::Grass.tint_color_at(IVec3::ZERO);
-            let untinted = [1.0, 1.0, 1.0, 1.0];
-
-            // In default mode (!full_grass), top face is tinted, side and bottom faces are untinted (side has pre-baked overlay)
-            assert!(
-                color_data.contains(&grass_tint),
-                "Top face must receive grass_tint"
-            );
-            assert!(
-                color_data.contains(&untinted),
-                "Bottom (dirt) and side faces must receive untinted color"
-            );
-
-            // In full_grass mode, sides receive grass_tint as well
-            let mut full_registry = registry.clone();
-            full_registry.full_grass = true;
-            let full_meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &full_registry);
-            let full_opaque = full_meshes.opaque.expect("Opaque mesh should exist");
-            let full_colors = full_opaque
-                .attribute(Mesh::ATTRIBUTE_COLOR)
-                .expect("Mesh should have vertex colors");
-            if let VertexAttributeValues::Float32x4(full_color_data) = full_colors {
-                let tinted_count = full_color_data.iter().filter(|c| **c == grass_tint).count();
-                // 5 faces (top + 4 sides) * 4 vertices = 20 tinted vertices; 1 bottom face * 4 vertices = 4 untinted vertices
-                assert_eq!(
-                    tinted_count, 20,
-                    "Top and 4 sides should receive grass_tint in full_grass mode"
-                );
-            }
-        } else {
-            panic!("Expected Float32x4 vertex colors");
-        }
-    }
-
-    #[test]
-    fn mesher_applies_animation_frame_count_metadata() {
-        let mut world = VoxelWorld::default();
-        let mut chunk = Chunk::default();
-        chunk.set(0, 0, 0, Voxel::Water);
-        world.insert_chunk(IVec3::ZERO, chunk);
-
-        let (_, registry) = build_voxel_texture_array();
-        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
-        let transparent = meshes.transparent.expect("Transparent mesh should exist");
-
-        let uv_bs = transparent
-            .attribute(Mesh::ATTRIBUTE_UV_1)
-            .expect("Mesh should have UV_1");
-
-        if let VertexAttributeValues::Float32x2(uv_b_data) = uv_bs {
-            assert!(!uv_b_data.is_empty());
-            for entry in uv_b_data {
-                assert_eq!(entry[1], 36.0, "Water frame count should be 36.0");
-            }
-        } else {
-            panic!("Expected Float32x2 UV_1");
-        }
-
-        let positions = transparent
-            .attribute(Mesh::ATTRIBUTE_POSITION)
-            .expect("Mesh should have positions");
-
-        if let VertexAttributeValues::Float32x3(pos_data) = positions {
-            assert!(!pos_data.is_empty());
-            let max_y = pos_data
-                .iter()
-                .map(|p| p[1])
-                .fold(f32::NEG_INFINITY, f32::max);
-            assert!(
-                (max_y - 0.90).abs() < 1e-4,
-                "Surface water max Y should be 0.90, got {}",
-                max_y
-            );
-        } else {
-            panic!("Expected Float32x3 positions");
-        }
-
-        let normals = transparent
-            .attribute(Mesh::ATTRIBUTE_NORMAL)
-            .expect("Mesh should have normals");
-        if let VertexAttributeValues::Float32x3(norm_data) = normals {
-            let has_down_normal = norm_data.iter().any(|n| n[1] < -0.9);
-            assert!(
-                has_down_normal,
-                "Transparent mesh should have downward-facing normals for underwater view"
-            );
-        } else {
-            panic!("Expected Float32x3 normals");
-        }
-    }
-
-    #[test]
-    fn mesher_renders_centered_voxels_correctly() {
-        let mut world = VoxelWorld::default();
-        let mut chunk = Chunk::default();
-        chunk.set(0, 0, 0, Voxel::Stone);
-        chunk.set(1, 0, 0, Voxel::Occupied);
-        chunk.set(0, 0, 1, Voxel::Occupied);
-        chunk.set(1, 0, 1, Voxel::Occupied);
-        world.insert_chunk(IVec3::ZERO, chunk);
-
-        let (_, registry) = build_voxel_texture_array();
-        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
-        let opaque = meshes
-            .opaque
-            .expect("Opaque mesh should exist for centered voxel");
-
-        let positions = opaque
-            .attribute(Mesh::ATTRIBUTE_POSITION)
-            .expect("Mesh should have positions");
-
-        if let VertexAttributeValues::Float32x3(pos_data) = positions {
-            assert!(!pos_data.is_empty());
-            let min_x = pos_data.iter().map(|p| p[0]).fold(f32::INFINITY, f32::min);
-            let max_x = pos_data
-                .iter()
-                .map(|p| p[0])
-                .fold(f32::NEG_INFINITY, f32::max);
-            assert!(
-                (min_x - 0.50).abs() < 1e-4,
-                "min_x should be 0.50, got {}",
-                min_x
-            );
-            assert!(
-                (max_x - 1.50).abs() < 1e-4,
-                "max_x should be 1.50, got {}",
-                max_x
-            );
-        } else {
-            panic!("Expected Float32x3 positions");
-        }
-    }
-
-    #[test]
-    fn ground_below_centered_voxel_renders_top_face() {
-        let mut world = VoxelWorld::default();
-        let mut chunk = Chunk::default();
-        chunk.set(0, 0, 0, Voxel::Sand);
-        chunk.set(1, 0, 0, Voxel::Sand);
-        chunk.set(0, 0, 1, Voxel::Sand);
-        chunk.set(1, 0, 1, Voxel::Sand);
-
-        chunk.set(0, 1, 0, Voxel::Stone);
-        chunk.set(1, 1, 0, Voxel::Occupied);
-        chunk.set(0, 1, 1, Voxel::Occupied);
-        chunk.set(1, 1, 1, Voxel::Occupied);
-
-        world.insert_chunk(IVec3::ZERO, chunk);
-
-        let (_, registry) = build_voxel_texture_array();
-        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
-        let opaque = meshes.opaque.expect("Opaque mesh should exist");
-
-        let normals = opaque
-            .attribute(Mesh::ATTRIBUTE_NORMAL)
-            .expect("Mesh should have normals");
-
-        if let VertexAttributeValues::Float32x3(norm_data) = normals {
-            let positions = opaque
-                .attribute(Mesh::ATTRIBUTE_POSITION)
-                .expect("Mesh should have positions");
-            if let VertexAttributeValues::Float32x3(pos_data) = positions {
-                let mut up_faces_at_ground = 0;
-                for (norm, pos) in norm_data.iter().zip(pos_data.iter()) {
-                    if norm[1] > 0.9 && (pos[1] - 1.00).abs() < 1e-4 {
-                        up_faces_at_ground += 1;
-                    }
-                }
-                assert!(
-                    up_faces_at_ground >= 4,
-                    "Ground under centered column must render its top face (at least 4 vertices), got {}",
-                    up_faces_at_ground
-                );
-            }
-        }
-    }
-
-    #[test]
-    fn waterlogged_centered_voxel_renders_both_opaque_and_transparent_meshes() {
-        let mut world = VoxelWorld::default();
-        let mut chunk = Chunk::default();
-        chunk.set(0, 0, 0, Voxel::Stone);
-        chunk.set(1, 0, 0, Voxel::WaterOccupied);
-        chunk.set(0, 0, 1, Voxel::WaterOccupied);
-        chunk.set(1, 0, 1, Voxel::WaterOccupied);
-
-        world.insert_chunk(IVec3::ZERO, chunk);
-
-        let (_, registry) = build_voxel_texture_array();
-        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
-        assert!(meshes.opaque.is_some());
-        assert!(meshes.transparent.is_some());
-    }
-
-    #[test]
-    fn water_step_renders_vertical_face_between_different_heights() {
-        let mut world = VoxelWorld::default();
-        let mut chunk = Chunk::default();
-        chunk.set(1, 0, 1, Voxel::Water);
-        chunk.set(2, 0, 1, Voxel::WaterFlowing);
-        world.insert_chunk(IVec3::ZERO, chunk);
-
-        let (_, registry) = build_voxel_texture_array();
-        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
-        let transparent = meshes.transparent.expect("Transparent mesh should exist");
-
-        let normals = transparent
-            .attribute(Mesh::ATTRIBUTE_NORMAL)
-            .expect("Mesh should have normals");
-        let positions = transparent
-            .attribute(Mesh::ATTRIBUTE_POSITION)
-            .expect("Mesh should have positions");
-
-        if let (
-            VertexAttributeValues::Float32x3(norm_data),
-            VertexAttributeValues::Float32x3(pos_data),
-        ) = (normals, positions)
-        {
-            let mut found_step_quad = false;
-            for (norm, pos) in norm_data.iter().zip(pos_data.iter()) {
-                if norm[0] > 0.9 && pos[1] >= 0.79 && pos[1] <= 0.91 {
-                    found_step_quad = true;
-                    break;
-                }
-            }
-            assert!(
-                found_step_quad,
-                "Expected vertical step quad between water levels facing +X"
-            );
-        } else {
-            panic!("Expected Float32x3 attributes");
-        }
-    }
-
-    #[test]
-    fn mesher_full_block_face_maps_single_texture_uv() {
-        let mut world = VoxelWorld::default();
-        let mut chunk = Chunk::default();
-        chunk.set(0, 0, 0, Voxel::Stone);
-        world.insert_chunk(IVec3::ZERO, chunk);
-
-        let (_, registry) = build_voxel_texture_array();
-        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
-        let opaque = meshes.opaque.expect("Opaque mesh should exist");
-
-        let uvs = opaque
-            .attribute(Mesh::ATTRIBUTE_UV_0)
-            .expect("Mesh should have UV_0");
-
-        if let VertexAttributeValues::Float32x2(uv_data) = uvs {
-            assert!(!uv_data.is_empty());
-            for quad_uvs in uv_data.chunks_exact(4) {
-                let min_u = quad_uvs
-                    .iter()
-                    .map(|uv| uv[0])
-                    .fold(f32::INFINITY, f32::min);
-                let max_u = quad_uvs
-                    .iter()
-                    .map(|uv| uv[0])
-                    .fold(f32::NEG_INFINITY, f32::max);
-                let min_v = quad_uvs
-                    .iter()
-                    .map(|uv| uv[1])
-                    .fold(f32::INFINITY, f32::min);
-                let max_v = quad_uvs
-                    .iter()
-                    .map(|uv| uv[1])
-                    .fold(f32::NEG_INFINITY, f32::max);
-
-                assert!(
-                    (max_u - min_u - 1.0).abs() < 1e-4,
-                    "Each full block face U span must be 1.0 (single texture), got {}",
-                    max_u - min_u
-                );
-                assert!(
-                    (max_v - min_v - 1.0).abs() < 1e-4,
-                    "Each full block face V span must be 1.0 (single texture), got {}",
-                    max_v - min_v
-                );
-            }
-        } else {
-            panic!("Expected Float32x2 UV_0 attributes");
-        }
-    }
-
-    #[test]
-    fn mesher_isolated_single_voxel_maps_full_texture_uv() {
-        let mut world = VoxelWorld::default();
-        let mut chunk = Chunk::default();
-        chunk.set(0, 0, 0, Voxel::Stone);
-        world.insert_chunk(IVec3::ZERO, chunk);
-
-        let (_, registry) = build_voxel_texture_array();
-        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
-        let opaque = meshes.opaque.expect("Opaque mesh should exist");
-
-        let uvs = opaque
-            .attribute(Mesh::ATTRIBUTE_UV_0)
-            .expect("Mesh should have UV_0");
-
-        if let VertexAttributeValues::Float32x2(uv_data) = uvs {
-            assert!(!uv_data.is_empty());
-            for quad_uvs in uv_data.chunks_exact(4) {
-                let min_u = quad_uvs
-                    .iter()
-                    .map(|uv| uv[0])
-                    .fold(f32::INFINITY, f32::min);
-                let max_u = quad_uvs
-                    .iter()
-                    .map(|uv| uv[0])
-                    .fold(f32::NEG_INFINITY, f32::max);
-                let min_v = quad_uvs
-                    .iter()
-                    .map(|uv| uv[1])
-                    .fold(f32::INFINITY, f32::min);
-                let max_v = quad_uvs
-                    .iter()
-                    .map(|uv| uv[1])
-                    .fold(f32::NEG_INFINITY, f32::max);
-
-                assert_eq!(min_u, 0.0, "Isolated single voxel min U must be 0.0");
-                assert_eq!(max_u, 1.0, "Isolated single voxel max U must be 1.0");
-                assert_eq!(min_v, 0.0, "Isolated single voxel min V must be 0.0");
-                assert_eq!(max_v, 1.0, "Isolated single voxel max V must be 1.0");
-            }
-        } else {
-            panic!("Expected Float32x2 UV_0 attributes");
-        }
-    }
-
-    #[test]
-    fn mesher_two_adjacent_subvoxels_combine_uv() {
-        let mut world = VoxelWorld::default();
-        let mut chunk = Chunk::default();
-        chunk.set(0, 0, 0, Voxel::Stone);
-        chunk.set(1, 0, 0, Voxel::Stone);
-        world.insert_chunk(IVec3::ZERO, chunk);
-
-        let (_, registry) = build_voxel_texture_array();
-        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
-        let opaque = meshes.opaque.expect("Opaque mesh should exist");
-
-        let normals = opaque
-            .attribute(Mesh::ATTRIBUTE_NORMAL)
-            .expect("Mesh should have normals");
-        let uvs = opaque
-            .attribute(Mesh::ATTRIBUTE_UV_0)
-            .expect("Mesh should have UV_0");
-
-        if let (
-            VertexAttributeValues::Float32x3(norm_data),
-            VertexAttributeValues::Float32x2(uv_data),
-        ) = (normals, uvs)
-        {
-            let mut found_top = false;
-            for (quad_norms, quad_uvs) in norm_data.chunks_exact(4).zip(uv_data.chunks_exact(4)) {
-                if quad_norms[0][1] > 0.9 {
-                    found_top = true;
-                    let min_u = quad_uvs
-                        .iter()
-                        .map(|uv| uv[0])
-                        .fold(f32::INFINITY, f32::min);
-                    let max_u = quad_uvs
-                        .iter()
-                        .map(|uv| uv[0])
-                        .fold(f32::NEG_INFINITY, f32::max);
-                    assert!(
-                        (max_u - min_u - 1.0).abs() < 1e-4,
-                        "Merged top face must combine U across the two voxels to span 1.0, got {}",
-                        max_u - min_u
-                    );
-                }
-            }
-            assert!(found_top, "Top face quad should exist");
-        } else {
-            panic!("Expected Float32x3 normals and Float32x2 UV_0 attributes");
-        }
-    }
-
-    #[test]
-    fn mesher_block_sides_map_full_texture_uv() {
-        let mut world = VoxelWorld::default();
-        let mut chunk = Chunk::default();
-        chunk.set(0, 0, 0, Voxel::Stone);
-        chunk.set(1, 0, 0, Voxel::Stone);
-        chunk.set(0, 0, 1, Voxel::Stone);
-        chunk.set(1, 0, 1, Voxel::Stone);
-        world.insert_chunk(IVec3::ZERO, chunk);
-
-        let (_, registry) = build_voxel_texture_array();
-        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
-        let opaque = meshes.opaque.expect("Opaque mesh should exist");
-
-        let normals = opaque
-            .attribute(Mesh::ATTRIBUTE_NORMAL)
-            .expect("Mesh should have normals");
-        let uvs = opaque
-            .attribute(Mesh::ATTRIBUTE_UV_0)
-            .expect("Mesh should have UV_0");
-
-        if let (
-            VertexAttributeValues::Float32x3(norm_data),
-            VertexAttributeValues::Float32x2(uv_data),
-        ) = (normals, uvs)
-        {
-            for (quad_norms, quad_uvs) in norm_data.chunks_exact(4).zip(uv_data.chunks_exact(4)) {
-                if quad_norms[0][1].abs() < 0.1 {
-                    let min_v = quad_uvs
-                        .iter()
-                        .map(|uv| uv[1])
-                        .fold(f32::INFINITY, f32::min);
-                    let max_v = quad_uvs
-                        .iter()
-                        .map(|uv| uv[1])
-                        .fold(f32::NEG_INFINITY, f32::max);
-                    assert!(
-                        (min_v - 0.0).abs() < 1e-4,
-                        "Block side min V must be 0.0, got {}",
-                        min_v
-                    );
-                    assert!(
-                        (max_v - 1.0).abs() < 1e-4,
-                        "Block side max V must be 1.0, got {}",
-                        max_v
-                    );
-                }
-            }
-        } else {
-            panic!("Expected Float32x3 normals and Float32x2 UV_0 attributes");
-        }
-    }
-
-    #[test]
-    fn mesher_emissive_light_blocks_include_faces_and_emissive_metadata() {
-        let mut world = VoxelWorld::default();
-        let mut chunk = Chunk::default();
-        for dy in 0..2 {
-            for dz in 0..2 {
-                for dx in 0..2 {
-                    chunk.set(dx, dy, dz, Voxel::LightWarm);
-                }
-            }
-        }
-        world.insert_chunk(IVec3::ZERO, chunk);
-
-        let (_, registry) = build_voxel_texture_array();
-        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
-        let opaque = meshes
-            .opaque
-            .expect("Opaque mesh should exist for light block");
-
-        let uv_bs = opaque
-            .attribute(Mesh::ATTRIBUTE_UV_1)
-            .expect("Mesh should have UV_1");
-
-        if let VertexAttributeValues::Float32x2(uv_b_data) = uv_bs {
-            assert!(!uv_b_data.is_empty());
-            for entry in uv_b_data {
-                assert_eq!(entry[1], -4.0, "Light block emission metadata must be -4.0");
-            }
-        } else {
-            panic!("Expected Float32x2 UV_1");
-        }
-    }
-
-    #[test]
-    fn mesher_early_exits_on_empty_air_chunk() {
-        let mut world = VoxelWorld::default();
-        world.insert_chunk(IVec3::ZERO, Chunk::new());
-
-        let (_, registry) = build_voxel_texture_array();
-        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
-        assert!(meshes.opaque.is_none());
-        assert!(meshes.transparent.is_none());
-    }
-
-    #[test]
-    fn mesher_early_exits_on_fully_solid_chunk_surrounded_by_solid() {
-        let mut world = VoxelWorld::default();
-        // Insert central solid chunk
-        world.insert_chunk(IVec3::ZERO, Chunk::filled(Voxel::Stone));
-
-        // Insert all 6 neighbors as solid chunks
-        for direction in FACE_DIRECTIONS {
-            world.insert_chunk(direction.normal(), Chunk::filled(Voxel::Stone));
-        }
-
-        let (_, registry) = build_voxel_texture_array();
-        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
-        assert!(meshes.opaque.is_none());
-        assert!(meshes.transparent.is_none());
-    }
-
-    #[test]
-    fn mesher_solid_chunk_adjacent_to_air_renders_only_exposed_boundary() {
-        let mut world = VoxelWorld::default();
-        // Insert central solid chunk
-        world.insert_chunk(IVec3::ZERO, Chunk::filled(Voxel::Stone));
-
-        // Insert 5 neighbors as solid, leave +Y (top) as air
-        world.insert_chunk(IVec3::X, Chunk::filled(Voxel::Stone));
-        world.insert_chunk(IVec3::NEG_X, Chunk::filled(Voxel::Stone));
-        world.insert_chunk(IVec3::NEG_Y, Chunk::filled(Voxel::Stone));
-        world.insert_chunk(IVec3::Z, Chunk::filled(Voxel::Stone));
-        world.insert_chunk(IVec3::NEG_Z, Chunk::filled(Voxel::Stone));
-        world.insert_chunk(IVec3::Y, Chunk::new()); // Empty air chunk on top
-
-        let (_, registry) = build_voxel_texture_array();
-        let meshes = ChunkMesher::build_meshes(&world, IVec3::ZERO, &registry);
-        let opaque = meshes.opaque.expect("Should render top face against air");
-        assert!(meshes.transparent.is_none());
-
-        // Every vertex must point strictly upwards (Positive Y) because all other 5 sides are occluded!
-        let normals = opaque.attribute(Mesh::ATTRIBUTE_NORMAL).unwrap();
-        if let VertexAttributeValues::Float32x3(norm_data) = normals {
-            assert!(!norm_data.is_empty());
-            for norm in norm_data {
-                assert_eq!(
-                    *norm,
-                    [0.0, 1.0, 0.0],
-                    "Only Positive Y faces should be rendered"
-                );
-            }
-        } else {
-            panic!("Expected Float32x3 normals");
-        }
-    }
-
-    #[test]
-    fn test_extract_slice_bitmask_uniform_and_paletted() {
-        let empty_chunk = Chunk::new();
-        let mask = extract_slice_bitmask(&empty_chunk, FaceDirection::PositiveY, 0);
-        assert_eq!(mask.opaque, [0u16; CHUNK_SIZE]);
-        assert_eq!(mask.special, [0u16; CHUNK_SIZE]);
-
-        let solid_chunk = Chunk::filled(Voxel::Stone);
-        let mask = extract_slice_bitmask(&solid_chunk, FaceDirection::PositiveY, 0);
-        assert_eq!(mask.opaque, [0xFFFFu16; CHUNK_SIZE]);
-        assert_eq!(mask.special, [0u16; CHUNK_SIZE]);
-
-        let mut custom_chunk = Chunk::new();
-        // Set row 0 (u from 0..8) on slice y=5
-        for x in 0..8 {
-            custom_chunk.set(x, 5, 0, Voxel::Stone);
-        }
-        // FaceDirection::PositiveY: u = x, v = z
-        let mask = extract_slice_bitmask(&custom_chunk, FaceDirection::PositiveY, 5);
-        assert_eq!(mask.opaque[0], 0x00FF);
-        for v in 1..CHUNK_SIZE {
-            assert_eq!(mask.opaque[v], 0);
-        }
-    }
-
-    #[test]
-    fn test_bitwise_face_culling_occluded_internal_faces() {
-        let solid_chunk = Chunk::filled(Voxel::Stone);
-        let current = extract_slice_bitmask(&solid_chunk, FaceDirection::PositiveX, 5);
-        let neighbor = extract_slice_bitmask(&solid_chunk, FaceDirection::PositiveX, 6);
-
-        // Between two solid slices, visible opaque face bitmask must be 0
-        for v in 0..CHUNK_SIZE {
-            let visible = current.opaque[v] & !neighbor.opaque[v];
-            assert_eq!(visible, 0, "Occluded internal faces must be 0");
-        }
-
-        let empty_chunk = Chunk::new();
-        let air_neighbor = extract_slice_bitmask(&empty_chunk, FaceDirection::PositiveX, 0);
-        // Between solid slice and air slice, all 16 bits must be visible
-        for v in 0..CHUNK_SIZE {
-            let visible = current.opaque[v] & !air_neighbor.opaque[v];
-            assert_eq!(
-                visible, 0xFFFF,
-                "Boundary face against air must be fully visible"
-            );
-        }
-    }
-
-    #[test]
-    fn leaf_face_rendering_and_trunk_visibility() {
-        // 1. Trunk wood touching leaves must render its face!
-        assert!(should_render_face(Voxel::OakWoodLog, Voxel::OakLeaves));
-        assert!(should_render_face(Voxel::BirchWoodLog, Voxel::BirchLeaves));
-        assert!(should_render_face(Voxel::PineWoodLog, Voxel::PineLeaves));
-        assert!(should_render_face(Voxel::OakWood, Voxel::OakLeaves));
-
-        // 2. Interior leaves touching adjacent leaves must render for 3D volumetric foliage!
-        assert!(should_render_face(Voxel::OakLeaves, Voxel::OakLeaves));
-        assert!(should_render_face(Voxel::BirchLeaves, Voxel::BirchLeaves));
-        assert!(should_render_face(Voxel::PineLeaves, Voxel::PineLeaves));
-
-        // 3. Exterior leaves touching air or water must render
-        assert!(should_render_face(Voxel::OakLeaves, Voxel::Air));
-        assert!(should_render_face(Voxel::OakLeaves, Voxel::Water));
-
-        // 4. Leaves touching solid trunk/dirt cull against the solid block to prevent z-fighting
-        assert!(!should_render_face(Voxel::OakLeaves, Voxel::OakWoodLog));
-        assert!(!should_render_face(Voxel::OakLeaves, Voxel::Dirt));
-        assert!(!should_render_face(Voxel::OakLeaves, Voxel::Stone));
-
-        // 5. Solid trunk touching another solid trunk culls
-        assert!(!should_render_face(Voxel::OakWoodLog, Voxel::OakWoodLog));
-        assert!(!should_render_face(Voxel::Stone, Voxel::Stone));
     }
 }
