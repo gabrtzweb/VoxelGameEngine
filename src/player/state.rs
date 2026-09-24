@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use super::{
-    Player,
+    Player, PlayerCamera,
     water::{is_point_in_water, player_submersion},
 };
 use crate::world::VoxelWorld;
@@ -15,7 +15,7 @@ pub struct PlayerEnvironmentStatus {
 pub fn update_player_environment_status(
     world: Option<Res<VoxelWorld>>,
     player_query: Option<Single<&Transform, With<Player>>>,
-    camera_query: Option<Single<&GlobalTransform, With<Camera3d>>>,
+    camera_query: Option<Single<&GlobalTransform, (With<Camera3d>, With<PlayerCamera>)>>,
     mut status: ResMut<PlayerEnvironmentStatus>,
 ) {
     let Some(world) = world else {

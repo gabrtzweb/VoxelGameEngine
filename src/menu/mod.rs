@@ -8,7 +8,11 @@ use bevy::{
     window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
 
-use crate::{gameplay::BlockIcons, player::InspectorInteraction, world::Voxel};
+use crate::{
+    gameplay::BlockIcons,
+    player::{InspectorInteraction, PlayerCamera},
+    world::Voxel,
+};
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum MenuState {
@@ -347,6 +351,7 @@ fn handle_menu_key_inputs(
     keyboard: Res<ButtonInput<KeyCode>>,
     menu_state: Res<State<MenuState>>,
     mut next_state: ResMut<NextState<MenuState>>,
+    search_query: Option<Res<crate::menu::creative_inventory::CreativeSearchQuery>>,
 ) {
     let current = *menu_state.get();
 
@@ -365,6 +370,9 @@ fn handle_menu_key_inputs(
     }
 
     if keyboard.just_pressed(KeyCode::KeyE) {
+        if search_query.as_ref().is_some_and(|s| s.is_focused) {
+            return;
+        }
         match current {
             MenuState::None => next_state.set(MenuState::Inventory),
             MenuState::Inventory => {
@@ -470,7 +478,7 @@ fn update_custom_cursor(
 fn manage_menu_blur(
     mut commands: Commands,
     menu_state: Res<State<MenuState>>,
-    camera_query: Query<Entity, With<Camera3d>>,
+    camera_query: Query<Entity, (With<Camera3d>, With<PlayerCamera>)>,
 ) {
     if !menu_state.is_changed() {
         return;
@@ -517,7 +525,7 @@ fn manage_menu_time_pause(
 
 fn sync_camera_fov(
     settings: Res<GameSettings>,
-    camera_projection: Option<Single<&mut Projection, With<Camera3d>>>,
+    camera_projection: Option<Single<&mut Projection, (With<Camera3d>, With<PlayerCamera>)>>,
 ) {
     if !settings.is_changed() {
         return;

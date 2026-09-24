@@ -11,7 +11,7 @@ use bevy::{
 use crate::{
     generation::TerrainGenerator,
     menu::MenuState,
-    player::Player,
+    player::{Player, PlayerCamera},
     world::{VOXEL_SIZE, Voxel},
 };
 
@@ -388,7 +388,7 @@ fn sync_minimap_terrain(
 }
 
 fn sync_minimap_marker(
-    camera_query: Query<&Transform, With<Camera3d>>,
+    camera_query: Query<&Transform, (With<Camera3d>, With<PlayerCamera>)>,
     mut marker_query: Query<&mut UiTransform, With<MinimapPlayerMarker>>,
     mut minimap_state: ResMut<MinimapState>,
 ) {

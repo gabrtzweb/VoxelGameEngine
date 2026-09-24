@@ -12,7 +12,7 @@ use bevy::{
 
 use crate::{
     menu::{CursorMode, MenuState},
-    player::Player,
+    player::{Player, PlayerCamera},
     world::{VOXEL_SIZE, Voxel},
 };
 
@@ -451,7 +451,7 @@ fn sync_world_map_terrain(
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn update_world_map_ui(
     player_query: Query<&Transform, With<Player>>,
-    camera_query: Query<&Transform, With<Camera3d>>,
+    camera_query: Query<&Transform, (With<Camera3d>, With<PlayerCamera>)>,
     window: Option<Single<&Window, With<PrimaryWindow>>>,
     map_state: Res<WorldMapState>,
     viewport_query: Query<(&ComputedNode, &GlobalTransform), With<WorldMapViewport>>,

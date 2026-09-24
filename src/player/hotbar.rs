@@ -56,11 +56,13 @@ impl Plugin for HotbarPlugin {
 
 fn setup_hotbar_ui(
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
     icons: Res<BlockIcons>,
     app_font: Option<Res<AppFont>>,
 ) {
     let initial_hotbar = Hotbar::default();
     let font_handle = app_font.as_ref().map(|f| f.source());
+    let hotbar_texture = asset_server.load("textures/gui/containers/hotbar.png");
 
     // Centered bottom container spanning screen width
     commands
@@ -78,20 +80,19 @@ fn setup_hotbar_ui(
             ZIndex(150),
         ))
         .with_children(|parent| {
-            // Hotbar tray with semi-transparent dark backing and subtle border
+            // Hotbar texture: 162x22 -> scaled 3x = 486x66 px
             parent
                 .spawn((
-                    Node {
-                        display: Display::Flex,
-                        flex_direction: FlexDirection::Row,
-                        column_gap: px(6.0),
-                        padding: UiRect::all(px(6.0)),
-                        border: UiRect::all(px(2.0)),
-                        border_radius: BorderRadius::all(px(8.0)),
+                    ImageNode {
+                        image: hotbar_texture,
                         ..default()
                     },
-                    BackgroundColor(Color::srgba(0.06, 0.06, 0.08, 0.85)),
-                    BorderColor::all(Color::srgba(0.25, 0.25, 0.28, 0.85)),
+                    Node {
+                        width: px(486.0),
+                        height: px(66.0),
+                        position_type: PositionType::Relative,
+                        ..default()
+                    },
                 ))
                 .with_children(|tray| {
                     for index in 0..HOTBAR_SLOT_COUNT {
@@ -101,13 +102,13 @@ fn setup_hotbar_ui(
                         let border_color = if is_active {
                             Color::srgb(1.0, 0.85, 0.30)
                         } else {
-                            Color::srgba(0.25, 0.25, 0.28, 0.60)
+                            Color::NONE
                         };
 
                         let bg_color = if is_active {
-                            Color::srgba(0.24, 0.24, 0.28, 0.95)
+                            Color::srgba(1.0, 1.0, 1.0, 0.12)
                         } else {
-                            Color::srgba(0.12, 0.12, 0.14, 0.75)
+                            Color::NONE
                         };
 
                         let icon_handle = initial_voxel
@@ -123,14 +124,16 @@ fn setup_hotbar_ui(
                         tray.spawn((
                             HotbarSlotUi { index },
                             Node {
-                                width: px(48.0),
-                                height: px(48.0),
+                                position_type: PositionType::Absolute,
+                                left: px(3.0 + index as f32 * 60.0),
+                                top: px(3.0),
+                                width: px(60.0),
+                                height: px(60.0),
                                 display: Display::Flex,
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
                                 border: UiRect::all(px(2.0)),
-                                border_radius: BorderRadius::all(px(6.0)),
-                                position_type: PositionType::Relative,
+                                border_radius: BorderRadius::all(px(2.0)),
                                 ..default()
                             },
                             BackgroundColor(bg_color),
@@ -139,7 +142,7 @@ fn setup_hotbar_ui(
                         .with_children(|slot| {
                             // Slot index number (1 through 8)
                             let mut num_font = TextFont {
-                                font_size: FontSize::Px(11.0),
+                                font_size: FontSize::Px(12.0),
                                 ..default()
                             };
                             if let Some(ref font) = font_handle {
@@ -149,17 +152,17 @@ fn setup_hotbar_ui(
                             slot.spawn((
                                 Text::new(format!("{}", index + 1)),
                                 num_font,
-                                TextColor(Color::srgba(0.85, 0.85, 0.85, 0.70)),
+                                TextColor(Color::srgba(0.90, 0.90, 0.90, 0.85)),
                                 text_shadow_default(),
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    top: px(2.0),
-                                    left: px(4.0),
+                                    top: px(3.0),
+                                    left: px(5.0),
                                     ..default()
                                 },
                             ));
 
-                            // Centered 32x32 2D item icon
+                            // Centered 36x36 2D item icon
                             slot.spawn((
                                 HotbarSlotIcon { index },
                                 ImageNode {
@@ -167,8 +170,8 @@ fn setup_hotbar_ui(
                                     ..default()
                                 },
                                 Node {
-                                    width: px(32.0),
-                                    height: px(32.0),
+                                    width: px(36.0),
+                                    height: px(36.0),
                                     ..default()
                                 },
                                 icon_visibility,
@@ -244,10 +247,10 @@ fn sync_hotbar_ui(
     for (slot, mut border_color, mut bg_color) in &mut slot_query {
         if slot.index == hotbar.active_slot {
             *border_color = BorderColor::all(Color::srgb(1.0, 0.85, 0.30));
-            bg_color.0 = Color::srgba(0.24, 0.24, 0.28, 0.95);
+            bg_color.0 = Color::srgba(1.0, 1.0, 1.0, 0.12);
         } else {
-            *border_color = BorderColor::all(Color::srgba(0.25, 0.25, 0.28, 0.60));
-            bg_color.0 = Color::srgba(0.12, 0.12, 0.14, 0.75);
+            *border_color = BorderColor::all(Color::NONE);
+            bg_color.0 = Color::NONE;
         }
     }
 

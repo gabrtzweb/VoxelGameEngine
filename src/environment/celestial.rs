@@ -6,6 +6,8 @@ use bevy::{
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 
+use crate::player::PlayerCamera;
+
 pub const CELESTIAL_DISTANCE: f32 = 800.0;
 pub const SUN_SIZE: f32 = 416.0;
 pub const MOON_SIZE: f32 = 320.0;
@@ -168,7 +170,7 @@ pub fn moon_phase_factor(phase: usize) -> f32 {
 
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub fn sync_celestial_transforms(
-    camera: Single<&Transform, With<Camera3d>>,
+    camera: Single<&Transform, (With<Camera3d>, With<PlayerCamera>)>,
     sun_visual: Single<
         (&mut Transform, &mut Visibility),
         (With<SunVisual>, Without<MoonVisual>, Without<Camera3d>),

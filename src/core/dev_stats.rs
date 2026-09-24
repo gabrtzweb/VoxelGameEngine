@@ -9,7 +9,7 @@ use crate::{
     gameplay::CurrentTarget,
     generation::TerrainGenerator,
     meshing::ChunkMeshRegistry,
-    player::{GameMode, Player, PlayerMotion},
+    player::{GameMode, Player, PlayerCamera, PlayerMotion},
     world::{CHUNK_VOLUME, VOXEL_SIZE, VoxelWorld},
 };
 
@@ -139,7 +139,7 @@ fn update_dev_stats(
     game_mode: Res<GameMode>,
     environment: Option<Res<EnvironmentState>>,
     player: Single<(&Transform, &PlayerMotion), With<Player>>,
-    camera: Single<&Transform, (With<Camera3d>, Without<Player>)>,
+    camera: Single<&Transform, (With<Camera3d>, With<PlayerCamera>, Without<Player>)>,
     current_target: Res<CurrentTarget>,
     terrain_generator: Option<Res<TerrainGenerator>>,
     dynamic_fps: Option<Res<super::DynamicFpsState>>,

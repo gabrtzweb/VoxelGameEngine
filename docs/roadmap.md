@@ -425,8 +425,31 @@ Phase 10 is currently active. Development is intentionally not strictly followin
     - Migrated celestial assets from legacy spritesheets to dedicated folders: individual 64×64 moon phase images in `assets/textures/environments/celestial/moon/` and sun texture at `assets/textures/environments/celestial/sun.png`.
     - Added `Terracotta` (with 5 organic variants `terr_terracotta.png` .. `4`) and the `Rainwood` block family (`RainwoodWood` with 4 variants, `RainwoodWoodLog` with log ring tops, and `RainwoodLeaves` with 2 foliage variants) to the voxel registry, terrain texture array, creative inventory, and map coloration.
 
-- [ ] **Stage 10.6: UI Texture Skinning (Hotbar, Personal Inventory & Creative Inventory)**:
-  - Update the initial visual look of the hotbar, player personal inventory, and creative inventory using textures.
+- [x] **Stage 10.6: UI Texture Skinning (Hotbar, Personal Inventory & Creative Inventory) (Completed)**:
+  - **Textured Hotbar HUD**:
+    - Loaded `assets/textures/gui/containers/hotbar.png` (162×22 px) scaled 3× (486×66 px) via `ImageNode` with nearest-neighbor sampling.
+    - Symmetrically aligned the 8 slot hitboxes and icons (36×36 px) to exact texture coordinates (each slot 60×60 px, stride 60 px).
+    - Inactive slots have transparent borders and backgrounds allowing the pixel-art bevels and recessed shadows to show through; active slot highlights with a 2px golden frame and subtle white sheen.
+  - **Dual-Card Textured Inventory Interface**:
+    - Mapped `inventory.png`, `creative_inventory.png`, and `scroller.png` (338×144 px) to a dual-card layout at 3× scale:
+    - **Left Card (Player Card)**:
+      - Sliced to 258×366 px (86×122 px at 3×).
+      - Header box displays `"Player Name – Level 10"` with `AppFont` and drop shadow.
+      - 3D player character viewport placeholder (159×264 px) with dedicated `PlayerModelViewport` component.
+      - 5 vertical armor slots column (54×54 px each) with visual placeholder letter badges ("H", "C", "G", "P", "B" for Helmet, Chest Armor, Gloves, Pants, Boots), hover highlights, and item placement rejection ensuring they do not accept blocks.
+    - **Right Card (Standard / Personal Inventory)**:
+      - Sliced to 474×378 px (158×126 px at 3×) from `inventory.png`.
+      - Header title `"Inventory"` and two non-functional button placeholders ("B", "B").
+      - 8×4 grid (32 slots) displaying `PlayerInventory` items with golden hover highlights and transparent inactive states.
+      - 1×8 hotbar mirror row at bottom with slot numbers 1..8 and item icons.
+    - **Right Card (Creative Inventory)**:
+      - Sliced to 528×378 px (176×126 px at 3×) from `creative_inventory.png`.
+      - Header title `"Inventory"` and interactive search bar with `"Search"` placeholder text, typing focus, and real-time block filtering.
+      - 8×4 grid (32 slots) displaying filtered creative blocks.
+      - Scrollbar track (36×336 px) with pixel-art `scroller.png` thumb (36×45 px) supporting smooth mouse wheel scrolling and click-and-drag.
+    - **Tab Switching & Navigation**:
+      - Top tab switcher buttons (`[ Creative ]` and `[ Personal ]`) and <kbd>Tab</kbd> hotkey toggling between Creative and Personal inventory layouts with smooth, seamless UI updates.
+      - Guarded <kbd>E</kbd> key when search bar is focused so typing 'e' does not accidentally close the inventory.
 
 ---
 

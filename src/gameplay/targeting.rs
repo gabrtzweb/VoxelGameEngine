@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use crate::world::{ChunkHomogeneity, VOXEL_SIZE, Voxel, VoxelWorld};
+use crate::{
+    player::PlayerCamera,
+    world::{ChunkHomogeneity, VOXEL_SIZE, Voxel, VoxelWorld},
+};
 
 const MAX_TARGET_DISTANCE: f32 = 10.0;
 
@@ -43,7 +46,7 @@ struct RaycastHit {
 }
 
 fn update_current_target(
-    camera: Single<&GlobalTransform, With<Camera3d>>,
+    camera: Single<&GlobalTransform, (With<Camera3d>, With<PlayerCamera>)>,
     world: Res<VoxelWorld>,
     mut current_target: ResMut<CurrentTarget>,
 ) {

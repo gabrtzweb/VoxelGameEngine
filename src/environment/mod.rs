@@ -14,6 +14,8 @@ pub use clouds::*;
 pub use stars::*;
 pub use time::*;
 
+use crate::player::PlayerCamera;
+
 pub struct EnvironmentPlugin;
 
 impl Plugin for EnvironmentPlugin {
@@ -58,7 +60,7 @@ impl Plugin for EnvironmentPlugin {
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn sync_celestial_system(
     state: Res<EnvironmentState>,
-    camera: Single<&Transform, With<Camera3d>>,
+    camera: Single<&Transform, (With<Camera3d>, With<PlayerCamera>)>,
     sun_visual: Single<
         (&mut Transform, &mut Visibility),
         (
@@ -133,7 +135,7 @@ fn sync_celestial_system(
 
 fn sync_starfield_system(
     state: Res<EnvironmentState>,
-    camera: Single<&Transform, With<Camera3d>>,
+    camera: Single<&Transform, (With<Camera3d>, With<PlayerCamera>)>,
     starfield_root: stars::StarfieldRootQuery,
     material_handle: Res<stars::StarfieldMaterialHandle>,
     materials: ResMut<Assets<StandardMaterial>>,
@@ -150,7 +152,7 @@ fn sync_starfield_system(
 fn sync_cloud_system(
     time: Res<Time>,
     state: Res<EnvironmentState>,
-    camera: Single<(&Transform, &GlobalTransform), With<Camera3d>>,
+    camera: Single<(&Transform, &GlobalTransform), (With<Camera3d>, With<PlayerCamera>)>,
     cloud: clouds::CloudQuery,
     material_handle: Res<clouds::CloudMaterialHandle>,
     materials: ResMut<Assets<StandardMaterial>>,

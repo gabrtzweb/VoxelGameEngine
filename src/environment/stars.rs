@@ -6,6 +6,8 @@ use bevy::{
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 
+use crate::player::PlayerCamera;
+
 pub const STAR_COUNT: usize = 250;
 pub const STAR_DISTANCE: f32 = 850.0;
 pub const STAR_BASE_SIZE: f32 = 5.5;
@@ -81,7 +83,7 @@ pub type StarfieldRootQuery<'w, 's> =
     Single<'w, 's, &'static mut Transform, (With<StarfieldRoot>, Without<Camera3d>)>;
 
 pub fn sync_starfield(
-    camera: Single<&Transform, With<Camera3d>>,
+    camera: Single<&Transform, (With<Camera3d>, With<PlayerCamera>)>,
     mut starfield_root: StarfieldRootQuery,
     material_handle: Res<StarfieldMaterialHandle>,
     mut materials: ResMut<Assets<StandardMaterial>>,

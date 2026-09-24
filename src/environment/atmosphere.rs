@@ -1,7 +1,10 @@
 use bevy::{camera::Exposure, prelude::*};
 
 use super::time::EnvironmentState;
-use crate::world::{CHUNK_SIZE, VOXEL_SIZE, streaming::ChunkStreamingSettings};
+use crate::{
+    player::PlayerCamera,
+    world::{CHUNK_SIZE, VOXEL_SIZE, streaming::ChunkStreamingSettings},
+};
 
 pub const DAY_SUN_ILLUMINANCE: f32 = 6_500.0;
 pub const DAY_FILL_ILLUMINANCE: f32 = 2_200.0;
@@ -19,7 +22,7 @@ pub fn update_atmosphere(
     state: Res<EnvironmentState>,
     mut clear_color: ResMut<ClearColor>,
     mut ambient: ResMut<GlobalAmbientLight>,
-    camera: Single<(&mut DistanceFog, &mut Exposure), With<Camera3d>>,
+    camera: Single<(&mut DistanceFog, &mut Exposure), (With<Camera3d>, With<PlayerCamera>)>,
     env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
 ) {
     let t = state.time_of_day;
@@ -52,7 +55,7 @@ pub fn update_atmosphere(
 pub fn sync_fog_distance(
     settings: Res<ChunkStreamingSettings>,
     game_settings: Option<Res<crate::menu::GameSettings>>,
-    camera: Single<&mut DistanceFog, With<Camera3d>>,
+    camera: Single<&mut DistanceFog, (With<Camera3d>, With<PlayerCamera>)>,
     env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
 ) {
     let mut fog = camera.into_inner();

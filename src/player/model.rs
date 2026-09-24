@@ -18,7 +18,7 @@ use super::{
 };
 
 const SKIN_RESOLUTION: f32 = 64.0;
-const PIXEL_SCALE: f32 = PLAYER_HEIGHT / 32.0; // 0.05625m per pixel -> 32 pixels = 1.8m
+pub(crate) const PIXEL_SCALE: f32 = PLAYER_HEIGHT / 32.0; // 0.05625m per pixel -> 32 pixels = 1.8m
 
 #[derive(Component)]
 pub struct PlayerModelRoot;
@@ -605,7 +605,7 @@ pub fn update_player_model(
 // Procedural Minecraft Skin Mesh Construction (64x64 format with 3D overlays)
 // ---------------------------------------------------------------------------
 
-fn build_head_mesh() -> Mesh {
+pub(crate) fn build_head_mesh() -> Mesh {
     let mut builder = SkinBoxBuilder::default();
     // Base head: 8x8x8 px, pivot at neck base (y = 0.0 to 8*scale)
     builder.add_box(
@@ -626,7 +626,7 @@ fn build_head_mesh() -> Mesh {
     builder.build()
 }
 
-fn build_torso_mesh() -> Mesh {
+pub(crate) fn build_torso_mesh() -> Mesh {
     let mut builder = SkinBoxBuilder::default();
     // Base torso: 8x12x4 px, pivot at waist (y = 0.0 to 12*scale)
     builder.add_box(
@@ -647,7 +647,7 @@ fn build_torso_mesh() -> Mesh {
     builder.build()
 }
 
-fn build_left_arm_mesh() -> Mesh {
+pub(crate) fn build_left_arm_mesh() -> Mesh {
     let mut builder = SkinBoxBuilder::default();
     // Base left arm: 4x12x4 px, pivot at shoulder joint (y = 0 down to -12*scale)
     builder.add_box(
@@ -668,7 +668,7 @@ fn build_left_arm_mesh() -> Mesh {
     builder.build()
 }
 
-fn build_right_arm_mesh() -> Mesh {
+pub(crate) fn build_right_arm_mesh() -> Mesh {
     let mut builder = SkinBoxBuilder::default();
     // Base right arm: 4x12x4 px, pivot at shoulder joint (y = 0 down to -12*scale)
     builder.add_box(
@@ -689,7 +689,7 @@ fn build_right_arm_mesh() -> Mesh {
     builder.build()
 }
 
-fn build_left_leg_mesh() -> Mesh {
+pub(crate) fn build_left_leg_mesh() -> Mesh {
     let mut builder = SkinBoxBuilder::default();
     // Base left leg: 4x12x4 px, pivot at hip joint (y = 0 down to -12*scale)
     builder.add_box(
@@ -710,7 +710,7 @@ fn build_left_leg_mesh() -> Mesh {
     builder.build()
 }
 
-fn build_right_leg_mesh() -> Mesh {
+pub(crate) fn build_right_leg_mesh() -> Mesh {
     let mut builder = SkinBoxBuilder::default();
     // Base right leg: 4x12x4 px, pivot at hip joint (y = 0 down to -12*scale)
     builder.add_box(

@@ -43,8 +43,10 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     T                 Rotate block shape 90° clockwise
 
     ESC               Pause Menu (Settings: Screen Mode, Render Dist, FOV, Fog, Bobbing, VSync, Dynamic FPS; Restart, Quit)
-    E                 Inventory (Dual-tab: Creative 4-row scrollable palette & Personal 8×4 storage)
-                      • Tabs at top: Toggle between Creative and Personal inventory
+    E                 Inventory (Dual-card textured interface: Creative palette & Personal storage)
+                      • Player Card: 3D character viewport, player name & level, 5 armor slots (Helmet, Chest, Gloves, Pants, Boots)
+                      • Tabs at top or Tab key: Toggle between Creative and Personal inventory
+                      • Search bar (Creative): Real-time block name search and filtering
                       • Shift + Click: Quick transfer between inventory and hotbar
                       • Shift + LMB Drag: Rapid transfer into hotbar / rapid hotbar wipe
                       • LMB Drag: Paint held block across multiple hotbar slots

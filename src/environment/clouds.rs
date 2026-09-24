@@ -9,6 +9,8 @@ use bevy::{
     },
 };
 
+use crate::player::PlayerCamera;
+
 pub const CLOUD_ALTITUDE: f32 = 220.0;
 pub const CLOUD_PLANE_SIZE: f32 = 1600.0;
 pub const CLOUD_TILE_WORLD_SIZE: f32 = 280.0;
@@ -67,7 +69,7 @@ pub type CloudQuery<'w, 's> = Single<
 
 pub fn sync_clouds(
     time: Res<Time>,
-    camera: Single<(&Transform, &GlobalTransform), With<Camera3d>>,
+    camera: Single<(&Transform, &GlobalTransform), (With<Camera3d>, With<PlayerCamera>)>,
     mut cloud: CloudQuery,
     material_handle: Res<CloudMaterialHandle>,
     mut materials: ResMut<Assets<StandardMaterial>>,
