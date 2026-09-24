@@ -15,9 +15,7 @@ use bevy::{
     window::{CursorGrabMode, CursorOptions},
 };
 
-#[allow(unused_imports)]
-pub use controller::PlayerStance;
-pub use controller::{InspectorInteraction, PlayerCamera, PlayerMotion};
+pub use controller::{InspectorInteraction, PlayerCamera, PlayerMotion, PlayerStance};
 
 pub use game_mode::GameMode;
 pub use inventory::PlayerInventory;

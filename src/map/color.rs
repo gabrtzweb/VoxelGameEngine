@@ -8,7 +8,7 @@ pub fn voxel_map_color(voxel: Voxel, water_depth: u8) -> [u8; 4] {
         // Natural terrain & soil
         Voxel::Grass => [92, 172, 60, 255],
         Voxel::SnowyGrass => [242, 246, 252, 255],
-        Voxel::Dirt | Voxel::PackedDirt => [134, 96, 67, 255],
+        Voxel::Dirt | Voxel::PackedDirt | Voxel::RootedDirt => [134, 96, 67, 255],
         Voxel::Sand => [218, 204, 150, 255],
         Voxel::RedSand => [195, 102, 50, 255],
         Voxel::Clay => [150, 155, 175, 255],

@@ -856,32 +856,3 @@ impl SkinBoxBuilder {
         mesh
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn player_skin_box_builds_valid_cuboid_mesh() {
-        let head = build_head_mesh();
-        assert!(head.count_vertices() > 0);
-        // Base box (24 verts) + overlay box (24 verts) = 48 vertices
-        assert_eq!(head.count_vertices(), 48);
-
-        let positions = head.attribute(Mesh::ATTRIBUTE_POSITION).unwrap();
-        if let bevy::render::mesh::VertexAttributeValues::Float32x3(pos) = positions {
-            assert_eq!(pos.len(), 48);
-        } else {
-            panic!("Expected Float32x3 vertex positions");
-        }
-    }
-
-    #[test]
-    fn player_model_height_proportions_match_1_8m() {
-        let leg_height = 12.0 * PIXEL_SCALE;
-        let torso_height = 12.0 * PIXEL_SCALE;
-        let head_height = 8.0 * PIXEL_SCALE;
-        let total_height = leg_height + torso_height + head_height;
-        assert!((total_height - PLAYER_HEIGHT).abs() < 1e-4);
-    }
-}

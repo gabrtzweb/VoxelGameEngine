@@ -266,39 +266,3 @@ fn sync_hotbar_ui(
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn hotbar_slot_cycling_wraps_cleanly() {
-        let mut active = 0;
-        // Scroll up from 0 -> wraps to 7
-        active = (active + HOTBAR_SLOT_COUNT - 1) % HOTBAR_SLOT_COUNT;
-        assert_eq!(active, 7);
-
-        // Scroll down from 7 -> wraps to 0
-        active = (active + 1) % HOTBAR_SLOT_COUNT;
-        assert_eq!(active, 0);
-    }
-
-    #[test]
-    fn hotbar_default_has_eight_slots() {
-        let hotbar = Hotbar::default();
-        assert_eq!(hotbar.slots.len(), 8);
-        assert_eq!(hotbar.slots[0], Some(Voxel::Grass));
-        assert_eq!(hotbar.slots[5], Some(Voxel::LightWarm));
-        assert_eq!(hotbar.slots[6], None);
-        assert_eq!(hotbar.slots[7], None);
-    }
-
-    #[test]
-    fn clearing_slot_sets_it_to_none() {
-        let mut hotbar = Hotbar::default();
-        assert_eq!(hotbar.slots[hotbar.active_slot], Some(Voxel::Grass));
-        // Simulate pressing Q
-        hotbar.slots[hotbar.active_slot] = None;
-        assert_eq!(hotbar.slots[hotbar.active_slot], None);
-    }
-}

@@ -242,11 +242,14 @@ pub enum Voxel {
     RainwoodWood = 64,
     RainwoodWoodLog = 65,
     RainwoodLeaves = 66,
+
+    // Soils
+    RootedDirt = 67,
 }
 
 impl Voxel {
     /// All voxels that map to a texture and are loaded into the terrain texture array.
-    pub const ALL: [Voxel; 65] = [
+    pub const ALL: [Voxel; 66] = [
         Voxel::Grass,
         Voxel::Dirt,
         Voxel::Stone,
@@ -312,6 +315,7 @@ impl Voxel {
         Voxel::Occupied,
         Voxel::WaterOccupied,
         Voxel::SnowyGrass,
+        Voxel::RootedDirt,
     ];
 
     /// The base texture name under `assets/textures/blocks/` without extension.
@@ -341,6 +345,7 @@ impl Voxel {
             Self::Moss => Some("terr_moss"),
             Self::Mud => Some("terr_mud"),
             Self::PackedDirt => Some("terr_packed_dirt"),
+            Self::RootedDirt => Some("terr_rooted_dirt"),
             Self::PackedMud => Some("terr_packed_mud"),
             Self::Mulch => Some("terr_mulch"),
             Self::Snow => Some("terr_snow"),
@@ -489,7 +494,7 @@ impl Voxel {
             Self::Terracotta => [165, 95, 65, 255],
             Self::Grass => [110, 180, 80, 255],
             Self::SnowyGrass => [240, 245, 255, 255],
-            Self::Dirt | Self::PackedDirt => [107, 66, 33, 255],
+            Self::Dirt | Self::PackedDirt | Self::RootedDirt => [107, 66, 33, 255],
             Self::Stone => [122, 128, 133, 255],
             Self::Cobblestone => [110, 110, 115, 255],
             Self::MossyCobblestone | Self::MossyStone => [95, 120, 85, 255],
@@ -603,6 +608,7 @@ impl Voxel {
             Self::SnowyGrass => "Snowy Grass",
             Self::Dirt => "Dirt",
             Self::PackedDirt => "Packed Dirt",
+            Self::RootedDirt => "Rooted Dirt",
             Self::Stone => "Stone",
             Self::Cobblestone => "Cobblestone",
             Self::MossyCobblestone => "Mossy Cobblestone",

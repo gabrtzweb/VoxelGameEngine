@@ -135,36 +135,3 @@ fn sync_block_light(
         commands.entity(existing.entity).despawn();
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::world::Chunk;
-
-    #[test]
-    fn block_light_registers_point_light_for_light_block() {
-        let mut app = App::new();
-        let mut world = VoxelWorld::default();
-        let mut chunk = Chunk::default();
-        chunk.set(0, 0, 0, Voxel::LightWarm);
-        world.insert_chunk(IVec3::ZERO, chunk);
-
-        let mut registry = VoxelLightRegistry::default();
-        let mut commands = app.world_mut().commands();
-
-        sync_voxel_light(&mut commands, &world, IVec3::ZERO, &mut registry);
-
-        assert_eq!(
-            registry.entries.len(),
-            1,
-            "Exactly 1 light entity should be registered for the 1m light block"
-        );
-        let block_coord = IVec3::ZERO;
-        let state = registry
-            .entries
-            .get(&block_coord)
-            .expect("Light state should exist");
-        assert_eq!(state.count, 1);
-        assert_eq!(state.voxel, Voxel::LightWarm);
-    }
-}

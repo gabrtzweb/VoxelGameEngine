@@ -212,16 +212,16 @@ fn spawn_settings_menu(
                         font_handle.as_ref(),
                     );
 
-                    // 4b. Grass Sides Toggle Button
+                    // 4b. Full Surface Sides Toggle Button (Grass, Snowy Grass, Mulch)
                     spawn_toggle_button(
                         card,
                         SettingsAction::ToggleFullGrass,
                         format!(
-                            "Grass Sides: {}",
+                            "Full Surface Sides: {}",
                             if game_settings.full_grass {
-                                "Full Grass"
+                                "Enabled"
                             } else {
-                                "Side Textures"
+                                "Disabled"
                             }
                         ),
                         FullGrassLabel,
@@ -676,11 +676,11 @@ fn update_settings_labels(
                 );
             } else if grass.is_some() {
                 text.0 = format!(
-                    "Grass Sides: {}",
+                    "Full Surface Sides: {}",
                     if game_settings.full_grass {
-                        "Full Grass"
+                        "Enabled"
                     } else {
-                        "Side Textures"
+                        "Disabled"
                     }
                 );
             } else if vsync.is_some() {

@@ -71,7 +71,9 @@ impl VoxelTextureRegistry {
             FaceDirection::PositiveY => m.top,
             FaceDirection::NegativeY => m.bottom,
             _ => {
-                if voxel == Voxel::Grass && self.full_grass {
+                if (voxel == Voxel::Grass || voxel == Voxel::SnowyGrass || voxel == Voxel::Mulch)
+                    && self.full_grass
+                {
                     m.top
                 } else {
                     m.side

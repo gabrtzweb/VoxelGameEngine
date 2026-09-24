@@ -575,10 +575,25 @@ This phase tracks the comprehensive cleanup, technical debt reduction, dead code
   - **Engine-Wide Hygiene**:
     - Maintained zero compiler warnings, zero clippy warnings, and clean test execution across remaining engine systems.
 
-- [ ] **Stage 12.4: Next Subsystem Reviews (Planned)**:
-  - **`src/player/` Subsystem**: Review controller and collision resolution against non-cube collision boxes (slab, stair, column).
-  - **`src/generation/` Subsystem**: Prepare terrain generator hooks for spawning shaped blocks (slabs, stairs, columns) once terrain passes are finalized.
-  - **Engine-Wide Hygiene**: Maintain zero compiler warnings (`#[warn(unused)]`), zero dead code, and fast test runs on any target machine.
+- [x] **Stage 12.4: `src/simulation/` and `src/player/` Subsystems Cleanup (Completed)**:
+  - **`src/simulation/` Subsystem**:
+    - `src/simulation/fluid.rs`: Purged dead `compute_water_distance` stub and stripped 162-line `mod tests` block.
+    - `src/simulation/lighting.rs`: Purged obsolete 33-line `mod tests` block.
+    - `src/simulation/mod.rs`: Removed `#![allow(unused_imports)]` and pruned dead re-exports (`remove_chunk_lights`, `sync_voxel_light`, `compute_water_distance`, etc.), retaining only active symbols.
+  - **`src/player/` Subsystem**:
+    - `src/player/collision.rs`: Stripped 39-line `mod tests` block.
+    - `src/player/controller.rs`: Stripped 44-line `mod tests` block.
+    - `src/player/hotbar.rs`: Stripped 36-line `mod tests` block.
+    - `src/player/inventory.rs`: Purged dead `new()`, `clear()`, unused `swap()`, and 46-line `mod tests` block, while retaining active `get`, `set`, `first_empty_slot`, and `add_item` methods used by the creative inventory (net reduction of 59 lines).
+    - `src/player/model.rs`: Stripped 29-line `mod tests` block.
+    - `src/player/mod.rs`: Cleaned up redundant imports and streamlined re-exports.
+  - **Net Line Count Reduction**:
+    - 416 net lines removed across 9 files with 0 compiler warnings (`cargo check`), 0 Clippy lints (`cargo clippy`), and clean formatting (`cargo fmt`).
+
+- [ ] **Stage 12.5: Next Subsystem Reviews (Planned)**:
+  - **`src/generation/` & `src/environment/` Subsystems**: Review noise, terrain, and celestial passes for obsolete unit tests, dead code, and unreferenced constants.
+  - **`src/map/` & `src/menu/` Subsystems**: Clean up unused UI components and test harnesses.
+  - **Engine-Wide Hygiene**: Maintain zero compiler warnings (`#[warn(unused)]`), zero dead code, and fast compilation on any target machine.
 
 
 

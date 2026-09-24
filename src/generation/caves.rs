@@ -50,6 +50,7 @@ pub struct CaveGenerator {
     pub ravine_freq: f32,
     pub ravine_width: f32,
     pub ravine_abundance: f32,
+    pub bedrock_floor_y: i32,
 }
 
 impl Default for CaveGenerator {
@@ -64,6 +65,7 @@ impl Default for CaveGenerator {
             ravine_freq: 0.003,
             ravine_width: 0.022,
             ravine_abundance: 0.15,
+            bedrock_floor_y: -254,
         }
     }
 }
@@ -191,7 +193,7 @@ impl CaveGenerator {
         sea_level: i32,
         seed: u32,
     ) -> bool {
-        if world_y > surface_height {
+        if world_y > surface_height || world_y <= self.bedrock_floor_y {
             return false;
         }
 
@@ -199,6 +201,16 @@ impl CaveGenerator {
         if depth_below_surface < 0 {
             return false;
         }
+
+        // Smooth floor transition: gently taper cave carving approaching the bedrock floor
+        // over 8 voxels, curving tunnel bottoms and cavern floors smoothly rather than abrupt flat cuts.
+        let smooth_floor = if world_y < self.bedrock_floor_y + 8 {
+            let floor_dist = (world_y - self.bedrock_floor_y) as f32;
+            let t = (floor_dist / 8.0).clamp(0.0, 1.0);
+            t * t * (3.0 - 2.0 * t)
+        } else {
+            1.0
+        };
 
         let fx = world_x as f32;
         let fy = world_y as f32;
@@ -228,7 +240,7 @@ impl CaveGenerator {
                     seed.wrapping_add(55_555),
                 ) * 0.008;
 
-                let half_width = self.ravine_width + wall_jitter;
+                let half_width = (self.ravine_width + wall_jitter) * smooth_floor;
                 if ravine_path.abs() < half_width {
                     let bottom_dist = 36 - depth_below_surface;
                     if bottom_dist > 1 {
@@ -239,8 +251,9 @@ impl CaveGenerator {
         }
 
         // 2. Worm / Spaghetti tunnels: subterranean tubes with natural surface cave mouths
-        let is_worm = sample.worm_a.abs() < self.spaghetti_threshold
-            && sample.worm_b.abs() < self.spaghetti_threshold;
+        let effective_spaghetti = self.spaghetti_threshold * smooth_floor;
+        let is_worm =
+            sample.worm_a.abs() < effective_spaghetti && sample.worm_b.abs() < effective_spaghetti;
 
         if depth_below_surface <= self.surface_buffer_voxels {
             // Surface buffer protects hillsides from craters/gullies.
@@ -258,7 +271,8 @@ impl CaveGenerator {
         }
 
         // 3. Cheese Caverns (large chambers deep underground)
-        if depth_below_surface > 8 && sample.cheese > self.cheese_threshold {
+        let effective_cheese_threshold = self.cheese_threshold + (1.0 - smooth_floor) * 0.50;
+        if depth_below_surface > 8 && sample.cheese > effective_cheese_threshold {
             return true;
         }
 

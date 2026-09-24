@@ -403,6 +403,11 @@ impl TerrainGenerator {
             return Voxel::Air;
         }
 
+        // Absolute bedrock floor: bottom layers of the world are strictly solid Dreadstone
+        if world_y <= self.strata.bedrock_min_block_y {
+            return Voxel::Dreadstone;
+        }
+
         let is_underwater =
             column.water_level.is_some() || column.terrain_height <= self.effective_sea_level() + 2;
 

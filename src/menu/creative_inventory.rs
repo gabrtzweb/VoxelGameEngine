@@ -29,12 +29,13 @@ pub const RIGHT_CARD_STD_TEX_H: f32 = 126.0;
 pub const RIGHT_CARD_CRE_TEX_W: f32 = 176.0;
 pub const RIGHT_CARD_CRE_TEX_H: f32 = 126.0;
 
-pub const AVAILABLE_BLOCKS: [Voxel; 62] = [
+pub const AVAILABLE_BLOCKS: [Voxel; 63] = [
     // Soils, Organics & Fine Sediment
     Voxel::Grass,
     Voxel::SnowyGrass,
     Voxel::Dirt,
     Voxel::PackedDirt,
+    Voxel::RootedDirt,
     Voxel::Mud,
     Voxel::PackedMud,
     Voxel::Mulch,
@@ -1873,7 +1874,7 @@ mod tests {
             INVENTORY_VISIBLE_SLOTS
         );
         assert_eq!(INVENTORY_VISIBLE_ROWS, 4);
-        assert_eq!(AVAILABLE_BLOCKS.len(), 62);
+        assert_eq!(AVAILABLE_BLOCKS.len(), 63);
         assert_eq!(total_inventory_rows(), 8);
         assert_eq!(max_scroll_row(), 4);
     }
