@@ -152,7 +152,7 @@ fn sync_starfield_system(
 fn sync_cloud_system(
     time: Res<Time>,
     state: Res<EnvironmentState>,
-    camera: Single<(&Transform, &GlobalTransform), (With<Camera3d>, With<PlayerCamera>)>,
+    camera: clouds::CameraTransformQuery,
     cloud: clouds::CloudQuery,
     material_handle: Res<clouds::CloudMaterialHandle>,
     materials: ResMut<Assets<StandardMaterial>>,

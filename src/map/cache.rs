@@ -143,10 +143,10 @@ fn extract_column_surface(world: &VoxelWorld, col: IVec2) -> Option<MapChunk> {
     // 1. Fetch chunks in the column once from top to bottom (only 33 hash map lookups instead of 8,448)
     let mut col_chunks: Vec<(i32, &crate::world::Chunk)> = Vec::with_capacity(33);
     for chunk_y in (WORLD_MIN_CHUNK_Y..=WORLD_MAX_CHUNK_Y).rev() {
-        if let Some(chunk) = world.get_chunk(IVec3::new(col.x, chunk_y, col.y)) {
-            if chunk.homogeneity() != ChunkHomogeneity::Empty {
-                col_chunks.push((chunk_y, chunk));
-            }
+        if let Some(chunk) = world.get_chunk(IVec3::new(col.x, chunk_y, col.y))
+            && chunk.homogeneity() != ChunkHomogeneity::Empty
+        {
+            col_chunks.push((chunk_y, chunk));
         }
     }
 

@@ -78,18 +78,20 @@ fn handle_block_shaping(
         && let Some(target) = current_target.hit
     {
         let origin = target.block_origin;
-        if let Some(voxel) = world.get_voxel(origin) {
-            if !voxel.is_empty() && !voxel.is_water() && !voxel.is_unbreakable() {
-                let (current_shape, current_orientation) = world.get_shape(origin);
-                radial_state.pressing = true;
-                radial_state.hold_timer = 0.0;
-                radial_state.mouse_offset = Vec2::ZERO;
-                radial_state.target_origin = Some(origin);
-                radial_state.target_material = Some(voxel);
-                radial_state.initial_shape = current_shape;
-                radial_state.selected_shape = current_shape;
-                radial_state.current_orientation = current_orientation;
-            }
+        if let Some(voxel) = world.get_voxel(origin)
+            && !voxel.is_empty()
+            && !voxel.is_water()
+            && !voxel.is_unbreakable()
+        {
+            let (current_shape, current_orientation) = world.get_shape(origin);
+            radial_state.pressing = true;
+            radial_state.hold_timer = 0.0;
+            radial_state.mouse_offset = Vec2::ZERO;
+            radial_state.target_origin = Some(origin);
+            radial_state.target_material = Some(voxel);
+            radial_state.initial_shape = current_shape;
+            radial_state.selected_shape = current_shape;
+            radial_state.current_orientation = current_orientation;
         }
     }
 
@@ -144,9 +146,11 @@ fn handle_block_shaping(
                     &mut modifications,
                     &mut light_registry,
                     &mut queues,
-                    origin,
-                    radial_state.selected_shape,
-                    0,
+                    ShapeModification {
+                        origin,
+                        shape: radial_state.selected_shape,
+                        orientation: 0,
+                    },
                 );
             }
         } else if radial_state.hold_timer < 0.20
@@ -159,9 +163,11 @@ fn handle_block_shaping(
                 &mut modifications,
                 &mut light_registry,
                 &mut queues,
-                origin,
-                next_shape,
-                0,
+                ShapeModification {
+                    origin,
+                    shape: next_shape,
+                    orientation: 0,
+                },
             );
         }
 
@@ -210,10 +216,18 @@ fn handle_block_rotation(
         &mut modifications,
         &mut light_registry,
         &mut queues,
-        origin,
-        current_shape,
-        next_orientation,
+        ShapeModification {
+            origin,
+            shape: current_shape,
+            orientation: next_orientation,
+        },
     );
+}
+
+pub struct ShapeModification {
+    pub origin: IVec3,
+    pub shape: BlockShape,
+    pub orientation: u8,
 }
 
 fn apply_block_shape(
@@ -222,23 +236,21 @@ fn apply_block_shape(
     modifications: &mut WorldModificationStore,
     light_registry: &mut VoxelLightRegistry,
     queues: &mut ChunkStreamingQueues,
-    block_origin: IVec3,
-    shape: BlockShape,
-    orientation: u8,
+    req: ShapeModification,
 ) {
-    let Some(current) = world.get_voxel(block_origin) else {
+    let Some(current) = world.get_voxel(req.origin) else {
         return;
     };
     if current.is_unbreakable() || current.is_empty() {
         return;
     }
 
-    world.set_shape(block_origin, shape, orientation);
-    modifications.record_shape(block_origin, shape, orientation);
+    world.set_shape(req.origin, req.shape, req.orientation);
+    modifications.record_shape(req.origin, req.shape, req.orientation);
 
-    sync_voxel_light(commands, world, block_origin, light_registry);
+    sync_voxel_light(commands, world, req.origin, light_registry);
 
-    for coordinate in affected_chunks(block_origin) {
+    for coordinate in affected_chunks(req.origin) {
         if world.get_chunk(coordinate).is_some() {
             queues.enqueue_priority_remesh(coordinate);
         }

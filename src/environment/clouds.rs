@@ -67,9 +67,16 @@ pub type CloudQuery<'w, 's> = Single<
     (With<CloudVisual>, Without<Camera3d>),
 >;
 
+pub type CameraTransformQuery<'w, 's> = Single<
+    'w,
+    's,
+    (&'static Transform, &'static GlobalTransform),
+    (With<Camera3d>, With<PlayerCamera>),
+>;
+
 pub fn sync_clouds(
     time: Res<Time>,
-    camera: Single<(&Transform, &GlobalTransform), (With<Camera3d>, With<PlayerCamera>)>,
+    camera: CameraTransformQuery,
     mut cloud: CloudQuery,
     material_handle: Res<CloudMaterialHandle>,
     mut materials: ResMut<Assets<StandardMaterial>>,

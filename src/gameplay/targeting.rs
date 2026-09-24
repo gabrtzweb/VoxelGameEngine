@@ -132,10 +132,7 @@ fn draw_box_outline(
     let center = (world_min + world_max) * 0.5;
     let size = world_max - world_min;
 
-    gizmos.cube(
-        Transform::from_translation(center).with_scale(size),
-        color,
-    );
+    gizmos.cube(Transform::from_translation(center).with_scale(size), color);
 }
 
 pub fn block_origin_from_voxel(voxel: IVec3) -> IVec3 {
@@ -220,15 +217,14 @@ fn raycast_world(
                     let (box_a, maybe_box_b) = shape.local_boxes(orientation);
                     let mut best =
                         ray_hit_local_box(grid_origin, direction, voxel, box_a[0], box_a[1]);
-                    if let Some(box_b) = maybe_box_b {
-                        if let Some(hit_b) =
+                    if let Some(box_b) = maybe_box_b
+                        && let Some(hit_b) =
                             ray_hit_local_box(grid_origin, direction, voxel, box_b[0], box_b[1])
-                        {
-                            best = match best {
-                                Some(hit_a) if hit_a.0 <= hit_b.0 => Some(hit_a),
-                                _ => Some(hit_b),
-                            };
-                        }
+                    {
+                        best = match best {
+                            Some(hit_a) if hit_a.0 <= hit_b.0 => Some(hit_a),
+                            _ => Some(hit_b),
+                        };
                     }
 
                     if let Some((_, hit_normal)) = best {

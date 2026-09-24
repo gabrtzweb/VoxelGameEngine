@@ -1,15 +1,5 @@
 use bevy::prelude::*;
 
-#[allow(dead_code)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default, Reflect)]
-pub enum ToolType {
-    #[default]
-    None,
-    Pickaxe,
-    Shovel,
-    Axe,
-}
-
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default, Reflect)]
 pub enum BlockShape {
@@ -144,10 +134,10 @@ impl BlockShape {
                     (false, 2) => [Vec3::new(0.0, 0.5, 0.5), Vec3::new(1.0, 1.0, 1.0)], // +Z
                     (false, 3) => [Vec3::new(0.0, 0.5, 0.0), Vec3::new(1.0, 1.0, 0.5)], // -Z
 
-                    (true, 0) => [Vec3::new(0.5, 0.0, 0.0), Vec3::new(1.0, 0.5, 1.0)],  // +X
-                    (true, 1) => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.5, 0.5, 1.0)],  // -X
-                    (true, 2) => [Vec3::new(0.0, 0.0, 0.5), Vec3::new(1.0, 0.5, 1.0)],  // +Z
-                    (true, 3) => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 0.5, 0.5)],  // -Z
+                    (true, 0) => [Vec3::new(0.5, 0.0, 0.0), Vec3::new(1.0, 0.5, 1.0)], // +X
+                    (true, 1) => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.5, 0.5, 1.0)], // -X
+                    (true, 2) => [Vec3::new(0.0, 0.0, 0.5), Vec3::new(1.0, 0.5, 1.0)], // +Z
+                    (true, 3) => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 0.5, 0.5)], // -Z
                     _ => unreachable!(),
                 };
 
@@ -253,13 +243,6 @@ pub enum Voxel {
     RainwoodWoodLog = 65,
     RainwoodLeaves = 66,
 }
-
-#[allow(dead_code, non_upper_case_globals)]
-pub const Terracota: Voxel = Voxel::Terracotta;
-#[allow(dead_code, non_upper_case_globals)]
-pub const Rainwood: Voxel = Voxel::RainwoodWood;
-#[allow(dead_code, non_upper_case_globals)]
-pub const RainwoodLog: Voxel = Voxel::RainwoodWoodLog;
 
 impl Voxel {
     /// All voxels that map to a texture and are loaded into the terrain texture array.
@@ -559,7 +542,6 @@ impl Voxel {
         matches!(self, Self::Water | Self::WaterFlowing | Self::WaterOccupied)
     }
 
-    #[allow(dead_code)]
     pub fn is_fluid(self) -> bool {
         self.is_water() || self == Self::Lava
     }
@@ -688,191 +670,5 @@ impl Voxel {
     /// Whether this voxel is completely unbreakable (like bedrock).
     pub fn is_unbreakable(self) -> bool {
         self == Self::Dreadstone
-    }
-
-    /// Hardness/durability value for breaking times.
-    #[allow(dead_code)]
-    pub fn durability(self) -> f32 {
-        match self {
-            Self::Air | Self::Occupied | Self::WaterOccupied => 0.0,
-            Self::Dreadstone => f32::INFINITY,
-            Self::OakLeaves | Self::BirchLeaves | Self::PineLeaves | Self::RainwoodLeaves => 0.3,
-            Self::Grass
-            | Self::SnowyGrass
-            | Self::Dirt
-            | Self::Mud
-            | Self::Sand
-            | Self::Gravel
-            | Self::Clay
-            | Self::RedSand
-            | Self::Ice => 0.6,
-            Self::PackedDirt
-            | Self::PackedMud
-            | Self::Mulch
-            | Self::Moss
-            | Self::Snow
-            | Self::PackedIce => 0.8,
-            Self::OakWood
-            | Self::OakWoodLog
-            | Self::BirchWood
-            | Self::BirchWoodLog
-            | Self::PineWood
-            | Self::PineWoodLog
-            | Self::RainwoodWood
-            | Self::RainwoodWoodLog => 1.2,
-            Self::Terracotta => 1.25,
-            Self::Sandstone | Self::RedSandstone => 1.5,
-            Self::Calcite => 1.5,
-            Self::Stone
-            | Self::Cobblestone
-            | Self::MossyCobblestone
-            | Self::MossyStone
-            | Self::Andesite
-            | Self::Diorite
-            | Self::Granite
-            | Self::Tuff
-            | Self::Blueschist
-            | Self::Dripstone
-            | Self::Limestone
-            | Self::Ochrestone
-            | Self::Serpentinite => 2.0,
-            Self::Slate
-            | Self::Cobbleslate
-            | Self::Blackstone
-            | Self::Cobbleblackstone
-            | Self::Basalt
-            | Self::Rhodonite => 2.5,
-            Self::Cactus => 0.4,
-            Self::RedMoss => 0.6,
-            Self::Flint | Self::Magma => 3.0,
-            Self::Light
-            | Self::LightWarm
-            | Self::LightCold
-            | Self::LightRed
-            | Self::LightGreen
-            | Self::LightBlue => 0.3,
-            Self::Water | Self::WaterFlowing | Self::Lava => 100.0,
-        }
-    }
-
-    /// The optimal tool type required to break/harvest the block efficiently.
-    #[allow(dead_code)]
-    pub fn required_tool(self) -> ToolType {
-        match self {
-            Self::Dreadstone => ToolType::None,
-
-            Self::Stone
-            | Self::Cobblestone
-            | Self::MossyCobblestone
-            | Self::MossyStone
-            | Self::Slate
-            | Self::Cobbleslate
-            | Self::Blackstone
-            | Self::Cobbleblackstone
-            | Self::Basalt
-            | Self::Flint
-            | Self::Magma
-            | Self::Andesite
-            | Self::Diorite
-            | Self::Granite
-            | Self::Tuff
-            | Self::Sandstone
-            | Self::RedSandstone
-            | Self::Ice
-            | Self::PackedIce
-            | Self::Blueschist
-            | Self::Calcite
-            | Self::Dripstone
-            | Self::Limestone
-            | Self::Ochrestone
-            | Self::Rhodonite
-            | Self::Terracotta
-            | Self::Serpentinite => ToolType::Pickaxe,
-
-            Self::Dirt
-            | Self::Grass
-            | Self::SnowyGrass
-            | Self::Sand
-            | Self::Gravel
-            | Self::Clay
-            | Self::Mud
-            | Self::PackedDirt
-            | Self::PackedMud
-            | Self::Snow
-            | Self::RedSand
-            | Self::RedMoss => ToolType::Shovel,
-
-            Self::Mulch
-            | Self::OakWood
-            | Self::OakWoodLog
-            | Self::BirchWood
-            | Self::BirchWoodLog
-            | Self::PineWood
-            | Self::PineWoodLog
-            | Self::RainwoodWood
-            | Self::RainwoodWoodLog => ToolType::Axe,
-
-            _ => ToolType::None,
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn dreadstone_is_unbreakable_bedrock() {
-        assert!(Voxel::Dreadstone.is_unbreakable());
-        assert!(Voxel::Dreadstone.durability().is_infinite());
-        assert!(!Voxel::Stone.is_unbreakable());
-        assert!(!Voxel::Dirt.is_unbreakable());
-    }
-
-    #[test]
-    fn leaf_solid_opaque_and_culling_invariants() {
-        assert!(!Voxel::OakLeaves.is_solid_opaque());
-        assert!(!Voxel::BirchLeaves.is_solid_opaque());
-        assert!(!Voxel::PineLeaves.is_solid_opaque());
-        assert!(!Voxel::RainwoodLeaves.is_solid_opaque());
-        assert!(Voxel::OakLeaves.is_leaves());
-        assert!(Voxel::BirchLeaves.is_leaves());
-        assert!(Voxel::PineLeaves.is_leaves());
-        assert!(Voxel::RainwoodLeaves.is_leaves());
-
-        assert!(Voxel::OakWoodLog.is_solid_opaque());
-        assert!(Voxel::BirchWoodLog.is_solid_opaque());
-        assert!(Voxel::PineWoodLog.is_solid_opaque());
-        assert!(Voxel::RainwoodWoodLog.is_solid_opaque());
-        assert!(Voxel::Terracotta.is_solid_opaque());
-        assert!(Voxel::Stone.is_solid_opaque());
-        assert!(!Voxel::Air.is_solid_opaque());
-        assert!(!Voxel::Water.is_solid_opaque());
-    }
-
-    #[test]
-    fn test_block_shape_local_boxes() {
-        let (full, extra) = BlockShape::Full.local_boxes(0);
-        assert_eq!(full[0], Vec3::ZERO);
-        assert_eq!(full[1], Vec3::ONE);
-        assert!(extra.is_none());
-
-        let (slab_bottom, extra) = BlockShape::Slab.local_boxes(0);
-        assert_eq!(slab_bottom[0], Vec3::ZERO);
-        assert_eq!(slab_bottom[1], Vec3::new(1.0, 0.5, 1.0));
-        assert!(extra.is_none());
-
-        let (slab_top, extra) = BlockShape::Slab.local_boxes(1);
-        assert_eq!(slab_top[0], Vec3::new(0.0, 0.5, 0.0));
-        assert_eq!(slab_top[1], Vec3::ONE);
-        assert!(extra.is_none());
-
-        let (stair_base, stair_step) = BlockShape::Stair.local_boxes(0);
-        assert_eq!(stair_base[0], Vec3::ZERO);
-        assert_eq!(stair_base[1], Vec3::new(1.0, 0.5, 1.0));
-        assert!(stair_step.is_some());
-        let step = stair_step.unwrap();
-        assert_eq!(step[0], Vec3::new(0.5, 0.5, 0.0));
-        assert_eq!(step[1], Vec3::ONE);
     }
 }

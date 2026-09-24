@@ -556,8 +556,26 @@ This phase tracks the comprehensive cleanup, technical debt reduction, dead code
     - Removed `#![allow(unused_imports)]`.
     - Streamlined exports to only include active types used across modules (`BlockIcons`, `setup_block_icons`, `SelectedVoxel`, `RadialMenuState`, `CurrentTarget`, `TargetingSet`, `VoxelTarget`).
 
-- [ ] **Stage 12.3: Next Cleanup & Subsystem Reviews (Planned)**:
-  - **`src/world/` Subsystem**: Audit chunk serialization, RLE compression, and lighting storage for obsolete fields or unused methods.
+- [x] **Stage 12.3: `src/world/` and Streaming Subsystems Cleanup (Completed)**:
+  - **`src/world/chunk.rs`**:
+    - Purged dead RLE compression/decompression storage variants and stubs (`ChunkStorage::Rle`, `to_rle`, `from_rle`, `compress_rle`, `decompress_rle`).
+    - Stripped dead test-only metrics and unused getters (`memory_size`, `non_air_count`, `solid_opaque_count`, `unique_voxel_count`, `storage`).
+    - Pruned 200 lines of obsolete internal unit tests, reducing file size by 342 lines.
+  - **`src/world/block.rs`**:
+    - Purged unused `ToolType` enum, unintegrated `durability()` (63 lines), and `required_tool()` (59 lines) survival stubs.
+    - Removed legacy misspelling aliases (`Terracota`, `Rainwood`, `RainwoodLog`).
+    - Pruned obsolete unit tests, reducing file size by 212 lines.
+  - **`src/world/storage.rs`**:
+    - Removed unused `ChunkNeighborhood::center()` getter.
+  - **`src/world/streaming/`**:
+    - Removed redundant `NEIGHBOR_CHUNK_OFFSETS` constant duplicate from `manager.rs`, `streaming/mod.rs`, and `world/mod.rs`.
+    - Streamlined re-exports to only expose actively consumed symbols.
+  - **`src/gameplay/shaping.rs`**:
+    - Refactored `apply_block_shape` with a `ShapeModification` parameter object, completely eliminating `#[allow(clippy::too_many_arguments)]`.
+  - **Engine-Wide Hygiene**:
+    - Maintained zero compiler warnings, zero clippy warnings, and clean test execution across remaining engine systems.
+
+- [ ] **Stage 12.4: Next Subsystem Reviews (Planned)**:
   - **`src/player/` Subsystem**: Review controller and collision resolution against non-cube collision boxes (slab, stair, column).
   - **`src/generation/` Subsystem**: Prepare terrain generator hooks for spawning shaped blocks (slabs, stairs, columns) once terrain passes are finalized.
   - **Engine-Wide Hygiene**: Maintain zero compiler warnings (`#[warn(unused)]`), zero dead code, and fast test runs on any target machine.

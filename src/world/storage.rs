@@ -185,11 +185,6 @@ impl ChunkNeighborhood {
         }
         Self { center, chunks }
     }
-
-    #[allow(dead_code)]
-    pub fn center(&self) -> IVec3 {
-        self.center
-    }
 }
 
 impl VoxelAccess for ChunkNeighborhood {

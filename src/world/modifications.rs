@@ -23,10 +23,10 @@ impl WorldModificationStore {
             .or_default()
             .insert(local_coordinate, voxel);
 
-        if voxel.is_empty() {
-            if let Some(shape_map) = self.shapes.get_mut(&chunk_coordinate) {
-                shape_map.remove(&local_coordinate);
-            }
+        if voxel.is_empty()
+            && let Some(shape_map) = self.shapes.get_mut(&chunk_coordinate)
+        {
+            shape_map.remove(&local_coordinate);
         }
     }
 

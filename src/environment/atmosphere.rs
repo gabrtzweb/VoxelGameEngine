@@ -18,11 +18,18 @@ pub const NIGHT_EXPOSURE_EV100: f32 = 9.2;
 pub const FOG_START_FACTOR: f32 = 0.50;
 pub const FOG_END_FACTOR: f32 = 0.90;
 
+type CameraAtmosphereQuery<'w, 's> = Single<
+    'w,
+    's,
+    (&'static mut DistanceFog, &'static mut Exposure),
+    (With<Camera3d>, With<PlayerCamera>),
+>;
+
 pub fn update_atmosphere(
     state: Res<EnvironmentState>,
     mut clear_color: ResMut<ClearColor>,
     mut ambient: ResMut<GlobalAmbientLight>,
-    camera: Single<(&mut DistanceFog, &mut Exposure), (With<Camera3d>, With<PlayerCamera>)>,
+    camera: CameraAtmosphereQuery,
     env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
 ) {
     let t = state.time_of_day;

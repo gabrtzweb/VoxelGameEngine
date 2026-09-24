@@ -523,10 +523,10 @@ fn manage_menu_time_pause(
     }
 }
 
-fn sync_camera_fov(
-    settings: Res<GameSettings>,
-    camera_projection: Option<Single<&mut Projection, (With<Camera3d>, With<PlayerCamera>)>>,
-) {
+type CameraProjectionQuery<'w, 's> =
+    Option<Single<'w, 's, &'static mut Projection, (With<Camera3d>, With<PlayerCamera>)>>;
+
+fn sync_camera_fov(settings: Res<GameSettings>, camera_projection: CameraProjectionQuery) {
     if !settings.is_changed() {
         return;
     }

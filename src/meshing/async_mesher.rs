@@ -45,6 +45,7 @@ impl Plugin for AsyncMesherPlugin {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn start_meshing_tasks(
     mut commands: Commands,
     active_tasks: Query<&ChunkMeshingTask>,
@@ -82,10 +83,11 @@ pub fn start_meshing_tasks(
             continue;
         }
 
-        if let Some(ref state) = streaming_state {
-            if !state.desired_chunks.is_empty() && !state.desired_chunks.contains(&coordinate) {
-                continue;
-            }
+        if let Some(ref state) = streaming_state
+            && !state.desired_chunks.is_empty()
+            && !state.desired_chunks.contains(&coordinate)
+        {
+            continue;
         }
 
         let Some(chunk) = world.get_chunk(coordinate) else {

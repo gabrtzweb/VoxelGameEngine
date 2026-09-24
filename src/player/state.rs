@@ -12,10 +12,13 @@ pub struct PlayerEnvironmentStatus {
     pub submersion: f32,
 }
 
+type CameraTransformQuery<'w, 's> =
+    Option<Single<'w, 's, &'static GlobalTransform, (With<Camera3d>, With<PlayerCamera>)>>;
+
 pub fn update_player_environment_status(
     world: Option<Res<VoxelWorld>>,
     player_query: Option<Single<&Transform, With<Player>>>,
-    camera_query: Option<Single<&GlobalTransform, (With<Camera3d>, With<PlayerCamera>)>>,
+    camera_query: CameraTransformQuery,
     mut status: ResMut<PlayerEnvironmentStatus>,
 ) {
     let Some(world) = world else {
