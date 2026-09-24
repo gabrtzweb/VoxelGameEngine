@@ -28,8 +28,41 @@ pub struct RadialMenuTitleText;
 #[derive(Component)]
 pub struct RadialMenuSubtitleText;
 
-pub fn spawn_radial_menu(commands: &mut Commands, selected_shape: BlockShape) {
+pub fn spawn_radial_menu(
+    commands: &mut Commands,
+    selected_shape: BlockShape,
+    font_handle: Option<&crate::core::FontSource>,
+) {
     let shapes = BlockShape::all();
+
+    let mut title_font = TextFont {
+        font_size: FontSize::Px(15.0),
+        ..default()
+    };
+    let mut subtitle_font = TextFont {
+        font_size: FontSize::Px(12.0),
+        ..default()
+    };
+    let mut tip_font = TextFont {
+        font_size: FontSize::Px(10.0),
+        ..default()
+    };
+    let mut slice_name_font = TextFont {
+        font_size: FontSize::Px(10.0),
+        ..default()
+    };
+    let mut slice_v_font = TextFont {
+        font_size: FontSize::Px(9.0),
+        ..default()
+    };
+
+    if let Some(font) = font_handle {
+        title_font.font = font.clone();
+        subtitle_font.font = font.clone();
+        tip_font.font = font.clone();
+        slice_name_font.font = font.clone();
+        slice_v_font.font = font.clone();
+    }
 
     commands
         .spawn((
@@ -81,31 +114,25 @@ pub fn spawn_radial_menu(commands: &mut Commands, selected_shape: BlockShape) {
                 .with_children(|card| {
                     card.spawn((
                         Text::new(selected_shape.name()),
-                        TextFont {
-                            font_size: FontSize::Px(15.0),
-                            ..default()
-                        },
+                        title_font,
                         TextColor(Color::srgb(1.0, 0.9, 0.4)),
+                        crate::core::text_shadow_default(),
                         RadialMenuTitleText,
                     ));
 
                     card.spawn((
                         Text::new(format!("{} / 8 Sub-voxels", selected_shape.voxel_count())),
-                        TextFont {
-                            font_size: FontSize::Px(12.0),
-                            ..default()
-                        },
+                        subtitle_font,
                         TextColor(Color::srgb(0.75, 0.8, 0.9)),
+                        crate::core::text_shadow_default(),
                         RadialMenuSubtitleText,
                     ));
 
                     card.spawn((
                         Text::new("Hold R + Move Mouse\nRelease R to Select"),
-                        TextFont {
-                            font_size: FontSize::Px(10.0),
-                            ..default()
-                        },
+                        tip_font,
                         TextColor(Color::srgba(0.6, 0.8, 1.0, 0.7)),
+                        crate::core::text_shadow_default(),
                     ));
                 });
 
@@ -149,24 +176,20 @@ pub fn spawn_radial_menu(commands: &mut Commands, selected_shape: BlockShape) {
                     .with_children(|slice_card| {
                         slice_card.spawn((
                             Text::new(shape.short_name()),
-                            TextFont {
-                                font_size: FontSize::Px(10.0),
-                                ..default()
-                            },
+                            slice_name_font.clone(),
                             TextColor(if is_selected {
                                 Color::srgb(1.0, 1.0, 1.0)
                             } else {
                                 Color::srgb(0.8, 0.85, 0.9)
                             }),
+                            crate::core::text_shadow_default(),
                         ));
 
                         slice_card.spawn((
                             Text::new(format!("{}v", shape.voxel_count())),
-                            TextFont {
-                                font_size: FontSize::Px(9.0),
-                                ..default()
-                            },
+                            slice_v_font.clone(),
                             TextColor(Color::srgba(0.6, 0.65, 0.75, 0.8)),
+                            crate::core::text_shadow_default(),
                         ));
                     });
                 }

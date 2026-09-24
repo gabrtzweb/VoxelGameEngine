@@ -19,6 +19,10 @@ impl VoxelWorld {
         self.chunks.get(&coordinate)
     }
 
+    pub fn contains_chunk(&self, coordinate: IVec3) -> bool {
+        self.chunks.contains_key(&coordinate)
+    }
+
     pub fn get_chunk_mut(&mut self, coordinate: IVec3) -> Option<&mut Chunk> {
         self.chunks.get_mut(&coordinate)
     }

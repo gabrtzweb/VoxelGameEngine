@@ -70,7 +70,7 @@ impl Plugin for PlayerModelPlugin {
 }
 
 pub fn load_player_skin_image() -> Image {
-    let path = "assets/textures/mobs/player_skin.png";
+    let path = "assets/textures/models/player_skin.png";
     let raw = match image::open(path) {
         Ok(img) => img.into_rgba8(),
         Err(_) => {

@@ -139,7 +139,7 @@ This document outlines the planned development phases for the voxel game engine,
     - Short tap <kbd>R</kbd>: Quick-cycles to the next shape sequentially (Full -> Stair -> StairUpsideDown -> CornerStair -> CornerStairInverted -> SlabBottom -> SlabTop -> VerticalSlab -> Column -> CenteredColumn -> Full).
     - Hold <kbd>R</kbd> (>0.2s): Sleek circular radial wheel centered on screen showing all 10 shapes with directional mouse selection, center preview card, and instant release-to-apply.
   - [x] **Priority D: Player Body Model, Minecraft Skin Support & Procedural Animations (<kbd>F5</kbd>)**:
-    - Classic humanoid limb hierarchy (Head, Torso, Left/Right Arm, Left/Right Leg) mapped to standard Minecraft 64×64 skin textures (`assets/textures/mobs/player_skin.png`), supporting both base skin and 3D outer overlays (hat/hair, jacket, sleeves, pants).
+    - Classic humanoid limb hierarchy (Head, Torso, Left/Right Arm, Left/Right Leg) mapped to standard Minecraft 64×64 skin textures (`assets/textures/models/player_skin.png`), supporting both base skin and 3D outer overlays (hat/hair, jacket, sleeves, pants).
     - True first-person body visibility: Head is automatically hidden to prevent camera interior clipping, while looking down reveals animated arms, chest, and legs beneath the player.
     - Third-person view toggle (<kbd>F5</kbd>): Full body and head become visible with camera orbiting behind and head yaw/pitch tracking camera view.
     - Procedural animations: Dynamic walk/sprint leg & arm pendulum swings, idle breathing sway, crouch torso tilt (<kbd>Ctrl</kbd>), prone crawl locomotion (<kbd>C</kbd>), airborne jump poses, and aquatic swimming strokes.
@@ -402,22 +402,31 @@ Phase 10 is currently active. Development is intentionally not strictly followin
     - **Vertex & Map Tint Blending**: 13-point symmetric circular Gaussian kernel ($R = 10.0$ blocks) smoothly blending climate colors across biome boundaries with 64-step channel quantization to preserve maximum greedy-meshing quad merging efficiency. Minimap and full-screen world map updated with live biome colors.
     - **Organic Surface Block Transitions**: Multi-octave 2D coherent noise dithering and threshold perturbation seamlessly intermingling surface block types across biome boundaries (Grass vs SnowyGrass patches and tongues across Snowy Tundra borders, Sand vs Grass dunes and drifts across Desert margins, and organic undulating beach shorelines).
 
-- [x] **Stage 10.5: Screen Modes, Map Polish & Dynamic FPS Removal**:
-  - **Dynamic FPS Removal & Unconstrained Performance**:
-    - Completely removed experimental dynamic frame throttling and thread sleep frame pacing to eliminate OS timer jitter and framerate lock at 40-50 FPS, keeping rendering unconstrained at maximum hardware performance (300+ FPS).
-    - Removed dynamic FPS toggles from the settings menu and F3 dev HUD.
-  - **Screen Mode Settings**:
-    - Added live screen mode switching stepper to Settings Menu: **Windowed**, **Exclusive Fullscreen**, and **Borderless Fullscreen**, updating Bevy's `PrimaryWindow` mode seamlessly in real time.
-  - **Minimap Visual Enhancements**:
-    - **Parchment Background Frame**: Loaded `assets/textures/gui/atlases/map_background.png` as an authentic cartographic border extending slightly outward behind the 192×192 terrain view.
+- [x] **Stage 10.5: Screen Modes, Map Performance & Font Integration**:
+  - **Flight & Movement Performance Bottleneck Elimination**:
+    - Discovered and eliminated the 40–50 FPS frame pacing bottleneck caused by evaluating Perlin noise across 36,864 minimap pixels every frame. Precomputed surface color in `MapPixel` at column extraction time, dropping main-thread Perlin noise calls during minimap updates from 3,354,624 to 0 and stabilizing framerates at 250–300+ FPS during active movement and flight.
+  - **Dynamic FPS Restoration & VSync Controls**:
+    - Restored `DynamicFpsPlugin` with zero-sleep unthrottled active gameplay, 30 FPS idle throttling, and 15 FPS unfocused throttling, accompanied by a Settings menu toggle.
+    - Added an in-game VSync toggle to Settings (disabled by default via `AutoNoVsync`, dynamically switching to `AutoVsync` without restarting).
+  - **Custom Font System & Drop Shadows**:
+    - Integrated `AppFont` resource and `FontPlugin` pointing to `assets/fonts/CutePixel.ttf` for easy font reference swapping.
+    - Added universal drop shadow support (`TextShadow`) across all UI and HUD text (F3 dev stats, minimap, world map, settings, pause menu, hotbar numbers, inventory tabs/badges, target HUD, and radial menu).
+  - **Minimap Visual Enhancements & Polish**:
+    - **Parchment Background Frame**: Loaded `assets/textures/gui/atlases/map_background.png` as an authentic cartographic border extending outward behind the 192×192 terrain view.
     - **Red Player Marker**: Loaded `assets/textures/gui/atlases/marker_red.png` replacing the procedural arrow, dynamically rotated with player camera yaw using native `UiTransform` and `Rot2`.
-    - **Informative Readout Labels**: Added explicit `"Coordinates:"` and `"Biome:"` prefixes to the minimap footer pill.
+    - **Compact Coordinates Format**: Updated readout format to `"Coordinates: XYZ: 0, 0, 0"`.
+    - **Cardinal Indicators (N, S, W, E)**: Standardized all four indicators to bright white (`13.0px`) with drop shadows, inset `16.0px` over the terrain view to prevent border clipping.
+  - **Screen Mode Settings**:
+    - Added live screen mode switching stepper to Settings Menu: **Windowed**, **Exclusive Fullscreen**, and **Borderless Fullscreen**, updating Bevy's `PrimaryWindow` mode in real time.
   - **World Map Marker Fix & Rotation**:
     - Separated viewport container from the terrain image node in `src/map/world_map.rs`, eliminating Taffy leaf node child clipping bugs.
     - Fixed marker positioning to accurately track world coordinates and center on player upon opening, with zero-size viewport initialization guards and yaw rotation.
   - **Environment Assets & Block Registry Expansion**:
     - Migrated celestial assets from legacy spritesheets to dedicated folders: individual 64×64 moon phase images in `assets/textures/environments/celestial/moon/` and sun texture at `assets/textures/environments/celestial/sun.png`.
     - Added `Terracotta` (with 5 organic variants `terr_terracotta.png` .. `4`) and the `Rainwood` block family (`RainwoodWood` with 4 variants, `RainwoodWoodLog` with log ring tops, and `RainwoodLeaves` with 2 foliage variants) to the voxel registry, terrain texture array, creative inventory, and map coloration.
+
+- [ ] **Stage 10.6: UI Texture Skinning (Hotbar, Personal Inventory & Creative Inventory)**:
+  - Update the initial visual look of the hotbar, player personal inventory, and creative inventory using textures.
 
 ---
 

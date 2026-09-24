@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use bevy::prelude::*;
 
-use crate::world::{CHUNK_SIZE, VOXEL_SIZE, Voxel, VoxelWorld};
+use crate::world::{CHUNK_SIZE, ChunkHomogeneity, VOXEL_SIZE, Voxel, VoxelWorld};
 
 const LIGHT_INTENSITY: f32 = 750_000.0;
 const LIGHT_RANGE: f32 = 26.0;
@@ -39,6 +39,12 @@ pub fn sync_chunk_lights(
     let Some(chunk) = world.get_chunk(chunk_coordinate) else {
         return;
     };
+
+    match chunk.homogeneity() {
+        ChunkHomogeneity::Empty => return,
+        ChunkHomogeneity::Solid(v) if !v.is_light() => return,
+        _ => {}
+    }
 
     let chunk_origin = chunk_coordinate * CHUNK_SIZE as i32;
     let mut block_coords = HashSet::new();

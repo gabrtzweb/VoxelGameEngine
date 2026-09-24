@@ -83,6 +83,8 @@ pub struct GameSettings {
     pub view_bobbing: bool,
     pub full_grass: bool,
     pub screen_mode: ScreenMode,
+    pub vsync_enabled: bool,
+    pub dynamic_fps_enabled: bool,
 }
 
 impl Default for GameSettings {
@@ -93,6 +95,8 @@ impl Default for GameSettings {
             view_bobbing: true,
             full_grass: false,
             screen_mode: ScreenMode::Windowed,
+            vsync_enabled: false,
+            dynamic_fps_enabled: true,
         }
     }
 }

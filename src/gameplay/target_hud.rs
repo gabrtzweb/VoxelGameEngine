@@ -73,7 +73,26 @@ pub fn format_target_hud_title(voxel: Voxel, shape: Option<BlockShape>) -> Strin
     }
 }
 
-fn setup_target_hud(mut commands: Commands, icons: Res<BlockIcons>) {
+fn setup_target_hud(
+    mut commands: Commands,
+    icons: Res<BlockIcons>,
+    app_font: Option<Res<crate::core::AppFont>>,
+) {
+    let font_handle = app_font.as_ref().map(|f| f.source());
+
+    let mut title_font = TextFont {
+        font_size: FontSize::Px(14.0),
+        ..default()
+    };
+    let mut subtitle_font = TextFont {
+        font_size: FontSize::Px(11.0),
+        ..default()
+    };
+    if let Some(ref font) = font_handle {
+        title_font.font = font.clone();
+        subtitle_font.font = font.clone();
+    }
+
     commands
         .spawn((
             TargetHudRoot,
@@ -134,21 +153,17 @@ fn setup_target_hud(mut commands: Commands, icons: Res<BlockIcons>) {
                             col.spawn((
                                 TargetHudTitle,
                                 Text::new(""),
-                                TextFont {
-                                    font_size: FontSize::Px(14.0),
-                                    ..default()
-                                },
+                                title_font,
                                 TextColor(Color::srgb(0.96, 0.96, 0.98)),
+                                crate::core::text_shadow_default(),
                             ));
 
                             col.spawn((
                                 TargetHudSubtitle,
                                 Text::new("Voxel Engine"),
-                                TextFont {
-                                    font_size: FontSize::Px(11.0),
-                                    ..default()
-                                },
+                                subtitle_font,
                                 TextColor(Color::srgb(0.42, 0.65, 0.96)),
+                                crate::core::text_shadow_default(),
                             ));
                         });
                 });

@@ -18,7 +18,7 @@ use crate::{
 
 use super::{
     cache::MapCache,
-    color::{apply_relief_shading, unexplored_color, voxel_map_color_at},
+    color::{apply_relief_shading, unexplored_color},
 };
 
 pub const WORLD_MAP_WIDTH: u32 = 640;
@@ -116,7 +116,10 @@ fn spawn_world_map_ui(
     mut commands: Commands,
     mut map_state: ResMut<WorldMapState>,
     player_query: Query<&Transform, With<Player>>,
+    app_font: Option<Res<crate::core::AppFont>>,
 ) {
+    let font_handle = app_font.as_ref().map(|f| f.source()).unwrap_or_default();
+
     // When opening the world map, center immediately on the player's position
     if let Ok(player_transform) = player_query.single() {
         let p = player_transform.translation;
@@ -163,19 +166,23 @@ fn spawn_world_map_ui(
                 header.spawn((
                     Text::new("WORLD MAP"),
                     TextFont {
+                        font: font_handle.clone(),
                         font_size: FontSize::Px(16.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.95, 0.95, 0.98)),
+                    crate::core::text_shadow_default(),
                 ));
 
                 header.spawn((
                     Text::new("[M / ESC] Return to Game"),
                     TextFont {
+                        font: font_handle.clone(),
                         font_size: FontSize::Px(12.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.65, 0.68, 0.75)),
+                    crate::core::text_shadow_default(),
                 ));
             });
 
@@ -266,32 +273,38 @@ fn spawn_world_map_ui(
                 footer.spawn((
                     Text::new("LMB Drag: Pan   |   Scroll: Zoom   |   Space: Center on Player"),
                     TextFont {
+                        font: font_handle.clone(),
                         font_size: FontSize::Px(12.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.60, 0.64, 0.72)),
+                    crate::core::text_shadow_default(),
                 ));
 
                 // Player coords readout
                 footer.spawn((
                     WorldMapInfoText,
-                    Text::new("Player: X: 0  Y: 0  Z: 0"),
+                    Text::new("Player: X: 0 Y: 0 Z: 0"),
                     TextFont {
+                        font: font_handle.clone(),
                         font_size: FontSize::Px(12.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.90, 0.92, 0.96)),
+                    crate::core::text_shadow_default(),
                 ));
 
                 // Cursor & Zoom readout
                 footer.spawn((
                     WorldMapCursorText,
-                    Text::new("Cursor: X: 0  Z: 0  |  Zoom: 1.00x"),
+                    Text::new("Cursor: X: 0 Z: 0 | Zoom: 1.00x"),
                     TextFont {
+                        font: font_handle,
                         font_size: FontSize::Px(12.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.75, 0.82, 0.90)),
+                    crate::core::text_shadow_default(),
                 ));
             });
         });
@@ -418,9 +431,8 @@ fn sync_world_map_terrain(
 
             let color = if let Some(pixel) = map_cache.get_pixel(wx, wz) {
                 if pixel.voxel != Voxel::Air {
-                    let base = voxel_map_color_at(pixel.voxel, pixel.water_depth, wx, wz);
                     let north_h = map_cache.get_pixel(wx, wz - 1).map(|p| p.height);
-                    apply_relief_shading(base, pixel.height, north_h)
+                    apply_relief_shading(pixel.color, pixel.height, north_h)
                 } else {
                     unexplored_color(wx, wz)
                 }

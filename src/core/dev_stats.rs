@@ -86,14 +86,17 @@ impl Plugin for DevStatsPlugin {
     }
 }
 
-fn spawn_dev_stats(mut commands: Commands) {
+fn spawn_dev_stats(mut commands: Commands, app_font: Option<Res<super::AppFont>>) {
+    let font_source = app_font.as_ref().map(|f| f.source()).unwrap_or_default();
     commands.spawn((
         Text::new(""),
         TextFont {
+            font: font_source,
             font_size: FontSize::Px(13.0),
             ..default()
         },
         TextColor(Color::WHITE),
+        super::text_shadow_default(),
         Node {
             position_type: PositionType::Absolute,
             top: px(12),
@@ -139,6 +142,7 @@ fn update_dev_stats(
     camera: Single<&Transform, (With<Camera3d>, Without<Player>)>,
     current_target: Res<CurrentTarget>,
     terrain_generator: Option<Res<TerrainGenerator>>,
+    dynamic_fps: Option<Res<super::DynamicFpsState>>,
     text_query: Single<
         (
             &mut Text,
@@ -297,9 +301,21 @@ fn update_dev_stats(
                 "Unknown".to_string()
             };
 
+            let power_text = if let Some(ref dyn_fps) = dynamic_fps {
+                let kind = dyn_fps.state_kind.label();
+                if let Some(target) = dyn_fps.target_fps {
+                    format!("{kind} ({target} FPS cap)")
+                } else {
+                    format!("{kind} (Unconstrained)")
+                }
+            } else {
+                "Disabled".to_string()
+            };
+
             text.0 = format!(
                 "FPS: {fps:.1}\n\
                 Frame: {frame_time:.2} ms\n\
+                Power: {power_text}\n\
                 Mode: {}\n\
                 Flight: {}\n\
                 Time: {env_text}\n\

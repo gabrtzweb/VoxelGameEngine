@@ -1,5 +1,6 @@
 use bevy::{input::mouse::AccumulatedMouseScroll, prelude::*};
 
+use crate::core::{text_shadow_default, AppFont};
 use crate::gameplay::{BlockIcons, SelectedVoxel};
 use crate::player::InspectorInteraction;
 use crate::world::Voxel;
@@ -53,8 +54,13 @@ impl Plugin for HotbarPlugin {
     }
 }
 
-fn setup_hotbar_ui(mut commands: Commands, icons: Res<BlockIcons>) {
+fn setup_hotbar_ui(
+    mut commands: Commands,
+    icons: Res<BlockIcons>,
+    app_font: Option<Res<AppFont>>,
+) {
     let initial_hotbar = Hotbar::default();
+    let font_handle = app_font.as_ref().map(|f| f.source());
 
     // Centered bottom container spanning screen width
     commands
@@ -132,13 +138,19 @@ fn setup_hotbar_ui(mut commands: Commands, icons: Res<BlockIcons>) {
                         ))
                         .with_children(|slot| {
                             // Slot index number (1 through 8)
+                            let mut num_font = TextFont {
+                                font_size: FontSize::Px(11.0),
+                                ..default()
+                            };
+                            if let Some(ref font) = font_handle {
+                                num_font.font = font.clone();
+                            }
+
                             slot.spawn((
                                 Text::new(format!("{}", index + 1)),
-                                TextFont {
-                                    font_size: FontSize::Px(11.0),
-                                    ..default()
-                                },
+                                num_font,
                                 TextColor(Color::srgba(0.85, 0.85, 0.85, 0.70)),
+                                text_shadow_default(),
                                 Node {
                                     position_type: PositionType::Absolute,
                                     top: px(2.0),

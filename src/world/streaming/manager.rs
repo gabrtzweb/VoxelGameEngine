@@ -187,11 +187,6 @@ pub fn plan_chunk_streaming(
 
     state.desired_chunks = desired_chunks.clone();
 
-    let loaded_chunks: HashSet<IVec3> = world
-        .iter_chunks()
-        .map(|(&coordinate, _)| coordinate)
-        .collect();
-
     let generating_chunks: HashSet<IVec3> = generation_tasks
         .iter()
         .map(|task| task.coordinate)
@@ -200,13 +195,16 @@ pub fn plan_chunk_streaming(
     let mut chunks_to_load: Vec<IVec3> = desired_chunks
         .iter()
         .filter(|coordinate| {
-            !loaded_chunks.contains(coordinate) && !generating_chunks.contains(coordinate)
+            !world.contains_chunk(**coordinate) && !generating_chunks.contains(coordinate)
         })
         .copied()
         .collect();
 
-    let mut chunks_to_unload: Vec<IVec3> =
-        loaded_chunks.difference(&desired_chunks).copied().collect();
+    let mut chunks_to_unload: Vec<IVec3> = world
+        .iter_chunks()
+        .map(|(&coordinate, _)| coordinate)
+        .filter(|coord| !desired_chunks.contains(coord))
+        .collect();
 
     chunks_to_load.sort_by_key(|coordinate| chunk_distance_squared(*coordinate, player_chunk));
 
@@ -247,7 +245,6 @@ pub fn process_chunk_unloads(
 
         remove_chunk_render(&mut commands, coordinate, &mut registry, &mut meshes);
         queues.remesh_set.remove(&coordinate);
-        queues.remesh.retain(|&c| c != coordinate);
 
         for neighbor in neighbors(coordinate) {
             if world.get_chunk(neighbor).is_some() {
@@ -319,7 +316,9 @@ pub fn collect_generation_tasks(
         world.insert_chunk(generated.coordinate, generated.chunk);
 
         if let Some(ref mut cache) = map_cache {
-            cache.mark_dirty(IVec2::new(generated.coordinate.x, generated.coordinate.z));
+            if generated.coordinate.y >= -8 && generated.coordinate.y <= 14 {
+                cache.mark_dirty(IVec2::new(generated.coordinate.x, generated.coordinate.z));
+            }
         }
 
         sync_chunk_lights(

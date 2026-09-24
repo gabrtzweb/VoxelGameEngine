@@ -164,6 +164,7 @@ fn handle_block_shaping(
     mut radial_state: ResMut<RadialMenuState>,
     menu_state: Option<Res<State<MenuState>>>,
     radial_root_query: Query<Entity, With<RadialMenuRoot>>,
+    app_font: Option<Res<crate::core::AppFont>>,
 ) {
     if menu_state
         .as_ref()
@@ -221,7 +222,12 @@ fn handle_block_shaping(
 
         if radial_state.hold_timer >= 0.20 && !radial_state.is_open {
             radial_state.is_open = true;
-            spawn_radial_menu(&mut commands, radial_state.selected_shape);
+            let font_handle = app_font.as_ref().map(|f| f.source());
+            spawn_radial_menu(
+                &mut commands,
+                radial_state.selected_shape,
+                font_handle.as_ref(),
+            );
         }
 
         if radial_state.is_open {

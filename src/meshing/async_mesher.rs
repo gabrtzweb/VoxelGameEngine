@@ -14,7 +14,7 @@ use super::{
 };
 use crate::world::{
     Chunk, ChunkHomogeneity, ChunkNeighborhood, NEIGHBOR_DIRECTIONS, VoxelWorld,
-    streaming::queues::ChunkStreamingQueues,
+    streaming::{ChunkStreamingQueues, ChunkStreamingState},
 };
 
 const MAX_MESHING_TASKS_IN_FLIGHT: usize = 32;
@@ -53,6 +53,7 @@ pub fn start_meshing_tasks(
     material: Res<ChunkMaterial>,
     mut registry: ResMut<ChunkMeshRegistry>,
     mut meshes: ResMut<Assets<Mesh>>,
+    streaming_state: Option<Res<ChunkStreamingState>>,
 ) {
     let active_count = active_tasks.iter().count();
     if active_count >= MAX_MESHING_TASKS_IN_FLIGHT {
@@ -77,7 +78,15 @@ pub fn start_meshing_tasks(
             continue;
         }
 
-        queues.remesh_set.remove(&coordinate);
+        if !queues.remesh_set.remove(&coordinate) {
+            continue;
+        }
+
+        if let Some(ref state) = streaming_state {
+            if !state.desired_chunks.is_empty() && !state.desired_chunks.contains(&coordinate) {
+                continue;
+            }
+        }
 
         let Some(chunk) = world.get_chunk(coordinate) else {
             continue;

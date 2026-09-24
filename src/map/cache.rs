@@ -14,6 +14,8 @@ pub struct MapPixel {
     pub height: i16,
     /// Depth of water if the surface voxel is water, or 0 if solid ground.
     pub water_depth: u8,
+    /// Precomputed RGBA surface color with biome tinting.
+    pub color: [u8; 4],
 }
 
 impl Default for MapPixel {
@@ -22,6 +24,7 @@ impl Default for MapPixel {
             voxel: Voxel::Air,
             height: 0,
             water_depth: 0,
+            color: [0, 0, 0, 0],
         }
     }
 }
@@ -137,8 +140,23 @@ impl MapCache {
 
 /// Scans a 16x16 chunk column from top to bottom in `VoxelWorld` to determine surface terrain.
 fn extract_column_surface(world: &VoxelWorld, col: IVec2) -> Option<MapChunk> {
+    // 1. Fetch chunks in the column once from top to bottom (only 33 hash map lookups instead of 8,448)
+    let mut col_chunks: Vec<(i32, &crate::world::Chunk)> = Vec::with_capacity(33);
+    for chunk_y in (WORLD_MIN_CHUNK_Y..=WORLD_MAX_CHUNK_Y).rev() {
+        if let Some(chunk) = world.get_chunk(IVec3::new(col.x, chunk_y, col.y)) {
+            if chunk.homogeneity() != ChunkHomogeneity::Empty {
+                col_chunks.push((chunk_y, chunk));
+            }
+        }
+    }
+
+    if col_chunks.is_empty() {
+        return None;
+    }
+
     let mut map_chunk = MapChunk::default();
     let mut has_any_terrain = false;
+    let chunk_size = CHUNK_SIZE as i32;
 
     for lx in 0..CHUNK_SIZE {
         for lz in 0..CHUNK_SIZE {
@@ -146,15 +164,9 @@ fn extract_column_surface(world: &VoxelWorld, col: IVec2) -> Option<MapChunk> {
             let mut water_surface_y = i32::MIN;
             let mut ground_y = i32::MIN;
 
-            'column_scan: for chunk_y in (WORLD_MIN_CHUNK_Y..=WORLD_MAX_CHUNK_Y).rev() {
-                let chunk_coord = IVec3::new(col.x, chunk_y, col.y);
-                let Some(chunk) = world.get_chunk(chunk_coord) else {
-                    continue;
-                };
-
+            'column_scan: for &(chunk_y, chunk) in &col_chunks {
                 match chunk.homogeneity() {
                     ChunkHomogeneity::Empty => {
-                        // All air, continue down
                         continue;
                     }
                     ChunkHomogeneity::Solid(v) => {
@@ -162,12 +174,11 @@ fn extract_column_surface(world: &VoxelWorld, col: IVec2) -> Option<MapChunk> {
                             continue;
                         }
 
-                        let top_y = chunk_y * CHUNK_SIZE as i32 + (CHUNK_SIZE - 1) as i32;
+                        let top_y = chunk_y * chunk_size + (chunk_size - 1);
                         if v.is_water() {
                             if water_surface_y == i32::MIN {
                                 water_surface_y = top_y;
                             }
-                            // Solid water chunk, continue downward to find sea floor
                             continue;
                         } else {
                             ground_y = top_y;
@@ -182,7 +193,7 @@ fn extract_column_surface(world: &VoxelWorld, col: IVec2) -> Option<MapChunk> {
                                 continue;
                             }
 
-                            let world_y = chunk_y * CHUNK_SIZE as i32 + ly as i32;
+                            let world_y = chunk_y * chunk_size + ly as i32;
                             if v.is_water() {
                                 if water_surface_y == i32::MIN {
                                     water_surface_y = world_y;
@@ -197,12 +208,16 @@ fn extract_column_surface(world: &VoxelWorld, col: IVec2) -> Option<MapChunk> {
                 }
             }
 
+            let world_x = col.x * chunk_size + lx as i32;
+            let world_z = col.y * chunk_size + lz as i32;
+
             if water_surface_y != i32::MIN {
                 let depth = if ground_y != i32::MIN {
                     (water_surface_y - ground_y).clamp(1, 255) as u8
                 } else {
                     1
                 };
+                let color = super::color::voxel_map_color_at(Voxel::Water, depth, world_x, world_z);
                 map_chunk.set(
                     lx,
                     lz,
@@ -210,10 +225,12 @@ fn extract_column_surface(world: &VoxelWorld, col: IVec2) -> Option<MapChunk> {
                         voxel: Voxel::Water,
                         height: water_surface_y as i16,
                         water_depth: depth,
+                        color,
                     },
                 );
                 has_any_terrain = true;
             } else if ground_y != i32::MIN {
+                let color = super::color::voxel_map_color_at(surface_voxel, 0, world_x, world_z);
                 map_chunk.set(
                     lx,
                     lz,
@@ -221,6 +238,7 @@ fn extract_column_surface(world: &VoxelWorld, col: IVec2) -> Option<MapChunk> {
                         voxel: surface_voxel,
                         height: ground_y as i16,
                         water_depth: 0,
+                        color,
                     },
                 );
                 has_any_terrain = true;
@@ -247,6 +265,7 @@ mod tests {
             voxel: Voxel::Grass,
             height: 64,
             water_depth: 0,
+            color: [92, 172, 60, 255],
         };
         chunk.set(5, 10, pixel);
         assert_eq!(chunk.get(5, 10), pixel);
@@ -275,6 +294,7 @@ mod tests {
         assert_eq!(p.voxel, Voxel::Stone);
         assert_eq!(p.height, 15);
         assert_eq!(p.water_depth, 0);
+        assert_eq!(p.color, [125, 125, 128, 255]);
     }
 
     #[test]
@@ -301,6 +321,7 @@ mod tests {
         assert_eq!(p.voxel, Voxel::Water);
         assert_eq!(p.height, 10);
         assert_eq!(p.water_depth, 5); // 10 - 5 = 5
+        assert_ne!(p.color, [0, 0, 0, 0]);
     }
 
     #[test]

@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
+    core::{text_shadow_default, AppFont},
     environment::{DayPhase, EnvironmentState},
     gameplay::SelectedVoxel,
     generation::TerrainGenerator,
@@ -36,7 +37,17 @@ impl Plugin for PauseMenuPlugin {
     }
 }
 
-fn spawn_pause_menu(mut commands: Commands) {
+fn spawn_pause_menu(mut commands: Commands, app_font: Option<Res<AppFont>>) {
+    let font_handle = app_font.as_ref().map(|f| f.source());
+
+    let mut title_font = TextFont {
+        font_size: FontSize::Px(22.0),
+        ..default()
+    };
+    if let Some(ref font) = font_handle {
+        title_font.font = font.clone();
+    }
+
     commands
         .spawn((
             PauseMenuRoot,
@@ -75,11 +86,9 @@ fn spawn_pause_menu(mut commands: Commands) {
                     // Header Title
                     card.spawn((
                         Text::new("GAME PAUSED"),
-                        TextFont {
-                            font_size: FontSize::Px(22.0),
-                            ..default()
-                        },
+                        title_font,
                         TextColor(Color::srgb(0.95, 0.95, 0.98)),
+                        text_shadow_default(),
                         Node {
                             margin: UiRect::bottom(px(8.0)),
                             ..default()
@@ -87,15 +96,28 @@ fn spawn_pause_menu(mut commands: Commands) {
                     ));
 
                     // Buttons
-                    spawn_menu_button(card, "Resume Game", PauseMenuAction::Resume);
-                    spawn_menu_button(card, "Settings", PauseMenuAction::Settings);
-                    spawn_menu_button(card, "Restart Game", PauseMenuAction::Restart);
-                    spawn_menu_button(card, "Quit to Desktop", PauseMenuAction::Quit);
+                    spawn_menu_button(card, "Resume Game", PauseMenuAction::Resume, font_handle.as_ref());
+                    spawn_menu_button(card, "Settings", PauseMenuAction::Settings, font_handle.as_ref());
+                    spawn_menu_button(card, "Restart Game", PauseMenuAction::Restart, font_handle.as_ref());
+                    spawn_menu_button(card, "Quit to Desktop", PauseMenuAction::Quit, font_handle.as_ref());
                 });
         });
 }
 
-fn spawn_menu_button(parent: &mut ChildSpawnerCommands, label: &str, action: PauseMenuAction) {
+fn spawn_menu_button(
+    parent: &mut ChildSpawnerCommands,
+    label: &str,
+    action: PauseMenuAction,
+    font_handle: Option<&crate::core::FontSource>,
+) {
+    let mut btn_font = TextFont {
+        font_size: FontSize::Px(14.0),
+        ..default()
+    };
+    if let Some(font) = font_handle {
+        btn_font.font = font.clone();
+    }
+
     parent
         .spawn((
             Button,
@@ -116,11 +138,9 @@ fn spawn_menu_button(parent: &mut ChildSpawnerCommands, label: &str, action: Pau
         .with_children(|btn| {
             btn.spawn((
                 Text::new(label),
-                TextFont {
-                    font_size: FontSize::Px(14.0),
-                    ..default()
-                },
+                btn_font,
                 TextColor(Color::srgb(0.90, 0.90, 0.92)),
+                text_shadow_default(),
             ));
         });
 }

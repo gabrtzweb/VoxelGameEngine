@@ -55,7 +55,7 @@ Camera System:
 - Third-Person Camera (<kbd>F5</kbd>): orbiting camera with dynamic raycast block collision prevention to avoid clipping underground/walls, and independent head pitch/yaw tracking
 
 Player Model & Procedural Animations:
-- Minecraft 64×64 skin compatible humanoid mesh hierarchy (Head, Torso, Left/Right Arm, Left/Right Leg) mapped to `assets/textures/mobs/player_skin.png`
+- Minecraft 64×64 skin compatible humanoid mesh hierarchy (Head, Torso, Left/Right Arm, Left/Right Leg) mapped to `assets/textures/models/player_skin.png`
 - Full support for base skin and 3D outer layers (hat/hair, jacket, sleeves, pants) with alpha masking
 - Procedural locomotion: dynamic walk/sprint leg & arm pendulum swings, idle breathing sway, crouch torso tilt, prone crawling strokes, streamlined flutter-kick swimming, airborne jump poses, and 4-state flight animations (ascent, descent, fast flight, hover)
 
@@ -117,7 +117,7 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - **Game Modes**: Creative mode (unrestricted flight, instant block edits) and Spectator mode (noclip through voxels).
 
 ### 5. Camera System & Procedural Humanoid Model
-- **Minecraft 64×64 Skin Pipeline**: Humanoid mesh hierarchy (Head, Torso, Left/Right Arm, Left/Right Leg) mapped to `assets/textures/mobs/player_skin.png` with full support for base skins and 3D outer layers (hat, jacket, sleeves, pants) with alpha masking.
+- **Minecraft 64×64 Skin Pipeline**: Humanoid mesh hierarchy (Head, Torso, Left/Right Arm, Left/Right Leg) mapped to `assets/textures/models/player_skin.png` with full support for base skins and 3D outer layers (hat, jacket, sleeves, pants) with alpha masking.
 - **Procedural Locomotion Animations**: Walk/sprint limb swings, idle breathing sway, crouch torso tilt, crawling prone strokes, streamlined flutter-kick swimming, jump poses, and 4-state flight animations.
 - **First-Person Body View**: True first-person visibility where the player's head is culled to avoid interior clipping, while looking down naturally reveals animated chest, arms, and legs.
 - **Third-Person Orbit Camera (<kbd>F5</kbd>)**: Raycast occlusion prevention preventing camera from clipping underground or through walls, with independent head pitch/yaw tracking.
@@ -148,12 +148,13 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - **Dual-Tab Creative & Personal Inventory (<kbd>E</kbd> Key)**: Minecraft-style dual-tab window (`src/menu/creative_inventory.rs`) seamlessly toggling between the **Creative Palette** (scrollable 4-row grid with all 58 blocks) and the **Personal Inventory** (fixed 8×4 = 32 slots with no scrollbar, backed by the persistent `PlayerInventory` resource in `src/player/inventory.rs`). Features hotbar mirror row, Mouse Tweaks controls (Shift-click transfer/clear, Shift+LMB drag, LMB drag painting, RMB stamp, digit key 1..8 quick-swap), and safe return of cursor-held items upon closing.
 - **3D Isometric Pixel-Art Block Icons**: Generated on-the-fly with 1.0 / 0.80 / 0.60 directional face shading, vertex tinting, and silhouette outlines.
 - **Pause Menu (<kbd>ESC</kbd> Key)**: Game pause with Resume, Settings, Restart Game, Quit to Desktop, and camera Depth-of-Field blur.
-- **In-Game Settings**: Live steppers for Screen Mode (Windowed, Exclusive Fullscreen, Borderless Fullscreen), Render Distance (2..=16 chunks), FOV (60°..=110°), Distance Fog toggle, Camera Bobbing toggle, Grass Sides toggle, Dynamic FPS toggle, and Time Flow toggle.
+- **In-Game Settings**: Live steppers for Screen Mode (Windowed, Exclusive Fullscreen, Borderless Fullscreen), Render Distance (2..=16 chunks), FOV (60°..=110°), Distance Fog toggle, Camera Bobbing toggle, Grass Sides toggle, VSync toggle (AutoNoVsync default / AutoVsync), Dynamic FPS toggle, and Time Flow toggle.
 - **Custom Mouse Cursors**: 9 cursor states including 13-frame animated busy spinner and floating held-block preview.
-- **Minecraft/Xaero-Style Minimap HUD**: Top-right square HUD with parchment `map_background.png` frame extending outward around the 192×192 dynamic canvas, cardinal indicators (<kbd>N</kbd>, <kbd>S</kbd>, <kbd>E</kbd>, <kbd>W</kbd>), real-time readout pill (`Coordinates: X: ... Y: ... Z: ...` and `Biome: ...`), and live directional player `marker_red.png` rotating with camera yaw via GPU `UiTransform`. Powered by an asynchronous 2D cache (`MapCache`) with North-up topographic hill shading and bathymetric water tinting.
+- **Minecraft/Xaero-Style Minimap HUD**: Top-right square HUD with parchment `map_background.png` frame extending outward around the 192×192 dynamic canvas, bright white cardinal indicators (<kbd>N</kbd>, <kbd>S</kbd>, <kbd>E</kbd>, <kbd>W</kbd>) inset over terrain, real-time readout (`Coordinates: XYZ: ...` and `Biome: ...`), and live directional player `marker_red.png` rotating with camera yaw via GPU `UiTransform`. Powered by an asynchronous 2D cache (`MapCache`) with North-up topographic hill shading and precomputed surface colors for zero-noise 250+ FPS updates.
 - **Full-Screen Interactive World Map (<kbd>M</kbd> Key)**: Seamless `MenuState::WorldMap` integration with smooth mouse drag panning, scroll wheel zooming (0.20x to 4.0x), keyboard panning (<kbd>WASD</kbd> / arrows), snap-to-player quick key (<kbd>Space</kbd>), real-time cursor coordinate tracking under pointer, and accurately centered `marker_red.png` tracking player coordinates and rotating with camera yaw.
+- **Custom Font & Universal Drop Shadows**: Centralized typography via `AppFont` and `FontPlugin` pointing to `assets/fonts/CutePixel.ttf`, with universal crisp drop shadows (`TextShadow`) applied across all UI and HUD text elements for clear contrast on all backgrounds.
 - **Ambient Environment & Biome Coloration**: Procedural 2-octave smooth color noise in `voxel.wgsl` via `world_position.xz` modulating tinted block vertices by $\pm 8\%$ to break up flat monochromatic plains, coupled with calibrated biome palettes (emerald Plains, golden Savanna, pale Desert, icy Tundra, turquoise coastal waters, deep navy oceans) and 5-point cross-kernel boundary blending.
-- **Dynamic FPS & Power Throttling**: Automatic background frame throttling (15 FPS), idle/AFK detection (30 FPS after 60s), and physical battery detection (60 FPS cap on laptop battery power). Active input priority (`idle_elapsed < 1.0s`) and zero thread sleeping during normal gameplay guarantees unthrottled 300+ FPS performance even in windowed mode.
+- **Dynamic FPS & Power Throttling**: Automatic background frame throttling (15 FPS), idle/AFK detection (30 FPS after 30s), and physical battery detection. Active input priority and zero thread sleeping during normal gameplay guarantees unthrottled 250–300+ FPS performance.
 - **Debug Overlays**: Minimal HUD by default, Extended Technical Debug HUD on <kbd>F3</kbd> (FPS, frame time, power source, dynamic throttle status, player XYZ/chunk, biome climate, chunk stats), HUD toggle on <kbd>Shift+F3</kbd>, and chunk debug borders on <kbd>F2</kbd>.
 
 ### 10. Engine Optimizations & Scalability (Phase 7 Milestones)
@@ -184,7 +185,8 @@ The player uses a custom AABB collision system that directly queries voxel data.
   - [x] Stage 10.2: Quality-of-Life (Live Chunk Reload, 4-Row Scrollable Creative Inventory, Player Personal Inventory & Creative Dual-Tab Toggle)
   - [x] Stage 10.3: Minimap & Interactive World Map (Minecraft/Xaero-Style, with live coordinate readout and biome identifier)
   - [x] Stage 10.4: Biome Color Variation & Ambient Environment Noise ("Ambient Environment" Mod Style)
-  - [x] Stage 10.5: Screen Modes & Map Polish (Dynamic FPS throttling removed to ensure unconstrained performance)
+  - [x] Stage 10.5: Screen Modes, Map Performance & Font Integration
+  - [ ] Stage 10.6: UI Texture Skinning (Hotbar, Personal Inventory & Creative Inventory)
 - [ ] Phase 11: World Generation & Worldbuilding Expansion (High Fantasy & Dark Fantasy Realism)
 
 ---

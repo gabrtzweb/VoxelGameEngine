@@ -17,7 +17,7 @@ use crate::{
 
 use super::{
     cache::{MapCache, MapChunk},
-    color::{apply_relief_shading, unexplored_color, voxel_map_color_at},
+    color::{apply_relief_shading, unexplored_color},
 };
 
 pub const MINIMAP_SIZE: u32 = 192;
@@ -70,7 +70,9 @@ fn setup_minimap(
     mut commands: Commands,
     mut images: ResMut<Assets<Image>>,
     asset_server: Res<AssetServer>,
+    app_font: Option<Res<crate::core::AppFont>>,
 ) {
+    let font_handle = app_font.as_ref().map(|f| f.source()).unwrap_or_default();
     // 1. Create dynamic 192x192 terrain map texture
     let terrain_pixels = [18u8, 19u8, 24u8, 255u8].repeat((MINIMAP_SIZE * MINIMAP_SIZE) as usize);
     let mut terrain_img = Image::new_fill(
@@ -164,13 +166,15 @@ fn setup_minimap(
                 frame.spawn((
                     Text::new("N"),
                     TextFont {
-                        font_size: FontSize::Px(11.0),
+                        font: font_handle.clone(),
+                        font_size: FontSize::Px(13.0),
                         ..default()
                     },
-                    TextColor(Color::srgb(0.95, 0.40, 0.40)),
+                    TextColor(Color::srgb(0.95, 0.95, 0.98)),
+                    crate::core::text_shadow_default(),
                     Node {
                         position_type: PositionType::Absolute,
-                        top: px(1.0),
+                        top: px(16.0),
                         ..default()
                     },
                     ZIndex(15),
@@ -180,13 +184,15 @@ fn setup_minimap(
                 frame.spawn((
                     Text::new("S"),
                     TextFont {
-                        font_size: FontSize::Px(10.0),
+                        font: font_handle.clone(),
+                        font_size: FontSize::Px(13.0),
                         ..default()
                     },
-                    TextColor(Color::srgb(0.35, 0.28, 0.22)),
+                    TextColor(Color::srgb(0.95, 0.95, 0.98)),
+                    crate::core::text_shadow_default(),
                     Node {
                         position_type: PositionType::Absolute,
-                        bottom: px(1.0),
+                        bottom: px(16.0),
                         ..default()
                     },
                     ZIndex(15),
@@ -196,13 +202,15 @@ fn setup_minimap(
                 frame.spawn((
                     Text::new("W"),
                     TextFont {
-                        font_size: FontSize::Px(10.0),
+                        font: font_handle.clone(),
+                        font_size: FontSize::Px(13.0),
                         ..default()
                     },
-                    TextColor(Color::srgb(0.35, 0.28, 0.22)),
+                    TextColor(Color::srgb(0.95, 0.95, 0.98)),
+                    crate::core::text_shadow_default(),
                     Node {
                         position_type: PositionType::Absolute,
-                        left: px(2.0),
+                        left: px(16.0),
                         ..default()
                     },
                     ZIndex(15),
@@ -212,13 +220,15 @@ fn setup_minimap(
                 frame.spawn((
                     Text::new("E"),
                     TextFont {
-                        font_size: FontSize::Px(10.0),
+                        font: font_handle.clone(),
+                        font_size: FontSize::Px(13.0),
                         ..default()
                     },
-                    TextColor(Color::srgb(0.35, 0.28, 0.22)),
+                    TextColor(Color::srgb(0.95, 0.95, 0.98)),
+                    crate::core::text_shadow_default(),
                     Node {
                         position_type: PositionType::Absolute,
-                        right: px(2.0),
+                        right: px(16.0),
                         ..default()
                     },
                     ZIndex(15),
@@ -258,21 +268,25 @@ fn setup_minimap(
             .with_children(|pill| {
                 pill.spawn((
                     MinimapCoordsText,
-                    Text::new("Coordinates: X: 0 Y: 0 Z: 0"),
+                    Text::new("Coordinates: XYZ: 0, 0, 0"),
                     TextFont {
+                        font: font_handle.clone(),
                         font_size: FontSize::Px(11.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.95, 0.95, 0.98)),
+                    crate::core::text_shadow_default(),
                 ));
                 pill.spawn((
                     MinimapBiomeText,
                     Text::new("Biome: Plains"),
                     TextFont {
+                        font: font_handle,
                         font_size: FontSize::Px(10.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.95, 0.95, 0.98)),
+                    crate::core::text_shadow_default(),
                 ));
             });
         });
@@ -303,8 +317,8 @@ fn sync_minimap_terrain(
     }
 
     let now = time.elapsed_secs();
-    // Rate limit minimap generation to at most 12.5 Hz (every 0.08s) while moving
-    if moved && !cache_changed && (now - minimap_state.last_update_time) < 0.08 {
+    // Throttle minimap texture generation to at most 20 Hz (every 0.05s) to avoid redundant GPU re-uploads
+    if (now - minimap_state.last_update_time) < 0.05 {
         return;
     }
 
@@ -356,9 +370,8 @@ fn sync_minimap_terrain(
             let color = if let Some(chunk) = cached_chunk {
                 let pixel = chunk.get(lx, lz);
                 if pixel.voxel != Voxel::Air {
-                    let base = voxel_map_color_at(pixel.voxel, pixel.water_depth, wx, wz);
                     let north_h = cached_north_chunk.map(|nc| nc.get(lx, north_lz).height);
-                    apply_relief_shading(base, pixel.height, north_h)
+                    apply_relief_shading(pixel.color, pixel.height, north_h)
                 } else {
                     unexplored_color(wx, wz)
                 }
@@ -412,7 +425,7 @@ fn update_minimap_ui(
     let vz = (p.z / VOXEL_SIZE).floor() as i32;
 
     for mut text in &mut coords_query {
-        **text = format!("Coordinates: X: {} Y: {} Z: {}", vx, vy, vz);
+        **text = format!("Coordinates: XYZ: {}, {}, {}", vx, vy, vz);
     }
 
     let biome_name = if let Some(ref generator) = terrain_generator {
@@ -552,8 +565,7 @@ mod tests {
     #[test]
     fn minimap_coordinate_formatting_compact() {
         let (vx, vy, vz) = (171, 22, -132);
-        let formatted = format!("Coordinates: X: {} Y: {} Z: {}", vx, vy, vz);
-        assert_eq!(formatted, "Coordinates: X: 171 Y: 22 Z: -132");
-        assert!(!formatted.contains("X:    171"));
+        let formatted = format!("Coordinates: XYZ: {}, {}, {}", vx, vy, vz);
+        assert_eq!(formatted, "Coordinates: XYZ: 171, 22, -132");
     }
 }

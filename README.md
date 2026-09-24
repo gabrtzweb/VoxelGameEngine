@@ -8,9 +8,10 @@ The project focuses on a fully editable procedural voxel world with 1.0 m³ bloc
 - Chunks have 16 × 16 × 16 voxels (16 m × 16 m × 16 m physical sections).
 - Complete removal of single 0.5 m sub-voxels.
 - Auto-step is calibrated to 0.50 m (50 cm) for smooth future slab stepping, requiring jumping over full 1 m blocks.
-- Square gameplay Minimap HUD (North-up, coordinates, live player heading chevron) and full-screen interactive World Map (<kbd>M</kbd>).
+- Square gameplay Minimap HUD (North-up, compact XYZ coordinates, live player heading chevron) and full-screen interactive World Map (<kbd>M</kbd>).
 - Ambient Environment procedural color noise and climate-driven biome palettes (grass, foliage, water) with smooth 5-point cross-kernel boundary blending.
-- Dynamic FPS intelligent power management: background window throttling (15 FPS), idle/AFK detection (30 FPS), and laptop battery conservation (60 FPS cap) with zero input latency wakeup.
+- Dynamic FPS & VSync: configurable presentation modes (AutoNoVsync default, toggleable in Settings) and intelligent frame throttling (15 FPS unfocused, 30 FPS idle) with unconstrained active gameplay (250+ FPS).
+- Custom typography & drop shadows: centralized font asset management (`CutePixel.ttf`) and universal drop shadow contrast styling.
 
 The long-term goal is to build a performant procedural voxel game with large-world streaming, runtime terrain editing, configurable generation, multiple gameplay modes, dynamic fluids and extensive development tooling.
 
@@ -41,7 +42,7 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     R                 Block shape (Tap: cycle sequentially / Hold: 10-shape circular radial menu)
     T                 Rotate block shape 90° clockwise
 
-    ESC               Pause Menu (Settings, Restart Game, Quit) with Depth of Field blur
+    ESC               Pause Menu (Settings: Screen Mode, Render Dist, FOV, Fog, Bobbing, VSync, Dynamic FPS; Restart, Quit)
     E                 Inventory (Dual-tab: Creative 4-row scrollable palette & Personal 8×4 storage)
                       • Tabs at top: Toggle between Creative and Personal inventory
                       • Shift + Click: Quick transfer between inventory and hotbar
@@ -66,18 +67,22 @@ The long-term goal is to build a performant procedural voxel game with large-wor
 
 ```text
 assets/
+├── fonts/
+│   └── CutePixel.ttf
 ├── shaders/
 │   └── voxel.wgsl
 ├── textures/
 │   ├── blocks/
 │   ├── environments/   
 │   │   └── celestial/
-│   │       └── moon/
+│   │       ├── moon/
+│   │       └── sun.png
 │   ├── gui/
 │   │   ├── atlases/
+│   │   ├── containers/
 │   │   └── cursors/
 │   ├── items/
-│   └── mobs/
+│   └── models/
 └── icon.ico
 
 docs/
@@ -87,6 +92,8 @@ docs/
 src/
 ├── core/
 │   ├── dev_stats.rs
+│   ├── dynamic_fps.rs
+│   ├── font.rs
 │   ├── mod.rs
 │   └── noise.rs
 ├── environment/

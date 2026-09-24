@@ -1,6 +1,7 @@
 use bevy::{input::mouse::AccumulatedMouseScroll, prelude::*, window::PrimaryWindow};
 
 use crate::{
+    core::{text_shadow_default, AppFont},
     gameplay::BlockIcons,
     player::hotbar::{HOTBAR_SLOT_COUNT, Hotbar},
     player::inventory::PlayerInventory,
@@ -177,7 +178,9 @@ fn spawn_inventory_menu(
     icons: Res<BlockIcons>,
     tab_state: Res<InventoryTab>,
     scroll_state: Res<InventoryScrollState>,
+    app_font: Option<Res<AppFont>>,
 ) {
+    let font_handle = app_font.as_ref().map(|f| f.source());
     let current_tab = *tab_state;
     let start_row = scroll_state.scroll_row;
     let total_rows = total_inventory_rows();
@@ -197,6 +200,19 @@ fn spawn_inventory_menu(
         InventoryTab::Creative => (Display::Flex, Visibility::Visible),
         InventoryTab::Player => (Display::None, Visibility::Hidden),
     };
+
+    let mut tab1_font = TextFont {
+        font_size: FontSize::Px(12.0),
+        ..default()
+    };
+    let mut tab2_font = TextFont {
+        font_size: FontSize::Px(12.0),
+        ..default()
+    };
+    if let Some(ref font) = font_handle {
+        tab1_font.font = font.clone();
+        tab2_font.font = font.clone();
+    }
 
     commands
         .spawn((
@@ -279,15 +295,13 @@ fn spawn_inventory_menu(
                                             tab: InventoryTab::Creative,
                                         },
                                         Text::new("CREATIVE INVENTORY"),
-                                        TextFont {
-                                            font_size: FontSize::Px(12.0),
-                                            ..default()
-                                        },
+                                        tab1_font,
                                         TextColor(if current_tab == InventoryTab::Creative {
                                             Color::srgb(1.0, 0.90, 0.40)
                                         } else {
                                             Color::srgb(0.70, 0.72, 0.78)
                                         }),
+                                        text_shadow_default(),
                                     ));
                                 });
 
@@ -324,15 +338,13 @@ fn spawn_inventory_menu(
                                             tab: InventoryTab::Player,
                                         },
                                         Text::new("PERSONAL INVENTORY"),
-                                        TextFont {
-                                            font_size: FontSize::Px(12.0),
-                                            ..default()
-                                        },
+                                        tab2_font,
                                         TextColor(if current_tab == InventoryTab::Player {
                                             Color::srgb(1.0, 0.90, 0.40)
                                         } else {
                                             Color::srgb(0.70, 0.72, 0.78)
                                         }),
+                                        text_shadow_default(),
                                     ));
                                 });
                         });
@@ -529,13 +541,19 @@ fn spawn_inventory_menu(
                                 ))
                                 .with_children(|slot| {
                                     // Number badge 1..8
+                                    let mut num_font = TextFont {
+                                        font_size: FontSize::Px(10.0),
+                                        ..default()
+                                    };
+                                    if let Some(ref font) = font_handle {
+                                        num_font.font = font.clone();
+                                    }
+
                                     slot.spawn((
                                         Text::new(format!("{}", slot_idx + 1)),
-                                        TextFont {
-                                            font_size: FontSize::Px(10.0),
-                                            ..default()
-                                        },
+                                        num_font,
                                         TextColor(Color::srgba(0.85, 0.85, 0.85, 0.60)),
+                                        text_shadow_default(),
                                         Node {
                                             position_type: PositionType::Absolute,
                                             top: px(2.0),
