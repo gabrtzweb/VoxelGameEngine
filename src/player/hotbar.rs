@@ -64,6 +64,17 @@ fn setup_hotbar_ui(
     let font_handle = app_font.as_ref().map(|f| f.source());
     let hotbar_texture = asset_server.load("textures/gui/containers/hotbar.png");
 
+    // Scale multiplier for hotbar UI rendering (2x integer scaling = 512x64 px)
+    const HOTBAR_SCALE: f32 = 2.0;
+    let tray_width = 256.0 * HOTBAR_SCALE;
+    let tray_height = 32.0 * HOTBAR_SCALE;
+    let slot_stride = 20.0 * HOTBAR_SCALE;
+    let slot_left_offset = 49.0 * HOTBAR_SCALE;
+    let slot_top = 7.0 * HOTBAR_SCALE;
+    let slot_size = 18.0 * HOTBAR_SCALE;
+    let icon_size = 16.0 * HOTBAR_SCALE;
+    let border_width = 1.0 * HOTBAR_SCALE;
+
     // Centered bottom container spanning screen width
     commands
         .spawn((
@@ -80,7 +91,7 @@ fn setup_hotbar_ui(
             ZIndex(150),
         ))
         .with_children(|parent| {
-            // Hotbar texture: 162x22 -> scaled 3x = 486x66 px
+            // Scaled hotbar texture (256x32 px at 2x = 512x64 px)
             parent
                 .spawn((
                     ImageNode {
@@ -88,8 +99,8 @@ fn setup_hotbar_ui(
                         ..default()
                     },
                     Node {
-                        width: px(486.0),
-                        height: px(66.0),
+                        width: px(tray_width),
+                        height: px(tray_height),
                         position_type: PositionType::Relative,
                         ..default()
                     },
@@ -125,15 +136,15 @@ fn setup_hotbar_ui(
                             HotbarSlotUi { index },
                             Node {
                                 position_type: PositionType::Absolute,
-                                left: px(3.0 + index as f32 * 60.0),
-                                top: px(3.0),
-                                width: px(60.0),
-                                height: px(60.0),
+                                left: px(slot_left_offset + index as f32 * slot_stride),
+                                top: px(slot_top),
+                                width: px(slot_size),
+                                height: px(slot_size),
                                 display: Display::Flex,
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
-                                border: UiRect::all(px(2.0)),
-                                border_radius: BorderRadius::all(px(2.0)),
+                                border: UiRect::all(px(border_width)),
+                                border_radius: BorderRadius::all(px(border_width)),
                                 ..default()
                             },
                             BackgroundColor(bg_color),
@@ -142,7 +153,7 @@ fn setup_hotbar_ui(
                         .with_children(|slot| {
                             // Slot index number (1 through 8)
                             let mut num_font = TextFont {
-                                font_size: FontSize::Px(12.0),
+                                font_size: FontSize::Px(6.0 * HOTBAR_SCALE),
                                 ..default()
                             };
                             if let Some(ref font) = font_handle {
@@ -156,13 +167,13 @@ fn setup_hotbar_ui(
                                 text_shadow_default(),
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    top: px(3.0),
-                                    left: px(5.0),
+                                    top: px(1.0 * HOTBAR_SCALE),
+                                    left: px(2.0 * HOTBAR_SCALE),
                                     ..default()
                                 },
                             ));
 
-                            // Centered 36x36 2D item icon
+                            // Centered 2D item icon
                             slot.spawn((
                                 HotbarSlotIcon { index },
                                 ImageNode {
@@ -170,8 +181,8 @@ fn setup_hotbar_ui(
                                     ..default()
                                 },
                                 Node {
-                                    width: px(36.0),
-                                    height: px(36.0),
+                                    width: px(icon_size),
+                                    height: px(icon_size),
                                     ..default()
                                 },
                                 icon_visibility,

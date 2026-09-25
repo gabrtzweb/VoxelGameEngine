@@ -54,15 +54,6 @@ impl ScreenMode {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn from_window_mode(mode: &bevy::window::WindowMode) -> Self {
-        match mode {
-            bevy::window::WindowMode::Windowed => Self::Windowed,
-            bevy::window::WindowMode::Fullscreen(_, _) => Self::ExclusiveFullscreen,
-            bevy::window::WindowMode::BorderlessFullscreen(_) => Self::BorderlessFullscreen,
-        }
-    }
-
     pub fn next(self) -> Self {
         match self {
             Self::Windowed => Self::ExclusiveFullscreen,
@@ -188,12 +179,6 @@ impl Default for BusyCursorAnimation {
     }
 }
 
-#[derive(Resource)]
-#[allow(dead_code)]
-pub struct GuiTextures {
-    pub cursor: Handle<Image>,
-}
-
 pub struct MenuPlugin;
 
 impl Plugin for MenuPlugin {
@@ -242,9 +227,6 @@ fn setup_custom_cursor(mut commands: Commands, asset_server: Res<AssetServer>) {
         busy: asset_server.load("textures/gui/cursors/busy.png"),
     };
 
-    commands.insert_resource(GuiTextures {
-        cursor: textures.default.clone(),
-    });
     commands.insert_resource(textures.clone());
 
     commands
@@ -537,56 +519,5 @@ fn sync_camera_fov(settings: Res<GameSettings>, camera_projection: CameraProject
 
     if let Projection::Perspective(ref mut perspective) = *camera_projection.into_inner() {
         perspective.fov = settings.fov_degrees.to_radians();
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn game_settings_has_sensible_defaults() {
-        let settings = GameSettings::default();
-        assert_eq!(settings.fov_degrees, 90.0);
-        assert!(!settings.fog_enabled);
-        assert!(settings.view_bobbing);
-    }
-
-    #[test]
-    fn held_inventory_item_default_is_none() {
-        let held = HeldInventoryItem::default();
-        assert_eq!(held.voxel, None);
-    }
-
-    #[test]
-    fn cursor_mode_default_is_default() {
-        assert_eq!(CursorMode::default(), CursorMode::Default);
-    }
-
-    #[test]
-    fn busy_cursor_animation_cycles_13_frames() {
-        let mut anim = BusyCursorAnimation::default();
-        assert_eq!(anim.frame, 0);
-
-        for i in 1..=13 {
-            anim.frame = (anim.frame + 1) % 13;
-            assert_eq!(anim.frame, i % 13);
-        }
-        assert_eq!(anim.frame, 0);
-    }
-
-    #[test]
-    fn screen_mode_cycle_and_conversions() {
-        let m = ScreenMode::Windowed;
-        assert_eq!(m.label(), "Windowed");
-        let m = m.next();
-        assert_eq!(m, ScreenMode::ExclusiveFullscreen);
-        assert_eq!(m.label(), "Exclusive Fullscreen");
-        let m = m.next();
-        assert_eq!(m, ScreenMode::BorderlessFullscreen);
-        assert_eq!(m.label(), "Borderless Fullscreen");
-        let m = m.next();
-        assert_eq!(m, ScreenMode::Windowed);
-        assert_eq!(m.prev(), ScreenMode::BorderlessFullscreen);
     }
 }

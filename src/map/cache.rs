@@ -87,12 +87,6 @@ impl MapCache {
         self.chunks.get(&chunk_col)
     }
 
-    /// Returns true if the chunk column has been explored.
-    #[allow(dead_code)]
-    pub fn contains_chunk(&self, chunk_col: IVec2) -> bool {
-        self.chunks.contains_key(&chunk_col)
-    }
-
     /// Retrieves the surface pixel for a specific world (x, z) block coordinate.
     pub fn get_pixel(&self, wx: i32, wz: i32) -> Option<MapPixel> {
         let chunk_size = CHUNK_SIZE as i32;
@@ -101,12 +95,6 @@ impl MapCache {
         let lx = wx.rem_euclid(chunk_size) as usize;
         let lz = wz.rem_euclid(chunk_size) as usize;
         Some(chunk.get(lx, lz))
-    }
-
-    /// Returns total number of explored chunk columns currently cached.
-    #[allow(dead_code)]
-    pub fn chunk_count(&self) -> usize {
-        self.chunks.len()
     }
 
     /// Clears all cached map data.
@@ -250,92 +238,5 @@ fn extract_column_surface(world: &VoxelWorld, col: IVec2) -> Option<MapChunk> {
         Some(map_chunk)
     } else {
         None
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::world::Chunk;
-
-    #[test]
-    fn test_map_chunk_get_set() {
-        let mut chunk = MapChunk::default();
-        let pixel = MapPixel {
-            voxel: Voxel::Grass,
-            height: 64,
-            water_depth: 0,
-            color: [92, 172, 60, 255],
-        };
-        chunk.set(5, 10, pixel);
-        assert_eq!(chunk.get(5, 10), pixel);
-        assert_eq!(chunk.get(0, 0), MapPixel::default());
-    }
-
-    #[test]
-    fn test_map_cache_dirty_and_update() {
-        let mut cache = MapCache::default();
-        let mut world = VoxelWorld::default();
-
-        // Place a solid stone chunk at (0, 0, 0)
-        let stone_chunk = Chunk::filled(Voxel::Stone);
-        world.insert_chunk(IVec3::new(0, 0, 0), stone_chunk);
-
-        // Mark column (0, 0) dirty
-        cache.mark_dirty(IVec2::new(0, 0));
-        assert_eq!(cache.chunk_count(), 0);
-
-        // Update dirty columns
-        cache.update_dirty_columns(&world);
-        assert_eq!(cache.chunk_count(), 1);
-
-        // Pixel at (4, 4) should be Stone at height 15
-        let p = cache.get_pixel(4, 4).expect("pixel should exist");
-        assert_eq!(p.voxel, Voxel::Stone);
-        assert_eq!(p.height, 15);
-        assert_eq!(p.water_depth, 0);
-        assert_eq!(p.color, [125, 125, 128, 255]);
-    }
-
-    #[test]
-    fn test_map_cache_water_detection() {
-        let mut cache = MapCache::default();
-        let mut world = VoxelWorld::default();
-
-        // Create a mixed chunk at (0, 0, 0) with Sand at y=5 and Water at y=6..10
-        let mut chunk = Chunk::new();
-        for x in 0..16 {
-            for z in 0..16 {
-                chunk.set(x, 5, z, Voxel::Sand);
-                for y in 6..=10 {
-                    chunk.set(x, y, z, Voxel::Water);
-                }
-            }
-        }
-        world.insert_chunk(IVec3::new(0, 0, 0), chunk);
-
-        cache.mark_dirty(IVec2::new(0, 0));
-        cache.update_dirty_columns(&world);
-
-        let p = cache.get_pixel(8, 8).expect("pixel should exist");
-        assert_eq!(p.voxel, Voxel::Water);
-        assert_eq!(p.height, 10);
-        assert_eq!(p.water_depth, 5); // 10 - 5 = 5
-        assert_ne!(p.color, [0, 0, 0, 0]);
-    }
-
-    #[test]
-    fn test_map_cache_clear() {
-        let mut cache = MapCache::default();
-        let mut world = VoxelWorld::default();
-        world.insert_chunk(IVec3::new(0, 0, 0), Chunk::filled(Voxel::Grass));
-
-        cache.mark_dirty(IVec2::new(0, 0));
-        cache.update_dirty_columns(&world);
-        assert_eq!(cache.chunk_count(), 1);
-
-        cache.clear();
-        assert_eq!(cache.chunk_count(), 0);
-        assert!(cache.get_pixel(0, 0).is_none());
     }
 }

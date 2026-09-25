@@ -42,8 +42,6 @@ pub struct MinimapPlayerMarker;
 #[derive(Resource)]
 pub struct MinimapState {
     pub terrain_image: Handle<Image>,
-    #[allow(dead_code)]
-    pub marker_image: Handle<Image>,
     pub last_player_block: IVec2,
     pub last_cache_version: u64,
     pub last_marker_yaw: f32,
@@ -95,7 +93,6 @@ fn setup_minimap(
 
     commands.insert_resource(MinimapState {
         terrain_image: terrain_handle.clone(),
-        marker_image: marker_handle.clone(),
         last_player_block: IVec2::new(i32::MAX, i32::MAX),
         last_cache_version: u64::MAX,
         last_marker_yaw: f32::MAX,
@@ -462,110 +459,5 @@ fn manage_minimap_visibility(
         if *vis != target_vis {
             *vis = target_vis;
         }
-    }
-}
-
-/// Renders a sharp, anti-aliased red directional chevron arrow into a 24x24 RGBA buffer.
-#[allow(dead_code)]
-pub fn draw_player_arrow(canvas: &mut [u8], yaw: f32) {
-    canvas.fill(0);
-
-    let size = MARKER_SIZE as f32;
-    let cx = size / 2.0;
-    let cy = size / 2.0;
-
-    // Camera forward vector in 2D top-down map:
-    // yaw = 0 faces -Z (North), pointing UP on map (dy < 0)
-    let ux = -yaw.sin();
-    let uy = -yaw.cos();
-    let vx = -uy;
-    let vy = ux;
-
-    // Geometry of directional chevron
-    let tip = Vec2::new(cx + 8.5 * ux, cy + 8.5 * uy);
-    let left_wing = Vec2::new(cx - 6.5 * ux - 5.5 * vx, cy - 6.5 * uy - 5.5 * vy);
-    let right_wing = Vec2::new(cx - 6.5 * ux + 5.5 * vx, cy - 6.5 * uy + 5.5 * vy);
-    let notch = Vec2::new(cx - 2.5 * ux, cy - 2.5 * uy);
-
-    for y in 0..MARKER_SIZE {
-        for x in 0..MARKER_SIZE {
-            let p = Vec2::new(x as f32 + 0.5, y as f32 + 0.5);
-            let in_left = point_in_triangle(p, tip, left_wing, notch);
-            let in_right = point_in_triangle(p, tip, notch, right_wing);
-
-            let idx = ((y * MARKER_SIZE + x) * 4) as usize;
-
-            if in_left || in_right {
-                // Vibrant red core
-                canvas[idx] = 235;
-                canvas[idx + 1] = 30;
-                canvas[idx + 2] = 30;
-                canvas[idx + 3] = 255;
-            } else {
-                // 1px Dark border outline
-                let d_left =
-                    dist_to_segment(p, tip, left_wing).min(dist_to_segment(p, left_wing, notch));
-                let d_right =
-                    dist_to_segment(p, tip, right_wing).min(dist_to_segment(p, right_wing, notch));
-                let d_min = d_left.min(d_right);
-
-                if d_min <= 1.25 {
-                    canvas[idx] = 18;
-                    canvas[idx + 1] = 18;
-                    canvas[idx + 2] = 22;
-                    canvas[idx + 3] = 255;
-                }
-            }
-        }
-    }
-}
-
-#[inline]
-fn point_in_triangle(p: Vec2, a: Vec2, b: Vec2, c: Vec2) -> bool {
-    let d1 = sign(p, a, b);
-    let d2 = sign(p, b, c);
-    let d3 = sign(p, c, a);
-
-    let has_neg = (d1 < 0.0) || (d2 < 0.0) || (d3 < 0.0);
-    let has_pos = (d1 > 0.0) || (d2 > 0.0) || (d3 > 0.0);
-
-    !(has_neg && has_pos)
-}
-
-#[inline]
-fn sign(p1: Vec2, p2: Vec2, p3: Vec2) -> f32 {
-    (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y)
-}
-
-#[inline]
-fn dist_to_segment(p: Vec2, a: Vec2, b: Vec2) -> f32 {
-    let ab = b - a;
-    let ap = p - a;
-    let len_sq = ab.length_squared();
-    if len_sq == 0.0 {
-        return ap.length();
-    }
-    let t = (ap.dot(ab) / len_sq).clamp(0.0, 1.0);
-    let projection = a + ab * t;
-    (p - projection).length()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn minimap_constants_and_marker_offset() {
-        assert_eq!(MARKER_SIZE, 24);
-        assert_eq!(MINIMAP_FRAME_SIZE, 216.0);
-        let offset = (MINIMAP_FRAME_SIZE - MARKER_SIZE as f32) / 2.0;
-        assert_eq!(offset, 96.0);
-    }
-
-    #[test]
-    fn minimap_coordinate_formatting_compact() {
-        let (vx, vy, vz) = (171, 22, -132);
-        let formatted = format!("Coordinates: XYZ: {}, {}, {}", vx, vy, vz);
-        assert_eq!(formatted, "Coordinates: XYZ: 171, 22, -132");
     }
 }

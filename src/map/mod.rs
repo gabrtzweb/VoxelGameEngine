@@ -3,8 +3,7 @@ pub mod color;
 pub mod minimap;
 pub mod world_map;
 
-#[allow(unused_imports)]
-pub use cache::{MapCache, MapChunk, MapPixel};
+pub use cache::MapCache;
 pub use minimap::MinimapPlugin;
 pub use world_map::WorldMapPlugin;
 

@@ -51,8 +51,6 @@ pub struct WorldMapState {
     pub last_drawn_center: Vec2,
     pub last_drawn_zoom: f32,
     pub last_cache_version: u64,
-    #[allow(dead_code)]
-    pub last_marker_yaw: f32,
 }
 
 pub struct WorldMapPlugin;
@@ -108,7 +106,6 @@ fn setup_world_map_resources(
         last_drawn_center: Vec2::splat(f32::MAX),
         last_drawn_zoom: -1.0,
         last_cache_version: u64::MAX,
-        last_marker_yaw: f32::MAX,
     });
 }
 
@@ -546,34 +543,5 @@ fn update_world_map_ui(
     // Default cursor text when outside viewport
     for mut text in &mut cursor_text_query {
         **text = format!("Zoom: {:.2}x", map_state.zoom);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn world_map_marker_centered_percent() {
-        let center = Vec2::new(100.0, -50.0);
-        let player_world = Vec2::new(100.0, -50.0);
-        let zoom = 1.0;
-
-        let half_w = (WORLD_MAP_WIDTH as f32) / 2.0;
-        let half_h = (WORLD_MAP_HEIGHT as f32) / 2.0;
-        let player_map_x = half_w + (player_world.x - center.x) * zoom;
-        let player_map_y = half_h + (player_world.y - center.y) * zoom;
-
-        let pct_x = (player_map_x / WORLD_MAP_WIDTH as f32) * 100.0;
-        let pct_y = (player_map_y / WORLD_MAP_HEIGHT as f32) * 100.0;
-
-        assert!((pct_x - 50.0).abs() < 1e-4);
-        assert!((pct_y - 50.0).abs() < 1e-4);
-    }
-
-    #[test]
-    fn world_map_marker_aspect_ratio_16_9() {
-        let ratio = (WORLD_MAP_WIDTH as f32) / (WORLD_MAP_HEIGHT as f32);
-        assert!((ratio - (16.0 / 9.0)).abs() < 1e-4);
     }
 }

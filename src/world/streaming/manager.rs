@@ -16,8 +16,8 @@ use crate::{
     },
 };
 
-const DEFAULT_RENDER_DISTANCE: i32 = 12;
-pub const DEFAULT_SIMULATION_DISTANCE: i32 = 4;
+const DEFAULT_RENDER_DISTANCE: i32 = 8;
+pub const DEFAULT_SIMULATION_DISTANCE: i32 = 8;
 
 pub const WORLD_MIN_CHUNK_Y: i32 = -16;
 pub const WORLD_MAX_CHUNK_Y: i32 = 16;

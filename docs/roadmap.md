@@ -427,8 +427,8 @@ Phase 10 is currently active. Development is intentionally not strictly followin
 
 - [x] **Stage 10.6: UI Texture Skinning (Hotbar, Personal Inventory & Creative Inventory) (Completed)**:
   - **Textured Hotbar HUD**:
-    - Loaded `assets/textures/gui/containers/hotbar.png` (162×22 px) scaled 3× (486×66 px) via `ImageNode` with nearest-neighbor sampling.
-    - Symmetrically aligned the 8 slot hitboxes and icons (36×36 px) to exact texture coordinates (each slot 60×60 px, stride 60 px).
+    - Loaded `assets/textures/gui/containers/hotbar.png` (256×32 px) scaled 2× integer (`512×64 px`) via `ImageNode` with nearest-neighbor sampling.
+    - Symmetrically aligned the 8 slot hitboxes and icons to exact texture coordinates (36×36 px outer slot frames with 2px borders, 32×32 px native item icons, stride 40 px).
     - Inactive slots have transparent borders and backgrounds allowing the pixel-art bevels and recessed shadows to show through; active slot highlights with a 2px golden frame and subtle white sheen.
   - **Dual-Card Textured Inventory Interface**:
     - Mapped `inventory.png`, `creative_inventory.png`, and `scroller.png` (338×144 px) to a dual-card layout at 3× scale:
@@ -590,10 +590,25 @@ This phase tracks the comprehensive cleanup, technical debt reduction, dead code
   - **Net Line Count Reduction**:
     - 416 net lines removed across 9 files with 0 compiler warnings (`cargo check`), 0 Clippy lints (`cargo clippy`), and clean formatting (`cargo fmt`).
 
-- [ ] **Stage 12.5: Next Subsystem Reviews (Planned)**:
-  - **`src/generation/` & `src/environment/` Subsystems**: Review noise, terrain, and celestial passes for obsolete unit tests, dead code, and unreferenced constants.
-  - **`src/map/` & `src/menu/` Subsystems**: Clean up unused UI components and test harnesses.
+- [x] **Stage 12.5: `src/map/` and `src/menu/` Subsystems Cleanup (Completed)**:
+  - **`src/map/` Subsystem**:
+    - `src/map/cache.rs`: Removed dead `contains_chunk` and test-only `chunk_count` methods, eliminated their `#[allow(dead_code)]` annotations, and pruned the 87-line `mod tests` block (~100 lines removed).
+    - `src/map/color.rs`: Stripped 44-line `mod tests` block.
+    - `src/map/minimap.rs`: Removed unused `marker_image` field from `MinimapState`, removed obsolete 84-line software triangle rasterizer (`draw_player_arrow`, `dist_to_segment`) replaced by GPU UI transform rotation, and stripped `mod tests` (~115 lines removed).
+    - `src/map/world_map.rs`: Removed dead `last_marker_yaw` field and stripped 32-line `mod tests` block.
+    - `src/map/mod.rs`: Removed `#[allow(unused_imports)]` and pruned unused re-exports (`MapChunk`, `MapPixel`), leaving only `pub use cache::MapCache;`.
+  - **`src/menu/` Subsystem**:
+    - `src/menu/mod.rs`: Removed dead `from_window_mode`, removed unused `GuiTextures` struct and resource insertion, and stripped the 51-line `mod tests` block (~69 lines removed).
+    - `src/menu/creative_inventory.rs`: Removed unused `INVENTORY_VISIBLE_SLOTS`, test-only `total_inventory_rows`, `max_scroll_row`, and `ArmorSlotType::name()`, and stripped the 231-line `mod tests` block (~254 lines removed).
+    - `src/menu/settings.rs` & `src/menu/pause.rs`: Verified 100% active UI logic with 0 bloat or dead code.
+  - **Net Line Count Reduction**:
+    - 608 lines eliminated across 7 files with 0 compiler warnings (`cargo check`), 0 Clippy lints (`cargo clippy`), and clean formatting (`cargo fmt`).
+
+- [ ] **Stage 12.6: Next Subsystem Reviews (Planned)**:
+  - **`src/generation/` & `src/environment/` Subsystems**: Review noise, terrain, biome, caves, and celestial passes for obsolete unit tests, dead code, and unreferenced constants.
+  - **`src/core/` Subsystem**: Audit app setup, diagnostics, state transitions, and remaining utilities.
   - **Engine-Wide Hygiene**: Maintain zero compiler warnings (`#[warn(unused)]`), zero dead code, and fast compilation on any target machine.
+
 
 
 
