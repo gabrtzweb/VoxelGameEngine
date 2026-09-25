@@ -130,6 +130,7 @@ pub struct InventoryScrollState {
 pub struct CreativeSearchQuery {
     pub query: String,
     pub is_focused: bool,
+    pub cursor: usize,
     pub selection: Option<(usize, usize)>,
 }
 
@@ -137,10 +138,10 @@ pub struct CreativeSearchQuery {
 pub struct CreativeSearchBar;
 
 #[derive(Component)]
-pub struct CreativeSearchSelection;
+pub struct CreativeSearchText;
 
 #[derive(Component)]
-pub struct CreativeSearchText;
+pub struct InventoryMenuEntity;
 
 #[derive(Component)]
 struct InventoryMenuRoot;
@@ -262,12 +263,13 @@ fn build_inventory_ui(
     let cre_tex = asset_server.load("textures/interfaces/containers/inventory_creative.png");
     let scr_tex = asset_server.load("textures/interfaces/containers/inventory_scroller.png");
 
-    let tab_font = make_font(15.0);
-    let title_font = make_font(18.0);
+    let tab_font = make_font(16.0);
+    let title_font = make_font(16.0);
     let btn_font = make_font(16.0);
 
     commands
         .spawn((
+            InventoryMenuEntity,
             InventoryMenuRoot,
             Node {
                 position_type: PositionType::Absolute,
@@ -287,6 +289,7 @@ fn build_inventory_ui(
             // Main Central Panel (190 x 152 px base image)
             backdrop
                 .spawn((
+                    InventoryMenuEntity,
                     InventoryCard,
                     ImageNode {
                         image: if current_tab == InventoryTab::Creative {
@@ -305,18 +308,19 @@ fn build_inventory_ui(
                 ))
                 .with_children(|card| {
                     // 1. Two Top Toggle Buttons (Mode Switcher above both interfaces)
-                    // Button 1: Personal Mode (X=22..91, Y=2..13)
+                    // Button 1: Personal Mode (X=21..92, Y=1..14)
                     card.spawn((
+                        InventoryMenuEntity,
                         Button,
                         InventoryTabButton {
                             tab: InventoryTab::Player,
                         },
                         Node {
                             position_type: PositionType::Absolute,
-                            left: px(22.0 * GUI_SCALE),  // 66.0
-                            top: px(2.0 * GUI_SCALE),    // 6.0
-                            width: px(70.0 * GUI_SCALE), // 210.0
-                            height: px(12.0 * GUI_SCALE),// 36.0
+                            left: px(21.0 * GUI_SCALE),  // 63.0
+                            top: px(1.0 * GUI_SCALE),    // 3.0
+                            width: px(72.0 * GUI_SCALE), // 216.0
+                            height: px(14.0 * GUI_SCALE),// 42.0
                             display: Display::Flex,
                             align_items: AlignItems::Center,
                             justify_content: JustifyContent::Center,
@@ -327,6 +331,7 @@ fn build_inventory_ui(
                     ))
                     .with_children(|btn| {
                         btn.spawn((
+                            InventoryMenuEntity,
                             InventoryTabButtonText {
                                 tab: InventoryTab::Player,
                             },
@@ -341,18 +346,19 @@ fn build_inventory_ui(
                         ));
                     });
 
-                    // Button 2: Creative Mode (X=98..167, Y=2..13)
+                    // Button 2: Creative Mode (X=97..168, Y=1..14)
                     card.spawn((
+                        InventoryMenuEntity,
                         Button,
                         InventoryTabButton {
                             tab: InventoryTab::Creative,
                         },
                         Node {
                             position_type: PositionType::Absolute,
-                            left: px(98.0 * GUI_SCALE),  // 294.0
-                            top: px(2.0 * GUI_SCALE),    // 6.0
-                            width: px(70.0 * GUI_SCALE), // 210.0
-                            height: px(12.0 * GUI_SCALE),// 36.0
+                            left: px(97.0 * GUI_SCALE),  // 291.0
+                            top: px(1.0 * GUI_SCALE),    // 3.0
+                            width: px(72.0 * GUI_SCALE), // 216.0
+                            height: px(14.0 * GUI_SCALE),// 42.0
                             display: Display::Flex,
                             align_items: AlignItems::Center,
                             justify_content: JustifyContent::Center,
@@ -363,6 +369,7 @@ fn build_inventory_ui(
                     ))
                     .with_children(|btn| {
                         btn.spawn((
+                            InventoryMenuEntity,
                             InventoryTabButtonText {
                                 tab: InventoryTab::Creative,
                             },
@@ -377,28 +384,37 @@ fn build_inventory_ui(
                         ));
                     });
 
-                    // 2. Title Area (X=24, Y=32)
+                    // 2. Title Area (X=22..90, Y=32..43)
                     card.spawn((
-                        Text::new("Inventory"),
-                        title_font,
-                        TextColor(Color::srgb(0.92, 0.92, 0.95)),
-                        text_shadow_default(),
+                        InventoryMenuEntity,
                         Node {
                             position_type: PositionType::Absolute,
-                            left: px(24.0 * GUI_SCALE), // 72.0
+                            left: px(22.0 * GUI_SCALE), // 66.0
                             top: px(32.0 * GUI_SCALE),  // 96.0
-                            height: px(12.0 * GUI_SCALE),
+                            width: px(69.0 * GUI_SCALE), // 207.0
+                            height: px(12.0 * GUI_SCALE),// 36.0
                             display: Display::Flex,
                             align_items: AlignItems::Center,
+                            padding: UiRect::left(px(6.0)),
                             ..default()
                         },
-                    ));
+                    ))
+                    .with_children(|title_box| {
+                        title_box.spawn((
+                            InventoryMenuEntity,
+                            Text::new("Inventory"),
+                            title_font,
+                            TextColor(Color::srgb(0.92, 0.92, 0.95)),
+                            text_shadow_default(),
+                        ));
+                    });
 
                     match current_tab {
                         InventoryTab::Player => {
                             // Section for two buttons (currently non-functional)
                             // Button A: X=138..149, Y=32..43
                             card.spawn((
+                                InventoryMenuEntity,
                                 Button,
                                 Node {
                                     position_type: PositionType::Absolute,
@@ -415,6 +431,7 @@ fn build_inventory_ui(
                             ))
                             .with_children(|b1| {
                                 b1.spawn((
+                                    InventoryMenuEntity,
                                     Text::new("B"),
                                     btn_font.clone(),
                                     TextColor(Color::srgba(0.85, 0.85, 0.90, 0.70)),
@@ -424,6 +441,7 @@ fn build_inventory_ui(
 
                             // Button B: X=156..167, Y=32..43
                             card.spawn((
+                                InventoryMenuEntity,
                                 Button,
                                 Node {
                                     position_type: PositionType::Absolute,
@@ -440,6 +458,7 @@ fn build_inventory_ui(
                             ))
                             .with_children(|b2| {
                                 b2.spawn((
+                                    InventoryMenuEntity,
                                     Text::new("B"),
                                     btn_font,
                                     TextColor(Color::srgba(0.85, 0.85, 0.90, 0.70)),
@@ -465,6 +484,7 @@ fn build_inventory_ui(
                                     let slot_top = (52.0 + r as f32 * 18.0) * GUI_SCALE;
 
                                     card.spawn((
+                                        InventoryMenuEntity,
                                         Button,
                                         InventoryPaletteSlot {
                                             slot_index: slot_idx,
@@ -488,6 +508,7 @@ fn build_inventory_ui(
                                     ))
                                     .with_children(|slot| {
                                         slot.spawn((
+                                            InventoryMenuEntity,
                                             InventoryPaletteSlotIcon {
                                                 slot_index: slot_idx,
                                             },
@@ -507,25 +528,29 @@ fn build_inventory_ui(
                             }
                         }
                         InventoryTab::Creative => {
-                            // Search Bar: X=99..167, Y=33..42
+                            // Search Bar: X=98..168, Y=32..43
                             card.spawn((
+                                InventoryMenuEntity,
                                 Button,
                                 CreativeSearchBar,
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    left: px(99.0 * GUI_SCALE),  // 297.0
-                                    top: px(33.0 * GUI_SCALE),   // 99.0
-                                    width: px(69.0 * GUI_SCALE), // 207.0
-                                    height: px(10.0 * GUI_SCALE),// 30.0
+                                    left: px(98.0 * GUI_SCALE),  // 294.0
+                                    top: px(32.0 * GUI_SCALE),   // 96.0
+                                    width: px(71.0 * GUI_SCALE), // 213.0
+                                    height: px(12.0 * GUI_SCALE),// 36.0
                                     padding: UiRect::horizontal(px(6.0)),
                                     display: Display::Flex,
                                     align_items: AlignItems::Center,
                                     border: UiRect::all(px(1.5)),
                                     border_radius: BorderRadius::all(px(2.0)),
-                                    overflow: Overflow::clip(),
                                     ..default()
                                 },
-                                BackgroundColor(Color::NONE),
+                                BackgroundColor(if search_query.selection.is_some() {
+                                    Color::srgba(0.20, 0.50, 0.95, 0.35)
+                                } else {
+                                    Color::NONE
+                                }),
                                 BorderColor::all(if search_query.is_focused {
                                     Color::srgb(1.0, 0.85, 0.30)
                                 } else {
@@ -533,33 +558,32 @@ fn build_inventory_ui(
                                 }),
                             ))
                             .with_children(|sb| {
-                                sb.spawn((
-                                    CreativeSearchSelection,
-                                    Node {
-                                        position_type: PositionType::Absolute,
-                                        left: px(6.0),
-                                        top: px(2.0),
-                                        width: px(0.0),
-                                        height: px(26.0),
-                                        border_radius: BorderRadius::all(px(2.0)),
-                                        ..default()
-                                    },
-                                    BackgroundColor(Color::srgba(0.25, 0.50, 0.95, 0.45)),
-                                    Visibility::Hidden,
-                                ));
-
                                 let search_font = make_font(15.0);
                                 let is_empty = search_query.query.is_empty();
-                                sb.spawn((
-                                    CreativeSearchText,
-                                    Text::new(if is_empty {
-                                        "Search"
+                                let has_selection = search_query.selection.is_some() && !is_empty;
+                                let display_text = if !search_query.is_focused {
+                                    if is_empty {
+                                        "Search".to_string()
                                     } else {
-                                        &search_query.query
-                                    }),
+                                        search_query.query.clone()
+                                    }
+                                } else if has_selection {
+                                    search_query.query.clone()
+                                } else if is_empty {
+                                    "|".to_string()
+                                } else {
+                                    let cur = search_query.cursor.min(search_query.query.len());
+                                    format!("{}|{}", &search_query.query[..cur], &search_query.query[cur..])
+                                };
+                                sb.spawn((
+                                    InventoryMenuEntity,
+                                    CreativeSearchText,
+                                    Text::new(display_text),
                                     search_font,
-                                    TextColor(if is_empty {
+                                    TextColor(if !search_query.is_focused && is_empty {
                                         Color::srgba(0.70, 0.70, 0.75, 0.60)
+                                    } else if has_selection {
+                                        Color::srgb(0.40, 0.85, 1.0)
                                     } else {
                                         Color::srgb(0.95, 0.95, 0.95)
                                     }),
@@ -589,6 +613,7 @@ fn build_inventory_ui(
                                     let slot_top = (52.0 + r as f32 * 18.0) * GUI_SCALE;
 
                                     card.spawn((
+                                        InventoryMenuEntity,
                                         Button,
                                         InventoryPaletteSlot {
                                             slot_index: slot_idx,
@@ -612,6 +637,7 @@ fn build_inventory_ui(
                                     ))
                                     .with_children(|slot| {
                                         slot.spawn((
+                                            InventoryMenuEntity,
                                             InventoryPaletteSlotIcon {
                                                 slot_index: slot_idx,
                                             },
@@ -630,10 +656,10 @@ fn build_inventory_ui(
                                 }
                             }
 
-                            // Scrollbar Track & Thumb (X=175..186, Y=34..141)
-                            let track_height = 108.0 * GUI_SCALE; // 324.0
+                            // Scrollbar Track & Thumb (X=178..183, Y=33..142)
+                            let track_height = 110.0 * GUI_SCALE; // 330.0
                             let thumb_height = 15.0 * GUI_SCALE;  // 45.0
-                            let max_travel = track_height - thumb_height; // 279.0
+                            let max_travel = track_height - thumb_height; // 285.0
                             let max_scroll = max_filtered_scroll(filtered.len());
                             let thumb_top = if max_scroll > 0 {
                                 (start_row as f32 / max_scroll as f32) * max_travel
@@ -642,20 +668,22 @@ fn build_inventory_ui(
                             };
 
                             card.spawn((
+                                InventoryMenuEntity,
                                 Button,
                                 InventoryScrollTrack,
                                 Node {
                                     position_type: PositionType::Absolute,
                                     left: px(175.0 * GUI_SCALE), // 525.0
-                                    top: px(34.0 * GUI_SCALE),   // 102.0
+                                    top: px(33.0 * GUI_SCALE),   // 99.0
                                     width: px(12.0 * GUI_SCALE), // 36.0
-                                    height: px(track_height),    // 324.0
+                                    height: px(track_height),    // 330.0
                                     ..default()
                                 },
                                 BackgroundColor(Color::NONE),
                             ))
                             .with_children(|track| {
                                 track.spawn((
+                                    InventoryMenuEntity,
                                     Button,
                                     InventoryScrollThumb,
                                     ImageNode {
@@ -691,6 +719,7 @@ fn build_inventory_ui(
                         let slot_top = 128.0 * GUI_SCALE; // 384.0
 
                         card.spawn((
+                            InventoryMenuEntity,
                             Button,
                             InventoryHotbarSlot { index: c },
                             Node {
@@ -712,6 +741,7 @@ fn build_inventory_ui(
                         .with_children(|slot| {
                             let num_font = make_font(11.0);
                             slot.spawn((
+                                InventoryMenuEntity,
                                 Text::new(format!("{}", c + 1)),
                                 num_font,
                                 TextColor(Color::srgba(0.90, 0.90, 0.90, 0.75)),
@@ -725,6 +755,7 @@ fn build_inventory_ui(
                             ));
 
                             slot.spawn((
+                                InventoryMenuEntity,
                                 InventoryHotbarSlotIcon { index: c },
                                 ImageNode {
                                     image: icon_handle,
@@ -746,7 +777,7 @@ fn build_inventory_ui(
 #[allow(clippy::too_many_arguments)]
 fn despawn_inventory_menu(
     mut commands: Commands,
-    query: Query<Entity, With<InventoryMenuRoot>>,
+    query: Query<Entity, With<InventoryMenuEntity>>,
     mut held_item: ResMut<HeldInventoryItem>,
     mut scroll_state: ResMut<InventoryScrollState>,
     mut search_query: ResMut<CreativeSearchQuery>,
@@ -765,6 +796,7 @@ fn despawn_inventory_menu(
     scroll_state.scroll_row = 0;
     scroll_state.is_dragging_thumb = false;
     search_query.query.clear();
+    search_query.cursor = 0;
     search_query.is_focused = false;
     search_query.selection = None;
 
@@ -785,7 +817,7 @@ fn handle_inventory_tab_key(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut tab_state: ResMut<InventoryTab>,
     mut commands: Commands,
-    query: Query<Entity, With<InventoryMenuRoot>>,
+    query: Query<Entity, With<InventoryMenuEntity>>,
     asset_server: Res<AssetServer>,
     hotbar: Res<Hotbar>,
     player_inv: Res<PlayerInventory>,
@@ -800,6 +832,7 @@ fn handle_inventory_tab_key(
             InventoryTab::Player => InventoryTab::Creative,
         };
         search_query.is_focused = false;
+        search_query.cursor = 0;
         search_query.selection = None;
         for entity in &query {
             commands.entity(entity).despawn();
@@ -823,7 +856,7 @@ fn handle_inventory_tab_interaction(
     mouse: Res<ButtonInput<MouseButton>>,
     mut tab_state: ResMut<InventoryTab>,
     mut commands: Commands,
-    query: Query<Entity, With<InventoryMenuRoot>>,
+    query: Query<Entity, With<InventoryMenuEntity>>,
     asset_server: Res<AssetServer>,
     hotbar: Res<Hotbar>,
     player_inv: Res<PlayerInventory>,
@@ -877,6 +910,7 @@ fn handle_inventory_tab_interaction(
 
     if tab_switched {
         search_query.is_focused = false;
+        search_query.cursor = 0;
         search_query.selection = None;
         for entity in &query {
             commands.entity(entity).despawn();
@@ -895,11 +929,118 @@ fn handle_inventory_tab_interaction(
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum KeyAction {
+    Char(char),
+    Backspace,
+    Delete,
+    Left,
+    Right,
+}
+
 #[derive(Default)]
 struct SearchInputState {
-    backspace_timer: f32,
+    active_repeat: Option<(KeyCode, KeyAction)>,
+    repeat_timer: f32,
     last_click_time: f32,
-    drag_start_idx: Option<usize>,
+    drag_start_cursor: Option<usize>,
+}
+
+fn apply_search_key_action(
+    action: KeyAction,
+    search_query: &mut CreativeSearchQuery,
+    changed: &mut bool,
+) {
+    match action {
+        KeyAction::Char(ch) => {
+            if let Some((start, end)) = search_query.selection {
+                let start = start.min(search_query.query.len());
+                let end = end.min(search_query.query.len());
+                if start < end {
+                    search_query.query.replace_range(start..end, &ch.to_string());
+                    search_query.cursor = start + 1;
+                    search_query.selection = None;
+                    *changed = true;
+                }
+            } else if search_query.query.len() < 24 {
+                let cur = search_query.cursor.min(search_query.query.len());
+                search_query.query.insert(cur, ch);
+                search_query.cursor = cur + 1;
+                *changed = true;
+            }
+        }
+        KeyAction::Backspace => {
+            if let Some((start, end)) = search_query.selection {
+                let start = start.min(search_query.query.len());
+                let end = end.min(search_query.query.len());
+                if start < end {
+                    search_query.query.drain(start..end);
+                    search_query.cursor = start;
+                    search_query.selection = None;
+                    *changed = true;
+                }
+            } else if search_query.cursor > 0 && !search_query.query.is_empty() {
+                let cur = search_query.cursor.min(search_query.query.len());
+                search_query.query.remove(cur - 1);
+                search_query.cursor = cur - 1;
+                *changed = true;
+            }
+        }
+        KeyAction::Delete => {
+            if let Some((start, end)) = search_query.selection {
+                let start = start.min(search_query.query.len());
+                let end = end.min(search_query.query.len());
+                if start < end {
+                    search_query.query.drain(start..end);
+                    search_query.cursor = start;
+                    search_query.selection = None;
+                    *changed = true;
+                }
+            } else {
+                let cur = search_query.cursor.min(search_query.query.len());
+                if cur < search_query.query.len() {
+                    search_query.query.remove(cur);
+                    *changed = true;
+                }
+            }
+        }
+        KeyAction::Left => {
+            if let Some((start, _)) = search_query.selection {
+                search_query.cursor = start.min(search_query.query.len());
+                search_query.selection = None;
+            } else {
+                search_query.cursor = search_query.cursor.saturating_sub(1);
+            }
+        }
+        KeyAction::Right => {
+            if let Some((_, end)) = search_query.selection {
+                search_query.cursor = end.min(search_query.query.len());
+                search_query.selection = None;
+            } else {
+                search_query.cursor = (search_query.cursor + 1).min(search_query.query.len());
+            }
+        }
+    }
+}
+
+fn get_card_top_left(
+    card_query: &Query<(&GlobalTransform, &ComputedNode), With<InventoryCard>>,
+    window_query: &Query<&Window, With<PrimaryWindow>>,
+) -> Option<Vec2> {
+    if let Some((card_tf, card_node)) = card_query.iter().next() {
+        let center = card_tf.translation().truncate();
+        let half = card_node.size() * 0.5;
+        if half.x > 10.0 && half.y > 10.0 {
+            return Some(center - half);
+        }
+    }
+    if let Some(w) = window_query.iter().next() {
+        return Some(Vec2::new(
+            (w.width() - INVENTORY_PANEL_TEX_W * GUI_SCALE) * 0.5,
+            (w.height() - INVENTORY_PANEL_TEX_H * GUI_SCALE) * 0.5,
+        ));
+    }
+    None
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -910,37 +1051,17 @@ fn handle_creative_search_input(
     tab_state: Res<InventoryTab>,
     mut search_query: ResMut<CreativeSearchQuery>,
     mut scroll_state: ResMut<InventoryScrollState>,
-    mut search_text_query: Query<
-        (&mut Text, &mut TextColor, &ComputedNode),
-        (With<CreativeSearchText>, Without<CreativeSearchSelection>),
-    >,
+    mut search_text_query: Query<(&mut Text, &mut TextColor), With<CreativeSearchText>>,
     mut search_bar_query: Query<
         (
             &Interaction,
-            &GlobalTransform,
-            &ComputedNode,
             &mut BorderColor,
+            &mut BackgroundColor,
         ),
         With<CreativeSearchBar>,
     >,
-    mut selection_query: Query<
-        (&mut Node, &mut Visibility),
-        (
-            With<CreativeSearchSelection>,
-            Without<CreativeSearchBar>,
-            Without<CreativeSearchText>,
-            Without<InventoryPaletteSlotIcon>,
-        ),
-    >,
     mut palette_query: Query<&mut InventoryPaletteSlot>,
-    mut slot_icon_query: Query<
-        (&InventoryPaletteSlotIcon, &mut ImageNode, &mut Visibility),
-        (
-            Without<CreativeSearchSelection>,
-            Without<CreativeSearchBar>,
-            Without<CreativeSearchText>,
-        ),
-    >,
+    mut slot_icon_query: Query<(&InventoryPaletteSlotIcon, &mut ImageNode, &mut Visibility)>,
     card_query: Query<(&GlobalTransform, &ComputedNode), With<InventoryCard>>,
     icons: Res<BlockIcons>,
     window_query: Query<&Window, With<PrimaryWindow>>,
@@ -950,23 +1071,24 @@ fn handle_creative_search_input(
         return;
     }
 
-    let cursor_pos = window_query
-        .single()
-        .ok()
-        .and_then(|w| w.cursor_position());
+    let cursor_pos = window_query.iter().next().and_then(|w| w.cursor_position());
+    let card_top_left = get_card_top_left(&card_query, &window_query);
 
-    let (search_bar_rect, text_start_x) = if let Some((card_tf, card_node)) = card_query.iter().next() {
-        let center = card_tf.translation().truncate();
-        let half = card_node.size() * 0.5;
-        let card_top_left = center - half;
-        let min_x = card_top_left.x + 99.0 * GUI_SCALE;
-        let min_y = card_top_left.y + 33.0 * GUI_SCALE;
-        let max_x = min_x + 69.0 * GUI_SCALE;
-        let max_y = min_y + 10.0 * GUI_SCALE;
-        (Some(Rect::new(min_x, min_y, max_x, max_y)), min_x + 6.0)
+    let (search_bar_rect, text_start_x) = if let Some(top_left) = card_top_left {
+        let min_x = top_left.x + 98.0 * GUI_SCALE;
+        let min_y = top_left.y + 32.0 * GUI_SCALE;
+        let max_x = min_x + 71.0 * GUI_SCALE;
+        let max_y = min_y + 12.0 * GUI_SCALE;
+        (
+            Some(Rect::new(min_x - 4.0, min_y - 4.0, max_x + 4.0, max_y + 4.0)),
+            min_x + 6.0,
+        )
     } else {
         (None, 0.0)
     };
+
+    let left_just_pressed = mouse.just_pressed(MouseButton::Left);
+    let left_pressed = mouse.pressed(MouseButton::Left);
 
     let is_inside_search_bar = cursor_pos.is_some_and(|pos| {
         search_bar_rect.is_some_and(|r| r.contains(pos))
@@ -974,84 +1096,90 @@ fn handle_creative_search_input(
 
     let is_search_pressed = search_bar_query
         .iter()
-        .any(|(i, _, _, _)| *i == Interaction::Pressed)
-        || (mouse.just_pressed(MouseButton::Left) && is_inside_search_bar);
+        .any(|(i, _, _)| *i == Interaction::Pressed)
+        || (left_just_pressed && is_inside_search_bar);
 
     let is_search_hovered = search_bar_query
         .iter()
-        .any(|(i, _, _, _)| *i == Interaction::Hovered || *i == Interaction::Pressed)
+        .any(|(i, _, _)| *i == Interaction::Hovered || *i == Interaction::Pressed)
         || is_inside_search_bar;
 
-    let char_count = search_query.query.len();
-    let text_width = search_text_query
-        .iter()
-        .next()
-        .map(|(_, _, cn)| cn.size().x)
-        .unwrap_or(0.0);
-    let char_width = if char_count > 0 && text_width > 0.0 {
-        (text_width / char_count as f32).max(1.0)
-    } else {
-        8.5
-    };
+    if left_just_pressed {
+        if is_inside_search_bar || is_search_pressed {
+            search_query.is_focused = true;
+            let now = time.elapsed_secs();
+            let is_double_click = (now - input_state.last_click_time) < 0.35
+                && (now - input_state.last_click_time) > 0.0;
 
-    if is_search_pressed {
-        search_query.is_focused = true;
-        let now = time.elapsed_secs();
-        let is_double_click = (now - input_state.last_click_time) < 0.35
-            && (now - input_state.last_click_time) > 0.0;
-
-        if is_double_click && char_count > 0 {
-            search_query.selection = Some((0, char_count));
-            input_state.last_click_time = 0.0;
-            input_state.drag_start_idx = None;
-        } else if mouse.just_pressed(MouseButton::Left) {
-            input_state.last_click_time = now;
-            if let Some(pos) = cursor_pos {
-                let offset_x = (pos.x - text_start_x).max(0.0);
-                let idx = ((offset_x / char_width).round() as usize).min(char_count);
-                input_state.drag_start_idx = Some(idx);
+            if is_double_click && !search_query.query.is_empty() {
+                search_query.selection = Some((0, search_query.query.len()));
+                search_query.cursor = search_query.query.len();
+                input_state.last_click_time = 0.0;
+                input_state.drag_start_cursor = None;
             } else {
-                input_state.drag_start_idx = Some(char_count);
+                input_state.last_click_time = now;
+                search_query.selection = None;
+                if let Some(pos) = cursor_pos {
+                    let click_x = (pos.x - text_start_x).max(0.0);
+                    let char_width = 8.5;
+                    let approx_idx = (click_x / char_width).round() as usize;
+                    search_query.cursor = approx_idx.min(search_query.query.len());
+                    input_state.drag_start_cursor = Some(search_query.cursor);
+                } else {
+                    search_query.cursor = search_query.query.len();
+                }
             }
+        } else {
+            search_query.is_focused = false;
             search_query.selection = None;
+            input_state.active_repeat = None;
+            input_state.drag_start_cursor = None;
         }
     }
 
-    if mouse.just_pressed(MouseButton::Left) && !is_search_hovered {
-        search_query.is_focused = false;
-        search_query.selection = None;
-        input_state.drag_start_idx = None;
-    }
-
-    if mouse.pressed(MouseButton::Left) && search_query.is_focused {
-        if let (Some(start_idx), Some(pos)) = (input_state.drag_start_idx, cursor_pos) {
-            let offset_x = (pos.x - text_start_x).max(0.0);
-            let curr_idx = ((offset_x / char_width).round() as usize).min(char_count);
-            if curr_idx != start_idx {
-                let min = start_idx.min(curr_idx);
-                let max = start_idx.max(curr_idx);
-                search_query.selection = Some((min, max));
-            } else {
-                search_query.selection = None;
+    // Drag selection while holding left mouse
+    if left_pressed && search_query.is_focused {
+        if let (Some(anchor), Some(pos)) = (input_state.drag_start_cursor, cursor_pos) {
+            let click_x = (pos.x - text_start_x).max(0.0);
+            let char_width = 8.5;
+            let cur_idx = ((click_x / char_width).round() as usize).min(search_query.query.len());
+            if cur_idx != anchor && !search_query.query.is_empty() {
+                let start = anchor.min(cur_idx);
+                let end = anchor.max(cur_idx);
+                search_query.selection = Some((start, end));
+                search_query.cursor = cur_idx;
             }
         }
     }
 
     if mouse.just_released(MouseButton::Left) {
-        input_state.drag_start_idx = None;
-        if let Some((start, end)) = search_query.selection {
-            if start >= end {
-                search_query.selection = None;
-            }
+        input_state.drag_start_cursor = None;
+    }
+
+    let target_border = if search_query.is_focused {
+        BorderColor::all(Color::srgb(1.0, 0.85, 0.30))
+    } else if is_search_hovered {
+        BorderColor::all(Color::srgba(1.0, 1.0, 1.0, 0.40))
+    } else {
+        BorderColor::all(Color::NONE)
+    };
+    if let Some((_, mut border, _)) = search_bar_query.iter_mut().next() {
+        if *border != target_border {
+            *border = target_border;
         }
     }
 
-    // Border highlight when focused
-    for (_, _, _, mut border) in &mut search_bar_query {
-        if search_query.is_focused {
-            *border = BorderColor::all(Color::srgb(1.0, 0.85, 0.30));
-        } else {
-            *border = BorderColor::all(Color::NONE);
+    let target_bg = if search_query.is_focused
+        && search_query.selection.is_some()
+        && !search_query.query.is_empty()
+    {
+        BackgroundColor(Color::srgba(0.20, 0.50, 0.95, 0.35))
+    } else {
+        BackgroundColor(Color::NONE)
+    };
+    if let Some((_, _, mut bg)) = search_bar_query.iter_mut().next() {
+        if *bg != target_bg {
+            *bg = target_bg;
         }
     }
 
@@ -1060,129 +1188,125 @@ fn handle_creative_search_input(
     if keyboard.just_pressed(KeyCode::Escape) && search_query.is_focused {
         search_query.is_focused = false;
         search_query.selection = None;
-        input_state.drag_start_idx = None;
+        input_state.active_repeat = None;
+        input_state.drag_start_cursor = None;
     }
 
-    let keys = [
-        (KeyCode::KeyA, 'a'),
-        (KeyCode::KeyB, 'b'),
-        (KeyCode::KeyC, 'c'),
-        (KeyCode::KeyD, 'd'),
-        (KeyCode::KeyE, 'e'),
-        (KeyCode::KeyF, 'f'),
-        (KeyCode::KeyG, 'g'),
-        (KeyCode::KeyH, 'h'),
-        (KeyCode::KeyI, 'i'),
-        (KeyCode::KeyJ, 'j'),
-        (KeyCode::KeyK, 'k'),
-        (KeyCode::KeyL, 'l'),
-        (KeyCode::KeyM, 'm'),
-        (KeyCode::KeyN, 'n'),
-        (KeyCode::KeyO, 'o'),
-        (KeyCode::KeyP, 'p'),
-        (KeyCode::KeyQ, 'q'),
-        (KeyCode::KeyR, 'r'),
-        (KeyCode::KeyS, 's'),
-        (KeyCode::KeyT, 't'),
-        (KeyCode::KeyU, 'u'),
-        (KeyCode::KeyV, 'v'),
-        (KeyCode::KeyW, 'w'),
-        (KeyCode::KeyX, 'x'),
-        (KeyCode::KeyY, 'y'),
-        (KeyCode::KeyZ, 'z'),
-        (KeyCode::Digit0, '0'),
-        (KeyCode::Digit1, '1'),
-        (KeyCode::Digit2, '2'),
-        (KeyCode::Digit3, '3'),
-        (KeyCode::Digit4, '4'),
-        (KeyCode::Digit5, '5'),
-        (KeyCode::Digit6, '6'),
-        (KeyCode::Digit7, '7'),
-        (KeyCode::Digit8, '8'),
-        (KeyCode::Digit9, '9'),
-        (KeyCode::Space, ' '),
+    let char_keys: &[(KeyCode, char, char)] = &[
+        (KeyCode::KeyA, 'a', 'A'),
+        (KeyCode::KeyB, 'b', 'B'),
+        (KeyCode::KeyC, 'c', 'C'),
+        (KeyCode::KeyD, 'd', 'D'),
+        (KeyCode::KeyE, 'e', 'E'),
+        (KeyCode::KeyF, 'f', 'F'),
+        (KeyCode::KeyG, 'g', 'G'),
+        (KeyCode::KeyH, 'h', 'H'),
+        (KeyCode::KeyI, 'i', 'I'),
+        (KeyCode::KeyJ, 'j', 'J'),
+        (KeyCode::KeyK, 'k', 'K'),
+        (KeyCode::KeyL, 'l', 'L'),
+        (KeyCode::KeyM, 'm', 'M'),
+        (KeyCode::KeyN, 'n', 'N'),
+        (KeyCode::KeyO, 'o', 'O'),
+        (KeyCode::KeyP, 'p', 'P'),
+        (KeyCode::KeyQ, 'q', 'Q'),
+        (KeyCode::KeyR, 'r', 'R'),
+        (KeyCode::KeyS, 's', 'S'),
+        (KeyCode::KeyT, 't', 'T'),
+        (KeyCode::KeyU, 'u', 'U'),
+        (KeyCode::KeyV, 'v', 'V'),
+        (KeyCode::KeyW, 'w', 'W'),
+        (KeyCode::KeyX, 'x', 'X'),
+        (KeyCode::KeyY, 'y', 'Y'),
+        (KeyCode::KeyZ, 'z', 'Z'),
+        (KeyCode::Digit0, '0', '0'),
+        (KeyCode::Digit1, '1', '1'),
+        (KeyCode::Digit2, '2', '2'),
+        (KeyCode::Digit3, '3', '3'),
+        (KeyCode::Digit4, '4', '4'),
+        (KeyCode::Digit5, '5', '5'),
+        (KeyCode::Digit6, '6', '6'),
+        (KeyCode::Digit7, '7', '7'),
+        (KeyCode::Digit8, '8', '8'),
+        (KeyCode::Digit9, '9', '9'),
+        (KeyCode::Numpad0, '0', '0'),
+        (KeyCode::Numpad1, '1', '1'),
+        (KeyCode::Numpad2, '2', '2'),
+        (KeyCode::Numpad3, '3', '3'),
+        (KeyCode::Numpad4, '4', '4'),
+        (KeyCode::Numpad5, '5', '5'),
+        (KeyCode::Numpad6, '6', '6'),
+        (KeyCode::Numpad7, '7', '7'),
+        (KeyCode::Numpad8, '8', '8'),
+        (KeyCode::Numpad9, '9', '9'),
+        (KeyCode::Space, ' ', ' '),
+        (KeyCode::Minus, '-', '_'),
     ];
 
     if search_query.is_focused {
-        // Backspace handling with repeat
-        let mut backspace_action = false;
-        if keyboard.just_pressed(KeyCode::Backspace) {
-            backspace_action = true;
-            input_state.backspace_timer = 0.40;
-        } else if keyboard.pressed(KeyCode::Backspace) {
-            input_state.backspace_timer -= time.delta_secs();
-            if input_state.backspace_timer <= 0.0 {
-                backspace_action = true;
-                input_state.backspace_timer = 0.04;
-            }
-        } else if keyboard.just_released(KeyCode::Backspace) {
-            input_state.backspace_timer = 0.0;
-        }
+        let ctrl = keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight);
+        let shift = keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight);
 
-        if backspace_action {
-            if let Some((start, end)) = search_query.selection {
-                if start < end && end <= search_query.query.len() {
-                    search_query.query.drain(start..end);
-                    search_query.selection = None;
-                    changed = true;
-                }
-            } else if search_query.query.pop().is_some() {
-                changed = true;
-            }
-        }
+        let mut triggered_action: Option<(KeyCode, KeyAction)> = None;
 
-        // Delete key handling
-        if keyboard.just_pressed(KeyCode::Delete) {
-            if let Some((start, end)) = search_query.selection {
-                if start < end && end <= search_query.query.len() {
-                    search_query.query.drain(start..end);
-                    search_query.selection = None;
-                    changed = true;
-                }
-            }
-        }
-
-        // Ctrl+A select all
-        let ctrl_pressed = keyboard.pressed(KeyCode::ControlLeft)
-            || keyboard.pressed(KeyCode::ControlRight);
-        if ctrl_pressed && keyboard.just_pressed(KeyCode::KeyA) {
+        if ctrl && keyboard.just_pressed(KeyCode::KeyA) {
             if !search_query.query.is_empty() {
                 search_query.selection = Some((0, search_query.query.len()));
+                search_query.cursor = search_query.query.len();
             }
-        } else if !ctrl_pressed {
-            for (key, ch) in keys {
-                if keyboard.just_pressed(key) {
-                    if let Some((start, end)) = search_query.selection {
-                        if start < end && end <= search_query.query.len() {
-                            search_query.query.replace_range(start..end, &ch.to_string());
-                            search_query.selection = None;
-                            changed = true;
-                            break;
-                        }
-                    } else if search_query.query.len() < 20 {
-                        search_query.query.push(ch);
-                        changed = true;
+        } else if !ctrl {
+            if keyboard.just_pressed(KeyCode::Backspace) {
+                triggered_action = Some((KeyCode::Backspace, KeyAction::Backspace));
+            } else if keyboard.just_pressed(KeyCode::Delete) {
+                triggered_action = Some((KeyCode::Delete, KeyAction::Delete));
+            } else if keyboard.just_pressed(KeyCode::ArrowLeft) {
+                triggered_action = Some((KeyCode::ArrowLeft, KeyAction::Left));
+            } else if keyboard.just_pressed(KeyCode::ArrowRight) {
+                triggered_action = Some((KeyCode::ArrowRight, KeyAction::Right));
+            } else if keyboard.just_pressed(KeyCode::Home) {
+                search_query.cursor = 0;
+                search_query.selection = None;
+            } else if keyboard.just_pressed(KeyCode::End) {
+                search_query.cursor = search_query.query.len();
+                search_query.selection = None;
+            } else {
+                for &(key, normal_ch, shift_ch) in char_keys {
+                    if keyboard.just_pressed(key) {
+                        let ch = if shift { shift_ch } else { normal_ch };
+                        triggered_action = Some((key, KeyAction::Char(ch)));
                         break;
                     }
                 }
             }
         }
+
+        if let Some((k, act)) = triggered_action {
+            apply_search_key_action(act, &mut search_query, &mut changed);
+            input_state.active_repeat = Some((k, act));
+            input_state.repeat_timer = 0.40;
+        }
+
+        // Key repeat processing for holding any key down
+        if let Some((active_k, active_act)) = input_state.active_repeat {
+            if keyboard.pressed(active_k) {
+                if triggered_action.map(|(k, _)| k) != Some(active_k) {
+                    input_state.repeat_timer -= time.delta_secs();
+                    while input_state.repeat_timer <= 0.0 {
+                        apply_search_key_action(active_act, &mut search_query, &mut changed);
+                        input_state.repeat_timer += 0.04;
+                    }
+                }
+            } else {
+                input_state.active_repeat = None;
+            }
+        }
+    } else {
+        input_state.active_repeat = None;
     }
 
     if changed {
         scroll_state.scroll_row = 0;
         let filtered = filtered_creative_blocks(&search_query.query);
-
-        // Update search text
-        for (mut text, mut color, _) in &mut search_text_query {
-            if search_query.query.is_empty() {
-                text.0 = "Search".to_string();
-                color.0 = Color::srgba(0.70, 0.70, 0.75, 0.60);
-            } else {
-                text.0 = search_query.query.clone();
-                color.0 = Color::srgb(0.95, 0.95, 0.95);
-            }
-        }
 
         // Update slots
         for mut slot in &mut palette_query {
@@ -1201,23 +1325,37 @@ fn handle_creative_search_input(
         }
     }
 
-    // Update selection highlight box
-    let curr_len = search_query.query.len();
-    if curr_len == 0 {
-        search_query.selection = None;
-    }
-
-    for (mut sel_node, mut sel_vis) in &mut selection_query {
-        if search_query.is_focused && let Some((start, end)) = search_query.selection {
-            if start < end && end <= curr_len {
-                sel_node.left = px(6.0 + start as f32 * char_width);
-                sel_node.width = px((end - start) as f32 * char_width);
-                *sel_vis = Visibility::Visible;
+    // Always update search text rendering to reflect query, cursor, and selection
+    let has_selection = search_query.is_focused && search_query.selection.is_some() && !search_query.query.is_empty();
+    for (mut text, mut color) in &mut search_text_query {
+        let target_str = if !search_query.is_focused {
+            if search_query.query.is_empty() {
+                "Search".to_string()
             } else {
-                *sel_vis = Visibility::Hidden;
+                search_query.query.clone()
             }
+        } else if has_selection {
+            search_query.query.clone()
+        } else if search_query.query.is_empty() {
+            "|".to_string()
         } else {
-            *sel_vis = Visibility::Hidden;
+            let cur = search_query.cursor.min(search_query.query.len());
+            format!("{}|{}", &search_query.query[..cur], &search_query.query[cur..])
+        };
+
+        if text.0 != target_str {
+            text.0 = target_str;
+        }
+
+        let target_color = if !search_query.is_focused && search_query.query.is_empty() {
+            Color::srgba(0.70, 0.70, 0.75, 0.60)
+        } else if has_selection {
+            Color::srgb(0.40, 0.85, 1.0)
+        } else {
+            Color::srgb(0.95, 0.95, 0.95)
+        };
+        if color.0 != target_color {
+            color.0 = target_color;
         }
     }
 }
@@ -1231,7 +1369,7 @@ fn handle_inventory_scroll(
     mut scroll_state: ResMut<InventoryScrollState>,
     icons: Res<BlockIcons>,
     window_query: Query<&Window, With<PrimaryWindow>>,
-    track_query: Query<(&GlobalTransform, &ComputedNode), With<InventoryScrollTrack>>,
+    card_query: Query<(&GlobalTransform, &ComputedNode), With<InventoryCard>>,
     track_interaction_query: Query<&Interaction, With<InventoryScrollTrack>>,
     thumb_query: Query<&Interaction, With<InventoryScrollThumb>>,
     mut thumb_node_query: Query<&mut Node, With<InventoryScrollThumb>>,
@@ -1246,7 +1384,9 @@ fn handle_inventory_scroll(
     let max_scroll = max_filtered_scroll(filtered.len());
     let mut row_changed = false;
 
-    let thumb_height: f32 = 45.0; // 15 * 3
+    let track_height = 110.0 * GUI_SCALE; // 330.0 px
+    let thumb_height = 15.0 * GUI_SCALE;  // 45.0 px
+    let max_travel = (track_height - thumb_height).max(1.0); // 285.0 px
 
     // 1. Mouse wheel scrolling
     let scroll_y = mouse_scroll.delta.y;
@@ -1261,73 +1401,59 @@ fn handle_inventory_scroll(
     // 2. Dragging the thumb or clicking on the track
     let left_pressed = mouse.pressed(MouseButton::Left);
     let left_just_pressed = mouse.just_pressed(MouseButton::Left);
-    let left_just_released = mouse.just_released(MouseButton::Left);
+    let cursor_pos = window_query.iter().next().and_then(|w| w.cursor_position());
+    let card_top_left = get_card_top_left(&card_query, &window_query);
 
-    for track_interaction in &track_interaction_query {
-        if *track_interaction == Interaction::Pressed && left_pressed {
-            scroll_state.is_dragging_thumb = true;
-        }
+    let (track_screen_x, track_screen_y) = if let Some(top_left) = card_top_left {
+        (
+            top_left.x + 175.0 * GUI_SCALE,
+            top_left.y + 33.0 * GUI_SCALE,
+        )
+    } else {
+        (0.0, 0.0)
+    };
+
+    let track_hit_rect = Rect::new(
+        track_screen_x - 16.0,
+        track_screen_y - 6.0,
+        track_screen_x + 12.0 * GUI_SCALE + 16.0,
+        track_screen_y + track_height + 6.0,
+    );
+
+    let is_inside_track = cursor_pos.is_some_and(|pos| track_hit_rect.contains(pos));
+
+    let track_pressed = track_interaction_query
+        .iter()
+        .any(|i| *i == Interaction::Pressed)
+        || thumb_query.iter().any(|i| *i == Interaction::Pressed);
+
+    if left_just_pressed && (is_inside_track || track_pressed) {
+        scroll_state.is_dragging_thumb = true;
     }
 
-    for thumb_interaction in &thumb_query {
-        if *thumb_interaction == Interaction::Pressed && left_pressed {
-            scroll_state.is_dragging_thumb = true;
-        }
-    }
-
-    // Direct bounding-box check to guarantee clicking on track/thumb starts drag
-    if left_just_pressed
-        && let (Some(window), Some((transform, computed))) =
-            (window_query.iter().next(), track_query.iter().next())
-        && let Some(cursor_pos) = window.cursor_position()
-    {
-        let center = transform.translation().truncate();
-        let half = computed.size() * 0.5;
-        let track_rect = Rect::from_corners(center - half, center + half);
-        if track_rect.contains(cursor_pos) {
-            scroll_state.is_dragging_thumb = true;
-        }
-    }
-
-    if left_just_released {
+    if !left_pressed {
         scroll_state.is_dragging_thumb = false;
     }
 
-    let track_data = track_query.iter().next();
-    let track_height = track_data
-        .map(|(_, computed)| computed.size().y)
-        .unwrap_or(108.0 * GUI_SCALE);
-    let max_travel = (track_height - thumb_height).max(1.0);
+    if scroll_state.is_dragging_thumb && left_pressed {
+        if let Some(pos) = cursor_pos {
+            let cursor_rel_y = pos.y - track_screen_y;
+            let clamped_y = (cursor_rel_y - thumb_height * 0.5).clamp(0.0, max_travel);
 
-    if scroll_state.is_dragging_thumb
-        && let (Some(window), Some((transform, computed))) =
-            (window_query.iter().next(), track_data)
-        && let Some(cursor_pos) = window.cursor_position()
-    {
-        let track_center_y = transform.translation().y;
-        let half_h = computed.size().y * 0.5;
-        let track_top_screen = track_center_y - half_h;
-        let track_cursor_y = cursor_pos.y - track_top_screen;
+            for mut thumb_node in &mut thumb_node_query {
+                thumb_node.top = px(clamped_y);
+            }
 
-        let clamped_y = (track_cursor_y - thumb_height * 0.5).clamp(0.0, max_travel);
+            let fraction = clamped_y / max_travel;
+            let target_row = ((fraction * max_scroll as f32).round() as usize).min(max_scroll);
 
-        // Smoothly position thumb under cursor during drag
-        for mut thumb_node in &mut thumb_node_query {
-            thumb_node.top = px(clamped_y);
+            if target_row != scroll_state.scroll_row {
+                scroll_state.scroll_row = target_row;
+                row_changed = true;
+            }
         }
-
-        let fraction = if max_travel > 0.0 {
-            clamped_y / max_travel
-        } else {
-            0.0
-        };
-        let target_row = (fraction * max_scroll as f32).round() as usize;
-
-        if target_row != scroll_state.scroll_row {
-            scroll_state.scroll_row = target_row.min(max_scroll);
-            row_changed = true;
-        }
-    } else if row_changed {
+    } else {
+        // Sync thumb position whenever not actively dragging
         let cur_row = scroll_state.scroll_row;
         let thumb_top = if max_scroll > 0 {
             (cur_row as f32 / max_scroll as f32) * max_travel

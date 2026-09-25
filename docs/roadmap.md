@@ -535,14 +535,22 @@ Phase 10 delivered extensive gameplay polish, interactive tactile feedback, inve
       - Title area ($X=24, Y=32$) and two action button placeholders ($X=138, 156$).
       - 1×8 bottom hotbar mirror row at $Y=128$.
     - **Creative Inventory**:
-      - Compact title and adjacent search bar ($X=99..167$, $Y=33..42$, width 69px, height 10px).
+      - Compact title and adjacent search bar ($X=98..168$, $Y=32..43$, width 71px, height 12px). Title area vertically centered with increased font size (16px).
       - 8×4 creative block grid with real-time filtering and 1×8 hotbar mirror row.
-      - Scrollbar track at $X=175..186$ with pixel-art thumb (`inventory_scroller.png`, 12×15 px at base, 36×45 px at 3×) supporting mouse wheel scrolling and click-and-drag.
-    - **Search Bar Text Selection & Repeat Deletion**:
-      - **Backspace Repeat**: Holding Backspace repeats character deletion with a 0.40s initial delay and 0.04s repeat rate.
-      - **Double-Click & Drag Selection**: Double-clicking selects all text; clicking and dragging selects character ranges, rendered with a semi-transparent blue highlight box behind text. Also supports <kbd>Ctrl+A</kbd>.
+      - **Manual Scrollbar Dragging & Smooth Tracking**: Scrollbar track ($X=175..186$) with pixel-art thumb (`inventory_scroller.png`, 12×15 px at base, 36×45 px at 3×) supporting both mouse wheel scrolling and click-and-drag thumb positioning with real-time slot synchronization.
+    - **Full-Featured Search Bar Input Field**:
+      - **Click-to-Focus & Hit-Testing**: Decoupled from Bevy child node transform propagation, utilizing card-relative coordinates with window fallback to ensure instantaneous, reliable focus activation on single click.
+      - **Dynamic Pipe Cursor & Navigation**: Rendered visual cursor pipe (`|`) with arrow key navigation (<kbd>Left</kbd>, <kbd>Right</kbd>), <kbd>Home</kbd>, and <kbd>End</kbd> support.
+      - **Continuous Key Repeat Engine**: Holding any character key (A–Z, 0–9, Space, `-`, `_`) triggers continuous typing repeating at 0.04s after a 0.40s initial threshold.
+      - **Backspace & Delete Key Repeat**: Holding Backspace or Delete continuously removes characters.
+      - **Double-Click & Drag Selection**: Double-clicking selects all query text; clicking and dragging selects character ranges, rendered with a semi-transparent blue highlight box behind text. Also supports <kbd>Ctrl+A</kbd>.
       - **Selection Deletion & Typing Replacement**: Typing replaces selected text; Backspace/Delete removes selection.
-      - Guarded <kbd>E</kbd> key when search input is focused.
+      - Guarded <kbd>E</kbd> key and <kbd>Esc</kbd> key to unfocus search input.
+    - **Minimap HUD & Time/Date Information Readout**:
+      - Added real-time date, time, and season readout below the minimap formatted as `"Day: 10, 14:30, spring"`.
+      - Streamlined minimal F3 Dev Stats HUD mode to exclusively show critical performance and target metrics (FPS, frame time, target block/coords) while delegating world time, biome, and coordinates to the minimap HUD footer.
+    - **Cleaned Final Interface Textures**:
+      - Integrated final production container and hotbar textures from `interfaces/containers/` removing legacy red guide outlines.
     - **Ergonomics & Polish**:
       - **Shift + Click**: Rapid item transfer between personal inventory and hotbar.
       - **Shift + LMB Drag**: Multi-slot batch transfer / creative hotbar clearance.

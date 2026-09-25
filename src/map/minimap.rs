@@ -34,6 +34,9 @@ pub struct MinimapCoordsText;
 pub struct MinimapBiomeText;
 
 #[derive(Component)]
+pub struct MinimapDateText;
+
+#[derive(Component)]
 pub struct MinimapDisplayImage;
 
 #[derive(Component)]
@@ -278,6 +281,17 @@ fn setup_minimap(
                     MinimapBiomeText,
                     Text::new("Biome: Plains"),
                     TextFont {
+                        font: font_handle.clone(),
+                        font_size: FontSize::Px(10.0),
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.95, 0.95, 0.98)),
+                    crate::core::text_shadow_default(),
+                ));
+                pill.spawn((
+                    MinimapDateText,
+                    Text::new("Day: 1, 06:00, spring"),
+                    TextFont {
                         font: font_handle,
                         font_size: FontSize::Px(10.0),
                         ..default()
@@ -408,9 +422,32 @@ fn sync_minimap_marker(
 
 fn update_minimap_ui(
     player_query: Query<&Transform, With<Player>>,
-    mut coords_query: Query<&mut Text, (With<MinimapCoordsText>, Without<MinimapBiomeText>)>,
-    mut biome_query: Query<&mut Text, (With<MinimapBiomeText>, Without<MinimapCoordsText>)>,
+    mut coords_query: Query<
+        &mut Text,
+        (
+            With<MinimapCoordsText>,
+            Without<MinimapBiomeText>,
+            Without<MinimapDateText>,
+        ),
+    >,
+    mut biome_query: Query<
+        &mut Text,
+        (
+            With<MinimapBiomeText>,
+            Without<MinimapCoordsText>,
+            Without<MinimapDateText>,
+        ),
+    >,
+    mut date_query: Query<
+        &mut Text,
+        (
+            With<MinimapDateText>,
+            Without<MinimapCoordsText>,
+            Without<MinimapBiomeText>,
+        ),
+    >,
     terrain_generator: Option<Res<TerrainGenerator>>,
+    environment: Option<Res<crate::environment::EnvironmentState>>,
 ) {
     let Ok(player_transform) = player_query.single() else {
         return;
@@ -433,6 +470,23 @@ fn update_minimap_ui(
 
     for mut text in &mut biome_query {
         **text = format!("Biome: {}", biome_name);
+    }
+
+    let (day, time_str, season_name) = if let Some(ref env) = environment {
+        let hours = (env.time_of_day * 24.0 + 6.0).rem_euclid(24.0);
+        let h = hours.floor() as u32;
+        let m = ((hours - hours.floor()) * 60.0).floor() as u32;
+        (
+            env.day_of_season(),
+            format!("{h:02}:{m:02}"),
+            env.season().name().to_lowercase(),
+        )
+    } else {
+        (1, "06:00".to_string(), "spring".to_string())
+    };
+
+    for mut text in &mut date_query {
+        **text = format!("Day: {day}, {time_str}, {season_name}");
     }
 }
 

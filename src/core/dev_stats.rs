@@ -204,30 +204,9 @@ fn update_dev_stats(
             *bg_color = BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.55));
             *border_color = BorderColor::all(Color::srgba(1.0, 1.0, 1.0, 0.10));
 
-            let (h, m, day_of_month, month, season_str) = if let Some(ref env) = environment {
-                let hours = (env.time_of_day * 24.0 + 6.0).rem_euclid(24.0);
-                let h = hours.floor() as u32;
-                let m = ((hours - hours.floor()) * 60.0).floor() as u32;
-                (h, m, env.day_of_month(), env.month(), env.season().name())
-            } else {
-                (0, 0, 1, 1, "Spring")
-            };
-
-            let biome_name = if let Some(ref generator) = terrain_generator {
-                let vx = (player_position.x / VOXEL_SIZE).floor() as i32;
-                let vz = (player_position.z / VOXEL_SIZE).floor() as i32;
-                generator.sample_column(vx, vz).biome.name()
-            } else {
-                "Plains"
-            };
-
             text.0 = format!(
                 "FPS: {fps:.0} ({frame_time:.2} ms)\n\
-                Time: {h:02}:{m:02} | Day {day_of_month} (M{month}, {season_str})\n\
-                Biome: {biome_name}\n\
-                Pos: {:.1} / {:.1} / {:.1}\n\
-                Target: {target_text}",
-                player_position.x, player_position.y, player_position.z,
+                Target: {target_text}"
             );
         }
         DebugHudMode::Extended => {
