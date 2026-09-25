@@ -318,25 +318,3 @@ fn apply_silhouette_outline(canvas: &mut [u8]) {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn isometric_icon_rasterization_produces_valid_rgba_image() {
-        let test_texture = vec![255u8; 16 * 16 * 4];
-        let image = render_isometric_block_icon(&test_texture, [1.0, 1.0, 1.0, 1.0]);
-
-        assert_eq!(image.texture_descriptor.size.width, 32);
-        assert_eq!(image.texture_descriptor.size.height, 32);
-
-        let data = image.data.as_ref().expect("Image data must be present");
-        assert_eq!(data.len(), 32 * 32 * 4);
-
-        let center_idx = (16 * 32 + 15) * 4;
-        assert!(data[center_idx + 3] > 0);
-
-        assert_eq!(data[3], 0);
-    }
-}

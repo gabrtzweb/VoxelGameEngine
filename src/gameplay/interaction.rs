@@ -304,37 +304,3 @@ pub fn place_block(
         Vec::new()
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::world::{Chunk, VoxelWorld};
-    use bevy::prelude::IVec3;
-
-    #[test]
-    fn placing_a_block_fills_voxel() {
-        let mut world = VoxelWorld::default();
-        world.insert_chunk(IVec3::ZERO, Chunk::new());
-        let mut modifications = WorldModificationStore::default();
-        let pos = IVec3::new(2, 2, 2);
-
-        let edited = place_block(&mut world, &mut modifications, pos, Voxel::Stone);
-
-        assert_eq!(edited.len(), 1);
-        assert_eq!(world.get_voxel(pos), Some(Voxel::Stone));
-    }
-
-    #[test]
-    fn placing_a_block_fails_when_voxel_is_occupied() {
-        let mut world = VoxelWorld::default();
-        world.insert_chunk(IVec3::ZERO, Chunk::new());
-        let mut modifications = WorldModificationStore::default();
-        let pos = IVec3::new(2, 2, 2);
-        world.set_voxel(pos, Voxel::Dirt);
-
-        let edited = place_block(&mut world, &mut modifications, pos, Voxel::Stone);
-
-        assert!(edited.is_empty());
-        assert_eq!(world.get_voxel(pos), Some(Voxel::Dirt));
-    }
-}

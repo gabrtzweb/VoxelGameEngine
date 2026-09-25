@@ -604,10 +604,30 @@ This phase tracks the comprehensive cleanup, technical debt reduction, dead code
   - **Net Line Count Reduction**:
     - 608 lines eliminated across 7 files with 0 compiler warnings (`cargo check`), 0 Clippy lints (`cargo clippy`), and clean formatting (`cargo fmt`).
 
-- [ ] **Stage 12.6: Next Subsystem Reviews (Planned)**:
-  - **`src/generation/` & `src/environment/` Subsystems**: Review noise, terrain, biome, caves, and celestial passes for obsolete unit tests, dead code, and unreferenced constants.
-  - **`src/core/` Subsystem**: Audit app setup, diagnostics, state transitions, and remaining utilities.
+- [x] **Stage 12.6: `src/generation/` and `src/gameplay/` Subsystems Cleanup (Completed)**:
+  - **`src/generation/` Subsystem**:
+    - `src/generation/trees.rs`: Completely purged 1,000+ lines of obsolete 50cm tree generation code awaiting Phase 9 rewrite; retained clean `TreeSpecies` enum (`Oak`, `Birch`, `Pine`, `Cactus`, and newly added `Rainwood`) with voxel mapping helpers (net reduction of 995 lines).
+    - `src/generation/biome.rs`: Removed dead `BiomeType::ALL` and `BiomeType::ACTIVE` constants and stripped 71-line `mod tests` block (net reduction of 93 lines).
+    - `src/generation/caves.rs`: Removed dead `is_cave` and `cave_voxel` methods (eliminating their `#[allow(dead_code, clippy::too_many_arguments)]` suppressions) and stripped 63-line `mod tests` block (net reduction of 103 lines).
+    - `src/generation/generator.rs`: Stripped 257-line `mod tests` block.
+    - `src/generation/strata.rs`: Stripped 54-line `mod tests` block.
+    - `src/generation/mod.rs`: Pruned unused re-exports and removed `#![allow(unused_imports)]`.
+    - `src/generation/inspector.rs`: Verified 100% active egui inspector code.
+  - **`src/gameplay/` Subsystem**:
+    - `src/gameplay/shaping.rs`: Refactored `handle_block_rotation` to group 4 mutable world resources into a tuple parameter, completely eliminating `#[allow(clippy::too_many_arguments)]`.
+    - `src/gameplay/icon.rs`: Stripped 22-line `mod tests` block.
+    - `src/gameplay/interaction.rs`: Stripped 34-line `mod tests` block.
+    - `src/gameplay/target_hud.rs`: Stripped 72-line `mod tests` block.
+    - `src/gameplay/targeting.rs`: Stripped 36-line `mod tests` block.
+    - `src/gameplay/debug.rs`, `radial_menu.rs`, & `mod.rs`: Verified 100% active runtime systems.
+  - **Net Line Count Reduction**:
+    - 1,676 net lines eliminated across 11 files with 0 compiler warnings (`cargo check`), 0 Clippy lints (`cargo clippy`), and clean formatting (`cargo fmt`).
+
+- [ ] **Stage 12.7: Remaining Subsystems Reviews (Planned)**:
+  - **`src/environment/` Subsystem**: Review atmosphere, clouds, stars, celestial, and time modules for obsolete unit tests, dead code, and unreferenced constants.
+  - **`src/core/` Subsystem**: Audit app setup, font, diagnostics, dynamic FPS, and remaining utilities.
   - **Engine-Wide Hygiene**: Maintain zero compiler warnings (`#[warn(unused)]`), zero dead code, and fast compilation on any target machine.
+
 
 
 

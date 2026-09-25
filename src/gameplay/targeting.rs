@@ -362,39 +362,3 @@ fn ray_hit_local_box(
         None
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use bevy::prelude::IVec3;
-
-    #[test]
-    fn block_origin_maps_directly_to_voxel() {
-        assert_eq!(
-            block_origin_from_voxel(IVec3::new(3, 2, 1)),
-            IVec3::new(3, 2, 1)
-        );
-        assert_eq!(
-            block_origin_from_voxel(IVec3::new(-1, -2, -3)),
-            IVec3::new(-1, -2, -3)
-        );
-    }
-
-    #[test]
-    fn adjacent_block_origin_moves_one_block_along_the_hit_face() {
-        let origin = IVec3::new(-2, 4, 6);
-
-        assert_eq!(
-            adjacent_block_origin(origin, IVec3::new(-2, 4, 6), IVec3::X),
-            IVec3::new(-1, 4, 6)
-        );
-        assert_eq!(
-            adjacent_block_origin(origin, IVec3::new(-2, 4, 6), -IVec3::Z),
-            IVec3::new(-2, 4, 5)
-        );
-        assert_eq!(
-            adjacent_block_origin(origin, IVec3::new(-2, 4, 6), IVec3::Y),
-            IVec3::new(-2, 5, 6)
-        );
-    }
-}

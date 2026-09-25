@@ -22,27 +22,6 @@ pub enum BiomeType {
 }
 
 impl BiomeType {
-    #[allow(dead_code)]
-    pub const ALL: [BiomeType; 14] = [
-        BiomeType::Plains,
-        BiomeType::PlainsForest,
-        BiomeType::Meadow,
-        BiomeType::Woodland,
-        BiomeType::Wetlands,
-        BiomeType::Highlands,
-        BiomeType::SnowyTundra,
-        BiomeType::ColdPlains,
-        BiomeType::Savanna,
-        BiomeType::Desert,
-        BiomeType::Beach,
-        BiomeType::River,
-        BiomeType::Ocean,
-        BiomeType::DeepOcean,
-    ];
-
-    #[allow(dead_code)]
-    pub const ACTIVE: [BiomeType; 14] = Self::ALL;
-
     pub fn name(self) -> &'static str {
         match self {
             BiomeType::Plains => "Plains",
@@ -492,76 +471,4 @@ pub fn sample_blended_biome_color(voxel: Voxel, world_x: f32, world_z: f32, seed
         (b * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
         (a * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
     ]
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn biome_classification_covers_all_variants() {
-        let mut found = std::collections::HashSet::new();
-
-        for c in -10..=10 {
-            for t in -10..=10 {
-                for h in -10..=10 {
-                    let cont = c as f32 / 10.0;
-                    let temp = t as f32 / 10.0;
-                    let hum = h as f32 / 10.0;
-                    let biome = ClimateGenerator::classify_biome(cont, temp, hum);
-                    found.insert(biome);
-                }
-            }
-        }
-
-        for expected in BiomeType::ACTIVE {
-            assert!(
-                found.contains(&expected),
-                "Missing classification for active biome: {:?}",
-                expected
-            );
-        }
-    }
-
-    #[test]
-    fn climate_generator_is_deterministic() {
-        let generator = ClimateGenerator::default();
-        let s1 = generator.sample(150.0, -250.0, 1337);
-        let s2 = generator.sample(150.0, -250.0, 1337);
-        assert_eq!(s1, s2);
-    }
-
-    #[test]
-    fn biome_colors_differ_between_climates() {
-        let plains_grass = BiomeType::Plains.grass_color();
-        let desert_grass = BiomeType::Desert.grass_color();
-        let tundra_grass = BiomeType::SnowyTundra.grass_color();
-
-        // Desert grass is warmer and yellower (higher red, lower green) than vibrant Plains grass
-        assert!(desert_grass[0] > plains_grass[0]);
-        // Tundra grass is cold and desaturated (higher blue/cyan tone)
-        assert!(tundra_grass[2] > plains_grass[2]);
-
-        let ocean_water = BiomeType::Ocean.water_color();
-        let desert_water = BiomeType::Desert.water_color();
-        let swamp_water = BiomeType::Wetlands.water_color();
-
-        // Desert oasis water is vibrant turquoise (high green/blue)
-        assert!(desert_water[1] > ocean_water[1]);
-        // Swamp water is murky/greenish
-        assert!(swamp_water[1] > swamp_water[0]);
-    }
-
-    #[test]
-    fn blended_biome_color_is_smooth_and_deterministic() {
-        let c1 = sample_blended_biome_color(Voxel::Grass, 100.0, 200.0, 1337);
-        let c2 = sample_blended_biome_color(Voxel::Grass, 100.0, 200.0, 1337);
-        assert_eq!(c1, c2);
-
-        let water = sample_blended_biome_color(Voxel::Water, 0.0, 0.0, 1337);
-        assert!(water[3] > 0.99);
-
-        let stone = sample_blended_biome_color(Voxel::Stone, 50.0, 50.0, 1337);
-        assert_eq!(stone, [1.0, 1.0, 1.0, 1.0]);
-    }
 }

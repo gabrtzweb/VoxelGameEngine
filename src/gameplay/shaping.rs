@@ -175,16 +175,17 @@ fn handle_block_shaping(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 fn handle_block_rotation(
     keyboard: Res<ButtonInput<KeyCode>>,
     game_mode: Res<GameMode>,
     current_target: Res<CurrentTarget>,
     mut commands: Commands,
-    mut world: ResMut<VoxelWorld>,
-    mut modifications: ResMut<WorldModificationStore>,
-    mut light_registry: ResMut<VoxelLightRegistry>,
-    mut queues: ResMut<ChunkStreamingQueues>,
+    (mut world, mut modifications, mut light_registry, mut queues): (
+        ResMut<VoxelWorld>,
+        ResMut<WorldModificationStore>,
+        ResMut<VoxelLightRegistry>,
+        ResMut<ChunkStreamingQueues>,
+    ),
     menu_state: Option<Res<State<MenuState>>>,
 ) {
     if menu_state.is_some_and(|s| *s.get() != MenuState::None) || *game_mode != GameMode::Creative {

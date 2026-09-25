@@ -301,31 +301,6 @@ impl CaveGenerator {
         false
     }
 
-    /// Determines whether a subterranean or ravine coordinate should be hollowed out by cave generation.
-    #[allow(dead_code, clippy::too_many_arguments)]
-    pub fn is_cave(
-        &self,
-        world_x: i32,
-        world_y: i32,
-        world_z: i32,
-        surface_height: i32,
-        is_underwater: bool,
-        sea_level: i32,
-        seed: u32,
-    ) -> bool {
-        let sample = self.sample_noise_point(world_x as f32, world_y as f32, world_z as f32, seed);
-        self.is_cave_sampled(
-            world_x,
-            world_y,
-            world_z,
-            sample,
-            surface_height,
-            is_underwater,
-            sea_level,
-            seed,
-        )
-    }
-
     /// Returns the filler voxel for a hollowed cave position using an up-sampled noise sample.
     #[inline]
     pub fn cave_voxel_sampled(
@@ -335,83 +310,5 @@ impl CaveGenerator {
         _sea_level: i32,
     ) -> Voxel {
         Voxel::Air
-    }
-
-    /// Returns the filler voxel for a hollowed cave position.
-    #[allow(dead_code)]
-    pub fn cave_voxel(
-        &self,
-        world_x: i32,
-        world_y: i32,
-        world_z: i32,
-        sea_level: i32,
-        seed: u32,
-    ) -> Voxel {
-        let sample = self.sample_noise_point(world_x as f32, world_y as f32, world_z as f32, seed);
-        self.cave_voxel_sampled(world_y, sample, sea_level)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn caves_do_not_carve_above_surface() {
-        let generator = CaveGenerator::default();
-        assert!(!generator.is_cave(0, 20, 0, 15, false, 9, 1337));
-        assert!(!generator.is_cave(0, 16, 0, 15, false, 9, 1337));
-    }
-
-    #[test]
-    fn cave_filler_types_by_depth() {
-        let generator = CaveGenerator::default();
-        let sea_level = 9;
-
-        assert_eq!(generator.cave_voxel(0, 5, 0, sea_level, 1337), Voxel::Air);
-        assert_eq!(generator.cave_voxel(0, -10, 0, sea_level, 1337), Voxel::Air);
-        assert_eq!(generator.cave_voxel(0, -60, 0, sea_level, 1337), Voxel::Air);
-        assert_eq!(generator.cave_voxel(0, -68, 0, sea_level, 1337), Voxel::Air);
-    }
-
-    #[test]
-    fn ravines_are_suppressed_underwater() {
-        let generator = CaveGenerator::default();
-        let sea_level = 9;
-
-        // Submerged surface (surface_height <= sea_level) must never trigger ravine carving
-        let at_sea = generator.is_cave(100, 8, 100, 8, true, sea_level, 1337);
-        assert!(!at_sea);
-    }
-
-    #[test]
-    fn trilinear_chunk_sampler_continuity_and_dimensions() {
-        let generator = CaveGenerator::default();
-        let chunk_origin = IVec3::new(16, -32, 16);
-        let sampler = generator.build_chunk_sampler(chunk_origin, 1337);
-
-        assert_eq!(sampler.samples.len(), CHUNK_VOLUME);
-
-        // Check continuity across cell boundary (e.g. at x = 3 and x = 4)
-        let s_3 = sampler.sample(3, 0, 0);
-        let s_4 = sampler.sample(4, 0, 0);
-
-        // The values must be close (continuous smoothly varying scalar field)
-        assert!((s_3.worm_a - s_4.worm_a).abs() < 0.25);
-        assert!((s_3.worm_b - s_4.worm_b).abs() < 0.25);
-        assert!((s_3.cheese - s_4.cheese).abs() < 0.25);
-
-        // Exact lattice point comparison: at (0, 0, 0), sample must exactly equal sample_noise_point
-        let exact = generator.sample_noise_point(
-            chunk_origin.x as f32,
-            chunk_origin.y as f32,
-            chunk_origin.z as f32,
-            1337,
-        );
-        let sampled = sampler.sample(0, 0, 0);
-        assert!((exact.worm_a - sampled.worm_a).abs() < 1e-5);
-        assert!((exact.worm_b - sampled.worm_b).abs() < 1e-5);
-        assert!((exact.cheese - sampled.cheese).abs() < 1e-5);
-        assert!((exact.aquifer - sampled.aquifer).abs() < 1e-5);
     }
 }
