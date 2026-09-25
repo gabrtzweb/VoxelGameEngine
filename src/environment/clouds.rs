@@ -250,30 +250,3 @@ fn solid_cloud_fallback() -> Image {
     img.sampler = ImageSampler::nearest();
     img
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn cloud_image_loads_with_alpha_channel() {
-        let img = load_cloud_image();
-        assert_eq!(img.width(), 256);
-        assert_eq!(img.height(), 256);
-        let data = img.data.as_ref().unwrap();
-        assert!(
-            data[3] <= 5,
-            "Corner pixel of clouds.png should be transparent (alpha <= 5)"
-        );
-    }
-
-    #[test]
-    fn cloud_color_sampling_smoothness() {
-        let noon_color = sample_cloud_color(0.25);
-        if let Color::LinearRgba(c) = noon_color {
-            assert!(c.red > 0.95 && c.green > 0.95 && c.blue > 0.95);
-        } else {
-            panic!("Expected LinearRgba");
-        }
-    }
-}

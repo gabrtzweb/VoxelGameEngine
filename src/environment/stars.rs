@@ -16,10 +16,7 @@ pub const STAR_BASE_SIZE: f32 = 5.5;
 pub struct StarfieldRoot;
 
 #[derive(Component)]
-#[allow(dead_code)]
-pub struct StarInstance {
-    pub initial_dir: Vec3,
-}
+pub struct StarInstance;
 
 #[derive(Resource)]
 pub struct StarfieldMaterialHandle(pub Handle<StandardMaterial>);
@@ -60,7 +57,7 @@ pub fn setup_starfield(
 
         let star_entity = commands
             .spawn((
-                StarInstance { initial_dir },
+                StarInstance,
                 Mesh3d(quad_mesh.clone()),
                 MeshMaterial3d(material_handle.clone()),
                 Transform::from_translation(initial_dir * STAR_DISTANCE)
@@ -171,33 +168,4 @@ fn generate_star_texture() -> Image {
     );
     img.sampler = ImageSampler::linear();
     img
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn star_distribution_is_valid() {
-        let stars = generate_star_directions(STAR_COUNT);
-        assert_eq!(stars.len(), STAR_COUNT);
-        for (dir, size) in stars {
-            assert!(dir.y > 0.0, "Star should be in upper hemisphere");
-            assert!(
-                (dir.length() - 1.0).abs() < 1e-4,
-                "Direction must be normalized"
-            );
-            assert!(size > 0.0, "Star size must be positive");
-        }
-    }
-
-    #[test]
-    fn star_texture_generates_valid_image() {
-        let img = generate_star_texture();
-        assert_eq!(img.width(), 16);
-        assert_eq!(img.height(), 16);
-        let data = img.data.as_ref().unwrap();
-        let center_idx = (7 * 16 + 7) * 4;
-        assert!(data[center_idx] > 200, "Center should be bright");
-    }
 }

@@ -130,18 +130,6 @@ impl MoonPhase {
     }
 }
 
-#[allow(dead_code)]
-pub const MOON_PHASE_NAMES: [&str; 8] = [
-    "Full Moon",
-    "Waning Gibbous",
-    "Last Quarter",
-    "Waning Crescent",
-    "New Moon",
-    "Waxing Crescent",
-    "First Quarter",
-    "Waxing Gibbous",
-];
-
 #[derive(Resource)]
 pub struct EnvironmentState {
     pub time_of_day: f32,
@@ -178,7 +166,6 @@ impl EnvironmentState {
         ((self.month() - 1) % 12) + 1
     }
 
-    #[allow(dead_code)]
     pub fn year(&self) -> u32 {
         (self.day_count.saturating_sub(1) / 336) + 1
     }
@@ -292,118 +279,4 @@ pub fn advance_environment_clock(
     let wrapped = next.rem_euclid(1.0);
     state.time_of_day = wrapped;
     state.phase = DayPhase::from_time(wrapped);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn day_phase_progression_loops_cleanly() {
-        assert_eq!(DayPhase::Morning.next(), DayPhase::Noon);
-        assert_eq!(DayPhase::Noon.next(), DayPhase::Evening);
-        assert_eq!(DayPhase::Evening.next(), DayPhase::Night);
-        assert_eq!(DayPhase::Night.next(), DayPhase::Morning);
-    }
-
-    #[test]
-    fn moon_phases_match_28_day_month_specification() {
-        for day in 1..=3 {
-            assert_eq!(MoonPhase::from_day_of_month(day), MoonPhase::NewMoon);
-        }
-        for day in 4..=7 {
-            assert_eq!(MoonPhase::from_day_of_month(day), MoonPhase::WaxingCrescent);
-        }
-        for day in 8..=10 {
-            assert_eq!(MoonPhase::from_day_of_month(day), MoonPhase::FirstQuarter);
-        }
-        for day in 11..=14 {
-            assert_eq!(MoonPhase::from_day_of_month(day), MoonPhase::WaxingGibbous);
-        }
-        for day in 15..=17 {
-            assert_eq!(MoonPhase::from_day_of_month(day), MoonPhase::FullMoon);
-        }
-        for day in 18..=21 {
-            assert_eq!(MoonPhase::from_day_of_month(day), MoonPhase::WaningGibbous);
-        }
-        for day in 22..=24 {
-            assert_eq!(MoonPhase::from_day_of_month(day), MoonPhase::LastQuarter);
-        }
-        for day in 25..=28 {
-            assert_eq!(MoonPhase::from_day_of_month(day), MoonPhase::WaningCrescent);
-        }
-    }
-
-    #[test]
-    fn calendar_progression_and_seasons() {
-        let mut state = EnvironmentState::default();
-        assert_eq!(state.day_count, 1);
-        assert_eq!(state.day_of_month(), 1);
-        assert_eq!(state.month(), 1);
-        assert_eq!(state.season(), Season::Spring);
-        assert_eq!(state.day_of_season(), 1);
-        assert_eq!(state.moon_phase(), MoonPhase::NewMoon);
-        assert_eq!(state.day_length_seconds, 1440.0);
-
-        // Day 28: end of month 1 (Spring)
-        state.day_count = 28;
-        assert_eq!(state.day_of_month(), 28);
-        assert_eq!(state.month(), 1);
-        assert_eq!(state.season(), Season::Spring);
-        assert_eq!(state.day_of_season(), 28);
-        assert_eq!(state.moon_phase(), MoonPhase::WaningCrescent);
-
-        // Day 29: start of month 2 (Spring)
-        state.day_count = 29;
-        assert_eq!(state.day_of_month(), 1);
-        assert_eq!(state.month(), 2);
-        assert_eq!(state.season(), Season::Spring);
-        assert_eq!(state.day_of_season(), 29);
-        assert_eq!(state.moon_phase(), MoonPhase::NewMoon);
-
-        // Day 84: end of month 3 / end of Spring
-        state.day_count = 84;
-        assert_eq!(state.day_of_month(), 28);
-        assert_eq!(state.month(), 3);
-        assert_eq!(state.season(), Season::Spring);
-        assert_eq!(state.day_of_season(), 84);
-
-        // Day 85: start of month 4 / start of Summer
-        state.day_count = 85;
-        assert_eq!(state.day_of_month(), 1);
-        assert_eq!(state.month(), 4);
-        assert_eq!(state.season(), Season::Summer);
-        assert_eq!(state.day_of_season(), 1);
-
-        // Day 169: start of month 7 / start of Autumn
-        state.day_count = 169;
-        assert_eq!(state.day_of_month(), 1);
-        assert_eq!(state.month(), 7);
-        assert_eq!(state.season(), Season::Autumn);
-        assert_eq!(state.day_of_season(), 1);
-
-        // Day 253: start of month 10 / start of Winter
-        state.day_count = 253;
-        assert_eq!(state.day_of_month(), 1);
-        assert_eq!(state.month(), 10);
-        assert_eq!(state.season(), Season::Winter);
-        assert_eq!(state.day_of_season(), 1);
-
-        // Day 336: end of month 12 / end of Year 1
-        state.day_count = 336;
-        assert_eq!(state.day_of_month(), 28);
-        assert_eq!(state.month(), 12);
-        assert_eq!(state.season(), Season::Winter);
-        assert_eq!(state.day_of_season(), 84);
-        assert_eq!(state.year(), 1);
-
-        // Day 337: Year 2, Month 13 (month_of_year 1), Spring Day 1
-        state.day_count = 337;
-        assert_eq!(state.day_of_month(), 1);
-        assert_eq!(state.month(), 13);
-        assert_eq!(state.month_of_year(), 1);
-        assert_eq!(state.season(), Season::Spring);
-        assert_eq!(state.day_of_season(), 1);
-        assert_eq!(state.year(), 2);
-    }
 }

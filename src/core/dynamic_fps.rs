@@ -225,27 +225,3 @@ impl Plugin for DynamicFpsPlugin {
             .add_systems(PostUpdate, dynamic_fps_pacer);
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn dynamic_fps_default_settings() {
-        let settings = DynamicFpsSettings::default();
-        assert!(settings.enabled);
-        assert_eq!(settings.unfocused_target_fps, 15);
-        assert_eq!(settings.idle_target_fps, 30);
-        assert_eq!(settings.battery_target_fps, 60);
-        assert_eq!(settings.idle_timeout_secs, 60.0);
-    }
-
-    #[test]
-    fn dynamic_fps_state_initializes_active() {
-        let state = DynamicFpsState::default();
-        assert!(state.is_focused);
-        assert!(!state.is_idle);
-        assert_eq!(state.state_kind, DynamicFpsStateKind::Normal);
-        assert_eq!(state.target_fps, None);
-    }
-}

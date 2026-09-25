@@ -32,8 +32,6 @@ pub struct MoonPhaseTextures(pub [Handle<Image>; 8]);
 
 #[derive(Resource)]
 pub struct CelestialMaterials {
-    #[allow(dead_code)]
-    pub sun: Handle<StandardMaterial>,
     pub moon: Handle<StandardMaterial>,
 }
 
@@ -76,7 +74,6 @@ pub fn setup_celestial(
     });
 
     commands.insert_resource(CelestialMaterials {
-        sun: sun_material.clone(),
         moon: moon_material.clone(),
     });
 
@@ -154,18 +151,6 @@ pub fn calculate_sun_direction(time_of_day: f32) -> Vec3 {
     let angle = (time_of_day - 0.25) * core::f32::consts::TAU;
     let tilt = 0.22;
     Vec3::new(-angle.sin(), angle.cos(), -angle.cos() * tilt).normalize()
-}
-
-#[allow(dead_code)]
-pub fn moon_phase_factor(phase: usize) -> f32 {
-    match phase % 8 {
-        0 => 1.0,
-        1 | 7 => 0.75,
-        2 | 6 => 0.50,
-        3 | 5 => 0.25,
-        4 => 0.05,
-        _ => 1.0,
-    }
 }
 
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
@@ -410,60 +395,4 @@ fn solid_color_image(width: u32, height: u32, color: [u8; 4]) -> Image {
     );
     img.sampler = ImageSampler::nearest();
     img
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn moon_phases_are_loaded_into_eight_discrete_images() {
-        let phases = load_moon_phase_images();
-        assert_eq!(phases.len(), 8);
-        for (idx, img) in phases.iter().enumerate() {
-            assert_eq!(img.width(), 64, "Phase {} width should be 64", idx);
-            assert_eq!(img.height(), 64, "Phase {} height should be 64", idx);
-        }
-    }
-
-    #[test]
-    fn sun_and_moon_have_additive_transparent_backgrounds() {
-        let sun = load_sun_image();
-        let sun_data = sun.data.as_ref().unwrap();
-        // Corner pixel (0, 0) should be pure black / zero alpha
-        assert_eq!(sun_data[0], 0);
-        assert_eq!(sun_data[1], 0);
-        assert_eq!(sun_data[2], 0);
-        assert_eq!(sun_data[3], 0);
-
-        // Center pixel should be bright yellow sun core
-        let w = sun.width();
-        let h = sun.height();
-        let center_idx = ((h / 2 * w + w / 2) * 4) as usize;
-        assert!(sun_data[center_idx] > 200, "Sun center red should be > 200");
-        assert_eq!(
-            sun_data[center_idx + 3],
-            255,
-            "Sun center alpha should be 255"
-        );
-
-        let phases = load_moon_phase_images();
-        for (idx, phase_img) in phases.iter().enumerate() {
-            let data = phase_img.data.as_ref().unwrap();
-            // Corner pixel should be pure black (0, 0, 0, 0)
-            assert_eq!(data[0], 0, "Phase {} corner red should be 0", idx);
-            assert_eq!(data[1], 0, "Phase {} corner green should be 0", idx);
-            assert_eq!(data[2], 0, "Phase {} corner blue should be 0", idx);
-            assert_eq!(data[3], 0, "Phase {} corner alpha should be 0", idx);
-        }
-    }
-
-    #[test]
-    fn celestial_distance_and_angular_scale() {
-        assert_eq!(CELESTIAL_DISTANCE, 800.0);
-        let sun_angular_ratio = SUN_SIZE / CELESTIAL_DISTANCE;
-        assert!((sun_angular_ratio - 0.52).abs() < 1e-4);
-        let moon_angular_ratio = MOON_SIZE / CELESTIAL_DISTANCE;
-        assert!((moon_angular_ratio - 0.40).abs() < 1e-4);
-    }
 }

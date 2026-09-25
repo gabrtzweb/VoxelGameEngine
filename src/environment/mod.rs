@@ -1,5 +1,3 @@
-#![allow(unused_imports)]
-
 pub mod atmosphere;
 pub mod celestial;
 pub mod clouds;
@@ -8,11 +6,13 @@ pub mod time;
 
 use bevy::prelude::*;
 
-pub use atmosphere::*;
-pub use celestial::*;
-pub use clouds::*;
-pub use stars::*;
-pub use time::*;
+use atmosphere::{
+    DAY_FILL_ILLUMINANCE, DAY_SUN_ILLUMINANCE, NIGHT_MOON_ILLUMINANCE, sample_ambient_brightness,
+    sample_ambient_color, sample_sky_color, sync_fog_distance, update_atmosphere,
+};
+use time::{advance_environment_clock, handle_environment_input};
+
+pub use time::{DayPhase, EnvironmentState};
 
 use crate::player::PlayerCamera;
 

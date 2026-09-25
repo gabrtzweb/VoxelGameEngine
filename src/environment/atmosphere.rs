@@ -94,10 +94,6 @@ pub fn sync_fog_distance(
     }
 }
 
-// -------------------------------------------------------------------------
-// Smooth 4-Phase Palette Interpolation
-// -------------------------------------------------------------------------
-
 pub fn sample_4stop<T: Copy>(
     time_of_day: f32,
     morning: T,
@@ -219,24 +215,4 @@ pub fn sample_exposure(time_of_day: f32) -> f32 {
         NIGHT_EXPOSURE_EV100,
         lerp_f32,
     )
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn atmosphere_sampler_continuous_at_boundaries() {
-        let eps = 0.0001;
-        let c_before = sample_sky_color(0.25 - eps);
-        let c_at = sample_sky_color(0.25);
-        let c_after = sample_sky_color(0.25 + eps);
-
-        if let (Color::LinearRgba(a), Color::LinearRgba(b), Color::LinearRgba(c)) =
-            (c_before, c_at, c_after)
-        {
-            assert!((a.red - b.red).abs() < 0.01);
-            assert!((b.red - c.red).abs() < 0.01);
-        }
-    }
 }

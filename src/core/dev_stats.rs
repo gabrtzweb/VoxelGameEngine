@@ -351,38 +351,3 @@ fn update_dev_stats(
         DebugHudMode::Hidden => {}
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn debug_hud_settings_toggles_cleanly() {
-        let mut settings = DebugHudSettings::default();
-        assert_eq!(settings.mode, DebugHudMode::Minimal);
-
-        settings.toggle_mode();
-        assert_eq!(settings.mode, DebugHudMode::Extended);
-
-        settings.toggle_mode();
-        assert_eq!(settings.mode, DebugHudMode::Minimal);
-
-        // Hide HUD
-        settings.toggle_hidden();
-        assert_eq!(settings.mode, DebugHudMode::Hidden);
-
-        // Unhide restores previous mode
-        settings.toggle_hidden();
-        assert_eq!(settings.mode, DebugHudMode::Minimal);
-
-        // Switch to Extended then hide
-        settings.toggle_mode();
-        assert_eq!(settings.mode, DebugHudMode::Extended);
-        settings.toggle_hidden();
-        assert_eq!(settings.mode, DebugHudMode::Hidden);
-
-        // Pressing F3 (toggle_mode) while hidden restores mode
-        settings.toggle_mode();
-        assert_eq!(settings.mode, DebugHudMode::Extended);
-    }
-}

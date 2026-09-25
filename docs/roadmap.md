@@ -363,11 +363,7 @@ Phase 10 is currently active. Development is intentionally not strictly followin
 
 - [ ] **Stage 10.1: Block Interaction Feedback & Particle FX**:
   - **Block Breaking Particle Bursts**: Scattering sub-voxel debris particles matching the texture of the broken block, bouncing briefly before fading out.
-  - **Block Placement Feedback**: Subtle scale pop / bounce animation and placement dust puff.
-  - **Sound Event Hooks**: Audio trigger events for:
-    - Footstep sounds by surface type (Grass, Stone, Sand, Wood, Snow, Water wading).
-    - Block breaking and placement audio (crunchy dirt, resonant stone, snappy wood, splashing water).
-    - Ambient wind gusts on mountain summits and subterranean cavern echoes.
+  - **Block Placement Feedback**: Subtle scale pop / bounce animation.
 
 - [ ] **Stage 10.2: Quality-of-Life & Additional Tooling**:
   - [x] **Fix Live "Regenerate World" Chunk Reload**: Ensure that clicking "Regenerate World" in the <kbd>F1</kbd> Inspector cleanly despawns existing chunk mesh entities and re-triggers async mesh generation in real time.
@@ -623,10 +619,22 @@ This phase tracks the comprehensive cleanup, technical debt reduction, dead code
   - **Net Line Count Reduction**:
     - 1,676 net lines eliminated across 11 files with 0 compiler warnings (`cargo check`), 0 Clippy lints (`cargo clippy`), and clean formatting (`cargo fmt`).
 
-- [ ] **Stage 12.7: Remaining Subsystems Reviews (Planned)**:
-  - **`src/environment/` Subsystem**: Review atmosphere, clouds, stars, celestial, and time modules for obsolete unit tests, dead code, and unreferenced constants.
-  - **`src/core/` Subsystem**: Audit app setup, font, diagnostics, dynamic FPS, and remaining utilities.
-  - **Engine-Wide Hygiene**: Maintain zero compiler warnings (`#[warn(unused)]`), zero dead code, and fast compilation on any target machine.
+- [x] **Stage 12.7: `src/environment/` and `src/core/` Subsystems Cleanup (Completed)**:
+  - **`src/environment/` Subsystem**:
+    - `src/environment/atmosphere.rs`: Stripped 20-line `mod tests` block.
+    - `src/environment/celestial.rs`: Removed dead `sun` field from `CelestialMaterials`, removed dead `moon_phase_factor()` helper, and stripped 56-line `mod tests` block (net reduction of 71 lines).
+    - `src/environment/clouds.rs`: Stripped 27-line `mod tests` block.
+    - `src/environment/stars.rs`: Turned `StarInstance` into a unit marker struct (`pub struct StarInstance;`), removed unused `initial_dir` field and its `#[allow(dead_code)]`, and stripped 29-line `mod tests` block (net reduction of 36 lines).
+    - `src/environment/time.rs`: Removed dead `MOON_PHASE_NAMES` array, removed `#[allow(dead_code)]` from `pub fn year(&self)` (actively used by dev stats), and stripped 114-line `mod tests` block (net reduction of 127 lines).
+    - `src/environment/mod.rs`: Replaced glob re-exports with explicit, minimal imports/re-exports (`DayPhase`, `EnvironmentState`, `EnvironmentPlugin`), completely eliminating `#![allow(unused_imports)]`.
+  - **`src/core/` Subsystem**:
+    - `src/core/font.rs`: Removed dead helpers `text_font`, `make_text_font`, `to_font_source`, and stripped 10-line `mod tests` block (net reduction of 39 lines).
+    - `src/core/noise.rs`: Stripped 38-line `mod tests` block.
+    - `src/core/dynamic_fps.rs`: Stripped 24-line `mod tests` block.
+    - `src/core/dev_stats.rs`: Stripped 35-line `mod tests` block.
+    - `src/core/mod.rs`: Pruned unused re-exports (`DebugHudMode`, `DebugHudSettings`, `DynamicFpsStateKind`, `DEFAULT_FONT_PATH`, `fbm_2d`, etc.), retaining only active symbols.
+  - **Net Line Count Reduction**:
+    - 423 net lines eliminated across 11 files with 0 compiler warnings (`cargo check`), 0 Clippy lints (`cargo clippy`), and clean formatting (`cargo fmt`).
 
 
 
