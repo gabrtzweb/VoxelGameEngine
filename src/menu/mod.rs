@@ -466,13 +466,13 @@ fn manage_menu_blur(
         return;
     }
 
-    // World depth-of-field blur applies only to Pause and Settings menus, keeping the world
-    // visually clear when interacting with the inventory.
-    let is_in_pause_menu =
-        *menu_state.get() == MenuState::Pause || *menu_state.get() == MenuState::Settings;
+    let should_blur = matches!(
+        *menu_state.get(),
+        MenuState::Pause | MenuState::Settings | MenuState::Inventory
+    );
 
     for camera_entity in &camera_query {
-        if is_in_pause_menu {
+        if should_blur {
             commands.entity(camera_entity).insert(DepthOfField {
                 mode: DepthOfFieldMode::Gaussian,
                 focal_distance: 0.1,

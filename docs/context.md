@@ -25,7 +25,7 @@ The stack I am using for my project:
     - Minimum chunk Y: -16 (-256 blocks)
     - Maximum chunk Y: +16 (+256 blocks)
     - Total playable vertical height: 512 blocks.
-- Bottom-most layer of blocks: 100% unbreakable Dreadstone bedrock strictly confined to the bottom 3–4 layers of the world ($Y \le -254$).
+- Bottom-most layer of blocks: 100% unbreakable Dreadstone bedrock strictly confined to the bottom 3–4 layers of the world ($Y \le -254$). The very bottom layer ($Y = -256$) is guaranteed solid, smooth Dreadstone bedrock; cave carvers are strictly masked out of the bottom layer to eliminate voids or holes through the floor of the world.
 - Upper underground crust ($Y > -120$) is uniform `Stone`, smoothly transitioning at the underground depth midpoint ($Y \le -120$) down to `Blackstone` (`rock_blackstone`). `Slate` and `Cobbleslate` are reserved exclusively for the `Highlands` biome.
 - Chunk streaming operates using a horizontal cylindrical distance ($X^2 + Z^2 \le R^2$) within the vertical range of chunk Y $-16$ to $+16$. This guarantees that soaring mountain summits ($Y \le 256$) and deep caverns are never truncated or sliced off by spherical distance clipping.
 - Cloud plane altitude: 220.0 m (floating high above the tallest mountain peaks).
@@ -70,10 +70,10 @@ The player uses a custom AABB collision system that directly queries voxel data.
 ## Implemented Architecture & Features by Domain
 
 ### 1. Core Voxel Architecture & World Representation
-- **1.0m³ Block Architecture**: The world is stored using 1.0 m voxels (identical to Minecraft blocks). Full 1 m³ blocks form the base unit of the world; 0.5 m sub-voxels and the former interaction mode toggle are completely removed.
+- **1.0m³ Block Architecture**: The world is stored using 1.0 m voxels (identical to Minecraft blocks). Full 1 m³ blocks form the base unit of the world; 0.5 m sub-voxels are completely removed. Native block shapes (`BlockShape::Full`, `BlockShape::Slab`, `BlockShape::Stair`, `BlockShape::Column`) are supported with full 3D orientations and exact sub-box collision raycasting.
 - **Chunk Geometry**: 16 × 16 × 16 voxels/blocks (4,096 voxels per chunk) spanning 16 m × 16 m × 16 m physical space.
-- **Procedural Cylindrical Streaming**: Dynamic horizontal radius streaming ($X^2 + Z^2 \le R^2$) spanning vertical chunk bounds from chunk $Y = -6$ ($-96$ blocks) up to chunk $Y = +16$ ($+256$ blocks). Default render distance of 12 chunks (configurable 2..=16 chunks in settings). Prevents mountain peaks and subterranean caverns from being truncated.
-- **Block Registry & Properties**: Dedicated blocks architecture in `src/world/block.rs` supporting 63 block types, texture IDs, tool tiers (Pickaxe, Shovel, Axe), and material durability values. Includes multi-face blocks such as `Voxel::OakWoodLog` (log rings on top/bottom, bark on sides) and `Voxel::SnowyGrass` (snow top, snowy grass sides, dirt bottom).
+- **Procedural Cylindrical Streaming**: Dynamic horizontal radius streaming ($X^2 + Z^2 \le R^2$) spanning vertical chunk bounds from chunk $Y = -16$ ($-256$ blocks) up to chunk $Y = +16$ ($+256$ blocks). Default render distance of 12 chunks (configurable 2..=16 chunks in settings). Prevents mountain peaks and subterranean caverns from being truncated.
+- **Block Registry & Properties**: Dedicated blocks architecture in `src/world/block.rs` supporting 64 block types, texture IDs, tool tiers (Pickaxe, Shovel, Axe), and material durability values. Includes multi-face blocks such as `Voxel::OakWoodLog` (log rings on top/bottom, bark on sides), `Voxel::SnowyGrass` (snow top, snowy grass sides, dirt bottom), `Voxel::RootedDirt` (dirt with hanging subterranean roots), and `Voxel::RainwoodWoodLog`.
 
 ### 2. Meshing & GPU Rendering Pipeline
 - **Asynchronous Greedy Meshing**: Chunk meshing offloaded to Bevy's `AsyncComputeTaskPool` with background worker tasks and throttled main-thread mesh uploading (`src/meshing/async_mesher.rs`), eliminating frame-rate drops.
@@ -95,19 +95,19 @@ The player uses a custom AABB collision system that directly queries voxel data.
   - Subsoil is uniform `Dirt` (or `Sand` in Desert/Beach) with gravel/blackstone clutter completely removed.
   - Upper underground crust ($Y > -120$) is uniform `Stone`.
   - Lower crust ($Y \le -120$) transitions at depth midpoint down to `Blackstone` (`rock_blackstone`) via 3D dithered noise.
-  - Bedrock (`Dreadstone`) is strictly confined to the bottom 3–4 layers of the world ($Y \le -254$).
+  - Bedrock (`Dreadstone`) is strictly confined to the bottom 3–4 layers of the world ($Y \le -254$). The bottom-most layer ($Y = -256$) is guaranteed smooth, unbroken Dreadstone bedrock with cave carvers masked out.
 - **Natural Mountain Arches, Cave Mouths & Subterranean Rivers**:
   - Spacious 3–5 block wide 3D caves with natural cave mouth breaches on dry hillsides ($0.18$ mask threshold).
   - Horizontal ridge-tunneling arches carving hollow openings through tall mountain ridges ($Y \ge 34$).
   - Rivers flowing into high peaks ($Y > \text{sea\_level} + 14$) preserve the standing mountain mass while tunneling subterranean river caverns at sea level.
   - Removed subterranean water aquifers for clean, walkable cave exploration.
-- **Paused Procedural Tree Generation (Stage 9.1)**:
-  - Procedural tree and clutter block generation (packed dirt, moss, etc.) has been temporarily paused and reverted from terrain chunk building during Phase 10 foundational terrain polishing. Trees, canopy architecture, and multi-face logs remain registered in block/inventory definitions, ready to be re-introduced once core terrain polish is settled.
+- **Paused Procedural Tree Generation**:
+  - Procedural tree and clutter block generation has been paused and cleaned up in terrain chunk building. Trees and multi-face logs remain registered in block/inventory definitions, ready to be reintroduced in Phase 12.
 - **Dedicated Live Terrain & World Inspector GUI**: Custom egui tuning window bound to <kbd>F1</kbd> running in `EguiPrimaryContextPass` with full interactive sliders and an instant "Regenerate World" button that cleanly despawns existing chunk mesh entities and re-triggers async mesh generation in real time.
 
 ### 4. Player Physics, Collision & Locomotion
 - **Custom Voxel AABB Collision**: Zero-allocation AABB collision system querying chunk voxel data directly without rigid bodies or external physics engine overhead.
-- **0.50m Auto-Stepping**: Automatically steps up to 0.50m (50cm) elevation changes (calibrated for future slab stepping), requiring jumping over full 1m blocks.
+- **0.50m Auto-Stepping**: Automatically steps up to 0.50m (50cm) elevation changes (calibrated for slab stepping), requiring jumping over full 1m blocks.
 - **Stance Hierarchy & Dimensions**:
   - Standing: height 1.80 m, eye height 1.62 m.
   - Crouching (<kbd>Ctrl</kbd>): height 1.30 m, eye height 1.20 m, speed reduced to 55%, with ledge-fall clamping preventing drops off steep edges.
@@ -137,22 +137,27 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - **Dynamic Clouds & Starfield**: 1600m horizontal cloud plane with wind drift and atmospheric tinting; single-root hierarchical starfield dome with celestial rotation and smooth twilight fade.
 - **Atmospheric Transitions & Time Control**: Continuous 4-stop piecewise-linear palette interpolation across Morning, Noon, Evening, and Night. Interactive time control (<kbd>F6</kbd>: tap to advance phase, hold to scrub time).
 
-### 8. Gameplay Tools & Shaping
-- **Block Shaping Tool (<kbd>R</kbd> Key)**: Tap <kbd>R</kbd> to sequentially cycle configurations; held for 10-shape radial menu.
-- **Circular Radial Menu (<kbd>Hold R</kbd> >0.2s)**: 10-slice circular wheel with directional mouse selection and center preview card.
+### 8. Gameplay Tools, Shaping & Interaction Feedback
+- **Block Interaction Feedback & Particle FX (Stage 10.1)**:
+  - **Block Breaking Particle Bursts**: Scattering 8 subtle sub-voxel debris pebbles ($0.040\text{m}$ half-extent / $8\text{cm}$ cubes) matching the broken block's texture layer and tint color, bouncing realistically against collidable terrain and walls (`check_terrain_collision`), with friction, gravity, and lifetime shrinking before despawning.
+  - **Block Placement Feedback**: Punchy 0.18s elastic scale bounce animation ($1.15 \to 1.00 \to 0.95 \to 1.00$) matching placed block multi-face textures and orientation.
+  - **Decoupled Observer Architecture**: Driven by Bevy 0.19 `On<BlockBreakEvent>` and `On<BlockPlaceEvent>` observer triggers in `src/gameplay/feedback.rs`.
+- **Block Shaping Tool (<kbd>R</kbd> Key)**: Tap <kbd>R</kbd> to sequentially cycle configurations (`Full`, `Slab`, `Stair`, `Column`); held for 4-slice radial menu.
+- **Circular Radial Menu (<kbd>Hold R</kbd> >0.2s)**: 4-slice circular wheel with directional mouse selection and center preview card.
 - **Block Rotation Tool (<kbd>T</kbd> Key)**: Rotates targeted block shape 90° clockwise around the vertical Y-axis.
 - **Block Interactions**: Left-click break, right-click place, middle-click block pick.
 
 ### 9. User Interface, Menus & Developer Tooling
-- **Textured 8-Slot Hotbar HUD**: Pixel-art skinned hotbar tray (`assets/textures/gui/containers/hotbar.png`, 162×22 px scaled 3× to 486×66 px) with 36×36 px block icons, transparent inactive slots, golden active selection frame (`Color::srgb(1.0, 0.85, 0.30)`), slot numbers (1..8) with drop shadow, mouse wheel cycling, and <kbd>Q</kbd> slot clearing.
-- **Dual-Card Textured Inventory Interface (<kbd>E</kbd> Key)**: Texture-skinned dual-card container interface (`src/menu/creative_inventory.rs`) rendered at 3× integer scale using nearest-neighbor sampling. Comprises:
+- **Textured 8-Slot Hotbar HUD**: Pixel-art skinned hotbar tray (`assets/textures/gui/containers/hotbar.png`, 256×32 px centered, scaled 2× integer to 512×64 px) with 36×36 px outer slot frames, 32×32 px native item icons (16px internal slot size), transparent inactive slots, golden active selection frame (`Color::srgb(1.0, 0.85, 0.30)`), slot numbers (1..8) with drop shadow, mouse wheel cycling, and <kbd>Q</kbd> slot clearing.
+- **Dual-Card Textured Inventory Interface (<kbd>E</kbd> Key)**: Texture-skinned dual-card container interface (`src/menu/creative_inventory.rs`) rendered at 3× integer scale using nearest-neighbor sampling. Centered horizontally with symmetrical level top borders:
   - **Left Player Card**: Sliced to 258×366 px from `inventory.png`/`creative_inventory.png`. Displays `"Player Name – Level 10"` header, empty 3D player model viewport (`PlayerModelViewport`), and 5 vertical armor slot placeholders (`ArmorSlotUi`) for Helmet, Chest Armor, Gloves, Pants, and Boots with letter badges ("H", "C", "G", "P", "B"), hover highlights, and placement rejection ensuring no blocks are accepted.
   - **Right Standard Card**: Sliced to 474×378 px from `inventory.png`. Displays `"Inventory"` title, two non-functional buttons ("B", "B"), 8×4 grid (32 slots) for `PlayerInventory` items, and 1×8 hotbar mirror row.
   - **Right Creative Card**: Sliced to 528×378 px from `creative_inventory.png`. Displays `"Inventory"` title, interactive search bar with `"Search"` placeholder and live block filtering, 8×4 grid for creative blocks, 1×8 hotbar mirror row, and 36×336 px scrollbar track with pixel-art `scroller.png` thumb.
-  - **Tab Switching & Ergonomics**: Top tab switcher buttons (`[ Creative ]` and `[ Personal ]`) and <kbd>Tab</kbd> hotkey toggling between views. Features full Mouse Tweaks support (Shift-click transfer/clear, LMB drag painting, RMB stamp, digit key 1..8 quick-swap) and guarded <kbd>E</kbd> key when search input is focused.
+  - **Tab Switching & Ergonomics**: Top tab switcher buttons (`[ Creative ]` and `[ Personal ]`) and <kbd>Tab</kbd> hotkey toggling between views. Features **Persistent Tab Memory** (remembers Creative vs Personal view across closing/reopening), **Shift + LMB Drag** multi-slot item transfer between hotbar and personal inventory, and guarded <kbd>E</kbd> key when search input is focused.
+  - **Cinematic Background Blur**: Smooth Gaussian camera depth-of-field blur (`DepthOfField`) triggers when opening the inventory, providing a sleek, focused UI experience matching the Pause/Settings menu.
 - **3D Isometric Pixel-Art Block Icons**: Generated on-the-fly with 1.0 / 0.80 / 0.60 directional face shading, vertex tinting, and silhouette outlines.
 - **Pause Menu (<kbd>ESC</kbd> Key)**: Game pause with Resume, Settings, Restart Game, Quit to Desktop, and camera Depth-of-Field blur.
-- **In-Game Settings**: Live steppers for Screen Mode (Windowed, Exclusive Fullscreen, Borderless Fullscreen), Render Distance (2..=16 chunks), FOV (60°..=110°), Distance Fog toggle, Camera Bobbing toggle, Grass Sides toggle, VSync toggle (AutoNoVsync default / AutoVsync), Dynamic FPS toggle, and Time Flow toggle.
+- **In-Game Settings**: Live steppers for Screen Mode (Windowed, Exclusive Fullscreen, Borderless Fullscreen), Render Distance (2..=16 chunks), FOV (60°..=110°), Distance Fog toggle, Camera Bobbing toggle, Fancy Block Sides toggle (broadened to Snowy Grass, Mulch, and Grass sides), VSync toggle (AutoNoVsync default / AutoVsync), Dynamic FPS toggle, and Time Flow toggle.
 - **Custom Mouse Cursors**: 9 cursor states including 13-frame animated busy spinner and floating held-block preview.
 - **Minecraft/Xaero-Style Minimap HUD**: Top-right square HUD with parchment `map_background.png` frame extending outward around the 192×192 dynamic canvas, bright white cardinal indicators (<kbd>N</kbd>, <kbd>S</kbd>, <kbd>E</kbd>, <kbd>W</kbd>) inset over terrain, real-time readout (`Coordinates: XYZ: ...` and `Biome: ...`), and live directional player `marker_red.png` rotating with camera yaw via GPU `UiTransform`. Powered by an asynchronous 2D cache (`MapCache`) with North-up topographic hill shading and precomputed surface colors for zero-noise 250+ FPS updates.
 - **Full-Screen Interactive World Map (<kbd>M</kbd> Key)**: Seamless `MenuState::WorldMap` integration with smooth mouse drag panning, scroll wheel zooming (0.20x to 4.0x), keyboard panning (<kbd>WASD</kbd> / arrows), snap-to-player quick key (<kbd>Space</kbd>), real-time cursor coordinate tracking under pointer, and accurately centered `marker_red.png` tracking player coordinates and rotating with camera yaw.
@@ -161,15 +166,21 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - **Dynamic FPS & Power Throttling**: Automatic background frame throttling (15 FPS), idle/AFK detection (30 FPS after 30s), and physical battery detection. Active input priority and zero thread sleeping during normal gameplay guarantees unthrottled 250–300+ FPS performance.
 - **Debug Overlays**: Minimal HUD by default, Extended Technical Debug HUD on <kbd>F3</kbd> (FPS, frame time, power source, dynamic throttle status, player XYZ/chunk, biome climate, chunk stats), HUD toggle on <kbd>Shift+F3</kbd>, and chunk debug borders on <kbd>F2</kbd>.
 
-### 10. Engine Optimizations & Scalability (Phase 7 Milestones)
+### 10. Engine Optimizations & Scalability (Phase 7, 8 & 9 Milestones)
 - **Async Compute Greedy Meshing**: Decoupled from main thread `Update` loop to `AsyncComputeTaskPool`.
+- **Chunk Homogeneity Flags**: `Empty` and fully occluded `Solid` chunks bypass mesher task scheduling, collision queries, and raycasts in O(1).
+- **Noise Up-Sampling & Trilinear Interpolation**: 3D cave/density noise sampled at a 4×4×4 lattice with SIMD trilinear interpolation, reducing mathematical noise evaluations by **97%**.
+- **Paletted Chunk Storage**: 4-bit indices for chunks with $\le 16$ block types, cutting world memory footprint by 70%–85%.
+- **Decoupled Simulation Radius**: Simulation bubble (4–6 chunks) decoupled from visual render distance (10–16+ chunks).
+- **64-Bit Bitmask Acceleration**: Row-level bitboards and intrinsic trailing/leading zero counts cutting face extraction time by 4x–8x.
+- **Static Lookup Tables (LUTs)**: Compile-time precomputed tables for shapes, orientations, normals, and quadrant UVs.
 - **Decoupled Remesh Queues**: Routed fluid simulation, player edits, shaping, and pause reload through chunk streaming queues instead of unbuffered synchronous remeshing.
 - **Single-Root Starfield Hierarchy**: Single rotating `StarfieldRoot` entity replacing 250 individual entity transform mutations per frame.
 - **Direct-Indexed Texture Registry**: `[Option<VoxelTextureMapping>; 64]` array eliminating SipHash in greedy mesher loops.
 - **Fast Chunk Hashing**: High-performance fast hasher (`FxHashMap`) for 3x–5x faster chunk lookups in `VoxelWorld`.
-- **Optimized Terrain Exposure Sampling**: Eliminated 8×5 nested loops in dirt exposure checks, preventing thread pool starvation.
 - **Zero Asset Dirtying in Environment**: Checking property changes before `materials.get_mut()` prevents constant GPU bind group invalidations.
 - **Zero-Alloc Collision Checks**: Stack-allocated buffer for `overlapping_solid_voxels`.
+- **Codebase Modernization**: Complete dead code pruning and modular refactoring across 10 engine subsystems with zero compiler warnings and zero Clippy lints.
 
 ---
 
@@ -177,27 +188,23 @@ The player uses a custom AABB collision system that directly queries voxel data.
 
 - [x] Phase 1: Core Rendering & Texture-Array Architecture (Completed)
 - [x] Phase 2: Atmosphere, Celestial Bodies & Dynamic Sky (Completed)
-- [x] Phase 3: Player Tools & Block Shapes (Completed)
-- [x] Phase 4: Fluid Dynamics, Underwater Visibility & World Persistence (Completed)
-- [x] Phase 5: Procedural Voxel Meshing & Texture-Array Optimization (Completed)
+- [x] Phase 3: Gameplay, Inventory & Sub-Voxel Shaping Tools (Completed)
+- [x] Phase 4: Dynamic Fluid Simulation & Boundary Mechanics (Completed)
+- [x] Phase 5: General Polish, Revisions & In-Game Interfaces (Completed)
 - [x] Phase 6: Advanced World Generation, Biomes & Caves (Completed)
-- [x] Phase 7: Engine Optimization, Architecture Audit & Scalability (Completed)
-- [ ] Phase 8: Engine Optimization & Scalability (Deferred / Backlog)
-- [ ] Phase 9: Flora, Procedural Trees & Surface Vegetation (Stage 9.1 paused/reverted to focus on foundational terrain polish)
-- [ ] Phase 10: Gameplay Polish, Audio Foundation & Quality-of-Life Tweaks (Currently Active: Agile, user-directed polish and terrain refinement tasks; not strictly linear)
-  - [x] Stage 10.0: Terrain & World Polish (Agile / Quality-of-Life)
-  - [x] Stage 10.2: Quality-of-Life (Live Chunk Reload, 4-Row Scrollable Creative Inventory, Player Personal Inventory & Creative Dual-Tab Toggle)
-  - [x] Stage 10.3: Minimap & Interactive World Map (Minecraft/Xaero-Style, with live coordinate readout and biome identifier)
-  - [x] Stage 10.4: Biome Color Variation & Ambient Environment Noise ("Ambient Environment" Mod Style)
-  - [x] Stage 10.5: Screen Modes, Map Performance & Font Integration
-  - [ ] Stage 10.6: UI Texture Skinning (Hotbar, Personal Inventory & Creative Inventory)
-- [ ] Phase 11: World Generation & Worldbuilding Expansion (High Fantasy & Dark Fantasy Realism)
+- [x] Phase 7: Project Organization, Architecture Audit & Refactor (Completed)
+- [x] Phase 8: Foundational Storage, Meshing & Bitmask Acceleration (Completed)
+- [x] Phase 9: Engine-Wide Architecture Modernization, 1m Shapes & Codebase Cleanup (Completed)
+- [x] Phase 10: Gameplay Polish, Interaction Feedback & Quality-of-Life (Completed)
+- [ ] Phase 11: World Generation & Worldbuilding Expansion (High Fantasy & Dark Fantasy Realism) (Active)
+- [ ] Phase 12: Flora, Procedural Trees & Surface Vegetation (Upcoming)
+- [ ] Phase 13: High-Performance Scaling, Level-of-Detail (LOD) & Engine Optimization (Upcoming)
 
 ---
 
 ## Known Issues & Backlog for Future Fixes
 
-- **Terrain Polish & Gameplay Tuning**: World generation, cave density, and strata are currently undergoing agile tuning as gameplay testing dictates. Completed milestones include Stage 10.3 Minimap & World Map (foundational functionality operational, reserved for future incremental enhancements), Stage 10.4 Ambient Environment noise with biome-specific color tinting and blending, and Stage 10.5 Screen Modes & Map Polish. Upcoming targets include particle bursts on block break/place and audio trigger hooks.
+- **Terrain Polish & Gameplay Tuning**: World generation, cave density, and strata are currently undergoing agile tuning as gameplay testing dictates. Completed milestones include Stage 10.1 block feedback particles/bouncing, Stage 10.3 Minimap & World Map, Stage 10.4 Ambient Environment noise with biome-specific color tinting and blending, Stage 10.5 Screen Modes & Map Polish, Stage 10.6 UI Texture Skinning & Ergonomics, Phase 8 Bitmask/Storage Optimizations, and Phase 9 Codebase Modernization. Current active development is in Phase 11 high fantasy biomes, geological worldbuilding, and terrain climate mapping.
 
 ---
 

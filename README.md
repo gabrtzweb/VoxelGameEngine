@@ -6,12 +6,14 @@ The project focuses on a fully editable procedural voxel world with 1.0 m³ bloc
 
 - The world is stored using 1.0 m voxels (identical to Minecraft blocks).
 - Chunks have 16 × 16 × 16 voxels (16 m × 16 m × 16 m physical sections).
-- Complete removal of single 0.5 m sub-voxels.
+- Complete removal of single 0.5 m sub-voxels; native 1.0 m block shapes (`Full`, `Slab`, `Stair`, `Column`) with 3D orientations.
+- Interactive tactile feedback: subtle 8-particle debris bursts with terrain collision bouncing on block break, and 0.18s elastic scale bounce on placement.
 - Auto-step is calibrated to 0.50 m (50 cm) for smooth future slab stepping, requiring jumping over full 1 m blocks.
 - Square gameplay Minimap HUD (North-up, compact XYZ coordinates, live player heading chevron) and full-screen interactive World Map (<kbd>M</kbd>).
 - Ambient Environment procedural color noise and climate-driven biome palettes (grass, foliage, water) with smooth 5-point cross-kernel boundary blending.
 - Dynamic FPS & VSync: configurable presentation modes (AutoNoVsync default, toggleable in Settings) and intelligent frame throttling (15 FPS unfocused, 30 FPS idle) with unconstrained active gameplay (250+ FPS).
 - Custom typography & drop shadows: centralized font asset management (`CutePixel.ttf`) and universal drop shadow contrast styling.
+- Centered dual-card textured interface: Creative palette & Personal storage with persistent tab memory, Shift-drag multi-slot transfers, and cinematic Depth-of-Field blur.
 
 The long-term goal is to build a performant procedural voxel game with large-world streaming, runtime terrain editing, configurable generation, multiple gameplay modes, dynamic fluids and extensive development tooling.
 
@@ -39,16 +41,16 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     1 - 8             Hotbar slot selection
     Mouse Wheel       Scroll hotbar slots (when not zooming)
     Q                 Clear active hotbar slot
-    R                 Block shape (Tap: cycle sequentially / Hold: 10-shape circular radial menu)
+    R                 Block shape (Tap: cycle sequentially / Hold: 4-slice circular radial menu)
     T                 Rotate block shape 90° clockwise
 
-    ESC               Pause Menu (Settings: Screen Mode, Render Dist, FOV, Fog, Bobbing, VSync, Dynamic FPS; Restart, Quit)
-    E                 Inventory (Dual-card textured interface: Creative palette & Personal storage)
+    ESC               Pause Menu (Settings: Screen Mode, Render Dist, FOV, Fog, Bobbing, Fancy Sides, VSync, Dynamic FPS; Restart, Quit)
+    E                 Inventory (Dual-card textured interface: Creative palette & Personal storage with background blur)
                       • Player Card: 3D character viewport, player name & level, 5 armor slots (Helmet, Chest, Gloves, Pants, Boots)
-                      • Tabs at top or Tab key: Toggle between Creative and Personal inventory
+                      • Tabs at top or Tab key: Toggle between Creative and Personal inventory (tab choice persists across close/reopen)
                       • Search bar (Creative): Real-time block name search and filtering
-                      • Shift + Click: Quick transfer between inventory and hotbar
-                      • Shift + LMB Drag: Rapid transfer into hotbar / rapid hotbar wipe
+                      • Shift + Click: Quick transfer between personal inventory and hotbar
+                      • Shift + LMB Drag: Rapid multi-slot transfer between hotbar and personal inventory / hotbar wipe in Creative
                       • LMB Drag: Paint held block across multiple hotbar slots
                       • Click outside / backdrop: Return held item to inventory / deselect
                       • Right Click: Stamp block into slot / deselect on empty space
@@ -107,11 +109,13 @@ src/
 │   └── time.rs
 ├── gameplay/
 │   ├── debug.rs
+│   ├── feedback.rs
 │   ├── icon.rs
 │   ├── interaction.rs
 │   ├── mod.rs
 │   ├── radial_menu.rs
 │   ├── shaping.rs
+│   ├── target_hud.rs
 │   └── targeting.rs
 ├── generation/
 │   ├── biome.rs

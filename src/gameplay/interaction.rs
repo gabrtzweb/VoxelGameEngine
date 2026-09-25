@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use super::targeting::{CurrentTarget, TargetingSet};
+use super::{
+    feedback::{BlockBreakEvent, BlockPlaceEvent},
+    targeting::{CurrentTarget, TargetingSet},
+};
 use crate::{
     menu::MenuState,
     player::{GameMode, InspectorInteraction, hotbar::Hotbar},
@@ -13,6 +16,20 @@ use crate::{
 
 const HOLD_DELAY: f32 = 0.25;
 const REPEAT_INTERVAL: f32 = 0.16;
+
+type WorldEditResources<'w> = (
+    ResMut<'w, VoxelWorld>,
+    ResMut<'w, WorldModificationStore>,
+    ResMut<'w, VoxelLightRegistry>,
+    ResMut<'w, ChunkStreamingQueues>,
+);
+
+type OptionalInteractionParams<'w> = (
+    Option<ResMut<'w, FluidUpdateQueue>>,
+    Option<Res<'w, State<MenuState>>>,
+    Option<Res<'w, InspectorInteraction>>,
+    Option<ResMut<'w, crate::map::MapCache>>,
+);
 
 #[derive(Resource, Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SelectedVoxel(pub Option<Voxel>);
@@ -79,13 +96,13 @@ impl Plugin for VoxelInteractionPlugin {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 fn pick_targeted_voxel(
-    game_mode: Res<GameMode>,
+    (game_mode, current_target): (Res<GameMode>, Res<CurrentTarget>),
     mouse: Res<ButtonInput<MouseButton>>,
-    menu_state: Option<Res<State<MenuState>>>,
-    inspector: Option<Res<InspectorInteraction>>,
-    current_target: Res<CurrentTarget>,
+    (menu_state, inspector): (
+        Option<Res<State<MenuState>>>,
+        Option<Res<InspectorInteraction>>,
+    ),
     world: Res<VoxelWorld>,
     mut selected: ResMut<SelectedVoxel>,
     hotbar: Option<ResMut<Hotbar>>,
@@ -125,23 +142,13 @@ fn pick_targeted_voxel(
     info!("Selected voxel: {}", voxel.label());
 }
 
-#[allow(clippy::too_many_arguments)]
 fn edit_voxels(
-    game_mode: Res<GameMode>,
-    selected: Res<SelectedVoxel>,
+    (game_mode, selected): (Res<GameMode>, Res<SelectedVoxel>),
     mut commands: Commands,
-    mouse: Res<ButtonInput<MouseButton>>,
-    time: Res<Time>,
-    current_target: Res<CurrentTarget>,
-    mut world: ResMut<VoxelWorld>,
-    mut modifications: ResMut<WorldModificationStore>,
-    mut light_registry: ResMut<VoxelLightRegistry>,
-    mut queues: ResMut<ChunkStreamingQueues>,
+    (mouse, time, current_target): (Res<ButtonInput<MouseButton>>, Res<Time>, Res<CurrentTarget>),
+    (mut world, mut modifications, mut light_registry, mut queues): WorldEditResources,
+    (fluid_queue, menu_state, inspector, mut map_cache): OptionalInteractionParams,
     mut interaction_state: Local<InteractionState>,
-    fluid_queue: Option<ResMut<FluidUpdateQueue>>,
-    menu_state: Option<Res<State<MenuState>>>,
-    inspector: Option<Res<InspectorInteraction>>,
-    mut map_cache: Option<ResMut<crate::map::MapCache>>,
 ) {
     if menu_state.is_some_and(|s| *s.get() != MenuState::None)
         || inspector.is_some_and(|i| i.active)
@@ -175,8 +182,10 @@ fn edit_voxels(
         return;
     };
 
-    let edited_voxels = if break_action {
-        remove_block(&mut world, &mut modifications, target.hit_voxel)
+    let (edited_voxels, broken_voxel) = if break_action {
+        let prev_voxel = world.get_voxel(target.hit_voxel);
+        let edited = remove_block(&mut world, &mut modifications, target.hit_voxel);
+        (edited, prev_voxel)
     } else if place_action {
         let Some(place_voxel_type) = selected.0 else {
             return;
@@ -186,18 +195,35 @@ fn edit_voxels(
             return;
         };
 
-        place_block(
+        let edited = place_block(
             &mut world,
             &mut modifications,
             place_position,
             place_voxel_type,
-        )
+        );
+        (edited, None)
     } else {
-        Vec::new()
+        (Vec::new(), None)
     };
 
     if edited_voxels.is_empty() {
         return;
+    }
+
+    if break_action {
+        if let Some(v) = broken_voxel {
+            commands.trigger(BlockBreakEvent {
+                position: target.hit_voxel,
+                voxel: v,
+            });
+        }
+    } else if place_action
+        && let (Some(place_voxel_type), Some(place_position)) = (selected.0, target.place_voxel)
+    {
+        commands.trigger(BlockPlaceEvent {
+            position: place_position,
+            voxel: place_voxel_type,
+        });
     }
 
     if let Some(mut fq) = fluid_queue {
@@ -214,7 +240,7 @@ fn edit_voxels(
         }
     }
 
-    for edited_voxel in edited_voxels {
+    for &edited_voxel in &edited_voxels {
         sync_voxel_light(&mut commands, &world, edited_voxel, &mut light_registry);
         dirty_chunks.extend(affected_chunks(edited_voxel));
     }

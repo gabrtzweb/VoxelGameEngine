@@ -432,12 +432,11 @@ fn build_inventory_ui(
                 .spawn((
                     InventoryCard,
                     Node {
-                        width: px(798.0),
                         display: Display::Flex,
                         flex_direction: FlexDirection::Row,
                         column_gap: px(4.0 * GUI_SCALE), // 12 px gap
-                        align_items: AlignItems::FlexStart,
-                        justify_content: JustifyContent::FlexStart,
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
                         ..default()
                     },
                 ))
@@ -562,7 +561,6 @@ fn build_inventory_ui(
                                         width: px(RIGHT_CARD_STD_TEX_W * GUI_SCALE),  // 474.0
                                         height: px(RIGHT_CARD_STD_TEX_H * GUI_SCALE), // 378.0
                                         position_type: PositionType::Relative,
-                                        margin: UiRect::top(px(18.0 * GUI_SCALE)), // 54.0
                                         ..default()
                                     },
                                 ))
@@ -783,7 +781,6 @@ fn build_inventory_ui(
                                         width: px(RIGHT_CARD_CRE_TEX_W * GUI_SCALE),  // 528.0
                                         height: px(RIGHT_CARD_CRE_TEX_H * GUI_SCALE), // 378.0
                                         position_type: PositionType::Relative,
-                                        margin: UiRect::top(px(18.0 * GUI_SCALE)), // 54.0
                                         ..default()
                                     },
                                 ))
@@ -1042,7 +1039,6 @@ fn despawn_inventory_menu(
     mut search_query: ResMut<CreativeSearchQuery>,
     mut player_inv: ResMut<PlayerInventory>,
     mut hotbar: ResMut<Hotbar>,
-    mut tab_state: ResMut<InventoryTab>,
 ) {
     if let Some(held) = held_item.voxel {
         if !player_inv.add_item(held)
@@ -1057,7 +1053,6 @@ fn despawn_inventory_menu(
     scroll_state.is_dragging_thumb = false;
     search_query.query.clear();
     search_query.is_focused = false;
-    *tab_state = InventoryTab::Player;
 
     for entity in &query {
         commands.entity(entity).despawn();
@@ -1645,7 +1640,11 @@ fn handle_inventory_slot_interaction(
 
                     // Shift + Click: transfer from Personal Inventory to Hotbar
                     if is_shift {
-                        if left_just_pressed && let Some(item) = player_inv.get(s_idx) {
+                        if (left_just_pressed || (left_pressed && is_hovered))
+                            && drag_state.last_shift_palette_slot != Some(s_idx)
+                            && let Some(item) = player_inv.get(s_idx)
+                        {
+                            drag_state.last_shift_palette_slot = Some(s_idx);
                             if let Some(empty_idx) = hotbar.slots.iter().position(|s| s.is_none()) {
                                 hotbar.slots[empty_idx] = Some(item);
                                 player_inv.set(s_idx, None);
@@ -1735,8 +1734,8 @@ fn handle_inventory_slot_interaction(
             // Shift + Click handling
             if is_shift {
                 if *tab_state == InventoryTab::Player {
-                    // In Personal tab, Shift-click transfers hotbar item into Player Inventory!
-                    if left_just_pressed
+                    // In Personal tab, Shift-click or Shift-drag transfers hotbar item into Player Inventory!
+                    if (left_just_pressed || (left_pressed && is_hovered))
                         && let Some(item) = hotbar.slots[idx]
                         && player_inv.add_item(item)
                     {

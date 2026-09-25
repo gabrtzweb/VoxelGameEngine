@@ -1,4 +1,5 @@
 pub mod debug;
+pub mod feedback;
 pub mod icon;
 pub mod interaction;
 pub mod radial_menu;
@@ -13,6 +14,7 @@ pub use targeting::{CurrentTarget, TargetingSet, VoxelTarget};
 
 use bevy::prelude::*;
 use debug::VoxelDebugPlugin;
+use feedback::InteractionFeedbackPlugin;
 use icon::BlockIconPlugin;
 use interaction::VoxelInteractionPlugin;
 use shaping::ShapingPlugin;
@@ -26,6 +28,7 @@ impl Plugin for GameplayPlugin {
         app.add_plugins((
             TargetingPlugin,
             VoxelInteractionPlugin,
+            InteractionFeedbackPlugin,
             ShapingPlugin,
             BlockIconPlugin,
             VoxelDebugPlugin,
