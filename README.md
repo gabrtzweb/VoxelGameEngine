@@ -13,7 +13,7 @@ The project focuses on a fully editable procedural voxel world with 1.0 m³ bloc
 - Ambient Environment procedural color noise and climate-driven biome palettes (grass, foliage, water) with smooth 5-point cross-kernel boundary blending.
 - Dynamic FPS & VSync: configurable presentation modes (AutoNoVsync default, toggleable in Settings) and intelligent frame throttling (15 FPS unfocused, 30 FPS idle) with unconstrained active gameplay (250+ FPS).
 - Custom typography & drop shadows: centralized font asset management (`CutePixel.ttf`) and universal drop shadow contrast styling.
-- Centered dual-card textured interface: Creative palette & Personal storage with persistent tab memory, Shift-drag multi-slot transfers, and cinematic Depth-of-Field blur.
+- Centered unified textured container interface: Creative palette & Personal storage with top mode toggle buttons, real-time search with hold-to-repeat backspace and text drag/double-click selection, persistent tab memory, Shift-drag multi-slot transfers, and cinematic Depth-of-Field blur.
 
 The long-term goal is to build a performant procedural voxel game with large-world streaming, runtime terrain editing, configurable generation, multiple gameplay modes, dynamic fluids and extensive development tooling.
 
@@ -45,10 +45,11 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     T                 Rotate block shape 90° clockwise
 
     ESC               Pause Menu (Settings: Screen Mode, Render Dist, FOV, Fog, Bobbing, Fancy Sides, VSync, Dynamic FPS; Restart, Quit)
-    E                 Inventory (Dual-card textured interface: Creative palette & Personal storage with background blur)
-                      • Player Card: 3D character viewport, player name & level, 5 armor slots (Helmet, Chest, Gloves, Pants, Boots)
-                      • Tabs at top or Tab key: Toggle between Creative and Personal inventory (tab choice persists across close/reopen)
-                      • Search bar (Creative): Real-time block name search and filtering
+    E                 Inventory (Unified 190×152 px textured container: Personal & Creative inventory with background blur)
+                      • Mode Buttons at top / Tab key: Toggle between Personal and Creative inventory (choice persists across close/reopen)
+                      • Personal Inventory: 8×4 grid (32 slots) storage, hotbar mirror row, action buttons
+                      • Creative Palette: 8×4 grid of all available blocks, pixel-art scroller, hotbar mirror row
+                      • Creative Search Bar: Real-time search & filtering, holding Backspace repeats character deletion, double-click selects all, click & drag selects text range, Ctrl+A select all
                       • Shift + Click: Quick transfer between personal inventory and hotbar
                       • Shift + LMB Drag: Rapid multi-slot transfer between hotbar and personal inventory / hotbar wipe in Creative
                       • LMB Drag: Paint held block across multiple hotbar slots
@@ -79,11 +80,12 @@ assets/
 │   ├── blocks/
 │   ├── environments/   
 │   │   └── celestial/
-│   │       ├── moon/
-│   │       └── sun.png
-│   ├── gui/
+│   │       └── moon/
+│   ├── interfaces/
 │   │   ├── atlases/
+│   │   │   └── decorations/
 │   │   ├── containers/
+│   │   │   └── slots/
 │   │   └── cursors/
 │   ├── items/
 │   └── models/

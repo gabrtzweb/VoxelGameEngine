@@ -62,7 +62,7 @@ fn setup_hotbar_ui(
 ) {
     let initial_hotbar = Hotbar::default();
     let font_handle = app_font.as_ref().map(|f| f.source());
-    let hotbar_texture = asset_server.load("textures/gui/containers/hotbar.png");
+    let hotbar_texture = asset_server.load("textures/interfaces/containers/hotbar.png");
 
     // Scale multiplier for hotbar UI rendering (2x integer scaling = 512x64 px)
     const HOTBAR_SCALE: f32 = 2.0;

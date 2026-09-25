@@ -507,8 +507,8 @@ Phase 10 delivered extensive gameplay polish, interactive tactile feedback, inve
     - Integrated `AppFont` resource and `FontPlugin` pointing to `assets/fonts/CutePixel.ttf` for easy font reference swapping.
     - Added universal drop shadow support (`TextShadow`) across all UI and HUD text (F3 dev stats, minimap, world map, settings, pause menu, hotbar numbers, inventory tabs/badges, target HUD, and radial menu).
   - **Minimap Visual Enhancements & Polish**:
-    - **Parchment Background Frame**: Loaded `assets/textures/gui/atlases/map_background.png` as an authentic cartographic border extending outward behind the 192×192 terrain view.
-    - **Red Player Marker**: Loaded `assets/textures/gui/atlases/marker_red.png` replacing the procedural arrow, dynamically rotated with player camera yaw using native `UiTransform` and `Rot2`.
+    - **Parchment Background Frame**: Loaded `assets/textures/interfaces/atlases/map_background.png` as an authentic cartographic border extending outward behind the 192×192 terrain view.
+    - **Red Player Marker**: Loaded `assets/textures/interfaces/atlases/decorations/marker_red.png` replacing the procedural arrow, dynamically rotated with player camera yaw using native `UiTransform` and `Rot2`.
     - **Compact Coordinates Format**: Updated readout format to `"Coordinates: XYZ: 0, 0, 0"`.
     - **Cardinal Indicators (N, S, W, E)**: Standardized all four indicators to bright white (`13.0px`) with drop shadows, inset `16.0px` over the terrain view to prevent border clipping.
   - **Screen Mode Settings**:
@@ -522,32 +522,32 @@ Phase 10 delivered extensive gameplay polish, interactive tactile feedback, inve
 
 - [x] **Stage 10.6: UI Texture Skinning & Ergonomics (Hotbar, Personal Inventory & Creative Inventory) (Completed)**:
   - **Textured Hotbar HUD**:
-    - Loaded `assets/textures/gui/containers/hotbar.png` (256×32 px) centered horizontally, scaled 2× integer (`512×64 px`) via `ImageNode` with nearest-neighbor sampling.
+    - Loaded `assets/textures/interfaces/containers/hotbar.png` (256×32 px) centered horizontally, scaled 2× integer (`512×64 px`) via `ImageNode` with nearest-neighbor sampling.
     - Symmetrically aligned the 8 slot hitboxes and icons to exact texture coordinates (36×36 px outer slot frames with 2px borders, 32×32 px native item icons, stride 40 px, 16px internal slot size).
     - Inactive slots have transparent borders and backgrounds allowing the pixel-art bevels and recessed shadows to show through; active slot highlights with a 2px golden frame and subtle white sheen.
-  - **Dual-Card Textured Inventory Interface**:
-    - Mapped `inventory.png`, `creative_inventory.png`, and `scroller.png` (338×144 px) to a dual-card layout at 3× scale:
-    - **Left Card (Player Card)**:
-      - Sliced to 258×366 px (86×122 px at 3×).
-      - Header box displays `"Player Name – Level 10"` with `AppFont` and drop shadow.
-      - 3D player character viewport placeholder (159×264 px) with dedicated `PlayerModelViewport` component.
-      - 5 vertical armor slots column (54×54 px each) with visual placeholder letter badges ("H", "C", "G", "P", "B" for Helmet, Chest Armor, Gloves, Pants, Boots), hover highlights, and item placement rejection ensuring they do not accept blocks.
-    - **Right Card (Standard / Personal Inventory)**:
-      - Sliced to 474×378 px (158×126 px at 3×) from `inventory.png`.
-      - Header title `"Inventory"` and two non-functional button placeholders ("B", "B").
-      - 8×4 grid (32 slots) displaying `PlayerInventory` items with golden hover highlights and transparent inactive states.
-      - 1×8 hotbar mirror row at bottom with slot numbers 1..8 and item icons.
-    - **Right Card (Creative Inventory)**:
-      - Sliced to 528×378 px (176×126 px at 3×) from `creative_inventory.png`.
-      - Header title `"Inventory"` and interactive search bar with `"Search"` placeholder text, typing focus, and real-time block filtering.
-      - 8×4 grid (32 slots) displaying filtered creative blocks.
-      - Scrollbar track (36×336 px) with pixel-art `scroller.png` thumb (36×45 px) supporting smooth mouse wheel scrolling and click-and-drag.
-    - **Tab Switching, Window Alignment & Ergonomics**:
-      - Top tab switcher buttons (`[ Creative ]` and `[ Personal ]`) and <kbd>Tab</kbd> hotkey toggling between Creative and Personal inventory layouts with smooth, seamless UI updates.
-      - **Persistent Tab Memory**: Inventory remembers whether the player was on Creative or Personal view across closing and reopening.
-      - **Symmetric Window Alignment**: Removed accidental 54px top margin offset from the right card, ensuring both Player Card and Inventory Card top borders sit perfectly level and centered.
-      - **Depth-of-Field Blur**: Smooth Gaussian camera depth-of-field blur (`DepthOfField`) triggers when opening the inventory, providing a sleek, focused UI experience matching the Pause/Settings menu.
-      - Guarded <kbd>E</kbd> key when search bar is focused so typing 'e' does not accidentally close the inventory.
+  - **Unified Textured Container Inventory Interface**:
+    - Transitioned from legacy split dual-card layout to a streamlined single-panel container (base 190×152 px, rendered at 3× integer scale to 570×456 px) using dedicated textures `assets/textures/interfaces/containers/inventory.png`, `inventory_creative.png`, and `inventory_scroller.png`. Removed side panel player card, 3D viewport, and armor slot placeholders to focus cleanly on core storage and palette functionality.
+    - **Top Mode Switch Buttons**:
+      - Symmetrically placed toggle buttons above the central panel for `Personal` ($X=22..91$, $Y=2..13$) and `Creative` ($X=98..167$, $Y=2..13$) matching texture guidelines, with <kbd>Tab</kbd> hotkey support.
+      - **Persistent Mode Memory**: Active view mode (Personal vs. Creative) is preserved across closing and reopening.
+    - **Personal Inventory**:
+      - 8×4 slot grid (32 items) for player storage ($X=24 + c \times 18$, $Y=52 + r \times 18$).
+      - Title area ($X=24, Y=32$) and two action button placeholders ($X=138, 156$).
+      - 1×8 bottom hotbar mirror row at $Y=128$.
+    - **Creative Inventory**:
+      - Compact title and adjacent search bar ($X=99..167$, $Y=33..42$, width 69px, height 10px).
+      - 8×4 creative block grid with real-time filtering and 1×8 hotbar mirror row.
+      - Scrollbar track at $X=175..186$ with pixel-art thumb (`inventory_scroller.png`, 12×15 px at base, 36×45 px at 3×) supporting mouse wheel scrolling and click-and-drag.
+    - **Search Bar Text Selection & Repeat Deletion**:
+      - **Backspace Repeat**: Holding Backspace repeats character deletion with a 0.40s initial delay and 0.04s repeat rate.
+      - **Double-Click & Drag Selection**: Double-clicking selects all text; clicking and dragging selects character ranges, rendered with a semi-transparent blue highlight box behind text. Also supports <kbd>Ctrl+A</kbd>.
+      - **Selection Deletion & Typing Replacement**: Typing replaces selected text; Backspace/Delete removes selection.
+      - Guarded <kbd>E</kbd> key when search input is focused.
+    - **Ergonomics & Polish**:
+      - **Shift + Click**: Rapid item transfer between personal inventory and hotbar.
+      - **Shift + LMB Drag**: Multi-slot batch transfer / creative hotbar clearance.
+      - **LMB Drag**: Continuous hotbar painting with held item.
+      - **Depth-of-Field Blur**: Cinematic camera depth-of-field blur (`DepthOfField`) upon opening inventory.
 
 ---
 
@@ -690,9 +690,4 @@ Phase 13 scales the engine's rendering and storage architecture to support massi
     - Spatial chunk index header with timestamp metadata for fast random-access chunk reads.
   - **Engine Benefits**:
     - Full persistent world saving and loading with fast disk access and compact file sizes.
-
-
-
-
-
-
+    

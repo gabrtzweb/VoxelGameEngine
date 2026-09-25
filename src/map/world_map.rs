@@ -94,7 +94,7 @@ fn setup_world_map_resources(
     terrain_img.sampler = ImageSampler::nearest();
     let terrain_handle = images.add(terrain_img);
 
-    let marker_handle: Handle<Image> = asset_server.load("textures/gui/atlases/marker_red.png");
+    let marker_handle: Handle<Image> = asset_server.load("textures/interfaces/atlases/decorations/marker_red.png");
 
     commands.insert_resource(WorldMapState {
         center: Vec2::ZERO,

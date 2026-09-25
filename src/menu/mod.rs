@@ -212,19 +212,19 @@ impl Plugin for MenuPlugin {
 
 fn setup_custom_cursor(mut commands: Commands, asset_server: Res<AssetServer>) {
     let textures = CursorTextures {
-        default: asset_server.load("textures/gui/cursors/default.png"),
-        pointing_hand: asset_server.load("textures/gui/cursors/pointing_hand.png"),
-        grabbing: asset_server.load("textures/gui/cursors/grabbing.png"),
-        crosshair: asset_server.load("textures/gui/cursors/crosshair.png"),
-        ibeam: asset_server.load("textures/gui/cursors/ibeam.png"),
-        not_allowed: asset_server.load("textures/gui/cursors/not_allowed.png"),
-        resize_all: asset_server.load("textures/gui/cursors/resize_all.png"),
-        resize_ew: asset_server.load("textures/gui/cursors/resize_ew.png"),
-        resize_ns: asset_server.load("textures/gui/cursors/resize_ns.png"),
-        resize_nesw: asset_server.load("textures/gui/cursors/resize_nesw.png"),
-        resize_nwse: asset_server.load("textures/gui/cursors/resize_nwse.png"),
-        shift: asset_server.load("textures/gui/cursors/shift.png"),
-        busy: asset_server.load("textures/gui/cursors/busy.png"),
+        default: asset_server.load("textures/interfaces/cursors/default.png"),
+        pointing_hand: asset_server.load("textures/interfaces/cursors/pointing_hand.png"),
+        grabbing: asset_server.load("textures/interfaces/cursors/grabbing.png"),
+        crosshair: asset_server.load("textures/interfaces/cursors/crosshair.png"),
+        ibeam: asset_server.load("textures/interfaces/cursors/ibeam.png"),
+        not_allowed: asset_server.load("textures/interfaces/cursors/not_allowed.png"),
+        resize_all: asset_server.load("textures/interfaces/cursors/resize_all.png"),
+        resize_ew: asset_server.load("textures/interfaces/cursors/resize_ew.png"),
+        resize_ns: asset_server.load("textures/interfaces/cursors/resize_ns.png"),
+        resize_nesw: asset_server.load("textures/interfaces/cursors/resize_nesw.png"),
+        resize_nwse: asset_server.load("textures/interfaces/cursors/resize_nwse.png"),
+        shift: asset_server.load("textures/interfaces/cursors/shift.png"),
+        busy: asset_server.load("textures/interfaces/cursors/busy.png"),
     };
 
     commands.insert_resource(textures.clone());
