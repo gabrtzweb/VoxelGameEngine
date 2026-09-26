@@ -76,6 +76,11 @@ assets/
 │   └── CutePixel.ttf
 ├── shaders/
 │   └── voxel.wgsl
+├── sounds/
+│   ├── footsteps/
+│   └── music/
+│       ├── game/
+│       └── menu/
 ├── textures/
 │   ├── blocks/
 │   ├── environments/   
