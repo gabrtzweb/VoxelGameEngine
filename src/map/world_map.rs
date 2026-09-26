@@ -175,7 +175,7 @@ fn spawn_world_map_ui(
                     Text::new("[M / ESC] Return to Game"),
                     TextFont {
                         font: font_handle.clone(),
-                        font_size: FontSize::Px(12.0),
+                        font_size: FontSize::Px(16.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.65, 0.68, 0.75)),
@@ -271,7 +271,7 @@ fn spawn_world_map_ui(
                     Text::new("LMB Drag: Pan   |   Scroll: Zoom   |   Space: Center on Player"),
                     TextFont {
                         font: font_handle.clone(),
-                        font_size: FontSize::Px(12.0),
+                        font_size: FontSize::Px(16.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.60, 0.64, 0.72)),
@@ -284,7 +284,7 @@ fn spawn_world_map_ui(
                     Text::new("Player: X: 0 Y: 0 Z: 0"),
                     TextFont {
                         font: font_handle.clone(),
-                        font_size: FontSize::Px(12.0),
+                        font_size: FontSize::Px(16.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.90, 0.92, 0.96)),
@@ -297,7 +297,7 @@ fn spawn_world_map_ui(
                     Text::new("Cursor: X: 0 Z: 0 | Zoom: 1.00x"),
                     TextFont {
                         font: font_handle,
-                        font_size: FontSize::Px(12.0),
+                        font_size: FontSize::Px(16.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.75, 0.82, 0.90)),

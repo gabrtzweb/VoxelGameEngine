@@ -37,23 +37,23 @@ pub fn spawn_radial_menu(
     let shapes = BlockShape::all();
 
     let mut title_font = TextFont {
-        font_size: FontSize::Px(15.0),
+        font_size: FontSize::Px(16.0),
         ..default()
     };
     let mut subtitle_font = TextFont {
-        font_size: FontSize::Px(12.0),
+        font_size: FontSize::Px(14.0),
         ..default()
     };
     let mut tip_font = TextFont {
-        font_size: FontSize::Px(10.0),
+        font_size: FontSize::Px(12.0),
         ..default()
     };
     let mut slice_name_font = TextFont {
-        font_size: FontSize::Px(11.0),
+        font_size: FontSize::Px(12.0),
         ..default()
     };
     let mut slice_v_font = TextFont {
-        font_size: FontSize::Px(9.0),
+        font_size: FontSize::Px(12.0),
         ..default()
     };
 

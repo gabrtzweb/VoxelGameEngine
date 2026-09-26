@@ -78,11 +78,11 @@ fn setup_target_hud(
     let font_handle = app_font.as_ref().map(|f| f.source());
 
     let mut title_font = TextFont {
-        font_size: FontSize::Px(14.0),
+        font_size: FontSize::Px(16.0),
         ..default()
     };
     let mut subtitle_font = TextFont {
-        font_size: FontSize::Px(11.0),
+        font_size: FontSize::Px(14.0),
         ..default()
     };
     if let Some(ref font) = font_handle {

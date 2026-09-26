@@ -80,6 +80,7 @@ fn main() {
                 })
                 .set(ImagePlugin::default_nearest()),
         )
+        .add_plugins(FontPlugin)
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(EguiPlugin::default())
         .add_plugins(TerrainInspectorPlugin)
@@ -91,7 +92,6 @@ fn main() {
         .add_plugins(GameplayPlugin)
         .add_plugins(DevStatsPlugin)
         .add_plugins(DynamicFpsPlugin)
-        .add_plugins(FontPlugin)
         .add_plugins(MapPlugin)
         .add_plugins(MenuPlugin)
         .add_systems(Update, set_window_icons)

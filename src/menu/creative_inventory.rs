@@ -10,7 +10,7 @@ use crate::{
 
 use super::{HeldInventoryItem, MenuState};
 
-pub const GUI_SCALE: f32 = 3.0;
+pub const GUI_SCALE: f32 = 3.5;
 
 pub const INVENTORY_COLS: usize = 8;
 pub const INVENTORY_VISIBLE_ROWS: usize = 4;
@@ -19,7 +19,7 @@ pub const INVENTORY_VISIBLE_ROWS: usize = 4;
 pub const INVENTORY_PANEL_TEX_W: f32 = 190.0;
 pub const INVENTORY_PANEL_TEX_H: f32 = 152.0;
 
-pub const AVAILABLE_BLOCKS: [Voxel; 63] = [
+pub const AVAILABLE_BLOCKS: [Voxel; 67] = [
     // Soils, Organics & Fine Sediment
     Voxel::Grass,
     Voxel::SnowyGrass,
@@ -64,18 +64,22 @@ pub const AVAILABLE_BLOCKS: [Voxel; 63] = [
     Voxel::Rhodonite,
     Voxel::Serpentinite,
     Voxel::Dreadstone,
-    // Woods & Foliage
+    // Woods, Foliage & Planks
     Voxel::OakWoodLog,
     Voxel::OakWood,
+    Voxel::OakPlanks,
     Voxel::OakLeaves,
     Voxel::BirchWoodLog,
     Voxel::BirchWood,
+    Voxel::BirchPlanks,
     Voxel::BirchLeaves,
     Voxel::PineWoodLog,
     Voxel::PineWood,
+    Voxel::PinePlanks,
     Voxel::PineLeaves,
     Voxel::RainwoodWoodLog,
     Voxel::RainwoodWood,
+    Voxel::RainwoodPlanks,
     Voxel::RainwoodLeaves,
     Voxel::Cactus,
     // Fluids & Volcanics
@@ -98,7 +102,7 @@ pub fn filtered_creative_blocks(query: &str) -> Vec<Voxel> {
     AVAILABLE_BLOCKS
         .iter()
         .copied()
-        .filter(|&v| format!("{:?}", v).to_lowercase().contains(&q))
+        .filter(|&v| format!("{:?}", v).to_lowercase().contains(&q) || v.label().to_lowercase().contains(&q))
         .collect()
 }
 
@@ -391,7 +395,7 @@ fn build_inventory_ui(
                             position_type: PositionType::Absolute,
                             left: px(22.0 * GUI_SCALE), // 66.0
                             top: px(32.0 * GUI_SCALE),  // 96.0
-                            width: px(69.0 * GUI_SCALE), // 207.0
+                            width: px(75.0 * GUI_SCALE), // 225.0
                             height: px(12.0 * GUI_SCALE),// 36.0
                             display: Display::Flex,
                             align_items: AlignItems::Center,
@@ -400,9 +404,13 @@ fn build_inventory_ui(
                         },
                     ))
                     .with_children(|title_box| {
+                        let title_text = match current_tab {
+                            InventoryTab::Player => "Personal Inventory",
+                            InventoryTab::Creative => "Creative Inventory",
+                        };
                         title_box.spawn((
                             InventoryMenuEntity,
-                            Text::new("Inventory"),
+                            Text::new(title_text),
                             title_font,
                             TextColor(Color::srgb(0.92, 0.92, 0.95)),
                             text_shadow_default(),
@@ -739,21 +747,7 @@ fn build_inventory_ui(
                             BorderColor::all(Color::NONE),
                         ))
                         .with_children(|slot| {
-                            let num_font = make_font(11.0);
-                            slot.spawn((
-                                InventoryMenuEntity,
-                                Text::new(format!("{}", c + 1)),
-                                num_font,
-                                TextColor(Color::srgba(0.90, 0.90, 0.90, 0.75)),
-                                text_shadow_default(),
-                                Node {
-                                    position_type: PositionType::Absolute,
-                                    top: px(0.0),
-                                    left: px(7.0),
-                                    ..default()
-                                },
-                            ));
-
+                            // Centered 2D item icon (rendered first, below slot number)
                             slot.spawn((
                                 InventoryMenuEntity,
                                 InventoryHotbarSlotIcon { index: c },
@@ -768,6 +762,23 @@ fn build_inventory_ui(
                                 },
                                 icon_vis,
                             ));
+
+                            // Slot index number (1 through 8, rendered in front with ZIndex)
+                            let num_font = make_font(13.0);
+                            slot.spawn((
+                                InventoryMenuEntity,
+                                Text::new(format!("{}", c + 1)),
+                                num_font,
+                                TextColor(Color::srgba(0.95, 0.95, 0.95, 0.90)),
+                                text_shadow_default(),
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    top: px(2.0),
+                                    left: px(4.0),
+                                    ..default()
+                                },
+                                ZIndex(10),
+                            ));
                         });
                     }
                 });
@@ -777,7 +788,7 @@ fn build_inventory_ui(
 #[allow(clippy::too_many_arguments)]
 fn despawn_inventory_menu(
     mut commands: Commands,
-    query: Query<Entity, With<InventoryMenuEntity>>,
+    query: Query<Entity, With<InventoryMenuRoot>>,
     mut held_item: ResMut<HeldInventoryItem>,
     mut scroll_state: ResMut<InventoryScrollState>,
     mut search_query: ResMut<CreativeSearchQuery>,
@@ -817,7 +828,7 @@ fn handle_inventory_tab_key(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut tab_state: ResMut<InventoryTab>,
     mut commands: Commands,
-    query: Query<Entity, With<InventoryMenuEntity>>,
+    query: Query<Entity, With<InventoryMenuRoot>>,
     asset_server: Res<AssetServer>,
     hotbar: Res<Hotbar>,
     player_inv: Res<PlayerInventory>,
@@ -856,7 +867,7 @@ fn handle_inventory_tab_interaction(
     mouse: Res<ButtonInput<MouseButton>>,
     mut tab_state: ResMut<InventoryTab>,
     mut commands: Commands,
-    query: Query<Entity, With<InventoryMenuEntity>>,
+    query: Query<Entity, With<InventoryMenuRoot>>,
     asset_server: Res<AssetServer>,
     hotbar: Res<Hotbar>,
     player_inv: Res<PlayerInventory>,
@@ -1041,6 +1052,20 @@ fn get_card_top_left(
         ));
     }
     None
+}
+
+#[cfg(target_os = "windows")]
+fn is_caps_lock_on() -> bool {
+    #[link(name = "user32")]
+    unsafe extern "system" {
+        fn GetKeyState(n_virt_key: i32) -> i16;
+    }
+    unsafe { (GetKeyState(0x14) & 1) != 0 }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn is_caps_lock_on() -> bool {
+    false
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1246,6 +1271,7 @@ fn handle_creative_search_input(
     if search_query.is_focused {
         let ctrl = keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight);
         let shift = keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight);
+        let caps = is_caps_lock_on();
 
         let mut triggered_action: Option<(KeyCode, KeyAction)> = None;
 
@@ -1272,7 +1298,18 @@ fn handle_creative_search_input(
             } else {
                 for &(key, normal_ch, shift_ch) in char_keys {
                     if keyboard.just_pressed(key) {
-                        let ch = if shift { shift_ch } else { normal_ch };
+                        let is_letter = normal_ch.is_ascii_alphabetic();
+                        let ch = if is_letter {
+                            if shift ^ caps {
+                                shift_ch
+                            } else {
+                                normal_ch
+                            }
+                        } else if shift {
+                            shift_ch
+                        } else {
+                            normal_ch
+                        };
                         triggered_action = Some((key, KeyAction::Char(ch)));
                         break;
                     }

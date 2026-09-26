@@ -64,8 +64,8 @@ fn setup_hotbar_ui(
     let font_handle = app_font.as_ref().map(|f| f.source());
     let hotbar_texture = asset_server.load("textures/interfaces/containers/hotbar.png");
 
-    // Scale multiplier for hotbar UI rendering (2x integer scaling = 512x64 px)
-    const HOTBAR_SCALE: f32 = 2.0;
+    // Scale multiplier for hotbar UI rendering (3x integer scaling = 768x96 px)
+    const HOTBAR_SCALE: f32 = 3.0;
     let tray_width = 256.0 * HOTBAR_SCALE;
     let tray_height = 32.0 * HOTBAR_SCALE;
     let slot_stride = 20.0 * HOTBAR_SCALE;
@@ -91,7 +91,7 @@ fn setup_hotbar_ui(
             ZIndex(150),
         ))
         .with_children(|parent| {
-            // Scaled hotbar texture (256x32 px at 2x = 512x64 px)
+            // Scaled hotbar texture (256x32 px at 3x = 768x96 px)
             parent
                 .spawn((
                     ImageNode {
@@ -151,29 +151,7 @@ fn setup_hotbar_ui(
                             BorderColor::all(border_color),
                         ))
                         .with_children(|slot| {
-                            // Slot index number (1 through 8)
-                            let mut num_font = TextFont {
-                                font_size: FontSize::Px(6.0 * HOTBAR_SCALE),
-                                ..default()
-                            };
-                            if let Some(ref font) = font_handle {
-                                num_font.font = font.clone();
-                            }
-
-                            slot.spawn((
-                                Text::new(format!("{}", index + 1)),
-                                num_font,
-                                TextColor(Color::srgba(0.90, 0.90, 0.90, 0.85)),
-                                text_shadow_default(),
-                                Node {
-                                    position_type: PositionType::Absolute,
-                                    top: px(1.0 * HOTBAR_SCALE),
-                                    left: px(2.0 * HOTBAR_SCALE),
-                                    ..default()
-                                },
-                            ));
-
-                            // Centered 2D item icon
+                            // Centered 2D item icon (rendered first, below slot number)
                             slot.spawn((
                                 HotbarSlotIcon { index },
                                 ImageNode {
@@ -186,6 +164,29 @@ fn setup_hotbar_ui(
                                     ..default()
                                 },
                                 icon_visibility,
+                            ));
+
+                            // Slot index number (1 through 8, rendered in front with ZIndex)
+                            let mut num_font = TextFont {
+                                font_size: FontSize::Px(16.0),
+                                ..default()
+                            };
+                            if let Some(ref font) = font_handle {
+                                num_font.font = font.clone();
+                            }
+
+                            slot.spawn((
+                                Text::new(format!("{}", index + 1)),
+                                num_font,
+                                TextColor(Color::srgba(0.95, 0.95, 0.95, 0.90)),
+                                text_shadow_default(),
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    top: px(2.0),
+                                    left: px(4.0),
+                                    ..default()
+                                },
+                                ZIndex(10),
                             ));
                         });
                     }

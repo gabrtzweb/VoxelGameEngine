@@ -167,7 +167,7 @@ fn setup_minimap(
                     Text::new("N"),
                     TextFont {
                         font: font_handle.clone(),
-                        font_size: FontSize::Px(13.0),
+                        font_size: FontSize::Px(16.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.95, 0.95, 0.98)),
@@ -185,7 +185,7 @@ fn setup_minimap(
                     Text::new("S"),
                     TextFont {
                         font: font_handle.clone(),
-                        font_size: FontSize::Px(13.0),
+                        font_size: FontSize::Px(16.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.95, 0.95, 0.98)),
@@ -203,7 +203,7 @@ fn setup_minimap(
                     Text::new("W"),
                     TextFont {
                         font: font_handle.clone(),
-                        font_size: FontSize::Px(13.0),
+                        font_size: FontSize::Px(16.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.95, 0.95, 0.98)),
@@ -221,7 +221,7 @@ fn setup_minimap(
                     Text::new("E"),
                     TextFont {
                         font: font_handle.clone(),
-                        font_size: FontSize::Px(13.0),
+                        font_size: FontSize::Px(16.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.95, 0.95, 0.98)),
@@ -271,7 +271,18 @@ fn setup_minimap(
                     Text::new("Coordinates: XYZ: 0, 0, 0"),
                     TextFont {
                         font: font_handle.clone(),
-                        font_size: FontSize::Px(11.0),
+                        font_size: FontSize::Px(16.0),
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.95, 0.95, 0.98)),
+                    crate::core::text_shadow_default(),
+                ));
+                pill.spawn((
+                    MinimapDateText,
+                    Text::new("Day: 1, 06:00, spring"),
+                    TextFont {
+                        font: font_handle.clone(),
+                        font_size: FontSize::Px(16.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.95, 0.95, 0.98)),
@@ -282,18 +293,7 @@ fn setup_minimap(
                     Text::new("Biome: Plains"),
                     TextFont {
                         font: font_handle.clone(),
-                        font_size: FontSize::Px(10.0),
-                        ..default()
-                    },
-                    TextColor(Color::srgb(0.95, 0.95, 0.98)),
-                    crate::core::text_shadow_default(),
-                ));
-                pill.spawn((
-                    MinimapDateText,
-                    Text::new("Day: 1, 06:00, spring"),
-                    TextFont {
-                        font: font_handle,
-                        font_size: FontSize::Px(10.0),
+                        font_size: FontSize::Px(16.0),
                         ..default()
                     },
                     TextColor(Color::srgb(0.95, 0.95, 0.98)),

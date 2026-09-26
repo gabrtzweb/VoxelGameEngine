@@ -92,7 +92,7 @@ fn spawn_dev_stats(mut commands: Commands, app_font: Option<Res<super::AppFont>>
         Text::new(""),
         TextFont {
             font: font_source,
-            font_size: FontSize::Px(13.0),
+            font_size: FontSize::Px(16.0),
             ..default()
         },
         TextColor(Color::WHITE),
@@ -154,6 +154,7 @@ fn update_dev_stats(
     >,
     mut update_timer: Local<f32>,
     mut last_mode: Local<Option<DebugHudMode>>,
+    mut fps_history: Local<Vec<f32>>,
 ) {
     let (mut text, mut visibility, mut bg_color, mut border_color) = text_query.into_inner();
 
@@ -171,7 +172,15 @@ fn update_dev_stats(
 
     *visibility = Visibility::Visible;
 
-    *update_timer += time.delta_secs();
+    let dt = time.delta_secs();
+    if dt > 0.0001 {
+        fps_history.push(dt);
+        if fps_history.len() > 120 {
+            fps_history.remove(0);
+        }
+    }
+
+    *update_timer += dt;
     if !mode_changed && *update_timer < STATS_UPDATE_INTERVAL {
         return;
     }
@@ -186,6 +195,18 @@ fn update_dev_stats(
         .get(&FrameTimeDiagnosticsPlugin::FRAME_TIME)
         .and_then(|diagnostic| diagnostic.smoothed())
         .unwrap_or(0.0);
+
+    let (min_fps, max_fps, low_1pct) = if !fps_history.is_empty() {
+        let mut sorted = fps_history.clone();
+        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        let max_f = 1.0 / sorted[0].max(0.0001);
+        let min_f = 1.0 / sorted[sorted.len() - 1].max(0.0001);
+        let p99_idx = ((sorted.len() as f32 * 0.99).floor() as usize).min(sorted.len() - 1);
+        let low_1p = 1.0 / sorted[p99_idx].max(0.0001);
+        (min_f, max_f, low_1p)
+    } else {
+        (fps as f32, fps as f32, fps as f32)
+    };
 
     let (player_transform, player_motion) = player.into_inner();
     let player_position = player_transform.translation;
@@ -204,9 +225,13 @@ fn update_dev_stats(
             *bg_color = BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.55));
             *border_color = BorderColor::all(Color::srgba(1.0, 1.0, 1.0, 0.10));
 
+            let loaded_chunks = world.iter_chunks().count();
+            let mesh_vertices = chunk_meshes.total_vertices();
+            let mesh_triangles = chunk_meshes.total_triangles();
+
             text.0 = format!(
-                "FPS: {fps:.0} ({frame_time:.2} ms)\n\
-                Target: {target_text}"
+                "FPS: {fps:.0} ({frame_time:.2} ms) | 1% Low: {low_1pct:.0} | Min: {min_fps:.0} | Max: {max_fps:.0}\n\
+                Chunks: {loaded_chunks} | Vertices: {mesh_vertices} | Triangles: {mesh_triangles}"
             );
         }
         DebugHudMode::Extended => {
@@ -243,6 +268,20 @@ fn update_dev_stats(
                 }
                 GameMode::Spectator => "N/A",
             };
+
+            let f = camera.forward();
+            let angle_deg = f.x.atan2(-f.z).to_degrees().rem_euclid(360.0);
+            let cardinal = match angle_deg {
+                d if (337.5..=360.0).contains(&d) || (0.0..22.5).contains(&d) => "North (Towards -Z)",
+                d if (22.5..67.5).contains(&d) => "North-East (+X, -Z)",
+                d if (67.5..112.5).contains(&d) => "East (Towards +X)",
+                d if (112.5..157.5).contains(&d) => "South-East (+X, +Z)",
+                d if (157.5..202.5).contains(&d) => "South (Towards +Z)",
+                d if (202.5..247.5).contains(&d) => "South-West (-X, +Z)",
+                d if (247.5..292.5).contains(&d) => "West (Towards -X)",
+                _ => "North-West (-X, -Z)",
+            };
+            let direction_text = format!("{cardinal} ({angle_deg:.1}°)");
 
             let env_text = if let Some(ref env) = environment {
                 let hours = (env.time_of_day * 24.0 + 6.0).rem_euclid(24.0);
@@ -292,11 +331,12 @@ fn update_dev_stats(
             };
 
             text.0 = format!(
-                "FPS: {fps:.1}\n\
+                "FPS: {fps:.1} [1% Low: {low_1pct:.0} | Min: {min_fps:.0} | Max: {max_fps:.0}]\n\
                 Frame: {frame_time:.2} ms\n\
                 Power: {power_text}\n\
                 Mode: {}\n\
                 Flight: {}\n\
+                Direction: {direction_text}\n\
                 Time: {env_text}\n\
                 Biome: {biome_text}\n\
                 Position: {}, {}, {}\n\

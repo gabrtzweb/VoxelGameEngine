@@ -245,11 +245,17 @@ pub enum Voxel {
 
     // Soils
     RootedDirt = 67,
+
+    // Planks
+    OakPlanks = 68,
+    BirchPlanks = 69,
+    PinePlanks = 70,
+    RainwoodPlanks = 71,
 }
 
 impl Voxel {
     /// All voxels that map to a texture and are loaded into the terrain texture array.
-    pub const ALL: [Voxel; 66] = [
+    pub const ALL: [Voxel; 70] = [
         Voxel::Grass,
         Voxel::Dirt,
         Voxel::Stone,
@@ -316,6 +322,10 @@ impl Voxel {
         Voxel::WaterOccupied,
         Voxel::SnowyGrass,
         Voxel::RootedDirt,
+        Voxel::OakPlanks,
+        Voxel::BirchPlanks,
+        Voxel::PinePlanks,
+        Voxel::RainwoodPlanks,
     ];
 
     /// The base texture name under `assets/textures/blocks/` without extension.
@@ -328,6 +338,10 @@ impl Voxel {
             Self::BirchWood | Self::BirchWoodLog => Some("tree_birchwood"),
             Self::PineWood | Self::PineWoodLog => Some("tree_pinewood"),
             Self::RainwoodWood | Self::RainwoodWoodLog => Some("tree_rainwood"),
+            Self::OakPlanks => Some("tree_oakwood_planks"),
+            Self::BirchPlanks => Some("tree_birchwood_planks"),
+            Self::PinePlanks => Some("tree_pinewood_planks"),
+            Self::RainwoodPlanks => Some("tree_rainwood_planks"),
             Self::OakLeaves => Some("tree_oakwood_leaves"),
             Self::BirchLeaves => Some("tree_birchwood_leaves"),
             Self::PineLeaves => Some("tree_pinewood_leaves"),
@@ -483,10 +497,10 @@ impl Voxel {
     pub fn fallback_color(self) -> [u8; 4] {
         match self {
             Self::Air | Self::Occupied | Self::WaterOccupied => [0, 0, 0, 0],
-            Self::OakWood | Self::OakWoodLog => [133, 94, 56, 255],
-            Self::BirchWood | Self::BirchWoodLog => [225, 222, 210, 255],
-            Self::PineWood | Self::PineWoodLog => [74, 48, 28, 255],
-            Self::RainwoodWood | Self::RainwoodWoodLog => [118, 76, 52, 255],
+            Self::OakWood | Self::OakWoodLog | Self::OakPlanks => [133, 94, 56, 255],
+            Self::BirchWood | Self::BirchWoodLog | Self::BirchPlanks => [225, 222, 210, 255],
+            Self::PineWood | Self::PineWoodLog | Self::PinePlanks => [74, 48, 28, 255],
+            Self::RainwoodWood | Self::RainwoodWoodLog | Self::RainwoodPlanks => [118, 76, 52, 255],
             Self::OakLeaves => [87, 166, 46, 255],
             Self::BirchLeaves => [133, 199, 56, 255],
             Self::PineLeaves => [46, 107, 66, 255],
@@ -650,12 +664,16 @@ impl Voxel {
             Self::Cactus => "Cactus",
             Self::OakWood => "Oak Wood",
             Self::OakWoodLog => "Oak Log",
+            Self::OakPlanks => "Oak Planks",
             Self::BirchWood => "Birch Wood",
             Self::BirchWoodLog => "Birch Log",
+            Self::BirchPlanks => "Birch Planks",
             Self::PineWood => "Pine Wood",
             Self::PineWoodLog => "Pine Log",
+            Self::PinePlanks => "Pine Planks",
             Self::RainwoodWood => "Rainwood Wood",
             Self::RainwoodWoodLog => "Rainwood Log",
+            Self::RainwoodPlanks => "Rainwood Planks",
             Self::OakLeaves => "Oak Leaves",
             Self::BirchLeaves => "Birch Leaves",
             Self::PineLeaves => "Pine Leaves",

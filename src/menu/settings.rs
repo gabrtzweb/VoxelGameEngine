@@ -90,7 +90,7 @@ fn spawn_settings_menu(
     let font_handle = app_font.as_ref().map(|f| f.source());
 
     let mut header_font = TextFont {
-        font_size: FontSize::Px(22.0),
+        font_size: FontSize::Px(32.0),
         ..default()
     };
     if let Some(ref font) = font_handle {
@@ -274,7 +274,7 @@ fn spawn_settings_menu(
 
                     // 8. Back Button
                     let mut back_font = TextFont {
-                        font_size: FontSize::Px(14.0),
+                        font_size: FontSize::Px(16.0),
                         ..default()
                     };
                     if let Some(ref font) = font_handle {
@@ -320,15 +320,15 @@ fn spawn_stepper_row<T: Component>(
     font_handle: Option<&crate::core::FontSource>,
 ) {
     let mut title_font = TextFont {
-        font_size: FontSize::Px(13.0),
+        font_size: FontSize::Px(16.0),
         ..default()
     };
     let mut btn_font = TextFont {
-        font_size: FontSize::Px(14.0),
+        font_size: FontSize::Px(16.0),
         ..default()
     };
     let mut val_font = TextFont {
-        font_size: FontSize::Px(13.0),
+        font_size: FontSize::Px(16.0),
         ..default()
     };
     if let Some(font) = font_handle {
@@ -446,7 +446,7 @@ fn spawn_toggle_button<T: Component>(
     font_handle: Option<&crate::core::FontSource>,
 ) {
     let mut btn_font = TextFont {
-        font_size: FontSize::Px(13.0),
+        font_size: FontSize::Px(16.0),
         ..default()
     };
     if let Some(font) = font_handle {

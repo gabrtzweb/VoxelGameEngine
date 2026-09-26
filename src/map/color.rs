@@ -44,10 +44,10 @@ pub fn voxel_map_color(voxel: Voxel, water_depth: u8) -> [u8; 4] {
         Voxel::Terracotta => [165, 95, 65, 255],
 
         // Woods & Foliage
-        Voxel::OakWood | Voxel::OakWoodLog => [133, 94, 56, 255],
-        Voxel::BirchWood | Voxel::BirchWoodLog => [215, 210, 198, 255],
-        Voxel::PineWood | Voxel::PineWoodLog => [74, 48, 28, 255],
-        Voxel::RainwoodWood | Voxel::RainwoodWoodLog => [118, 76, 52, 255],
+        Voxel::OakWood | Voxel::OakWoodLog | Voxel::OakPlanks => [133, 94, 56, 255],
+        Voxel::BirchWood | Voxel::BirchWoodLog | Voxel::BirchPlanks => [215, 210, 198, 255],
+        Voxel::PineWood | Voxel::PineWoodLog | Voxel::PinePlanks => [74, 48, 28, 255],
+        Voxel::RainwoodWood | Voxel::RainwoodWoodLog | Voxel::RainwoodPlanks => [118, 76, 52, 255],
         Voxel::OakLeaves => [72, 140, 42, 255],
         Voxel::BirchLeaves => [115, 165, 50, 255],
         Voxel::PineLeaves => [40, 95, 55, 255],

@@ -26,15 +26,18 @@ pub fn text_shadow_default() -> TextShadow {
     }
 }
 
+impl FromWorld for AppFont {
+    fn from_world(world: &mut World) -> Self {
+        let asset_server = world.resource::<AssetServer>();
+        let handle: Handle<Font> = asset_server.load(DEFAULT_FONT_PATH);
+        AppFont { handle }
+    }
+}
+
 pub struct FontPlugin;
 
 impl Plugin for FontPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_app_font);
+        app.init_resource::<AppFont>();
     }
-}
-
-fn setup_app_font(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let handle: Handle<Font> = asset_server.load(DEFAULT_FONT_PATH);
-    commands.insert_resource(AppFont { handle });
 }
