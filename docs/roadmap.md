@@ -531,12 +531,13 @@ Phase 10 delivered extensive gameplay polish, interactive tactile feedback, inve
       - Symmetrically placed toggle buttons above the central panel for `Personal` ($X=22..91$, $Y=2..13$) and `Creative` ($X=98..167$, $Y=2..13$) matching texture guidelines, with <kbd>Tab</kbd> hotkey support.
       - **Persistent Mode Memory**: Active view mode (Personal vs. Creative) is preserved across closing and reopening.
     - **Personal Inventory**:
+      - Dedicated `"Personal Inventory"` title ($X=24, Y=32$) with 16px font size.
       - 8×4 slot grid (32 items) for player storage ($X=24 + c \times 18$, $Y=52 + r \times 18$).
-      - Title area ($X=24, Y=32$) and two action button placeholders ($X=138, 156$).
+      - Two action button placeholders ($X=138, 156$).
       - 1×8 bottom hotbar mirror row at $Y=128$.
     - **Creative Inventory**:
-      - Compact title and adjacent search bar ($X=98..168$, $Y=32..43$, width 71px, height 12px). Title area vertically centered with increased font size (16px).
-      - 8×4 creative block grid with real-time filtering and 1×8 hotbar mirror row.
+      - Dedicated `"Creative Inventory"` title and adjacent search bar ($X=98..168$, $Y=32..43$, width 71px, height 12px). Title area vertically centered with increased font size (16px).
+      - 8×4 creative block grid with real-time filtering, including the 4 core wood plank types (`OakPlanks`, `BirchPlanks`, `PinePlanks`, `RainwoodPlanks`), and 1×8 hotbar mirror row.
       - **Manual Scrollbar Dragging & Smooth Tracking**: Scrollbar track ($X=175..186$) with pixel-art thumb (`inventory_scroller.png`, 12×15 px at base, 36×45 px at 3×) supporting both mouse wheel scrolling and click-and-drag thumb positioning with real-time slot synchronization.
     - **Full-Featured Search Bar Input Field**:
       - **Click-to-Focus & Hit-Testing**: Decoupled from Bevy child node transform propagation, utilizing card-relative coordinates with window fallback to ensure instantaneous, reliable focus activation on single click.
@@ -545,10 +546,15 @@ Phase 10 delivered extensive gameplay polish, interactive tactile feedback, inve
       - **Backspace & Delete Key Repeat**: Holding Backspace or Delete continuously removes characters.
       - **Double-Click & Drag Selection**: Double-clicking selects all query text; clicking and dragging selects character ranges, rendered with a semi-transparent blue highlight box behind text. Also supports <kbd>Ctrl+A</kbd>.
       - **Selection Deletion & Typing Replacement**: Typing replaces selected text; Backspace/Delete removes selection.
+      - **Caps Lock & Shift Support**: Seamless uppercase character input respecting both Caps Lock state and Shift modifiers.
       - Guarded <kbd>E</kbd> key and <kbd>Esc</kbd> key to unfocus search input.
     - **Minimap HUD & Time/Date Information Readout**:
-      - Added real-time date, time, and season readout below the minimap formatted as `"Day: 10, 14:30, spring"`.
-      - Streamlined minimal F3 Dev Stats HUD mode to exclusively show critical performance and target metrics (FPS, frame time, target block/coords) while delegating world time, biome, and coordinates to the minimap HUD footer.
+      - Reordered and streamlined information readout below the minimap in logical sequence: `Coordinates: X, Y, Z` – `Date: Day ..., HH:MM, season` – `Biome: ...`.
+    - **F3 Dev Stats HUD Overhaul**:
+      - Minimal mode shows essential performance diagnostics: current FPS, 1% low FPS, Min/Max FPS, loaded chunk counts, and total active mesh vertices and triangles.
+      - Extended mode adds dynamic camera `Direction` indicator (e.g. `Direction: North (-Z)`) alongside detailed player coordinates, climate diagnostics, and dynamic throttle status.
+    - **Universal Typography Migration**:
+      - Fixed `FontPlugin` initialization via `FromWorld` in `src/core/font.rs` ensuring the custom pixel font (`CutePixel.ttf`) renders across all HUD elements, hotbar slot numbers, target HUD, dev stats, minimap, and menus.
     - **Cleaned Final Interface Textures**:
       - Integrated final production container and hotbar textures from `interfaces/containers/` removing legacy red guide outlines.
     - **Ergonomics & Polish**:

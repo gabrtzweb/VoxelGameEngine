@@ -12,8 +12,8 @@ The project focuses on a fully editable procedural voxel world with 1.0 m³ bloc
 - Square gameplay Minimap HUD (North-up, compact XYZ coordinates, live player heading chevron) and full-screen interactive World Map (<kbd>M</kbd>).
 - Ambient Environment procedural color noise and climate-driven biome palettes (grass, foliage, water) with smooth 5-point cross-kernel boundary blending.
 - Dynamic FPS & VSync: configurable presentation modes (AutoNoVsync default, toggleable in Settings) and intelligent frame throttling (15 FPS unfocused, 30 FPS idle) with unconstrained active gameplay (250+ FPS).
-- Custom typography & drop shadows: centralized font asset management (`CutePixel.ttf`) and universal drop shadow contrast styling.
-- Centered unified textured container interface: Creative palette & Personal storage with top mode toggle buttons, real-time search with hold-to-repeat backspace and text drag/double-click selection, persistent tab memory, Shift-drag multi-slot transfers, and cinematic Depth-of-Field blur.
+- Custom typography & drop shadows: universal font asset management (`CutePixel.ttf`) applied across all in-game HUDs, menus, and interfaces with drop shadow contrast styling.
+- Centered unified textured container interface: Creative palette & Personal storage with top mode toggle buttons, real-time search with hold-to-repeat backspace, Caps Lock support, and text drag/double-click selection, persistent tab memory, Shift-drag multi-slot transfers, and cinematic Depth-of-Field blur.
 
 The long-term goal is to build a performant procedural voxel game with large-world streaming, runtime terrain editing, configurable generation, multiple gameplay modes, dynamic fluids and extensive development tooling.
 
@@ -47,9 +47,9 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     ESC               Pause Menu (Settings: Screen Mode, Render Dist, FOV, Fog, Bobbing, Fancy Sides, VSync, Dynamic FPS; Restart, Quit)
     E                 Inventory (Unified 190×152 px textured container: Personal & Creative inventory with background blur)
                       • Mode Buttons at top / Tab key: Toggle between Personal and Creative inventory (choice persists across close/reopen)
-                      • Personal Inventory: 8×4 grid (32 slots) storage, hotbar mirror row, action buttons
-                      • Creative Palette: 8×4 grid of all available blocks, pixel-art scroller, hotbar mirror row
-                      • Creative Search Bar: Real-time search & filtering, holding Backspace repeats character deletion, double-click selects all, click & drag selects text range, Ctrl+A select all
+                      • Personal Inventory: Dedicated title, 8×4 grid (32 slots) storage, hotbar mirror row, action buttons
+                      • Creative Palette: Dedicated title, 8×4 grid of all available blocks (including 4 wood plank varieties), pixel-art scroller, hotbar mirror row
+                      • Creative Search Bar: Real-time search & filtering with Caps Lock and Shift uppercase support, holding Backspace repeats character deletion, double-click selects all, click & drag selects text range, Ctrl+A select all
                       • Shift + Click: Quick transfer between personal inventory and hotbar
                       • Shift + LMB Drag: Rapid multi-slot transfer between hotbar and personal inventory / hotbar wipe in Creative
                       • LMB Drag: Paint held block across multiple hotbar slots
