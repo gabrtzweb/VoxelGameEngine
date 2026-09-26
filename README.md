@@ -78,9 +78,11 @@ assets/
 │   └── voxel.wgsl
 ├── sounds/
 │   ├── footsteps/
-│   └── music/
-│       ├── game/
-│       └── menu/
+│   ├── liquids/
+│   ├── music/
+│   │   ├── game/
+│   │   └── menu/
+│   └── weather/
 ├── textures/
 │   ├── blocks/
 │   ├── environments/   
@@ -97,6 +99,7 @@ assets/
 └── icon.ico
 
 docs/
+├── future_textures/
 ├── context.md
 └── roadmap.md
 
