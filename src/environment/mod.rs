@@ -150,22 +150,27 @@ fn sync_starfield_system(
 }
 
 fn sync_cloud_system(
-    time: Res<Time>,
     state: Res<EnvironmentState>,
     camera: clouds::CameraTransformQuery,
-    cloud: clouds::CloudQuery,
+    cloud_layers: clouds::CloudLayerQuery,
     material_handle: Res<clouds::CloudMaterialHandle>,
     materials: ResMut<Assets<StandardMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    cloud_map: Res<clouds::CloudTextureMap>,
+    mut layers_res: ResMut<clouds::CloudLayersResource>,
     env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
 ) {
     let is_underwater = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
 
     clouds::sync_clouds(
-        time,
+        state.total_in_game_seconds(),
         camera,
-        cloud,
+        cloud_layers,
         material_handle,
         materials,
+        &mut meshes,
+        &cloud_map,
+        &mut layers_res,
         state.time_of_day,
         is_underwater,
     );

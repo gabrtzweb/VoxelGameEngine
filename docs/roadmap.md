@@ -557,11 +557,23 @@ Phase 10 delivered extensive gameplay polish, interactive tactile feedback, inve
       - Fixed `FontPlugin` initialization via `FromWorld` in `src/core/font.rs` ensuring the custom pixel font (`CutePixel.ttf`) renders across all HUD elements, hotbar slot numbers, target HUD, dev stats, minimap, and menus.
     - **Cleaned Final Interface Textures**:
       - Integrated final production container and hotbar textures from `interfaces/containers/` removing legacy red guide outlines.
+    - **World Map Interface Overhaul & Parchment Framing**:
+      - Redesigned the World Map from a full-screen stretched box into a compact, cohesive centered RPG window (`src/map/world_map.rs`).
+      - Integrated `map_background_large.png` (expanded to 512×384 px, 4:3 aspect ratio) as a decorative ragged-edge parchment background frame, matching the aesthetic of the minimap.
+      - Centered the interactive terrain viewport (`696 × 504 px` inside a `768 × 576 px` frame at 1.5× integer-fraction scale) with clean margins, preserving the black checkered grid for unexplored chunks while allowing the parchment texture and corners to frame the map.
+      - Attached the Header bar ("WORLD MAP" and "[M / ESC] Return to Game") and Footer HUD (pan/zoom controls, player coordinates, cursor coordinates, and zoom multiplier) directly onto the world map window container, eliminating detached screen-edge elements.
     - **Ergonomics & Polish**:
       - **Shift + Click**: Rapid item transfer between personal inventory and hotbar.
       - **Shift + LMB Drag**: Multi-slot batch transfer / creative hotbar clearance.
-      - **LMB Drag**: Continuous hotbar painting with held item.
       - **Depth-of-Field Blur**: Cinematic camera depth-of-field blur (`DepthOfField`) upon opening inventory.
+  - **Visual Polish, Global Illumination & Dynamic Water Shader**:
+    - **Block Seam & Edge Gap Elimination**: Fixed the horizontal texture line glitch visible on block edges (especially dirt blocks below grass). Root cause was greedy meshing assigning chunk-offset voxel coordinates into UVs, causing `fract(uv)` at integer boundaries ($1.0, 16.0$) to wrap to $0.0$ (sampling the top green grass texel row). Normalized quad UV bounds to `[0.0, width]` / `[0.0, height]`, enabled `ImageAddressMode::Repeat` in `textures.rs`, and introduced safe fractional tile UV clamping (`[0.0005, 0.9995]`) in `voxel.wgsl`.
+    - **Hemispheric Global Illumination & Natural Shadow Visibility**: Eliminated pitch-black shadows on vertical block faces and cliff sides. Switched tonemapping to `Tonemapping::TonyMcMapface` (preventing shadow toe crushing) and boosted daytime ambient light to 2,600 lux (1,800 morning and evening) with hemispheric GI bounce in `voxel.wgsl`, ensuring shaded block faces display crisp, visible texture detail and natural earth/sky bounce without overexposure or crushed blacks.
+    - **Atmospheric Lighting & Dynamic Celestial Sun**: Elevated ambient daylight illuminance and dynamically tuned the sun color across the day cycle (rich golden-orange dawn/dusk transitioning to radiant warm white at midday). Oriented the non-shadowed `SkyFillLight` opposite the sun's horizontal azimuth to illuminate shaded faces, and extended shadow cascades to 128m. Added subtle Fresnel edge rim glow for crisp voxel silhouettes.
+    - **Dynamic Water Shader Overhaul**:
+      - **Crystal-Clear Translucency**: Reduced base water alpha to 0.42 (blending to 0.68 at glancing angles) with zero milky emissive washing, making shallow water completely transparent with seabed sand and stone clearly visible.
+      - **Authentic Animated Texture Visibility**: Set water animation speed to 16 FPS, allowing all 32 frames of `liqd_water_still.png` to cycle fluidly without muddying or artificial blob patterns.
+      - **Procedural 3D Wave Harmonics**: Multi-frequency wave normal perturbation simulates undulating rolling waves with real PBR specular sunlight glints and glancing sky reflection.
 
 ---
 
@@ -572,37 +584,52 @@ A focused overhaul and expansion of procedural world generation, terrain topogra
 - [x] **Stage 11.0: Foundational Geology & World Depth Calibration (Completed)**:
   - **Symmetric 512-Block Vertical Height**: Set minimum chunk level to `WORLD_MIN_CHUNK_Y = -16`, establishing a symmetric vertical world range spanning $-256$ to $+256$ (512 total playable blocks).
   - **Underground Blackstone Stratum**: Standard subterranean stone transitions halfway down the crust ($Y \le -120$) into dense `Blackstone`, while unbreakable `Dreadstone` bedrock forms the floor of the world ($Y \le -254$).
-  - **Exclusive Highlands Slate**: Reserved `Slate` and `Cobbleslate` exclusively for the `Highlands` biome, establishing its unique geological identity as steep alpine crags and scree slopes.
-  - **Reactivated Core Biome Suite**: Activated all 14 baseline biomes in `BiomeType::ACTIVE` and `ClimateGenerator::classify_biome` (`Plains`, `Cold Plains`, `Snowy Tundra`, `Meadow`, `Woodland`, `Wetlands`, `Highlands`, `Plains Forest`, `Savanna`, `Desert`, `Beach`, `River`, `Ocean`, `Deep Ocean`).
+  - **Current Biome Suite**: There is 14 baseline biomes in `BiomeType::ACTIVE` and `ClimateGenerator::classify_biome` (`Plains`, `Cold Plains`, `Snowy Tundra`, `Meadow`, `Woodland`, `Wetlands`, `Highlands`, `Plains Forest`, `Savanna`, `Desert`, `Beach`, `River`, `Ocean`, `Deep Ocean`).
 
-- [ ] **Stage 11.1: Surface Fantasy Biome Catalog (Terrain & Surface Palettes)**:
-  *Note: Only existing engine blocks are utilized (`Grass`, `SnowyGrass`, `Dirt`, `PackedDirt`, `Mud`, `PackedMud`, `Mulch`, `Moss`, `RedMoss`, `Clay`, `Gravel`, `Flint`, `Sand`, `RedSand`, `Stone`, `MossyStone`, `Cobblestone`, `Slate`, `Basalt`, `Blackstone`, `Sandstone`, `RedSandstone`, `Limestone`, `Calcite`, `Ice`, `PackedIce`). No flora/fauna features at this stage.*
+- [ ] **Stage 11.1: Block pallete reorganization based on biome requirements**:
+  - **Terrain Blocks (Surface)**:
+    - 
 
-  - **1. Frigid & Subpolar Climates**:
-    - *Glacial Spire & Nunataks*: Soaring vertical ice peaks and nunatak crags. Surface: `PackedIce`, `Ice`, `Snow`, and `Blueschist`. Subsoil: `PackedIce`. Water: Frigid navy (`#1B3F73`).
-    - *Frost Scree & Permafrost Slope*: High wind-swept scree slopes. Surface: `SnowyGrass`, loose `Gravel`, `Stone`, and `Snow`. Subsoil: `Dirt` and `Flint`. Water: Frigid cyan (`#48B2DE`).
-  - **2. Temperate & Maritime Climates**:
-    - *Ancient Grove (Brokilon/Fangorn style)*: Deep shaded lowland forest floor. Surface: `Moss`, `Grass`, and `PackedDirt`. Subsoil: `Mulch` and `Dirt`. Water: Dark tannin green (`#327A58`).
-    - *Old-Growth Pine Taiga*: Cool conifer valleys and hills. Surface: `Mulch`, `PackedDirt`, and cold `Grass`. Subsoil: `PackedDirt`. Water: Clear mountain blue (`#3E8AB8`).
-    - *Rolling Moors & Heathlands*: Wind-swept undulating hills. Surface: `Grass` with scattered `Gravel` patches and `Dirt`. Subsoil: `Dirt` and `Stone`. Water: Temperate blue (`#356592`).
-  - **3. Waterlogged Mires & Wetlands**:
-    - *Crookback Mire (Velen / Dead Marshes style)*: Stagnant depressions and peat banks. Surface: Wet `Mud`, `PackedMud`, `Clay`, and olive `Moss`. Subsoil: Deep `PackedMud`. Water: Murky brown-green (`#3D4A30`).
-    - *Brackish Estuary*: Low-lying braided channels. Surface: `Mud`, `Clay`, and river `Sand`. Subsoil: Layered `Clay` and `Gravel`. Water: Silty teal (`#3B827E`).
-  - **4. Arid & Scorched Climates**:
-    - *Red Mesa & Slot Canyons*: Layered flat-topped plateaus and dry arroyos. Surface: `RedSandstone`, `RedSand`, and `Ochrestone`. Subsoil: `RedSandstone`. Water: Rare oasis turquoise (`#2AC4C4`).
-    - *Volcanic Ashlands & Basalt Sinks (Mordor style)*: Scorched volcanic plains with fissures. Surface: `Basalt`, `Blackstone`, `Magma` seams, and dark `PackedDirt`. Subsoil: `Basalt`. Water/Fluids: Glowing `Lava`.
-  - **5. Coastal & Marine Boundaries**:
-    - *Rocky Sea-Cliffs*: Sheer ocean precipices battered by surf. Surface: `Stone`, `Cobblestone`, `Gravel`, and sea-spray `Grass`. Subsoil: Solid `Stone`. Water: Deep marine blue (`#244C8E`).
+- [ ] **Stage 11.2: Surface Biome Catalog (Terrain & Surface Palettes)**:
+  *Note: Only existing engine blocks are utilized. No flora/fauna features at this stage.*
 
-- [ ] **Stage 11.2: Multi-Parameter Climate Noise & Spline Mapping**:
+  - **Already existing biomes**:
+    - Plains
+    - Cold Plains
+    - Snowy Tundra
+    - Meadow
+    - Woodland
+    - Wetlands
+    - Highlands
+    - Plains Forest
+    - Savanna
+    - Desert
+    - Beach
+    - River
+    - Ocean
+    - Deep Ocean
+  - **New biomes**:
+    - Birch Forest
+    - Cold Taiga
+    - Dense Forest
+    - Mire
+    - Rolling Hills
+    - Scrubland
+    - Tropical Beach
+    - Tundra
+    - Volcanic Lands
+  - **They should be distributed like this**:
+    - 
+
+- [ ] **Stage 11.3: Multi-Parameter Climate Noise & Spline Mapping**:
   - **Multi-Noise Climate Coordinates**: Continuous multi-octave 2D noise mapping Continentalness, Temperature, and Humidity with expanded parameter curves.
   - **Smooth Spline / Voronoi Climate Blending**: Multi-octave jittered cellular partitioning ensuring biomes transition naturally without artificial geometric borders.
 
-- [ ] **Stage 11.3: Natural Biome Transitions & Edge Dithering**:
+- [ ] **Stage 11.4: Natural Biome Transitions & Edge Dithering**:
   - **Surface Block Dithering**: Expand organic block transitions (similar to Grass vs. SnowyGrass and Sand vs. Grass) across all adjacent biome borders (e.g. Mud fingers blending into Moor grass, RedSand drifts meeting Sandstone).
   - **Height & Slope Blending**: Natural elevation interpolation preventing sudden cliff cuts across biome boundaries.
 
-- [ ] **Stage 11.4: Atmospheric Biome Weather, Volumetric Fog & Environment Grading**:
+- [ ] **Stage 11.5: Atmospheric Biome Weather, Volumetric Fog & Environment Grading**:
   - **Biome-Specific Ambient Palettes**:
     - Low-altitude eerie mist in wetlands and mires.
     - Crisp high-exposure distance fog on alpine and glacial heights.
@@ -617,34 +644,21 @@ Phase 12 breathes organic life, vertical grandeur, and color into the procedural
 
 - [ ] **Stage 12.1: Procedural 1m Trees & Canopy Architecture**:
   - **Trunk Shapes, Species & Wood Types**:
-    - Wood species suite: Oak (`OakWood`, `OakWoodLog`), Birch (`BirchWood`, `BirchWoodLog`), Pine (`PineWood`, `PineWoodLog`), and Rainwood (`RainwoodWood`, `RainwoodWoodLog`), following the bark-only sides vs top/bottom log-ring architecture.
+    - Wood species suite: Oak, Birch, Pine, Palm, Willow, Acacia,  and Kapok, following the bark-only sides vs top/bottom log-ring architecture.
     - 1m block trunk geometry utilizing native shapes:
       - **Standard Trunks**: 1m × 1m full blocks (`BlockShape::Full`).
       - **Slender / Branch Trunks**: Centered vertical column shapes (`BlockShape::Column`, centered).
-      - **Colossal Trunks**: 2×2 log cores flanked by flaring root buttresses at ground level.
-    - Procedural branch generation: Log branches radiating outward and upward from the main trunk into canopies.
-    - Species profiles:
-      - **Oak**: Broad billowing Euclidean spherical leaf canopies, branching crowns (5–12m height).
-      - **Birch**: Tall, slender columnar trunks with oval sinusoidal crowns (7–14m height).
-      - **Pine**: Tiered dense conical evergreen skirts tapering to needle spires (10–22m height).
-      - **Rainwood**: Dense tropical umbrella canopies with hanging mosses and wide buttress bases.
   - **Canopy Foliage, Volumetric Depth & Alpha Cutouts**:
-    - Leaves blocks: `Voxel::OakLeaves`, `Voxel::BirchLeaves`, `Voxel::PineLeaves`, and `Voxel::RainwoodLeaves`.
     - GPU alpha-masking via `AlphaMode::Mask(0.5)` with `discard` in `voxel.wgsl` for crisp see-through foliage with full depth testing and zero sorting artifacts.
     - Volumetric interior leaf rendering (`should_render_face(leaf, leaf) = true`) preventing hollow outer shells while GPU backface culling preserves performance.
     - Biome foliage tinting dynamically harmonizing leaf colors with terrain climate noise.
   - **Spawn Validation & Multi-Chunk Margins**:
-    - Trees spawn strictly on compatible soil (Grass, Dirt, Packed Dirt, Mulch, Mud, Sand for palms) with clearance checks preventing growth inside caves or underwater.
+    - Trees spawn strictly on compatible soil (Grass, Dirt, Mulch, Sand for Palms) with clearance checks preventing growth inside caves or underwater.
     - Multi-chunk generation margins ensuring branch and canopy geometry seamlessly crosses chunk boundaries without planar clipping.
 
 - [ ] **Stage 12.2: Ground Flora, Flowers & Biome Foliage**:
-  - **Wild Grass & Ferns**: Single and double-tall grass tufts scattered across Plains, Meadows, and Woodlands using cross-quad alpha cutouts.
-  - **Flowering Plants**: Biome-specific flowers:
-    - Meadows: High-density vibrant carpets of Poppies, Dandelions, Cornflowers, and Blue Orchids.
-    - Woodlands: Woodland bluebells and wild ferns.
-    - Wetlands: Water lily pads floating on marsh pools, reeds/sugar cane along muddy riverbanks.
-    - Caves & Shadows: Red and brown mushrooms flourishing in low-light subterranean grottos and damp overhangs.
-    - Deserts: Dead tumbleweeds, dry shrubs, and saguaro cacti.
+  - **Wild Grass & Ferns**: Single and double-tall grass tufts scattered across the biomes using cross-quad alpha cutouts.
+  - **Flowering Plants**: Biome-specific flowers scattered across the biomes.
 
 - [ ] **Stage 12.3: Alpha-Cutout Cross-Quad Meshing & Wind Sway Shader**:
   - **Cross-Quad Plant Geometry**: Efficient 2-quad (X-pattern) billboard meshes for wild grass, flowers, and crops.
@@ -695,10 +709,10 @@ Phase 13 scales the engine's rendering and storage architecture to support massi
   - **Engine Benefits**:
     - Eliminates micro-stutters and pop-in directly in the player's line of sight during rapid flight.
 
-- [ ] **Stage 13.5: Compressed Binary Region File Storage (Anvil/MCA 32×32 Architecture)**:
+- [ ] **Stage 13.5: Compressed Binary Region File Storage (32×32 Architecture)**:
   - **The Problem**: The world is currently memory-only and regenerates procedurally on every run; player edits in `WorldModificationStore` are not saved to disk.
   - **Architecture**:
-    - Sector-based 32×32 chunk binary region file format (`.mca` style) storing 1,024 chunk columns per region file.
+    - Sector-based 32×32 chunk binary region, storing 1,024 chunk columns per region file.
     - Per-chunk compression utilizing high-throughput Zstandard or LZ4 over 4-bit paletted voxel data.
     - Asynchronous background disk I/O thread pool streaming dirty chunks to disk without blocking the main game thread.
     - Spatial chunk index header with timestamp metadata for fast random-access chunk reads.

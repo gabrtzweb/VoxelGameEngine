@@ -6,14 +6,14 @@ use crate::{
     world::{CHUNK_SIZE, VOXEL_SIZE, streaming::ChunkStreamingSettings},
 };
 
-pub const DAY_SUN_ILLUMINANCE: f32 = 6_500.0;
-pub const DAY_FILL_ILLUMINANCE: f32 = 2_200.0;
-pub const DAY_AMBIENT_BRIGHTNESS: f32 = 450.0;
-pub const DAY_EXPOSURE_EV100: f32 = 11.0;
+pub const DAY_SUN_ILLUMINANCE: f32 = 8_500.0;
+pub const DAY_FILL_ILLUMINANCE: f32 = 1_200.0;
+pub const DAY_AMBIENT_BRIGHTNESS: f32 = 1_000.0;
+pub const DAY_EXPOSURE_EV100: f32 = 11.1;
 
-pub const NIGHT_MOON_ILLUMINANCE: f32 = 450.0;
-pub const NIGHT_AMBIENT_BRIGHTNESS: f32 = 28.0;
-pub const NIGHT_EXPOSURE_EV100: f32 = 9.2;
+pub const NIGHT_MOON_ILLUMINANCE: f32 = 600.0;
+pub const NIGHT_AMBIENT_BRIGHTNESS: f32 = 50.0;
+pub const NIGHT_EXPOSURE_EV100: f32 = 9.0;
 
 pub const FOG_START_FACTOR: f32 = 0.50;
 pub const FOG_END_FACTOR: f32 = 0.90;
@@ -144,10 +144,10 @@ pub fn sample_sky_color(time_of_day: f32) -> Color {
 }
 
 pub fn sample_ambient_color(time_of_day: f32) -> Color {
-    let morning = LinearRgba::new(0.92, 0.78, 0.70, 1.0);
-    let noon = LinearRgba::new(0.85, 0.88, 0.95, 1.0);
-    let evening = LinearRgba::new(0.90, 0.65, 0.50, 1.0);
-    let night = LinearRgba::new(0.24, 0.28, 0.44, 1.0);
+    let morning = LinearRgba::new(0.95, 0.82, 0.72, 1.0);
+    let noon = LinearRgba::new(0.88, 0.94, 1.08, 1.0);
+    let evening = LinearRgba::new(0.95, 0.72, 0.55, 1.0);
+    let night = LinearRgba::new(0.32, 0.38, 0.58, 1.0);
 
     Color::LinearRgba(sample_4stop(
         time_of_day,
@@ -162,9 +162,9 @@ pub fn sample_ambient_color(time_of_day: f32) -> Color {
 pub fn sample_ambient_brightness(time_of_day: f32) -> f32 {
     sample_4stop(
         time_of_day,
-        220.0,
+        800.0,
         DAY_AMBIENT_BRIGHTNESS,
-        200.0,
+        800.0,
         NIGHT_AMBIENT_BRIGHTNESS,
         lerp_f32,
     )

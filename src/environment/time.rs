@@ -174,6 +174,10 @@ impl EnvironmentState {
         (self.day_count.saturating_sub(1) % 336) + 1
     }
 
+    pub fn total_in_game_seconds(&self) -> f64 {
+        (self.day_count as f64 - 1.0 + self.time_of_day as f64) * self.day_length_seconds as f64
+    }
+
     pub fn day_of_season(&self) -> u32 {
         (self.day_of_year() - 1) % 84 + 1
     }

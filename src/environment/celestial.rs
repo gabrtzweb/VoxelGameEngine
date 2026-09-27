@@ -108,7 +108,7 @@ pub fn setup_celestial(
         CascadeShadowConfigBuilder {
             num_cascades: 4,
             minimum_distance: 0.1,
-            maximum_distance: 96.0,
+            maximum_distance: 128.0,
             first_cascade_far_bound: 14.0,
             overlap_proportion: 0.25,
         }
@@ -250,6 +250,13 @@ pub fn sync_celestial_transforms(
     sun_l.shadow_maps_enabled = sun_elev > 0.04;
     *sun_lt = Transform::default().looking_to(-sun_dir, Vec3::Y);
 
+    // Dynamic sun color: deep golden-orange at dawn/dusk, warm white at noon
+    let sun_warmth = (sun_elev / 0.40).clamp(0.0, 1.0);
+    let dawn_color = Vec3::new(1.0, 0.66, 0.32);
+    let midday_color = Vec3::new(1.0, 0.98, 0.90);
+    let current_sun_color = dawn_color.lerp(midday_color, sun_warmth.powf(0.7));
+    sun_l.color = Color::srgb(current_sun_color.x, current_sun_color.y, current_sun_color.z);
+
     // Directional moonlight shining from moon towards the world (-moon_dir).
     let moon_elev = moon_dir.y.max(0.0);
     moon_l.illuminance =
@@ -257,9 +264,11 @@ pub fn sync_celestial_transforms(
     moon_l.shadow_maps_enabled = moon_elev > 0.04 && moon_phase_illuminance_factor > 0.20;
     *moon_lt = Transform::default().looking_to(-moon_dir, Vec3::Y);
 
-    // Sky fill light softens shadows during daytime.
+    // Sky fill light softens shadows during daytime, oriented opposite the sun's horizontal azimuth
     fill_l.illuminance = sun_elev.powf(0.5) * day_fill_illuminance;
-    *fill_lt = Transform::default().looking_to(Vec3::new(-0.30, -0.65, -0.30).normalize(), Vec3::Y);
+    let fill_dir = Vec3::new(sun_dir.x * 0.6, -0.80, sun_dir.z * 0.6).normalize();
+    *fill_lt = Transform::default().looking_to(fill_dir, Vec3::Y);
+    fill_l.color = Color::srgb(0.60, 0.74, 0.96);
 }
 
 fn load_celestial_images() -> (Image, [Image; 8]) {

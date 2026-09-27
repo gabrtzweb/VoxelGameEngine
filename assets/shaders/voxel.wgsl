@@ -61,10 +61,10 @@ fn fragment(
         discard;
     }
 
-    // Ambient Environment modulation: breaks up monotonous large expanses of grass, leaves, and water
+    // Ambient Environment modulation: breaks up monotonous large expanses of grass and leaves
     var tint_color = vertex_output.color;
     let is_tinted = (tint_color.r < 0.99 || tint_color.g < 0.99 || tint_color.b < 0.99);
-    if (is_tinted || frame_count > 1.5) {
+    if (is_tinted) {
         let noise = ambient_environment_noise(vertex_output.world_position.xz);
         // Subtle organic variation: ±8% darker and lighter natural patches
         let ambient_factor = 0.92 + noise * 0.16;
@@ -76,15 +76,8 @@ fn fragment(
     var out: FragmentOutput;
     if (frame_count < -0.5) {
         // Light-emitting blocks are self-illuminated:
-        // Always maintains full, vivid texture visibility day and night,
-        // unaffected by external shadows or darkness.
         out.color = vec4<f32>(tex_color.rgb * vertex_output.color.rgb * 1.15, 1.0);
     } else {
-        if (frame_count > 1.5) {
-            pbr_input.material.base_color.a = max(pbr_input.material.base_color.a, 0.72);
-            let water_tint = tex_color.rgb * tint_color.rgb;
-            pbr_input.material.emissive = vec4<f32>(water_tint * 0.55, 1.0);
-        }
         out.color = apply_pbr_lighting(pbr_input);
     }
     out.color = main_pass_post_lighting_processing(pbr_input, out.color);
