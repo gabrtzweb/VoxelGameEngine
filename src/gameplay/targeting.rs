@@ -118,6 +118,10 @@ fn draw_current_target_highlight(
     if let Some(box_b) = maybe_box_b {
         draw_box_outline(&mut gizmos, origin, box_b[0], box_b[1], color);
     }
+    if let Some((_extra_v, extra_orient)) = world.get_extra_slab(target.block_origin) {
+        let (extra_box, _) = BlockShape::Slab.local_boxes(extra_orient);
+        draw_box_outline(&mut gizmos, origin, extra_box[0], extra_box[1], color);
+    }
 }
 
 fn draw_box_outline(
@@ -226,6 +230,17 @@ fn raycast_world(
                             _ => Some(hit_b),
                         };
                     }
+                    if let Some((_extra_v, extra_orient)) = world.get_extra_slab(voxel) {
+                        let (extra_box, _) = BlockShape::Slab.local_boxes(extra_orient);
+                        if let Some(hit_extra) =
+                            ray_hit_local_box(grid_origin, direction, voxel, extra_box[0], extra_box[1])
+                        {
+                            best = match best {
+                                Some(hit_a) if hit_a.0 <= hit_extra.0 => Some(hit_a),
+                                _ => Some(hit_extra),
+                            };
+                        }
+                    }
 
                     if let Some((_, hit_normal)) = best {
                         return Some(RaycastHit {
@@ -304,26 +319,24 @@ fn ray_hit_local_box(
 
     let mut t1_x = (box_min.x - origin.x) * inv_x;
     let mut t2_x = (box_max.x - origin.x) * inv_x;
-    let mut norm_x = if direction.x < 0.0 {
+    let norm_x = if direction.x < 0.0 {
         IVec3::X
     } else {
         IVec3::NEG_X
     };
     if t1_x > t2_x {
         std::mem::swap(&mut t1_x, &mut t2_x);
-        norm_x = -norm_x;
     }
 
     let mut t1_y = (box_min.y - origin.y) * inv_y;
     let mut t2_y = (box_max.y - origin.y) * inv_y;
-    let mut norm_y = if direction.y < 0.0 {
+    let norm_y = if direction.y < 0.0 {
         IVec3::Y
     } else {
         IVec3::NEG_Y
     };
     if t1_y > t2_y {
         std::mem::swap(&mut t1_y, &mut t2_y);
-        norm_y = -norm_y;
     }
 
     if (t1_x > t2_y) || (t1_y > t2_x) {
@@ -335,14 +348,13 @@ fn ray_hit_local_box(
 
     let mut t1_z = (box_min.z - origin.z) * inv_z;
     let mut t2_z = (box_max.z - origin.z) * inv_z;
-    let mut norm_z = if direction.z < 0.0 {
+    let norm_z = if direction.z < 0.0 {
         IVec3::Z
     } else {
         IVec3::NEG_Z
     };
     if t1_z > t2_z {
         std::mem::swap(&mut t1_z, &mut t2_z);
-        norm_z = -norm_z;
     }
 
     if (t_enter > t2_z) || (t1_z > t2_x.min(t2_y)) {

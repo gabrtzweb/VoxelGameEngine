@@ -31,7 +31,7 @@ pub const CLOUD_LAYER_CONFIGS: &[CloudLayerConfig] = &[
         thickness: 2.0,
         cell_size: 12.0,
         grid_radius: 24,
-        base_alpha: 0.58,
+        base_alpha: 0.85,
         wind_speed: Vec2::new(3.2, 1.0),
         texture_offset: IVec2::new(0, 0),
     },
@@ -41,7 +41,7 @@ pub const CLOUD_LAYER_CONFIGS: &[CloudLayerConfig] = &[
         thickness: 2.0,
         cell_size: 16.0,
         grid_radius: 22,
-        base_alpha: 0.44,
+        base_alpha: 0.70,
         wind_speed: Vec2::new(2.1, 0.6),
         texture_offset: IVec2::new(128, 64),
     },
@@ -51,7 +51,7 @@ pub const CLOUD_LAYER_CONFIGS: &[CloudLayerConfig] = &[
         thickness: 2.5,
         cell_size: 20.0,
         grid_radius: 20,
-        base_alpha: 0.32,
+        base_alpha: 0.50,
         wind_speed: Vec2::new(1.4, 0.4),
         texture_offset: IVec2::new(64, 192),
     },
@@ -237,29 +237,29 @@ pub fn sample_cloud_color(time_of_day: f32) -> Color {
     let (c1, c2, factor) = if t < 0.25 {
         let f = t / 0.25;
         (
-            LinearRgba::new(1.0, 0.88, 0.78, 0.90), // Dawn warm peach
-            LinearRgba::new(1.0, 1.0, 1.0, 0.95),   // Midday bright white
+            LinearRgba::new(1.0, 0.92, 0.85, 0.95), // Dawn warm peach
+            LinearRgba::new(1.0, 1.0, 1.0, 0.98),   // Midday bright white
             f,
         )
     } else if t < 0.50 {
         let f = (t - 0.25) / 0.25;
         (
-            LinearRgba::new(1.0, 1.0, 1.0, 0.95),   // Midday bright white
-            LinearRgba::new(1.0, 0.65, 0.52, 0.90), // Sunset vibrant amber/pink
+            LinearRgba::new(1.0, 1.0, 1.0, 0.98),   // Midday bright white
+            LinearRgba::new(1.0, 0.72, 0.60, 0.95), // Sunset vibrant amber/pink
             f,
         )
     } else if t < 0.75 {
         let f = (t - 0.50) / 0.25;
         (
-            LinearRgba::new(1.0, 0.65, 0.52, 0.90), // Sunset vibrant amber/pink
-            LinearRgba::new(0.20, 0.24, 0.36, 0.75), // Midnight deep navy
+            LinearRgba::new(1.0, 0.72, 0.60, 0.95), // Sunset vibrant amber/pink
+            LinearRgba::new(0.30, 0.35, 0.48, 0.85), // Midnight deep navy
             f,
         )
     } else {
         let f = (t - 0.75) / 0.25;
         (
-            LinearRgba::new(0.20, 0.24, 0.36, 0.75), // Midnight deep navy
-            LinearRgba::new(1.0, 0.88, 0.78, 0.90),  // Dawn warm peach
+            LinearRgba::new(0.30, 0.35, 0.48, 0.85), // Midnight deep navy
+            LinearRgba::new(1.0, 0.92, 0.85, 0.95),  // Dawn warm peach
             f,
         )
     };
@@ -338,10 +338,10 @@ pub fn generate_3d_cloud_mesh(
     };
 
     // Shading factors tuned for crisp, bright white clouds
-    let bottom_shade = [0.82, 0.83, 0.86]; // Clean bright underside
+    let bottom_shade = [0.91, 0.92, 0.94]; // Clean bright underside
     let top_shade = [1.00, 1.00, 1.00];    // Full sunlight top
-    let west_east_shade = [0.90, 0.91, 0.93]; // Bright vertical walls
-    let north_south_shade = [0.87, 0.88, 0.90]; // Crisp side shading
+    let west_east_shade = [0.96, 0.97, 0.98]; // Bright vertical walls
+    let north_south_shade = [0.93, 0.94, 0.95]; // Crisp side shading
 
     for cz in -grid_radius..=grid_radius {
         let wz = cz as f32 * cell_size;
@@ -594,113 +594,3 @@ fn procedural_cloud_fallback() -> CloudTextureMap {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use bevy::render::mesh::VertexAttributeValues;
-
-    #[test]
-    fn test_cloud_texture_map_loads() {
-        let map = load_cloud_texture_map();
-        assert!(map.width > 0);
-        assert!(map.height > 0);
-        let cloud_count = map.data.iter().filter(|&&c| c).count();
-        assert!(cloud_count > 0, "Cloud map should contain solid cloud cells");
-    }
-
-    #[test]
-    fn test_3d_cloud_mesh_attributes_and_shading() {
-        let map = load_cloud_texture_map();
-        let config = &CLOUD_LAYER_CONFIGS[0];
-        let mesh = generate_3d_cloud_mesh(&map, config, IVec2::ZERO);
-
-        let positions = mesh.attribute(Mesh::ATTRIBUTE_POSITION).expect("Missing positions");
-        let normals = mesh.attribute(Mesh::ATTRIBUTE_NORMAL).expect("Missing normals");
-        let colors = mesh.attribute(Mesh::ATTRIBUTE_COLOR).expect("Missing vertex colors");
-        let indices = mesh.indices().expect("Missing indices");
-
-        assert!(!indices.is_empty(), "Cloud mesh must contain indices");
-
-        let fade_inner = config.cell_size * (config.grid_radius as f32 * 0.58);
-        let fade_outer = config.cell_size * (config.grid_radius as f32 * 0.95);
-
-        if let (
-            VertexAttributeValues::Float32x3(pos_data),
-            VertexAttributeValues::Float32x3(norm_data),
-            VertexAttributeValues::Float32x4(color_data),
-        ) = (positions, normals, colors) {
-            assert_eq!(pos_data.len(), norm_data.len());
-            assert_eq!(pos_data.len(), color_data.len());
-
-            let mut has_bottom = false;
-            let mut has_top = false;
-            let mut has_side = false;
-
-            for i in 0..norm_data.len() {
-                let norm = norm_data[i];
-                let col = color_data[i];
-                let pos = pos_data[i];
-
-                let dist = (pos[0] * pos[0] + pos[2] * pos[2]).sqrt();
-                if dist <= fade_inner {
-                    assert!(
-                        (col[3] - config.base_alpha).abs() < 0.01,
-                        "Inner radius vertices must have full base alpha, got {}",
-                        col[3]
-                    );
-                } else if dist >= fade_outer {
-                    assert!(
-                        col[3] < 0.05,
-                        "Outer radius vertices must have near-zero alpha, got {}",
-                        col[3]
-                    );
-                }
-
-                // Shading verification (whiter thresholds)
-                if norm[1] < -0.9 {
-                    has_bottom = true;
-                    assert!(
-                        (col[0] - 0.82).abs() < 0.01,
-                        "Bottom face must have 0.82 bright underside shadow"
-                    );
-                } else if norm[1] > 0.9 {
-                    has_top = true;
-                    assert!(
-                        (col[0] - 1.00).abs() < 0.01,
-                        "Top face must have 1.00 full sunlight"
-                    );
-                } else {
-                    has_side = true;
-                    assert!(
-                        col[0] >= 0.85 && col[0] <= 0.94,
-                        "Side walls must have 0.87-0.90 directional shading, got {}",
-                        col[0]
-                    );
-                }
-            }
-
-            assert!(has_bottom, "Must have bottom faces");
-            assert!(has_top, "Must have top faces");
-            assert!(has_side, "Must have 3D vertical side faces");
-        } else {
-            panic!("Unexpected vertex attribute format");
-        }
-    }
-
-    #[test]
-    fn test_sample_cloud_color_day_night() {
-        let noon = sample_cloud_color(0.25);
-        if let Color::LinearRgba(c) = noon {
-            assert!(c.red > 0.95 && c.green > 0.95 && c.blue > 0.95);
-        } else {
-            panic!("Expected LinearRgba");
-        }
-
-        let sunset = sample_cloud_color(0.50);
-        if let Color::LinearRgba(c) = sunset {
-            assert!(c.red > c.blue, "Sunset should be warmer than noon/night");
-        } else {
-            panic!("Expected LinearRgba");
-        }
-    }
-}

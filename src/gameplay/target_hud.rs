@@ -39,11 +39,13 @@ impl Plugin for TargetHudPlugin {
 pub fn resolve_target_block_info(
     world: &impl VoxelAccess,
     target: VoxelTarget,
-) -> Option<(Voxel, Option<(BlockShape, u8)>)> {
+) -> Option<(Voxel, Option<(BlockShape, u8)>, Option<Voxel>)> {
     let raw_voxel = world.get_voxel(target.hit_voxel)?;
     if raw_voxel.is_empty() {
         return None;
     }
+
+    let extra_voxel = world.get_extra_slab(target.block_origin).map(|(v, _)| v);
 
     let shape = if raw_voxel.is_fluid() {
         None
@@ -52,11 +54,19 @@ pub fn resolve_target_block_info(
         Some((shape, orientation))
     };
 
-    Some((raw_voxel, shape))
+    Some((raw_voxel, shape, extra_voxel))
 }
 
 /// Formats the target block title, appending shape and orientation name if not a standard full block.
-pub fn format_target_hud_title(voxel: Voxel, shape: Option<(BlockShape, u8)>) -> String {
+pub fn format_target_hud_title(
+    voxel: Voxel,
+    shape: Option<(BlockShape, u8)>,
+    extra_voxel: Option<Voxel>,
+) -> String {
+    if let Some(extra) = extra_voxel {
+        return format!("{} / {} Slab", voxel.label(), extra.label());
+    }
+
     match shape {
         Some((s, orientation)) if s != BlockShape::Full && !voxel.is_fluid() => {
             format!(
@@ -197,7 +207,7 @@ fn update_target_hud(
     };
 
     // Resolve targeted block info
-    let Some((voxel, shape)) = resolve_target_block_info(&*world, target) else {
+    let Some((voxel, shape, extra_voxel)) = resolve_target_block_info(&*world, target) else {
         for mut vis in &mut root_query {
             if *vis != Visibility::Hidden {
                 *vis = Visibility::Hidden;
@@ -222,7 +232,7 @@ fn update_target_hud(
     }
 
     // Update title text
-    let new_title = format_target_hud_title(voxel, shape);
+    let new_title = format_target_hud_title(voxel, shape, extra_voxel);
     for mut text in &mut title_query {
         if text.0 != new_title {
             text.0 = new_title.clone();

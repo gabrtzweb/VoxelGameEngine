@@ -248,6 +248,10 @@ fn apply_block_shape(
 
     world.set_shape(req.origin, req.shape, req.orientation);
     modifications.record_shape(req.origin, req.shape, req.orientation);
+    if req.shape != BlockShape::Slab {
+        world.set_extra_slab(req.origin, None);
+        modifications.record_extra_slab(req.origin, None);
+    }
 
     sync_voxel_light(commands, world, req.origin, light_registry);
 

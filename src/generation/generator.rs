@@ -5,7 +5,7 @@ use super::{
     caves::{CaveGenerator, CaveNoiseSample},
     strata::StrataGenerator,
 };
-use crate::world::{CHUNK_SIZE, CHUNK_VOLUME, Chunk, Voxel};
+use crate::world::{BlockShape, CHUNK_SIZE, CHUNK_VOLUME, Chunk, Voxel};
 
 pub const LOGICAL_BLOCK_VOXELS: i32 = 1;
 
@@ -17,6 +17,8 @@ pub struct TerrainColumn {
     pub is_beach: bool,
     pub is_underground_river: bool,
     pub climate: ClimateSample,
+    pub surface_shape: BlockShape,
+    pub shape_orientation: u8,
 }
 
 impl Default for TerrainColumn {
@@ -33,6 +35,8 @@ impl Default for TerrainColumn {
                 humidity: 0.0,
                 biome: BiomeType::Plains,
             },
+            surface_shape: BlockShape::Full,
+            shape_orientation: 0,
         }
     }
 }
@@ -115,10 +119,12 @@ impl TerrainGenerator {
                 let column = self.sample_column(world_x, world_z);
                 columns[column_index(x, z)] = column;
 
+                let col_top = column.terrain_height;
+
                 let filled_height = column
                     .water_level
-                    .unwrap_or(column.terrain_height)
-                    .max(column.terrain_height);
+                    .unwrap_or(col_top)
+                    .max(col_top);
 
                 maximum_filled_height = maximum_filled_height.max(filled_height);
             }
@@ -130,6 +136,7 @@ impl TerrainGenerator {
         }
 
         let mut voxels = vec![Voxel::Air; CHUNK_VOLUME];
+        let mut chunk_shapes: Vec<(usize, BlockShape, u8)> = Vec::new();
 
         if chunk_min_y <= maximum_filled_height {
             let chunk_caves = self.caves.build_chunk_sampler(chunk_origin, self.seed);
@@ -149,20 +156,172 @@ impl TerrainGenerator {
                         if voxel != Voxel::Air {
                             let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
                             voxels[idx] = voxel;
+
+                            if world_y == column.terrain_height && column.surface_shape != BlockShape::Full {
+                                chunk_shapes.push((idx, column.surface_shape, column.shape_orientation));
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Cave interior shaping: natural ledges, slabs, and wall transitions
+            let get_v = |voxels_buf: &[Voxel], lx: i32, ly: i32, lz: i32| -> Voxel {
+                if lx >= 0
+                    && lx < CHUNK_SIZE as i32
+                    && ly >= 0
+                    && ly < CHUNK_SIZE as i32
+                    && lz >= 0
+                    && lz < CHUNK_SIZE as i32
+                {
+                    voxels_buf[lx as usize + lz as usize * CHUNK_SIZE + ly as usize * CHUNK_SIZE * CHUNK_SIZE]
+                } else {
+                    let wx = chunk_origin.x + lx;
+                    let wy = chunk_origin.y + ly;
+                    let wz = chunk_origin.z + lz;
+                    let col = self.sample_column(wx, wz);
+                    self.voxel_at(col, wx, wy, wz)
+                }
+            };
+
+            for z in 0..CHUNK_SIZE {
+                for x in 0..CHUNK_SIZE {
+                    let column = columns[column_index(x, z)];
+
+                    for y in 0..CHUNK_SIZE {
+                        let world_y = chunk_origin.y + y as i32;
+                        // Subterranean spaces strictly below surface terrain height
+                        if world_y >= column.terrain_height {
+                            continue;
+                        }
+
+                        let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
+                        let voxel = voxels[idx];
+                        if !voxel.is_collidable() || voxel == Voxel::Dreadstone {
+                            continue;
+                        }
+
+                        let world_x = chunk_origin.x + x as i32;
+                        let world_z = chunk_origin.z + z as i32;
+
+                        let above = get_v(&voxels, x as i32, y as i32 + 1, z as i32);
+                        if above == Voxel::Air {
+                            // Cave floor / shelf: use bottom slabs on gentle 1-block steps
+                            let d_west = if !get_v(&voxels, x as i32 - 1, y as i32, z as i32).is_collidable() {
+                                if get_v(&voxels, x as i32 - 1, y as i32 - 1, z as i32).is_collidable() { -1 } else { -2 }
+                            } else { 0 };
+
+                            let d_east = if !get_v(&voxels, x as i32 + 1, y as i32, z as i32).is_collidable() {
+                                if get_v(&voxels, x as i32 + 1, y as i32 - 1, z as i32).is_collidable() { -1 } else { -2 }
+                            } else { 0 };
+
+                            let d_north = if !get_v(&voxels, x as i32, y as i32, z as i32 - 1).is_collidable() {
+                                if get_v(&voxels, x as i32, y as i32 - 1, z as i32 - 1).is_collidable() { -1 } else { -2 }
+                            } else { 0 };
+
+                            let d_south = if !get_v(&voxels, x as i32, y as i32, z as i32 + 1).is_collidable() {
+                                if get_v(&voxels, x as i32, y as i32 - 1, z as i32 + 1).is_collidable() { -1 } else { -2 }
+                            } else { 0 };
+
+                            let has_cliff = d_west <= -2 || d_east <= -2 || d_north <= -2 || d_south <= -2;
+                            if !has_cliff {
+                                let lower_count = (if d_west == -1 { 1 } else { 0 })
+                                    + (if d_east == -1 { 1 } else { 0 })
+                                    + (if d_north == -1 { 1 } else { 0 })
+                                    + (if d_south == -1 { 1 } else { 0 });
+
+                                if lower_count == 1 || lower_count == 2 {
+                                    // Slabs for cave floor transitions (avoids excessive staircases)
+                                    chunk_shapes.push((idx, BlockShape::Slab, 0));
+                                }
+                            }
+                        } else {
+                            // Cave wall shaping: soften wall bases, arched ceiling junctions, vertical wall recesses, and chamfered corners
+                            let air_west = get_v(&voxels, x as i32 - 1, y as i32, z as i32) == Voxel::Air;
+                            let air_east = get_v(&voxels, x as i32 + 1, y as i32, z as i32) == Voxel::Air;
+                            let air_north = get_v(&voxels, x as i32, y as i32, z as i32 - 1) == Voxel::Air;
+                            let air_south = get_v(&voxels, x as i32, y as i32, z as i32 + 1) == Voxel::Air;
+
+                            let wall_openings = air_west as u8 + air_east as u8 + air_north as u8 + air_south as u8;
+                            let wall_noise = crate::core::noise::gradient_noise_3d(
+                                world_x as f32 * 0.18,
+                                world_y as f32 * 0.18,
+                                world_z as f32 * 0.18,
+                                self.seed.wrapping_add(44_221),
+                            );
+
+                            if wall_openings == 1 {
+                                let (air_dx, air_dz, stair_orient, inv_stair_orient, vert_slab_orient) = if air_west {
+                                    (-1, 0, 0, 4, 5) // air is -X, slab attached to +X rock wall -> orient 5
+                                } else if air_east {
+                                    (1, 0, 1, 5, 4)  // air is +X, slab attached to -X rock wall -> orient 4
+                                } else if air_north {
+                                    (0, -1, 2, 6, 3) // air is -Z, slab attached to +Z rock wall -> orient 3
+                                } else {
+                                    (0, 1, 3, 7, 2)  // air is +Z, slab attached to -Z rock wall -> orient 2
+                                };
+
+                                let below_cave_floor = get_v(&voxels, x as i32 + air_dx, y as i32 - 1, z as i32 + air_dz).is_collidable();
+                                let above_cave_roof = get_v(&voxels, x as i32 + air_dx, y as i32 + 1, z as i32 + air_dz).is_collidable();
+
+                                if below_cave_floor && wall_noise > 0.10 {
+                                    // Wall base: rock footing using stairs or slabs
+                                    if wall_noise > 0.45 {
+                                        chunk_shapes.push((idx, BlockShape::Stair, stair_orient));
+                                    } else {
+                                        chunk_shapes.push((idx, BlockShape::Slab, 0));
+                                    }
+                                } else if above_cave_roof && wall_noise > 0.25 {
+                                    // Wall top: arched ceiling overhang
+                                    if wall_noise > 0.50 {
+                                        chunk_shapes.push((idx, BlockShape::Stair, inv_stair_orient));
+                                    } else {
+                                        chunk_shapes.push((idx, BlockShape::Slab, 1));
+                                    }
+                                } else if (0.35..0.68).contains(&wall_noise) {
+                                    // Mid-wall: vertical slabs create rocky recesses and wall relief in caves & ravines!
+                                    chunk_shapes.push((idx, BlockShape::Slab, vert_slab_orient));
+                                }
+                            } else if wall_openings == 2 {
+                                // Outer turning corners in caves and ravines: side-aligned column slabs chamfer sharp 90-degree rock edges
+                                let corner_orient = if air_west && air_north {
+                                    Some(4) // Solid corner at MaxX, MaxZ (+X, +Z)
+                                } else if air_east && air_north {
+                                    Some(3) // Solid corner at MinX, MaxZ (-X, +Z)
+                                } else if air_west && air_south {
+                                    Some(2) // Solid corner at MaxX, MinZ (+X, -Z)
+                                } else if air_east && air_south {
+                                    Some(1) // Solid corner at MinX, MinZ (-X, -Z)
+                                } else {
+                                    None // Opposite walls (corridor)
+                                };
+
+                                if let Some(orient) = corner_orient {
+                                    if wall_noise > 0.15 {
+                                        chunk_shapes.push((idx, BlockShape::Column, orient));
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
 
-        Chunk::from_voxels(voxels)
+        let mut chunk = Chunk::from_voxels(voxels);
+        for (idx, shape, orientation) in chunk_shapes {
+            let (lx, ly, lz) = Chunk::index_to_xyz(idx);
+            chunk.set_shape(lx, ly, lz, shape, orientation);
+        }
+
+        chunk
     }
 
     pub fn effective_sea_level(&self) -> i32 {
         logical_block_top(self.sea_level)
     }
 
-    pub fn sample_column(&self, world_x: i32, world_z: i32) -> TerrainColumn {
+    pub fn continuous_height_and_biome(&self, world_x: i32, world_z: i32) -> (f32, BiomeType, bool) {
         let logical_x = world_x.div_euclid(LOGICAL_BLOCK_VOXELS);
         let logical_z = world_z.div_euclid(LOGICAL_BLOCK_VOXELS);
         let sample_x = logical_block_sample_position(logical_x);
@@ -171,7 +330,7 @@ impl TerrainGenerator {
         let mut climate = self.climate.sample(sample_x, sample_z, self.seed);
         let sea_level = self.effective_sea_level();
 
-        let mut terrain_height = self.terrain_height_at(world_x as f32, world_z as f32, &climate);
+        let mut raw_height = self.natural_height_at(world_x as f32, world_z as f32, &climate);
 
         let (river_factor, is_river_path) = self.river_sample(sample_x, sample_z);
         let is_inland = climate.continentalness >= -0.05;
@@ -179,28 +338,20 @@ impl TerrainGenerator {
         let mut is_underground_river = false;
 
         if is_river {
-            let initial_height = terrain_height;
-            // If mountain is high, keep peak intact and let the river flow underneath!
+            let initial_height = raw_height.round() as i32;
             if initial_height > sea_level + 14 {
                 is_underground_river = true;
             } else {
-                let river_bed = sea_level - 4;
+                let river_bed = (sea_level - 4) as f32;
                 let target_height = lerp(
-                    terrain_height as f32,
-                    river_bed as f32,
+                    raw_height,
+                    river_bed,
                     (river_factor * 1.25).min(1.0),
-                )
-                .round() as i32;
-                terrain_height = terrain_height.min(target_height);
+                );
+                raw_height = raw_height.min(target_height);
                 climate.biome = BiomeType::River;
             }
         }
-
-        let water_level = if terrain_height < sea_level {
-            Some(sea_level)
-        } else {
-            None
-        };
 
         let is_beach = self.is_beach_at(logical_x, logical_z, climate.biome, sea_level, &climate);
         let final_biome = if is_beach && !is_river {
@@ -209,13 +360,113 @@ impl TerrainGenerator {
             climate.biome
         };
 
+        (raw_height, final_biome, is_underground_river)
+    }
+
+    pub fn sample_column(&self, world_x: i32, world_z: i32) -> TerrainColumn {
+        let sea_level = self.effective_sea_level();
+        let (raw_height, final_biome, is_underground_river) =
+            self.continuous_height_and_biome(world_x, world_z);
+
+        let terrain_height = raw_height.round() as i32;
+        let mut surface_shape = BlockShape::Full;
+        let mut shape_orientation = 0u8;
+
+        let water_level = if terrain_height < sea_level {
+            Some(sea_level)
+        } else {
+            None
+        };
+
+        let is_beach = final_biome == BiomeType::Beach;
+
+        // Transitions on dry land above water level (terrain at or below sea_level remains strictly full blocks)
+        if water_level.is_none() && terrain_height >= sea_level + 1 {
+            let get_effective_height = |(h, _, _): (f32, BiomeType, bool)| -> i32 {
+                let th = h.round() as i32;
+                if th < sea_level {
+                    sea_level
+                } else {
+                    th
+                }
+            };
+
+            let h_east = get_effective_height(self.continuous_height_and_biome(world_x + 1, world_z));
+            let h_west = get_effective_height(self.continuous_height_and_biome(world_x - 1, world_z));
+            let h_south = get_effective_height(self.continuous_height_and_biome(world_x, world_z + 1));
+            let h_north = get_effective_height(self.continuous_height_and_biome(world_x, world_z - 1));
+
+            let d_east = h_east - terrain_height;
+            let d_west = h_west - terrain_height;
+            let d_south = h_south - terrain_height;
+            let d_north = h_north - terrain_height;
+
+            let has_cliff = d_east <= -2 || d_west <= -2 || d_south <= -2 || d_north <= -2;
+
+            // Retain solid blocks on sections of higher terrain for blocky cliffs and stepped terraces
+            let edge_noise = crate::core::noise::gradient_noise_2d(
+                world_x as f32 * 0.08,
+                world_z as f32 * 0.08,
+                self.seed.wrapping_add(88_991),
+            );
+
+            let is_high_terrain = terrain_height >= sea_level + 7;
+            let keep_solid = if is_high_terrain {
+                edge_noise > 0.05
+            } else {
+                edge_noise > 0.42
+            };
+
+            if !has_cliff && !keep_solid {
+                let lower_count = (if d_west == -1 { 1 } else { 0 })
+                    + (if d_east == -1 { 1 } else { 0 })
+                    + (if d_north == -1 { 1 } else { 0 })
+                    + (if d_south == -1 { 1 } else { 0 });
+
+                if lower_count == 1 {
+                    // Surface stairs restored at a natural frequency (~35%), slabs for remainder
+                    let stair_hash = ((world_x.wrapping_mul(374_761_393)
+                        ^ world_z.wrapping_mul(668_265_263)
+                        ^ (self.seed as i32))
+                        .abs() % 100) as f32 / 100.0;
+
+                    if stair_hash < 0.35 {
+                        surface_shape = BlockShape::Stair;
+                        // Orient step towards the higher side so it ascends away from the lower neighbor
+                        shape_orientation = if d_east == -1 {
+                            1 // Drop to East (+X): step is at -X
+                        } else if d_west == -1 {
+                            0 // Drop to West (-X): step is at +X
+                        } else if d_south == -1 {
+                            3 // Drop to South (+Z): step is at -Z
+                        } else {
+                            2 // Drop to North (-Z): step is at +Z
+                        };
+                    } else {
+                        surface_shape = BlockShape::Slab;
+                        shape_orientation = 0; // Bottom Slab
+                    }
+                } else if lower_count == 2 {
+                    // Corner drops use clean bottom slabs
+                    surface_shape = BlockShape::Slab;
+                    shape_orientation = 0; // Bottom Slab
+                }
+            }
+        }
+
         TerrainColumn {
             terrain_height,
             water_level,
             biome: final_biome,
             is_beach,
             is_underground_river,
-            climate,
+            climate: self.climate.sample(
+                logical_block_sample_position(world_x.div_euclid(LOGICAL_BLOCK_VOXELS)),
+                logical_block_sample_position(world_z.div_euclid(LOGICAL_BLOCK_VOXELS)),
+                self.seed,
+            ),
+            surface_shape,
+            shape_orientation,
         }
     }
 
@@ -688,3 +939,4 @@ fn smoothstep(value: f32) -> f32 {
 fn lerp(start: f32, end: f32, amount: f32) -> f32 {
     start + (end - start) * amount
 }
+

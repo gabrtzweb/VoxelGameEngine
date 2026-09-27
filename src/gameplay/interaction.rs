@@ -11,7 +11,10 @@ use crate::{
         fluid::FluidUpdateQueue,
         lighting::{VoxelLightRegistry, sync_voxel_light},
     },
-    world::{ChunkStreamingQueues, Voxel, VoxelWorld, WorldModificationStore, affected_chunks},
+    world::{
+        BlockShape, ChunkStreamingQueues, Voxel, VoxelWorld, WorldModificationStore,
+        affected_chunks,
+    },
 };
 
 const HOLD_DELAY: f32 = 0.25;
@@ -184,8 +187,18 @@ fn edit_voxels(
 
     let (edited_voxels, broken_voxel) = if break_action {
         let prev_voxel = world.get_voxel(target.hit_voxel);
-        let edited = remove_block(&mut world, &mut modifications, target.hit_voxel);
-        (edited, prev_voxel)
+        let has_extra = world.get_extra_slab(target.hit_voxel).is_some();
+        let (edited, broken) = if has_extra {
+            // Remove the extra slab first, leaving the base slab intact
+            let extra = world.get_extra_slab(target.hit_voxel).map(|(v, _)| v);
+            world.set_extra_slab(target.hit_voxel, None);
+            modifications.record_extra_slab(target.hit_voxel, None);
+            (vec![target.hit_voxel], extra)
+        } else {
+            let edited = remove_block(&mut world, &mut modifications, target.hit_voxel);
+            (edited, prev_voxel)
+        };
+        (edited, broken)
     } else if place_action {
         let Some(place_voxel_type) = selected.0 else {
             return;
@@ -195,12 +208,48 @@ fn edit_voxels(
             return;
         };
 
-        let edited = place_block(
-            &mut world,
-            &mut modifications,
-            place_position,
-            place_voxel_type,
-        );
+        let (hit_shape, hit_orientation) = world.get_shape(target.hit_voxel);
+        let existing_voxel = world.get_voxel(target.hit_voxel);
+        let existing_extra = world.get_extra_slab(target.hit_voxel);
+
+        let edited = if target.face_normal == IVec3::Y
+            && hit_shape == BlockShape::Slab
+            && hit_orientation == 0
+            && existing_extra.is_none()
+        {
+            // Clicking on top of a bottom slab that has no upper slab yet
+            if Some(place_voxel_type) == existing_voxel {
+                // Same material: completes the bottom slab into a full block of this material
+                world.set_shape(target.hit_voxel, BlockShape::Full, 0);
+                modifications.record_shape(target.hit_voxel, BlockShape::Full, 0);
+            } else {
+                // Different material: place new material as a top slab within the exact same block space!
+                world.set_extra_slab(target.hit_voxel, Some((place_voxel_type, 1)));
+                modifications.record_extra_slab(target.hit_voxel, Some((place_voxel_type, 1)));
+            }
+            vec![target.hit_voxel]
+        } else if target.face_normal == -IVec3::Y
+            && hit_shape == BlockShape::Slab
+            && hit_orientation == 1
+            && existing_extra.is_none()
+        {
+            // Clicking underneath a ceiling slab that has no bottom slab yet
+            if Some(place_voxel_type) == existing_voxel {
+                world.set_shape(target.hit_voxel, BlockShape::Full, 0);
+                modifications.record_shape(target.hit_voxel, BlockShape::Full, 0);
+            } else {
+                world.set_extra_slab(target.hit_voxel, Some((place_voxel_type, 0)));
+                modifications.record_extra_slab(target.hit_voxel, Some((place_voxel_type, 0)));
+            }
+            vec![target.hit_voxel]
+        } else {
+            place_block(
+                &mut world,
+                &mut modifications,
+                place_position,
+                place_voxel_type,
+            )
+        };
         (edited, None)
     } else {
         (Vec::new(), None)
@@ -220,8 +269,13 @@ fn edit_voxels(
     } else if place_action
         && let (Some(place_voxel_type), Some(place_position)) = (selected.0, target.place_voxel)
     {
+        let event_pos = if edited_voxels.contains(&target.hit_voxel) && !edited_voxels.contains(&place_position) {
+            target.hit_voxel
+        } else {
+            place_position
+        };
         commands.trigger(BlockPlaceEvent {
-            position: place_position,
+            position: event_pos,
             voxel: place_voxel_type,
         });
     }

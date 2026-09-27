@@ -170,6 +170,7 @@ pub struct Chunk {
     unique_voxel_count: u16,
     homogeneity: ChunkHomogeneity,
     shapes: HashMap<usize, (BlockShape, u8)>,
+    extra_slabs: HashMap<usize, (Voxel, u8)>,
 }
 
 impl Chunk {
@@ -203,6 +204,7 @@ impl Chunk {
             unique_voxel_count: 1,
             homogeneity,
             shapes: HashMap::default(),
+            extra_slabs: HashMap::default(),
         }
     }
 
@@ -247,6 +249,7 @@ impl Chunk {
             unique_voxel_count,
             homogeneity,
             shapes: HashMap::default(),
+            extra_slabs: HashMap::default(),
         }
     }
 
@@ -262,7 +265,7 @@ impl Chunk {
 
     #[inline]
     pub fn is_fully_solid_opaque(&self) -> bool {
-        self.solid_opaque_count == CHUNK_VOLUME
+        self.solid_opaque_count == CHUNK_VOLUME && !self.has_shapes() && !self.has_extra_slabs()
     }
 
     #[inline(always)]
@@ -312,6 +315,7 @@ impl Chunk {
 
         if voxel.is_empty() {
             self.shapes.remove(&index);
+            self.extra_slabs.remove(&index);
         }
 
         self.homogeneity = if self.non_air_count == 0 {
@@ -354,6 +358,35 @@ impl Chunk {
     #[inline]
     pub fn shapes(&self) -> &HashMap<usize, (BlockShape, u8)> {
         &self.shapes
+    }
+
+    #[inline]
+    pub fn get_extra_slab(&self, x: usize, y: usize, z: usize) -> Option<(Voxel, u8)> {
+        if self.extra_slabs.is_empty() {
+            None
+        } else {
+            self.extra_slabs.get(&Self::index(x, y, z)).copied()
+        }
+    }
+
+    pub fn set_extra_slab(&mut self, x: usize, y: usize, z: usize, slab: Option<(Voxel, u8)>) {
+        let index = Self::index(x, y, z);
+        if let Some(s) = slab {
+            self.extra_slabs.insert(index, s);
+        } else {
+            self.extra_slabs.remove(&index);
+        }
+    }
+
+    #[inline]
+    pub fn has_extra_slabs(&self) -> bool {
+        !self.extra_slabs.is_empty()
+    }
+
+    #[inline]
+    #[allow(dead_code)]
+    pub fn extra_slabs(&self) -> &HashMap<usize, (Voxel, u8)> {
+        &self.extra_slabs
     }
 
     #[inline]

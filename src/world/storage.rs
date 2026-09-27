@@ -76,6 +76,26 @@ impl VoxelWorld {
         Some(chunk_coordinate)
     }
 
+    pub fn get_extra_slab(&self, world_voxel: IVec3) -> Option<(Voxel, u8)> {
+        VoxelAccess::get_extra_slab(self, world_voxel)
+    }
+
+    pub fn set_extra_slab(
+        &mut self,
+        world_voxel: IVec3,
+        extra_slab: Option<(Voxel, u8)>,
+    ) -> Option<IVec3> {
+        let (chunk_coordinate, local_coordinate) = Self::world_voxel_to_chunk(world_voxel);
+        let chunk = self.get_chunk_mut(chunk_coordinate)?;
+        chunk.set_extra_slab(
+            local_coordinate.x as usize,
+            local_coordinate.y as usize,
+            local_coordinate.z as usize,
+            extra_slab,
+        );
+        Some(chunk_coordinate)
+    }
+
     pub fn world_voxel_to_chunk(world_voxel: IVec3) -> (IVec3, UVec3) {
         let chunk_size = CHUNK_SIZE as i32;
 
@@ -124,6 +144,15 @@ pub trait VoxelAccess {
             return (BlockShape::Full, 0);
         };
         chunk.get_shape(
+            local_coordinate.x as usize,
+            local_coordinate.y as usize,
+            local_coordinate.z as usize,
+        )
+    }
+    fn get_extra_slab(&self, world_voxel: IVec3) -> Option<(Voxel, u8)> {
+        let (chunk_coordinate, local_coordinate) = VoxelWorld::world_voxel_to_chunk(world_voxel);
+        let chunk = self.get_chunk(chunk_coordinate)?;
+        chunk.get_extra_slab(
             local_coordinate.x as usize,
             local_coordinate.y as usize,
             local_coordinate.z as usize,
