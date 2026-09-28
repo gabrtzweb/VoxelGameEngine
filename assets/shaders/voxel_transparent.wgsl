@@ -356,5 +356,18 @@ fn fragment(
     out.color = apply_pbr_lighting(pbr_input);
     out.color = main_pass_post_lighting_processing(pbr_input, out.color);
     out.color.a = final_alpha;
+
+    // Specular Highlight Ceiling:
+    // Direct PBR specular highlights on water (roughness 0.04) can peak at extreme HDR luminance (50+),
+    // which incorrectly passes the post-process god rays threshold (1.95) and creates a blinding vertical
+    // light streak ("laser beam") from the water surface towards the camera.
+    // Clamping water luminance to 1.10 preserves brilliant, glistening white highlights (which saturate to 1.0
+    // under tonemapping) while strictly keeping water reflection below post-process light emission thresholds.
+    let water_luma = dot(out.color.rgb, vec3<f32>(0.2126, 0.7152, 0.0722));
+    let max_water_luma: f32 = 1.10;
+    if (water_luma > max_water_luma) {
+        out.color = vec4<f32>(out.color.rgb * (max_water_luma / water_luma), out.color.a);
+    }
+
     return out;
 }

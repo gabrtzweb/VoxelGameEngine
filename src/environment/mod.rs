@@ -1,6 +1,7 @@
 pub mod atmosphere;
 pub mod celestial;
 pub mod clouds;
+pub mod post_process;
 pub mod stars;
 pub mod time;
 
@@ -26,6 +27,7 @@ impl Plugin for EnvironmentPlugin {
         let initial_brightness = sample_ambient_brightness(default_state.time_of_day);
 
         app.insert_resource(default_state)
+            .add_plugins(post_process::PostProcessPlugin)
             .insert_resource(GlobalAmbientLight {
                 color: initial_ambient,
                 brightness: initial_brightness,

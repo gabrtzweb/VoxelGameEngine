@@ -104,6 +104,7 @@ fn spawn_player_and_camera(
 
     commands.spawn((
         Camera3d::default(),
+        bevy::camera::Hdr,
         DepthPrepass,
         DistanceFog {
             color: Color::srgb(0.67, 0.75, 0.82),
@@ -119,6 +120,7 @@ fn spawn_player_and_camera(
         },
         Exposure { ev100: 11.0 },
         Tonemapping::AcesFitted,
+        crate::environment::post_process::PostProcessSettings::default(),
         Projection::Perspective(PerspectiveProjection {
             fov: CAMERA_FOV_DEGREES.to_radians(),
             near: 0.05,
