@@ -91,8 +91,10 @@ fn setup_minimap(
     let terrain_handle = images.add(terrain_img);
 
     // 2. Load textures from assets/textures/interfaces/atlases/
-    let bg_handle: Handle<Image> = asset_server.load("textures/interfaces/atlases/map_background.png");
-    let marker_handle: Handle<Image> = asset_server.load("textures/interfaces/atlases/decorations/marker_red.png");
+    let bg_handle: Handle<Image> =
+        asset_server.load("textures/interfaces/atlases/map_background.png");
+    let marker_handle: Handle<Image> =
+        asset_server.load("textures/interfaces/atlases/decorations/marker_red.png");
 
     commands.insert_resource(MinimapState {
         terrain_image: terrain_handle.clone(),

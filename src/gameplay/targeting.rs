@@ -232,9 +232,13 @@ fn raycast_world(
                     }
                     if let Some((_extra_v, extra_orient)) = world.get_extra_slab(voxel) {
                         let (extra_box, _) = BlockShape::Slab.local_boxes(extra_orient);
-                        if let Some(hit_extra) =
-                            ray_hit_local_box(grid_origin, direction, voxel, extra_box[0], extra_box[1])
-                        {
+                        if let Some(hit_extra) = ray_hit_local_box(
+                            grid_origin,
+                            direction,
+                            voxel,
+                            extra_box[0],
+                            extra_box[1],
+                        ) {
                             best = match best {
                                 Some(hit_a) if hit_a.0 <= hit_extra.0 => Some(hit_a),
                                 _ => Some(hit_extra),

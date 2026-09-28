@@ -114,11 +114,7 @@ fn aabb_overlap(min_a: Vec3, max_a: Vec3, min_b: Vec3, max_b: Vec3) -> bool {
 }
 
 #[inline]
-fn for_each_voxel_box<F: FnMut(Vec3, Vec3)>(
-    world: &VoxelWorld,
-    voxel: IVec3,
-    mut f: F,
-) {
+fn for_each_voxel_box<F: FnMut(Vec3, Vec3)>(world: &VoxelWorld, voxel: IVec3, mut f: F) {
     let (shape, orientation) = world.get_shape(voxel);
     let v_pos = voxel.as_vec3() * VOXEL_SIZE;
     let (box_a, maybe_box_b) = shape.local_boxes(orientation);
@@ -128,7 +124,10 @@ fn for_each_voxel_box<F: FnMut(Vec3, Vec3)>(
     }
     if let Some((_extra_v, extra_orient)) = world.get_extra_slab(voxel) {
         let (extra_box, _) = BlockShape::Slab.local_boxes(extra_orient);
-        f(v_pos + extra_box[0] * VOXEL_SIZE, v_pos + extra_box[1] * VOXEL_SIZE);
+        f(
+            v_pos + extra_box[0] * VOXEL_SIZE,
+            v_pos + extra_box[1] * VOXEL_SIZE,
+        );
     }
 }
 
@@ -182,7 +181,9 @@ fn resolve_x(
                 let p_min_x = candidate.x - half_width;
                 let p_max_x = candidate.x + half_width;
 
-                if p_min_x < box_max.x - COLLISION_EPSILON && p_max_x > box_min.x + COLLISION_EPSILON {
+                if p_min_x < box_max.x - COLLISION_EPSILON
+                    && p_max_x > box_min.x + COLLISION_EPSILON
+                {
                     did_collide = true;
                     if movement > 0.0 {
                         candidate.x = candidate.x.min(box_min.x - half_width - COLLISION_EPSILON);
@@ -247,7 +248,9 @@ fn resolve_z(
                 let p_min_z = candidate.z - half_width;
                 let p_max_z = candidate.z + half_width;
 
-                if p_min_z < box_max.z - COLLISION_EPSILON && p_max_z > box_min.z + COLLISION_EPSILON {
+                if p_min_z < box_max.z - COLLISION_EPSILON
+                    && p_max_z > box_min.z + COLLISION_EPSILON
+                {
                     did_collide = true;
                     if movement > 0.0 {
                         candidate.z = candidate.z.min(box_min.z - half_width - COLLISION_EPSILON);
@@ -293,7 +296,9 @@ fn resolve_y(world: &VoxelWorld, position: Vec3, movement: f32, height: f32) -> 
                 let p_min_y = candidate.y;
                 let p_max_y = candidate.y + height;
 
-                if p_min_y < box_max.y - COLLISION_EPSILON && p_max_y > box_min.y + COLLISION_EPSILON {
+                if p_min_y < box_max.y - COLLISION_EPSILON
+                    && p_max_y > box_min.y + COLLISION_EPSILON
+                {
                     did_collide = true;
                     if movement > 0.0 {
                         candidate.y = candidate.y.min(box_min.y - height - COLLISION_EPSILON);
@@ -312,16 +317,17 @@ pub fn collides_at(world: &VoxelWorld, position: Vec3, height: f32) -> bool {
     let (min_voxel, max_voxel) = body_voxel_bounds(position, height);
     let half_width = PLAYER_WIDTH * 0.5;
     let p_min = Vec3::new(position.x - half_width, position.y, position.z - half_width);
-    let p_max = Vec3::new(position.x + half_width, position.y + height, position.z + half_width);
+    let p_max = Vec3::new(
+        position.x + half_width,
+        position.y + height,
+        position.z + half_width,
+    );
 
     for y in min_voxel.y..=max_voxel.y {
         for z in min_voxel.z..=max_voxel.z {
             for x in min_voxel.x..=max_voxel.x {
                 let coord = IVec3::new(x, y, z);
-                if world
-                    .get_voxel(coord)
-                    .is_some_and(Voxel::is_collidable)
-                {
+                if world.get_voxel(coord).is_some_and(Voxel::is_collidable) {
                     let mut collided = false;
                     for_each_voxel_box(world, coord, |box_min, box_max| {
                         if aabb_overlap(p_min, p_max, box_min, box_max) {

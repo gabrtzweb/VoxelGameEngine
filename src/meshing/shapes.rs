@@ -121,12 +121,21 @@ pub fn mesh_shaped_voxels(
                 );
 
                 if let Some((extra_voxel, extra_orient)) = extra {
-                    let (extra_side_layer, extra_frame_count) =
-                        textures.get_face_texture_info(extra_voxel, world_voxel, FaceDirection::PositiveX);
-                    let (extra_top_layer, _) =
-                        textures.get_face_texture_info(extra_voxel, world_voxel, FaceDirection::PositiveY);
-                    let (extra_bottom_layer, _) =
-                        textures.get_face_texture_info(extra_voxel, world_voxel, FaceDirection::NegativeY);
+                    let (extra_side_layer, extra_frame_count) = textures.get_face_texture_info(
+                        extra_voxel,
+                        world_voxel,
+                        FaceDirection::PositiveX,
+                    );
+                    let (extra_top_layer, _) = textures.get_face_texture_info(
+                        extra_voxel,
+                        world_voxel,
+                        FaceDirection::PositiveY,
+                    );
+                    let (extra_bottom_layer, _) = textures.get_face_texture_info(
+                        extra_voxel,
+                        world_voxel,
+                        FaceDirection::NegativeY,
+                    );
 
                     let extra_frame_count_f32 = if extra_voxel.is_light() {
                         -4.0

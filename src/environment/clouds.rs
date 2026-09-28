@@ -189,8 +189,10 @@ pub fn sync_clouds(
         let period_x = (cloud_map.width as f64) * (config.cell_size as f64);
         let period_z = (cloud_map.height as f64) * (config.cell_size as f64);
 
-        let wind_x = (in_game_time_seconds * config.wind_speed.x as f64).rem_euclid(period_x) as f32;
-        let wind_z = (in_game_time_seconds * config.wind_speed.y as f64).rem_euclid(period_z) as f32;
+        let wind_x =
+            (in_game_time_seconds * config.wind_speed.x as f64).rem_euclid(period_x) as f32;
+        let wind_z =
+            (in_game_time_seconds * config.wind_speed.y as f64).rem_euclid(period_z) as f32;
 
         let world_center_x = camera_translation.x - wind_x;
         let world_center_z = camera_translation.z - wind_z;
@@ -308,16 +310,14 @@ pub fn generate_3d_cloud_mesh(
         }
     };
 
-    let add_quad = |
-        p: [[f32; 3]; 4],
-        norm: [f32; 3],
-        shade: [f32; 3],
-        pos_out: &mut Vec<[f32; 3]>,
-        norm_out: &mut Vec<[f32; 3]>,
-        uv_out: &mut Vec<[f32; 2]>,
-        col_out: &mut Vec<[f32; 4]>,
-        idx_out: &mut Vec<u32>,
-    | {
+    let add_quad = |p: [[f32; 3]; 4],
+                    norm: [f32; 3],
+                    shade: [f32; 3],
+                    pos_out: &mut Vec<[f32; 3]>,
+                    norm_out: &mut Vec<[f32; 3]>,
+                    uv_out: &mut Vec<[f32; 2]>,
+                    col_out: &mut Vec<[f32; 4]>,
+                    idx_out: &mut Vec<u32>| {
         let start_idx = pos_out.len() as u32;
         let uv_coords = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
         for (i, pt) in p.iter().enumerate() {
@@ -339,7 +339,7 @@ pub fn generate_3d_cloud_mesh(
 
     // Shading factors tuned for crisp, bright white clouds
     let bottom_shade = [0.91, 0.92, 0.94]; // Clean bright underside
-    let top_shade = [1.00, 1.00, 1.00];    // Full sunlight top
+    let top_shade = [1.00, 1.00, 1.00]; // Full sunlight top
     let west_east_shade = [0.96, 0.97, 0.98]; // Bright vertical walls
     let north_south_shade = [0.93, 0.94, 0.95]; // Crisp side shading
 
@@ -384,12 +384,7 @@ pub fn generate_3d_cloud_mesh(
 
             // Merged Bottom face (normal [0, -1, 0]) - CCW facing down
             add_quad(
-                [
-                    [x0, y0, z0],
-                    [x1, y0, z0],
-                    [x1, y0, z1],
-                    [x0, y0, z1],
-                ],
+                [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]],
                 [0.0, -1.0, 0.0],
                 bottom_shade,
                 &mut positions,
@@ -401,12 +396,7 @@ pub fn generate_3d_cloud_mesh(
 
             // Merged Top face (normal [0, 1, 0]) - CCW facing up
             add_quad(
-                [
-                    [x0, y1, z1],
-                    [x1, y1, z1],
-                    [x1, y1, z0],
-                    [x0, y1, z0],
-                ],
+                [[x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0]],
                 [0.0, 1.0, 0.0],
                 top_shade,
                 &mut positions,
@@ -423,12 +413,7 @@ pub fn generate_3d_cloud_mesh(
             );
             if !has_west {
                 add_quad(
-                    [
-                        [x0, y0, z0],
-                        [x0, y0, z1],
-                        [x0, y1, z1],
-                        [x0, y1, z0],
-                    ],
+                    [[x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0]],
                     [-1.0, 0.0, 0.0],
                     west_east_shade,
                     &mut positions,
@@ -446,12 +431,7 @@ pub fn generate_3d_cloud_mesh(
             );
             if !has_east {
                 add_quad(
-                    [
-                        [x1, y0, z1],
-                        [x1, y0, z0],
-                        [x1, y1, z0],
-                        [x1, y1, z1],
-                    ],
+                    [[x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1]],
                     [1.0, 0.0, 0.0],
                     west_east_shade,
                     &mut positions,
@@ -593,4 +573,3 @@ fn procedural_cloud_fallback() -> CloudTextureMap {
         data,
     }
 }
-

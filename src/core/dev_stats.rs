@@ -272,7 +272,9 @@ fn update_dev_stats(
             let f = camera.forward();
             let angle_deg = f.x.atan2(-f.z).to_degrees().rem_euclid(360.0);
             let cardinal = match angle_deg {
-                d if (337.5..=360.0).contains(&d) || (0.0..22.5).contains(&d) => "North (Towards -Z)",
+                d if (337.5..=360.0).contains(&d) || (0.0..22.5).contains(&d) => {
+                    "North (Towards -Z)"
+                }
                 d if (22.5..67.5).contains(&d) => "North-East (+X, -Z)",
                 d if (67.5..112.5).contains(&d) => "East (Towards +X)",
                 d if (112.5..157.5).contains(&d) => "South-East (+X, +Z)",

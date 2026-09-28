@@ -102,7 +102,9 @@ pub fn filtered_creative_blocks(query: &str) -> Vec<Voxel> {
     AVAILABLE_BLOCKS
         .iter()
         .copied()
-        .filter(|&v| format!("{:?}", v).to_lowercase().contains(&q) || v.label().to_lowercase().contains(&q))
+        .filter(|&v| {
+            format!("{:?}", v).to_lowercase().contains(&q) || v.label().to_lowercase().contains(&q)
+        })
         .collect()
 }
 
@@ -304,7 +306,7 @@ fn build_inventory_ui(
                         ..default()
                     },
                     Node {
-                        width: px(INVENTORY_PANEL_TEX_W * GUI_SCALE),  // 570.0 px
+                        width: px(INVENTORY_PANEL_TEX_W * GUI_SCALE), // 570.0 px
                         height: px(INVENTORY_PANEL_TEX_H * GUI_SCALE), // 456.0 px
                         position_type: PositionType::Relative,
                         ..default()
@@ -321,10 +323,10 @@ fn build_inventory_ui(
                         },
                         Node {
                             position_type: PositionType::Absolute,
-                            left: px(21.0 * GUI_SCALE),  // 63.0
-                            top: px(1.0 * GUI_SCALE),    // 3.0
-                            width: px(72.0 * GUI_SCALE), // 216.0
-                            height: px(14.0 * GUI_SCALE),// 42.0
+                            left: px(21.0 * GUI_SCALE),   // 63.0
+                            top: px(1.0 * GUI_SCALE),     // 3.0
+                            width: px(72.0 * GUI_SCALE),  // 216.0
+                            height: px(14.0 * GUI_SCALE), // 42.0
                             display: Display::Flex,
                             align_items: AlignItems::Center,
                             justify_content: JustifyContent::Center,
@@ -359,10 +361,10 @@ fn build_inventory_ui(
                         },
                         Node {
                             position_type: PositionType::Absolute,
-                            left: px(97.0 * GUI_SCALE),  // 291.0
-                            top: px(1.0 * GUI_SCALE),    // 3.0
-                            width: px(72.0 * GUI_SCALE), // 216.0
-                            height: px(14.0 * GUI_SCALE),// 42.0
+                            left: px(97.0 * GUI_SCALE),   // 291.0
+                            top: px(1.0 * GUI_SCALE),     // 3.0
+                            width: px(72.0 * GUI_SCALE),  // 216.0
+                            height: px(14.0 * GUI_SCALE), // 42.0
                             display: Display::Flex,
                             align_items: AlignItems::Center,
                             justify_content: JustifyContent::Center,
@@ -393,10 +395,10 @@ fn build_inventory_ui(
                         InventoryMenuEntity,
                         Node {
                             position_type: PositionType::Absolute,
-                            left: px(22.0 * GUI_SCALE), // 66.0
-                            top: px(32.0 * GUI_SCALE),  // 96.0
-                            width: px(75.0 * GUI_SCALE), // 225.0
-                            height: px(12.0 * GUI_SCALE),// 36.0
+                            left: px(22.0 * GUI_SCALE),   // 66.0
+                            top: px(32.0 * GUI_SCALE),    // 96.0
+                            width: px(75.0 * GUI_SCALE),  // 225.0
+                            height: px(12.0 * GUI_SCALE), // 36.0
                             display: Display::Flex,
                             align_items: AlignItems::Center,
                             padding: UiRect::left(px(6.0)),
@@ -426,10 +428,10 @@ fn build_inventory_ui(
                                 Button,
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    left: px(138.0 * GUI_SCALE), // 414.0
-                                    top: px(32.0 * GUI_SCALE),   // 96.0
-                                    width: px(12.0 * GUI_SCALE), // 36.0
-                                    height: px(12.0 * GUI_SCALE),// 36.0
+                                    left: px(138.0 * GUI_SCALE),  // 414.0
+                                    top: px(32.0 * GUI_SCALE),    // 96.0
+                                    width: px(12.0 * GUI_SCALE),  // 36.0
+                                    height: px(12.0 * GUI_SCALE), // 36.0
                                     display: Display::Flex,
                                     justify_content: JustifyContent::Center,
                                     align_items: AlignItems::Center,
@@ -453,10 +455,10 @@ fn build_inventory_ui(
                                 Button,
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    left: px(156.0 * GUI_SCALE), // 468.0
-                                    top: px(32.0 * GUI_SCALE),   // 96.0
-                                    width: px(12.0 * GUI_SCALE), // 36.0
-                                    height: px(12.0 * GUI_SCALE),// 36.0
+                                    left: px(156.0 * GUI_SCALE),  // 468.0
+                                    top: px(32.0 * GUI_SCALE),    // 96.0
+                                    width: px(12.0 * GUI_SCALE),  // 36.0
+                                    height: px(12.0 * GUI_SCALE), // 36.0
                                     display: Display::Flex,
                                     justify_content: JustifyContent::Center,
                                     align_items: AlignItems::Center,
@@ -543,10 +545,10 @@ fn build_inventory_ui(
                                 CreativeSearchBar,
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    left: px(98.0 * GUI_SCALE),  // 294.0
-                                    top: px(32.0 * GUI_SCALE),   // 96.0
-                                    width: px(71.0 * GUI_SCALE), // 213.0
-                                    height: px(12.0 * GUI_SCALE),// 36.0
+                                    left: px(98.0 * GUI_SCALE),   // 294.0
+                                    top: px(32.0 * GUI_SCALE),    // 96.0
+                                    width: px(71.0 * GUI_SCALE),  // 213.0
+                                    height: px(12.0 * GUI_SCALE), // 36.0
                                     padding: UiRect::horizontal(px(6.0)),
                                     display: Display::Flex,
                                     align_items: AlignItems::Center,
@@ -581,7 +583,11 @@ fn build_inventory_ui(
                                     "|".to_string()
                                 } else {
                                     let cur = search_query.cursor.min(search_query.query.len());
-                                    format!("{}|{}", &search_query.query[..cur], &search_query.query[cur..])
+                                    format!(
+                                        "{}|{}",
+                                        &search_query.query[..cur],
+                                        &search_query.query[cur..]
+                                    )
                                 };
                                 sb.spawn((
                                     InventoryMenuEntity,
@@ -666,7 +672,7 @@ fn build_inventory_ui(
 
                             // Scrollbar Track & Thumb (X=178..183, Y=33..142)
                             let track_height = 110.0 * GUI_SCALE; // 330.0
-                            let thumb_height = 15.0 * GUI_SCALE;  // 45.0
+                            let thumb_height = 15.0 * GUI_SCALE; // 45.0
                             let max_travel = track_height - thumb_height; // 285.0
                             let max_scroll = max_filtered_scroll(filtered.len());
                             let thumb_top = if max_scroll > 0 {
@@ -968,7 +974,9 @@ fn apply_search_key_action(
                 let start = start.min(search_query.query.len());
                 let end = end.min(search_query.query.len());
                 if start < end {
-                    search_query.query.replace_range(start..end, &ch.to_string());
+                    search_query
+                        .query
+                        .replace_range(start..end, &ch.to_string());
                     search_query.cursor = start + 1;
                     search_query.selection = None;
                     *changed = true;
@@ -1078,11 +1086,7 @@ fn handle_creative_search_input(
     mut scroll_state: ResMut<InventoryScrollState>,
     mut search_text_query: Query<(&mut Text, &mut TextColor), With<CreativeSearchText>>,
     mut search_bar_query: Query<
-        (
-            &Interaction,
-            &mut BorderColor,
-            &mut BackgroundColor,
-        ),
+        (&Interaction, &mut BorderColor, &mut BackgroundColor),
         With<CreativeSearchBar>,
     >,
     mut palette_query: Query<&mut InventoryPaletteSlot>,
@@ -1105,7 +1109,12 @@ fn handle_creative_search_input(
         let max_x = min_x + 71.0 * GUI_SCALE;
         let max_y = min_y + 12.0 * GUI_SCALE;
         (
-            Some(Rect::new(min_x - 4.0, min_y - 4.0, max_x + 4.0, max_y + 4.0)),
+            Some(Rect::new(
+                min_x - 4.0,
+                min_y - 4.0,
+                max_x + 4.0,
+                max_y + 4.0,
+            )),
             min_x + 6.0,
         )
     } else {
@@ -1115,9 +1124,8 @@ fn handle_creative_search_input(
     let left_just_pressed = mouse.just_pressed(MouseButton::Left);
     let left_pressed = mouse.pressed(MouseButton::Left);
 
-    let is_inside_search_bar = cursor_pos.is_some_and(|pos| {
-        search_bar_rect.is_some_and(|r| r.contains(pos))
-    });
+    let is_inside_search_bar =
+        cursor_pos.is_some_and(|pos| search_bar_rect.is_some_and(|r| r.contains(pos)));
 
     let is_search_pressed = search_bar_query
         .iter()
@@ -1269,7 +1277,8 @@ fn handle_creative_search_input(
     ];
 
     if search_query.is_focused {
-        let ctrl = keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight);
+        let ctrl =
+            keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight);
         let shift = keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight);
         let caps = is_caps_lock_on();
 
@@ -1300,11 +1309,7 @@ fn handle_creative_search_input(
                     if keyboard.just_pressed(key) {
                         let is_letter = normal_ch.is_ascii_alphabetic();
                         let ch = if is_letter {
-                            if shift ^ caps {
-                                shift_ch
-                            } else {
-                                normal_ch
-                            }
+                            if shift ^ caps { shift_ch } else { normal_ch }
                         } else if shift {
                             shift_ch
                         } else {
@@ -1363,7 +1368,9 @@ fn handle_creative_search_input(
     }
 
     // Always update search text rendering to reflect query, cursor, and selection
-    let has_selection = search_query.is_focused && search_query.selection.is_some() && !search_query.query.is_empty();
+    let has_selection = search_query.is_focused
+        && search_query.selection.is_some()
+        && !search_query.query.is_empty();
     for (mut text, mut color) in &mut search_text_query {
         let target_str = if !search_query.is_focused {
             if search_query.query.is_empty() {
@@ -1377,7 +1384,11 @@ fn handle_creative_search_input(
             "|".to_string()
         } else {
             let cur = search_query.cursor.min(search_query.query.len());
-            format!("{}|{}", &search_query.query[..cur], &search_query.query[cur..])
+            format!(
+                "{}|{}",
+                &search_query.query[..cur],
+                &search_query.query[cur..]
+            )
         };
 
         if text.0 != target_str {
@@ -1422,7 +1433,7 @@ fn handle_inventory_scroll(
     let mut row_changed = false;
 
     let track_height = 110.0 * GUI_SCALE; // 330.0 px
-    let thumb_height = 15.0 * GUI_SCALE;  // 45.0 px
+    let thumb_height = 15.0 * GUI_SCALE; // 45.0 px
     let max_travel = (track_height - thumb_height).max(1.0); // 285.0 px
 
     // 1. Mouse wheel scrolling
@@ -1541,10 +1552,7 @@ fn handle_inventory_slot_interaction(
             &mut BorderColor,
             &mut BackgroundColor,
         ),
-        (
-            With<InventoryPaletteSlot>,
-            Without<InventoryHotbarSlot>,
-        ),
+        (With<InventoryPaletteSlot>, Without<InventoryHotbarSlot>),
     >,
     mut slot_icon_query: Query<(&InventoryPaletteSlotIcon, &mut ImageNode, &mut Visibility)>,
     mut hotbar_slot_query: Query<
@@ -1554,10 +1562,7 @@ fn handle_inventory_slot_interaction(
             &mut BorderColor,
             &mut BackgroundColor,
         ),
-        (
-            With<InventoryHotbarSlot>,
-            Without<InventoryPaletteSlot>,
-        ),
+        (With<InventoryHotbarSlot>, Without<InventoryPaletteSlot>),
     >,
     mut drag_state: Local<InventoryDragState>,
 ) {

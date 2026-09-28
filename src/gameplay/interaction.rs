@@ -269,7 +269,9 @@ fn edit_voxels(
     } else if place_action
         && let (Some(place_voxel_type), Some(place_position)) = (selected.0, target.place_voxel)
     {
-        let event_pos = if edited_voxels.contains(&target.hit_voxel) && !edited_voxels.contains(&place_position) {
+        let event_pos = if edited_voxels.contains(&target.hit_voxel)
+            && !edited_voxels.contains(&place_position)
+        {
             target.hit_voxel
         } else {
             place_position

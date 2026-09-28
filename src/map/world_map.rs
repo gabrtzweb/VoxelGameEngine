@@ -280,7 +280,10 @@ fn spawn_world_map_ui(
                                         top: percent(50.0),
                                         ..default()
                                     },
-                                    UiTransform::from_translation(Val2::new(px(-half_m), px(-half_m))),
+                                    UiTransform::from_translation(Val2::new(
+                                        px(-half_m),
+                                        px(-half_m),
+                                    )),
                                     Visibility::Visible,
                                     ZIndex(30),
                                 ));
@@ -307,7 +310,9 @@ fn spawn_world_map_ui(
                     .with_children(|footer| {
                         // Row 1: Controls Hint
                         footer.spawn((
-                            Text::new("LMB Drag: Pan   |   Scroll: Zoom   |   Space: Center on Player"),
+                            Text::new(
+                                "LMB Drag: Pan   |   Scroll: Zoom   |   Space: Center on Player",
+                            ),
                             TextFont {
                                 font: font_handle.clone(),
                                 font_size: FontSize::Px(16.0),

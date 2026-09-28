@@ -121,10 +121,7 @@ impl TerrainGenerator {
 
                 let col_top = column.terrain_height;
 
-                let filled_height = column
-                    .water_level
-                    .unwrap_or(col_top)
-                    .max(col_top);
+                let filled_height = column.water_level.unwrap_or(col_top).max(col_top);
 
                 maximum_filled_height = maximum_filled_height.max(filled_height);
             }
@@ -157,8 +154,14 @@ impl TerrainGenerator {
                             let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
                             voxels[idx] = voxel;
 
-                            if world_y == column.terrain_height && column.surface_shape != BlockShape::Full {
-                                chunk_shapes.push((idx, column.surface_shape, column.shape_orientation));
+                            if world_y == column.terrain_height
+                                && column.surface_shape != BlockShape::Full
+                            {
+                                chunk_shapes.push((
+                                    idx,
+                                    column.surface_shape,
+                                    column.shape_orientation,
+                                ));
                             }
                         }
                     }
@@ -174,7 +177,9 @@ impl TerrainGenerator {
                     && lz >= 0
                     && lz < CHUNK_SIZE as i32
                 {
-                    voxels_buf[lx as usize + lz as usize * CHUNK_SIZE + ly as usize * CHUNK_SIZE * CHUNK_SIZE]
+                    voxels_buf[lx as usize
+                        + lz as usize * CHUNK_SIZE
+                        + ly as usize * CHUNK_SIZE * CHUNK_SIZE]
                 } else {
                     let wx = chunk_origin.x + lx;
                     let wy = chunk_origin.y + ly;
@@ -207,23 +212,64 @@ impl TerrainGenerator {
                         let above = get_v(&voxels, x as i32, y as i32 + 1, z as i32);
                         if above == Voxel::Air {
                             // Cave floor / shelf: use bottom slabs on gentle 1-block steps
-                            let d_west = if !get_v(&voxels, x as i32 - 1, y as i32, z as i32).is_collidable() {
-                                if get_v(&voxels, x as i32 - 1, y as i32 - 1, z as i32).is_collidable() { -1 } else { -2 }
-                            } else { 0 };
+                            let d_west = if !get_v(&voxels, x as i32 - 1, y as i32, z as i32)
+                                .is_collidable()
+                            {
+                                if get_v(&voxels, x as i32 - 1, y as i32 - 1, z as i32)
+                                    .is_collidable()
+                                {
+                                    -1
+                                } else {
+                                    -2
+                                }
+                            } else {
+                                0
+                            };
 
-                            let d_east = if !get_v(&voxels, x as i32 + 1, y as i32, z as i32).is_collidable() {
-                                if get_v(&voxels, x as i32 + 1, y as i32 - 1, z as i32).is_collidable() { -1 } else { -2 }
-                            } else { 0 };
+                            let d_east = if !get_v(&voxels, x as i32 + 1, y as i32, z as i32)
+                                .is_collidable()
+                            {
+                                if get_v(&voxels, x as i32 + 1, y as i32 - 1, z as i32)
+                                    .is_collidable()
+                                {
+                                    -1
+                                } else {
+                                    -2
+                                }
+                            } else {
+                                0
+                            };
 
-                            let d_north = if !get_v(&voxels, x as i32, y as i32, z as i32 - 1).is_collidable() {
-                                if get_v(&voxels, x as i32, y as i32 - 1, z as i32 - 1).is_collidable() { -1 } else { -2 }
-                            } else { 0 };
+                            let d_north = if !get_v(&voxels, x as i32, y as i32, z as i32 - 1)
+                                .is_collidable()
+                            {
+                                if get_v(&voxels, x as i32, y as i32 - 1, z as i32 - 1)
+                                    .is_collidable()
+                                {
+                                    -1
+                                } else {
+                                    -2
+                                }
+                            } else {
+                                0
+                            };
 
-                            let d_south = if !get_v(&voxels, x as i32, y as i32, z as i32 + 1).is_collidable() {
-                                if get_v(&voxels, x as i32, y as i32 - 1, z as i32 + 1).is_collidable() { -1 } else { -2 }
-                            } else { 0 };
+                            let d_south = if !get_v(&voxels, x as i32, y as i32, z as i32 + 1)
+                                .is_collidable()
+                            {
+                                if get_v(&voxels, x as i32, y as i32 - 1, z as i32 + 1)
+                                    .is_collidable()
+                                {
+                                    -1
+                                } else {
+                                    -2
+                                }
+                            } else {
+                                0
+                            };
 
-                            let has_cliff = d_west <= -2 || d_east <= -2 || d_north <= -2 || d_south <= -2;
+                            let has_cliff =
+                                d_west <= -2 || d_east <= -2 || d_north <= -2 || d_south <= -2;
                             if !has_cliff {
                                 let lower_count = (if d_west == -1 { 1 } else { 0 })
                                     + (if d_east == -1 { 1 } else { 0 })
@@ -237,12 +283,17 @@ impl TerrainGenerator {
                             }
                         } else {
                             // Cave wall shaping: soften wall bases, arched ceiling junctions, vertical wall recesses, and chamfered corners
-                            let air_west = get_v(&voxels, x as i32 - 1, y as i32, z as i32) == Voxel::Air;
-                            let air_east = get_v(&voxels, x as i32 + 1, y as i32, z as i32) == Voxel::Air;
-                            let air_north = get_v(&voxels, x as i32, y as i32, z as i32 - 1) == Voxel::Air;
-                            let air_south = get_v(&voxels, x as i32, y as i32, z as i32 + 1) == Voxel::Air;
+                            let air_west =
+                                get_v(&voxels, x as i32 - 1, y as i32, z as i32) == Voxel::Air;
+                            let air_east =
+                                get_v(&voxels, x as i32 + 1, y as i32, z as i32) == Voxel::Air;
+                            let air_north =
+                                get_v(&voxels, x as i32, y as i32, z as i32 - 1) == Voxel::Air;
+                            let air_south =
+                                get_v(&voxels, x as i32, y as i32, z as i32 + 1) == Voxel::Air;
 
-                            let wall_openings = air_west as u8 + air_east as u8 + air_north as u8 + air_south as u8;
+                            let wall_openings =
+                                air_west as u8 + air_east as u8 + air_north as u8 + air_south as u8;
                             let wall_noise = crate::core::noise::gradient_noise_3d(
                                 world_x as f32 * 0.18,
                                 world_y as f32 * 0.18,
@@ -251,18 +302,36 @@ impl TerrainGenerator {
                             );
 
                             if wall_openings == 1 {
-                                let (air_dx, air_dz, stair_orient, inv_stair_orient, vert_slab_orient) = if air_west {
+                                let (
+                                    air_dx,
+                                    air_dz,
+                                    stair_orient,
+                                    inv_stair_orient,
+                                    vert_slab_orient,
+                                ) = if air_west {
                                     (-1, 0, 0, 4, 5) // air is -X, slab attached to +X rock wall -> orient 5
                                 } else if air_east {
-                                    (1, 0, 1, 5, 4)  // air is +X, slab attached to -X rock wall -> orient 4
+                                    (1, 0, 1, 5, 4) // air is +X, slab attached to -X rock wall -> orient 4
                                 } else if air_north {
                                     (0, -1, 2, 6, 3) // air is -Z, slab attached to +Z rock wall -> orient 3
                                 } else {
-                                    (0, 1, 3, 7, 2)  // air is +Z, slab attached to -Z rock wall -> orient 2
+                                    (0, 1, 3, 7, 2) // air is +Z, slab attached to -Z rock wall -> orient 2
                                 };
 
-                                let below_cave_floor = get_v(&voxels, x as i32 + air_dx, y as i32 - 1, z as i32 + air_dz).is_collidable();
-                                let above_cave_roof = get_v(&voxels, x as i32 + air_dx, y as i32 + 1, z as i32 + air_dz).is_collidable();
+                                let below_cave_floor = get_v(
+                                    &voxels,
+                                    x as i32 + air_dx,
+                                    y as i32 - 1,
+                                    z as i32 + air_dz,
+                                )
+                                .is_collidable();
+                                let above_cave_roof = get_v(
+                                    &voxels,
+                                    x as i32 + air_dx,
+                                    y as i32 + 1,
+                                    z as i32 + air_dz,
+                                )
+                                .is_collidable();
 
                                 if below_cave_floor && wall_noise > 0.10 {
                                     // Wall base: rock footing using stairs or slabs
@@ -274,7 +343,11 @@ impl TerrainGenerator {
                                 } else if above_cave_roof && wall_noise > 0.25 {
                                     // Wall top: arched ceiling overhang
                                     if wall_noise > 0.50 {
-                                        chunk_shapes.push((idx, BlockShape::Stair, inv_stair_orient));
+                                        chunk_shapes.push((
+                                            idx,
+                                            BlockShape::Stair,
+                                            inv_stair_orient,
+                                        ));
                                     } else {
                                         chunk_shapes.push((idx, BlockShape::Slab, 1));
                                     }
@@ -321,7 +394,11 @@ impl TerrainGenerator {
         logical_block_top(self.sea_level)
     }
 
-    pub fn continuous_height_and_biome(&self, world_x: i32, world_z: i32) -> (f32, BiomeType, bool) {
+    pub fn continuous_height_and_biome(
+        &self,
+        world_x: i32,
+        world_z: i32,
+    ) -> (f32, BiomeType, bool) {
         let logical_x = world_x.div_euclid(LOGICAL_BLOCK_VOXELS);
         let logical_z = world_z.div_euclid(LOGICAL_BLOCK_VOXELS);
         let sample_x = logical_block_sample_position(logical_x);
@@ -343,11 +420,7 @@ impl TerrainGenerator {
                 is_underground_river = true;
             } else {
                 let river_bed = (sea_level - 4) as f32;
-                let target_height = lerp(
-                    raw_height,
-                    river_bed,
-                    (river_factor * 1.25).min(1.0),
-                );
+                let target_height = lerp(raw_height, river_bed, (river_factor * 1.25).min(1.0));
                 raw_height = raw_height.min(target_height);
                 climate.biome = BiomeType::River;
             }
@@ -384,17 +457,17 @@ impl TerrainGenerator {
         if water_level.is_none() && terrain_height >= sea_level + 1 {
             let get_effective_height = |(h, _, _): (f32, BiomeType, bool)| -> i32 {
                 let th = h.round() as i32;
-                if th < sea_level {
-                    sea_level
-                } else {
-                    th
-                }
+                if th < sea_level { sea_level } else { th }
             };
 
-            let h_east = get_effective_height(self.continuous_height_and_biome(world_x + 1, world_z));
-            let h_west = get_effective_height(self.continuous_height_and_biome(world_x - 1, world_z));
-            let h_south = get_effective_height(self.continuous_height_and_biome(world_x, world_z + 1));
-            let h_north = get_effective_height(self.continuous_height_and_biome(world_x, world_z - 1));
+            let h_east =
+                get_effective_height(self.continuous_height_and_biome(world_x + 1, world_z));
+            let h_west =
+                get_effective_height(self.continuous_height_and_biome(world_x - 1, world_z));
+            let h_south =
+                get_effective_height(self.continuous_height_and_biome(world_x, world_z + 1));
+            let h_north =
+                get_effective_height(self.continuous_height_and_biome(world_x, world_z - 1));
 
             let d_east = h_east - terrain_height;
             let d_west = h_west - terrain_height;
@@ -428,7 +501,9 @@ impl TerrainGenerator {
                     let stair_hash = ((world_x.wrapping_mul(374_761_393)
                         ^ world_z.wrapping_mul(668_265_263)
                         ^ (self.seed as i32))
-                        .abs() % 100) as f32 / 100.0;
+                        .abs()
+                        % 100) as f32
+                        / 100.0;
 
                     if stair_hash < 0.35 {
                         surface_shape = BlockShape::Stair;
@@ -939,4 +1014,3 @@ fn smoothstep(value: f32) -> f32 {
 fn lerp(start: f32, end: f32, amount: f32) -> f32 {
     start + (end - start) * amount
 }
-

@@ -255,7 +255,11 @@ pub fn sync_celestial_transforms(
     let dawn_color = Vec3::new(1.0, 0.66, 0.32);
     let midday_color = Vec3::new(1.0, 0.98, 0.90);
     let current_sun_color = dawn_color.lerp(midday_color, sun_warmth.powf(0.7));
-    sun_l.color = Color::srgb(current_sun_color.x, current_sun_color.y, current_sun_color.z);
+    sun_l.color = Color::srgb(
+        current_sun_color.x,
+        current_sun_color.y,
+        current_sun_color.z,
+    );
 
     // Directional moonlight shining from moon towards the world (-moon_dir).
     let moon_elev = moon_dir.y.max(0.0);
