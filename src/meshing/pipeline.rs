@@ -13,26 +13,71 @@ use super::{
 };
 use crate::world::VoxelWorld;
 
-pub const VOXEL_SHADER_PATH: &str = "shaders/voxel.wgsl";
+pub const OPAQUE_VOXEL_SHADER_PATH: &str = "shaders/voxel_opaque.wgsl";
+pub const TRANSPARENT_VOXEL_SHADER_PATH: &str = "shaders/voxel_transparent.wgsl";
+#[allow(dead_code)]
+pub const VOXEL_SHADER_PATH: &str = OPAQUE_VOXEL_SHADER_PATH;
 
 #[derive(Asset, AsBindGroup, Reflect, Debug, Clone)]
-pub struct VoxelMaterialExtension {
+pub struct OpaqueVoxelMaterial {
     #[texture(100, dimension = "2d_array")]
     #[sampler(101)]
     pub texture_array: Handle<Image>,
 }
 
-impl MaterialExtension for VoxelMaterialExtension {
+impl MaterialExtension for OpaqueVoxelMaterial {
     fn fragment_shader() -> ShaderRef {
-        VOXEL_SHADER_PATH.into()
+        OPAQUE_VOXEL_SHADER_PATH.into()
     }
 
     fn deferred_fragment_shader() -> ShaderRef {
-        VOXEL_SHADER_PATH.into()
+        OPAQUE_VOXEL_SHADER_PATH.into()
     }
 }
 
-pub type VoxelMaterial = ExtendedMaterial<StandardMaterial, VoxelMaterialExtension>;
+pub type OpaqueChunkMaterial = ExtendedMaterial<StandardMaterial, OpaqueVoxelMaterial>;
+
+#[derive(Asset, AsBindGroup, Reflect, Debug, Clone)]
+pub struct TransparentVoxelMaterial {
+    #[texture(100, dimension = "2d_array")]
+    #[sampler(101)]
+    pub texture_array: Handle<Image>,
+}
+
+impl MaterialExtension for TransparentVoxelMaterial {
+    fn vertex_shader() -> ShaderRef {
+        TRANSPARENT_VOXEL_SHADER_PATH.into()
+    }
+
+    fn deferred_vertex_shader() -> ShaderRef {
+        TRANSPARENT_VOXEL_SHADER_PATH.into()
+    }
+
+    fn fragment_shader() -> ShaderRef {
+        TRANSPARENT_VOXEL_SHADER_PATH.into()
+    }
+
+    fn deferred_fragment_shader() -> ShaderRef {
+        TRANSPARENT_VOXEL_SHADER_PATH.into()
+    }
+
+    // Transparent water reads the opaque depth prepass and should not write into prepass or shadow maps
+    fn enable_prepass() -> bool {
+        false
+    }
+
+    fn enable_shadows() -> bool {
+        false
+    }
+}
+
+pub type TransparentChunkMaterial = ExtendedMaterial<StandardMaterial, TransparentVoxelMaterial>;
+
+// Backwards compatibility alias
+#[allow(dead_code)]
+pub type VoxelMaterial = OpaqueChunkMaterial;
+#[allow(dead_code)]
+pub type VoxelMaterialExtension = OpaqueVoxelMaterial;
 
 pub struct ChunkRenderPart {
     pub entity: Entity,
@@ -109,41 +154,43 @@ impl ChunkMeshRegistry {
 
 #[derive(Resource)]
 pub struct ChunkMaterial {
-    pub opaque: Handle<VoxelMaterial>,
-    pub transparent: Handle<VoxelMaterial>,
+    pub opaque: Handle<OpaqueChunkMaterial>,
+    pub transparent: Handle<TransparentChunkMaterial>,
     pub texture_registry: VoxelTextureRegistry,
 }
 
 pub fn setup_chunk_material(
     mut commands: Commands,
     mut images: ResMut<Assets<Image>>,
-    mut materials: ResMut<Assets<VoxelMaterial>>,
+    mut opaque_materials: ResMut<Assets<OpaqueChunkMaterial>>,
+    mut transparent_materials: ResMut<Assets<TransparentChunkMaterial>>,
 ) {
     let (texture_array_image, texture_registry) = build_voxel_texture_array();
     let texture_array = images.add(texture_array_image);
 
-    let opaque = materials.add(ExtendedMaterial {
+    let opaque = opaque_materials.add(ExtendedMaterial {
         base: StandardMaterial {
             base_color: Color::WHITE,
             alpha_mode: AlphaMode::Opaque,
             perceptual_roughness: 0.9,
             ..default()
         },
-        extension: VoxelMaterialExtension {
+        extension: OpaqueVoxelMaterial {
             texture_array: texture_array.clone(),
         },
     });
 
-    let transparent = materials.add(ExtendedMaterial {
+    let transparent = transparent_materials.add(ExtendedMaterial {
         base: StandardMaterial {
-            base_color: Color::srgba(1.0, 1.0, 1.0, 0.80),
+            base_color: Color::srgba(1.0, 1.0, 1.0, 0.85),
             alpha_mode: AlphaMode::Blend,
             cull_mode: None,
             double_sided: false,
-            perceptual_roughness: 0.2,
+            perceptual_roughness: 0.04,
+            reflectance: 0.9,
             ..default()
         },
-        extension: VoxelMaterialExtension { texture_array },
+        extension: TransparentVoxelMaterial { texture_array },
     });
 
     commands.insert_resource(texture_registry.clone());
@@ -210,12 +257,12 @@ pub fn apply_chunk_mesh(
     }
 }
 
-fn sync_render_part(
+fn sync_render_part<M: Material>(
     commands: &mut Commands,
     meshes: &mut Assets<Mesh>,
     part: &mut Option<ChunkRenderPart>,
     rebuilt_mesh: Option<Mesh>,
-    material: &Handle<VoxelMaterial>,
+    material: &Handle<M>,
     translation: Vec3,
 ) {
     let Some(rebuilt_mesh) = rebuilt_mesh else {

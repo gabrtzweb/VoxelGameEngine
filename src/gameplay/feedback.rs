@@ -232,11 +232,7 @@ fn handle_block_break_feedback(
         .or_insert_with(|| meshes.add(create_cube_mesh(0.040, event.voxel, &chunk_material, false)))
         .clone();
 
-    let material_handle = if event.voxel.is_transparent() {
-        chunk_material.transparent.clone()
-    } else {
-        chunk_material.opaque.clone()
-    };
+    let material_handle = chunk_material.opaque.clone();
 
     // Spawn 8 debris particles in a subtle, contained scatter
     for _ in 0..8 {
@@ -310,11 +306,7 @@ fn handle_block_place_feedback(
         .or_insert_with(|| meshes.add(create_cube_mesh(0.5, event.voxel, &chunk_material, true)))
         .clone();
 
-    let material_handle = if event.voxel.is_transparent() {
-        chunk_material.transparent.clone()
-    } else {
-        chunk_material.opaque.clone()
-    };
+    let material_handle = chunk_material.opaque.clone();
 
     let center = event.position.as_vec3() + Vec3::splat(0.5);
 

@@ -10,7 +10,7 @@ pub mod water;
 
 use bevy::{
     camera::Exposure,
-    core_pipeline::tonemapping::Tonemapping,
+    core_pipeline::{prepass::DepthPrepass, tonemapping::Tonemapping},
     prelude::*,
     window::{CursorGrabMode, CursorOptions},
 };
@@ -104,6 +104,7 @@ fn spawn_player_and_camera(
 
     commands.spawn((
         Camera3d::default(),
+        DepthPrepass,
         DistanceFog {
             color: Color::srgb(0.67, 0.75, 0.82),
 
