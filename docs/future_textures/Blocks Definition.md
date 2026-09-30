@@ -1,6 +1,6 @@
-# World Blocks Definition v0.5
+# World Blocks Definition v0.5 (212 in total)
 
-## Rocky Blocks
+## Rocky Blocks (72 in total)
 * **[Minecraft: Andesite]** -> Rock_Andesite, Cobbled_Andesite, Mossy_Andesite
 * **[Minecraft: Lapis Lazuli]** -> Rock_Azurite, Cobbled_Azurite, Mossy_Azurite
 * **[Minecraft: Basalt]** -> Rock_Basalt, Cobbled_Basalt, Mossy_Basalt
@@ -26,7 +26,7 @@
 * **[Minecraft: Tuff]** -> Rock_Tuffite, Cobbled_Tuffite, Mossy_Tuffite
 * **[New Block: White Sandstone]** -> Rock_White_Sandstone, Cobbled_White_Sandstone, Mossy_White_Sandstone
 
-### Special Rocky Blocks
+### Special Rocky Blocks (8 in total)
 * **[Minecraft: Glowstone]** -> Rock_Alabaster
 * **[Minecraft: Potent Sulfur]** -> Rock_Brimstone
 * **[Minecraft: Blue Ice]** -> Rock_Cryolite
@@ -38,7 +38,7 @@
 
 ---
 
-## Soil Blocks
+## Soil Blocks (32 in total)
 * **[New Block: Ash]** -> Soil_Ash
 * **[New Block: Black Sand]** -> Soil_Black_Sand
 * **[Minecraft: Clay]** -> Soil_Clay
@@ -74,7 +74,7 @@
 
 ---
 
-## Liquid Blocks
+## Liquid Blocks (8 in total)
 * **[New Block: Acid]** -> Liquid_Acid
 * **[New Block: Blood]** -> Liquid_Blood
 * **[Minecraft: Lava]** -> Liquid_Lava
@@ -86,7 +86,7 @@
 
 ---
 
-## Frost Blocks
+## Frost Blocks (4 in total)
 * **[New Block: Black Ice]** -> Frost_Black_Ice
 * **[New Block: Fragile Ice]** -> Frost_Fragile_Ice
 * **[Minecraft: Ice]** -> Frost_Ice
@@ -94,7 +94,7 @@
 
 ---
 
-## Testing/Debug Blocks
+## Testing/Debug Blocks (8 in total)
 * **[New Block: Null Block]** -> Null_Block
 * **[New Block: Null Liquid]** -> Null_Liquid
 * **[New Block: Test Accept]** -> Test_Accept
@@ -106,16 +106,19 @@
 
 ---
 
-## Light Source Blocks
+## Light Source Blocks (8 in total)
 * **[New Block: Blue Light Block]** -> Emit_Blue_Light
 * **[New Block: Cold Light Block]** -> Emit_Cold_Light
 * **[New Block: Green Light Block]** -> Emit_Green_Light
 * **[New Block: Red Light Block]** -> Emit_Red_Light 
 * **[New Block: Warm Light Block]** -> Emit_Warm_Light
+* **[New Block: Blue Torch]** -> Emit_Blue_Torch
+* **[New Block: Green Torch]** -> Emit_Green_Torch
+* **[New Block: Red Torch]** -> Emit_Red_Torch
 
 ---
 
-## Decoration Blocks
+## Decoration Blocks (16 in total)
 - **[Minecraft: Barrel]** -> Deco_Barrel
 - **[New Block: Basket]** -> Deco_Basket
 - **[Minecraft: Bone Block]** -> Deco_Bone
@@ -135,7 +138,7 @@
 
 ---
 
-## Wood Blocks
+## Wood Blocks (48 in total)
 - **[Minecraft: Acacia]** -> Tree_Acacia, Tree_Acacia_Log
 - **[Minecraft: Acacia Leaves]** -> Tree_Acacia_Leaves
 - **[Minecraft: Acacia Planks]** -> Tree_Acacia_Planks
@@ -146,6 +149,7 @@
 - **[New Block: Charred Wood]** -> Tree_Charred, Tree_Charred_Log
 - **[New Block: Charred Wood Planks]** -> Tree_Charred_Planks
 - **[New Block: Dead Wood]** -> Tree_Dead, Tree_Dead_Log
+- **[New Block: Dead Wood Planks]** -> Tree_Dead_Planks
 - **[Minecraft: Jungle]** -> Tree_Mahogany, Tree_Mahogany_Log
 - **[Minecraft: Jungle Leaves]** -> Tree_Mahogany_Leaves
 - **[Minecraft: Jungle Planks]** -> Tree_Mahogany_Planks
@@ -168,14 +172,20 @@
 - **[New Block: Willow]** -> Tree_Willow, Tree_Willow_Log
 - **[New Block: Willow Leaves]** -> Tree_Willow_Leaves
 - **[New Block: Willow Planks]** -> Tree_Willow_Planks
+- **[Minecraft: Dark Oak]** -> Tree_Yew, Tree_Yew_Log
+- **[Minecraft: Dark Oak Leaves]** -> Tree_Yew_Leaves
+- **[Minecraft: Dark Oak Planks]** -> Tree_Yew_Planks
 
 ---
-## Aquatic Blocks
+## Aquatic Blocks (8 in total)
+- **[Minecraft: Dried Kelp Block]** -> Aqua_Algae_Mat
 - **[Minecraft: Brain Coral]** -> Aqua_Brain_Coral
 - **[Minecraft: Bubble Coral]** -> Aqua_Bubble_Coral
 - **[Minecraft: Fire Coral]** -> Aqua_Fire_Coral
+- **[New Block: Geothermal Vent]** -> Aqua_Geothermal_Vent
 - **[Minecraft: Horn Coral]** -> Aqua_Horn_Coral
 - **[Minecraft: Wet Sponge]** -> Aqua_Sponge
 - **[Minecraft: Tube Coral]** -> Aqua_Tube_Coral
 
 ---
+## Future Blocks (Planned for later)
