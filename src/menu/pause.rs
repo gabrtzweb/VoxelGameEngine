@@ -67,21 +67,13 @@ fn spawn_pause_menu(mut commands: Commands, app_font: Option<Res<AppFont>>) {
         ))
         .with_children(|backdrop| {
             backdrop
-                .spawn((
-                    Node {
-                        display: Display::Flex,
-                        flex_direction: FlexDirection::Column,
-                        align_items: AlignItems::Center,
-                        row_gap: px(14.0),
-                        width: px(280.0),
-                        padding: UiRect::axes(px(24.0), px(28.0)),
-                        border: UiRect::all(px(2.0)),
-                        border_radius: BorderRadius::all(px(10.0)),
-                        ..default()
-                    },
-                    BackgroundColor(Color::srgba(0.07, 0.07, 0.10, 0.95)),
-                    BorderColor::all(Color::srgba(0.35, 0.35, 0.42, 0.80)),
-                ))
+                .spawn(Node {
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    row_gap: px(20.0),
+                    ..default()
+                })
                 .with_children(|card| {
                     // Header Title
                     card.spawn((
@@ -95,31 +87,61 @@ fn spawn_pause_menu(mut commands: Commands, app_font: Option<Res<AppFont>>) {
                         },
                     ));
 
-                    // Buttons
-                    spawn_menu_button(
-                        card,
-                        "Resume Game",
-                        PauseMenuAction::Resume,
-                        font_handle.as_ref(),
-                    );
-                    spawn_menu_button(
-                        card,
-                        "Settings",
-                        PauseMenuAction::Settings,
-                        font_handle.as_ref(),
-                    );
-                    spawn_menu_button(
-                        card,
-                        "Restart Game",
-                        PauseMenuAction::Restart,
-                        font_handle.as_ref(),
-                    );
-                    spawn_menu_button(
-                        card,
-                        "Quit to Desktop",
-                        PauseMenuAction::Quit,
-                        font_handle.as_ref(),
-                    );
+                    // 2-Column Buttons Container
+                    card.spawn(Node {
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
+                        row_gap: px(12.0),
+                        ..default()
+                    })
+                    .with_children(|rows| {
+                        // Row 1: Resume Game | Settings
+                        rows.spawn(Node {
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Row,
+                            column_gap: px(16.0),
+                            align_items: AlignItems::Center,
+                            ..default()
+                        })
+                        .with_children(|row| {
+                            spawn_menu_button(
+                                row,
+                                "Resume Game",
+                                PauseMenuAction::Resume,
+                                font_handle.as_ref(),
+                            );
+                            spawn_menu_button(
+                                row,
+                                "Settings",
+                                PauseMenuAction::Settings,
+                                font_handle.as_ref(),
+                            );
+                        });
+
+                        // Row 2: Restart Game | Quit to Desktop
+                        rows.spawn(Node {
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Row,
+                            column_gap: px(16.0),
+                            align_items: AlignItems::Center,
+                            ..default()
+                        })
+                        .with_children(|row| {
+                            spawn_menu_button(
+                                row,
+                                "Restart Game",
+                                PauseMenuAction::Restart,
+                                font_handle.as_ref(),
+                            );
+                            spawn_menu_button(
+                                row,
+                                "Quit to Desktop",
+                                PauseMenuAction::Quit,
+                                font_handle.as_ref(),
+                            );
+                        });
+                    });
                 });
         });
 }

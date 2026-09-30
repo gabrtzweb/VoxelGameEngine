@@ -414,6 +414,7 @@ fn update_custom_cursor(
     cursor_mode: Res<CursorMode>,
     cursor_textures: Res<CursorTextures>,
     busy_animation: Res<BusyCursorAnimation>,
+    ui_scale: Option<Res<bevy::ui::UiScale>>,
 ) {
     let (mut cursor_node, mut cursor_image, mut cursor_vis) = cursor_query.into_inner();
     let (mut held_icon, mut held_vis) = held_icon_query.into_inner();
@@ -432,8 +433,9 @@ fn update_custom_cursor(
 
     if let Some(pos) = window.cursor_position() {
         *cursor_vis = Visibility::Visible;
-        cursor_node.left = px(pos.x);
-        cursor_node.top = px(pos.y);
+        let scale = ui_scale.map_or(1.0, |s| s.0);
+        cursor_node.left = px(pos.x / scale);
+        cursor_node.top = px(pos.y / scale);
 
         let current_mode = *cursor_mode;
         cursor_image.image = cursor_textures.get(current_mode);

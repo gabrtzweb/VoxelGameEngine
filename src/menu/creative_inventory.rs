@@ -1045,6 +1045,7 @@ fn apply_search_key_action(
 fn get_card_top_left(
     card_query: &Query<(&GlobalTransform, &ComputedNode), With<InventoryCard>>,
     window_query: &Query<&Window, With<PrimaryWindow>>,
+    scale: f32,
 ) -> Option<Vec2> {
     if let Some((card_tf, card_node)) = card_query.iter().next() {
         let center = card_tf.translation().truncate();
@@ -1055,8 +1056,8 @@ fn get_card_top_left(
     }
     if let Some(w) = window_query.iter().next() {
         return Some(Vec2::new(
-            (w.width() - INVENTORY_PANEL_TEX_W * GUI_SCALE) * 0.5,
-            (w.height() - INVENTORY_PANEL_TEX_H * GUI_SCALE) * 0.5,
+            (w.width() - INVENTORY_PANEL_TEX_W * GUI_SCALE * scale) * 0.5,
+            (w.height() - INVENTORY_PANEL_TEX_H * GUI_SCALE * scale) * 0.5,
         ));
     }
     None
@@ -1094,28 +1095,31 @@ fn handle_creative_search_input(
     card_query: Query<(&GlobalTransform, &ComputedNode), With<InventoryCard>>,
     icons: Res<BlockIcons>,
     window_query: Query<&Window, With<PrimaryWindow>>,
+    ui_scale: Option<Res<UiScale>>,
     mut input_state: Local<SearchInputState>,
 ) {
     if *tab_state != InventoryTab::Creative {
         return;
     }
 
+    let scale = ui_scale.as_ref().map_or(1.0, |s| s.0);
+    let eff_scale = GUI_SCALE * scale;
     let cursor_pos = window_query.iter().next().and_then(|w| w.cursor_position());
-    let card_top_left = get_card_top_left(&card_query, &window_query);
+    let card_top_left = get_card_top_left(&card_query, &window_query, scale);
 
     let (search_bar_rect, text_start_x) = if let Some(top_left) = card_top_left {
-        let min_x = top_left.x + 98.0 * GUI_SCALE;
-        let min_y = top_left.y + 32.0 * GUI_SCALE;
-        let max_x = min_x + 71.0 * GUI_SCALE;
-        let max_y = min_y + 12.0 * GUI_SCALE;
+        let min_x = top_left.x + 98.0 * eff_scale;
+        let min_y = top_left.y + 32.0 * eff_scale;
+        let max_x = min_x + 71.0 * eff_scale;
+        let max_y = min_y + 12.0 * eff_scale;
         (
             Some(Rect::new(
-                min_x - 4.0,
-                min_y - 4.0,
-                max_x + 4.0,
-                max_y + 4.0,
+                min_x - 4.0 * scale,
+                min_y - 4.0 * scale,
+                max_x + 4.0 * scale,
+                max_y + 4.0 * scale,
             )),
-            min_x + 6.0,
+            min_x + 6.0 * scale,
         )
     } else {
         (None, 0.0)
@@ -1154,7 +1158,7 @@ fn handle_creative_search_input(
                 search_query.selection = None;
                 if let Some(pos) = cursor_pos {
                     let click_x = (pos.x - text_start_x).max(0.0);
-                    let char_width = 8.5;
+                    let char_width = 8.5 * scale;
                     let approx_idx = (click_x / char_width).round() as usize;
                     search_query.cursor = approx_idx.min(search_query.query.len());
                     input_state.drag_start_cursor = Some(search_query.cursor);
@@ -1174,7 +1178,7 @@ fn handle_creative_search_input(
     if left_pressed && search_query.is_focused {
         if let (Some(anchor), Some(pos)) = (input_state.drag_start_cursor, cursor_pos) {
             let click_x = (pos.x - text_start_x).max(0.0);
-            let char_width = 8.5;
+            let char_width = 8.5 * scale;
             let cur_idx = ((click_x / char_width).round() as usize).min(search_query.query.len());
             if cur_idx != anchor && !search_query.query.is_empty() {
                 let start = anchor.min(cur_idx);
@@ -1423,18 +1427,25 @@ fn handle_inventory_scroll(
     mut thumb_node_query: Query<&mut Node, With<InventoryScrollThumb>>,
     mut palette_query: Query<&mut InventoryPaletteSlot>,
     mut slot_icon_query: Query<(&InventoryPaletteSlotIcon, &mut ImageNode, &mut Visibility)>,
+    ui_scale: Option<Res<UiScale>>,
 ) {
     if *tab_state != InventoryTab::Creative {
         return;
     }
 
+    let scale = ui_scale.as_ref().map_or(1.0, |s| s.0);
+    let eff_scale = GUI_SCALE * scale;
     let filtered = filtered_creative_blocks(&search_query.query);
     let max_scroll = max_filtered_scroll(filtered.len());
     let mut row_changed = false;
 
-    let track_height = 110.0 * GUI_SCALE; // 330.0 px
-    let thumb_height = 15.0 * GUI_SCALE; // 45.0 px
-    let max_travel = (track_height - thumb_height).max(1.0); // 285.0 px
+    let track_height_logical = 110.0 * GUI_SCALE; // 385.0 px (with 3.5 GUI_SCALE)
+    let thumb_height_logical = 15.0 * GUI_SCALE; // 52.5 px
+    let max_travel_logical = (track_height_logical - thumb_height_logical).max(1.0);
+
+    let track_height = track_height_logical * scale;
+    let thumb_height = thumb_height_logical * scale;
+    let max_travel = max_travel_logical * scale;
 
     // 1. Mouse wheel scrolling
     let scroll_y = mouse_scroll.delta.y;
@@ -1450,22 +1461,22 @@ fn handle_inventory_scroll(
     let left_pressed = mouse.pressed(MouseButton::Left);
     let left_just_pressed = mouse.just_pressed(MouseButton::Left);
     let cursor_pos = window_query.iter().next().and_then(|w| w.cursor_position());
-    let card_top_left = get_card_top_left(&card_query, &window_query);
+    let card_top_left = get_card_top_left(&card_query, &window_query, scale);
 
     let (track_screen_x, track_screen_y) = if let Some(top_left) = card_top_left {
         (
-            top_left.x + 175.0 * GUI_SCALE,
-            top_left.y + 33.0 * GUI_SCALE,
+            top_left.x + 175.0 * eff_scale,
+            top_left.y + 33.0 * eff_scale,
         )
     } else {
         (0.0, 0.0)
     };
 
     let track_hit_rect = Rect::new(
-        track_screen_x - 16.0,
-        track_screen_y - 6.0,
-        track_screen_x + 12.0 * GUI_SCALE + 16.0,
-        track_screen_y + track_height + 6.0,
+        track_screen_x - 16.0 * scale,
+        track_screen_y - 6.0 * scale,
+        track_screen_x + (12.0 * GUI_SCALE + 16.0) * scale,
+        track_screen_y + track_height + 6.0 * scale,
     );
 
     let is_inside_track = cursor_pos.is_some_and(|pos| track_hit_rect.contains(pos));
@@ -1487,12 +1498,13 @@ fn handle_inventory_scroll(
         if let Some(pos) = cursor_pos {
             let cursor_rel_y = pos.y - track_screen_y;
             let clamped_y = (cursor_rel_y - thumb_height * 0.5).clamp(0.0, max_travel);
+            let fraction = clamped_y / max_travel;
+            let thumb_top_logical = fraction * max_travel_logical;
 
             for mut thumb_node in &mut thumb_node_query {
-                thumb_node.top = px(clamped_y);
+                thumb_node.top = px(thumb_top_logical);
             }
 
-            let fraction = clamped_y / max_travel;
             let target_row = ((fraction * max_scroll as f32).round() as usize).min(max_scroll);
 
             if target_row != scroll_state.scroll_row {
@@ -1503,14 +1515,14 @@ fn handle_inventory_scroll(
     } else {
         // Sync thumb position whenever not actively dragging
         let cur_row = scroll_state.scroll_row;
-        let thumb_top = if max_scroll > 0 {
-            (cur_row as f32 / max_scroll as f32) * max_travel
+        let thumb_top_logical = if max_scroll > 0 {
+            (cur_row as f32 / max_scroll as f32) * max_travel_logical
         } else {
             0.0
         };
 
         for mut thumb_node in &mut thumb_node_query {
-            thumb_node.top = px(thumb_top);
+            thumb_node.top = px(thumb_top_logical);
         }
     }
 

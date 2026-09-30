@@ -116,20 +116,13 @@ fn spawn_settings_menu(
         ))
         .with_children(|backdrop| {
             backdrop
-                .spawn((
-                    Node {
-                        display: Display::Flex,
-                        flex_direction: FlexDirection::Column,
-                        align_items: AlignItems::Center,
-                        padding: UiRect::axes(px(24.0), px(16.0)),
-                        row_gap: px(8.0),
-                        border: UiRect::all(px(2.0)),
-                        border_radius: BorderRadius::all(px(8.0)),
-                        ..default()
-                    },
-                    BackgroundColor(Color::srgba(0.10, 0.10, 0.13, 0.95)),
-                    BorderColor::all(Color::srgba(0.35, 0.35, 0.42, 0.80)),
-                ))
+                .spawn(Node {
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    row_gap: px(16.0),
+                    ..default()
+                })
                 .with_children(|card| {
                     // Header Title
                     card.spawn((
@@ -143,136 +136,168 @@ fn spawn_settings_menu(
                         },
                     ));
 
-                    // 0. Screen Mode Stepper
-                    spawn_stepper_row(
-                        card,
-                        "Screen Mode",
-                        game_settings.screen_mode.label().to_string(),
-                        SettingsAction::DecScreenMode,
-                        SettingsAction::IncScreenMode,
-                        ScreenModeLabel,
-                        font_handle.as_ref(),
-                    );
+                    // 2-Column Settings Container
+                    card.spawn(Node {
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Row,
+                        column_gap: px(24.0),
+                        align_items: AlignItems::FlexStart,
+                        ..default()
+                    })
+                    .with_children(|columns| {
+                        // Left Column: Display & World Settings
+                        columns
+                            .spawn(Node {
+                                display: Display::Flex,
+                                flex_direction: FlexDirection::Column,
+                                row_gap: px(10.0),
+                                width: px(280.0),
+                                ..default()
+                            })
+                            .with_children(|col_left| {
+                                // 0. Screen Mode Stepper
+                                spawn_stepper_row(
+                                    col_left,
+                                    "Screen Mode",
+                                    game_settings.screen_mode.label().to_string(),
+                                    SettingsAction::DecScreenMode,
+                                    SettingsAction::IncScreenMode,
+                                    ScreenModeLabel,
+                                    font_handle.as_ref(),
+                                );
 
-                    // 1. Render Distance Stepper
-                    spawn_stepper_row(
-                        card,
-                        "Render Distance",
-                        format!("{render_dist} Chunks"),
-                        SettingsAction::DecRenderDistance,
-                        SettingsAction::IncRenderDistance,
-                        RenderDistanceLabel,
-                        font_handle.as_ref(),
-                    );
+                                // 1. Render Distance Stepper
+                                spawn_stepper_row(
+                                    col_left,
+                                    "Render Distance",
+                                    format!("{render_dist} Chunks"),
+                                    SettingsAction::DecRenderDistance,
+                                    SettingsAction::IncRenderDistance,
+                                    RenderDistanceLabel,
+                                    font_handle.as_ref(),
+                                );
 
-                    // 1b. Simulation Distance Stepper
-                    spawn_stepper_row(
-                        card,
-                        "Simulation Distance",
-                        format!("{sim_dist} Chunks"),
-                        SettingsAction::DecSimulationDistance,
-                        SettingsAction::IncSimulationDistance,
-                        SimulationDistanceLabel,
-                        font_handle.as_ref(),
-                    );
+                                // 1b. Simulation Distance Stepper
+                                spawn_stepper_row(
+                                    col_left,
+                                    "Simulation Distance",
+                                    format!("{sim_dist} Chunks"),
+                                    SettingsAction::DecSimulationDistance,
+                                    SettingsAction::IncSimulationDistance,
+                                    SimulationDistanceLabel,
+                                    font_handle.as_ref(),
+                                );
 
-                    // 2. Field of View Stepper
-                    spawn_stepper_row(
-                        card,
-                        "Field of View",
-                        format!("{fov}°"),
-                        SettingsAction::DecFov,
-                        SettingsAction::IncFov,
-                        FovLabel,
-                        font_handle.as_ref(),
-                    );
+                                // 2. Field of View Stepper
+                                spawn_stepper_row(
+                                    col_left,
+                                    "Field of View",
+                                    format!("{fov}°"),
+                                    SettingsAction::DecFov,
+                                    SettingsAction::IncFov,
+                                    FovLabel,
+                                    font_handle.as_ref(),
+                                );
 
-                    // 3. Fog Toggle Button
-                    spawn_toggle_button(
-                        card,
-                        SettingsAction::ToggleFog,
-                        format!("Fog: {}", if fog_enabled { "Enabled" } else { "Disabled" }),
-                        FogLabel,
-                        font_handle.as_ref(),
-                    );
+                                // 3. Fog Toggle Button
+                                spawn_toggle_button(
+                                    col_left,
+                                    SettingsAction::ToggleFog,
+                                    format!("Fog: {}", if fog_enabled { "Enabled" } else { "Disabled" }),
+                                    FogLabel,
+                                    font_handle.as_ref(),
+                                );
+                            });
 
-                    // 4. View Bobbing Toggle Button
-                    spawn_toggle_button(
-                        card,
-                        SettingsAction::ToggleViewBobbing,
-                        format!(
-                            "View Bobbing: {}",
-                            if game_settings.view_bobbing {
-                                "Enabled"
-                            } else {
-                                "Disabled"
-                            }
-                        ),
-                        ViewBobbingLabel,
-                        font_handle.as_ref(),
-                    );
+                        // Right Column: Performance & Graphics Tweaks
+                        columns
+                            .spawn(Node {
+                                display: Display::Flex,
+                                flex_direction: FlexDirection::Column,
+                                row_gap: px(10.0),
+                                width: px(280.0),
+                                ..default()
+                            })
+                            .with_children(|col_right| {
+                                // 4. VSync Toggle Button
+                                spawn_toggle_button(
+                                    col_right,
+                                    SettingsAction::ToggleVsync,
+                                    format!(
+                                        "VSync: {}",
+                                        if game_settings.vsync_enabled {
+                                            "Enabled"
+                                        } else {
+                                            "Disabled"
+                                        }
+                                    ),
+                                    VsyncLabel,
+                                    font_handle.as_ref(),
+                                );
 
-                    // 4b. Full Surface Sides Toggle Button (Grass, Snowy Grass, Mulch)
-                    spawn_toggle_button(
-                        card,
-                        SettingsAction::ToggleFullGrass,
-                        format!(
-                            "Full Surface Sides: {}",
-                            if game_settings.full_grass {
-                                "Enabled"
-                            } else {
-                                "Disabled"
-                            }
-                        ),
-                        FullGrassLabel,
-                        font_handle.as_ref(),
-                    );
+                                // 5. Dynamic FPS Toggle Button
+                                spawn_toggle_button(
+                                    col_right,
+                                    SettingsAction::ToggleDynamicFps,
+                                    format!(
+                                        "Dynamic FPS: {}",
+                                        if game_settings.dynamic_fps_enabled {
+                                            "Enabled"
+                                        } else {
+                                            "Disabled"
+                                        }
+                                    ),
+                                    DynamicFpsLabel,
+                                    font_handle.as_ref(),
+                                );
 
-                    // 5. VSync Toggle Button
-                    spawn_toggle_button(
-                        card,
-                        SettingsAction::ToggleVsync,
-                        format!(
-                            "VSync: {}",
-                            if game_settings.vsync_enabled {
-                                "Enabled"
-                            } else {
-                                "Disabled"
-                            }
-                        ),
-                        VsyncLabel,
-                        font_handle.as_ref(),
-                    );
+                                // 6. View Bobbing Toggle Button
+                                spawn_toggle_button(
+                                    col_right,
+                                    SettingsAction::ToggleViewBobbing,
+                                    format!(
+                                        "View Bobbing: {}",
+                                        if game_settings.view_bobbing {
+                                            "Enabled"
+                                        } else {
+                                            "Disabled"
+                                        }
+                                    ),
+                                    ViewBobbingLabel,
+                                    font_handle.as_ref(),
+                                );
 
-                    // 6. Dynamic FPS Toggle Button
-                    spawn_toggle_button(
-                        card,
-                        SettingsAction::ToggleDynamicFps,
-                        format!(
-                            "Dynamic FPS: {}",
-                            if game_settings.dynamic_fps_enabled {
-                                "Enabled"
-                            } else {
-                                "Disabled"
-                            }
-                        ),
-                        DynamicFpsLabel,
-                        font_handle.as_ref(),
-                    );
+                                // 7. Full Surface Sides Toggle Button
+                                spawn_toggle_button(
+                                    col_right,
+                                    SettingsAction::ToggleFullGrass,
+                                    format!(
+                                        "Full Surface Sides: {}",
+                                        if game_settings.full_grass {
+                                            "Enabled"
+                                        } else {
+                                            "Disabled"
+                                        }
+                                    ),
+                                    FullGrassLabel,
+                                    font_handle.as_ref(),
+                                );
 
-                    // 7. Time Pause Toggle Button
-                    spawn_toggle_button(
-                        card,
-                        SettingsAction::ToggleTimePause,
-                        format!(
-                            "Time Flow: {}",
-                            if time_paused { "Paused" } else { "Running" }
-                        ),
-                        TimePauseLabel,
-                        font_handle.as_ref(),
-                    );
+                                // 8. Time Pause Toggle Button
+                                spawn_toggle_button(
+                                    col_right,
+                                    SettingsAction::ToggleTimePause,
+                                    format!(
+                                        "Time Flow: {}",
+                                        if time_paused { "Paused" } else { "Running" }
+                                    ),
+                                    TimePauseLabel,
+                                    font_handle.as_ref(),
+                                );
+                            });
+                    });
 
-                    // 8. Back Button
+                    // Centered Back Button
                     let mut back_font = TextFont {
                         font_size: FontSize::Px(16.0),
                         ..default()
@@ -286,11 +311,11 @@ fn spawn_settings_menu(
                         SettingsAction::Back,
                         Node {
                             width: px(280.0),
-                            height: px(34.0),
+                            height: px(38.0),
                             display: Display::Flex,
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
-                            margin: UiRect::top(px(6.0)),
+                            margin: UiRect::top(px(10.0)),
                             border: UiRect::all(px(1.5)),
                             border_radius: BorderRadius::all(px(6.0)),
                             ..default()

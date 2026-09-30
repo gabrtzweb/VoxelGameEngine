@@ -18,7 +18,7 @@ use bevy::{
 
 use bevy_inspector_egui::bevy_egui::EguiPlugin;
 
-use core::{DevStatsPlugin, DynamicFpsPlugin, FontPlugin};
+use core::{AdaptiveUiPlugin, DevStatsPlugin, DynamicFpsPlugin, FontPlugin};
 use environment::EnvironmentPlugin;
 use gameplay::GameplayPlugin;
 use generation::TerrainInspectorPlugin;
@@ -81,6 +81,7 @@ fn main() {
                 .set(ImagePlugin::default_nearest()),
         )
         .add_plugins(FontPlugin)
+        .add_plugins(AdaptiveUiPlugin)
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(EguiPlugin::default())
         .add_plugins(TerrainInspectorPlugin)
