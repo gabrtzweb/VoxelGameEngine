@@ -126,6 +126,12 @@ pub enum CursorMode {
     Busy,
 }
 
+#[derive(Component, Clone)]
+pub struct MenuButtonTexture {
+    pub normal: Handle<Image>,
+    pub hover: Handle<Image>,
+}
+
 #[derive(Resource, Clone)]
 #[allow(dead_code)]
 pub struct CursorTextures {
@@ -480,7 +486,7 @@ fn manage_menu_blur(
                 focal_distance: 0.1,
                 aperture_f_stops: 2.0,
                 max_circle_of_confusion_diameter: 8.0,
-                max_depth: 100.0,
+                max_depth: 2000.0,
                 ..default()
             });
         } else {

@@ -2,12 +2,13 @@ use std::borrow::Cow;
 
 use bevy::{
     core_pipeline::{
+        FullscreenShader,
         schedule::{Core3d, Core3dSystems},
         tonemapping::tonemapping,
-        FullscreenShader,
     },
     prelude::*,
     render::{
+        RenderApp, RenderStartup,
         extract_component::{
             ComponentUniforms, DynamicUniformIndex, ExtractComponent, ExtractComponentPlugin,
             UniformComponentPlugin,
@@ -19,7 +20,6 @@ use bevy::{
         renderer::{RenderContext, RenderDevice, ViewQuery},
         texture::TextureCache,
         view::{ExtractedView, ViewTarget},
-        RenderApp, RenderStartup,
     },
 };
 
@@ -236,8 +236,7 @@ fn post_process_system(
         return;
     }
 
-    let Some(scatter_pipeline) =
-        pipeline_cache.get_render_pipeline(pipelines.scatter_pipeline_id)
+    let Some(scatter_pipeline) = pipeline_cache.get_render_pipeline(pipelines.scatter_pipeline_id)
     else {
         return;
     };
@@ -253,8 +252,7 @@ fn post_process_system(
         _ => pipelines.composite_hdr_pipeline_id,
     };
 
-    let Some(composite_pipeline) = pipeline_cache.get_render_pipeline(composite_pipeline_id)
-    else {
+    let Some(composite_pipeline) = pipeline_cache.get_render_pipeline(composite_pipeline_id) else {
         return;
     };
 
@@ -335,21 +333,21 @@ fn post_process_system(
     );
 
     {
-        let mut composite_pass =
-            ctx.command_encoder()
-                .begin_render_pass(&RenderPassDescriptor {
-                    label: Some("god_rays_composite_pass"),
-                    color_attachments: &[Some(RenderPassColorAttachment {
-                        view: post_process.destination,
-                        depth_slice: None,
-                        resolve_target: None,
-                        ops: Operations::default(),
-                    })],
-                    depth_stencil_attachment: None,
-                    timestamp_writes: None,
-                    occlusion_query_set: None,
-                    multiview_mask: None,
-                });
+        let mut composite_pass = ctx
+            .command_encoder()
+            .begin_render_pass(&RenderPassDescriptor {
+                label: Some("god_rays_composite_pass"),
+                color_attachments: &[Some(RenderPassColorAttachment {
+                    view: post_process.destination,
+                    depth_slice: None,
+                    resolve_target: None,
+                    ops: Operations::default(),
+                })],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+                multiview_mask: None,
+            });
 
         composite_pass.set_pipeline(composite_pipeline);
         composite_pass.set_bind_group(0, &composite_bind_group, &[settings_index.index()]);
@@ -358,12 +356,11 @@ fn post_process_system(
 }
 
 /// Computes the celestial light (Sun or Moon) 2D screen/NDC projection every frame, with aspect ratio and radial edge fade.
+#[allow(clippy::type_complexity)]
 pub fn update_post_process_light_position(
     state: Res<EnvironmentState>,
-    camera_query: Query<
-        (&Camera, &GlobalTransform),
-        (With<Camera3d>, With<PlayerCamera>),
-    >,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
+    camera_query: Query<(&Camera, &GlobalTransform), (With<Camera3d>, With<PlayerCamera>)>,
     mut settings_query: Query<&mut PostProcessSettings, (With<Camera3d>, With<PlayerCamera>)>,
 ) {
     let Ok((camera, camera_global_transform)) = camera_query.single() else {
@@ -372,6 +369,13 @@ pub fn update_post_process_light_position(
     let Ok(mut settings) = settings_query.single_mut() else {
         return;
     };
+
+    // If game is in a menu (pause, settings, inventory, etc.), disable sun rays to prevent post-process flicker with menu blur
+    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+        settings.light_visible = 0.0;
+        settings.exposure = 0.0;
+        return;
+    }
 
     // 1. Calculate dynamic aspect ratio from camera viewport to correct circular flares
     let aspect_ratio = camera
@@ -385,34 +389,35 @@ pub fn update_post_process_light_position(
     let moon_dir = -sun_dir;
 
     // 2. Dual celestial body targeting: Sun during day/twilight, Moon at night
-    let (target_dir, base_exposure, target_tint, target_threshold, target_max_radius) = if sun_dir.y > -0.05 {
-        // Sun is active (HDR value ~2.2; threshold 1.95 filters out specular water reflections; radius 0.22 isolates celestial disc)
-        let day_factor = (sun_dir.y / 0.15).clamp(0.0, 1.0);
-        (
-            sun_dir,
-            0.45 * day_factor,
-            Vec3::new(1.04, 0.92, 0.76),
-            1.95,
-            0.22,
-        )
-    } else if moon_dir.y > 0.0 {
-        // Sun has set and Moon is active (HDR value ~1.35; threshold 1.20 filters out night terrain; radius 0.18 isolates moon disc)
-        let moon_elevation_factor = (moon_dir.y / 0.15).clamp(0.0, 1.0);
-        let phase_factor = state.moon_phase().illuminance_factor();
-        // Subtle, ethereal moonlight rays
-        let moon_exposure = 0.10 * moon_elevation_factor * phase_factor;
-        (
-            moon_dir,
-            moon_exposure,
-            Vec3::new(0.45, 0.55, 0.85),
-            1.20,
-            0.18,
-        )
-    } else {
-        settings.light_visible = 0.0;
-        settings.exposure = 0.0;
-        return;
-    };
+    let (target_dir, base_exposure, target_tint, target_threshold, target_max_radius) =
+        if sun_dir.y > -0.05 {
+            // Sun is active (HDR value ~2.2; threshold 1.95 filters out specular water reflections; radius 0.22 isolates celestial disc)
+            let day_factor = (sun_dir.y / 0.15).clamp(0.0, 1.0);
+            (
+                sun_dir,
+                0.45 * day_factor,
+                Vec3::new(1.04, 0.92, 0.76),
+                1.95,
+                0.22,
+            )
+        } else if moon_dir.y > 0.0 {
+            // Sun has set and Moon is active (HDR value ~1.35; threshold 1.20 filters out night terrain; radius 0.18 isolates moon disc)
+            let moon_elevation_factor = (moon_dir.y / 0.15).clamp(0.0, 1.0);
+            let phase_factor = state.moon_phase().illuminance_factor();
+            // Subtle, ethereal moonlight rays
+            let moon_exposure = 0.10 * moon_elevation_factor * phase_factor;
+            (
+                moon_dir,
+                moon_exposure,
+                Vec3::new(0.45, 0.55, 0.85),
+                1.20,
+                0.18,
+            )
+        } else {
+            settings.light_visible = 0.0;
+            settings.exposure = 0.0;
+            return;
+        };
 
     settings.ray_tint = target_tint;
     settings.threshold = target_threshold;

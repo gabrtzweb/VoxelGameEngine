@@ -14,6 +14,9 @@ The project focuses on a fully editable procedural voxel world with 1.0 m³ bloc
 - Dynamic FPS & VSync: configurable presentation modes (AutoNoVsync default, toggleable in Settings) and intelligent frame throttling (15 FPS unfocused, 30 FPS idle) with unconstrained active gameplay (250+ FPS).
 - Custom typography & drop shadows: universal font asset management (`CutePixel.ttf`) applied across all in-game HUDs, menus, and interfaces with drop shadow contrast styling.
 - Centered unified textured container interface: Creative palette & Personal storage with top mode toggle buttons, real-time search with hold-to-repeat backspace, Caps Lock support, and text drag/double-click selection, persistent tab memory, Shift-drag multi-slot transfers, and cinematic Depth-of-Field blur.
+- Dynamic adaptive UI scaling: responsive resolution-relative `UiScale` system (`AdaptiveUiPlugin`), automatically scaling HUD, minimap, hotbar, and inventory elements proportionally across all screen sizes and resolutions.
+- Restructured two-column menus with pixel-art buttons: Pause and Settings menus redesigned into clean two-column floating layouts using authentic textured container buttons (`button.png`, `small_button.png`).
+- Post-process menu stabilization: automatic muting of volumetric god rays and celestial light flares during active menus, eliminating background lighting flicker against depth-of-field blur.
 
 The long-term goal is to build a performant procedural voxel game with large-world streaming, runtime terrain editing, configurable generation, multiple gameplay modes, dynamic fluids and extensive development tooling.
 
@@ -44,7 +47,7 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     R                 Block shape (Tap: cycle sequentially / Hold: 4-slice circular radial menu)
     T                 Rotate block shape 90° clockwise
 
-    ESC               Pause Menu (Settings: Screen Mode, Render Dist, FOV, Fog, Bobbing, Fancy Sides, VSync, Dynamic FPS; Restart, Quit)
+    ESC               Pause Menu (Two-column layout, textured buttons; Settings: Screen Mode, Render Dist, Sim Dist, FOV, Fog, Bobbing, Fancy Sides, VSync, Dynamic FPS, Time Flow; Restart, Quit)
     E                 Inventory (Unified 190×152 px textured container: Personal & Creative inventory with background blur)
                       • Mode Buttons at top / Tab key: Toggle between Personal and Creative inventory (choice persists across close/reopen)
                       • Personal Inventory: Dedicated title, 8×4 grid (32 slots) storage, hotbar mirror row, action buttons
@@ -75,7 +78,9 @@ assets/
 ├── fonts/
 │   └── CutePixel.ttf
 ├── shaders/
-│   └── voxel.wgsl
+│   ├── post_process.wgsl
+│   ├── voxel_opaque.wgsl
+│   └── voxel_transparent.wgsl
 ├── sounds/
 │   ├── footsteps/
 │   ├── liquids/
@@ -109,12 +114,14 @@ src/
 │   ├── dynamic_fps.rs
 │   ├── font.rs
 │   ├── mod.rs
-│   └── noise.rs
+│   ├── noise.rs
+│   └── ui_scale.rs
 ├── environment/
 │   ├── atmosphere.rs
 │   ├── celestial.rs
 │   ├── clouds.rs
 │   ├── mod.rs
+│   ├── post_process.rs
 │   ├── stars.rs
 │   └── time.rs
 ├── gameplay/

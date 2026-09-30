@@ -81,6 +81,7 @@ fn spawn_settings_menu(
     game_settings: Res<GameSettings>,
     env_state: Option<Res<EnvironmentState>>,
     app_font: Option<Res<AppFont>>,
+    asset_server: Res<AssetServer>,
 ) {
     let render_dist = chunk_settings.render_distance;
     let sim_dist = chunk_settings.simulation_distance;
@@ -88,6 +89,11 @@ fn spawn_settings_menu(
     let fog_enabled = game_settings.fog_enabled;
     let time_paused = env_state.as_ref().is_some_and(|e| e.is_time_paused);
     let font_handle = app_font.as_ref().map(|f| f.source());
+
+    let btn_normal = asset_server.load("textures/interfaces/containers/button.png");
+    let btn_hover = asset_server.load("textures/interfaces/containers/button_hover.png");
+    let small_normal = asset_server.load("textures/interfaces/containers/small_button.png");
+    let small_hover = asset_server.load("textures/interfaces/containers/small_button_hover.png");
 
     let mut header_font = TextFont {
         font_size: FontSize::Px(32.0),
@@ -164,6 +170,8 @@ fn spawn_settings_menu(
                                     SettingsAction::IncScreenMode,
                                     ScreenModeLabel,
                                     font_handle.as_ref(),
+                                    &small_normal,
+                                    &small_hover,
                                 );
 
                                 // 1. Render Distance Stepper
@@ -175,6 +183,8 @@ fn spawn_settings_menu(
                                     SettingsAction::IncRenderDistance,
                                     RenderDistanceLabel,
                                     font_handle.as_ref(),
+                                    &small_normal,
+                                    &small_hover,
                                 );
 
                                 // 1b. Simulation Distance Stepper
@@ -186,6 +196,8 @@ fn spawn_settings_menu(
                                     SettingsAction::IncSimulationDistance,
                                     SimulationDistanceLabel,
                                     font_handle.as_ref(),
+                                    &small_normal,
+                                    &small_hover,
                                 );
 
                                 // 2. Field of View Stepper
@@ -197,15 +209,22 @@ fn spawn_settings_menu(
                                     SettingsAction::IncFov,
                                     FovLabel,
                                     font_handle.as_ref(),
+                                    &small_normal,
+                                    &small_hover,
                                 );
 
                                 // 3. Fog Toggle Button
                                 spawn_toggle_button(
                                     col_left,
                                     SettingsAction::ToggleFog,
-                                    format!("Fog: {}", if fog_enabled { "Enabled" } else { "Disabled" }),
+                                    format!(
+                                        "Fog: {}",
+                                        if fog_enabled { "Enabled" } else { "Disabled" }
+                                    ),
                                     FogLabel,
                                     font_handle.as_ref(),
+                                    &btn_normal,
+                                    &btn_hover,
                                 );
                             });
 
@@ -233,6 +252,8 @@ fn spawn_settings_menu(
                                     ),
                                     VsyncLabel,
                                     font_handle.as_ref(),
+                                    &btn_normal,
+                                    &btn_hover,
                                 );
 
                                 // 5. Dynamic FPS Toggle Button
@@ -249,6 +270,8 @@ fn spawn_settings_menu(
                                     ),
                                     DynamicFpsLabel,
                                     font_handle.as_ref(),
+                                    &btn_normal,
+                                    &btn_hover,
                                 );
 
                                 // 6. View Bobbing Toggle Button
@@ -265,6 +288,8 @@ fn spawn_settings_menu(
                                     ),
                                     ViewBobbingLabel,
                                     font_handle.as_ref(),
+                                    &btn_normal,
+                                    &btn_hover,
                                 );
 
                                 // 7. Full Surface Sides Toggle Button
@@ -281,6 +306,8 @@ fn spawn_settings_menu(
                                     ),
                                     FullGrassLabel,
                                     font_handle.as_ref(),
+                                    &btn_normal,
+                                    &btn_hover,
                                 );
 
                                 // 8. Time Pause Toggle Button
@@ -293,6 +320,8 @@ fn spawn_settings_menu(
                                     ),
                                     TimePauseLabel,
                                     font_handle.as_ref(),
+                                    &btn_normal,
+                                    &btn_hover,
                                 );
                             });
                     });
@@ -309,6 +338,14 @@ fn spawn_settings_menu(
                     card.spawn((
                         Button,
                         SettingsAction::Back,
+                        crate::menu::MenuButtonTexture {
+                            normal: btn_normal.clone(),
+                            hover: btn_hover.clone(),
+                        },
+                        ImageNode {
+                            image: btn_normal.clone(),
+                            ..default()
+                        },
                         Node {
                             width: px(280.0),
                             height: px(38.0),
@@ -316,18 +353,14 @@ fn spawn_settings_menu(
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
                             margin: UiRect::top(px(10.0)),
-                            border: UiRect::all(px(1.5)),
-                            border_radius: BorderRadius::all(px(6.0)),
                             ..default()
                         },
-                        BackgroundColor(Color::srgba(0.16, 0.16, 0.20, 0.90)),
-                        BorderColor::all(Color::srgba(0.32, 0.32, 0.38, 0.70)),
                     ))
                     .with_children(|btn| {
                         btn.spawn((
                             Text::new("Back"),
                             back_font,
-                            TextColor(Color::srgb(0.90, 0.90, 0.92)),
+                            TextColor(Color::srgb(0.95, 0.95, 0.98)),
                             text_shadow_default(),
                         ));
                     });
@@ -335,6 +368,7 @@ fn spawn_settings_menu(
         });
 }
 
+#[allow(clippy::too_many_arguments)]
 fn spawn_stepper_row<T: Component>(
     parent: &mut ChildSpawnerCommands,
     title: &str,
@@ -343,6 +377,8 @@ fn spawn_stepper_row<T: Component>(
     inc_action: SettingsAction,
     marker: T,
     font_handle: Option<&crate::core::FontSource>,
+    small_normal: &Handle<Image>,
+    small_hover: &Handle<Image>,
 ) {
     let mut title_font = TextFont {
         font_size: FontSize::Px(16.0),
@@ -395,18 +431,22 @@ fn spawn_stepper_row<T: Component>(
                     .spawn((
                         Button,
                         dec_action,
+                        crate::menu::MenuButtonTexture {
+                            normal: small_normal.clone(),
+                            hover: small_hover.clone(),
+                        },
+                        ImageNode {
+                            image: small_normal.clone(),
+                            ..default()
+                        },
                         Node {
                             width: px(28.0),
                             height: px(28.0),
                             display: Display::Flex,
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
-                            border: UiRect::all(px(1.0)),
-                            border_radius: BorderRadius::all(px(4.0)),
                             ..default()
                         },
-                        BackgroundColor(Color::srgba(0.18, 0.18, 0.22, 0.90)),
-                        BorderColor::all(Color::srgba(0.35, 0.35, 0.40, 0.70)),
                     ))
                     .with_children(|btn| {
                         btn.spawn((
@@ -438,18 +478,22 @@ fn spawn_stepper_row<T: Component>(
                     .spawn((
                         Button,
                         inc_action,
+                        crate::menu::MenuButtonTexture {
+                            normal: small_normal.clone(),
+                            hover: small_hover.clone(),
+                        },
+                        ImageNode {
+                            image: small_normal.clone(),
+                            ..default()
+                        },
                         Node {
                             width: px(28.0),
                             height: px(28.0),
                             display: Display::Flex,
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
-                            border: UiRect::all(px(1.0)),
-                            border_radius: BorderRadius::all(px(4.0)),
                             ..default()
                         },
-                        BackgroundColor(Color::srgba(0.18, 0.18, 0.22, 0.90)),
-                        BorderColor::all(Color::srgba(0.35, 0.35, 0.40, 0.70)),
                     ))
                     .with_children(|btn| {
                         btn.spawn((
@@ -469,6 +513,8 @@ fn spawn_toggle_button<T: Component>(
     label: String,
     marker: T,
     font_handle: Option<&crate::core::FontSource>,
+    btn_normal: &Handle<Image>,
+    btn_hover: &Handle<Image>,
 ) {
     let mut btn_font = TextFont {
         font_size: FontSize::Px(16.0),
@@ -482,25 +528,29 @@ fn spawn_toggle_button<T: Component>(
         .spawn((
             Button,
             action,
+            crate::menu::MenuButtonTexture {
+                normal: btn_normal.clone(),
+                hover: btn_hover.clone(),
+            },
+            ImageNode {
+                image: btn_normal.clone(),
+                ..default()
+            },
             Node {
                 width: px(280.0),
-                height: px(32.0),
+                height: px(34.0),
                 display: Display::Flex,
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
-                border: UiRect::all(px(1.5)),
-                border_radius: BorderRadius::all(px(6.0)),
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.16, 0.16, 0.20, 0.90)),
-            BorderColor::all(Color::srgba(0.32, 0.32, 0.38, 0.70)),
         ))
         .with_children(|btn| {
             btn.spawn((
                 marker,
                 Text::new(label),
                 btn_font,
-                TextColor(Color::srgb(0.90, 0.90, 0.92)),
+                TextColor(Color::srgb(0.95, 0.95, 0.98)),
                 text_shadow_default(),
             ));
         });
@@ -518,8 +568,8 @@ fn handle_settings_buttons(
         (
             &Interaction,
             &SettingsAction,
-            &mut BackgroundColor,
-            &mut BorderColor,
+            &crate::menu::MenuButtonTexture,
+            &mut ImageNode,
         ),
         (Changed<Interaction>, With<Button>),
     >,
@@ -534,11 +584,10 @@ fn handle_settings_buttons(
     world: Option<Res<VoxelWorld>>,
     mut window_query: Query<&mut Window, With<bevy::window::PrimaryWindow>>,
 ) {
-    for (interaction, action, mut bg_color, mut border_color) in &mut interaction_query {
+    for (interaction, action, btn_tex, mut img) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
-                *bg_color = BackgroundColor(Color::srgba(0.35, 0.35, 0.44, 1.0));
-                *border_color = BorderColor::all(Color::srgb(1.0, 0.90, 0.40));
+                img.image = btn_tex.hover.clone();
 
                 match action {
                     SettingsAction::DecScreenMode => {
@@ -624,12 +673,10 @@ fn handle_settings_buttons(
                 }
             }
             Interaction::Hovered => {
-                *bg_color = BackgroundColor(Color::srgba(0.24, 0.24, 0.30, 0.95));
-                *border_color = BorderColor::all(Color::srgb(1.0, 0.85, 0.30));
+                img.image = btn_tex.hover.clone();
             }
             Interaction::None => {
-                *bg_color = BackgroundColor(Color::srgba(0.16, 0.16, 0.20, 0.90));
-                *border_color = BorderColor::all(Color::srgba(0.32, 0.32, 0.38, 0.70));
+                img.image = btn_tex.normal.clone();
             }
         }
     }

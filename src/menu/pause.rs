@@ -37,8 +37,14 @@ impl Plugin for PauseMenuPlugin {
     }
 }
 
-fn spawn_pause_menu(mut commands: Commands, app_font: Option<Res<AppFont>>) {
+fn spawn_pause_menu(
+    mut commands: Commands,
+    app_font: Option<Res<AppFont>>,
+    asset_server: Res<AssetServer>,
+) {
     let font_handle = app_font.as_ref().map(|f| f.source());
+    let btn_normal = asset_server.load("textures/interfaces/containers/button.png");
+    let btn_hover = asset_server.load("textures/interfaces/containers/button_hover.png");
 
     let mut title_font = TextFont {
         font_size: FontSize::Px(32.0),
@@ -110,12 +116,16 @@ fn spawn_pause_menu(mut commands: Commands, app_font: Option<Res<AppFont>>) {
                                 "Resume Game",
                                 PauseMenuAction::Resume,
                                 font_handle.as_ref(),
+                                &btn_normal,
+                                &btn_hover,
                             );
                             spawn_menu_button(
                                 row,
                                 "Settings",
                                 PauseMenuAction::Settings,
                                 font_handle.as_ref(),
+                                &btn_normal,
+                                &btn_hover,
                             );
                         });
 
@@ -133,12 +143,16 @@ fn spawn_pause_menu(mut commands: Commands, app_font: Option<Res<AppFont>>) {
                                 "Restart Game",
                                 PauseMenuAction::Restart,
                                 font_handle.as_ref(),
+                                &btn_normal,
+                                &btn_hover,
                             );
                             spawn_menu_button(
                                 row,
                                 "Quit to Desktop",
                                 PauseMenuAction::Quit,
                                 font_handle.as_ref(),
+                                &btn_normal,
+                                &btn_hover,
                             );
                         });
                     });
@@ -151,6 +165,8 @@ fn spawn_menu_button(
     label: &str,
     action: PauseMenuAction,
     font_handle: Option<&crate::core::FontSource>,
+    btn_normal: &Handle<Image>,
+    btn_hover: &Handle<Image>,
 ) {
     let mut btn_font = TextFont {
         font_size: FontSize::Px(16.0),
@@ -164,24 +180,28 @@ fn spawn_menu_button(
         .spawn((
             Button,
             action,
+            crate::menu::MenuButtonTexture {
+                normal: btn_normal.clone(),
+                hover: btn_hover.clone(),
+            },
+            ImageNode {
+                image: btn_normal.clone(),
+                ..default()
+            },
             Node {
                 width: px(220.0),
                 height: px(40.0),
                 display: Display::Flex,
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
-                border: UiRect::all(px(1.5)),
-                border_radius: BorderRadius::all(px(6.0)),
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.16, 0.16, 0.20, 0.90)),
-            BorderColor::all(Color::srgba(0.32, 0.32, 0.38, 0.70)),
         ))
         .with_children(|btn| {
             btn.spawn((
                 Text::new(label),
                 btn_font,
-                TextColor(Color::srgb(0.90, 0.90, 0.92)),
+                TextColor(Color::srgb(0.95, 0.95, 0.98)),
                 text_shadow_default(),
             ));
         });
@@ -199,8 +219,8 @@ fn handle_pause_menu_buttons(
         (
             &Interaction,
             &PauseMenuAction,
-            &mut BackgroundColor,
-            &mut BorderColor,
+            &crate::menu::MenuButtonTexture,
+            &mut ImageNode,
         ),
         (Changed<Interaction>, With<Button>),
     >,
@@ -220,11 +240,10 @@ fn handle_pause_menu_buttons(
     mut map_cache_query: Option<ResMut<crate::map::MapCache>>,
     mut commands: Commands,
 ) {
-    for (interaction, action, mut bg_color, mut border_color) in &mut interaction_query {
+    for (interaction, action, btn_tex, mut img) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
-                *bg_color = BackgroundColor(Color::srgba(0.35, 0.35, 0.44, 1.0));
-                *border_color = BorderColor::all(Color::srgb(1.0, 0.90, 0.40));
+                img.image = btn_tex.hover.clone();
 
                 match action {
                     PauseMenuAction::Resume => {
@@ -317,12 +336,10 @@ fn handle_pause_menu_buttons(
                 }
             }
             Interaction::Hovered => {
-                *bg_color = BackgroundColor(Color::srgba(0.24, 0.24, 0.30, 0.95));
-                *border_color = BorderColor::all(Color::srgb(1.0, 0.85, 0.30));
+                img.image = btn_tex.hover.clone();
             }
             Interaction::None => {
-                *bg_color = BackgroundColor(Color::srgba(0.16, 0.16, 0.20, 0.90));
-                *border_color = BorderColor::all(Color::srgba(0.32, 0.32, 0.38, 0.70));
+                img.image = btn_tex.normal.clone();
             }
         }
     }

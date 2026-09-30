@@ -589,6 +589,23 @@ Phase 10 delivered extensive gameplay polish, interactive tactile feedback, inve
       - **Aspect-Ratio-Corrected Lens Flares**: Dynamically extracts viewport aspect ratio ($W/H$) from `camera.logical_viewport_size()`, scaling horizontal UV delta in the shader to produce perfectly circular, isotropic solar/lunar halos without squashed oval distortion on widescreen monitors.
       - **Interleaved Gradient Noise Dithering & Atmospheric Attenuation**: Evaluates Jorge Jimenez's IGN jitter per fragment to stagger 20 ray steps, converting banding into fine grain. In addition, atmospheric distance attenuation (`smoothstep(1.5, 0.0, dist_to_light)`) and tightened center-distance radial fade (`[0.8, 1.2]`) gently dissipate rays across the sky and completely eliminate peripheral perspective warping when looking away.
 
+- [x] **Stage 10.7: Adaptive UI Scaling, Two-Column Textured Menus & Post-Processing Stabilization (Completed)**:
+  - **Dynamic Adaptive UI Scaling (`AdaptiveUiPlugin`, `src/core/ui_scale.rs`)**:
+    - Implemented screen-relative dynamic `UiScale` system calibrated to a 1080p ($1920 \times 1080$) reference baseline ($W / 1920$, $H / 1080$) with responsive clamping between $0.65$ and $2.50$.
+    - Prevents UI elements (HUD, hotbar, minimap, F3 dev stats, crosshair, and unified inventory container) from becoming oversized on small windows or microscopic on 4K/HiDPI monitors.
+    - Synchronized custom cursor tracking (`src/menu/mod.rs`) and creative inventory manual slot hitboxes, search bar hit-testing, and scrollbar drag bounds (`src/menu/creative_inventory.rs`) with the active `UiScale` factor.
+  - **Two-Column Floating Layout for Pause & Settings Menus (`src/menu/pause.rs`, `src/menu/settings.rs`)**:
+    - Restructured the vertically constrained single-column menu lists into organized, balanced two-column grid layouts.
+    - Removed opaque dark background cards, allowing buttons and option controls to float cleanly over the world's depth-of-field blur.
+  - **Pixel-Art Container Button Textures (`src/menu/`)**:
+    - Upgraded menu and settings buttons to use native pixel-art container textures loaded from `assets/textures/interfaces/containers/`:
+      - Standard buttons and option toggles use `button.png` (normal) and `button_hover.png` (hover) with reactive state switching via `MenuButtonTexture`.
+      - Incremental stepper controls (`[-]` and `[+]` for Screen Mode, Render Distance, Simulation Distance, and FOV) use `small_button.png` and `small_button_hover.png`.
+      - Text labels rendered with high-contrast drop shadows (`TextShadow`) and centered alignment.
+  - **Post-Process Menu Lighting Stabilization & Horizon Blur Coverage (`src/environment/post_process.rs`, `src/menu/mod.rs`)**:
+    - Completely resolved violent post-processing lighting flickering when looking toward the sun with menus open by zeroing sun ray visibility and exposure (`light_visible = 0.0`, `exposure = 0.0`) whenever `MenuState != None`.
+    - Increased `DepthOfField` `max_depth` to $2000.0$ to ensure comprehensive, even blur coverage out to the furthest horizon mountains.
+
 ---
 
 ## Phase 11: World Generation & Worldbuilding Expansion (High Fantasy & Dark Fantasy Realism) (Active)
