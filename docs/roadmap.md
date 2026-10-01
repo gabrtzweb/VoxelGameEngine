@@ -635,6 +635,9 @@ A focused overhaul and expansion of procedural world generation, terrain topogra
     - **3D Hollow Basket (`Deco_Basket`)**: Constructed with an open top rim using alpha cutout and 5 interior faces (interior floor and 4 inward-facing woven side walls), creating a deep hollow basket cavity.
     - **Compact RGB Torches (`Emit_Red_Torch`, `Emit_Green_Torch`, `Emit_Blue_Torch`)**: Custom 10-pixel height 3D torch model with emissive self-illumination, passable non-solid collision (`!is_collidable`), torch stacking prevention, support validation, and automatic 4-way wall-mounting with artist metal brackets.
     - **Placement Feedback & Light Fixes**: Fixed `frame_count` animation indexing to eliminate light block texture cycling/flickering, and bypassed full-cube pop meshes on custom-shaped voxels.
+  - **Item Identification Tooltips (Hotbar & Inventory)**:
+    - **Vanilla Minecraft Hotbar Tooltip**: Centered item name display directly above the hotbar tray whenever a slot containing an item is selected (via 1-8 keys or mouse wheel), staying opaque for 1.4s before smoothly fading away over 0.8s; resets on slot change, instantly hides on empty hand / slot clearing (Q), and mutes during active menus.
+    - **Floating Inventory Hover Tooltip**: Dynamic dark-slate tooltip card following the cursor when hovering over any slot containing an item in the Creative Palette, Personal Storage, or inventory hotbar mirror row, equipped with viewport edge flip/clamping and pixel typography.
 
 - [ ] **Stage 11.2: Surface Biome Catalog (Terrain & Surface Palettes)**:
   *Note: Only existing engine blocks are utilized. Documented in `docs/world_definition.md` to replace the 14 original legacy biomes across 5 distinct geographic zones.*

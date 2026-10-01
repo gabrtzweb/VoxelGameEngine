@@ -119,6 +119,12 @@ struct InventoryHotbarSlotIcon {
     index: usize,
 }
 
+#[derive(Component)]
+pub struct InventoryTooltipBox;
+
+#[derive(Component)]
+pub struct InventoryTooltipText;
+
 pub struct InventoryMenuPlugin;
 
 impl Plugin for InventoryMenuPlugin {
@@ -136,6 +142,7 @@ impl Plugin for InventoryMenuPlugin {
                     handle_creative_search_input,
                     handle_inventory_scroll,
                     handle_inventory_slot_interaction,
+                    update_inventory_tooltip,
                     sync_inventory_hotbar_icons,
                 )
                     .chain()
@@ -714,6 +721,40 @@ fn build_inventory_ui(
                             ));
                         });
                     }
+                });
+
+            // Floating hover tooltip for items
+            let tip_font = make_font(15.0);
+            backdrop
+                .spawn((
+                    InventoryMenuEntity,
+                    InventoryTooltipBox,
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: px(0.0),
+                        top: px(0.0),
+                        padding: UiRect::axes(px(8.0), px(4.0)),
+                        border: UiRect::all(px(1.5)),
+                        border_radius: BorderRadius::all(px(3.0)),
+                        display: Display::Flex,
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgba(0.06, 0.07, 0.12, 0.96)),
+                    BorderColor::all(Color::srgba(0.38, 0.42, 0.58, 0.90)),
+                    ZIndex(850),
+                    Visibility::Hidden,
+                ))
+                .with_children(|tip| {
+                    tip.spawn((
+                        InventoryMenuEntity,
+                        InventoryTooltipText,
+                        Text::new(""),
+                        tip_font,
+                        TextColor(Color::srgb(1.0, 1.0, 1.0)),
+                        text_shadow_default(),
+                    ));
                 });
         });
 }
@@ -1827,4 +1868,90 @@ fn sync_inventory_hotbar_icons(
             *vis = Visibility::Hidden;
         }
     }
+}
+
+fn update_inventory_tooltip(
+    window_query: Query<&Window, With<PrimaryWindow>>,
+    ui_scale: Option<Res<UiScale>>,
+    hotbar: Res<Hotbar>,
+    palette_query: Query<(&Interaction, &InventoryPaletteSlot)>,
+    hotbar_slot_query: Query<(&Interaction, &InventoryHotbarSlot)>,
+    mut tooltip_box_query: Query<(&mut Node, &mut Visibility), With<InventoryTooltipBox>>,
+    mut tooltip_text_query: Query<&mut Text, With<InventoryTooltipText>>,
+) {
+    let Ok((mut box_node, mut box_vis)) = tooltip_box_query.single_mut() else {
+        return;
+    };
+    let Ok(mut text) = tooltip_text_query.single_mut() else {
+        return;
+    };
+
+    // Find any hovered slot that contains an item
+    let mut hovered_voxel: Option<Voxel> = None;
+
+    // 1. Check palette grid slots
+    for (interaction, slot) in &palette_query {
+        if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
+            if let Some(v) = slot.voxel {
+                hovered_voxel = Some(v);
+                break;
+            }
+        }
+    }
+
+    // 2. Check hotbar row slots in the inventory
+    if hovered_voxel.is_none() {
+        for (interaction, slot) in &hotbar_slot_query {
+            if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
+                if let Some(v) = hotbar.slots[slot.index] {
+                    hovered_voxel = Some(v);
+                    break;
+                }
+            }
+        }
+    }
+
+    let Some(voxel) = hovered_voxel else {
+        *box_vis = Visibility::Hidden;
+        return;
+    };
+
+    let Some(window) = window_query.iter().next() else {
+        *box_vis = Visibility::Hidden;
+        return;
+    };
+
+    let Some(cursor_pos) = window.cursor_position() else {
+        *box_vis = Visibility::Hidden;
+        return;
+    };
+
+    let label = voxel.label();
+    text.0 = label.to_string();
+    *box_vis = Visibility::Visible;
+
+    let scale = ui_scale.as_ref().map_or(1.0, |s| s.0);
+    let cur_x = cursor_pos.x / scale;
+    let cur_y = cursor_pos.y / scale;
+
+    let win_w = window.width() / scale;
+    let win_h = window.height() / scale;
+
+    let approx_w = (label.len() as f32 * 10.0 + 20.0).max(60.0);
+    let approx_h = 28.0;
+
+    let left = if cur_x + 18.0 + approx_w > win_w - 8.0 {
+        (cur_x - approx_w - 12.0).max(8.0)
+    } else {
+        cur_x + 18.0
+    };
+
+    let top = if cur_y - approx_h - 10.0 < 8.0 {
+        (cur_y + 24.0).min(win_h - approx_h - 8.0)
+    } else {
+        cur_y - approx_h - 6.0
+    };
+
+    box_node.left = px(left);
+    box_node.top = px(top);
 }

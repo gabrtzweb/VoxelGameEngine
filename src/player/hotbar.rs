@@ -1,4 +1,4 @@
-use bevy::{input::mouse::AccumulatedMouseScroll, prelude::*};
+use bevy::{input::mouse::AccumulatedMouseScroll, prelude::*, ui::widget::TextShadow};
 
 use crate::core::{AppFont, text_shadow_default};
 use crate::gameplay::{BlockIcons, SelectedVoxel};
@@ -31,6 +31,10 @@ impl Default for Hotbar {
     }
 }
 
+pub const TOOLTIP_HOLD_SECS: f32 = 1.4;
+pub const TOOLTIP_FADE_SECS: f32 = 0.8;
+pub const TOOLTIP_TOTAL_SECS: f32 = TOOLTIP_HOLD_SECS + TOOLTIP_FADE_SECS;
+
 #[derive(Component)]
 pub struct HotbarSlotUi {
     pub index: usize,
@@ -41,16 +45,44 @@ pub struct HotbarSlotIcon {
     pub index: usize,
 }
 
+#[derive(Resource, Debug, Clone)]
+pub struct HotbarTooltipState {
+    pub text: String,
+    pub timer: f32,
+    pub last_slot: usize,
+    pub last_voxel: Option<Voxel>,
+    pub initialized: bool,
+}
+
+impl Default for HotbarTooltipState {
+    fn default() -> Self {
+        Self {
+            text: String::new(),
+            timer: 0.0,
+            last_slot: 0,
+            last_voxel: None,
+            initialized: false,
+        }
+    }
+}
+
+#[derive(Component)]
+pub struct HotbarTooltipText;
+
 pub struct HotbarPlugin;
 
 impl Plugin for HotbarPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Hotbar>()
+            .init_resource::<HotbarTooltipState>()
             .add_systems(
                 Startup,
                 setup_hotbar_ui.after(crate::gameplay::setup_block_icons),
             )
-            .add_systems(Update, (handle_hotbar_input, sync_hotbar_ui).chain());
+            .add_systems(
+                Update,
+                (handle_hotbar_input, sync_hotbar_ui, update_hotbar_tooltip).chain(),
+            );
     }
 }
 
@@ -91,6 +123,32 @@ fn setup_hotbar_ui(
             ZIndex(150),
         ))
         .with_children(|parent| {
+            // Held item name tooltip (Minecraft-style centered text floating above hotbar)
+            let mut tooltip_font = TextFont {
+                font_size: FontSize::Px(20.0),
+                ..default()
+            };
+            if let Some(ref font) = font_handle {
+                tooltip_font.font = font.clone();
+            }
+
+            parent.spawn((
+                HotbarTooltipText,
+                Text::new(""),
+                tooltip_font,
+                TextColor(Color::srgba(1.0, 1.0, 1.0, 0.0)),
+                text_shadow_default(),
+                Node {
+                    position_type: PositionType::Absolute,
+                    bottom: px(tray_height + 14.0),
+                    display: Display::Flex,
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+                Visibility::Hidden,
+            ));
+
             // Scaled hotbar texture (256x32 px at 3x = 768x96 px)
             parent
                 .spawn((
@@ -276,5 +334,100 @@ fn sync_hotbar_ui(
                 *visibility = Visibility::Hidden;
             }
         }
+    }
+}
+
+fn update_hotbar_tooltip(
+    time: Res<Time>,
+    hotbar: Res<Hotbar>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mouse_scroll: Res<AccumulatedMouseScroll>,
+    mut tooltip_state: ResMut<HotbarTooltipState>,
+    mut tooltip_query: Query<
+        (
+            &mut Text,
+            &mut TextColor,
+            Option<&mut TextShadow>,
+            &mut Visibility,
+        ),
+        With<HotbarTooltipText>,
+    >,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
+    inspector: Option<Res<InspectorInteraction>>,
+) {
+    let Ok((mut text, mut color, mut shadow, mut vis)) = tooltip_query.single_mut() else {
+        return;
+    };
+
+    let in_menu = menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None)
+        || inspector.is_some_and(|i| i.active);
+
+    let active_slot = hotbar.active_slot;
+    let current_voxel = hotbar.slots[active_slot];
+
+    if !tooltip_state.initialized {
+        tooltip_state.initialized = true;
+        tooltip_state.last_slot = active_slot;
+        tooltip_state.last_voxel = current_voxel;
+        *vis = Visibility::Hidden;
+        color.0 = Color::srgba(1.0, 1.0, 1.0, 0.0);
+        return;
+    }
+
+    let digit_keys = [
+        KeyCode::Digit1,
+        KeyCode::Digit2,
+        KeyCode::Digit3,
+        KeyCode::Digit4,
+        KeyCode::Digit5,
+        KeyCode::Digit6,
+        KeyCode::Digit7,
+        KeyCode::Digit8,
+    ];
+
+    let explicit_key_press = digit_keys
+        .get(active_slot)
+        .is_some_and(|k| keyboard.just_pressed(*k));
+    let explicit_scroll = !keyboard.pressed(KeyCode::KeyZ) && mouse_scroll.delta.y.abs() > 0.05;
+    let slot_changed = active_slot != tooltip_state.last_slot;
+    let voxel_changed = current_voxel != tooltip_state.last_voxel;
+
+    if (!in_menu && (explicit_key_press || explicit_scroll)) || slot_changed || voxel_changed {
+        tooltip_state.last_slot = active_slot;
+        tooltip_state.last_voxel = current_voxel;
+
+        if let Some(voxel) = current_voxel {
+            let label = voxel.label();
+            tooltip_state.text = label.to_string();
+            tooltip_state.timer = TOOLTIP_TOTAL_SECS;
+            text.0 = tooltip_state.text.clone();
+        } else {
+            tooltip_state.timer = 0.0;
+            text.0.clear();
+        }
+    }
+
+    if tooltip_state.timer > 0.0 {
+        tooltip_state.timer = (tooltip_state.timer - time.delta_secs()).max(0.0);
+    }
+
+    if in_menu || tooltip_state.timer <= 0.0 {
+        *vis = Visibility::Hidden;
+        color.0 = Color::srgba(1.0, 1.0, 1.0, 0.0);
+        if let Some(ref mut s) = shadow {
+            s.color = Color::srgba(0.0, 0.0, 0.0, 0.0);
+        }
+    } else {
+        let alpha = if tooltip_state.timer > TOOLTIP_FADE_SECS {
+            1.0
+        } else {
+            (tooltip_state.timer / TOOLTIP_FADE_SECS).clamp(0.0, 1.0)
+        };
+
+        color.0 = Color::srgba(1.0, 1.0, 1.0, alpha);
+        if let Some(ref mut s) = shadow {
+            s.color = Color::srgba(0.0, 0.0, 0.0, 0.85 * alpha);
+        }
+        *vis = Visibility::Inherited;
     }
 }

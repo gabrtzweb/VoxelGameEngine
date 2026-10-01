@@ -43,6 +43,24 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
             continue;
         }
 
+        // Dedicated 2D item icon texture override (e.g. for torches and handheld items)
+        if let Some(item_path) = voxel_item_texture_path(voxel) {
+            if Path::new(item_path).exists()
+                && let Ok(img) = image::open(item_path)
+            {
+                let rgba = img.into_rgba8();
+                let icon_image = create_item_icon_image(&rgba);
+                let handle = images.add(icon_image);
+
+                if fallback_image.is_none() {
+                    fallback_image = Some(handle.clone());
+                }
+
+                block_icons.icons.insert(voxel, handle);
+                continue;
+            }
+        }
+
         let mut raw_side = if let Some(side_name) = voxel.side_texture_name() {
             load_raw_16x16_by_name(side_name, voxel.fallback_color())
         } else {
@@ -368,6 +386,91 @@ fn apply_silhouette_outline(canvas: &mut [u8]) {
                 canvas[idx + 2] = 20;
                 canvas[idx + 3] = 160;
             }
+        }
+    }
+}
+
+fn voxel_item_texture_path(voxel: Voxel) -> Option<&'static str> {
+    match voxel {
+        Voxel::Emit_Blue_Torch => Some("assets/textures/items/emit_blue_torch_item.png"),
+        Voxel::Emit_Green_Torch => Some("assets/textures/items/emit_green_torch_item.png"),
+        Voxel::Emit_Red_Torch => Some("assets/textures/items/emit_red_torch_item.png"),
+        _ => None,
+    }
+}
+
+fn create_item_icon_image(rgba: &image::RgbaImage) -> Image {
+    let (src_w, src_h) = rgba.dimensions();
+    let mut canvas = vec![0u8; (ICON_SIZE * ICON_SIZE * 4) as usize];
+
+    for y in 0..ICON_SIZE {
+        let sy = ((y as f32 / ICON_SIZE as f32) * src_h as f32).floor() as u32;
+        let sy = sy.min(src_h - 1);
+        for x in 0..ICON_SIZE {
+            let sx = ((x as f32 / ICON_SIZE as f32) * src_w as f32).floor() as u32;
+            let sx = sx.min(src_w - 1);
+
+            let pixel = rgba.get_pixel(sx, sy);
+            let out_idx = ((y * ICON_SIZE + x) * 4) as usize;
+            canvas[out_idx] = pixel[0];
+            canvas[out_idx + 1] = pixel[1];
+            canvas[out_idx + 2] = pixel[2];
+            canvas[out_idx + 3] = pixel[3];
+        }
+    }
+
+    let mut image = Image::new_fill(
+        Extent3d {
+            width: ICON_SIZE,
+            height: ICON_SIZE,
+            depth_or_array_layers: 1,
+        },
+        TextureDimension::D2,
+        &canvas,
+        TextureFormat::Rgba8UnormSrgb,
+        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+    );
+
+    image.sampler = ImageSampler::nearest();
+    image
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_torch_item_textures_exist() {
+        let torches = [
+            (Voxel::Emit_Blue_Torch, "emit_blue_torch_item.png"),
+            (Voxel::Emit_Green_Torch, "emit_green_torch_item.png"),
+            (Voxel::Emit_Red_Torch, "emit_red_torch_item.png"),
+        ];
+
+        for (voxel, file_name) in torches {
+            let path_opt = voxel_item_texture_path(voxel);
+            assert!(
+                path_opt.is_some(),
+                "Expected item texture path for {voxel:?}"
+            );
+            let path = path_opt.unwrap();
+            assert!(
+                path.ends_with(file_name),
+                "Expected path to end with {file_name}, got {path}"
+            );
+            assert!(
+                Path::new(path).exists(),
+                "Torch item texture file must exist on disk: {path}"
+            );
+
+            // Verify it can be opened as an RGBA image
+            let img = image::open(path).expect("Failed to open torch item texture");
+            assert_eq!(img.width(), 16);
+            assert_eq!(img.height(), 16);
+
+            let icon_img = create_item_icon_image(&img.into_rgba8());
+            assert_eq!(icon_img.width(), ICON_SIZE);
+            assert_eq!(icon_img.height(), ICON_SIZE);
         }
     }
 }

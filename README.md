@@ -18,6 +18,7 @@ The project focuses on a fully editable procedural voxel world with 1.0 m³ bloc
 - Dynamic adaptive UI scaling: responsive resolution-relative `UiScale` system (`AdaptiveUiPlugin`), automatically scaling HUD, minimap, hotbar, and inventory elements proportionally across all screen sizes and resolutions.
 - Restructured two-column menus with pixel-art buttons: Pause and Settings menus redesigned into clean two-column floating layouts using authentic textured container buttons (`button.png`, `small_button.png`).
 - Post-process menu stabilization: automatic muting of volumetric god rays and celestial light flares during active menus, eliminating background lighting flicker against depth-of-field blur.
+- Item identification tooltips: vanilla Minecraft-style hotbar item name display centered above the hotbar on slot selection with smooth fade-out, and responsive floating hover tooltips across all Creative and Personal inventory slots.
 
 The long-term goal is to build a performant procedural voxel game with large-world streaming, runtime terrain editing, configurable generation, multiple gameplay modes, dynamic fluids and extensive development tooling.
 
