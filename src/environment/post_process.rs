@@ -28,7 +28,7 @@ use crate::{
         celestial::{CELESTIAL_DISTANCE, calculate_sun_direction},
         time::EnvironmentState,
     },
-    player::PlayerCamera,
+    player::{InspectorInteraction, PlayerCamera},
 };
 
 pub const POST_PROCESS_SHADER_PATH: &str = "shaders/post_process.wgsl";
@@ -360,6 +360,7 @@ fn post_process_system(
 pub fn update_post_process_light_position(
     state: Res<EnvironmentState>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
+    inspector: Option<Res<InspectorInteraction>>,
     camera_query: Query<(&Camera, &GlobalTransform), (With<Camera3d>, With<PlayerCamera>)>,
     mut settings_query: Query<&mut PostProcessSettings, (With<Camera3d>, With<PlayerCamera>)>,
 ) {
@@ -370,8 +371,10 @@ pub fn update_post_process_light_position(
         return;
     };
 
-    // If game is in a menu (pause, settings, inventory, etc.), disable sun rays to prevent post-process flicker with menu blur
-    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+    // If game is in a menu or the inspector is open, disable sun rays to prevent post-process flicker with UI
+    let in_menu = menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None);
+    let inspector_active = inspector.is_some_and(|i| i.active);
+    if in_menu || inspector_active {
         settings.light_visible = 0.0;
         settings.exposure = 0.0;
         return;

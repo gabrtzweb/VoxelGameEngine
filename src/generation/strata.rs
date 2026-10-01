@@ -75,9 +75,9 @@ impl StrataGenerator {
         }
 
         // 3. Subterranean stone:
-        // - Highlands biome uniquely features Slate and Cobbleslate
-        // - Standard biomes switch from Stone to Blackstone halfway down the world (mid_crust_y)
-        if biome.biome_type == crate::generation::BiomeType::Highlands {
+        // - Shale Barrens biome uniquely features Slate and Cobbleslate
+        // - Standard biomes switch from Stone to Slate halfway down the world (mid_crust_y)
+        if biome.biome_type == crate::generation::BiomeType::ShaleBarrens {
             let cobbleslate_noise =
                 gradient_noise_3d(bx * 0.20, by * 0.20, bz * 0.20, seed.wrapping_add(88_222));
             if cobbleslate_noise > 0.35 {

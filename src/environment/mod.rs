@@ -10,6 +10,7 @@ use bevy::prelude::*;
 use atmosphere::{
     DAY_FILL_ILLUMINANCE, DAY_SUN_ILLUMINANCE, NIGHT_MOON_ILLUMINANCE, sample_ambient_brightness,
     sample_ambient_color, sample_sky_color, sync_fog_distance, update_atmosphere,
+    update_biome_atmosphere_transition, BiomeAtmosphereState,
 };
 use time::{advance_environment_clock, handle_environment_input};
 
@@ -27,6 +28,8 @@ impl Plugin for EnvironmentPlugin {
         let initial_brightness = sample_ambient_brightness(default_state.time_of_day);
 
         app.insert_resource(default_state)
+            .init_resource::<BiomeAtmosphereState>()
+            .register_type::<BiomeAtmosphereState>()
             .add_plugins(post_process::PostProcessPlugin)
             .insert_resource(GlobalAmbientLight {
                 color: initial_ambient,
@@ -47,6 +50,7 @@ impl Plugin for EnvironmentPlugin {
                 (
                     handle_environment_input,
                     advance_environment_clock,
+                    update_biome_atmosphere_transition,
                     update_atmosphere,
                     sync_fog_distance,
                     sync_celestial_system,

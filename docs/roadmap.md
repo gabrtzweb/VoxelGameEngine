@@ -639,37 +639,46 @@ A focused overhaul and expansion of procedural world generation, terrain topogra
     - **Vanilla Minecraft Hotbar Tooltip**: Centered item name display directly above the hotbar tray whenever a slot containing an item is selected (via 1-8 keys or mouse wheel), staying opaque for 1.4s before smoothly fading away over 0.8s; resets on slot change, instantly hides on empty hand / slot clearing (Q), and mutes during active menus.
     - **Floating Inventory Hover Tooltip**: Dynamic dark-slate tooltip card following the cursor when hovering over any slot containing an item in the Creative Palette, Personal Storage, or inventory hotbar mirror row, equipped with viewport edge flip/clamping and pixel typography.
 
-- [ ] **Stage 11.2: Surface Biome Catalog (Terrain & Surface Palettes)**:
-  *Note: Only existing engine blocks are utilized. Documented in `docs/world_definition.md` to replace the 14 original legacy biomes across 5 distinct geographic zones.*
+- [x] **Stage 11.2: Complete 48-Biome System Overhaul (Terrain & Surface Palettes)**:
+  *Replaced the legacy 14-biome system with the complete 48-biome architecture defined in `docs/world_definition.md`.*
 
-  - **Surface Biomes**:
-    - *Forests & Woodlands*: Ancient Weald, Boreal Taiga, Birch Copse
-    - *Plains & Open Lands*: Steppe, Permafrost Steppe, Snowy Tundra, Moorland, Heath
-    - *Wetlands*: Peat Bog, Marshland
-    - *Arid & Warm Lands*: Arid Scrubland, Dune Desert, Badlands
-  - **Mountain Biomes**:
-    - Karst Peaks, Scree Slopes, Shale Barrens, Volcanic Fields, Glacial Peaks, Alpine Tundra, Jagged Crags, Frozen Caldera
-  - **Coastal Biomes**:
-    - Beach, Shingle Beach, Volcanic Coast, Chalk Cliffs, Tidal Mudflats, Coastal Crags, Brackish Estuary, Windswept Dunes
-  - **Aquatic Biomes**:
-    - River, Frozen River, Lake, Thermal Lake, Temperate Ocean, Deep Temperate Ocean, Cold Ocean, Deep Cold Ocean, Warm Ocean, Deep Warm Ocean, Frozen Ocean, Abyssal Trench
-  - **Climate & Palette Distribution**:
-    - To be mapped against temperature, moisture, and continentalness curves using only the active 244-block catalog.
+  - **Biome Categories (8 Biomes per Category, 48 in Total)**:
+    - *Forests & Woodlands*: Ancient Weald, Autumnal Forest, Birch Copse, Blossom Grove, Boreal Taiga, Deadwood Thicket, Tropical Rainforest, Yew Grove
+    - *Plains & Open Lands*: Acacia Savanna, Heath, Moorland, Outback Scrubland, Permafrost Steppe, Snowy Tundra, Steppe, Volcanic Plains
+    - *Wetlands & Swamps*: Cypress Swamp, Fungal Bog, Mangrove Swamp, Marshland, Peat Bog, Sludge Wastes, Tar Pits, Weeping Bayou
+    - *Arid & Warm Lands*: Badlands, Dune Desert, Oasis, Painted Desert, Rocky Scrubland, Scorched Wastes, White Desert, Windswept Canyons
+    - *Mountain Biomes*: Alpine Tundra, Frozen Caldera, Glacial Peaks, Jagged Crags, Karst Peaks, Scree Slopes, Shale Barrens, Volcanic Fields
+    - *Coastal & Aquatic Biomes*: Abyssal Trench, Beach, Brackish Estuary, Chalk Cliffs, Coastal Crags, Deep Ocean, Temperate Ocean, Tidal Mudflats
+  - **3D Climate Space Classification**:
+    - Organic distribution across Continentalness, Temperature, and Humidity in `ClimateGenerator::classify_biome`.
+    - Fully unit-tested: verifies complete coverage where all 48 biomes are reached without gaps or orphaned variants.
+  - **Surface Generation & Dual-Material Dithering**:
+    - Complete surface block, subsoil strata, and primary rock mapping according to the Biome Generation Anatomy.
+    - Organic multi-frequency 2D noise dithering for dual-surface biomes (Mulch/Grass, Ash/Black Sand, Moss/Mud, Snowy Peat/Snowy Grass, Red Sand/Sand, Slate/Cobbled Slate, Basalt/Scoria, etc.).
+    - Distinct aquatic floor materials for underwater terrain (Obsidian/Pitchstone for Abyssal Trench, White Sand for Temperate Ocean, Silt/Mud for Brackish Estuary, Gravel/Andesite for Deep Ocean).
+    - High-altitude dynamic snowlines for non-volcanic/cold alpine peaks.
+  - **Preserved Core Subterranean Systems**:
+    - Cave generator, subterranean 3D noise, and underground structures remain 100% intact and untouched. Tree generation deferred to Phase 12.
 
-- [ ] **Stage 11.3: Multi-Parameter Climate Noise & Spline Mapping**:
-  - **Multi-Noise Climate Coordinates**: Continuous multi-octave 2D noise mapping Continentalness, Temperature, and Humidity with expanded parameter curves.
-  - **Smooth Spline / Voronoi Climate Blending**: Multi-octave jittered cellular partitioning ensuring biomes transition naturally without artificial geometric borders.
+- [x] **Stage 11.3: Multi-Parameter Climate Noise & Spline Mapping**:
+  - **Multi-Noise Climate Coordinates**: Continuous multi-octave 2D noise mapping Continentalness, Temperature, and Humidity with calibrated parameter curves.
+  - **Sensible Coastal & Mountain Biome Allocation**: High-energy cliff biomes (`ChalkCliffs`, `CoastalCrags`) are assigned specifically to high-relief coastal margins rather than dominating flat coastlines, preserving natural sandy `Beach` and wetland transitions.
+  - **Biome-Driven Elevation & Amplitude**: Integrated `base_height_offset` and `amplitude_multiplier` directly into `natural_height_at`, sculpting elevated plateaus for chalk cliffs, deep abyssal trenches, and towering mountain ranges.
+  - **Rolling Hills & Continental Spline**: Added multi-octave rolling hills noise and expanded the continental elevation spline, creating varied contours and meadows instead of flat, stepped planes.
 
-- [ ] **Stage 11.4: Natural Biome Transitions & Edge Dithering**:
-  - **Surface Block Dithering**: Expand organic block transitions (similar to Grass vs. SnowyGrass and Sand vs. Grass) across all adjacent biome borders (e.g. Mud fingers blending into Moor grass, RedSand drifts meeting Sandstone).
-  - **Height & Slope Blending**: Natural elevation interpolation preventing sudden cliff cuts across biome boundaries.
+- [x] **Stage 11.4: Natural Biome Transitions, Edge Dithering & Slope Rock Exposure**:
+  - **Slope-Based Dynamic Rock Exposure**: Evaluates local terrain gradient (`is_cliff`). Steep cliff drops and sheer vertical walls expose raw cliff stone (`Rock_Chalk` on chalk cliffs, `Rock_Porphyry` on coastal crags, `Rock_Karst` on karst spires, `Rock_Slate` on shale ridges, banded `Rock_Terracotta`/`Rock_Red_Sandstone` on badlands).
+  - **Lush Flat Tops & Outcrop Dithering**: Flatter clifftops and plateau summits retain lush soils (`Soil_Grass`), while coastal crags blend grass, gravel, and cobbled porphyry stones rather than rendering as monolithic stone sheets.
+  - **Organic Edge Dithering**: Multi-frequency noise dithering smoothly blends materials across adjacent biome borders.
 
-- [ ] **Stage 11.5: Atmospheric Biome Weather, Volumetric Fog & Environment Grading**:
-  - **Biome-Specific Ambient Palettes**:
-    - Low-altitude eerie mist in wetlands and mires.
-    - Crisp high-exposure distance fog on alpine and glacial heights.
-    - Dark ash haze in volcanic wastelands.
-    - Soft warm golden lighting across temperate plains and moors.
+- [x] **Stage 11.5: Atmospheric Biome Weather, Volumetric Fog & Environment Grading**:
+  - **Real-Time Biome Atmosphere Grading**: Integrated `current_biome` tracking into `PlayerEnvironmentStatus` and applied biome atmosphere grading in `src/environment/atmosphere.rs`.
+  - **Biome-Specific Ambient Palettes & Distance Fog**:
+    - Low-altitude eerie mist and murky green tint in wetlands and swamps (`CypressSwamp`, `FungalBog`, `PeatBog`, `Marshland`, etc.).
+    - Dark ash haze and ember ambient tones in volcanic fields and deadwood thickets.
+    - Crisp, high-exposure distance fog and bright cyan-white lighting on alpine and glacial heights (`GlacialPeaks`, `AlpineTundra`, `FrozenCaldera`).
+    - Warm golden heat haze across arid deserts and canyons (`DuneDesert`, `Badlands`, `WindsweptCanyons`).
+    - Deep maritime horizon haze across ocean waters and coastal margins.
 
 ---
 

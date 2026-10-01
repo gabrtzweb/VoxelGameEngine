@@ -124,14 +124,14 @@ pub fn handle_terrain_generator_reload(
     // 1. Despawn all in-flight generation tasks
     for (entity, _) in &generation_tasks {
         if let Ok(mut entity_cmds) = commands.get_entity(entity) {
-            entity_cmds.despawn();
+            entity_cmds.try_despawn();
         }
     }
 
     // 2. Despawn all in-flight meshing tasks
     for (entity, _) in &meshing_tasks {
         if let Ok(mut entity_cmds) = commands.get_entity(entity) {
-            entity_cmds.despawn();
+            entity_cmds.try_despawn();
         }
     }
 

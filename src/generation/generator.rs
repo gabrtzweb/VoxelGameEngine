@@ -15,6 +15,7 @@ pub struct TerrainColumn {
     pub water_level: Option<i32>,
     pub biome: BiomeType,
     pub is_beach: bool,
+    pub is_cliff: bool,
     pub is_underground_river: bool,
     pub climate: ClimateSample,
     pub surface_shape: BlockShape,
@@ -26,14 +27,15 @@ impl Default for TerrainColumn {
         Self {
             terrain_height: 0,
             water_level: None,
-            biome: BiomeType::Plains,
+            biome: BiomeType::Steppe,
             is_beach: false,
+            is_cliff: false,
             is_underground_river: false,
             climate: ClimateSample {
                 continentalness: 0.0,
                 temperature: 0.0,
                 humidity: 0.0,
-                biome: BiomeType::Plains,
+                biome: BiomeType::Steppe,
             },
             surface_shape: BlockShape::Full,
             shape_orientation: 0,
@@ -61,6 +63,10 @@ pub struct TerrainGenerator {
     pub river_frequency: f32,
     pub river_width: f32,
 
+    // Mountain ridges and rolling hills
+    pub mountain_ridge_height: f32,
+    pub rolling_hills_amplitude: f32,
+
     // Advanced Phase 6 procedural systems
     pub climate: ClimateGenerator,
     pub caves: CaveGenerator,
@@ -79,14 +85,18 @@ impl Default for TerrainGenerator {
             base_height: 16.0,
 
             // Broad continental landforms
-            macro_amplitude: 8.0,
-            macro_frequency: 0.008,
+            macro_amplitude: 14.0,
+            macro_frequency: 0.0260,
 
             // Local terrain relief
-            detail_amplitude: 3.0,
-            detail_frequency: 0.038,
+            detail_amplitude: 5.4,
+            detail_frequency: 0.032,
             detail_octaves: 3,
             persistence: 0.5,
+
+            // Mountain ridges and rolling hills
+            mountain_ridge_height: 54.0,
+            rolling_hills_amplitude: 5.0,
 
             // Sea level in voxels
             sea_level: 12,
@@ -404,7 +414,7 @@ impl TerrainGenerator {
         let sample_x = logical_block_sample_position(logical_x);
         let sample_z = logical_block_sample_position(logical_z);
 
-        let mut climate = self.climate.sample(sample_x, sample_z, self.seed);
+        let mut climate = self.climate.sample_dithered(sample_x, sample_z, self.seed);
         let sea_level = self.effective_sea_level();
 
         let mut raw_height = self.natural_height_at(world_x as f32, world_z as f32, &climate);
@@ -422,7 +432,9 @@ impl TerrainGenerator {
                 let river_bed = (sea_level - 4) as f32;
                 let target_height = lerp(raw_height, river_bed, (river_factor * 1.25).min(1.0));
                 raw_height = raw_height.min(target_height);
-                climate.biome = BiomeType::River;
+                if climate.continentalness < 0.15 {
+                    climate.biome = BiomeType::BrackishEstuary;
+                }
             }
         }
 
@@ -452,6 +464,7 @@ impl TerrainGenerator {
         };
 
         let is_beach = final_biome == BiomeType::Beach;
+        let mut is_cliff = false;
 
         // Transitions on dry land above water level (terrain at or below sea_level remains strictly full blocks)
         if water_level.is_none() && terrain_height >= sea_level + 1 {
@@ -475,6 +488,8 @@ impl TerrainGenerator {
             let d_north = h_north - terrain_height;
 
             let has_cliff = d_east <= -2 || d_west <= -2 || d_south <= -2 || d_north <= -2;
+            let max_delta = d_east.abs().max(d_west.abs()).max(d_south.abs()).max(d_north.abs());
+            is_cliff = has_cliff || max_delta >= 2;
 
             // Retain solid blocks on sections of higher terrain for blocky cliffs and stepped terraces
             let edge_noise = crate::core::noise::gradient_noise_2d(
@@ -534,8 +549,9 @@ impl TerrainGenerator {
             water_level,
             biome: final_biome,
             is_beach,
+            is_cliff,
             is_underground_river,
-            climate: self.climate.sample(
+            climate: self.climate.sample_dithered(
                 logical_block_sample_position(world_x.div_euclid(LOGICAL_BLOCK_VOXELS)),
                 logical_block_sample_position(world_z.div_euclid(LOGICAL_BLOCK_VOXELS)),
                 self.seed,
@@ -571,9 +587,22 @@ impl TerrainGenerator {
         sea_level: i32,
         climate: &ClimateSample,
     ) -> bool {
+        // Exclude sheer cliffs, ocean trenches, rocky crags, tidal flats, and frozen/karst mountain peaks
         if matches!(
             biome,
-            BiomeType::SnowyTundra | BiomeType::Highlands | BiomeType::DeepOcean
+            BiomeType::ChalkCliffs
+                | BiomeType::CoastalCrags
+                | BiomeType::AbyssalTrench
+                | BiomeType::DeepOcean
+                | BiomeType::TemperateOcean
+                | BiomeType::BrackishEstuary
+                | BiomeType::TidalMudflats
+                | BiomeType::GlacialPeaks
+                | BiomeType::FrozenCaldera
+                | BiomeType::KarstPeaks
+                | BiomeType::JaggedCrags
+                | BiomeType::ShaleBarrens
+                | BiomeType::VolcanicFields
         ) {
             return false;
         }
@@ -595,28 +624,104 @@ impl TerrainGenerator {
         world_z: i32,
         column: TerrainColumn,
     ) -> Voxel {
-        // Submerged terrain (underwater) is NEVER Grass or SnowyGrass!
+        let dither_noise = crate::core::noise::gradient_noise_2d(
+            world_x as f32 * 0.15,
+            world_z as f32 * 0.15,
+            self.seed.wrapping_add(45_678),
+        );
+
+        // 1. Submerged terrain (underwater) floor materials
         let is_submerged = column.water_level.is_some_and(|wl| world_y <= wl);
         if is_submerged {
-            return Voxel::Soil_Sand;
+            return match column.biome {
+                BiomeType::AbyssalTrench => {
+                    if dither_noise > 0.0 {
+                        Voxel::Rock_Obsidian
+                    } else {
+                        Voxel::Rock_Pitchstone
+                    }
+                }
+                BiomeType::DeepOcean => {
+                    if dither_noise > 0.05 {
+                        Voxel::Soil_Gravel
+                    } else {
+                        Voxel::Rock_Andesite
+                    }
+                }
+                BiomeType::TemperateOcean => Voxel::Soil_White_Sand,
+                BiomeType::BrackishEstuary => {
+                    if dither_noise > 0.0 {
+                        Voxel::Soil_Silt
+                    } else {
+                        Voxel::Soil_Mud
+                    }
+                }
+                BiomeType::TidalMudflats => {
+                    if dither_noise > 0.0 {
+                        Voxel::Soil_Packed_Mud
+                    } else {
+                        Voxel::Soil_Clay
+                    }
+                }
+                BiomeType::CypressSwamp
+                | BiomeType::MangroveSwamp
+                | BiomeType::Marshland
+                | BiomeType::FungalBog
+                | BiomeType::WeepingBayou => Voxel::Soil_Mud,
+                BiomeType::TarPits => Voxel::Soil_Black_Sand,
+                BiomeType::SludgeWastes => Voxel::Soil_Scorched_Sand,
+                BiomeType::VolcanicPlains | BiomeType::VolcanicFields => Voxel::Rock_Basalt,
+                BiomeType::FrozenCaldera => Voxel::Frost_Black_Ice,
+                BiomeType::Beach => {
+                    if column.climate.temperature > 0.15 {
+                        Voxel::Soil_White_Sand
+                    } else {
+                        Voxel::Soil_Sand
+                    }
+                }
+                _ => {
+                    if column.climate.temperature < -0.15 {
+                        Voxel::Soil_Gravel
+                    } else {
+                        Voxel::Soil_Sand
+                    }
+                }
+            };
         }
 
+        // 2. Coastal Beach Surface
         if column.is_beach {
-            return Voxel::Soil_Sand;
+            let beach_warmth = column.climate.temperature + dither_noise * 0.10;
+            return if beach_warmth > 0.15 {
+                Voxel::Soil_White_Sand
+            } else {
+                Voxel::Soil_Sand
+            };
         }
 
-        // High alpine elevation snowline: mountains above y >= 48 receive snowcaps
-        if column.biome != BiomeType::Desert
-            && column.biome != BiomeType::Ocean
-            && column.biome != BiomeType::DeepOcean
-            && column.biome != BiomeType::River
-        {
+        // 3. High alpine elevation snowline: cold/temperate mountains above y >= 50 receive snowcaps
+        let is_warm_or_volcanic = matches!(
+            column.biome,
+            BiomeType::ScorchedWastes
+                | BiomeType::VolcanicFields
+                | BiomeType::VolcanicPlains
+                | BiomeType::Badlands
+                | BiomeType::DuneDesert
+                | BiomeType::WhiteDesert
+                | BiomeType::PaintedDesert
+                | BiomeType::TropicalRainforest
+                | BiomeType::Oasis
+                | BiomeType::TarPits
+                | BiomeType::SludgeWastes
+        );
+
+        if !is_warm_or_volcanic && column.climate.temperature < 0.10 {
             let snowline_jitter = crate::core::noise::gradient_noise_2d(
                 world_x as f32 * 0.05,
                 world_z as f32 * 0.05,
                 self.seed.wrapping_add(91_111),
             ) * 3.0;
-            let snowline = 48.0 + snowline_jitter;
+            let snowline = 50.0 + snowline_jitter;
 
             if world_y as f32 >= snowline {
                 let slope_noise = crate::core::noise::gradient_noise_2d(
@@ -624,78 +729,232 @@ impl TerrainGenerator {
                     world_z as f32 * 0.15,
                     self.seed.wrapping_add(82_222),
                 );
-                if world_y as f32 >= snowline + 8.0 && slope_noise > 0.40 {
-                    return Voxel::Rock_Stone;
+                if world_y as f32 >= snowline + 8.0 && slope_noise > 0.35 {
+                    return column.biome.config().primary_stone;
                 }
                 return Voxel::Soil_Snow;
             }
         }
 
-        // 1. Organic Frigid Transition (Snowy Grass <-> Grass):
-        // Nominal Snowy Tundra threshold is temperature < -0.20.
-        // Multi-frequency 2D noise blends snow patches and grass tongues smoothly across the transition.
-        let snow_noise_macro = crate::core::noise::gradient_noise_2d(
-            world_x as f32 * 0.08,
-            world_z as f32 * 0.08,
-            self.seed.wrapping_add(14_337),
-        );
-        let snow_noise_micro = crate::core::noise::gradient_noise_2d(
-            world_x as f32 * 0.25,
-            world_z as f32 * 0.25,
-            self.seed.wrapping_add(28_991),
-        );
-        let snow_jitter = snow_noise_macro * 0.045 + snow_noise_micro * 0.025;
-        let is_snowy = column.climate.temperature + snow_jitter < -0.20;
+        // 4. Biome Surface Block Selection with organic dual-surface dithering
+        match column.biome {
+            // Forests & Woodlands
+            BiomeType::AncientWeald => {
+                if dither_noise > 0.05 {
+                    Voxel::Soil_Mulch
+                } else {
+                    Voxel::Soil_Grass
+                }
+            }
+            BiomeType::AutumnalForest => Voxel::Soil_Silt_Grass,
+            BiomeType::BirchCopse => Voxel::Soil_Grass,
+            BiomeType::BlossomGrove => Voxel::Soil_Grass,
+            BiomeType::BorealTaiga => {
+                if dither_noise > 0.0 {
+                    Voxel::Soil_Snowy_Peat
+                } else {
+                    Voxel::Soil_Snowy_Grass
+                }
+            }
+            BiomeType::DeadwoodThicket => {
+                if dither_noise > 0.0 {
+                    Voxel::Soil_Ash
+                } else {
+                    Voxel::Soil_Black_Sand
+                }
+            }
+            BiomeType::TropicalRainforest => {
+                if dither_noise > -0.10 {
+                    Voxel::Soil_Moss
+                } else {
+                    Voxel::Soil_Mud
+                }
+            }
+            BiomeType::YewGrove => Voxel::Soil_Peat_Mulch,
 
-        if is_snowy {
-            return Voxel::Soil_Snowy_Grass;
-        }
+            // Plains & Open Lands
+            BiomeType::AcaciaSavanna => {
+                if dither_noise > 0.15 {
+                    Voxel::Soil_Packed_Dirt
+                } else {
+                    Voxel::Soil_Grass
+                }
+            }
+            BiomeType::Heath => Voxel::Soil_Silt_Grass,
+            BiomeType::Moorland => Voxel::Soil_Peat_Grass,
+            BiomeType::OutbackScrubland => {
+                if dither_noise > 0.0 {
+                    Voxel::Soil_Scorched_Red_Sand
+                } else {
+                    Voxel::Soil_Packed_Mud
+                }
+            }
+            BiomeType::PermafrostSteppe => Voxel::Soil_Snowy_Silt,
+            BiomeType::SnowyTundra => Voxel::Soil_Snowy_Grass,
+            BiomeType::Steppe => Voxel::Soil_Grass,
+            BiomeType::VolcanicPlains => {
+                if dither_noise > 0.0 {
+                    Voxel::Soil_Ash
+                } else {
+                    Voxel::Soil_Scorched_Black_Sand
+                }
+            }
 
-        // 2. Organic Arid Transition (Sand <-> Grass for Desert):
-        // Nominal Desert is temperature > 0.20 && humidity < -0.05.
-        // We compute distance to the desert boundary and blend with organic noise so sand dunes taper naturally.
-        let temp_dist = column.climate.temperature - 0.20;
-        let hum_dist = -0.05 - column.climate.humidity;
-        let desert_margin = temp_dist.min(hum_dist);
+            // Wetlands & Swamps
+            BiomeType::CypressSwamp => Voxel::Soil_Mud,
+            BiomeType::FungalBog => Voxel::Soil_Red_Moss,
+            BiomeType::MangroveSwamp => Voxel::Soil_Mud,
+            BiomeType::Marshland => {
+                if dither_noise > 0.10 {
+                    Voxel::Soil_Packed_Mud
+                } else {
+                    Voxel::Soil_Mud
+                }
+            }
+            BiomeType::PeatBog => Voxel::Soil_Peat_Grass,
+            BiomeType::SludgeWastes => Voxel::Soil_Scorched_Sand,
+            BiomeType::TarPits => Voxel::Soil_Black_Sand,
+            BiomeType::WeepingBayou => Voxel::Soil_Silt_Mulch,
 
-        let desert_noise_macro = crate::core::noise::gradient_noise_2d(
-            world_x as f32 * 0.09,
-            world_z as f32 * 0.09,
-            self.seed.wrapping_add(33_881),
-        );
-        let desert_noise_micro = crate::core::noise::gradient_noise_2d(
-            world_x as f32 * 0.26,
-            world_z as f32 * 0.26,
-            self.seed.wrapping_add(51_223),
-        );
-        let desert_jitter = desert_noise_macro * 0.035 + desert_noise_micro * 0.020;
-        let is_desert = (desert_margin + desert_jitter) > 0.0;
+            BiomeType::Badlands => {
+                if column.is_cliff {
+                    if (world_y.rem_euclid(8)) < 3 {
+                        Voxel::Rock_Terracotta
+                    } else {
+                        Voxel::Rock_Red_Sandstone
+                    }
+                } else {
+                    Voxel::Soil_Red_Sand
+                }
+            },
+            BiomeType::DuneDesert => Voxel::Soil_Sand,
+            BiomeType::Oasis => Voxel::Soil_Grass,
+            BiomeType::PaintedDesert => {
+                if dither_noise > 0.0 {
+                    Voxel::Soil_White_Sand
+                } else {
+                    Voxel::Soil_Sand
+                }
+            }
+            BiomeType::RockyScrubland => {
+                if dither_noise > 0.05 {
+                    Voxel::Soil_Packed_Dirt
+                } else {
+                    Voxel::Soil_Sand
+                }
+            }
+            BiomeType::ScorchedWastes => Voxel::Soil_Scorched_Sand,
+            BiomeType::WhiteDesert => Voxel::Soil_White_Sand,
+            BiomeType::WindsweptCanyons => Voxel::Soil_Sand,
 
-        if is_desert
-            || column.biome == BiomeType::Beach
-            || column.biome == BiomeType::Ocean
-            || column.biome == BiomeType::DeepOcean
-            || column.biome == BiomeType::River
-        {
-            return Voxel::Soil_Sand;
-        }
+            // Mountain Biomes
+            BiomeType::AlpineTundra => {
+                if dither_noise > 0.30 {
+                    Voxel::Rock_Diorite
+                } else {
+                    Voxel::Soil_Snowy_Grass
+                }
+            }
+            BiomeType::FrozenCaldera => Voxel::Frost_Black_Ice,
+            BiomeType::GlacialPeaks => Voxel::Soil_Snow,
+            BiomeType::JaggedCrags => {
+                if column.is_cliff {
+                    if dither_noise > 0.0 {
+                        Voxel::Rock_Gabbro
+                    } else {
+                        Voxel::Rock_Andesite
+                    }
+                } else if dither_noise > 0.25 {
+                    Voxel::Rock_Gabbro
+                } else {
+                    Voxel::Soil_Grass
+                }
+            }
+            BiomeType::KarstPeaks => {
+                if column.is_cliff || dither_noise > 0.15 {
+                    Voxel::Rock_Karst
+                } else {
+                    Voxel::Soil_Grass
+                }
+            }
+            BiomeType::ScreeSlopes => Voxel::Soil_Gravel,
+            BiomeType::ShaleBarrens => {
+                if column.is_cliff {
+                    if dither_noise > 0.15 {
+                        Voxel::Rock_Slate
+                    } else {
+                        Voxel::Cobbled_Slate
+                    }
+                } else if dither_noise > 0.20 {
+                    Voxel::Rock_Slate
+                } else {
+                    Voxel::Soil_Silt_Grass
+                }
+            }
+            BiomeType::VolcanicFields => {
+                if dither_noise > 0.05 {
+                    Voxel::Rock_Basalt
+                } else {
+                    Voxel::Rock_Scoria
+                }
+            }
 
-        if column.biome == BiomeType::Highlands {
-            let slate_noise = crate::core::noise::gradient_noise_2d(
-                world_x as f32 * 0.15,
-                world_z as f32 * 0.15,
-                self.seed.wrapping_add(45_678),
-            );
-            if slate_noise > 0.05 {
-                return Voxel::Rock_Slate;
-            } else if slate_noise > -0.25 {
-                return Voxel::Cobbled_Slate;
-            } else {
-                return Voxel::Soil_Grass;
+            // Coastal & Aquatic Biomes
+            BiomeType::AbyssalTrench => {
+                if dither_noise > 0.0 {
+                    Voxel::Rock_Obsidian
+                } else {
+                    Voxel::Rock_Pitchstone
+                }
+            }
+            BiomeType::Beach => {
+                if column.climate.temperature > 0.15 {
+                    Voxel::Soil_White_Sand
+                } else {
+                    Voxel::Soil_Sand
+                }
+            }
+            BiomeType::BrackishEstuary => {
+                if dither_noise > 0.0 {
+                    Voxel::Soil_Silt
+                } else {
+                    Voxel::Soil_Mud
+                }
+            }
+            BiomeType::ChalkCliffs => {
+                if column.is_cliff {
+                    Voxel::Rock_Chalk
+                } else {
+                    Voxel::Soil_Grass
+                }
+            }
+            BiomeType::CoastalCrags => {
+                if column.is_cliff {
+                    Voxel::Rock_Porphyry
+                } else if dither_noise > 0.10 {
+                    Voxel::Soil_Grass
+                } else if dither_noise > -0.15 {
+                    Voxel::Soil_Gravel
+                } else {
+                    Voxel::Cobbled_Porphyry
+                }
+            }
+            BiomeType::DeepOcean => {
+                if dither_noise > 0.0 {
+                    Voxel::Soil_Gravel
+                } else {
+                    Voxel::Rock_Andesite
+                }
+            }
+            BiomeType::TemperateOcean => Voxel::Soil_White_Sand,
+            BiomeType::TidalMudflats => {
+                if dither_noise > 0.0 {
+                    Voxel::Soil_Packed_Mud
+                } else {
+                    Voxel::Soil_Clay
+                }
             }
         }
-
-        Voxel::Soil_Grass
     }
 
     fn voxel_at_sampled(
@@ -761,13 +1020,32 @@ impl TerrainGenerator {
         let biome_cfg = column.biome.config();
 
         if column.is_beach && logical_depth <= 3 {
-            return Voxel::Soil_Sand;
+            return if column.climate.temperature > 0.15 {
+                Voxel::Soil_White_Sand
+            } else {
+                Voxel::Soil_Sand
+            };
         }
 
         if logical_depth <= 2 {
             let surface = self.surface_material_at(world_x, column.terrain_height, world_z, column);
-            if surface == Voxel::Soil_Sand {
-                return Voxel::Soil_Sand;
+            if matches!(
+                surface,
+                Voxel::Soil_Sand
+                    | Voxel::Soil_Red_Sand
+                    | Voxel::Soil_White_Sand
+                    | Voxel::Soil_Black_Sand
+                    | Voxel::Soil_Scorched_Sand
+                    | Voxel::Soil_Scorched_Red_Sand
+                    | Voxel::Soil_Scorched_Black_Sand
+                    | Voxel::Soil_Gravel
+                    | Voxel::Soil_Mud
+                    | Voxel::Soil_Silt
+                    | Voxel::Soil_Ash
+                    | Voxel::Soil_Snow
+                    | Voxel::Frost_Black_Ice
+            ) {
+                return surface;
             }
         }
 
@@ -823,16 +1101,16 @@ impl TerrainGenerator {
 
     pub fn continental_elevation(continentalness: f32) -> f32 {
         const SPLINE_NODES: [(f32, f32); 10] = [
-            (-1.00, -32.0), // Deep abyssal trench
-            (-0.55, -24.0), // Deep ocean basin
-            (-0.25, -16.0), // Open ocean floor
-            (-0.08, -7.0),  // Continental shelf / shallow coastal waters
+            (-1.00, -36.0), // Deep abyssal trench
+            (-0.55, -26.0), // Deep ocean basin
+            (-0.25, -18.0), // Open ocean floor
+            (-0.08, -8.0),  // Continental shelf / shallow coastal waters
             (0.00, -4.0),   // Coastline / beach (aligns with sea_level = 12 at base_height = 16)
-            (0.10, 4.0),    // Low coastal plains (y = 20)
-            (0.22, 14.0),   // Inland rolling plains (y = 30)
-            (0.35, 36.0),   // Highlands & foothills (y = 52)
-            (0.50, 72.0),   // Rugged mountain chains (y = 88)
-            (0.70, 118.0),  // Grand alpine peaks (y = 134)
+            (0.10, 5.0),    // Low coastal plains (y = 21)
+            (0.22, 16.0),   // Inland rolling plains (y = 32)
+            (0.35, 42.0),   // Highlands & foothills (y = 58)
+            (0.50, 84.0),   // Rugged mountain chains (y = 100)
+            (0.70, 134.0),  // Grand alpine peaks (y = 150)
         ];
 
         let c = continentalness.clamp(-1.0, 1.0);
@@ -874,6 +1152,15 @@ impl TerrainGenerator {
             self.seed.wrapping_add(31_337),
         );
 
+        let rolling_hills = fractal_noise(
+            world_x,
+            world_z,
+            0.012,
+            2,
+            0.5,
+            self.seed.wrapping_add(45_117),
+        ) * self.rolling_hills_amplitude;
+
         let detail_noise = fractal_noise(
             world_x,
             world_z,
@@ -887,7 +1174,7 @@ impl TerrainGenerator {
         let roughness = Self::continental_roughness(climate.continentalness);
 
         let mountain_factor = ((climate.continentalness - 0.22) / 0.35).clamp(0.0, 1.0);
-        let ridge = (1.0 - macro_noise.abs()).powi(2) * 48.0 * mountain_factor;
+        let ridge = (1.0 - macro_noise.abs()).powi(2) * self.mountain_ridge_height * mountain_factor;
 
         let swamp_depression = if climate.continentalness > 0.02
             && climate.continentalness < 0.25
@@ -902,7 +1189,7 @@ impl TerrainGenerator {
         };
 
         let base = self.base_height + cont_base - swamp_depression;
-        let amplitude = (self.macro_amplitude * macro_noise + self.detail_amplitude * detail_noise)
+        let amplitude = (self.macro_amplitude * macro_noise + rolling_hills + self.detail_amplitude * detail_noise)
             * roughness
             + ridge;
 

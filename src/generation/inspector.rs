@@ -15,12 +15,19 @@ impl Plugin for TerrainInspectorPlugin {
     }
 }
 
-pub fn terrain_inspector_ui(mut contexts: EguiContexts, mut generator: ResMut<TerrainGenerator>) {
+pub fn terrain_inspector_ui(
+    mut contexts: EguiContexts,
+    mut generator: ResMut<TerrainGenerator>,
+    player_query: Query<&Transform, With<crate::player::Player>>,
+    env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
+    mut atmo_state: Option<ResMut<crate::environment::atmosphere::BiomeAtmosphereState>>,
+) {
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
 
     egui::Window::new("Terrain & World Generation Inspector")
+        .id(egui::Id::new("terrain_world_gen_inspector_window"))
         .default_pos(egui::pos2(840.0, 30.0))
         .default_width(380.0)
         .resizable(true)
@@ -36,19 +43,70 @@ pub fn terrain_inspector_ui(mut contexts: EguiContexts, mut generator: ResMut<Te
             ui.label("Tweak procedural parameters live and click 'Regenerate World' to reload all chunks.");
             ui.separator();
 
+            egui::CollapsingHeader::new("Live Telemetry & Diagnostics")
+                .default_open(true)
+                .show(ui, |ui| {
+                    if let Some(transform) = player_query.iter().next() {
+                        let pos = transform.translation;
+                        ui.label(format!("Player Pos: ({:.1}, {:.1}, {:.1})", pos.x, pos.y, pos.z));
+
+                        let sample = generator.climate.sample_dithered(pos.x, pos.z, generator.seed);
+                        ui.label(format!("Current Biome: {}", sample.biome.name()));
+                        ui.label(format!(
+                            "Climate: C: {:+.3} | T: {:+.3} | H: {:+.3}",
+                            sample.continentalness, sample.temperature, sample.humidity
+                        ));
+                    }
+                    if let Some(ref status) = env_status {
+                        ui.label(format!(
+                            "Camera Underwater: {} (submersion: {:.2})",
+                            status.is_camera_in_water, status.submersion
+                        ));
+                    }
+                });
+
+            egui::CollapsingHeader::new("Atmospheric Grading & Fog")
+                .default_open(true)
+                .show(ui, |ui| {
+                    if let Some(ref mut atmo) = atmo_state {
+                        ui.add(
+                            egui::Slider::new(&mut atmo.transition_speed, 0.2..=5.0)
+                                .text("Transition Speed"),
+                        );
+                        ui.label(format!(
+                            "Blended Fog Dist: {:.2}x",
+                            atmo.current.fog_distance_multiplier
+                        ));
+                        ui.label(format!(
+                            "Blended Exposure: {:+.2} EV",
+                            atmo.current.exposure_offset
+                        ));
+                        let fc = atmo.current.fog_color_filter;
+                        ui.label(format!(
+                            "Fog Filter (RGB): ({:.2}, {:.2}, {:.2})",
+                            fc.red, fc.green, fc.blue
+                        ));
+                    }
+                });
+
             egui::CollapsingHeader::new("Geography & Elevation")
                 .default_open(true)
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
                         ui.label("Seed:");
                         ui.add(egui::DragValue::new(&mut generator.seed));
+                        if ui.button("Random").clicked() {
+                            generator.seed = generator.seed.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+                        }
                     });
                     ui.add(egui::Slider::new(&mut generator.sea_level, 0..=24).text("Sea Level (voxels)"));
                     ui.add(egui::Slider::new(&mut generator.base_height, -10.0..=25.0).text("Base Height"));
                     ui.add(egui::Slider::new(&mut generator.macro_amplitude, 0.0..=25.0).text("Macro Amplitude"));
-                    ui.add(egui::Slider::new(&mut generator.macro_frequency, 0.001..=0.030).text("Macro Freq"));
-                    ui.add(egui::Slider::new(&mut generator.detail_amplitude, 0.0..=10.0).text("Detail Amplitude"));
+                    ui.add(egui::Slider::new(&mut generator.macro_frequency, 0.001..=0.040).text("Macro Freq"));
+                    ui.add(egui::Slider::new(&mut generator.detail_amplitude, 0.0..=12.0).text("Detail Amplitude"));
                     ui.add(egui::Slider::new(&mut generator.detail_frequency, 0.01..=0.10).text("Detail Freq"));
+                    ui.add(egui::Slider::new(&mut generator.mountain_ridge_height, 0.0..=120.0).text("Mountain Ridge Height"));
+                    ui.add(egui::Slider::new(&mut generator.rolling_hills_amplitude, 0.0..=20.0).text("Rolling Hills Amp"));
                 });
 
             egui::CollapsingHeader::new("Rivers & Water")
@@ -59,7 +117,7 @@ pub fn terrain_inspector_ui(mut contexts: EguiContexts, mut generator: ResMut<Te
                 });
 
             egui::CollapsingHeader::new("Caves & Ravines")
-                .default_open(true)
+                .default_open(false)
                 .show(ui, |ui| {
                     ui.add(egui::Slider::new(&mut generator.caves.spaghetti_threshold, 0.06..=0.25).text("Tunnel Width (Spaghetti)"));
                     ui.add(egui::Slider::new(&mut generator.caves.spaghetti_freq, 0.01..=0.06).text("Tunnel Freq"));
@@ -79,11 +137,13 @@ pub fn terrain_inspector_ui(mut contexts: EguiContexts, mut generator: ResMut<Te
                 });
 
             egui::CollapsingHeader::new("Climate & Biomes")
-                .default_open(false)
+                .default_open(true)
                 .show(ui, |ui| {
                     ui.add(egui::Slider::new(&mut generator.climate.continentalness_freq, 0.0005..=0.008).text("Continentalness Freq"));
                     ui.add(egui::Slider::new(&mut generator.climate.temperature_freq, 0.0005..=0.008).text("Temperature Freq"));
                     ui.add(egui::Slider::new(&mut generator.climate.humidity_freq, 0.0005..=0.008).text("Humidity Freq"));
+                    ui.add(egui::Slider::new(&mut generator.climate.warp_amplitude, 0.0..=80.0).text("Domain Warp Amp"));
+                    ui.add(egui::Slider::new(&mut generator.climate.dither_amplitude, 0.0..=25.0).text("Micro Dither Amp"));
                 });
 
             ui.add_space(8.0);
@@ -91,6 +151,9 @@ pub fn terrain_inspector_ui(mut contexts: EguiContexts, mut generator: ResMut<Te
                 let v = generator.version.wrapping_add(1);
                 *generator = TerrainGenerator::default();
                 generator.version = v;
+                if let Some(ref mut atmo) = atmo_state {
+                    atmo.transition_speed = 1.5;
+                }
             }
         });
 }

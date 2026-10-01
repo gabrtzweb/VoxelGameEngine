@@ -271,7 +271,7 @@ All aquatic blocks are solid cubic blocks that function structurally like rock o
 
 ### Surface & Wall Flora (Flat/Directional Mesh) (8 slots)
 - **Lily Pad** -> Vege_Lily_Pad [X]
-- **Vines** -> Vege_Vines [X]
+- **Vines** -> Vege_Vines
 - *[Empty Slot]*
 - *[Empty Slot]*
 - *[Empty Slot]*
@@ -284,7 +284,7 @@ All aquatic blocks are solid cubic blocks that function structurally like rock o
 - **Bubble Coral Fan** -> Vege_Bubble_Coral_Fan
 - **Fire Coral Fan** -> Vege_Fire_Coral_Fan 
 - **Horn Coral Fan** -> Vege_Horn_Coral_Fan 
-- **Kelp** -> Vege_Kelp [X]
+- **Kelp** -> Vege_Kelp
 - **Seagrass** -> Vege_Seagrass
 - **Tube Coral Fan** -> Vege_Tube_Coral_Fan
 - *[Empty Slot]*
@@ -311,62 +311,68 @@ Most of these plants feature multiple texture variants (e.g., `vege_wildgrass.pn
 Tinting: Blocks like `Vege_Wildgrass`, `Vege_Bush`, and `Vege_Fern` will utilize grayscale textures to receive dynamic biome color tinting (similar to the standard `Soil_Grass`). Other flora, such as dry grass, dead bushes, red shrubs, corals, and fungi, will have their final colors fully baked into their texture files.
 
 ---
-# World Biomes Definition v0.5 (Phase 12)
+# World Biomes Definition v0.5 (Phase 12) (48 in total)
 
-## Surface Biomes
+## Biome Generation Anatomy
 
-### Forests & Woodlands
-- **Ancient Weald**
-- **Boreal Taiga**
-- **Birch Copse**
+Explaining how the 244 blocks from the registry populate these 48 biomes.
 
-### Plains & Open Lands
-- **Steppe**
-- **Permafrost Steppe**
-- **Snowy Tundra**
-- **Moorland**
-- **Heath**
+### Forests & Woodlands (8 in total)
+- **Ancient Weald:** A dense, classic magical forest. Surface: `Soil_Mulch` and `Soil_Grass`. Trees: `Tree_Oak` with `Tree_Oak_Leaves`, `Tree_Oak_Leaves_Lush`, and `Tree_Oak_Leaves_Flowering`.
+- **Autumnal Forest:** A vibrant temperate forest. Surface: `Soil_Silt_Grass`. Trees: `Tree_Maple` featuring a mix of `Tree_Maple_Leaves_Red`, `Tree_Maple_Leaves_Orange`, and `Tree_Maple_Leaves_Yellow`.
+- **Birch Copse:** A bright, airy woodland. Surface: `Soil_Grass`. Primary Rock: `Rock_Chalk`. Trees: `Tree_Birch`.
+- **Blossom Grove:** A serene, pink-canopied grove. Surface: `Soil_Grass`. Primary Rock: `Rock_Calcite`. Trees: `Tree_Cherry`.
+- **Boreal Taiga:** A cold, pine-dominated forest. Surface: `Soil_Snowy_Peat` and `Soil_Snowy_Grass`. Trees: `Tree_Pine`.
+- **Deadwood Thicket:** A cursed, lifeless woods. Surface: `Soil_Ash` and `Soil_Black_Sand`. Trees: `Tree_Dead` and `Tree_Charred`. Primary Rock: `Rock_Pitchstone`.
+- **Tropical Rainforest:** A hot, dense jungle. Surface: `Soil_Mud` and `Soil_Moss`. Trees: `Tree_Mahogany`. Primary Rock: `Rock_Serpentine`.
+- **Yew Grove:** A dark, ancient, and solemn forest. Surface: `Soil_Peat_Mulch`. Trees: `Tree_Yew`. Primary Rock: `Rock_Gabbro`.
 
-### Wetlands
-- **Peat Bog**
-- **Marshland**
+### Plains & Open Lands (8 in total)
+- **Acacia Savanna:** Warm, dry grassland. Surface: `Soil_Grass` (warm tinted) and `Soil_Packed_Dirt`. Trees: Sparse `Tree_Acacia`.
+- **Heath:** Cool, rugged plains. Surface: `Soil_Silt_Grass`. Subsoil: `Soil_Silt`. Primary Rock: `Rock_Tuffite`.
+- **Moorland:** Wet, foggy highlands. Surface: `Soil_Peat_Grass`. Subsoil: `Soil_Peat`. Primary Rock: `Rock_Gabbro`.
+- **Outback Scrubland:** Harsh, reddish dry plains. Surface: `Soil_Scorched_Red_Sand` and `Soil_Packed_Mud`.
+- **Permafrost Steppe:** Deeply frozen flatlands. Surface: `Soil_Snowy_Silt`. Subsoil: `Soil_Packed_Silt`. Primary Rock: `Rock_Slate`.
+- **Snowy Tundra:** Classic frozen plains. Surface: `Soil_Snowy_Grass`. Primary Rock: `Rock_Limestone`. 
+- **Steppe:** Endless temperate grasslands. Surface: `Soil_Grass`. Primary Rock: `Rock_Sandstone`.
+- **Volcanic Plains:** Flatlands covered in volcanic sediment. Surface: `Soil_Ash` and `Soil_Scorched_Black_Sand`. Primary Rock: `Rock_Basalt`.
 
-### Arid & Warm Lands
-- **Arid Scrubland**
-- **Dune Desert**
-- **Badlands**
+### Wetlands & Swamps (8 in total)
+- **Cypress Swamp:** Deep, murky waters. Surface: `Soil_Mud`. Trees: `Tree_Pine` (acting as Cypress) growing directly out of `Liquid_Water`.
+- **Fungal Bog:** A highly toxic or magical swamp. Surface: `Soil_Red_Moss`. Liquids: Pools of `Liquid_Ooze` or `Liquid_Acid`. 
+- **Mangrove Swamp:** Coastal or riverine wetlands. Surface: `Soil_Mud`. Trees: `Tree_Mangrove` supported by `Tree_Mangrove_Roots` over water.
+- **Marshland:** Grassy, shallow wetlands. Surface: `Soil_Mud` and `Soil_Packed_Mud`. Primary Rock: `Rock_Serpentine`.
+- **Peat Bog:** Spongy, wet terrain. Surface: `Soil_Peat_Grass`. Subsoil: `Soil_Peat`. Primary Rock: `Rock_Marl`.
+- **Sludge Wastes:** Highly polluted or corrupted wetlands. Surface: `Soil_Scorched_Sand`. Liquids: Ponds of `Liquid_Sludge`.
+- **Tar Pits:** Dangerous prehistoric swamps. Surface: `Soil_Black_Sand`. Liquids: Deep pits of `Liquid_Tar`. Primary Rock: `Rock_Pitchstone`.
+- **Weeping Bayou:** Calm, atmospheric flooded forests. Surface: `Soil_Silt_Mulch`. Trees: `Tree_Willow` lining the water channels.
 
-## Mountain Biomes
-- **Karst Peaks**
-- **Scree Slopes**
-- **Shale Barrens**
-- **Volcanic Fields**
-- **Glacial Peaks**
-- **Alpine Tundra**
-- **Jagged Crags**
-- **Frozen Caldera**
+### Arid & Warm Lands (8 in total)
+- **Badlands:** Multi-colored, highly eroded terrain. Surface: `Soil_Red_Sand`. Primary Rock: `Rock_Red_Sandstone` featuring distinct horizontal bands of `Rock_Terracotta`.
+- **Dune Desert:** Endless rolling dunes. Surface: `Soil_Sand`. Primary Rock: `Rock_Sandstone`.
+- **Oasis:** Small, localized lush spots in deserts. Surface: `Soil_Grass` enclosing a pool of `Liquid_Water`. Trees: `Tree_Palm`.
+- **Painted Desert:** Deserts with exotic geology. Surface: `Soil_White_Sand` and `Soil_Sand`. Primary Rock: `Rock_Ochrestone` or `Rock_Cinnabar`.
+- **Rocky Scrubland:** Dry, harsh terrain. Surface: `Soil_Packed_Dirt` and `Soil_Sand`. Trees: `Tree_Cactus`. Primary Rock: `Rock_Granite`.
+- **Scorched Wastes:** Extremely hot, barren plains. Surface: `Soil_Scorched_Sand`. Liquids: Rare pools of `Liquid_Lava`. Primary Rock: `Rock_Scoria`.
+- **White Desert:** Blindingly bright deserts. Surface: `Soil_White_Sand`. Primary Rock: `Rock_White_Sandstone`.
+- **Windswept Canyons:** Deep arid ravines. Surface: `Soil_Sand`. Primary Rock: `Rock_Chert` and `Rock_Porphyry` forming the canyon walls.
 
-## Coastal Biomes
-- **Beach**
-- **Shingle Beach**
-- **Volcanic Coast**
-- **Chalk Cliffs**
-- **Tidal Mudflats**
-- **Coastal Crags**
-- **Brackish Estuary**
-- **Windswept Dunes**
+### Mountain Biomes (8 in total)
+- **Alpine Tundra:** High altitude rocky plains. Surface: `Soil_Snowy_Grass` interspersed with exposed `Rock_Diorite`.
+- **Frozen Caldera:** The collapsed summit of an extinct volcano. Surface: `Frost_Black_Ice`. Walls: `Rock_Obsidian` and `Rock_Basalt`.
+- **Glacial Peaks:** The highest, coldest mountains. Surface: `Soil_Snow`. Subsoil: `Frost_Packed_Ice`.
+- **Jagged Crags:** Dark, imposing, and hostile mountains. Surface: Exposed `Rock_Gabbro` and `Rock_Andesite`.
+- **Karst Peaks:** Extreme, vertical spire-like mountains. Surface: Pure `Rock_Karst`.
+- **Scree Slopes:** Dangerous, unstable mountain sides. Surface: Entirely composed of sliding `Soil_Gravel` resting on `Rock_Andesite`.
+- **Shale Barrens:** Grey, lifeless ridges. Surface: `Rock_Slate` and `Cobbled_Slate`.
+- **Volcanic Fields:** Active geothermal mountains. Surface: `Rock_Basalt` and `Rock_Scoria`. Liquids: Streams of `Liquid_Lava` and `Liquid_Molten`. Primary Rock: `Rock_Magma`.
 
-## Aquatic Biomes
-- **River**
-- **Frozen River**
-- **Lake**
-- **Thermal Lake**
-- **Temperate Ocean**
-- **Deep Temperate Ocean**
-- **Cold Ocean**
-- **Deep Cold Ocean**
-- **Warm Ocean**
-- **Deep Warm Ocean**
-- **Frozen Ocean**
-- **Abyssal Trench**
-
+### Coastal & Aquatic Biomes (8 in total)
+- **Abyssal Trench:** The deepest, darkest parts of the ocean. Floor: `Rock_Obsidian` and `Rock_Pitchstone`. Features: `Aqua_Geothermal_Vent`.
+- **Beach:** Classic coastal shorelines. Surface: `Soil_White_Sand` or `Soil_Sand`. Trees: Sparse `Tree_Palm`.
+- **Brackish Estuary:** River mouths meeting the sea. Floor: `Soil_Silt` and `Soil_Mud`.
+- **Chalk Cliffs:** Vertical coastal drops. Walls: Pure `Rock_Chalk`.
+- **Coastal Crags:** Violent, rocky shores. Surface: `Rock_Porphyry`.
+- **Deep Ocean:** The vast open ocean. Floor: `Soil_Gravel` and `Rock_Andesite`.
+- **Temperate Ocean:** Shallow, lively seas. Floor: `Soil_White_Sand`. Features: Thriving coral reefs using `Aqua_Brain_Coral`, `Aqua_Bubble_Coral`, `Aqua_Fire_Coral`, `Aqua_Horn_Coral`, and `Aqua_Tube_Coral`.
+- **Tidal Mudflats:** Flat coastal wetlands exposed at low tide. Surface: `Soil_Packed_Mud` and `Soil_Clay`.

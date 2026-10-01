@@ -292,7 +292,7 @@ fn setup_minimap(
                 ));
                 pill.spawn((
                     MinimapBiomeText,
-                    Text::new("Biome: Plains"),
+                    Text::new("Biome: Steppe"),
                     TextFont {
                         font: font_handle.clone(),
                         font_size: FontSize::Px(16.0),

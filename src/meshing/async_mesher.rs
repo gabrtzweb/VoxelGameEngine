@@ -147,7 +147,7 @@ pub fn collect_meshing_tasks(
             continue;
         };
 
-        commands.entity(entity).despawn();
+        commands.entity(entity).try_despawn();
 
         if world.get_chunk(completed.coordinate).is_none() {
             remove_chunk_render(
