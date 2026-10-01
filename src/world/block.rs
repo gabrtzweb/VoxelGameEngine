@@ -8,6 +8,8 @@ pub enum BlockShape {
     Slab = 1,
     Stair = 2,
     Column = 3,
+    Torch = 4,
+    Basket = 5,
 }
 
 impl BlockShape {
@@ -26,6 +28,8 @@ impl BlockShape {
             Self::Slab => "Slab",
             Self::Stair => "Stairs",
             Self::Column => "Column",
+            Self::Torch => "Torch",
+            Self::Basket => "Basket",
         }
     }
 
@@ -35,21 +39,24 @@ impl BlockShape {
             Self::Slab => "SLAB",
             Self::Stair => "STAIR",
             Self::Column => "COLUMN",
+            Self::Torch => "TORCH",
+            Self::Basket => "BASKET",
         }
     }
 
     pub const fn orientation_count(self) -> u8 {
         match self {
-            Self::Full => 1,
+            Self::Full | Self::Basket => 1,
             Self::Slab => 6,
             Self::Stair => 8,
             Self::Column => 6,
+            Self::Torch => 5,
         }
     }
 
     pub fn orientation_name(self, orientation: u8) -> &'static str {
         match self {
-            Self::Full => "Standard",
+            Self::Full | Self::Basket => "Standard",
             Self::Slab => match orientation % 6 {
                 0 => "Bottom (Floor)",
                 1 => "Top (Ceiling)",
@@ -79,6 +86,14 @@ impl BlockShape {
                 5 => "Centered Horizontal",
                 _ => "Unknown",
             },
+            Self::Torch => match orientation % 5 {
+                0 => "Floor (Standing)",
+                1 => "Wall North (-Z)",
+                2 => "Wall South (+Z)",
+                3 => "Wall West (-X)",
+                4 => "Wall East (+X)",
+                _ => "Unknown",
+            },
         }
     }
 
@@ -88,6 +103,7 @@ impl BlockShape {
             Self::Slab => Self::Stair,
             Self::Stair => Self::Column,
             Self::Column => Self::Full,
+            other => other,
         }
     }
 
@@ -95,7 +111,7 @@ impl BlockShape {
     /// Full, Slab, and Column have 1 box; Stair has 2 boxes (base slab + step).
     pub fn local_boxes(self, orientation: u8) -> ([Vec3; 2], Option<[Vec3; 2]>) {
         match self {
-            Self::Full => ([Vec3::ZERO, Vec3::ONE], None),
+            Self::Full | Self::Basket => ([Vec3::ZERO, Vec3::ONE], None),
             Self::Slab => {
                 let bbox = match orientation % 6 {
                     0 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 0.5, 1.0)], // Floor
@@ -142,6 +158,16 @@ impl BlockShape {
                 };
 
                 (base, Some(step))
+            }
+            Self::Torch => {
+                let bbox = match orientation % 5 {
+                    0 => [Vec3::new(0.40, 0.0, 0.40), Vec3::new(0.60, 0.65, 0.60)], // Floor
+                    1 => [Vec3::new(0.40, 0.12, 0.0), Vec3::new(0.60, 0.78, 0.45)], // Wall North (-Z)
+                    2 => [Vec3::new(0.40, 0.12, 0.55), Vec3::new(0.60, 0.78, 1.0)], // Wall South (+Z)
+                    3 => [Vec3::new(0.0, 0.12, 0.40), Vec3::new(0.45, 0.78, 0.60)], // Wall West (-X)
+                    _ => [Vec3::new(0.55, 0.12, 0.40), Vec3::new(1.0, 0.78, 0.60)], // Wall East (+X)
+                };
+                (bbox, None)
             }
         }
     }
@@ -324,7 +350,7 @@ pub enum Voxel {
     Rock_Obsidian = 157,
     Rock_Terracotta = 158,
 
-    // Wood Blocks (50)
+    // Wood Blocks (56)
     Tree_Acacia_Bark = 159,
     Tree_Acacia_Log = 160,
     Tree_Acacia_Leaves = 161,
@@ -333,92 +359,98 @@ pub enum Voxel {
     Tree_Birch_Log = 164,
     Tree_Birch_Leaves = 165,
     Tree_Birch_Planks = 166,
-    Tree_Mahogany_Bark = 167,
-    Tree_Mahogany_Log = 168,
-    Tree_Mahogany_Leaves = 169,
-    Tree_Mahogany_Planks = 170,
-    Tree_Mangrove_Bark = 171,
-    Tree_Mangrove_Log = 172,
-    Tree_Mangrove_Leaves = 173,
-    Tree_Mangrove_Planks = 174,
-    Tree_Mangrove_Roots = 175,
-    Tree_Maple_Bark = 176,
-    Tree_Maple_Log = 177,
-    Tree_Maple_Leaves_Red = 178,
-    Tree_Maple_Leaves_Orange = 179,
-    Tree_Maple_Leaves_Yellow = 180,
-    Tree_Maple_Planks = 181,
-    Tree_Oak_Bark = 182,
-    Tree_Oak_Log = 183,
-    Tree_Oak_Leaves = 184,
-    Tree_Oak_Planks = 185,
-    Tree_Palm_Bark = 186,
-    Tree_Palm_Log = 187,
-    Tree_Palm_Leaves = 188,
-    Tree_Palm_Planks = 189,
-    Tree_Pine_Bark = 190,
-    Tree_Pine_Log = 191,
-    Tree_Pine_Leaves = 192,
-    Tree_Pine_Planks = 193,
-    Tree_Willow_Bark = 194,
-    Tree_Willow_Log = 195,
-    Tree_Willow_Leaves = 196,
-    Tree_Willow_Planks = 197,
-    Tree_Yew_Bark = 198,
-    Tree_Yew_Log = 199,
-    Tree_Yew_Leaves = 200,
-    Tree_Yew_Planks = 201,
-    Tree_Cactus = 202,
-    Tree_Charred_Bark = 203,
-    Tree_Charred_Log = 204,
-    Tree_Charred_Planks = 205,
-    Tree_Dead_Bark = 206,
-    Tree_Dead_Log = 207,
-    Tree_Dead_Planks = 208,
+    Tree_Cherry_Bark = 167,
+    Tree_Cherry_Log = 168,
+    Tree_Cherry_Leaves = 169,
+    Tree_Cherry_Planks = 170,
+    Tree_Mahogany_Bark = 171,
+    Tree_Mahogany_Log = 172,
+    Tree_Mahogany_Leaves = 173,
+    Tree_Mahogany_Planks = 174,
+    Tree_Mangrove_Bark = 175,
+    Tree_Mangrove_Log = 176,
+    Tree_Mangrove_Leaves = 177,
+    Tree_Mangrove_Planks = 178,
+    Tree_Mangrove_Roots = 179,
+    Tree_Maple_Bark = 180,
+    Tree_Maple_Log = 181,
+    Tree_Maple_Leaves_Red = 182,
+    Tree_Maple_Leaves_Orange = 183,
+    Tree_Maple_Leaves_Yellow = 184,
+    Tree_Maple_Planks = 185,
+    Tree_Oak_Bark = 186,
+    Tree_Oak_Log = 187,
+    Tree_Oak_Leaves = 188,
+    Tree_Oak_Leaves_Lush = 189,
+    Tree_Oak_Leaves_Flowering = 190,
+    Tree_Oak_Planks = 191,
+    Tree_Palm_Bark = 192,
+    Tree_Palm_Log = 193,
+    Tree_Palm_Leaves = 194,
+    Tree_Palm_Planks = 195,
+    Tree_Pine_Bark = 196,
+    Tree_Pine_Log = 197,
+    Tree_Pine_Leaves = 198,
+    Tree_Pine_Planks = 199,
+    Tree_Willow_Bark = 200,
+    Tree_Willow_Log = 201,
+    Tree_Willow_Leaves = 202,
+    Tree_Willow_Planks = 203,
+    Tree_Yew_Bark = 204,
+    Tree_Yew_Log = 205,
+    Tree_Yew_Leaves = 206,
+    Tree_Yew_Planks = 207,
+    Tree_Cactus = 208,
+    Tree_Charred_Bark = 209,
+    Tree_Charred_Log = 210,
+    Tree_Charred_Planks = 211,
+    Tree_Dead_Bark = 212,
+    Tree_Dead_Log = 213,
+    Tree_Dead_Planks = 214,
 
     // Aquatic Blocks (8)
-    Aqua_Algae_Mat = 209,
-    Aqua_Brain_Coral = 210,
-    Aqua_Bubble_Coral = 211,
-    Aqua_Fire_Coral = 212,
-    Aqua_Geothermal_Vent = 213,
-    Aqua_Horn_Coral = 214,
-    Aqua_Sponge = 215,
-    Aqua_Tube_Coral = 216,
+    Aqua_Algae_Mat = 215,
+    Aqua_Brain_Coral = 216,
+    Aqua_Bubble_Coral = 217,
+    Aqua_Fire_Coral = 218,
+    Aqua_Geothermal_Vent = 219,
+    Aqua_Horn_Coral = 220,
+    Aqua_Sponge = 221,
+    Aqua_Tube_Coral = 222,
 
     // Light Source Blocks (8)
-    Emit_Blue_Light = 217,
-    Emit_Blue_Torch = 218,
-    Emit_Cold_Light = 219,
-    Emit_Green_Light = 220,
-    Emit_Green_Torch = 221,
-    Emit_Red_Light = 222,
-    Emit_Red_Torch = 223,
-    Emit_Warm_Light = 224,
+    Emit_Blue_Light = 223,
+    Emit_Blue_Torch = 224,
+    Emit_Cold_Light = 225,
+    Emit_Green_Light = 226,
+    Emit_Green_Torch = 227,
+    Emit_Red_Light = 228,
+    Emit_Red_Torch = 229,
+    Emit_Warm_Light = 230,
 
     // Decoration Blocks (16)
-    Deco_Barrel = 225,
-    Deco_Basket = 226,
-    Deco_Bone = 227,
-    Deco_Bookshelf = 228,
-    Deco_Brick = 229,
-    Deco_Fabric = 230,
-    Deco_Flesh = 231,
-    Deco_Glass = 232,
-    Deco_Hay = 233,
-    Deco_Plaster = 234,
-    Deco_Slime = 235,
-    Deco_Stone_Path = 236,
-    Deco_Thatch = 237,
-    Deco_Wax = 238,
-    Deco_Wicker = 239,
-    Deco_Wool = 240,
+    Deco_Barrel = 231,
+    Deco_Basket = 232,
+    Deco_Bone = 233,
+    Deco_Bookshelf = 234,
+    Deco_Brick = 235,
+    Deco_Fabric = 236,
+    Deco_Flesh = 237,
+    Deco_Glass = 238,
+    Deco_Hay = 239,
+    Deco_Plaster = 240,
+    Deco_Slime = 241,
+    Deco_Stone_Path = 242,
+    Deco_Thatch = 243,
+    Deco_Wax = 244,
+    Deco_Wicker = 245,
+    Deco_Wool = 246,
 
 }
 
 impl Voxel {
     /// All voxels that map to a texture and are loaded into the terrain texture array.
-    pub const ALL: [Voxel; 238] = [
+    pub const ALL: [Voxel; 244] = [
         // Testing / Debug Blocks
         Voxel::Null_Block,
         Voxel::Null_Liquid,
@@ -590,6 +622,10 @@ impl Voxel {
         Voxel::Tree_Birch_Log,
         Voxel::Tree_Birch_Leaves,
         Voxel::Tree_Birch_Planks,
+        Voxel::Tree_Cherry_Bark,
+        Voxel::Tree_Cherry_Log,
+        Voxel::Tree_Cherry_Leaves,
+        Voxel::Tree_Cherry_Planks,
         Voxel::Tree_Mahogany_Bark,
         Voxel::Tree_Mahogany_Log,
         Voxel::Tree_Mahogany_Leaves,
@@ -608,6 +644,8 @@ impl Voxel {
         Voxel::Tree_Oak_Bark,
         Voxel::Tree_Oak_Log,
         Voxel::Tree_Oak_Leaves,
+        Voxel::Tree_Oak_Leaves_Lush,
+        Voxel::Tree_Oak_Leaves_Flowering,
         Voxel::Tree_Oak_Planks,
         Voxel::Tree_Palm_Bark,
         Voxel::Tree_Palm_Log,
@@ -844,6 +882,10 @@ impl Voxel {
             Self::Tree_Birch_Log => Some("tree_birch_log"),
             Self::Tree_Birch_Leaves => Some("tree_birch_leaves"),
             Self::Tree_Birch_Planks => Some("tree_birch_planks"),
+            Self::Tree_Cherry_Bark => Some("tree_cherry_bark"),
+            Self::Tree_Cherry_Log => Some("tree_cherry_log"),
+            Self::Tree_Cherry_Leaves => Some("tree_cherry_leaves"),
+            Self::Tree_Cherry_Planks => Some("tree_cherry_planks"),
             Self::Tree_Mahogany_Bark => Some("tree_mahogany_bark"),
             Self::Tree_Mahogany_Log => Some("tree_mahogany_log"),
             Self::Tree_Mahogany_Leaves => Some("tree_mahogany_leaves"),
@@ -862,6 +904,8 @@ impl Voxel {
             Self::Tree_Oak_Bark => Some("tree_oak_bark"),
             Self::Tree_Oak_Log => Some("tree_oak_log"),
             Self::Tree_Oak_Leaves => Some("tree_oak_leaves"),
+            Self::Tree_Oak_Leaves_Lush => Some("tree_oak_leaves_lush"),
+            Self::Tree_Oak_Leaves_Flowering => Some("tree_oak_leaves_flowering"),
             Self::Tree_Oak_Planks => Some("tree_oak_planks"),
             Self::Tree_Palm_Bark => Some("tree_palm_bark"),
             Self::Tree_Palm_Log => Some("tree_palm_log"),
@@ -941,6 +985,7 @@ impl Voxel {
             Self::Tree_Acacia_Log => Some("tree_acacia_bark"),
             Self::Tree_Birch_Log => Some("tree_birch_bark"),
             Self::Tree_Charred_Log => Some("tree_charred_bark"),
+            Self::Tree_Cherry_Log => Some("tree_cherry_bark"),
             Self::Tree_Dead_Log => Some("tree_dead_bark"),
             Self::Tree_Mahogany_Log => Some("tree_mahogany_bark"),
             Self::Tree_Mangrove_Log => Some("tree_mangrove_bark"),
@@ -977,6 +1022,7 @@ impl Voxel {
             Self::Tree_Acacia_Log => Some("tree_acacia_log"),
             Self::Tree_Birch_Log => Some("tree_birch_log"),
             Self::Tree_Charred_Log => Some("tree_charred_log"),
+            Self::Tree_Cherry_Log => Some("tree_cherry_log"),
             Self::Tree_Dead_Log => Some("tree_dead_log"),
             Self::Tree_Mahogany_Log => Some("tree_mahogany_log"),
             Self::Tree_Mangrove_Log => Some("tree_mangrove_log"),
@@ -1011,6 +1057,7 @@ impl Voxel {
             Self::Tree_Acacia_Log => Some("tree_acacia_log"),
             Self::Tree_Birch_Log => Some("tree_birch_log"),
             Self::Tree_Charred_Log => Some("tree_charred_log"),
+            Self::Tree_Cherry_Log => Some("tree_cherry_log"),
             Self::Tree_Dead_Log => Some("tree_dead_log"),
             Self::Tree_Mahogany_Log => Some("tree_mahogany_log"),
             Self::Tree_Mangrove_Log => Some("tree_mangrove_log"),
@@ -1168,7 +1215,7 @@ impl Voxel {
             Self::Liquid_Tar => [25, 25, 30, 255],
             Self::Liquid_Water => [60, 140, 220, 255],
             // Frost Blocks
-            Self::Frost_Black_Ice => [40, 50, 70, 255],
+            Self::Frost_Black_Ice => [30, 35, 45, 170],
             Self::Frost_Fragile_Ice => [140, 185, 235, 200],
             Self::Frost_Ice => [140, 185, 235, 220],
             Self::Frost_Packed_Ice => [160, 200, 245, 255],
@@ -1320,6 +1367,10 @@ impl Voxel {
             Self::Tree_Birch_Log => [225, 222, 210, 255],
             Self::Tree_Birch_Leaves => [133, 199, 56, 255],
             Self::Tree_Birch_Planks => [200, 195, 180, 255],
+            Self::Tree_Cherry_Bark => [57, 39, 48, 255],
+            Self::Tree_Cherry_Log => [57, 39, 48, 255],
+            Self::Tree_Cherry_Leaves => [230, 176, 197, 255],
+            Self::Tree_Cherry_Planks => [155, 125, 110, 255],
             Self::Tree_Mahogany_Bark => [100, 50, 40, 255],
             Self::Tree_Mahogany_Log => [100, 50, 40, 255],
             Self::Tree_Mahogany_Leaves => [70, 120, 45, 255],
@@ -1338,6 +1389,8 @@ impl Voxel {
             Self::Tree_Oak_Bark => [133, 94, 56, 255],
             Self::Tree_Oak_Log => [133, 94, 56, 255],
             Self::Tree_Oak_Leaves => [87, 166, 46, 255],
+            Self::Tree_Oak_Leaves_Lush => [69, 91, 36, 255],
+            Self::Tree_Oak_Leaves_Flowering => [87, 93, 51, 255],
             Self::Tree_Oak_Planks => [155, 115, 75, 255],
             Self::Tree_Palm_Bark => [140, 110, 70, 255],
             Self::Tree_Palm_Log => [140, 110, 70, 255],
@@ -1423,17 +1476,44 @@ impl Voxel {
             )
     }
 
+    pub fn max_fluid_spread(self) -> u8 {
+        match self {
+            Self::Liquid_Water | Self::WaterOccupied => 8,
+            Self::Liquid_Acid => 5,
+            Self::Liquid_Blood | Self::Null_Liquid => 4,
+            Self::Liquid_Lava | Self::Liquid_Molten | Self::Liquid_Sludge | Self::Liquid_Ooze => 3,
+            Self::Liquid_Tar => 2,
+            _ => 0,
+        }
+    }
+
     pub fn is_collidable(self) -> bool {
         !self.is_empty()
             && !self.is_fluid()
+            && !self.is_torch()
             && self != Self::Occupied
             && self != Self::WaterOccupied
+    }
+
+    pub fn is_torch(self) -> bool {
+        matches!(
+            self,
+            Self::Emit_Blue_Torch | Self::Emit_Green_Torch | Self::Emit_Red_Torch
+        )
+    }
+
+    pub fn is_basket(self) -> bool {
+        self == Self::Deco_Basket
+    }
+
+    pub fn has_custom_mesh(self) -> bool {
+        self.is_torch() || self.is_basket()
     }
 
     pub fn is_transparent(self) -> bool {
         self.is_water()
             || self == Self::Deco_Glass
-            || matches!(self, Self::Frost_Ice | Self::Frost_Fragile_Ice)
+            || matches!(self, Self::Frost_Ice | Self::Frost_Fragile_Ice | Self::Frost_Black_Ice)
     }
 
     pub fn is_leaves(self) -> bool {
@@ -1441,12 +1521,15 @@ impl Voxel {
             self,
             Self::Tree_Acacia_Leaves
                 | Self::Tree_Birch_Leaves
+                | Self::Tree_Cherry_Leaves
                 | Self::Tree_Mahogany_Leaves
                 | Self::Tree_Mangrove_Leaves
                 | Self::Tree_Maple_Leaves_Red
                 | Self::Tree_Maple_Leaves_Orange
                 | Self::Tree_Maple_Leaves_Yellow
                 | Self::Tree_Oak_Leaves
+                | Self::Tree_Oak_Leaves_Lush
+                | Self::Tree_Oak_Leaves_Flowering
                 | Self::Tree_Palm_Leaves
                 | Self::Tree_Pine_Leaves
                 | Self::Tree_Willow_Leaves
@@ -1460,6 +1543,8 @@ impl Voxel {
             && !self.is_fluid()
             && !self.is_leaves()
             && !self.is_transparent()
+            && !self.is_torch()
+            && !self.is_basket()
             && self != Self::Occupied
             && self != Self::WaterOccupied
     }
@@ -1669,6 +1754,10 @@ impl Voxel {
             Self::Tree_Birch_Log => "Birch Log",
             Self::Tree_Birch_Leaves => "Birch Leaves",
             Self::Tree_Birch_Planks => "Birch Planks",
+            Self::Tree_Cherry_Bark => "Cherry Bark",
+            Self::Tree_Cherry_Log => "Cherry Log",
+            Self::Tree_Cherry_Leaves => "Cherry Leaves",
+            Self::Tree_Cherry_Planks => "Cherry Planks",
             Self::Tree_Mahogany_Bark => "Mahogany Bark",
             Self::Tree_Mahogany_Log => "Mahogany Log",
             Self::Tree_Mahogany_Leaves => "Mahogany Leaves",
@@ -1687,6 +1776,8 @@ impl Voxel {
             Self::Tree_Oak_Bark => "Oak Bark",
             Self::Tree_Oak_Log => "Oak Log",
             Self::Tree_Oak_Leaves => "Oak Leaves",
+            Self::Tree_Oak_Leaves_Lush => "Lush Oak Leaves",
+            Self::Tree_Oak_Leaves_Flowering => "Flowering Oak Leaves",
             Self::Tree_Oak_Planks => "Oak Planks",
             Self::Tree_Palm_Bark => "Palm Bark",
             Self::Tree_Palm_Log => "Palm Log",
@@ -1752,5 +1843,43 @@ impl Voxel {
     /// Whether this voxel is completely unbreakable (like bedrock).
     pub fn is_unbreakable(self) -> bool {
         self == Self::Rock_Dreadstone
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_torch_properties() {
+        let torches = [Voxel::Emit_Red_Torch, Voxel::Emit_Green_Torch, Voxel::Emit_Blue_Torch];
+        for &t in &torches {
+            assert!(t.is_torch(), "Expected {t:?} to be a torch");
+            assert!(t.has_custom_mesh(), "Expected {t:?} to have a custom mesh");
+            assert!(!t.is_collidable(), "Expected torch {t:?} to be non-collidable (passable)");
+            assert!(!t.is_solid_opaque(), "Expected torch {t:?} not to be solid opaque");
+            assert!(t.is_light(), "Expected torch {t:?} to emit light");
+        }
+    }
+
+    #[test]
+    fn test_basket_properties() {
+        let basket = Voxel::Deco_Basket;
+        assert!(basket.is_basket(), "Expected Deco_Basket to be basket");
+        assert!(basket.has_custom_mesh(), "Expected basket to have custom mesh");
+        assert!(basket.is_collidable(), "Expected basket to be collidable");
+        assert!(!basket.is_solid_opaque(), "Expected basket not to be solid opaque (hollow interior)");
+    }
+
+    #[test]
+    fn test_torch_orientations_and_boxes() {
+        assert_eq!(BlockShape::Torch.orientation_count(), 5);
+        for orient in 0..5 {
+            let (box_a, box_b) = BlockShape::Torch.local_boxes(orient);
+            assert!(box_b.is_none());
+            let min = box_a[0];
+            let max = box_a[1];
+            assert!(min.x < max.x && min.y < max.y && min.z < max.z);
+        }
     }
 }

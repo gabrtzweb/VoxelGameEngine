@@ -264,6 +264,16 @@ tree_cactus_top2.png
 tree_charred_bark.png
 tree_charred_log.png
 tree_charred_planks.png
+tree_cherry_bark.png
+tree_cherry_bark1.png
+tree_cherry_leaves.png
+tree_cherry_leaves1.png
+tree_cherry_leaves2.png
+tree_cherry_leaves3.png
+tree_cherry_log.png
+tree_cherry_planks.png
+tree_cherry_planks1.png
+tree_cherry_planks2.png
 tree_dead_bark.png
 tree_dead_log.png
 tree_dead_planks.png
@@ -308,6 +318,10 @@ tree_oak_bark4.png
 tree_oak_bark5.png
 tree_oak_leaves.png
 tree_oak_leaves1.png
+tree_oak_leaves_flowering.png
+tree_oak_leaves_flowering1.png
+tree_oak_leaves_lush.png
+tree_oak_leaves_lush1.png
 tree_oak_log.png
 tree_oak_planks.png
 tree_oak_planks1.png
@@ -334,6 +348,7 @@ tree_pine_planks1.png
 tree_pine_planks2.png
 tree_willow_bark.png
 tree_willow_bark1.png
+tree_willow_leaves.png
 tree_willow_log.png
 tree_willow_planks.png
 tree_willow_planks1.png
@@ -348,4 +363,3 @@ tree_yew_log.png
 tree_yew_planks.png
 tree_yew_planks1.png
 tree_yew_planks2.png
-tree_willow_leaves.png

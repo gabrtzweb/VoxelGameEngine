@@ -134,7 +134,7 @@ fn create_cube_mesh(
                 .texture_registry
                 .get_face_texture_info(voxel, IVec3::ZERO, *face_dir);
         let frame_count = if voxel.is_light() {
-            -4.0
+            -(frames.max(1) as f32)
         } else {
             frames as f32
         };
@@ -299,7 +299,7 @@ fn handle_block_place_feedback(
         return;
     };
 
-    if event.voxel.is_empty() || event.voxel.is_water() {
+    if event.voxel.is_empty() || event.voxel.is_water() || event.voxel.has_custom_mesh() {
         return;
     }
 

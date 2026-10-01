@@ -171,6 +171,7 @@ pub struct Chunk {
     homogeneity: ChunkHomogeneity,
     shapes: HashMap<usize, (BlockShape, u8)>,
     extra_slabs: HashMap<usize, (Voxel, u8)>,
+    fluid_levels: HashMap<usize, u8>,
 }
 
 impl Chunk {
@@ -205,6 +206,7 @@ impl Chunk {
             homogeneity,
             shapes: HashMap::default(),
             extra_slabs: HashMap::default(),
+            fluid_levels: HashMap::default(),
         }
     }
 
@@ -250,6 +252,7 @@ impl Chunk {
             homogeneity,
             shapes: HashMap::default(),
             extra_slabs: HashMap::default(),
+            fluid_levels: HashMap::default(),
         }
     }
 
@@ -316,6 +319,22 @@ impl Chunk {
         if voxel.is_empty() {
             self.shapes.remove(&index);
             self.extra_slabs.remove(&index);
+            self.fluid_levels.remove(&index);
+        } else {
+            if voxel.is_torch() {
+                self.shapes.entry(index).or_insert((BlockShape::Torch, 0));
+            } else if voxel.is_basket() {
+                self.shapes.entry(index).or_insert((BlockShape::Basket, 0));
+            } else if self
+                .shapes
+                .get(&index)
+                .is_some_and(|&(s, _)| s == BlockShape::Torch || s == BlockShape::Basket)
+            {
+                self.shapes.remove(&index);
+            }
+            if !voxel.is_fluid() {
+                self.fluid_levels.remove(&index);
+            }
         }
 
         self.homogeneity = if self.non_air_count == 0 {
@@ -367,6 +386,33 @@ impl Chunk {
         } else {
             self.extra_slabs.get(&Self::index(x, y, z)).copied()
         }
+    }
+
+    #[inline]
+    pub fn get_fluid_level(&self, x: usize, y: usize, z: usize) -> u8 {
+        if self.fluid_levels.is_empty() {
+            0
+        } else {
+            self.fluid_levels
+                .get(&Self::index(x, y, z))
+                .copied()
+                .unwrap_or(0)
+        }
+    }
+
+    pub fn set_fluid_level(&mut self, x: usize, y: usize, z: usize, level: u8) {
+        let index = Self::index(x, y, z);
+        if level == 0 {
+            self.fluid_levels.remove(&index);
+        } else {
+            self.fluid_levels.insert(index, level);
+        }
+    }
+
+    #[inline]
+    #[allow(dead_code)]
+    pub fn fluid_levels(&self) -> &HashMap<usize, u8> {
+        &self.fluid_levels
     }
 
     pub fn set_extra_slab(&mut self, x: usize, y: usize, z: usize, slab: Option<(Voxel, u8)>) {

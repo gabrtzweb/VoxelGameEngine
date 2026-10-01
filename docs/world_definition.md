@@ -1,4 +1,4 @@
-# World Blocks Definition v0.5 (238 in total)
+# World Blocks Definition v0.5 (244 in total)
 
 ## Rocky Blocks (96 in total)
 * **Andesite** -> Rock_Andesite, Cobbled_Andesite, Mossy_Andesite, Mossy_Cobbled_Andesite
@@ -174,7 +174,7 @@ Decoration blocks are solid cubic structures used to detail the world. While man
 
 ---
 
-## Wood Blocks (50 in total)
+## Wood Blocks (56 in total)
 - **Acacia** -> Tree_Acacia_Bark, Tree_Acacia_Log
 - **Acacia Leaves** -> Tree_Acacia_Leaves
 - **Acacia Planks** -> Tree_Acacia_Planks
@@ -184,6 +184,9 @@ Decoration blocks are solid cubic structures used to detail the world. While man
 - **Cactus** -> Tree_Cactus
 - **Charred Wood** -> Tree_Charred_Bark, Tree_Charred_Log
 - **Charred Wood Planks** -> Tree_Charred_Planks
+- **Cherry** -> Tree_Cherry_Bark, Tree_Cherry_Log
+- **Cherry Leaves** -> Tree_Cherry_Leaves
+- **Cherry Planks** -> Tree_Cherry_Planks
 - **Dead Wood** -> Tree_Dead_Bark, Tree_Dead_Log
 - **Dead Wood Planks** -> Tree_Dead_Planks
 - **Mahogany** -> Tree_Mahogany_Bark, Tree_Mahogany_Log
@@ -197,7 +200,7 @@ Decoration blocks are solid cubic structures used to detail the world. While man
 - **Maple Leaves** -> Tree_Maple_Leaves_Orange, Tree_Maple_Leaves_Red, Tree_Maple_Leaves_Yellow
 - **Maple Planks** -> Tree_Maple_Planks
 - **Oak** -> Tree_Oak_Bark, Tree_Oak_Log
-- **Oak Leaves** -> Tree_Oak_Leaves
+- **Oak Leaves** -> Tree_Oak_Leaves, Tree_Oak_Leaves_Lush, Tree_Oak_Leaves_Flowering
 - **Oak Planks** -> Tree_Oak_Planks
 - **Palm** -> Tree_Palm_Bark, Tree_Palm_Log
 - **Palm Leaves** -> Tree_Palm_Leaves
@@ -234,4 +237,136 @@ Explaining them:
 All aquatic blocks are solid cubic blocks that function structurally like rock or soil blocks, occupying the full voxel to prevent water rendering issues. Most of them use a single unique texture across all 6 faces, with the exception of the "Algae Mat" and the "Geothermal Vent". The Algae Mat uses "`/blocks/aqua_algae_mat_top.png`" for its top and bottom faces, and "`/blocks/aqua_algae_mat.png`" for its side faces. The Geothermal Vent follows a similar rule, utilizing different textures for its top/bottom ( `/blocks/aqua_geothermal_vent.png`) and "`/blocks/aqua_geothermal_vent_side.png`" for the side faces.
 
 ---
-## Future Blocks (Planned for later)
+## Future Vegetation Blocks (Planned for later) (48 slots in total)
+
+*(NOT to be implement yet. They are non-solid vegetation blocks that require custom rendering pipelines and alpha transparency. Keep them out of the current Voxel enum.)*
+
+### Terrestrial Flora (X-Mesh) (16 slots)
+- **Bush** -> Vege_Bush 
+- **Cactus Bush** -> Vege_Cactus_Bush 
+- **Dead Bush** -> Vege_Dead_Bush 
+- **Dry Grass** -> Vege_Drygrass 
+- **Dune Grass** -> Vege_Dune_Grass [X]
+- **Fern** -> Vege_Fern 
+- **Frost Grass** -> Vege_Frost_Grass [X]
+- **Red Shrub** -> Vege_Red_Shrub 
+- **Wildgrass** -> Vege_Wildgrass
+- *[Empty Slot]*
+- *[Empty Slot]*
+- *[Empty Slot]*
+- *[Empty Slot]*
+- *[Empty Slot]*
+- *[Empty Slot]*
+- *[Empty Slot]*
+
+### Tall Terrestrial Flora (2-Blocks High X-Mesh) (8 slots)
+- **Tall Fern** -> Vege_Tall_Fern
+- **Tall Wildgrass** -> Vege_Tall_Wildgrass
+- *[Empty Slot]*
+- *[Empty Slot]*
+- *[Empty Slot]*
+- *[Empty Slot]*
+- *[Empty Slot]*
+- *[Empty Slot]*
+
+### Surface & Wall Flora (Flat/Directional Mesh) (8 slots)
+- **Lily Pad** -> Vege_Lily_Pad [X]
+- **Vines** -> Vege_Vines [X]
+- *[Empty Slot]*
+- *[Empty Slot]*
+- *[Empty Slot]*
+- *[Empty Slot]*
+- *[Empty Slot]*
+- *[Empty Slot]*
+
+### Aquatic Flora (X-Mesh) (8 slots)
+- **Brain Coral Fan** -> Vege_Brain_Coral_Fan
+- **Bubble Coral Fan** -> Vege_Bubble_Coral_Fan
+- **Fire Coral Fan** -> Vege_Fire_Coral_Fan 
+- **Horn Coral Fan** -> Vege_Horn_Coral_Fan 
+- **Kelp** -> Vege_Kelp [X]
+- **Seagrass** -> Vege_Seagrass
+- **Tube Coral Fan** -> Vege_Tube_Coral_Fan
+- *[Empty Slot]*
+
+### Fungi (X-Mesh) (8 slots)
+- **Brown Mushroom** -> Fungi_Brown_Mushroom [X]
+- **Red Mushroom** -> Fungi_Red_Mushroom [X]
+- **Crimson Fungus** -> Fungi_Crimson [X]
+- **Warped Fungus** -> Fungi_Warped [X]
+- *[Empty Slot]*
+- *[Empty Slot]*
+- *[Empty Slot]*
+- *[Empty Slot]*
+
+Explaining them:
+Unlike standard cubic blocks, these vegetation blocks will bypass traditional voxel geometry. 
+
+- **X-Mesh Blocks**: Most vegetation (grass, ferns, bushes, corals, and fungi) will use an "X-mesh" (or cross-model) rendering technique where two flat planes intersect diagonally inside the voxel. 
+- **Custom Mesh Blocks**: "Lily Pad" will render as a flat horizontal quad slightly above the water level. "Vines" will render as directional flat quads placed flush against the side faces of adjacent solid blocks.
+- **Tall Blocks**: Tall ferns and wildgrass occupy two vertical voxels. They will require specific rendering logic to pair a bottom texture (`_bottom`) with its corresponding top texture (`_top`).
+
+Most of these plants feature multiple texture variants (e.g., `vege_wildgrass.png`, `vege_wildgrass1.png`, `vege_wildgrass2.png`) to provide natural, randomized visual variety in the world generation. 
+
+Tinting: Blocks like `Vege_Wildgrass`, `Vege_Bush`, and `Vege_Fern` will utilize grayscale textures to receive dynamic biome color tinting (similar to the standard `Soil_Grass`). Other flora, such as dry grass, dead bushes, red shrubs, corals, and fungi, will have their final colors fully baked into their texture files.
+
+---
+# World Biomes Definition v0.5 (Phase 12)
+
+## Surface Biomes
+
+### Forests & Woodlands
+- **Ancient Weald**
+- **Boreal Taiga**
+- **Birch Copse**
+
+### Plains & Open Lands
+- **Steppe**
+- **Permafrost Steppe**
+- **Snowy Tundra**
+- **Moorland**
+- **Heath**
+
+### Wetlands
+- **Peat Bog**
+- **Marshland**
+
+### Arid & Warm Lands
+- **Arid Scrubland**
+- **Dune Desert**
+- **Badlands**
+
+## Mountain Biomes
+- **Karst Peaks**
+- **Scree Slopes**
+- **Shale Barrens**
+- **Volcanic Fields**
+- **Glacial Peaks**
+- **Alpine Tundra**
+- **Jagged Crags**
+- **Frozen Caldera**
+
+## Coastal Biomes
+- **Beach**
+- **Shingle Beach**
+- **Volcanic Coast**
+- **Chalk Cliffs**
+- **Tidal Mudflats**
+- **Coastal Crags**
+- **Brackish Estuary**
+- **Windswept Dunes**
+
+## Aquatic Biomes
+- **River**
+- **Frozen River**
+- **Lake**
+- **Thermal Lake**
+- **Temperate Ocean**
+- **Deep Temperate Ocean**
+- **Cold Ocean**
+- **Deep Cold Ocean**
+- **Warm Ocean**
+- **Deep Warm Ocean**
+- **Frozen Ocean**
+- **Abyssal Trench**
+

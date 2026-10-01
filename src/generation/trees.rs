@@ -7,6 +7,7 @@ pub enum TreeSpecies {
     Birch,
     Pine,
     Acacia,
+    Cherry,
     Mahogany,
     Mangrove,
     Maple,
@@ -20,11 +21,12 @@ pub enum TreeSpecies {
 
 #[allow(dead_code)]
 impl TreeSpecies {
-    pub const ALL: [TreeSpecies; 13] = [
+    pub const ALL: [TreeSpecies; 14] = [
         Self::Oak,
         Self::Birch,
         Self::Pine,
         Self::Acacia,
+        Self::Cherry,
         Self::Mahogany,
         Self::Mangrove,
         Self::Maple,
@@ -42,6 +44,7 @@ impl TreeSpecies {
             Self::Birch => Voxel::Tree_Birch_Log,
             Self::Pine => Voxel::Tree_Pine_Log,
             Self::Acacia => Voxel::Tree_Acacia_Log,
+            Self::Cherry => Voxel::Tree_Cherry_Log,
             Self::Mahogany => Voxel::Tree_Mahogany_Log,
             Self::Mangrove => Voxel::Tree_Mangrove_Log,
             Self::Maple => Voxel::Tree_Maple_Log,
@@ -60,6 +63,7 @@ impl TreeSpecies {
             Self::Birch => Voxel::Tree_Birch_Bark,
             Self::Pine => Voxel::Tree_Pine_Bark,
             Self::Acacia => Voxel::Tree_Acacia_Bark,
+            Self::Cherry => Voxel::Tree_Cherry_Bark,
             Self::Mahogany => Voxel::Tree_Mahogany_Bark,
             Self::Mangrove => Voxel::Tree_Mangrove_Bark,
             Self::Maple => Voxel::Tree_Maple_Bark,
@@ -78,6 +82,7 @@ impl TreeSpecies {
             Self::Birch => Some(Voxel::Tree_Birch_Leaves),
             Self::Pine => Some(Voxel::Tree_Pine_Leaves),
             Self::Acacia => Some(Voxel::Tree_Acacia_Leaves),
+            Self::Cherry => Some(Voxel::Tree_Cherry_Leaves),
             Self::Mahogany => Some(Voxel::Tree_Mahogany_Leaves),
             Self::Mangrove => Some(Voxel::Tree_Mangrove_Leaves),
             Self::Maple => Some(Voxel::Tree_Maple_Leaves_Red),
@@ -94,6 +99,7 @@ impl TreeSpecies {
             Self::Birch => Some(Voxel::Tree_Birch_Planks),
             Self::Pine => Some(Voxel::Tree_Pine_Planks),
             Self::Acacia => Some(Voxel::Tree_Acacia_Planks),
+            Self::Cherry => Some(Voxel::Tree_Cherry_Planks),
             Self::Mahogany => Some(Voxel::Tree_Mahogany_Planks),
             Self::Mangrove => Some(Voxel::Tree_Mangrove_Planks),
             Self::Maple => Some(Voxel::Tree_Maple_Planks),

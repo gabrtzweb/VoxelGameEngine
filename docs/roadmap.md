@@ -618,50 +618,40 @@ A focused overhaul and expansion of procedural world generation, terrain topogra
   - **Current Biome Suite**: There is 14 baseline biomes in `BiomeType::ACTIVE` and `ClimateGenerator::classify_biome` (`Plains`, `Cold Plains`, `Snowy Tundra`, `Meadow`, `Woodland`, `Wetlands`, `Highlands`, `Plains Forest`, `Savanna`, `Desert`, `Beach`, `River`, `Ocean`, `Deep Ocean`).
 
 - [x] **Stage 11.1: Complete Voxel Registry & Initial Block Catalog Definition (Completed)**:
-  - **Comprehensive 236-Block Palette**: All initial blocks for the game have been defined in `src/world/block.rs` and documented in `docs/blocks_list.md`. The catalog spans 9 primary categories:
+  - **Comprehensive 244-Block Palette**: All initial blocks for the game have been defined in `src/world/block.rs` and documented in `docs/world_definition.md` (superseding legacy `docs/blocks_list.md`). The catalog spans 10 primary categories:
     - **Testing / Debug (8)**: Null placeholders and test/debug blocks.
-    - **Fluids & Liquids (8)**: Acid, blood, lava, molten rock, ooze, sludge, tar, water.
-    - **Frost (4)**: Black ice, fragile ice, ice, packed ice.
+    - **Fluids & Liquids (8)**: Acid, blood, lava, molten rock, ooze, sludge, tar, water (with tuned wave movement, finite spreading limits, and non-shapeable constraints).
+    - **Frost (4)**: Black ice (semi-transparent dark ice), fragile ice, ice, packed ice (with wave shaders removed from static ice/glass).
     - **Soils & Sediment (32)**: Diverse soils, clays, gravels, muds, mulches, peats, silts, snows, ash, and standard/scorched sands.
     - **Rocks & Minerals (96)**: 24 geological stone types with 4 variants each (Raw Rock, Cobbled, Mossy, and Mossy Cobbled).
-    - **Woods & Trees (52)**: 13 tree species (Oak, Birch, Pine, Acacia, Mahogany, Mangrove, Maple, Palm, Willow, Yew, Charred, Dead, Cactus) with bark, log, leaves, and planks.
+    - **Woods & Trees (58)**: 14 tree species (Oak, Birch, Pine, Acacia, Cherry, Mahogany, Mangrove, Maple, Palm, Willow, Yew, Charred, Dead, Cactus) with bark, log, leaves, and planks, plus lush and flowering foliage variants.
     - **Aquatic & Marine (8)**: Algae, sea grass, kelp, dead coral, and coral colonies.
-    - **Lights & Illumination (16)**: Standard and colored lights, glowing lichens, and magma.
-    - **Decorations (12)**: Bookshelves, bricks, chiseled/smooth stone, clear and tinted glass, iron bars, chains, lanterns, and campfires.
+    - **Lights & Illumination (16)**: Standard and colored lights, glowing lichens, magma, and RGB torches.
+    - **Decorations (14)**: Bookshelves, bricks, chiseled/smooth stone, clear and tinted glass, iron bars, chains, lanterns, campfires, and baskets.
   - **Dual-Layer Texture Overlays & Face Mapping**: Directional multi-face textures (logs, grass, cactus, basalt) and runtime overlay compositing (`overlay_texture_name()`) for mossy rock and mossy cobbled rock variants.
-  - **Subterranean Stone Refinement**: Mid-crust subterranean stone transition now uses `Rock_Slate` (slate) rather than black sandstone.
-  - **Tree Species Cataloging**: Tree species in `src/generation/trees.rs` expanded to all 13 species (`TreeSpecies`), replacing legacy `Rainwood` with `Mahogany`.
+  - **Subterranean Stone Refinement**: Mid-crust subterranean stone transition uses `Rock_Slate` (slate) rather than black sandstone.
+  - **Tree Species Cataloging**: Tree species in `src/generation/trees.rs` expanded to all 14 species (`TreeSpecies`), replacing legacy `Rainwood` with `Mahogany` and integrating `Cherry`.
+  - **Custom 3D Mesh Blocks**:
+    - **3D Hollow Basket (`Deco_Basket`)**: Constructed with an open top rim using alpha cutout and 5 interior faces (interior floor and 4 inward-facing woven side walls), creating a deep hollow basket cavity.
+    - **Compact RGB Torches (`Emit_Red_Torch`, `Emit_Green_Torch`, `Emit_Blue_Torch`)**: Custom 10-pixel height 3D torch model with emissive self-illumination, passable non-solid collision (`!is_collidable`), torch stacking prevention, support validation, and automatic 4-way wall-mounting with artist metal brackets.
+    - **Placement Feedback & Light Fixes**: Fixed `frame_count` animation indexing to eliminate light block texture cycling/flickering, and bypassed full-cube pop meshes on custom-shaped voxels.
 
 - [ ] **Stage 11.2: Surface Biome Catalog (Terrain & Surface Palettes)**:
-  *Note: Only existing engine blocks are utilized. No flora/fauna features at this stage.*
+  *Note: Only existing engine blocks are utilized. Documented in `docs/world_definition.md` to replace the 14 original legacy biomes across 5 distinct geographic zones.*
 
-  - **Already existing biomes**:
-    - Plains
-    - Cold Plains
-    - Snowy Tundra
-    - Meadow
-    - Woodland
-    - Wetlands
-    - Highlands
-    - Plains Forest
-    - Savanna
-    - Desert
-    - Beach
-    - River
-    - Ocean
-    - Deep Ocean
-  - **New biomes**:
-    - Birch Forest
-    - Cold Taiga
-    - Dense Forest
-    - Mire
-    - Rolling Hills
-    - Scrubland
-    - Tropical Beach
-    - Tundra
-    - Volcanic Lands
-  - **They should be distributed like this**:
-    - 
+  - **Surface Biomes**:
+    - *Forests & Woodlands*: Ancient Weald, Boreal Taiga, Birch Copse
+    - *Plains & Open Lands*: Steppe, Permafrost Steppe, Snowy Tundra, Moorland, Heath
+    - *Wetlands*: Peat Bog, Marshland
+    - *Arid & Warm Lands*: Arid Scrubland, Dune Desert, Badlands
+  - **Mountain Biomes**:
+    - Karst Peaks, Scree Slopes, Shale Barrens, Volcanic Fields, Glacial Peaks, Alpine Tundra, Jagged Crags, Frozen Caldera
+  - **Coastal Biomes**:
+    - Beach, Shingle Beach, Volcanic Coast, Chalk Cliffs, Tidal Mudflats, Coastal Crags, Brackish Estuary, Windswept Dunes
+  - **Aquatic Biomes**:
+    - River, Frozen River, Lake, Thermal Lake, Temperate Ocean, Deep Temperate Ocean, Cold Ocean, Deep Cold Ocean, Warm Ocean, Deep Warm Ocean, Frozen Ocean, Abyssal Trench
+  - **Climate & Palette Distribution**:
+    - To be mapped against temperature, moisture, and continentalness curves using only the active 244-block catalog.
 
 - [ ] **Stage 11.3: Multi-Parameter Climate Noise & Spline Mapping**:
   - **Multi-Noise Climate Coordinates**: Continuous multi-octave 2D noise mapping Continentalness, Temperature, and Humidity with expanded parameter curves.

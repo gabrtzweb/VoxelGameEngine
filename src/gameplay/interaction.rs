@@ -212,7 +212,10 @@ fn edit_voxels(
         let existing_voxel = world.get_voxel(target.hit_voxel);
         let existing_extra = world.get_extra_slab(target.hit_voxel);
 
-        let edited = if target.face_normal == IVec3::Y
+        let edited = if existing_voxel.is_some_and(Voxel::is_torch) {
+            // Cannot stack or place anything against or on top of a torch
+            Vec::new()
+        } else if target.face_normal == IVec3::Y
             && hit_shape == BlockShape::Slab
             && hit_orientation == 0
             && existing_extra.is_none()
@@ -242,6 +245,47 @@ fn edit_voxels(
                 modifications.record_extra_slab(target.hit_voxel, Some((place_voxel_type, 0)));
             }
             vec![target.hit_voxel]
+        } else if place_voxel_type.is_torch() {
+            // Torch placement: check orientation and support
+            let supporting_solid = existing_voxel.is_some_and(|v| !v.is_empty() && !v.is_fluid() && !v.is_torch());
+            if !supporting_solid {
+                Vec::new()
+            } else if target.face_normal == -IVec3::Y {
+                // Cannot place torch on ceiling
+                Vec::new()
+            } else {
+                let torch_orient = match target.face_normal {
+                    IVec3::Y => 0,      // Floor standing
+                    IVec3::Z => 1,      // Wall North (-Z)
+                    IVec3::NEG_Z => 2,  // Wall South (+Z)
+                    IVec3::X => 3,      // Wall West (-X)
+                    IVec3::NEG_X => 4,  // Wall East (+X)
+                    _ => 0,
+                };
+                let placed = place_block(
+                    &mut world,
+                    &mut modifications,
+                    place_position,
+                    place_voxel_type,
+                );
+                if !placed.is_empty() {
+                    world.set_shape(place_position, BlockShape::Torch, torch_orient);
+                    modifications.record_shape(place_position, BlockShape::Torch, torch_orient);
+                }
+                placed
+            }
+        } else if place_voxel_type.is_basket() {
+            let placed = place_block(
+                &mut world,
+                &mut modifications,
+                place_position,
+                place_voxel_type,
+            );
+            if !placed.is_empty() {
+                world.set_shape(place_position, BlockShape::Basket, 0);
+                modifications.record_shape(place_position, BlockShape::Basket, 0);
+            }
+            placed
         } else {
             place_block(
                 &mut world,
@@ -331,7 +375,13 @@ pub fn remove_voxel(
     };
 
     world.set_voxel(world_voxel, replacement);
+    world.set_fluid_level(world_voxel, 0);
+    world.set_shape(world_voxel, BlockShape::Full, 0);
+    world.set_extra_slab(world_voxel, None);
     modifications.record(world_voxel, replacement);
+    modifications.record_fluid_level(world_voxel, 0);
+    modifications.record_shape(world_voxel, BlockShape::Full, 0);
+    modifications.record_extra_slab(world_voxel, None);
 
     true
 }
@@ -346,7 +396,7 @@ pub fn place_voxel(
         return false;
     };
 
-    if !current_voxel.is_empty() && !current_voxel.is_water() {
+    if !current_voxel.is_empty() && !current_voxel.is_fluid() {
         return false;
     }
 
@@ -357,7 +407,9 @@ pub fn place_voxel(
     };
 
     world.set_voxel(world_voxel, final_voxel);
+    world.set_fluid_level(world_voxel, 0);
     modifications.record(world_voxel, final_voxel);
+    modifications.record_fluid_level(world_voxel, 0);
 
     true
 }
@@ -367,11 +419,70 @@ pub fn remove_block(
     modifications: &mut WorldModificationStore,
     block_pos: IVec3,
 ) -> Vec<IVec3> {
-    if remove_voxel(world, modifications, block_pos) {
-        vec![block_pos]
-    } else {
-        Vec::new()
+    if !remove_voxel(world, modifications, block_pos) {
+        return Vec::new();
     }
+
+    let mut removed = vec![block_pos];
+
+    // Check if any attached torches lost their support:
+    // 1. Floor torch sitting on top of this block (block_pos + Y)
+    let top_pos = block_pos + IVec3::Y;
+    if let Some(v) = world.get_voxel(top_pos)
+        && v.is_torch()
+    {
+        let (s, o) = world.get_shape(top_pos);
+        if s == BlockShape::Torch && o == 0 && remove_voxel(world, modifications, top_pos) {
+            removed.push(top_pos);
+        }
+    }
+
+    // 2. Wall torches attached to this block:
+    // South neighbor (+Z) has torch attached to North wall of block_pos (orientation 1)
+    let south_pos = block_pos + IVec3::Z;
+    if let Some(v) = world.get_voxel(south_pos)
+        && v.is_torch()
+    {
+        let (s, o) = world.get_shape(south_pos);
+        if s == BlockShape::Torch && o == 1 && remove_voxel(world, modifications, south_pos) {
+            removed.push(south_pos);
+        }
+    }
+
+    // North neighbor (-Z) has torch attached to South wall of block_pos (orientation 2)
+    let north_pos = block_pos - IVec3::Z;
+    if let Some(v) = world.get_voxel(north_pos)
+        && v.is_torch()
+    {
+        let (s, o) = world.get_shape(north_pos);
+        if s == BlockShape::Torch && o == 2 && remove_voxel(world, modifications, north_pos) {
+            removed.push(north_pos);
+        }
+    }
+
+    // East neighbor (+X) has torch attached to West wall of block_pos (orientation 3)
+    let east_pos = block_pos + IVec3::X;
+    if let Some(v) = world.get_voxel(east_pos)
+        && v.is_torch()
+    {
+        let (s, o) = world.get_shape(east_pos);
+        if s == BlockShape::Torch && o == 3 && remove_voxel(world, modifications, east_pos) {
+            removed.push(east_pos);
+        }
+    }
+
+    // West neighbor (-X) has torch attached to East wall of block_pos (orientation 4)
+    let west_pos = block_pos - IVec3::X;
+    if let Some(v) = world.get_voxel(west_pos)
+        && v.is_torch()
+    {
+        let (s, o) = world.get_shape(west_pos);
+        if s == BlockShape::Torch && o == 4 && remove_voxel(world, modifications, west_pos) {
+            removed.push(west_pos);
+        }
+    }
+
+    removed
 }
 
 pub fn place_block(

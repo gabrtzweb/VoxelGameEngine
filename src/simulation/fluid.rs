@@ -12,8 +12,6 @@ use crate::{
     },
 };
 
-pub const MAX_FULL_WATER_SPREAD: u8 = 8;
-pub const MAX_SINGLE_WATER_SPREAD: u8 = 4;
 const FLUID_TICK_SECONDS: f32 = 0.25;
 const MAX_UPDATES_PER_TICK: usize = 256;
 
@@ -29,22 +27,6 @@ pub fn is_in_simulation_radius(
     let dz = chunk_coord.z - player_chunk.z;
     let dy = (chunk_coord.y - player_chunk.y).abs();
     dx * dx + dz * dz <= simulation_distance * simulation_distance && dy <= simulation_distance
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct WaterInfo {
-    pub distance: u8,
-    pub is_full_block: bool,
-}
-
-impl WaterInfo {
-    pub fn max_spread(self) -> u8 {
-        if self.is_full_block {
-            MAX_FULL_WATER_SPREAD
-        } else {
-            MAX_SINGLE_WATER_SPREAD
-        }
-    }
 }
 
 #[derive(Resource, Default)]
@@ -148,23 +130,14 @@ fn run_fluid_simulation(
             continue;
         };
 
-        match current_voxel {
-            Voxel::Liquid_Water => {
-                let changed =
-                    process_water_source(&mut world, &mut modifications, &mut queue, pos);
-                edited_voxels.extend(changed);
-            }
-            Voxel::WaterOccupied => {
-                let changed =
-                    process_water_occupied(&mut world, &mut modifications, &mut queue, pos);
-                edited_voxels.extend(changed);
-            }
-            Voxel::Air => {
-                let changed =
-                    check_infinite_source(&mut world, &mut modifications, &mut queue, pos);
-                edited_voxels.extend(changed);
-            }
-            _ => {}
+        if current_voxel.is_fluid() {
+            let changed =
+                process_fluid(&mut world, &mut modifications, &mut queue, pos, current_voxel);
+            edited_voxels.extend(changed);
+        } else if current_voxel == Voxel::Air {
+            let changed =
+                check_infinite_source(&mut world, &mut modifications, &mut queue, pos);
+            edited_voxels.extend(changed);
         }
 
         updates_this_tick += 1;
@@ -191,35 +164,20 @@ fn run_fluid_simulation(
     }
 }
 
-#[allow(dead_code)]
-fn process_water_source(
+#[inline]
+pub fn is_same_fluid_type(a: Voxel, b: Voxel) -> bool {
+    (a.is_water() && b.is_water()) || (a.is_fluid() && a == b)
+}
+
+fn process_fluid(
     world: &mut VoxelWorld,
     modifications: &mut WorldModificationStore,
     queue: &mut FluidUpdateQueue,
     pos: IVec3,
+    current_voxel: Voxel,
 ) -> Vec<IVec3> {
     let mut edited = Vec::new();
-
-    let below = pos - IVec3::Y;
-    if let Some(voxel_below) = world.get_voxel(below) {
-        if voxel_below == Voxel::Air {
-            world.set_voxel(below, Voxel::Liquid_Water);
-            modifications.record(below, Voxel::Liquid_Water);
-            queue.enqueue_with_neighbors(below);
-            edited.push(below);
-            return edited;
-        } else if voxel_below == Voxel::Occupied {
-            world.set_voxel(below, Voxel::WaterOccupied);
-            modifications.record(below, Voxel::WaterOccupied);
-            queue.enqueue_with_neighbors(below);
-            edited.push(below);
-            return edited;
-        }
-    }
-
-    if !is_supported_by_ground(world, pos) {
-        return edited;
-    }
+    let current_level = world.get_fluid_level(pos);
 
     let horizontals = [
         pos + IVec3::X,
@@ -228,162 +186,124 @@ fn process_water_source(
         pos - IVec3::Z,
     ];
 
-    for neighbor in horizontals {
-        if let Some(v) = world.get_voxel(neighbor) {
+    // 1. Upstream validation for flowing blocks:
+    // If this is a flowing block (level > 0), verify that it is still fed by an upstream source/column.
+    // If not, drain back to Air (or Occupied for waterlogged slabs).
+    if current_level > 0 {
+        let has_upstream_above = world
+            .get_voxel(pos + IVec3::Y)
+            .is_some_and(|v| is_same_fluid_type(current_voxel, v));
+
+        let has_upstream_horizontal = horizontals.iter().any(|&n| {
+            world
+                .get_voxel(n)
+                .is_some_and(|v| is_same_fluid_type(current_voxel, v))
+                && world.get_fluid_level(n) < current_level
+        });
+
+        if !has_upstream_above && !has_upstream_horizontal {
+            let replacement = if current_voxel == Voxel::WaterOccupied {
+                Voxel::Occupied
+            } else {
+                Voxel::Air
+            };
+            world.set_voxel(pos, replacement);
+            world.set_fluid_level(pos, 0);
+            modifications.record(pos, replacement);
+            modifications.record_fluid_level(pos, 0);
+            queue.enqueue_with_neighbors(pos);
+            edited.push(pos);
+            return edited;
+        }
+    }
+
+    // 2. Downward flow (vertical gravity priority):
+    let below = pos - IVec3::Y;
+    if let Some(voxel_below) = world.get_voxel(below) {
+        if voxel_below == Voxel::Air {
+            let flow_voxel = if current_voxel == Voxel::WaterOccupied {
+                Voxel::Liquid_Water
+            } else {
+                current_voxel
+            };
+            world.set_voxel(below, flow_voxel);
+            world.set_fluid_level(below, 1);
+            modifications.record(below, flow_voxel);
+            modifications.record_fluid_level(below, 1);
+            queue.enqueue_with_neighbors(below);
+            edited.push(below);
+            return edited;
+        } else if voxel_below == Voxel::Occupied && current_voxel.is_water() {
+            world.set_voxel(below, Voxel::WaterOccupied);
+            world.set_fluid_level(below, 1);
+            modifications.record(below, Voxel::WaterOccupied);
+            modifications.record_fluid_level(below, 1);
+            queue.enqueue_with_neighbors(below);
+            edited.push(below);
+            return edited;
+        }
+    }
+
+    // 3. Falling column check:
+    // A falling stream descending through mid-air must not branch sideways until it hits solid ground.
+    let is_falling_column = world
+        .get_voxel(pos + IVec3::Y)
+        .is_some_and(|v| is_same_fluid_type(current_voxel, v));
+    let below_is_solid = world
+        .get_voxel(below)
+        .is_some_and(|v| !v.is_empty() && !v.is_fluid());
+
+    if is_falling_column && !below_is_solid {
+        return edited;
+    }
+
+    // 4. Ground support check:
+    if !is_supported_by_ground(world, pos) {
+        return edited;
+    }
+
+    // 5. Horizontal spreading:
+    let effective_level = if current_level == 0 {
+        0
+    } else if is_falling_column {
+        1
+    } else {
+        current_level
+    };
+
+    let max_spread = current_voxel.max_fluid_spread();
+    if effective_level < max_spread {
+        let next_level = effective_level + 1;
+        let spread_voxel = if current_voxel == Voxel::WaterOccupied {
+            Voxel::Liquid_Water
+        } else {
+            current_voxel
+        };
+
+        for neighbor in horizontals {
+            let Some(v) = world.get_voxel(neighbor) else {
+                continue;
+            };
+
             if v == Voxel::Air {
-                world.set_voxel(neighbor, Voxel::Liquid_Water);
-                modifications.record(neighbor, Voxel::Liquid_Water);
+                world.set_voxel(neighbor, spread_voxel);
+                world.set_fluid_level(neighbor, next_level);
+                modifications.record(neighbor, spread_voxel);
+                modifications.record_fluid_level(neighbor, next_level);
                 queue.enqueue_with_neighbors(neighbor);
                 edited.push(neighbor);
-            } else if v == Voxel::Occupied {
+            } else if v == Voxel::Occupied && current_voxel.is_water() {
                 world.set_voxel(neighbor, Voxel::WaterOccupied);
+                world.set_fluid_level(neighbor, next_level);
                 modifications.record(neighbor, Voxel::WaterOccupied);
+                modifications.record_fluid_level(neighbor, next_level);
                 queue.enqueue_with_neighbors(neighbor);
                 edited.push(neighbor);
-            }
-        }
-    }
-
-    edited
-}
-
-#[allow(dead_code)]
-fn process_water_flowing(
-    world: &mut VoxelWorld,
-    modifications: &mut WorldModificationStore,
-    queue: &mut FluidUpdateQueue,
-    pos: IVec3,
-) -> Vec<IVec3> {
-    let mut edited = Vec::new();
-
-    if !has_adjacent_water(world, pos) {
-        world.set_voxel(pos, Voxel::Air);
-        modifications.record(pos, Voxel::Air);
-        queue.enqueue_with_neighbors(pos);
-        edited.push(pos);
-        return edited;
-    }
-
-    let Some(info) = compute_water_info(world, pos) else {
-        world.set_voxel(pos, Voxel::Air);
-        modifications.record(pos, Voxel::Air);
-        queue.enqueue_with_neighbors(pos);
-        edited.push(pos);
-        return edited;
-    };
-
-    let below = pos - IVec3::Y;
-    if let Some(voxel_below) = world.get_voxel(below) {
-        if voxel_below == Voxel::Air {
-            world.set_voxel(below, Voxel::Liquid_Water);
-            modifications.record(below, Voxel::Liquid_Water);
-            queue.enqueue_with_neighbors(below);
-            edited.push(below);
-            return edited;
-        } else if voxel_below == Voxel::Occupied {
-            world.set_voxel(below, Voxel::WaterOccupied);
-            modifications.record(below, Voxel::WaterOccupied);
-            queue.enqueue_with_neighbors(below);
-            edited.push(below);
-            return edited;
-        }
-    }
-
-    if !is_supported_by_ground(world, pos) {
-        return edited;
-    }
-
-    if info.distance < info.max_spread() {
-        let horizontals = [
-            pos + IVec3::X,
-            pos - IVec3::X,
-            pos + IVec3::Z,
-            pos - IVec3::Z,
-        ];
-
-        for neighbor in horizontals {
-            if let Some(v) = world.get_voxel(neighbor) {
-                if v == Voxel::Air {
-                    world.set_voxel(neighbor, Voxel::Liquid_Water);
-                    modifications.record(neighbor, Voxel::Liquid_Water);
-                    queue.enqueue_with_neighbors(neighbor);
-                    edited.push(neighbor);
-                } else if v == Voxel::Occupied {
-                    world.set_voxel(neighbor, Voxel::WaterOccupied);
-                    modifications.record(neighbor, Voxel::WaterOccupied);
-                    queue.enqueue_with_neighbors(neighbor);
-                    edited.push(neighbor);
-                }
-            }
-        }
-    }
-
-    edited
-}
-
-fn process_water_occupied(
-    world: &mut VoxelWorld,
-    modifications: &mut WorldModificationStore,
-    queue: &mut FluidUpdateQueue,
-    pos: IVec3,
-) -> Vec<IVec3> {
-    let mut edited = Vec::new();
-
-    if !has_adjacent_water(world, pos) {
-        world.set_voxel(pos, Voxel::Occupied);
-        modifications.record(pos, Voxel::Occupied);
-        queue.enqueue_with_neighbors(pos);
-        edited.push(pos);
-        return edited;
-    }
-
-    let Some(info) = compute_water_info(world, pos) else {
-        world.set_voxel(pos, Voxel::Occupied);
-        modifications.record(pos, Voxel::Occupied);
-        queue.enqueue_with_neighbors(pos);
-        edited.push(pos);
-        return edited;
-    };
-
-    let below = pos - IVec3::Y;
-    if let Some(voxel_below) = world.get_voxel(below) {
-        if voxel_below == Voxel::Air {
-            world.set_voxel(below, Voxel::Liquid_Water);
-            modifications.record(below, Voxel::Liquid_Water);
-            queue.enqueue_with_neighbors(below);
-            edited.push(below);
-            return edited;
-        } else if voxel_below == Voxel::Occupied {
-            world.set_voxel(below, Voxel::WaterOccupied);
-            modifications.record(below, Voxel::WaterOccupied);
-            queue.enqueue_with_neighbors(below);
-            edited.push(below);
-            return edited;
-        }
-    }
-
-    if !is_supported_by_ground(world, pos) {
-        return edited;
-    }
-
-    if info.distance < info.max_spread() {
-        let horizontals = [
-            pos + IVec3::X,
-            pos - IVec3::X,
-            pos + IVec3::Z,
-            pos - IVec3::Z,
-        ];
-
-        for neighbor in horizontals {
-            if let Some(v) = world.get_voxel(neighbor) {
-                if v == Voxel::Air {
-                    world.set_voxel(neighbor, Voxel::Liquid_Water);
-                    modifications.record(neighbor, Voxel::Liquid_Water);
-                    queue.enqueue_with_neighbors(neighbor);
-                    edited.push(neighbor);
-                } else if v == Voxel::Occupied {
-                    world.set_voxel(neighbor, Voxel::WaterOccupied);
-                    modifications.record(neighbor, Voxel::WaterOccupied);
+            } else if is_same_fluid_type(current_voxel, v) {
+                let existing_level = world.get_fluid_level(neighbor);
+                if existing_level > next_level {
+                    world.set_fluid_level(neighbor, next_level);
+                    modifications.record_fluid_level(neighbor, next_level);
                     queue.enqueue_with_neighbors(neighbor);
                     edited.push(neighbor);
                 }
@@ -406,7 +326,7 @@ fn check_infinite_source(
     let Some(v_below) = world.get_voxel(below) else {
         return edited;
     };
-    if v_below == Voxel::Air {
+    if v_below.is_empty() {
         return edited;
     }
 
@@ -419,34 +339,21 @@ fn check_infinite_source(
 
     let source_count = horizontals
         .iter()
-        .filter(|&&n| world.get_voxel(n) == Some(Voxel::Liquid_Water))
+        .filter(|&&n| {
+            world.get_voxel(n) == Some(Voxel::Liquid_Water) && world.get_fluid_level(n) == 0
+        })
         .count();
 
     if source_count >= 2 {
         world.set_voxel(pos, Voxel::Liquid_Water);
+        world.set_fluid_level(pos, 0);
         modifications.record(pos, Voxel::Liquid_Water);
+        modifications.record_fluid_level(pos, 0);
         queue.enqueue_with_neighbors(pos);
         edited.push(pos);
     }
 
     edited
-}
-
-fn has_adjacent_water(world: &VoxelWorld, pos: IVec3) -> bool {
-    let neighbors = [
-        pos + IVec3::Y,
-        pos - IVec3::Y,
-        pos + IVec3::X,
-        pos - IVec3::X,
-        pos + IVec3::Z,
-        pos - IVec3::Z,
-    ];
-
-    neighbors.iter().any(|&n| {
-        world
-            .get_voxel(n)
-            .is_some_and(Voxel::is_water)
-    })
 }
 
 fn is_supported_by_ground(world: &VoxelWorld, pos: IVec3) -> bool {
@@ -459,7 +366,7 @@ fn is_supported_by_ground(world: &VoxelWorld, pos: IVec3) -> bool {
         return false;
     }
 
-    if !v_below.is_water() && v_below != Voxel::Occupied && v_below != Voxel::WaterOccupied {
+    if !v_below.is_fluid() {
         return true;
     }
 
@@ -471,7 +378,7 @@ fn is_supported_by_ground(world: &VoxelWorld, pos: IVec3) -> bool {
         if v.is_empty() {
             return false;
         }
-        if !v.is_water() && v != Voxel::Occupied && v != Voxel::WaterOccupied {
+        if !v.is_fluid() {
             return true;
         }
         check_pos -= IVec3::Y;
@@ -480,99 +387,217 @@ fn is_supported_by_ground(world: &VoxelWorld, pos: IVec3) -> bool {
     false
 }
 
-#[allow(dead_code)]
-pub fn is_full_block_source(world: &impl VoxelAccess, pos: IVec3) -> bool {
-    let above = pos + IVec3::Y;
-    let below = pos - IVec3::Y;
-    world.get_voxel(above).is_some_and(Voxel::is_water)
-        || world.get_voxel(below).is_some_and(Voxel::is_water)
-}
-
-pub fn compute_water_info(world: &impl VoxelAccess, pos: IVec3) -> Option<WaterInfo> {
-    let above = pos + IVec3::Y;
-    if let Some(v_above) = world.get_voxel(above)
-        && v_above.is_water()
-    {
-        let two_above = pos + IVec3::new(0, 2, 0);
-        if world.get_voxel(two_above).is_some_and(Voxel::is_water) {
-            return Some(WaterInfo {
-                distance: 1,
-                is_full_block: true,
-            });
-        }
-    }
-
-    let mut queue = VecDeque::new();
-    let mut visited = HashSet::new();
-
-    queue.push_back((pos, 0u8));
-    visited.insert(pos);
-
-    while let Some((curr, dist)) = queue.pop_front() {
-        if dist >= MAX_FULL_WATER_SPREAD {
-            continue;
-        }
-
-        let horizontals = [
-            curr + IVec3::X,
-            curr - IVec3::X,
-            curr + IVec3::Z,
-            curr - IVec3::Z,
-        ];
-
-        for neighbor in horizontals {
-            if visited.contains(&neighbor) {
-                continue;
-            }
-
-            let Some(v) = world.get_voxel(neighbor) else {
-                continue;
-            };
-
-            let next_dist = dist + 1;
-
-            if v.is_water() {
-                let n_above = neighbor + IVec3::Y;
-                let n_two_above = neighbor + IVec3::new(0, 2, 0);
-                if world.get_voxel(n_above).is_some_and(Voxel::is_water)
-                    && world.get_voxel(n_two_above).is_some_and(Voxel::is_water)
-                {
-                    let info = WaterInfo {
-                        distance: next_dist,
-                        is_full_block: true,
-                    };
-                    if next_dist <= MAX_FULL_WATER_SPREAD {
-                        return Some(info);
-                    }
-                }
-
-                visited.insert(neighbor);
-                queue.push_back((neighbor, next_dist));
-            }
-        }
-    }
-
-    None
-}
-
 pub fn water_surface_height_offset(world: &impl VoxelAccess, world_voxel: IVec3) -> f32 {
     let voxel = world.get_voxel(world_voxel).unwrap_or(Voxel::Air);
     if !voxel.is_fluid() {
         return 0.0;
     }
 
-    if voxel != Voxel::Liquid_Water && voxel != Voxel::WaterOccupied {
+    // Submerged fluid blocks have no surface drop.
+    let above = world_voxel + IVec3::Y;
+    if world.get_voxel(above).is_some_and(Voxel::is_fluid) {
+        return 0.0;
+    }
+
+    let level = world.get_fluid_level(world_voxel);
+    if level == 0 {
         return 0.10;
     }
 
-    if voxel == Voxel::Liquid_Water {
-        return 0.10;
-    }
-
-    let Some(info) = compute_water_info(world, world_voxel) else {
-        return 0.50;
-    };
-
-    let total_offset = 0.10 + (info.distance as f32) * 0.10;
+    let max_spread = voxel.max_fluid_spread().max(1);
+    let ratio = (level as f32) / (max_spread as f32);
+    let total_offset = 0.10 + ratio * 0.65;
     total_offset.clamp(0.10, 0.85)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::world::chunk::Chunk;
+
+    #[test]
+    fn test_fluid_spread_limits() {
+        assert_eq!(Voxel::Liquid_Water.max_fluid_spread(), 8);
+        assert_eq!(Voxel::WaterOccupied.max_fluid_spread(), 8);
+        assert_eq!(Voxel::Liquid_Acid.max_fluid_spread(), 5);
+        assert_eq!(Voxel::Liquid_Blood.max_fluid_spread(), 4);
+        assert_eq!(Voxel::Null_Liquid.max_fluid_spread(), 4);
+        assert_eq!(Voxel::Liquid_Lava.max_fluid_spread(), 3);
+        assert_eq!(Voxel::Liquid_Molten.max_fluid_spread(), 3);
+        assert_eq!(Voxel::Liquid_Sludge.max_fluid_spread(), 3);
+        assert_eq!(Voxel::Liquid_Ooze.max_fluid_spread(), 3);
+        assert_eq!(Voxel::Liquid_Tar.max_fluid_spread(), 2);
+        assert_eq!(Voxel::Rock_Stone.max_fluid_spread(), 0);
+        assert_eq!(Voxel::Air.max_fluid_spread(), 0);
+    }
+
+    fn setup_test_world() -> (VoxelWorld, WorldModificationStore, FluidUpdateQueue) {
+        let mut world = VoxelWorld::default();
+        // Insert chunks covering from -1 to 1 in X, Z, and 0 in Y
+        for cx in -1..=1 {
+            for cz in -1..=1 {
+                world.insert_chunk(IVec3::new(cx, 0, cz), Chunk::new());
+            }
+        }
+        // Build a solid stone floor at y = 0
+        for x in -16..=16 {
+            for z in -16..=16 {
+                world.set_voxel(IVec3::new(x, 0, z), Voxel::Rock_Stone);
+            }
+        }
+        let modifications = WorldModificationStore::default();
+        let queue = FluidUpdateQueue::default();
+        (world, modifications, queue)
+    }
+
+    fn step_simulation(
+        world: &mut VoxelWorld,
+        modifications: &mut WorldModificationStore,
+        queue: &mut FluidUpdateQueue,
+        max_steps: usize,
+    ) {
+        for _ in 0..max_steps {
+            if queue.queue.is_empty() {
+                break;
+            }
+            let count = queue.queue.len();
+            for _ in 0..count {
+                let Some(pos) = queue.queue.pop_front() else {
+                    break;
+                };
+                queue.in_queue.remove(&pos);
+
+                let Some(current_voxel) = world.get_voxel(pos) else {
+                    continue;
+                };
+
+                if current_voxel.is_fluid() {
+                    process_fluid(world, modifications, queue, pos, current_voxel);
+                } else if current_voxel == Voxel::Air {
+                    check_infinite_source(world, modifications, queue, pos);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_water_spread_and_drain() {
+        let (mut world, mut modifications, mut queue) = setup_test_world();
+        let source_pos = IVec3::new(0, 1, 0);
+
+        // Place water source block
+        world.set_voxel(source_pos, Voxel::Liquid_Water);
+        world.set_fluid_level(source_pos, 0);
+        queue.enqueue_with_neighbors(source_pos);
+
+        // Run simulation until stable
+        step_simulation(&mut world, &mut modifications, &mut queue, 50);
+
+        // Verify water spread limit is exactly 8 blocks
+        assert_eq!(world.get_voxel(source_pos), Some(Voxel::Liquid_Water));
+        assert_eq!(world.get_fluid_level(source_pos), 0);
+
+        for dist in 1..=8 {
+            let check_pos = IVec3::new(dist, 1, 0);
+            assert_eq!(
+                world.get_voxel(check_pos),
+                Some(Voxel::Liquid_Water),
+                "Water should spread up to distance {}",
+                dist
+            );
+            assert_eq!(world.get_fluid_level(check_pos), dist as u8);
+        }
+
+        // Distance 9 MUST be Air (not spread infinitely!)
+        assert_eq!(
+            world.get_voxel(IVec3::new(9, 1, 0)),
+            Some(Voxel::Air),
+            "Water must not spread past distance 8"
+        );
+
+        // Now remove source block: set to Air
+        world.set_voxel(source_pos, Voxel::Air);
+        world.set_fluid_level(source_pos, 0);
+        queue.enqueue_with_neighbors(source_pos);
+
+        // Run simulation until stable
+        step_simulation(&mut world, &mut modifications, &mut queue, 50);
+
+        // Verify all flowing water drained away
+        for dist in 1..=8 {
+            let check_pos = IVec3::new(dist, 1, 0);
+            assert_eq!(
+                world.get_voxel(check_pos),
+                Some(Voxel::Air),
+                "Flowing water at distance {} should drain away after source is removed",
+                dist
+            );
+            assert_eq!(world.get_fluid_level(check_pos), 0);
+        }
+    }
+
+    #[test]
+    fn test_lava_spread_limit() {
+        let (mut world, mut modifications, mut queue) = setup_test_world();
+        let source_pos = IVec3::new(0, 1, 0);
+
+        // Place lava source block
+        world.set_voxel(source_pos, Voxel::Liquid_Lava);
+        world.set_fluid_level(source_pos, 0);
+        queue.enqueue_with_neighbors(source_pos);
+
+        // Run simulation until stable
+        step_simulation(&mut world, &mut modifications, &mut queue, 50);
+
+        // Lava spreads at most 3 blocks
+        for dist in 1..=3 {
+            let check_pos = IVec3::new(dist, 1, 0);
+            assert_eq!(
+                world.get_voxel(check_pos),
+                Some(Voxel::Liquid_Lava),
+                "Lava should spread up to distance {}",
+                dist
+            );
+            assert_eq!(world.get_fluid_level(check_pos), dist as u8);
+        }
+
+        // Distance 4 MUST be Air
+        assert_eq!(
+            world.get_voxel(IVec3::new(4, 1, 0)),
+            Some(Voxel::Air),
+            "Lava must not spread past distance 3"
+        );
+    }
+
+    #[test]
+    fn test_infinite_water_requires_sources() {
+        let (mut world, mut modifications, mut queue) = setup_test_world();
+
+        // 1. Two flowing water blocks (level > 0) next to an air block:
+        // (0, 1, 1) level 2, (0, 1, -1) level 2, target is (0, 1, 0)
+        let target = IVec3::new(0, 1, 0);
+        world.set_voxel(IVec3::new(0, 1, 1), Voxel::Liquid_Water);
+        world.set_fluid_level(IVec3::new(0, 1, 1), 2);
+        world.set_voxel(IVec3::new(0, 1, -1), Voxel::Liquid_Water);
+        world.set_fluid_level(IVec3::new(0, 1, -1), 2);
+
+        check_infinite_source(&mut world, &mut modifications, &mut queue, target);
+        assert_eq!(
+            world.get_voxel(target),
+            Some(Voxel::Air),
+            "Flowing water blocks should not create infinite source"
+        );
+
+        // 2. Two true source blocks (level == 0) next to an air block:
+        world.set_fluid_level(IVec3::new(0, 1, 1), 0);
+        world.set_fluid_level(IVec3::new(0, 1, -1), 0);
+
+        check_infinite_source(&mut world, &mut modifications, &mut queue, target);
+        assert_eq!(
+            world.get_voxel(target),
+            Some(Voxel::Liquid_Water),
+            "Two water sources should create a new source"
+        );
+        assert_eq!(world.get_fluid_level(target), 0);
+    }
 }

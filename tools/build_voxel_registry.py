@@ -1,6 +1,10 @@
 import os
 
-with open('all_textures.txt', 'r', encoding='utf-8-sig') as f:
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+tex_path = os.path.join(BASE_DIR, 'docs', 'all_textures.txt')
+if not os.path.exists(tex_path):
+    tex_path = os.path.join(BASE_DIR, 'all_textures.txt')
+with open(tex_path, 'r', encoding='utf-8-sig') as f:
     textures_on_disk = set(line.strip().replace('.png', '') for line in f if line.strip())
 
 # The 24 rocky block types:
@@ -93,7 +97,7 @@ liquid_blocks = [
 
 # Frost blocks (4):
 frost_blocks = [
-    ("Frost_Black_Ice", "frost_black_ice", "Black Ice", [40, 50, 70, 255]),
+    ("Frost_Black_Ice", "frost_black_ice", "Black Ice", [30, 35, 45, 170]),
     ("Frost_Fragile_Ice", "frost_fragile_ice", "Fragile Ice", [140, 185, 235, 200]),
     ("Frost_Ice", "frost_ice", "Ice", [140, 185, 235, 220]),
     ("Frost_Packed_Ice", "frost_packed_ice", "Packed Ice", [160, 200, 245, 255]),
@@ -147,6 +151,7 @@ deco_blocks = [
 wood_trees = [
     ("Acacia", "acacia", [160, 85, 45, 255], [180, 100, 50, 255], [100, 140, 40, 255]),
     ("Birch", "birch", [225, 222, 210, 255], [200, 195, 180, 255], [133, 199, 56, 255]),
+    ("Cherry", "cherry", [57, 39, 48, 255], [155, 125, 110, 255], [230, 176, 197, 255]),
     ("Mahogany", "mahogany", [100, 50, 40, 255], [120, 60, 45, 255], [70, 120, 45, 255]),
     ("Mangrove", "mangrove", [110, 75, 60, 255], [130, 85, 65, 255], [65, 125, 55, 255]),
     ("Maple", "maple", [130, 90, 60, 255], [150, 105, 70, 255], [200, 80, 40, 255]),
@@ -167,6 +172,9 @@ for tname, tslug, bark_col, plank_col, leaf_col in wood_trees:
         wood_blocks.append(("Tree_Maple_Leaves_Yellow", "tree_maple_leaves_yellow", "Yellow Maple Leaves", [225, 185, 30, 255]))
     else:
         wood_blocks.append((f"Tree_{tname}_Leaves", f"tree_{tslug}_leaves", f"{tname} Leaves", leaf_col))
+        if tslug == "oak":
+            wood_blocks.append(("Tree_Oak_Leaves_Lush", "tree_oak_leaves_lush", "Lush Oak Leaves", [69, 91, 36, 255]))
+            wood_blocks.append(("Tree_Oak_Leaves_Flowering", "tree_oak_leaves_flowering", "Flowering Oak Leaves", [87, 93, 51, 255]))
     wood_blocks.append((f"Tree_{tname}_Planks", f"tree_{tslug}_planks", f"{tname} Planks", plank_col))
     if tname == "Mangrove":
         wood_blocks.append(("Tree_Mangrove_Roots", "tree_mangrove_roots", "Mangrove Roots", [95, 65, 50, 255]))
@@ -252,7 +260,7 @@ for cat_name, b_list in categories:
     for b in b_list:
         all_blocks.append(b)
 
-assert len(all_blocks) == 238
+assert len(all_blocks) == 244
 
 # Now build src/world/block.rs
 def generate_rust():
@@ -297,7 +305,7 @@ def generate_rust():
     lines.append("")
     lines.append("impl Voxel {")
     lines.append("    /// All voxels that map to a texture and are loaded into the terrain texture array.")
-    lines.append("    pub const ALL: [Voxel; 238] = [")
+    lines.append("    pub const ALL: [Voxel; 244] = [")
     for cat_name, b_list in categories:
         lines.append(f"        // {cat_name}")
         for b in b_list:
@@ -338,6 +346,7 @@ def generate_rust():
     lines.append('            Self::Tree_Acacia_Log => Some("tree_acacia_bark"),')
     lines.append('            Self::Tree_Birch_Log => Some("tree_birch_bark"),')
     lines.append('            Self::Tree_Charred_Log => Some("tree_charred_bark"),')
+    lines.append('            Self::Tree_Cherry_Log => Some("tree_cherry_bark"),')
     lines.append('            Self::Tree_Dead_Log => Some("tree_dead_bark"),')
     lines.append('            Self::Tree_Mahogany_Log => Some("tree_mahogany_bark"),')
     lines.append('            Self::Tree_Mangrove_Log => Some("tree_mangrove_bark"),')
@@ -376,6 +385,7 @@ def generate_rust():
     lines.append('            Self::Tree_Acacia_Log => Some("tree_acacia_log"),')
     lines.append('            Self::Tree_Birch_Log => Some("tree_birch_log"),')
     lines.append('            Self::Tree_Charred_Log => Some("tree_charred_log"),')
+    lines.append('            Self::Tree_Cherry_Log => Some("tree_cherry_log"),')
     lines.append('            Self::Tree_Dead_Log => Some("tree_dead_log"),')
     lines.append('            Self::Tree_Mahogany_Log => Some("tree_mahogany_log"),')
     lines.append('            Self::Tree_Mangrove_Log => Some("tree_mangrove_log"),')
@@ -412,6 +422,7 @@ def generate_rust():
     lines.append('            Self::Tree_Acacia_Log => Some("tree_acacia_log"),')
     lines.append('            Self::Tree_Birch_Log => Some("tree_birch_log"),')
     lines.append('            Self::Tree_Charred_Log => Some("tree_charred_log"),')
+    lines.append('            Self::Tree_Cherry_Log => Some("tree_cherry_log"),')
     lines.append('            Self::Tree_Dead_Log => Some("tree_dead_log"),')
     lines.append('            Self::Tree_Mahogany_Log => Some("tree_mahogany_log"),')
     lines.append('            Self::Tree_Mangrove_Log => Some("tree_mangrove_log"),')
@@ -559,13 +570,46 @@ def generate_rust():
     lines.append("            )")
     lines.append("    }")
     lines.append("")
+    lines.append("    pub fn max_fluid_spread(self) -> u8 {")
+    lines.append("        match self {")
+    lines.append("            Self::Liquid_Water | Self::WaterOccupied => 8,")
+    lines.append("            Self::Liquid_Acid => 5,")
+    lines.append("            Self::Liquid_Blood | Self::Null_Liquid => 4,")
+    lines.append("            Self::Liquid_Lava | Self::Liquid_Molten | Self::Liquid_Sludge | Self::Liquid_Ooze => 3,")
+    lines.append("            Self::Liquid_Tar => 2,")
+    lines.append("            _ => 0,")
+    lines.append("        }")
+    lines.append("    }")
+    lines.append("")
 
     # is_collidable
     lines.append("    pub fn is_collidable(self) -> bool {")
     lines.append("        !self.is_empty()")
     lines.append("            && !self.is_fluid()")
+    lines.append("            && !self.is_torch()")
     lines.append("            && self != Self::Occupied")
     lines.append("            && self != Self::WaterOccupied")
+    lines.append("    }")
+    lines.append("")
+
+    # is_torch
+    lines.append("    pub fn is_torch(self) -> bool {")
+    lines.append("        matches!(")
+    lines.append("            self,")
+    lines.append("            Self::Emit_Blue_Torch | Self::Emit_Green_Torch | Self::Emit_Red_Torch")
+    lines.append("        )")
+    lines.append("    }")
+    lines.append("")
+
+    # is_basket
+    lines.append("    pub fn is_basket(self) -> bool {")
+    lines.append("        self == Self::Deco_Basket")
+    lines.append("    }")
+    lines.append("")
+
+    # has_custom_mesh
+    lines.append("    pub fn has_custom_mesh(self) -> bool {")
+    lines.append("        self.is_torch() || self.is_basket()")
     lines.append("    }")
     lines.append("")
 
@@ -573,7 +617,7 @@ def generate_rust():
     lines.append("    pub fn is_transparent(self) -> bool {")
     lines.append("        self.is_water()")
     lines.append("            || self == Self::Deco_Glass")
-    lines.append("            || matches!(self, Self::Frost_Ice | Self::Frost_Fragile_Ice)")
+    lines.append("            || matches!(self, Self::Frost_Ice | Self::Frost_Fragile_Ice | Self::Frost_Black_Ice)")
     lines.append("    }")
     lines.append("")
 
@@ -583,12 +627,15 @@ def generate_rust():
     lines.append("            self,")
     lines.append("            Self::Tree_Acacia_Leaves")
     lines.append("                | Self::Tree_Birch_Leaves")
+    lines.append("                | Self::Tree_Cherry_Leaves")
     lines.append("                | Self::Tree_Mahogany_Leaves")
     lines.append("                | Self::Tree_Mangrove_Leaves")
     lines.append("                | Self::Tree_Maple_Leaves_Red")
     lines.append("                | Self::Tree_Maple_Leaves_Orange")
     lines.append("                | Self::Tree_Maple_Leaves_Yellow")
     lines.append("                | Self::Tree_Oak_Leaves")
+    lines.append("                | Self::Tree_Oak_Leaves_Lush")
+    lines.append("                | Self::Tree_Oak_Leaves_Flowering")
     lines.append("                | Self::Tree_Palm_Leaves")
     lines.append("                | Self::Tree_Pine_Leaves")
     lines.append("                | Self::Tree_Willow_Leaves")
@@ -604,6 +651,8 @@ def generate_rust():
     lines.append("            && !self.is_fluid()")
     lines.append("            && !self.is_leaves()")
     lines.append("            && !self.is_transparent()")
+    lines.append("            && !self.is_torch()")
+    lines.append("            && !self.is_basket()")
     lines.append("            && self != Self::Occupied")
     lines.append("            && self != Self::WaterOccupied")
     lines.append("    }")
@@ -664,11 +713,49 @@ def generate_rust():
     lines.append("    }")
     lines.append("}")
     lines.append("")
+    lines.append("#[cfg(test)]")
+    lines.append("mod tests {")
+    lines.append("    use super::*;")
+    lines.append("")
+    lines.append("    #[test]")
+    lines.append("    fn test_torch_properties() {")
+    lines.append("        let torches = [Voxel::Emit_Red_Torch, Voxel::Emit_Green_Torch, Voxel::Emit_Blue_Torch];")
+    lines.append("        for &t in &torches {")
+    lines.append("            assert!(t.is_torch(), \"Expected {t:?} to be a torch\");")
+    lines.append("            assert!(t.has_custom_mesh(), \"Expected {t:?} to have a custom mesh\");")
+    lines.append("            assert!(!t.is_collidable(), \"Expected torch {t:?} to be non-collidable (passable)\");")
+    lines.append("            assert!(!t.is_solid_opaque(), \"Expected torch {t:?} not to be solid opaque\");")
+    lines.append("            assert!(t.is_light(), \"Expected torch {t:?} to emit light\");")
+    lines.append("        }")
+    lines.append("    }")
+    lines.append("")
+    lines.append("    #[test]")
+    lines.append("    fn test_basket_properties() {")
+    lines.append("        let basket = Voxel::Deco_Basket;")
+    lines.append("        assert!(basket.is_basket(), \"Expected Deco_Basket to be basket\");")
+    lines.append("        assert!(basket.has_custom_mesh(), \"Expected basket to have custom mesh\");")
+    lines.append("        assert!(basket.is_collidable(), \"Expected basket to be collidable\");")
+    lines.append("        assert!(!basket.is_solid_opaque(), \"Expected basket not to be solid opaque (hollow interior)\");")
+    lines.append("    }")
+    lines.append("")
+    lines.append("    #[test]")
+    lines.append("    fn test_torch_orientations_and_boxes() {")
+    lines.append("        assert_eq!(BlockShape::Torch.orientation_count(), 5);")
+    lines.append("        for orient in 0..5 {")
+    lines.append("            let (box_a, box_b) = BlockShape::Torch.local_boxes(orient);")
+    lines.append("            assert!(box_b.is_none());")
+    lines.append("            let min = box_a[0];")
+    lines.append("            let max = box_a[1];")
+    lines.append("            assert!(min.x < max.x && min.y < max.y && min.z < max.z);")
+    lines.append("        }")
+    lines.append("    }")
+    lines.append("}")
+    lines.append("")
 
     return "\n".join(lines)
 
 code = generate_rust()
-with open('src/world/block.rs', 'w', encoding='utf-8') as f:
+with open(os.path.join(BASE_DIR, 'src', 'world', 'block.rs'), 'w', encoding='utf-8') as f:
     f.write(code)
 
 print("Successfully generated src/world/block.rs!")

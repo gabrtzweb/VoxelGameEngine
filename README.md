@@ -6,8 +6,9 @@ The project focuses on a fully editable procedural voxel world with 1.0 m³ bloc
 
 - The world is stored using 1.0 m voxels (identical to Minecraft blocks).
 - Chunks have 16 × 16 × 16 voxels (16 m × 16 m × 16 m physical sections).
-- Complete removal of single 0.5 m sub-voxels; native 1.0 m block shapes (`Full`, `Slab`, `Stair`, `Column`) with 3D orientations.
-- Interactive tactile feedback: subtle 8-particle debris bursts with terrain collision bouncing on block break, and 0.18s elastic scale bounce on placement.
+- Complete removal of single 0.5 m sub-voxels; native 1.0 m block shapes (`Full`, `Slab`, `Stair`, `Column`, `Torch`, `Basket`) with 3D orientations, custom meshes (3D hollow basket, Minecraft-style RGB torches), and passable non-solid collision for torches.
+- Comprehensive 244-block palette across 10 categories with multi-face textures, dual-layer moss overlays, organic tinting, and tuned dynamic fluid simulation (wave movement and finite spreading).
+- Interactive tactile feedback: subtle 8-particle debris bursts with terrain collision bouncing on block break, and 0.18s elastic scale bounce on block placement.
 - Auto-step is calibrated to 0.50 m (50 cm) for smooth future slab stepping, requiring jumping over full 1 m blocks.
 - Square gameplay Minimap HUD (North-up, compact XYZ coordinates, live player heading chevron) and full-screen interactive World Map (<kbd>M</kbd>).
 - Ambient Environment procedural color noise and climate-driven biome palettes (grass, foliage, water) with smooth 5-point cross-kernel boundary blending.
@@ -51,7 +52,7 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     E                 Inventory (Unified 190×152 px textured container: Personal & Creative inventory with background blur)
                       • Mode Buttons at top / Tab key: Toggle between Personal and Creative inventory (choice persists across close/reopen)
                       • Personal Inventory: Dedicated title, 8×4 grid (32 slots) storage, hotbar mirror row, action buttons
-                      • Creative Palette: Dedicated title, 8×4 grid of all 236 available blocks across 9 categories (Testing, Fluids, Frost, Soils, Rocks, Woods, Aquatic, Lights, Decoration), pixel-art scroller, hotbar mirror row
+                      • Creative Palette: Dedicated title, 8×4 grid of all 244 available blocks across 10 categories (Testing, Fluids, Frost, Soils, Rocks, Woods, Aquatic, Lights, Decoration), pixel-art scroller, hotbar mirror row
                       • Creative Search Bar: Real-time search & filtering with Caps Lock and Shift uppercase support, holding Backspace repeats character deletion, double-click selects all, click & drag selects text range, Ctrl+A select all
                       • Shift + Click: Quick transfer between personal inventory and hotbar
                       • Shift + LMB Drag: Rapid multi-slot transfer between hotbar and personal inventory / hotbar wipe in Creative

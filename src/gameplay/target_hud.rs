@@ -67,6 +67,17 @@ pub fn format_target_hud_title(
         return format!("{} / {} Slab", voxel.label(), extra.label());
     }
 
+    if voxel.is_basket() {
+        return voxel.label().to_string();
+    }
+
+    if voxel.is_torch() {
+        if let Some((s, orientation)) = shape {
+            return format!("{} ({})", voxel.label(), s.orientation_name(orientation));
+        }
+        return voxel.label().to_string();
+    }
+
     match shape {
         Some((s, orientation)) if s != BlockShape::Full && !voxel.is_fluid() => {
             format!(

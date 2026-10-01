@@ -19,7 +19,7 @@ pub const INVENTORY_VISIBLE_ROWS: usize = 4;
 pub const INVENTORY_PANEL_TEX_W: f32 = 190.0;
 pub const INVENTORY_PANEL_TEX_H: f32 = 152.0;
 
-pub const AVAILABLE_BLOCKS: [Voxel; 238] = Voxel::ALL;
+pub const AVAILABLE_BLOCKS: [Voxel; 244] = Voxel::ALL;
 
 pub fn filtered_creative_blocks(query: &str) -> Vec<Voxel> {
     if query.trim().is_empty() {

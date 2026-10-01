@@ -80,8 +80,9 @@ fn handle_block_shaping(
         let origin = target.block_origin;
         if let Some(voxel) = world.get_voxel(origin)
             && !voxel.is_empty()
-            && !voxel.is_water()
+            && !voxel.is_fluid()
             && !voxel.is_unbreakable()
+            && !voxel.has_custom_mesh()
         {
             let (current_shape, current_orientation) = world.get_shape(origin);
             radial_state.pressing = true;
@@ -204,7 +205,7 @@ fn handle_block_rotation(
     let Some(voxel) = world.get_voxel(origin) else {
         return;
     };
-    if voxel.is_empty() || voxel.is_water() || voxel.is_unbreakable() {
+    if voxel.is_empty() || voxel.is_fluid() || voxel.is_unbreakable() || voxel.has_custom_mesh() {
         return;
     }
 
@@ -242,7 +243,7 @@ fn apply_block_shape(
     let Some(current) = world.get_voxel(req.origin) else {
         return;
     };
-    if current.is_unbreakable() || current.is_empty() {
+    if current.is_unbreakable() || current.is_empty() || current.is_fluid() || current.has_custom_mesh() {
         return;
     }
 

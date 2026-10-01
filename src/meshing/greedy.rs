@@ -125,7 +125,16 @@ impl MeshBuffers {
 
         let vertices = quad_vertices(direction, slice, u, v, width, height);
 
-        let color = key.tint_color;
+        let mut color = key.tint_color;
+        color[3] = if key.voxel.is_water() {
+            1.0
+        } else if key.voxel.is_fluid() {
+            2.0
+        } else if key.voxel.is_transparent() {
+            0.0
+        } else {
+            1.0
+        };
         let layer = key.texture_layer as f32;
         let frame_count = if key.voxel.is_light() {
             -(key.frame_count.max(1) as f32)
@@ -284,7 +293,10 @@ pub fn extract_slice_bitmask(
             let lz = local_voxel.z as usize;
             let voxel = chunk.get(lx, ly, lz);
 
-            if voxel.is_empty() || chunk.get_shape(lx, ly, lz).0 != BlockShape::Full {
+            if voxel.is_empty()
+                || chunk.get_shape(lx, ly, lz).0 != BlockShape::Full
+                || voxel.has_custom_mesh()
+            {
                 continue;
             }
 
@@ -449,7 +461,10 @@ impl ChunkMesher {
                         let lz = local_voxel.z as usize;
                         let voxel = chunk.get(lx, ly, lz);
 
-                        if voxel.is_empty() || chunk.get_shape(lx, ly, lz).0 != BlockShape::Full {
+                        if voxel.is_empty()
+                            || chunk.get_shape(lx, ly, lz).0 != BlockShape::Full
+                            || voxel.has_custom_mesh()
+                        {
                             continue;
                         }
 
@@ -463,7 +478,7 @@ impl ChunkMesher {
                             && direction != FaceDirection::PositiveY
                             && direction != FaceDirection::NegativeY
                         {
-                            if neighbor.is_fluid() {
+                            if neighbor == voxel {
                                 let v_offset = (water_surface_height_offset(world, world_voxel)
                                     * 100.0)
                                     .round() as u8;
@@ -476,7 +491,7 @@ impl ChunkMesher {
                                 } else {
                                     continue;
                                 }
-                            } else if !neighbor.is_empty() {
+                            } else if !should_render_face(voxel, neighbor) {
                                 continue;
                             }
                         } else if neighbor_shape == BlockShape::Full
@@ -491,7 +506,7 @@ impl ChunkMesher {
                             voxel,
                             Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass
                         );
-                        let tint_color = if is_grass {
+                        let mut tint_color = if is_grass {
                             match direction {
                                 FaceDirection::PositiveY => voxel.tint_color_at(world_voxel),
                                 FaceDirection::NegativeY => [1.0, 1.0, 1.0, 1.0],
@@ -505,6 +520,16 @@ impl ChunkMesher {
                             }
                         } else {
                             voxel.tint_color_at(world_voxel)
+                        };
+
+                        tint_color[3] = if voxel.is_water() {
+                            1.0
+                        } else if voxel.is_fluid() {
+                            2.0
+                        } else if voxel.is_transparent() {
+                            0.0
+                        } else {
+                            1.0
                         };
 
                         let surface_offset_cm = if voxel.is_fluid() {
@@ -559,11 +584,16 @@ pub fn should_render_face(voxel: Voxel, neighbor: Voxel) -> bool {
     if voxel.is_fluid() {
         return neighbor.is_empty()
             || neighbor == Voxel::Occupied
+            || (neighbor.is_fluid() && neighbor != voxel)
             || (!neighbor.is_fluid() && (neighbor.is_transparent() || neighbor.is_leaves()));
     }
 
     if voxel.is_transparent() {
-        return neighbor.is_empty() || neighbor == Voxel::Occupied;
+        return neighbor.is_empty()
+            || neighbor == Voxel::Occupied
+            || neighbor.is_fluid()
+            || neighbor.is_leaves()
+            || (neighbor.is_transparent() && neighbor != voxel);
     }
 
     if voxel.is_leaves() {
@@ -654,7 +684,7 @@ pub fn greedy_merge_mask(
                 }
             }
 
-            let target_buffers = if key.voxel.is_transparent() {
+            let target_buffers = if key.voxel.is_transparent() || key.voxel.is_fluid() {
                 &mut *transparent_buffers
             } else {
                 &mut *opaque_buffers

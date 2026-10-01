@@ -13,6 +13,7 @@ pub struct WorldModificationStore {
     chunks: HashMap<IVec3, HashMap<UVec3, Voxel>>,
     shapes: HashMap<IVec3, HashMap<UVec3, (BlockShape, u8)>>,
     extra_slabs: HashMap<IVec3, HashMap<UVec3, Option<(Voxel, u8)>>>,
+    fluid_levels: HashMap<IVec3, HashMap<UVec3, u8>>,
 }
 
 impl WorldModificationStore {
@@ -30,6 +31,9 @@ impl WorldModificationStore {
             }
             if let Some(extra_map) = self.extra_slabs.get_mut(&chunk_coordinate) {
                 extra_map.remove(&local_coordinate);
+            }
+            if let Some(fluid_map) = self.fluid_levels.get_mut(&chunk_coordinate) {
+                fluid_map.remove(&local_coordinate);
             }
         }
     }
@@ -56,6 +60,21 @@ impl WorldModificationStore {
             .entry(chunk_coordinate)
             .or_default()
             .insert(local_coordinate, extra_slab);
+    }
+
+    pub fn record_fluid_level(&mut self, world_voxel: IVec3, level: u8) {
+        let (chunk_coordinate, local_coordinate) = VoxelWorld::world_voxel_to_chunk(world_voxel);
+
+        if level == 0 {
+            if let Some(fluid_map) = self.fluid_levels.get_mut(&chunk_coordinate) {
+                fluid_map.remove(&local_coordinate);
+            }
+        } else {
+            self.fluid_levels
+                .entry(chunk_coordinate)
+                .or_default()
+                .insert(local_coordinate, level);
+        }
     }
 
     pub fn apply_to_chunk(&self, chunk_coordinate: IVec3, chunk: &mut Chunk) {
@@ -89,6 +108,17 @@ impl WorldModificationStore {
                     local_coordinate.y as usize,
                     local_coordinate.z as usize,
                     extra_slab,
+                );
+            }
+        }
+
+        if let Some(fluid_mods) = self.fluid_levels.get(&chunk_coordinate) {
+            for (&local_coordinate, &level) in fluid_mods {
+                chunk.set_fluid_level(
+                    local_coordinate.x as usize,
+                    local_coordinate.y as usize,
+                    local_coordinate.z as usize,
+                    level,
                 );
             }
         }

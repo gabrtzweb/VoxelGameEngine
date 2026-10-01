@@ -96,6 +96,22 @@ impl VoxelWorld {
         Some(chunk_coordinate)
     }
 
+    pub fn get_fluid_level(&self, world_voxel: IVec3) -> u8 {
+        VoxelAccess::get_fluid_level(self, world_voxel)
+    }
+
+    pub fn set_fluid_level(&mut self, world_voxel: IVec3, level: u8) -> Option<IVec3> {
+        let (chunk_coordinate, local_coordinate) = Self::world_voxel_to_chunk(world_voxel);
+        let chunk = self.get_chunk_mut(chunk_coordinate)?;
+        chunk.set_fluid_level(
+            local_coordinate.x as usize,
+            local_coordinate.y as usize,
+            local_coordinate.z as usize,
+            level,
+        );
+        Some(chunk_coordinate)
+    }
+
     pub fn world_voxel_to_chunk(world_voxel: IVec3) -> (IVec3, UVec3) {
         let chunk_size = CHUNK_SIZE as i32;
 
@@ -153,6 +169,17 @@ pub trait VoxelAccess {
         let (chunk_coordinate, local_coordinate) = VoxelWorld::world_voxel_to_chunk(world_voxel);
         let chunk = self.get_chunk(chunk_coordinate)?;
         chunk.get_extra_slab(
+            local_coordinate.x as usize,
+            local_coordinate.y as usize,
+            local_coordinate.z as usize,
+        )
+    }
+    fn get_fluid_level(&self, world_voxel: IVec3) -> u8 {
+        let (chunk_coordinate, local_coordinate) = VoxelWorld::world_voxel_to_chunk(world_voxel);
+        let Some(chunk) = self.get_chunk(chunk_coordinate) else {
+            return 0;
+        };
+        chunk.get_fluid_level(
             local_coordinate.x as usize,
             local_coordinate.y as usize,
             local_coordinate.z as usize,
