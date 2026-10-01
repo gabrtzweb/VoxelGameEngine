@@ -56,6 +56,15 @@ pub fn terrain_inspector_ui(
                             "Climate: C: {:+.3} | T: {:+.3} | H: {:+.3}",
                             sample.continentalness, sample.temperature, sample.humidity
                         ));
+                        if let Some((species, prob)) = crate::generation::trees::biome_tree_profile(sample.biome) {
+                            ui.label(format!(
+                                "Flora: {:?} (density: {:.0}%)",
+                                species,
+                                (prob * generator.tree_density * 100.0).min(100.0)
+                            ));
+                        } else {
+                            ui.label("Flora: None (open terrain)");
+                        }
                     }
                     if let Some(ref status) = env_status {
                         ui.label(format!(
@@ -144,6 +153,15 @@ pub fn terrain_inspector_ui(
                     ui.add(egui::Slider::new(&mut generator.climate.humidity_freq, 0.0005..=0.008).text("Humidity Freq"));
                     ui.add(egui::Slider::new(&mut generator.climate.warp_amplitude, 0.0..=80.0).text("Domain Warp Amp"));
                     ui.add(egui::Slider::new(&mut generator.climate.dither_amplitude, 0.0..=25.0).text("Micro Dither Amp"));
+                });
+
+            egui::CollapsingHeader::new("Vegetation & Trees")
+                .default_open(true)
+                .show(ui, |ui| {
+                    ui.add(
+                        egui::Slider::new(&mut generator.tree_density, 0.0..=3.0)
+                            .text("Tree Density Multiplier"),
+                    );
                 });
 
             ui.add_space(8.0);

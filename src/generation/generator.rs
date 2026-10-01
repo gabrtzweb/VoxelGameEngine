@@ -4,6 +4,7 @@ use super::{
     biome::{BiomeType, ClimateGenerator, ClimateSample},
     caves::{CaveGenerator, CaveNoiseSample},
     strata::StrataGenerator,
+    trees::{self, TreeSpecies},
 };
 use crate::world::{BlockShape, CHUNK_SIZE, CHUNK_VOLUME, Chunk, Voxel};
 
@@ -72,6 +73,9 @@ pub struct TerrainGenerator {
     pub caves: CaveGenerator,
     pub strata: StrataGenerator,
 
+    // Phase 12 procedural vegetation
+    pub tree_density: f32,
+
     // Generation version tracker to signal runtime remeshing when tweaked in inspector
     pub version: u32,
 }
@@ -108,6 +112,9 @@ impl Default for TerrainGenerator {
             caves: CaveGenerator::default(),
             strata: StrataGenerator::default(),
 
+            // Standard tree spawn density multiplier
+            tree_density: 1.0,
+
             version: 0,
         }
     }
@@ -137,15 +144,17 @@ impl TerrainGenerator {
             }
         }
 
-        // Entire chunk is above terrain and water
-        if chunk_min_y > maximum_filled_height {
+        // Entire chunk is above terrain, water, AND any potential tree canopies
+        if chunk_min_y > maximum_filled_height + 16 {
             return Chunk::filled(Voxel::Air);
         }
 
         let mut voxels = vec![Voxel::Air; CHUNK_VOLUME];
         let mut chunk_shapes: Vec<(usize, BlockShape, u8)> = Vec::new();
+        let mut has_solid_voxels = false;
 
         if chunk_min_y <= maximum_filled_height {
+            has_solid_voxels = true;
             let chunk_caves = self.caves.build_chunk_sampler(chunk_origin, self.seed);
 
             for z in 0..CHUNK_SIZE {
@@ -389,6 +398,151 @@ impl TerrainGenerator {
                     }
                 }
             }
+        }
+
+        // Phase 12: Procedural Tree & Cactus Generation
+        if self.tree_density > 0.0 {
+            let chunk_max_y = chunk_min_y + CHUNK_SIZE as i32 - 1;
+            let min_cell_x = (chunk_origin.x - 5).div_euclid(5);
+            let max_cell_x = (chunk_origin.x + 16).div_euclid(5);
+            let min_cell_z = (chunk_origin.z - 5).div_euclid(5);
+            let max_cell_z = (chunk_origin.z + 16).div_euclid(5);
+
+            for cell_z in min_cell_z..=max_cell_z {
+                for cell_x in min_cell_x..=max_cell_x {
+                    let hash = trees::hash_tree_cell(cell_x, cell_z, self.seed);
+                    let offset_x = (hash % 3) as i32 + 1;
+                    let offset_z = ((hash >> 2) % 3) as i32 + 1;
+                    let tx = cell_x * 5 + offset_x;
+                    let tz = cell_z * 5 + offset_z;
+
+                    // Quick horizontal bounds check: does canopy touch this chunk?
+                    if tx + 2 < chunk_origin.x
+                        || tx - 2 >= chunk_origin.x + CHUNK_SIZE as i32
+                        || tz + 2 < chunk_origin.z
+                        || tz - 2 >= chunk_origin.z + CHUNK_SIZE as i32
+                    {
+                        continue;
+                    }
+
+                    let col = self.sample_column(tx, tz);
+                    let Some((species, base_prob)) = trees::biome_tree_profile(col.biome) else {
+                        continue;
+                    };
+
+                    let roll = ((hash >> 4) & 0xFFFF) as f32 / 65535.0;
+                    if roll >= base_prob * self.tree_density {
+                        continue;
+                    }
+
+                    if col.is_cliff || col.surface_shape == BlockShape::Stair {
+                        continue;
+                    }
+
+                    let is_swamp_tree = species == TreeSpecies::Mangrove
+                        || (species == TreeSpecies::Pine && col.biome == BiomeType::CypressSwamp);
+
+                    let ty = if let Some(water_level) = col.water_level {
+                        if !is_swamp_tree {
+                            continue;
+                        }
+                        if water_level - col.terrain_height > 2 {
+                            continue;
+                        }
+                        col.terrain_height
+                    } else {
+                        col.terrain_height
+                    };
+
+                    // Vertical bounds check: tree occupies y in [ty + 1, ty + 10]
+                    if ty + 1 > chunk_max_y || ty + 10 < chunk_min_y {
+                        continue;
+                    }
+
+                    let surface_mat = self.surface_material_at(tx, col.terrain_height, tz, col);
+                    if !trees::is_soil_valid_for_species(species, surface_mat) {
+                        continue;
+                    }
+
+                    // Cactus specific clearance: no solid blocks directly adjacent to base
+                    if species == TreeSpecies::Cactus {
+                        let col_e = self.sample_column(tx + 1, tz);
+                        let col_w = self.sample_column(tx - 1, tz);
+                        let col_s = self.sample_column(tx, tz + 1);
+                        let col_n = self.sample_column(tx, tz - 1);
+                        if col_e.terrain_height > ty
+                            || col_w.terrain_height > ty
+                            || col_s.terrain_height > ty
+                            || col_n.terrain_height > ty
+                        {
+                            continue;
+                        }
+                    }
+
+                    trees::generate_tree_voxels(
+                        tx,
+                        ty,
+                        tz,
+                        species,
+                        col.biome,
+                        hash,
+                        |bx, by, bz, voxel| {
+                            if bx >= chunk_origin.x
+                                && bx < chunk_origin.x + CHUNK_SIZE as i32
+                                && by >= chunk_origin.y
+                                && by < chunk_origin.y + CHUNK_SIZE as i32
+                                && bz >= chunk_origin.z
+                                && bz < chunk_origin.z + CHUNK_SIZE as i32
+                            {
+                                let lx = (bx - chunk_origin.x) as usize;
+                                let ly = (by - chunk_origin.y) as usize;
+                                let lz = (bz - chunk_origin.z) as usize;
+                                let idx = lx + lz * CHUNK_SIZE + ly * CHUNK_SIZE * CHUNK_SIZE;
+
+                                let current = voxels[idx];
+                                let is_trunk_or_cactus = trees::is_trunk(voxel);
+
+                                if is_trunk_or_cactus {
+                                    if current == Voxel::Air
+                                        || current == Voxel::Liquid_Water
+                                        || trees::is_leaves(current)
+                                    {
+                                        voxels[idx] = voxel;
+                                        has_solid_voxels = true;
+                                    }
+                                } else if current == Voxel::Air {
+                                    voxels[idx] = voxel;
+                                    has_solid_voxels = true;
+                                }
+                            }
+                        },
+                    );
+
+                    // Convert surface soil directly underneath the trunk to dirt if grass
+                    if ty >= chunk_min_y
+                        && ty <= chunk_max_y
+                        && tx >= chunk_origin.x
+                        && tx < chunk_origin.x + CHUNK_SIZE as i32
+                        && tz >= chunk_origin.z
+                        && tz < chunk_origin.z + CHUNK_SIZE as i32
+                    {
+                        let lx = (tx - chunk_origin.x) as usize;
+                        let ly = (ty - chunk_origin.y) as usize;
+                        let lz = (tz - chunk_origin.z) as usize;
+                        let idx = lx + lz * CHUNK_SIZE + ly * CHUNK_SIZE * CHUNK_SIZE;
+                        if matches!(
+                            voxels[idx],
+                            Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass
+                        ) {
+                            voxels[idx] = Voxel::Soil_Dirt;
+                        }
+                    }
+                }
+            }
+        }
+
+        if !has_solid_voxels {
+            return Chunk::filled(Voxel::Air);
         }
 
         let mut chunk = Chunk::from_voxels(voxels);

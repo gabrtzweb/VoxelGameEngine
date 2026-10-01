@@ -682,23 +682,29 @@ A focused overhaul and expansion of procedural world generation, terrain topogra
 
 ---
 
-## Phase 12: Flora, Procedural Trees & Surface Vegetation (Upcoming)
+## Phase 12: Flora, Procedural Trees & Surface Vegetation (In Progress)
 
 Phase 12 breathes organic life, vertical grandeur, and color into the procedural world by generating biome-specific trees, flowering ground cover, shrubs, and dynamic wind-swayed foliage native to the 1m voxel architecture.
 
-- [ ] **Stage 12.1: Procedural 1m Trees & Canopy Architecture**:
-  - **Trunk Shapes, Species & Wood Types**:
-    - Wood species suite: Oak, Birch, Pine, Palm, Willow, Acacia,  and Kapok, following the bark-only sides vs top/bottom log-ring architecture.
-    - 1m block trunk geometry utilizing native shapes:
-      - **Standard Trunks**: 1m × 1m full blocks (`BlockShape::Full`).
-      - **Slender / Branch Trunks**: Centered vertical column shapes (`BlockShape::Column`, centered).
-  - **Canopy Foliage, Volumetric Depth & Alpha Cutouts**:
-    - GPU alpha-masking via `AlphaMode::Mask(0.5)` with `discard` in `voxel.wgsl` for crisp see-through foliage with full depth testing and zero sorting artifacts.
-    - Volumetric interior leaf rendering (`should_render_face(leaf, leaf) = true`) preventing hollow outer shells while GPU backface culling preserves performance.
-    - Biome foliage tinting dynamically harmonizing leaf colors with terrain climate noise.
-  - **Spawn Validation & Multi-Chunk Margins**:
-    - Trees spawn strictly on compatible soil (Grass, Dirt, Mulch, Sand for Palms) with clearance checks preventing growth inside caves or underwater.
-    - Multi-chunk generation margins ensuring branch and canopy geometry seamlessly crosses chunk boundaries without planar clipping.
+- [x] **Stage 12.1: Procedural 1m Trees & Canopy Architecture (Functional Baseline Implementation)**:
+  - **Shared Taller *Minecraft* Oak Shape**:
+    - All standard trees share the iconic Minecraft oak tree profile elevated on a taller trunk ($H \in [6, 8]$ blocks).
+    - Canopy starts at $y = H - 2$, leaving **3 to 5 blocks of open walking clearance** underneath so players can walk and sprint freely beneath the leaves.
+    - Canopy geometry: layers $H - 2$ and $H - 1$ ($5 \times 5$ square with outer corners rounded off), layer $H$ ($3 \times 3$ rounded square), and layer $H + 1$ (plus-shaped dome cap).
+  - **Cacti Generation**: Vertical single-column pillars (2–4 blocks tall of `Voxel::Tree_Cactus`) strictly placed on desert sand soils with cardinal clearance checks.
+  - **Dead & Lifeless Woods**: Bare trunks with branch stubs and no foliage for `BiomeType::DeadwoodThicket`.
+  - **48-Biome Species Mapping & Foliage Variants**:
+    - Mapped tree species across all 48 biomes (Oak, Birch, Pine, Maple, Acacia, Cherry, Mahogany, Mangrove, Palm, Willow, Yew, Dead/Charred, Cactus).
+    - Dynamic leaf color variants based on deterministic cell hash: Ancient Weald (mix of Oak, Lush Oak, Flowering Oak) and Autumnal Forest (mix of Red, Orange, Yellow Maple).
+    - Mangrove stilt roots (`Tree_Mangrove_Roots`) supporting trunks over mud and shallow water.
+  - **Deterministic 2D Cellular Grid Placement & Seam-Free Chunk Boundaries**:
+    - Cellular grid with $5 \times 5$ block spacing and deterministic cell hashing (`trees::hash_tree_cell`).
+    - Evaluates 25 neighbor cells per chunk; adjacent chunks independently generate their respective slices of multi-chunk canopies with zero locks, chunk dependencies, or horizontal slicing.
+    - Extended chunk generation early-exit buffer to `maximum_filled_height + 16` ensuring upper canopies crossing vertical chunk boundaries remain fully intact.
+    - Grass directly beneath trunks naturally converts to `Soil_Dirt`.
+  - **Inspector & Telemetry Integration**:
+    - Real-time `Tree Density Multiplier` slider ($0.0\times$ to $3.0\times$) with instant world regeneration.
+    - Live biome flora species and density telemetry in the Inspector UI.
 
 - [ ] **Stage 12.2: Ground Flora, Flowers & Biome Foliage**:
   - **Wild Grass & Ferns**: Single and double-tall grass tufts scattered across the biomes using cross-quad alpha cutouts.

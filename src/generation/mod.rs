@@ -10,3 +10,5 @@ pub use caves::CaveGenerator;
 pub use generator::TerrainGenerator;
 pub use inspector::TerrainInspectorPlugin;
 pub use strata::StrataGenerator;
+#[allow(unused_imports)]
+pub use trees::TreeSpecies;
