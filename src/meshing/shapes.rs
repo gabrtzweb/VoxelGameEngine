@@ -39,19 +39,20 @@ pub fn mesh_shaped_voxels(
             textures.get_face_texture_info(voxel, world_voxel, FaceDirection::NegativeY);
 
         let frame_count_f32 = if voxel.is_light() {
-            -4.0
+            -(frame_count.max(1) as f32)
         } else {
             frame_count as f32
         };
 
         let tint = voxel.tint_color_at(world_voxel);
         let top_tint = tint;
-        let bottom_tint = if voxel == Voxel::Grass {
+        let is_grass = matches!(voxel, Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass);
+        let bottom_tint = if is_grass {
             [1.0, 1.0, 1.0, 1.0]
         } else {
             tint
         };
-        let side_tint = if voxel == Voxel::Grass && !textures.full_grass {
+        let side_tint = if is_grass && !textures.full_grass {
             [1.0, 1.0, 1.0, 1.0]
         } else {
             tint
@@ -145,12 +146,13 @@ pub fn mesh_shaped_voxels(
 
                     let extra_tint = extra_voxel.tint_color_at(world_voxel);
                     let extra_top_tint = extra_tint;
-                    let extra_bottom_tint = if extra_voxel == Voxel::Grass {
+                    let is_extra_grass = matches!(extra_voxel, Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass);
+                    let extra_bottom_tint = if is_extra_grass {
                         [1.0, 1.0, 1.0, 1.0]
                     } else {
                         extra_tint
                     };
-                    let extra_side_tint = if extra_voxel == Voxel::Grass && !textures.full_grass {
+                    let extra_side_tint = if is_extra_grass && !textures.full_grass {
                         [1.0, 1.0, 1.0, 1.0]
                     } else {
                         extra_tint

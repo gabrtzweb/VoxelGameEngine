@@ -17,12 +17,12 @@ impl Default for Hotbar {
     fn default() -> Self {
         Self {
             slots: [
-                Some(Voxel::Grass),
-                Some(Voxel::Dirt),
-                Some(Voxel::Stone),
-                Some(Voxel::Sand),
-                Some(Voxel::Water),
-                Some(Voxel::LightWarm),
+                Some(Voxel::Soil_Grass),
+                Some(Voxel::Soil_Dirt),
+                Some(Voxel::Rock_Stone),
+                Some(Voxel::Soil_Sand),
+                Some(Voxel::Liquid_Water),
+                Some(Voxel::Emit_Warm_Light),
                 None,
                 None,
             ],
@@ -124,7 +124,7 @@ fn setup_hotbar_ui(
 
                         let icon_handle = initial_voxel
                             .map(|v| icons.get(v))
-                            .unwrap_or_else(|| icons.get(Voxel::Stone));
+                            .unwrap_or_else(|| icons.get(Voxel::Rock_Stone));
 
                         let icon_visibility = if initial_voxel.is_some() {
                             Visibility::Visible

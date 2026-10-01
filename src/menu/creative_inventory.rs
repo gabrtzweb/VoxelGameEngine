@@ -19,80 +19,7 @@ pub const INVENTORY_VISIBLE_ROWS: usize = 4;
 pub const INVENTORY_PANEL_TEX_W: f32 = 190.0;
 pub const INVENTORY_PANEL_TEX_H: f32 = 152.0;
 
-pub const AVAILABLE_BLOCKS: [Voxel; 67] = [
-    // Soils, Organics & Fine Sediment
-    Voxel::Grass,
-    Voxel::SnowyGrass,
-    Voxel::Dirt,
-    Voxel::PackedDirt,
-    Voxel::RootedDirt,
-    Voxel::Mud,
-    Voxel::PackedMud,
-    Voxel::Mulch,
-    Voxel::Moss,
-    Voxel::RedMoss,
-    Voxel::Clay,
-    Voxel::Terracotta,
-    Voxel::Gravel,
-    Voxel::Sand,
-    Voxel::RedSand,
-    Voxel::Snow,
-    Voxel::Ice,
-    Voxel::PackedIce,
-    // Stones, Rocks & Minerals
-    Voxel::Stone,
-    Voxel::Cobblestone,
-    Voxel::MossyStone,
-    Voxel::MossyCobblestone,
-    Voxel::Slate,
-    Voxel::Cobbleslate,
-    Voxel::Blackstone,
-    Voxel::Cobbleblackstone,
-    Voxel::Flint,
-    Voxel::Basalt,
-    Voxel::Andesite,
-    Voxel::Diorite,
-    Voxel::Granite,
-    Voxel::Tuff,
-    Voxel::Sandstone,
-    Voxel::RedSandstone,
-    Voxel::Blueschist,
-    Voxel::Calcite,
-    Voxel::Dripstone,
-    Voxel::Limestone,
-    Voxel::Ochrestone,
-    Voxel::Rhodonite,
-    Voxel::Serpentinite,
-    Voxel::Dreadstone,
-    // Woods, Foliage & Planks
-    Voxel::OakWoodLog,
-    Voxel::OakWood,
-    Voxel::OakPlanks,
-    Voxel::OakLeaves,
-    Voxel::BirchWoodLog,
-    Voxel::BirchWood,
-    Voxel::BirchPlanks,
-    Voxel::BirchLeaves,
-    Voxel::PineWoodLog,
-    Voxel::PineWood,
-    Voxel::PinePlanks,
-    Voxel::PineLeaves,
-    Voxel::RainwoodWoodLog,
-    Voxel::RainwoodWood,
-    Voxel::RainwoodPlanks,
-    Voxel::RainwoodLeaves,
-    Voxel::Cactus,
-    // Fluids & Volcanics
-    Voxel::Water,
-    Voxel::Lava,
-    Voxel::Magma,
-    // Illumination
-    Voxel::LightWarm,
-    Voxel::LightCold,
-    Voxel::LightRed,
-    Voxel::LightGreen,
-    Voxel::LightBlue,
-];
+pub const AVAILABLE_BLOCKS: [Voxel; 238] = Voxel::ALL;
 
 pub fn filtered_creative_blocks(query: &str) -> Vec<Voxel> {
     if query.trim().is_empty() {
@@ -483,7 +410,7 @@ fn build_inventory_ui(
                                     let voxel = player_inv.get(slot_idx);
                                     let icon_handle = voxel
                                         .map(|v| icons.get(v))
-                                        .unwrap_or_else(|| icons.get(Voxel::Stone));
+                                        .unwrap_or_else(|| icons.get(Voxel::Rock_Stone));
                                     let icon_vis = if voxel.is_some() {
                                         Visibility::Visible
                                     } else {
@@ -616,7 +543,7 @@ fn build_inventory_ui(
                                     let voxel = filtered.get(block_idx).copied();
                                     let icon_handle = voxel
                                         .map(|v| icons.get(v))
-                                        .unwrap_or_else(|| icons.get(Voxel::Stone));
+                                        .unwrap_or_else(|| icons.get(Voxel::Rock_Stone));
                                     let icon_vis = if voxel.is_some() {
                                         Visibility::Visible
                                     } else {
@@ -722,7 +649,7 @@ fn build_inventory_ui(
                         let slot_voxel = hotbar.slots[c];
                         let icon_handle = slot_voxel
                             .map(|v| icons.get(v))
-                            .unwrap_or_else(|| icons.get(Voxel::Stone));
+                            .unwrap_or_else(|| icons.get(Voxel::Rock_Stone));
                         let icon_vis = if slot_voxel.is_some() {
                             Visibility::Visible
                         } else {

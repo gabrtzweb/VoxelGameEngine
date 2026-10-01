@@ -140,7 +140,10 @@ fn create_cube_mesh(
         };
 
         let color = if is_pop {
-            if voxel == Voxel::Grass {
+            if matches!(
+                voxel,
+                Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass
+            ) {
                 if *face_dir == FaceDirection::PositiveY {
                     voxel.tint_color()
                 } else {

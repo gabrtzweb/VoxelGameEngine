@@ -128,7 +128,7 @@ impl MeshBuffers {
         let color = key.tint_color;
         let layer = key.texture_layer as f32;
         let frame_count = if key.voxel.is_light() {
-            -4.0
+            -(key.frame_count.max(1) as f32)
         } else {
             key.frame_count as f32
         };
@@ -143,7 +143,7 @@ impl MeshBuffers {
                 vertex[2] * VOXEL_SIZE,
             ];
 
-            if key.voxel.is_water() {
+            if key.voxel.is_fluid() {
                 match direction {
                     FaceDirection::PositiveY => {
                         pos[1] -= surface_offset;
@@ -199,7 +199,7 @@ impl MeshBuffers {
             base_index + 3,
         ]);
 
-        if key.voxel.is_water() && direction == FaceDirection::PositiveY {
+        if key.voxel.is_fluid() && direction == FaceDirection::PositiveY {
             let under_base_index = self.positions.len() as u32;
 
             for vertex in vertices.iter() {
@@ -459,11 +459,11 @@ impl ChunkMesher {
                         let (neighbor_shape, _) = world.get_shape(neighbor_coordinate);
                         let mut step_bottom_offset_cm = 0u8;
 
-                        if voxel.is_water()
+                        if voxel.is_fluid()
                             && direction != FaceDirection::PositiveY
                             && direction != FaceDirection::NegativeY
                         {
-                            if neighbor.is_water() {
+                            if neighbor.is_fluid() {
                                 let v_offset = (water_surface_height_offset(world, world_voxel)
                                     * 100.0)
                                     .round() as u8;
@@ -487,7 +487,11 @@ impl ChunkMesher {
 
                         let (texture_layer, frame_count) =
                             textures.get_face_texture_info(voxel, world_voxel, direction);
-                        let tint_color = if voxel == Voxel::Grass {
+                        let is_grass = matches!(
+                            voxel,
+                            Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass
+                        );
+                        let tint_color = if is_grass {
                             match direction {
                                 FaceDirection::PositiveY => voxel.tint_color_at(world_voxel),
                                 FaceDirection::NegativeY => [1.0, 1.0, 1.0, 1.0],
@@ -503,7 +507,7 @@ impl ChunkMesher {
                             voxel.tint_color_at(world_voxel)
                         };
 
-                        let surface_offset_cm = if voxel.is_water() {
+                        let surface_offset_cm = if voxel.is_fluid() {
                             (water_surface_height_offset(world, world_voxel) * 100.0).round() as u8
                         } else {
                             0
@@ -552,6 +556,12 @@ impl ChunkMesher {
 }
 
 pub fn should_render_face(voxel: Voxel, neighbor: Voxel) -> bool {
+    if voxel.is_fluid() {
+        return neighbor.is_empty()
+            || neighbor == Voxel::Occupied
+            || (!neighbor.is_fluid() && (neighbor.is_transparent() || neighbor.is_leaves()));
+    }
+
     if voxel.is_transparent() {
         return neighbor.is_empty() || neighbor == Voxel::Occupied;
     }
@@ -562,10 +572,11 @@ pub fn should_render_face(voxel: Voxel, neighbor: Voxel) -> bool {
         return !neighbor.is_solid_opaque();
     }
 
-    // Solid opaque blocks render against air, water, leaves, or occupied cells
+    // Solid opaque blocks render against air, water, leaves, fluids, or occupied cells
     neighbor.is_empty()
         || neighbor.is_transparent()
         || neighbor.is_leaves()
+        || neighbor.is_fluid()
         || neighbor == Voxel::Occupied
 }
 

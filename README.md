@@ -51,7 +51,7 @@ The long-term goal is to build a performant procedural voxel game with large-wor
     E                 Inventory (Unified 190×152 px textured container: Personal & Creative inventory with background blur)
                       • Mode Buttons at top / Tab key: Toggle between Personal and Creative inventory (choice persists across close/reopen)
                       • Personal Inventory: Dedicated title, 8×4 grid (32 slots) storage, hotbar mirror row, action buttons
-                      • Creative Palette: Dedicated title, 8×4 grid of all available blocks (including 4 wood plank varieties), pixel-art scroller, hotbar mirror row
+                      • Creative Palette: Dedicated title, 8×4 grid of all 236 available blocks across 9 categories (Testing, Fluids, Frost, Soils, Rocks, Woods, Aquatic, Lights, Decoration), pixel-art scroller, hotbar mirror row
                       • Creative Search Bar: Real-time search & filtering with Caps Lock and Shift uppercase support, holding Backspace repeats character deletion, double-click selects all, click & drag selects text range, Ctrl+A select all
                       • Shift + Click: Quick transfer between personal inventory and hotbar
                       • Shift + LMB Drag: Rapid multi-slot transfer between hotbar and personal inventory / hotbar wipe in Creative

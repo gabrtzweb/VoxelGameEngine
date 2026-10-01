@@ -33,6 +33,10 @@ impl MaterialExtension for OpaqueVoxelMaterial {
     fn deferred_fragment_shader() -> ShaderRef {
         OPAQUE_VOXEL_SHADER_PATH.into()
     }
+
+    fn prepass_fragment_shader() -> ShaderRef {
+        "shaders/voxel_prepass.wgsl".into()
+    }
 }
 
 pub type OpaqueChunkMaterial = ExtendedMaterial<StandardMaterial, OpaqueVoxelMaterial>;
@@ -171,7 +175,7 @@ pub fn setup_chunk_material(
     let opaque = opaque_materials.add(ExtendedMaterial {
         base: StandardMaterial {
             base_color: Color::WHITE,
-            alpha_mode: AlphaMode::Opaque,
+            alpha_mode: AlphaMode::Mask(0.5),
             perceptual_roughness: 0.9,
             ..default()
         },

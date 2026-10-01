@@ -47,9 +47,11 @@ fn fragment(
     let frame_count = vertex_output.uv_b.y;
 
     var layer = i32(round(base_layer));
-    if (frame_count > 1.5) {
+    let is_emissive = frame_count < -0.5;
+    let actual_frame_count = abs(frame_count);
+    if (actual_frame_count > 1.5) {
         let fps = 6.0;
-        let count = max(1, i32(round(frame_count)));
+        let count = max(1, i32(round(actual_frame_count)));
         let frame = (i32(floor(max(globals.time, 0.0) * fps)) % count + count) % count;
         layer = layer + frame;
     }
@@ -74,7 +76,7 @@ fn fragment(
     pbr_input.material.base_color = tex_color * pbr_input.material.base_color * tint_color;
 
     var out: FragmentOutput;
-    if (frame_count < -0.5) {
+    if (is_emissive) {
         // Light-emitting blocks are self-illuminated:
         out.color = vec4<f32>(tex_color.rgb * vertex_output.color.rgb * 1.15, 1.0);
     } else {

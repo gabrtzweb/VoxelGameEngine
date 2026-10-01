@@ -617,9 +617,20 @@ A focused overhaul and expansion of procedural world generation, terrain topogra
   - **Underground Blackstone Stratum**: Standard subterranean stone transitions halfway down the crust ($Y \le -120$) into dense `Blackstone`, while unbreakable `Dreadstone` bedrock forms the floor of the world ($Y \le -254$).
   - **Current Biome Suite**: There is 14 baseline biomes in `BiomeType::ACTIVE` and `ClimateGenerator::classify_biome` (`Plains`, `Cold Plains`, `Snowy Tundra`, `Meadow`, `Woodland`, `Wetlands`, `Highlands`, `Plains Forest`, `Savanna`, `Desert`, `Beach`, `River`, `Ocean`, `Deep Ocean`).
 
-- [ ] **Stage 11.1: Block pallete reorganization based on biome requirements**:
-  - **Terrain Blocks (Surface)**:
-    - 
+- [x] **Stage 11.1: Complete Voxel Registry & Initial Block Catalog Definition (Completed)**:
+  - **Comprehensive 236-Block Palette**: All initial blocks for the game have been defined in `src/world/block.rs` and documented in `docs/blocks_list.md`. The catalog spans 9 primary categories:
+    - **Testing / Debug (8)**: Null placeholders and test/debug blocks.
+    - **Fluids & Liquids (8)**: Acid, blood, lava, molten rock, ooze, sludge, tar, water.
+    - **Frost (4)**: Black ice, fragile ice, ice, packed ice.
+    - **Soils & Sediment (32)**: Diverse soils, clays, gravels, muds, mulches, peats, silts, snows, ash, and standard/scorched sands.
+    - **Rocks & Minerals (96)**: 24 geological stone types with 4 variants each (Raw Rock, Cobbled, Mossy, and Mossy Cobbled).
+    - **Woods & Trees (52)**: 13 tree species (Oak, Birch, Pine, Acacia, Mahogany, Mangrove, Maple, Palm, Willow, Yew, Charred, Dead, Cactus) with bark, log, leaves, and planks.
+    - **Aquatic & Marine (8)**: Algae, sea grass, kelp, dead coral, and coral colonies.
+    - **Lights & Illumination (16)**: Standard and colored lights, glowing lichens, and magma.
+    - **Decorations (12)**: Bookshelves, bricks, chiseled/smooth stone, clear and tinted glass, iron bars, chains, lanterns, and campfires.
+  - **Dual-Layer Texture Overlays & Face Mapping**: Directional multi-face textures (logs, grass, cactus, basalt) and runtime overlay compositing (`overlay_texture_name()`) for mossy rock and mossy cobbled rock variants.
+  - **Subterranean Stone Refinement**: Mid-crust subterranean stone transition now uses `Rock_Slate` (slate) rather than black sandstone.
+  - **Tree Species Cataloging**: Tree species in `src/generation/trees.rs` expanded to all 13 species (`TreeSpecies`), replacing legacy `Rainwood` with `Mahogany`.
 
 - [ ] **Stage 11.2: Surface Biome Catalog (Terrain & Surface Palettes)**:
   *Note: Only existing engine blocks are utilized. No flora/fauna features at this stage.*

@@ -202,7 +202,7 @@ impl TerrainGenerator {
 
                         let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
                         let voxel = voxels[idx];
-                        if !voxel.is_collidable() || voxel == Voxel::Dreadstone {
+                        if !voxel.is_collidable() || voxel == Voxel::Rock_Dreadstone {
                             continue;
                         }
 
@@ -598,11 +598,11 @@ impl TerrainGenerator {
         // Submerged terrain (underwater) is NEVER Grass or SnowyGrass!
         let is_submerged = column.water_level.is_some_and(|wl| world_y <= wl);
         if is_submerged {
-            return Voxel::Sand;
+            return Voxel::Soil_Sand;
         }
 
         if column.is_beach {
-            return Voxel::Sand;
+            return Voxel::Soil_Sand;
         }
 
         // High alpine elevation snowline: mountains above y >= 48 receive snowcaps
@@ -625,9 +625,9 @@ impl TerrainGenerator {
                     self.seed.wrapping_add(82_222),
                 );
                 if world_y as f32 >= snowline + 8.0 && slope_noise > 0.40 {
-                    return Voxel::Stone;
+                    return Voxel::Rock_Stone;
                 }
-                return Voxel::Snow;
+                return Voxel::Soil_Snow;
             }
         }
 
@@ -648,7 +648,7 @@ impl TerrainGenerator {
         let is_snowy = column.climate.temperature + snow_jitter < -0.20;
 
         if is_snowy {
-            return Voxel::SnowyGrass;
+            return Voxel::Soil_Snowy_Grass;
         }
 
         // 2. Organic Arid Transition (Sand <-> Grass for Desert):
@@ -677,7 +677,7 @@ impl TerrainGenerator {
             || column.biome == BiomeType::DeepOcean
             || column.biome == BiomeType::River
         {
-            return Voxel::Sand;
+            return Voxel::Soil_Sand;
         }
 
         if column.biome == BiomeType::Highlands {
@@ -687,15 +687,15 @@ impl TerrainGenerator {
                 self.seed.wrapping_add(45_678),
             );
             if slate_noise > 0.05 {
-                return Voxel::Slate;
+                return Voxel::Rock_Slate;
             } else if slate_noise > -0.25 {
-                return Voxel::Cobbleslate;
+                return Voxel::Cobbled_Slate;
             } else {
-                return Voxel::Grass;
+                return Voxel::Soil_Grass;
             }
         }
 
-        Voxel::Grass
+        Voxel::Soil_Grass
     }
 
     fn voxel_at_sampled(
@@ -712,7 +712,7 @@ impl TerrainGenerator {
             let river_roof = self.effective_sea_level() + 5;
             if world_y >= river_floor && world_y <= river_roof {
                 if world_y <= self.effective_sea_level() {
-                    return Voxel::Water;
+                    return Voxel::Liquid_Water;
                 } else {
                     return Voxel::Air;
                 }
@@ -723,7 +723,7 @@ impl TerrainGenerator {
             if let Some(water_level) = column.water_level
                 && world_y <= water_level
             {
-                return Voxel::Water;
+                return Voxel::Liquid_Water;
             }
 
             return Voxel::Air;
@@ -731,7 +731,7 @@ impl TerrainGenerator {
 
         // Absolute bedrock floor: bottom layers of the world are strictly solid Dreadstone
         if world_y <= self.strata.bedrock_min_block_y {
-            return Voxel::Dreadstone;
+            return Voxel::Rock_Dreadstone;
         }
 
         let is_underwater =
@@ -761,13 +761,13 @@ impl TerrainGenerator {
         let biome_cfg = column.biome.config();
 
         if column.is_beach && logical_depth <= 3 {
-            return Voxel::Sand;
+            return Voxel::Soil_Sand;
         }
 
         if logical_depth <= 2 {
             let surface = self.surface_material_at(world_x, column.terrain_height, world_z, column);
-            if surface == Voxel::Sand {
-                return Voxel::Sand;
+            if surface == Voxel::Soil_Sand {
+                return Voxel::Soil_Sand;
             }
         }
 
@@ -801,7 +801,7 @@ impl TerrainGenerator {
 
         let logical_depth = depth / LOGICAL_BLOCK_VOXELS;
         if column.is_beach && logical_depth <= 3 {
-            return Voxel::Sand;
+            return Voxel::Soil_Sand;
         }
 
         let biome_cfg = column.biome.config();

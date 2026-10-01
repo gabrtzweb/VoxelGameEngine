@@ -26,7 +26,7 @@ The stack I am using for my project:
     - Maximum chunk Y: +16 (+256 blocks)
     - Total playable vertical height: 512 blocks.
 - Bottom-most layer of blocks: 100% unbreakable Dreadstone bedrock strictly confined to the bottom 3–4 layers of the world ($Y \le -254$). The very bottom layer ($Y = -256$) is guaranteed solid, smooth Dreadstone bedrock; cave carvers are strictly masked out of the bottom layer to eliminate voids or holes through the floor of the world.
-- Upper underground crust ($Y > -120$) is uniform `Stone`, smoothly transitioning at the underground depth midpoint ($Y \le -120$) down to `Blackstone` (`rock_blackstone`). `Slate` and `Cobbleslate` are reserved exclusively for the `Highlands` biome.
+- Upper underground crust ($Y > -120$) is uniform `Stone`, smoothly transitioning at the underground depth midpoint ($Y \le -120$) down to `Slate` (`Rock_Slate`). `Slate` and `Cobbleslate` are also featured in the `Highlands` biome.
 - Chunk streaming operates using a horizontal cylindrical distance ($X^2 + Z^2 \le R^2$) within the vertical range of chunk Y $-16$ to $+16$. This guarantees that soaring mountain summits ($Y \le 256$) and deep caverns are never truncated or sliced off by spherical distance clipping.
 - Cloud plane altitude: 220.0 m (floating high above the tallest mountain peaks).
 - Current default render distance: 12 chunks (distance fog disabled by default).
@@ -73,7 +73,7 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - **1.0m³ Block Architecture**: The world is stored using 1.0 m voxels (identical to Minecraft blocks). Full 1 m³ blocks form the base unit of the world; 0.5 m sub-voxels are completely removed. Native block shapes (`BlockShape::Full`, `BlockShape::Slab`, `BlockShape::Stair`, `BlockShape::Column`) are supported with full 3D orientations and exact sub-box collision raycasting.
 - **Chunk Geometry**: 16 × 16 × 16 voxels/blocks (4,096 voxels per chunk) spanning 16 m × 16 m × 16 m physical space.
 - **Procedural Cylindrical Streaming**: Dynamic horizontal radius streaming ($X^2 + Z^2 \le R^2$) spanning vertical chunk bounds from chunk $Y = -16$ ($-256$ blocks) up to chunk $Y = +16$ ($+256$ blocks). Default render distance of 12 chunks (configurable 2..=16 chunks in settings). Prevents mountain peaks and subterranean caverns from being truncated.
-- **Block Registry & Properties**: Dedicated blocks architecture in `src/world/block.rs` supporting 70 block types, texture IDs, tool tiers (Pickaxe, Shovel, Axe), and material durability values. Includes multi-face blocks such as `Voxel::OakWoodLog` (log rings on top/bottom, bark on sides), `Voxel::SnowyGrass` (snow top, snowy grass sides, dirt bottom), `Voxel::RootedDirt` (dirt with hanging subterranean roots), `Voxel::RainwoodWoodLog`, wooden planks suite (`Voxel::OakPlanks`, `Voxel::BirchPlanks`, `Voxel::PinePlanks`, `Voxel::RainwoodPlanks`), and standard 16×16 textured `Voxel::Cactus`.
+- **Block Registry & Properties**: Complete 236-block catalog (239 enum variants in `src/world/block.rs`, documented in `docs/blocks_list.md`) across 9 categories: Testing (8), Liquids (8), Frost (4), Soils (32), Rocks (96 across 24 geological types with raw, cobbled, mossy, and mossy cobbled variants), Woods (52 across 13 species), Aquatic (8), Lights (16), and Decorations (12). Includes directional multi-face mapping, runtime moss overlay compositing (`overlay_texture_name`), and comprehensive physical/visual property queries.
 
 ### 2. Meshing & GPU Rendering Pipeline
 - **Asynchronous Greedy Meshing**: Chunk meshing offloaded to Bevy's `AsyncComputeTaskPool` with background worker tasks and throttled main-thread mesh uploading (`src/meshing/async_mesher.rs`), eliminating frame-rate drops.
@@ -94,7 +94,7 @@ The player uses a custom AABB collision system that directly queries voxel data.
 - **Clean Subterranean Strata & Bedrock Floor**:
   - Subsoil is uniform `Dirt` (or `Sand` in Desert/Beach) with gravel/blackstone clutter completely removed.
   - Upper underground crust ($Y > -120$) is uniform `Stone`.
-  - Lower crust ($Y \le -120$) transitions at depth midpoint down to `Blackstone` (`rock_blackstone`) via 3D dithered noise.
+  - Lower crust ($Y \le -120$) transitions at depth midpoint down to `Slate` (`Rock_Slate`) via 3D dithered noise.
   - Bedrock (`Dreadstone`) is strictly confined to the bottom 3–4 layers of the world ($Y \le -254$). The bottom-most layer ($Y = -256$) is guaranteed smooth, unbroken Dreadstone bedrock with cave carvers masked out.
 - **Natural Mountain Arches, Cave Mouths & Subterranean Rivers**:
   - Spacious 3–5 block wide 3D caves with natural cave mouth breaches on dry hillsides ($0.18$ mask threshold).
@@ -102,7 +102,7 @@ The player uses a custom AABB collision system that directly queries voxel data.
   - Rivers flowing into high peaks ($Y > \text{sea\_level} + 14$) preserve the standing mountain mass while tunneling subterranean river caverns at sea level.
   - Removed subterranean water aquifers for clean, walkable cave exploration.
 - **Paused Procedural Tree Generation**:
-  - Procedural tree and clutter block generation has been paused and cleaned up in terrain chunk building. Trees and multi-face logs remain registered in block/inventory definitions, ready to be reintroduced in Phase 12.
+  - Procedural tree and clutter block generation has been paused and cleaned up in terrain chunk building. 13 complete tree species (Oak, Birch, Pine, Acacia, Mahogany, Mangrove, Maple, Palm, Willow, Yew, Charred, Dead, Cactus) are defined in `src/generation/trees.rs` (`TreeSpecies`) and registered in block/inventory definitions, ready to be reintroduced in Phase 12.
 - **Dedicated Live Terrain & World Inspector GUI**: Custom egui tuning window bound to <kbd>F1</kbd> running in `EguiPrimaryContextPass` with full interactive sliders and an instant "Regenerate World" button that cleanly despawns existing chunk mesh entities and re-triggers async mesh generation in real time.
 
 ### 4. Player Physics, Collision & Locomotion

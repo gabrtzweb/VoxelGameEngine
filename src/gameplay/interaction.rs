@@ -39,7 +39,7 @@ pub struct SelectedVoxel(pub Option<Voxel>);
 
 impl Default for SelectedVoxel {
     fn default() -> Self {
-        Self(Some(Voxel::Grass))
+        Self(Some(Voxel::Soil_Grass))
     }
 }
 
@@ -325,7 +325,7 @@ pub fn remove_voxel(
     }
 
     let replacement = if current_voxel == Voxel::WaterOccupied {
-        Voxel::Water
+        Voxel::Liquid_Water
     } else {
         Voxel::Air
     };

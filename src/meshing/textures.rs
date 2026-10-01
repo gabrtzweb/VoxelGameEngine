@@ -71,9 +71,18 @@ impl VoxelTextureRegistry {
             FaceDirection::PositiveY => m.top,
             FaceDirection::NegativeY => m.bottom,
             _ => {
-                if (voxel == Voxel::Grass || voxel == Voxel::SnowyGrass || voxel == Voxel::Mulch)
-                    && self.full_grass
-                {
+                if matches!(
+                    voxel,
+                    Voxel::Soil_Grass
+                        | Voxel::Soil_Peat_Grass
+                        | Voxel::Soil_Silt_Grass
+                        | Voxel::Soil_Snowy_Grass
+                        | Voxel::Soil_Snowy_Peat
+                        | Voxel::Soil_Snowy_Silt
+                        | Voxel::Soil_Mulch
+                        | Voxel::Soil_Peat_Mulch
+                        | Voxel::Soil_Silt_Mulch
+                ) && self.full_grass {
                     m.top
                 } else {
                     m.side
@@ -115,10 +124,12 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
         let side_name = voxel.side_texture_name().unwrap_or(base_name);
         let mut side_variants = load_all_variants_for(side_name, voxel.fallback_color());
 
-        // Composite grass side overlay if this is Grass
-        if voxel == Voxel::Grass
-            && let Some(overlay) =
-                try_load_image("assets/textures/blocks/terr_grass_side_overlay.png")
+        // Composite grass side overlay if this is a grass soil
+        if matches!(
+            voxel,
+            Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass
+        ) && let Some(overlay) =
+            try_load_image("assets/textures/blocks/soil_grass_side_overlay.png")
             && let Some(overlay_frame) = overlay.frames.first()
         {
             let tint = voxel.tint_color();
@@ -136,23 +147,27 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
                             let base_g = frame[idx + 1] as f32;
                             let base_b = frame[idx + 2] as f32;
 
-                            let out_r = (base_r * (1.0 - ov_a) + ov_r * ov_a)
+                            frame[idx] = (base_r * (1.0 - ov_a) + ov_r * ov_a)
                                 .round()
                                 .clamp(0.0, 255.0) as u8;
-                            let out_g = (base_g * (1.0 - ov_a) + ov_g * ov_a)
+                            frame[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a)
                                 .round()
                                 .clamp(0.0, 255.0) as u8;
-                            let out_b = (base_b * (1.0 - ov_a) + ov_b * ov_a)
+                            frame[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a)
                                 .round()
                                 .clamp(0.0, 255.0) as u8;
-
-                            frame[idx] = out_r;
-                            frame[idx + 1] = out_g;
-                            frame[idx + 2] = out_b;
                         }
                     }
                 }
             }
+        }
+
+        // Composite texture overlay if defined (e.g. mossy rock / mossy cobbled overlay)
+        if let Some(overlay_name) = voxel.overlay_texture_name()
+            && let Some(overlay) = try_load_image(&format!("assets/textures/blocks/{overlay_name}.png"))
+            && let Some(overlay_frame) = overlay.frames.first()
+        {
+            composite_overlay(&mut side_variants, overlay_frame);
         }
 
         let side_variant_count = side_variants.len() as u16;
@@ -272,6 +287,30 @@ pub struct LoadedTexture {
     pub frames: Vec<Vec<u8>>,
 }
 
+fn composite_overlay(variants: &mut [LoadedTexture], overlay_frame: &[u8]) {
+    for variant in variants {
+        for frame in &mut variant.frames {
+            for i in 0..256 {
+                let idx = i * 4;
+                let ov_a = overlay_frame[idx + 3] as f32 / 255.0;
+                if ov_a > 0.0 {
+                    let ov_r = overlay_frame[idx] as f32;
+                    let ov_g = overlay_frame[idx + 1] as f32;
+                    let ov_b = overlay_frame[idx + 2] as f32;
+
+                    let base_r = frame[idx] as f32;
+                    let base_g = frame[idx + 1] as f32;
+                    let base_b = frame[idx + 2] as f32;
+
+                    frame[idx] = (base_r * (1.0 - ov_a) + ov_r * ov_a).round().clamp(0.0, 255.0) as u8;
+                    frame[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a).round().clamp(0.0, 255.0) as u8;
+                    frame[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a).round().clamp(0.0, 255.0) as u8;
+                }
+            }
+        }
+    }
+}
+
 fn load_all_variants_for(base_name: &str, fallback_color: [u8; 4]) -> Vec<LoadedTexture> {
     let mut variants = Vec::new();
 
@@ -282,10 +321,17 @@ fn load_all_variants_for(base_name: &str, fallback_color: [u8; 4]) -> Vec<Loaded
         format!("assets/textures/blocks/{base_name}0.png"),
     ];
 
-    if base_name == "liqd_water_still" {
-        primary_paths.push("assets/textures/blocks/liqd_water.png".to_string());
-    } else if base_name == "liqd_water" {
-        primary_paths.insert(0, "assets/textures/blocks/liqd_water_still.png".to_string());
+    if base_name.ends_with("_still") {
+        let stripped = base_name.trim_end_matches("_still");
+        primary_paths.push(format!("assets/textures/blocks/{stripped}.png"));
+    } else if base_name.starts_with("liquid_") {
+        primary_paths.insert(0, format!("assets/textures/blocks/{base_name}_still.png"));
+    }
+
+    if base_name == "cobbled_tuffite" {
+        primary_paths.insert(0, "assets/textures/blocks/cobbled_tuff.png".to_string());
+    } else if base_name == "tree_maple_leaves_orange" || base_name == "tree_maple_leaves_orange_" {
+        primary_paths.insert(0, "assets/textures/blocks/tree_maple_leaves_orange_.png".to_string());
     }
 
     primary_paths.push(format!("assets/textures/blocks/block_{base_name}.png"));

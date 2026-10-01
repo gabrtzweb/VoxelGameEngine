@@ -41,20 +41,20 @@ impl StrataGenerator {
 
         // Bedrock (Dreadstone) strictly in bottom 3-4 layers of the world
         if block_y <= self.bedrock_min_block_y {
-            return Voxel::Dreadstone;
+            return Voxel::Rock_Dreadstone;
         } else if block_y <= self.bedrock_min_block_y + 3 {
             let bedrock_noise =
                 gradient_noise_3d(bx * 0.35, by * 0.35, bz * 0.35, seed.wrapping_add(234_567));
             if block_y == self.bedrock_min_block_y + 1 {
                 if bedrock_noise > -0.40 {
-                    return Voxel::Dreadstone;
+                    return Voxel::Rock_Dreadstone;
                 }
             } else if block_y == self.bedrock_min_block_y + 2 {
                 if bedrock_noise > 0.05 {
-                    return Voxel::Dreadstone;
+                    return Voxel::Rock_Dreadstone;
                 }
             } else if block_y == self.bedrock_min_block_y + 3 && bedrock_noise > 0.40 {
-                return Voxel::Dreadstone;
+                return Voxel::Rock_Dreadstone;
             }
         }
 
@@ -81,15 +81,15 @@ impl StrataGenerator {
             let cobbleslate_noise =
                 gradient_noise_3d(bx * 0.20, by * 0.20, bz * 0.20, seed.wrapping_add(88_222));
             if cobbleslate_noise > 0.35 {
-                Voxel::Cobbleslate
+                Voxel::Cobbled_Slate
             } else {
-                Voxel::Slate
+                Voxel::Rock_Slate
             }
         } else {
             let blackstone_transition =
                 gradient_noise_3d(bx * 0.15, by * 0.15, bz * 0.15, seed.wrapping_add(77_889)) * 4.0;
             if (block_y as f32) < (self.mid_crust_y as f32 + blackstone_transition) {
-                Voxel::Blackstone
+                Voxel::Rock_Slate
             } else {
                 biome.primary_stone
             }

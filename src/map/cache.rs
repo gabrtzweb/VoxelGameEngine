@@ -205,12 +205,12 @@ fn extract_column_surface(world: &VoxelWorld, col: IVec2) -> Option<MapChunk> {
                 } else {
                     1
                 };
-                let color = super::color::voxel_map_color_at(Voxel::Water, depth, world_x, world_z);
+                let color = super::color::voxel_map_color_at(Voxel::Liquid_Water, depth, world_x, world_z);
                 map_chunk.set(
                     lx,
                     lz,
                     MapPixel {
-                        voxel: Voxel::Water,
+                        voxel: Voxel::Liquid_Water,
                         height: water_surface_y as i16,
                         water_depth: depth,
                         color,

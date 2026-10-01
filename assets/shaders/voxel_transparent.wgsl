@@ -276,9 +276,10 @@ fn fragment(
     let frame_count = vertex_output.uv_b.y;
 
     var layer = i32(round(base_layer));
-    if (frame_count > 1.5) {
+    let actual_frame_count = abs(frame_count);
+    if (actual_frame_count > 1.5) {
         let fps = 6.0;
-        let count = max(1, i32(round(frame_count)));
+        let count = max(1, i32(round(actual_frame_count)));
         let frame = (i32(floor(time * fps)) % count + count) % count;
         layer = layer + frame;
     }

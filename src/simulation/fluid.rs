@@ -149,13 +149,9 @@ fn run_fluid_simulation(
         };
 
         match current_voxel {
-            Voxel::Water => {
-                let changed = process_water_source(&mut world, &mut modifications, &mut queue, pos);
-                edited_voxels.extend(changed);
-            }
-            Voxel::WaterFlowing => {
+            Voxel::Liquid_Water => {
                 let changed =
-                    process_water_flowing(&mut world, &mut modifications, &mut queue, pos);
+                    process_water_source(&mut world, &mut modifications, &mut queue, pos);
                 edited_voxels.extend(changed);
             }
             Voxel::WaterOccupied => {
@@ -195,6 +191,7 @@ fn run_fluid_simulation(
     }
 }
 
+#[allow(dead_code)]
 fn process_water_source(
     world: &mut VoxelWorld,
     modifications: &mut WorldModificationStore,
@@ -206,8 +203,8 @@ fn process_water_source(
     let below = pos - IVec3::Y;
     if let Some(voxel_below) = world.get_voxel(below) {
         if voxel_below == Voxel::Air {
-            world.set_voxel(below, Voxel::WaterFlowing);
-            modifications.record(below, Voxel::WaterFlowing);
+            world.set_voxel(below, Voxel::Liquid_Water);
+            modifications.record(below, Voxel::Liquid_Water);
             queue.enqueue_with_neighbors(below);
             edited.push(below);
             return edited;
@@ -234,8 +231,8 @@ fn process_water_source(
     for neighbor in horizontals {
         if let Some(v) = world.get_voxel(neighbor) {
             if v == Voxel::Air {
-                world.set_voxel(neighbor, Voxel::WaterFlowing);
-                modifications.record(neighbor, Voxel::WaterFlowing);
+                world.set_voxel(neighbor, Voxel::Liquid_Water);
+                modifications.record(neighbor, Voxel::Liquid_Water);
                 queue.enqueue_with_neighbors(neighbor);
                 edited.push(neighbor);
             } else if v == Voxel::Occupied {
@@ -250,6 +247,7 @@ fn process_water_source(
     edited
 }
 
+#[allow(dead_code)]
 fn process_water_flowing(
     world: &mut VoxelWorld,
     modifications: &mut WorldModificationStore,
@@ -277,8 +275,8 @@ fn process_water_flowing(
     let below = pos - IVec3::Y;
     if let Some(voxel_below) = world.get_voxel(below) {
         if voxel_below == Voxel::Air {
-            world.set_voxel(below, Voxel::WaterFlowing);
-            modifications.record(below, Voxel::WaterFlowing);
+            world.set_voxel(below, Voxel::Liquid_Water);
+            modifications.record(below, Voxel::Liquid_Water);
             queue.enqueue_with_neighbors(below);
             edited.push(below);
             return edited;
@@ -306,8 +304,8 @@ fn process_water_flowing(
         for neighbor in horizontals {
             if let Some(v) = world.get_voxel(neighbor) {
                 if v == Voxel::Air {
-                    world.set_voxel(neighbor, Voxel::WaterFlowing);
-                    modifications.record(neighbor, Voxel::WaterFlowing);
+                    world.set_voxel(neighbor, Voxel::Liquid_Water);
+                    modifications.record(neighbor, Voxel::Liquid_Water);
                     queue.enqueue_with_neighbors(neighbor);
                     edited.push(neighbor);
                 } else if v == Voxel::Occupied {
@@ -350,8 +348,8 @@ fn process_water_occupied(
     let below = pos - IVec3::Y;
     if let Some(voxel_below) = world.get_voxel(below) {
         if voxel_below == Voxel::Air {
-            world.set_voxel(below, Voxel::WaterFlowing);
-            modifications.record(below, Voxel::WaterFlowing);
+            world.set_voxel(below, Voxel::Liquid_Water);
+            modifications.record(below, Voxel::Liquid_Water);
             queue.enqueue_with_neighbors(below);
             edited.push(below);
             return edited;
@@ -379,8 +377,8 @@ fn process_water_occupied(
         for neighbor in horizontals {
             if let Some(v) = world.get_voxel(neighbor) {
                 if v == Voxel::Air {
-                    world.set_voxel(neighbor, Voxel::WaterFlowing);
-                    modifications.record(neighbor, Voxel::WaterFlowing);
+                    world.set_voxel(neighbor, Voxel::Liquid_Water);
+                    modifications.record(neighbor, Voxel::Liquid_Water);
                     queue.enqueue_with_neighbors(neighbor);
                     edited.push(neighbor);
                 } else if v == Voxel::Occupied {
@@ -421,12 +419,12 @@ fn check_infinite_source(
 
     let source_count = horizontals
         .iter()
-        .filter(|&&n| world.get_voxel(n) == Some(Voxel::Water))
+        .filter(|&&n| world.get_voxel(n) == Some(Voxel::Liquid_Water))
         .count();
 
     if source_count >= 2 {
-        world.set_voxel(pos, Voxel::Water);
-        modifications.record(pos, Voxel::Water);
+        world.set_voxel(pos, Voxel::Liquid_Water);
+        modifications.record(pos, Voxel::Liquid_Water);
         queue.enqueue_with_neighbors(pos);
         edited.push(pos);
     }
@@ -447,7 +445,7 @@ fn has_adjacent_water(world: &VoxelWorld, pos: IVec3) -> bool {
     neighbors.iter().any(|&n| {
         world
             .get_voxel(n)
-            .is_some_and(|v| v == Voxel::Water || v == Voxel::WaterFlowing)
+            .is_some_and(Voxel::is_water)
     })
 }
 
@@ -482,6 +480,7 @@ fn is_supported_by_ground(world: &VoxelWorld, pos: IVec3) -> bool {
     false
 }
 
+#[allow(dead_code)]
 pub fn is_full_block_source(world: &impl VoxelAccess, pos: IVec3) -> bool {
     let above = pos + IVec3::Y;
     let below = pos - IVec3::Y;
@@ -492,7 +491,7 @@ pub fn is_full_block_source(world: &impl VoxelAccess, pos: IVec3) -> bool {
 pub fn compute_water_info(world: &impl VoxelAccess, pos: IVec3) -> Option<WaterInfo> {
     let above = pos + IVec3::Y;
     if let Some(v_above) = world.get_voxel(above)
-        && (v_above == Voxel::Water || v_above == Voxel::WaterFlowing)
+        && v_above.is_water()
     {
         let two_above = pos + IVec3::new(0, 2, 0);
         if world.get_voxel(two_above).is_some_and(Voxel::is_water) {
@@ -532,36 +531,23 @@ pub fn compute_water_info(world: &impl VoxelAccess, pos: IVec3) -> Option<WaterI
 
             let next_dist = dist + 1;
 
-            match v {
-                Voxel::Water => {
-                    let is_full = is_full_block_source(world, neighbor);
+            if v.is_water() {
+                let n_above = neighbor + IVec3::Y;
+                let n_two_above = neighbor + IVec3::new(0, 2, 0);
+                if world.get_voxel(n_above).is_some_and(Voxel::is_water)
+                    && world.get_voxel(n_two_above).is_some_and(Voxel::is_water)
+                {
                     let info = WaterInfo {
                         distance: next_dist,
-                        is_full_block: is_full,
+                        is_full_block: true,
                     };
-                    if next_dist <= info.max_spread() {
+                    if next_dist <= MAX_FULL_WATER_SPREAD {
                         return Some(info);
                     }
                 }
-                Voxel::WaterFlowing | Voxel::WaterOccupied => {
-                    let n_above = neighbor + IVec3::Y;
-                    let n_two_above = neighbor + IVec3::new(0, 2, 0);
-                    if world.get_voxel(n_above).is_some_and(Voxel::is_water)
-                        && world.get_voxel(n_two_above).is_some_and(Voxel::is_water)
-                    {
-                        let info = WaterInfo {
-                            distance: next_dist,
-                            is_full_block: true,
-                        };
-                        if next_dist <= MAX_FULL_WATER_SPREAD {
-                            return Some(info);
-                        }
-                    }
 
-                    visited.insert(neighbor);
-                    queue.push_back((neighbor, next_dist));
-                }
-                _ => {}
+                visited.insert(neighbor);
+                queue.push_back((neighbor, next_dist));
             }
         }
     }
@@ -571,11 +557,15 @@ pub fn compute_water_info(world: &impl VoxelAccess, pos: IVec3) -> Option<WaterI
 
 pub fn water_surface_height_offset(world: &impl VoxelAccess, world_voxel: IVec3) -> f32 {
     let voxel = world.get_voxel(world_voxel).unwrap_or(Voxel::Air);
-    if !voxel.is_water() {
+    if !voxel.is_fluid() {
         return 0.0;
     }
 
-    if voxel == Voxel::Water {
+    if voxel != Voxel::Liquid_Water && voxel != Voxel::WaterOccupied {
+        return 0.10;
+    }
+
+    if voxel == Voxel::Liquid_Water {
         return 0.10;
     }
 

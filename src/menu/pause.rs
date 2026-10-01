@@ -319,7 +319,7 @@ fn handle_pause_menu_buttons(
                             **hotbar = Hotbar::default();
                         }
                         if let Some(ref mut selected) = selected_voxel_query {
-                            selected.0 = Some(Voxel::Grass);
+                            selected.0 = Some(Voxel::Soil_Grass);
                         }
                         if let Some(ref mut cache) = map_cache_query {
                             cache.clear();

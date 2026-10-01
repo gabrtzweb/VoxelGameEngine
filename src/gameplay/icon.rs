@@ -49,8 +49,12 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
             load_voxel_raw_16x16(voxel)
         };
 
-        if voxel == Voxel::Grass {
-            let overlay_path = "assets/textures/blocks/terr_grass_side_overlay.png";
+        let is_grass = matches!(
+            voxel,
+            Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass
+        );
+        if is_grass {
+            let overlay_path = "assets/textures/blocks/soil_grass_side_overlay.png";
             if Path::new(overlay_path).exists()
                 && let Ok(img) = image::open(overlay_path)
             {
@@ -82,15 +86,69 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
             }
         }
 
+        if let Some(overlay_name) = voxel.overlay_texture_name() {
+            let overlay_path = format!("assets/textures/blocks/{overlay_name}.png");
+            if Path::new(&overlay_path).exists()
+                && let Ok(img) = image::open(&overlay_path)
+            {
+                let rgba = img.into_rgba8();
+                let raw = rgba.into_raw();
+                for idx in (0..raw_side.len().min(raw.len())).step_by(4) {
+                    let ov_a = (raw[idx + 3] as f32) / 255.0;
+                    if ov_a > 0.001 {
+                        let ov_r = raw[idx] as f32;
+                        let ov_g = raw[idx + 1] as f32;
+                        let ov_b = raw[idx + 2] as f32;
+
+                        let base_r = raw_side[idx] as f32;
+                        let base_g = raw_side[idx + 1] as f32;
+                        let base_b = raw_side[idx + 2] as f32;
+
+                        raw_side[idx] = (base_r * (1.0 - ov_a) + ov_r * ov_a)
+                            .round()
+                            .clamp(0.0, 255.0) as u8;
+                        raw_side[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a)
+                            .round()
+                            .clamp(0.0, 255.0) as u8;
+                        raw_side[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a)
+                            .round()
+                            .clamp(0.0, 255.0) as u8;
+                    }
+                }
+            }
+        }
+
         let raw_top = if let Some(top_name) = voxel.top_texture_name() {
-            load_raw_16x16_by_name(top_name, voxel.fallback_color())
+            let mut top_bytes = load_raw_16x16_by_name(top_name, voxel.fallback_color());
+            if voxel != Voxel::Mossy_Basalt && let Some(overlay_name) = voxel.overlay_texture_name() {
+                let overlay_path = format!("assets/textures/blocks/{overlay_name}.png");
+                if Path::new(&overlay_path).exists() && let Ok(img) = image::open(&overlay_path) {
+                    let rgba = img.into_rgba8();
+                    let raw = rgba.into_raw();
+                    for idx in (0..top_bytes.len().min(raw.len())).step_by(4) {
+                        let ov_a = (raw[idx + 3] as f32) / 255.0;
+                        if ov_a > 0.001 {
+                            let ov_r = raw[idx] as f32;
+                            let ov_g = raw[idx + 1] as f32;
+                            let ov_b = raw[idx + 2] as f32;
+                            let base_r = top_bytes[idx] as f32;
+                            let base_g = top_bytes[idx + 1] as f32;
+                            let base_b = top_bytes[idx + 2] as f32;
+                            top_bytes[idx] = (base_r * (1.0 - ov_a) + ov_r * ov_a).round().clamp(0.0, 255.0) as u8;
+                            top_bytes[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a).round().clamp(0.0, 255.0) as u8;
+                            top_bytes[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a).round().clamp(0.0, 255.0) as u8;
+                        }
+                    }
+                }
+            }
+            top_bytes
         } else if voxel.side_texture_name().is_some() {
             load_voxel_raw_16x16(voxel)
         } else {
             raw_side.clone()
         };
 
-        let side_tint = if voxel == Voxel::Grass {
+        let side_tint = if is_grass {
             [1.0, 1.0, 1.0, 1.0]
         } else {
             voxel.tint_color()
@@ -106,11 +164,6 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
         }
 
         block_icons.icons.insert(voxel, handle);
-    }
-
-    // Also support legacy Light alias pointing to LightWarm
-    if let Some(warm_handle) = block_icons.icons.get(&Voxel::LightWarm).cloned() {
-        block_icons.icons.insert(Voxel::Light, warm_handle);
     }
 
     if let Some(fb) = fallback_image {
