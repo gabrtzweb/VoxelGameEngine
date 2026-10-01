@@ -127,6 +127,7 @@ impl TerrainGenerator {
 
         let mut columns = [TerrainColumn::default(); CHUNK_SIZE * CHUNK_SIZE];
         let mut maximum_filled_height = i32::MIN;
+        let mut minimum_filled_height = i32::MAX;
 
         for z in 0..CHUNK_SIZE {
             for x in 0..CHUNK_SIZE {
@@ -141,6 +142,7 @@ impl TerrainGenerator {
                 let filled_height = column.water_level.unwrap_or(col_top).max(col_top);
 
                 maximum_filled_height = maximum_filled_height.max(filled_height);
+                minimum_filled_height = minimum_filled_height.min(col_top);
             }
         }
 
@@ -401,8 +403,9 @@ impl TerrainGenerator {
         }
 
         // Phase 12: Procedural Tree & Cactus Generation
-        if self.tree_density > 0.0 {
-            let chunk_max_y = chunk_min_y + CHUNK_SIZE as i32 - 1;
+        // Only evaluate trees if this chunk intersects the surface layer where trees can exist
+        let chunk_max_y = chunk_min_y + CHUNK_SIZE as i32 - 1;
+        if self.tree_density > 0.0 && chunk_max_y >= minimum_filled_height - 6 {
             let min_cell_x = (chunk_origin.x - 5).div_euclid(5);
             let max_cell_x = (chunk_origin.x + 16).div_euclid(5);
             let min_cell_z = (chunk_origin.z - 5).div_euclid(5);
@@ -771,7 +774,7 @@ impl TerrainGenerator {
         rep_height >= sea_level - 6 && rep_height <= max_beach_height
     }
 
-    fn surface_material_at(
+    pub fn surface_material_at(
         &self,
         world_x: i32,
         world_y: i32,

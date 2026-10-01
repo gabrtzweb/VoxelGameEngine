@@ -8,8 +8,8 @@ use bevy::{
 use super::{
     greedy::{ChunkMesher, ChunkMeshes},
     pipeline::{
-        ChunkMaterial, ChunkMeshRegistry, apply_chunk_mesh, remove_chunk_render,
-        setup_chunk_material,
+        ChunkMaterial, ChunkMeshRegistry, LodMeshRegistry, apply_chunk_mesh, remove_chunk_render,
+        remove_lod_render, setup_chunk_material,
     },
 };
 use crate::world::{
@@ -17,8 +17,8 @@ use crate::world::{
     streaming::{ChunkStreamingQueues, ChunkStreamingState},
 };
 
-const MAX_MESHING_TASKS_IN_FLIGHT: usize = 32;
-const MAX_MESHING_TASKS_STARTED_PER_FRAME: usize = 8;
+const MAX_MESHING_TASKS_IN_FLIGHT: usize = 64;
+const MAX_MESHING_TASKS_STARTED_PER_FRAME: usize = 24;
 
 #[derive(Component)]
 pub struct ChunkMeshingTask {
@@ -140,6 +140,7 @@ pub fn collect_meshing_tasks(
     world: Res<VoxelWorld>,
     material: Res<ChunkMaterial>,
     mut registry: ResMut<ChunkMeshRegistry>,
+    mut lod_registry: ResMut<LodMeshRegistry>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for (entity, mut meshing_task) in &mut tasks {
@@ -159,6 +160,8 @@ pub fn collect_meshing_tasks(
             continue;
         }
 
+        let has_mesh = completed.meshes.opaque.is_some() || completed.meshes.transparent.is_some();
+
         apply_chunk_mesh(
             &mut commands,
             completed.coordinate,
@@ -167,5 +170,13 @@ pub fn collect_meshing_tasks(
             &mut meshes,
             &material,
         );
+
+        // When a real chunk with visible geometry is placed, clean up any distant LOD mesh covering this column
+        if has_mesh {
+            let column = IVec2::new(completed.coordinate.x, completed.coordinate.z);
+            if lod_registry.contains(&column) {
+                remove_lod_render(&mut commands, column, &mut lod_registry, &mut meshes);
+            }
+        }
     }
 }

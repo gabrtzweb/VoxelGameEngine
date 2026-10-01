@@ -1,3 +1,4 @@
+use crate::meshing::ChunkLod;
 use bevy::prelude::*;
 use std::collections::{HashSet, VecDeque};
 
@@ -7,6 +8,8 @@ pub struct ChunkStreamingQueues {
     pub unload: VecDeque<IVec3>,
     pub remesh: VecDeque<IVec3>,
     pub remesh_set: HashSet<IVec3>,
+    pub lod_load: VecDeque<(IVec2, ChunkLod)>,
+    pub lod_unload: VecDeque<IVec2>,
 }
 
 impl ChunkStreamingQueues {

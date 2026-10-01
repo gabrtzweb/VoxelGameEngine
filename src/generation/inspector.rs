@@ -21,6 +21,9 @@ pub fn terrain_inspector_ui(
     player_query: Query<&Transform, With<crate::player::Player>>,
     env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
     mut atmo_state: Option<ResMut<crate::environment::atmosphere::BiomeAtmosphereState>>,
+    mut streaming_settings: Option<ResMut<crate::world::streaming::manager::ChunkStreamingSettings>>,
+    mesh_registry: Option<Res<crate::meshing::ChunkMeshRegistry>>,
+    lod_registry: Option<Res<crate::meshing::LodMeshRegistry>>,
 ) {
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
@@ -164,6 +167,57 @@ pub fn terrain_inspector_ui(
                     );
                 });
 
+            egui::CollapsingHeader::new("Render Distance & LOD (Stage 13.1)")
+                .default_open(true)
+                .show(ui, |ui| {
+                    if let Some(ref mut settings) = streaming_settings {
+                        ui.add(
+                            egui::Slider::new(&mut settings.render_distance, 2..=16)
+                                .text("Real Render Distance (LOD 0)"),
+                        );
+                        ui.add(
+                            egui::Slider::new(&mut settings.lod_render_distance, 0..=32)
+                                .text("LOD Render Distance (Far Horizon)"),
+                        );
+                        if settings.lod_render_distance == 0 {
+                            ui.label(
+                                egui::RichText::new(
+                                    "LOD chunks disabled (0 chunks beyond real distance)",
+                                )
+                                .italics()
+                                .color(egui::Color32::from_rgb(200, 160, 80)),
+                            );
+                        } else {
+                            let total_r = settings.render_distance + settings.lod_render_distance;
+                            ui.label(format!(
+                                "Total Horizon: {} chunks (~{}m radius)",
+                                total_r,
+                                total_r * 16
+                            ));
+                        }
+                    }
+                    if let Some(ref real_reg) = mesh_registry {
+                        ui.label(format!(
+                            "Real Mesh Chunks (LOD 0): {} | {} verts ({} tris)",
+                            real_reg.len(),
+                            real_reg.total_vertices(),
+                            real_reg.total_triangles()
+                        ));
+                    }
+                    if let Some(ref lod_reg) = lod_registry {
+                        let lod1_count = lod_reg.lod_count(crate::meshing::ChunkLod::Lod1);
+                        let lod2_count = lod_reg.lod_count(crate::meshing::ChunkLod::Lod2);
+                        ui.label(format!(
+                            "LOD Columns: {} (LOD 1: {}, LOD 2: {}) | {} verts ({} tris)",
+                            lod_reg.len(),
+                            lod1_count,
+                            lod2_count,
+                            lod_reg.total_vertices(),
+                            lod_reg.total_triangles()
+                        ));
+                    }
+                });
+
             ui.add_space(8.0);
             if ui.button("Reset Defaults").clicked() {
                 let v = generator.version.wrapping_add(1);
@@ -171,6 +225,10 @@ pub fn terrain_inspector_ui(
                 generator.version = v;
                 if let Some(ref mut atmo) = atmo_state {
                     atmo.transition_speed = 1.5;
+                }
+                if let Some(ref mut settings) = streaming_settings {
+                    **settings =
+                        crate::world::streaming::manager::ChunkStreamingSettings::default();
                 }
             }
         });

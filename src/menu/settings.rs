@@ -18,6 +18,8 @@ enum SettingsAction {
     IncScreenMode,
     DecRenderDistance,
     IncRenderDistance,
+    DecLodDistance,
+    IncLodDistance,
     DecSimulationDistance,
     IncSimulationDistance,
     DecFov,
@@ -36,6 +38,9 @@ struct ScreenModeLabel;
 
 #[derive(Component)]
 struct RenderDistanceLabel;
+
+#[derive(Component)]
+struct LodDistanceLabel;
 
 #[derive(Component)]
 struct SimulationDistanceLabel;
@@ -84,6 +89,7 @@ fn spawn_settings_menu(
     asset_server: Res<AssetServer>,
 ) {
     let render_dist = chunk_settings.render_distance;
+    let lod_dist = chunk_settings.lod_render_distance;
     let sim_dist = chunk_settings.simulation_distance;
     let fov = game_settings.fov_degrees as i32;
     let fog_enabled = game_settings.fog_enabled;
@@ -182,6 +188,23 @@ fn spawn_settings_menu(
                                     SettingsAction::DecRenderDistance,
                                     SettingsAction::IncRenderDistance,
                                     RenderDistanceLabel,
+                                    font_handle.as_ref(),
+                                    &small_normal,
+                                    &small_hover,
+                                );
+
+                                // 1b. LOD Distance Stepper
+                                spawn_stepper_row(
+                                    col_left,
+                                    "LOD Distance",
+                                    if lod_dist == 0 {
+                                        "Disabled".to_string()
+                                    } else {
+                                        format!("{lod_dist} Chunks")
+                                    },
+                                    SettingsAction::DecLodDistance,
+                                    SettingsAction::IncLodDistance,
+                                    LodDistanceLabel,
                                     font_handle.as_ref(),
                                     &small_normal,
                                     &small_hover,
@@ -610,6 +633,14 @@ fn handle_settings_buttons(
                         chunk_settings.render_distance =
                             (chunk_settings.render_distance + 1).min(16);
                     }
+                    SettingsAction::DecLodDistance => {
+                        chunk_settings.lod_render_distance =
+                            (chunk_settings.lod_render_distance - 2).max(0);
+                    }
+                    SettingsAction::IncLodDistance => {
+                        chunk_settings.lod_render_distance =
+                            (chunk_settings.lod_render_distance + 2).min(32);
+                    }
                     SettingsAction::DecSimulationDistance => {
                         chunk_settings.simulation_distance =
                             (chunk_settings.simulation_distance - 1).max(2);
@@ -691,6 +722,7 @@ fn update_settings_labels(
         &mut Text,
         Option<&ScreenModeLabel>,
         Option<&RenderDistanceLabel>,
+        Option<&LodDistanceLabel>,
         Option<&SimulationDistanceLabel>,
         Option<&FovLabel>,
         Option<&FogLabel>,
@@ -713,6 +745,7 @@ fn update_settings_labels(
         mut text,
         screen_mode,
         render_dist,
+        lod_dist,
         sim_dist,
         fov,
         fog,
@@ -778,6 +811,12 @@ fn update_settings_labels(
         if chunk_changed {
             if render_dist.is_some() {
                 text.0 = format!("{} Chunks", chunk_settings.render_distance);
+            } else if lod_dist.is_some() {
+                text.0 = if chunk_settings.lod_render_distance == 0 {
+                    "Disabled".to_string()
+                } else {
+                    format!("{} Chunks", chunk_settings.lod_render_distance)
+                };
             } else if sim_dist.is_some() {
                 text.0 = format!("{} Chunks", chunk_settings.simulation_distance);
             }

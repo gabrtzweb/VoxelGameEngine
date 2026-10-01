@@ -21,12 +21,12 @@ use super::{
     color::{apply_relief_shading, unexplored_color},
 };
 
-pub const WORLD_MAP_WIDTH: u32 = 696;
-pub const WORLD_MAP_HEIGHT: u32 = 504;
-pub const WORLD_MAP_FRAME_WIDTH: f32 = 768.0;
-pub const WORLD_MAP_FRAME_HEIGHT: f32 = 576.0;
-pub const WORLD_MAP_VIEWPORT_WIDTH: f32 = 696.0;
-pub const WORLD_MAP_VIEWPORT_HEIGHT: f32 = 504.0;
+pub const WORLD_MAP_WIDTH: u32 = 1044;
+pub const WORLD_MAP_HEIGHT: u32 = 756;
+pub const WORLD_MAP_FRAME_WIDTH: f32 = 1152.0;
+pub const WORLD_MAP_FRAME_HEIGHT: f32 = 864.0;
+pub const WORLD_MAP_VIEWPORT_WIDTH: f32 = 1044.0;
+pub const WORLD_MAP_VIEWPORT_HEIGHT: f32 = 756.0;
 pub const WORLD_MARKER_SIZE: f32 = 24.0;
 
 #[derive(Component)]
@@ -152,74 +152,52 @@ fn spawn_world_map_ui(
             ZIndex(250),
         ))
         .with_children(|root| {
-            // Centered World Map Window Container (Compact & cohesive)
+            // Centered World Map Parchment Frame Container (map_background_large.png)
             root.spawn(Node {
-                display: Display::Flex,
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
-                row_gap: px(6.0),
+                position_type: PositionType::Relative,
                 width: px(WORLD_MAP_FRAME_WIDTH),
+                height: px(WORLD_MAP_FRAME_HEIGHT),
+                display: Display::Flex,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
                 ..default()
             })
-            .with_children(|window| {
-                // 1. Header Bar (attached directly to the world map interface)
-                window
+            .with_children(|frame| {
+                // Background parchment image filling the frame
+                frame.spawn((
+                    ImageNode {
+                        image: map_state.background_image.clone(),
+                        ..default()
+                    },
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: px(0.0),
+                        top: px(0.0),
+                        right: px(0.0),
+                        bottom: px(0.0),
+                        ..default()
+                    },
+                    ZIndex(1),
+                ));
+
+                // Interactive World Map Terrain Viewport centered inside parchment frame
+                frame
                     .spawn((
+                        WorldMapViewport,
                         Node {
-                            width: percent(100.0),
-                            height: px(34.0),
-                            display: Display::Flex,
-                            flex_direction: FlexDirection::Row,
-                            justify_content: JustifyContent::SpaceBetween,
-                            align_items: AlignItems::Center,
-                            padding: UiRect::axes(px(14.0), px(4.0)),
-                            border: UiRect::all(px(1.5)),
-                            border_radius: BorderRadius::all(px(4.0)),
+                            position_type: PositionType::Relative,
+                            width: px(WORLD_MAP_VIEWPORT_WIDTH),
+                            height: px(WORLD_MAP_VIEWPORT_HEIGHT),
+                            overflow: Overflow::clip(),
                             ..default()
                         },
-                        BackgroundColor(Color::srgba(0.08, 0.09, 0.12, 0.92)),
-                        BorderColor::all(Color::srgba(0.28, 0.32, 0.42, 0.80)),
+                        ZIndex(5),
                     ))
-                    .with_children(|header| {
-                        header.spawn((
-                            Text::new("WORLD MAP"),
-                            TextFont {
-                                font: font_handle.clone(),
-                                font_size: FontSize::Px(16.0),
-                                ..default()
-                            },
-                            TextColor(Color::srgb(0.95, 0.92, 0.78)),
-                            crate::core::text_shadow_default(),
-                        ));
-
-                        header.spawn((
-                            Text::new("[M / ESC] Return to Game"),
-                            TextFont {
-                                font: font_handle.clone(),
-                                font_size: FontSize::Px(16.0),
-                                ..default()
-                            },
-                            TextColor(Color::srgb(0.68, 0.72, 0.80)),
-                            crate::core::text_shadow_default(),
-                        ));
-                    });
-
-                // 2. Center Parchment Frame Container (map_background_large.png)
-                window
-                    .spawn(Node {
-                        position_type: PositionType::Relative,
-                        width: px(WORLD_MAP_FRAME_WIDTH),
-                        height: px(WORLD_MAP_FRAME_HEIGHT),
-                        display: Display::Flex,
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        ..default()
-                    })
-                    .with_children(|frame| {
-                        // Background parchment image filling the frame
-                        frame.spawn((
+                    .with_children(|viewport| {
+                        // Terrain Render Texture (fills viewport 100%)
+                        viewport.spawn((
                             ImageNode {
-                                image: map_state.background_image.clone(),
+                                image: map_state.terrain_image.clone(),
                                 ..default()
                             },
                             Node {
@@ -233,129 +211,95 @@ fn spawn_world_map_ui(
                             ZIndex(1),
                         ));
 
-                        // Interactive World Map Terrain Viewport centered inside parchment frame
-                        frame
-                            .spawn((
-                                WorldMapViewport,
-                                Node {
-                                    position_type: PositionType::Relative,
-                                    width: px(WORLD_MAP_VIEWPORT_WIDTH),
-                                    height: px(WORLD_MAP_VIEWPORT_HEIGHT),
-                                    overflow: Overflow::clip(),
-                                    ..default()
-                                },
-                                ZIndex(5),
-                            ))
-                            .with_children(|viewport| {
-                                // Terrain Render Texture (fills viewport 100%)
-                                viewport.spawn((
-                                    ImageNode {
-                                        image: map_state.terrain_image.clone(),
-                                        ..default()
-                                    },
-                                    Node {
-                                        position_type: PositionType::Absolute,
-                                        left: px(0.0),
-                                        top: px(0.0),
-                                        right: px(0.0),
-                                        bottom: px(0.0),
-                                        ..default()
-                                    },
-                                    ZIndex(1),
-                                ));
-
-                                // Player Directional Red Marker
-                                let half_m = WORLD_MARKER_SIZE / 2.0;
-                                viewport.spawn((
-                                    WorldMapPlayerMarker,
-                                    ImageNode {
-                                        image: map_state.marker_image.clone(),
-                                        ..default()
-                                    },
-                                    Node {
-                                        position_type: PositionType::Absolute,
-                                        width: px(WORLD_MARKER_SIZE),
-                                        height: px(WORLD_MARKER_SIZE),
-                                        left: percent(50.0),
-                                        top: percent(50.0),
-                                        ..default()
-                                    },
-                                    UiTransform::from_translation(Val2::new(
-                                        px(-half_m),
-                                        px(-half_m),
-                                    )),
-                                    Visibility::Visible,
-                                    ZIndex(30),
-                                ));
-                            });
-                    });
-
-                // 3. Footer Bar (attached directly to the world map interface)
-                window
-                    .spawn((
-                        Node {
-                            width: percent(100.0),
-                            display: Display::Flex,
-                            flex_direction: FlexDirection::Column,
-                            justify_content: JustifyContent::Center,
-                            row_gap: px(4.0),
-                            padding: UiRect::axes(px(14.0), px(6.0)),
-                            border: UiRect::all(px(1.5)),
-                            border_radius: BorderRadius::all(px(4.0)),
-                            ..default()
-                        },
-                        BackgroundColor(Color::srgba(0.08, 0.09, 0.12, 0.92)),
-                        BorderColor::all(Color::srgba(0.28, 0.32, 0.42, 0.80)),
-                    ))
-                    .with_children(|footer| {
-                        // Row 1: Controls Hint
-                        footer.spawn((
-                            Text::new(
-                                "LMB Drag: Pan   |   Scroll: Zoom   |   Space: Center on Player",
-                            ),
-                            TextFont {
-                                font: font_handle.clone(),
-                                font_size: FontSize::Px(16.0),
+                        // Player Directional Red Marker
+                        let half_m = WORLD_MARKER_SIZE / 2.0;
+                        viewport.spawn((
+                            WorldMapPlayerMarker,
+                            ImageNode {
+                                image: map_state.marker_image.clone(),
                                 ..default()
                             },
-                            TextColor(Color::srgb(0.65, 0.68, 0.76)),
-                            crate::core::text_shadow_default(),
+                            Node {
+                                position_type: PositionType::Absolute,
+                                width: px(WORLD_MARKER_SIZE),
+                                height: px(WORLD_MARKER_SIZE),
+                                left: percent(50.0),
+                                top: percent(50.0),
+                                ..default()
+                            },
+                            UiTransform::from_translation(Val2::new(
+                                px(-half_m),
+                                px(-half_m),
+                            )),
+                            Visibility::Visible,
+                            ZIndex(30),
                         ));
 
-                        // Row 2: Coordinates and Cursor / Zoom
-                        footer
-                            .spawn(Node {
-                                display: Display::Flex,
-                                flex_direction: FlexDirection::Row,
-                                justify_content: JustifyContent::SpaceBetween,
-                                align_items: AlignItems::Center,
-                                width: percent(100.0),
-                                ..default()
-                            })
-                            .with_children(|coords_row| {
-                                coords_row.spawn((
-                                    WorldMapInfoText,
-                                    Text::new("Player: X: 0 Y: 0 Z: 0"),
+                        // Integrated In-Map HUD overlay in bottom checkered area
+                        viewport
+                            .spawn((
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    left: px(20.0),
+                                    right: px(20.0),
+                                    bottom: px(14.0),
+                                    display: Display::Flex,
+                                    flex_direction: FlexDirection::Column,
+                                    row_gap: px(4.0),
+                                    ..default()
+                                },
+                                ZIndex(40),
+                            ))
+                            .with_children(|overlay| {
+                                // Row 1: Controls Hint
+                                overlay.spawn((
+                                    Text::new(
+                                        "LMB Drag: Pan   |   Scroll: Zoom   |   Space: Center on Player   |   [M / ESC] Close",
+                                    ),
                                     TextFont {
                                         font: font_handle.clone(),
-                                        font_size: FontSize::Px(16.0),
+                                        font_size: FontSize::Px(15.0),
                                         ..default()
                                     },
-                                    TextColor(Color::srgb(0.92, 0.94, 0.98)),
+                                    TextColor(Color::WHITE),
                                     crate::core::text_shadow_default(),
                                 ));
 
-                                coords_row.spawn((
-                                    WorldMapCursorText,
-                                    Text::new("Cursor: X: 0 Z: 0 | Zoom: 1.00x"),
-                                    TextFont {
-                                        font: font_handle,
-                                        font_size: FontSize::Px(16.0),
+                                // Row 2: Coordinates & Cursor / Zoom
+                                overlay
+                                    .spawn(Node {
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Row,
+                                        justify_content: JustifyContent::SpaceBetween,
+                                        align_items: AlignItems::Center,
+                                        width: percent(100.0),
                                         ..default()
-                                    },
-                                    TextColor(Color::srgb(0.80, 0.85, 0.92)),
-                                    crate::core::text_shadow_default(),
-                                ));
+                                    })
+                                    .with_children(|coords_row| {
+                                        coords_row.spawn((
+                                            WorldMapInfoText,
+                                            Text::new("Player: X: 0 Y: 0 Z: 0"),
+                                            TextFont {
+                                                font: font_handle.clone(),
+                                                font_size: FontSize::Px(15.0),
+                                                ..default()
+                                            },
+                                            TextColor(Color::WHITE),
+                                            crate::core::text_shadow_default(),
+                                        ));
+
+                                        coords_row.spawn((
+                                            WorldMapCursorText,
+                                            Text::new("Cursor: X: 0 Z: 0 | Zoom: 1.00x"),
+                                            TextFont {
+                                                font: font_handle,
+                                                font_size: FontSize::Px(15.0),
+                                                ..default()
+                                            },
+                                            TextColor(Color::WHITE),
+                                            crate::core::text_shadow_default(),
+                                        ));
+                                    });
                             });
                     });
             });
@@ -472,18 +416,44 @@ fn sync_world_map_terrain(
     let half_h = (WORLD_MAP_HEIGHT as f32) / 2.0;
     let zoom = map_state.zoom;
     let center = map_state.center;
+    let chunk_size = crate::world::CHUNK_SIZE as i32;
 
     for py in 0..WORLD_MAP_HEIGHT {
         let wz = (center.y + (py as f32 - half_h) / zoom).floor() as i32;
         let row_offset = (py as usize) * (WORLD_MAP_WIDTH as usize) * 4;
 
+        let col_z = wz.div_euclid(chunk_size);
+        let lz = wz.rem_euclid(chunk_size) as usize;
+
+        let north_wz = wz - 1;
+        let north_col_z = north_wz.div_euclid(chunk_size);
+        let north_lz = north_wz.rem_euclid(chunk_size) as usize;
+
+        let mut last_col_x = i32::MIN;
+        let mut current_chunk: Option<&crate::map::cache::MapChunk> = None;
+        let mut north_chunk: Option<&crate::map::cache::MapChunk> = None;
+
         for px in 0..WORLD_MAP_WIDTH {
             let wx = (center.x + (px as f32 - half_w) / zoom).floor() as i32;
             let idx = row_offset + (px as usize) * 4;
 
-            let color = if let Some(pixel) = map_cache.get_pixel(wx, wz) {
+            let col_x = wx.div_euclid(chunk_size);
+            let lx = wx.rem_euclid(chunk_size) as usize;
+
+            if col_x != last_col_x {
+                last_col_x = col_x;
+                current_chunk = map_cache.get_chunk(IVec2::new(col_x, col_z));
+                north_chunk = if north_col_z == col_z {
+                    current_chunk
+                } else {
+                    map_cache.get_chunk(IVec2::new(col_x, north_col_z))
+                };
+            }
+
+            let color = if let Some(chunk) = current_chunk {
+                let pixel = chunk.get(lx, lz);
                 if pixel.voxel != Voxel::Air {
-                    let north_h = map_cache.get_pixel(wx, wz - 1).map(|p| p.height);
+                    let north_h = north_chunk.map(|nc| nc.get(lx, north_lz).height);
                     apply_relief_shading(pixel.color, pixel.height, north_h)
                 } else {
                     unexplored_color(wx, wz)

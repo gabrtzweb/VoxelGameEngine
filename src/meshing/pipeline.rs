@@ -121,6 +121,7 @@ impl ChunkRenderData {
 #[derive(Resource, Default)]
 pub struct ChunkMeshRegistry {
     entries: HashMap<IVec3, ChunkRenderData>,
+    columns: HashMap<IVec2, usize>,
 }
 
 impl ChunkMeshRegistry {
@@ -151,7 +152,60 @@ impl ChunkMeshRegistry {
         self.entries.contains_key(coordinate)
     }
 
+    #[inline]
+    pub fn has_column_mesh(&self, column: IVec2) -> bool {
+        self.columns.get(&column).is_some_and(|&count| count > 0)
+    }
+
     pub fn iter_coordinates(&self) -> impl Iterator<Item = &IVec3> {
+        self.entries.keys()
+    }
+}
+
+/// Registry of distant LOD surface meshes for chunk columns (cx, cz).
+#[derive(Resource, Default)]
+pub struct LodMeshRegistry {
+    entries: HashMap<IVec2, ChunkRenderData>,
+    lods: HashMap<IVec2, super::lod::ChunkLod>,
+}
+
+impl LodMeshRegistry {
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    #[allow(dead_code)]
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+
+    pub fn total_vertices(&self) -> usize {
+        self.entries
+            .values()
+            .map(ChunkRenderData::vertex_count)
+            .sum()
+    }
+
+    pub fn total_triangles(&self) -> usize {
+        self.entries
+            .values()
+            .map(ChunkRenderData::triangle_count)
+            .sum()
+    }
+
+    pub fn contains(&self, coordinate: &IVec2) -> bool {
+        self.entries.contains_key(coordinate)
+    }
+
+    pub fn get_lod(&self, coordinate: &IVec2) -> Option<super::lod::ChunkLod> {
+        self.lods.get(coordinate).copied()
+    }
+
+    pub fn lod_count(&self, lod: super::lod::ChunkLod) -> usize {
+        self.lods.values().filter(|&&l| l == lod).count()
+    }
+
+    pub fn iter_coordinates(&self) -> impl Iterator<Item = &IVec2> {
         self.entries.keys()
     }
 }
@@ -231,9 +285,12 @@ pub fn apply_chunk_mesh(
     material: &ChunkMaterial,
 ) {
     let translation = VoxelWorld::chunk_translation(coordinate);
+    let column = IVec2::new(coordinate.x, coordinate.z);
+    let was_empty;
 
     let is_empty = {
         let entry = registry.entries.entry(coordinate).or_default();
+        was_empty = entry.is_empty();
 
         sync_render_part(
             commands,
@@ -257,7 +314,19 @@ pub fn apply_chunk_mesh(
     };
 
     if is_empty {
-        registry.entries.remove(&coordinate);
+        if !was_empty {
+            registry.entries.remove(&coordinate);
+            if let Some(count) = registry.columns.get_mut(&column) {
+                *count = count.saturating_sub(1);
+                if *count == 0 {
+                    registry.columns.remove(&column);
+                }
+            }
+        } else {
+            registry.entries.remove(&coordinate);
+        }
+    } else if was_empty {
+        *registry.columns.entry(column).or_default() += 1;
     }
 }
 
@@ -330,6 +399,78 @@ pub fn remove_chunk_render(
     registry: &mut ChunkMeshRegistry,
     meshes: &mut Assets<Mesh>,
 ) {
+    let Some(mut render_data) = registry.entries.remove(&coordinate) else {
+        return;
+    };
+
+    let column = IVec2::new(coordinate.x, coordinate.z);
+    if !render_data.is_empty() {
+        if let Some(count) = registry.columns.get_mut(&column) {
+            *count = count.saturating_sub(1);
+            if *count == 0 {
+                registry.columns.remove(&column);
+            }
+        }
+    }
+
+    remove_render_part(commands, meshes, &mut render_data.opaque);
+    remove_render_part(commands, meshes, &mut render_data.transparent);
+}
+
+pub fn apply_lod_mesh(
+    commands: &mut Commands,
+    coordinate: IVec2,
+    lod: super::lod::ChunkLod,
+    rebuilt: ChunkMeshes,
+    registry: &mut LodMeshRegistry,
+    meshes: &mut Assets<Mesh>,
+    material: &ChunkMaterial,
+) {
+    let translation = Vec3::new(
+        coordinate.x as f32 * crate::world::CHUNK_SIZE as f32,
+        0.0,
+        coordinate.y as f32 * crate::world::CHUNK_SIZE as f32,
+    );
+
+    let is_empty = {
+        let entry = registry.entries.entry(coordinate).or_default();
+
+        sync_render_part(
+            commands,
+            meshes,
+            &mut entry.opaque,
+            rebuilt.opaque,
+            &material.opaque,
+            translation,
+        );
+
+        sync_render_part(
+            commands,
+            meshes,
+            &mut entry.transparent,
+            rebuilt.transparent,
+            &material.transparent,
+            translation,
+        );
+
+        entry.is_empty()
+    };
+
+    if is_empty {
+        registry.entries.remove(&coordinate);
+        registry.lods.remove(&coordinate);
+    } else {
+        registry.lods.insert(coordinate, lod);
+    }
+}
+
+pub fn remove_lod_render(
+    commands: &mut Commands,
+    coordinate: IVec2,
+    registry: &mut LodMeshRegistry,
+    meshes: &mut Assets<Mesh>,
+) {
+    registry.lods.remove(&coordinate);
     let Some(mut render_data) = registry.entries.remove(&coordinate) else {
         return;
     };

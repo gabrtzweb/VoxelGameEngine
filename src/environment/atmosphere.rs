@@ -112,7 +112,8 @@ pub fn sync_fog_distance(
             .unwrap_or(1.0);
 
         let chunk_world_size = CHUNK_SIZE as f32 * VOXEL_SIZE;
-        let render_radius = settings.render_distance.max(1) as f32 * chunk_world_size;
+        let total_chunks = (settings.render_distance + settings.lod_render_distance.max(0)).max(1);
+        let render_radius = total_chunks as f32 * chunk_world_size;
         fog.falloff = FogFalloff::Linear {
             start: render_radius * FOG_START_FACTOR * biome_mult,
             end: render_radius * FOG_END_FACTOR * biome_mult,

@@ -721,17 +721,35 @@ Phase 12 breathes organic life, vertical grandeur, and color into the procedural
 
 Phase 13 scales the engine's rendering and storage architecture to support massive view distances (24–32+ chunks, 384–512m+ radii), seamless 144+ FPS frame pacing during supersonic flight, and persistent binary disk storage.
 
-- [ ] **Stage 13.1: Chunk Mesh LOD & Downsampled Far-Mesh Geometry (LOD Render Distance)**:
-  - **The Problem**: Rendering 4,000+ chunks at 24–32 chunk render distances submits millions of polygons to the GPU, saturating vertex stages with distant sub-pixel details.
-  - **Architecture**:
-    - Multi-tier geometric LOD hierarchy:
-      - **LOD 0 (Near: 0–12 chunks)**: Full resolution 1m³ greedy-meshed voxels with all custom shapes.
-      - **LOD 1 (Mid: 13–20 chunks)**: 2×2 voxel downsampled blocks merged into simplified terrain meshes.
-      - **LOD 2 (Far: 21–32+ chunks)**: 4×4 voxel downsampled heightfield blocks representing macro topography.
-    - **Skirt Stitching & Seam Elimination**: Vertical boundary skirts connecting differing LOD levels to eliminate T-junction cracks and visible gaps without complex stitching algorithms.
-    - **Hysteresis Distance Blending**: Chunk LOD levels transition with distance hysteresis to completely prevent visual popping when crossing chunk borders.
-  - **Engine Benefits**:
-    - Slashes distant mesh vertex counts by 75%–90%, making 32-chunk view distances smooth on standard GPUs.
+- [x] **Stage 13.1: Chunk Mesh LOD & Downsampled Far-Mesh Geometry (LOD Render Distance)**:
+  - **Dual-Distance Architecture (Real vs. LOD Extension)**:
+    - **`render_distance`**: Controls real full-resolution 1m³ voxel chunks (LOD 0) with caves, custom shapes, full physics, and block modifications. Default: **12 chunks** (192m radius).
+    - **`lod_render_distance`**: Dedicated setting controlling how many additional chunks beyond `render_distance` are rendered as low-overhead LOD far-meshes. Default: **20 chunks** (320m extension).
+      - Combined default view distance: **32 chunks around player** (512m radius, 1,024m horizon diameter).
+      - Setting `lod_render_distance = 0` completely disables LOD meshing (pure vanilla behavior).
+      - Setting `lod_render_distance > 0` extends the visible horizon by $N$ chunks (up to $12 + 32 = 44 \text{ chunks} = 704\text{m}$).
+  - **Zero-Gap Seamless Placeholder Handoff**:
+    - When entering new areas or loading the world, instant cuboid LOD far-meshes are placed immediately across all columns (including those within `render_distance`) in microseconds.
+    - As real 1m³ voxel chunk meshes finish background generation and meshing, they seamlessly replace the LOD far-mesh column with zero gaps, zero popping, and zero delays.
+    - Scaled async generation concurrency to 64 in-flight / 32 per frame and meshing to 64 in-flight / 24 per frame, delivering $\approx 4\times\text{--}7\times$ faster chunk loading and silky 144+ FPS during supersonic flight.
+  - **Multi-Tier Cuboid Voxel Block LOD Hierarchy (Distant Horizons / Voxy Style)**:
+    - **LOD 0 (Core: $0 \le d \le R_{\text{real}}$)**: Full resolution 1m³ greedy-meshed voxels with all custom shapes and full 3D cave systems.
+    - **LOD 1 (Mid: $R_{\text{real}} < d \le R_{\text{real}} + \frac{R_{\text{lod}}}{2}$)**: 2m downsampled cuboid block grid (8×8 cells per column) with flat horizontal block tops, vertical stepped side walls, cliff strata splitting, and biome foliage tinting.
+    - **LOD 2 (Far: $R_{\text{real}} + \frac{R_{\text{lod}}}{2} < d \le R_{\text{total}}$)**: 4m downsampled cuboid block grid (4×4 cells per column) with axis-aligned block faces, water planes, and cliff rock exposures, generated in $< 10\,\mu\text{s}$ per column bypassing all 3D cave sampling and subterranean voxel allocation.
+  - **Procedural Trees & Vegetation in LOD**:
+    - Generates discrete cuboid tree trunks, species-specific stepped leaf canopies, desert cacti columns, and swamp dead trees directly on LOD meshes.
+    - Natural biome foliage tinting applied to LOD leaves matching near-world trees seamlessly across distances.
+    - Deterministic cellular grid base coordinates prevent duplicate quads or seams across chunk boundaries.
+  - **Asynchronous World Map & Minimap Integration**:
+    - LOD columns asynchronously generate 2D surface representations (`MapChunk`) alongside mesh generation on the worker thread pool with zero main-thread overhead.
+    - Safely populates `MapCache` for distant chunks, revealing mountains, valleys, rivers, and tree canopies on the full-screen world map (M key) and HUD minimap out to the 32-chunk horizon.
+    - Clean priority guarantee: Full-resolution chunks from active `VoxelWorld` seamlessly supersede LOD map data as the player explores.
+  - **100% Cuboid Geometry & Seam Elimination**: Strictly axis-aligned normals and faces; integrated vertical border drops along all 4 outer edges of LOD columns eliminate T-junction cracks and gaps between LOD tiers and real voxel chunks without non-cuboid curves.
+  - **Smooth Streaming Handoff**: LOD surface meshes remain active until real chunk meshes finish generating and uploading geometry, completely preventing popping or void gaps.
+  - **Atmospheric Fog Synchronization**: Fog distances in `sync_fog_distance` automatically adapt to $R_{\text{real}} + R_{\text{lod}}$, beautifully veiling the distant horizon without hiding LOD mountains.
+  - **In-Game Settings Menu & Inspector Controls**:
+    - **In-Game Settings Menu**: Dedicated "LOD Distance" stepper row with "Disabled" (0 chunks) through "32 Chunks" steps.
+    - **World Generation Inspector**: Live sliders and real-time chunk, vertex, and triangle telemetry broken down by LOD tier.
 
 - [ ] **Stage 13.2: GPU Occlusion Culling (Hi-Z Depth Pyramid & Sub-Chunk AABB Culling)**:
   - **The Problem**: Chunks buried deep underground or hidden behind mountain ranges are processed by the vertex shader and GPU rasterizer even when 100% occluded.
