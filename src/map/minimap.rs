@@ -350,12 +350,12 @@ fn sync_minimap_terrain(
 
     for py in 0..MINIMAP_SIZE as i32 {
         let wz = player_block.y + (py - half);
-        let chunk_z = wz.div_euclid(16);
-        let lz = wz.rem_euclid(16) as usize;
+        let chunk_z = wz >> 4;
+        let lz = (wz & 15) as usize;
 
         let north_wz = wz - 1;
-        let north_chunk_z = north_wz.div_euclid(16);
-        let north_lz = north_wz.rem_euclid(16) as usize;
+        let north_chunk_z = north_wz >> 4;
+        let north_lz = (north_wz & 15) as usize;
 
         let row_offset = (py as usize) * (MINIMAP_SIZE as usize) * 4;
 
@@ -365,8 +365,8 @@ fn sync_minimap_terrain(
 
         for px in 0..MINIMAP_SIZE as i32 {
             let wx = player_block.x + (px - half);
-            let chunk_x = wx.div_euclid(16);
-            let lx = wx.rem_euclid(16) as usize;
+            let chunk_x = wx >> 4;
+            let lx = (wx & 15) as usize;
 
             if chunk_x != cached_chunk_x {
                 cached_chunk_x = chunk_x;

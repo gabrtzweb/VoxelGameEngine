@@ -437,6 +437,57 @@ impl Chunk {
     }
 
     #[inline]
+    #[allow(dead_code)]
+    pub fn extra_slabs(&self) -> &HashMap<usize, (Voxel, u8)> {
+        &self.extra_slabs
+    }
+
+    #[inline]
+    #[allow(dead_code)]
+    pub fn fluid_levels(&self) -> &HashMap<usize, u8> {
+        &self.fluid_levels
+    }
+
+    #[inline]
+    #[allow(dead_code)]
+    pub fn storage(&self) -> &ChunkStorage {
+        &self.storage
+    }
+
+    #[inline]
+    #[allow(dead_code)]
+    pub fn set_shape_raw(&mut self, index: usize, shape: BlockShape, orientation: u8) {
+        self.shapes.insert(index, (shape, orientation));
+    }
+
+    #[inline]
+    #[allow(dead_code)]
+    pub fn set_extra_slab_raw(&mut self, index: usize, slab: (Voxel, u8)) {
+        self.extra_slabs.insert(index, slab);
+    }
+
+    #[inline]
+    #[allow(dead_code)]
+    pub fn set_fluid_level_raw(&mut self, index: usize, level: u8) {
+        self.fluid_levels.insert(index, level);
+    }
+
+    #[allow(dead_code)]
+    pub fn to_voxels(&self) -> Vec<Voxel> {
+        let mut voxels = Vec::with_capacity(CHUNK_VOLUME);
+        match self.homogeneity {
+            ChunkHomogeneity::Empty => voxels.resize(CHUNK_VOLUME, Voxel::Air),
+            ChunkHomogeneity::Solid(v) => voxels.resize(CHUNK_VOLUME, v),
+            ChunkHomogeneity::Mixed => {
+                for i in 0..CHUNK_VOLUME {
+                    voxels.push(self.storage.get(i));
+                }
+            }
+        }
+        voxels
+    }
+
+    #[inline]
     fn index(x: usize, y: usize, z: usize) -> usize {
         debug_assert!(x < CHUNK_SIZE);
         debug_assert!(y < CHUNK_SIZE);

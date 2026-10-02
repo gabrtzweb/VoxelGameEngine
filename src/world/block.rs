@@ -705,7 +705,182 @@ impl Voxel {
         Voxel::Deco_Wicker,
         Voxel::Deco_Wool,
     ];
+}
 
+const FLAG_EMPTY: u16 = 1 << 0;
+const FLAG_WATER: u16 = 1 << 1;
+const FLAG_FLUID: u16 = 1 << 2;
+const FLAG_COLLIDABLE: u16 = 1 << 3;
+const FLAG_TORCH: u16 = 1 << 4;
+const FLAG_BASKET: u16 = 1 << 5;
+const FLAG_TRANSPARENT: u16 = 1 << 6;
+const FLAG_LEAVES: u16 = 1 << 7;
+const FLAG_SOLID_OPAQUE: u16 = 1 << 8;
+const FLAG_LIGHT: u16 = 1 << 9;
+const FLAG_POINT_LIGHT: u16 = 1 << 10;
+
+#[derive(Clone, Copy)]
+struct VoxelProps {
+    flags: u16,
+    max_fluid_spread: u8,
+}
+
+const fn compute_voxel_props(v: Voxel) -> VoxelProps {
+    let mut flags = 0u16;
+
+    let is_empty = matches!(v, Voxel::Air);
+    if is_empty {
+        flags |= FLAG_EMPTY;
+    }
+
+    let is_water = matches!(v, Voxel::Liquid_Water | Voxel::WaterOccupied);
+    if is_water {
+        flags |= FLAG_WATER;
+    }
+
+    let is_fluid = is_water
+        || matches!(
+            v,
+            Voxel::Liquid_Acid
+                | Voxel::Liquid_Blood
+                | Voxel::Liquid_Lava
+                | Voxel::Liquid_Molten
+                | Voxel::Liquid_Ooze
+                | Voxel::Liquid_Sludge
+                | Voxel::Liquid_Tar
+                | Voxel::Null_Liquid
+        );
+    if is_fluid {
+        flags |= FLAG_FLUID;
+    }
+
+    let is_torch = matches!(
+        v,
+        Voxel::Emit_Blue_Torch | Voxel::Emit_Green_Torch | Voxel::Emit_Red_Torch
+    );
+    if is_torch {
+        flags |= FLAG_TORCH;
+    }
+
+    let is_basket = matches!(v, Voxel::Deco_Basket);
+    if is_basket {
+        flags |= FLAG_BASKET;
+    }
+
+    let is_transparent = is_water
+        || matches!(
+            v,
+            Voxel::Deco_Glass
+                | Voxel::Frost_Ice
+                | Voxel::Frost_Fragile_Ice
+                | Voxel::Frost_Black_Ice
+        );
+    if is_transparent {
+        flags |= FLAG_TRANSPARENT;
+    }
+
+    let is_leaves = matches!(
+        v,
+        Voxel::Tree_Acacia_Leaves
+            | Voxel::Tree_Birch_Leaves
+            | Voxel::Tree_Cherry_Leaves
+            | Voxel::Tree_Mahogany_Leaves
+            | Voxel::Tree_Mangrove_Leaves
+            | Voxel::Tree_Maple_Leaves_Red
+            | Voxel::Tree_Maple_Leaves_Orange
+            | Voxel::Tree_Maple_Leaves_Yellow
+            | Voxel::Tree_Oak_Leaves
+            | Voxel::Tree_Oak_Leaves_Lush
+            | Voxel::Tree_Oak_Leaves_Flowering
+            | Voxel::Tree_Palm_Leaves
+            | Voxel::Tree_Pine_Leaves
+            | Voxel::Tree_Willow_Leaves
+            | Voxel::Tree_Yew_Leaves
+    );
+    if is_leaves {
+        flags |= FLAG_LEAVES;
+    }
+
+    let is_occupied = matches!(v, Voxel::Occupied | Voxel::WaterOccupied);
+
+    let is_collidable = !is_empty && !is_fluid && !is_torch && !is_occupied;
+    if is_collidable {
+        flags |= FLAG_COLLIDABLE;
+    }
+
+    let is_solid_opaque = !is_empty
+        && !is_fluid
+        && !is_leaves
+        && !is_transparent
+        && !is_torch
+        && !is_basket
+        && !is_occupied;
+    if is_solid_opaque {
+        flags |= FLAG_SOLID_OPAQUE;
+    }
+
+    let is_point_light = matches!(
+        v,
+        Voxel::Emit_Blue_Light
+            | Voxel::Emit_Blue_Torch
+            | Voxel::Emit_Cold_Light
+            | Voxel::Emit_Green_Light
+            | Voxel::Emit_Green_Torch
+            | Voxel::Emit_Red_Light
+            | Voxel::Emit_Red_Torch
+            | Voxel::Emit_Warm_Light
+    );
+    if is_point_light {
+        flags |= FLAG_POINT_LIGHT;
+    }
+
+    let is_light = is_point_light
+        || matches!(
+            v,
+            Voxel::Liquid_Lava | Voxel::Liquid_Molten | Voxel::Rock_Magma
+        );
+    if is_light {
+        flags |= FLAG_LIGHT;
+    }
+
+    let max_fluid_spread = match v {
+        Voxel::Liquid_Water | Voxel::WaterOccupied => 8,
+        Voxel::Liquid_Acid => 5,
+        Voxel::Liquid_Blood | Voxel::Null_Liquid => 4,
+        Voxel::Liquid_Lava | Voxel::Liquid_Molten | Voxel::Liquid_Sludge | Voxel::Liquid_Ooze => 3,
+        Voxel::Liquid_Tar => 2,
+        _ => 0,
+    };
+
+    VoxelProps {
+        flags,
+        max_fluid_spread,
+    }
+}
+
+const fn init_voxel_properties() -> [VoxelProps; 256] {
+    let mut table = [VoxelProps {
+        flags: 0,
+        max_fluid_spread: 0,
+    }; 256];
+
+    table[Voxel::Air as usize] = compute_voxel_props(Voxel::Air);
+    table[Voxel::Occupied as usize] = compute_voxel_props(Voxel::Occupied);
+    table[Voxel::WaterOccupied as usize] = compute_voxel_props(Voxel::WaterOccupied);
+
+    let mut idx = 0;
+    while idx < Voxel::ALL.len() {
+        let v = Voxel::ALL[idx];
+        table[v as usize] = compute_voxel_props(v);
+        idx += 1;
+    }
+
+    table
+}
+
+static VOXEL_PROPS: [VoxelProps; 256] = init_voxel_properties();
+
+impl Voxel {
     /// The base texture name under `assets/textures/blocks/` without extension.
     pub fn texture_name(self) -> Option<&'static str> {
         match self {
@@ -1460,137 +1635,73 @@ impl Voxel {
         }
     }
 
+    #[inline(always)]
     pub fn is_empty(self) -> bool {
-        self == Self::Air
+        (VOXEL_PROPS[self as usize].flags & FLAG_EMPTY) != 0
     }
 
+    #[inline(always)]
     pub fn is_water(self) -> bool {
-        matches!(self, Self::Liquid_Water | Self::WaterOccupied)
+        (VOXEL_PROPS[self as usize].flags & FLAG_WATER) != 0
     }
 
+    #[inline(always)]
     pub fn is_fluid(self) -> bool {
-        self.is_water()
-            || matches!(
-                self,
-                Self::Liquid_Acid
-                    | Self::Liquid_Blood
-                    | Self::Liquid_Lava
-                    | Self::Liquid_Molten
-                    | Self::Liquid_Ooze
-                    | Self::Liquid_Sludge
-                    | Self::Liquid_Tar
-                    | Self::Null_Liquid
-            )
+        (VOXEL_PROPS[self as usize].flags & FLAG_FLUID) != 0
     }
 
+    #[inline(always)]
     pub fn max_fluid_spread(self) -> u8 {
-        match self {
-            Self::Liquid_Water | Self::WaterOccupied => 8,
-            Self::Liquid_Acid => 5,
-            Self::Liquid_Blood | Self::Null_Liquid => 4,
-            Self::Liquid_Lava | Self::Liquid_Molten | Self::Liquid_Sludge | Self::Liquid_Ooze => 3,
-            Self::Liquid_Tar => 2,
-            _ => 0,
-        }
+        VOXEL_PROPS[self as usize].max_fluid_spread
     }
 
+    #[inline(always)]
     pub fn is_collidable(self) -> bool {
-        !self.is_empty()
-            && !self.is_fluid()
-            && !self.is_torch()
-            && self != Self::Occupied
-            && self != Self::WaterOccupied
+        (VOXEL_PROPS[self as usize].flags & FLAG_COLLIDABLE) != 0
     }
 
+    #[inline(always)]
     pub fn is_torch(self) -> bool {
-        matches!(
-            self,
-            Self::Emit_Blue_Torch | Self::Emit_Green_Torch | Self::Emit_Red_Torch
-        )
+        (VOXEL_PROPS[self as usize].flags & FLAG_TORCH) != 0
     }
 
+    #[inline(always)]
     pub fn is_basket(self) -> bool {
-        self == Self::Deco_Basket
+        (VOXEL_PROPS[self as usize].flags & FLAG_BASKET) != 0
     }
 
+    #[inline(always)]
     pub fn has_custom_mesh(self) -> bool {
-        self.is_torch() || self.is_basket()
+        (VOXEL_PROPS[self as usize].flags & (FLAG_TORCH | FLAG_BASKET)) != 0
     }
 
+    #[inline(always)]
     pub fn is_transparent(self) -> bool {
-        self.is_water()
-            || self == Self::Deco_Glass
-            || matches!(
-                self,
-                Self::Frost_Ice | Self::Frost_Fragile_Ice | Self::Frost_Black_Ice
-            )
+        (VOXEL_PROPS[self as usize].flags & FLAG_TRANSPARENT) != 0
     }
 
+    #[inline(always)]
     pub fn is_leaves(self) -> bool {
-        matches!(
-            self,
-            Self::Tree_Acacia_Leaves
-                | Self::Tree_Birch_Leaves
-                | Self::Tree_Cherry_Leaves
-                | Self::Tree_Mahogany_Leaves
-                | Self::Tree_Mangrove_Leaves
-                | Self::Tree_Maple_Leaves_Red
-                | Self::Tree_Maple_Leaves_Orange
-                | Self::Tree_Maple_Leaves_Yellow
-                | Self::Tree_Oak_Leaves
-                | Self::Tree_Oak_Leaves_Lush
-                | Self::Tree_Oak_Leaves_Flowering
-                | Self::Tree_Palm_Leaves
-                | Self::Tree_Pine_Leaves
-                | Self::Tree_Willow_Leaves
-                | Self::Tree_Yew_Leaves
-        )
+        (VOXEL_PROPS[self as usize].flags & FLAG_LEAVES) != 0
     }
 
     /// Solid opaque blocks that completely occlude light and adjacent faces (not leaves, transparent, fluid, or air).
+    #[inline(always)]
     pub fn is_solid_opaque(self) -> bool {
-        !self.is_empty()
-            && !self.is_fluid()
-            && !self.is_leaves()
-            && !self.is_transparent()
-            && !self.is_torch()
-            && !self.is_basket()
-            && self != Self::Occupied
-            && self != Self::WaterOccupied
+        (VOXEL_PROPS[self as usize].flags & FLAG_SOLID_OPAQUE) != 0
     }
 
+    #[inline(always)]
     pub fn is_light(self) -> bool {
-        matches!(
-            self,
-            Self::Emit_Blue_Light
-                | Self::Emit_Blue_Torch
-                | Self::Emit_Cold_Light
-                | Self::Emit_Green_Light
-                | Self::Emit_Green_Torch
-                | Self::Emit_Red_Light
-                | Self::Emit_Red_Torch
-                | Self::Emit_Warm_Light
-                | Self::Liquid_Lava
-                | Self::Liquid_Molten
-                | Self::Rock_Magma
-        )
+        (VOXEL_PROPS[self as usize].flags & FLAG_LIGHT) != 0
     }
 
     /// Returns true strictly for discrete player-placeable light fixtures (torches, lamps)
     /// that are eligible to spawn individual 3D GPU PointLight entities.
     /// Excludes bulk terrain/fluid emitters (Lava, Magma) which are rendered emissively in shaders.
+    #[inline(always)]
     pub fn is_point_light_fixture(self) -> bool {
-        matches!(
-            self,
-            Self::Emit_Blue_Light
-                | Self::Emit_Blue_Torch
-                | Self::Emit_Cold_Light
-                | Self::Emit_Green_Light
-                | Self::Emit_Green_Torch
-                | Self::Emit_Red_Light
-                | Self::Emit_Red_Torch
-                | Self::Emit_Warm_Light
-        )
+        (VOXEL_PROPS[self as usize].flags & FLAG_POINT_LIGHT) != 0
     }
 
     pub fn light_color(self) -> Color {

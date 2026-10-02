@@ -1,9 +1,11 @@
+pub mod camera;
 pub mod collision;
 pub mod controller;
 pub mod game_mode;
 pub mod hotbar;
 pub mod inventory;
 pub mod model;
+pub mod movement;
 pub mod spectator;
 pub mod state;
 pub mod water;

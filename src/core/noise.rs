@@ -13,8 +13,9 @@ const GRADIENTS_2D: [[f32; 2]; 8] = [
     [-0.70710677, -0.70710677],
 ];
 
-/// Canonical 3D gradient directions (12 edge midpoints of a cube).
-const GRADIENTS_3D: [[f32; 3]; 12] = [
+/// Canonical 3D gradient directions (16 directions: 12 cube edge midpoints + 4 tetrahedron diagonals).
+/// Sized to 16 to allow branchless bitwise masking (`& 15`) instead of expensive integer modulo (`% 12`).
+const GRADIENTS_3D: [[f32; 3]; 16] = [
     [1.0, 1.0, 0.0],
     [-1.0, 1.0, 0.0],
     [1.0, -1.0, 0.0],
@@ -27,10 +28,15 @@ const GRADIENTS_3D: [[f32; 3]; 12] = [
     [0.0, -1.0, 1.0],
     [0.0, 1.0, -1.0],
     [0.0, -1.0, -1.0],
+    // 4 canonical directions completing the 16-element power-of-two table (Ken Perlin Improved Noise):
+    [1.0, 1.0, 0.0],
+    [-1.0, 1.0, 0.0],
+    [0.0, -1.0, 1.0],
+    [0.0, -1.0, -1.0],
 ];
 
 #[inline(always)]
-fn hash_2d(x: i32, z: i32, seed: u32) -> u32 {
+pub fn hash_2d(x: i32, z: i32, seed: u32) -> u32 {
     let mut h = seed;
     h ^= (x as u32).wrapping_mul(0x27D4_EB2D);
     h ^= (z as u32).wrapping_mul(0x1656_67B1);
@@ -43,7 +49,13 @@ fn hash_2d(x: i32, z: i32, seed: u32) -> u32 {
 }
 
 #[inline(always)]
-fn hash_3d(x: i32, y: i32, z: i32, seed: u32) -> u32 {
+pub fn hash_2d_f32(x: i32, z: i32, seed: u32) -> f32 {
+    let normalized = hash_2d(x, z, seed) as f32 / u32::MAX as f32;
+    normalized * 2.0 - 1.0
+}
+
+#[inline(always)]
+pub fn hash_3d(x: i32, y: i32, z: i32, seed: u32) -> u32 {
     let mut h = seed;
     h ^= (x as u32).wrapping_mul(0x27D4_EB2D);
     h ^= (y as u32).wrapping_mul(0x9E37_79B9);
@@ -56,14 +68,63 @@ fn hash_3d(x: i32, y: i32, z: i32, seed: u32) -> u32 {
     h
 }
 
-#[inline(always)]
-fn quintic_fade(t: f32) -> f32 {
-    t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
+pub use super::math::{lerp, quintic_fade, smoothstep};
+
+/// Computes smooth 2D value noise in the range `[-1.0, 1.0]`.
+#[inline]
+pub fn value_noise_2d(x: f32, z: f32, seed: u32) -> f32 {
+    let x0 = x.floor() as i32;
+    let z0 = z.floor() as i32;
+
+    let x1 = x0 + 1;
+    let z1 = z0 + 1;
+
+    let tx = smoothstep(x - x0 as f32);
+    let tz = smoothstep(z - z0 as f32);
+
+    let v00 = hash_2d_f32(x0, z0, seed);
+    let v10 = hash_2d_f32(x1, z0, seed);
+    let v01 = hash_2d_f32(x0, z1, seed);
+    let v11 = hash_2d_f32(x1, z1, seed);
+
+    let top = lerp(v00, v10, tx);
+    let bottom = lerp(v01, v11, tx);
+
+    lerp(top, bottom, tz)
 }
 
-#[inline(always)]
-fn lerp(a: f32, b: f32, t: f32) -> f32 {
-    a + t * (b - a)
+/// Computes multi-octave 2D value fractal noise in the range `[-1.0, 1.0]`.
+#[inline]
+pub fn fractal_noise_2d(
+    world_x: f32,
+    world_z: f32,
+    base_frequency: f32,
+    octaves: u32,
+    persistence: f32,
+    seed: u32,
+) -> f32 {
+    let mut value = 0.0;
+    let mut amplitude = 1.0;
+    let mut frequency = 1.0;
+    let mut amplitude_sum = 0.0;
+
+    for octave in 0..octaves {
+        let x = world_x * base_frequency * frequency;
+        let z = world_z * base_frequency * frequency;
+
+        let octave_seed = seed.wrapping_add(octave.wrapping_mul(10_007));
+        value += value_noise_2d(x, z, octave_seed) * amplitude;
+
+        amplitude_sum += amplitude;
+        amplitude *= persistence;
+        frequency *= 2.0;
+    }
+
+    if amplitude_sum > 0.0 {
+        value / amplitude_sum
+    } else {
+        0.0
+    }
 }
 
 /// Computes smooth 2D gradient noise in the range `[-1.0, 1.0]`.
@@ -151,14 +212,14 @@ pub fn gradient_noise_3d(x: f32, y: f32, z: f32, seed: u32) -> f32 {
     let v = quintic_fade(fy0);
     let w = quintic_fade(fz0);
 
-    let g000 = GRADIENTS_3D[(hash_3d(x0, y0, z0, seed) % 12) as usize];
-    let g100 = GRADIENTS_3D[(hash_3d(x1, y0, z0, seed) % 12) as usize];
-    let g010 = GRADIENTS_3D[(hash_3d(x0, y1, z0, seed) % 12) as usize];
-    let g110 = GRADIENTS_3D[(hash_3d(x1, y1, z0, seed) % 12) as usize];
-    let g001 = GRADIENTS_3D[(hash_3d(x0, y0, z1, seed) % 12) as usize];
-    let g101 = GRADIENTS_3D[(hash_3d(x1, y0, z1, seed) % 12) as usize];
-    let g011 = GRADIENTS_3D[(hash_3d(x0, y1, z1, seed) % 12) as usize];
-    let g111 = GRADIENTS_3D[(hash_3d(x1, y1, z1, seed) % 12) as usize];
+    let g000 = GRADIENTS_3D[(hash_3d(x0, y0, z0, seed) & 15) as usize];
+    let g100 = GRADIENTS_3D[(hash_3d(x1, y0, z0, seed) & 15) as usize];
+    let g010 = GRADIENTS_3D[(hash_3d(x0, y1, z0, seed) & 15) as usize];
+    let g110 = GRADIENTS_3D[(hash_3d(x1, y1, z0, seed) & 15) as usize];
+    let g001 = GRADIENTS_3D[(hash_3d(x0, y0, z1, seed) & 15) as usize];
+    let g101 = GRADIENTS_3D[(hash_3d(x1, y0, z1, seed) & 15) as usize];
+    let g011 = GRADIENTS_3D[(hash_3d(x0, y1, z1, seed) & 15) as usize];
+    let g111 = GRADIENTS_3D[(hash_3d(x1, y1, z1, seed) & 15) as usize];
 
     let d000 = g000[0] * fx0 + g000[1] * fy0 + g000[2] * fz0;
     let d100 = g100[0] * fx1 + g100[1] * fy0 + g100[2] * fz0;

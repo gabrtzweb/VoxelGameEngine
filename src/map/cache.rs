@@ -74,11 +74,7 @@ impl MapCache {
 
     /// Marks the chunk column containing a world voxel coordinate as dirty.
     pub fn mark_block_dirty(&mut self, world_voxel: IVec3) {
-        let chunk_size = CHUNK_SIZE as i32;
-        let col = IVec2::new(
-            world_voxel.x.div_euclid(chunk_size),
-            world_voxel.z.div_euclid(chunk_size),
-        );
+        let col = IVec2::new(world_voxel.x >> 4, world_voxel.z >> 4);
         self.mark_dirty(col);
     }
 

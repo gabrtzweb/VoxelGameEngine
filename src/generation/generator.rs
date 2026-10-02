@@ -6,9 +6,16 @@ use super::{
     strata::StrataGenerator,
     trees::{self, TreeSpecies},
 };
+use crate::core::math::lerp;
+use crate::core::noise::fractal_noise_2d as fractal_noise;
 use crate::world::{BlockShape, CHUNK_SIZE, CHUNK_VOLUME, Chunk, Voxel};
 
 pub const LOGICAL_BLOCK_VOXELS: i32 = 1;
+
+pub const SEED_OFFSET_BEACH_NOISE: u32 = 88_411;
+pub const SEED_OFFSET_SURFACE_DITHER: u32 = 45_678;
+pub const SEED_OFFSET_SNOWLINE_JITTER: u32 = 91_111;
+pub const SEED_OFFSET_SNOW_SLOPE: u32 = 82_222;
 
 #[derive(Clone, Copy, Debug)]
 pub struct TerrainColumn {
@@ -821,7 +828,7 @@ impl TerrainGenerator {
         let beach_noise = crate::core::noise::gradient_noise_2d(
             logical_x as f32 * 0.12,
             logical_z as f32 * 0.12,
-            self.seed.wrapping_add(88_411),
+            self.seed.wrapping_add(SEED_OFFSET_BEACH_NOISE),
         ) * 1.5;
         let max_beach_height = (sea_level as f32 + 2.5 + beach_noise).round() as i32;
         rep_height >= sea_level - 6 && rep_height <= max_beach_height
@@ -837,7 +844,7 @@ impl TerrainGenerator {
         let dither_noise = crate::core::noise::gradient_noise_2d(
             world_x as f32 * 0.15,
             world_z as f32 * 0.15,
-            self.seed.wrapping_add(45_678),
+            self.seed.wrapping_add(SEED_OFFSET_SURFACE_DITHER),
         );
 
         // 1. Submerged terrain (underwater) floor materials
@@ -929,7 +936,7 @@ impl TerrainGenerator {
             let snowline_jitter = crate::core::noise::gradient_noise_2d(
                 world_x as f32 * 0.05,
                 world_z as f32 * 0.05,
-                self.seed.wrapping_add(91_111),
+                self.seed.wrapping_add(SEED_OFFSET_SNOWLINE_JITTER),
             ) * 3.0;
             let snowline = 50.0 + snowline_jitter;
 
@@ -937,7 +944,7 @@ impl TerrainGenerator {
                 let slope_noise = crate::core::noise::gradient_noise_2d(
                     world_x as f32 * 0.15,
                     world_z as f32 * 0.15,
-                    self.seed.wrapping_add(82_222),
+                    self.seed.wrapping_add(SEED_OFFSET_SNOW_SLOPE),
                 );
                 if world_y as f32 >= snowline + 8.0 && slope_noise > 0.35 {
                     return column.biome.config().primary_stone;
@@ -1410,79 +1417,4 @@ pub fn logical_block_top(world_y: i32) -> i32 {
 
 fn column_index(x: usize, z: usize) -> usize {
     x + z * CHUNK_SIZE
-}
-
-fn fractal_noise(
-    world_x: f32,
-    world_z: f32,
-    base_frequency: f32,
-    octaves: u32,
-    persistence: f32,
-    seed: u32,
-) -> f32 {
-    let mut value = 0.0;
-    let mut amplitude = 1.0;
-    let mut frequency = 1.0;
-    let mut amplitude_sum = 0.0;
-
-    for octave in 0..octaves {
-        let x = world_x * base_frequency * frequency;
-        let z = world_z * base_frequency * frequency;
-
-        let octave_seed = seed.wrapping_add(octave.wrapping_mul(10_007));
-        value += value_noise(x, z, octave_seed) * amplitude;
-
-        amplitude_sum += amplitude;
-        amplitude *= persistence;
-        frequency *= 2.0;
-    }
-
-    if amplitude_sum > 0.0 {
-        value / amplitude_sum
-    } else {
-        0.0
-    }
-}
-
-fn value_noise(x: f32, z: f32, seed: u32) -> f32 {
-    let x0 = x.floor() as i32;
-    let z0 = z.floor() as i32;
-
-    let x1 = x0 + 1;
-    let z1 = z0 + 1;
-
-    let tx = smoothstep(x - x0 as f32);
-    let tz = smoothstep(z - z0 as f32);
-
-    let v00 = hash_value(x0, z0, seed);
-    let v10 = hash_value(x1, z0, seed);
-    let v01 = hash_value(x0, z1, seed);
-    let v11 = hash_value(x1, z1, seed);
-
-    let top = lerp(v00, v10, tx);
-    let bottom = lerp(v01, v11, tx);
-
-    lerp(top, bottom, tz)
-}
-
-fn hash_value(x: i32, z: i32, seed: u32) -> f32 {
-    let mut hash = seed;
-    hash ^= (x as u32).wrapping_mul(0x27D4_EB2D);
-    hash ^= (z as u32).wrapping_mul(0x1656_67B1);
-    hash ^= hash >> 15;
-    hash = hash.wrapping_mul(0x85EB_CA6B);
-    hash ^= hash >> 13;
-    hash = hash.wrapping_mul(0xC2B2_AE35);
-    hash ^= hash >> 16;
-
-    let normalized = hash as f32 / u32::MAX as f32;
-    normalized * 2.0 - 1.0
-}
-
-fn smoothstep(value: f32) -> f32 {
-    value * value * (3.0 - 2.0 * value)
-}
-
-fn lerp(start: f32, end: f32, amount: f32) -> f32 {
-    start + (end - start) * amount
 }

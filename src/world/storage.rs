@@ -119,19 +119,25 @@ impl VoxelWorld {
         Some(chunk_coordinate)
     }
 
+    #[inline(always)]
     pub fn world_voxel_to_chunk(world_voxel: IVec3) -> (IVec3, UVec3) {
-        let chunk_size = CHUNK_SIZE as i32;
+        // Since CHUNK_SIZE = 16 = 2^4, arithmetic right shift (>>) on signed i32 in two's complement
+        // exactly computes Euclidean division (world_voxel >> 4),
+        // and bitwise AND (& 15) exactly extracts the Euclidean remainder.
+        // This eliminates 6 hardware division/remainder operations per invocation.
+        const SHIFT: i32 = 4;
+        const MASK: i32 = (CHUNK_SIZE as i32) - 1;
 
         let chunk_coordinate = IVec3::new(
-            world_voxel.x.div_euclid(chunk_size),
-            world_voxel.y.div_euclid(chunk_size),
-            world_voxel.z.div_euclid(chunk_size),
+            world_voxel.x >> SHIFT,
+            world_voxel.y >> SHIFT,
+            world_voxel.z >> SHIFT,
         );
 
         let local_coordinate = UVec3::new(
-            world_voxel.x.rem_euclid(chunk_size) as u32,
-            world_voxel.y.rem_euclid(chunk_size) as u32,
-            world_voxel.z.rem_euclid(chunk_size) as u32,
+            (world_voxel.x & MASK) as u32,
+            (world_voxel.y & MASK) as u32,
+            (world_voxel.z & MASK) as u32,
         );
 
         (chunk_coordinate, local_coordinate)

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use bevy::{
     asset::RenderAssetUsages,
     light::{NotShadowCaster, NotShadowReceiver},
@@ -6,6 +8,7 @@ use bevy::{
         mesh::{Indices, PrimitiveTopology},
         render_resource::Face,
     },
+    tasks::{AsyncComputeTaskPool, Task, futures::check_ready},
 };
 
 use crate::player::PlayerCamera;
@@ -65,11 +68,11 @@ pub struct CloudLayerVisual {
 #[derive(Resource)]
 pub struct CloudMaterialHandle(pub Handle<StandardMaterial>);
 
-#[derive(Resource)]
+#[derive(Resource, Clone)]
 pub struct CloudTextureMap {
     pub width: u32,
     pub height: u32,
-    pub data: Vec<bool>,
+    pub data: Arc<[bool]>,
 }
 
 impl CloudTextureMap {
@@ -84,6 +87,7 @@ impl CloudTextureMap {
 pub struct SingleLayerState {
     pub current_cell_center: IVec2,
     pub mesh_handle: Handle<Mesh>,
+    pub active_task: Option<Task<(IVec2, Mesh)>>,
 }
 
 #[derive(Resource)]
@@ -129,6 +133,7 @@ pub fn setup_clouds(
         layer_states.push(SingleLayerState {
             current_cell_center: IVec2::ZERO,
             mesh_handle,
+            active_task: None,
         });
     }
 
@@ -185,6 +190,18 @@ pub fn sync_clouds(
         let config = &CLOUD_LAYER_CONFIGS[index];
         let layer_state = &mut layers_res.layers[index];
 
+        // 1. Poll in-flight async cloud meshing task
+        if let Some(mut task) = layer_state.active_task.take() {
+            if let Some((completed_center, new_mesh)) = check_ready(&mut task) {
+                layer_state.current_cell_center = completed_center;
+                if let Some(mut mesh) = meshes.get_mut(&layer_state.mesh_handle) {
+                    *mesh = new_mesh;
+                }
+            } else {
+                layer_state.active_task = Some(task);
+            }
+        }
+
         let period_x = (cloud_map.width as f64) * (config.cell_size as f64);
         let period_z = (cloud_map.height as f64) * (config.cell_size as f64);
 
@@ -201,15 +218,19 @@ pub fn sync_clouds(
 
         let target_cell_center = IVec2::new(cell_x, cell_z);
 
-        if target_cell_center != layer_state.current_cell_center {
-            layer_state.current_cell_center = target_cell_center;
-            if let Some(mut mesh) = meshes.get_mut(&layer_state.mesh_handle) {
-                *mesh = generate_3d_cloud_mesh(cloud_map, config, target_cell_center);
-            }
+        // 2. Spawn async task if target cell center has shifted and no task is in flight
+        if target_cell_center != layer_state.current_cell_center && layer_state.active_task.is_none() {
+            let pool = AsyncComputeTaskPool::get();
+            let map_clone = cloud_map.clone();
+            let config_clone = config.clone();
+            layer_state.active_task = Some(pool.spawn(async move {
+                let mesh = generate_3d_cloud_mesh(&map_clone, &config_clone, target_cell_center);
+                (target_cell_center, mesh)
+            }));
         }
 
-        let subcell_x = world_center_x - (cell_x as f32 * config.cell_size);
-        let subcell_z = world_center_z - (cell_z as f32 * config.cell_size);
+        let subcell_x = world_center_x - (layer_state.current_cell_center.x as f32 * config.cell_size);
+        let subcell_z = world_center_z - (layer_state.current_cell_center.y as f32 * config.cell_size);
 
         cloud_transform.translation = Vec3::new(
             camera_translation.x - subcell_x,
@@ -294,6 +315,7 @@ pub fn generate_3d_cloud_mesh(
     let mut indices: Vec<u32> = Vec::with_capacity(estimated_indices);
     let fade_inner = cell_size * (grid_radius as f32 * 0.58);
     let fade_outer = cell_size * (grid_radius as f32 * 0.95);
+    let fade_inner_sq = fade_inner * fade_inner;
     let fade_outer_sq = fade_outer * fade_outer;
     let fade_range = fade_outer - fade_inner;
     let y0 = 0.0;
@@ -301,14 +323,15 @@ pub fn generate_3d_cloud_mesh(
     let base_alpha = config.base_alpha;
 
     let calc_alpha = |x: f32, z: f32| -> f32 {
-        let d = (x * x + z * z).sqrt();
-        if d <= fade_inner {
+        let d_sq = x * x + z * z;
+        if d_sq <= fade_inner_sq {
             base_alpha
-        } else if d >= fade_outer {
+        } else if d_sq >= fade_outer_sq {
             0.0
         } else {
+            let d = d_sq.sqrt();
             let t = (d - fade_inner) / fade_range;
-            let smooth = t * t * (3.0 - 2.0 * t);
+            let smooth = crate::core::math::smoothstep(t);
             (1.0 - smooth) * base_alpha
         }
     };
@@ -547,7 +570,7 @@ pub fn load_cloud_texture_map() -> CloudTextureMap {
         return CloudTextureMap {
             width,
             height,
-            data: clean_data,
+            data: clean_data.into(),
         };
     }
 
@@ -573,6 +596,6 @@ fn procedural_cloud_fallback() -> CloudTextureMap {
     CloudTextureMap {
         width: size as u32,
         height: size as u32,
-        data,
+        data: data.into(),
     }
 }

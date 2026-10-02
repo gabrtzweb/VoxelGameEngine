@@ -1,10 +1,12 @@
 pub mod block;
+pub mod cache;
 pub mod chunk;
 pub mod modifications;
 pub mod storage;
 pub mod streaming;
 
 pub use block::{BlockShape, Voxel};
+pub use cache::ChunkCache;
 pub use chunk::{CHUNK_SIZE, CHUNK_VOLUME, Chunk, ChunkHomogeneity, VOXEL_SIZE};
 pub use modifications::WorldModificationStore;
 pub use storage::{CHUNK_WORLD_SIZE, ChunkNeighborhood, VoxelAccess, VoxelWorld, affected_chunks};
@@ -19,6 +21,7 @@ pub struct WorldPlugin;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(ChunkStreamingPlugin);
+        app.init_resource::<ChunkCache>()
+            .add_plugins(ChunkStreamingPlugin);
     }
 }

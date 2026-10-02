@@ -18,6 +18,7 @@ pub struct LightState {
 #[derive(Resource, Default)]
 pub struct VoxelLightRegistry {
     pub entries: HashMap<IVec3, LightState>,
+    pub chunk_to_blocks: HashMap<IVec3, Vec<IVec3>>,
 }
 
 pub fn sync_voxel_light(
@@ -110,6 +111,12 @@ pub fn sync_chunk_lights(
                 count: 1,
             },
         );
+
+        registry
+            .chunk_to_blocks
+            .entry(chunk_coordinate)
+            .or_default()
+            .push(pool_key);
     }
 }
 
@@ -118,25 +125,14 @@ pub fn remove_chunk_lights(
     chunk_coordinate: IVec3,
     registry: &mut VoxelLightRegistry,
 ) {
-    let lights_to_remove: Vec<(IVec3, Entity)> = registry
-        .entries
-        .iter()
-        .filter_map(|(&block_coord, &state)| {
-            let (light_chunk, _) = VoxelWorld::world_voxel_to_chunk(block_coord);
-
-            if light_chunk == chunk_coordinate {
-                Some((block_coord, state.entity))
-            } else {
-                None
+    if let Some(blocks) = registry.chunk_to_blocks.remove(&chunk_coordinate) {
+        for block_coord in blocks {
+            if let Some(state) = registry.entries.remove(&block_coord) {
+                if let Ok(mut entity_cmds) = commands.get_entity(state.entity) {
+                    entity_cmds.despawn();
+                }
             }
-        })
-        .collect();
-
-    for (block_coord, entity) in lights_to_remove {
-        if let Ok(mut entity_cmds) = commands.get_entity(entity) {
-            entity_cmds.despawn();
         }
-        registry.entries.remove(&block_coord);
     }
 }
 
@@ -173,6 +169,12 @@ fn sync_block_light(
             ))
             .id();
 
+        let (chunk_coord, _) = VoxelWorld::world_voxel_to_chunk(block_coord);
+        let blocks = registry.chunk_to_blocks.entry(chunk_coord).or_default();
+        if !blocks.contains(&block_coord) {
+            blocks.push(block_coord);
+        }
+
         registry.entries.insert(
             block_coord,
             LightState {
@@ -183,5 +185,9 @@ fn sync_block_light(
         );
     } else if let Some(existing) = registry.entries.remove(&block_coord) {
         commands.entity(existing.entity).despawn();
+        let (chunk_coord, _) = VoxelWorld::world_voxel_to_chunk(block_coord);
+        if let Some(blocks) = registry.chunk_to_blocks.get_mut(&chunk_coord) {
+            blocks.retain(|&c| c != block_coord);
+        }
     }
 }

@@ -1,6 +1,7 @@
 pub mod dev_stats;
 pub mod dynamic_fps;
 pub mod font;
+pub mod math;
 pub mod noise;
 pub mod ui_scale;
 

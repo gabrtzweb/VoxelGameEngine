@@ -147,8 +147,9 @@ pub fn lerp_linear_rgba(a: LinearRgba, b: LinearRgba, factor: f32) -> LinearRgba
     )
 }
 
+#[inline(always)]
 pub fn lerp_f32(a: f32, b: f32, factor: f32) -> f32 {
-    a + (b - a) * factor
+    crate::core::math::lerp(a, b, factor)
 }
 
 pub fn sample_sky_color(time_of_day: f32) -> Color {

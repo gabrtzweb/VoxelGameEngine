@@ -311,16 +311,20 @@ pub fn plan_chunk_streaming(
         // Step 1: For near and mid distances (up to r_mid), use Lod1 (1x1 chunk columns)
         // Inside real render distance: provide an instant Lod1 far-mesh placeholder
         // if real voxel chunk meshes haven't arrived yet, completely eliminating the void gap!
+        let r_mid_sq = r_mid * r_mid;
+        let r_real_sq = r_real * r_real;
+        let total_r_sq = (total_r * total_r) as f32;
+
         let mid_r = r_mid.ceil() as i32;
         for dz in -mid_r..=mid_r {
             for dx in -mid_r..=mid_r {
-                let dist = ((dx * dx + dz * dz) as f32).sqrt();
-                if dist > r_mid {
+                let dist_sq = (dx * dx + dz * dz) as f32;
+                if dist_sq > r_mid_sq {
                     continue;
                 }
 
                 let col = center_2d + IVec2::new(dx, dz);
-                if dist <= r_real {
+                if dist_sq <= r_real_sq {
                     if !mesh_registry.has_column_mesh(col) {
                         desired_lod.insert(col, ChunkLod::Lod1);
                     }
@@ -332,10 +336,10 @@ pub fn plan_chunk_streaming(
 
         // Step 2: For far distance (beyond r_mid up to total_r), use Lod2 (2x2 super-chunks)
         // Batch distant columns into 2x2 super-chunks to slash draw calls by ~75%.
-        let min_super_x = (center_2d.x - total_r).div_euclid(2) * 2;
-        let max_super_x = (center_2d.x + total_r).div_euclid(2) * 2;
-        let min_super_z = (center_2d.y - total_r).div_euclid(2) * 2;
-        let max_super_z = (center_2d.y + total_r).div_euclid(2) * 2;
+        let min_super_x = (center_2d.x - total_r) & !1;
+        let max_super_x = (center_2d.x + total_r) & !1;
+        let min_super_z = (center_2d.y - total_r) & !1;
+        let max_super_z = (center_2d.y + total_r) & !1;
 
         let mut sz = min_super_z;
         while sz <= max_super_z {
@@ -350,12 +354,12 @@ pub fn plan_chunk_streaming(
                     for oz in 0..2 {
                         let sub_col = super_coord + IVec2::new(ox, oz);
                         let delta = sub_col - center_2d;
-                        let dist = ((delta.x * delta.x + delta.y * delta.y) as f32).sqrt();
+                        let dist_sq = (delta.x * delta.x + delta.y * delta.y) as f32;
 
-                        if desired_lod.contains_key(&sub_col) || dist <= r_mid {
+                        if desired_lod.contains_key(&sub_col) || dist_sq <= r_mid_sq {
                             overlaps_near = true;
                         }
-                        if dist <= total_r as f32 {
+                        if dist_sq <= total_r_sq {
                             in_range_count += 1;
                         }
                     }
@@ -372,9 +376,9 @@ pub fn plan_chunk_streaming(
                         for oz in 0..2 {
                             let sub_col = super_coord + IVec2::new(ox, oz);
                             let delta = sub_col - center_2d;
-                            let dist = ((delta.x * delta.x + delta.y * delta.y) as f32).sqrt();
-                            if dist > r_mid
-                                && dist <= total_r as f32
+                            let dist_sq = (delta.x * delta.x + delta.y * delta.y) as f32;
+                            if dist_sq > r_mid_sq
+                                && dist_sq <= total_r_sq
                                 && !desired_lod.contains_key(&sub_col)
                             {
                                 desired_lod.insert(sub_col, ChunkLod::Lod1);
@@ -452,6 +456,7 @@ pub fn process_chunk_unloads(
     mut light_registry: ResMut<VoxelLightRegistry>,
     mut registry: ResMut<ChunkMeshRegistry>,
     mut meshes: ResMut<Assets<Mesh>>,
+    mut chunk_cache: Option<ResMut<crate::world::ChunkCache>>,
 ) {
     for _ in 0..MAX_CHUNK_UNLOADS_PER_FRAME {
         let Some(coordinate) = queues.unload.pop_front() else {
@@ -464,8 +469,12 @@ pub fn process_chunk_unloads(
 
         remove_chunk_lights(&mut commands, coordinate, &mut light_registry);
 
-        if world.remove_chunk(coordinate).is_none() {
+        let Some(chunk_arc) = world.remove_chunk(coordinate) else {
             continue;
+        };
+
+        if let Some(ref mut cache) = chunk_cache {
+            cache.insert(coordinate, chunk_arc);
         }
 
         remove_chunk_render(&mut commands, coordinate, &mut registry, &mut meshes);
@@ -499,6 +508,7 @@ pub fn start_generation_tasks(
     terrain_generator: Res<TerrainGenerator>,
     active_tasks: Query<&ChunkGenerationTask>,
     mut queues: ResMut<ChunkStreamingQueues>,
+    mut chunk_cache: Option<ResMut<crate::world::ChunkCache>>,
 ) {
     let active_count = active_tasks.iter().count();
 
@@ -516,6 +526,19 @@ pub fn start_generation_tasks(
         let Some(coordinate) = queues.load.pop_front() else {
             break;
         };
+
+        // Cache hit fast-path: if this chunk was generated previously and cached,
+        // reuse the chunk directly without running expensive 3D noise generation!
+        if let Some(ref mut cache) = chunk_cache {
+            if let Some(cached_chunk_arc) = cache.take(&coordinate) {
+                let chunk = (*cached_chunk_arc).clone();
+                let task = pool.spawn(async move {
+                    GeneratedChunk { coordinate, chunk }
+                });
+                commands.spawn(ChunkGenerationTask { coordinate, task });
+                continue;
+            }
+        }
 
         let generator = terrain_generator.clone();
 

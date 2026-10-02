@@ -415,18 +415,17 @@ fn sync_world_map_terrain(
     let half_h = (WORLD_MAP_HEIGHT as f32) / 2.0;
     let zoom = map_state.zoom;
     let center = map_state.center;
-    let chunk_size = crate::world::CHUNK_SIZE as i32;
 
     for py in 0..WORLD_MAP_HEIGHT {
         let wz = (center.y + (py as f32 - half_h) / zoom).floor() as i32;
         let row_offset = (py as usize) * (WORLD_MAP_WIDTH as usize) * 4;
 
-        let col_z = wz.div_euclid(chunk_size);
-        let lz = wz.rem_euclid(chunk_size) as usize;
+        let col_z = wz >> 4;
+        let lz = (wz & 15) as usize;
 
         let north_wz = wz - 1;
-        let north_col_z = north_wz.div_euclid(chunk_size);
-        let north_lz = north_wz.rem_euclid(chunk_size) as usize;
+        let north_col_z = north_wz >> 4;
+        let north_lz = (north_wz & 15) as usize;
 
         let mut last_col_x = i32::MIN;
         let mut current_chunk: Option<&crate::map::cache::MapChunk> = None;
@@ -436,8 +435,8 @@ fn sync_world_map_terrain(
             let wx = (center.x + (px as f32 - half_w) / zoom).floor() as i32;
             let idx = row_offset + (px as usize) * 4;
 
-            let col_x = wx.div_euclid(chunk_size);
-            let lx = wx.rem_euclid(chunk_size) as usize;
+            let col_x = wx >> 4;
+            let lx = (wx & 15) as usize;
 
             if col_x != last_col_x {
                 last_col_x = col_x;
