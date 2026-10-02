@@ -280,14 +280,18 @@ pub fn generate_3d_cloud_mesh(
     config: &CloudLayerConfig,
     center: IVec2,
 ) -> Mesh {
-    let mut positions: Vec<[f32; 3]> = Vec::new();
-    let mut normals: Vec<[f32; 3]> = Vec::new();
-    let mut uvs: Vec<[f32; 2]> = Vec::new();
-    let mut colors: Vec<[f32; 4]> = Vec::new();
-    let mut indices: Vec<u32> = Vec::new();
-
     let cell_size = config.cell_size;
     let grid_radius = config.grid_radius;
+
+    let estimated_cells = (grid_radius as usize * 2 + 1) * (grid_radius as usize * 2 + 1) / 2;
+    let estimated_quads = estimated_cells * 3;
+    let estimated_verts = estimated_quads * 4;
+    let estimated_indices = estimated_quads * 6;
+    let mut positions: Vec<[f32; 3]> = Vec::with_capacity(estimated_verts);
+    let mut normals: Vec<[f32; 3]> = Vec::with_capacity(estimated_verts);
+    let mut uvs: Vec<[f32; 2]> = Vec::with_capacity(estimated_verts);
+    let mut colors: Vec<[f32; 4]> = Vec::with_capacity(estimated_verts);
+    let mut indices: Vec<u32> = Vec::with_capacity(estimated_indices);
     let fade_inner = cell_size * (grid_radius as f32 * 0.58);
     let fade_outer = cell_size * (grid_radius as f32 * 0.95);
     let fade_outer_sq = fade_outer * fade_outer;

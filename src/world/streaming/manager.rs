@@ -251,17 +251,16 @@ pub fn plan_chunk_streaming(
     state.last_player_chunk = Some(player_chunk);
     state.last_camera_fwd = Some(current_fwd);
 
-    let desired_chunks =
+    state.desired_chunks =
         desired_chunk_coordinates(player_chunk, settings.render_distance, &terrain_generator);
-
-    state.desired_chunks = desired_chunks.clone();
 
     let generating_chunks: HashSet<IVec3> = generation_tasks
         .iter()
         .map(|task| task.coordinate)
         .collect();
 
-    let mut chunks_to_load: Vec<IVec3> = desired_chunks
+    let mut chunks_to_load: Vec<IVec3> = state
+        .desired_chunks
         .iter()
         .filter(|coordinate| {
             !world.contains_chunk(**coordinate) && !generating_chunks.contains(coordinate)
@@ -272,21 +271,21 @@ pub fn plan_chunk_streaming(
     let mut chunks_to_unload: Vec<IVec3> = world
         .iter_chunks()
         .map(|(&coordinate, _)| coordinate)
-        .filter(|coord| !desired_chunks.contains(coord))
+        .filter(|coord| !state.desired_chunks.contains(coord))
         .collect();
 
     // View-cone forward weighting: chunks in player's forward view cone get up to 2.5x priority
     chunks_to_load.sort_by_key(|coordinate| {
         let delta = *coordinate - player_chunk;
-        let dist = ((delta.x * delta.x + delta.y * delta.y + delta.z * delta.z) as f32).sqrt();
-        let weight = if dist <= 1.5 || current_fwd == Vec2::ZERO {
+        let dist_sq = (delta.x * delta.x + delta.y * delta.y + delta.z * delta.z) as f32;
+        let weight = if dist_sq <= 2.25 || current_fwd == Vec2::ZERO {
             1.0
         } else {
             let dir = Vec2::new(delta.x as f32, delta.z as f32).normalize_or_zero();
             let dot = dir.dot(current_fwd);
             (1.0 - 0.6 * dot).max(0.2)
         };
-        (dist * weight * 1000.0) as i64
+        (dist_sq * weight * 1000.0) as i64
     });
 
     chunks_to_unload.sort_by_key(|coordinate| {
@@ -390,8 +389,6 @@ pub fn plan_chunk_streaming(
         }
     }
 
-    state.desired_lod_columns = desired_lod.clone();
-
     // LOD columns to unload:
     // Only unload if no longer desired (e.g. out of range, or real meshes arrived, or tier changed)
     let mut lod_to_unload: Vec<IVec2> = lod_registry
@@ -415,10 +412,11 @@ pub fn plan_chunk_streaming(
         .collect();
 
     let mut lod_to_load: Vec<(IVec2, ChunkLod)> = desired_lod
-        .into_iter()
+        .iter()
         .filter(|(coord, lod)| {
-            lod_registry.get_lod(coord) != Some(*lod) && active_lod.get(coord) != Some(lod)
+            lod_registry.get_lod(coord) != Some(**lod) && active_lod.get(coord) != Some(lod)
         })
+        .map(|(&coord, &lod)| (coord, lod))
         .collect();
 
     lod_to_load.sort_by_key(|(coord, lod)| {
@@ -443,6 +441,8 @@ pub fn plan_chunk_streaming(
 
     queues.lod_load.clear();
     queues.lod_load.extend(lod_to_load);
+
+    state.desired_lod_columns = desired_lod;
 }
 
 pub fn process_chunk_unloads(

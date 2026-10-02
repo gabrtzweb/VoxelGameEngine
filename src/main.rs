@@ -34,12 +34,7 @@ use winit::{platform::windows::WindowExtWindows, window::Icon};
 fn set_window_icons(
     primary_window: Single<Entity, With<PrimaryWindow>>,
     windows: Option<NonSend<WinitWindows>>,
-    mut initialized: Local<bool>,
 ) {
-    if *initialized {
-        return;
-    }
-
     let Some(windows) = windows else {
         return;
     };
@@ -61,8 +56,6 @@ fn set_window_icons(
 
     window.set_window_icon(Some(icon.clone()));
     window.set_taskbar_icon(Some(icon));
-
-    *initialized = true;
 }
 
 fn main() {
@@ -95,6 +88,6 @@ fn main() {
         .add_plugins(DynamicFpsPlugin)
         .add_plugins(MapPlugin)
         .add_plugins(MenuPlugin)
-        .add_systems(Update, set_window_icons)
+        .add_systems(Update, set_window_icons.run_if(run_once))
         .run();
 }

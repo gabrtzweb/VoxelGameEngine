@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 
@@ -7,16 +9,20 @@ pub const CHUNK_WORLD_SIZE: f32 = CHUNK_SIZE as f32 * VOXEL_SIZE;
 
 #[derive(Resource, Default)]
 pub struct VoxelWorld {
-    chunks: HashMap<IVec3, Chunk>,
+    chunks: HashMap<IVec3, Arc<Chunk>>,
 }
 
 impl VoxelWorld {
     pub fn insert_chunk(&mut self, coordinate: IVec3, chunk: Chunk) {
-        self.chunks.insert(coordinate, chunk);
+        self.chunks.insert(coordinate, Arc::new(chunk));
     }
 
     pub fn get_chunk(&self, coordinate: IVec3) -> Option<&Chunk> {
-        self.chunks.get(&coordinate)
+        self.chunks.get(&coordinate).map(Arc::as_ref)
+    }
+
+    pub fn get_chunk_arc(&self, coordinate: IVec3) -> Option<Arc<Chunk>> {
+        self.chunks.get(&coordinate).cloned()
     }
 
     pub fn contains_chunk(&self, coordinate: IVec3) -> bool {
@@ -24,7 +30,8 @@ impl VoxelWorld {
     }
 
     pub fn get_chunk_mut(&mut self, coordinate: IVec3) -> Option<&mut Chunk> {
-        self.chunks.get_mut(&coordinate)
+        let arc = self.chunks.get_mut(&coordinate)?;
+        Some(Arc::make_mut(arc))
     }
 
     pub fn get_voxel(&self, world_voxel: IVec3) -> Option<Voxel> {
@@ -139,10 +146,10 @@ impl VoxelWorld {
     }
 
     pub fn iter_chunks(&self) -> impl Iterator<Item = (&IVec3, &Chunk)> {
-        self.chunks.iter()
+        self.chunks.iter().map(|(coordinate, chunk)| (coordinate, chunk.as_ref()))
     }
 
-    pub fn remove_chunk(&mut self, coordinate: IVec3) -> Option<Chunk> {
+    pub fn remove_chunk(&mut self, coordinate: IVec3) -> Option<Arc<Chunk>> {
         self.chunks.remove(&coordinate)
     }
 
@@ -224,18 +231,18 @@ impl VoxelAccess for ResMut<'_, VoxelWorld> {
 #[derive(Clone)]
 pub struct ChunkNeighborhood {
     center: IVec3,
-    chunks: [Option<Chunk>; 27],
+    chunks: [Option<Arc<Chunk>>; 27],
 }
 
 impl ChunkNeighborhood {
     pub fn new(world: &VoxelWorld, center: IVec3) -> Self {
-        let mut chunks: [Option<Chunk>; 27] = Default::default();
+        let mut chunks: [Option<Arc<Chunk>>; 27] = Default::default();
         for dz in -1..=1 {
             for dy in -1..=1 {
                 for dx in -1..=1 {
                     let coord = center + IVec3::new(dx, dy, dz);
                     let idx = ((dx + 1) + (dy + 1) * 3 + (dz + 1) * 9) as usize;
-                    chunks[idx] = world.get_chunk(coord).cloned();
+                    chunks[idx] = world.get_chunk_arc(coord);
                 }
             }
         }
@@ -249,7 +256,7 @@ impl VoxelAccess for ChunkNeighborhood {
         if diff.x >= -1 && diff.x <= 1 && diff.y >= -1 && diff.y <= 1 && diff.z >= -1 && diff.z <= 1
         {
             let idx = ((diff.x + 1) + (diff.y + 1) * 3 + (diff.z + 1) * 9) as usize;
-            self.chunks[idx].as_ref()
+            self.chunks[idx].as_deref()
         } else {
             None
         }

@@ -54,7 +54,7 @@ pub fn sync_chunk_lights(
     }
 
     let chunk_origin = chunk_coordinate * CHUNK_SIZE as i32;
-    let mut torch_coords = Vec::new();
+    let mut torch_coords = Vec::with_capacity(MAX_TORCHES_PER_CHUNK);
     let mut lava_pos_sum = Vec3::ZERO;
     let mut lava_count = 0usize;
 

@@ -7,7 +7,7 @@ use bevy::{
 use super::{shapes::mesh_shaped_voxels, textures::VoxelTextureRegistry};
 use crate::{
     simulation::fluid::water_surface_height_offset,
-    world::{BlockShape, CHUNK_SIZE, Chunk, VOXEL_SIZE, Voxel, VoxelAccess},
+    world::{BlockShape, CHUNK_SIZE, CHUNK_VOLUME, Chunk, VOXEL_SIZE, Voxel, VoxelAccess},
 };
 
 const MASK_SIZE: usize = CHUNK_SIZE * CHUNK_SIZE;
@@ -101,14 +101,30 @@ pub struct MeshBuffers {
 
 impl MeshBuffers {
     pub fn new() -> Self {
+        Self::with_capacity(0)
+    }
+
+    pub fn with_capacity(quads: usize) -> Self {
+        let verts = quads * 4;
+        let idxs = quads * 6;
         Self {
-            positions: Vec::new(),
-            normals: Vec::new(),
-            uvs: Vec::new(),
-            uv_bs: Vec::new(),
-            colors: Vec::new(),
-            indices: Vec::new(),
+            positions: Vec::with_capacity(verts),
+            normals: Vec::with_capacity(verts),
+            uvs: Vec::with_capacity(verts),
+            uv_bs: Vec::with_capacity(verts),
+            colors: Vec::with_capacity(verts),
+            indices: Vec::with_capacity(idxs),
         }
+    }
+
+    #[allow(dead_code)]
+    pub fn clear(&mut self) {
+        self.positions.clear();
+        self.normals.clear();
+        self.uvs.clear();
+        self.uv_bs.clear();
+        self.colors.clear();
+        self.indices.clear();
     }
 
     pub fn push_quad(
@@ -362,8 +378,8 @@ impl ChunkMesher {
 
         let chunk_voxel_origin = chunk_coordinate * CHUNK_SIZE as i32;
 
-        let mut opaque_buffers = MeshBuffers::new();
-        let mut transparent_buffers = MeshBuffers::new();
+        let mut opaque_buffers = MeshBuffers::with_capacity(256);
+        let mut transparent_buffers = MeshBuffers::with_capacity(64);
 
         for direction in FACE_DIRECTIONS {
             // Optimization for solid chunks: if the chunk is solid opaque and the neighbor
@@ -802,7 +818,9 @@ pub fn compute_chunk_visibility_mask(chunk: &Chunk) -> u64 {
     }
 
     let mut connectivity: u64 = 0;
-    let mut queue = Vec::with_capacity(256);
+    // Chunk volume is 4096 voxels. Each voxel index is visited at most once,
+    // so a fixed stack buffer of 4096 u16 avoids all heap allocations in the mesher.
+    let mut queue = [0u16; CHUNK_VOLUME];
 
     for start_face in 0..6 {
         for v in 0..CHUNK_SIZE {
@@ -815,14 +833,15 @@ pub fn compute_chunk_visibility_mask(chunk: &Chunk) -> u64 {
                 }
 
                 visited[idx / 64] |= 1u64 << (idx % 64);
-                queue.clear();
-                queue.push(idx);
+                let mut head = 0usize;
+                let mut tail = 0usize;
+                queue[tail] = idx as u16;
+                tail += 1;
 
                 let mut touched_faces = 1u8 << start_face;
-                let mut head = 0;
 
-                while head < queue.len() {
-                    let cur = queue[head];
+                while head < tail {
+                    let cur = queue[head] as usize;
                     head += 1;
 
                     let cx = cur % CHUNK_SIZE;
@@ -848,31 +867,53 @@ pub fn compute_chunk_visibility_mask(chunk: &Chunk) -> u64 {
                         touched_faces |= 1 << 5;
                     }
 
-                    let push_neighbor =
-                        |n_idx: usize, visited_bits: &mut [u64; 64], q: &mut Vec<usize>| {
-                            if (visited_bits[n_idx / 64] & (1u64 << (n_idx % 64))) == 0 {
-                                visited_bits[n_idx / 64] |= 1u64 << (n_idx % 64);
-                                q.push(n_idx);
-                            }
-                        };
-
                     if cx > 0 {
-                        push_neighbor(cur - 1, &mut visited, &mut queue);
+                        let n_idx = cur - 1;
+                        if (visited[n_idx / 64] & (1u64 << (n_idx % 64))) == 0 {
+                            visited[n_idx / 64] |= 1u64 << (n_idx % 64);
+                            queue[tail] = n_idx as u16;
+                            tail += 1;
+                        }
                     }
                     if cx + 1 < CHUNK_SIZE {
-                        push_neighbor(cur + 1, &mut visited, &mut queue);
+                        let n_idx = cur + 1;
+                        if (visited[n_idx / 64] & (1u64 << (n_idx % 64))) == 0 {
+                            visited[n_idx / 64] |= 1u64 << (n_idx % 64);
+                            queue[tail] = n_idx as u16;
+                            tail += 1;
+                        }
                     }
                     if cz > 0 {
-                        push_neighbor(cur - CHUNK_SIZE, &mut visited, &mut queue);
+                        let n_idx = cur - CHUNK_SIZE;
+                        if (visited[n_idx / 64] & (1u64 << (n_idx % 64))) == 0 {
+                            visited[n_idx / 64] |= 1u64 << (n_idx % 64);
+                            queue[tail] = n_idx as u16;
+                            tail += 1;
+                        }
                     }
                     if cz + 1 < CHUNK_SIZE {
-                        push_neighbor(cur + CHUNK_SIZE, &mut visited, &mut queue);
+                        let n_idx = cur + CHUNK_SIZE;
+                        if (visited[n_idx / 64] & (1u64 << (n_idx % 64))) == 0 {
+                            visited[n_idx / 64] |= 1u64 << (n_idx % 64);
+                            queue[tail] = n_idx as u16;
+                            tail += 1;
+                        }
                     }
                     if cy > 0 {
-                        push_neighbor(cur - CHUNK_SIZE * CHUNK_SIZE, &mut visited, &mut queue);
+                        let n_idx = cur - CHUNK_SIZE * CHUNK_SIZE;
+                        if (visited[n_idx / 64] & (1u64 << (n_idx % 64))) == 0 {
+                            visited[n_idx / 64] |= 1u64 << (n_idx % 64);
+                            queue[tail] = n_idx as u16;
+                            tail += 1;
+                        }
                     }
                     if cy + 1 < CHUNK_SIZE {
-                        push_neighbor(cur + CHUNK_SIZE * CHUNK_SIZE, &mut visited, &mut queue);
+                        let n_idx = cur + CHUNK_SIZE * CHUNK_SIZE;
+                        if (visited[n_idx / 64] & (1u64 << (n_idx % 64))) == 0 {
+                            visited[n_idx / 64] |= 1u64 << (n_idx % 64);
+                            queue[tail] = n_idx as u16;
+                            tail += 1;
+                        }
                     }
                 }
 

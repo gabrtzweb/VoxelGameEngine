@@ -67,6 +67,7 @@ fn lerp(a: f32, b: f32, t: f32) -> f32 {
 }
 
 /// Computes smooth 2D gradient noise in the range `[-1.0, 1.0]`.
+#[inline]
 pub fn gradient_noise_2d(x: f32, z: f32, seed: u32) -> f32 {
     let x0 = x.floor() as i32;
     let z0 = z.floor() as i32;
@@ -99,6 +100,7 @@ pub fn gradient_noise_2d(x: f32, z: f32, seed: u32) -> f32 {
 }
 
 /// Computes 2D Fractal Brownian Motion (FBM) with multiple octaves in range `[-1.0, 1.0]`.
+#[inline]
 pub fn fbm_2d(
     x: f32,
     z: f32,
@@ -129,6 +131,7 @@ pub fn fbm_2d(
 }
 
 /// Computes smooth 3D gradient noise in the range `[-1.0, 1.0]`.
+#[inline]
 pub fn gradient_noise_3d(x: f32, y: f32, z: f32, seed: u32) -> f32 {
     let x0 = x.floor() as i32;
     let y0 = y.floor() as i32;
@@ -179,6 +182,7 @@ pub fn gradient_noise_3d(x: f32, y: f32, z: f32, seed: u32) -> f32 {
 }
 
 /// Computes 3D Fractal Brownian Motion (FBM) with multiple octaves in range `[-1.0, 1.0]`.
+#[inline]
 pub fn fbm_3d(
     x: f32,
     y: f32,

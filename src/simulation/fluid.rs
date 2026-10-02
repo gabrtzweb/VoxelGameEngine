@@ -104,7 +104,7 @@ fn run_fluid_simulation(
         (player_chunk, sim_distance)
     });
 
-    let mut edited_voxels = Vec::new();
+    let mut edited_voxels = Vec::with_capacity(32);
     let count = queue.queue.len();
     let mut updates_this_tick = 0;
 
@@ -150,7 +150,7 @@ fn run_fluid_simulation(
         return;
     }
 
-    let mut dirty_chunks = Vec::new();
+    let mut dirty_chunks = Vec::with_capacity(16);
 
     for edited in edited_voxels {
         sync_voxel_light(&mut commands, &world, edited, &mut light_registry);
@@ -179,7 +179,7 @@ fn process_fluid(
     pos: IVec3,
     current_voxel: Voxel,
 ) -> Vec<IVec3> {
-    let mut edited = Vec::new();
+    let mut edited = Vec::with_capacity(5);
     let current_level = world.get_fluid_level(pos);
 
     let horizontals = [
@@ -323,7 +323,7 @@ fn check_infinite_source(
     queue: &mut FluidUpdateQueue,
     pos: IVec3,
 ) -> Vec<IVec3> {
-    let mut edited = Vec::new();
+    let mut edited = Vec::with_capacity(1);
 
     let below = pos - IVec3::Y;
     let Some(v_below) = world.get_voxel(below) else {
