@@ -6,6 +6,7 @@ use bevy::{
 };
 
 use super::{
+    culling::CaveCullingState,
     greedy::{ChunkMesher, ChunkMeshes},
     pipeline::{
         ChunkMaterial, ChunkMeshRegistry, LodMeshRegistry, apply_chunk_mesh, remove_chunk_render,
@@ -29,6 +30,7 @@ pub struct ChunkMeshingTask {
 pub struct CompletedChunkMesh {
     pub coordinate: IVec3,
     pub meshes: ChunkMeshes,
+    pub is_subterranean: bool,
 }
 
 pub struct AsyncMesherPlugin;
@@ -117,12 +119,17 @@ pub fn start_meshing_tasks(
             }
         }
 
+        let is_subterranean = chunk.is_subterranean();
         let neighborhood = ChunkNeighborhood::new(&world, coordinate);
         let textures = material.texture_registry.clone();
 
         let task = pool.spawn(async move {
             let meshes = ChunkMesher::build_meshes(&neighborhood, coordinate, &textures);
-            CompletedChunkMesh { coordinate, meshes }
+            CompletedChunkMesh {
+                coordinate,
+                meshes,
+                is_subterranean,
+            }
         });
 
         commands.spawn(ChunkMeshingTask { coordinate, task });
@@ -134,20 +141,29 @@ pub fn start_meshing_tasks(
     }
 }
 
+const MAX_CHUNK_MESH_UPLOADS_PER_FRAME: usize = 12;
+
 pub fn collect_meshing_tasks(
     mut commands: Commands,
     mut tasks: Query<(Entity, &mut ChunkMeshingTask)>,
     world: Res<VoxelWorld>,
     material: Res<ChunkMaterial>,
+    culling_state: Option<Res<CaveCullingState>>,
     mut registry: ResMut<ChunkMeshRegistry>,
     mut lod_registry: ResMut<LodMeshRegistry>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
+    let mut uploaded = 0;
     for (entity, mut meshing_task) in &mut tasks {
+        if uploaded >= MAX_CHUNK_MESH_UPLOADS_PER_FRAME {
+            break;
+        }
+
         let Some(completed) = check_ready(&mut meshing_task.task) else {
             continue;
         };
 
+        uploaded += 1;
         commands.entity(entity).try_despawn();
 
         if world.get_chunk(completed.coordinate).is_none() {
@@ -166,6 +182,8 @@ pub fn collect_meshing_tasks(
             &mut commands,
             completed.coordinate,
             completed.meshes,
+            completed.is_subterranean,
+            culling_state.as_deref(),
             &mut registry,
             &mut meshes,
             &material,
@@ -176,6 +194,10 @@ pub fn collect_meshing_tasks(
             let column = IVec2::new(completed.coordinate.x, completed.coordinate.z);
             if lod_registry.contains(&column) {
                 remove_lod_render(&mut commands, column, &mut lod_registry, &mut meshes);
+            }
+            let super_col = IVec2::new(column.x.div_euclid(2) * 2, column.y.div_euclid(2) * 2);
+            if lod_registry.contains(&super_col) {
+                remove_lod_render(&mut commands, super_col, &mut lod_registry, &mut meshes);
             }
         }
     }

@@ -87,6 +87,7 @@ impl FaceKey {
 pub struct ChunkMeshes {
     pub opaque: Option<Mesh>,
     pub transparent: Option<Mesh>,
+    pub visibility_mask: u64,
 }
 
 pub struct MeshBuffers {
@@ -327,6 +328,7 @@ impl ChunkMesher {
             return ChunkMeshes {
                 opaque: None,
                 transparent: None,
+                visibility_mask: (1u64 << 36) - 1,
             };
         };
 
@@ -335,6 +337,7 @@ impl ChunkMesher {
             return ChunkMeshes {
                 opaque: None,
                 transparent: None,
+                visibility_mask: (1u64 << 36) - 1,
             };
         }
 
@@ -353,6 +356,7 @@ impl ChunkMesher {
                 return ChunkMeshes {
                     opaque: None,
                     transparent: None,
+                    visibility_mask: 0,
                 };
             }
         }
@@ -573,9 +577,12 @@ impl ChunkMesher {
             );
         }
 
+        let visibility_mask = compute_chunk_visibility_mask(chunk);
+
         ChunkMeshes {
             opaque: opaque_buffers.into_mesh(),
             transparent: transparent_buffers.into_mesh(),
+            visibility_mask,
         }
     }
 }
@@ -753,4 +760,110 @@ pub fn quad_vertices(
             [[u0, v0, z], [u0, v1, z], [u1, v1, z], [u1, v0, z]]
         }
     }
+}
+
+pub fn face_uv_to_voxel(face: usize, u: usize, v: usize) -> (usize, usize, usize) {
+    match face {
+        0 => (0, v, u),              // NegativeX: x=0, y=v, z=u
+        1 => (CHUNK_SIZE - 1, v, u), // PositiveX: x=15, y=v, z=u
+        2 => (u, 0, v),              // NegativeY: x=u, y=0, z=v
+        3 => (u, CHUNK_SIZE - 1, v), // PositiveY: x=u, y=15, z=v
+        4 => (u, v, 0),              // NegativeZ: x=u, y=v, z=0
+        _ => (u, v, CHUNK_SIZE - 1), // PositiveZ: x=u, y=v, z=15
+    }
+}
+
+/// Evaluates face-to-face visibility through non-solid voxels inside a chunk.
+///
+/// Returns a 36-bit bitmask where bit `(in_face * 6 + out_face)` is set if sight/air
+/// can traverse continuously from `in_face` to `out_face` without being blocked by solid opaque blocks.
+pub fn compute_chunk_visibility_mask(chunk: &Chunk) -> u64 {
+    if chunk.is_empty() {
+        return (1u64 << 36) - 1;
+    }
+
+    if chunk.is_fully_solid_opaque() {
+        return 0;
+    }
+
+    // 4096 bits = 64 u64 words
+    let mut visited = [0u64; 64];
+
+    // Mask solid opaque blocks as visited so flood fill cannot enter them
+    for y in 0..CHUNK_SIZE {
+        for z in 0..CHUNK_SIZE {
+            for x in 0..CHUNK_SIZE {
+                let voxel = chunk.get(x, y, z);
+                if voxel.is_solid_opaque() && chunk.get_shape(x, y, z).0 == BlockShape::Full {
+                    let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
+                    visited[idx / 64] |= 1u64 << (idx % 64);
+                }
+            }
+        }
+    }
+
+    let mut connectivity: u64 = 0;
+    let mut queue = Vec::with_capacity(256);
+
+    for start_face in 0..6 {
+        for v in 0..CHUNK_SIZE {
+            for u in 0..CHUNK_SIZE {
+                let (x, y, z) = face_uv_to_voxel(start_face, u, v);
+                let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
+
+                if (visited[idx / 64] & (1u64 << (idx % 64))) != 0 {
+                    continue;
+                }
+
+                visited[idx / 64] |= 1u64 << (idx % 64);
+                queue.clear();
+                queue.push(idx);
+
+                let mut touched_faces = 1u8 << start_face;
+                let mut head = 0;
+
+                while head < queue.len() {
+                    let cur = queue[head];
+                    head += 1;
+
+                    let cx = cur % CHUNK_SIZE;
+                    let cz = (cur / CHUNK_SIZE) % CHUNK_SIZE;
+                    let cy = cur / (CHUNK_SIZE * CHUNK_SIZE);
+
+                    if cx == 0 { touched_faces |= 1 << 0; }
+                    if cx == CHUNK_SIZE - 1 { touched_faces |= 1 << 1; }
+                    if cy == 0 { touched_faces |= 1 << 2; }
+                    if cy == CHUNK_SIZE - 1 { touched_faces |= 1 << 3; }
+                    if cz == 0 { touched_faces |= 1 << 4; }
+                    if cz == CHUNK_SIZE - 1 { touched_faces |= 1 << 5; }
+
+                    let push_neighbor = |n_idx: usize, visited_bits: &mut [u64; 64], q: &mut Vec<usize>| {
+                        if (visited_bits[n_idx / 64] & (1u64 << (n_idx % 64))) == 0 {
+                            visited_bits[n_idx / 64] |= 1u64 << (n_idx % 64);
+                            q.push(n_idx);
+                        }
+                    };
+
+                    if cx > 0 { push_neighbor(cur - 1, &mut visited, &mut queue); }
+                    if cx + 1 < CHUNK_SIZE { push_neighbor(cur + 1, &mut visited, &mut queue); }
+                    if cz > 0 { push_neighbor(cur - CHUNK_SIZE, &mut visited, &mut queue); }
+                    if cz + 1 < CHUNK_SIZE { push_neighbor(cur + CHUNK_SIZE, &mut visited, &mut queue); }
+                    if cy > 0 { push_neighbor(cur - CHUNK_SIZE * CHUNK_SIZE, &mut visited, &mut queue); }
+                    if cy + 1 < CHUNK_SIZE { push_neighbor(cur + CHUNK_SIZE * CHUNK_SIZE, &mut visited, &mut queue); }
+                }
+
+                for f1 in 0..6 {
+                    if (touched_faces & (1 << f1)) != 0 {
+                        for f2 in 0..6 {
+                            if (touched_faces & (1 << f2)) != 0 {
+                                connectivity |= 1u64 << (f1 * 6 + f2);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    connectivity
 }

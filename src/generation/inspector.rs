@@ -208,7 +208,7 @@ pub fn terrain_inspector_ui(
                         let lod1_count = lod_reg.lod_count(crate::meshing::ChunkLod::Lod1);
                         let lod2_count = lod_reg.lod_count(crate::meshing::ChunkLod::Lod2);
                         ui.label(format!(
-                            "LOD Columns: {} (LOD 1: {}, LOD 2: {}) | {} verts ({} tris)",
+                            "LOD Meshes: {} (LOD 1: {}, LOD 2 [2x2 Batched]: {}) | {} verts ({} tris)",
                             lod_reg.len(),
                             lod1_count,
                             lod2_count,

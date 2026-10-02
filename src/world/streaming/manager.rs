@@ -64,6 +64,7 @@ impl Default for ChunkStreamingSettings {
 #[derive(Resource, Default)]
 pub struct ChunkStreamingState {
     pub last_player_chunk: Option<IVec3>,
+    pub last_camera_fwd: Option<Vec2>,
     pub desired_chunks: HashSet<IVec3>,
     pub desired_lod_columns: HashMap<IVec2, ChunkLod>,
 }
@@ -90,7 +91,7 @@ pub struct CompletedLodMesh {
     pub coordinate: IVec2,
     pub lod: ChunkLod,
     pub meshes: crate::meshing::greedy::ChunkMeshes,
-    pub map_chunk: crate::map::MapChunk,
+    pub map_chunks: Vec<(IVec2, crate::map::MapChunk)>,
 }
 
 pub struct ChunkStreamingPlugin;
@@ -208,13 +209,16 @@ pub fn handle_terrain_generator_reload(
 
     // 7. Reset player tracking so plan_chunk_streaming immediately queues full reload around player
     state.last_player_chunk = None;
+    state.last_camera_fwd = None;
     state.desired_chunks.clear();
     state.desired_lod_columns.clear();
 }
 
 pub fn plan_chunk_streaming(
     player: Single<&Transform, With<Player>>,
+    camera: Option<Single<&Transform, (With<Camera3d>, With<crate::player::PlayerCamera>)>>,
     settings: Res<ChunkStreamingSettings>,
+    terrain_generator: Res<TerrainGenerator>,
     mut state: ResMut<ChunkStreamingState>,
     world: Res<VoxelWorld>,
     mesh_registry: Res<ChunkMeshRegistry>,
@@ -224,14 +228,35 @@ pub fn plan_chunk_streaming(
     mut queues: ResMut<ChunkStreamingQueues>,
 ) {
     let player_chunk = player_chunk_coordinate(player.translation);
+    let current_fwd = camera
+        .as_ref()
+        .map(|c| {
+            let f = c.forward();
+            Vec2::new(f.x, f.z).normalize_or_zero()
+        })
+        .unwrap_or(Vec2::ZERO);
 
-    if !settings.is_changed() && state.last_player_chunk == Some(player_chunk) {
+    let moved_chunk = state.last_player_chunk != Some(player_chunk);
+    let camera_turned = state.last_camera_fwd.map_or(false, |last| {
+        current_fwd != Vec2::ZERO && current_fwd.dot(last) < 0.95 // ~18 degrees turn
+    });
+
+    if !settings.is_changed()
+        && !moved_chunk
+        && !mesh_registry.is_changed()
+        && (!camera_turned || (queues.load.is_empty() && queues.lod_load.is_empty()))
+    {
         return;
     }
 
     state.last_player_chunk = Some(player_chunk);
+    state.last_camera_fwd = Some(current_fwd);
 
-    let desired_chunks = desired_chunk_coordinates(player_chunk, settings.render_distance);
+    let desired_chunks = desired_chunk_coordinates(
+        player_chunk,
+        settings.render_distance,
+        &terrain_generator,
+    );
 
     state.desired_chunks = desired_chunks.clone();
 
@@ -254,7 +279,19 @@ pub fn plan_chunk_streaming(
         .filter(|coord| !desired_chunks.contains(coord))
         .collect();
 
-    chunks_to_load.sort_by_key(|coordinate| chunk_distance_squared(*coordinate, player_chunk));
+    // View-cone forward weighting: chunks in player's forward view cone get up to 2.5x priority
+    chunks_to_load.sort_by_key(|coordinate| {
+        let delta = *coordinate - player_chunk;
+        let dist = ((delta.x * delta.x + delta.y * delta.y + delta.z * delta.z) as f32).sqrt();
+        let weight = if dist <= 1.5 || current_fwd == Vec2::ZERO {
+            1.0
+        } else {
+            let dir = Vec2::new(delta.x as f32, delta.z as f32).normalize_or_zero();
+            let dot = dir.dot(current_fwd);
+            (1.0 - 0.6 * dot).max(0.2)
+        };
+        (dist * weight * 1000.0) as i64
+    });
 
     chunks_to_unload.sort_by_key(|coordinate| {
         std::cmp::Reverse(chunk_distance_squared(*coordinate, player_chunk))
@@ -276,45 +313,94 @@ pub fn plan_chunk_streaming(
         let r_real = settings.render_distance as f32;
         let r_mid = r_real + settings.lod_render_distance as f32 * 0.5;
 
-        for dz in -total_r..=total_r {
-            for dx in -total_r..=total_r {
+        // Step 1: For near and mid distances (up to r_mid), use Lod1 (1x1 chunk columns)
+        // Inside real render distance: provide an instant Lod1 far-mesh placeholder
+        // if real voxel chunk meshes haven't arrived yet, completely eliminating the void gap!
+        let mid_r = r_mid.ceil() as i32;
+        for dz in -mid_r..=mid_r {
+            for dx in -mid_r..=mid_r {
                 let dist = ((dx * dx + dz * dz) as f32).sqrt();
-                if dist > total_r as f32 {
+                if dist > r_mid {
                     continue;
                 }
 
                 let col = center_2d + IVec2::new(dx, dz);
                 if dist <= r_real {
-                    // Inside real render distance: provide an instant Lod1 far-mesh placeholder
-                    // if real voxel chunk meshes haven't arrived yet, completely eliminating the void gap!
                     if !mesh_registry.has_column_mesh(col) {
                         desired_lod.insert(col, ChunkLod::Lod1);
                     }
-                } else if dist <= r_mid {
-                    desired_lod.insert(col, ChunkLod::Lod1);
                 } else {
-                    desired_lod.insert(col, ChunkLod::Lod2);
+                    desired_lod.insert(col, ChunkLod::Lod1);
                 }
             }
+        }
+
+        // Step 2: For far distance (beyond r_mid up to total_r), use Lod2 (2x2 super-chunks)
+        // Batch distant columns into 2x2 super-chunks to slash draw calls by ~75%.
+        let min_super_x = (center_2d.x - total_r).div_euclid(2) * 2;
+        let max_super_x = (center_2d.x + total_r).div_euclid(2) * 2;
+        let min_super_z = (center_2d.y - total_r).div_euclid(2) * 2;
+        let max_super_z = (center_2d.y + total_r).div_euclid(2) * 2;
+
+        let mut sz = min_super_z;
+        while sz <= max_super_z {
+            let mut sx = min_super_x;
+            while sx <= max_super_x {
+                let super_coord = IVec2::new(sx, sz);
+
+                let mut overlaps_near = false;
+                let mut in_range_count = 0;
+
+                for ox in 0..2 {
+                    for oz in 0..2 {
+                        let sub_col = super_coord + IVec2::new(ox, oz);
+                        let delta = sub_col - center_2d;
+                        let dist = ((delta.x * delta.x + delta.y * delta.y) as f32).sqrt();
+
+                        if desired_lod.contains_key(&sub_col) || dist <= r_mid {
+                            overlaps_near = true;
+                        }
+                        if dist <= total_r as f32 {
+                            in_range_count += 1;
+                        }
+                    }
+                }
+
+                if !overlaps_near && in_range_count > 0 {
+                    // All 4 sub-columns are safely in the far zone!
+                    // Batch them into a single 2x2 Lod2 super-chunk
+                    desired_lod.insert(super_coord, ChunkLod::Lod2);
+                } else if overlaps_near {
+                    // If any sub-column was in near/mid zone, any OTHER sub-column that is beyond r_mid
+                    // but within total_r should still be covered by Lod1 so there's no void gap!
+                    for ox in 0..2 {
+                        for oz in 0..2 {
+                            let sub_col = super_coord + IVec2::new(ox, oz);
+                            let delta = sub_col - center_2d;
+                            let dist = ((delta.x * delta.x + delta.y * delta.y) as f32).sqrt();
+                            if dist > r_mid
+                                && dist <= total_r as f32
+                                && !desired_lod.contains_key(&sub_col)
+                            {
+                                desired_lod.insert(sub_col, ChunkLod::Lod1);
+                            }
+                        }
+                    }
+                }
+
+                sx += 2;
+            }
+            sz += 2;
         }
     }
 
     state.desired_lod_columns = desired_lod.clone();
 
     // LOD columns to unload:
-    // Only unload if beyond total visible horizon, or if real chunk meshes have already taken over this column
-    let total_r = settings.render_distance + settings.lod_render_distance;
-
+    // Only unload if no longer desired (e.g. out of range, or real meshes arrived, or tier changed)
     let mut lod_to_unload: Vec<IVec2> = lod_registry
         .iter_coordinates()
-        .filter(|coord| {
-            if settings.lod_render_distance <= 0 {
-                return true;
-            }
-            let delta = **coord - center_2d;
-            let dist = ((delta.x * delta.x + delta.y * delta.y) as f32).sqrt();
-            dist > total_r as f32 || mesh_registry.has_column_mesh(**coord)
-        })
+        .filter(|coord| !desired_lod.contains_key(coord))
         .copied()
         .collect();
 
@@ -340,9 +426,24 @@ pub fn plan_chunk_streaming(
         })
         .collect();
 
-    lod_to_load.sort_by_key(|(coord, _)| {
-        let delta = *coord - center_2d;
-        delta.x * delta.x + delta.y * delta.y
+    lod_to_load.sort_by_key(|(coord, lod)| {
+        let offset = if *lod == ChunkLod::Lod2 {
+            Vec2::new(0.5, 0.5)
+        } else {
+            Vec2::ZERO
+        };
+        let col_f = Vec2::new(coord.x as f32 + offset.x, coord.y as f32 + offset.y);
+        let center_f = Vec2::new(center_2d.x as f32, center_2d.y as f32);
+        let delta = col_f - center_f;
+        let dist = delta.length();
+        let weight = if dist <= 1.5 || current_fwd == Vec2::ZERO {
+            1.0
+        } else {
+            let dir = delta.normalize_or_zero();
+            let dot = dir.dot(current_fwd);
+            (1.0 - 0.6 * dot).max(0.2)
+        };
+        (dist * weight * 1000.0) as i64
     });
 
     queues.lod_load.clear();
@@ -513,12 +614,20 @@ pub fn start_lod_meshing_tasks(
 
         let task = pool.spawn(async move {
             let meshes = build_lod_mesh(coordinate, lod, &generator, &textures);
-            let map_chunk = crate::map::cache::generate_lod_map_chunk(coordinate, &generator);
+            let mut map_chunks = Vec::new();
+            for dx in 0..lod.chunk_extent() {
+                for dz in 0..lod.chunk_extent() {
+                    let sub_coord = coordinate + IVec2::new(dx, dz);
+                    let map_chunk =
+                        crate::map::cache::generate_lod_map_chunk(sub_coord, &generator);
+                    map_chunks.push((sub_coord, map_chunk));
+                }
+            }
             CompletedLodMesh {
                 coordinate,
                 lod,
                 meshes,
-                map_chunk,
+                map_chunks,
             }
         });
 
@@ -529,6 +638,8 @@ pub fn start_lod_meshing_tasks(
         });
     }
 }
+
+const MAX_LOD_MESH_UPLOADS_PER_FRAME: usize = 16;
 
 pub fn collect_lod_meshing_tasks(
     mut commands: Commands,
@@ -543,11 +654,17 @@ pub fn collect_lod_meshing_tasks(
         return;
     };
 
+    let mut uploaded = 0;
     for (entity, mut lod_task) in &mut tasks {
+        if uploaded >= MAX_LOD_MESH_UPLOADS_PER_FRAME {
+            break;
+        }
+
         let Some(completed) = check_ready(&mut lod_task.task) else {
             continue;
         };
 
+        uploaded += 1;
         commands.entity(entity).despawn();
 
         // Ensure this LOD column is still desired at this tier
@@ -567,8 +684,10 @@ pub fn collect_lod_meshing_tasks(
 
         // Update world map and minimap with newly generated LOD surface terrain & trees
         if let Some(ref mut cache) = map_cache {
-            if cache.get_chunk(completed.coordinate).is_none() {
-                cache.insert_lod_chunk(completed.coordinate, completed.map_chunk);
+            for (sub_coord, map_chunk) in completed.map_chunks {
+                if cache.get_chunk(sub_coord).is_none() {
+                    cache.insert_lod_chunk(sub_coord, map_chunk);
+                }
             }
         }
     }
@@ -586,7 +705,11 @@ pub fn player_chunk_coordinate(player_position: Vec3) -> IVec3 {
     chunk_coordinate
 }
 
-pub fn desired_chunk_coordinates(center: IVec3, render_distance: i32) -> HashSet<IVec3> {
+pub fn desired_chunk_coordinates(
+    center: IVec3,
+    render_distance: i32,
+    generator: &TerrainGenerator,
+) -> HashSet<IVec3> {
     let radius_squared = render_distance * render_distance;
 
     let mut chunks = HashSet::new();
@@ -602,8 +725,18 @@ pub fn desired_chunk_coordinates(center: IVec3, render_distance: i32) -> HashSet
                 continue;
             }
 
-            for y in min_y..=max_y {
-                chunks.insert(IVec3::new(center.x + x, y, center.z + z));
+            let col_chunk_x = center.x + x;
+            let col_chunk_z = center.z + z;
+            let est_max_height = generator.estimate_chunk_max_height(col_chunk_x, col_chunk_z);
+            let est_max_chunk_y = est_max_height.div_euclid(crate::world::CHUNK_SIZE as i32);
+
+            // Safe column upper bound:
+            // 1. At least 1 chunk buffer above treetops/mountain peaks
+            // 2. But keep chunks around the player loaded if player is flying high (center.y + 2)
+            let col_max_y = (est_max_chunk_y + 1).max(center.y + 2).min(max_y);
+
+            for y in min_y..=col_max_y {
+                chunks.insert(IVec3::new(col_chunk_x, y, col_chunk_z));
             }
         }
     }
@@ -622,3 +755,44 @@ pub fn chunk_distance_squared(a: IVec3, b: IVec3) -> i32 {
 
     delta.x * delta.x + delta.y * delta.y + delta.z * delta.z
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_desired_chunk_coordinates_prunes_empty_sky() {
+        let generator = TerrainGenerator::default();
+        let center = IVec3::new(0, 1, 0); // Player near ground/sea level
+        let render_distance = 8;
+        let desired = desired_chunk_coordinates(center, render_distance, &generator);
+
+        // Theoretical unpruned cylindrical bounding count
+        let mut unpruned_count = 0;
+        let min_y = (center.y - render_distance).max(WORLD_MIN_CHUNK_Y);
+        let max_y = (center.y + render_distance).min(WORLD_MAX_CHUNK_Y);
+        for z in -render_distance..=render_distance {
+            for x in -render_distance..=render_distance {
+                if x * x + z * z <= render_distance * render_distance {
+                    unpruned_count += (max_y - min_y + 1) as usize;
+                }
+            }
+        }
+
+        assert!(
+            desired.len() < unpruned_count,
+            "Pruned desired count {} should be strictly smaller than unpruned {}",
+            desired.len(),
+            unpruned_count
+        );
+
+        // Verify that at least 20% of empty sky chunks were pruned away
+        let savings_percent = (unpruned_count - desired.len()) as f32 / unpruned_count as f32;
+        assert!(
+            savings_percent >= 0.20,
+            "Sky pruning saved {:.1}%, expected at least 20% workload reduction",
+            savings_percent * 100.0
+        );
+    }
+}
+

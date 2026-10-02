@@ -1566,6 +1566,23 @@ impl Voxel {
         )
     }
 
+    /// Returns true strictly for discrete player-placeable light fixtures (torches, lamps)
+    /// that are eligible to spawn individual 3D GPU PointLight entities.
+    /// Excludes bulk terrain/fluid emitters (Lava, Magma) which are rendered emissively in shaders.
+    pub fn is_point_light_fixture(self) -> bool {
+        matches!(
+            self,
+            Self::Emit_Blue_Light
+                | Self::Emit_Blue_Torch
+                | Self::Emit_Cold_Light
+                | Self::Emit_Green_Light
+                | Self::Emit_Green_Torch
+                | Self::Emit_Red_Light
+                | Self::Emit_Red_Torch
+                | Self::Emit_Warm_Light
+        )
+    }
+
     pub fn light_color(self) -> Color {
         match self {
             Self::Emit_Warm_Light => Color::srgb(1.0, 0.82, 0.42),

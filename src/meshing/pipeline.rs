@@ -3,15 +3,17 @@ use bevy::platform::collections::HashMap;
 use bevy::{
     pbr::{ExtendedMaterial, MaterialExtension},
     prelude::*,
+    camera::primitives::Aabb,
     render::render_resource::*,
     shader::ShaderRef,
 };
 
 use super::{
+    culling::{CaveCullingState, ChunkCoordinate, SubterraneanChunkMesh},
     greedy::{ChunkMesher, ChunkMeshes},
     textures::{VoxelTextureRegistry, build_voxel_texture_array},
 };
-use crate::world::VoxelWorld;
+use crate::world::{Chunk, VoxelWorld};
 
 pub const OPAQUE_VOXEL_SHADER_PATH: &str = "shaders/voxel_opaque.wgsl";
 pub const TRANSPARENT_VOXEL_SHADER_PATH: &str = "shaders/voxel_transparent.wgsl";
@@ -94,6 +96,7 @@ pub struct ChunkRenderPart {
 pub struct ChunkRenderData {
     pub opaque: Option<ChunkRenderPart>,
     pub transparent: Option<ChunkRenderPart>,
+    pub visibility_mask: u64,
 }
 
 impl ChunkRenderData {
@@ -152,6 +155,17 @@ impl ChunkMeshRegistry {
         self.entries.contains_key(coordinate)
     }
 
+    pub fn get_visibility_mask_opt(&self, coordinate: &IVec3) -> Option<u64> {
+        self.entries.get(coordinate).map(|d| d.visibility_mask)
+    }
+
+    #[allow(dead_code)]
+    pub fn get_visibility_mask(&self, coordinate: &IVec3) -> u64 {
+        self.entries
+            .get(coordinate)
+            .map_or(0, |d| d.visibility_mask)
+    }
+
     #[inline]
     pub fn has_column_mesh(&self, column: IVec2) -> bool {
         self.columns.get(&column).is_some_and(|&count| count > 0)
@@ -159,6 +173,11 @@ impl ChunkMeshRegistry {
 
     pub fn iter_coordinates(&self) -> impl Iterator<Item = &IVec3> {
         self.entries.keys()
+    }
+
+    #[allow(dead_code)]
+    pub fn iter_entries(&self) -> impl Iterator<Item = (&IVec3, &ChunkRenderData)> {
+        self.entries.iter()
     }
 }
 
@@ -272,14 +291,27 @@ pub fn sync_chunk_render(
         return;
     }
 
+    let is_subterranean = world.get_chunk(coordinate).is_some_and(Chunk::is_subterranean);
     let rebuilt = ChunkMesher::build_meshes(world, coordinate, &material.texture_registry);
-    apply_chunk_mesh(commands, coordinate, rebuilt, registry, meshes, material);
+    apply_chunk_mesh(
+        commands,
+        coordinate,
+        rebuilt,
+        is_subterranean,
+        None,
+        registry,
+        meshes,
+        material,
+    );
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn apply_chunk_mesh(
     commands: &mut Commands,
     coordinate: IVec3,
     rebuilt: ChunkMeshes,
+    is_subterranean: bool,
+    _culling_state: Option<&CaveCullingState>,
     registry: &mut ChunkMeshRegistry,
     meshes: &mut Assets<Mesh>,
     material: &ChunkMaterial,
@@ -288,9 +320,21 @@ pub fn apply_chunk_mesh(
     let column = IVec2::new(coordinate.x, coordinate.z);
     let was_empty;
 
+    let initial_visibility = if is_subterranean {
+        Visibility::Hidden
+    } else {
+        Visibility::Inherited
+    };
+
     let is_empty = {
         let entry = registry.entries.entry(coordinate).or_default();
         was_empty = entry.is_empty();
+        entry.visibility_mask = rebuilt.visibility_mask;
+
+        let chunk_aabb = Aabb::from_min_max(
+            Vec3::ZERO,
+            Vec3::splat(crate::world::CHUNK_SIZE as f32),
+        );
 
         sync_render_part(
             commands,
@@ -299,6 +343,10 @@ pub fn apply_chunk_mesh(
             rebuilt.opaque,
             &material.opaque,
             translation,
+            chunk_aabb,
+            Some(coordinate),
+            is_subterranean,
+            initial_visibility,
         );
 
         sync_render_part(
@@ -308,6 +356,10 @@ pub fn apply_chunk_mesh(
             rebuilt.transparent,
             &material.transparent,
             translation,
+            chunk_aabb,
+            Some(coordinate),
+            is_subterranean,
+            initial_visibility,
         );
 
         entry.is_empty()
@@ -330,6 +382,7 @@ pub fn apply_chunk_mesh(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn sync_render_part<M: Material>(
     commands: &mut Commands,
     meshes: &mut Assets<Mesh>,
@@ -337,6 +390,10 @@ fn sync_render_part<M: Material>(
     rebuilt_mesh: Option<Mesh>,
     material: &Handle<M>,
     translation: Vec3,
+    aabb: Aabb,
+    coordinate: Option<IVec3>,
+    is_subterranean: bool,
+    initial_visibility: Visibility,
 ) {
     let Some(rebuilt_mesh) = rebuilt_mesh else {
         remove_render_part(commands, meshes, part);
@@ -362,13 +419,23 @@ fn sync_render_part<M: Material>(
 
     let mesh_handle = meshes.add(rebuilt_mesh);
 
-    let entity = commands
-        .spawn((
-            Mesh3d(mesh_handle.clone()),
-            MeshMaterial3d(material.clone()),
-            Transform::from_translation(translation),
-        ))
-        .id();
+    let mut entity_cmds = commands.spawn((
+        Mesh3d(mesh_handle.clone()),
+        MeshMaterial3d(material.clone()),
+        Transform::from_translation(translation),
+        aabb,
+        initial_visibility,
+    ));
+
+    if let Some(coord) = coordinate {
+        entity_cmds.insert(ChunkCoordinate(coord));
+    }
+
+    if is_subterranean {
+        entity_cmds.insert(SubterraneanChunkMesh);
+    }
+
+    let entity = entity_cmds.id();
 
     *part = Some(ChunkRenderPart {
         entity,
@@ -435,6 +502,12 @@ pub fn apply_lod_mesh(
     let is_empty = {
         let entry = registry.entries.entry(coordinate).or_default();
 
+        let region_size = lod.world_size();
+        let lod_aabb = Aabb::from_min_max(
+            Vec3::new(0.0, -256.0, 0.0),
+            Vec3::new(region_size, 256.0, region_size),
+        );
+
         sync_render_part(
             commands,
             meshes,
@@ -442,6 +515,10 @@ pub fn apply_lod_mesh(
             rebuilt.opaque,
             &material.opaque,
             translation,
+            lod_aabb,
+            None,
+            false,
+            Visibility::Inherited,
         );
 
         sync_render_part(
@@ -451,6 +528,10 @@ pub fn apply_lod_mesh(
             rebuilt.transparent,
             &material.transparent,
             translation,
+            lod_aabb,
+            None,
+            false,
+            Visibility::Inherited,
         );
 
         entry.is_empty()

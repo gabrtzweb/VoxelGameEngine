@@ -30,6 +30,21 @@ impl ChunkLod {
             Self::Lod2 => 4,
         }
     }
+
+    /// Extent of the LOD mesh along X and Z in chunk columns (1 for Lod0/Lod1, 2 for Lod2 2x2 super-chunks).
+    #[inline]
+    pub fn chunk_extent(self) -> i32 {
+        match self {
+            Self::Lod0 | Self::Lod1 => 1,
+            Self::Lod2 => 2,
+        }
+    }
+
+    /// Size of the LOD mesh in meters (voxels) along X and Z.
+    #[inline]
+    pub fn world_size(self) -> f32 {
+        (self.chunk_extent() * CHUNK_SIZE as i32) as f32
+    }
 }
 
 /// Classifies a horizontal distance (in chunks) into the appropriate LOD tier,
@@ -212,7 +227,8 @@ pub fn build_lod_mesh(
     textures: &VoxelTextureRegistry,
 ) -> ChunkMeshes {
     let stride = lod.stride();
-    let num_cells = (CHUNK_SIZE as i32) / stride; // 8 for Lod1, 4 for Lod2
+    let region_size = lod.chunk_extent() * CHUNK_SIZE as i32;
+    let num_cells = region_size / stride; // 8 for Lod1 (16m / 2m), 8 for Lod2 (32m / 4m)
     let grid_dim = num_cells + 2;
 
     let chunk_origin_x = chunk_coordinate.x * CHUNK_SIZE as i32;
@@ -437,9 +453,9 @@ pub fn build_lod_mesh(
     // 3. Procedural Trees in LOD chunks
     if generator.tree_density > 0.0 {
         let min_cell_x = (chunk_origin_x - 3).div_euclid(5);
-        let max_cell_x = (chunk_origin_x + 18).div_euclid(5);
+        let max_cell_x = (chunk_origin_x + region_size + 2).div_euclid(5);
         let min_cell_z = (chunk_origin_z - 3).div_euclid(5);
-        let max_cell_z = (chunk_origin_z + 18).div_euclid(5);
+        let max_cell_z = (chunk_origin_z + region_size + 2).div_euclid(5);
 
         for cell_z in min_cell_z..=max_cell_z {
             for cell_x in min_cell_x..=max_cell_x {
@@ -449,11 +465,11 @@ pub fn build_lod_mesh(
                 let tx = cell_x * 5 + offset_x;
                 let tz = cell_z * 5 + offset_z;
 
-                // Ownership check: this chunk owns and generates trees whose base trunk is within its 16x16 bounds
+                // Ownership check: this LOD mesh owns and generates trees whose base trunk is within its bounds
                 if tx < chunk_origin_x
-                    || tx >= chunk_origin_x + CHUNK_SIZE as i32
+                    || tx >= chunk_origin_x + region_size
                     || tz < chunk_origin_z
-                    || tz >= chunk_origin_z + CHUNK_SIZE as i32
+                    || tz >= chunk_origin_z + region_size
                 {
                     continue;
                 }
@@ -508,6 +524,7 @@ pub fn build_lod_mesh(
     ChunkMeshes {
         opaque: opaque_buffers.into_mesh(),
         transparent: transparent_buffers.into_mesh(),
+        visibility_mask: (1u64 << 36) - 1,
     }
 }
 
@@ -1027,6 +1044,27 @@ mod tests {
             }
         }
         assert!(found_trees, "LOD meshes should generate tree geometry in forested chunks");
+    }
+
+    #[test]
+    fn test_lod2_super_chunk_dimensions() {
+        assert_eq!(ChunkLod::Lod0.chunk_extent(), 1);
+        assert_eq!(ChunkLod::Lod1.chunk_extent(), 1);
+        assert_eq!(ChunkLod::Lod2.chunk_extent(), 2);
+
+        assert_eq!(ChunkLod::Lod0.world_size(), 16.0);
+        assert_eq!(ChunkLod::Lod1.world_size(), 16.0);
+        assert_eq!(ChunkLod::Lod2.world_size(), 32.0);
+    }
+
+    #[test]
+    fn test_lod2_super_chunk_mesh_generation() {
+        let generator = TerrainGenerator::default();
+        let textures = VoxelTextureRegistry::default();
+        let meshes = build_lod_mesh(IVec2::new(20, 20), ChunkLod::Lod2, &generator, &textures);
+        assert!(meshes.opaque.is_some());
+        let mesh = meshes.opaque.unwrap();
+        assert!(mesh.count_vertices() > 0, "LOD 2 super-chunk must generate vertex geometry");
     }
 }
 

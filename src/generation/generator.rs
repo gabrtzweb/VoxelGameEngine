@@ -121,9 +121,55 @@ impl Default for TerrainGenerator {
 }
 
 impl TerrainGenerator {
+    /// Fast 5-point bounding evaluation (4 corners + center) providing a safe upper-bound
+    /// on the maximum solid terrain, water, and tree canopy height anywhere within chunk column (chunk_x, chunk_z).
+    /// Used for O(1) early rejection of empty sky chunks.
+    pub fn estimate_chunk_max_height(&self, chunk_x: i32, chunk_z: i32) -> i32 {
+        let chunk_origin_x = chunk_x * CHUNK_SIZE as i32;
+        let chunk_origin_z = chunk_z * CHUNK_SIZE as i32;
+
+        let samples = [
+            (chunk_origin_x, chunk_origin_z),
+            (chunk_origin_x + (CHUNK_SIZE as i32 - 1), chunk_origin_z),
+            (chunk_origin_x, chunk_origin_z + (CHUNK_SIZE as i32 - 1)),
+            (
+                chunk_origin_x + (CHUNK_SIZE as i32 - 1),
+                chunk_origin_z + (CHUNK_SIZE as i32 - 1),
+            ),
+            (
+                chunk_origin_x + (CHUNK_SIZE as i32 / 2),
+                chunk_origin_z + (CHUNK_SIZE as i32 / 2),
+            ),
+        ];
+
+        let mut max_h = f32::MIN;
+        for (sx, sz) in samples {
+            let (raw_h, _, _) = self.continuous_height_and_biome(sx, sz);
+            max_h = max_h.max(raw_h);
+        }
+
+        let sea_level = self.effective_sea_level() as f32;
+        // 24.0 blocks buffer safely accounts for intra-chunk noise variance, local cliff tops, and tallest tree canopies (8 blocks)
+        (max_h.max(sea_level) + 24.0).ceil() as i32
+    }
+
     pub fn generate_chunk(&self, chunk_coordinate: IVec3) -> Chunk {
         let chunk_origin = chunk_coordinate * CHUNK_SIZE as i32;
         let chunk_min_y = chunk_origin.y;
+        let chunk_max_y = chunk_min_y + CHUNK_SIZE as i32 - 1;
+
+        // 1. Bedrock floor fast path: bottom layers below bedrock are 100% solid Dreadstone
+        if chunk_max_y <= self.strata.bedrock_min_block_y {
+            let mut chunk = Chunk::filled(Voxel::Rock_Dreadstone);
+            chunk.set_subterranean(true);
+            return chunk;
+        }
+
+        // 2. Sky fast path: if chunk is strictly above estimated max terrain height + canopy, return Air in O(1)
+        let est_max = self.estimate_chunk_max_height(chunk_coordinate.x, chunk_coordinate.z);
+        if chunk_min_y > est_max {
+            return Chunk::filled(Voxel::Air);
+        }
 
         let mut columns = [TerrainColumn::default(); CHUNK_SIZE * CHUNK_SIZE];
         let mut maximum_filled_height = i32::MIN;
@@ -553,6 +599,9 @@ impl TerrainGenerator {
             let (lx, ly, lz) = Chunk::index_to_xyz(idx);
             chunk.set_shape(lx, ly, lz, shape, orientation);
         }
+
+        let is_subterranean = chunk_max_y < minimum_filled_height;
+        chunk.set_subterranean(is_subterranean);
 
         chunk
     }
@@ -1457,4 +1506,66 @@ fn smoothstep(value: f32) -> f32 {
 
 fn lerp(start: f32, end: f32, amount: f32) -> f32 {
     start + (end - start) * amount
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::world::ChunkHomogeneity;
+
+    #[test]
+    fn test_estimate_chunk_max_height_safety() {
+        let generator = TerrainGenerator::default();
+        let chunk_x = 2;
+        let chunk_z = -3;
+        let est_max = generator.estimate_chunk_max_height(chunk_x, chunk_z);
+
+        // Verify that every single sampled column inside the 16x16 chunk is strictly <= est_max
+        let origin_x = chunk_x * CHUNK_SIZE as i32;
+        let origin_z = chunk_z * CHUNK_SIZE as i32;
+
+        for z in 0..CHUNK_SIZE as i32 {
+            for x in 0..CHUNK_SIZE as i32 {
+                let col = generator.sample_column(origin_x + x, origin_z + z);
+                assert!(
+                    col.terrain_height <= est_max,
+                    "Column at ({}, {}) terrain_height {} exceeded estimated max {}",
+                    origin_x + x,
+                    origin_z + z,
+                    col.terrain_height,
+                    est_max
+                );
+                if let Some(water) = col.water_level {
+                    assert!(
+                        water <= est_max,
+                        "Column water level {} exceeded estimated max {}",
+                        water,
+                        est_max
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_sky_chunk_early_exit_returns_air() {
+        let generator = TerrainGenerator::default();
+        let chunk = generator.generate_chunk(IVec3::new(0, 15, 0));
+        assert_eq!(
+            chunk.homogeneity(),
+            ChunkHomogeneity::Empty,
+            "High sky chunk must be 100% air"
+        );
+    }
+
+    #[test]
+    fn test_bedrock_floor_early_exit_returns_dreadstone() {
+        let generator = TerrainGenerator::default();
+        let chunk = generator.generate_chunk(IVec3::new(0, -17, 0));
+        assert_eq!(
+            chunk.homogeneity(),
+            ChunkHomogeneity::Solid(Voxel::Rock_Dreadstone),
+            "Chunk below bedrock floor must be 100% solid dreadstone"
+        );
+    }
 }

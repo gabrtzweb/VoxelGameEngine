@@ -172,6 +172,7 @@ pub struct Chunk {
     shapes: HashMap<usize, (BlockShape, u8)>,
     extra_slabs: HashMap<usize, (Voxel, u8)>,
     fluid_levels: HashMap<usize, u8>,
+    is_subterranean: bool,
 }
 
 impl Chunk {
@@ -207,6 +208,7 @@ impl Chunk {
             shapes: HashMap::default(),
             extra_slabs: HashMap::default(),
             fluid_levels: HashMap::default(),
+            is_subterranean: false,
         }
     }
 
@@ -253,7 +255,18 @@ impl Chunk {
             shapes: HashMap::default(),
             extra_slabs: HashMap::default(),
             fluid_levels: HashMap::default(),
+            is_subterranean: false,
         }
+    }
+
+    #[inline]
+    pub fn is_subterranean(&self) -> bool {
+        self.is_subterranean
+    }
+
+    #[inline]
+    pub fn set_subterranean(&mut self, subterranean: bool) {
+        self.is_subterranean = subterranean;
     }
 
     #[inline]

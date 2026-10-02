@@ -143,6 +143,7 @@ fn update_dev_stats(
     current_target: Res<CurrentTarget>,
     terrain_generator: Option<Res<TerrainGenerator>>,
     dynamic_fps: Option<Res<super::DynamicFpsState>>,
+    culling_state: Option<Res<crate::meshing::CaveCullingState>>,
     text_query: Single<
         (
             &mut Text,
@@ -152,9 +153,11 @@ fn update_dev_stats(
         ),
         With<DevStatsText>,
     >,
-    mut update_timer: Local<f32>,
-    mut last_mode: Local<Option<DebugHudMode>>,
-    mut fps_history: Local<Vec<f32>>,
+    (mut update_timer, mut last_mode, mut fps_history): (
+        Local<f32>,
+        Local<Option<DebugHudMode>>,
+        Local<Vec<f32>>,
+    ),
 ) {
     let (mut text, mut visibility, mut bg_color, mut border_color) = text_query.into_inner();
 
@@ -229,9 +232,15 @@ fn update_dev_stats(
             let mesh_vertices = chunk_meshes.total_vertices();
             let mesh_triangles = chunk_meshes.total_triangles();
 
+            let culling_info = if let Some(ref cs) = culling_state {
+                format!(" (Rendered: {} | Culled: {})", cs.rendered_chunks, cs.culled_chunks)
+            } else {
+                String::new()
+            };
+
             text.0 = format!(
                 "FPS: {fps:.0} ({frame_time:.2} ms) | 1% Low: {low_1pct:.0} | Min: {min_fps:.0} | Max: {max_fps:.0}\n\
-                Chunks: {loaded_chunks} | Vertices: {mesh_vertices} | Triangles: {mesh_triangles}"
+                Chunks: {loaded_chunks}{culling_info} | Vertices: {mesh_vertices} | Triangles: {mesh_triangles}"
             );
         }
         DebugHudMode::Extended => {
@@ -346,6 +355,8 @@ fn update_dev_stats(
                 Camera: {:.1}, {:.1}, {:.1}\n\
                 Loaded chunks: {}\n\
                 Meshed chunks: {}\n\
+                Rendered chunks: {}\n\
+                Culled chunks: {}\n\
                 Mesh vertices: {}\n\
                 Mesh triangles: {}\n\
                 Voxel capacity: {}\n\
@@ -363,6 +374,8 @@ fn update_dev_stats(
                 camera_position.z,
                 loaded_chunks,
                 meshed_chunks,
+                culling_state.as_ref().map_or(0, |s| s.rendered_chunks),
+                culling_state.as_ref().map_or(0, |s| s.culled_chunks),
                 mesh_vertices,
                 mesh_triangles,
                 loaded_chunks * CHUNK_VOLUME,
