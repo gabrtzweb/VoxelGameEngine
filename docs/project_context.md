@@ -3,6 +3,27 @@
 This is an attempt to develop an experimental voxel engine and game, built from scratch using Rust and Bevy.
 
 
+---
+
+## Core Concepts
+
+- The world is stored using 1.0 m voxels (similar to Minecraft blocks).
+- Chunks have 16 × 16 × 16 voxels (16 m × 16 m × 16 m physical sections).
+- Native 1.0 m block with multiple shapes: (`Full`, `Slab`, `Stair`, `'Column`, `Torch`, `Basket`) with 3D orientations, custom meshes (3D hollow basket, torches), and passable non-solid collision for torches.
+- Comprehensive 244-block palette across 10 categories with multi-face textures, dual-layer moss overlays, organic tinting, and tuned dynamic fluid simulation (wave movement and finite spreading).
+- Interactive tactile feedback: subtle 8-particle debris bursts with terrain collision bouncing on block break, and 0.18s elastic scale bounce on block placement.
+- Auto-step is calibrated to 0.50 m (50 cm) for smooth future slab stepping, requiring jumping over full 1 m blocks.
+- Square gameplay Minimap HUD (North-up, compact XYZ coordinates, live player heading chevron) and full-screen interactive World Map (<kbd>M</kbd>).
+- Ambient Environment procedural color noise and climate-driven biome palettes (grass, foliage, water) with smooth 5-point cross-kernel boundary blending.
+- Dynamic FPS & VSync: configurable presentation modes (AutoNoVsync default, toggleable in Settings) and intelligent frame throttling (15 FPS unfocused, 30 FPS idle) with unconstrained active gameplay (250+ FPS).
+- Custom typography & drop shadows: universal font asset management (`CutePixel.ttf`) applied across all in-game HUDs, menus, and interfaces with drop shadow contrast styling.
+- Centered unified textured container interface: Creative palette & Personal storage with top mode toggle buttons, real-time search with hold-to-repeat backspace, Caps Lock support, and text drag/double-click selection, persistent tab memory, Shift-drag multi-slot transfers, and cinematic Depth-of-Field blur.
+- Dynamic adaptive UI scaling: responsive resolution-relative `UiScale` system (`AdaptiveUiPlugin`), automatically scaling HUD, minimap, hotbar, and inventory elements proportionally across all screen sizes and resolutions.
+- Restructured two-column menus with pixel-art buttons: Pause and Settings menus redesigned into clean two-column floating layouts using authentic textured container buttons (`button.png`, `small_button.png`).
+- Item identification tooltips: Item name display centered above the hotbar on slot selection with smooth fade-out, and responsive floating hover tooltips across all Creative and Personal inventory slots.
+
+---
+
 ## Current World Scale
 - The world is stored using 1.0 m voxels (identical to Minecraft blocks).
 - Full 1 m³ blocks form the base unit of the world; 0.5 m sub-voxels are completely removed.

@@ -2,22 +2,7 @@
 
 This is an attempt to develop an experimental voxel game engine built from scratch with Rust and Bevy.
 
-The project focuses on a fully editable procedural voxel world with 1.0 m³ blocks:
-
-- The world is stored using 1.0 m voxels (similar to Minecraft blocks).
-- Chunks have 16 × 16 × 16 voxels (16 m × 16 m × 16 m physical sections).
-- Native 1.0 m block with multiple shapes: (`Full`, `Slab`, `Stair`, `'Column`, `Torch`, `Basket`) with 3D orientations, custom meshes (3D hollow basket, torches), and passable non-solid collision for torches.
-- Comprehensive 244-block palette across 10 categories with multi-face textures, dual-layer moss overlays, organic tinting, and tuned dynamic fluid simulation (wave movement and finite spreading).
-- Interactive tactile feedback: subtle 8-particle debris bursts with terrain collision bouncing on block break, and 0.18s elastic scale bounce on block placement.
-- Auto-step is calibrated to 0.50 m (50 cm) for smooth future slab stepping, requiring jumping over full 1 m blocks.
-- Square gameplay Minimap HUD (North-up, compact XYZ coordinates, live player heading chevron) and full-screen interactive World Map (<kbd>M</kbd>).
-- Ambient Environment procedural color noise and climate-driven biome palettes (grass, foliage, water) with smooth 5-point cross-kernel boundary blending.
-- Dynamic FPS & VSync: configurable presentation modes (AutoNoVsync default, toggleable in Settings) and intelligent frame throttling (15 FPS unfocused, 30 FPS idle) with unconstrained active gameplay (250+ FPS).
-- Custom typography & drop shadows: universal font asset management (`CutePixel.ttf`) applied across all in-game HUDs, menus, and interfaces with drop shadow contrast styling.
-- Centered unified textured container interface: Creative palette & Personal storage with top mode toggle buttons, real-time search with hold-to-repeat backspace, Caps Lock support, and text drag/double-click selection, persistent tab memory, Shift-drag multi-slot transfers, and cinematic Depth-of-Field blur.
-- Dynamic adaptive UI scaling: responsive resolution-relative `UiScale` system (`AdaptiveUiPlugin`), automatically scaling HUD, minimap, hotbar, and inventory elements proportionally across all screen sizes and resolutions.
-- Restructured two-column menus with pixel-art buttons: Pause and Settings menus redesigned into clean two-column floating layouts using authentic textured container buttons (`button.png`, `small_button.png`).
-- Item identification tooltips: Item name display centered above the hotbar on slot selection with smooth fade-out, and responsive floating hover tooltips across all Creative and Personal inventory slots.
+The project focuses on a fully editable procedural voxel world with 1.0 m³ blocks.
 
 The long-term goal is to build a performant procedural voxel game with large-world streaming, runtime terrain editing, configurable generation, multiple gameplay modes, dynamic fluids and extensive development tooling.
 
@@ -50,19 +35,8 @@ More information about how the project works and future plans can be found at [p
     R                 Block shape (Tap: cycle sequentially / Hold: 4-slice circular radial menu)
     T                 Rotate block shape 90° clockwise
 
-    ESC               Pause Menu (Two-column layout, textured buttons; Settings: Screen Mode, Render Dist, Sim Dist, FOV, Fog, Bobbing, Fancy Sides, VSync, Dynamic FPS, Time Flow; Restart, Quit)
-    E                 Inventory (Unified 190×152 px textured container: Personal & Creative inventory with background blur)
-                      • Mode Buttons at top / Tab key: Toggle between Personal and Creative inventory (choice persists across close/reopen)
-                      • Personal Inventory: Dedicated title, 8×4 grid (32 slots) storage, hotbar mirror row, action buttons
-                      • Creative Palette: Dedicated title, 8×4 grid of all 244 available blocks across 10 categories (Testing, Fluids, Frost, Soils, Rocks, Woods, Aquatic, Lights, Decoration), pixel-art scroller, hotbar mirror row
-                      • Creative Search Bar: Real-time search & filtering with Caps Lock and Shift uppercase support, holding Backspace repeats character deletion, double-click selects all, click & drag selects text range, Ctrl+A select all
-                      • Shift + Click: Quick transfer between personal inventory and hotbar
-                      • Shift + LMB Drag: Rapid multi-slot transfer between hotbar and personal inventory / hotbar wipe in Creative
-                      • LMB Drag: Paint held block across multiple hotbar slots
-                      • Click outside / backdrop: Return held item to inventory / deselect
-                      • Right Click: Stamp block into slot / deselect on empty space
-                      • Q / Middle Click: Clear hovered hotbar slot / drop item
-                      • 1 - 8: Quick assign or swap slots
+    ESC               Pause Menu With Settings
+    E                 Personal & Creative inventory
     M                 World Map (Full-screen interactive map, pan & zoom, player tracking)
 
     F1                Toggle Inspector (bevy_inspector_egui)
