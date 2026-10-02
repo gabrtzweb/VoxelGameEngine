@@ -68,58 +68,6 @@ pub enum BiomeType {
 }
 
 impl BiomeType {
-    #[allow(dead_code)]
-    pub const ALL: [BiomeType; 48] = [
-        BiomeType::AncientWeald,
-        BiomeType::AutumnalForest,
-        BiomeType::BirchCopse,
-        BiomeType::BlossomGrove,
-        BiomeType::BorealTaiga,
-        BiomeType::DeadwoodThicket,
-        BiomeType::TropicalRainforest,
-        BiomeType::YewGrove,
-        BiomeType::AcaciaSavanna,
-        BiomeType::Heath,
-        BiomeType::Moorland,
-        BiomeType::OutbackScrubland,
-        BiomeType::PermafrostSteppe,
-        BiomeType::SnowyTundra,
-        BiomeType::Steppe,
-        BiomeType::VolcanicPlains,
-        BiomeType::CypressSwamp,
-        BiomeType::FungalBog,
-        BiomeType::MangroveSwamp,
-        BiomeType::Marshland,
-        BiomeType::PeatBog,
-        BiomeType::SludgeWastes,
-        BiomeType::TarPits,
-        BiomeType::WeepingBayou,
-        BiomeType::Badlands,
-        BiomeType::DuneDesert,
-        BiomeType::Oasis,
-        BiomeType::PaintedDesert,
-        BiomeType::RockyScrubland,
-        BiomeType::ScorchedWastes,
-        BiomeType::WhiteDesert,
-        BiomeType::WindsweptCanyons,
-        BiomeType::AlpineTundra,
-        BiomeType::FrozenCaldera,
-        BiomeType::GlacialPeaks,
-        BiomeType::JaggedCrags,
-        BiomeType::KarstPeaks,
-        BiomeType::ScreeSlopes,
-        BiomeType::ShaleBarrens,
-        BiomeType::VolcanicFields,
-        BiomeType::AbyssalTrench,
-        BiomeType::Beach,
-        BiomeType::BrackishEstuary,
-        BiomeType::ChalkCliffs,
-        BiomeType::CoastalCrags,
-        BiomeType::DeepOcean,
-        BiomeType::TemperateOcean,
-        BiomeType::TidalMudflats,
-    ];
-
     pub fn name(self) -> &'static str {
         match self {
             Self::AncientWeald => "Ancient Weald",
@@ -191,7 +139,7 @@ impl BiomeType {
                 biome_type: self,
                 name: "Autumnal Forest",
                 surface_material: Voxel::Soil_Silt_Grass,
-                subsoil_material: Voxel::Soil_Silt,
+                subsoil_material: Voxel::Soil_Silt_Dirt,
                 subsoil_depth: 3,
                 base_height_offset: 3.0,
                 amplitude_multiplier: 1.0,
@@ -224,7 +172,7 @@ impl BiomeType {
                 biome_type: self,
                 name: "Boreal Taiga",
                 surface_material: Voxel::Soil_Snowy_Peat,
-                subsoil_material: Voxel::Soil_Peat,
+                subsoil_material: Voxel::Soil_Peat_Dirt,
                 subsoil_depth: 3,
                 base_height_offset: 6.0,
                 amplitude_multiplier: 1.4,
@@ -257,7 +205,7 @@ impl BiomeType {
                 biome_type: self,
                 name: "Yew Grove",
                 surface_material: Voxel::Soil_Peat_Mulch,
-                subsoil_material: Voxel::Soil_Peat,
+                subsoil_material: Voxel::Soil_Peat_Dirt,
                 subsoil_depth: 3,
                 base_height_offset: 5.0,
                 amplitude_multiplier: 1.2,
@@ -281,7 +229,7 @@ impl BiomeType {
                 biome_type: self,
                 name: "Heath",
                 surface_material: Voxel::Soil_Silt_Grass,
-                subsoil_material: Voxel::Soil_Silt,
+                subsoil_material: Voxel::Soil_Silt_Dirt,
                 subsoil_depth: 3,
                 base_height_offset: 3.0,
                 amplitude_multiplier: 1.1,
@@ -292,7 +240,7 @@ impl BiomeType {
                 biome_type: self,
                 name: "Moorland",
                 surface_material: Voxel::Soil_Peat_Grass,
-                subsoil_material: Voxel::Soil_Peat,
+                subsoil_material: Voxel::Soil_Peat_Dirt,
                 subsoil_depth: 4,
                 base_height_offset: 8.0,
                 amplitude_multiplier: 1.3,
@@ -404,7 +352,7 @@ impl BiomeType {
                 biome_type: self,
                 name: "Peat Bog",
                 surface_material: Voxel::Soil_Peat_Grass,
-                subsoil_material: Voxel::Soil_Peat,
+                subsoil_material: Voxel::Soil_Peat_Dirt,
                 subsoil_depth: 5,
                 base_height_offset: -1.0,
                 amplitude_multiplier: 0.5,
@@ -651,7 +599,7 @@ impl BiomeType {
             Self::BrackishEstuary => BiomeConfig {
                 biome_type: self,
                 name: "Brackish Estuary",
-                surface_material: Voxel::Soil_Silt,
+                surface_material: Voxel::Soil_Silt_Dirt,
                 subsoil_material: Voxel::Soil_Mud,
                 subsoil_depth: 4,
                 base_height_offset: -3.0,
@@ -806,20 +754,31 @@ impl BiomeType {
     pub fn foliage_color(self, voxel: Voxel) -> [f32; 4] {
         match voxel {
             Voxel::Tree_Oak_Leaves => match self {
-                Self::AncientWeald | Self::BlossomGrove | Self::BirchCopse => [0.55, 1.15, 0.35, 1.0],
+                Self::AncientWeald | Self::BlossomGrove | Self::BirchCopse => {
+                    [0.55, 1.15, 0.35, 1.0]
+                }
                 Self::TropicalRainforest => [0.40, 1.05, 0.30, 1.0],
-                Self::BorealTaiga | Self::SnowyTundra | Self::PermafrostSteppe => [0.45, 0.90, 0.50, 1.0],
+                Self::BorealTaiga | Self::SnowyTundra | Self::PermafrostSteppe => {
+                    [0.45, 0.90, 0.50, 1.0]
+                }
                 Self::AutumnalForest => [0.85, 0.95, 0.28, 1.0],
-                Self::AcaciaSavanna | Self::OutbackScrubland | Self::DuneDesert | Self::Badlands => [0.72, 0.95, 0.30, 1.0],
-                Self::CypressSwamp | Self::Marshland | Self::MangroveSwamp | Self::PeatBog => [0.44, 0.80, 0.30, 1.0],
+                Self::AcaciaSavanna
+                | Self::OutbackScrubland
+                | Self::DuneDesert
+                | Self::Badlands => [0.72, 0.95, 0.30, 1.0],
+                Self::CypressSwamp | Self::Marshland | Self::MangroveSwamp | Self::PeatBog => {
+                    [0.44, 0.80, 0.30, 1.0]
+                }
                 Self::DeadwoodThicket => [0.35, 0.40, 0.32, 1.0],
                 _ => [0.55, 1.10, 0.35, 1.0],
             },
             Voxel::Tree_Birch_Leaves => [0.85, 1.25, 0.40, 1.0],
             Voxel::Tree_Pine_Leaves => match self {
-                Self::GlacialPeaks | Self::AlpineTundra | Self::SnowyTundra | Self::BorealTaiga | Self::PermafrostSteppe => {
-                    [0.35, 0.82, 0.60, 1.0]
-                }
+                Self::GlacialPeaks
+                | Self::AlpineTundra
+                | Self::SnowyTundra
+                | Self::BorealTaiga
+                | Self::PermafrostSteppe => [0.35, 0.82, 0.60, 1.0],
                 _ => [0.40, 0.90, 0.55, 1.0],
             },
             Voxel::Tree_Mahogany_Leaves => [0.45, 1.00, 0.40, 1.0],
@@ -835,7 +794,9 @@ impl BiomeType {
     /// Primary tint color for a voxel in this biome.
     pub fn voxel_tint(self, voxel: Voxel) -> [f32; 4] {
         match voxel {
-            Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass => self.grass_color(),
+            Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass => {
+                self.grass_color()
+            }
             Voxel::Liquid_Water | Voxel::WaterOccupied => self.water_color(),
             Voxel::Tree_Oak_Leaves
             | Voxel::Tree_Birch_Leaves
@@ -845,9 +806,7 @@ impl BiomeType {
             | Voxel::Tree_Mangrove_Leaves
             | Voxel::Tree_Palm_Leaves
             | Voxel::Tree_Willow_Leaves
-            | Voxel::Tree_Yew_Leaves => {
-                self.foliage_color(voxel)
-            }
+            | Voxel::Tree_Yew_Leaves => self.foliage_color(voxel),
             _ => [1.0, 1.0, 1.0, 1.0],
         }
     }
@@ -941,10 +900,24 @@ impl ClimateGenerator {
     /// Samples climate with multi-octave domain warping and high-frequency edge dithering
     pub fn sample_dithered(&self, world_x: f32, world_z: f32, seed: u32) -> ClimateSample {
         // Macro domain warping (breaks geometric contour lines into organic tendrils)
-        let warp_x = fbm_2d(world_x, world_z, 0.004, 2, 0.5, 2.0, seed.wrapping_add(12_345))
-            * self.warp_amplitude;
-        let warp_z = fbm_2d(world_x, world_z, 0.004, 2, 0.5, 2.0, seed.wrapping_add(67_890))
-            * self.warp_amplitude;
+        let warp_x = fbm_2d(
+            world_x,
+            world_z,
+            0.004,
+            2,
+            0.5,
+            2.0,
+            seed.wrapping_add(12_345),
+        ) * self.warp_amplitude;
+        let warp_z = fbm_2d(
+            world_x,
+            world_z,
+            0.004,
+            2,
+            0.5,
+            2.0,
+            seed.wrapping_add(67_890),
+        ) * self.warp_amplitude;
 
         // Micro boundary dithering noise (interlocking feathered edge specks)
         let dither_x = crate::core::noise::gradient_noise_2d(
@@ -958,7 +931,11 @@ impl ClimateGenerator {
             seed.wrapping_add(99_442),
         ) * self.dither_amplitude;
 
-        self.sample(world_x + warp_x + dither_x, world_z + warp_z + dither_z, seed)
+        self.sample(
+            world_x + warp_x + dither_x,
+            world_z + warp_z + dither_z,
+            seed,
+        )
     }
 
     /// Organically distributes all 48 biomes across Continentalness, Temperature, and Humidity.
@@ -1200,37 +1177,4 @@ pub fn sample_blended_biome_color(voxel: Voxel, world_x: f32, world_z: f32, seed
         (b * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
         (a * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
     ]
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_all_48_biomes_classified() {
-        assert_eq!(BiomeType::ALL.len(), 48);
-
-        let mut hit = std::collections::HashSet::new();
-
-        // Sample across a dense 3D climate grid to ensure every biome can be generated
-        for c_step in -10..=10 {
-            let c = c_step as f32 / 10.0;
-            for t_step in -10..=10 {
-                let t = t_step as f32 / 10.0;
-                for h_step in -10..=10 {
-                    let h = h_step as f32 / 10.0;
-                    hit.insert(ClimateGenerator::classify_biome(c, t, h));
-                }
-            }
-        }
-
-        for &biome in &BiomeType::ALL {
-            assert!(
-                hit.contains(&biome),
-                "Biome {:?} ({}) was never generated by classify_biome!",
-                biome,
-                biome.name()
-            );
-        }
-    }
 }

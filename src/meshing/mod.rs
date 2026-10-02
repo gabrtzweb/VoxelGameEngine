@@ -10,12 +10,12 @@ pub use async_mesher::ChunkMeshingTask;
 #[allow(unused_imports)]
 pub use culling::{CaveCullingState, ChunkCoordinate, SubterraneanChunkMesh};
 #[allow(unused_imports)]
-pub use lod::{ChunkLod, build_lod_mesh, classify_chunk_lod};
+pub use lod::{ChunkLod, build_lod_mesh};
 #[allow(unused_imports)]
 pub use pipeline::{
     ChunkMaterial, ChunkMeshRegistry, LodMeshRegistry, OpaqueChunkMaterial, OpaqueVoxelMaterial,
-    TransparentChunkMaterial, TransparentVoxelMaterial, VoxelMaterial, apply_lod_mesh,
-    remove_chunk_render, remove_lod_render, sync_chunk_render,
+    TransparentChunkMaterial, TransparentVoxelMaterial, apply_lod_mesh, remove_chunk_render,
+    remove_lod_render, sync_chunk_render,
 };
 pub use textures::VoxelTextureRegistry;
 

@@ -364,7 +364,7 @@ pub fn generate_3d_cloud_mesh(
             let run_start_cx = cx;
             let mut run_end_cx = cx;
 
-            while run_end_cx + 1 <= grid_radius {
+            while run_end_cx < grid_radius {
                 let next_cx = run_end_cx + 1;
                 let next_wx = next_cx as f32 * cell_size;
                 let next_dist_sq = next_wx * next_wx + wz * wz;

@@ -422,12 +422,6 @@ impl Chunk {
         }
     }
 
-    #[inline]
-    #[allow(dead_code)]
-    pub fn fluid_levels(&self) -> &HashMap<usize, u8> {
-        &self.fluid_levels
-    }
-
     pub fn set_extra_slab(&mut self, x: usize, y: usize, z: usize, slab: Option<(Voxel, u8)>) {
         let index = Self::index(x, y, z);
         if let Some(s) = slab {
@@ -440,12 +434,6 @@ impl Chunk {
     #[inline]
     pub fn has_extra_slabs(&self) -> bool {
         !self.extra_slabs.is_empty()
-    }
-
-    #[inline]
-    #[allow(dead_code)]
-    pub fn extra_slabs(&self) -> &HashMap<usize, (Voxel, u8)> {
-        &self.extra_slabs
     }
 
     #[inline]

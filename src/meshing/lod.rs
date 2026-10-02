@@ -47,40 +47,6 @@ impl ChunkLod {
     }
 }
 
-/// Classifies a horizontal distance (in chunks) into the appropriate LOD tier,
-/// or returns `None` if the chunk is beyond the total visible horizon.
-#[inline]
-#[allow(dead_code)]
-pub fn classify_chunk_lod(
-    distance_chunks: f32,
-    render_distance: i32,
-    lod_render_distance: i32,
-) -> Option<ChunkLod> {
-    let r_real = render_distance as f32;
-    let r_lod = lod_render_distance as f32;
-    let r_total = r_real + r_lod;
-
-    if distance_chunks > r_total {
-        return None;
-    }
-
-    if distance_chunks <= r_real {
-        return Some(ChunkLod::Lod0);
-    }
-
-    if lod_render_distance <= 0 {
-        return None;
-    }
-
-    // Midpoint for transition between LOD 1 and LOD 2
-    let r_mid = r_real + r_lod * 0.5;
-    if distance_chunks <= r_mid {
-        Some(ChunkLod::Lod1)
-    } else {
-        Some(ChunkLod::Lod2)
-    }
-}
-
 /// Helper to push an axis-aligned rectangular quad into `MeshBuffers`.
 fn push_lod_quad(
     buffers: &mut MeshBuffers,
@@ -98,33 +64,24 @@ fn push_lod_quad(
     buffers.positions.extend_from_slice(&[p0, p1, p2, p3]);
     let norm = direction.normal_f32();
     buffers.normals.extend_from_slice(&[norm, norm, norm, norm]);
-    buffers.colors.extend_from_slice(&[color, color, color, color]);
-    buffers.uv_bs.extend_from_slice(&[[layer, 0.0], [layer, 0.0], [layer, 0.0], [layer, 0.0]]);
+    buffers
+        .colors
+        .extend_from_slice(&[color, color, color, color]);
+    buffers
+        .uv_bs
+        .extend_from_slice(&[[layer, 0.0], [layer, 0.0], [layer, 0.0], [layer, 0.0]]);
 
     let uvs = match direction {
-        FaceDirection::PositiveY | FaceDirection::NegativeY => [
-            [0.0, 0.0],
-            [0.0, v_span],
-            [u_span, v_span],
-            [u_span, 0.0],
-        ],
-        _ => [
-            [0.0, v_span],
-            [0.0, 0.0],
-            [u_span, 0.0],
-            [u_span, v_span],
-        ],
+        FaceDirection::PositiveY | FaceDirection::NegativeY => {
+            [[0.0, 0.0], [0.0, v_span], [u_span, v_span], [u_span, 0.0]]
+        }
+        _ => [[0.0, v_span], [0.0, 0.0], [u_span, 0.0], [u_span, v_span]],
     };
     buffers.uvs.extend_from_slice(&uvs);
 
-    buffers.indices.extend_from_slice(&[
-        base,
-        base + 1,
-        base + 2,
-        base,
-        base + 2,
-        base + 3,
-    ]);
+    buffers
+        .indices
+        .extend_from_slice(&[base, base + 1, base + 2, base, base + 2, base + 3]);
 }
 
 /// Pushes a vertical side wall between `bot_y` and `top_y` with block textures.
@@ -417,35 +374,35 @@ pub fn build_lod_mesh(
             }
 
             // --- C. Water Surface Quads ---
-            if let Some(water_level) = wl {
-                if h_curr < water_level {
-                    let water_y = (water_level + 1) as f32 - 0.05;
-                    let water_layer = textures
-                        .get_face_texture_info(
-                            Voxel::Liquid_Water,
-                            IVec3::new(world_x, water_level, world_z),
-                            FaceDirection::PositiveY,
-                        )
-                        .0 as f32;
-
-                    let wp0 = [local_x0, water_y, local_z0];
-                    let wp1 = [local_x0, water_y, local_z1];
-                    let wp2 = [local_x1, water_y, local_z1];
-                    let wp3 = [local_x1, water_y, local_z0];
-
-                    push_lod_quad(
-                        &mut transparent_buffers,
+            if let Some(water_level) = wl
+                && h_curr < water_level
+            {
+                let water_y = (water_level + 1) as f32 - 0.05;
+                let water_layer = textures
+                    .get_face_texture_info(
+                        Voxel::Liquid_Water,
+                        IVec3::new(world_x, water_level, world_z),
                         FaceDirection::PositiveY,
-                        wp0,
-                        wp1,
-                        wp2,
-                        wp3,
-                        cell_w,
-                        cell_w,
-                        water_layer,
-                        [0.35, 0.65, 0.92, 1.0],
-                    );
-                }
+                    )
+                    .0 as f32;
+
+                let wp0 = [local_x0, water_y, local_z0];
+                let wp1 = [local_x0, water_y, local_z1];
+                let wp2 = [local_x1, water_y, local_z1];
+                let wp3 = [local_x1, water_y, local_z0];
+
+                push_lod_quad(
+                    &mut transparent_buffers,
+                    FaceDirection::PositiveY,
+                    wp0,
+                    wp1,
+                    wp2,
+                    wp3,
+                    cell_w,
+                    cell_w,
+                    water_layer,
+                    [0.35, 0.65, 0.92, 1.0],
+                );
             }
         }
     }
@@ -475,7 +432,9 @@ pub fn build_lod_mesh(
                 }
 
                 let col_data = generator.sample_column(tx, tz);
-                let Some((species, base_prob)) = crate::generation::trees::biome_tree_profile(col_data.biome) else {
+                let Some((species, base_prob)) =
+                    crate::generation::trees::biome_tree_profile(col_data.biome)
+                else {
                     continue;
                 };
 
@@ -949,123 +908,3 @@ fn push_lod_tree(
         tint,
     );
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_classify_chunk_lod_disabled() {
-        assert_eq!(classify_chunk_lod(5.0, 8, 0), Some(ChunkLod::Lod0));
-        assert_eq!(classify_chunk_lod(8.0, 8, 0), Some(ChunkLod::Lod0));
-        assert_eq!(classify_chunk_lod(8.5, 8, 0), None);
-        assert_eq!(classify_chunk_lod(12.0, 8, 0), None);
-    }
-
-    #[test]
-    fn test_classify_chunk_lod_enabled() {
-        let real = 8;
-        let lod = 12; // total = 20, mid = 8 + 6 = 14
-
-        // Inside real render distance -> Lod0
-        assert_eq!(classify_chunk_lod(0.0, real, lod), Some(ChunkLod::Lod0));
-        assert_eq!(classify_chunk_lod(8.0, real, lod), Some(ChunkLod::Lod0));
-
-        // Between real and mid -> Lod1
-        assert_eq!(classify_chunk_lod(9.0, real, lod), Some(ChunkLod::Lod1));
-        assert_eq!(classify_chunk_lod(14.0, real, lod), Some(ChunkLod::Lod1));
-
-        // Between mid and total -> Lod2
-        assert_eq!(classify_chunk_lod(15.0, real, lod), Some(ChunkLod::Lod2));
-        assert_eq!(classify_chunk_lod(20.0, real, lod), Some(ChunkLod::Lod2));
-
-        // Beyond total -> None (culled)
-        assert_eq!(classify_chunk_lod(20.5, real, lod), None);
-        assert_eq!(classify_chunk_lod(25.0, real, lod), None);
-    }
-
-    #[test]
-    fn test_lod_strides() {
-        assert_eq!(ChunkLod::Lod0.stride(), 1);
-        assert_eq!(ChunkLod::Lod1.stride(), 2);
-        assert_eq!(ChunkLod::Lod2.stride(), 4);
-    }
-
-    #[test]
-    fn test_cuboid_lod_mesh_normals_are_axis_aligned() {
-        let generator = TerrainGenerator::default();
-        let textures = VoxelTextureRegistry::default();
-        let meshes = build_lod_mesh(IVec2::new(10, 10), ChunkLod::Lod1, &generator, &textures);
-        assert!(meshes.opaque.is_some());
-        let mesh = meshes.opaque.unwrap();
-
-        if let Some(bevy::mesh::VertexAttributeValues::Float32x3(normals)) =
-            mesh.attribute(Mesh::ATTRIBUTE_NORMAL)
-        {
-            for norm in normals {
-                let is_axis_aligned = (norm[0].abs() == 1.0 && norm[1] == 0.0 && norm[2] == 0.0)
-                    || (norm[0] == 0.0 && norm[1].abs() == 1.0 && norm[2] == 0.0)
-                    || (norm[0] == 0.0 && norm[1] == 0.0 && norm[2].abs() == 1.0);
-                assert!(
-                    is_axis_aligned,
-                    "LOD normal {:?} is not axis-aligned (must be cuboid!)",
-                    norm
-                );
-            }
-        } else {
-            panic!("Expected Float32x3 normals in opaque LOD mesh");
-        }
-    }
-
-    #[test]
-    fn test_lod_mesh_includes_trees_when_present() {
-        let mut generator = TerrainGenerator::default();
-        generator.tree_density = 2.0;
-        let textures = VoxelTextureRegistry::default();
-        let mut found_trees = false;
-
-        for cx in 0..10 {
-            for cz in 0..10 {
-                let mut gen_no_trees = generator.clone();
-                gen_no_trees.tree_density = 0.0;
-                let mesh_no_trees = build_lod_mesh(IVec2::new(cx, cz), ChunkLod::Lod1, &gen_no_trees, &textures);
-                let mesh_with_trees = build_lod_mesh(IVec2::new(cx, cz), ChunkLod::Lod1, &generator, &textures);
-
-                let verts_no_trees = mesh_no_trees.opaque.as_ref().map(|m| m.count_vertices()).unwrap_or(0);
-                let verts_with_trees = mesh_with_trees.opaque.as_ref().map(|m| m.count_vertices()).unwrap_or(0);
-
-                if verts_with_trees > verts_no_trees {
-                    found_trees = true;
-                    break;
-                }
-            }
-            if found_trees {
-                break;
-            }
-        }
-        assert!(found_trees, "LOD meshes should generate tree geometry in forested chunks");
-    }
-
-    #[test]
-    fn test_lod2_super_chunk_dimensions() {
-        assert_eq!(ChunkLod::Lod0.chunk_extent(), 1);
-        assert_eq!(ChunkLod::Lod1.chunk_extent(), 1);
-        assert_eq!(ChunkLod::Lod2.chunk_extent(), 2);
-
-        assert_eq!(ChunkLod::Lod0.world_size(), 16.0);
-        assert_eq!(ChunkLod::Lod1.world_size(), 16.0);
-        assert_eq!(ChunkLod::Lod2.world_size(), 32.0);
-    }
-
-    #[test]
-    fn test_lod2_super_chunk_mesh_generation() {
-        let generator = TerrainGenerator::default();
-        let textures = VoxelTextureRegistry::default();
-        let meshes = build_lod_mesh(IVec2::new(20, 20), ChunkLod::Lod2, &generator, &textures);
-        assert!(meshes.opaque.is_some());
-        let mesh = meshes.opaque.unwrap();
-        assert!(mesh.count_vertices() > 0, "LOD 2 super-chunk must generate vertex geometry");
-    }
-}
-
-

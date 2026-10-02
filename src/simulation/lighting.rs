@@ -66,7 +66,8 @@ pub fn sync_chunk_lights(
                     let world_voxel = chunk_origin + IVec3::new(x as i32, y as i32, z as i32);
                     torch_coords.push(world_voxel);
                 } else if voxel == Voxel::Liquid_Lava || voxel == Voxel::Liquid_Molten {
-                    let world_pos = (chunk_origin + IVec3::new(x as i32, y as i32, z as i32)).as_vec3()
+                    let world_pos = (chunk_origin + IVec3::new(x as i32, y as i32, z as i32))
+                        .as_vec3()
                         + Vec3::splat(0.5);
                     lava_pos_sum += world_pos;
                     lava_count += 1;
@@ -145,7 +146,10 @@ fn sync_block_light(
     block_coord: IVec3,
     registry: &mut VoxelLightRegistry,
 ) {
-    if let Some(voxel) = world.get_voxel(block_coord).filter(|v| v.is_point_light_fixture()) {
+    if let Some(voxel) = world
+        .get_voxel(block_coord)
+        .filter(|v| v.is_point_light_fixture())
+    {
         if let Some(&existing) = registry.entries.get(&block_coord) {
             if existing.voxel == voxel {
                 return;

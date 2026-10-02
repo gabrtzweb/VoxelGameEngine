@@ -1,9 +1,9 @@
 use bevy::platform::collections::HashMap;
 
 use bevy::{
+    camera::primitives::Aabb,
     pbr::{ExtendedMaterial, MaterialExtension},
     prelude::*,
-    camera::primitives::Aabb,
     render::render_resource::*,
     shader::ShaderRef,
 };
@@ -17,8 +17,6 @@ use crate::world::{Chunk, VoxelWorld};
 
 pub const OPAQUE_VOXEL_SHADER_PATH: &str = "shaders/voxel_opaque.wgsl";
 pub const TRANSPARENT_VOXEL_SHADER_PATH: &str = "shaders/voxel_transparent.wgsl";
-#[allow(dead_code)]
-pub const VOXEL_SHADER_PATH: &str = OPAQUE_VOXEL_SHADER_PATH;
 
 #[derive(Asset, AsBindGroup, Reflect, Debug, Clone)]
 pub struct OpaqueVoxelMaterial {
@@ -79,12 +77,6 @@ impl MaterialExtension for TransparentVoxelMaterial {
 
 pub type TransparentChunkMaterial = ExtendedMaterial<StandardMaterial, TransparentVoxelMaterial>;
 
-// Backwards compatibility alias
-#[allow(dead_code)]
-pub type VoxelMaterial = OpaqueChunkMaterial;
-#[allow(dead_code)]
-pub type VoxelMaterialExtension = OpaqueVoxelMaterial;
-
 pub struct ChunkRenderPart {
     pub entity: Entity,
     pub mesh_handle: Handle<Mesh>,
@@ -132,11 +124,6 @@ impl ChunkMeshRegistry {
         self.entries.len()
     }
 
-    #[allow(dead_code)]
-    pub fn is_empty(&self) -> bool {
-        self.entries.is_empty()
-    }
-
     pub fn total_vertices(&self) -> usize {
         self.entries
             .values()
@@ -159,13 +146,6 @@ impl ChunkMeshRegistry {
         self.entries.get(coordinate).map(|d| d.visibility_mask)
     }
 
-    #[allow(dead_code)]
-    pub fn get_visibility_mask(&self, coordinate: &IVec3) -> u64 {
-        self.entries
-            .get(coordinate)
-            .map_or(0, |d| d.visibility_mask)
-    }
-
     #[inline]
     pub fn has_column_mesh(&self, column: IVec2) -> bool {
         self.columns.get(&column).is_some_and(|&count| count > 0)
@@ -173,11 +153,6 @@ impl ChunkMeshRegistry {
 
     pub fn iter_coordinates(&self) -> impl Iterator<Item = &IVec3> {
         self.entries.keys()
-    }
-
-    #[allow(dead_code)]
-    pub fn iter_entries(&self) -> impl Iterator<Item = (&IVec3, &ChunkRenderData)> {
-        self.entries.iter()
     }
 }
 
@@ -191,11 +166,6 @@ pub struct LodMeshRegistry {
 impl LodMeshRegistry {
     pub fn len(&self) -> usize {
         self.entries.len()
-    }
-
-    #[allow(dead_code)]
-    pub fn is_empty(&self) -> bool {
-        self.entries.is_empty()
     }
 
     pub fn total_vertices(&self) -> usize {
@@ -291,7 +261,9 @@ pub fn sync_chunk_render(
         return;
     }
 
-    let is_subterranean = world.get_chunk(coordinate).is_some_and(Chunk::is_subterranean);
+    let is_subterranean = world
+        .get_chunk(coordinate)
+        .is_some_and(Chunk::is_subterranean);
     let rebuilt = ChunkMesher::build_meshes(world, coordinate, &material.texture_registry);
     apply_chunk_mesh(
         commands,
@@ -331,10 +303,8 @@ pub fn apply_chunk_mesh(
         was_empty = entry.is_empty();
         entry.visibility_mask = rebuilt.visibility_mask;
 
-        let chunk_aabb = Aabb::from_min_max(
-            Vec3::ZERO,
-            Vec3::splat(crate::world::CHUNK_SIZE as f32),
-        );
+        let chunk_aabb =
+            Aabb::from_min_max(Vec3::ZERO, Vec3::splat(crate::world::CHUNK_SIZE as f32));
 
         sync_render_part(
             commands,
@@ -471,12 +441,12 @@ pub fn remove_chunk_render(
     };
 
     let column = IVec2::new(coordinate.x, coordinate.z);
-    if !render_data.is_empty() {
-        if let Some(count) = registry.columns.get_mut(&column) {
-            *count = count.saturating_sub(1);
-            if *count == 0 {
-                registry.columns.remove(&column);
-            }
+    if !render_data.is_empty()
+        && let Some(count) = registry.columns.get_mut(&column)
+    {
+        *count = count.saturating_sub(1);
+        if *count == 0 {
+            registry.columns.remove(&column);
         }
     }
 

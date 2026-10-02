@@ -49,10 +49,7 @@ pub fn update_atmosphere(
         fog.directional_light_exponent = 4.0;
         exposure.ev100 = sample_exposure(t);
     } else {
-        let biome_atmo = atmo_state
-            .as_ref()
-            .map(|s| s.current)
-            .unwrap_or_default();
+        let biome_atmo = atmo_state.as_ref().map(|s| s.current).unwrap_or_default();
 
         let base_sky = sample_sky_color(t);
         let base_ambient = sample_ambient_color(t);
@@ -268,20 +265,27 @@ impl BiomeAtmosphere {
         let f = factor.clamp(0.0, 1.0);
         BiomeAtmosphere {
             fog_color_filter: LinearRgba::new(
-                self.fog_color_filter.red + (target.fog_color_filter.red - self.fog_color_filter.red) * f,
-                self.fog_color_filter.green + (target.fog_color_filter.green - self.fog_color_filter.green) * f,
-                self.fog_color_filter.blue + (target.fog_color_filter.blue - self.fog_color_filter.blue) * f,
+                self.fog_color_filter.red
+                    + (target.fog_color_filter.red - self.fog_color_filter.red) * f,
+                self.fog_color_filter.green
+                    + (target.fog_color_filter.green - self.fog_color_filter.green) * f,
+                self.fog_color_filter.blue
+                    + (target.fog_color_filter.blue - self.fog_color_filter.blue) * f,
                 1.0,
             ),
             fog_distance_multiplier: self.fog_distance_multiplier
                 + (target.fog_distance_multiplier - self.fog_distance_multiplier) * f,
             ambient_color_filter: LinearRgba::new(
-                self.ambient_color_filter.red + (target.ambient_color_filter.red - self.ambient_color_filter.red) * f,
-                self.ambient_color_filter.green + (target.ambient_color_filter.green - self.ambient_color_filter.green) * f,
-                self.ambient_color_filter.blue + (target.ambient_color_filter.blue - self.ambient_color_filter.blue) * f,
+                self.ambient_color_filter.red
+                    + (target.ambient_color_filter.red - self.ambient_color_filter.red) * f,
+                self.ambient_color_filter.green
+                    + (target.ambient_color_filter.green - self.ambient_color_filter.green) * f,
+                self.ambient_color_filter.blue
+                    + (target.ambient_color_filter.blue - self.ambient_color_filter.blue) * f,
                 1.0,
             ),
-            exposure_offset: self.exposure_offset + (target.exposure_offset - self.exposure_offset) * f,
+            exposure_offset: self.exposure_offset
+                + (target.exposure_offset - self.exposure_offset) * f,
         }
     }
 }

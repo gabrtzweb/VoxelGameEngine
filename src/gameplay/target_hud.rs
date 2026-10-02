@@ -35,11 +35,13 @@ impl Plugin for TargetHudPlugin {
     }
 }
 
+pub type TargetBlockInfo = (Voxel, Option<(BlockShape, u8)>, Option<Voxel>);
+
 /// Resolves the canonical voxel and detected shape for a given voxel target.
 pub fn resolve_target_block_info(
     world: &impl VoxelAccess,
     target: VoxelTarget,
-) -> Option<(Voxel, Option<(BlockShape, u8)>, Option<Voxel>)> {
+) -> Option<TargetBlockInfo> {
     let raw_voxel = world.get_voxel(target.hit_voxel)?;
     if raw_voxel.is_empty() {
         return None;

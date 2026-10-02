@@ -1143,17 +1143,18 @@ fn handle_creative_search_input(
     }
 
     // Drag selection while holding left mouse
-    if left_pressed && search_query.is_focused {
-        if let (Some(anchor), Some(pos)) = (input_state.drag_start_cursor, cursor_pos) {
-            let click_x = (pos.x - text_start_x).max(0.0);
-            let char_width = 8.5 * scale;
-            let cur_idx = ((click_x / char_width).round() as usize).min(search_query.query.len());
-            if cur_idx != anchor && !search_query.query.is_empty() {
-                let start = anchor.min(cur_idx);
-                let end = anchor.max(cur_idx);
-                search_query.selection = Some((start, end));
-                search_query.cursor = cur_idx;
-            }
+    if left_pressed
+        && search_query.is_focused
+        && let (Some(anchor), Some(pos)) = (input_state.drag_start_cursor, cursor_pos)
+    {
+        let click_x = (pos.x - text_start_x).max(0.0);
+        let char_width = 8.5 * scale;
+        let cur_idx = ((click_x / char_width).round() as usize).min(search_query.query.len());
+        if cur_idx != anchor && !search_query.query.is_empty() {
+            let start = anchor.min(cur_idx);
+            let end = anchor.max(cur_idx);
+            search_query.selection = Some((start, end));
+            search_query.cursor = cur_idx;
         }
     }
 
@@ -1168,10 +1169,10 @@ fn handle_creative_search_input(
     } else {
         BorderColor::all(Color::NONE)
     };
-    if let Some((_, mut border, _)) = search_bar_query.iter_mut().next() {
-        if *border != target_border {
-            *border = target_border;
-        }
+    if let Some((_, mut border, _)) = search_bar_query.iter_mut().next()
+        && *border != target_border
+    {
+        *border = target_border;
     }
 
     let target_bg = if search_query.is_focused
@@ -1182,10 +1183,10 @@ fn handle_creative_search_input(
     } else {
         BackgroundColor(Color::NONE)
     };
-    if let Some((_, _, mut bg)) = search_bar_query.iter_mut().next() {
-        if *bg != target_bg {
-            *bg = target_bg;
-        }
+    if let Some((_, _, mut bg)) = search_bar_query.iter_mut().next()
+        && *bg != target_bg
+    {
+        *bg = target_bg;
     }
 
     let mut changed = false;
@@ -1891,22 +1892,22 @@ fn update_inventory_tooltip(
 
     // 1. Check palette grid slots
     for (interaction, slot) in &palette_query {
-        if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
-            if let Some(v) = slot.voxel {
-                hovered_voxel = Some(v);
-                break;
-            }
+        if (*interaction == Interaction::Hovered || *interaction == Interaction::Pressed)
+            && let Some(v) = slot.voxel
+        {
+            hovered_voxel = Some(v);
+            break;
         }
     }
 
     // 2. Check hotbar row slots in the inventory
     if hovered_voxel.is_none() {
         for (interaction, slot) in &hotbar_slot_query {
-            if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
-                if let Some(v) = hotbar.slots[slot.index] {
-                    hovered_voxel = Some(v);
-                    break;
-                }
+            if (*interaction == Interaction::Hovered || *interaction == Interaction::Pressed)
+                && let Some(v) = hotbar.slots[slot.index]
+            {
+                hovered_voxel = Some(v);
+                break;
             }
         }
     }

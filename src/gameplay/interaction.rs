@@ -247,7 +247,8 @@ fn edit_voxels(
             vec![target.hit_voxel]
         } else if place_voxel_type.is_torch() {
             // Torch placement: check orientation and support
-            let supporting_solid = existing_voxel.is_some_and(|v| !v.is_empty() && !v.is_fluid() && !v.is_torch());
+            let supporting_solid =
+                existing_voxel.is_some_and(|v| !v.is_empty() && !v.is_fluid() && !v.is_torch());
             if !supporting_solid {
                 Vec::new()
             } else if target.face_normal == -IVec3::Y {
@@ -255,11 +256,11 @@ fn edit_voxels(
                 Vec::new()
             } else {
                 let torch_orient = match target.face_normal {
-                    IVec3::Y => 0,      // Floor standing
-                    IVec3::Z => 1,      // Wall North (-Z)
-                    IVec3::NEG_Z => 2,  // Wall South (+Z)
-                    IVec3::X => 3,      // Wall West (-X)
-                    IVec3::NEG_X => 4,  // Wall East (+X)
+                    IVec3::Y => 0,     // Floor standing
+                    IVec3::Z => 1,     // Wall North (-Z)
+                    IVec3::NEG_Z => 2, // Wall South (+Z)
+                    IVec3::X => 3,     // Wall West (-X)
+                    IVec3::NEG_X => 4, // Wall East (+X)
                     _ => 0,
                 };
                 let placed = place_block(

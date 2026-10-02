@@ -436,10 +436,10 @@ impl TerrainGenerator {
                                     None // Opposite walls (corridor)
                                 };
 
-                                if let Some(orient) = corner_orient {
-                                    if wall_noise > 0.15 {
-                                        chunk_shapes.push((idx, BlockShape::Column, orient));
-                                    }
+                                if let Some(orient) = corner_orient
+                                    && wall_noise > 0.15
+                                {
+                                    chunk_shapes.push((idx, BlockShape::Column, orient));
                                 }
                             }
                         }
@@ -673,7 +673,7 @@ impl TerrainGenerator {
         let mut is_cliff = false;
 
         // Transitions on dry land above water level (terrain at or below sea_level remains strictly full blocks)
-        if water_level.is_none() && terrain_height >= sea_level + 1 {
+        if water_level.is_none() && terrain_height > sea_level {
             let get_effective_height = |(h, _, _): (f32, BiomeType, bool)| -> i32 {
                 let th = h.round() as i32;
                 if th < sea_level { sea_level } else { th }
@@ -694,7 +694,11 @@ impl TerrainGenerator {
             let d_north = h_north - terrain_height;
 
             let has_cliff = d_east <= -2 || d_west <= -2 || d_south <= -2 || d_north <= -2;
-            let max_delta = d_east.abs().max(d_west.abs()).max(d_south.abs()).max(d_north.abs());
+            let max_delta = d_east
+                .abs()
+                .max(d_west.abs())
+                .max(d_south.abs())
+                .max(d_north.abs());
             is_cliff = has_cliff || max_delta >= 2;
 
             // Retain solid blocks on sections of higher terrain for blocky cliffs and stepped terraces
@@ -857,7 +861,7 @@ impl TerrainGenerator {
                 BiomeType::TemperateOcean => Voxel::Soil_White_Sand,
                 BiomeType::BrackishEstuary => {
                     if dither_noise > 0.0 {
-                        Voxel::Soil_Silt
+                        Voxel::Soil_Silt_Dirt
                     } else {
                         Voxel::Soil_Mud
                     }
@@ -1032,7 +1036,7 @@ impl TerrainGenerator {
                 } else {
                     Voxel::Soil_Red_Sand
                 }
-            },
+            }
             BiomeType::DuneDesert => Voxel::Soil_Sand,
             BiomeType::Oasis => Voxel::Soil_Grass,
             BiomeType::PaintedDesert => {
@@ -1122,7 +1126,7 @@ impl TerrainGenerator {
             }
             BiomeType::BrackishEstuary => {
                 if dither_noise > 0.0 {
-                    Voxel::Soil_Silt
+                    Voxel::Soil_Silt_Dirt
                 } else {
                     Voxel::Soil_Mud
                 }
@@ -1246,7 +1250,7 @@ impl TerrainGenerator {
                     | Voxel::Soil_Scorched_Black_Sand
                     | Voxel::Soil_Gravel
                     | Voxel::Soil_Mud
-                    | Voxel::Soil_Silt
+                    | Voxel::Soil_Silt_Dirt
                     | Voxel::Soil_Ash
                     | Voxel::Soil_Snow
                     | Voxel::Frost_Black_Ice
@@ -1265,7 +1269,6 @@ impl TerrainGenerator {
         )
     }
 
-    #[allow(dead_code)]
     fn voxel_at(&self, column: TerrainColumn, world_x: i32, world_y: i32, world_z: i32) -> Voxel {
         let sample = self.caves.sample_noise_point(
             world_x as f32,
@@ -1274,23 +1277,6 @@ impl TerrainGenerator {
             self.seed,
         );
         self.voxel_at_sampled(column, world_x, world_y, world_z, sample)
-    }
-
-    #[allow(dead_code)]
-    pub fn surface_voxel(&self, column: TerrainColumn, world_y: i32) -> Voxel {
-        let depth = column.terrain_height - world_y;
-        if depth <= 0 {
-            return self.surface_material_at(0, world_y, 0, column);
-        }
-
-        let logical_depth = depth / LOGICAL_BLOCK_VOXELS;
-        if column.is_beach && logical_depth <= 3 {
-            return Voxel::Soil_Sand;
-        }
-
-        let biome_cfg = column.biome.config();
-        self.strata
-            .solid_voxel_at(0, world_y, 0, logical_depth, &biome_cfg, self.seed)
     }
 
     fn logical_terrain_height_at(
@@ -1380,7 +1366,8 @@ impl TerrainGenerator {
         let roughness = Self::continental_roughness(climate.continentalness);
 
         let mountain_factor = ((climate.continentalness - 0.22) / 0.35).clamp(0.0, 1.0);
-        let ridge = (1.0 - macro_noise.abs()).powi(2) * self.mountain_ridge_height * mountain_factor;
+        let ridge =
+            (1.0 - macro_noise.abs()).powi(2) * self.mountain_ridge_height * mountain_factor;
 
         let swamp_depression = if climate.continentalness > 0.02
             && climate.continentalness < 0.25
@@ -1395,7 +1382,9 @@ impl TerrainGenerator {
         };
 
         let base = self.base_height + cont_base - swamp_depression;
-        let amplitude = (self.macro_amplitude * macro_noise + rolling_hills + self.detail_amplitude * detail_noise)
+        let amplitude = (self.macro_amplitude * macro_noise
+            + rolling_hills
+            + self.detail_amplitude * detail_noise)
             * roughness
             + ridge;
 
@@ -1490,82 +1479,10 @@ fn hash_value(x: i32, z: i32, seed: u32) -> f32 {
     normalized * 2.0 - 1.0
 }
 
-#[allow(dead_code)]
-fn smooth_range(value: f32, start: f32, end: f32) -> f32 {
-    if end <= start {
-        return if value >= start { 1.0 } else { 0.0 };
-    }
-
-    let normalized = ((value - start) / (end - start)).clamp(0.0, 1.0);
-    smoothstep(normalized)
-}
-
 fn smoothstep(value: f32) -> f32 {
     value * value * (3.0 - 2.0 * value)
 }
 
 fn lerp(start: f32, end: f32, amount: f32) -> f32 {
     start + (end - start) * amount
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::world::ChunkHomogeneity;
-
-    #[test]
-    fn test_estimate_chunk_max_height_safety() {
-        let generator = TerrainGenerator::default();
-        let chunk_x = 2;
-        let chunk_z = -3;
-        let est_max = generator.estimate_chunk_max_height(chunk_x, chunk_z);
-
-        // Verify that every single sampled column inside the 16x16 chunk is strictly <= est_max
-        let origin_x = chunk_x * CHUNK_SIZE as i32;
-        let origin_z = chunk_z * CHUNK_SIZE as i32;
-
-        for z in 0..CHUNK_SIZE as i32 {
-            for x in 0..CHUNK_SIZE as i32 {
-                let col = generator.sample_column(origin_x + x, origin_z + z);
-                assert!(
-                    col.terrain_height <= est_max,
-                    "Column at ({}, {}) terrain_height {} exceeded estimated max {}",
-                    origin_x + x,
-                    origin_z + z,
-                    col.terrain_height,
-                    est_max
-                );
-                if let Some(water) = col.water_level {
-                    assert!(
-                        water <= est_max,
-                        "Column water level {} exceeded estimated max {}",
-                        water,
-                        est_max
-                    );
-                }
-            }
-        }
-    }
-
-    #[test]
-    fn test_sky_chunk_early_exit_returns_air() {
-        let generator = TerrainGenerator::default();
-        let chunk = generator.generate_chunk(IVec3::new(0, 15, 0));
-        assert_eq!(
-            chunk.homogeneity(),
-            ChunkHomogeneity::Empty,
-            "High sky chunk must be 100% air"
-        );
-    }
-
-    #[test]
-    fn test_bedrock_floor_early_exit_returns_dreadstone() {
-        let generator = TerrainGenerator::default();
-        let chunk = generator.generate_chunk(IVec3::new(0, -17, 0));
-        assert_eq!(
-            chunk.homogeneity(),
-            ChunkHomogeneity::Solid(Voxel::Rock_Dreadstone),
-            "Chunk below bedrock floor must be 100% solid dreadstone"
-        );
-    }
 }

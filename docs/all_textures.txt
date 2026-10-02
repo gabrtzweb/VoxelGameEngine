@@ -1,4 +1,4 @@
-aqua_algae_mat.png
+aqua_algae_mat_side.png
 aqua_algae_mat_top.png
 aqua_brain_coral.png
 aqua_bubble_coral.png
@@ -199,7 +199,7 @@ soil_packed_mud.png
 soil_packed_mud1.png
 soil_packed_peat.png
 soil_packed_silt.png
-soil_peat.png
+soil_peat_dirt.png
 soil_peat_grass_side.png
 soil_peat_mulch.png
 soil_peat_mulch_side.png
@@ -217,7 +217,7 @@ soil_scorched_black_sand.png
 soil_scorched_red_sand.png
 soil_scorched_sand.png
 soil_scorched_white_sand.png
-soil_silt.png
+soil_silt_dirt.png
 soil_silt_grass_side.png
 soil_silt_mulch.png
 soil_silt_mulch_side.png
@@ -303,9 +303,12 @@ tree_mangrove_roots_top.png
 tree_mangrove_roots_top1.png
 tree_maple_bark.png
 tree_maple_bark1.png
-tree_maple_leaves_orange_.png
+tree_maple_leaves_orange.png
+tree_maple_leaves_orange1.png
 tree_maple_leaves_red.png
+tree_maple_leaves_red1.png
 tree_maple_leaves_yellow.png
+tree_maple_leaves_yellow1.png
 tree_maple_log.png
 tree_maple_planks.png
 tree_maple_planks1.png

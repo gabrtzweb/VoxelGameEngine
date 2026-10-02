@@ -8,9 +8,9 @@ pub mod time;
 use bevy::prelude::*;
 
 use atmosphere::{
-    DAY_FILL_ILLUMINANCE, DAY_SUN_ILLUMINANCE, NIGHT_MOON_ILLUMINANCE, sample_ambient_brightness,
-    sample_ambient_color, sample_sky_color, sync_fog_distance, update_atmosphere,
-    update_biome_atmosphere_transition, BiomeAtmosphereState,
+    BiomeAtmosphereState, DAY_FILL_ILLUMINANCE, DAY_SUN_ILLUMINANCE, NIGHT_MOON_ILLUMINANCE,
+    sample_ambient_brightness, sample_ambient_color, sample_sky_color, sync_fog_distance,
+    update_atmosphere, update_biome_atmosphere_transition,
 };
 use time::{advance_environment_clock, handle_environment_input};
 

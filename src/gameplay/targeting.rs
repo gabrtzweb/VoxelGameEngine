@@ -16,7 +16,6 @@ pub enum TargetingSet {
 pub struct VoxelTarget {
     pub hit_voxel: IVec3,
     pub place_voxel: Option<IVec3>,
-    #[allow(dead_code)]
     pub face_normal: IVec3,
     pub block_origin: IVec3,
 }
@@ -141,11 +140,6 @@ fn draw_box_outline(
 
 pub fn block_origin_from_voxel(voxel: IVec3) -> IVec3 {
     voxel
-}
-
-#[allow(dead_code)]
-pub fn adjacent_block_origin(_block_origin: IVec3, hit_voxel: IVec3, face_normal: IVec3) -> IVec3 {
-    hit_voxel + face_normal
 }
 
 fn raycast_world(

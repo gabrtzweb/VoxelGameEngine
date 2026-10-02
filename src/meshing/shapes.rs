@@ -55,7 +55,10 @@ pub fn mesh_shaped_voxels(
             1.0
         };
         let top_tint = tint;
-        let is_grass = matches!(voxel, Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass);
+        let is_grass = matches!(
+            voxel,
+            Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass
+        );
         let bottom_tint = if is_grass {
             [1.0, 1.0, 1.0, tint[3]]
         } else {
@@ -197,7 +200,10 @@ pub fn mesh_shaped_voxels(
                         1.0
                     };
                     let extra_top_tint = extra_tint;
-                    let is_extra_grass = matches!(extra_voxel, Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass);
+                    let is_extra_grass = matches!(
+                        extra_voxel,
+                        Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass
+                    );
                     let extra_bottom_tint = if is_extra_grass {
                         [1.0, 1.0, 1.0, extra_tint[3]]
                     } else {
@@ -588,12 +594,7 @@ fn mesh_basket(
             side_layer,
             frame_count,
             side_tint,
-            [
-                [uv_max, 1.0],
-                [uv_max, 0.0],
-                [uv_min, 0.0],
-                [uv_min, 1.0],
-            ],
+            [[uv_max, 1.0], [uv_max, 0.0], [uv_min, 0.0], [uv_min, 1.0]],
         );
 
         // Interior South wall (at z = z1, facing -Z inside cavity)
@@ -609,12 +610,7 @@ fn mesh_basket(
             side_layer,
             frame_count,
             side_tint,
-            [
-                [uv_min, 1.0],
-                [uv_min, 0.0],
-                [uv_max, 0.0],
-                [uv_max, 1.0],
-            ],
+            [[uv_min, 1.0], [uv_min, 0.0], [uv_max, 0.0], [uv_max, 1.0]],
         );
 
         // Interior West wall (at x = x0, facing +X inside cavity)
@@ -630,12 +626,7 @@ fn mesh_basket(
             side_layer,
             frame_count,
             side_tint,
-            [
-                [uv_min, 1.0],
-                [uv_min, 0.0],
-                [uv_max, 0.0],
-                [uv_max, 1.0],
-            ],
+            [[uv_min, 1.0], [uv_min, 0.0], [uv_max, 0.0], [uv_max, 1.0]],
         );
 
         // Interior East wall (at x = x1, facing -X inside cavity)
@@ -651,12 +642,7 @@ fn mesh_basket(
             side_layer,
             frame_count,
             side_tint,
-            [
-                [uv_max, 1.0],
-                [uv_max, 0.0],
-                [uv_min, 0.0],
-                [uv_min, 1.0],
-            ],
+            [[uv_max, 1.0], [uv_max, 0.0], [uv_min, 0.0], [uv_min, 1.0]],
         );
     }
 }
@@ -835,8 +821,12 @@ fn mesh_torch(
 
             push_torch_stick_box(
                 buffers,
-                x0, y0, z0,
-                x1, y1, z1,
+                x0,
+                y0,
+                z0,
+                x1,
+                y1,
+                z1,
                 texture_layer,
                 frame_count,
                 tint_color,
@@ -853,8 +843,12 @@ fn mesh_torch(
 
             push_torch_stick_box(
                 buffers,
-                x0, y0, z0,
-                x1, y1, z1,
+                x0,
+                y0,
+                z0,
+                x1,
+                y1,
+                z1,
                 texture_layer,
                 frame_count,
                 tint_color,
@@ -917,8 +911,12 @@ fn mesh_torch(
 
             push_torch_stick_box(
                 buffers,
-                x0, y0, z0,
-                x1, y1, z1,
+                x0,
+                y0,
+                z0,
+                x1,
+                y1,
+                z1,
                 texture_layer,
                 frame_count,
                 tint_color,
@@ -982,8 +980,12 @@ fn mesh_torch(
 
             push_torch_stick_box(
                 buffers,
-                x0, y0, z0,
-                x1, y1, z1,
+                x0,
+                y0,
+                z0,
+                x1,
+                y1,
+                z1,
                 texture_layer,
                 frame_count,
                 tint_color,
@@ -1046,8 +1048,12 @@ fn mesh_torch(
 
             push_torch_stick_box(
                 buffers,
-                x0, y0, z0,
-                x1, y1, z1,
+                x0,
+                y0,
+                z0,
+                x1,
+                y1,
+                z1,
                 texture_layer,
                 frame_count,
                 tint_color,

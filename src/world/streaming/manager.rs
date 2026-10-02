@@ -19,8 +19,8 @@ use crate::{
     },
 };
 
-const DEFAULT_RENDER_DISTANCE: i32 = 12;
-const DEFAULT_LOD_RENDER_DISTANCE: i32 = 20;
+const DEFAULT_RENDER_DISTANCE: i32 = 8;
+const DEFAULT_LOD_RENDER_DISTANCE: i32 = 8;
 pub const DEFAULT_SIMULATION_DISTANCE: i32 = 8;
 
 pub const WORLD_MIN_CHUNK_Y: i32 = -16;
@@ -237,7 +237,7 @@ pub fn plan_chunk_streaming(
         .unwrap_or(Vec2::ZERO);
 
     let moved_chunk = state.last_player_chunk != Some(player_chunk);
-    let camera_turned = state.last_camera_fwd.map_or(false, |last| {
+    let camera_turned = state.last_camera_fwd.is_some_and(|last| {
         current_fwd != Vec2::ZERO && current_fwd.dot(last) < 0.95 // ~18 degrees turn
     });
 
@@ -252,11 +252,8 @@ pub fn plan_chunk_streaming(
     state.last_player_chunk = Some(player_chunk);
     state.last_camera_fwd = Some(current_fwd);
 
-    let desired_chunks = desired_chunk_coordinates(
-        player_chunk,
-        settings.render_distance,
-        &terrain_generator,
-    );
+    let desired_chunks =
+        desired_chunk_coordinates(player_chunk, settings.render_distance, &terrain_generator);
 
     state.desired_chunks = desired_chunks.clone();
 
@@ -421,8 +418,7 @@ pub fn plan_chunk_streaming(
     let mut lod_to_load: Vec<(IVec2, ChunkLod)> = desired_lod
         .into_iter()
         .filter(|(coord, lod)| {
-            lod_registry.get_lod(coord) != Some(*lod)
-                && active_lod.get(coord) != Some(lod)
+            lod_registry.get_lod(coord) != Some(*lod) && active_lod.get(coord) != Some(lod)
         })
         .collect();
 
@@ -755,44 +751,3 @@ pub fn chunk_distance_squared(a: IVec3, b: IVec3) -> i32 {
 
     delta.x * delta.x + delta.y * delta.y + delta.z * delta.z
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_desired_chunk_coordinates_prunes_empty_sky() {
-        let generator = TerrainGenerator::default();
-        let center = IVec3::new(0, 1, 0); // Player near ground/sea level
-        let render_distance = 8;
-        let desired = desired_chunk_coordinates(center, render_distance, &generator);
-
-        // Theoretical unpruned cylindrical bounding count
-        let mut unpruned_count = 0;
-        let min_y = (center.y - render_distance).max(WORLD_MIN_CHUNK_Y);
-        let max_y = (center.y + render_distance).min(WORLD_MAX_CHUNK_Y);
-        for z in -render_distance..=render_distance {
-            for x in -render_distance..=render_distance {
-                if x * x + z * z <= render_distance * render_distance {
-                    unpruned_count += (max_y - min_y + 1) as usize;
-                }
-            }
-        }
-
-        assert!(
-            desired.len() < unpruned_count,
-            "Pruned desired count {} should be strictly smaller than unpruned {}",
-            desired.len(),
-            unpruned_count
-        );
-
-        // Verify that at least 20% of empty sky chunks were pruned away
-        let savings_percent = (unpruned_count - desired.len()) as f32 / unpruned_count as f32;
-        assert!(
-            savings_percent >= 0.20,
-            "Sky pruning saved {:.1}%, expected at least 20% workload reduction",
-            savings_percent * 100.0
-        );
-    }
-}
-

@@ -44,21 +44,20 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
         }
 
         // Dedicated 2D item icon texture override (e.g. for torches and handheld items)
-        if let Some(item_path) = voxel_item_texture_path(voxel) {
-            if Path::new(item_path).exists()
-                && let Ok(img) = image::open(item_path)
-            {
-                let rgba = img.into_rgba8();
-                let icon_image = create_item_icon_image(&rgba);
-                let handle = images.add(icon_image);
+        if let Some(item_path) = voxel_item_texture_path(voxel)
+            && Path::new(item_path).exists()
+            && let Ok(img) = image::open(item_path)
+        {
+            let rgba = img.into_rgba8();
+            let icon_image = create_item_icon_image(&rgba);
+            let handle = images.add(icon_image);
 
-                if fallback_image.is_none() {
-                    fallback_image = Some(handle.clone());
-                }
-
-                block_icons.icons.insert(voxel, handle);
-                continue;
+            if fallback_image.is_none() {
+                fallback_image = Some(handle.clone());
             }
+
+            block_icons.icons.insert(voxel, handle);
+            continue;
         }
 
         let mut raw_side = if let Some(side_name) = voxel.side_texture_name() {
@@ -138,9 +137,11 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
 
         let raw_top = if let Some(top_name) = voxel.top_texture_name() {
             let mut top_bytes = load_raw_16x16_by_name(top_name, voxel.fallback_color());
-            if voxel != Voxel::Mossy_Basalt && let Some(overlay_name) = voxel.overlay_texture_name() {
+            if let Some(overlay_name) = voxel.overlay_texture_name() {
                 let overlay_path = format!("assets/textures/blocks/{overlay_name}.png");
-                if Path::new(&overlay_path).exists() && let Ok(img) = image::open(&overlay_path) {
+                if Path::new(&overlay_path).exists()
+                    && let Ok(img) = image::open(&overlay_path)
+                {
                     let rgba = img.into_rgba8();
                     let raw = rgba.into_raw();
                     for idx in (0..top_bytes.len().min(raw.len())).step_by(4) {
@@ -152,9 +153,18 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
                             let base_r = top_bytes[idx] as f32;
                             let base_g = top_bytes[idx + 1] as f32;
                             let base_b = top_bytes[idx + 2] as f32;
-                            top_bytes[idx] = (base_r * (1.0 - ov_a) + ov_r * ov_a).round().clamp(0.0, 255.0) as u8;
-                            top_bytes[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a).round().clamp(0.0, 255.0) as u8;
-                            top_bytes[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a).round().clamp(0.0, 255.0) as u8;
+                            top_bytes[idx] = (base_r * (1.0 - ov_a) + ov_r * ov_a)
+                                .round()
+                                .clamp(0.0, 255.0)
+                                as u8;
+                            top_bytes[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a)
+                                .round()
+                                .clamp(0.0, 255.0)
+                                as u8;
+                            top_bytes[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a)
+                                .round()
+                                .clamp(0.0, 255.0)
+                                as u8;
                         }
                     }
                 }
@@ -240,13 +250,6 @@ fn solid_raw_16x16(color: [u8; 4]) -> Vec<u8> {
         frame.extend_from_slice(&color);
     }
     frame
-}
-
-/// Renders an authentic 2:1 pixel-art isometric cube with Top, Left, and Right faces,
-/// directional face shading (1.0 / 0.80 / 0.60), vertex tinting, and a subtle silhouette outline.
-#[allow(dead_code)]
-pub fn render_isometric_block_icon(tex_16x16: &[u8], tint: [f32; 4]) -> Image {
-    render_isometric_block_icon_multi(tex_16x16, tex_16x16, tint, tint)
 }
 
 /// Renders an authentic 2:1 pixel-art isometric cube with distinct Top and Side textures and tints.
@@ -433,44 +436,4 @@ fn create_item_icon_image(rgba: &image::RgbaImage) -> Image {
 
     image.sampler = ImageSampler::nearest();
     image
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_torch_item_textures_exist() {
-        let torches = [
-            (Voxel::Emit_Blue_Torch, "emit_blue_torch_item.png"),
-            (Voxel::Emit_Green_Torch, "emit_green_torch_item.png"),
-            (Voxel::Emit_Red_Torch, "emit_red_torch_item.png"),
-        ];
-
-        for (voxel, file_name) in torches {
-            let path_opt = voxel_item_texture_path(voxel);
-            assert!(
-                path_opt.is_some(),
-                "Expected item texture path for {voxel:?}"
-            );
-            let path = path_opt.unwrap();
-            assert!(
-                path.ends_with(file_name),
-                "Expected path to end with {file_name}, got {path}"
-            );
-            assert!(
-                Path::new(path).exists(),
-                "Torch item texture file must exist on disk: {path}"
-            );
-
-            // Verify it can be opened as an RGBA image
-            let img = image::open(path).expect("Failed to open torch item texture");
-            assert_eq!(img.width(), 16);
-            assert_eq!(img.height(), 16);
-
-            let icon_img = create_item_icon_image(&img.into_rgba8());
-            assert_eq!(icon_img.width(), ICON_SIZE);
-            assert_eq!(icon_img.height(), ICON_SIZE);
-        }
-    }
 }

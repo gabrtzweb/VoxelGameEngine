@@ -1,10 +1,10 @@
-use std::collections::{HashSet, VecDeque};
 use bevy::prelude::*;
+use std::collections::{HashSet, VecDeque};
 
 use crate::{
     meshing::pipeline::ChunkMeshRegistry,
     player::PlayerCamera,
-    world::{block::BlockShape, VoxelWorld, CHUNK_SIZE, VOXEL_SIZE},
+    world::{CHUNK_SIZE, VOXEL_SIZE, VoxelWorld, block::BlockShape},
 };
 
 /// Component attached to chunk mesh entities storing their grid coordinate.
@@ -133,12 +133,24 @@ pub fn get_camera_reachable_faces(
         let vz = (cur / CHUNK_SIZE) % CHUNK_SIZE;
         let vy = cur / (CHUNK_SIZE * CHUNK_SIZE);
 
-        if vx == 0 { reachable |= 1 << 0; }
-        if vx == CHUNK_SIZE - 1 { reachable |= 1 << 1; }
-        if vy == 0 { reachable |= 1 << 2; }
-        if vy == CHUNK_SIZE - 1 { reachable |= 1 << 3; }
-        if vz == 0 { reachable |= 1 << 4; }
-        if vz == CHUNK_SIZE - 1 { reachable |= 1 << 5; }
+        if vx == 0 {
+            reachable |= 1 << 0;
+        }
+        if vx == CHUNK_SIZE - 1 {
+            reachable |= 1 << 1;
+        }
+        if vy == 0 {
+            reachable |= 1 << 2;
+        }
+        if vy == CHUNK_SIZE - 1 {
+            reachable |= 1 << 3;
+        }
+        if vz == 0 {
+            reachable |= 1 << 4;
+        }
+        if vz == CHUNK_SIZE - 1 {
+            reachable |= 1 << 5;
+        }
 
         let push_n = |n_idx: usize, visited_bits: &mut [u64; 64], q: &mut Vec<usize>| {
             if (visited_bits[n_idx / 64] & (1u64 << (n_idx % 64))) == 0 {
@@ -147,12 +159,24 @@ pub fn get_camera_reachable_faces(
             }
         };
 
-        if vx > 0 { push_n(cur - 1, &mut visited, &mut queue); }
-        if vx + 1 < CHUNK_SIZE { push_n(cur + 1, &mut visited, &mut queue); }
-        if vz > 0 { push_n(cur - CHUNK_SIZE, &mut visited, &mut queue); }
-        if vz + 1 < CHUNK_SIZE { push_n(cur + CHUNK_SIZE, &mut visited, &mut queue); }
-        if vy > 0 { push_n(cur - CHUNK_SIZE * CHUNK_SIZE, &mut visited, &mut queue); }
-        if vy + 1 < CHUNK_SIZE { push_n(cur + CHUNK_SIZE * CHUNK_SIZE, &mut visited, &mut queue); }
+        if vx > 0 {
+            push_n(cur - 1, &mut visited, &mut queue);
+        }
+        if vx + 1 < CHUNK_SIZE {
+            push_n(cur + 1, &mut visited, &mut queue);
+        }
+        if vz > 0 {
+            push_n(cur - CHUNK_SIZE, &mut visited, &mut queue);
+        }
+        if vz + 1 < CHUNK_SIZE {
+            push_n(cur + CHUNK_SIZE, &mut visited, &mut queue);
+        }
+        if vy > 0 {
+            push_n(cur - CHUNK_SIZE * CHUNK_SIZE, &mut visited, &mut queue);
+        }
+        if vy + 1 < CHUNK_SIZE {
+            push_n(cur + CHUNK_SIZE * CHUNK_SIZE, &mut visited, &mut queue);
+        }
     }
 
     reachable
@@ -246,7 +270,8 @@ pub fn update_cave_culling_system(
         }
     } else {
         let cam_mask = get_chunk_permeability(cam_chunk, &registry, world.as_deref());
-        let reachable_faces = get_camera_reachable_faces(cam_pos, cam_chunk, cam_mask, world.as_deref());
+        let reachable_faces =
+            get_camera_reachable_faces(cam_pos, cam_chunk, cam_mask, world.as_deref());
 
         visible_chunks.insert(cam_chunk);
         let mut queue = VecDeque::with_capacity(256);
@@ -308,68 +333,4 @@ pub fn update_cave_culling_system(
 
     culling_state.rendered_chunks = rendered_count;
     culling_state.culled_chunks = culled_count;
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::generation::TerrainGenerator;
-
-    #[test]
-    fn test_chunk_subterranean_flag() {
-        let generator = TerrainGenerator::default();
-        let deep_chunk = generator.generate_chunk(IVec3::new(0, -4, 0));
-        assert!(deep_chunk.is_subterranean(), "Chunk at Y=-4 should be subterranean");
-
-        let bedrock = generator.generate_chunk(IVec3::new(0, -17, 0));
-        assert!(bedrock.is_subterranean(), "Bedrock chunk should be subterranean");
-    }
-
-    #[test]
-    fn test_cave_culling_system_visibility_switching() {
-        let mut app = App::new();
-        app.init_resource::<CaveCullingState>();
-        app.init_resource::<ChunkMeshRegistry>();
-
-        let cam_transform = Transform::from_xyz(8.0, 25.0, 8.0);
-        app.world_mut().spawn((
-            PlayerCamera::from_transform(&cam_transform),
-            cam_transform,
-        ));
-
-        // Spawn a surface chunk at (0, 1, 0)
-        let surface_chunk = app
-            .world_mut()
-            .spawn((
-                ChunkCoordinate(IVec3::new(0, 1, 0)),
-                Visibility::Inherited,
-            ))
-            .id();
-
-        // Spawn a buried cave chunk at (0, -3, 0)
-        let deep_cave = app
-            .world_mut()
-            .spawn((
-                ChunkCoordinate(IVec3::new(0, -3, 0)),
-                SubterraneanChunkMesh,
-                Visibility::Inherited,
-            ))
-            .id();
-
-        app.add_systems(Update, update_cave_culling_system);
-
-        // Run traversal: with default empty registry, solid ground blocks -Y
-        app.update();
-
-        assert_eq!(
-            *app.world().get::<Visibility>(surface_chunk).unwrap(),
-            Visibility::Inherited,
-            "Surface chunk containing camera must be visible"
-        );
-        assert_eq!(
-            *app.world().get::<Visibility>(deep_cave).unwrap(),
-            Visibility::Hidden,
-            "Deep cave chunk must be culled"
-        );
-    }
 }

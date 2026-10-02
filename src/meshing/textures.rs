@@ -82,7 +82,8 @@ impl VoxelTextureRegistry {
                         | Voxel::Soil_Mulch
                         | Voxel::Soil_Peat_Mulch
                         | Voxel::Soil_Silt_Mulch
-                ) && self.full_grass {
+                ) && self.full_grass
+                {
                     m.top
                 } else {
                     m.side
@@ -152,10 +153,12 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
                                 .clamp(0.0, 255.0) as u8;
                             frame[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a)
                                 .round()
-                                .clamp(0.0, 255.0) as u8;
+                                .clamp(0.0, 255.0)
+                                as u8;
                             frame[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a)
                                 .round()
-                                .clamp(0.0, 255.0) as u8;
+                                .clamp(0.0, 255.0)
+                                as u8;
                         }
                     }
                 }
@@ -164,7 +167,8 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
         // Composite texture overlay if defined (e.g. mossy rock / mossy cobbled overlay)
         if let Some(overlay_name) = voxel.overlay_texture_name()
-            && let Some(overlay) = try_load_image(&format!("assets/textures/blocks/{overlay_name}.png"))
+            && let Some(overlay) =
+                try_load_image(&format!("assets/textures/blocks/{overlay_name}.png"))
             && let Some(overlay_frame) = overlay.frames.first()
         {
             composite_overlay(&mut side_variants, overlay_frame);
@@ -188,7 +192,14 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
         };
 
         let top_info = if let Some(top_name) = voxel.top_texture_name() {
-            let top_variants = load_all_variants_for(top_name, voxel.fallback_color());
+            let mut top_variants = load_all_variants_for(top_name, voxel.fallback_color());
+            if let Some(overlay_name) = voxel.overlay_texture_name()
+                && let Some(overlay) =
+                    try_load_image(&format!("assets/textures/blocks/{overlay_name}.png"))
+                && let Some(overlay_frame) = overlay.frames.first()
+            {
+                composite_overlay(&mut top_variants, overlay_frame);
+            }
             let top_variant_count = top_variants.len() as u16;
             let top_frame_count = top_variants.first().map_or(1, |v| v.frames.len() as u16);
             let top_start_layer = current_layer;
@@ -209,7 +220,14 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
             && voxel.side_texture_name() != Some(base_name)
         {
             // If side was overridden, base_name is used for the top texture (e.g. Basalt, Mulch, Grass)
-            let top_variants = load_all_variants_for(base_name, voxel.fallback_color());
+            let mut top_variants = load_all_variants_for(base_name, voxel.fallback_color());
+            if let Some(overlay_name) = voxel.overlay_texture_name()
+                && let Some(overlay) =
+                    try_load_image(&format!("assets/textures/blocks/{overlay_name}.png"))
+                && let Some(overlay_frame) = overlay.frames.first()
+            {
+                composite_overlay(&mut top_variants, overlay_frame);
+            }
             let top_variant_count = top_variants.len() as u16;
             let top_frame_count = top_variants.first().map_or(1, |v| v.frames.len() as u16);
             let top_start_layer = current_layer;
@@ -236,7 +254,14 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
             {
                 top_info
             } else {
-                let bot_variants = load_all_variants_for(bot_name, voxel.fallback_color());
+                let mut bot_variants = load_all_variants_for(bot_name, voxel.fallback_color());
+                if let Some(overlay_name) = voxel.overlay_texture_name()
+                    && let Some(overlay) =
+                        try_load_image(&format!("assets/textures/blocks/{overlay_name}.png"))
+                    && let Some(overlay_frame) = overlay.frames.first()
+                {
+                    composite_overlay(&mut bot_variants, overlay_frame);
+                }
                 let bot_variant_count = bot_variants.len() as u16;
                 let bot_frame_count = bot_variants.first().map_or(1, |v| v.frames.len() as u16);
                 let bot_start_layer = current_layer;
@@ -302,9 +327,15 @@ fn composite_overlay(variants: &mut [LoadedTexture], overlay_frame: &[u8]) {
                     let base_g = frame[idx + 1] as f32;
                     let base_b = frame[idx + 2] as f32;
 
-                    frame[idx] = (base_r * (1.0 - ov_a) + ov_r * ov_a).round().clamp(0.0, 255.0) as u8;
-                    frame[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a).round().clamp(0.0, 255.0) as u8;
-                    frame[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a).round().clamp(0.0, 255.0) as u8;
+                    frame[idx] = (base_r * (1.0 - ov_a) + ov_r * ov_a)
+                        .round()
+                        .clamp(0.0, 255.0) as u8;
+                    frame[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a)
+                        .round()
+                        .clamp(0.0, 255.0) as u8;
+                    frame[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a)
+                        .round()
+                        .clamp(0.0, 255.0) as u8;
                 }
             }
         }
@@ -330,8 +361,11 @@ fn load_all_variants_for(base_name: &str, fallback_color: [u8; 4]) -> Vec<Loaded
 
     if base_name == "cobbled_tuffite" {
         primary_paths.insert(0, "assets/textures/blocks/cobbled_tuff.png".to_string());
-    } else if base_name == "tree_maple_leaves_orange" || base_name == "tree_maple_leaves_orange_" {
-        primary_paths.insert(0, "assets/textures/blocks/tree_maple_leaves_orange_.png".to_string());
+    } else if base_name == "tree_maple_leaves_orange" {
+        primary_paths.insert(
+            0,
+            "assets/textures/blocks/tree_maple_leaves_orange.png".to_string(),
+        );
     }
 
     primary_paths.push(format!("assets/textures/blocks/block_{base_name}.png"));

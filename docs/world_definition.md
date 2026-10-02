@@ -1,4 +1,4 @@
-# World Blocks Definition v0.5 (244 in total)
+# World Blocks Definition v0.1.0 (244 in total)
 
 ## Rocky Blocks (96 in total)
 * **Andesite** -> Rock_Andesite, Cobbled_Andesite, Mossy_Andesite, Mossy_Cobbled_Andesite
@@ -29,7 +29,7 @@
 Explaining them:
 Let's take Andesite for example. It will have the first block: "Andesite", which uses the texture `/blocks/rock_andesite.png` on all 6 faces. Then, there is "Mossy Andesite", which uses the same base texture `/blocks/rock_andesite.png` combined with the `/blocks/mossy_rock_overlay.png` texture on top (on all 6 faces). The third block, "Cobbled Andesite", uses the texture `/blocks/cobbled_andesite.png` on all 6 faces. Following this pattern, the fourth block, "Mossy Cobbled Andesite", uses the `/blocks/cobbled_andesite.png` base combined with the `/blocks/mossy_cobbled_overlay.png` texture on top (on all 6 faces). 
 
-This definition applies to all rocky blocks above, with the exception of Basalt. Basalt has different textures depending on the face, using `/blocks/rock_basalt_side.png` on its 4 sides and `/blocks/rock_basalt.png` on the top and bottom faces. Therefore, "Mossy Basalt" applies the `/blocks/mossy_rock_overlay.png` only on top of the side textures, not on the top and bottom faces. For "Cobbled Basalt", all 6 faces share the same `/blocks/cobbled_basalt.png` texture, so the `/blocks/mossy_cobbled_overlay.png` can be applied to all 6 faces.
+This definition applies to all rocky blocks above, with the exception of Basalt. Basalt has different textures depending on the face, using `/blocks/rock_basalt_side.png` on its 4 sides and `/blocks/rock_basalt.png` on the top and bottom faces. Like the other mossy blocks, "Mossy Basalt" applies the `/blocks/mossy_rock_overlay.png` on all 6 faces (on top of the side textures as well as the top and bottom faces). For "Cobbled Basalt", all 6 faces share the same `/blocks/cobbled_basalt.png` texture, so the `/blocks/mossy_cobbled_overlay.png` can be applied to all 6 faces.
 
 ### Special Rocky Blocks (8 in total)
 * **Alabaster** -> Rock_Alabaster
@@ -60,7 +60,7 @@ Those last 8 rock types don't follow the same pattern as the previous ones becau
 * **Packed Mud** -> Soil_Packed_Mud
 * **Packed Peat** -> Soil_Packed_Peat
 * **Packed Silt** -> Soil_Packed_Silt
-* **Peat** -> Soil_Peat
+* **Peat Dirt** -> Soil_Peat_Dirt
 * **Peat Grass** -> Soil_Peat_Grass
 * **Peat Mulch** -> Soil_Peat_Mulch
 * **Red Moss** -> Soil_Red_Moss
@@ -71,7 +71,7 @@ Those last 8 rock types don't follow the same pattern as the previous ones becau
 * **Scorched Red Sand** -> Soil_Scorched_Red_Sand
 * **Scorched Sand** -> Soil_Scorched_Sand
 * **Scorched White Sand** -> Soil_Scorched_White_Sand
-* **Silt** -> Soil_Silt
+* **Silt Dirt** -> Soil_Silt_Dirt
 * **Silt Grass** -> Soil_Silt_Grass
 * **Silt Mulch** -> Soil_Silt_Mulch
 * **Snow** -> Soil_Snow
@@ -85,11 +85,11 @@ A few of them will have different side, top, bottom, and even overlay textures. 
 
 Keep in mind that the `/blocks/soil_grass_overlay.png` and `/blocks/soil_grass.png` textures are grayscale and will receive a tint (this mechanic is already implemented in the engine). 
 
-Blocks following this same pattern include Silt Grass and Peat Grass. They will use the "`/blocks/soil_grass.png`" texture on top. Their sides will use their respective side versions ("`/blocks/soil_peat_grass_side.png`" and "`/blocks/soil_silt_grass_side.png`") combined with the `/blocks/soil_grass_overlay.png` for the tint. Their bottom faces will use their respective dirt types, meaning `soil_peat` and `soil_silt`.
+Blocks following this same pattern include Silt Grass and Peat Grass. They will use the "`/blocks/soil_grass.png`" texture on top. Their sides will use their respective side versions ("`/blocks/soil_peat_grass_side.png`" and "`/blocks/soil_silt_grass_side.png`") combined with the `/blocks/soil_grass_overlay.png` for the tint. Their bottom faces will use their respective dirt types, meaning `soil_peat_dirt` and `soil_silt_dirt`.
 
-The Mulch blocks will have a similar structure. The "Mulch" block will use "`/blocks/soil_mulch.png`" on top, "`/blocks/soil_mulch_side.png`" on the sides, and "`/blocks/soil_dirt.png`" on the bottom. Similarly, "Peat Mulch" will use "`/blocks/soil_peat_mulch.png`" on top, "`/blocks/soil_peat_mulch_side.png`" on the sides, and "`/blocks/soil_peat.png`" on the bottom. 
+The Mulch blocks will have a similar structure. The "Mulch" block will use "`/blocks/soil_mulch.png`" on top, "`/blocks/soil_mulch_side.png`" on the sides, and "`/blocks/soil_dirt.png`" on the bottom. Similarly, "Peat Mulch" will use "`/blocks/soil_peat_mulch.png`" on top, "`/blocks/soil_peat_mulch_side.png`" on the sides, and "`/blocks/soil_peat_dirt.png`" on the bottom. 
 
-The process for the snowy blocks works the exact same way. They use the snow texture on top and their specific snowy side textures on the side faces. For the bottom faces, "Snowy Grass" uses dirt, "Snowy Peat" uses peat, and "Snowy Silt" uses silt. 
+The process for the snowy blocks works the exact same way. They use the snow texture on top and their specific snowy side textures on the side faces. For the bottom faces, "Snowy Grass" uses dirt, "Snowy Peat" uses peat dirt, and "Snowy Silt" uses silt dirt. 
 
 All the remaining soil blocks share the same texture across all 6 faces.
 
@@ -234,7 +234,7 @@ Special blocks have their own mapping rules: "Mangrove Roots" uses "`/blocks/tre
 - **Tube Coral** -> Aqua_Tube_Coral
 
 Explaining them:
-All aquatic blocks are solid cubic blocks that function structurally like rock or soil blocks, occupying the full voxel to prevent water rendering issues. Most of them use a single unique texture across all 6 faces, with the exception of the "Algae Mat" and the "Geothermal Vent". The Algae Mat uses "`/blocks/aqua_algae_mat_top.png`" for its top and bottom faces, and "`/blocks/aqua_algae_mat.png`" for its side faces. The Geothermal Vent follows a similar rule, utilizing different textures for its top/bottom ( `/blocks/aqua_geothermal_vent.png`) and "`/blocks/aqua_geothermal_vent_side.png`" for the side faces.
+All aquatic blocks are solid cubic blocks that function structurally like rock or soil blocks, occupying the full voxel to prevent water rendering issues. Most of them use a single unique texture across all 6 faces, with the exception of the "Algae Mat" and the "Geothermal Vent". The Algae Mat uses "`/blocks/aqua_algae_mat_top.png`" for its top and bottom faces, and "`/blocks/aqua_algae_mat_side.png`" for its side faces. The Geothermal Vent follows a similar rule, utilizing different textures for its top/bottom ( `/blocks/aqua_geothermal_vent.png`) and "`/blocks/aqua_geothermal_vent_side.png`" for the side faces.
 
 ---
 ## Future Vegetation Blocks (Planned for later) (48 slots in total)
@@ -262,7 +262,7 @@ All aquatic blocks are solid cubic blocks that function structurally like rock o
 ### Tall Terrestrial Flora (2-Blocks High X-Mesh) (8 slots)
 - **Tall Fern** -> Vege_Tall_Fern
 - **Tall Wildgrass** -> Vege_Tall_Wildgrass
-- *[Empty Slot]*
+- **Sugar Cane** -> Vege_Sugar_Cane
 - *[Empty Slot]*
 - *[Empty Slot]*
 - *[Empty Slot]*
@@ -270,10 +270,10 @@ All aquatic blocks are solid cubic blocks that function structurally like rock o
 - *[Empty Slot]*
 
 ### Surface & Wall Flora (Flat/Directional Mesh) (8 slots)
-- **Lily Pad** -> Vege_Lily_Pad [X]
+- **Lily Pad** -> Vege_Lily_Pad
 - **Vines** -> Vege_Vines
-- *[Empty Slot]*
-- *[Empty Slot]*
+- **Hanging Roots** -> Vege_Hanging_Roots
+- **Hanging Moss** -> Vege_Hanging_Moss
 - *[Empty Slot]*
 - *[Empty Slot]*
 - *[Empty Slot]*
@@ -311,7 +311,7 @@ Most of these plants feature multiple texture variants (e.g., `vege_wildgrass.pn
 Tinting: Blocks like `Vege_Wildgrass`, `Vege_Bush`, and `Vege_Fern` will utilize grayscale textures to receive dynamic biome color tinting (similar to the standard `Soil_Grass`). Other flora, such as dry grass, dead bushes, red shrubs, corals, and fungi, will have their final colors fully baked into their texture files.
 
 ---
-# World Biomes Definition v0.5 (Phase 12) (48 in total)
+# World Biomes Definition v0.1.0 (Phase 12) (48 in total)
 
 ## Biome Generation Anatomy
 
@@ -329,8 +329,8 @@ Explaining how the 244 blocks from the registry populate these 48 biomes.
 
 ### Plains & Open Lands (8 in total)
 - **Acacia Savanna:** Warm, dry grassland. Surface: `Soil_Grass` (warm tinted) and `Soil_Packed_Dirt`. Trees: Sparse `Tree_Acacia`.
-- **Heath:** Cool, rugged plains. Surface: `Soil_Silt_Grass`. Subsoil: `Soil_Silt`. Primary Rock: `Rock_Tuffite`.
-- **Moorland:** Wet, foggy highlands. Surface: `Soil_Peat_Grass`. Subsoil: `Soil_Peat`. Primary Rock: `Rock_Gabbro`.
+- **Heath:** Cool, rugged plains. Surface: `Soil_Silt_Grass`. Subsoil: `Soil_Silt_Dirt`. Primary Rock: `Rock_Tuffite`.
+- **Moorland:** Wet, foggy highlands. Surface: `Soil_Peat_Grass`. Subsoil: `Soil_Peat_Dirt`. Primary Rock: `Rock_Gabbro`.
 - **Outback Scrubland:** Harsh, reddish dry plains. Surface: `Soil_Scorched_Red_Sand` and `Soil_Packed_Mud`.
 - **Permafrost Steppe:** Deeply frozen flatlands. Surface: `Soil_Snowy_Silt`. Subsoil: `Soil_Packed_Silt`. Primary Rock: `Rock_Slate`.
 - **Snowy Tundra:** Classic frozen plains. Surface: `Soil_Snowy_Grass`. Primary Rock: `Rock_Limestone`. 
@@ -342,7 +342,7 @@ Explaining how the 244 blocks from the registry populate these 48 biomes.
 - **Fungal Bog:** A highly toxic or magical swamp. Surface: `Soil_Red_Moss`. Liquids: Pools of `Liquid_Ooze` or `Liquid_Acid`. 
 - **Mangrove Swamp:** Coastal or riverine wetlands. Surface: `Soil_Mud`. Trees: `Tree_Mangrove` supported by `Tree_Mangrove_Roots` over water.
 - **Marshland:** Grassy, shallow wetlands. Surface: `Soil_Mud` and `Soil_Packed_Mud`. Primary Rock: `Rock_Serpentine`.
-- **Peat Bog:** Spongy, wet terrain. Surface: `Soil_Peat_Grass`. Subsoil: `Soil_Peat`. Primary Rock: `Rock_Marl`.
+- **Peat Bog:** Spongy, wet terrain. Surface: `Soil_Peat_Grass`. Subsoil: `Soil_Peat_Dirt`. Primary Rock: `Rock_Marl`.
 - **Sludge Wastes:** Highly polluted or corrupted wetlands. Surface: `Soil_Scorched_Sand`. Liquids: Ponds of `Liquid_Sludge`.
 - **Tar Pits:** Dangerous prehistoric swamps. Surface: `Soil_Black_Sand`. Liquids: Deep pits of `Liquid_Tar`. Primary Rock: `Rock_Pitchstone`.
 - **Weeping Bayou:** Calm, atmospheric flooded forests. Surface: `Soil_Silt_Mulch`. Trees: `Tree_Willow` lining the water channels.
@@ -370,9 +370,31 @@ Explaining how the 244 blocks from the registry populate these 48 biomes.
 ### Coastal & Aquatic Biomes (8 in total)
 - **Abyssal Trench:** The deepest, darkest parts of the ocean. Floor: `Rock_Obsidian` and `Rock_Pitchstone`. Features: `Aqua_Geothermal_Vent`.
 - **Beach:** Classic coastal shorelines. Surface: `Soil_White_Sand` or `Soil_Sand`. Trees: Sparse `Tree_Palm`.
-- **Brackish Estuary:** River mouths meeting the sea. Floor: `Soil_Silt` and `Soil_Mud`.
+- **Brackish Estuary:** River mouths meeting the sea. Floor: `Soil_Silt_Dirt` and `Soil_Mud`.
 - **Chalk Cliffs:** Vertical coastal drops. Walls: Pure `Rock_Chalk`.
 - **Coastal Crags:** Violent, rocky shores. Surface: `Rock_Porphyry`.
 - **Deep Ocean:** The vast open ocean. Floor: `Soil_Gravel` and `Rock_Andesite`.
 - **Temperate Ocean:** Shallow, lively seas. Floor: `Soil_White_Sand`. Features: Thriving coral reefs using `Aqua_Brain_Coral`, `Aqua_Bubble_Coral`, `Aqua_Fire_Coral`, `Aqua_Horn_Coral`, and `Aqua_Tube_Coral`.
 - **Tidal Mudflats:** Flat coastal wetlands exposed at low tide. Surface: `Soil_Packed_Mud` and `Soil_Clay`.
+
+# New World Blocks Definition v0.1.5 (Planned for later) (88 in total)
+
+## Decorative Blocks (84 in total)
+- **Ceramic** -> Deco_Ceramic
+- **Bambu Stacked** -> Deco_Bambu_Stacked
+- **Colored Brick** -> Deco_Brick_Black, Deco_Brick_Blue, Deco_Brick_Brown, Deco_Brick_Dark_Blue, Deco_Brick_Dark_Grey, Deco_Brick_Green, Deco_Brick_Light_Grey, Deco_Brick_Light_Pink, Deco_Brick_Lime, Deco_Brick_Orange, Deco_Brick_Pink, Deco_Brick_Purple, Deco_Brick_Red, Deco_Brick_Turquoise, Deco_Brick_White, Deco_Brick_Yellow
+- **Colored Ceramic** -> Deco_Ceramic_Black, Deco_Ceramic_Blue, Deco_Ceramic_Brown, Deco_Ceramic_Dark_Blue, Deco_Ceramic_Dark_Grey, Deco_Ceramic_Green, Deco_Ceramic_Light_Grey, Deco_Ceramic_Light_Pink, Deco_Ceramic_Lime, Deco_Ceramic_Orange, Deco_Ceramic_Pink, Deco_Ceramic_Purple, Deco_Ceramic_Red, Deco_Ceramic_Turquoise, Deco_Ceramic_White, Deco_Ceramic_Yellow
+- **Colored Fabric** -> Deco_Fabric_Black, Deco_Fabric_Blue, Deco_Fabric_Brown, Deco_Fabric_Dark_Blue, Deco_Fabric_Dark_Grey, Deco_Fabric_Green, Deco_Fabric_Light_Grey, Deco_Fabric_Light_Pink, Deco_Fabric_Lime, Deco_Fabric_Orange, Deco_Fabric_Pink, Deco_Fabric_Purple, Deco_Fabric_Red, Deco_Fabric_Turquoise, Deco_Fabric_White, Deco_Fabric_Yellow
+- **Colored Glass** -> Deco_Glass_Black, Deco_Glass_Blue, Deco_Glass_Brown, Deco_Glass_Dark_Blue, Deco_Glass_Dark_Grey, Deco_Glass_Green, Deco_Glass_Light_Grey, Deco_Glass_Light_Pink, Deco_Glass_Lime, Deco_Glass_Orange, Deco_Glass_Pink, Deco_Glass_Purple, Deco_Glass_Red, Deco_Glass_Turquoise, Deco_Glass_White, Deco_Glass_Yellow
+- **Colored Wool** -> Deco_Wool_Black, Deco_Wool_Blue, Deco_Wool_Brown, Deco_Wool_Dark_Blue, Deco_Wool_Dark_Grey, Deco_Wool_Green, Deco_Wool_Light_Grey, Deco_Wool_Light_Pink, Deco_Wool_Lime, Deco_Wool_Orange, Deco_Wool_Pink, Deco_Wool_Purple, Deco_Wool_Red, Deco_Wool_Turquoise, Deco_Wool_White, Deco_Wool_Yellow
+- **Honeycomb** -> Deco_Honeycomb
+- **Tinted Glass** -> Deco_Glass_Tinted
+
+
+## Soil Blocks (6 in total)
+* **Chared Dirt** -> Soil_Chared_Dirt
+* **Dusty Gravel** -> Soil_Dusty_Gravel
+* **Sandy Gravel** -> Soil_Sandy_Gravel
+* **Rought Gravel** -> Soil_Rought_Gravel
+* **Farmland** -> Soil_Farmland
+* **Farmland Moist** -> Soil_Farmland_Moist

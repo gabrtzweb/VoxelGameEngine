@@ -62,7 +62,7 @@ soil_blocks = [
     ("Soil_Packed_Mud", "soil_packed_mud", "Packed Mud", [80, 55, 40, 255]),
     ("Soil_Packed_Peat", "soil_packed_peat", "Packed Peat", [70, 50, 35, 255]),
     ("Soil_Packed_Silt", "soil_packed_silt", "Packed Silt", [115, 110, 100, 255]),
-    ("Soil_Peat", "soil_peat", "Peat", [75, 55, 40, 255]),
+    ("Soil_Peat_Dirt", "soil_peat_dirt", "Peat Dirt", [75, 55, 40, 255]),
     ("Soil_Peat_Grass", "soil_grass", "Peat Grass", [95, 150, 60, 255]),
     ("Soil_Peat_Mulch", "soil_peat_mulch", "Peat Mulch", [80, 50, 35, 255]),
     ("Soil_Red_Moss", "soil_red_moss", "Red Moss", [175, 45, 45, 255]),
@@ -73,7 +73,7 @@ soil_blocks = [
     ("Soil_Scorched_Red_Sand", "soil_scorched_red_sand", "Scorched Red Sand", [160, 70, 40, 255]),
     ("Soil_Scorched_Sand", "soil_scorched_sand", "Scorched Sand", [175, 150, 100, 255]),
     ("Soil_Scorched_White_Sand", "soil_scorched_white_sand", "Scorched White Sand", [190, 190, 185, 255]),
-    ("Soil_Silt", "soil_silt", "Silt", [130, 125, 115, 255]),
+    ("Soil_Silt_Dirt", "soil_silt_dirt", "Silt Dirt", [130, 125, 115, 255]),
     ("Soil_Silt_Grass", "soil_grass", "Silt Grass", [110, 160, 70, 255]),
     ("Soil_Silt_Mulch", "soil_silt_mulch", "Silt Mulch", [100, 80, 60, 255]),
     ("Soil_Snow", "soil_snow", "Snow", [240, 245, 255, 255]),
@@ -168,7 +168,7 @@ for tname, tslug, bark_col, plank_col, leaf_col in wood_trees:
     wood_blocks.append((f"Tree_{tname}_Log", f"tree_{tslug}_log", f"{tname} Log", bark_col))
     if tslug == "maple":
         wood_blocks.append(("Tree_Maple_Leaves_Red", "tree_maple_leaves_red", "Red Maple Leaves", [185, 45, 30, 255]))
-        wood_blocks.append(("Tree_Maple_Leaves_Orange", "tree_maple_leaves_orange_", "Orange Maple Leaves", [225, 115, 25, 255]))
+        wood_blocks.append(("Tree_Maple_Leaves_Orange", "tree_maple_leaves_orange", "Orange Maple Leaves", [225, 115, 25, 255]))
         wood_blocks.append(("Tree_Maple_Leaves_Yellow", "tree_maple_leaves_yellow", "Yellow Maple Leaves", [225, 185, 30, 255]))
     else:
         wood_blocks.append((f"Tree_{tname}_Leaves", f"tree_{tslug}_leaves", f"{tname} Leaves", leaf_col))
@@ -193,7 +193,7 @@ wood_blocks.append(("Tree_Dead_Planks", "tree_dead_planks", "Dead Wood Planks", 
 
 # Aquatic blocks (8):
 aqua_blocks = [
-    ("Aqua_Algae_Mat", "aqua_algae_mat", "Algae Mat", [50, 120, 70, 255]),
+    ("Aqua_Algae_Mat", "aqua_algae_mat_side", "Algae Mat", [50, 120, 70, 255]),
     ("Aqua_Brain_Coral", "aqua_brain_coral", "Brain Coral", [220, 100, 130, 255]),
     ("Aqua_Bubble_Coral", "aqua_bubble_coral", "Bubble Coral", [180, 70, 160, 255]),
     ("Aqua_Fire_Coral", "aqua_fire_coral", "Fire Coral", [220, 50, 50, 255]),
@@ -358,10 +358,7 @@ def generate_rust():
     lines.append('            Self::Tree_Yew_Log => Some("tree_yew_bark"),')
     lines.append('            Self::Tree_Cactus => Some("tree_cactus_side"),')
     lines.append('            Self::Tree_Mangrove_Roots => Some("tree_mangrove_roots"),')
-    lines.append('            Self::Aqua_Algae_Mat => Some("aqua_algae_mat"),')
-    lines.append('            Self::Aqua_Geothermal_Vent => Some("aqua_geothermal_vent_side"),')
-    lines.append('            Self::Deco_Barrel => Some("deco_barrel"),')
-    lines.append('            Self::Deco_Basket => Some("deco_basket_side"),')
+    lines.append('            Self::Aqua_Algae_Mat => Some("aqua_algae_mat_side"),')
     lines.append('            Self::Deco_Bookshelf => Some("deco_bookshelf"),')
     lines.append('            Self::Deco_Bone => Some("deco_bone"),')
     lines.append('            Self::Deco_Hay => Some("deco_hay"),')
@@ -417,8 +414,8 @@ def generate_rust():
     lines.append("        match self {")
     lines.append('            Self::Rock_Basalt | Self::Mossy_Basalt => Some("rock_basalt"),')
     lines.append('            Self::Soil_Grass | Self::Soil_Snowy_Grass | Self::Soil_Mulch => Some("soil_dirt"),')
-    lines.append('            Self::Soil_Peat_Grass | Self::Soil_Snowy_Peat | Self::Soil_Peat_Mulch => Some("soil_peat"),')
-    lines.append('            Self::Soil_Silt_Grass | Self::Soil_Snowy_Silt | Self::Soil_Silt_Mulch => Some("soil_silt"),')
+    lines.append('            Self::Soil_Peat_Grass | Self::Soil_Snowy_Peat | Self::Soil_Peat_Mulch => Some("soil_peat_dirt"),')
+    lines.append('            Self::Soil_Silt_Grass | Self::Soil_Snowy_Silt | Self::Soil_Silt_Mulch => Some("soil_silt_dirt"),')
     lines.append('            Self::Tree_Acacia_Log => Some("tree_acacia_log"),')
     lines.append('            Self::Tree_Birch_Log => Some("tree_birch_log"),')
     lines.append('            Self::Tree_Charred_Log => Some("tree_charred_log"),')

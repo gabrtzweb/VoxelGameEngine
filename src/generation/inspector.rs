@@ -21,7 +21,9 @@ pub fn terrain_inspector_ui(
     player_query: Query<&Transform, With<crate::player::Player>>,
     env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
     mut atmo_state: Option<ResMut<crate::environment::atmosphere::BiomeAtmosphereState>>,
-    mut streaming_settings: Option<ResMut<crate::world::streaming::manager::ChunkStreamingSettings>>,
+    mut streaming_settings: Option<
+        ResMut<crate::world::streaming::manager::ChunkStreamingSettings>,
+    >,
     mesh_registry: Option<Res<crate::meshing::ChunkMeshRegistry>>,
     lod_registry: Option<Res<crate::meshing::LodMeshRegistry>>,
 ) {

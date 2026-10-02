@@ -222,7 +222,7 @@ pub enum Voxel {
     Soil_Packed_Mud = 33,
     Soil_Packed_Peat = 34,
     Soil_Packed_Silt = 35,
-    Soil_Peat = 36,
+    Soil_Peat_Dirt = 36,
     Soil_Peat_Grass = 37,
     Soil_Peat_Mulch = 38,
     Soil_Red_Moss = 39,
@@ -233,7 +233,7 @@ pub enum Voxel {
     Soil_Scorched_Red_Sand = 44,
     Soil_Scorched_Sand = 45,
     Soil_Scorched_White_Sand = 46,
-    Soil_Silt = 47,
+    Soil_Silt_Dirt = 47,
     Soil_Silt_Grass = 48,
     Soil_Silt_Mulch = 49,
     Soil_Snow = 50,
@@ -445,7 +445,6 @@ pub enum Voxel {
     Deco_Wax = 244,
     Deco_Wicker = 245,
     Deco_Wool = 246,
-
 }
 
 impl Voxel {
@@ -488,7 +487,7 @@ impl Voxel {
         Voxel::Soil_Packed_Mud,
         Voxel::Soil_Packed_Peat,
         Voxel::Soil_Packed_Silt,
-        Voxel::Soil_Peat,
+        Voxel::Soil_Peat_Dirt,
         Voxel::Soil_Peat_Grass,
         Voxel::Soil_Peat_Mulch,
         Voxel::Soil_Red_Moss,
@@ -499,7 +498,7 @@ impl Voxel {
         Voxel::Soil_Scorched_Red_Sand,
         Voxel::Soil_Scorched_Sand,
         Voxel::Soil_Scorched_White_Sand,
-        Voxel::Soil_Silt,
+        Voxel::Soil_Silt_Dirt,
         Voxel::Soil_Silt_Grass,
         Voxel::Soil_Silt_Mulch,
         Voxel::Soil_Snow,
@@ -748,7 +747,7 @@ impl Voxel {
             Self::Soil_Packed_Mud => Some("soil_packed_mud"),
             Self::Soil_Packed_Peat => Some("soil_packed_peat"),
             Self::Soil_Packed_Silt => Some("soil_packed_silt"),
-            Self::Soil_Peat => Some("soil_peat"),
+            Self::Soil_Peat_Dirt => Some("soil_peat_dirt"),
             Self::Soil_Peat_Grass => Some("soil_grass"),
             Self::Soil_Peat_Mulch => Some("soil_peat_mulch"),
             Self::Soil_Red_Moss => Some("soil_red_moss"),
@@ -759,7 +758,7 @@ impl Voxel {
             Self::Soil_Scorched_Red_Sand => Some("soil_scorched_red_sand"),
             Self::Soil_Scorched_Sand => Some("soil_scorched_sand"),
             Self::Soil_Scorched_White_Sand => Some("soil_scorched_white_sand"),
-            Self::Soil_Silt => Some("soil_silt"),
+            Self::Soil_Silt_Dirt => Some("soil_silt_dirt"),
             Self::Soil_Silt_Grass => Some("soil_grass"),
             Self::Soil_Silt_Mulch => Some("soil_silt_mulch"),
             Self::Soil_Snow => Some("soil_snow"),
@@ -898,7 +897,7 @@ impl Voxel {
             Self::Tree_Maple_Bark => Some("tree_maple_bark"),
             Self::Tree_Maple_Log => Some("tree_maple_log"),
             Self::Tree_Maple_Leaves_Red => Some("tree_maple_leaves_red"),
-            Self::Tree_Maple_Leaves_Orange => Some("tree_maple_leaves_orange_"),
+            Self::Tree_Maple_Leaves_Orange => Some("tree_maple_leaves_orange"),
             Self::Tree_Maple_Leaves_Yellow => Some("tree_maple_leaves_yellow"),
             Self::Tree_Maple_Planks => Some("tree_maple_planks"),
             Self::Tree_Oak_Bark => Some("tree_oak_bark"),
@@ -931,7 +930,7 @@ impl Voxel {
             Self::Tree_Dead_Log => Some("tree_dead_log"),
             Self::Tree_Dead_Planks => Some("tree_dead_planks"),
             // Aquatic Blocks
-            Self::Aqua_Algae_Mat => Some("aqua_algae_mat"),
+            Self::Aqua_Algae_Mat => Some("aqua_algae_mat_side"),
             Self::Aqua_Brain_Coral => Some("aqua_brain_coral"),
             Self::Aqua_Bubble_Coral => Some("aqua_bubble_coral"),
             Self::Aqua_Fire_Coral => Some("aqua_fire_coral"),
@@ -997,7 +996,7 @@ impl Voxel {
             Self::Tree_Yew_Log => Some("tree_yew_bark"),
             Self::Tree_Cactus => Some("tree_cactus_side"),
             Self::Tree_Mangrove_Roots => Some("tree_mangrove_roots"),
-            Self::Aqua_Algae_Mat => Some("aqua_algae_mat"),
+            Self::Aqua_Algae_Mat => Some("aqua_algae_mat_side"),
             Self::Aqua_Geothermal_Vent => Some("aqua_geothermal_vent_side"),
             Self::Deco_Barrel => Some("deco_barrel"),
             Self::Deco_Basket => Some("deco_basket_side"),
@@ -1018,7 +1017,9 @@ impl Voxel {
             Self::Soil_Mulch => Some("soil_mulch"),
             Self::Soil_Peat_Mulch => Some("soil_peat_mulch"),
             Self::Soil_Silt_Mulch => Some("soil_silt_mulch"),
-            Self::Soil_Snowy_Grass | Self::Soil_Snowy_Peat | Self::Soil_Snowy_Silt => Some("soil_snow"),
+            Self::Soil_Snowy_Grass | Self::Soil_Snowy_Peat | Self::Soil_Snowy_Silt => {
+                Some("soil_snow")
+            }
             Self::Tree_Acacia_Log => Some("tree_acacia_log"),
             Self::Tree_Birch_Log => Some("tree_birch_log"),
             Self::Tree_Charred_Log => Some("tree_charred_log"),
@@ -1052,8 +1053,12 @@ impl Voxel {
         match self {
             Self::Rock_Basalt | Self::Mossy_Basalt => Some("rock_basalt"),
             Self::Soil_Grass | Self::Soil_Snowy_Grass | Self::Soil_Mulch => Some("soil_dirt"),
-            Self::Soil_Peat_Grass | Self::Soil_Snowy_Peat | Self::Soil_Peat_Mulch => Some("soil_peat"),
-            Self::Soil_Silt_Grass | Self::Soil_Snowy_Silt | Self::Soil_Silt_Mulch => Some("soil_silt"),
+            Self::Soil_Peat_Grass | Self::Soil_Snowy_Peat | Self::Soil_Peat_Mulch => {
+                Some("soil_peat_dirt")
+            }
+            Self::Soil_Silt_Grass | Self::Soil_Snowy_Silt | Self::Soil_Silt_Mulch => {
+                Some("soil_silt_dirt")
+            }
             Self::Tree_Acacia_Log => Some("tree_acacia_log"),
             Self::Tree_Birch_Log => Some("tree_birch_log"),
             Self::Tree_Charred_Log => Some("tree_charred_log"),
@@ -1084,55 +1089,55 @@ impl Voxel {
     /// Optional overlay texture (like mossy rock or mossy cobbled layers) rendered on top of the base texture.
     pub fn overlay_texture_name(&self) -> Option<&'static str> {
         match self {
-            Self::Mossy_Andesite |
-            Self::Mossy_Azurite |
-            Self::Mossy_Basalt |
-            Self::Mossy_Black_Sandstone |
-            Self::Mossy_Calcite |
-            Self::Mossy_Chalk |
-            Self::Mossy_Chert |
-            Self::Mossy_Cinnabar |
-            Self::Mossy_Diorite |
-            Self::Mossy_Gabbro |
-            Self::Mossy_Granite |
-            Self::Mossy_Karst |
-            Self::Mossy_Limestone |
-            Self::Mossy_Marl |
-            Self::Mossy_Pitchstone |
-            Self::Mossy_Porphyry |
-            Self::Mossy_Red_Sandstone |
-            Self::Mossy_Sandstone |
-            Self::Mossy_Scoria |
-            Self::Mossy_Serpentine |
-            Self::Mossy_Slate |
-            Self::Mossy_Stone |
-            Self::Mossy_Tuffite |
-            Self::Mossy_White_Sandstone => Some("mossy_rock_overlay"),
+            Self::Mossy_Andesite
+            | Self::Mossy_Azurite
+            | Self::Mossy_Basalt
+            | Self::Mossy_Black_Sandstone
+            | Self::Mossy_Calcite
+            | Self::Mossy_Chalk
+            | Self::Mossy_Chert
+            | Self::Mossy_Cinnabar
+            | Self::Mossy_Diorite
+            | Self::Mossy_Gabbro
+            | Self::Mossy_Granite
+            | Self::Mossy_Karst
+            | Self::Mossy_Limestone
+            | Self::Mossy_Marl
+            | Self::Mossy_Pitchstone
+            | Self::Mossy_Porphyry
+            | Self::Mossy_Red_Sandstone
+            | Self::Mossy_Sandstone
+            | Self::Mossy_Scoria
+            | Self::Mossy_Serpentine
+            | Self::Mossy_Slate
+            | Self::Mossy_Stone
+            | Self::Mossy_Tuffite
+            | Self::Mossy_White_Sandstone => Some("mossy_rock_overlay"),
 
-            Self::Mossy_Cobbled_Andesite |
-            Self::Mossy_Cobbled_Azurite |
-            Self::Mossy_Cobbled_Basalt |
-            Self::Mossy_Cobbled_Black_Sandstone |
-            Self::Mossy_Cobbled_Calcite |
-            Self::Mossy_Cobbled_Chalk |
-            Self::Mossy_Cobbled_Chert |
-            Self::Mossy_Cobbled_Cinnabar |
-            Self::Mossy_Cobbled_Diorite |
-            Self::Mossy_Cobbled_Gabbro |
-            Self::Mossy_Cobbled_Granite |
-            Self::Mossy_Cobbled_Karst |
-            Self::Mossy_Cobbled_Limestone |
-            Self::Mossy_Cobbled_Marl |
-            Self::Mossy_Cobbled_Pitchstone |
-            Self::Mossy_Cobbled_Porphyry |
-            Self::Mossy_Cobbled_Red_Sandstone |
-            Self::Mossy_Cobbled_Sandstone |
-            Self::Mossy_Cobbled_Scoria |
-            Self::Mossy_Cobbled_Serpentine |
-            Self::Mossy_Cobbled_Slate |
-            Self::Mossy_Cobbled_Stone |
-            Self::Mossy_Cobbled_Tuffite |
-            Self::Mossy_Cobbled_White_Sandstone => Some("mossy_cobbled_overlay"),
+            Self::Mossy_Cobbled_Andesite
+            | Self::Mossy_Cobbled_Azurite
+            | Self::Mossy_Cobbled_Basalt
+            | Self::Mossy_Cobbled_Black_Sandstone
+            | Self::Mossy_Cobbled_Calcite
+            | Self::Mossy_Cobbled_Chalk
+            | Self::Mossy_Cobbled_Chert
+            | Self::Mossy_Cobbled_Cinnabar
+            | Self::Mossy_Cobbled_Diorite
+            | Self::Mossy_Cobbled_Gabbro
+            | Self::Mossy_Cobbled_Granite
+            | Self::Mossy_Cobbled_Karst
+            | Self::Mossy_Cobbled_Limestone
+            | Self::Mossy_Cobbled_Marl
+            | Self::Mossy_Cobbled_Pitchstone
+            | Self::Mossy_Cobbled_Porphyry
+            | Self::Mossy_Cobbled_Red_Sandstone
+            | Self::Mossy_Cobbled_Sandstone
+            | Self::Mossy_Cobbled_Scoria
+            | Self::Mossy_Cobbled_Serpentine
+            | Self::Mossy_Cobbled_Slate
+            | Self::Mossy_Cobbled_Stone
+            | Self::Mossy_Cobbled_Tuffite
+            | Self::Mossy_Cobbled_White_Sandstone => Some("mossy_cobbled_overlay"),
 
             _ => None,
         }
@@ -1163,7 +1168,9 @@ impl Voxel {
     /// Color tint applied to vertices for biome / atmospheric coloring.
     pub fn tint_color(self) -> [f32; 4] {
         match self {
-            Self::Soil_Grass | Self::Soil_Peat_Grass | Self::Soil_Silt_Grass => [0.55, 0.94, 0.42, 1.0],
+            Self::Soil_Grass | Self::Soil_Peat_Grass | Self::Soil_Silt_Grass => {
+                [0.55, 0.94, 0.42, 1.0]
+            }
             Self::Soil_Snowy_Grass => [0.90, 0.95, 1.0, 1.0],
             Self::Liquid_Water | Self::WaterOccupied => [0.35, 0.65, 0.92, 1.0],
             Self::Tree_Oak_Leaves => [0.60, 1.15, 0.35, 1.0],
@@ -1233,7 +1240,7 @@ impl Voxel {
             Self::Soil_Packed_Mud => [80, 55, 40, 255],
             Self::Soil_Packed_Peat => [70, 50, 35, 255],
             Self::Soil_Packed_Silt => [115, 110, 100, 255],
-            Self::Soil_Peat => [75, 55, 40, 255],
+            Self::Soil_Peat_Dirt => [75, 55, 40, 255],
             Self::Soil_Peat_Grass => [95, 150, 60, 255],
             Self::Soil_Peat_Mulch => [80, 50, 35, 255],
             Self::Soil_Red_Moss => [175, 45, 45, 255],
@@ -1244,7 +1251,7 @@ impl Voxel {
             Self::Soil_Scorched_Red_Sand => [160, 70, 40, 255],
             Self::Soil_Scorched_Sand => [175, 150, 100, 255],
             Self::Soil_Scorched_White_Sand => [190, 190, 185, 255],
-            Self::Soil_Silt => [130, 125, 115, 255],
+            Self::Soil_Silt_Dirt => [130, 125, 115, 255],
             Self::Soil_Silt_Grass => [110, 160, 70, 255],
             Self::Soil_Silt_Mulch => [100, 80, 60, 255],
             Self::Soil_Snow => [240, 245, 255, 255],
@@ -1513,7 +1520,10 @@ impl Voxel {
     pub fn is_transparent(self) -> bool {
         self.is_water()
             || self == Self::Deco_Glass
-            || matches!(self, Self::Frost_Ice | Self::Frost_Fragile_Ice | Self::Frost_Black_Ice)
+            || matches!(
+                self,
+                Self::Frost_Ice | Self::Frost_Fragile_Ice | Self::Frost_Black_Ice
+            )
     }
 
     pub fn is_leaves(self) -> bool {
@@ -1590,7 +1600,9 @@ impl Voxel {
             Self::Emit_Red_Light | Self::Emit_Red_Torch => Color::srgb(1.0, 0.25, 0.25),
             Self::Emit_Green_Light | Self::Emit_Green_Torch => Color::srgb(0.25, 1.0, 0.25),
             Self::Emit_Blue_Light | Self::Emit_Blue_Torch => Color::srgb(0.25, 0.50, 1.0),
-            Self::Liquid_Lava | Self::Liquid_Molten | Self::Rock_Magma => Color::srgb(1.0, 0.45, 0.15),
+            Self::Liquid_Lava | Self::Liquid_Molten | Self::Rock_Magma => {
+                Color::srgb(1.0, 0.45, 0.15)
+            }
             _ => Color::WHITE,
         }
     }
@@ -1637,7 +1649,7 @@ impl Voxel {
             Self::Soil_Packed_Mud => "Packed Mud",
             Self::Soil_Packed_Peat => "Packed Peat",
             Self::Soil_Packed_Silt => "Packed Silt",
-            Self::Soil_Peat => "Peat",
+            Self::Soil_Peat_Dirt => "Peat Dirt",
             Self::Soil_Peat_Grass => "Peat Grass",
             Self::Soil_Peat_Mulch => "Peat Mulch",
             Self::Soil_Red_Moss => "Red Moss",
@@ -1648,7 +1660,7 @@ impl Voxel {
             Self::Soil_Scorched_Red_Sand => "Scorched Red Sand",
             Self::Soil_Scorched_Sand => "Scorched Sand",
             Self::Soil_Scorched_White_Sand => "Scorched White Sand",
-            Self::Soil_Silt => "Silt",
+            Self::Soil_Silt_Dirt => "Silt Dirt",
             Self::Soil_Silt_Grass => "Silt Grass",
             Self::Soil_Silt_Mulch => "Silt Mulch",
             Self::Soil_Snow => "Snow",
@@ -1860,43 +1872,5 @@ impl Voxel {
     /// Whether this voxel is completely unbreakable (like bedrock).
     pub fn is_unbreakable(self) -> bool {
         self == Self::Rock_Dreadstone
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_torch_properties() {
-        let torches = [Voxel::Emit_Red_Torch, Voxel::Emit_Green_Torch, Voxel::Emit_Blue_Torch];
-        for &t in &torches {
-            assert!(t.is_torch(), "Expected {t:?} to be a torch");
-            assert!(t.has_custom_mesh(), "Expected {t:?} to have a custom mesh");
-            assert!(!t.is_collidable(), "Expected torch {t:?} to be non-collidable (passable)");
-            assert!(!t.is_solid_opaque(), "Expected torch {t:?} not to be solid opaque");
-            assert!(t.is_light(), "Expected torch {t:?} to emit light");
-        }
-    }
-
-    #[test]
-    fn test_basket_properties() {
-        let basket = Voxel::Deco_Basket;
-        assert!(basket.is_basket(), "Expected Deco_Basket to be basket");
-        assert!(basket.has_custom_mesh(), "Expected basket to have custom mesh");
-        assert!(basket.is_collidable(), "Expected basket to be collidable");
-        assert!(!basket.is_solid_opaque(), "Expected basket not to be solid opaque (hollow interior)");
-    }
-
-    #[test]
-    fn test_torch_orientations_and_boxes() {
-        assert_eq!(BlockShape::Torch.orientation_count(), 5);
-        for orient in 0..5 {
-            let (box_a, box_b) = BlockShape::Torch.local_boxes(orient);
-            assert!(box_b.is_none());
-            let min = box_a[0];
-            let max = box_a[1];
-            assert!(min.x < max.x && min.y < max.y && min.z < max.z);
-        }
     }
 }

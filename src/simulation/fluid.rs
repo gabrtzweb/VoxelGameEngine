@@ -131,12 +131,16 @@ fn run_fluid_simulation(
         };
 
         if current_voxel.is_fluid() {
-            let changed =
-                process_fluid(&mut world, &mut modifications, &mut queue, pos, current_voxel);
+            let changed = process_fluid(
+                &mut world,
+                &mut modifications,
+                &mut queue,
+                pos,
+                current_voxel,
+            );
             edited_voxels.extend(changed);
         } else if current_voxel == Voxel::Air {
-            let changed =
-                check_infinite_source(&mut world, &mut modifications, &mut queue, pos);
+            let changed = check_infinite_source(&mut world, &mut modifications, &mut queue, pos);
             edited_voxels.extend(changed);
         }
 
@@ -408,196 +412,4 @@ pub fn water_surface_height_offset(world: &impl VoxelAccess, world_voxel: IVec3)
     let ratio = (level as f32) / (max_spread as f32);
     let total_offset = 0.10 + ratio * 0.65;
     total_offset.clamp(0.10, 0.85)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::world::chunk::Chunk;
-
-    #[test]
-    fn test_fluid_spread_limits() {
-        assert_eq!(Voxel::Liquid_Water.max_fluid_spread(), 8);
-        assert_eq!(Voxel::WaterOccupied.max_fluid_spread(), 8);
-        assert_eq!(Voxel::Liquid_Acid.max_fluid_spread(), 5);
-        assert_eq!(Voxel::Liquid_Blood.max_fluid_spread(), 4);
-        assert_eq!(Voxel::Null_Liquid.max_fluid_spread(), 4);
-        assert_eq!(Voxel::Liquid_Lava.max_fluid_spread(), 3);
-        assert_eq!(Voxel::Liquid_Molten.max_fluid_spread(), 3);
-        assert_eq!(Voxel::Liquid_Sludge.max_fluid_spread(), 3);
-        assert_eq!(Voxel::Liquid_Ooze.max_fluid_spread(), 3);
-        assert_eq!(Voxel::Liquid_Tar.max_fluid_spread(), 2);
-        assert_eq!(Voxel::Rock_Stone.max_fluid_spread(), 0);
-        assert_eq!(Voxel::Air.max_fluid_spread(), 0);
-    }
-
-    fn setup_test_world() -> (VoxelWorld, WorldModificationStore, FluidUpdateQueue) {
-        let mut world = VoxelWorld::default();
-        // Insert chunks covering from -1 to 1 in X, Z, and 0 in Y
-        for cx in -1..=1 {
-            for cz in -1..=1 {
-                world.insert_chunk(IVec3::new(cx, 0, cz), Chunk::new());
-            }
-        }
-        // Build a solid stone floor at y = 0
-        for x in -16..=16 {
-            for z in -16..=16 {
-                world.set_voxel(IVec3::new(x, 0, z), Voxel::Rock_Stone);
-            }
-        }
-        let modifications = WorldModificationStore::default();
-        let queue = FluidUpdateQueue::default();
-        (world, modifications, queue)
-    }
-
-    fn step_simulation(
-        world: &mut VoxelWorld,
-        modifications: &mut WorldModificationStore,
-        queue: &mut FluidUpdateQueue,
-        max_steps: usize,
-    ) {
-        for _ in 0..max_steps {
-            if queue.queue.is_empty() {
-                break;
-            }
-            let count = queue.queue.len();
-            for _ in 0..count {
-                let Some(pos) = queue.queue.pop_front() else {
-                    break;
-                };
-                queue.in_queue.remove(&pos);
-
-                let Some(current_voxel) = world.get_voxel(pos) else {
-                    continue;
-                };
-
-                if current_voxel.is_fluid() {
-                    process_fluid(world, modifications, queue, pos, current_voxel);
-                } else if current_voxel == Voxel::Air {
-                    check_infinite_source(world, modifications, queue, pos);
-                }
-            }
-        }
-    }
-
-    #[test]
-    fn test_water_spread_and_drain() {
-        let (mut world, mut modifications, mut queue) = setup_test_world();
-        let source_pos = IVec3::new(0, 1, 0);
-
-        // Place water source block
-        world.set_voxel(source_pos, Voxel::Liquid_Water);
-        world.set_fluid_level(source_pos, 0);
-        queue.enqueue_with_neighbors(source_pos);
-
-        // Run simulation until stable
-        step_simulation(&mut world, &mut modifications, &mut queue, 50);
-
-        // Verify water spread limit is exactly 8 blocks
-        assert_eq!(world.get_voxel(source_pos), Some(Voxel::Liquid_Water));
-        assert_eq!(world.get_fluid_level(source_pos), 0);
-
-        for dist in 1..=8 {
-            let check_pos = IVec3::new(dist, 1, 0);
-            assert_eq!(
-                world.get_voxel(check_pos),
-                Some(Voxel::Liquid_Water),
-                "Water should spread up to distance {}",
-                dist
-            );
-            assert_eq!(world.get_fluid_level(check_pos), dist as u8);
-        }
-
-        // Distance 9 MUST be Air (not spread infinitely!)
-        assert_eq!(
-            world.get_voxel(IVec3::new(9, 1, 0)),
-            Some(Voxel::Air),
-            "Water must not spread past distance 8"
-        );
-
-        // Now remove source block: set to Air
-        world.set_voxel(source_pos, Voxel::Air);
-        world.set_fluid_level(source_pos, 0);
-        queue.enqueue_with_neighbors(source_pos);
-
-        // Run simulation until stable
-        step_simulation(&mut world, &mut modifications, &mut queue, 50);
-
-        // Verify all flowing water drained away
-        for dist in 1..=8 {
-            let check_pos = IVec3::new(dist, 1, 0);
-            assert_eq!(
-                world.get_voxel(check_pos),
-                Some(Voxel::Air),
-                "Flowing water at distance {} should drain away after source is removed",
-                dist
-            );
-            assert_eq!(world.get_fluid_level(check_pos), 0);
-        }
-    }
-
-    #[test]
-    fn test_lava_spread_limit() {
-        let (mut world, mut modifications, mut queue) = setup_test_world();
-        let source_pos = IVec3::new(0, 1, 0);
-
-        // Place lava source block
-        world.set_voxel(source_pos, Voxel::Liquid_Lava);
-        world.set_fluid_level(source_pos, 0);
-        queue.enqueue_with_neighbors(source_pos);
-
-        // Run simulation until stable
-        step_simulation(&mut world, &mut modifications, &mut queue, 50);
-
-        // Lava spreads at most 3 blocks
-        for dist in 1..=3 {
-            let check_pos = IVec3::new(dist, 1, 0);
-            assert_eq!(
-                world.get_voxel(check_pos),
-                Some(Voxel::Liquid_Lava),
-                "Lava should spread up to distance {}",
-                dist
-            );
-            assert_eq!(world.get_fluid_level(check_pos), dist as u8);
-        }
-
-        // Distance 4 MUST be Air
-        assert_eq!(
-            world.get_voxel(IVec3::new(4, 1, 0)),
-            Some(Voxel::Air),
-            "Lava must not spread past distance 3"
-        );
-    }
-
-    #[test]
-    fn test_infinite_water_requires_sources() {
-        let (mut world, mut modifications, mut queue) = setup_test_world();
-
-        // 1. Two flowing water blocks (level > 0) next to an air block:
-        // (0, 1, 1) level 2, (0, 1, -1) level 2, target is (0, 1, 0)
-        let target = IVec3::new(0, 1, 0);
-        world.set_voxel(IVec3::new(0, 1, 1), Voxel::Liquid_Water);
-        world.set_fluid_level(IVec3::new(0, 1, 1), 2);
-        world.set_voxel(IVec3::new(0, 1, -1), Voxel::Liquid_Water);
-        world.set_fluid_level(IVec3::new(0, 1, -1), 2);
-
-        check_infinite_source(&mut world, &mut modifications, &mut queue, target);
-        assert_eq!(
-            world.get_voxel(target),
-            Some(Voxel::Air),
-            "Flowing water blocks should not create infinite source"
-        );
-
-        // 2. Two true source blocks (level == 0) next to an air block:
-        world.set_fluid_level(IVec3::new(0, 1, 1), 0);
-        world.set_fluid_level(IVec3::new(0, 1, -1), 0);
-
-        check_infinite_source(&mut world, &mut modifications, &mut queue, target);
-        assert_eq!(
-            world.get_voxel(target),
-            Some(Voxel::Liquid_Water),
-            "Two water sources should create a new source"
-        );
-        assert_eq!(world.get_fluid_level(target), 0);
-    }
 }

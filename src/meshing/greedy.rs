@@ -830,26 +830,51 @@ pub fn compute_chunk_visibility_mask(chunk: &Chunk) -> u64 {
                     let cz = (cur / CHUNK_SIZE) % CHUNK_SIZE;
                     let cy = cur / (CHUNK_SIZE * CHUNK_SIZE);
 
-                    if cx == 0 { touched_faces |= 1 << 0; }
-                    if cx == CHUNK_SIZE - 1 { touched_faces |= 1 << 1; }
-                    if cy == 0 { touched_faces |= 1 << 2; }
-                    if cy == CHUNK_SIZE - 1 { touched_faces |= 1 << 3; }
-                    if cz == 0 { touched_faces |= 1 << 4; }
-                    if cz == CHUNK_SIZE - 1 { touched_faces |= 1 << 5; }
+                    if cx == 0 {
+                        touched_faces |= 1 << 0;
+                    }
+                    if cx == CHUNK_SIZE - 1 {
+                        touched_faces |= 1 << 1;
+                    }
+                    if cy == 0 {
+                        touched_faces |= 1 << 2;
+                    }
+                    if cy == CHUNK_SIZE - 1 {
+                        touched_faces |= 1 << 3;
+                    }
+                    if cz == 0 {
+                        touched_faces |= 1 << 4;
+                    }
+                    if cz == CHUNK_SIZE - 1 {
+                        touched_faces |= 1 << 5;
+                    }
 
-                    let push_neighbor = |n_idx: usize, visited_bits: &mut [u64; 64], q: &mut Vec<usize>| {
-                        if (visited_bits[n_idx / 64] & (1u64 << (n_idx % 64))) == 0 {
-                            visited_bits[n_idx / 64] |= 1u64 << (n_idx % 64);
-                            q.push(n_idx);
-                        }
-                    };
+                    let push_neighbor =
+                        |n_idx: usize, visited_bits: &mut [u64; 64], q: &mut Vec<usize>| {
+                            if (visited_bits[n_idx / 64] & (1u64 << (n_idx % 64))) == 0 {
+                                visited_bits[n_idx / 64] |= 1u64 << (n_idx % 64);
+                                q.push(n_idx);
+                            }
+                        };
 
-                    if cx > 0 { push_neighbor(cur - 1, &mut visited, &mut queue); }
-                    if cx + 1 < CHUNK_SIZE { push_neighbor(cur + 1, &mut visited, &mut queue); }
-                    if cz > 0 { push_neighbor(cur - CHUNK_SIZE, &mut visited, &mut queue); }
-                    if cz + 1 < CHUNK_SIZE { push_neighbor(cur + CHUNK_SIZE, &mut visited, &mut queue); }
-                    if cy > 0 { push_neighbor(cur - CHUNK_SIZE * CHUNK_SIZE, &mut visited, &mut queue); }
-                    if cy + 1 < CHUNK_SIZE { push_neighbor(cur + CHUNK_SIZE * CHUNK_SIZE, &mut visited, &mut queue); }
+                    if cx > 0 {
+                        push_neighbor(cur - 1, &mut visited, &mut queue);
+                    }
+                    if cx + 1 < CHUNK_SIZE {
+                        push_neighbor(cur + 1, &mut visited, &mut queue);
+                    }
+                    if cz > 0 {
+                        push_neighbor(cur - CHUNK_SIZE, &mut visited, &mut queue);
+                    }
+                    if cz + 1 < CHUNK_SIZE {
+                        push_neighbor(cur + CHUNK_SIZE, &mut visited, &mut queue);
+                    }
+                    if cy > 0 {
+                        push_neighbor(cur - CHUNK_SIZE * CHUNK_SIZE, &mut visited, &mut queue);
+                    }
+                    if cy + 1 < CHUNK_SIZE {
+                        push_neighbor(cur + CHUNK_SIZE * CHUNK_SIZE, &mut visited, &mut queue);
+                    }
                 }
 
                 for f1 in 0..6 {

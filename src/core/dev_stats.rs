@@ -233,7 +233,10 @@ fn update_dev_stats(
             let mesh_triangles = chunk_meshes.total_triangles();
 
             let culling_info = if let Some(ref cs) = culling_state {
-                format!(" (Rendered: {} | Culled: {})", cs.rendered_chunks, cs.culled_chunks)
+                format!(
+                    " (Rendered: {} | Culled: {})",
+                    cs.rendered_chunks, cs.culled_chunks
+                )
             } else {
                 String::new()
             };

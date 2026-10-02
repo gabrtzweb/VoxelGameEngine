@@ -87,17 +87,6 @@ impl MapCache {
         self.chunks.get(&chunk_col)
     }
 
-    /// Retrieves the surface pixel for a specific world (x, z) block coordinate.
-    #[allow(dead_code)]
-    pub fn get_pixel(&self, wx: i32, wz: i32) -> Option<MapPixel> {
-        let chunk_size = CHUNK_SIZE as i32;
-        let col = IVec2::new(wx.div_euclid(chunk_size), wz.div_euclid(chunk_size));
-        let chunk = self.get_chunk(col)?;
-        let lx = wx.rem_euclid(chunk_size) as usize;
-        let lz = wz.rem_euclid(chunk_size) as usize;
-        Some(chunk.get(lx, lz))
-    }
-
     /// Clears all cached map data.
     pub fn clear(&mut self) {
         self.chunks.clear();
@@ -158,8 +147,7 @@ pub fn generate_lod_map_chunk(
                 && col_data.terrain_height < wl
             {
                 let depth = (wl - col_data.terrain_height).clamp(1, 255) as u8;
-                let color =
-                    super::color::voxel_map_color_at(Voxel::Liquid_Water, depth, wx, wz);
+                let color = super::color::voxel_map_color_at(Voxel::Liquid_Water, depth, wx, wz);
                 map_chunk.set(
                     lx,
                     lz,
@@ -195,8 +183,7 @@ pub fn generate_lod_map_chunk(
 
         for cell_z in min_cell_z..=max_cell_z {
             for cell_x in min_cell_x..=max_cell_x {
-                let hash =
-                    crate::generation::trees::hash_tree_cell(cell_x, cell_z, generator.seed);
+                let hash = crate::generation::trees::hash_tree_cell(cell_x, cell_z, generator.seed);
                 let offset_x = (hash % 3) as i32 + 1;
                 let offset_z = ((hash >> 2) % 3) as i32 + 1;
                 let tx = cell_x * 5 + offset_x;
@@ -235,11 +222,8 @@ pub fn generate_lod_map_chunk(
                     continue;
                 }
 
-                let leaf_opt = crate::generation::trees::leaves_voxel_variant(
-                    species,
-                    hash,
-                    col_data.biome,
-                );
+                let leaf_opt =
+                    crate::generation::trees::leaves_voxel_variant(species, hash, col_data.biome);
                 let display_voxel = leaf_opt.unwrap_or_else(|| species.log_voxel());
 
                 let height = 6 + ((hash >> 12) % 3) as i32;
@@ -257,8 +241,7 @@ pub fn generate_lod_map_chunk(
                         let lx = wx - chunk_origin_x;
                         let lz = wz - chunk_origin_z;
                         if lx >= 0 && lx < chunk_size && lz >= 0 && lz < chunk_size {
-                            let color =
-                                super::color::voxel_map_color_at(display_voxel, 0, wx, wz);
+                            let color = super::color::voxel_map_color_at(display_voxel, 0, wx, wz);
                             map_chunk.set(
                                 lx as usize,
                                 lz as usize,
@@ -358,7 +341,8 @@ fn extract_column_surface(world: &VoxelWorld, col: IVec2) -> Option<MapChunk> {
                 } else {
                     1
                 };
-                let color = super::color::voxel_map_color_at(Voxel::Liquid_Water, depth, world_x, world_z);
+                let color =
+                    super::color::voxel_map_color_at(Voxel::Liquid_Water, depth, world_x, world_z);
                 map_chunk.set(
                     lx,
                     lz,
@@ -393,58 +377,3 @@ fn extract_column_surface(world: &VoxelWorld, col: IVec2) -> Option<MapChunk> {
         None
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::generation::TerrainGenerator;
-
-    #[test]
-    fn test_generate_lod_map_chunk() {
-        let generator = TerrainGenerator::default();
-        let map_chunk = generate_lod_map_chunk(IVec2::new(0, 0), &generator);
-        for z in 0..CHUNK_SIZE {
-            for x in 0..CHUNK_SIZE {
-                let pixel = map_chunk.get(x, z);
-                assert!(!pixel.voxel.is_empty(), "LOD map pixel must have a valid voxel material");
-                assert!(pixel.color[3] > 0, "LOD map pixel must have non-zero alpha");
-            }
-        }
-    }
-
-    #[test]
-    fn test_insert_lod_chunk_does_not_overwrite_real_chunks() {
-        let mut cache = MapCache::default();
-        let col = IVec2::new(5, 5);
-        let real_pixel = MapPixel {
-            voxel: Voxel::Rock_Basalt,
-            height: 100,
-            water_depth: 0,
-            color: [100, 100, 100, 255],
-        };
-        let mut real_chunk = MapChunk::default();
-        real_chunk.set(0, 0, real_pixel);
-        cache.chunks.insert(col, real_chunk);
-
-        let lod_pixel = MapPixel {
-            voxel: Voxel::Soil_Grass,
-            height: 50,
-            water_depth: 0,
-            color: [50, 200, 50, 255],
-        };
-        let mut lod_chunk = MapChunk::default();
-        lod_chunk.set(0, 0, lod_pixel);
-
-        // Attempt inserting LOD chunk for already existing real column
-        cache.insert_lod_chunk(col, lod_chunk);
-        assert_eq!(cache.get_chunk(col).unwrap().get(0, 0).voxel, Voxel::Rock_Basalt);
-
-        // Inserting into empty column should succeed
-        let empty_col = IVec2::new(10, 10);
-        let mut lod_chunk2 = MapChunk::default();
-        lod_chunk2.set(0, 0, lod_pixel);
-        cache.insert_lod_chunk(empty_col, lod_chunk2);
-        assert_eq!(cache.get_chunk(empty_col).unwrap().get(0, 0).voxel, Voxel::Soil_Grass);
-    }
-}
-

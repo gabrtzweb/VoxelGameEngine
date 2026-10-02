@@ -243,7 +243,11 @@ fn apply_block_shape(
     let Some(current) = world.get_voxel(req.origin) else {
         return;
     };
-    if current.is_unbreakable() || current.is_empty() || current.is_fluid() || current.has_custom_mesh() {
+    if current.is_unbreakable()
+        || current.is_empty()
+        || current.is_fluid()
+        || current.has_custom_mesh()
+    {
         return;
     }
 
