@@ -218,7 +218,6 @@ pub fn setup_player_model(
         .add_children(&[torso, left_leg, right_leg]);
 }
 
-#[allow(clippy::type_complexity, clippy::too_many_arguments)]
 pub fn update_player_model(
     time: Res<Time>,
     env_status: Res<PlayerEnvironmentStatus>,

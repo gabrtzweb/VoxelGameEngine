@@ -181,7 +181,6 @@ impl CaveGenerator {
     }
 
     /// Determines whether a subterranean or ravine coordinate should be hollowed out using a precomputed sample.
-    #[allow(clippy::too_many_arguments)]
     pub fn is_cave_sampled(
         &self,
         world_x: i32,

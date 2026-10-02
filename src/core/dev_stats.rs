@@ -129,7 +129,6 @@ fn handle_debug_hud_input(
     }
 }
 
-#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn update_dev_stats(
     hud_settings: Res<DebugHudSettings>,
     diagnostics: Res<DiagnosticsStore>,

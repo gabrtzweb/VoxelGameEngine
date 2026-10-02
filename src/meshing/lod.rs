@@ -85,7 +85,6 @@ fn push_lod_quad(
 }
 
 /// Pushes a vertical side wall between `bot_y` and `top_y` with block textures.
-#[allow(clippy::too_many_arguments)]
 fn push_lod_wall(
     buffers: &mut MeshBuffers,
     direction: FaceDirection,
@@ -488,7 +487,6 @@ pub fn build_lod_mesh(
 }
 
 /// Emits a cuboid voxel tree (trunk + canopy) into the LOD buffers.
-#[allow(clippy::too_many_arguments)]
 fn push_lod_tree(
     buffers: &mut MeshBuffers,
     tx: i32,

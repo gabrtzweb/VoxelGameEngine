@@ -75,7 +75,6 @@ impl Plugin for FluidSimulationPlugin {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 fn run_fluid_simulation(
     time: Res<Time>,
     mut timer: ResMut<FluidTickTimer>,

@@ -63,7 +63,6 @@ impl Plugin for EnvironmentPlugin {
     }
 }
 
-#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn sync_celestial_system(
     state: Res<EnvironmentState>,
     camera: Single<&Transform, (With<Camera3d>, With<PlayerCamera>)>,

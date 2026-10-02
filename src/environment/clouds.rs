@@ -157,7 +157,6 @@ pub type CameraTransformQuery<'w, 's> = Single<
     (With<Camera3d>, With<PlayerCamera>),
 >;
 
-#[allow(clippy::too_many_arguments)]
 pub fn sync_clouds(
     in_game_time_seconds: f64,
     camera: CameraTransformQuery,

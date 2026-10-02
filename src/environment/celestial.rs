@@ -153,7 +153,6 @@ pub fn calculate_sun_direction(time_of_day: f32) -> Vec3 {
     Vec3::new(-angle.sin(), angle.cos(), -angle.cos() * tilt).normalize()
 }
 
-#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub fn sync_celestial_transforms(
     camera: Single<&Transform, (With<Camera3d>, With<PlayerCamera>)>,
     sun_visual: Single<

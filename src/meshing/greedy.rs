@@ -111,7 +111,6 @@ impl MeshBuffers {
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub fn push_quad(
         &mut self,
         direction: FaceDirection,

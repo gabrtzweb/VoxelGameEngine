@@ -213,7 +213,6 @@ fn despawn_pause_menu(mut commands: Commands, query: Query<Entity, With<PauseMen
     }
 }
 
-#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn handle_pause_menu_buttons(
     mut interaction_query: Query<
         (

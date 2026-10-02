@@ -179,7 +179,6 @@ pub fn gradient_noise_3d(x: f32, y: f32, z: f32, seed: u32) -> f32 {
 }
 
 /// Computes 3D Fractal Brownian Motion (FBM) with multiple octaves in range `[-1.0, 1.0]`.
-#[allow(clippy::too_many_arguments)]
 pub fn fbm_3d(
     x: f32,
     y: f32,

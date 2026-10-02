@@ -32,7 +32,6 @@ impl Plugin for ShapingPlugin {
     }
 }
 
-#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn handle_block_shaping(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,

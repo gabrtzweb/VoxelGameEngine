@@ -151,7 +151,6 @@ impl Plugin for InventoryMenuPlugin {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 fn spawn_inventory_menu(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -176,7 +175,6 @@ fn spawn_inventory_menu(
     );
 }
 
-#[allow(clippy::too_many_arguments)]
 fn build_inventory_ui(
     commands: &mut Commands,
     asset_server: &AssetServer,
@@ -759,7 +757,6 @@ fn build_inventory_ui(
         });
 }
 
-#[allow(clippy::too_many_arguments)]
 fn despawn_inventory_menu(
     mut commands: Commands,
     query: Query<Entity, With<InventoryMenuRoot>>,
@@ -797,7 +794,6 @@ struct InventoryDragState {
     is_hotbar_dragging: bool,
 }
 
-#[allow(clippy::too_many_arguments)]
 fn handle_inventory_tab_key(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut tab_state: ResMut<InventoryTab>,
@@ -836,7 +832,6 @@ fn handle_inventory_tab_key(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 fn handle_inventory_tab_interaction(
     mouse: Res<ButtonInput<MouseButton>>,
     mut tab_state: ResMut<InventoryTab>,
@@ -1045,7 +1040,6 @@ fn is_caps_lock_on() -> bool {
     false
 }
 
-#[allow(clippy::too_many_arguments)]
 fn handle_creative_search_input(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
@@ -1381,7 +1375,6 @@ fn handle_creative_search_input(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 fn handle_inventory_scroll(
     mouse: Res<ButtonInput<MouseButton>>,
     mouse_scroll: Res<AccumulatedMouseScroll>,
@@ -1515,7 +1508,6 @@ fn handle_inventory_scroll(
     }
 }
 
-#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn handle_inventory_slot_interaction(
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse: Res<ButtonInput<MouseButton>>,

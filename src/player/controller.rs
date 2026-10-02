@@ -273,7 +273,6 @@ pub(super) fn camera_look(
     transform.rotation = Quat::from_euler(EulerRot::YXZ, camera.yaw, camera.pitch, current_roll);
 }
 
-#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub(super) fn creative_movement(
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse_scroll: Res<AccumulatedMouseScroll>,
@@ -597,7 +596,6 @@ fn resolve_third_person_camera_distance(
     max_distance
 }
 
-#[allow(clippy::too_many_arguments)]
 fn fly_movement(
     keyboard: Option<&ButtonInput<KeyCode>>,
     delta_seconds: f32,
@@ -671,7 +669,6 @@ fn fly_movement(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 fn grounded_or_water_movement(
     keyboard: Option<&ButtonInput<KeyCode>>,
     delta_seconds: f32,

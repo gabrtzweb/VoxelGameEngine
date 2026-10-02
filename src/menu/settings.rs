@@ -391,7 +391,6 @@ fn spawn_settings_menu(
         });
 }
 
-#[allow(clippy::too_many_arguments)]
 fn spawn_stepper_row<T: Component>(
     parent: &mut ChildSpawnerCommands,
     title: &str,
@@ -585,7 +584,6 @@ fn despawn_settings_menu(mut commands: Commands, query: Query<Entity, With<Setti
     }
 }
 
-#[allow(clippy::type_complexity, clippy::too_many_arguments)]
 fn handle_settings_buttons(
     mut interaction_query: Query<
         (
@@ -713,7 +711,6 @@ fn handle_settings_buttons(
     }
 }
 
-#[allow(clippy::type_complexity)]
 fn update_settings_labels(
     chunk_settings: Res<ChunkStreamingSettings>,
     game_settings: Res<GameSettings>,

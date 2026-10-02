@@ -47,7 +47,6 @@ impl Plugin for AsyncMesherPlugin {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn start_meshing_tasks(
     mut commands: Commands,
     active_tasks: Query<&ChunkMeshingTask>,

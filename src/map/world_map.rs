@@ -312,7 +312,6 @@ fn despawn_world_map_ui(mut commands: Commands, query: Query<Entity, With<WorldM
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 fn handle_world_map_input(
     mouse_button: Res<ButtonInput<MouseButton>>,
     scroll: Res<AccumulatedMouseScroll>,
@@ -470,7 +469,6 @@ fn sync_world_map_terrain(
     }
 }
 
-#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn update_world_map_ui(
     player_query: Query<&Transform, With<Player>>,
     camera_query: Query<&Transform, (With<Camera3d>, With<PlayerCamera>)>,

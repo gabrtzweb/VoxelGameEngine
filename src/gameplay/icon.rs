@@ -325,7 +325,6 @@ pub fn render_isometric_block_icon_multi(
     image
 }
 
-#[allow(clippy::too_many_arguments)]
 #[inline(always)]
 fn draw_texel(
     canvas: &mut [u8],

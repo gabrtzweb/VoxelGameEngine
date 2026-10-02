@@ -356,7 +356,6 @@ fn post_process_system(
 }
 
 /// Computes the celestial light (Sun or Moon) 2D screen/NDC projection every frame, with aspect ratio and radial edge fade.
-#[allow(clippy::type_complexity)]
 pub fn update_post_process_light_position(
     state: Res<EnvironmentState>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,

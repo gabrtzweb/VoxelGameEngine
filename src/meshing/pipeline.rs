@@ -277,7 +277,6 @@ pub fn sync_chunk_render(
     );
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn apply_chunk_mesh(
     commands: &mut Commands,
     coordinate: IVec3,
@@ -352,7 +351,6 @@ pub fn apply_chunk_mesh(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 fn sync_render_part<M: Material>(
     commands: &mut Commands,
     meshes: &mut Assets<Mesh>,

@@ -297,7 +297,6 @@ pub fn mesh_shaped_voxels(
 
 /// Pushes an axis-aligned shape sub-box with unified boundary neighbor culling.
 /// cull order: [+X, -X, +Y, -Y, +Z, -Z]
-#[allow(clippy::too_many_arguments)]
 fn push_shape_box(
     buffers: &mut MeshBuffers,
     fx: f32,
@@ -514,7 +513,6 @@ fn push_quad_face_with_uvs(
     ]);
 }
 
-#[allow(clippy::too_many_arguments)]
 fn mesh_basket(
     buffers: &mut MeshBuffers,
     fx: f32,
@@ -647,7 +645,6 @@ fn mesh_basket(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 fn push_torch_stick_box(
     buffers: &mut MeshBuffers,
     min_x: f32,

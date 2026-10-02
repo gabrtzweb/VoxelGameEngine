@@ -406,7 +406,6 @@ fn manage_cursor_grab_mode(
     }
 }
 
-#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn update_custom_cursor(
     window: Option<Single<&Window, With<PrimaryWindow>>>,
     menu_state: Res<State<MenuState>>,
