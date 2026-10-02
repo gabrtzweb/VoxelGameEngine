@@ -7,7 +7,7 @@ use super::{
     trees::{self, TreeSpecies},
 };
 use crate::core::math::lerp;
-use crate::core::noise::fractal_noise_2d as fractal_noise;
+use crate::core::noise::{Simd4f, fractal_noise_2d as fractal_noise, fractal_noise_2d_x4};
 use crate::world::{BlockShape, CHUNK_SIZE, CHUNK_VOLUME, Chunk, Voxel};
 
 pub const LOGICAL_BLOCK_VOXELS: i32 = 1;
@@ -183,19 +183,26 @@ impl TerrainGenerator {
         let mut minimum_filled_height = i32::MAX;
 
         for z in 0..CHUNK_SIZE {
-            for x in 0..CHUNK_SIZE {
-                let world_x = chunk_origin.x + x as i32;
-                let world_z = chunk_origin.z + z as i32;
+            for x_start in (0..CHUNK_SIZE).step_by(4) {
+                let wx = [
+                    chunk_origin.x + x_start as i32,
+                    chunk_origin.x + x_start as i32 + 1,
+                    chunk_origin.x + x_start as i32 + 2,
+                    chunk_origin.x + x_start as i32 + 3,
+                ];
+                let wz = [chunk_origin.z + z as i32; 4];
 
-                let column = self.sample_column(world_x, world_z);
-                columns[column_index(x, z)] = column;
+                let cols = self.sample_columns_x4(wx, wz);
+                for (lane, col) in cols.into_iter().enumerate() {
+                    let x = x_start + lane;
+                    columns[column_index(x, z)] = col;
 
-                let col_top = column.terrain_height;
+                    let col_top = col.terrain_height;
+                    let filled_height = col.water_level.unwrap_or(col_top).max(col_top);
 
-                let filled_height = column.water_level.unwrap_or(col_top).max(col_top);
-
-                maximum_filled_height = maximum_filled_height.max(filled_height);
-                minimum_filled_height = minimum_filled_height.min(col_top);
+                    maximum_filled_height = maximum_filled_height.max(filled_height);
+                    minimum_filled_height = minimum_filled_height.min(col_top);
+                }
             }
         }
 
@@ -617,11 +624,11 @@ impl TerrainGenerator {
         logical_block_top(self.sea_level)
     }
 
-    pub fn continuous_height_and_biome(
+    pub fn continuous_height_and_biome_with_climate(
         &self,
         world_x: i32,
         world_z: i32,
-    ) -> (f32, BiomeType, bool) {
+    ) -> (f32, BiomeType, bool, ClimateSample) {
         let logical_x = world_x.div_euclid(LOGICAL_BLOCK_VOXELS);
         let logical_z = world_z.div_euclid(LOGICAL_BLOCK_VOXELS);
         let sample_x = logical_block_sample_position(logical_x);
@@ -658,14 +665,127 @@ impl TerrainGenerator {
             climate.biome
         };
 
+        (raw_height, final_biome, is_underground_river, climate)
+    }
+
+    pub fn continuous_height_and_biome(
+        &self,
+        world_x: i32,
+        world_z: i32,
+    ) -> (f32, BiomeType, bool) {
+        let (raw_height, final_biome, is_underground_river, _) =
+            self.continuous_height_and_biome_with_climate(world_x, world_z);
         (raw_height, final_biome, is_underground_river)
     }
 
-    pub fn sample_column(&self, world_x: i32, world_z: i32) -> TerrainColumn {
-        let sea_level = self.effective_sea_level();
-        let (raw_height, final_biome, is_underground_river) =
-            self.continuous_height_and_biome(world_x, world_z);
+    /// Evaluates 4 terrain column heights, biomes, and climates simultaneously using 4-wide SIMD noise.
+    pub fn continuous_height_and_biome_x4(
+        &self,
+        world_xs: [i32; 4],
+        world_zs: [i32; 4],
+    ) -> [(f32, BiomeType, bool, ClimateSample); 4] {
+        let logical_x = [
+            world_xs[0].div_euclid(LOGICAL_BLOCK_VOXELS),
+            world_xs[1].div_euclid(LOGICAL_BLOCK_VOXELS),
+            world_xs[2].div_euclid(LOGICAL_BLOCK_VOXELS),
+            world_xs[3].div_euclid(LOGICAL_BLOCK_VOXELS),
+        ];
+        let logical_z = [
+            world_zs[0].div_euclid(LOGICAL_BLOCK_VOXELS),
+            world_zs[1].div_euclid(LOGICAL_BLOCK_VOXELS),
+            world_zs[2].div_euclid(LOGICAL_BLOCK_VOXELS),
+            world_zs[3].div_euclid(LOGICAL_BLOCK_VOXELS),
+        ];
 
+        let sample_x = Simd4f([
+            logical_block_sample_position(logical_x[0]),
+            logical_block_sample_position(logical_x[1]),
+            logical_block_sample_position(logical_x[2]),
+            logical_block_sample_position(logical_x[3]),
+        ]);
+        let sample_z = Simd4f([
+            logical_block_sample_position(logical_z[0]),
+            logical_block_sample_position(logical_z[1]),
+            logical_block_sample_position(logical_z[2]),
+            logical_block_sample_position(logical_z[3]),
+        ]);
+
+        let climates = self
+            .climate
+            .sample_dithered_x4(sample_x, sample_z, self.seed);
+        let sea_level = self.effective_sea_level();
+
+        let wx_f32 = Simd4f([
+            world_xs[0] as f32,
+            world_xs[1] as f32,
+            world_xs[2] as f32,
+            world_xs[3] as f32,
+        ]);
+        let wz_f32 = Simd4f([
+            world_zs[0] as f32,
+            world_zs[1] as f32,
+            world_zs[2] as f32,
+            world_zs[3] as f32,
+        ]);
+
+        let raw_heights = self.natural_height_at_x4(wx_f32, wz_f32, &climates);
+        let (river_factors, is_river_paths) = self.river_sample_x4(sample_x, sample_z);
+
+        let mut res = [(0.0f32, BiomeType::Steppe, false, climates[0]); 4];
+
+        for i in 0..4 {
+            let mut raw_height = raw_heights.0[i];
+            let mut climate = climates[i];
+            let river_factor = river_factors[i];
+            let is_river_path = is_river_paths[i];
+
+            let is_inland = climate.continentalness >= -0.05;
+            let is_river = is_river_path && is_inland && river_factor > 0.05;
+            let mut is_underground_river = false;
+
+            if is_river {
+                let initial_height = raw_height.round() as i32;
+                if initial_height > sea_level + 14 {
+                    is_underground_river = true;
+                } else {
+                    let river_bed = (sea_level - 4) as f32;
+                    let target_height = lerp(raw_height, river_bed, (river_factor * 1.25).min(1.0));
+                    raw_height = raw_height.min(target_height);
+                    if climate.continentalness < 0.15 {
+                        climate.biome = BiomeType::BrackishEstuary;
+                    }
+                }
+            }
+
+            let is_beach = self.is_beach_at(
+                logical_x[i],
+                logical_z[i],
+                climate.biome,
+                sea_level,
+                &climate,
+            );
+            let final_biome = if is_beach && !is_river {
+                BiomeType::Beach
+            } else {
+                climate.biome
+            };
+
+            res[i] = (raw_height, final_biome, is_underground_river, climate);
+        }
+
+        res
+    }
+
+    pub fn build_terrain_column(
+        &self,
+        world_x: i32,
+        world_z: i32,
+        raw_height: f32,
+        final_biome: BiomeType,
+        is_underground_river: bool,
+        climate: ClimateSample,
+    ) -> TerrainColumn {
+        let sea_level = self.effective_sea_level();
         let terrain_height = raw_height.round() as i32;
         let mut surface_shape = BlockShape::Full;
         let mut shape_orientation = 0u8;
@@ -768,14 +888,41 @@ impl TerrainGenerator {
             is_beach,
             is_cliff,
             is_underground_river,
-            climate: self.climate.sample_dithered(
-                logical_block_sample_position(world_x.div_euclid(LOGICAL_BLOCK_VOXELS)),
-                logical_block_sample_position(world_z.div_euclid(LOGICAL_BLOCK_VOXELS)),
-                self.seed,
-            ),
+            climate,
             surface_shape,
             shape_orientation,
         }
+    }
+
+    pub fn sample_column(&self, world_x: i32, world_z: i32) -> TerrainColumn {
+        let (raw_height, final_biome, is_underground_river, climate) =
+            self.continuous_height_and_biome_with_climate(world_x, world_z);
+        self.build_terrain_column(
+            world_x,
+            world_z,
+            raw_height,
+            final_biome,
+            is_underground_river,
+            climate,
+        )
+    }
+
+    /// Evaluates 4 terrain columns simultaneously using 4-wide SIMD noise.
+    pub fn sample_columns_x4(&self, world_xs: [i32; 4], world_zs: [i32; 4]) -> [TerrainColumn; 4] {
+        let samples = self.continuous_height_and_biome_x4(world_xs, world_zs);
+        let mut cols = [TerrainColumn::default(); 4];
+        for i in 0..4 {
+            let (raw_height, final_biome, is_underground_river, climate) = samples[i];
+            cols[i] = self.build_terrain_column(
+                world_xs[i],
+                world_zs[i],
+                raw_height,
+                final_biome,
+                is_underground_river,
+                climate,
+            );
+        }
+        cols
     }
 
     pub fn river_sample(&self, world_x: f32, world_z: f32) -> (f32, bool) {
@@ -794,6 +941,27 @@ impl TerrainGenerator {
         } else {
             (0.0, false)
         }
+    }
+
+    pub fn river_sample_x4(&self, world_x: Simd4f, world_z: Simd4f) -> ([f32; 4], [bool; 4]) {
+        let river_noise = fractal_noise_2d_x4(
+            world_x,
+            world_z,
+            self.river_frequency,
+            3,
+            0.5,
+            self.seed.wrapping_add(555_123),
+        );
+        let mut depth_factors = [0.0f32; 4];
+        let mut is_river = [false; 4];
+        for i in 0..4 {
+            let dist = river_noise.0[i].abs();
+            if dist < self.river_width {
+                depth_factors[i] = 1.0 - (dist / self.river_width);
+                is_river[i] = true;
+            }
+        }
+        (depth_factors, is_river)
     }
 
     fn is_beach_at(
@@ -1396,6 +1564,76 @@ impl TerrainGenerator {
             + ridge;
 
         base + amplitude
+    }
+
+    fn natural_height_at_x4(
+        &self,
+        world_x: Simd4f,
+        world_z: Simd4f,
+        climates: &[ClimateSample; 4],
+    ) -> Simd4f {
+        let macro_noise = fractal_noise_2d_x4(
+            world_x,
+            world_z,
+            self.macro_frequency,
+            3,
+            0.55,
+            self.seed.wrapping_add(31_337),
+        );
+
+        let rolling_hills = fractal_noise_2d_x4(
+            world_x,
+            world_z,
+            0.012,
+            2,
+            0.5,
+            self.seed.wrapping_add(45_117),
+        )
+        .scale(self.rolling_hills_amplitude);
+
+        let detail_noise = fractal_noise_2d_x4(
+            world_x,
+            world_z,
+            self.detail_frequency,
+            self.detail_octaves,
+            self.persistence,
+            self.seed.wrapping_add(81_731),
+        );
+
+        let mut res = [0.0f32; 4];
+        for i in 0..4 {
+            let m_n = macro_noise.0[i];
+            let r_h = rolling_hills.0[i];
+            let d_n = detail_noise.0[i];
+            let climate = &climates[i];
+
+            let cont_base = Self::continental_elevation(climate.continentalness);
+            let roughness = Self::continental_roughness(climate.continentalness);
+
+            let mountain_factor = ((climate.continentalness - 0.22) / 0.35).clamp(0.0, 1.0);
+            let ridge = (1.0 - m_n.abs()).powi(2) * self.mountain_ridge_height * mountain_factor;
+
+            let swamp_depression = if climate.continentalness > 0.02
+                && climate.continentalness < 0.25
+                && climate.humidity > 0.15
+            {
+                let wetness = ((climate.humidity - 0.15) / 0.20).clamp(0.0, 1.0);
+                let inland_factor =
+                    (1.0 - ((climate.continentalness - 0.12).abs() / 0.12)).clamp(0.0, 1.0);
+                wetness * inland_factor * 3.5
+            } else {
+                0.0
+            };
+
+            let base = self.base_height + cont_base - swamp_depression;
+            let amplitude = (self.macro_amplitude * m_n + r_h + self.detail_amplitude * d_n)
+                * roughness
+                + ridge;
+
+            res[i] = base + amplitude;
+        }
+
+        Simd4f(res)
     }
 
     fn terrain_height_at(&self, world_x: f32, world_z: f32, climate: &ClimateSample) -> i32 {

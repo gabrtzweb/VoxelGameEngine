@@ -248,20 +248,20 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
     );
 
     let time = max(globals.time, 0.0);
-    let surface_type = round(vertex_no_morph.color.a);
+    let surface_type = vertex_no_morph.color.a;
 
     // Apply physical Y-axis wave displacement to upward-facing fluid surfaces ONLY
     if (out.world_normal.y > 0.5) {
-        if (surface_type > 0.5 && surface_type < 1.5) {
+        if (surface_type > 0.25 && surface_type < 0.75) {
             // Water: full physical waves
             let wave_h = calculate_wave_height(out.world_position.xz, time);
             out.world_position.y += wave_h;
-        } else if (surface_type > 1.5) {
+        } else if (surface_type >= 0.75) {
             // Generic Fluid: toned-down, gentle viscous undulation
             let wave_h = calculate_fluid_wave_height(out.world_position.xz, time);
             out.world_position.y += wave_h;
         }
-        // surface_type < 0.5 (Solid Transparent): strictly ZERO displacement
+        // surface_type <= 0.25 (Solid Transparent): strictly ZERO displacement
     }
 
     // Clip position projected from the physically displaced world coordinates
@@ -378,7 +378,7 @@ fn fragment(
     var final_color = base_pixel_color;
     var final_alpha = tex_color.a;
 
-    if (surface_type > 0.5 && surface_type < 1.5) {
+    if (surface_type > 0.25 && surface_type < 0.75) {
         // --- 1. Water: Volumetric Depth & Organic Seafoam ---
 #ifdef DEPTH_PREPASS
         let floor_ndc = prepass_utils::prepass_depth(vertex_output.position, 0u);
@@ -420,7 +420,7 @@ fn fragment(
         final_color = mix(water_base, foam_color, total_foam);
         final_alpha = clamp(mix(base_water_alpha, 0.98, total_foam), 0.0, 1.0);
         pbr_input.material.perceptual_roughness = mix(0.04, 0.32, total_foam);
-    } else if (surface_type > 1.5) {
+    } else if (surface_type >= 0.75) {
         // --- 2. Generic Fluid ---
         // Pure vibrant liquid colors (no ocean depth tint or foam)
         final_color = base_pixel_color;

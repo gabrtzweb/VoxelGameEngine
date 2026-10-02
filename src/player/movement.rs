@@ -1,16 +1,13 @@
-use bevy::{
-    input::mouse::AccumulatedMouseScroll,
-    prelude::*,
-};
+use bevy::{input::mouse::AccumulatedMouseScroll, prelude::*};
 
-use crate::{
-    menu::GameSettings,
-    world::VoxelWorld,
-};
+use crate::{menu::GameSettings, world::VoxelWorld};
 
 use super::{
     GameMode, PLAYER_EYE_HEIGHT, PLAYER_HEIGHT, Player, PlayerEnvironmentStatus,
-    camera::{InspectorInteraction, PlayerCamera, THIRD_PERSON_DISTANCE, resolve_third_person_camera_distance},
+    camera::{
+        InspectorInteraction, PlayerCamera, THIRD_PERSON_DISTANCE,
+        resolve_third_person_camera_distance,
+    },
     collision::{has_headroom, is_grounded, move_with_collisions},
 };
 

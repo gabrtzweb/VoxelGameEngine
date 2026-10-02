@@ -46,9 +46,9 @@ pub fn mesh_shaped_voxels(
 
         let mut tint = voxel.tint_color_at(world_voxel);
         tint[3] = if voxel.is_water() {
-            1.0
+            0.5
         } else if voxel.is_fluid() {
-            2.0
+            1.0
         } else if voxel.is_transparent() {
             0.0
         } else {
@@ -459,7 +459,7 @@ fn push_quad_face(
             .positions
             .push([v[0] * VOXEL_SIZE, v[1] * VOXEL_SIZE, v[2] * VOXEL_SIZE]);
         buffers.normals.push(normal);
-        buffers.colors.push(tint_color);
+        buffers.colors.push(super::greedy::pack_color(tint_color));
         buffers.uv_bs.push([texture_layer as f32, frame_count]);
     }
 
@@ -497,7 +497,7 @@ fn push_quad_face_with_uvs(
             .positions
             .push([v[0] * VOXEL_SIZE, v[1] * VOXEL_SIZE, v[2] * VOXEL_SIZE]);
         buffers.normals.push(normal);
-        buffers.colors.push(tint_color);
+        buffers.colors.push(super::greedy::pack_color(tint_color));
         buffers.uv_bs.push([texture_layer as f32, frame_count]);
     }
 

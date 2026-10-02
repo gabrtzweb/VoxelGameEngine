@@ -1,12 +1,12 @@
 # VoxelGameEngine
 
-An experimental voxel game engine built from scratch with Rust and Bevy.
+This is an attempt to develop an experimental voxel game engine built from scratch with Rust and Bevy.
 
 The project focuses on a fully editable procedural voxel world with 1.0 m³ blocks:
 
-- The world is stored using 1.0 m voxels (identical to Minecraft blocks).
+- The world is stored using 1.0 m voxels (similar to Minecraft blocks).
 - Chunks have 16 × 16 × 16 voxels (16 m × 16 m × 16 m physical sections).
-- Complete removal of single 0.5 m sub-voxels; native 1.0 m block shapes (`Full`, `Slab`, `Stair`, `Column`, `Torch`, `Basket`) with 3D orientations, custom meshes (3D hollow basket, Minecraft-style RGB torches), and passable non-solid collision for torches.
+- Native 1.0 m block with multiple shapes: (`Full`, `Slab`, `Stair`, `'Column`, `Torch`, `Basket`) with 3D orientations, custom meshes (3D hollow basket, torches), and passable non-solid collision for torches.
 - Comprehensive 244-block palette across 10 categories with multi-face textures, dual-layer moss overlays, organic tinting, and tuned dynamic fluid simulation (wave movement and finite spreading).
 - Interactive tactile feedback: subtle 8-particle debris bursts with terrain collision bouncing on block break, and 0.18s elastic scale bounce on block placement.
 - Auto-step is calibrated to 0.50 m (50 cm) for smooth future slab stepping, requiring jumping over full 1 m blocks.
@@ -17,14 +17,15 @@ The project focuses on a fully editable procedural voxel world with 1.0 m³ bloc
 - Centered unified textured container interface: Creative palette & Personal storage with top mode toggle buttons, real-time search with hold-to-repeat backspace, Caps Lock support, and text drag/double-click selection, persistent tab memory, Shift-drag multi-slot transfers, and cinematic Depth-of-Field blur.
 - Dynamic adaptive UI scaling: responsive resolution-relative `UiScale` system (`AdaptiveUiPlugin`), automatically scaling HUD, minimap, hotbar, and inventory elements proportionally across all screen sizes and resolutions.
 - Restructured two-column menus with pixel-art buttons: Pause and Settings menus redesigned into clean two-column floating layouts using authentic textured container buttons (`button.png`, `small_button.png`).
-- Post-process menu stabilization: automatic muting of volumetric god rays and celestial light flares during active menus, eliminating background lighting flicker against depth-of-field blur.
-- Item identification tooltips: vanilla Minecraft-style hotbar item name display centered above the hotbar on slot selection with smooth fade-out, and responsive floating hover tooltips across all Creative and Personal inventory slots.
+- Item identification tooltips: Item name display centered above the hotbar on slot selection with smooth fade-out, and responsive floating hover tooltips across all Creative and Personal inventory slots.
 
 The long-term goal is to build a performant procedural voxel game with large-world streaming, runtime terrain editing, configurable generation, multiple gameplay modes, dynamic fluids and extensive development tooling.
 
+More information about how the project works and future plans can be found at [project_context.md](docs/project_context.md) and [project_roadmap.md](docs/project_roadmap.md).
+
 ## Current Game Controls
 
-    Mouse             Look
+    Mouse             Look'
 
     W                 Forward / Swim forward
     S                 Backward / Swim backward
@@ -84,37 +85,35 @@ assets/
 │   ├── voxel_opaque.wgsl
 │   └── voxel_transparent.wgsl
 ├── sounds/
+│   ├── ambience/
+│   ├── blocks/
 │   ├── footsteps/
 │   ├── liquids/
 │   ├── music/
-│   │   ├── game/
-│   │   └── menu/
 │   └── weather/
 ├── textures/
 │   ├── blocks/
-│   ├── environments/   
-│   │   └── celestial/
-│   │       └── moon/
+│   ├── environments/
 │   ├── interfaces/
-│   │   ├── atlases/
-│   │   │   └── decorations/
-│   │   ├── containers/
-│   │   │   └── slots/
-│   │   └── cursors/
 │   ├── items/
-│   └── models/
+│   ├── models/
+│   └── particles/
 └── icon.ico
 
 docs/
 ├── future_textures/
-├── context.md
-└── roadmap.md
+├── all_textures.txt
+├── project_context.md
+├── project_roadmap.md
+├── technical_review.md
+└── world_definition.md
 
 src/
 ├── core/
 │   ├── dev_stats.rs
 │   ├── dynamic_fps.rs
 │   ├── font.rs
+│   ├── math.rs
 │   ├── mod.rs
 │   ├── noise.rs
 │   └── ui_scale.rs
@@ -157,12 +156,15 @@ src/
 │   └── settings.rs
 ├── meshing/
 │   ├── async_mesher.rs
+│   ├── culling.rs
 │   ├── greedy.rs
+│   ├── lod.rs
 │   ├── mod.rs
 │   ├── pipeline.rs
 │   ├── shapes.rs
 │   └── textures.rs
 ├── player/
+│   ├── camera.rs
 │   ├── collision.rs
 │   ├── controller.rs
 │   ├── game_mode.rs
@@ -170,6 +172,7 @@ src/
 │   ├── inventory.rs
 │   ├── mod.rs
 │   ├── model.rs
+│   ├── movement.rs
 │   ├── spectator.rs
 │   ├── state.rs
 │   └── water.rs
@@ -183,6 +186,7 @@ src/
 │   │   ├── mod.rs
 │   │   └── queues.rs
 │   ├── block.rs
+│   ├── cache.rs
 │   ├── chunk.rs
 │   ├── mod.rs
 │   ├── modifications.rs

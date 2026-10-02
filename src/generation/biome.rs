@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use crate::{core::noise::fbm_2d, world::Voxel};
+use crate::{
+    core::noise::{Simd4f, fbm_2d, fbm_2d_x4, gradient_noise_2d_x4},
+    world::Voxel,
+};
 
 /// Complete 48-biome catalog defined in `docs/world_definition.md`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Reflect, Default)]
@@ -934,6 +937,101 @@ impl ClimateGenerator {
         self.sample(
             world_x + warp_x + dither_x,
             world_z + warp_z + dither_z,
+            seed,
+        )
+    }
+
+    /// Evaluates 4 climate samples simultaneously using 4-wide SIMD noise.
+    pub fn sample_x4(&self, world_x: Simd4f, world_z: Simd4f, seed: u32) -> [ClimateSample; 4] {
+        let continentalness = fbm_2d_x4(
+            world_x,
+            world_z,
+            self.continentalness_freq,
+            3,
+            0.55,
+            2.0,
+            seed.wrapping_add(10_007),
+        );
+
+        let temperature = fbm_2d_x4(
+            world_x,
+            world_z,
+            self.temperature_freq,
+            2,
+            0.5,
+            2.0,
+            seed.wrapping_add(30_011),
+        );
+
+        let humidity = fbm_2d_x4(
+            world_x,
+            world_z,
+            self.humidity_freq,
+            2,
+            0.5,
+            2.0,
+            seed.wrapping_add(50_021),
+        );
+
+        std::array::from_fn(|i| {
+            let c = continentalness.0[i];
+            let t = temperature.0[i];
+            let h = humidity.0[i];
+            ClimateSample {
+                continentalness: c,
+                temperature: t,
+                humidity: h,
+                biome: Self::classify_biome(c, t, h),
+            }
+        })
+    }
+
+    /// Samples climate for 4 coordinates simultaneously with SIMD domain warping and edge dithering.
+    pub fn sample_dithered_x4(
+        &self,
+        world_x: Simd4f,
+        world_z: Simd4f,
+        seed: u32,
+    ) -> [ClimateSample; 4] {
+        let warp_x = fbm_2d_x4(
+            world_x,
+            world_z,
+            0.004,
+            2,
+            0.5,
+            2.0,
+            seed.wrapping_add(12_345),
+        )
+        .scale(self.warp_amplitude);
+
+        let warp_z = fbm_2d_x4(
+            world_x,
+            world_z,
+            0.004,
+            2,
+            0.5,
+            2.0,
+            seed.wrapping_add(67_890),
+        )
+        .scale(self.warp_amplitude);
+
+        let dither_x = gradient_noise_2d_x4(
+            world_x.scale(0.16),
+            world_z.scale(0.16),
+            seed.wrapping_add(88_331),
+        )
+        .scale(self.dither_amplitude);
+
+        let dither_z = gradient_noise_2d_x4(
+            world_x.scale(0.16).add_scalar(50.0),
+            world_z.scale(0.16).add_scalar(50.0),
+            seed.wrapping_add(99_442),
+        )
+        .scale(self.dither_amplitude);
+
+        self.sample_x4(
+            world_x.add(warp_x).add(dither_x),
+            world_z.add(warp_z).add(dither_z),
             seed,
         )
     }

@@ -529,15 +529,13 @@ pub fn start_generation_tasks(
 
         // Cache hit fast-path: if this chunk was generated previously and cached,
         // reuse the chunk directly without running expensive 3D noise generation!
-        if let Some(ref mut cache) = chunk_cache {
-            if let Some(cached_chunk_arc) = cache.take(&coordinate) {
-                let chunk = (*cached_chunk_arc).clone();
-                let task = pool.spawn(async move {
-                    GeneratedChunk { coordinate, chunk }
-                });
-                commands.spawn(ChunkGenerationTask { coordinate, task });
-                continue;
-            }
+        if let Some(ref mut cache) = chunk_cache
+            && let Some(cached_chunk_arc) = cache.take(&coordinate)
+        {
+            let chunk = (*cached_chunk_arc).clone();
+            let task = pool.spawn(async move { GeneratedChunk { coordinate, chunk } });
+            commands.spawn(ChunkGenerationTask { coordinate, task });
+            continue;
         }
 
         let generator = terrain_generator.clone();

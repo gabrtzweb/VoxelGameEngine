@@ -28,6 +28,8 @@ pub struct CaveCullingState {
     pub rendered_vertices: usize,
     #[allow(dead_code)]
     pub culled_vertices: usize,
+    pub visible_chunks: HashSet<IVec3>,
+    pub traversal_queue: VecDeque<(IVec3, usize)>,
 }
 
 impl Default for CaveCullingState {
@@ -40,6 +42,8 @@ impl Default for CaveCullingState {
             culled_chunks: 0,
             rendered_vertices: 0,
             culled_vertices: 0,
+            visible_chunks: HashSet::with_capacity(512),
+            traversal_queue: VecDeque::with_capacity(256),
         }
     }
 }
@@ -256,7 +260,7 @@ pub fn update_cave_culling_system(
         .and_then(|w| w.get_voxel(cam_block))
         .is_some_and(|v| v.is_solid_opaque());
 
-    let mut visible_chunks = HashSet::with_capacity(512);
+    culling_state.visible_chunks.clear();
 
     if is_in_solid_rock {
         // In spectator mode clipping inside solid rock, strictly keep immediate 3x3x3 chunks visible.
@@ -264,7 +268,9 @@ pub fn update_cave_culling_system(
         for dz in -1..=1 {
             for dy in -1..=1 {
                 for dx in -1..=1 {
-                    visible_chunks.insert(cam_chunk + IVec3::new(dx, dy, dz));
+                    culling_state
+                        .visible_chunks
+                        .insert(cam_chunk + IVec3::new(dx, dy, dz));
                 }
             }
         }
@@ -273,21 +279,21 @@ pub fn update_cave_culling_system(
         let reachable_faces =
             get_camera_reachable_faces(cam_pos, cam_chunk, cam_mask, world.as_deref());
 
-        visible_chunks.insert(cam_chunk);
-        let mut queue = VecDeque::with_capacity(256);
+        culling_state.visible_chunks.insert(cam_chunk);
+        culling_state.traversal_queue.clear();
 
         // Queue only neighbor chunks in directions the camera can actually see through open air
         for out_face in 0..6 {
             if (reachable_faces & (1 << out_face)) != 0 {
                 let neighbor = cam_chunk + FACE_OFFSETS[out_face];
                 let in_face = OPPOSITE_FACES[out_face];
-                if visible_chunks.insert(neighbor) {
-                    queue.push_back((neighbor, in_face));
+                if culling_state.visible_chunks.insert(neighbor) {
+                    culling_state.traversal_queue.push_back((neighbor, in_face));
                 }
             }
         }
 
-        while let Some((curr, in_face)) = queue.pop_front() {
+        while let Some((curr, in_face)) = culling_state.traversal_queue.pop_front() {
             let mask = get_chunk_permeability(curr, &registry, world.as_deref());
             if mask == 0 {
                 continue;
@@ -307,8 +313,10 @@ pub fn update_cave_culling_system(
                 }
 
                 let in_face_of_neighbor = OPPOSITE_FACES[out_face];
-                if visible_chunks.insert(neighbor) {
-                    queue.push_back((neighbor, in_face_of_neighbor));
+                if culling_state.visible_chunks.insert(neighbor) {
+                    culling_state
+                        .traversal_queue
+                        .push_back((neighbor, in_face_of_neighbor));
                 }
             }
         }
@@ -318,7 +326,7 @@ pub fn update_cave_culling_system(
     let mut culled_count = 0;
 
     for (coord, mut visibility) in &mut chunk_meshes {
-        let target = if visible_chunks.contains(&coord.0) {
+        let target = if culling_state.visible_chunks.contains(&coord.0) {
             rendered_count += 1;
             Visibility::Inherited
         } else {

@@ -127,10 +127,10 @@ pub fn remove_chunk_lights(
 ) {
     if let Some(blocks) = registry.chunk_to_blocks.remove(&chunk_coordinate) {
         for block_coord in blocks {
-            if let Some(state) = registry.entries.remove(&block_coord) {
-                if let Ok(mut entity_cmds) = commands.get_entity(state.entity) {
-                    entity_cmds.despawn();
-                }
+            if let Some(state) = registry.entries.remove(&block_coord)
+                && let Ok(mut entity_cmds) = commands.get_entity(state.entity)
+            {
+                entity_cmds.despawn();
             }
         }
     }

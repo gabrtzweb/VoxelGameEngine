@@ -64,9 +64,10 @@ fn push_lod_quad(
     buffers.positions.extend_from_slice(&[p0, p1, p2, p3]);
     let norm = direction.normal_f32();
     buffers.normals.extend_from_slice(&[norm, norm, norm, norm]);
+    let packed = super::greedy::pack_color(color);
     buffers
         .colors
-        .extend_from_slice(&[color, color, color, color]);
+        .extend_from_slice(&[packed, packed, packed, packed]);
     buffers
         .uv_bs
         .extend_from_slice(&[[layer, 0.0], [layer, 0.0], [layer, 0.0], [layer, 0.0]]);

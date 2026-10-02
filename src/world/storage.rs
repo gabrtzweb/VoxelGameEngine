@@ -152,7 +152,9 @@ impl VoxelWorld {
     }
 
     pub fn iter_chunks(&self) -> impl Iterator<Item = (&IVec3, &Chunk)> {
-        self.chunks.iter().map(|(coordinate, chunk)| (coordinate, chunk.as_ref()))
+        self.chunks
+            .iter()
+            .map(|(coordinate, chunk)| (coordinate, chunk.as_ref()))
     }
 
     pub fn remove_chunk(&mut self, coordinate: IVec3) -> Option<Arc<Chunk>> {

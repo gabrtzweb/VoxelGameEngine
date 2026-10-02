@@ -1,7 +1,7 @@
 use bevy::platform::collections::HashMap;
 
 use bevy::{
-    camera::primitives::Aabb,
+    camera::primitives::{Aabb, MeshAabb},
     pbr::{ExtendedMaterial, MaterialExtension},
     prelude::*,
     render::render_resource::*,
@@ -374,12 +374,17 @@ fn sync_render_part<M: Material>(
         .map(|indices| indices.len() / 3)
         .unwrap_or(0);
 
+    let tight_aabb = rebuilt_mesh.compute_aabb().unwrap_or(aabb);
+
     if let Some(existing) = part.as_mut()
         && let Some(mut mesh) = meshes.get_mut(&existing.mesh_handle)
     {
         *mesh = rebuilt_mesh;
         existing.vertex_count = vertex_count;
         existing.triangle_count = triangle_count;
+        if let Ok(mut entity_cmds) = commands.get_entity(existing.entity) {
+            entity_cmds.insert(tight_aabb);
+        }
         return;
     }
 
@@ -391,7 +396,7 @@ fn sync_render_part<M: Material>(
         Mesh3d(mesh_handle.clone()),
         MeshMaterial3d(material.clone()),
         Transform::from_translation(translation),
-        aabb,
+        tight_aabb,
         initial_visibility,
     ));
 

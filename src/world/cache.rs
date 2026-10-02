@@ -130,8 +130,8 @@ pub fn serialize_chunk(chunk: &Chunk) -> Vec<u8> {
         } => {
             buffer.push(1); // Tag 1 = Paletted
             buffer.push(*palette_len);
-            for i in 0..(*palette_len as usize) {
-                buffer.push(palette[i] as u8);
+            for &p in palette.iter().take(*palette_len as usize) {
+                buffer.push(p as u8);
             }
             buffer.extend_from_slice(indices.as_slice());
         }
@@ -177,7 +177,7 @@ pub fn deserialize_chunk(bytes: &[u8]) -> Option<Chunk> {
     if bytes.len() < 7 {
         return None;
     }
-    if &bytes[0..4] != &CHUNK_MAGIC {
+    if bytes[0..4] != CHUNK_MAGIC {
         return None;
     }
     let version = bytes[4];

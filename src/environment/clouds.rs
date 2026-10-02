@@ -219,7 +219,9 @@ pub fn sync_clouds(
         let target_cell_center = IVec2::new(cell_x, cell_z);
 
         // 2. Spawn async task if target cell center has shifted and no task is in flight
-        if target_cell_center != layer_state.current_cell_center && layer_state.active_task.is_none() {
+        if target_cell_center != layer_state.current_cell_center
+            && layer_state.active_task.is_none()
+        {
             let pool = AsyncComputeTaskPool::get();
             let map_clone = cloud_map.clone();
             let config_clone = config.clone();
@@ -229,8 +231,10 @@ pub fn sync_clouds(
             }));
         }
 
-        let subcell_x = world_center_x - (layer_state.current_cell_center.x as f32 * config.cell_size);
-        let subcell_z = world_center_z - (layer_state.current_cell_center.y as f32 * config.cell_size);
+        let subcell_x =
+            world_center_x - (layer_state.current_cell_center.x as f32 * config.cell_size);
+        let subcell_z =
+            world_center_z - (layer_state.current_cell_center.y as f32 * config.cell_size);
 
         cloud_transform.translation = Vec3::new(
             camera_translation.x - subcell_x,
