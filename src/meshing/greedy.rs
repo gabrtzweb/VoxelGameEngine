@@ -1,6 +1,6 @@
 use bevy::{
     asset::RenderAssetUsages,
-    mesh::{Indices, PrimitiveTopology, VertexAttributeValues},
+    mesh::{Indices, PrimitiveTopology},
     prelude::{IVec3, Mesh},
 };
 
@@ -95,20 +95,8 @@ pub struct MeshBuffers {
     pub normals: Vec<[f32; 3]>,
     pub uvs: Vec<[f32; 2]>,
     pub uv_bs: Vec<[f32; 2]>,
-    pub colors: Vec<[u8; 4]>,
+    pub colors: Vec<[f32; 4]>,
     pub indices: Vec<u32>,
-}
-
-/// Packs a 4-channel float color `[r, g, b, a]` (0.0..1.0) into 4 normalized bytes `[u8; 4]`.
-/// Enables GPU hardware vertex fetch decompression from 4 bytes into `vec4<f32>` (Unorm8x4).
-#[inline(always)]
-pub fn pack_color(color: [f32; 4]) -> [u8; 4] {
-    [
-        (color[0].clamp(0.0, 1.0) * 255.0).round() as u8,
-        (color[1].clamp(0.0, 1.0) * 255.0).round() as u8,
-        (color[2].clamp(0.0, 1.0) * 255.0).round() as u8,
-        (color[3].clamp(0.0, 1.0) * 255.0).round() as u8,
-    ]
 }
 
 impl MeshBuffers {
@@ -155,15 +143,14 @@ impl MeshBuffers {
 
         let mut color = key.tint_color;
         color[3] = if key.voxel.is_water() {
-            0.5
-        } else if key.voxel.is_fluid() {
             1.0
+        } else if key.voxel.is_fluid() {
+            2.0
         } else if key.voxel.is_transparent() {
             0.0
         } else {
             1.0
         };
-        let packed_color = pack_color(color);
         let layer = key.texture_layer as f32;
         let frame_count = if key.voxel.is_light() {
             -(key.frame_count.max(1) as f32)
@@ -183,9 +170,6 @@ impl MeshBuffers {
 
             if key.voxel.is_fluid() {
                 match direction {
-                    FaceDirection::PositiveY => {
-                        pos[1] -= surface_offset;
-                    }
                     FaceDirection::PositiveX
                     | FaceDirection::NegativeX
                     | FaceDirection::PositiveZ
@@ -196,13 +180,16 @@ impl MeshBuffers {
                             pos[1] += VOXEL_SIZE - step_bottom_offset;
                         }
                     }
+                    FaceDirection::PositiveY => {
+                        pos[1] -= surface_offset;
+                    }
                     FaceDirection::NegativeY => {}
                 }
             }
 
             self.positions.push(pos);
             self.normals.push(direction.normal_f32());
-            self.colors.push(packed_color);
+            self.colors.push(color);
             self.uv_bs.push([layer, frame_count]);
         }
 
@@ -250,7 +237,7 @@ impl MeshBuffers {
 
                 self.positions.push(pos);
                 self.normals.push(FaceDirection::NegativeY.normal_f32());
-                self.colors.push(packed_color);
+                self.colors.push(color);
                 self.uv_bs.push([layer, frame_count]);
             }
 
@@ -287,10 +274,7 @@ impl MeshBuffers {
             .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals)
             .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, self.uvs)
             .with_inserted_attribute(Mesh::ATTRIBUTE_UV_1, self.uv_bs)
-            .with_inserted_attribute(
-                Mesh::ATTRIBUTE_COLOR,
-                VertexAttributeValues::Unorm8x4(self.colors),
-            )
+            .with_inserted_attribute(Mesh::ATTRIBUTE_COLOR, self.colors)
             .with_inserted_indices(indices),
         )
     }

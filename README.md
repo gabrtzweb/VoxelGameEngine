@@ -44,7 +44,7 @@ More information about how the project works and future plans can be found at [p
     F3                Toggle HUD (Minimal / Extended debug)
     Shift + F3        Toggle HUD visibility (Show / Hide)
     F4                Creative / Spectator
-    F5                First / Third person (64×64 Minecraft skin body model, head tracking, overlay layers, animations)
+    F5                First / Third person (body model, head tracking, overlay layers, animations)
     F6                Day / Night cycle (Click: step phase / Hold: scrub time)
 
 
