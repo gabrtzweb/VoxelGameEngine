@@ -160,6 +160,38 @@ impl TerrainGenerator {
         (max_h.max(sea_level) + 24.0).ceil() as i32
     }
 
+    /// Fast 5-point bounding evaluation providing a safe lower-bound
+    /// on the minimum solid terrain or seabed height anywhere within chunk column (chunk_x, chunk_z).
+    /// Used to ensure visible surface terrain and water chunks stay loaded when player is flying high.
+    pub fn estimate_chunk_surface_min_height(&self, chunk_x: i32, chunk_z: i32) -> i32 {
+        let chunk_origin_x = chunk_x * CHUNK_SIZE as i32;
+        let chunk_origin_z = chunk_z * CHUNK_SIZE as i32;
+
+        let samples = [
+            (chunk_origin_x, chunk_origin_z),
+            (chunk_origin_x + (CHUNK_SIZE as i32 - 1), chunk_origin_z),
+            (chunk_origin_x, chunk_origin_z + (CHUNK_SIZE as i32 - 1)),
+            (
+                chunk_origin_x + (CHUNK_SIZE as i32 - 1),
+                chunk_origin_z + (CHUNK_SIZE as i32 - 1),
+            ),
+            (
+                chunk_origin_x + (CHUNK_SIZE as i32 / 2),
+                chunk_origin_z + (CHUNK_SIZE as i32 / 2),
+            ),
+        ];
+
+        let mut min_h = f32::MAX;
+        for (sx, sz) in samples {
+            let (raw_h, _, _) = self.continuous_height_and_biome(sx, sz);
+            min_h = min_h.min(raw_h);
+        }
+
+        let sea_level = self.effective_sea_level() as f32;
+        // 16.0 blocks buffer safely accounts for intra-chunk noise variance and local seabed dips
+        (min_h.min(sea_level) - 16.0).floor() as i32
+    }
+
     pub fn generate_chunk(&self, chunk_coordinate: IVec3) -> Chunk {
         let chunk_origin = chunk_coordinate * CHUNK_SIZE as i32;
         let chunk_min_y = chunk_origin.y;

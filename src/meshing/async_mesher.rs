@@ -188,15 +188,11 @@ pub fn collect_meshing_tasks(
             &material,
         );
 
-        // When a real chunk with visible geometry is placed, clean up any distant LOD mesh covering this column
-        if has_mesh {
+        // When a real surface chunk with visible geometry is placed, clean up any distant LOD mesh covering this column
+        if has_mesh && !completed.is_subterranean {
             let column = IVec2::new(completed.coordinate.x, completed.coordinate.z);
             if lod_registry.contains(&column) {
                 remove_lod_render(&mut commands, column, &mut lod_registry, &mut meshes);
-            }
-            let super_col = IVec2::new(column.x.div_euclid(2) * 2, column.y.div_euclid(2) * 2);
-            if lod_registry.contains(&super_col) {
-                remove_lod_render(&mut commands, super_col, &mut lod_registry, &mut meshes);
             }
         }
     }

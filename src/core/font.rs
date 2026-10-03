@@ -4,7 +4,7 @@ pub use bevy::ui::widget::TextShadow;
 
 /// Path to the active game font inside `assets/`.
 /// To swap to a different font, change this reference.
-pub const DEFAULT_FONT_PATH: &str = "fonts/CutePixel.ttf";
+pub const DEFAULT_FONT_PATH: &str = "fonts/ari-w9500-condensed-display.ttf";
 
 /// Shared game font handle available across all UI and HUD systems.
 #[derive(Resource, Clone)]

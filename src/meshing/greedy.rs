@@ -495,7 +495,8 @@ impl ChunkMesher {
 
                         let world_voxel = chunk_voxel_origin + local_voxel;
                         let neighbor_coordinate = world_voxel + direction.normal();
-                        let neighbor = world.get_voxel(neighbor_coordinate).unwrap_or(Voxel::Air);
+                        let neighbor_opt = world.get_voxel(neighbor_coordinate);
+                        let neighbor = neighbor_opt.unwrap_or(Voxel::Air);
                         let (neighbor_shape, _) = world.get_shape(neighbor_coordinate);
                         let mut step_bottom_offset_cm = 0u8;
 
@@ -503,6 +504,12 @@ impl ChunkMesher {
                             && direction != FaceDirection::PositiveY
                             && direction != FaceDirection::NegativeY
                         {
+                            // If bordering an unloaded chunk outside render distance, do not render
+                            // an artificial waterfall cliff into the void; the water seamlessly continues into LOD.
+                            if neighbor_opt.is_none() {
+                                continue;
+                            }
+
                             if neighbor == voxel {
                                 let v_offset = (water_surface_height_offset(world, world_voxel)
                                     * 100.0)

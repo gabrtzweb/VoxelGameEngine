@@ -289,9 +289,9 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
 // ==============================================================================
 
 fn deep_color_blend(deep_water: vec3<f32>, depth_dist: f32) -> vec3<f32> {
-    // Exponential Beer-Lambert depth absorption for deep ocean abyss
-    let absorption = exp(-depth_dist * 0.12);
-    return deep_water * mix(0.08, 1.0, absorption);
+    // Exponential Beer-Lambert depth absorption for deep ocean
+    let absorption = exp(-depth_dist * 0.08);
+    return deep_water * mix(0.55, 1.0, absorption);
 }
 
 @fragment
@@ -382,9 +382,15 @@ fn fragment(
         // --- 1. Water: Volumetric Depth & Organic Seafoam ---
 #ifdef DEPTH_PREPASS
         let floor_ndc = prepass_utils::prepass_depth(vertex_output.position, 0u);
-        let floor_view_z = depth_ndc_to_view_z(floor_ndc);
-        let water_view_z = position_world_to_view(vertex_output.world_position.xyz).z;
-        let depth_dist = max(0.0, water_view_z - floor_view_z);
+        var depth_dist: f32;
+        // In reverse-Z depth prepass, floor_ndc <= 0.00001 indicates clear depth / far plane (unrendered background)
+        if (floor_ndc <= 0.00001) {
+            depth_dist = 12.0;
+        } else {
+            let floor_view_z = depth_ndc_to_view_z(floor_ndc);
+            let water_view_z = position_world_to_view(vertex_output.world_position.xyz).z;
+            depth_dist = clamp(max(0.0, water_view_z - floor_view_z), 0.0, 24.0);
+        }
 #else
         let depth_dist = 5.0;
 #endif
@@ -397,7 +403,7 @@ fn fragment(
 
         let shallow_tint = vec3<f32>(1.00, 1.04, 1.08);
         let mid_tint     = vec3<f32>(0.45, 0.70, 0.88);
-        let deep_tint    = vec3<f32>(0.02, 0.07, 0.20);
+        let deep_tint    = vec3<f32>(0.06, 0.16, 0.32);
 
         let t1 = smoothstep(0.8, 3.8, depth_dist);
         let t2 = smoothstep(3.8, 11.5, depth_dist);

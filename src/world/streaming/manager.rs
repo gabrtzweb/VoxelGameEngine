@@ -325,7 +325,7 @@ pub fn plan_chunk_streaming(
 
                 let col = center_2d + IVec2::new(dx, dz);
                 if dist_sq <= r_real_sq {
-                    if !mesh_registry.has_column_mesh(col) {
+                    if !mesh_registry.has_column_surface_mesh(col) {
                         desired_lod.insert(col, ChunkLod::Lod1);
                     }
                 } else {
@@ -729,8 +729,6 @@ pub fn desired_chunk_coordinates(
 
     let mut chunks = HashSet::new();
 
-    // Use cylindrical horizontal distance so vertical mountain peaks are not sliced off
-    let min_y = (center.y - render_distance).max(WORLD_MIN_CHUNK_Y);
     let max_y = (center.y + render_distance).min(WORLD_MAX_CHUNK_Y);
 
     for z in -render_distance..=render_distance {
@@ -745,12 +743,20 @@ pub fn desired_chunk_coordinates(
             let est_max_height = generator.estimate_chunk_max_height(col_chunk_x, col_chunk_z);
             let est_max_chunk_y = est_max_height.div_euclid(crate::world::CHUNK_SIZE as i32);
 
-            // Safe column upper bound:
-            // 1. At least 1 chunk buffer above treetops/mountain peaks
-            // 2. But keep chunks around the player loaded if player is flying high (center.y + 2)
+            let est_min_height =
+                generator.estimate_chunk_surface_min_height(col_chunk_x, col_chunk_z);
+            let est_min_chunk_y = est_min_height.div_euclid(crate::world::CHUNK_SIZE as i32);
+
+            // Safe column bounds:
+            // 1. Upper bound: at least 1 chunk buffer above treetops/peaks, and keep chunks around high-flying player loaded
             let col_max_y = (est_max_chunk_y + 1).max(center.y + 2).min(max_y);
 
-            for y in min_y..=col_max_y {
+            // 2. Lower bound: when player is flying high, guarantee that sea level and surface/seabed terrain stay loaded
+            let col_min_y = (center.y - render_distance)
+                .min(est_min_chunk_y)
+                .max(WORLD_MIN_CHUNK_Y);
+
+            for y in col_min_y..=col_max_y {
                 chunks.insert(IVec3::new(col_chunk_x, y, col_chunk_z));
             }
         }

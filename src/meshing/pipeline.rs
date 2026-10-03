@@ -89,6 +89,7 @@ pub struct ChunkRenderData {
     pub opaque: Option<ChunkRenderPart>,
     pub transparent: Option<ChunkRenderPart>,
     pub visibility_mask: u64,
+    pub is_subterranean: bool,
 }
 
 impl ChunkRenderData {
@@ -117,6 +118,7 @@ impl ChunkRenderData {
 pub struct ChunkMeshRegistry {
     entries: HashMap<IVec3, ChunkRenderData>,
     columns: HashMap<IVec2, usize>,
+    surface_columns: HashMap<IVec2, usize>,
 }
 
 impl ChunkMeshRegistry {
@@ -146,9 +148,15 @@ impl ChunkMeshRegistry {
         self.entries.get(coordinate).map(|d| d.visibility_mask)
     }
 
+    #[allow(dead_code)]
     #[inline]
     pub fn has_column_mesh(&self, column: IVec2) -> bool {
         self.columns.get(&column).is_some_and(|&count| count > 0)
+    }
+
+    #[inline]
+    pub fn has_column_surface_mesh(&self, column: IVec2) -> bool {
+        self.surface_columns.get(&column).is_some_and(|&count| count > 0)
     }
 
     pub fn iter_coordinates(&self) -> impl Iterator<Item = &IVec3> {
@@ -300,6 +308,7 @@ pub fn apply_chunk_mesh(
     let is_empty = {
         let entry = registry.entries.entry(coordinate).or_default();
         was_empty = entry.is_empty();
+        entry.is_subterranean = is_subterranean;
         entry.visibility_mask = rebuilt.visibility_mask;
 
         let chunk_aabb =
@@ -343,11 +352,22 @@ pub fn apply_chunk_mesh(
                     registry.columns.remove(&column);
                 }
             }
+            if !is_subterranean {
+                if let Some(count) = registry.surface_columns.get_mut(&column) {
+                    *count = count.saturating_sub(1);
+                    if *count == 0 {
+                        registry.surface_columns.remove(&column);
+                    }
+                }
+            }
         } else {
             registry.entries.remove(&coordinate);
         }
     } else if was_empty {
         *registry.columns.entry(column).or_default() += 1;
+        if !is_subterranean {
+            *registry.surface_columns.entry(column).or_default() += 1;
+        }
     }
 }
 
@@ -444,12 +464,20 @@ pub fn remove_chunk_render(
     };
 
     let column = IVec2::new(coordinate.x, coordinate.z);
-    if !render_data.is_empty()
-        && let Some(count) = registry.columns.get_mut(&column)
-    {
-        *count = count.saturating_sub(1);
-        if *count == 0 {
-            registry.columns.remove(&column);
+    if !render_data.is_empty() {
+        if let Some(count) = registry.columns.get_mut(&column) {
+            *count = count.saturating_sub(1);
+            if *count == 0 {
+                registry.columns.remove(&column);
+            }
+        }
+        if !render_data.is_subterranean {
+            if let Some(count) = registry.surface_columns.get_mut(&column) {
+                *count = count.saturating_sub(1);
+                if *count == 0 {
+                    registry.surface_columns.remove(&column);
+                }
+            }
         }
     }
 
