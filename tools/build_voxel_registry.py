@@ -1,7 +1,7 @@
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-tex_path = os.path.join(BASE_DIR, 'docs', 'all_textures.txt')
+tex_path = os.path.join(BASE_DIR, 'tools', 'all_textures.txt')
 if not os.path.exists(tex_path):
     tex_path = os.path.join(BASE_DIR, 'all_textures.txt')
 with open(tex_path, 'r', encoding='utf-8-sig') as f:

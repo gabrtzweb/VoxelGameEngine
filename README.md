@@ -75,11 +75,9 @@ assets/
 └── icon.ico
 
 docs/
-├── future_textures/
-├── all_textures.txt
+├── worldbuilding/
 ├── project_context.md
 ├── project_roadmap.md
-├── technical_review.md
 └── world_definition.md
 
 src/
