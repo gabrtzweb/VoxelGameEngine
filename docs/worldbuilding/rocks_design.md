@@ -27,7 +27,7 @@ graph TD
     
     D --> D1["Extrusivas, Piroclásticas & Vidros: Basalt, Andesite, Tuff, Pumice, Scoria, Obsidian, Pitchstone, Porphyry"]
     D --> D2["Intrusivas (Plutônicas / Pegmatíticas): Granite, Diorite, Gabbro, Peridotite, Cryolite"]
-    D --> D3["Minerais Vulcânicos / Hidrotermais & Fusão: Sulfur, Cinnabar, Magma"]
+    D --> D3["Minerais Vulcânicos / Hidrotermais & Sílica: Brimstone, Jasper, Magma"]
     
     E --> E1["Manto Sólido: rock_mantle (Pressurizado / Frio)"]
     E --> E2["Manto de Pluma: rock_mantle_plume (Plumas Mantélicas / Hotspots)"]
@@ -69,8 +69,8 @@ graph TD
 | **Obsidian** | **Ígnea** | Extrusiva (vidro vulcânico amorfo) | Preto vítreo brilhante com reflexos escuros | Resfriamento ultrarrápido de lava em contato com água/gelo. |
 | **Pitchstone** | **Ígnea** | Extrusiva (vidro vulcânico resinoso) | Preto-piche e verde-escuro com brilho graxo/resinoso | Derrames de lava félsica úmida, margens de caldeiras, fendas vulcânicas antigas. |
 | **Porphyry** | **Ígnea** | Vulcânica/Subvulcânica com fenocristais | Púrpura imperial com cristais salpicados | A rocha nobre dos imperadores romanos; intrusões magmáticas violetas. |
-| **Sulfur** | **Ígnea / Hidrotermal** | Mineral vulcânico nativo | Amarelo-canário vívido puro | Fumarolas ativas, fontes termais sulfurosas e caldeiras vulcânicas. |
-| **Cinnabar** | **Ígnea / Hidrotermal** | Minério de sulfeto de mercúrio | Vermelho escarlate brilhante e carmesim | Veios hidrotermais profundos, fontes termais e zonas de fendas magmáticas. |
+| **Brimstone** | **Ígnea / Hidrotermal** | Rocha sulfurosa nativa vulcânica | Amarelo-canário vívido puro e crostas termais | Fumarolas ativas, fontes termais sulfurosas e caldeiras vulcânicas. |
+| **Jasper** | **Ígnea / Hidrotermal** | Rocha silicosa microcristalina (Jaspe Vermelho) | Vermelho escarlate brilhante e carmesim profundo | Fontes termais, zonas vulcânicas de sílica férrica e arquitetura monumental. |
 | **Slate** | **Metamórfica** | Foliada lamelar de baixo grau | Cinza grafite escuro (Deepslate Minecraft) | Encostas íngremes dobradas por tectonismo, lajes e telhas. |
 | **Gneiss** | **Metamórfica** | Foliada de alto grau (bandada) | Faixas onduladas cinza-escuro e cinza-médio (Ancient Debris ref) | Escudos continentais antigos e maciços colossais (Pão de Açúcar). |
 | **Marble** | **Metamórfica** | Não-foliada (calcário recristalizado) | Branco suave nobre polido (Quartz Minecraft) | Templos clássicos, palácios, monumentos e estátuas. |
@@ -114,7 +114,7 @@ Rochas que formam relevos externos de montanhas, platôs, falésias e escarpas p
 ## 5. Catálogo de Texturas em `worldbuilding/rocks/` (Atuais: 102 Texturas)
 
 - **40 Rochas Sólidas**:
-  - 38 mineráveis: Argillite, Chalk, Dolomite, Karst, Calcite, Chert, Travertine, Limestone, Flint, Alabaster, Azurite, Sandstone, Sandstone Red, Sandstone Dune, Sandstone White, Sandstone Pink, Sandstone Black, Basalt, Gabbro, Peridotite, Cryolite, Granite, Diorite, Andesite, Tuff, Pumice, Scoria, Obsidian, Pitchstone, Porphyry, Sulfur, Cinnabar, Magma, Slate, Gneiss, Marble, Serpentinite, Quartzite.
+  - 38 mineráveis: Argillite, Chalk, Dolomite, Karst, Calcite, Chert, Travertine, Limestone, Flint, Alabaster, Azurite, Sandstone, Sandstone Red, Sandstone Dune, Sandstone White, Sandstone Pink, Sandstone Black, Basalt, Gabbro, Peridotite, Cryolite, Granite, Diorite, Andesite, Tuff, Pumice, Scoria, Obsidian, Pitchstone, Porphyry, Brimstone, Jasper, Magma, Slate, Gneiss, Marble, Serpentinite, Quartzite.
   - 2 inquebráveis primordiais: Mantle (`rock_mantle.png`), Mantle Plume (`rock_mantle_plume.png`).
 - **38 Rochas Cobbled**: Cobbled de **todas as 38 rochas mineráveis sem exceção** (`cobbled_<nome>.png`).
 - **24 Texturas de Afloramento (12 Rochas x Grass & Snow Side)**.
@@ -251,13 +251,13 @@ Cada uma das 16 rochas sedimentares possui seu bloco de matriz rochosa sólida e
 - **Porphyry**: `rock_porphyry.png` em todas as 6 faces.
 - **Cobbled Porphyry**: `cobbled_porphyry.png` em todas as 6 faces.
 
-#### 14. Sulfur
-- **Sulfur**: `rock_sulfur.png` em todas as 6 faces.
-- **Cobbled Sulfur**: `cobbled_sulfur.png` em todas as 6 faces.
+#### 14. Brimstone
+- **Brimstone**: `rock_brimstone.png` em todas as 6 faces.
+- **Cobbled Brimstone**: `cobbled_brimstone.png` em todas as 6 faces.
 
-#### 15. Cinnabar
-- **Cinnabar**: `rock_cinnabar.png` em todas as 6 faces.
-- **Cobbled Cinnabar**: `cobbled_cinnabar.png` em todas as 6 faces.
+#### 15. Jasper
+- **Jasper**: `rock_jasper.png` em todas as 6 faces.
+- **Cobbled Jasper**: `cobbled_jasper.png` em todas as 6 faces.
 
 #### 16. Magma
 - **Magma**: `rock_magma.png` em todas as 6 faces (bloco geotérmico animado; emissão de luz e dano de calor).
