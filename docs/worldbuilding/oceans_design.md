@@ -1,110 +1,121 @@
-# Catálogo e Estrutura de Worldbuilding: Ecossistemas Oceânicos e Vida Marinha (Oceanografia & Recifes)
+# Catálogo e Estrutura de Worldbuilding: Ecossistemas Oceânicos e Bentônicos (Oceans)
 
-Todas as texturas ativas de ecossistemas oceânicos, corais e flora marinha estão organizadas na pasta:
-📂 **`docs/worldbuilding/oceans`** *(30 texturas PNG ativas cobrindo recifes, flora pelágica, tapetes bentônicos e respiradouros termais)*
-
-Texturas compartilhadas de rochas e solos costeiros/submarinos estão em:
-📂 **`docs/worldbuilding/rocks`** e **`docs/worldbuilding/soils`** *(calcário, basalto oceânico, areia marinha, cascalho)*
+Todas as texturas ativas de biomas marinhos, recifes de coral, bentos e hidrófitas estão organizadas na pasta:
+📂 **`docs/worldbuilding/oceans`** *(39 texturas PNG ativas, representando 22 blocos únicos divididos em 6 categorias estritamente pares)*
 
 ---
 
-## 1. Classificação Oceanográfica e Biomas Marinhos (As 4 Grandes Zonas)
+## 1. Classificação Ecológica e Estratos Oceânicos
 
-Na biologia e relevo marinho do planeta, os ecossistemas aquáticos organizam-se em **4 Domínios Ecológicos**, cobrindo desde a lâmina superficial iluminada até as fossas oceânicas abissais:
+O domínio oceânico e aquático é organizado em **6 Grandes Categorias Fisionômicas (22 Blocos Únicos)**:
 
 ```mermaid
 graph TD
-    A["Oceanografia: Ecossistemas Marinhos (30 Texturas)"] --> B["1. Recifes de Corais Vivos (15)"]
-    A --> C["2. Florestas Pelágicas & Pradarias (7)"]
-    A --> D["3. Hidrófitas de Superfície (5)"]
-    A --> E["4. Bentos & Hidrotermalismo Abissal (3)"]
+    O["Ecossistemas Marinhos & Bentônicos (22 Blocos Únicos / 39 Texturas)"] --> A["1. Corais Vivos Maciços (6 Blocos)"]
+    O --> B["2. Leques de Coral Vivos (6 Blocos)"]
+    O --> C["3. Corais Calcificados Mortos (2 Blocos)"]
+    O --> D["4. Estruturas Bentônicas & Fundo (4 Blocos)"]
+    O --> E["5. Vegetação Subaquática (2 Blocos)"]
+    O --> F["6. Hidrófitas Flutuantes (2 Blocos)"]
 
-    B --> B1["Tube Coral: Cnidário azul cilíndrico (Bloco maciço + 2 fans)"]
-    B --> B2["Brain Coral: Cnidário rosa sinuoso (Bloco maciço + 2 fans)"]
-    B --> B3["Bubble Coral: Cnidário púrpura vesicular (Bloco maciço + 2 fans)"]
-    B --> B4["Fire Coral: Cnidário escarlate urticante (Bloco maciço + 2 fans)"]
-    B --> B5["Horn Coral: Cnidário chifre amarelo (Bloco maciço + 2 fans)"]
+    A --> A1["Tube Coral (Azul), Brain Coral (Rosa), Bubble Coral (Púrpura)"]
+    A --> A2["Fire Coral (Vermelho), Horn Coral (Amarelo), Staghorn Coral (Verde-Esmeralda)"]
 
-    C --> C1["Kelp Plant: Florestas de algas gigantes ondulantes (3 tiras animadas 16x320)"]
-    C --> C2["Seagrass: Pradarias marinhas de fundo arenoso (2 tiras animadas 16x240)"]
-    C --> C3["Algae Mat: Tapete microalgal sobre rochas marinhas (Top e Side)"]
+    B --> B1["Tube Fan, Brain Fan, Bubble Fan (2 variações cada)"]
+    B --> B2["Fire Fan, Horn Fan, Staghorn Fan (2 variações cada)"]
 
-    D --> D1["Lily Pad: Vitórias-régias e folhas flutuantes (5 variações decorativas)"]
+    C --> C1["Dead Coral Block: Bloco maciço de calcário esquelético cinza"]
+    C --> C2["Dead Coral Fan: Leque de coral morto cinza ramificado (2 variações)"]
 
-    E --> E1["Sponge: Porífero natural filtrador absorvente"]
-    E --> E2["Geothermal Vent: Chaminé hidrotermal vulcânica submarina (Top e Side)"]
+    D --> D1["Natural Sponge: Porífero biológico poroso tubular"]
+    D --> D2["Algae Mat: Tapete microalgal costeiro (Top e Side)"]
+    D --> D3["Geothermal Vent: Fissura vulcânica hidrotermal abissal (Top e Side)"]
+    D --> D4["Sea Anemone: Cnidário bentônico de tentáculos carnosos (2 variações)"]
+
+    E --> E1["Kelp Plant: Macroalga parda laminar vertical (3 variações de tira animada)"]
+    E --> E2["Seagrass: Grama marinha pelágica de fundo arenoso (2 variações de tira animada)"]
+
+    F --> F1["Lily Pad: Folhas orbiculares de ninfeia verde (5 variações aleatórias)"]
+    F --> F2["Helvola Pad: Ninfeia-pigmeia amarela com flor e corte angular"]
 ```
 
 ---
 
-## 2. Morfologia e Modelagem Técnica dos Blocos Marinhos
+## 2. Padrões de Renderização e Variações Aleatórias
 
-Os elementos oceânicos dividem-se em 4 comportamentos de renderização e física no motor de voxels:
+Na arquitetura da engine, arquivos com sufixos numéricos (`1, 2, 3...`) não constituem blocos distintos, mas **variações estéticas do mesmo bloco** selecionadas aleatoriamente na geração do mundo para quebrar a repetitividade da malha visual.
 
-1. **Blocos Sólidos Cúbicos (Solids / Blocks)**:
-   - Texturas `16x16` mapeadas nas 6 faces cúbicas normais.
-   - Exemplos: `aqua_tube_coral.png`, `aqua_brain_coral.png`, `aqua_bubble_coral.png`, `aqua_fire_coral.png`, `aqua_horn_coral.png`, `aqua_sponge.png`.
-   - Podem ser orientados ou ter faces diferenciadas como `aqua_algae_mat` e `aqua_geothermal_vent` (`top` e `side`).
-2. **Plantas e Cnidários em Cruz (Cross Models / Coral Fans)**:
-   - Canal RGBA transparente em planos cruzados diagonais em X/Y no interior do voxel de água.
-   - Cada coral possui 2 variantes visuais (`fan` e `fan1`) para quebrar repetição estética.
-3. **Plantas Altas Animadas de Coluna D'água (Strip Animations / Multi-Tile)**:
-   - **Kelp (`16x320`)**: Tiras verticais de 20 frames de `16x16` que criam o movimento contínuo do kelp flutuando com a correnteza marítima.
-   - **Seagrass (`16x240`)**: Tiras verticais de 15 frames de `16x16` simulando o capim-marinho se curvando no leito de areia.
-4. **Folhas Flutuantes Horizontais (Surface Flats)**:
-   - Texturas RGBA `16x16` posicionadas no topo da superfície líquida (`vege_lily_pad.png` a `vege_lily_pad4.png`).
+1. **Blocos Cúbicos Sólidos (`16x16 pixels RGB`)**:
+   - Faces uniformes para montagem de recifes maciços e leito marinho (`aqua_*_coral.png`, `aqua_dead_coral.png`, `aqua_sponge.png`).
+2. **Cnidários Ramificados / Coral Fans em Cruz (`16x16 pixels RGBA`)**:
+   - Renderizados no topo de blocos de coral ou rochas submarinas, com 2 variantes morfológicas de ramificação (`fan` e `fan1`).
+3. **Plantas Altas Animadas de Coluna D'água (Strip Animations)**:
+   - **Kelp (`16x320`)**: Tiras verticais de 20 frames de `16x16` que criam o movimento ondulante da macroalga com a correnteza marítima (3 variações: `vege_kelp_plant.png`, `1`, `2`).
+   - **Seagrass (`16x240`)**: Tiras verticais de 15 frames de `16x16` simulando o capim-marinho oscilando no leito de areia (2 variações: `vege_seagrass.png`, `1`).
+4. **Hidrófitas Flutuantes Horizontais (Surface Flats)**:
+   - Texturas `16x16 RGBA` posicionadas rente à película da água (`vege_lily_pad` a `4`, `aqua_helvola_pad`).
 
 ---
 
-## 3. Catálogo dos Ecossistemas Oceânicos (30 Texturas)
+## 3. Catálogo dos 22 Blocos Oceânicos Únicos (39 Texturas)
 
-| # | Elemento / Espécie | Categoria Ecológica | Arquivo(s) de Textura | Dimensões / Tipo | Bioma & Profundidade | Definição Ecológica & Características |
-| :-: | :--- | :--- | :--- | :--- | :---: | :--- |
-| **01** | **Tube Coral** | **Cnidário Maciço (Azul)** | `aqua_tube_coral.png` | 16x16 RGB | Águas Tropicais Rasas | Estrutura maciça do recife de corais azuis; colônias compactas de carbonato de cálcio. |
-| **02** | **Tube Coral Fan** | **Cnidário Ramificado** | `vege_tube_coral_fan.png`<br>`vege_tube_coral_fan1.png` | 16x16 RGBA (2x) | Topo de Blocos de Coral | Leque ramificado de coral tubo em leque; bioindicador de recifes vivos saudáveis. |
-| **03** | **Brain Coral** | **Cnidário Maciço (Rosa)** | `aqua_brain_coral.png` | 16x16 RGB | Águas Tropicais Rasas | Colônias massivas com sulcos sinuosos de padrão cerebral e carapaça de alta densidade mineral. |
-| **04** | **Brain Coral Fan** | **Cnidário Ramificado** | `vege_brain_coral_fan.png`<br>`vege_brain_coral_fan1.png` | 16x16 RGBA (2x) | Topo de Blocos de Coral | Ramificações menores que crescem fixadas sobre recifes de coral cérebro. |
-| **05** | **Bubble Coral** | **Cnidário Maciço (Púrpura)** | `aqua_bubble_coral.png` | 16x16 RGB | Águas Tropicais Quentes | Estruturas arredondadas roxas com bolsas vesiculares contendo microalgas simbióticas. |
-| **06** | **Bubble Coral Fan** | **Cnidário Ramificado** | `vege_bubble_coral_fan.png`<br>`vege_bubble_coral_fan1.png` | 16x16 RGBA (2x) | Topo de Blocos de Coral | Pólipos vesiculares delicados flutuando suavemente nas correntes marinhas. |
-| **07** | **Fire Coral** | **Cnidário Maciço (Vermelho)** | `aqua_fire_coral.png` | 16x16 RGB | Barreira Externa de Recifes | Hidrocoral calcificado escarlate vivo com nematocistos irritantes na superfície do exoesqueleto. |
-| **08** | **Fire Coral Fan** | **Cnidário Ramificado** | `vege_fire_coral_fan.png`<br>`vege_fire_coral_fan1.png` | 16x16 RGBA (2x) | Topo de Blocos de Coral | Leques em chamas decorativos fixados na crista das barreiras externas de recife. |
-| **09** | **Horn Coral** | **Cnidário Maciço (Amarelo)** | `aqua_horn_coral.png` | 16x16 RGB | Águas Tropicais Claras | Formações cônicas e colunares de coloração dourada intensa em recifes de águas transparentes. |
-| **10** | **Horn Coral Fan** | **Cnidário Ramificado** | `vege_horn_coral_fan.png`<br>`vege_horn_coral_fan1.png` | 16x16 RGBA (2x) | Topo de Blocos de Coral | Chifres ramificados amarelos que se estendem verticalmente em direção à luz solar. |
-| **11** | **Kelp Plant** | **Macroalga Laminar** | `vege_kelp_plant.png`<br>`vege_kelp_plant1.png`<br>`vege_kelp_plant2.png` | **16x320 RGBA**<br>*(3 tiras animadas de 20 frames)* | Oceanos Frios & Temperados | Florestas gigantes de macroalgas pardas que crescem a partir do leito até a superfície iluminada. |
-| **12** | **Seagrass** | **Grama Marinha Pelágica** | `vege_seagrass.png`<br>`vege_seagrass1.png` | **16x240 RGBA**<br>*(2 tiras animadas de 15 frames)* | Leito Arenoso de Enseadas | Pradarias submarinas de angiospermas marinhas que ancoram a areia e oxigenam o fundo oceânico. |
-| **13** | **Algae Mat** | **Tapete Microalgal** | `aqua_algae_mat_top.png`<br>`aqua_algae_mat_side.png` | 16x16 RGB (Top/Side) | Encostas Úmidas & Entremarés | Tapetes densos de biofilme algal e musgo aquático que colonizam rochas e superfícies costeiras. |
-| **14** | **Lily Pad** | **Hidrófita de Superfície** | `vege_lily_pad.png` a `vege_lily_pad4.png` | 16x16 RGBA *(5 variações)* | Pântanos, Mangues & Rios | Plantas aquáticas com folhas orbiculares e flores cerosas que flutuam na película superficial de águas calmas. |
-| **15** | **Natural Sponge** | **Porífero Abissal** | `aqua_sponge.png` | 16x16 RGB | Recifes Profundos | Organismos sésseis multicelulares porosos com esqueleto de espongina e canais internos de filtração aquática. |
-| **16** | **Geothermal Vent** | **Fissura Vulcânica Abissal** | `aqua_geothermal_vent_top.png`<br>`aqua_geothermal_vent_side.png` | 16x16 (Top P, Side RGBA) | Fossas Abissais & Assoalho | Chaminés hidrotermais submarinas que emitem colunas de fluidos superaquecidos ricos em minerais sulfetados. |, Side RGBA) | Fossas Abissais & Assoalho | Chaminé hidrotermal sulfurosa; gera bolhas ascendentes, calor e minerais raros. |
+| # | Bloco / Espécie | Categoria Ecológica | Arquivo(s) de Textura | Variações | Bioma & Profundidade | Definição Biológica & Características |
+| :-: | :--- | :--- | :--- | :---: | :---: | :--- |
+| **01** | **Tube Coral** | **Coral Maciço Vivo** | `aqua_tube_coral.png` | 1 | Águas Tropicais Rasas | Colônia calcária de tubos coralíneos de coloração azulada vibrante. |
+| **02** | **Brain Coral** | **Coral Maciço Vivo** | `aqua_brain_coral.png` | 1 | Águas Tropicais Rasas | Colônia massiva hemisférica com sulcos meandriformes em padrão cerebral rosa. |
+| **03** | **Bubble Coral** | **Coral Maciço Vivo** | `aqua_bubble_coral.png` | 1 | Águas Tropicais Quentes | Estruturas vesiculares infladas de coloração púrpura rica em zooxantelas. |
+| **04** | **Fire Coral** | **Coral Maciço Vivo** | `aqua_fire_coral.png` | 1 | Crista Externa de Recifes | Hidrocoral calcificado escarlate vivo com nematocistos irritantes na carapaça. |
+| **05** | **Horn Coral** | **Coral Maciço Vivo** | `aqua_horn_coral.png` | 1 | Águas Tropicais Claras | Estrutura colunar dourada/amarela que cresce voltada para zonas de alta insolação. |
+| **06** | **Staghorn Coral** | **Coral Maciço Vivo** | `aqua_staghorn_coral.png` | 1 | Recifes de Barreira | Coral acroporídeo verde-esmeralda vivo de crescimento rápido com ramos angulares. |
+| **07** | **Tube Coral Fan** | **Leque de Coral Vivo** | `vege_tube_coral_fan.png`, `fan1.png` | 2 | Topo de Blocos de Coral | Leques em leque tubulares azulados fixados no topo dos blocos de recife. |
+| **08** | **Brain Coral Fan** | **Leque de Coral Vivo** | `vege_brain_coral_fan.png`, `fan1.png` | 2 | Topo de Blocos de Coral | Ramificações foliáceas onduladas menores que brotam sobre recifes de coral cérebro. |
+| **09** | **Bubble Coral Fan** | **Leque de Coral Vivo** | `vege_bubble_coral_fan.png`, `fan1.png` | 2 | Topo de Blocos de Coral | Aglomerados de pólipos vesiculares delicados que oscilam nas correntes de recife. |
+| **10** | **Fire Coral Fan** | **Leque de Coral Vivo** | `vege_fire_coral_fan.png`, `fan1.png` | 2 | Topo de Blocos de Coral | Leques ramificados escarlates eretos em cristas de recife sujeitas a arrebentação. |
+| **11** | **Horn Coral Fan** | **Leque de Coral Vivo** | `vege_horn_coral_fan.png`, `fan1.png` | 2 | Topo de Blocos de Coral | Chifres ramificados amarelos que se estendem verticalmente em busca de luminosidade. |
+| **12** | **Staghorn Coral Fan**| **Leque de Coral Vivo** | `vege_staghorn_coral_fan.png`, `fan1.png` | 2 | Topo de Blocos de Coral | Ramificações verdes digitadas pontiagudas características do coral chifre-de-veado. |
+| **13** | **Dead Coral** | **Coral Calcificado Morto** | `aqua_dead_coral.png` | 1 | Recifes Branqueados | Esqueleto de carbonato de cálcio mineralizado cinza após perda de pigmentos e zooxantelas. |
+| **14** | **Dead Coral Fan** | **Coral Calcificado Morto** | `vege_dead_coral_fan.png`, `fan1.png` | 2 | Topo de Recifes Mortos | Leque ramificado mineral seco e quebradiço de coral fóssil descorado cinza. |
+| **15** | **Natural Sponge** | **Porífero Bentônico** | `aqua_sponge.png` | 1 | Recifes Profundos | Organismo séssil multicelular poroso com rede interna de canais de filtração marinha. |
+| **16** | **Algae Mat** | **Tapete Microalgal** | `aqua_algae_mat_top.png`, `side.png` | 1 *(Top/Side)* | Encostas Entremarés & Cais | Biofilme espesso de microalgas e briófitas que recobre pedras e substratos costeiros. |
+| **17** | **Geothermal Vent** | **Fissura Hidrotermal** | `aqua_geothermal_vent_top.png`, `side.png` | 1 *(Top/Side)* | Fossas Abissais | Chaminé vulcânica submarina que emite plumas de água superaquecida rica em sulfetos. |
+| **18** | **Sea Anemone** | **Cnidário Bentônico** | `aqua_sea_anemone.png`, `anemone1.png` | 2 | Rochas Submarinas & Recifes | Pólipo marinho séssil com disco pedal aderido à rocha e coroa de tentáculos ondulantes. |
+| **19** | **Kelp Plant** | **Macroalga Laminar** | `vege_kelp_plant.png`, `1.png`, `2.png` | 3 *(Animadas)* | Oceanos Frios & Temperados | Florestas gigantes de macroalgas pardas que crescem a partir do leito até a superfície. |
+| **20** | **Seagrass** | **Grama Marinha Pelágica** | `vege_seagrass.png`, `1.png` | 2 *(Animadas)* | Enseadas & Leito Arenoso | Angiospermas marinhas que formam pradarias submarinas e ancoram sedimentos arenosos. |
+| **21** | **Lily Pad** | **Hidrófita Flutuante** | `vege_lily_pad.png` a `vege_lily_pad4.png` | 5 | Pântanos, Mangues & Rios | Folhas orbiculares cerosas de ninfeia verde que flutuam na película de águas calmas. |
+| **22** | **Helvola Pad** | **Hidrófita Flutuante** | `aqua_helvola_pad.png` | 1 | Lagos Claros & Remansos | Folha menor de ninfeia-pigmeia amarela (*Nymphaea helvola*) com reentrância apical. |
 
 ---
 
-## 4. Inventário Técnico Completo de Texturas em `worldbuilding/oceans/` (30 Texturas Ativas)
+## 4. Inventário Técnico Completo de Texturas em `worldbuilding/oceans/` (39 Texturas Ativas)
 
-### A. Blocos Maciços de Coral e Submarinos (7 Texturas Cúbicas)
-* `aqua_tube_coral.png`
-* `aqua_brain_coral.png`
-* `aqua_bubble_coral.png`
-* `aqua_fire_coral.png`
-* `aqua_horn_coral.png`
-* `aqua_sponge.png`
-* `aqua_algae_mat_side.png`
+### A. Blocos Maciços de Coral e Submarinos Cúbicos (8 Texturas 16x16 RGB)
+* `aqua_tube_coral.png` *(Azul)*
+* `aqua_brain_coral.png` *(Rosa)*
+* `aqua_bubble_coral.png` *(Púrpura)*
+* `aqua_fire_coral.png` *(Vermelho)*
+* `aqua_horn_coral.png` *(Amarelo)*
+* `aqua_staghorn_coral.png` *(Verde-Esmeralda)*
+* `aqua_dead_coral.png` *(Cinza esquelético)*
+* `aqua_sponge.png` *(Porífero natural)*
 
-### B. Blocos com Texturas Top / Side Diferenciadas (3 Texturas)
-* `aqua_algae_mat_top.png`
-* `aqua_geothermal_vent_side.png`
-* `aqua_geothermal_vent_top.png`
+### B. Blocos com Texturas Top / Side Diferenciadas (4 Texturas 16x16)
+* `aqua_algae_mat_top.png`, `aqua_algae_mat_side.png`
+* `aqua_geothermal_vent_top.png`, `aqua_geothermal_vent_side.png`
 
-### C. Cnidários Ramificados / Coral Fans em Cruz (10 Texturas RGBA)
+### C. Cnidários e Invertebrados Bentônicos em Cruz / Billboard (16 Texturas 16x16 RGBA)
 * `vege_tube_coral_fan.png`, `vege_tube_coral_fan1.png`
 * `vege_brain_coral_fan.png`, `vege_brain_coral_fan1.png`
 * `vege_bubble_coral_fan.png`, `vege_bubble_coral_fan1.png`
 * `vege_fire_coral_fan.png`, `vege_fire_coral_fan1.png`
 * `vege_horn_coral_fan.png`, `vege_horn_coral_fan1.png`
+* `vege_staghorn_coral_fan.png`, `vege_staghorn_coral_fan1.png`
+* `vege_dead_coral_fan.png`, `vege_dead_coral_fan1.png`
+* `aqua_sea_anemone.png`, `aqua_sea_anemone1.png`
 
 ### D. Tiras Animadas de Flora Pelágica Subaquática (5 Texturas Verticais)
 * `vege_kelp_plant.png`, `vege_kelp_plant1.png`, `vege_kelp_plant2.png` *(16x320 pixels cada - 20 frames verticais)*
 * `vege_seagrass.png`, `vege_seagrass1.png` *(16x240 pixels cada - 15 frames verticais)*
 
-### E. Hidrófitas Flutuantes de Superfície (5 Texturas RGBA)
-* `vege_lily_pad.png`, `vege_lily_pad1.png`, `vege_lily_pad2.png`, `vege_lily_pad3.png`, `vege_lily_pad4.png`
+### E. Hidrófitas Flutuantes de Superfície (6 Texturas 16x16 RGBA)
+* `vege_lily_pad.png`, `vege_lily_pad1.png`, `vege_lily_pad2.png`, `vege_lily_pad3.png`, `vege_lily_pad4.png` *(5 variações)*
+* `aqua_helvola_pad.png` *(Ninfeia-pigmeia amarela)*
