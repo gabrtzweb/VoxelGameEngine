@@ -93,7 +93,7 @@ graph TD
 2. **Horizonte A (Solo Vivo / Topsoil):** Camada onde a vegetação cria raízes, com variantes agrícolas aradas (`_tilled.png`), raízes expostas (`_rooted.png`) e laterais com grama (`_grass_side.png`).
 3. **Horizonte B (Subsolo Mineral):** Camada profunda de acúmulo iluvial: onde se concentram argilas puras (*Clays*), couraças de ferro endurecidas (*Laterite Hardpan*) ou cimentações salinas (*Caliche Cracked*).
 4. **Horizonte C (Regolito):** Zona de fragmentação mecânica da rocha; representada pelos solos ásperos (`_coarse.png`) e pelos **Cascalhos de Matriz** (`soil_gravel_<matriz>.png`).
-5. **Horizonte R (Rocha-Mãe Nativa):** A sustentação geológica do terreno — definida no catálogo de [rocks_design.md](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/docs/worldbuilding/rocks_design.md).
+5. **Horizonte R (Rocha-Mãe Nativa):** A sustentação geológica do terreno — definida no catálogo de `rocks_design.md`.
 
 ---
 

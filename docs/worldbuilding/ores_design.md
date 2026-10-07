@@ -49,41 +49,40 @@ graph TD
     E --> E5["Sulfur: Mineral vulcânico nativo hidrotermal (Pólvora, Ácido sulfúrico)"]
     E --> E6["Cinnabar: Sulfeto de mercúrio escarlate (Mercúrio líquido, Azougue, Automação)"]
     E --> E7["Purpurite: Fosfato de manganês e ferro púrpura real (Pegmatitos nobres)"]
-    E --> E8["Lapis Lazuli: Lazurita azul ultramarina com pirita (Pigmento real, Alquimia)"]
+    E --> E8["Lazurite: Lazurita azul ultramarina com pirita (Pigmento real, Alquimia)"]
 ```
 
 ---
 
 ## 2. A Estrutura de Texturas: Tríades Minerais Completas (Normais, Densos e Raws)
 
-O sistema mineralógico do jogo divide a representação de cada minério em 3 camadas visuais e funcionais:
+O sistema mineralógico do jogo divide a representação de cada minério em 3 camadas visuais e geológicas:
 
 ```mermaid
 graph LR
-    O1["1. Overlay Normal<br>(ore_<nome>_overlay.png)<br>Veio comum disperso (15-35% mineral)"] -->|Maior profundidade / Núcleo de jazida| O2["2. Overlay Denso<br>(dense_ore_<nome>_overlay.png)<br>Veio rico compacto (35-42% mineral)"]
-    O1 -->|Mineração com Picareta| N["Fragmentos Minerais Brutos<br>(Raw Nuggets / Chunks)"]
-    O2 -->|Mineração com Picareta (2x a 3x drops)| N
-    N -->|Compactação 3x3 no Inventário| R["3. Bloco Maciço Bruto<br>(raw_<nome>.png)<br>Armazenamento compacto (100% mineral)"]
+    O1["1. Overlay Normal<br>(ore_<nome>_overlay.png)<br>Veio comum disperso (15-35% mineral)"] -->|Zona de maior concentração| O2["2. Overlay Denso<br>(dense_ore_<nome>_overlay.png)<br>Veio rico compacto (35-42% mineral)"]
+    O1 -.-> R["3. Bloco Maciço Bruto<br>(raw_<nome>.png)<br>Agregado mineral puro (100% mineral)"]
+    O2 -.-> R
 ```
 
 1. **Overlay Normal (`ore_<nome>_overlay.png`)**:
    - Canal RGBA transparente.
    - Padrão 16x16 (ou 16x64 vertical animado no caso da Opala).
-   - Representa os veios distribuídos naturalmente pelas paredes de cavernas e montanhas.
+   - Representa os veios distribuídos naturalmente pelas paredes de rochas e cavernas.
 2. **Overlay Denso (`dense_ore_<nome>_overlay.png`)**:
    - Canal RGBA transparente.
    - Padrão 16x16 (ou 16x64 vertical animado no caso da Opala).
-   - Representa os veios ricos em profundidade (*dense veins*), com aglomerados minerais densificados que rendem 2x a 3x mais drops ao jogador.
+   - Representa os veios de alta concentração mineral em zonas de enriquecimento secundário (*dense veins*), com aglomerados minerais densificados.
 3. **Bloco Maciço Bruto (`raw_<nome>.png`)**:
    - Canal RGB sólido.
    - Padrão 16x16 (ou 16x64 vertical animado no caso da Opala).
-   - Utilizado para estocagem econômica (9 fragmentos brutos = 1 bloco bruto) e construção arquitetônica temática.
+   - Representa o agregado mineral consolidado em estado maciço puro (100% mineral), sem a rocha hospedeira.
 
 ---
 
 ## 3. Catálogo dos 28 Minérios do Jogo (Tríades Completas: 84 Texturas)
 
-| # | Minério | Família Metalogênica | Overlay Normal | Overlay Denso | Bloco Maciço (Raw) | Dureza | Papel no Mundo / Gameplay |
+| # | Minério | Família Metalogênica | Overlay Normal | Overlay Denso | Bloco Maciço (Raw) | Dureza | Aplicações & Importância no Mundo |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **01** | **Coal** | **Fóssil / Hidrocarboneto** | `ore_coal_overlay.png` | `dense_ore_coal_overlay.png` | `raw_coal.png` | 1.0 – 2.5 | Combustível primário de fornos, geração de vapor, tochas e redutor siderúrgico. |
 | **02** | **Copper** | **Metal de Transição** | `ore_copper_overlay.png` | `dense_ore_copper_overlay.png` | `raw_copper.png` | 2.5 – 3.0 | Condutividade elétrica e térmica; tubulações e base para ligas (Bronze e Latão). |
@@ -111,7 +110,7 @@ graph LR
 | **24** | **Salt** | **Haleto Evaporítico (Halita)** | `ore_salt_overlay.png` | `dense_ore_salt_overlay.png` | `raw_salt.png` | 2.0 – 2.5 | Sal-gema cúbico: preservação duradoura de carnes, curtimento de couros e eletrólise. |
 | **25** | **Saltpeter** | **Nitrato Evaporítico (Nitro)** | `ore_saltpeter_overlay.png` | `dense_ore_saltpeter_overlay.png` | `raw_saltpeter.png` | 1.5 – 2.0 | **Salitre clássico**: fecha a Tríade da Pólvora com Carvão e Enxofre; super-fertilizante agrícola. |
 | **26** | **Quartz** | **Tectossilicato Cristalino** | `ore_quartz_overlay.png` | `dense_ore_quartz_overlay.png` | `raw_quartz.png` | 7.0 | Quartzo leitoso piezoelétrico; osciladores de relógio, vidraria refratária e prismas. |
-| **27** | **Lapis Lazuli** | **Tectossilicato Nobre** | `ore_lapis_overlay.png` | `dense_ore_lapis_overlay.png` | `raw_lapis.png` | 5.0 – 5.5 | Azul ultramarino com pirita dourada; pigmento real, encantamentos e mosaicos. |
+| **27** | **Lazurite** | **Tectossilicato Nobre** | `ore_lazurite_overlay.png` | `dense_ore_lazurite_overlay.png` | `raw_lazurite.png` | 5.0 – 5.5 | Azul ultramarino com pirita dourada; pigmento real, encantamentos e mosaicos. |
 | **28** | **Uranium** | **Actinídeo Radioativo** | `ore_uranium_overlay.png` | `dense_ore_uranium_overlay.png` | `raw_uranium.png` | 5.5 – 6.0 | Energia nuclear massiva, fissão, fontes térmicas duradouras e luminescência. |
 
 ---
@@ -153,13 +152,13 @@ A Opala mineralógica possui o fenômeno óptico único de **Play-of-Color** (ir
 Todas as texturas possuem largura **16 pixels** (16x16 padrão, com exceção da Opala animada em 16x64):
 
 ### A. Overlays Normais com Transparência Alfa (28 Texturas RGBA)
-`ore_coal_overlay.png`, `ore_copper_overlay.png`, `ore_tin_overlay.png`, `ore_iron_overlay.png`, `ore_zinc_overlay.png`, `ore_gold_overlay.png`, `ore_silver_overlay.png`, `ore_platinum_overlay.png`, `ore_aluminum_overlay.png`, `ore_lead_overlay.png`, `ore_nickel_overlay.png`, `ore_rhodochrosite_overlay.png`, `ore_diamond_overlay.png`, `ore_emerald_overlay.png`, `ore_ruby_overlay.png`, `ore_sapphire_overlay.png`, `ore_topaz_overlay.png`, `ore_peridot_overlay.png`, `ore_jade_overlay.png`, `ore_opal_overlay.png` *(16x64)*, `ore_purpurite_overlay.png`, `ore_cinnabar_overlay.png`, `ore_sulfur_overlay.png`, `ore_salt_overlay.png`, `ore_saltpeter_overlay.png`, `ore_quartz_overlay.png`, `ore_lapis_overlay.png`, `ore_uranium_overlay.png`.
+`ore_coal_overlay.png`, `ore_copper_overlay.png`, `ore_tin_overlay.png`, `ore_iron_overlay.png`, `ore_zinc_overlay.png`, `ore_gold_overlay.png`, `ore_silver_overlay.png`, `ore_platinum_overlay.png`, `ore_aluminum_overlay.png`, `ore_lead_overlay.png`, `ore_nickel_overlay.png`, `ore_rhodochrosite_overlay.png`, `ore_diamond_overlay.png`, `ore_emerald_overlay.png`, `ore_ruby_overlay.png`, `ore_sapphire_overlay.png`, `ore_topaz_overlay.png`, `ore_peridot_overlay.png`, `ore_jade_overlay.png`, `ore_opal_overlay.png` *(16x64)*, `ore_purpurite_overlay.png`, `ore_cinnabar_overlay.png`, `ore_sulfur_overlay.png`, `ore_salt_overlay.png`, `ore_saltpeter_overlay.png`, `ore_quartz_overlay.png`, `ore_lazurite_overlay.png`, `ore_uranium_overlay.png`.
 
 ### B. Overlays Densos com Transparência Alfa (28 Texturas RGBA)
-`dense_ore_coal_overlay.png`, `dense_ore_copper_overlay.png`, `dense_ore_tin_overlay.png`, `dense_ore_iron_overlay.png`, `dense_ore_zinc_overlay.png`, `dense_ore_gold_overlay.png`, `dense_ore_silver_overlay.png`, `dense_ore_platinum_overlay.png`, `dense_ore_aluminum_overlay.png`, `dense_ore_lead_overlay.png`, `dense_ore_nickel_overlay.png`, `dense_ore_rhodochrosite_overlay.png`, `dense_ore_diamond_overlay.png`, `dense_ore_emerald_overlay.png`, `dense_ore_ruby_overlay.png`, `dense_ore_sapphire_overlay.png`, `dense_ore_topaz_overlay.png`, `dense_ore_peridot_overlay.png`, `dense_ore_jade_overlay.png`, `dense_ore_opal_overlay.png` *(16x64)*, `dense_ore_purpurite_overlay.png`, `dense_ore_cinnabar_overlay.png`, `dense_ore_sulfur_overlay.png`, `dense_ore_salt_overlay.png`, `dense_ore_saltpeter_overlay.png`, `dense_ore_quartz_overlay.png`, `dense_ore_lapis_overlay.png`, `dense_ore_uranium_overlay.png`.
+`dense_ore_coal_overlay.png`, `dense_ore_copper_overlay.png`, `dense_ore_tin_overlay.png`, `dense_ore_iron_overlay.png`, `dense_ore_zinc_overlay.png`, `dense_ore_gold_overlay.png`, `dense_ore_silver_overlay.png`, `dense_ore_platinum_overlay.png`, `dense_ore_aluminum_overlay.png`, `dense_ore_lead_overlay.png`, `dense_ore_nickel_overlay.png`, `dense_ore_rhodochrosite_overlay.png`, `dense_ore_diamond_overlay.png`, `dense_ore_emerald_overlay.png`, `dense_ore_ruby_overlay.png`, `dense_ore_sapphire_overlay.png`, `dense_ore_topaz_overlay.png`, `dense_ore_peridot_overlay.png`, `dense_ore_jade_overlay.png`, `dense_ore_opal_overlay.png` *(16x64)*, `dense_ore_purpurite_overlay.png`, `dense_ore_cinnabar_overlay.png`, `dense_ore_sulfur_overlay.png`, `dense_ore_salt_overlay.png`, `dense_ore_saltpeter_overlay.png`, `dense_ore_quartz_overlay.png`, `dense_ore_lazurite_overlay.png`, `dense_ore_uranium_overlay.png`.
 
 ### C. Blocos Maciços / Raw Blocks Opacos (28 Texturas RGB / P)
-`raw_coal.png`, `raw_copper.png`, `raw_tin.png`, `raw_iron.png`, `raw_zinc.png`, `raw_gold.png`, `raw_silver.png`, `raw_platinum.png`, `raw_aluminum.png`, `raw_lead.png`, `raw_nickel.png`, `raw_rhodochrosite.png`, `raw_diamond.png`, `raw_emerald.png`, `raw_ruby.png`, `raw_sapphire.png`, `raw_topaz.png`, `raw_peridot.png`, `raw_jade.png`, `raw_opal.png` *(16x64)*, `raw_purpurite.png`, `raw_cinnabar.png`, `raw_sulfur.png`, `raw_salt.png`, `raw_saltpeter.png`, `raw_quartz.png`, `raw_lapis.png`, `raw_uranium.png`.
+`raw_coal.png`, `raw_copper.png`, `raw_tin.png`, `raw_iron.png`, `raw_zinc.png`, `raw_gold.png`, `raw_silver.png`, `raw_platinum.png`, `raw_aluminum.png`, `raw_lead.png`, `raw_nickel.png`, `raw_rhodochrosite.png`, `raw_diamond.png`, `raw_emerald.png`, `raw_ruby.png`, `raw_sapphire.png`, `raw_topaz.png`, `raw_peridot.png`, `raw_jade.png`, `raw_opal.png` *(16x64)*, `raw_purpurite.png`, `raw_cinnabar.png`, `raw_sulfur.png`, `raw_salt.png`, `raw_saltpeter.png`, `raw_quartz.png`, `raw_lazurite.png`, `raw_uranium.png`.
 
 ### D. Blocos Fósseis Independentes (4 Texturas Opacas)
 `fossil_bones.png`, `fossil_bitumen.png`, `fossil_amber.png`, `fossil_matrix.png`.
