@@ -308,28 +308,30 @@ Blocos geológicos de topo e escarpa que formam os picos, montanhas e falésias 
 
 #### 1. Rochas com Cobertura de Grama (12 Blocos - Rock Grass)
 Para cada bloco:
-- Topo: `soil_grass.png` (escala de cinza com biome tint)
-- Fundo: `rock_<nome>.png`
-- Lateral: `rock_<nome>_grass_side.png` com overlay `rock_grass_side_overlay.png` (em escala de cinza com biome tint na camada de grama).
+- Topo: `soil_grass.png` (escala de cinza que recebe Biome Tint).
+- Fundo: `rock_<nome>.png` (base rochosa pura, sem tint).
+- Lateral: Base `rock_<nome>_grass_side.png` composta por cima com o overlay `soil_grass_side_overlay.png`.
+- **Regra de Tinting**: O Biome Tint atua no topo e **exclusivamente na camada de overlay lateral da grama**, garantindo que apenas a franja de grama receba o tom do bioma e a textura rochosa base permaneça com suas cores minerais naturais sem sofrer tingimento.
 
-1. **Argillite Grass**: Topo `soil_grass.png`, fundo `rock_argillite.png`, lateral `rock_argillite_grass_side.png`.
-2. **Chalk Grass**: Topo `soil_grass.png`, fundo `rock_chalk.png`, lateral `rock_chalk_grass_side.png`.
-3. **Dolomite Grass**: Topo `soil_grass.png`, fundo `rock_dolomite.png`, lateral `rock_dolomite_grass_side.png`.
-4. **Slate Grass**: Topo `soil_grass.png`, fundo `rock_slate.png`, lateral `rock_slate_grass_side.png`.
-5. **Granite Grass**: Topo `soil_grass.png`, fundo `rock_granite.png`, lateral `rock_granite_grass_side.png`.
-6. **Andesite Grass**: Topo `soil_grass.png`, fundo `rock_andesite.png`, lateral `rock_andesite_grass_side.png`.
-7. **Basalt Grass**: Topo `soil_grass.png`, fundo `rock_basalt.png`, lateral `rock_basalt_grass_side.png`.
-8. **Karst Grass**: Topo `soil_grass.png`, fundo `rock_karst.png`, lateral `rock_karst_grass_side.png`.
-9. **Travertine Grass**: Topo `soil_grass.png`, fundo `rock_travertine.png`, lateral `rock_travertine_grass_side.png`.
-10. **Gneiss Grass**: Topo `soil_grass.png`, fundo `rock_gneiss.png`, lateral `rock_gneiss_grass_side.png`.
-11. **Limestone Grass**: Topo `soil_grass.png`, fundo `rock_limestone.png`, lateral `rock_limestone_grass_side.png`.
-12. **Quartzite Grass**: Topo `soil_grass.png`, fundo `rock_quartzite.png`, lateral `rock_quartzite_grass_side.png`.
+1. **Argillite Grass**: Topo `soil_grass.png`, fundo `rock_argillite.png`, lateral `rock_argillite_grass_side.png` + `soil_grass_side_overlay.png`.
+2. **Chalk Grass**: Topo `soil_grass.png`, fundo `rock_chalk.png`, lateral `rock_chalk_grass_side.png` + `soil_grass_side_overlay.png`.
+3. **Dolomite Grass**: Topo `soil_grass.png`, fundo `rock_dolomite.png`, lateral `rock_dolomite_grass_side.png` + `soil_grass_side_overlay.png`.
+4. **Slate Grass**: Topo `soil_grass.png`, fundo `rock_slate.png`, lateral `rock_slate_grass_side.png` + `soil_grass_side_overlay.png`.
+5. **Granite Grass**: Topo `soil_grass.png`, fundo `rock_granite.png`, lateral `rock_granite_grass_side.png` + `soil_grass_side_overlay.png`.
+6. **Andesite Grass**: Topo `soil_grass.png`, fundo `rock_andesite.png`, lateral `rock_andesite_grass_side.png` + `soil_grass_side_overlay.png`.
+7. **Basalt Grass**: Topo `soil_grass.png`, fundo `rock_basalt.png`, lateral `rock_basalt_grass_side.png` + `soil_grass_side_overlay.png`.
+8. **Karst Grass**: Topo `soil_grass.png`, fundo `rock_karst.png`, lateral `rock_karst_grass_side.png` + `soil_grass_side_overlay.png`.
+9. **Travertine Grass**: Topo `soil_grass.png`, fundo `rock_travertine.png`, lateral `rock_travertine_grass_side.png` + `soil_grass_side_overlay.png`.
+10. **Gneiss Grass**: Topo `soil_grass.png`, fundo `rock_gneiss.png`, lateral `rock_gneiss_grass_side.png` + `soil_grass_side_overlay.png`.
+11. **Limestone Grass**: Topo `soil_grass.png`, fundo `rock_limestone.png`, lateral `rock_limestone_grass_side.png` + `soil_grass_side_overlay.png`.
+12. **Quartzite Grass**: Topo `soil_grass.png`, fundo `rock_quartzite.png`, lateral `rock_quartzite_grass_side.png` + `soil_grass_side_overlay.png`.
 
 #### 2. Rochas com Cobertura de Neve (12 Blocos - Rock Snow)
 Para cada bloco:
-- Topo: `soil_snow.png`
-- Fundo: `rock_<nome>.png`
-- Lateral: `rock_<nome>_snow_side.png`.
+- Topo: `soil_snow.png` (neve sólida pura).
+- Fundo: `rock_<nome>.png`.
+- Lateral: `rock_<nome>_snow_side.png` direta.
+- **Regra de Neve**: Não necessita de overlay lateral de neve, pois a neve possui cor branca fixa estática e não recebe biome tinting.
 
 1. **Argillite Snow**: Topo `soil_snow.png`, fundo `rock_argillite.png`, lateral `rock_argillite_snow_side.png`.
 2. **Chalk Snow**: Topo `soil_snow.png`, fundo `rock_chalk.png`, lateral `rock_chalk_snow_side.png`.
@@ -343,4 +345,79 @@ Para cada bloco:
 10. **Gneiss Snow**: Topo `soil_snow.png`, fundo `rock_gneiss.png`, lateral `rock_gneiss_snow_side.png`.
 11. **Limestone Snow**: Topo `soil_snow.png`, fundo `rock_limestone.png`, lateral `rock_limestone_snow_side.png`.
 12. **Quartzite Snow**: Topo `soil_snow.png`, fundo `rock_quartzite.png`, lateral `rock_quartzite_snow_side.png`.
+
+---
+
+## 7. Metalogenia & Hospedagem de Minérios (Distribuição Geológica dos 28 Minérios)
+
+### 7.1. Diretriz de Design: Ocorrência Geológica vs. Multiplicação Cega
+Em vez de aplicar os overlays de minérios cegamente sobre todas as 38 famílias de rocha (o que geraria $38 \times 28 \times 2 = 2.128$ blocos desnecessários, descaracterizando a geologia real e inflacionando o motor), a Voxel Engine adota o modelo de **Afinidade Petrológica de Gênese Mineral**:
+- Cada um dos **28 minérios** ocorre exclusivamente em **2 a 6 rochas hospedeiras específicas**, respeitando a gênese real da geologia (sedimentar, ígnea magmática, hidrotermal ou metamórfica).
+- **Dolomite como Rocha Matriz Ubíqua**: Por ser a rocha cinza padrão onipresente na maior parte do mundo, a Dolomita abriga minérios de sobrevivência básica e progressão inicial (**Coal**, **Iron**, **Copper**, **Zinc**, **Lead**), garantindo que o jogador nunca fique preso sem recursos vitais no início do jogo.
+- **Carvão Antracítico em Ardósia**: A Ardósia (`slate`) também passa a hospedar carvão (antracite metamórfica), garantindo combustível em regiões montanhosas foliadas.
+- Isso gera **90 associações mineralógicas únicas**, cada uma com versão **Normal** (`ore_<minerio>_overlay.png`) e **Densa** (`dense_ore_<minerio>_overlay.png`), totalizando **180 blocos de minérios incrustados** no mundo.
+
+### 7.2. Tabela Mestra de Hospedagem Mineralógica Rebalanceada (90 Associações = 180 Blocos)
+
+| # | Minério | Gênese Geológica Principal | Rochas Hospedeiras Específicas | Justificativa Científica e Metalogênica |
+| :-: | :--- | :--- | :--- | :--- |
+| **01** | **Coal** (Carvão) | Sedimentar Orgânica & Metamórfica | `dolomite`, `limestone`, `argillite`, `sandstone`, `slate` | Bacias sedimentares, dolostones carbonosos e antracite em ardósia; vital para tochas e fornos. |
+| **02** | **Copper** (Cobre) | Ígnea / Hidrotermal / Sedimentar | `basalt`, `diorite`, `andesite`, `sandstone_red`, `azurite`, `dolomite` | Pórfiros andinos, basaltos de derrame, arenitos vermelhos e veios disseminados em dolomita. |
+| **03** | **Tin** (Estanho) | Ígnea Félsica / Greisen | `granite`, `slate`, `cryolite` | Cassiterita em bordas graníticas, pegmatitos glaciais e xistos/ardósias; chave da Era do Bronze. |
+| **04** | **Iron** (Ferro) | BIF / Sedimentar / Máfica | `dolomite`, `limestone`, `chert`, `basalt`, `scoria`, `sandstone_black` | O metal mais abundante da crosta; siderita em dolomita, BIF com chert e basaltos ferrosos. |
+| **05** | **Zinc** (Zinco) | Carbonática / Hidrotermal | `dolomite`, `limestone`, `karst` | Depósitos cársticos tipo Mississippi Valley (MVT) com esfalerita em dolostones. |
+| **06** | **Gold** (Ouro) | Orogênica / Hidrotermal | `granite`, `quartzite`, `andesite`, `gneiss`, `slate` | Filões de quartzo mesotermais em granitos e quartzitos, e veios em arcos vulcânicos. |
+| **07** | **Silver** (Prata) | Epitermal / Hidrotermal | `diorite`, `andesite`, `jasper` | Zonas epitermais vulcânicas intermediárias e filões silicosos de jaspe. |
+| **08** | **Platinum** (Platina) | Plutônica Ultramáfica | `gabbro`, `peridotite`, `serpentinite` | Intrusões máficas e ultramáficas profundas estratificadas (tipo Complexo Bushveld). |
+| **09** | **Aluminum** (Alumínio) | Intemperismo Residual / Pegmatito | `argillite`, `karst`, `cryolite` | Bauxitas formadas em carstes e argilitos intemperizados; criolita pegmatítica. |
+| **10** | **Lead** (Chumbo) | Carbonática Hidrotermal | `limestone`, `dolomite`, `karst` | Galena cúbica associada à dissolução cárstica e dolostones profundos. |
+| **11** | **Nickel** (Níquel) | Máfica / Ultramáfica | `gabbro`, `peridotite`, `basalt`, `serpentinite` | Sulfetos de níquel (pentlandita) em rochas ricas em magnésio e ferro do manto. |
+| **12** | **Rhodochrosite** (Manganês) | Hidrotermal Carbonática | `calcite`, `marble`, `porphyry` | Carbonato de manganês rosa em veios de calcita pura, mármores e pórfiros. |
+| **13** | **Diamond** (Diamante) | Manto Superior / UHP | `peridotite`, `gneiss` | Chaminés mantélicas profundas (kimberlitos/peridotitos) e gnaisses de ultra-alta pressão. |
+| **14** | **Ruby** (Rubi) | Metamórfica de Contato | `marble`, `gneiss` | Coríndon vermelho em mármores calcíticos puros (tipo depósitos de Mogok) e gnaisse. |
+| **15** | **Sapphire** (Safira) | Metamórfica / Basáltica | `marble`, `basalt`, `gneiss` | Coríndon azul em mármores de contato, derrames de basalto alcalino e gnaisse. |
+| **16** | **Topaz** (Topázio) | Pegmatito Félsico | `granite`, `quartzite` | Fluorssilicato formado em cavidades de granitos e veios silicosos de quartzito. |
+| **17** | **Emerald** (Esmeralda) | Pegmatito / Hidrotermal | `quartzite`, `marble`, `slate` | Berilo verde em contato de fluidos berilíferos com rochas ricas em cromo/vanádio. |
+| **18** | **Peridot** (Peridoto) | Mantélica / Máfica | `peridotite`, `basalt` | Gemologia da forsterita/olivina presente em peridotitos e xenólitos de basalto. |
+| **19** | **Jade** (Jade) | Metamórfica de Subducção | `serpentinite`, `slate` | Jadeíta e nefrita de extrema tenacidade formadas em zonas de sutura oceânica. |
+| **20** | **Opal** (Opala) | Precipitação Silicosa | `sandstone_white`, `tuff`, `pitchstone` | Sílica amorfa hidratada precipitada em arenitos brancos de quartzo e tufos vulcânicos. |
+| **21** | **Purpurite** (Purpurita) | Pegmatito de Fosfatos | `granite`, `porphyry` | Fosfato secundário oxidado rico em manganês/ferro em bordas de granito e pórfiro. |
+| **22** | **Cinnabar** (Cinábrio) | Epitermal de Baixa Temperatura | `brimstone`, `travertine`, `tuff`, `karst` | Sulfeto de mercúrio associado a caldeiras sulfurosas, fontes termais e carste. |
+| **23** | **Sulfur** (Enxofre) | Vulcânica Exalativa | `brimstone`, `basalt`, `tuff`, `scoria` | Sublimação de gases vulcânicos em crateras, escórias e rochas piroclásticas. |
+| **24** | **Salt** (Sal-Gema) | Evaporítica Marinha | `alabaster`, `chalk`, `sandstone_dune` | Halita precipitada em lagos secos com gipsita (alabastro), giz e dunas fósseis. |
+| **25** | **Saltpeter** (Salitre) | Evaporítica Cavernosa | `limestone`, `alabaster`, `sandstone_dune` | Nitrato mineral cristalizado em paredes de cavernas calcárias secas e evaporitos. |
+| **26** | **Quartz** (Quartzo) | Hidrotermal Universal | `granite`, `quartzite`, `sandstone_white` | Tectossilicato em filões hidrotermais de granitos, quartzitos e arenitos puros. |
+| **27** | **Lazurite** (Lazurita) | Metamórfica Alcalina | `marble`, `calcite` | Lápis-lazúli clássico formado pelo metamorfismo de calcários e mármores com pirita. |
+| **28** | **Uranium** (Urânio) | Pegmatito Félsico / Bacia | `granite`, `sandstone_pink`, `pitchstone` | Pitchblenda em granitos félsicos, vidros vulcânicos e arenitos sedimentares de bacia. |
+
+### 7.3. Nomenclatura e IDs dos Blocos Registrados
+Para cada par **Minério + Rocha**, registram-se 2 blocos de minério no motor gráfico:
+1. **Veio Padrão**: `ore_<minerio>_<rocha>` (ex.: `ore_iron_dolomite`, `ore_coal_slate`, `ore_gold_quartzite`).
+   - Composição: 6 faces com textura base `rocks/rock_<rocha>.png` + overlay `ores/ore_<minerio>_overlay.png`.
+2. **Veio Denso / Concentrado**: `dense_ore_<minerio>_<rocha>` (ex.: `dense_ore_iron_dolomite`, `dense_ore_coal_slate`, `dense_ore_gold_quartzite`).
+   - Composição: 6 faces com textura base `rocks/rock_<rocha>.png` + overlay `ores/dense_ore_<minerio>_overlay.png`.
+
+---
+
+## 8. Sistema de Seixos de Superfície: Pebbles (8 Blocos Funcionais)
+
+### 8.1. Filosofia de Sobrevivência e Lascamento Primitivo (Early-Game)
+O jogador inicia sua jornada no mundo de mãos vazias e **não quebra blocos de rocha sólida sem ferramentas**. A sobrevivência inicial depende de explorar a superfície e coletar **Pebbles (Seixos soltos)** dispostos pelo chão natural:
+- **Modelo no Motor**: Não ocupam um cubo sólido de 1x1x1; são blocos rasteiros de chão (micro-modelo 3D de pedrinhas espalhadas de 1-2 pixels de altura), coletáveis instantaneamente com a mão vazia.
+- **Lascamento (*Knapping*)**: Bater duas pedras adequadas entre si (ex.: 2 sílex ou 1 sílex + 1 percutor de quartzo) lasca a rocha, produzindo lâminas de machado, facas, pontas de lança e acendedores de fogo (*flint striker*).
+
+### 8.2. Catálogo dos 8 Blocos de Pebbles em `rocks/`
+
+| # | ID do Bloco | Nome / Seixo | Arquivo de Textura | Papel Arqueológico & de Sobrevivência |
+| :-: | :--- | :--- | :--- | :--- |
+| **01** | `pebble_flint` | Seixo de Sílex | `rocks/pebble_flint.png` | **O Rei do Early-Game**: Fratura concoidal afiada como navalha; lâminas, machados e acendedor de fogueira. |
+| **02** | `pebble_chert` | Seixo de Pederneira (Quirto) | `rocks/pebble_chert.png` | O irmão do sílex; ferramentas cortantes e pontas de flecha onde o sílex for escasso. |
+| **03** | `pebble_obsidian`| Seixo de Obsidiana | `rocks/pebble_obsidian.png` | Vidro vulcânico ultra-cortante (fio molecular) em biomas vulcânicos e derrames basálticos. |
+| **04** | `pebble_dolomite`| Seixo de Dolomita (Pedra Comum)| `rocks/pebble_dolomite.png`| O seixo mais comum do mundo; construção de fogueiras primitivas (*Campfire*), fornos e projéteis. |
+| **05** | `pebble_quartz` | Seixo de Quartzo Leitoso | `rocks/pebble_quartz.png` | Dureza 7 Mohs; percutor primário para bater e lascar o sílex/chert, além de raspadores duros. |
+| **06** | `pebble_sandstone`| Seixo de Arenito Abrasivo | `rocks/pebble_sandstone.png`| Pedra de afiar natural (*Whetstone*) para polir ferramentas de osso, madeira e pedra. |
+| **07** | `pebble_basalt` | Seixo de Basalto Tenaz | `rocks/pebble_basalt.png` | Pedra máfica ultra-tenaz que não estilhaça; martelos de mão pesados e machados polidos. |
+| **08** | `pebble_granite`| Seixo de Granito Áspero | `rocks/pebble_granite.png` | Pedra densa e rugosa para pilões manuais e quebra de nozes/grãos primitivos. |
+
+
 

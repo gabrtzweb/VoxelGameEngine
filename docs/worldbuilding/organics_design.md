@@ -1,22 +1,22 @@
 # Catálogo e Estrutura de Worldbuilding: Biomateriais, Fauna e Matéria Orgânica (Organics)
 
 Todas as texturas ativas de estruturas da fauna, ninhos, secreções animais, osteologia, excrementos, tecidos e biomassa visceral estão organizadas na pasta:
-📂 **`docs/worldbuilding/organics`** *(56 texturas PNG ativas, representando 32 blocos únicos divididos em 4 categorias ecológicas)*
+📂 **`docs/worldbuilding/organics`** *(56 texturas PNG ativas, representando 34 blocos únicos divididos em 4 categorias ecológicas)*
 
 ---
 
 ## 1. Classificação Ecológica e Domínios Faunísticos
 
-O ecossistema de biomateriais e fauna do mundo é organizado em **4 Categorias Biológicas (32 Blocos Únicos / 56 Texturas)**:
+O ecossistema de biomateriais e fauna do mundo é organizado em **4 Categorias Biológicas (34 Blocos Únicos / 56 Texturas)**:
 
 ```mermaid
 graph TD
-    O["Biomateriais & Organics (32 Blocos / 56 Texturas)"] --> C1["1. Ninhos & Colônias da Fauna (12 Blocos)"]
+    O["Biomateriais & Organics (34 Blocos / 56 Texturas)"] --> C1["1. Ninhos & Colônias da Fauna (14 Blocos)"]
     O --> C2["2. Secreções, Ceras & Geis (6 Blocos)"]
     O --> C3["3. Osteologia, Excrementos & Sedimentos (8 Blocos)"]
     O --> C4["4. Tecidos Vivos, Órgãos & Tegumento (6 Blocos)"]
 
-    C1 --> C1a["Ant Hill, Bee Nest, Bird Nest, Spider Egg, Cobweb, Cobweb Arch, Cobweb Hanging, Cobweb Stretched, Hay Nest, Termite Mound, Wasp Nest, Silk Cocoon"]
+    C1 --> C1a["Ant Hill, Ant Hill Open, Bee Nest, Bird Nest, Spider Egg, Cobweb, Cobweb Arch, Cobweb Hanging, Cobweb Stretched, Hay Nest, Termite Mound, Termite Mound Open, Wasp Nest, Silk Cocoon"]
     C2 --> C2a["Honey Block, Honeycomb Block, Slime Block, Pollen Block, Jelly Block, Venom Block"]
     C3 --> C3a["Bone Block, Dust Block, Guano Block, Calcined Shell, Poop Block, Coprolite Block, Seashell Block, Calcined Bone"]
     C4 --> C4a["Living Flesh, Living Porous Flesh, Flesh Block, Blubber Block, Brain Block, Fur Block"]
@@ -26,15 +26,15 @@ graph TD
 
 ## 2. Estrutura e Distribuição dos Blocos
 
-Com a definição do **Calcined Bone** e **Calcined Shell**, a integração do **Hay Nest**, a transição das teias para blocos verticais autônomos, o padrão de meias-alturas (*slabs*) para ninhos e a adição do **Jelly Block** e **Venom Block**, o catálogo atinge a marca balanceada de **32 blocos únicos**:
+Com a definição do **Calcined Bone** e **Calcined Shell**, a integração do **Hay Nest**, a separação autônoma de **Ant Hill Open** e **Termite Mound Open**, a transição das teias para blocos verticais autônomos, o padrão de meias-alturas (*slabs*) para ninhos e a adição do **Jelly Block** e **Venom Block**, o catálogo atinge a marca balanceada de **34 blocos únicos**:
 
 | Categoria Biológica | Qtd de Blocos | Espécimes Integrados |
 | :--- | :---: | :--- |
-| **1. Ninhos & Colônias da Fauna** | **12** | `Ant Hill`, `Bee Nest`, `Bird Nest`, `Spider Egg`, `Cobweb`, `Cobweb Arch`, `Cobweb Hanging`, `Cobweb Stretched`, `Hay Nest`, `Termite Mound`, `Wasp Nest`, `Silk Cocoon` |
+| **1. Ninhos & Colônias da Fauna** | **14** | `Ant Hill`, `Ant Hill Open`, `Bee Nest`, `Bird Nest`, `Spider Egg`, `Cobweb`, `Cobweb Arch`, `Cobweb Hanging`, `Cobweb Stretched`, `Hay Nest`, `Termite Mound`, `Termite Mound Open`, `Wasp Nest`, `Silk Cocoon` |
 | **2. Secreções, Ceras & Geis** | **6** | `Honey Block`, `Honeycomb Block`, `Slime Block`, `Pollen Block`, `Jelly Block`, `Venom Block` |
 | **3. Osteologia, Excrementos & Sedimentos** | **8** | `Bone Block`, `Dust Block`, `Guano Block`, `Poop Block`, `Calcined Shell`, `Coprolite Block`, `Seashell Block`, `Calcined Bone` |
 | **4. Tecidos Vivos, Órgãos & Tegumento** | **6** | `Living Flesh`, `Living Porous Flesh`, `Flesh Block`, `Blubber Block`, `Brain Block`, `Fur Block` |
-| **TOTAL GERAL** | **32** | **32 Blocos Únicos / 56 Texturas PNG** |
+| **TOTAL GERAL** | **34** | **34 Blocos Únicos / 56 Texturas PNG** |
 
 ---
 
@@ -54,8 +54,8 @@ Todas as texturas utilizam estritamente o prefixo **`bio_`** e a padronização 
    - **Calcined Shell**: Rocha sedimentar clástica calcítica formada por conchas marinhas e bioclastos calcinados piro-mineralizados em tons de cinza-claro gizoso (`bio_calcined_shell.png`), perfeitamente sincronizada à paleta de cinzas do `Calcined Bone`.
    - **Flesh Block**: Bloco estático de matéria muscular e tecido conjuntivo cru com corte transversal membranoso no topo (`bio_flesh_top.png`) e feixes musculares densos nas laterais (`bio_flesh_side.png`).
    - **Fur Block**: Pelagem animal densa orientável com escorrimento vertical dos pelos nas laterais (`bio_fur_side.png`) e espiral do couro no topo (`bio_fur_top.png`).
-   - **Ant Hill**: Estado inativo fechado (`bio_ant_hill.png`) e estado ativo com galeria aberta (`bio_ant_hill_open.png`).
-   - **Termite Mound**: Estrutura monolítica de terra marrom-argilosa cimentada de savana com caneluras verticais fechadas (`bio_termite_mound.png`) e estado ativo com chaminés de ventilação verticais e galerias assimétricas profundas (`bio_termite_mound_open.png`).
+   - **Ant Hill**: Estado inativo fechado (`bio_ant_hill.png`) e estado ativo com galeria aberta (`bio_ant_hill_open.png`), ambos com 6 faces uniformes.
+   - **Termite Mound**: Estrutura monolítica de terra marrom-argilosa cimentada de savana com caneluras verticais fechadas (`bio_termite_mound.png`) e estado ativo com chaminés de ventilação verticais e galerias assimétricas profundas (`bio_termite_mound_open.png`), ambos com 6 faces uniformes.
 2. **Teias de Aranha (Volumétrica e Modelos Planos Verticais)**:
    - **Cobweb (Bloco Tridimensional)**: Bloco cúbico volumétrico de seda biológica proteica densa com 3 variações estocásticas (`bio_cobweb.png`, `bio_cobweb1.png`, `bio_cobweb2.png`).
    - **Teias de Aplicação Vertical (Cobweb Arch, Hanging, Stretched)**: Blocos bidimensionais planos fixados diretamente contra faces verticais sólidas (paredes, quinas e vergas de tetos), vazados com transparência alpha: arco superior de canto (`bio_cobweb_arch.png`), cortina suspensa pendente (`bio_cobweb_hanging.png`) e teia tensionada entre superfícies verticais (`bio_cobweb_stretched.png`).
@@ -72,42 +72,44 @@ Todas as texturas utilizam estritamente o prefixo **`bio_`** e a padronização 
 
 ---
 
-## 4. Catálogo dos 32 Blocos Orgânicos Únicos (56 Texturas)
+## 4. Catálogo dos 34 Blocos Orgânicos Únicos (56 Texturas)
 
 | # | Bloco / Espécime | Categoria | Arquivo(s) de Textura | Variações / Faces | Biomas & Ocorrência Natural | Definição Biológica & Características |
-| :-: | :--- | :--- | :--- | :--- | :---: | :--- | :--- |
-| **01** | **Ant Hill** | **Ninhos & Colônias** | `bio_ant_hill.png`<br>`bio_ant_hill_open.png` | 2 estados | Savanas, Campos Abertos, Bosques | Monte cônico de partículas de solo cimentadas com saliva por formigas com galeria aberta ativa e fechada. |
-| **02** | **Bee Nest** | **Ninhos & Colônias** | `bio_bee_nest_bot...top.png`<br>`bio_bee_nest_front_honey.png` | 5 faces | Florestas Floridas, Bosques Claros | Colônia silvestre suspensa em troncos construída por abelhas com alvéolos de cera e gotejamento de mel. |
-| **03** | **Bird Nest** | **Ninhos & Colônias** | `bio_bird_nest_bot.png`<br>`bio_bird_nest_side...top.png` | 3 faces (Slab) | Copas de Árvores, Penhascos | Tigela compacta tecida de galhos, musgo seco e plumas com ovos pontilhados azul-turquesa; modelo de meia-altura (slab). |
-| **04** | **Spider Egg** | **Ninhos & Colônias** | `bio_spider_egg_bot.png`<br>`bio_spider_egg_side...top.png` | 3 faces | Cavernas Profundas, Fendas Escuras | Ooteca de seda densa tecida por artrópodes contendo aglomerados de ovos esféricos escarlates em gestação. |
-| **05** | **Cobweb** | **Ninhos & Colônias** | `bio_cobweb.png`, `1`, `2` | 3 variações | Minas Abandonadas, Cânions, Cavernas | Fios de seda biológica proteica viscosa entrelaçados em planos diagonais em cruz com alta elasticidade e poeira; bloco volumétrico 3D. |
-| **06** | **Cobweb Arch** | **Ninhos & Colônias** | `bio_cobweb_arch.png` | Face vertical | Cantos de Caverna, Portais, Minas | Teia em arco diagonal tecida em leque no canto superior entre parede e teto; bloco plano aplicado em face vertical. |
-| **07** | **Cobweb Hanging** | **Ninhos & Colônias** | `bio_cobweb_hanging.png` | Face vertical | Tetos de Túneis, Vergas, Criptas | Véu de teia suspenso que pende a partir do topo de blocos em estalactites de seda; bloco plano aplicado em face vertical. |
-| **08** | **Cobweb Stretched** | **Ninhos & Colônias** | `bio_cobweb_stretched.png` | Face vertical | Fendas Estreitas, Corredores | Teia esticada e tensionada entre bordas verticais simulando armadilha de passagem; bloco plano aplicado em face vertical. |
-| **09** | **Hay Nest** | **Ninhos & Colônias** | `bio_hay_nest_bot.png`<br>`bio_hay_nest_side...top.png` | 3 faces (Slab) | Fazendas, Celeiros, Pradarias Altas | Ninho aconchegante tecido de feno e palha seca prensada para avicultura, galinheiros e pequenos roedores de pasto; modelo de meia-altura (slab). |
-| **10** | **Termite Mound** | **Ninhos & Colônias** | `bio_termite_mound.png`<br>`bio_termite_mound_open.png` | 2 estados | Savanas Áridas, Chapadas, Bosques Secos | Estrutura monolítica de terra marrom-argilosa cimentada de savana com caneluras colunares verticais e chaminés de ventilação assimétricas. |
-| **11** | **Wasp Nest** | **Ninhos & Colônias** | `bio_wasp_nest_bot.png`<br>`bio_wasp_nest_side.png`<br>`bio_wasp_nest_top.png` | 3 faces | Galhos Densos, Cavernas, Ruínas | Ninho suspenso de celulose vegetal ("papel machê" cinzento) com topo de ancoragem, laterais estratificadas e base com orifício de entrada. |
-| **12** | **Silk Cocoon** | **Ninhos & Colônias** | `bio_silk_cocoon_bot.png`<br>`bio_silk_cocoon_side.png`<br>`bio_silk_cocoon_top.png` | 3 faces | Florestas Temperadas, Selvas Úmidas | Casulo pupal compacto afilado de fios de seda pura contínua enrolados em casca marfim-pérola brilhante; modelo vazado e fonte nobre de seda. |
-| **13** | **Honey Block** | **Secreções & Ceras** | `bio_honey_block_bot...top.png` | 3 faces | Colmeias Silvestres, Matas Cálidas | Secreção viscosa semitranslúcida de néctar processado e desidratado com alta densidade de açúcares naturais. |
-| **14** | **Honeycomb Block**| **Secreções & Ceras** | `bio_honeycomb_block.png` | 1 bloco | Colmeias Antigas, Ocos de Tronco | Matriz prismática hexagonal regular de cera pura sintetizada por glândulas abdominais de insetos sociais. |
-| **15** | **Slime Block** | **Secreções & Ceras** | `bio_slime.png` | 1 bloco (Translúcido) | Pântanos Úmidos, Fendas Subterrâneas | Matéria coloidal viva translúcida viscoelástica verde que retém umidade e amortece impactos cinéticos. |
-| **16** | **Pollen Block** | **Secreções & Ceras** | `bio_pollen.png` | 1 bloco | Prados Floridos, Proximidades de Colmeias | Bloco denso aveludado de grãos de pólen vegetal comprimidos; solta poeira dourada ao quebrar e atrai polinizadores. |
-| **17** | **Jelly Block** | **Secreções & Ceras** | `bio_jelly.png` | 1 bloco (Translúcido) | Pomares Úmidos, Ocos de Frutas, Colônias | Geleia orgânica pura translúcida viscoelástica arroxeada com alta resiliência elástica para saltos sem retenção viscosa. |
-| **18** | **Venom Block** | **Secreções & Ceras** | `bio_venom.png` | 1 bloco | Covis de Serpentes, Fendas Peçonhentas, Ninhos | Peçonha biológica cáustica altamente densa e coagulada em roxo-escuro profundo quase preto; emite toxicidade letal. |
-| **19** | **Bone Block** | **Osteologia & Sedimentos**| `bio_bone_side.png`<br>`bio_bone_top.png` | 2 faces | Desertos, Ravinas, Fósseis Antigos | Estrutura de matriz de fosfato de cálcio fóssil e hidroxiapatita de megafauna extinta mineralizada pelo tempo. |
-| **20** | **Dust Block** | **Osteologia & Sedimentos**| `bio_dust.png` | 1 bloco | Catacumbas, Câmaras Fechadas | Acúmulo compacto de partículas orgânicas inertes, células descamadas, exoesqueletos microscópicos e cinzas. |
-| **21** | **Guano Block** | **Osteologia & Sedimentos**| `bio_guano.png` | 1 bloco | Cavernas de Quirópteros, Ilhas | Depósito sedimentar fóssil rico em nitratos e fosfatos originado do excremento dessecado de morcegos e aves. |
-| **22** | **Poop Block** | **Osteologia & Sedimentos**| `bio_poop.png` | 1 bloco | Pastos, Currais, Tiras de Fauna | Bloco denso de esterco e estrume animal orgânico com fibras vegetais não digeridas e matéria rica em nutrientes. |
-| **23** | **Calcined Shell** | **Osteologia & Sedimentos**| `bio_calcined_shell.png` | 1 bloco | Praias Antigas, Leitos Fósseis, Fornos | Aglomerado de conchas e bivalves marinhos calcinados piro-mineralizados em cinza-claro gizoso, rico em calcário desidratado. |
-| **24** | **Coprolite Block**| **Osteologia & Sedimentos**| `bio_coprolite.png` | 1 bloco | Jazidas Fósseis, Desertos, Cavernas Antigas | Excremento fóssil petrificado de megafauna extinta mineralizado em fosfato de cálcio duro e rocha sedimentar. |
-| **25** | **Seashell Block** | **Osteologia & Sedimentos**| `bio_seashell.png` | 1 bloco | Litorais Rochosos, Recifes, Praias Quentes | Aglomerado costeiro denso de conchas marinhas inteiras e bivalves coloridos em tons terracota e coral. |
-| **26** | **Calcined Bone** | **Osteologia & Sedimentos**| `bio_calcined_bone_side.png`<br>`bio_calcined_bone_top.png` | 2 faces | Covas Fósseis, Fornos Antigos, Estratos Vulcânicos | Osso submetido a altas temperaturas piro-mineralizado em cinza-claro gizoso, rico em hidroxiapatita recristalizada. |
-| **27** | **Living Flesh** | **Tecidos & Biomassa** | `bio_living_flesh.png` *(16×48 px)* | Animado (3f) | Zonas Viscerais, Covas Abissais | Tecido muscular estriado biológico pulsante contínuo e autônomo, mantendo calor orgânico vivo nas fendas. |
-| **28** | **Living Porous Flesh**| **Tecidos & Biomassa** | `bio_living_porous_flesh.png` *(16×32 px)* | Animado (2f) | Entranhas de Macrofissuras | Tecido conjuntivo esponjoso visceral vivo com poros abertos que exsudam fluidos orgânicos em ritmo respiratório. |
-| **29** | **Flesh Block** | **Tecidos & Biomassa** | `bio_flesh_side.png`<br>`bio_flesh_top.png` | 2 faces | Açougues, Covas, Covis Predatórios | Bloco sólido e denso de carne crua e músculo fatiado com topo membranoso e laterais em feixes fibrosos. |
-| **30** | **Blubber Block** | **Tecidos & Biomassa** | `bio_blubber.png` | Semitranslúcido | Biomas Árticos, Megafauna Marinha | Camada densa de tecido adiposo animal e gordura isolante esbranquiçada/amarelada; combustível biológico premium. |
-| **31** | **Brain Block** | **Tecidos & Biomassa** | `bio_brain.png` | 1 bloco | Fendas Psíquicas, Biomas Viscerais | Massa encefálica viva rosada com convoluções cerebrais densas que reage a estímulos e sinapses. |
-| **32** | **Fur Block** | **Tecidos & Biomassa** | `bio_fur_side.png`<br>`bio_fur_top.png` | 2 faces | Taigas, Tundras Frias, Currais | Couro com pelagem animal espessa marrom-escura isolante térmica contra frio severo. |
+| :-: | :--- | :--- | :--- | :--- | :---: | :--- |
+| **01** | **Ant Hill** | **Ninhos & Colônias** | `bio_ant_hill.png` | 6 faces | Savanas, Campos Abertos, Bosques | Monte cônico de partículas de solo cimentadas com saliva por formigas em estado fechado inativo. |
+| **02** | **Ant Hill Open** | **Ninhos & Colônias** | `bio_ant_hill_open.png` | 6 faces | Savanas, Campos Abertos, Bosques | Monte de formigueiro em estado ativo com galerias e orifícios de entrada escavados. |
+| **03** | **Bee Nest** | **Ninhos & Colônias** | `bio_bee_nest_bot...top.png`<br>`bio_bee_nest_front_honey.png` | 5 faces | Florestas Floridas, Bosques Claros | Colônia silvestre suspensa em troncos construída por abelhas com alvéolos de cera e gotejamento de mel. |
+| **04** | **Bird Nest** | **Ninhos & Colônias** | `bio_bird_nest_bot.png`<br>`bio_bird_nest_side...top.png` | 3 faces (Slab) | Copas de Árvores, Penhascos | Tigela compacta tecida de galhos, musgo seco e plumas com ovos pontilhados azul-turquesa; modelo de meia-altura (slab). |
+| **05** | **Spider Egg** | **Ninhos & Colônias** | `bio_spider_egg_bot.png`<br>`bio_spider_egg_side...top.png` | 3 faces | Cavernas Profundas, Fendas Escuras | Ooteca de seda densa tecida por artrópodes contendo aglomerados de ovos esféricos escarlates em gestação. |
+| **06** | **Cobweb** | **Ninhos & Colônias** | `bio_cobweb.png`, `1`, `2` | 3 variações | Minas Abandonadas, Cânions, Cavernas | Fios de seda biológica proteica viscosa entrelaçados em planos diagonais em cruz com alta elasticidade e poeira; bloco volumétrico 3D. |
+| **07** | **Cobweb Arch** | **Ninhos & Colônias** | `bio_cobweb_arch.png` | Face vertical | Cantos de Caverna, Portais, Minas | Teia em arco diagonal tecida em leque no canto superior entre parede e teto; bloco plano aplicado em face vertical. |
+| **08** | **Cobweb Hanging** | **Ninhos & Colônias** | `bio_cobweb_hanging.png` | Face vertical | Tetos de Túneis, Vergas, Criptas | Véu de teia suspenso que pende a partir do topo de blocos em estalactites de seda; bloco plano aplicado em face vertical. |
+| **09** | **Cobweb Stretched** | **Ninhos & Colônias** | `bio_cobweb_stretched.png` | Face vertical | Fendas Estreitas, Corredores | Teia esticada e tensionada entre bordas verticais simulando armadilha de passagem; bloco plano aplicado em face vertical. |
+| **10** | **Hay Nest** | **Ninhos & Colônias** | `bio_hay_nest_bot.png`<br>`bio_hay_nest_side...top.png` | 3 faces (Slab) | Fazendas, Celeiros, Pradarias Altas | Ninho aconchegante tecido de feno e palha seca prensada para avicultura, galinheiros e pequenos roedores de pasto; modelo de meia-altura (slab). |
+| **11** | **Termite Mound** | **Ninhos & Colônias** | `bio_termite_mound.png` | 6 faces | Savanas Áridas, Chapadas, Bosques Secos | Estrutura monolítica de terra marrom-argilosa cimentada de savana com caneluras colunares verticais fechadas. |
+| **12** | **Termite Mound Open** | **Ninhos & Colônias** | `bio_termite_mound_open.png` | 6 faces | Savanas Áridas, Chapadas, Bosques Secos | Estrutura de cupinzeiro ativa com chaminés de ventilação verticais e galerias profundas abertas. |
+| **13** | **Wasp Nest** | **Ninhos & Colônias** | `bio_wasp_nest_bot.png`<br>`bio_wasp_nest_side.png`<br>`bio_wasp_nest_top.png` | 3 faces | Galhos Densos, Cavernas, Ruínas | Ninho suspenso de celulose vegetal ("papel machê" cinzento) com topo de ancoragem, laterais estratificadas e base com orifício de entrada. |
+| **14** | **Silk Cocoon** | **Ninhos & Colônias** | `bio_silk_cocoon_bot.png`<br>`bio_silk_cocoon_side.png`<br>`bio_silk_cocoon_top.png` | 3 faces | Florestas Temperadas, Selvas Úmidas | Casulo pupal compacto afilado de fios de seda pura contínua enrolados em casca marfim-pérola brilhante; modelo vazado e fonte nobre de seda. |
+| **15** | **Honey Block** | **Secreções & Ceras** | `bio_honey_block_bot...top.png` | 3 faces | Colmeias Silvestres, Matas Cálidas | Secreção viscosa semitranslúcida de néctar processado e desidratado com alta densidade de açúcares naturais. |
+| **16** | **Honeycomb Block**| **Secreções & Ceras** | `bio_honeycomb_block.png` | 1 bloco | Colmeias Antigas, Ocos de Tronco | Matriz prismática hexagonal regular de cera pura sintetizada por glândulas abdominais de insetos sociais. |
+| **17** | **Slime Block** | **Secreções & Ceras** | `bio_slime.png` | 1 bloco (Translúcido) | Pântanos Úmidos, Fendas Subterrâneas | Matéria coloidal viva translúcida viscoelástica verde que retém umidade e amortece impactos cinéticos. |
+| **18** | **Pollen Block** | **Secreções & Ceras** | `bio_pollen.png` | 1 bloco | Prados Floridos, Proximidades de Colmeias | Bloco denso aveludado de grãos de pólen vegetal comprimidos; solta poeira dourada ao quebrar e atrai polinizadores. |
+| **19** | **Jelly Block** | **Secreções & Ceras** | `bio_jelly.png` | 1 bloco (Translúcido) | Pomares Úmidos, Ocos de Frutas, Colônias | Geleia orgânica pura translúcida viscoelástica arroxeada com alta resiliência elástica para saltos sem retenção viscosa. |
+| **20** | **Venom Block** | **Secreções & Ceras** | `bio_venom.png` | 1 bloco | Covis de Serpentes, Fendas Peçonhentas, Ninhos | Peçonha biológica cáustica altamente densa e coagulada em roxo-escuro profundo quase preto; emite toxicidade letal. |
+| **21** | **Bone Block** | **Osteologia & Sedimentos**| `bio_bone_side.png`<br>`bio_bone_top.png` | 2 faces | Desertos, Ravinas, Fósseis Antigos | Estrutura de matriz de fosfato de cálcio fóssil e hidroxiapatita de megafauna extinta mineralizada pelo tempo. |
+| **22** | **Dust Block** | **Osteologia & Sedimentos**| `bio_dust.png` | 1 bloco | Catacumbas, Câmaras Fechadas | Acúmulo compacto de partículas orgânicas inertes, células descamadas, exoesqueletos microscópicos e cinzas. |
+| **23** | **Guano Block** | **Osteologia & Sedimentos**| `bio_guano.png` | 1 bloco | Cavernas de Quirópteros, Ilhas | Depósito sedimentar fóssil rico em nitratos e fosfatos originado do excremento dessecado de morcegos e aves. |
+| **24** | **Poop Block** | **Osteologia & Sedimentos**| `bio_poop.png` | 1 bloco | Pastos, Currais, Tiras de Fauna | Bloco denso de esterco e estrume animal orgânico com fibras vegetais não digeridas e matéria rica em nutrientes. |
+| **25** | **Calcined Shell** | **Osteologia & Sedimentos**| `bio_calcined_shell.png` | 1 bloco | Praias Antigas, Leitos Fósseis, Fornos | Aglomerado de conchas e bivalves marinhos calcinados piro-mineralizados em cinza-claro gizoso, rico em calcário desidratado. |
+| **26** | **Coprolite Block**| **Osteologia & Sedimentos**| `bio_coprolite.png` | 1 bloco | Jazidas Fósseis, Desertos, Cavernas Antigas | Excremento fóssil petrificado de megafauna extinta mineralizado em fosfato de cálcio duro e rocha sedimentar. |
+| **27** | **Seashell Block** | **Osteologia & Sedimentos**| `bio_seashell.png` | 1 bloco | Litorais Rochosos, Recifes, Praias Quentes | Aglomerado costeiro denso de conchas marinhas inteiras e bivalves coloridos em tons terracota e coral. |
+| **28** | **Calcined Bone** | **Osteologia & Sedimentos**| `bio_calcined_bone_side.png`<br>`bio_calcined_bone_top.png` | 2 faces | Covas Fósseis, Fornos Antigos, Estratos Vulcânicos | Osso submetido a altas temperaturas piro-mineralizado em cinza-claro gizoso, rico em hidroxiapatita recristalizada. |
+| **29** | **Living Flesh** | **Tecidos & Biomassa** | `bio_living_flesh.png` *(16×48 px)* | Animado (3f) | Zonas Viscerais, Covas Abissais | Tecido muscular estriado biológico pulsante contínuo e autônomo, mantendo calor orgânico vivo nas fendas. |
+| **30** | **Living Porous Flesh**| **Tecidos & Biomassa** | `bio_living_porous_flesh.png` *(16×32 px)* | Animado (2f) | Entranhas de Macrofissuras | Tecido conjuntivo esponjoso visceral vivo com poros abertos que exsudam fluidos orgânicos em ritmo respiratório. |
+| **31** | **Flesh Block** | **Tecidos & Biomassa** | `bio_flesh_side.png`<br>`bio_flesh_top.png` | 2 faces | Açougues, Covas, Covis Predatórios | Bloco sólido e denso de carne crua e músculo fatiado com topo membranoso e laterais em feixes fibrosos. |
+| **32** | **Blubber Block** | **Tecidos & Biomassa** | `bio_blubber.png` | Semitranslúcido | Biomas Árticos, Megafauna Marinha | Camada densa de tecido adiposo animal e gordura isolante esbranquiçada/amarelada; combustível biológico premium. |
+| **33** | **Brain Block** | **Tecidos & Biomassa** | `bio_brain.png` | 1 bloco | Fendas Psíquicas, Biomas Viscerais | Massa encefálica viva rosada com convoluções cerebrais densas que reage a estímulos e sinapses. |
+| **34** | **Fur Block** | **Tecidos & Biomassa** | `bio_fur_side.png`<br>`bio_fur_top.png` | 2 faces | Taigas, Tundras Frias, Currais | Couro com pelagem animal espessa marrom-escura isolante térmica contra frio severo. |
 
 ---
 

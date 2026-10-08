@@ -180,7 +180,7 @@ Mapeamento exato de cada bloco do jogo, suas faces registradas no motor gráfico
 | **02** | `oak_wood` | `tree_oak_bark.png` | `tree_oak_bark.png` | `tree_oak_bark.png` | Sólido, Combustível |
 | **03** | `oak_planks` | `tree_oak_planks.png` | `tree_oak_planks.png` | `tree_oak_planks.png` | Sólido, Construtivo |
 | **04** | `oak_leaves` | `tree_oak_leaves.png` | `tree_oak_leaves.png` | `tree_oak_leaves.png` | Cutout, Decaimento |
-| **05** | `oak_leaves_flowering` | `tree_oak_leaves_flowering.png` | `tree_oak_leaves_flowering.png` | `tree_oak_leaves_flowering.png` | Cutout, Decaimento |
+| **05** | `oak_leaves_lush_flowering` | `tree_oak_leaves_flowering.png` | `tree_oak_leaves_flowering.png` | `tree_oak_leaves_flowering.png` | Cutout, Decaimento |
 | **06** | `oak_leaves_lush` | `tree_oak_leaves_lush.png` | `tree_oak_leaves_lush.png` | `tree_oak_leaves_lush.png` | Cutout, Decaimento |
 | **07** | `oak_leaves_dead` | `tree_oak_leaves_dead.png` | `tree_oak_leaves_dead.png` | `tree_oak_leaves_dead.png` | Cutout, Seco, Inflamável |
 | **08** | `birch_log` | `tree_birch_log.png` | `tree_birch_log.png` | `tree_birch_bark.png` | Eixo 3D, Combustível |

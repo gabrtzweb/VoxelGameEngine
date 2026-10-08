@@ -163,6 +163,40 @@ Todas as texturas possuem largura **16 pixels** (16x16 padrão, com exceção da
 ### D. Blocos Fósseis Independentes (4 Texturas Opacas)
 `fossil_bones.png`, `fossil_bitumen.png`, `fossil_amber.png`, `fossil_matrix.png`.
 
+---
+
+## 7. Associação Geológica de Rochas Hospedeiras (World Generation)
+
+Conforme formalizado na Seção 7 de `docs/worldbuilding/rocks_design.md`, os overlays de minérios **não são multiplicados indiscriminadamente sobre todas as 38 rochas**. A Voxel Engine segue o modelo de **Gênese Petrológica Rebalanceada**:
+- Cada minério possui de **2 a 6 rochas hospedeiras autênticas**, cobrindo ambientes sedimentares, ígneos/hidrotermais ou metamórficos adequados.
+- **Dolomite como Hub Ubíquo de Sobrevivência**: Por ser a pedra cinza comum de grande parte do mundo, a Dolomita hospeda a tríade vital de progressão inicial (**Coal**, **Iron**, **Copper**, **Zinc**, **Lead**), evitando que jogadores fiquem desprovidos de combustível ou metalurgia básica.
+- **Carvão Antracítico em Ardósia**: A Ardósia (`slate`) hospeda carvão de alta pureza (antracite metamórfica), garantindo combustível em regiões montanhosas foliadas.
+- Existem **90 associações mineralógicas únicas**, gerando **180 blocos de minérios incrustados** (90 na versão `ore_<minerio>_<rocha>` + 90 na versão `dense_ore_<minerio>_<rocha>`).
+
+---
+
+## 8. Sistema de Indicadores de Superfície: Ore Nuggets (6 Blocos / Pepitas de Minério)
+
+### 8.1. Filosofia de Prospecção Visual e Metalurgia Inicial
+Para permitir prospecção visual no relevo e acesso ao primeiro punhado de metal sem exigir picaretas avançadas, certos minérios metálicos geram **Nuggets (Pepitas soltas de chão)** imediatamente na superfície do solo/grama acima de veios subterrâneos:
+- **Modelo no Motor**: Blocos rasteiros de chão (micro-modelo 3D de pepitas espalhadas de 1-2 pixels de altura), coletáveis com a mão vazia.
+- **Indicação de Veios**: Encontrar 1 a 3 nuggets no solo informa ao jogador que há um veio mineral concentrado sob aquele ponto.
+- **Fusão Primitiva**: Coletar pepitas suficientes permite ao jogador fundir suas primeiras cabeças de ferramentas de Cobre e Bronze em fornos simples de barro.
+
+### 8.2. Catálogo dos 6 Blocos de Nuggets em `ores/`
+
+| # | ID do Bloco | Metal / Minério | Arquivo de Textura | Papel no Gameplay & Prospecção |
+| :-: | :--- | :--- | :--- | :--- |
+| **01** | `nugget_copper` | Pepita de Cobre Nativo / Malaquita | `ores/nugget_copper.png` | **Alvorecer dos Metais**: Coletável na superfície para fundição das primeiras ferramentas de cobre; indica veio cuprífero subterrâneo. |
+| **02** | `nugget_tin` | Pepita de Estanho / Cassiterita | `ores/nugget_tin.png` | **Era do Bronze**: Pequenos seixos metálicos de estanho para ligar com cobre e forjar Bronze autêntico. |
+| **03** | `nugget_iron` | Pepita de Ferro / Hematita | `ores/nugget_iron.png` | **Prospecção Siderúrgica**: Nódulos de ferro de superfície que apontam para veios profundos de hematita. |
+| **04** | `nugget_gold` | Pepita de Ouro Nativo | `ores/nugget_gold.png` | **Aluvião & Riqueza**: Clássica pepita dourada encontrada em leitos de rios, solos arenosos e áreas orogênicas. |
+| **05** | `nugget_silver` | Pepita de Prata Nativa | `ores/nugget_silver.png` | **Metalurgia Nobre**: Pepitas prateadas de alta condutividade para purificação e joalheria inicial. |
+| **06** | `nugget_platinum`| Pepita de Platina Imperial | `ores/nugget_platinum.png`| **Aluvião Nobre Raro**: Pepitas platiníferas pesadas de rios e depósitos de placer ultramáficos. |
+
+
+
+
 
 
 

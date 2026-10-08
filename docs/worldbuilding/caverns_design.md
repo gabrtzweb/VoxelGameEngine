@@ -37,16 +37,16 @@ Para cada um dos 6 minerais cristalinos do jogo, existe um conjunto de 3 textura
 
 ```mermaid
 graph LR
-    B["1. Bloco de Cristal<br>(crystal_<nome>.png)<br>16x16 Maciço"] --- C["2. Cluster Mineral<br>(crystal_<nome>_cluster.png)<br>16x16 Silhueta 3D"]
+    B["1. Bloco de Cristal<br>(crystal_<nome>.png)<br>16x16 Maciço"] --- C["2. Cluster Mineral<br>(crystal_<nome>_cluster.png)<br>16x16 Cross-billboard"]
     C --- G["3. Cluster Glinted<br>(crystal_<nome>_cluster_glinted.png)<br>16x16 Emissivo / Cintilante"]
 ```
 
 1. **Bloco de Cristal Maciço (`crystal_<nome>.png`)**:
-   - `16x16` pixels opaco. Representa a rocha de cristal pura consolidada, obtida através da união de fragmentos minerais e prismas lapidados.
+   - `16x16` pixels opaco. Representa a rocha de cristal pura consolidada, obtida através da união de fragmentos minerais e prismas lapidados (6 faces sólidas).
 2. **Cluster Mineral (`crystal_<nome>_cluster.png`)**:
-   - `16x16` pixels com canal alfa (`RGBA`). Representa o agregado mineral tridimensional em crescimento natural incrustado em tetos, pisos ou paredes rochosas de geodos.
+   - `16x16` pixels com canal alfa (`RGBA`). Renderizado como **Cross-billboard** (planos cruzados em X, análogo a vegetações/flores), representando o agregado mineral em crescimento natural incrustado em tetos, pisos ou paredes rochosas de geodos.
 3. **Cluster com Brilho / Glinted (`crystal_<nome>_cluster_glinted.png`)**:
-   - `16x16` pixels com canal alfa (`RGBA`). Variante animada/cintilante com centelhas de refração de luz no ápice superior, simulando a dispersão prismática e reflexão cristalina natural.
+   - `16x16` pixels com canal alfa (`RGBA`). Renderizado como **Cross-billboard** (planos cruzados em X) com propriedade emissiva e centelhas de refração de luz no ápice superior, simulando a dispersão prismática e reflexão cristalina natural.
 
 ---
 
@@ -54,7 +54,7 @@ graph LR
 
 Todos os cristais possuem base 100% real na mineralogia e geologia terrestre:
 
-| Cristal | Mineralogia & Composição | Bloco Base (16x16) | Cluster 3D | Cluster Glinted | Cor Predominante | Origem & Propriedades Naturais |
+| Cristal | Mineralogia & Composição | Bloco Base (16x16) | Cluster (Cross-billboard) | Cluster Glinted (Cross-billboard Emissivo) | Cor Predominante | Origem & Propriedades Naturais |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Amethyst** | Quartzo violeta ($SiO_2$) | `crystal_amethyst.png` | `crystal_amethyst_cluster.png` | `crystal_amethyst_cluster_glinted.png` | Violeta / Lilás (`#7252b3` a `#eacef0`) | Variedade cristalina de quartzo que adquire cor púrpura por irradiação natural e impurezas de ferro; ocorre em geodos basálticos. |
 | **Aquamarine** | Berilo azul-ciano ($Be_3Al_2Si_6O_{18}$) | `crystal_aquamarine.png` | `crystal_aquamarine_cluster.png` | `crystal_aquamarine_cluster_glinted.png` | Azul-Ciano / Marinho (`#24f6d8` a `#339599`) | Variedade nobre de berilo formada em veios pegmatíticos e cavidades hidrotermais sob pressão e fluidos ricos em berílio. |
@@ -88,16 +88,16 @@ graph TD
     D5 -. "Encontro de Coluna (down_tip_merge + up_tip_merge)" .- U5
 ```
 
-### 4.1 Catálogo dos 6 Materiais de Espeleotemas
+### 4.1 Catálogo dos 6 Blocos de Espeleotemas Modulares
 
-| Material | Rocha-Mãe Conectada | Peças Modulares | Textura Base & Visual | Origem & Características Físicas |
-| :--- | :--- | :---: | :--- | :--- |
-| **Karst** | `rocks/rock_karst.png` | 10 peças (5 Down + 5 Up) | Calcário cárstico fóssil clássico cinza com relevo rugoso | Depósitos minerais carbonáticos secundários formados pela precipitação lenta de bicarbonato de cálcio em cavernas de dissolução cárstica. |
-| **Calcite** | `rocks/rock_calcite.png` | 10 peças (5 Down + 5 Up) | Calcita carbonática pura branco-creme perolada límpida | Espeleotemas de calcita de alta pureza química, com crescimento cristalino liso, estrias peroladas e coloração leitosa. |
-| **Brimstone** | `rocks/rock_brimstone.png` | 10 peças (5 Down + 5 Up) | Espinhos afiados amarelo-enxofre vulcânico | Estruturas aciculares e pontiagudas originárias da sublimação direta de gases ricos em enxofre ao redor de fumarolas vulcânicas. |
-| **Basalt** *(Magma)* | `rocks/rock_basalt.png` | 10 peças (5 Down + 5 Up) | Basalto negro com veios térmicos e gotas de lava incandescente | Estalactites vulcânicas originadas pelo escorrimento e gotejamento de lava fluida ao longo do teto de tubos de lava (*lava tubes*). |
-| **Ice** *(Icicle)* | `fluids/frost_ice_packed.png` | 10 peças (5 Down + 5 Up) | Pingentes cristalinos e estalagmites de gelo compacto | Formações de gelo compacto desenvolvidas pelo gotejamento e congelamento progressivo de água em cavernas glaciais e de permafrost. |
-| **Pink Salt Straw** | `caverns/crystal_pink_salt.png` | 6 peças (3 Down + 3 Up) | Canudos tubulares de halita oca ultrafinos (`bottom`, `middle`, `top`) | Estruturas tubulares cilíndricas ocas de precipitação salina (*soda straws*), desenvolvidas a partir da borda de gotas de água salobra suspensas. |
+| ID do Bloco | Material / Nome | Rocha-Mãe Conectada | Peças Modulares | Textura Base & Visual | Origem & Características Físicas |
+| :--- | :--- | :--- | :---: | :--- | :--- |
+| `dripstone` | **Karst** (Dripstone Cárstico) | `rocks/rock_karst.png` | 10 peças (5 Down + 5 Up) | Calcário cárstico fóssil clássico cinza com relevo rugoso | Depósitos minerais carbonáticos secundários formados pela precipitação lenta de bicarbonato de cálcio em cavernas de dissolução cárstica. |
+| `calcite_dripstone` | **Calcite** (Flowstone) | `rocks/rock_calcite.png` | 10 peças (5 Down + 5 Up) | Calcita carbonática pura branco-creme perolada límpida | Espeleotemas de calcita de alta pureza química, com crescimento cristalino liso, estrias peroladas e coloração leitosa. |
+| `brimstone_spike` | **Brimstone** (Espinho de Enxofre) | `rocks/rock_brimstone.png` | 10 peças (5 Down + 5 Up) | Espinhos afiados amarelo-enxofre vulcânico | Estruturas aciculares e pontiagudas originárias da sublimação direta de gases ricos em enxofre ao redor de fumarolas vulcânicas. |
+| `lava_icicle` | **Basalt** (Goteira de Magma) | `rocks/rock_basalt.png` | 10 peças (5 Down + 5 Up) | Basalto negro com veios térmicos e gotas de lava incandescente | Estalactites vulcânicas originadas pelo escorrimento e gotejamento de lava fluida ao longo do teto de tubos de lava (*lava tubes*). |
+| `icicle` | **Ice** (Pingente de Gelo Glacial) | `fluids/frost_ice_packed.png` | 10 peças (5 Down + 5 Up) | Pingentes cristalinos e estalagmites de gelo compacto | Formações de gelo compacto desenvolvidas pelo gotejamento e congelamento progressivo de água em cavernas glaciais e de permafrost. |
+| `salt_straw` | **Pink Salt Straw** (Canudo de Sal) | `caverns/crystal_pink_salt.png` | 6 peças (3 Down + 3 Up) | Canudos tubulares de halita oca ultrafinos (`bottom`, `middle`, `top`) | Estruturas tubulares cilíndricas ocas de precipitação salina (*soda straws*), desenvolvidas a partir da borda de gotas de água salobra suspensas. |
 
 ---
 
