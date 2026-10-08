@@ -1,25 +1,24 @@
 # Catálogo e Estrutura de Worldbuilding: Decorações, Alvenaria e Revestimentos (Decorations)
 
-Todas as texturas ativas de elementos arquitetônicos, mobiliário, tecidos, vidraçaria, alvenaria e variantes tingíveis estão organizadas na pasta:
-📂 **`docs/worldbuilding/decorations`** *(44 texturas PNG ativas, representando 22 blocos únicos divididos em 4 categorias funcionais)*
+Todas as texturas ativas de elementos arquitetônicos, mobiliário, tecidos, vidraçaria, alvenaria e variantes tingíveis estão organizadas na 📂 **`docs/worldbuilding/decorations`** *(46 texturas PNG ativas, representando 24 blocos únicos divididos em 4 categorias funcionais)*
 
 ---
 
 ## 1. Classificação Estrutural e Arquitetônica
 
-O acervo de decoração e construção do mundo é organizado em **4 Categorias Funcionais (22 Blocos Únicos / 44 Texturas)**:
+O acervo de decoração e construção do mundo é organizado em **4 Categorias Funcionais (24 Blocos Únicos / 46 Texturas)**:
 
 ```mermaid
 graph TD
-    D["Decorações & Arquitetura (22 Blocos Únicos / 44 Texturas)"] --> C1["1. Recipientes & Mobiliário Estrutural (4 Blocos)"]
+    D["Decorações & Arquitetura (24 Blocos Únicos / 46 Texturas)"] --> C1["1. Recipientes & Mobiliário Estrutural (4 Blocos)"]
     D --> C2["2. Materiais & Alvenaria Rústica Básica (6 Blocos)"]
     D --> C3["3. Revestimentos Tingíveis / Painted (6 Blocos)"]
-    D --> C4["4. Fibras Agrícolas, Coberturas & Calçamentos (6 Blocos)"]
+    D --> C4["4. Fibras Agrícolas, Coberturas & Calçamentos (8 Blocos)"]
 
     C1 --> C1a["Barrel (Top, Side, Bottom), Basket (Top, Side, Bottom, Handles), Bookshelf (Top, Side, 6 Variações), Composter (Top, Side, Bottom)"]
     C2 --> C2a["Bricks (4 Variações), Cloth, Glass, Plaster, Wool, Shingles"]
     C3 --> C3a["Painted Bricks (4 Variações), Painted Cloth, Painted Glass, Painted Plaster, Painted Wool, Painted Shingles"]
-    C4 --> C4a["Hay Bale (Top, Side), Thatch (Top, Side), Wicker, Stone Path, Wax Block, Wood Path"]
+    C4 --> C4a["Hay Bale (Top, Side), Thatch (Top, Side), Wicker, Wax Block, Wood Path, Stone Path, Dirty Path, Sandy Path"]
 ```
 
 ---
@@ -38,10 +37,10 @@ Para possibilitar o sistema de tingimento com as **16 cores adicionais da paleta
 
 ---
 
-## 3. Catálogo dos 22 Blocos de Decoração Únicos (44 Texturas)
+## 3. Catálogo dos 24 Blocos de Decoração Únicos (46 Texturas)
 
 | # | Bloco / Espécime | Categoria | Arquivo(s) de Textura | Variações / Faces | Uso Construtivo & Estilo Arquitetônico | Características Visuais & Materiais |
-| :-: | :--- | :--- | :--- | :---: | :--- | :--- |
+| :-: | :--- | :--- | :--- | :--- | :---: | :--- |
 | **01** | **Barrel** | **Recipientes & Mobiliário** | `deco_barrel_top.png`<br>`deco_barrel_side.png`<br>`deco_barrel_bot.png` | 3 faces | Adegas, Armazéns, Oficinas | Barril de ripas de carvalho arqueadas reforçado por aros metálicos escuros e tampo estanque. |
 | **02** | **Basket** | **Recipientes & Mobiliário** | `deco_basket_top.png`<br>`deco_basket_side.png`<br>`deco_basket_side_handles.png`<br>`deco_basket_bot.png` | 4 faces *(Topo vazado)* | Mercados, Vilas, Despensas | Cesto rústico trançado em talos de salgueiro flexíveis com alças laterais e abertura superior oca. |
 | **03** | **Bookshelf** | **Recipientes & Mobiliário** | `deco_bookshelf.png` a `5`<br>`deco_bookshelf_side.png`<br>`deco_bookshelf_top.png` | 8 texturas *(6 variações + 2 faces)* | Bibliotecas, Câmaras Mágicas, Estudos | Estante de madeira nobre talhada contendo tomos, pergaminhos encadernados em couro e lombadas multicoloridas. |
@@ -64,12 +63,14 @@ Para possibilitar o sistema de tingimento com as **16 cores adicionais da paleta
 | **20** | **Stone Path** | **Fibras & Calçamentos** | `deco_stone_path.png` | 1 bloco | Vias Rurais, Praças, Jardins | Calçamento empedrado irregular de seixos e lajes de pedra assentados diretamente no solo de terra. |
 | **21** | **Wax Block** | **Fibras & Calçamentos** | `deco_wax.png` | 1 bloco | Candelabros, Fundição, Impermeabilização | Bloco maciço de cera natural de abelha/parafina endurecida semitranslúcida com brilho ceroso suave. |
 | **22** | **Wood Path** | **Fibras & Calçamentos** | `deco_wood_path.png` | 1 bloco | Trilhas de Bosque, Passadiços, Pomares | Caminho rústico de tábuas e dormentes de madeira desgastada com cavilhas cravadas no solo de terra. |
+| **23** | **Dirty Path** | **Fibras & Calçamentos** | `deco_dirty_path.png` | 1 bloco | Trilhas Rurais, Bosques, Hortas | Trilha de solo franco (*loam*) batido e compactado com pedriscos miúdos incrustados pelo tráfego contínuo de passos e carroças. |
+| **24** | **Sandy Path** | **Fibras & Calçamentos** | `deco_sandy_path.png` | 1 bloco | Vilas Costeiras, Oásis, Dunas | Caminho firme de areia dourada compactada com pequenas inclusões de quartzo e conchas, ideal para vilas de praia e rotas desérticas. |
 
 ---
 
-## 4. Inventário Técnico Completo em `worldbuilding/decorations/` (44 Texturas Ativas)
+## 4. Inventário Técnico Completo em `worldbuilding/decorations/` (46 Texturas Ativas)
 
-Todas as 44 texturas utilizam estritamente o prefixo `deco_`:
+Todas as 46 texturas utilizam estritamente o prefixo `deco_`:
 
 ### A. Recipientes e Mobiliário Estrutural (18 Arquivos)
 * `deco_barrel_top.png`, `deco_barrel_side.png`, `deco_barrel_bot.png`
@@ -94,10 +95,12 @@ Todas as 44 texturas utilizam estritamente o prefixo `deco_`:
 * `deco_painted_wool.png` *(Lã neutra de alta luminância em escala de cinza)*
 * `deco_painted_shingles.png` *(Telhas cerâmicas escamadas em escala de cinza para 16 cores)*
 
-### D. Fibras Agrícolas, Coberturas e Calçamentos (8 Arquivos)
+### D. Fibras Agrícolas, Coberturas e Calçamentos (10 Arquivos)
+* `deco_dirty_path.png` *(Trilha rústica de terra batida com seixos)*
 * `deco_hay_side.png`, `deco_hay_top.png` *(Fardo de feno orientável)*
-* `deco_thatch_side.png`, `deco_thatch_top.png` *(Telhado de colmo orientável)*
-* `deco_wicker.png` *(Painel trançado de vime)*
+* `deco_sandy_path.png` *(Caminho de areia compactada com quartzo)*
 * `deco_stone_path.png` *(Calçamento de seixos e pedras)*
+* `deco_thatch_side.png`, `deco_thatch_top.png` *(Telhado de colmo orientável)*
 * `deco_wax.png` *(Bloco de cera maciça)*
+* `deco_wicker.png` *(Painel trançado de vime)*
 * `deco_wood_path.png` *(Passadiço e dormentes de madeira sobre terra)*

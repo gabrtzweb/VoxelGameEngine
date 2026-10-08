@@ -3,7 +3,7 @@
 Todas as texturas ativas de árvores e madeiras estão organizadas na pasta:
 📂 **`docs/worldbuilding/trees`** *(114 texturas PNG ativas em 22 espécies botânicas)*
 E os overlays dinâmicos de folhagem nevada e floral em:
-📂 **`docs/worldbuilding/overlays`** *(inclui 2 overlays de neve e 4 overlays florais)*
+📂 **`docs/worldbuilding/overlays`** *(inclui 2 overlays de neve e 8 overlays florais)*
 
 ---
 
@@ -150,18 +150,22 @@ graph TD
 
 ---
 
-## 5. Overlays Florestais em `docs/worldbuilding/overlays/` (6 Arquivos PNG)
+## 5. Overlays Florestais em `docs/worldbuilding/overlays/` (10 Arquivos PNG)
 
 Como as faces superiores nevadas cobrem integralmente o topo da folhagem, elas utilizam texturas diretas de bloco (`tree_*_leaves_snowy_top.png`), poupando uma passagem extra de renderização. Os overlays dinâmicos concentram-se nas laterais nevadas e nas inflorescências modulares que se sobrepõem a qualquer folhagem:
 
 | Arquivo de Overlay | Função no Bloco de Folhas | Espécies Botânicas Ideais / Aplicação no Mundo |
 | :--- | :--- | :--- |
-| `tree_pine_leaves_snowy_side_overlay.png` | Acúmulo lateral de neve nos ramos de agulhas | `Pine` *(Taigas frias e cumes de montanha)* |
-| `tree_yew_leaves_snowy_side_overlay.png` | Acúmulo lateral de neve na folhagem densa | `Yew` *(Florestas boreais sombrias e invernos rigorosos)* |
-| `tree_white_flower_leaves_overlay.png` | Inflorescências brancas miúdas primaveris (Var 0) | `Oak` (florestas temperadas), `Birch` (bosques claros), `Cherry` (Sakura branca) |
-| `tree_white_flower_leaves_overlay1.png` | Inflorescências brancas em buquês densos (Var 1) | `Oak`, `Birch`, `Willow` (amentos florais) |
-| `tree_magenta_flower_leaves_overlay.png` | Flores magenta/rosadas vibrantes (Var 0) | `Cherry` (Sakura rosa viva), `Mahogany` & `Kapok` (dossel de selva tropical) |
-| `tree_magenta_flower_leaves_overlay1.png` | Flores magenta/rosadas agrupadas (Var 1) | `Cherry`, `Kapok`, `Oak` (Azaleia florescida exuberante) |
+| `leaves_snowy_pine_side_overlay.png` | Acúmulo lateral de neve nos ramos de agulhas | `Pine` *(Taigas frias e cumes de montanha)* |
+| `leaves_snowy_yew_side_overlay.png` | Acúmulo lateral de neve na folhagem densa | `Yew` *(Florestas boreais sombrias e invernos rigorosos)* |
+| `flower_leaves_white_overlay.png` | Inflorescências brancas miúdas primaveris (Var 0) | `Oak` (florestas temperadas), `Birch` (bosques claros), `Cherry` (Sakura branca) |
+| `flower_leaves_white_overlay1.png` | Inflorescências brancas em buquês densos (Var 1) | `Oak`, `Birch`, `Willow` (amentos florais) |
+| `flower_leaves_magenta_overlay.png` | Flores magenta/rosadas vibrantes (Var 0) | `Cherry` (Sakura rosa viva), `Mahogany` & `Kapok` (dossel de selva tropical) |
+| `flower_leaves_magenta_overlay1.png` | Flores magenta/rosadas agrupadas (Var 1) | `Cherry`, `Kapok`, `Oak` (Azaleia florescida exuberante) |
+| `flower_leaves_yellow_overlay.png` | Flores amarelas douradas primaveris (Var 0) | `Acacia`, `Oak` (bosques ensolarados), `Birch`, `Golden Wattle` |
+| `flower_leaves_yellow_overlay1.png` | Flores amarelas agrupadas em cachos (Var 1) | `Acacia`, `Willow`, `Kapok` |
+| `flower_leaves_blue_overlay.png` | Inflorescências azuis/celestes miúdas (Var 0) | `Jacaranda`, `Wisteria`, `Willow` (bosques boreais e encantados) |
+| `flower_leaves_blue_overlay1.png` | Flores azuis em buquês densos (Var 1) | `Jacaranda`, `Paulownia`, `Hydrangea` arbórea |
 
 ---
 

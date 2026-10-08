@@ -120,7 +120,7 @@ Todas as 74 texturas da pasta iniciam estritamente com o prefixo `vege_`:
 * `vege_vines.png`, `vege_vines1.png`, `vege_vines2.png`
 * `vege_hanging_moss.png`
 * `vege_hanging_roots.png`, `vege_hanging_roots1.png`
-* `vege_lichen.png`
+* `vege_lichen.png`, `vege_lichen1.png`, `vege_lichen2.png`
 
 ### F. Flora Subterrânea de Caverna (4 Arquivos)
 * `vege_cave_growths.png`
