@@ -1,23 +1,23 @@
 # Catálogo e Estrutura de Worldbuilding: Biomateriais, Fauna e Matéria Orgânica (Organics)
 
 Todas as texturas ativas de estruturas da fauna, ninhos, secreções animais, osteologia, excrementos, tecidos e biomassa visceral estão organizadas na pasta:
-📂 **`docs/worldbuilding/organics`** *(56 texturas PNG ativas, representando 34 blocos únicos divididos em 4 categorias ecológicas)*
+📂 **`docs/worldbuilding/organics`** *(59 texturas PNG ativas, representando 37 blocos únicos divididos em 4 categorias ecológicas)*
 
 ---
 
 ## 1. Classificação Ecológica e Domínios Faunísticos
 
-O ecossistema de biomateriais e fauna do mundo é organizado em **4 Categorias Biológicas (34 Blocos Únicos / 56 Texturas)**:
+O ecossistema de biomateriais e fauna do mundo é organizado em **4 Categorias Biológicas (37 Blocos Únicos / 59 Texturas)**:
 
 ```mermaid
 graph TD
-    O["Biomateriais & Organics (34 Blocos / 56 Texturas)"] --> C1["1. Ninhos & Colônias da Fauna (14 Blocos)"]
-    O --> C2["2. Secreções, Ceras & Geis (6 Blocos)"]
+    O["Biomateriais & Organics (37 Blocos / 59 Texturas)"] --> C1["1. Ninhos & Colônias da Fauna (16 Blocos)"]
+    O --> C2["2. Secreções, Ceras & Geis (7 Blocos)"]
     O --> C3["3. Osteologia, Excrementos & Sedimentos (8 Blocos)"]
     O --> C4["4. Tecidos Vivos, Órgãos & Tegumento (6 Blocos)"]
 
-    C1 --> C1a["Ant Hill, Ant Hill Open, Bee Nest, Bird Nest, Spider Egg, Cobweb, Cobweb Arch, Cobweb Hanging, Cobweb Stretched, Hay Nest, Termite Mound, Termite Mound Open, Wasp Nest, Silk Cocoon"]
-    C2 --> C2a["Honey Block, Honeycomb Block, Slime Block, Pollen Block, Jelly Block, Venom Block"]
+    C1 --> C1a["Ant Hill, Ant Hill Open, Bee Nest, Bird Nest, Spider Egg, Cobweb, Cobweb Arch, Cobweb Hanging, Cobweb Stretched, Hay Nest, Termite Mound, Termite Mound Open, Wasp Nest, Silk Cocoon, Beaver Dam, Bug Hive"]
+    C2 --> C2a["Honey Block, Honeycomb Block, Slime Block, Pollen Block, Jelly Block, Venom Block, Wax Block"]
     C3 --> C3a["Bone Block, Dust Block, Guano Block, Calcined Shell, Poop Block, Coprolite Block, Seashell Block, Calcined Bone"]
     C4 --> C4a["Living Flesh, Living Porous Flesh, Flesh Block, Blubber Block, Brain Block, Fur Block"]
 ```
@@ -57,7 +57,7 @@ Todas as texturas utilizam estritamente o prefixo **`bio_`** e a padronização 
    - **Ant Hill**: Estado inativo fechado (`bio_ant_hill.png`) e estado ativo com galeria aberta (`bio_ant_hill_open.png`), ambos com 6 faces uniformes.
    - **Termite Mound**: Estrutura monolítica de terra marrom-argilosa cimentada de savana com caneluras verticais fechadas (`bio_termite_mound.png`) e estado ativo com chaminés de ventilação verticais e galerias assimétricas profundas (`bio_termite_mound_open.png`), ambos com 6 faces uniformes.
 2. **Teias de Aranha (Volumétrica e Modelos Planos Verticais)**:
-   - **Cobweb (Bloco Tridimensional)**: Bloco cúbico volumétrico de seda biológica proteica densa com 3 variações estocásticas (`bio_cobweb.png`, `bio_cobweb1.png`, `bio_cobweb2.png`).
+   - **Cobweb (Bloco Tridimensional)**: Bloco cúbico volumétrico de seda biológica proteica densa com modelo de fios cruzados (`bio_cobweb.png`).
    - **Teias de Aplicação Vertical (Cobweb Arch, Hanging, Stretched)**: Blocos bidimensionais planos fixados diretamente contra faces verticais sólidas (paredes, quinas e vergas de tetos), vazados com transparência alpha: arco superior de canto (`bio_cobweb_arch.png`), cortina suspensa pendente (`bio_cobweb_hanging.png`) e teia tensionada entre superfícies verticais (`bio_cobweb_stretched.png`).
 3. **Texturas Animadas em Tira Vertical (Animated Meshes)**:
    - **`bio_living_flesh.png` (16×48 pixels)**: Contém 3 quadros sequenciais de 16×16 que reproduzem a pulsação contínua e autônoma de feixes musculares vivos.
@@ -72,7 +72,7 @@ Todas as texturas utilizam estritamente o prefixo **`bio_`** e a padronização 
 
 ---
 
-## 4. Catálogo dos 34 Blocos Orgânicos Únicos (56 Texturas)
+## 4. Catálogo dos 37 Blocos Orgânicos Únicos (59 Texturas)
 
 | # | Bloco / Espécime | Categoria | Arquivo(s) de Textura | Variações / Faces | Biomas & Ocorrência Natural | Definição Biológica & Características |
 | :-: | :--- | :--- | :--- | :--- | :---: | :--- |
@@ -81,7 +81,7 @@ Todas as texturas utilizam estritamente o prefixo **`bio_`** e a padronização 
 | **03** | **Bee Nest** | **Ninhos & Colônias** | `bio_bee_nest_bot...top.png`<br>`bio_bee_nest_front_honey.png` | 5 faces | Florestas Floridas, Bosques Claros | Colônia silvestre suspensa em troncos construída por abelhas com alvéolos de cera e gotejamento de mel. |
 | **04** | **Bird Nest** | **Ninhos & Colônias** | `bio_bird_nest_bot.png`<br>`bio_bird_nest_side...top.png` | 3 faces (Slab) | Copas de Árvores, Penhascos | Tigela compacta tecida de galhos, musgo seco e plumas com ovos pontilhados azul-turquesa; modelo de meia-altura (slab). |
 | **05** | **Spider Egg** | **Ninhos & Colônias** | `bio_spider_egg_bot.png`<br>`bio_spider_egg_side...top.png` | 3 faces | Cavernas Profundas, Fendas Escuras | Ooteca de seda densa tecida por artrópodes contendo aglomerados de ovos esféricos escarlates em gestação. |
-| **06** | **Cobweb** | **Ninhos & Colônias** | `bio_cobweb.png`, `1`, `2` | 3 variações | Minas Abandonadas, Cânions, Cavernas | Fios de seda biológica proteica viscosa entrelaçados em planos diagonais em cruz com alta elasticidade e poeira; bloco volumétrico 3D. |
+| **06** | **Cobweb** | **Ninhos & Colônias** | `bio_cobweb.png` | 1 bloco | Minas Abandonadas, Cânions, Cavernas | Fios de seda biológica proteica viscosa entrelaçados em planos diagonais em cruz com alta elasticidade e poeira; bloco volumétrico 3D. |
 | **07** | **Cobweb Arch** | **Ninhos & Colônias** | `bio_cobweb_arch.png` | Face vertical | Cantos de Caverna, Portais, Minas | Teia em arco diagonal tecida em leque no canto superior entre parede e teto; bloco plano aplicado em face vertical. |
 | **08** | **Cobweb Hanging** | **Ninhos & Colônias** | `bio_cobweb_hanging.png` | Face vertical | Tetos de Túneis, Vergas, Criptas | Véu de teia suspenso que pende a partir do topo de blocos em estalactites de seda; bloco plano aplicado em face vertical. |
 | **09** | **Cobweb Stretched** | **Ninhos & Colônias** | `bio_cobweb_stretched.png` | Face vertical | Fendas Estreitas, Corredores | Teia esticada e tensionada entre bordas verticais simulando armadilha de passagem; bloco plano aplicado em face vertical. |
@@ -110,6 +110,9 @@ Todas as texturas utilizam estritamente o prefixo **`bio_`** e a padronização 
 | **32** | **Blubber Block** | **Tecidos & Biomassa** | `bio_blubber.png` | Semitranslúcido | Biomas Árticos, Megafauna Marinha | Camada densa de tecido adiposo animal e gordura isolante esbranquiçada/amarelada; combustível biológico premium. |
 | **33** | **Brain Block** | **Tecidos & Biomassa** | `bio_brain.png` | 1 bloco | Fendas Psíquicas, Biomas Viscerais | Massa encefálica viva rosada com convoluções cerebrais densas que reage a estímulos e sinapses. |
 | **34** | **Fur Block** | **Tecidos & Biomassa** | `bio_fur_side.png`<br>`bio_fur_top.png` | 2 faces | Taigas, Tundras Frias, Currais | Couro com pelagem animal espessa marrom-escura isolante térmica contra frio severo. |
+| **35** | **Beaver Dam** | **Ninhos & Colônias** | `bio_beaver_dam.png` | 6 faces | Rios de Floresta, Lagoas, Pântanos | Estrutura de contenção hidráulica tecida com troncos descascados, gravetos e argamassa de lama por castores para alagar cursos d'água. |
+| **36** | **Bug Hive** | **Ninhos & Colônias** | `bio_bug_hive_top.png`<br>`bio_bug_hive_side.png`<br>`bio_bug_hive_bot.png` | 3 faces | Troncos Ocos, Cavernas de Insetos, Selvas | Colônia densa de artrópodes construída com celulose mastigada e resina larval contendo galerias de incubação. |
+| **37** | **Wax Block** | **Secreções & Ceras** | `bio_wax.png` | 1 bloco (Semitranslúcido) | Colmeias Selvagens, Apicultura, Ninhos | Bloco amarelo-âmbar denso de cera virgem de abelha fundida com textura acetinada e propriedades de isolamento e selagem impermeável. |
 
 ---
 
@@ -125,31 +128,34 @@ Anteriormente concebidas como texturas de decalque/overlay em `worldbuilding/ove
 
 ---
 
-## 6. Inventário Técnico Completo em `worldbuilding/organics/` (56 Texturas Ativas)
+## 6. Inventário Técnico Completo em `worldbuilding/organics/` (59 Texturas Ativas)
 
 Todas as 56 texturas utilizam estritamente o prefixo `bio_` e a terminação padronizada de faces:
 
-### A. Ninhos e Colônias da Fauna (30 Arquivos)
-* `bio_ant_hill.png`, `bio_ant_hill_open.png`
-* `bio_bee_nest_bot.png`, `bio_bee_nest_front.png`, `bio_bee_nest_front_honey.png`, `bio_bee_nest_side.png`, `bio_bee_nest_top.png`
-* `bio_bird_nest_bot.png`, `bio_bird_nest_side.png`, `bio_bird_nest_top.png` *(Ninho de Gravetos - Modelo Slab)*
-* `bio_cobweb.png`, `bio_cobweb1.png`, `bio_cobweb2.png` *(Bloco Volumétrico Tridimensional)*
-* `bio_cobweb_arch.png` *(Teia em Arco de Canto - Face Vertical)*
-* `bio_cobweb_hanging.png` *(Teia Suspensa / Véu - Face Vertical)*
-* `bio_cobweb_stretched.png` *(Teia Esticada / Tensionada - Face Vertical)*
-* `bio_hay_nest_bot.png`, `bio_hay_nest_side.png`, `bio_hay_nest_top.png` *(Ninho de Feno e Palha - Modelo Slab)*
-* `bio_silk_cocoon_bot.png`, `bio_silk_cocoon_side.png`, `bio_silk_cocoon_top.png` *(Casulo de Seda Direcional Vazado)*
-* `bio_spider_egg_bot.png`, `bio_spider_egg_side.png`, `bio_spider_egg_top.png`
-* `bio_termite_mound.png`, `bio_termite_mound_open.png` *(Cupinzeiro Fechado e Aberto)*
-* `bio_wasp_nest_bot.png`, `bio_wasp_nest_side.png`, `bio_wasp_nest_top.png` *(Vespário de Celulose Completo)*
+### A. Ninhos e Colônias da Fauna (32 Arquivos)
+* `bio_ant_hill.png`, `bio_ant_hill_open.png` (2)
+* `bio_beaver_dam.png` *(Dique e Represa de Castor)* (1)
+* `bio_bee_nest_bot.png`, `bio_bee_nest_front.png`, `bio_bee_nest_front_honey.png`, `bio_bee_nest_side.png`, `bio_bee_nest_top.png` (5)
+* `bio_bird_nest_bot.png`, `bio_bird_nest_side.png`, `bio_bird_nest_top.png` *(Ninho de Gravetos - Modelo Slab)* (3)
+* `bio_bug_hive_bot.png`, `bio_bug_hive_side.png`, `bio_bug_hive_top.png` *(Colônia / Colmeia de Insetos)* (3)
+* `bio_cobweb.png` *(Bloco Volumétrico Tridimensional)* (1)
+* `bio_cobweb_arch.png` *(Teia em Arco de Canto - Face Vertical)* (1)
+* `bio_cobweb_hanging.png` *(Teia Suspensa / Véu - Face Vertical)* (1)
+* `bio_cobweb_stretched.png` *(Teia Esticada / Tensionada - Face Vertical)* (1)
+* `bio_hay_nest_bot.png`, `bio_hay_nest_side.png`, `bio_hay_nest_top.png` *(Ninho de Feno e Palha - Modelo Slab)* (3)
+* `bio_silk_cocoon_bot.png`, `bio_silk_cocoon_side.png`, `bio_silk_cocoon_top.png` *(Casulo de Seda Direcional Vazado)* (3)
+* `bio_spider_egg_bot.png`, `bio_spider_egg_side.png`, `bio_spider_egg_top.png` (3)
+* `bio_termite_mound.png`, `bio_termite_mound_open.png` *(Cupinzeiro Fechado e Aberto)* (2)
+* `bio_wasp_nest_bot.png`, `bio_wasp_nest_side.png`, `bio_wasp_nest_top.png` *(Vespário de Celulose Completo)* (3)
 
-### B. Secreções, Ceras e Geis (8 Arquivos)
-* `bio_honey_block_bot.png`, `bio_honey_block_side.png`, `bio_honey_block_top.png`
-* `bio_honeycomb_block.png`
-* `bio_jelly.png` *(Gel Orgânico Translúcido Elástico Arroxeado)*
-* `bio_pollen.png` *(Bloco de Pólen Compacto)*
-* `bio_slime.png` *(Gel Orgânico Translúcido Viscoelástico Verde)*
-* `bio_venom.png` *(Peçonha Cáustica Densa Roxo-Escuro Quase Preto)*
+### B. Secreções, Ceras e Geis (9 Arquivos)
+* `bio_honey_block_bot.png`, `bio_honey_block_side.png`, `bio_honey_block_top.png` (3)
+* `bio_honeycomb_block.png` (1)
+* `bio_jelly.png` *(Gel Orgânico Translúcido Elástico Arroxeado)* (1)
+* `bio_pollen.png` *(Bloco de Pólen Compacto)* (1)
+* `bio_slime.png` *(Gel Orgânico Translúcido Viscoelástico Verde)* (1)
+* `bio_venom.png` *(Peçonha Cáustica Densa Roxo-Escuro Quase Preto)* (1)
+* `bio_wax.png` *(Bloco Maciço de Cera de Abelha Natural)* (1)
 
 ### C. Osteologia, Excrementos e Sedimentos Biológicos (10 Arquivos)
 * `bio_bone_side.png`, `bio_bone_top.png`

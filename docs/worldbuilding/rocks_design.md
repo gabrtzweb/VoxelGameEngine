@@ -172,8 +172,8 @@ Cada uma das 16 rochas sedimentares possui seu bloco de matriz rochosa sólida e
 - **Cobbled Alabaster**: `cobbled_alabaster.png` em todas as 6 faces.
 
 #### 11. Sandstone (Arenito Amarelo Comum)
-- **Sandstone**: `rock_sandstone.png` em todas as 6 faces.
-- **Cobbled Sandstone**: `cobbled_sandstone.png` em todas as 6 faces.
+- **Sandstone**: `rock_sandstone_common.png` em todas as 6 faces.
+- **Cobbled Sandstone**: `cobbled_sandstone_common.png` em todas as 6 faces.
 
 #### 12. Sandstone Red (Arenito Vermelho)
 - **Sandstone Red**: `rock_sandstone_red.png` em todas as 6 faces.

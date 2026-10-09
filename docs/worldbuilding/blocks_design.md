@@ -3,9 +3,9 @@
 Este documento centraliza e cataloga **todos os blocos implementados na Voxel Engine**, organizados pelas pastas de worldbuilding em `docs/worldbuilding/`. 
 
 > [!IMPORTANT]
-> **Total Geral de Blocos do Projeto: 942 Blocos Catalogados**  
-> Somando todas as 14 categorias mães do ecossistema de blocos da engine:  
-> **186** (rocks) + **58** (soils) + **161** (trees) + **218** (ores) + **34** (organics) + **114** (decorations) + **32** (flowers) + **26** (vegetation) + **18** (fungi) + **18** (fluids) + **38** (oceans) + **24** (caverns) + **9** (lights) + **6** (debug) = **942 Blocos Totais**.
+> **Total Geral de Blocos do Projeto: 963 Blocos Catalogados**  
+> Somando todas as 13 categorias mães do ecossistema de blocos da engine:  
+> **186** (rocks) + **58** (soils) + **161** (trees) + **218** (ores) + **36** (organics) + **142** (decorations) + **32** (flowers) + **26** (vegetation) + **18** (fungi) + **18** (fluids) + **38** (oceans) + **24** (caverns) + **6** (debug) = **963 Blocos Totais**.
 
 Para cada bloco, estão especificados:
 1. **Identificador único (`ID do Bloco`)**.
@@ -29,8 +29,70 @@ Para cada bloco, estão especificados:
 | **02** | Edafologia & Solos (`soils`) | **58 blocos** | [Acessar Seção 02](#02-edafologia--solos-soils--58-blocos) |
 | **03** | Dendrologia & Madeiras (`trees`) | **161 blocos** | [Acessar Seção 03](#03-dendrologia--madeiras-trees--161-blocos) |
 | **04** | Metalogenia & Minérios (`ores`) | **218 blocos** | [Acessar Seção 04](#04-metalogenia--minérios-ores--218-blocos) |
+| **05** | Biomateriais & Organics (`organics`) | **36 blocos** | [Acessar Seção 05](#05-biomateriais--organics-organics--36-blocos) |
+| **06** | Decorações, Iluminação & Arquitetura (`decorations`) | **142 blocos** | [Acessar Seção 06](#06-decorações-iluminação--arquitetura-decorations--142-blocos) |
+| **07** | Botânica: Flores (`flowers`) | **32 blocos** | [Acessar Seção 07](#07-botânica-flores-flowers--32-blocos) |
+| **08** | Botânica: Vegetação Rasteira (`vegetation`) | **26 blocos** | [Acessar Seção 08](#08-botânica-vegetação-rasteira-vegetation--26-blocos) |
+| **09** | Micologia: Fungos (`fungi`) | **18 blocos** | [Acessar Seção 09](#09-micologia-fungos-fungi--18-blocos) |
+| **10** | Hidrosfera & Criologia (`fluids`) | **18 blocos** | [Acessar Seção 10](#10-hidrosfera--criologia-fluids--18-blocos) |
+| **11** | Ecossistemas Oceânicos (`oceans`) | **38 blocos** | [Acessar Seção 11](#11-ecossistemas-oceânicos-oceans--38-blocos) |
+| **12** | Espeleologia & Cristais (`caverns`) | **24 blocos** | [Acessar Seção 12](#12-espeleologia--cristais-caverns--24-blocos) |
+| **13** | Blocos Técnicos & Debug (`debug`) | **6 blocos** | [Acessar Seção 13](#13-blocos-técnicos--debug-debug--6-blocos) |
+| **TOTAL** | **Todas as Categorias Somadas** | **963 blocos** | — |
+
+01. [Geologia & Rochas (`rocks`) — 186 Blocos](#01-geologia--rochas-rocks--186-blocos)
+02. [Edafologia & Solos (`soils`) — 58 Blocos](#02-edafologia--solos-soils--58-blocos)
+03. [Dendrologia & Madeiras (`trees`) — 161 Blocos](#03-dendrologia--madeiras-trees--161-blocos)
+04. [Metalogenia & Minérios (`ores`) — 218 Blocos](#04-metalogenia--minérios-ores--218-blocos)
+05. [Biomateriais & Organics (`organics`) — 36 Blocos](#05-biomateriais--organics-organics--36-blocos)
+06. [Decorações, Iluminação & Arquitetura (`decorations`) — 142 Blocos](#06-decorações-iluminação--arquitetura-decorations--142-blocos)
+07. [Botânica: Flores (`flowers`) — 32 Blocos](#07-botânica-flores-flowers--32-blocos)
+08. [Botânica: Vegetação Rasteira (`vegetation`) — 26 Blocos](#08-botânica-vegetação-rasteira-vegetation--26-blocos)
+09. [Micologia: Fungos (`fungi`) — 18 Blocos](#09-micologia-fungos-fungi--18-blocos)
+10. [Hidrosfera & Criologia (`fluids`) — 18 Blocos](#10-hidrosfera--criologia-fluids--18-blocos)
+11. [Ecossistemas Oceânicos (`oceans`) — 38 Blocos](#11-ecossistemas-oceânicos-oceans--38-blocos)
+12. [Espeleologia & Cristais (`caverns`) — 24 Blocos](#12-espeleologia--cristais-caverns--24-blocos)
+13. [Blocos Técnicos & Debug (`debug`) — 6 Blocos](#13-blocos-técnicos--debug-debug--6-blocos)
+14. [Roadmap Futuro: Agricultura & Alimentos (`crops` / `foods`)](#14-roadmap--planejamento-futuro-agricultura-cultivos--alimentos-crops--foods)
+
+---: | :--- | :---: | :--- |
+| **01** | Geologia & Rochas (`rocks`) | **186 blocos** | [Acessar Seção 01](#01-geologia--rochas-rocks--186-blocos) |
+| **02** | Edafologia & Solos (`soils`) | **58 blocos** | [Acessar Seção 02](#02-edafologia--solos-soils--58-blocos) |
+| **03** | Dendrologia & Madeiras (`trees`) | **161 blocos** | [Acessar Seção 03](#03-dendrologia--madeiras-trees--161-blocos) |
+| **04** | Metalogenia & Minérios (`ores`) | **218 blocos** | [Acessar Seção 04](#04-metalogenia--minérios-ores--218-blocos) |
+| **05** | Biomateriais & Organics (`organics`) | **36 blocos** | [Acessar Seção 05](#05-biomateriais--organics-organics--36-blocos) |
+| **06** | Decorações, Iluminação & Arquitetura (`decorations`) | **142 blocos** | [Acessar Seção 06](#06-decorações-iluminação--arquitetura-decorations--142-blocos) |
+| **07** | Botânica: Flores (`flowers`) | **32 blocos** | [Acessar Seção 07](#07-botânica-flores-flowers--32-blocos) |
+| **08** | Botânica: Vegetação Rasteira (`vegetation`) | **26 blocos** | [Acessar Seção 08](#08-botânica-vegetação-rasteira-vegetation--26-blocos) |
+| **09** | Micologia: Fungos (`fungi`) | **18 blocos** | [Acessar Seção 09](#09-micologia-fungos-fungi--18-blocos) |
+| **10** | Hidrosfera & Criologia (`fluids`) | **18 blocos** | [Acessar Seção 10](#10-hidrosfera--criologia-fluids--18-blocos) |
+| **11** | Ecossistemas Oceânicos (`oceans`) | **38 blocos** | [Acessar Seção 11](#11-ecossistemas-oceânicos-oceans--38-blocos) |
+| **12** | Espeleologia & Cristais (`caverns`) | **24 blocos** | [Acessar Seção 12](#12-espeleologia--cristais-caverns--24-blocos) |
+| **13** | Blocos Técnicos & Debug (`debug`) | **6 blocos** | [Acessar Seção 13](#13-blocos-técnicos--debug-debug--6-blocos) |
+| **TOTAL** | **Todas as Categorias Somadas** | **963 blocos** | — |
+
+01. [Geologia & Rochas (`rocks`) — 186 Blocos](#01-geologia--rochas-rocks--186-blocos)
+02. [Edafologia & Solos (`soils`) — 58 Blocos](#02-edafologia--solos-soils--58-blocos)
+03. [Dendrologia & Madeiras (`trees`) — 161 Blocos](#03-dendrologia--madeiras-trees--161-blocos)
+04. [Metalogenia & Minérios (`ores`) — 218 Blocos](#04-metalogenia--minérios-ores--218-blocos)
+05. [Biomateriais & Organics (`organics`) — 36 Blocos](#05-biomateriais--organics-organics--36-blocos)
+06. [Decorações, Iluminação & Arquitetura (`decorations`) — 142 Blocos](#06-decorações-iluminação--arquitetura-decorations--142-blocos)
+07. [Botânica: Flores (`flowers`) — 32 Blocos](#07-botânica-flores-flowers--32-blocos)
+08. [Botânica: Vegetação Rasteira (`vegetation`) — 26 Blocos](#08-botânica-vegetação-rasteira-vegetation--26-blocos)
+09. [Micologia: Fungos (`fungi`) — 18 Blocos](#09-micologia-fungos-fungi--18-blocos)
+10. [Hidrosfera & Criologia (`fluids`) — 18 Blocos](#10-hidrosfera--criologia-fluids--18-blocos)
+11. [Ecossistemas Oceânicos (`oceans`) — 38 Blocos](#11-ecossistemas-oceânicos-oceans--38-blocos)
+12. [Espeleologia & Cristais (`caverns`) — 24 Blocos](#12-espeleologia--cristais-caverns--24-blocos)
+13. [Blocos Técnicos & Debug (`debug`) — 6 Blocos](#13-blocos-técnicos--debug-debug--6-blocos)
+14. [Roadmap Futuro: Agricultura & Alimentos (`crops` / `foods`)](#14-roadmap--planejamento-futuro-agricultura-cultivos--alimentos-crops--foods)
+
+---: | :--- | :---: | :--- |
+| **01** | Geologia & Rochas (`rocks`) | **186 blocos** | [Acessar Seção 01](#01-geologia--rochas-rocks--186-blocos) |
+| **02** | Edafologia & Solos (`soils`) | **58 blocos** | [Acessar Seção 02](#02-edafologia--solos-soils--58-blocos) |
+| **03** | Dendrologia & Madeiras (`trees`) | **161 blocos** | [Acessar Seção 03](#03-dendrologia--madeiras-trees--161-blocos) |
+| **04** | Metalogenia & Minérios (`ores`) | **218 blocos** | [Acessar Seção 04](#04-metalogenia--minérios-ores--218-blocos) |
 | **05** | Biomateriais & Organics (`organics`) | **34 blocos** | [Acessar Seção 05](#05-biomateriais--organics-organics--34-blocos) |
-| **06** | Decorações & Arquitetura (`decorations`) | **114 blocos** | [Acessar Seção 06](#06-decorações--arquitetura-decorations--114-blocos) |
+| **06** | Decorações & Arquitetura (`decorations`) | **134 blocos** | [Acessar Seção 06](#06-decorações--arquitetura-decorations--134-blocos) |
 | **07** | Botânica: Flores (`flowers`) | **32 blocos** | [Acessar Seção 07](#07-botânica-flores-flowers--32-blocos) |
 | **08** | Botânica: Vegetação Rasteira (`vegetation`) | **26 blocos** | [Acessar Seção 08](#08-botânica-vegetação-rasteira-vegetation--26-blocos) |
 | **09** | Micologia: Fungos (`fungi`) | **18 blocos** | [Acessar Seção 09](#09-micologia-fungos-fungi--18-blocos) |
@@ -39,14 +101,14 @@ Para cada bloco, estão especificados:
 | **12** | Espeleologia & Cristais (`caverns`) | **24 blocos** | [Acessar Seção 12](#12-espeleologia--cristais-caverns--24-blocos) |
 | **13** | Iluminação & Emissores (`lights`) | **9 blocos** | [Acessar Seção 13](#13-iluminação--emissores-lights--9-blocos) |
 | **14** | Blocos Técnicos & Debug (`debug`) | **6 blocos** | [Acessar Seção 14](#14-blocos-técnicos--debug-debug--6-blocos) |
-| **TOTAL** | **Todas as Categorias Somadas** | **942 blocos** | — |
+| **TOTAL** | **Todas as Categorias Somadas** | **962 blocos** | — |
 
 01. [Geologia & Rochas (`rocks`) — 186 Blocos](#01-geologia--rochas-rocks--186-blocos)
 02. [Edafologia & Solos (`soils`) — 58 Blocos](#02-edafologia--solos-soils--58-blocos)
 03. [Dendrologia & Madeiras (`trees`) — 161 Blocos](#03-dendrologia--madeiras-trees--161-blocos)
 04. [Metalogenia & Minérios (`ores`) — 218 Blocos](#04-metalogenia--minérios-ores--218-blocos)
 05. [Biomateriais & Organics (`organics`) — 34 Blocos](#05-biomateriais--organics-organics--34-blocos)
-06. [Decorações & Arquitetura (`decorations`) — 114 Blocos](#06-decorações--arquitetura-decorations--114-blocos)
+06. [Decorações & Arquitetura (`decorations`) — 134 Blocos](#06-decorações--arquitetura-decorations--134-blocos)
 07. [Botânica: Flores (`flowers`) — 32 Blocos](#07-botânica-flores-flowers--32-blocos)
 08. [Botânica: Vegetação Rasteira (`vegetation`) — 26 Blocos](#08-botânica-vegetação-rasteira-vegetation--26-blocos)
 09. [Micologia: Fungos (`fungi`) — 18 Blocos](#09-micologia-fungos-fungi--18-blocos)
@@ -127,10 +189,10 @@ O **Manto Primordial** (*Bedrock*) é composto por 2 blocos inquebráveis que n�
 | **38** | `mossy_rock_alabaster` | Alabaster Musgoso | `rocks/rock_alabaster.png` | `rocks/rock_alabaster.png` | `rocks/rock_alabaster.png` | Base + `overlays/mossy_rock_overlay.png` |
 | **39** | `cobbled_alabaster` | Alabaster Britado | `rocks/cobbled_alabaster.png`| `rocks/cobbled_alabaster.png`| `rocks/cobbled_alabaster.png`| 6 faces uniformes |
 | **40** | `mossy_cobbled_alabaster`| Alabaster Britado Musgoso| `rocks/cobbled_alabaster.png`| `rocks/cobbled_alabaster.png`| `rocks/cobbled_alabaster.png`| Base + `overlays/mossy_cobbled_overlay.png` |
-| **41** | `rock_sandstone` | Sandstone Sólido | `rocks/rock_sandstone.png` | `rocks/rock_sandstone.png` | `rocks/rock_sandstone.png` | 6 faces uniformes |
-| **42** | `mossy_rock_sandstone` | Sandstone Musgoso | `rocks/rock_sandstone.png` | `rocks/rock_sandstone.png` | `rocks/rock_sandstone.png` | Base + `overlays/mossy_rock_overlay.png` |
-| **43** | `cobbled_sandstone` | Sandstone Britado | `rocks/cobbled_sandstone.png`| `rocks/cobbled_sandstone.png`| `rocks/cobbled_sandstone.png`| 6 faces uniformes |
-| **44** | `mossy_cobbled_sandstone`| Sandstone Britado Musgoso| `rocks/cobbled_sandstone.png`| `rocks/cobbled_sandstone.png`| `rocks/cobbled_sandstone.png`| Base + `overlays/mossy_cobbled_overlay.png` |
+| **41** | `rock_sandstone_common` | Sandstone Comum Sólido | `rocks/rock_sandstone_common.png` | `rocks/rock_sandstone_common.png` | `rocks/rock_sandstone_common.png` | 6 faces uniformes |
+| **42** | `mossy_rock_sandstone_common`| Sandstone Comum Musgoso | `rocks/rock_sandstone_common.png` | `rocks/rock_sandstone_common.png` | `rocks/rock_sandstone_common.png` | Base + `overlays/mossy_rock_overlay.png` |
+| **43** | `cobbled_sandstone_common`| Sandstone Comum Britado | `rocks/cobbled_sandstone_common.png`| `rocks/cobbled_sandstone_common.png`| `rocks/cobbled_sandstone_common.png`| 6 faces uniformes |
+| **44** | `mossy_cobbled_sandstone_common`| Sandstone Comum Britado Musgoso| `rocks/cobbled_sandstone_common.png`| `rocks/cobbled_sandstone_common.png`| `rocks/cobbled_sandstone_common.png`| Base + `overlays/mossy_cobbled_overlay.png` |
 | **45** | `rock_sandstone_red` | Red Sandstone Sólido | `rocks/rock_sandstone_red.png`| `rocks/rock_sandstone_red.png`| `rocks/rock_sandstone_red.png`| 6 faces uniformes |
 | **46** | `mossy_rock_sandstone_red`| Red Sandstone Musgoso | `rocks/rock_sandstone_red.png`| `rocks/rock_sandstone_red.png`| `rocks/rock_sandstone_red.png`| Base + `overlays/mossy_rock_overlay.png` |
 | **47** | `cobbled_sandstone_red`| Red Sandstone Britado | `rocks/cobbled_sandstone_red.png`| `rocks/cobbled_sandstone_red.png`| `rocks/cobbled_sandstone_red.png`| 6 faces uniformes |
@@ -328,7 +390,7 @@ Assim como nos afloramentos geológicos, **todos os blocos com faces de grama la
 | **05** | `loam_grass` | Solo Franco com Grama | `soils/soil_grass.png` | `soils/soil_loam_dirt.png` | `soils/soil_loam_grass_side.png` + `overlays/soil_grass_side_overlay.png` | Biome Tint no topo e no overlay lateral (terra base sem tint) |
 | **06** | `loam_snow` | Solo Franco com Neve | `soils/soil_snow.png` | `soils/soil_loam_dirt.png` | `soils/soil_loam_snow_side.png` | Manto de neve direto na lateral (sem overlay; neve sólida fixa sem tint) |
 | **07** | `loam_mulch` | Solo Franco com Serapilheira| `soils/soil_loam_mulch.png` | `soils/soil_loam_dirt.png` | `soils/soil_loam_mulch_side.png`| Topo mulch + Fundo dirt + 4 lados mulch_side |
-| **08** | `loam_tilled` | Solo Franco Arado Agrícola | `soils/soil_loam_tilled.png` | `soils/soil_loam_dirt.png` | `soils/soil_loam_tilled_side.png`| Topo tilled + Fundo dirt + 4 lados tilled_side |
+| **08** | `loam_tilled` | Solo Franco Arado Agrícola | `soils/soil_loam_tilled_top.png` | `soils/soil_loam_dirt.png` | `soils/soil_loam_tilled_side.png`| Topo tilled + Fundo dirt + 4 lados tilled_side |
 | **09** | `silt_dirt` | Silte Aluvial Puro | `soils/soil_silt_dirt.png` | `soils/soil_silt_dirt.png` | `soils/soil_silt_dirt.png` | 6 faces uniformes |
 | **10** | `silt_coarse` | Silte Áspero | `soils/soil_silt_coarse.png` | `soils/soil_silt_coarse.png` | `soils/soil_silt_coarse.png` | 6 faces uniformes |
 | **11** | `silt_mud` | Silte Lamoso | `soils/soil_silt_mud.png` | `soils/soil_silt_mud.png` | `soils/soil_silt_mud.png` | 6 faces uniformes |
@@ -336,7 +398,7 @@ Assim como nos afloramentos geológicos, **todos os blocos com faces de grama la
 | **13** | `silt_grass` | Silte com Grama | `soils/soil_grass.png` | `soils/soil_silt_dirt.png` | `soils/soil_silt_grass_side.png` + `overlays/soil_grass_side_overlay.png` | Biome Tint no topo e no overlay lateral (terra base sem tint) |
 | **14** | `silt_snow` | Silte com Neve | `soils/soil_snow.png` | `soils/soil_silt_dirt.png` | `soils/soil_silt_snow_side.png` | Manto de neve direto na lateral (sem overlay; neve sólida fixa sem tint) |
 | **15** | `silt_mulch` | Silte com Serapilheira | `soils/soil_silt_mulch.png` | `soils/soil_silt_dirt.png` | `soils/soil_silt_mulch_side.png`| Topo mulch + Fundo dirt + 4 lados mulch_side |
-| **16** | `silt_tilled` | Silte Arado Agrícola | `soils/soil_silt_tilled.png` | `soils/soil_silt_dirt.png` | `soils/soil_silt_tilled_side.png`| Topo tilled + Fundo dirt + 4 lados tilled_side |
+| **16** | `silt_tilled` | Silte Arado Agrícola | `soils/soil_silt_tilled_top.png` | `soils/soil_silt_dirt.png` | `soils/soil_silt_tilled_side.png`| Topo tilled + Fundo dirt + 4 lados tilled_side |
 | **17** | `peat_dirt` | Turfa Pura de Pântano | `soils/soil_peat_dirt.png` | `soils/soil_peat_dirt.png` | `soils/soil_peat_dirt.png` | 6 faces uniformes |
 | **18** | `peat_coarse` | Turfa Áspera | `soils/soil_peat_coarse.png` | `soils/soil_peat_coarse.png` | `soils/soil_peat_coarse.png` | 6 faces uniformes |
 | **19** | `peat_mud` | Turfa Lamosa Encharcada | `soils/soil_peat_mud.png` | `soils/soil_peat_mud.png` | `soils/soil_peat_mud.png` | 6 faces uniformes |
@@ -344,7 +406,7 @@ Assim como nos afloramentos geológicos, **todos os blocos com faces de grama la
 | **21** | `peat_grass` | Turfa com Grama | `soils/soil_grass.png` | `soils/soil_peat_dirt.png` | `soils/soil_peat_grass_side.png` + `overlays/soil_grass_side_overlay.png` | Biome Tint no topo e no overlay lateral (terra base sem tint) |
 | **22** | `peat_snow` | Turfa com Neve | `soils/soil_snow.png` | `soils/soil_peat_dirt.png` | `soils/soil_peat_snow_side.png` | Manto de neve direto na lateral (sem overlay; neve sólida fixa sem tint) |
 | **23** | `peat_mulch` | Turfa com Serapilheira | `soils/soil_peat_mulch.png` | `soils/soil_peat_dirt.png` | `soils/soil_peat_mulch_side.png`| Topo mulch + Fundo dirt + 4 lados mulch_side |
-| **24** | `peat_tilled` | Turfa Arada Agrícola | `soils/soil_peat_tilled.png` | `soils/soil_peat_dirt.png` | `soils/soil_peat_tilled_side.png`| Topo tilled + Fundo dirt + 4 lados tilled_side |
+| **24** | `peat_tilled` | Turfa Arada Agrícola | `soils/soil_peat_tilled_top.png` | `soils/soil_peat_dirt.png` | `soils/soil_peat_tilled_side.png`| Topo tilled + Fundo dirt + 4 lados tilled_side |
 
 ---
 
@@ -379,7 +441,7 @@ Assim como nos afloramentos geológicos, **todos os blocos com faces de grama la
 | **42** | `red_clay` | Argila Vermelha Terracota | `soils/soil_clay_red.png` | `soils/soil_clay_red.png` | `soils/soil_clay_red.png` | 6 faces uniformes |
 | **43** | `white_clay` | Caulim / Argila Branca | `soils/soil_clay_white.png` | `soils/soil_clay_white.png` | `soils/soil_clay_white.png` | 6 faces uniformes |
 | **44** | `yellow_clay` | Argila Amarela Ocre | `soils/soil_clay_yellow.png` | `soils/soil_clay_yellow.png` | `soils/soil_clay_yellow.png` | 6 faces uniformes |
-| **45** | `common_sand` | Areia Comum Quartzosa | `soils/soil_sand.png` | `soils/soil_sand.png` | `soils/soil_sand.png` | 6 faces uniformes |
+| **45** | `common_sand` | Areia Comum Quartzosa | `soils/soil_sand_common.png` | `soils/soil_sand_common.png` | `soils/soil_sand_common.png` | 6 faces uniformes |
 | **46** | `red_sand` | Areia Vermelha Desértica | `soils/soil_sand_red.png` | `soils/soil_sand_red.png` | `soils/soil_sand_red.png` | 6 faces uniformes |
 | **47** | `dune_sand` | Areia Dourada de Duna | `soils/soil_sand_dune.png` | `soils/soil_sand_dune.png` | `soils/soil_sand_dune.png` | 6 faces uniformes |
 | **48** | `white_sand` | Areia Branca Bioclástica | `soils/soil_sand_white.png` | `soils/soil_sand_white.png` | `soils/soil_sand_white.png` | 6 faces uniformes |
@@ -684,7 +746,7 @@ Compostos por 6 faces idênticas: matriz sólida da rocha hospedeira (`rocks/roc
 | **39** | `ore_coal_dolomite` | Minério de Carvão em Dolomita | `rocks/rock_dolomite.png` | Base rock + overlay `ores/ore_coal_overlay.png` |
 | **40** | `ore_coal_limestone` | Minério de Carvão em Calcário | `rocks/rock_limestone.png` | Base rock + overlay `ores/ore_coal_overlay.png` |
 | **41** | `ore_coal_argillite` | Minério de Carvão em Argilito | `rocks/rock_argillite.png` | Base rock + overlay `ores/ore_coal_overlay.png` |
-| **42** | `ore_coal_sandstone` | Minério de Carvão em Arenito Amarelo | `rocks/rock_sandstone.png` | Base rock + overlay `ores/ore_coal_overlay.png` |
+| **42** | `ore_coal_sandstone` | Minério de Carvão em Arenito Amarelo | `rocks/rock_sandstone_common.png` | Base rock + overlay `ores/ore_coal_overlay.png` |
 | **43** | `ore_coal_slate` | Minério de Carvão em Ardósia | `rocks/rock_slate.png` | Base rock + overlay `ores/ore_coal_overlay.png` |
 | **44** | `ore_copper_basalt` | Minério de Cobre em Basalto | `rocks/rock_basalt.png` | Base rock + overlay `ores/ore_copper_overlay.png` |
 | **45** | `ore_copper_diorite` | Minério de Cobre em Diorito | `rocks/rock_diorite.png` | Base rock + overlay `ores/ore_copper_overlay.png` |
@@ -783,7 +845,7 @@ Compostos por 6 faces idênticas: matriz sólida da rocha hospedeira (`rocks/roc
 | **129** | `dense_ore_coal_dolomite` | Minério Denso de Carvão em Dolomita | `rocks/rock_dolomite.png` | Base rock + overlay `ores/dense_ore_coal_overlay.png` |
 | **130** | `dense_ore_coal_limestone` | Minério Denso de Carvão em Calcário | `rocks/rock_limestone.png` | Base rock + overlay `ores/dense_ore_coal_overlay.png` |
 | **131** | `dense_ore_coal_argillite` | Minério Denso de Carvão em Argilito | `rocks/rock_argillite.png` | Base rock + overlay `ores/dense_ore_coal_overlay.png` |
-| **132** | `dense_ore_coal_sandstone` | Minério Denso de Carvão em Arenito Amarelo | `rocks/rock_sandstone.png` | Base rock + overlay `ores/dense_ore_coal_overlay.png` |
+| **132** | `dense_ore_coal_sandstone` | Minério Denso de Carvão em Arenito Amarelo | `rocks/rock_sandstone_common.png` | Base rock + overlay `ores/dense_ore_coal_overlay.png` |
 | **133** | `dense_ore_coal_slate` | Minério Denso de Carvão em Ardósia | `rocks/rock_slate.png` | Base rock + overlay `ores/dense_ore_coal_overlay.png` |
 | **134** | `dense_ore_copper_basalt` | Minério Denso de Cobre em Basalto | `rocks/rock_basalt.png` | Base rock + overlay `ores/dense_ore_copper_overlay.png` |
 | **135** | `dense_ore_copper_diorite` | Minério Denso de Cobre em Diorito | `rocks/rock_diorite.png` | Base rock + overlay `ores/dense_ore_copper_overlay.png` |
@@ -873,9 +935,9 @@ Compostos por 6 faces idênticas: matriz sólida da rocha hospedeira (`rocks/roc
 
 ---
 
-## 05. Biomateriais & Organics (`organics`) — 34 Blocos
+## 05. Biomateriais & Organics (`organics`) — 36 Blocos
 
-O ecossistema de biomateriais conta com **34 blocos únicos** divididos em 4 domínios ecológicos, respeitando o prefixo unificado `bio_` e mapeamento direcional estrito.
+O ecossistema de biomateriais conta com **36 blocos únicos** divididos em 4 domínios ecológicos, respeitando o prefixo unificado `bio_` e mapeamento direcional estrito.
 
 | # | ID do Bloco | Nome / Descrição | Top (`top`) | Bottom (`bottom`) | Lados (`sides`) | Frente / Detalhes |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -913,181 +975,221 @@ O ecossistema de biomateriais conta com **34 blocos únicos** divididos em 4 dom
 | **32** | `blubber_block` | Bloco de Gordura / Banha | `organics/bio_blubber.png` | `organics/bio_blubber.png` | `organics/bio_blubber.png` | 6 faces uniformes |
 | **33** | `brain_block` | Massa Encefálica Viva | `organics/bio_brain.png` | `organics/bio_brain.png` | `organics/bio_brain.png` | 6 faces uniformes |
 | **34** | `fur_block` | Bloco de Pelagem e Couro | `organics/bio_fur_top.png` | `organics/bio_fur_top.png` | `organics/bio_fur_side.png` | Topo e Fundo couro + 4 lados pelagem |
+| **35** | `beaver_dam` | Dique de Castor / Galhos e Lama | `organics/bio_beaver_dam.png` | `organics/bio_beaver_dam.png` | `organics/bio_beaver_dam.png` | 6 faces uniformes |
+| **36** | `bug_hive` | Colmeia / Colônia de Insetos | `organics/bio_bug_hive_top.png` | `organics/bio_bug_hive_bot.png` | `organics/bio_bug_hive_side.png` | Topo top + Fundo bot + 4 lados side |
 
 ---
 
-## 06. Decorações & Arquitetura (`decorations`) — 114 Blocos
+## 06. Decorações, Iluminação & Arquitetura (`decorations`) — 142 Blocos
 
-O catálogo arquitetônico possui **114 blocos**, abrangendo móveis utilitários e de armazenamento, materiais tradicionais de alvenaria em sua forma pura original, as **16 variantes coloridas completas** para cada um dos 6 revestimentos mestres tingíveis via shader de tintura (totalizando $6 \times 16 = 96$ blocos tingidos) e 8 blocos de fibras agrícolas e calçamentos rurais.
+O catálogo arquitetônico e de iluminação possui **142 blocos**, abrangendo móveis utilitários e de armazenamento (com o Caixote rústico `crate` e Saco de Estopa `bag`), materiais tradicionais de alvenaria, têxteis e vidraçaria pura (incluindo o Linho natural `linen`, Tecido pesado `fabric`, Vidro Fumê redutor de luz `tinted_glass` e o padrão geométrico em `glass`), as **16 variantes coloridas completas** para cada um dos 7 revestimentos mestres tingíveis via shader (`deco_<bloco>_painted.png`, totalizando $7 	imes 16 = 112$ blocos tingidos), 6 blocos de fibras agrícolas e calçamentos rurais (incluindo a Trilha de Neve `path_snowy`) e **12 emissores radiantes e tochas** (com a Luminária comutável `lamp`, 6 tochas e 5 blocos de luz colorida).
 
 ### 6.1. Recipientes & Mobiliário Estrutural (4 Blocos)
 
 | # | ID do Bloco | Nome / Descrição | Top (`top`) | Bottom (`bottom`) | Lados (`sides`) | Composição / Faces |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
 | **01** | `barrel` | Barril de Carvalho com Aros | `decorations/deco_barrel_top.png` | `decorations/deco_barrel_bot.png` | `decorations/deco_barrel_side.png` | Topo top + Fundo bot + 4 lados side |
-| **02** | `basket` | Cesto Trançado com Alças | `decorations/deco_basket_top.png` | `decorations/deco_basket_bot.png` | `decorations/deco_basket_side.png` | Topo top + Fundo bot + 4 lados side |
+| **02** | `crate` | Caixote Rústico de Carga / Madeira | `decorations/deco_crate_top.png` | `decorations/deco_crate_bot.png` | `decorations/deco_crate_side.png` | Topo top + Fundo bot + 4 lados side |
 | **03** | `bookshelf` | Estante de Livros | `decorations/deco_bookshelf_top.png` | `decorations/deco_bookshelf_top.png` | `decorations/deco_bookshelf_side.png` | Topo e Fundo top + 3 lados side + 1 frente `decorations/deco_bookshelf.png` |
-| **04** | `composter` | Caixa de Compostagem | `decorations/deco_composter_top.png` | `decorations/deco_composter_bot.png` | `decorations/deco_composter_side.png` | Topo top + Fundo bot + 4 lados side |
+| **04** | `bag` | Saco de Estopa / Linho com Nó | `decorations/deco_bag_top.png` | `decorations/deco_bag_bot.png` | `decorations/deco_bag_side.png` | Topo top + Fundo bot + 3 lados side + 1 frente knot `decorations/deco_bag_side_knot.png` (nova cor linho dourado) |
 
 ---
 
-### 6.2. Alvenaria, Vidros e Tecidos Tradicionais Básicos (6 Blocos Puros Originais)
+### 6.2. Alvenaria, Vidros e Tecidos Tradicionais Básicos (8 Blocos Puros Originais)
 
 | # | ID do Bloco | Nome / Descrição | Top (`top`) | Bottom (`bottom`) | Lados (`sides`) | Composição / Faces |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
 | **05** | `bricks` | Tijolos Cerâmicos Vermelhos (Original) | `decorations/deco_bricks.png` | `decorations/deco_bricks.png` | `decorations/deco_bricks.png` | 6 faces uniformes |
-| **06** | `cloth` | Tecido de Linho Cru Natural (Original) | `decorations/deco_cloth.png` | `decorations/deco_cloth.png` | `decorations/deco_cloth.png` | 6 faces uniformes |
-| **07** | `glass` | Vidro Incolor Transparente (Original) | `decorations/deco_glass.png` | `decorations/deco_glass.png` | `decorations/deco_glass.png` | 6 faces uniformes (transparente) |
-| **08** | `plaster` | Reboco Rústico de Gesso e Cal (Original) | `decorations/deco_plaster.png` | `decorations/deco_plaster.png` | `decorations/deco_plaster.png` | 6 faces uniformes |
-| **09** | `wool` | Lã Branca Natural de Ovelha (Original) | `decorations/deco_wool.png` | `decorations/deco_wool.png` | `decorations/deco_wool.png` | 6 faces uniformes |
-| **10** | `shingles` | Telhas Cerâmicas Terracota (Original) | `decorations/deco_shingles.png` | `decorations/deco_shingles.png` | `decorations/deco_shingles.png` | 6 faces uniformes |
+| **06** | `linen` | Tecido de Linho Cru Natural (Original) | `decorations/deco_linen.png` | `decorations/deco_linen.png` | `decorations/deco_linen.png` | 6 faces uniformes (textura alinhada à nova cor de linho dourado da sacaria) |
+| **07** | `fabric` | Tecido Rústico de Trama Pesada (Original) | `decorations/deco_fabric.png` | `decorations/deco_fabric.png` | `decorations/deco_fabric.png` | 6 faces uniformes (trama entrelaçada encorpada) |
+| **08** | `glass` | Vidro Incolor Transparente (Original) | `decorations/deco_glass.png` | `decorations/deco_glass.png` | `decorations/deco_glass.png` | 6 faces uniformes (transparente com padrão de caixilhos geométricos e reflexos) |
+| **09** | `tinted_glass` | Vidro Fumê / Vidro Escurecido | `decorations/deco_tinted_glass.png` | `decorations/deco_tinted_glass.png` | `decorations/deco_tinted_glass.png` | 6 faces uniformes (redutor óptico de passagem de luz com caixilhos escuros) |
+| **10** | `plaster` | Reboco Rústico de Gesso e Cal (Original) | `decorations/deco_plaster.png` | `decorations/deco_plaster.png` | `decorations/deco_plaster.png` | 6 faces uniformes |
+| **11** | `wool` | Lã Branca Natural de Ovelha (Original) | `decorations/deco_wool.png` | `decorations/deco_wool.png` | `decorations/deco_wool.png` | 6 faces uniformes |
+| **12** | `shingles` | Telhas Cerâmicas Terracota (Original) | `decorations/deco_shingles.png` | `decorations/deco_shingles.png` | `decorations/deco_shingles.png` | 6 faces uniformes (design escamado atualizado) |
 
 ---
 
-### 6.3. Revestimentos e Superfícies Tingíveis em 16 Cores (96 Blocos)
+### 6.3. Revestimentos e Superfícies Tingíveis em 16 Cores (112 Blocos)
 
-Gerados pela multiplicação de luminância da textura neutra desaturada `deco_painted_*.png` pela matriz de cor da paleta de 16 pigmentos minerais e vegetais do mundo.
+Gerados pela multiplicação de luminância das texturas mestres desaturadas `deco_<bloco>_painted.png` pela matriz de cor da paleta de 16 pigmentos minerais e vegetais do mundo.
 
 #### 6.3.1. Tijolos Cerâmicos em Alvenaria (16 Variações Cromáticas)
 
 | # | ID do Bloco | Nome / Descrição | Top (`top`) | Bottom (`bottom`) | Lados (`sides`) | Composição / Shader Tint |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **11** | `brick_black` | Tijolos Cerâmicos Tingidos (Preto) | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | 6 faces uniformes (base painted + tint Preto / `Deco_Brick_Black`) |
-| **12** | `brick_blue` | Tijolos Cerâmicos Tingidos (Azul) | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | 6 faces uniformes (base painted + tint Azul / `Deco_Brick_Blue`) |
-| **13** | `brick_brown` | Tijolos Cerâmicos Tingidos (Marrom) | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | 6 faces uniformes (base painted + tint Marrom / `Deco_Brick_Brown`) |
-| **14** | `brick_dark_blue` | Tijolos Cerâmicos Tingidos (Azul Escuro) | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | 6 faces uniformes (base painted + tint Azul Escuro / `Deco_Brick_Dark_Blue`) |
-| **15** | `brick_dark_grey` | Tijolos Cerâmicos Tingidos (Cinza Escuro) | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | 6 faces uniformes (base painted + tint Cinza Escuro / `Deco_Brick_Dark_Grey`) |
-| **16** | `brick_green` | Tijolos Cerâmicos Tingidos (Verde) | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | 6 faces uniformes (base painted + tint Verde / `Deco_Brick_Green`) |
-| **17** | `brick_light_grey` | Tijolos Cerâmicos Tingidos (Cinza Claro) | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | 6 faces uniformes (base painted + tint Cinza Claro / `Deco_Brick_Light_Grey`) |
-| **18** | `brick_light_pink` | Tijolos Cerâmicos Tingidos (Rosa Claro) | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | 6 faces uniformes (base painted + tint Rosa Claro / `Deco_Brick_Light_Pink`) |
-| **19** | `brick_lime` | Tijolos Cerâmicos Tingidos (Verde Lima) | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | 6 faces uniformes (base painted + tint Verde Lima / `Deco_Brick_Lime`) |
-| **20** | `brick_orange` | Tijolos Cerâmicos Tingidos (Laranja) | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | 6 faces uniformes (base painted + tint Laranja / `Deco_Brick_Orange`) |
-| **21** | `brick_pink` | Tijolos Cerâmicos Tingidos (Rosa) | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | 6 faces uniformes (base painted + tint Rosa / `Deco_Brick_Pink`) |
-| **22** | `brick_purple` | Tijolos Cerâmicos Tingidos (Púrpura / Roxo) | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | 6 faces uniformes (base painted + tint Púrpura / Roxo / `Deco_Brick_Purple`) |
-| **23** | `brick_red` | Tijolos Cerâmicos Tingidos (Vermelho) | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | 6 faces uniformes (base painted + tint Vermelho / `Deco_Brick_Red`) |
-| **24** | `brick_turquoise` | Tijolos Cerâmicos Tingidos (Turquesa) | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | 6 faces uniformes (base painted + tint Turquesa / `Deco_Brick_Turquoise`) |
-| **25** | `brick_white` | Tijolos Cerâmicos Tingidos (Branco) | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | 6 faces uniformes (base painted + tint Branco / `Deco_Brick_White`) |
-| **26** | `brick_yellow` | Tijolos Cerâmicos Tingidos (Amarelo) | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | `decorations/deco_painted_bricks.png` | 6 faces uniformes (base painted + tint Amarelo / `Deco_Brick_Yellow`) |
+| **13** | `brick_black` | Tijolos Cerâmicos Tingidos (Preto) | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | 6 faces uniformes (base painted + tint Preto / `Deco_Brick_Black`) |
+| **14** | `brick_blue` | Tijolos Cerâmicos Tingidos (Azul) | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | 6 faces uniformes (base painted + tint Azul / `Deco_Brick_Blue`) |
+| **15** | `brick_brown` | Tijolos Cerâmicos Tingidos (Marrom) | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | 6 faces uniformes (base painted + tint Marrom / `Deco_Brick_Brown`) |
+| **16** | `brick_dark_blue` | Tijolos Cerâmicos Tingidos (Azul Escuro) | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | 6 faces uniformes (base painted + tint Azul Escuro / `Deco_Brick_Dark_Blue`) |
+| **17** | `brick_dark_grey` | Tijolos Cerâmicos Tingidos (Cinza Escuro) | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | 6 faces uniformes (base painted + tint Cinza Escuro / `Deco_Brick_Dark_Grey`) |
+| **18** | `brick_green` | Tijolos Cerâmicos Tingidos (Verde) | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | 6 faces uniformes (base painted + tint Verde / `Deco_Brick_Green`) |
+| **19** | `brick_light_grey` | Tijolos Cerâmicos Tingidos (Cinza Claro) | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | 6 faces uniformes (base painted + tint Cinza Claro / `Deco_Brick_Light_Grey`) |
+| **20** | `brick_light_pink` | Tijolos Cerâmicos Tingidos (Rosa Claro) | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | 6 faces uniformes (base painted + tint Rosa Claro / `Deco_Brick_Light_Pink`) |
+| **21** | `brick_lime` | Tijolos Cerâmicos Tingidos (Verde Lima) | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | 6 faces uniformes (base painted + tint Verde Lima / `Deco_Brick_Lime`) |
+| **22** | `brick_orange` | Tijolos Cerâmicos Tingidos (Laranja) | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | 6 faces uniformes (base painted + tint Laranja / `Deco_Brick_Orange`) |
+| **23** | `brick_pink` | Tijolos Cerâmicos Tingidos (Rosa) | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | 6 faces uniformes (base painted + tint Rosa / `Deco_Brick_Pink`) |
+| **24** | `brick_purple` | Tijolos Cerâmicos Tingidos (Púrpura / Roxo) | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | 6 faces uniformes (base painted + tint Púrpura / Roxo / `Deco_Brick_Purple`) |
+| **25** | `brick_red` | Tijolos Cerâmicos Tingidos (Vermelho) | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | 6 faces uniformes (base painted + tint Vermelho / `Deco_Brick_Red`) |
+| **26** | `brick_turquoise` | Tijolos Cerâmicos Tingidos (Turquesa) | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | 6 faces uniformes (base painted + tint Turquesa / `Deco_Brick_Turquoise`) |
+| **27** | `brick_white` | Tijolos Cerâmicos Tingidos (Branco) | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | 6 faces uniformes (base painted + tint Branco / `Deco_Brick_White`) |
+| **28** | `brick_yellow` | Tijolos Cerâmicos Tingidos (Amarelo) | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | `decorations/deco_bricks_painted.png` | 6 faces uniformes (base painted + tint Amarelo / `Deco_Brick_Yellow`) |
 
 #### 6.3.2. Tecido de Linho Têxtil (16 Variações Cromáticas)
 
 | # | ID do Bloco | Nome / Descrição | Top (`top`) | Bottom (`bottom`) | Lados (`sides`) | Composição / Shader Tint |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **27** | `cloth_black` | Tecido de Linho Tingido (Preto) | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | 6 faces uniformes (base painted + tint Preto / `Deco_Cloth_Black`) |
-| **28** | `cloth_blue` | Tecido de Linho Tingido (Azul) | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | 6 faces uniformes (base painted + tint Azul / `Deco_Cloth_Blue`) |
-| **29** | `cloth_brown` | Tecido de Linho Tingido (Marrom) | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | 6 faces uniformes (base painted + tint Marrom / `Deco_Cloth_Brown`) |
-| **30** | `cloth_dark_blue` | Tecido de Linho Tingido (Azul Escuro) | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | 6 faces uniformes (base painted + tint Azul Escuro / `Deco_Cloth_Dark_Blue`) |
-| **31** | `cloth_dark_grey` | Tecido de Linho Tingido (Cinza Escuro) | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | 6 faces uniformes (base painted + tint Cinza Escuro / `Deco_Cloth_Dark_Grey`) |
-| **32** | `cloth_green` | Tecido de Linho Tingido (Verde) | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | 6 faces uniformes (base painted + tint Verde / `Deco_Cloth_Green`) |
-| **33** | `cloth_light_grey` | Tecido de Linho Tingido (Cinza Claro) | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | 6 faces uniformes (base painted + tint Cinza Claro / `Deco_Cloth_Light_Grey`) |
-| **34** | `cloth_light_pink` | Tecido de Linho Tingido (Rosa Claro) | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | 6 faces uniformes (base painted + tint Rosa Claro / `Deco_Cloth_Light_Pink`) |
-| **35** | `cloth_lime` | Tecido de Linho Tingido (Verde Lima) | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | 6 faces uniformes (base painted + tint Verde Lima / `Deco_Cloth_Lime`) |
-| **36** | `cloth_orange` | Tecido de Linho Tingido (Laranja) | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | 6 faces uniformes (base painted + tint Laranja / `Deco_Cloth_Orange`) |
-| **37** | `cloth_pink` | Tecido de Linho Tingido (Rosa) | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | 6 faces uniformes (base painted + tint Rosa / `Deco_Cloth_Pink`) |
-| **38** | `cloth_purple` | Tecido de Linho Tingido (Púrpura / Roxo) | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | 6 faces uniformes (base painted + tint Púrpura / Roxo / `Deco_Cloth_Purple`) |
-| **39** | `cloth_red` | Tecido de Linho Tingido (Vermelho) | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | 6 faces uniformes (base painted + tint Vermelho / `Deco_Cloth_Red`) |
-| **40** | `cloth_turquoise` | Tecido de Linho Tingido (Turquesa) | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | 6 faces uniformes (base painted + tint Turquesa / `Deco_Cloth_Turquoise`) |
-| **41** | `cloth_white` | Tecido de Linho Tingido (Branco) | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | 6 faces uniformes (base painted + tint Branco / `Deco_Cloth_White`) |
-| **42** | `cloth_yellow` | Tecido de Linho Tingido (Amarelo) | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | `decorations/deco_painted_cloth.png` | 6 faces uniformes (base painted + tint Amarelo / `Deco_Cloth_Yellow`) |
+| **29** | `linen_black` | Tecido de Linho Tingido (Preto) | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | 6 faces uniformes (base painted + tint Preto / `Deco_Linen_Black`) |
+| **30** | `linen_blue` | Tecido de Linho Tingido (Azul) | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | 6 faces uniformes (base painted + tint Azul / `Deco_Linen_Blue`) |
+| **31** | `linen_brown` | Tecido de Linho Tingido (Marrom) | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | 6 faces uniformes (base painted + tint Marrom / `Deco_Linen_Brown`) |
+| **32** | `linen_dark_blue` | Tecido de Linho Tingido (Azul Escuro) | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | 6 faces uniformes (base painted + tint Azul Escuro / `Deco_Linen_Dark_Blue`) |
+| **33** | `linen_dark_grey` | Tecido de Linho Tingido (Cinza Escuro) | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | 6 faces uniformes (base painted + tint Cinza Escuro / `Deco_Linen_Dark_Grey`) |
+| **34** | `linen_green` | Tecido de Linho Tingido (Verde) | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | 6 faces uniformes (base painted + tint Verde / `Deco_Linen_Green`) |
+| **35** | `linen_light_grey` | Tecido de Linho Tingido (Cinza Claro) | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | 6 faces uniformes (base painted + tint Cinza Claro / `Deco_Linen_Light_Grey`) |
+| **36** | `linen_light_pink` | Tecido de Linho Tingido (Rosa Claro) | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | 6 faces uniformes (base painted + tint Rosa Claro / `Deco_Linen_Light_Pink`) |
+| **37** | `linen_lime` | Tecido de Linho Tingido (Verde Lima) | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | 6 faces uniformes (base painted + tint Verde Lima / `Deco_Linen_Lime`) |
+| **38** | `linen_orange` | Tecido de Linho Tingido (Laranja) | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | 6 faces uniformes (base painted + tint Laranja / `Deco_Linen_Orange`) |
+| **39** | `linen_pink` | Tecido de Linho Tingido (Rosa) | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | 6 faces uniformes (base painted + tint Rosa / `Deco_Linen_Pink`) |
+| **40** | `linen_purple` | Tecido de Linho Tingido (Púrpura / Roxo) | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | 6 faces uniformes (base painted + tint Púrpura / Roxo / `Deco_Linen_Purple`) |
+| **41** | `linen_red` | Tecido de Linho Tingido (Vermelho) | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | 6 faces uniformes (base painted + tint Vermelho / `Deco_Linen_Red`) |
+| **42** | `linen_turquoise` | Tecido de Linho Tingido (Turquesa) | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | 6 faces uniformes (base painted + tint Turquesa / `Deco_Linen_Turquoise`) |
+| **43** | `linen_white` | Tecido de Linho Tingido (Branco) | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | 6 faces uniformes (base painted + tint Branco / `Deco_Linen_White`) |
+| **44** | `linen_yellow` | Tecido de Linho Tingido (Amarelo) | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | `decorations/deco_linen_painted.png` | 6 faces uniformes (base painted + tint Amarelo / `Deco_Linen_Yellow`) |
 
-#### 6.3.3. Vidro Translúcido Colorido (16 Variações Cromáticas)
-
-| # | ID do Bloco | Nome / Descrição | Top (`top`) | Bottom (`bottom`) | Lados (`sides`) | Composição / Shader Tint |
-| :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **43** | `glass_black` | Vidro Tingido / Vitral (Preto) | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | 6 faces uniformes (transparente + tint Preto / `Deco_Glass_Black`) |
-| **44** | `glass_blue` | Vidro Tingido / Vitral (Azul) | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | 6 faces uniformes (transparente + tint Azul / `Deco_Glass_Blue`) |
-| **45** | `glass_brown` | Vidro Tingido / Vitral (Marrom) | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | 6 faces uniformes (transparente + tint Marrom / `Deco_Glass_Brown`) |
-| **46** | `glass_dark_blue` | Vidro Tingido / Vitral (Azul Escuro) | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | 6 faces uniformes (transparente + tint Azul Escuro / `Deco_Glass_Dark_Blue`) |
-| **47** | `glass_dark_grey` | Vidro Tingido / Vitral (Cinza Escuro) | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | 6 faces uniformes (transparente + tint Cinza Escuro / `Deco_Glass_Dark_Grey`) |
-| **48** | `glass_green` | Vidro Tingido / Vitral (Verde) | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | 6 faces uniformes (transparente + tint Verde / `Deco_Glass_Green`) |
-| **49** | `glass_light_grey` | Vidro Tingido / Vitral (Cinza Claro) | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | 6 faces uniformes (transparente + tint Cinza Claro / `Deco_Glass_Light_Grey`) |
-| **50** | `glass_light_pink` | Vidro Tingido / Vitral (Rosa Claro) | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | 6 faces uniformes (transparente + tint Rosa Claro / `Deco_Glass_Light_Pink`) |
-| **51** | `glass_lime` | Vidro Tingido / Vitral (Verde Lima) | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | 6 faces uniformes (transparente + tint Verde Lima / `Deco_Glass_Lime`) |
-| **52** | `glass_orange` | Vidro Tingido / Vitral (Laranja) | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | 6 faces uniformes (transparente + tint Laranja / `Deco_Glass_Orange`) |
-| **53** | `glass_pink` | Vidro Tingido / Vitral (Rosa) | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | 6 faces uniformes (transparente + tint Rosa / `Deco_Glass_Pink`) |
-| **54** | `glass_purple` | Vidro Tingido / Vitral (Púrpura / Roxo) | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | 6 faces uniformes (transparente + tint Púrpura / Roxo / `Deco_Glass_Purple`) |
-| **55** | `glass_red` | Vidro Tingido / Vitral (Vermelho) | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | 6 faces uniformes (transparente + tint Vermelho / `Deco_Glass_Red`) |
-| **56** | `glass_turquoise` | Vidro Tingido / Vitral (Turquesa) | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | 6 faces uniformes (transparente + tint Turquesa / `Deco_Glass_Turquoise`) |
-| **57** | `glass_white` | Vidro Tingido / Vitral (Branco) | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | 6 faces uniformes (transparente + tint Branco / `Deco_Glass_White`) |
-| **58** | `glass_yellow` | Vidro Tingido / Vitral (Amarelo) | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | `decorations/deco_painted_glass.png` | 6 faces uniformes (transparente + tint Amarelo / `Deco_Glass_Yellow`) |
-
-#### 6.3.4. Reboco e Estuque Residencial (16 Variações Cromáticas)
+#### 6.3.3. Tecido Rústico Entrelaçado (16 Variações Cromáticas)
 
 | # | ID do Bloco | Nome / Descrição | Top (`top`) | Bottom (`bottom`) | Lados (`sides`) | Composição / Shader Tint |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **59** | `plaster_black` | Estuque de Gesso Tingido (Preto) | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | 6 faces uniformes (base painted + tint Preto / `Deco_Plaster_Black`) |
-| **60** | `plaster_blue` | Estuque de Gesso Tingido (Azul) | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | 6 faces uniformes (base painted + tint Azul / `Deco_Plaster_Blue`) |
-| **61** | `plaster_brown` | Estuque de Gesso Tingido (Marrom) | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | 6 faces uniformes (base painted + tint Marrom / `Deco_Plaster_Brown`) |
-| **62** | `plaster_dark_blue` | Estuque de Gesso Tingido (Azul Escuro) | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | 6 faces uniformes (base painted + tint Azul Escuro / `Deco_Plaster_Dark_Blue`) |
-| **63** | `plaster_dark_grey` | Estuque de Gesso Tingido (Cinza Escuro) | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | 6 faces uniformes (base painted + tint Cinza Escuro / `Deco_Plaster_Dark_Grey`) |
-| **64** | `plaster_green` | Estuque de Gesso Tingido (Verde) | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | 6 faces uniformes (base painted + tint Verde / `Deco_Plaster_Green`) |
-| **65** | `plaster_light_grey` | Estuque de Gesso Tingido (Cinza Claro) | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | 6 faces uniformes (base painted + tint Cinza Claro / `Deco_Plaster_Light_Grey`) |
-| **66** | `plaster_light_pink` | Estuque de Gesso Tingido (Rosa Claro) | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | 6 faces uniformes (base painted + tint Rosa Claro / `Deco_Plaster_Light_Pink`) |
-| **67** | `plaster_lime` | Estuque de Gesso Tingido (Verde Lima) | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | 6 faces uniformes (base painted + tint Verde Lima / `Deco_Plaster_Lime`) |
-| **68** | `plaster_orange` | Estuque de Gesso Tingido (Laranja) | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | 6 faces uniformes (base painted + tint Laranja / `Deco_Plaster_Orange`) |
-| **69** | `plaster_pink` | Estuque de Gesso Tingido (Rosa) | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | 6 faces uniformes (base painted + tint Rosa / `Deco_Plaster_Pink`) |
-| **70** | `plaster_purple` | Estuque de Gesso Tingido (Púrpura / Roxo) | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | 6 faces uniformes (base painted + tint Púrpura / Roxo / `Deco_Plaster_Purple`) |
-| **71** | `plaster_red` | Estuque de Gesso Tingido (Vermelho) | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | 6 faces uniformes (base painted + tint Vermelho / `Deco_Plaster_Red`) |
-| **72** | `plaster_turquoise` | Estuque de Gesso Tingido (Turquesa) | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | 6 faces uniformes (base painted + tint Turquesa / `Deco_Plaster_Turquoise`) |
-| **73** | `plaster_white` | Estuque de Gesso Tingido (Branco) | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | 6 faces uniformes (base painted + tint Branco / `Deco_Plaster_White`) |
-| **74** | `plaster_yellow` | Estuque de Gesso Tingido (Amarelo) | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | `decorations/deco_painted_plaster.png` | 6 faces uniformes (base painted + tint Amarelo / `Deco_Plaster_Yellow`) |
+| **45** | `fabric_black` | Tecido Rústico Tingido (Preto) | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | 6 faces uniformes (base painted + tint Preto / `Deco_Fabric_Black`) |
+| **46** | `fabric_blue` | Tecido Rústico Tingido (Azul) | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | 6 faces uniformes (base painted + tint Azul / `Deco_Fabric_Blue`) |
+| **47** | `fabric_brown` | Tecido Rústico Tingido (Marrom) | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | 6 faces uniformes (base painted + tint Marrom / `Deco_Fabric_Brown`) |
+| **48** | `fabric_dark_blue` | Tecido Rústico Tingido (Azul Escuro) | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | 6 faces uniformes (base painted + tint Azul Escuro / `Deco_Fabric_Dark_Blue`) |
+| **49** | `fabric_dark_grey` | Tecido Rústico Tingido (Cinza Escuro) | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | 6 faces uniformes (base painted + tint Cinza Escuro / `Deco_Fabric_Dark_Grey`) |
+| **50** | `fabric_green` | Tecido Rústico Tingido (Verde) | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | 6 faces uniformes (base painted + tint Verde / `Deco_Fabric_Green`) |
+| **51** | `fabric_light_grey` | Tecido Rústico Tingido (Cinza Claro) | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | 6 faces uniformes (base painted + tint Cinza Claro / `Deco_Fabric_Light_Grey`) |
+| **52** | `fabric_light_pink` | Tecido Rústico Tingido (Rosa Claro) | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | 6 faces uniformes (base painted + tint Rosa Claro / `Deco_Fabric_Light_Pink`) |
+| **53** | `fabric_lime` | Tecido Rústico Tingido (Verde Lima) | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | 6 faces uniformes (base painted + tint Verde Lima / `Deco_Fabric_Lime`) |
+| **54** | `fabric_orange` | Tecido Rústico Tingido (Laranja) | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | 6 faces uniformes (base painted + tint Laranja / `Deco_Fabric_Orange`) |
+| **55** | `fabric_pink` | Tecido Rústico Tingido (Rosa) | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | 6 faces uniformes (base painted + tint Rosa / `Deco_Fabric_Pink`) |
+| **56** | `fabric_purple` | Tecido Rústico Tingido (Púrpura / Roxo) | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | 6 faces uniformes (base painted + tint Púrpura / Roxo / `Deco_Fabric_Purple`) |
+| **57** | `fabric_red` | Tecido Rústico Tingido (Vermelho) | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | 6 faces uniformes (base painted + tint Vermelho / `Deco_Fabric_Red`) |
+| **58** | `fabric_turquoise` | Tecido Rústico Tingido (Turquesa) | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | 6 faces uniformes (base painted + tint Turquesa / `Deco_Fabric_Turquoise`) |
+| **59** | `fabric_white` | Tecido Rústico Tingido (Branco) | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | 6 faces uniformes (base painted + tint Branco / `Deco_Fabric_White`) |
+| **60** | `fabric_yellow` | Tecido Rústico Tingido (Amarelo) | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | `decorations/deco_fabric_painted.png` | 6 faces uniformes (base painted + tint Amarelo / `Deco_Fabric_Yellow`) |
 
-#### 6.3.5. Lã Fofa Processada e Tingida (16 Variações Cromáticas)
-
-| # | ID do Bloco | Nome / Descrição | Top (`top`) | Bottom (`bottom`) | Lados (`sides`) | Composição / Shader Tint |
-| :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **75** | `wool_black` | Lã de Ovelha Tingida (Preto) | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | 6 faces uniformes (base painted + tint Preto / `Deco_Wool_Black`) |
-| **76** | `wool_blue` | Lã de Ovelha Tingida (Azul) | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | 6 faces uniformes (base painted + tint Azul / `Deco_Wool_Blue`) |
-| **77** | `wool_brown` | Lã de Ovelha Tingida (Marrom) | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | 6 faces uniformes (base painted + tint Marrom / `Deco_Wool_Brown`) |
-| **78** | `wool_dark_blue` | Lã de Ovelha Tingida (Azul Escuro) | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | 6 faces uniformes (base painted + tint Azul Escuro / `Deco_Wool_Dark_Blue`) |
-| **79** | `wool_dark_grey` | Lã de Ovelha Tingida (Cinza Escuro) | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | 6 faces uniformes (base painted + tint Cinza Escuro / `Deco_Wool_Dark_Grey`) |
-| **80** | `wool_green` | Lã de Ovelha Tingida (Verde) | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | 6 faces uniformes (base painted + tint Verde / `Deco_Wool_Green`) |
-| **81** | `wool_light_grey` | Lã de Ovelha Tingida (Cinza Claro) | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | 6 faces uniformes (base painted + tint Cinza Claro / `Deco_Wool_Light_Grey`) |
-| **82** | `wool_light_pink` | Lã de Ovelha Tingida (Rosa Claro) | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | 6 faces uniformes (base painted + tint Rosa Claro / `Deco_Wool_Light_Pink`) |
-| **83** | `wool_lime` | Lã de Ovelha Tingida (Verde Lima) | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | 6 faces uniformes (base painted + tint Verde Lima / `Deco_Wool_Lime`) |
-| **84** | `wool_orange` | Lã de Ovelha Tingida (Laranja) | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | 6 faces uniformes (base painted + tint Laranja / `Deco_Wool_Orange`) |
-| **85** | `wool_pink` | Lã de Ovelha Tingida (Rosa) | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | 6 faces uniformes (base painted + tint Rosa / `Deco_Wool_Pink`) |
-| **86** | `wool_purple` | Lã de Ovelha Tingida (Púrpura / Roxo) | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | 6 faces uniformes (base painted + tint Púrpura / Roxo / `Deco_Wool_Purple`) |
-| **87** | `wool_red` | Lã de Ovelha Tingida (Vermelho) | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | 6 faces uniformes (base painted + tint Vermelho / `Deco_Wool_Red`) |
-| **88** | `wool_turquoise` | Lã de Ovelha Tingida (Turquesa) | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | 6 faces uniformes (base painted + tint Turquesa / `Deco_Wool_Turquoise`) |
-| **89** | `wool_white` | Lã de Ovelha Tingida (Branco) | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | 6 faces uniformes (base painted + tint Branco / `Deco_Wool_White`) |
-| **90** | `wool_yellow` | Lã de Ovelha Tingida (Amarelo) | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | `decorations/deco_painted_wool.png` | 6 faces uniformes (base painted + tint Amarelo / `Deco_Wool_Yellow`) |
-
-#### 6.3.6. Telhas Cerâmicas Semicirculares (16 Variações Cromáticas)
+#### 6.3.4. Vidro Translúcido / Vitrais Geométricos (16 Variações Cromáticas)
 
 | # | ID do Bloco | Nome / Descrição | Top (`top`) | Bottom (`bottom`) | Lados (`sides`) | Composição / Shader Tint |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **91** | `shingles_black` | Telhas Escamadas Esmaltadas (Preto) | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | 6 faces uniformes (base painted + tint Preto / `Deco_Shingles_Black`) |
-| **92** | `shingles_blue` | Telhas Escamadas Esmaltadas (Azul) | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | 6 faces uniformes (base painted + tint Azul / `Deco_Shingles_Blue`) |
-| **93** | `shingles_brown` | Telhas Escamadas Esmaltadas (Marrom) | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | 6 faces uniformes (base painted + tint Marrom / `Deco_Shingles_Brown`) |
-| **94** | `shingles_dark_blue` | Telhas Escamadas Esmaltadas (Azul Escuro) | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | 6 faces uniformes (base painted + tint Azul Escuro / `Deco_Shingles_Dark_Blue`) |
-| **95** | `shingles_dark_grey` | Telhas Escamadas Esmaltadas (Cinza Escuro) | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | 6 faces uniformes (base painted + tint Cinza Escuro / `Deco_Shingles_Dark_Grey`) |
-| **96** | `shingles_green` | Telhas Escamadas Esmaltadas (Verde) | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | 6 faces uniformes (base painted + tint Verde / `Deco_Shingles_Green`) |
-| **97** | `shingles_light_grey` | Telhas Escamadas Esmaltadas (Cinza Claro) | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | 6 faces uniformes (base painted + tint Cinza Claro / `Deco_Shingles_Light_Grey`) |
-| **98** | `shingles_light_pink` | Telhas Escamadas Esmaltadas (Rosa Claro) | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | 6 faces uniformes (base painted + tint Rosa Claro / `Deco_Shingles_Light_Pink`) |
-| **99** | `shingles_lime` | Telhas Escamadas Esmaltadas (Verde Lima) | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | 6 faces uniformes (base painted + tint Verde Lima / `Deco_Shingles_Lime`) |
-| **100** | `shingles_orange` | Telhas Escamadas Esmaltadas (Laranja) | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | 6 faces uniformes (base painted + tint Laranja / `Deco_Shingles_Orange`) |
-| **101** | `shingles_pink` | Telhas Escamadas Esmaltadas (Rosa) | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | 6 faces uniformes (base painted + tint Rosa / `Deco_Shingles_Pink`) |
-| **102** | `shingles_purple` | Telhas Escamadas Esmaltadas (Púrpura / Roxo) | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | 6 faces uniformes (base painted + tint Púrpura / Roxo / `Deco_Shingles_Purple`) |
-| **103** | `shingles_red` | Telhas Escamadas Esmaltadas (Vermelho) | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | 6 faces uniformes (base painted + tint Vermelho / `Deco_Shingles_Red`) |
-| **104** | `shingles_turquoise` | Telhas Escamadas Esmaltadas (Turquesa) | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | 6 faces uniformes (base painted + tint Turquesa / `Deco_Shingles_Turquoise`) |
-| **105** | `shingles_white` | Telhas Escamadas Esmaltadas (Branco) | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | 6 faces uniformes (base painted + tint Branco / `Deco_Shingles_White`) |
-| **106** | `shingles_yellow` | Telhas Escamadas Esmaltadas (Amarelo) | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | `decorations/deco_painted_shingles.png` | 6 faces uniformes (base painted + tint Amarelo / `Deco_Shingles_Yellow`) |
+| **61** | `glass_black` | Vidro Tingido / Vitral (Preto) | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | 6 faces uniformes (base painted + tint Preto / `Deco_Glass_Black`) |
+| **62** | `glass_blue` | Vidro Tingido / Vitral (Azul) | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | 6 faces uniformes (base painted + tint Azul / `Deco_Glass_Blue`) |
+| **63** | `glass_brown` | Vidro Tingido / Vitral (Marrom) | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | 6 faces uniformes (base painted + tint Marrom / `Deco_Glass_Brown`) |
+| **64** | `glass_dark_blue` | Vidro Tingido / Vitral (Azul Escuro) | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | 6 faces uniformes (base painted + tint Azul Escuro / `Deco_Glass_Dark_Blue`) |
+| **65** | `glass_dark_grey` | Vidro Tingido / Vitral (Cinza Escuro) | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | 6 faces uniformes (base painted + tint Cinza Escuro / `Deco_Glass_Dark_Grey`) |
+| **66** | `glass_green` | Vidro Tingido / Vitral (Verde) | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | 6 faces uniformes (base painted + tint Verde / `Deco_Glass_Green`) |
+| **67** | `glass_light_grey` | Vidro Tingido / Vitral (Cinza Claro) | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | 6 faces uniformes (base painted + tint Cinza Claro / `Deco_Glass_Light_Grey`) |
+| **68** | `glass_light_pink` | Vidro Tingido / Vitral (Rosa Claro) | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | 6 faces uniformes (base painted + tint Rosa Claro / `Deco_Glass_Light_Pink`) |
+| **69** | `glass_lime` | Vidro Tingido / Vitral (Verde Lima) | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | 6 faces uniformes (base painted + tint Verde Lima / `Deco_Glass_Lime`) |
+| **70** | `glass_orange` | Vidro Tingido / Vitral (Laranja) | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | 6 faces uniformes (base painted + tint Laranja / `Deco_Glass_Orange`) |
+| **71** | `glass_pink` | Vidro Tingido / Vitral (Rosa) | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | 6 faces uniformes (base painted + tint Rosa / `Deco_Glass_Pink`) |
+| **72** | `glass_purple` | Vidro Tingido / Vitral (Púrpura / Roxo) | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | 6 faces uniformes (base painted + tint Púrpura / Roxo / `Deco_Glass_Purple`) |
+| **73** | `glass_red` | Vidro Tingido / Vitral (Vermelho) | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | 6 faces uniformes (base painted + tint Vermelho / `Deco_Glass_Red`) |
+| **74** | `glass_turquoise` | Vidro Tingido / Vitral (Turquesa) | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | 6 faces uniformes (base painted + tint Turquesa / `Deco_Glass_Turquoise`) |
+| **75** | `glass_white` | Vidro Tingido / Vitral (Branco) | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | 6 faces uniformes (base painted + tint Branco / `Deco_Glass_White`) |
+| **76** | `glass_yellow` | Vidro Tingido / Vitral (Amarelo) | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | `decorations/deco_glass_painted.png` | 6 faces uniformes (base painted + tint Amarelo / `Deco_Glass_Yellow`) |
 
----
+#### 6.3.5. Reboco e Estuque Residencial (16 Variações Cromáticas)
 
-### 6.4. Fibras Agrícolas, Coberturas & Calçamentos Rurais (8 Blocos)
+| # | ID do Bloco | Nome / Descrição | Top (`top`) | Bottom (`bottom`) | Lados (`sides`) | Composição / Shader Tint |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- |
+| **77** | `plaster_black` | Estuque de Gesso Tingido (Preto) | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | 6 faces uniformes (base painted + tint Preto / `Deco_Plaster_Black`) |
+| **78** | `plaster_blue` | Estuque de Gesso Tingido (Azul) | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | 6 faces uniformes (base painted + tint Azul / `Deco_Plaster_Blue`) |
+| **79** | `plaster_brown` | Estuque de Gesso Tingido (Marrom) | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | 6 faces uniformes (base painted + tint Marrom / `Deco_Plaster_Brown`) |
+| **80** | `plaster_dark_blue` | Estuque de Gesso Tingido (Azul Escuro) | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | 6 faces uniformes (base painted + tint Azul Escuro / `Deco_Plaster_Dark_Blue`) |
+| **81** | `plaster_dark_grey` | Estuque de Gesso Tingido (Cinza Escuro) | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | 6 faces uniformes (base painted + tint Cinza Escuro / `Deco_Plaster_Dark_Grey`) |
+| **82** | `plaster_green` | Estuque de Gesso Tingido (Verde) | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | 6 faces uniformes (base painted + tint Verde / `Deco_Plaster_Green`) |
+| **83** | `plaster_light_grey` | Estuque de Gesso Tingido (Cinza Claro) | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | 6 faces uniformes (base painted + tint Cinza Claro / `Deco_Plaster_Light_Grey`) |
+| **84** | `plaster_light_pink` | Estuque de Gesso Tingido (Rosa Claro) | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | 6 faces uniformes (base painted + tint Rosa Claro / `Deco_Plaster_Light_Pink`) |
+| **85** | `plaster_lime` | Estuque de Gesso Tingido (Verde Lima) | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | 6 faces uniformes (base painted + tint Verde Lima / `Deco_Plaster_Lime`) |
+| **86** | `plaster_orange` | Estuque de Gesso Tingido (Laranja) | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | 6 faces uniformes (base painted + tint Laranja / `Deco_Plaster_Orange`) |
+| **87** | `plaster_pink` | Estuque de Gesso Tingido (Rosa) | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | 6 faces uniformes (base painted + tint Rosa / `Deco_Plaster_Pink`) |
+| **88** | `plaster_purple` | Estuque de Gesso Tingido (Púrpura / Roxo) | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | 6 faces uniformes (base painted + tint Púrpura / Roxo / `Deco_Plaster_Purple`) |
+| **89** | `plaster_red` | Estuque de Gesso Tingido (Vermelho) | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | 6 faces uniformes (base painted + tint Vermelho / `Deco_Plaster_Red`) |
+| **90** | `plaster_turquoise` | Estuque de Gesso Tingido (Turquesa) | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | 6 faces uniformes (base painted + tint Turquesa / `Deco_Plaster_Turquoise`) |
+| **91** | `plaster_white` | Estuque de Gesso Tingido (Branco) | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | 6 faces uniformes (base painted + tint Branco / `Deco_Plaster_White`) |
+| **92** | `plaster_yellow` | Estuque de Gesso Tingido (Amarelo) | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | `decorations/deco_plaster_painted.png` | 6 faces uniformes (base painted + tint Amarelo / `Deco_Plaster_Yellow`) |
+
+#### 6.3.6. Lã Fofa Processada e Tingida (16 Variações Cromáticas)
+
+| # | ID do Bloco | Nome / Descrição | Top (`top`) | Bottom (`bottom`) | Lados (`sides`) | Composição / Shader Tint |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- |
+| **93** | `wool_black` | Lã de Ovelha Tingida (Preto) | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | 6 faces uniformes (base painted + tint Preto / `Deco_Wool_Black`) |
+| **94** | `wool_blue` | Lã de Ovelha Tingida (Azul) | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | 6 faces uniformes (base painted + tint Azul / `Deco_Wool_Blue`) |
+| **95** | `wool_brown` | Lã de Ovelha Tingida (Marrom) | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | 6 faces uniformes (base painted + tint Marrom / `Deco_Wool_Brown`) |
+| **96** | `wool_dark_blue` | Lã de Ovelha Tingida (Azul Escuro) | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | 6 faces uniformes (base painted + tint Azul Escuro / `Deco_Wool_Dark_Blue`) |
+| **97** | `wool_dark_grey` | Lã de Ovelha Tingida (Cinza Escuro) | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | 6 faces uniformes (base painted + tint Cinza Escuro / `Deco_Wool_Dark_Grey`) |
+| **98** | `wool_green` | Lã de Ovelha Tingida (Verde) | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | 6 faces uniformes (base painted + tint Verde / `Deco_Wool_Green`) |
+| **99** | `wool_light_grey` | Lã de Ovelha Tingida (Cinza Claro) | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | 6 faces uniformes (base painted + tint Cinza Claro / `Deco_Wool_Light_Grey`) |
+| **100** | `wool_light_pink` | Lã de Ovelha Tingida (Rosa Claro) | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | 6 faces uniformes (base painted + tint Rosa Claro / `Deco_Wool_Light_Pink`) |
+| **101** | `wool_lime` | Lã de Ovelha Tingida (Verde Lima) | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | 6 faces uniformes (base painted + tint Verde Lima / `Deco_Wool_Lime`) |
+| **102** | `wool_orange` | Lã de Ovelha Tingida (Laranja) | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | 6 faces uniformes (base painted + tint Laranja / `Deco_Wool_Orange`) |
+| **103** | `wool_pink` | Lã de Ovelha Tingida (Rosa) | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | 6 faces uniformes (base painted + tint Rosa / `Deco_Wool_Pink`) |
+| **104** | `wool_purple` | Lã de Ovelha Tingida (Púrpura / Roxo) | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | 6 faces uniformes (base painted + tint Púrpura / Roxo / `Deco_Wool_Purple`) |
+| **105** | `wool_red` | Lã de Ovelha Tingida (Vermelho) | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | 6 faces uniformes (base painted + tint Vermelho / `Deco_Wool_Red`) |
+| **106** | `wool_turquoise` | Lã de Ovelha Tingida (Turquesa) | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | 6 faces uniformes (base painted + tint Turquesa / `Deco_Wool_Turquoise`) |
+| **107** | `wool_white` | Lã de Ovelha Tingida (Branco) | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | 6 faces uniformes (base painted + tint Branco / `Deco_Wool_White`) |
+| **108** | `wool_yellow` | Lã de Ovelha Tingida (Amarelo) | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | `decorations/deco_wool_painted.png` | 6 faces uniformes (base painted + tint Amarelo / `Deco_Wool_Yellow`) |
+
+#### 6.3.7. Telhas Cerâmicas Semicirculares (16 Variações Cromáticas)
+
+| # | ID do Bloco | Nome / Descrição | Top (`top`) | Bottom (`bottom`) | Lados (`sides`) | Composição / Shader Tint |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- |
+| **109** | `shingles_black` | Telhas Escamadas Esmaltadas (Preto) | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | 6 faces uniformes (base painted + tint Preto / `Deco_Shingles_Black`) |
+| **110** | `shingles_blue` | Telhas Escamadas Esmaltadas (Azul) | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | 6 faces uniformes (base painted + tint Azul / `Deco_Shingles_Blue`) |
+| **111** | `shingles_brown` | Telhas Escamadas Esmaltadas (Marrom) | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | 6 faces uniformes (base painted + tint Marrom / `Deco_Shingles_Brown`) |
+| **112** | `shingles_dark_blue` | Telhas Escamadas Esmaltadas (Azul Escuro) | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | 6 faces uniformes (base painted + tint Azul Escuro / `Deco_Shingles_Dark_Blue`) |
+| **113** | `shingles_dark_grey` | Telhas Escamadas Esmaltadas (Cinza Escuro) | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | 6 faces uniformes (base painted + tint Cinza Escuro / `Deco_Shingles_Dark_Grey`) |
+| **114** | `shingles_green` | Telhas Escamadas Esmaltadas (Verde) | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | 6 faces uniformes (base painted + tint Verde / `Deco_Shingles_Green`) |
+| **115** | `shingles_light_grey` | Telhas Escamadas Esmaltadas (Cinza Claro) | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | 6 faces uniformes (base painted + tint Cinza Claro / `Deco_Shingles_Light_Grey`) |
+| **116** | `shingles_light_pink` | Telhas Escamadas Esmaltadas (Rosa Claro) | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | 6 faces uniformes (base painted + tint Rosa Claro / `Deco_Shingles_Light_Pink`) |
+| **117** | `shingles_lime` | Telhas Escamadas Esmaltadas (Verde Lima) | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | 6 faces uniformes (base painted + tint Verde Lima / `Deco_Shingles_Lime`) |
+| **118** | `shingles_orange` | Telhas Escamadas Esmaltadas (Laranja) | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | 6 faces uniformes (base painted + tint Laranja / `Deco_Shingles_Orange`) |
+| **119** | `shingles_pink` | Telhas Escamadas Esmaltadas (Rosa) | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | 6 faces uniformes (base painted + tint Rosa / `Deco_Shingles_Pink`) |
+| **120** | `shingles_purple` | Telhas Escamadas Esmaltadas (Púrpura / Roxo) | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | 6 faces uniformes (base painted + tint Púrpura / Roxo / `Deco_Shingles_Purple`) |
+| **121** | `shingles_red` | Telhas Escamadas Esmaltadas (Vermelho) | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | 6 faces uniformes (base painted + tint Vermelho / `Deco_Shingles_Red`) |
+| **122** | `shingles_turquoise` | Telhas Escamadas Esmaltadas (Turquesa) | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | 6 faces uniformes (base painted + tint Turquesa / `Deco_Shingles_Turquoise`) |
+| **123** | `shingles_white` | Telhas Escamadas Esmaltadas (Branco) | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | 6 faces uniformes (base painted + tint Branco / `Deco_Shingles_White`) |
+| **124** | `shingles_yellow` | Telhas Escamadas Esmaltadas (Amarelo) | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | `decorations/deco_shingles_painted.png` | 6 faces uniformes (base painted + tint Amarelo / `Deco_Shingles_Yellow`) |
+
+### 6.4. Fibras Agrícolas & Calçamentos Rurais (6 Blocos)
 
 | # | ID do Bloco | Nome / Descrição | Top (`top`) | Bottom (`bottom`) | Lados (`sides`) | Composição / Faces |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **107** | `hay_bale` | Fardo de Feno Prensado | `decorations/deco_hay_top.png` | `decorations/deco_hay_top.png` | `decorations/deco_hay_side.png` | Topo e Fundo top + 4 lados side |
-| **108** | `thatch` | Cobertura de Colmo / Sapê | `decorations/deco_thatch_top.png` | `decorations/deco_thatch_top.png` | `decorations/deco_thatch_side.png` | Topo e Fundo top + 4 lados side |
-| **109** | `wicker` | Painel Trançado de Vime | `decorations/deco_wicker.png` | `decorations/deco_wicker.png` | `decorations/deco_wicker.png` | 6 faces uniformes |
-| **110** | `wax_block` | Bloco Maciço de Cera | `decorations/deco_wax.png` | `decorations/deco_wax.png` | `decorations/deco_wax.png` | 6 faces uniformes (semitranslúcido) |
-| **111** | `wood_path` | Caminho de Madeira Batida | `decorations/deco_wood_path.png` | `decorations/deco_wood_path.png` | `decorations/deco_wood_path.png` | 6 faces uniformes |
-| **112** | `stone_path` | Calçamento Rústico de Pedra | `decorations/deco_stone_path.png` | `decorations/deco_stone_path.png` | `decorations/deco_stone_path.png` | 6 faces uniformes |
-| **113** | `dirty_path` | Trilha de Terra Batida | `decorations/deco_dirty_path.png` | `decorations/deco_dirty_path.png` | `decorations/deco_dirty_path.png` | 6 faces uniformes |
-| **114** | `sandy_path` | Caminho de Areia Compactada | `decorations/deco_sandy_path.png` | `decorations/deco_sandy_path.png` | `decorations/deco_sandy_path.png` | 6 faces uniformes |
+| **125** | `hay_bale` | Fardo de Feno Prensado | `decorations/deco_hay_top.png` | `decorations/deco_hay_top.png` | `decorations/deco_hay_side.png` | Topo e Fundo top + 4 lados side |
+| **126** | `wax_block` | Bloco Maciço de Cera | `decorations/deco_wax.png` | `decorations/deco_wax.png` | `decorations/deco_wax.png` | 6 faces uniformes (semitranslúcido) |
+| **127** | `path_stone` | Calçamento Rústico de Pedra | `decorations/deco_path_stone.png` | `decorations/deco_path_stone.png` | `decorations/deco_path_stone.png` | 6 faces uniformes |
+| **128** | `path_dirty` | Trilha de Terra Batida | `decorations/deco_path_dirty.png` | `decorations/deco_path_dirty.png` | `decorations/deco_path_dirty.png` | 6 faces uniformes |
+| **129** | `path_sandy` | Caminho de Areia Compactada | `decorations/deco_path_sandy.png` | `decorations/deco_path_sandy.png` | `decorations/deco_path_sandy.png` | 6 faces uniformes |
+| **130** | `path_snowy` | Trilha de Neve Compactada | `decorations/deco_path_snowy.png` | `decorations/deco_path_snowy.png` | `decorations/deco_path_snowy.png` | 6 faces uniformes |
+
+---
+
+### 6.5. Iluminação Decorativa & Emissores Radiantes (12 Blocos)
+
+| # | ID do Bloco | Nome / Descrição | Top (`top`) | Bottom (`bottom`) | Lados (`sides`) | Composição / Geometria |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- |
+| **131** | `lamp` | Luminária / Lâmpada de Teto | `decorations/deco_lamp_top.png` | `decorations/deco_lamp.png` | `decorations/deco_lamp.png` | 1 bloco funcional comutável (Normal: `deco_lamp*` apagada; On: `deco_lamp*_on` acesa emissiva) |
+| **132** | `emit_torch` | Tocha Padrão de Fogo | — | — | — | Modelo haste vertical / parede (`decorations/emit_torch.png`, animada com chama crepitante) |
+| **133** | `emit_torch_cold` | Tocha LED de Luz Fria | — | — | — | Modelo haste vertical / parede (`decorations/emit_torch_cold.png`, emissor frio 6500K) |
+| **134** | `emit_torch_warm` | Tocha LED de Luz Quente | — | — | — | Modelo haste vertical / parede (`decorations/emit_torch_warm.png`, emissor âmbar quente 2700K) |
+| **135** | `emit_torch_red` | Tocha LED Vermelha | — | — | — | Modelo haste vertical / parede (`decorations/emit_torch_red.png`, emissor rubi) |
+| **136** | `emit_torch_green` | Tocha LED Verde | — | — | — | Modelo haste vertical / parede (`decorations/emit_torch_green.png`, emissor esmeralda) |
+| **137** | `emit_torch_blue` | Tocha LED Azul | — | — | — | Modelo haste vertical / parede (`decorations/emit_torch_blue.png`, emissor safira) |
+| **138** | `emit_light_cold` | Bloco Emissor de Luz Fria | `decorations/emit_light_cold.png` | `decorations/emit_light_cold.png` | `decorations/emit_light_cold.png` | 6 faces uniformes (emissivo radiante) |
+| **139** | `emit_light_warm` | Bloco Emissor de Luz Quente | `decorations/emit_light_warm.png` | `decorations/emit_light_warm.png` | `decorations/emit_light_warm.png` | 6 faces uniformes (emissivo radiante) |
+| **140** | `emit_light_red` | Bloco Emissor de Luz Vermelha | `decorations/emit_light_red.png` | `decorations/emit_light_red.png` | `decorations/emit_light_red.png` | 6 faces uniformes (emissivo radiante) |
+| **141** | `emit_light_green` | Bloco Emissor de Luz Verde | `decorations/emit_light_green.png` | `decorations/emit_light_green.png` | `decorations/emit_light_green.png` | 6 faces uniformes (emissivo radiante) |
+| **142** | `emit_light_blue` | Bloco Emissor de Luz Azul | `decorations/emit_light_blue.png` | `decorations/emit_light_blue.png` | `decorations/emit_light_blue.png` | 6 faces uniformes (emissivo radiante) |
 
 ---
 
@@ -1331,25 +1433,7 @@ Cada espeleotema funciona no motor como um **bloco único registrado**, cuja geo
 
 ---
 
-## 13. Iluminação & Emissores (`lights`) — 9 Blocos
-
-A pasta `lights/` contém os blocos e tochas emissores de luz radiante no mundo:
-
-| # | ID do Bloco | Nome / Descrição | Top (`top`) | Bottom (`bottom`) | Lados (`sides`) | Composição / Geometria |
-| :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **01** | `emit_torch` | Tocha Padrão | — | — | — | Modelo haste vertical / parede (`lights/emit_torch.png`, emissivo) |
-| **02** | `emit_red_torch` | Tocha Vermelha | — | — | — | Modelo haste vertical / parede (`lights/emit_red_torch.png`, emissivo) |
-| **03** | `emit_blue_torch`| Tocha Azul | — | — | — | Modelo haste vertical / parede (`lights/emit_blue_torch.png`, emissivo) |
-| **04** | `emit_green_torch`| Tocha Verde | — | — | — | Modelo haste vertical / parede (`lights/emit_green_torch.png`, emissivo) |
-| **05** | `emit_warm_light`| Bloco de Luz Quente | `lights/emit_warm_light.png` | `lights/emit_warm_light.png` | `lights/emit_warm_light.png` | 6 faces uniformes (emissivo) |
-| **06** | `emit_cold_light`| Bloco de Luz Fria | `lights/emit_cold_light.png` | `lights/emit_cold_light.png` | `lights/emit_cold_light.png` | 6 faces uniformes (emissivo) |
-| **07** | `emit_red_light` | Bloco de Luz Vermelha | `lights/emit_red_light.png` | `lights/emit_red_light.png` | `lights/emit_red_light.png` | 6 faces uniformes (emissivo) |
-| **08** | `emit_blue_light`| Bloco de Luz Azul | `lights/emit_blue_light.png` | `lights/emit_blue_light.png` | `lights/emit_blue_light.png` | 6 faces uniformes (emissivo) |
-| **09** | `emit_green_light`| Bloco de Luz Verde | `lights/emit_green_light.png` | `lights/emit_green_light.png` | `lights/emit_green_light.png` | 6 faces uniformes (emissivo) |
-
----
-
-## 14. Blocos Técnicos & Debug (`debug`) — 6 Blocos
+## 13. Blocos Técnicos & Debug (`debug`) — 6 Blocos
 
 Utilizados internamente pela engine para fallback visual, carregamento de chunks e validação de pipelines:
 
@@ -1364,14 +1448,14 @@ Utilizados internamente pela engine para fallback visual, carregamento de chunks
 
 ---
 
-## 15. Roadmap & Planejamento Futuro: Agricultura, Cultivos & Alimentos (`crops` / `foods`)
+## 14. Roadmap & Planejamento Futuro: Agricultura, Cultivos & Alimentos (`crops` / `foods`)
 
 > [!NOTE]
 > **Próxima Categoria em Desenvolvimento (Backlog de Worldbuilding & Gameplay):**  
 > Com o fechamento das 14 categorias mães de blocos iniciais do jogo (totalizando **942 blocos**), o próximo domínio arquitetado para o ecossistema será **Agricultura, Cultivos e Alimentos** (`crops` / `foods`).  
 > O catálogo de blocos e mecânicas será formalizado assim que os pacotes de texturas forem curados e organizados na pasta do projeto.
 
-### 15.1. Espécimes de Cultivo e Alimentos Planejados
+### 14.1. Espécimes de Cultivo e Alimentos Planejados
 1. **Cebola** (*Onion* / `crop_onion`) — Cultivo de raiz com broto verde superficial em canteiros.
 2. **Abóbora** (*Pumpkin* / `crop_pumpkin` e `block_pumpkin`) — Fruto pesado em bloco maciço 1x1 e ramas floríferas rasteiras.
 3. **Alface** (*Lettuce* / `crop_lettuce`) — Folhagem em roseta rasteira para horticultura de vilas.
@@ -1379,16 +1463,24 @@ Utilizados internamente pela engine para fallback visual, carregamento de chunks
 5. **Coco** (*Coconut* / `crop_coconut`) — Palmeiras litorâneas com cocos colhíveis em copas tropicais.
 6. **Arroz** (*Rice* / `crop_rice`) — Plantação semi-aquática em várzeas e terraços inundados.
 7. **Batata** (*Potato* / `crop_potato`) — Tubérculo subterrâneo com estágios vegetativos de floração.
-8. **Cultivos Complementares Previstos**: Trigo (*Wheat*), Cenoura (*Carrot*), Tomate (*Tomato*), Cana-de-Açúcar (*Sugar Cane*), Milho (*Corn*), Melão (*Melon*).
+8. **Trigo** (*Wheat*) / `crop_wheat` — Plantação básica de pão.
+9. **Cenoura** (*Carrot*) / `crop_carrot` — Plantação de raiz.
+10. **Tomate** (*Tomato*) / `crop_tomato` — Plantação de fruto.
+11. **Cana-de-Açúcar** (*Sugar Cane*) / `crop_sugar_cane` — Plantação de caule.
+12. **Milho** (*Corn*) / `crop_corn` — Plantação de espigas.
+13. **Melão** (*Melon*) / `crop_melon` — Plantação de frutos.
+14. **Couves** (*Cabbage*) / `crop_cabbage` — Plantação de folhas.
+15. **Beterraba** (*Beetroot*) / `crop_beetroot` — Plantação de raiz.
+16. **Cebola** (*Onion*) / `crop_onion` — Plantação de raiz.
 
-### 15.2. Mecânica de Blocos e Renderização Prevista
+### 14.2. Mecânica de Blocos e Renderização Prevista
 - **Estágios de Crescimento**: Modelos de vegetação por estágio (`stage_0` a `stage_3`) renderizados como *cross-billboards* no topo de solo fértil.
 - **Blocos Físicos de Armazenamento**: Fardos, caixotes de feira e blocos alimentares sólidos estruturais.
 - **Interação de Edafologia**: Integração com solo agrícola arado e irrigado (`soil_farmland` / `soil_tilled`).
 
 ---
 
-## 16. Regras de Integração de Overlays no Motor
+## 15. Regras de Integração de Overlays no Motor
 
 Para referência de renderização, os overlays existentes em `docs/worldbuilding/overlays/` comportam-se sob dois paradigmas distintos:
 
