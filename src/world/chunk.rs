@@ -341,7 +341,16 @@ impl Chunk {
             } else if self
                 .shapes
                 .get(&index)
-                .is_some_and(|&(s, _)| s == BlockShape::Torch || s == BlockShape::Basket)
+                .is_some_and(|&(s, _)| {
+                    matches!(
+                        s,
+                        BlockShape::Torch
+                            | BlockShape::Basket
+                            | BlockShape::PebbleOne
+                            | BlockShape::PebbleTwo
+                            | BlockShape::PebbleThree
+                    )
+                })
             {
                 self.shapes.remove(&index);
             }

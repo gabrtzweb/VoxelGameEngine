@@ -114,10 +114,32 @@ pub fn mesh_shaped_voxels(
             continue;
         }
 
+        if matches!(
+            shape,
+            BlockShape::PebbleOne | BlockShape::PebbleTwo | BlockShape::PebbleThree
+        ) {
+            mesh_pebble(
+                buffers,
+                fx,
+                fy,
+                fz,
+                shape,
+                orientation,
+                side_layer,
+                frame_count_f32,
+                side_tint,
+            );
+            continue;
+        }
+
         let (box_a, maybe_box_b) = shape.local_boxes(orientation);
 
         match shape {
-            BlockShape::Torch | BlockShape::Basket => unreachable!(),
+            BlockShape::Torch
+            | BlockShape::Basket
+            | BlockShape::PebbleOne
+            | BlockShape::PebbleTwo
+            | BlockShape::PebbleThree => unreachable!(),
             BlockShape::Full | BlockShape::Column => {
                 push_shape_box(
                     buffers,
@@ -1103,5 +1125,279 @@ fn mesh_torch(
                 ],
             );
         }
+    }
+}
+
+fn mesh_pebble(
+    buffers: &mut MeshBuffers,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    shape: BlockShape,
+    orientation: u8,
+    texture_layer: u16,
+    frame_count: f32,
+    tint_color: [f32; 4],
+) {
+    match shape {
+        BlockShape::PebbleOne => {
+            push_pebble_element(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                [7.0, 0.0, 5.0],
+                [11.0, 2.0, 10.0],
+                [0.0, 7.0, 4.0, 9.0],  // north
+                [0.0, 5.0, 5.0, 7.0],  // east
+                [4.0, 7.0, 8.0, 9.0],  // south
+                [5.0, 5.0, 10.0, 7.0], // west
+                [4.0, 5.0, 0.0, 0.0],  // up
+                [8.0, 0.0, 4.0, 5.0],  // down
+                texture_layer,
+                frame_count,
+                tint_color,
+            );
+        }
+        BlockShape::PebbleTwo => {
+            push_pebble_element(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                [3.0, 0.0, 10.0],
+                [5.0, 1.0, 12.0],
+                [2.0, 0.0, 4.0, 1.0], // north
+                [2.0, 1.0, 4.0, 2.0], // east
+                [2.0, 2.0, 4.0, 3.0], // south
+                [2.0, 3.0, 4.0, 4.0], // west
+                [2.0, 2.0, 0.0, 0.0], // up
+                [2.0, 2.0, 0.0, 4.0], // down
+                texture_layer,
+                frame_count,
+                tint_color,
+            );
+        }
+        BlockShape::PebbleThree => {
+            // Main pebble
+            push_pebble_element(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                [7.0, 0.0, 8.0],
+                [12.0, 2.0, 13.0],
+                [8.0, 0.0, 13.0, 2.0],  // north
+                [8.0, 2.0, 13.0, 4.0],  // east
+                [8.0, 4.0, 13.0, 6.0],  // south
+                [5.0, 8.0, 10.0, 10.0], // west
+                [5.0, 5.0, 0.0, 0.0],   // up
+                [5.0, 5.0, 0.0, 10.0],  // down
+                texture_layer,
+                frame_count,
+                tint_color,
+            );
+            // Secondary pebble
+            push_pebble_element(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                [5.0, 0.0, 6.0],
+                [8.0, 1.0, 10.0],
+                [0.0, 10.0, 3.0, 11.0], // north
+                [8.0, 6.0, 12.0, 7.0],  // east
+                [3.0, 10.0, 6.0, 11.0], // south
+                [8.0, 7.0, 12.0, 8.0],  // west
+                [8.0, 4.0, 5.0, 0.0],   // up
+                [8.0, 4.0, 5.0, 8.0],   // down
+                texture_layer,
+                frame_count,
+                tint_color,
+            );
+        }
+        _ => {}
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn push_pebble_element(
+    buffers: &mut MeshBuffers,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    orientation: u8,
+    from: [f32; 3],
+    to: [f32; 3],
+    north_uv: [f32; 4],
+    east_uv: [f32; 4],
+    south_uv: [f32; 4],
+    west_uv: [f32; 4],
+    up_uv: [f32; 4],
+    down_uv: [f32; 4],
+    texture_layer: u16,
+    frame_count: f32,
+    tint_color: [f32; 4],
+) {
+    let x0 = from[0] / 16.0;
+    let x1 = to[0] / 16.0;
+    let y0 = from[1] / 16.0;
+    let y1 = to[1] / 16.0;
+    let z0 = from[2] / 16.0;
+    let z1 = to[2] / 16.0;
+
+    let rot_vert = |p: [f32; 3]| -> [f32; 3] {
+        let (rx, rz) = match orientation % 4 {
+            0 => (p[0], p[2]),
+            1 => (1.0 - p[2], p[0]),
+            2 => (1.0 - p[0], 1.0 - p[2]),
+            _ => (p[2], 1.0 - p[0]),
+        };
+        [fx + rx, fy + p[1], fz + rz]
+    };
+
+    let rot_norm = |n: [f32; 3]| -> [f32; 3] {
+        match orientation % 4 {
+            0 => n,
+            1 => [-n[2], n[1], n[0]],
+            2 => [-n[0], n[1], -n[2]],
+            _ => [n[2], n[1], -n[0]],
+        }
+    };
+
+    // North face (-Z)
+    {
+        let u1 = north_uv[0] / 16.0;
+        let v1 = north_uv[1] / 16.0;
+        let u2 = north_uv[2] / 16.0;
+        let v2 = north_uv[3] / 16.0;
+        push_quad_face_with_uvs(
+            buffers,
+            [
+                rot_vert([x0, y0, z0]),
+                rot_vert([x0, y1, z0]),
+                rot_vert([x1, y1, z0]),
+                rot_vert([x1, y0, z0]),
+            ],
+            rot_norm([0.0, 0.0, -1.0]),
+            texture_layer,
+            frame_count,
+            tint_color,
+            [[u1, v2], [u1, v1], [u2, v1], [u2, v2]],
+        );
+    }
+
+    // South face (+Z)
+    {
+        let u1 = south_uv[0] / 16.0;
+        let v1 = south_uv[1] / 16.0;
+        let u2 = south_uv[2] / 16.0;
+        let v2 = south_uv[3] / 16.0;
+        push_quad_face_with_uvs(
+            buffers,
+            [
+                rot_vert([x1, y0, z1]),
+                rot_vert([x1, y1, z1]),
+                rot_vert([x0, y1, z1]),
+                rot_vert([x0, y0, z1]),
+            ],
+            rot_norm([0.0, 0.0, 1.0]),
+            texture_layer,
+            frame_count,
+            tint_color,
+            [[u1, v2], [u1, v1], [u2, v1], [u2, v2]],
+        );
+    }
+
+    // East face (+X)
+    {
+        let u1 = east_uv[0] / 16.0;
+        let v1 = east_uv[1] / 16.0;
+        let u2 = east_uv[2] / 16.0;
+        let v2 = east_uv[3] / 16.0;
+        push_quad_face_with_uvs(
+            buffers,
+            [
+                rot_vert([x1, y0, z0]),
+                rot_vert([x1, y1, z0]),
+                rot_vert([x1, y1, z1]),
+                rot_vert([x1, y0, z1]),
+            ],
+            rot_norm([1.0, 0.0, 0.0]),
+            texture_layer,
+            frame_count,
+            tint_color,
+            [[u2, v2], [u2, v1], [u1, v1], [u1, v2]],
+        );
+    }
+
+    // West face (-X)
+    {
+        let u1 = west_uv[0] / 16.0;
+        let v1 = west_uv[1] / 16.0;
+        let u2 = west_uv[2] / 16.0;
+        let v2 = west_uv[3] / 16.0;
+        push_quad_face_with_uvs(
+            buffers,
+            [
+                rot_vert([x0, y0, z1]),
+                rot_vert([x0, y1, z1]),
+                rot_vert([x0, y1, z0]),
+                rot_vert([x0, y0, z0]),
+            ],
+            rot_norm([-1.0, 0.0, 0.0]),
+            texture_layer,
+            frame_count,
+            tint_color,
+            [[u2, v2], [u2, v1], [u1, v1], [u1, v2]],
+        );
+    }
+
+    // Up face (+Y)
+    {
+        let u1 = up_uv[0] / 16.0;
+        let v1 = up_uv[1] / 16.0;
+        let u2 = up_uv[2] / 16.0;
+        let v2 = up_uv[3] / 16.0;
+        push_quad_face_with_uvs(
+            buffers,
+            [
+                rot_vert([x0, y1, z0]),
+                rot_vert([x0, y1, z1]),
+                rot_vert([x1, y1, z1]),
+                rot_vert([x1, y1, z0]),
+            ],
+            rot_norm([0.0, 1.0, 0.0]),
+            texture_layer,
+            frame_count,
+            tint_color,
+            [[u1, v1], [u1, v2], [u2, v2], [u2, v1]],
+        );
+    }
+
+    // Down face (-Y)
+    {
+        let u1 = down_uv[0] / 16.0;
+        let v1 = down_uv[1] / 16.0;
+        let u2 = down_uv[2] / 16.0;
+        let v2 = down_uv[3] / 16.0;
+        push_quad_face_with_uvs(
+            buffers,
+            [
+                rot_vert([x0, y0, z1]),
+                rot_vert([x0, y0, z0]),
+                rot_vert([x1, y0, z0]),
+                rot_vert([x1, y0, z1]),
+            ],
+            rot_norm([0.0, -1.0, 0.0]),
+            texture_layer,
+            frame_count,
+            tint_color,
+            [[u1, v1], [u1, v2], [u2, v2], [u2, v1]],
+        );
     }
 }

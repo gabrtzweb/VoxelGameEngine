@@ -10,6 +10,9 @@ pub enum BlockShape {
     Column = 3,
     Torch = 4,
     Basket = 5,
+    PebbleOne = 6,
+    PebbleTwo = 7,
+    PebbleThree = 8,
 }
 
 impl BlockShape {
@@ -30,6 +33,9 @@ impl BlockShape {
             Self::Column => "Column",
             Self::Torch => "Torch",
             Self::Basket => "Basket",
+            Self::PebbleOne => "Pebble (1)",
+            Self::PebbleTwo => "Pebble (2)",
+            Self::PebbleThree => "Pebble (3)",
         }
     }
 
@@ -41,6 +47,9 @@ impl BlockShape {
             Self::Column => "COLUMN",
             Self::Torch => "TORCH",
             Self::Basket => "BASKET",
+            Self::PebbleOne => "PEBBLE1",
+            Self::PebbleTwo => "PEBBLE2",
+            Self::PebbleThree => "PEBBLE3",
         }
     }
 
@@ -51,6 +60,7 @@ impl BlockShape {
             Self::Stair => 8,
             Self::Column => 6,
             Self::Torch => 5,
+            Self::PebbleOne | Self::PebbleTwo | Self::PebbleThree => 4,
         }
     }
 
@@ -92,6 +102,13 @@ impl BlockShape {
                 2 => "Wall South (+Z)",
                 3 => "Wall West (-X)",
                 4 => "Wall East (+X)",
+                _ => "Unknown",
+            },
+            Self::PebbleOne | Self::PebbleTwo | Self::PebbleThree => match orientation % 4 {
+                0 => "North (0°)",
+                1 => "East (90°)",
+                2 => "South (180°)",
+                3 => "West (270°)",
                 _ => "Unknown",
             },
         }
@@ -169,7 +186,54 @@ impl BlockShape {
                 };
                 (bbox, None)
             }
+            Self::PebbleOne => {
+                let b = rotate_aabb_y(
+                    Vec3::new(7.0 / 16.0, 0.0, 5.0 / 16.0),
+                    Vec3::new(11.0 / 16.0, 2.0 / 16.0, 10.0 / 16.0),
+                    orientation,
+                );
+                (b, None)
+            }
+            Self::PebbleTwo => {
+                let b = rotate_aabb_y(
+                    Vec3::new(3.0 / 16.0, 0.0, 10.0 / 16.0),
+                    Vec3::new(5.0 / 16.0, 1.0 / 16.0, 12.0 / 16.0),
+                    orientation,
+                );
+                (b, None)
+            }
+            Self::PebbleThree => {
+                let b1 = rotate_aabb_y(
+                    Vec3::new(7.0 / 16.0, 0.0, 8.0 / 16.0),
+                    Vec3::new(12.0 / 16.0, 2.0 / 16.0, 13.0 / 16.0),
+                    orientation,
+                );
+                let b2 = rotate_aabb_y(
+                    Vec3::new(5.0 / 16.0, 0.0, 6.0 / 16.0),
+                    Vec3::new(8.0 / 16.0, 1.0 / 16.0, 10.0 / 16.0),
+                    orientation,
+                );
+                (b1, Some(b2))
+            }
         }
+    }
+}
+
+fn rotate_aabb_y(min: Vec3, max: Vec3, orientation: u8) -> [Vec3; 2] {
+    match orientation % 4 {
+        0 => [min, max],
+        1 => [
+            Vec3::new(1.0 - max.z, min.y, min.x),
+            Vec3::new(1.0 - min.z, max.y, max.x),
+        ],
+        2 => [
+            Vec3::new(1.0 - max.x, min.y, 1.0 - max.z),
+            Vec3::new(1.0 - min.x, max.y, 1.0 - min.z),
+        ],
+        _ => [
+            Vec3::new(min.z, min.y, 1.0 - max.x),
+            Vec3::new(max.z, max.y, 1.0 - min.x),
+        ],
     }
 }
 
