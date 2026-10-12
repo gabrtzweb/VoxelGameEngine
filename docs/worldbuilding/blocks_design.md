@@ -1378,8 +1378,8 @@ Compreende **38 blocos únicos** marinhos, recifais e pelágicos.
 | **30** | `sea_anemone` | Anêmona-do-Mar Carnosa | — | — | — | Cross-billboard 1 bloco (`oceans/aqua_sea_anemone.png`) |
 | **31** | `coralstone` | Calcarenito de Coral Claro | `oceans/aqua_coralstone.png` | `oceans/aqua_coralstone.png` | `oceans/aqua_coralstone.png` | 6 faces uniformes |
 | **32** | `reefstone` | Rocha Vulcânica de Recife | `oceans/aqua_reefstone.png` | `oceans/aqua_reefstone.png` | `oceans/aqua_reefstone.png` | 6 faces uniformes |
-| **33** | `algae_reefstone`| Reefstone com Biofilme | `oceans/aqua_algae_reefstone.png`| `oceans/aqua_algae_reefstone.png`| `oceans/aqua_algae_reefstone.png`| 6 faces uniformes (base reefstone + overlay `overlays/algae_overlay.png`) |
-| **34** | `barnacles` | Crosta de Cracas Marinhas | `oceans/aqua_barnacles.png` | `oceans/aqua_barnacles.png` | `oceans/aqua_barnacles.png` | 6 faces uniformes |
+| **33** | `algae_reefstone`| Reefstone com Biofilme | `oceans/aqua_reefstone_algae.png`| `oceans/aqua_reefstone_algae.png`| `oceans/aqua_reefstone_algae.png`| 6 faces uniformes (base reefstone + overlay `overlays/algae_overlay.png`) |
+| **34** | `barnacles` | Crosta de Cracas Marinhas | `oceans/aqua_reefstone_barnacles.png` | `oceans/aqua_reefstone_barnacles.png` | `oceans/aqua_reefstone_barnacles.png` | 6 faces uniformes |
 | **35** | `kelp_plant` | Kelp / Macroalga Laminar | — | — | — | Tira animada vertical 16x320 (20 frames) |
 | **36** | `seagrass` | Grama-Marinha de Leito | — | — | — | Tira animada vertical 16x240 (15 frames) |
 | **37** | `lily_pad` | Vitória-Régia / Ninfeia | `oceans/vege_lily_pad.png` | — | — | Face plana horizontal (cutout em superfície d'água) |
