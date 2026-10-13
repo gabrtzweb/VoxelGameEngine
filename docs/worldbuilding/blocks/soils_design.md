@@ -52,7 +52,7 @@ For each biological soil type (**Loam**, **Silt**, **Peat**):
 * `mulch_side`: Lateral face displaying trailing mulch litter (`soil_<type>_mulch_side.png`)
 * `rooted`: Soil densely webbed with exposed tree roots (`soil_<type>_rooted.png`) *(+ stochastic shader variants `soil_<type>_rooted1.png`, `soil_<type>_rooted2.png`)*
 * `snow_side`: Lateral face displaying a top snow crust (`soil_<type>_snow_side.png`)
-* `tilled_top`: Top face plowed and hoed into agricultural furrows (`soil_<type>_tilled_top.png`)
+* `tilled_top`: Top face plowed and hoed into agricultural furrows (`soil_<type>_tilled_top.png`) *(+ stochastic variants `soil_<type>_tilled_top1.png` with sprouting weeds, `soil_<type>_tilled_top2.png` with embedded pebbles)*
 * `tilled_side`: Lateral face showing agricultural furrow cutouts (`soil_<type>_tilled_side.png`)
 
 ### B. Climatic Soils (4 variants each = 12 textures + stochastic variations)
@@ -98,7 +98,7 @@ All 4 moss biomes feature complete 3-fold stochastic variants (`1` and `2`):
 
 ### H. Snows & Grass Tops (4 base textures + stochastic variations)
 * `soil_snow.png`, `soil_snow1.png`, `soil_snow2.png` *(Solid snow block & snow cap top)*
-* `soil_snow_powder.png` *(Aerated fluffy powder snow)*
+* `soil_snow_powder.png` *(Aerated fluffy powder snow, + `1`, `2`)*
 * `soil_grass.png`, `soil_grass1.png`, `soil_grass2.png` *(Grayscale top grass face for biome color tinting)*
 * `soil_grass_colored.png` *(Pre-colored standalone grass top)*
 

@@ -77,31 +77,31 @@ Animal burrows (rabbits, badgers, marmots) utilize a dual-texture composite top 
 * **Wasp Nest (3)**: `nest_wasp_nest_bot.png`, `nest_wasp_nest_side.png`, `nest_wasp_nest_top.png`
 * **Bird Nest (3)**: `nest_bird_nest_bot.png`, `nest_bird_nest_side.png`, `nest_bird_nest_top.png` *(Slab model)*
 * **Hay Nest (3)**: `nest_hay_nest_bot.png`, `nest_hay_nest_side.png`, `nest_hay_nest_top.png` *(Slab model)*
-* **Beaver Dam (1)**: `nest_beaver_dam.png`
+* **Beaver Dam (1)**: `nest_beaver_dam.png` *(+ `1`, `2`)*
 * **Spider Egg (3)**: `nest_spider_egg_bot.png`, `nest_spider_egg_side.png`, `nest_spider_egg_top.png`
 * **Silk Cocoon (3)**: `nest_silk_cocoon_bot.png`, `nest_silk_cocoon_side.png`, `nest_silk_cocoon_top.png`
 * **Burrow (2)**: `nest_burrow_top.png` *(Grayscale tinted turf)*, `nest_burrow_top_layer.png` *(Soil entry layer)*
 
-### B. Living Tissues, Organs & Osteology (10 Files, 16×16 px)
-* **Raw Flesh (2)**: `bio_flesh_top.png`, `bio_flesh_side.png`
+### B. Living Tissues, Organs & Osteology (10 Base Files + Stochastic Variations, 16×16 px)
+* **Raw Flesh (2)**: `bio_flesh_top.png`, `bio_flesh_side.png` *(+ `1`, `2`)*
 * **Blubber (1)**: `bio_blubber.png` *(Translucent adipose layer)*
 * **Brain (1)**: `bio_brain.png` *(Convoluted neural cerebral mass)*
 * **Animal Fur (2)**: `bio_fur_top.png`, `bio_fur_side.png`
-* **Bone Block (2)**: `bio_bone_top.png`, `bio_bone_side.png`
+* **Bone Block (2)**: `bio_bone_top.png`, `bio_bone_side.png` *(+ `1`, `2`)*
 * **Calcined Bone (2)**: `bio_calcined_bone_top.png`, `bio_calcined_bone_side.png`
 
-### C. Secretions, Waxes, Gels, Droppings & Spiderwebs (16 Files, 16×16 px)
+### C. Secretions, Waxes, Gels, Droppings & Spiderwebs (16 Base Files + Stochastic Variations, 16×16 px)
 * **Honey Block (3)**: `organic_honey_block_bot.png`, `organic_honey_block_side.png`, `organic_honey_block_top.png` *(Translucent)*
-* **Honeycomb Block (1)**: `organic_honeycomb_block.png`
+* **Honeycomb Block (1)**: `organic_honeycomb_block.png` *(+ `1`, `2`)*
 * **Beeswax Block (1)**: `organic_wax.png`
-* **Slime Block (1)**: `organic_slime.png` *(Translucent green)*
-* **Jelly Block (1)**: `organic_jelly.png` *(Translucent purple)*
+* **Slime Block (2)**: `organic_slime.png` (Top/Sides), `organic_slime_bot.png` (Bottom) *(Translucent green)*
+* **Jelly Block (2)**: `organic_jelly.png` (Top/Sides), `organic_jelly_bot.png` (Bottom) *(Translucent purple)*
 * **Guano Block (1)**: `organic_guano.png`
-* **Poop Block (1)**: `organic_poop.png`
+* **Poop Block (1)**: `organic_poop.png` *(+ `1`, `2`)*
 * **Coprolite Block (1)**: `organic_coprolite.png`
-* **Dust Block (1)**: `organic_dust.png`
+* **Dust Block (1)**: `organic_dust.png` *(+ `1`, `2`)*
 * **Seashell Block (1)**: `organic_seashell.png`
-* **Cobweb (4)**: `organic_cobweb.png`, `organic_cobweb_arch.png`, `organic_cobweb_hanging.png`, `organic_cobweb_stretched.png`
+* **Cobweb (4)**: `organic_cobweb.png` *(+ `1`, `2`)*, `organic_cobweb_arch.png`, `organic_cobweb_hanging.png`, `organic_cobweb_stretched.png`
 
 ---
 
@@ -154,8 +154,8 @@ Physiological secretions, insect products, biological wastes, and structural spi
 | **21** | `honey_block` | Honey Block | **Secretion** | `organic_honey_block_bot...top.png` | Translucent (3 faces) | Beehives, Apiaries | Viscous colloidal nectar concentrate; cushions kinetic impact and adheres to surfaces. |
 | **22** | `honeycomb_block`| Honeycomb Block | **Wax Matrix** | `organic_honeycomb_block.png` | Uniform (6 faces) | Apiaries, Tree Cavities | Regular hexagonal prismatic matrix of pure insect wax synthesized by honeybee workers. |
 | **23** | `wax_block` | Beeswax Block | **Wax** | `organic_wax.png` | Uniform (6 faces) | Domestic Hives, Workshops | Compact block of rendered virgin beeswax; waterproof sealant and architectural candle craft. |
-| **24** | `slime_block` | Slime Block | **Colloid** | `organic_slime.png` | Translucent (Alpha 178) | Swamps, Deep Caves | Elastic green colloidal gel; high viscoelastic resilience providing kinetic bounce. |
-| **25** | `jelly_block` | Royal Jelly Block | **Colloid** | `organic_jelly.png` | Translucent (Alpha 191) | Queen Chambers, Orchards | Viscoelastic translucent purple royal gel providing bounce without slime stickiness. |
+| **24** | `slime_block` | Slime Block | **Colloid** | `organic_slime.png`<br>`organic_slime_bot.png` | Top/Sides + Bottom split | Swamps, Deep Caves | Elastic green colloidal gel; high viscoelastic resilience providing kinetic bounce. |
+| **25** | `jelly_block` | Royal Jelly Block | **Colloid** | `organic_jelly.png`<br>`organic_jelly_bot.png` | Top/Sides + Bottom split | Queen Chambers, Orchards | Viscoelastic translucent purple royal gel providing bounce without slime stickiness. |
 | **26** | `guano_block` | Guano Block | **Dropping** | `organic_guano.png` | Uniform (6 faces) | Bat Caves, Sea Islands | Compact nitrogen and phosphate-rich natural fertilizer accumulated from bat and seabird guano. |
 | **27** | `poop_block` | Manure Block | **Dropping** | `organic_poop.png` | Uniform (6 faces) | Pastures, Livestock Corrals | Rich agricultural farm animal dung with undigested vegetable fiber; high-potency soil fertilizer. |
 | **28** | `coprolite_block`| Coprolite Block | **Fossil** | `organic_coprolite.png` | Uniform (6 faces) | Fossil Beds, Dry Caves | Prehistoric petrified fossil dung mineralized into solid calcium phosphate sedimentary rock. |

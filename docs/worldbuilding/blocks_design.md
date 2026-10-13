@@ -3,9 +3,9 @@
 This master document centralizes, unifies, and catalogs **all blocks implemented in the Voxel Engine**, organized across the 13 worldbuilding subdomains located in `docs/worldbuilding/blocks/`.
 
 > [!IMPORTANT]
-> **Project Grand Total: 762 Cataloged Unique Blocks**  
+> **Project Grand Total: 776 Cataloged Unique Blocks**  
 > Summing all 13 core domains of the engine's block ecosystem:  
-> **8** (systems) + **18** (fluids) + **58** (soils) + **76** (rocks) + **98** (trees) + **158** (ores) + **28** (caverns) + **36** (oceans) + **34** (organics) + **160** (decorations) + **18** (mushrooms) + **38** (vegetation) + **32** (flowers) = **762 Total Blocks**.
+> **8** (systems) + **18** (fluids) + **58** (soils) + **76** (rocks) + **98** (trees) + **158** (ores) + **28** (caverns) + **50** (oceans) + **34** (organics) + **160** (decorations) + **18** (mushrooms) + **38** (vegetation) + **32** (flowers) = **776 Total Blocks**.
 
 For each block, the following properties are systematically specified:
 1. **Unique Block Identifier (`Block ID`)**.
@@ -32,32 +32,32 @@ For each block, the following properties are systematically specified:
 | **05** | Trees, Forestry & Dendrology (`trees`) | **98 blocks** | [trees_design.md](blocks/trees_design.md) | [Go to Section 05](#05-trees-forestry--dendrology-trees--98-blocks) |
 | **06** | Ores, Minerals & Gemology (`ores`) | **158 blocks** | [ores_design.md](blocks/ores_design.md) | [Go to Section 06](#06-ores-minerals--gemology-ores--158-blocks) |
 | **07** | Speleology & Crystals (`caverns`) | **28 blocks** | [caverns_design.md](blocks/caverns_design.md) | [Go to Section 07](#07-speleology--crystals-caverns--28-blocks) |
-| **08** | Ocean & Benthic Ecosystems (`oceans`) | **36 blocks** | [oceans_design.md](blocks/oceans_design.md) | [Go to Section 08](#08-ocean--benthic-ecosystems-oceans--36-blocks) |
+| **08** | Ocean & Benthic Ecosystems (`oceans`) | **46 blocks** | [oceans_design.md](blocks/oceans_design.md) | [Go to Section 08](#08-ocean--benthic-ecosystems-oceans--46-blocks) |
 | **09** | Biomaterials, Fauna & Organic Matter (`organics`) | **34 blocks** | [organics_design.md](blocks/organics_design.md) | [Go to Section 09](#09-biomaterials-fauna--organic-matter-organics--34-blocks) |
 | **10** | Decorations, Lighting & Architecture (`decorations`) | **160 blocks** | [decorations_design.md](blocks/decorations_design.md) | [Go to Section 10](#10-decorations-lighting--architecture-decorations--160-blocks) |
 | **11** | Mycology: Mushrooms (`mushrooms`) | **18 blocks** | [mushrooms_design.md](blocks/mushrooms_design.md) | [Go to Section 11](#11-mycology-mushrooms-mushrooms--18-blocks) |
 | **12** | Botany: Groundcover & Herbaceous Flora (`vegetation`) | **38 blocks** | [vegetation_design.md](blocks/vegetation_design.md) | [Go to Section 12](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks) |
 | **13** | Botany: Flowers & Flowering Flora (`flowers`) | **32 blocks** | [flowers_design.md](blocks/flowers_design.md) | [Go to Section 13](#13-botany-flowers--flowering-flora-flowers--32-blocks) |
-| **TOTAL** | **Grand Master Sum** | **762 blocks** | — | — |
+| **TOTAL** | **Grand Master Sum** | **772 blocks** | — | — |
 
-01. [Technical & System Blocks (`systems`) — 8 Blocks](#01-technical--system-blocks-systems--8-blocks)
-02. [Hydrosphere & Cryology (`fluids`) — 18 Blocks](#02-hydrosphere--cryology-fluids--18-blocks)
+01. [Technical & System Blocks (`systems`) — 8 Blocks [✅ 100% Completo]](#01-technical--system-blocks-systems--8-blocks-100-completo)
+02. [Hydrosphere & Cryology (`fluids`) — 18 Blocks [✅ 100% Completo]](#02-hydrosphere--cryology-fluids--18-blocks-100-completo)
 03. [Pedology & Soils (`soils`) — 58 Blocks](#03-pedology--soils-soils--58-blocks)
 04. [Geology & Rocks (`rocks`) — 76 Blocks](#04-geology--rocks-rocks--76-blocks)
 05. [Trees, Forestry & Dendrology (`trees`) — 98 Blocks](#05-trees-forestry--dendrology-trees--98-blocks)
 06. [Ores, Minerals & Gemology (`ores`) — 158 Blocks](#06-ores-minerals--gemology-ores--158-blocks)
 07. [Speleology & Crystals (`caverns`) — 28 Blocks](#07-speleology--crystals-caverns--28-blocks)
-08. [Ocean & Benthic Ecosystems (`oceans`) — 36 Blocks](#08-ocean--benthic-ecosystems-oceans--36-blocks)
+08. [Ocean & Benthic Ecosystems (`oceans`) — 50 Blocks [✅ 100% Completo]](#08-ocean--benthic-ecosystems-oceans--50-blocks-100-completo)
 09. [Biomaterials, Fauna & Organic Matter (`organics`) — 34 Blocks](#09-biomaterials-fauna--organic-matter-organics--34-blocks)
 10. [Decorations, Lighting & Architecture (`decorations`) — 160 Blocks](#10-decorations-lighting--architecture-decorations--160-blocks)
-11. [Mycology: Mushrooms (`mushrooms`) — 18 Blocks](#11-mycology-mushrooms-mushrooms--18-blocks)
+11. [Mycology: Mushrooms (`mushrooms`) — 18 Blocks [✅ 100% Completo]](#11-mycology-mushrooms-mushrooms--18-blocks-100-completo)
 12. [Botany: Groundcover & Herbaceous Flora (`vegetation`) — 38 Blocks](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks)
 13. [Botany: Flowers & Flowering Flora (`flowers`) — 32 Blocks](#13-botany-flowers--flowering-flora-flowers--32-blocks)
 14. [Future Roadmap: Agriculture, Crops & Food (`crops` / `foods`)](#14-future-roadmap-agriculture-crops--food-crops--foods)
 
 ---
 
-## 01. Technical & System Blocks (`systems`) — 8 Blocks
+## 01. Technical & System Blocks (`systems`) — 8 Blocks [✅ 100% Completo]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/systems`  
 📄 **Comprehensive Specification**: [systems_design.md](blocks/systems_design.md)
@@ -79,7 +79,7 @@ The engine internal technical and validation domain comprises **4 engine fallbac
 
 ---
 
-## 02. Hydrosphere & Cryology (`fluids`) — 18 Blocks
+## 02. Hydrosphere & Cryology (`fluids`) — 18 Blocks [✅ 100% Completo]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/fluids`  
 📄 **Comprehensive Specification**: [fluids_design.md](blocks/fluids_design.md)
@@ -249,9 +249,9 @@ The geological framework comprises **28 mineable rock matrices** across 7 core p
 | **53** | `limestone` | Limestone | **Sedimentary** | `rock_limestone.png` | 6 uniform faces *(Fibrous travertine matrix)* |
 | **54** | `limestone_grass` | Limestone Grass Outcrop | **Sedimentary** | Top: `soil_grass.png`<br>Bot: `rock_limestone.png`<br>Sides: `rock_limestone_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **55** | `limestone_snow` | Limestone Snow Outcrop | **Sedimentary** | Top: `soil_snow.png`<br>Bot: `rock_limestone.png`<br>Sides: `rock_limestone_snow_side.png` | Top + Bot + 4 sides |
-| **56** | `magma` | Magma Rock | **Geothermal** | `rock_magma.png` | 6 uniform faces *(Animated incandescent veins, emits light)* |
-| **57** | `mantle` | Primordial Mantle | **Bedrock** | `rock_mantle.png` | 6 uniform faces *(Cold high-pressure world floor, unbreakable)* |
-| **58** | `mantle_plume` | Mantle Plume | **Bedrock** | `rock_mantle_plume.png` | 6 uniform faces *(Thermal hotspot ascending plume, unbreakable)* |
+| **56** | `magma` | Magma Rock | **Geothermal** | `rock_magma.png` *(+ `1`, `2`)* | 6 uniform faces *(Animated incandescent veins, emits light)* |
+| **57** | `mantle` | Primordial Mantle | **Bedrock** | `rock_mantle.png` *(+ `1`, `2`)* | 6 uniform faces *(Cold high-pressure world floor, unbreakable)* |
+| **58** | `mantle_plume` | Mantle Plume | **Bedrock** | `rock_mantle_plume.png` *(+ `1`, `2`)* | 6 uniform faces *(Thermal hotspot ascending plume, unbreakable)* |
 | **59** | `marble` | Marble | **Metamorphic** | `rock_marble.png` | 6 uniform faces *(Pure white architectural stone)* |
 | **60** | `obsidian` | Obsidian | **Volcanic** | `rock_obsidian.png` | 6 uniform faces *(Amorphous volcanic glass)* |
 | **61** | `pebble_flint_one` | Flint Pebble (Single) | **Pebble Cluster** (1 Pebble) | `pebble_flint_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
@@ -568,22 +568,22 @@ The subterranean speleological domain comprises **6 solid mineral crystal blocks
 
 | # | Block ID | Name | Category | Texture File(s) / Parent | Face Mapping / Geometry | Geological Description |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **01** | `crystal_amethyst_block` | Amethyst Block | **Crystal** | `crystal_amethyst.png` | 6 uniform faces | Violet quartz block with rich purple crystal facets ($SiO_2$). |
+| **01** | `crystal_amethyst_block` | Amethyst Block | **Crystal** | `crystal_amethyst.png` *(+ `1`, `2`)* | 6 uniform faces | Violet quartz block with rich purple crystal facets ($SiO_2$). |
 | **02** | `crystal_amethyst_cluster` | Amethyst Cluster | **Cluster** | `crystal_amethyst_cluster.png` | Cross-billboard | Clustered prismatic violet quartz crystals. |
 | **03** | `crystal_amethyst_glinted` | Glinted Amethyst Cluster | **Emissive** | `crystal_amethyst_cluster_glinted.png` | Cross-billboard | Deep purple cluster flashing radiant lavender glints. |
-| **04** | `crystal_aquamarine_block` | Aquamarine Block | **Crystal** | `crystal_aquamarine.png` | 6 uniform faces | Translucent cyan-blue beryl block ($Be_3Al_2Si_6O_{18}$). |
+| **04** | `crystal_aquamarine_block` | Aquamarine Block | **Crystal** | `crystal_aquamarine.png` *(+ `1`, `2`)* | 6 uniform faces | Translucent cyan-blue beryl block ($Be_3Al_2Si_6O_{18}$). |
 | **05** | `crystal_aquamarine_cluster` | Aquamarine Cluster | **Cluster** | `crystal_aquamarine_cluster.png` | Cross-billboard | Hexagonal prismatic sea-blue beryl cluster. |
 | **06** | `crystal_aquamarine_glinted` | Glinted Aquamarine Cluster | **Emissive** | `crystal_aquamarine_cluster_glinted.png` | Cross-billboard | Bioluminescent sea-foam cyan glints and reflections. |
-| **07** | `crystal_citrine_block` | Citrine Block | **Crystal** | `crystal_citrine.png` | 6 uniform faces | Solar golden-amber quartz block created by geothermal heating ($SiO_2$). |
+| **07** | `crystal_citrine_block` | Citrine Block | **Crystal** | `crystal_citrine.png` *(+ `1`, `2`)* | 6 uniform faces | Solar golden-amber quartz block created by geothermal heating ($SiO_2$). |
 | **08** | `crystal_citrine_cluster` | Citrine Cluster | **Cluster** | `crystal_citrine_cluster.png` | Cross-billboard | Radiant golden-amber hydrothermal quartz cluster. |
 | **09** | `crystal_citrine_glinted` | Glinted Citrine Cluster | **Emissive** | `crystal_citrine_cluster_glinted.png` | Cross-billboard | Fiery solar amber gleam emanating warm subterranean light. |
-| **10** | `crystal_fluorite_block` | Fluorite Block | **Crystal** | `crystal_fluorite.png` | 6 uniform faces | Mint-green cubic calcium fluoride block with soft natural sheen ($CaF_2$). |
+| **10** | `crystal_fluorite_block` | Fluorite Block | **Crystal** | `crystal_fluorite.png` *(+ `1`, `2`)* | 6 uniform faces | Mint-green cubic calcium fluoride block with soft natural sheen ($CaF_2$). |
 | **11** | `crystal_fluorite_cluster` | Fluorite Cluster | **Cluster** | `crystal_fluorite_cluster.png` | Cross-billboard | Cubic mint-green crystal cluster with natural cleavage. |
 | **12** | `crystal_fluorite_glinted` | Glinted Fluorite Cluster | **Emissive** | `crystal_fluorite_cluster_glinted.png` | Cross-billboard | Naturally fluorescent ultraviolet emerald-green sparkle. |
-| **13** | `crystal_pink_salt_block` | Pink Salt Block | **Crystal** | `crystal_pink_salt.png` | 6 uniform faces | Ancient coral-pink evaporite halite salt block ($NaCl$). |
+| **13** | `crystal_pink_salt_block` | Pink Salt Block | **Crystal** | `crystal_pink_salt.png` *(+ `1`, `2`)* | 6 uniform faces | Ancient coral-pink evaporite halite salt block ($NaCl$). |
 | **14** | `crystal_pink_salt_cluster` | Pink Salt Cluster | **Cluster** | `crystal_pink_salt_cluster.png` | Cross-billboard | Crystalline halite hopper crystals in coral pink. |
 | **15** | `crystal_pink_salt_glinted` | Glinted Pink Salt Cluster | **Emissive** | `crystal_pink_salt_cluster_glinted.png` | Cross-billboard | Warm salmon-pink shimmering salt cluster. |
-| **16** | `crystal_selenite_block` | Selenite Block | **Crystal** | `crystal_selenite.png` | 6 uniform faces | Pearlescent silvery-white columnar gypsum block ($CaSO_4 \cdot 2H_2O$). |
+| **16** | `crystal_selenite_block` | Selenite Block | **Crystal** | `crystal_selenite.png` *(+ `1`, `2`)* | 6 uniform faces | Pearlescent silvery-white columnar gypsum block ($CaSO_4 \cdot 2H_2O$). |
 | **17** | `crystal_selenite_cluster` | Selenite Cluster | **Cluster** | `crystal_selenite_cluster.png` | Cross-billboard | Needle-sharp translucent pearlescent gypsum spires. |
 | **18** | `crystal_selenite_glinted` | Glinted Selenite Cluster | **Emissive** | `crystal_selenite_cluster_glinted.png` | Cross-billboard | Pure silvery lunar brilliance reflecting ambient cavern light. |
 | **19** | `dripstone_calcite` | Calcite Flowstone | **Speleothem** | `rock_calcite.png` | Modular system (**10** pieces) | Smooth, pearlescent milk-white flowstone — Pure carbonate precipitation in pristine mineral-rich groundwater caverns. |
@@ -599,53 +599,67 @@ The subterranean speleological domain comprises **6 solid mineral crystal blocks
 
 ---
 
-## 08. Ocean & Benthic Ecosystems (`oceans`) — 36 Blocks
+## 08. Ocean & Benthic Ecosystems (`oceans`) — 50 Blocks [✅ 100% Completo]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/oceans`  
 📄 **Comprehensive Specification**: [oceans_design.md](blocks/oceans_design.md)
 
-The benthic and subaquatic oceanic domain comprises **12 colonial massive coral blocks**, **12 branching coral fans**, **2 calcified dead coral formations**, **8 benthic structures & rocky substrates** (sponges, algae mats, vents, coralstone, reefstone), and **2 subaquatic pelagic plants** (kelp and seagrass) = **36 Total Oceanic Blocks**.
+The benthic and subaquatic oceanic domain comprises **14 colonial massive coral blocks**, **14 branching coral fans**, **4 senescent & dead coral formations** (dying coral, dying fan, dead coral, dead fan), **10 benthic structures & biogenic substrates** (sponges, algae mats, vents, coralstone, reefstone, scutes, pearls, anemones), and **8 subaquatic pelagic plants** = **50 Total Oceanic Blocks**.
 
 ---
 
 | # | Block ID | Name | Category | Texture File(s) | Variations / Geometry | Occurrence / Biome | Biological Description |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **01** | `algae_mat` | Algae Mat | **Biofilm** | `aqua_algae_mat_top.png`<br>`aqua_algae_mat_side.png` | Top/Side split | Intertidal Shores, Docks | Dense green biofilm of microalgae and bryophytes coating coastal stone. |
-| **02** | `algae_reefstone` | Algae Reefstone | **Encrusted Rock** | `aqua_reefstone_algae.png` | Uniform (6 faces) | Sunlit Reef Slopes | Dark reefstone heavily coated with vibrant green marine algal biofilm. |
-| **03** | `barnacles` | Barnacles | **Crustacean** | `aqua_reefstone_barnacles.png` | Uniform (6 faces) | Rocky Coasts, Shipwrecks | Compact colonial crust of conical calcified acorn barnacles. |
-| **04** | `brain_coral` | Brain Coral | **Massive Coral** | `aqua_brain_coral.png` | 1 | Shallow Warm Lagoons | Hemispherical massive colony with convoluted, meandering ridges in rose pink. |
-| **05** | `brain_coral_fan` | Brain Coral Fan | **Coral Fan** | `vege_brain_coral_fan.png`, `fan1.png` | 2 | Top of Coral Blocks | Compact wavy pink frilled fan extending into tidal currents. |
-| **06** | `bubble_coral` | Bubble Coral | **Massive Coral** | `aqua_bubble_coral.png` | 1 | Sunlit Reef Slopes | Inflated vesicular water-filled polyps of vivid violet-purple coloration. |
-| **07** | `bubble_coral_fan` | Bubble Coral Fan | **Coral Fan** | `vege_bubble_coral_fan.png`, `fan1.png` | 2 | Top of Coral Blocks | Clustered delicate purple vesicles on a thin flexible calcareous stem. |
-| **08** | `coralstone` | Coralstone | **Biogenic Rock** | `aqua_coralstone.png` | Uniform (6 faces) | Shallow Reefs, Sandbars | Porous light-colored calcarenite formed from consolidated coral fragments. |
-| **09** | `dead_coral` | Dead Coral Block | **Dead Coral** | `aqua_dead_coral.png` | 1 | Bleached Reefs, Sunken Atolls | Porous, chalky mineralized calcium carbonate block in ghostly grey. |
-| **10** | `dead_coral_fan` | Dead Coral Fan | **Dead Coral** | `vege_dead_coral_fan.png`, `fan1.png` | 2 | Top of Dead Reefs | Brittle, desaturated skeletal fan with chalky grey limestone texture. |
-| **11** | `fire_coral` | Fire Coral | **Massive Coral** | `aqua_fire_coral.png` | 1 | Outer Reef Crests | Calcified hydrocoral in bright scarlet with stinging defensive nematocysts. |
-| **12** | `fire_coral_fan` | Fire Coral Fan | **Coral Fan** | `vege_fire_coral_fan.png`, `fan1.png` | 2 | Top of Coral Blocks | Upright fiery scarlet branching fan thriving in energetic breaker zones. |
-| **13** | `geothermal_vent` | Geothermal Vent | **Hydrothermal** | `aqua_geothermal_vent_top.png`<br>`aqua_geothermal_vent_side.png` | Top/Side split | Abyssal Trenches | Submarine volcanic chimney venting superheated mineral-rich water. |
-| **14** | `heart_coral` | Heart Coral | **Massive Coral** | `aqua_heart_coral.png` | 1 | Tropical Reef Drop-offs | Massive calcium colony displaying intense crimson-magenta polyps. |
-| **15** | `heart_coral_fan` | Heart Coral Fan | **Coral Fan** | `vege_heart_coral_fan.png`, `fan1.png` | 2 | Top of Coral Blocks | Broad crimson-pink fan displaying gentle lobed contours. |
-| **16** | `horn_coral` | Horn Coral | **Massive Coral** | `aqua_horn_coral.png` | 1 | Clear Tropical Waters | Upright columnar gold-yellow corallum reaching toward intense sunlight. |
-| **17** | `horn_coral_fan` | Horn Coral Fan | **Coral Fan** | `vege_horn_coral_fan.png`, `fan1.png` | 2 | Top of Coral Blocks | Slender yellow antlers spreading outward to catch drifting micro-nutrients. |
-| **18** | `kelp_plant` | Kelp Plant | **Laminar Macroalga** | `vege_kelp_plant.png`, `1`, `2` | 3 | 16×320 px (20 frames) | Giant vertical brown laminar kelp forming dense underwater kelp forests. |
-| **19** | `leaf_coral` | Leaf Coral | **Massive Coral** | `aqua_leaf_coral.png` | 1 | Calm Sheltered Lagoons | Foliaceous ruffled plates and wavy ridges rich in olive-green pigments. |
-| **20** | `leaf_coral_fan` | Leaf Coral Fan | **Coral Fan** | `vege_leaf_coral_fan.png`, `fan1.png` | 2 | Top of Coral Blocks | Leaf-like ruffled olive-green fronds undulating with ocean swell. |
-| **21** | `reed_coral` | Reed Coral | **Massive Coral** | `aqua_reed_coral.png` | 1 | Mid-Depth Patch Reefs | Articulated vertical clustered stems in deep indigo and violet tones. |
-| **22** | `reed_coral_fan` | Reed Coral Fan | **Coral Fan** | `vege_reed_coral_fan.png`, `fan1.png` | 2 | Top of Coral Blocks | Vertical violet spires and delicate reedy branches rising from a basal cup. |
-| **23** | `reefstone` | Reefstone | **Volcanic Rock** | `aqua_reefstone.png` | Uniform (6 faces) | Reef Foundations | Dense, dark basaltic bedrock providing geological support for coral reefs. |
-| **24** | `sea_anemone` | Sea Anemone | **Anthozoan** | `aqua_sea_anemone.png`, `1.png` | Cross-billboard | Reef Walls, Tide Pools | Predatory sessile polyp with pedal disc and ring of stinging tentacles. |
-| **25** | `seagrass` | Seagrass | **Marine Angiosperm** | `vege_seagrass.png`, `1` | 2 | 16×240 px (15 frames) | Flowering marine grass anchoring soft sediments in shallow coastal meadows. |
-| **26** | `spike_coral` | Spike Coral | **Massive Coral** | `aqua_spike_coral.png` | 1 | Deep Reef Margins | Heavy skeletal base with prominent conical spires in cyan-turquoise hues. |
-| **27** | `spike_coral_fan` | Spike Coral Fan | **Coral Fan** | `vege_spike_coral_fan.png`, `fan1.png` | 2 | Top of Coral Blocks | Radiant turquoise thorny fan with sharp needle-pointed tips. |
-| **28** | `sponge` | Natural Sponge | **Poriferan** | `aqua_sponge.png` | Uniform (6 faces) | Deep Warm Reefs | Multicellular sessile poriferan with porous water-filtration canals. |
-| **29** | `staghorn_coral` | Staghorn Coral | **Massive Coral** | `aqua_staghorn_coral.png` | 1 | Barrier Reef Flats | Fast-growing emerald-green branching acroporid structure with angular antlers. |
-| **30** | `staghorn_coral_fan` | Staghorn Coral Fan | **Coral Fan** | `vege_staghorn_coral_fan.png`, `fan1.png` | 2 | Top of Coral Blocks | Intricate green digitiform branching fan mimicking juvenile staghorns. |
-| **31** | `thorn_coral` | Thorn Coral | **Massive Coral** | `aqua_thorn_coral.png` | 1 | Deep Trenches & Sea Caves | Antipatharian black coral with a tough, thorny obsidian-colored chitin skeleton. |
-| **32** | `thorn_coral_fan` | Thorn Coral Fan | **Coral Fan** | `vege_thorn_coral_fan.png`, `fan1.png` | 2 | Top of Coral Blocks | Delicate black obsidian fan armed with minute microscopic thorns. |
-| **33** | `tube_coral` | Tube Coral | **Massive Coral** | `aqua_tube_coral.png` | 1 | Shallow Tropical Seas | Dense cylindrical tubular aragonite corallites in vibrant cobalt blue. |
-| **34** | `tube_coral_fan` | Tube Coral Fan | **Coral Fan** | `vege_tube_coral_fan.png`, `fan1.png` | 2 | Top of Coral Blocks | Branching tubular cobalt-blue fan anchored perpendicularly to reef strata. |
-| **35** | `wax_coral` | Wax Coral | **Massive Coral** | `aqua_wax_coral.png` | 1 | Calcareous Reef Plateaus | Smooth, pale ivory-white colonial formation with a velvety waxy finish. |
-| **36** | `wax_coral_fan` | Wax Coral Fan | **Coral Fan** | `vege_wax_coral_fan.png`, `fan1.png` | 2 | Top of Coral Blocks | Translucent ivory-white fan with velvety waxy texture. |
+| **01** | `algae_mat` | Algae Mat | **Biofilm** | `aqua_algae_mat.png` *(+ `1`, `2`)* | Uniform (6 faces) | Intertidal Shores, Docks | Dense green biofilm of microalgae and bryophytes coating coastal stone. |
+| **02** | `algae_reefstone` | Algae Reefstone | **Encrusted Rock** | `aqua_reefstone.png` *(+ `algae_dead_overlay.png`)* | Uniform + Overlay | Sunlit Reef Slopes | Dark reefstone heavily coated with surface/dead marine algal biofilm layer. |
+| **03** | `barnacles_reefstone` | Barnacles Reefstone | **Crustacean Encrusted Rock** | `aqua_reefstone.png` *(+ `barnacles_overlay.png`)* | Uniform + Overlay | Rocky Coasts, Shipwrecks | Compact colonial crust of conical calcified acorn barnacles encrusting dark reefstone. |
+| **04** | `bone_worms` | Bone Worms | **Siboglinid Annelid** | `vege_bone_worms.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Abyssal Whale Falls, Vents | Deep-sea *Osedax* bone-eating tube worms with vibrant scarlet respiratory feather plumes. |
+| **05** | `brain_coral` | Brain Coral | **Massive Coral** | `aqua_brain_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Shallow Warm Lagoons | Hemispherical massive colony with convoluted, meandering ridges in rose pink. |
+| **06** | `brain_coral_fan` | Brain Coral Fan | **Coral Fan** | `vege_brain_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Compact wavy pink frilled fan extending into tidal currents. |
+| **07** | `bubble_coral` | Bubble Coral | **Massive Coral** | `aqua_bubble_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Sunlit Reef Slopes | Inflated vesicular water-filled polyps of vivid violet-purple coloration. |
+| **08** | `bubble_coral_fan` | Bubble Coral Fan | **Coral Fan** | `vege_bubble_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Clustered delicate purple vesicles on a thin flexible calcareous stem. |
+| **09** | `bull_kelp` | Bull Kelp | **Laminar Macroalga** | `vege_bull_kelp.png` *(Topo)*<br>`vege_bull_kelp_plant.png` *(Corpo)* | Multi-block Column | Cold Temperate Depths | Heavy annual kelp with hollow bulbous pneumatocyst bulb supporting trailing blades. |
+| **10** | `coralstone` | Coralstone | **Biogenic Rock** | `aqua_coralstone.png` *(+ `1`, `2`)* | Uniform (6 faces) | Shallow Reefs, Sandbars | Porous light-colored calcarenite formed from consolidated coral fragments. |
+| **11** | `dead_coral` | Dead Coral Block | **Dead Coral** | `aqua_dead_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Bleached Reefs, Sunken Atolls | Porous, chalky mineralized calcium carbonate block in ghostly grey. |
+| **12** | `dead_coral_fan` | Dead Coral Fan | **Dead Coral** | `vege_dead_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Dead Reefs | Brittle, desaturated skeletal fan with chalky grey limestone texture. |
+| **13** | `delesseria` | Delesseria | **Rhodophyte** | `vege_delesseria.png` *(Topo)*<br>`vege_delesseria_plant.png` *(Corpo)* | Multi-block Column | Deep Sublittoral Shallows | Elegant deep-sea red alga with delicate leaf-like sinuous fronds with midribs. |
+| **14** | `dying_coral` | Dying Coral Block | **Senescent Coral** | `aqua_dying_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Stressed Reef Margins, Warming Shallows | Moribund, decaying coral colony displaying dull necrotic brownish-tan tones with fading bleached rims. |
+| **15** | `dying_coral_fan` | Dying Coral Fan | **Senescent Coral** | `vege_dying_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Stressed Reefs | Fading brownish-ochre gorgonian fan with decaying petal lobes and withered tips. |
+| **16** | `fire_coral` | Fire Coral | **Massive Coral** | `aqua_fire_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Outer Reef Crests | Calcified hydrocoral in bright scarlet with stinging defensive nematocysts. |
+| **17** | `fire_coral_fan` | Fire Coral Fan | **Coral Fan** | `vege_fire_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Upright fiery scarlet branching fan thriving in energetic breaker zones. |
+| **18** | `geothermal_vent` | Geothermal Vent | **Hydrothermal** | `aqua_geothermal_vent_top.png`<br>`aqua_geothermal_vent_side.png`<br>`aqua_geothermal_vent_bot.png` | Top / Side / Bottom split | Abyssal Trenches | Submarine volcanic chimney venting superheated mineral-rich water; dark basal feeding conduit. |
+| **19** | `heart_coral` | Heart Coral | **Massive Coral** | `aqua_heart_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Tropical Reef Drop-offs | Massive calcium colony displaying intense crimson-magenta polyps. |
+| **20** | `heart_coral_fan` | Heart Coral Fan | **Coral Fan** | `vege_heart_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Broad crimson-pink fan displaying gentle lobed contours. |
+| **21** | `horn_coral` | Horn Coral | **Massive Coral** | `aqua_horn_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Clear Tropical Waters | Upright columnar gold-yellow corallum reaching toward intense sunlight. |
+| **22** | `horn_coral_fan` | Horn Coral Fan | **Coral Fan** | `vege_horn_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Slender yellow antlers spreading outward to catch drifting micro-nutrients. |
+| **23** | `kelp` | Giant Kelp | **Laminar Macroalga** | `vege_kelp.png` *(Topo)*<br>`vege_kelp_plant.png` *(Corpo)* | Multi-block Column | Temperate Kelp Forests | Giant vertical brown laminar kelp forming dense underwater forest canopies. |
+| **24** | `leaf_coral` | Leaf Coral | **Massive Coral** | `aqua_leaf_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Calm Sheltered Lagoons | Foliaceous ruffled plates and wavy ridges rich in olive-green pigments. |
+| **25** | `leaf_coral_fan` | Leaf Coral Fan | **Coral Fan** | `vege_leaf_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Leaf-like ruffled olive-green fronds undulating with ocean swell. |
+| **26** | `pearl_block` | Pearl Block | **Biogenic Nacre** | `aqua_pearl_top.png`<br>`aqua_pearl_side.png`<br>`aqua_pearl_bot.png` | Top / Side / Bottom split | Deep Pearl Oyster Beds | Iridescent aragonite-conchiolin nacreous block with lustrous rosy sheen and shadowed attachment base. |
+| **27** | `red_algae` | Red Algae | **Rhodophyte** | `vege_red_algae.png` *(+ `1`, `2`)* | 3 (Animated Strip) | Shallow Reef Slopes | Crimson coastal marine rhodophyte rich in phycoerythrin pigments. |
+| **28** | `reed_coral` | Reed Coral | **Massive Coral** | `aqua_reed_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Mid-Depth Patch Reefs | Articulated vertical clustered stems in deep indigo and violet tones. |
+| **29** | `reed_coral_fan` | Reed Coral Fan | **Coral Fan** | `vege_reed_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Vertical violet spires and delicate reedy branches rising from a basal cup. |
+| **30** | `reefstone` | Reefstone | **Volcanic Rock** | `aqua_reefstone.png` *(+ `1`, `2`)* | Uniform (6 faces) | Reef Foundations | Dense, dark basaltic bedrock providing geological support for coral reefs. |
+| **31** | `sargassum` | Sargassum | **Pelagic Phaeophyte** | `vege_sargassum.png` *(Topo)*<br>`vege_sargassum_plant.png` *(Corpo)* | Multi-block Column | Open Pelagic Gyres, Reefs | Free-floating or anchored bushy brown macroalga with berry-like gas vesicles. |
+| **32** | `scute_block` | Turtle Scute Block | **Biogenic Shell** | `aqua_scute_top.png`<br>`aqua_scute_side.png`<br>`aqua_scute_bot.png` | Top / Side / Bottom split | Sandy Beaches, Coastal Dunes | Dense keratinous carapace plates harvested from sea turtles; high impact resistance. |
+| **33** | `sea_anemone` | Sea Anemone | **Anthozoan** | `aqua_sea_anemone_top.png`<br>`aqua_sea_anemone_side.png`<br>`aqua_sea_anemone_bot.png` | Top / Side / Bottom split | Reef Walls, Tide Pools | Predatory sessile anthozoan block with crown of stinging tentacles, fleshy scapus column, and basal pedal disc. |
+| **34** | `seagrass` | Seagrass | **Marine Angiosperm** | `vege_seagrass.png` *(+ `1`, `2`)* | 3 (Animated Strip) | Shallow Coastal Meadows | Flowering marine grass anchoring soft sediments in shallow coastal meadows. |
+| **35** | `seaweed` | Seaweed | **Littoral Macroalga** | `vege_seaweed.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Intertidal Reefs, Tide Pools | Intertidal golden-brown wrack anchoring to stones and tide pools. |
+| **36** | `spike_coral` | Spike Coral | **Massive Coral** | `aqua_spike_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Deep Reef Margins | Heavy skeletal base with prominent conical spires in cyan-turquoise hues. |
+| **37** | `spike_coral_fan` | Spike Coral Fan | **Coral Fan** | `vege_spike_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Radiant turquoise thorny fan with sharp needle-pointed tips. |
+| **38** | `sponge` | Natural Sponge | **Poriferan** | `aqua_sponge.png` *(+ `1`, `2`)* | Uniform (6 faces) | Deep Warm Reefs | Multicellular sessile poriferan with porous water-filtration canals. |
+| **39** | `staghorn_coral` | Staghorn Coral | **Massive Coral** | `aqua_staghorn_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Barrier Reef Flats | Fast-growing emerald-green branching acroporid structure with angular antlers. |
+| **40** | `staghorn_coral_fan` | Staghorn Coral Fan | **Coral Fan** | `vege_staghorn_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Intricate green digitiform branching fan mimicking juvenile staghorns. |
+| **41** | `sun_coral` | Sun Coral | **Massive Coral** | `aqua_sun_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Tropical Atolls & Sunlit Reefs | Radiating golden-orange corallites with intense saffron centers. |
+| **42** | `sun_coral_fan` | Sun Coral Fan | **Coral Fan** | `vege_sun_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Branching cup-shaped golden-orange fan radiating into sunlit waters. |
+| **43** | `thorn_coral` | Thorn Coral | **Massive Coral** | `aqua_thorn_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Deep Trenches & Sea Caves | Antipatharian black coral with a tough, thorny obsidian-colored chitin skeleton. |
+| **44** | `thorn_coral_fan` | Thorn Coral Fan | **Coral Fan** | `vege_thorn_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Delicate black obsidian fan armed with minute microscopic thorns. |
+| **45** | `tube_coral` | Tube Coral | **Massive Coral** | `aqua_tube_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Shallow Tropical Seas | Dense cylindrical tubular aragonite corallites in vibrant cobalt blue. |
+| **46** | `tube_coral_fan` | Tube Coral Fan | **Coral Fan** | `vege_tube_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Branching tubular cobalt-blue fan anchored perpendicularly to reef strata. |
+| **47** | `wax_coral` | Wax Coral | **Massive Coral** | `aqua_wax_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Calcareous Reef Plateaus | Smooth, pale ivory-white colonial formation with a velvety waxy finish. |
+| **48** | `wax_coral_fan` | Wax Coral Fan | **Coral Fan** | `vege_wax_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Translucent ivory-white fan with velvety waxy texture. |
+| **49** | `zigzag_coral` | Zigzag Coral | **Massive Coral** | `aqua_zigzag_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Deep Barrier Slopes, Mesophotic Reefs | Angular labyrinthine skeletal ridges in graphite dark grey hues. |
+| **50** | `zigzag_coral_fan` | Zigzag Coral Fan | **Coral Fan** | `vege_zigzag_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Rigid angular branching dark grey fan with step-like zigzag structure. |
 
 ---
 
@@ -681,14 +695,14 @@ The biological biomaterials and organic domain comprises **14 insect colony and 
 | **19** | `hay_nest` | Hay Poultry Nest | **Nest** | `nest_hay_nest_bot...top.png` | Half-height Slab | Barnyards, Farmsteads | Agricultural laying nest woven from golden cured straw and dry hay; half-height slab geometry. |
 | **20** | `honey_block` | Honey Block | **Secretion** | `organic_honey_block_bot...top.png` | Translucent (3 faces) | Beehives, Apiaries | Viscous colloidal nectar concentrate; cushions kinetic impact and adheres to surfaces. |
 | **21** | `honeycomb_block` | Honeycomb Block | **Wax Matrix** | `organic_honeycomb_block.png` | Uniform (6 faces) | Apiaries, Tree Cavities | Regular hexagonal prismatic matrix of pure insect wax synthesized by honeybee workers. |
-| **22** | `jelly_block` | Royal Jelly Block | **Colloid** | `organic_jelly.png` | Translucent (Alpha 191) | Queen Chambers, Orchards | Viscoelastic translucent purple royal gel providing bounce without slime stickiness. |
+| **22** | `jelly_block` | Royal Jelly Block | **Colloid** | `organic_jelly.png`<br>`organic_jelly_bot.png` | Top/Sides + Bottom split | Queen Chambers, Orchards | Viscoelastic translucent purple royal gel providing bounce without slime stickiness. |
 | **23** | `loam_burrow` | Loam Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png`<br>Bot: `soils/soil_loam_dirt.png`<br>Sides: `soils/soil_loam_grass_side.png` | Composite Top + Loam soil | Fertile Plains, Meadows | Excavated wildlife den in rich loam soil with grass-fringed aperture and earth depth. |
 | **24** | `peat_burrow` | Peat Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png`<br>Bot: `soils/soil_peat_dirt.png`<br>Sides: `soils/soil_peat_grass_side.png` | Composite Top + Peat soil | Bogs, Moorlands, Fens | Subterranean burrow dug into dense dark acidic peat moorland, sheltering hardy marsh fauna. |
 | **25** | `poop_block` | Manure Block | **Dropping** | `organic_poop.png` | Uniform (6 faces) | Pastures, Livestock Corrals | Rich agricultural farm animal dung with undigested vegetable fiber; high-potency soil fertilizer. |
 | **26** | `seashell_block` | Seashell Block | **Sediment** | `organic_seashell.png` | Uniform (6 faces) | Warm Beaches, Coastlines | Dense coastal coquina formed from crushed whole marine bivalves and iridescent sea shells. |
 | **27** | `silk_cocoon` | Wild Silk Cocoon | **Pupa** | `nest_silk_cocoon_bot...top.png` | Directional (3 faces) | Temperate Woods, Jungles | Compact ellipsoidal pupal shell of continuous pearlescent silk fibers; premium silk harvest. |
 | **28** | `silt_burrow` | Silt Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png`<br>Bot: `soils/soil_silt_dirt.png`<br>Sides: `soils/soil_silt_grass_side.png` | Composite Top + Silt soil | Woodland Hills, Slopes | Excavated wildlife den in fine silt forest soils with shaded earthen entry tunnel. |
-| **29** | `slime_block` | Slime Block | **Colloid** | `organic_slime.png` | Translucent (Alpha 178) | Swamps, Deep Caves | Elastic green colloidal gel; high viscoelastic resilience providing kinetic bounce. |
+| **29** | `slime_block` | Slime Block | **Colloid** | `organic_slime.png`<br>`organic_slime_bot.png` | Top/Sides + Bottom split | Swamps, Deep Caves | Elastic green colloidal gel; high viscoelastic resilience providing kinetic bounce. |
 | **30** | `spider_egg` | Spider Egg Sac | **Ootheca** | `nest_spider_egg_bot...top.png` | Directional (3 faces) | Deep Caverns, Mines | Dense fibrous silk ootheca enclosing clutches of gestating scarlet spider eggs. |
 | **31** | `termite_mound` | Termite Mound (Closed) | **Colony** | `nest_termite_mound.png` | Uniform (6 faces) | Arid Savannas | Towering spire of red clay soil cemented by termites with monolithic flute ridges. |
 | **32** | `termite_mound_open` | Termite Mound (Active) | **Colony** | `nest_termite_mound_open.png` | Uniform (6 faces) | Arid Savannas | Active termite mound displaying open thermal chimneys and ventilation tunnels. |
@@ -731,8 +745,8 @@ The architectural, utilitarian, and illumination domain comprises **6 utilitaria
 | **033** | `emit_torch_green` | Green Torch | **Lighting** | `emit_torch_green.png` | Vertical stem model *(Emerald green diode)* |
 | **034** | `emit_torch_red` | Red Torch | **Lighting** | `emit_torch_red.png` | Vertical stem model *(Ruby red diode)* |
 | **035** | `emit_torch_warm` | Warm Torch | **Lighting** | `emit_torch_warm.png` | Vertical stem model *(Warm light 2700K)* |
-| **036** | `fabric` | Fabric | **Textile** | `deco_fabric.png` | 6 uniform faces |
-| **037–052** | `fabric_<color>` | (Color) Fabric *(16 colors)* | **Textile** | `deco_fabric_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
+| **036** | `fabric` | Fabric | **Textile** | `deco_fabric.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **037–052** | `fabric_<color>` | (Color) Fabric *(16 colors)* | **Textile** | `deco_fabric_painted.png` *(+ `1`, `2`)* | 6 uniform faces (Shader Tint: colors 01–16) |
 | **053** | `glass` | Glass | **Glasswork** | `deco_glass.png` | 6 uniform faces (Clear transparent) |
 | **054–069** | `glass_<color>` | (Color) Glass *(16 colors)* | **Glasswork** | `deco_glass_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
 | **070** | `hay_bale` | Hay Bale | **Fibers** | `deco_hay_bale_top.png`<br>`deco_hay_bale_side.png` | Top & Bottom top + 4 sides side *(Orientable)* |
@@ -754,7 +768,7 @@ The architectural, utilitarian, and illumination domain comprises **6 utilitaria
 
 ---
 
-## 11. Mycology: Mushrooms (`mushrooms`) — 18 Blocks
+## 11. Mycology: Mushrooms (`mushrooms`) — 18 Blocks [✅ 100% Completo]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/mushrooms`  
 📄 **Comprehensive Specification**: [mushrooms_design.md](blocks/mushrooms_design.md)
@@ -765,24 +779,24 @@ The mycological domain encompasses **8 wild understory ground mushrooms** (cross
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **01** | `fungi_amanita` | Amanita (Fly Agaric) | **Ground Mushroom** | `fungi_amanita.png` *(+ 4 variants: `fungi_amanita1.png` to `4`)* | Cross-billboard model (2 intersecting vertical planes) |
-| **02** | `fungi_amanita_cap` | Amanita Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_amanita_cap.png`<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
-| **03** | `fungi_chanterelle` | Golden Chanterelle | **Ground Mushroom** | `fungi_chanterelle.png`, `fungi_chanterelle1.png` *(2 variants)* | Cross-billboard model (2 intersecting vertical planes) |
-| **04** | `fungi_chanterelle_cap` | Chanterelle Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_chanterelle_cap.png`<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
-| **05** | `fungi_indigo` | Indigo Milk Cap | **Ground Mushroom** | `fungi_indigo.png`, `fungi_indigo1.png` *(2 variants)* | Cross-billboard model (2 intersecting vertical planes) |
-| **06** | `fungi_indigo_cap` | Indigo Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_indigo_cap.png`<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
-| **07** | `fungi_inside` | Fungi Inside Flesh | **Macrofungal Structure** | `fungi_inside.png` | 6 uniform faces |
-| **08** | `fungi_mycena` | Mycena (Bioluminescent) | **Ground Mushroom** | `fungi_mycena.png`, `fungi_mycena1.png` *(2 variants)* | Cross-billboard model (2 intersecting vertical planes) |
-| **09** | `fungi_mycena_cap` | Mycena Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_mycena_cap.png`<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
-| **10** | `fungi_porcini` | Porcini (King Bolete) | **Ground Mushroom** | `fungi_porcini.png` *(+ 4 variants: `fungi_porcini1.png` to `4`)* | Cross-billboard model (2 intersecting vertical planes) |
-| **11** | `fungi_porcini_cap` | Porcini Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_porcini_cap.png`<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
-| **12** | `fungi_russula` | Russula (Sickener) | **Ground Mushroom** | `fungi_russula.png`, `fungi_russula1.png` *(2 variants)* | Cross-billboard model (2 intersecting vertical planes) |
-| **13** | `fungi_russula_cap` | Russula Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_russula_cap.png`<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
-| **14** | `fungi_shiitake` | Shiitake | **Ground Mushroom** | `fungi_shiitake.png`, `fungi_shiitake1.png` *(2 variants)* | Cross-billboard model (2 intersecting vertical planes) |
-| **15** | `fungi_shiitake_cap` | Shiitake Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_shiitake_cap.png`<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
-| **16** | `fungi_stem` | Fungi Stem | **Macrofungal Structure** | `fungi_stem.png` | 6 uniform faces |
-| **17** | `fungi_verdigris` | Verdigris Agaric | **Ground Mushroom** | `fungi_verdigris.png`, `fungi_verdigris1.png` *(2 variants)* | Cross-billboard model (2 intersecting vertical planes) |
-| **18** | `fungi_verdigris_cap` | Verdigris Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_verdigris_cap.png`<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
+| **01** | `fungi_amanita` | Amanita (Fly Agaric) | **Ground Mushroom** | `fungi_amanita.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **02** | `fungi_amanita_cap` | Amanita Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_amanita_cap.png` *(+ `1`, `2`)*<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
+| **03** | `fungi_chanterelle` | Golden Chanterelle | **Ground Mushroom** | `fungi_chanterelle.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **04** | `fungi_chanterelle_cap` | Chanterelle Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_chanterelle_cap.png` *(+ `1`, `2`)*<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
+| **05** | `fungi_indigo` | Indigo Milk Cap | **Ground Mushroom** | `fungi_indigo.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **06** | `fungi_indigo_cap` | Indigo Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_indigo_cap.png` *(+ `1`, `2`)*<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
+| **07** | `fungi_inside` | Fungi Inside Flesh | **Macrofungal Structure** | `fungi_inside.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **08** | `fungi_mycena` | Mycena (Bioluminescent) | **Ground Mushroom** | `fungi_mycena.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **09** | `fungi_mycena_cap` | Mycena Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_mycena_cap.png` *(+ `1`, `2`)*<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
+| **10** | `fungi_porcini` | Porcini (King Bolete) | **Ground Mushroom** | `fungi_porcini.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **11** | `fungi_porcini_cap` | Porcini Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_porcini_cap.png` *(+ `1`, `2`)*<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
+| **12** | `fungi_russula` | Russula (Sickener) | **Ground Mushroom** | `fungi_russula.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **13** | `fungi_russula_cap` | Russula Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_russula_cap.png` *(+ `1`, `2`)*<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
+| **14** | `fungi_shiitake` | Shiitake | **Ground Mushroom** | `fungi_shiitake.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **15** | `fungi_shiitake_cap` | Shiitake Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_shiitake_cap.png` *(+ `1`, `2`)*<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
+| **16** | `fungi_stem` | Fungi Stem | **Macrofungal Structure** | `fungi_stem.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **17** | `fungi_verdigris` | Verdigris Agaric | **Ground Mushroom** | `fungi_verdigris.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **18** | `fungi_verdigris_cap` | Verdigris Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_verdigris_cap.png` *(+ `1`, `2`)*<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
 
 ---
 

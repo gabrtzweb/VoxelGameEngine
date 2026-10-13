@@ -53,18 +53,18 @@ To maintain strict geological realism and prevent visual anomalies (e.g., surfac
 * **Sedimentary Strata (4)**: `rock_dolomite.png` *(+ `1`, `2`)*, `rock_limestone.png` *(+ `1`, `2`)*, `rock_chalk.png` *(+ `1`, `2`)*, `rock_argillite.png` *(+ `1`, `2`)*
 * **Volcanics & Pyroclastics (4)**: `rock_basalt.png` *(+ `1`, `2`)*, `rock_obsidian.png` *(+ `1`, `2`)*, `rock_tuff.png` *(+ `1`, `2`)*, `rock_scoria.png` *(+ `1`, `2`)*
 * **Metamorphic Foundations (4)**: `rock_slate.png` *(+ `1`, `2`)*, `rock_marble.png` *(+ `1`, `2`)*, `rock_gneiss.png` *(+ `1`, `2`)*, `rock_serpentinite.png` *(+ `1`, `2`)*
-* **Subterranean & Specials (4)**: `rock_magma.png` *(animated 16×112 px)*, `rock_brimstone.png` *(+ `1`, `2`)*, `rock_calcite.png` *(+ `1`, `2`)*, `rock_karst.png` *(+ `1`, `2`)*
-* **Primordial Mantle (2)**: `rock_mantle.png`, `rock_mantle_plume.png` *(unbreakable world floor; baseline unvaried)*
+* **Subterranean & Specials (4)**: `rock_magma.png` *(animated 16×112 px, + `1`, `2`)*, `rock_brimstone.png` *(+ `1`, `2`)*, `rock_calcite.png` *(+ `1`, `2`)*, `rock_karst.png` *(+ `1`, `2`)*
+* **Primordial Mantle (2)**: `rock_mantle.png` *(+ `1`, `2`)*, `rock_mantle_plume.png` *(+ `1`, `2`)* *(unbreakable world floor with 3-fold stochastic variants)*
 
-### B. Mined Cobblestone Variants (26 Files, 16×16 px)
-All mineable solid rocks drop an unrefined fractured cobblestone upon excavation:
-* **Sandstones (6)**: `rock_sandstone_common_cobbled.png`, `rock_sandstone_red_cobbled.png`, `rock_sandstone_dune_cobbled.png`, `rock_sandstone_white_cobbled.png`, `rock_sandstone_pink_cobbled.png`, `rock_sandstone_black_cobbled.png`
-* **Continental Plutonics (4)**: `rock_granite_cobbled.png`, `rock_diorite_cobbled.png`, `rock_andesite_cobbled.png`, `rock_gabbro_cobbled.png`
-* **Sedimentary Strata (4)**: `rock_dolomite_cobbled.png`, `rock_limestone_cobbled.png`, `rock_chalk_cobbled.png`, `rock_argillite_cobbled.png`
-* **Volcanics & Pyroclastics (4)**: `rock_basalt_cobbled.png`, `rock_obsidian_cobbled.png`, `rock_tuff_cobbled.png`, `rock_scoria_cobbled.png`
-* **Metamorphic Foundations (4)**: `rock_slate_cobbled.png`, `rock_marble_cobbled.png`, `rock_gneiss_cobbled.png`, `rock_serpentinite_cobbled.png`
-* **Subterranean & Specials (4)**: `rock_magma_cobbled.png` *(animated)*, `rock_brimstone_cobbled.png`, `rock_calcite_cobbled.png`, `rock_karst_cobbled.png`
-*(Note: `mantle` and `mantle_plume` are unbreakable and have no cobbled variants).*
+### B. Mined Cobblestone Variants (26 Base Files + Stochastic Variations, 16×16 px)
+All mineable solid rocks drop an unrefined fractured cobblestone upon excavation. To prevent repetitive grid tiling across player fortifications, dungeon walls, and paved roads, all 26 cobbled stone matrices feature complete 3-fold stochastic variants (`_base`, `1`, `2`):
+* **Sandstones (6)**: `rock_sandstone_common_cobbled.png` *(+ `1`, `2`)*, `rock_sandstone_red_cobbled.png` *(+ `1`, `2`)*, `rock_sandstone_dune_cobbled.png` *(+ `1`, `2`)*, `rock_sandstone_white_cobbled.png` *(+ `1`, `2`)*, `rock_sandstone_pink_cobbled.png` *(+ `1`, `2`)*, `rock_sandstone_black_cobbled.png` *(+ `1`, `2`)*
+* **Continental Plutonics (4)**: `rock_granite_cobbled.png` *(+ `1`, `2`)*, `rock_diorite_cobbled.png` *(+ `1`, `2`)*, `rock_andesite_cobbled.png` *(+ `1`, `2`)*, `rock_gabbro_cobbled.png` *(+ `1`, `2`)*
+* **Sedimentary Strata (4)**: `rock_dolomite_cobbled.png` *(+ `1`, `2`)*, `rock_limestone_cobbled.png` *(+ `1`, `2`)*, `rock_chalk_cobbled.png` *(+ `1`, `2`)*, `rock_argillite_cobbled.png` *(+ `1`, `2`)*
+* **Volcanics & Pyroclastics (4)**: `rock_basalt_cobbled.png` *(+ `1`, `2`)*, `rock_obsidian_cobbled.png` *(+ `1`, `2`)*, `rock_tuff_cobbled.png` *(+ `1`, `2`)*, `rock_scoria_cobbled.png` *(+ `1`, `2`)*
+* **Metamorphic Foundations (4)**: `rock_slate_cobbled.png` *(+ `1`, `2`)*, `rock_marble_cobbled.png` *(+ `1`, `2`)*, `rock_gneiss_cobbled.png` *(+ `1`, `2`)*, `rock_serpentinite_cobbled.png` *(+ `1`, `2`)*
+* **Subterranean & Specials (4)**: `rock_magma_cobbled.png` *(animated 16×112 px, + `1`, `2`)*, `rock_brimstone_cobbled.png` *(+ `1`, `2`)*, `rock_calcite_cobbled.png` *(+ `1`, `2`)*, `rock_karst_cobbled.png` *(+ `1`, `2`)*
+*(Note: `mantle` and `mantle_plume` are unbreakable bedrock and have no cobbled variants).*
 
 ### C. Mountain Outcrop Veg/Snow Sides (16 Files, 16×16 px)
 Exactly **8 surface alpine and cliff rocks** possess lateral turf and snow shelf cutouts:
@@ -179,8 +179,8 @@ Loose surface pebbles collectable by hand, generated on riverbeds, beaches, grav
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **61** | `magma` | Magma Rock | **Geothermal** | `rock_magma.png` | 6 uniform faces *(Animated incandescent veins, emits light)* |
-| **62** | `cobbled_magma` | Cobbled Magma | **Geothermal** | `rock_magma_cobbled.png` | 6 uniform faces *(Animated incandescent veins)* |
+| **61** | `magma` | Magma Rock | **Geothermal** | `rock_magma.png` *(+ `1`, `2`)* | 6 uniform faces *(Animated incandescent veins, emits light)* |
+| **62** | `cobbled_magma` | Cobbled Magma | **Geothermal** | `rock_magma_cobbled.png` *(+ `1`, `2`)* | 6 uniform faces *(Animated incandescent veins)* |
 | **63** | `brimstone` | Brimstone | **Hydrothermal** | `rock_brimstone.png` | 6 uniform faces *(Sulfur fumaroles, cave speleothems)* |
 | **64** | `cobbled_brimstone` | Cobbled Brimstone | **Hydrothermal** | `rock_brimstone_cobbled.png` | 6 uniform faces |
 | **65** | `calcite` | Calcite | **Mineral** | `rock_calcite.png` | 6 uniform faces *(Crystalline geode matrix, speleothems)* |
@@ -194,8 +194,8 @@ Loose surface pebbles collectable by hand, generated on riverbeds, beaches, grav
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **69** | `mantle` | Primordial Mantle | **Bedrock** | `rock_mantle.png` | 6 uniform faces *(Cold high-pressure world floor, unbreakable)* |
-| **70** | `mantle_plume` | Mantle Plume | **Bedrock** | `rock_mantle_plume.png` | 6 uniform faces *(Thermal hotspot ascending plume, unbreakable)* |
+| **69** | `mantle` | Primordial Mantle | **Bedrock** | `rock_mantle.png` *(+ `1`, `2`)* | 6 uniform faces *(Cold high-pressure world floor, unbreakable)* |
+| **70** | `mantle_plume` | Mantle Plume | **Bedrock** | `rock_mantle_plume.png` *(+ `1`, `2`)* | 6 uniform faces *(Thermal hotspot ascending plume, unbreakable)* |
 
 ---
 

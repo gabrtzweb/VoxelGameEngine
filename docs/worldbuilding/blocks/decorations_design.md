@@ -43,23 +43,23 @@ All 56 textures strictly follow the functional prefix taxonomy (`util_`, `deco_`
 
 ### B. Basic Traditional Masonry, Glass & Textiles (`deco_`) (8 Base Files)
 * `deco_bricks.png` *(Classic red fired clay bricks; + stochastic shader variants `deco_bricks1.png`, `deco_bricks2.png`)*
-* `deco_linen.png` *(Raw natural linen textile)*
-* `deco_fabric.png` *(Heavy cross-weave rustic textile)*
+* `deco_linen.png` *(+ `1`, `2`)* *(Raw natural linen textile)*
+* `deco_fabric.png` *(+ `1`, `2`)* *(Heavy cross-weave rustic textile)*
 * `deco_glass.png` *(Crystal-clear softened transparent glass with optimal visibility)*
 * `deco_tinted_glass.png` *(Charcoal smoked glass with optical light-dimming barrier)*
-* `deco_plaster.png` *(Smooth beige hydrated lime plaster)*
-* `deco_wool.png` *(Natural shorn white sheep wool)*
-* `deco_shingles.png` *(Curved terracotta fish-scale roof shingles)*
+* `deco_plaster.png` *(+ `1`, `2`)* *(Smooth beige hydrated lime plaster)*
+* `deco_wool.png` *(+ `1`, `2`)* *(Natural shorn white sheep wool)*
+* `deco_shingles.png` *(+ `1`, `2`)* *(Curved terracotta fish-scale roof shingles)*
 
 ### C. Master Dyeable Grayscale Textures (`deco_`) (8 Base Files)
 * `deco_bricks_painted.png` *(Grayscale bricks for 16-color shader tinting; + stochastic shader variants `deco_bricks_painted1.png`, `deco_bricks_painted2.png`)*
-* `deco_linen_painted.png` *(Neutral grayscale linen for 16-color shader tinting)*
-* `deco_fabric_painted.png` *(Neutral grayscale heavy fabric for 16-color shader tinting)*
+* `deco_linen_painted.png` *(+ `1`, `2`)* *(Neutral grayscale linen for 16-color shader tinting)*
+* `deco_fabric_painted.png` *(+ `1`, `2`)* *(Neutral grayscale heavy fabric for 16-color shader tinting)*
 * `deco_glass_painted.png` *(Glass with translucent center and neutral frames for 16 clear stained-glass windows)*
 * `deco_tinted_glass_painted.png` *(Dense smoked glass with neutral frames for 16 dark tinted stained-glass windows)*
-* `deco_plaster_painted.png` *(Neutral grayscale plaster for 16-color shader tinting)*
-* `deco_wool_painted.png` *(High-luminance neutral wool for 16-color shader tinting)*
-* `deco_shingles_painted.png` *(Grayscale curved shingles for 16-color glazed ceramic roofing)*
+* `deco_plaster_painted.png` *(+ `1`, `2`)* *(Neutral grayscale plaster for 16-color shader tinting)*
+* `deco_wool_painted.png` *(+ `1`, `2`)* *(High-luminance neutral wool for 16-color shader tinting)*
+* `deco_shingles_painted.png` *(+ `1`, `2`)* *(Grayscale curved shingles for 16-color glazed ceramic roofing)*
 
 ### D. Agricultural Fibers & Pathways (`deco_`) (8 Base Files + Stochastic Variations)
 * `deco_hay_bale_side.png`, `deco_hay_bale_top.png` *(Orientable animal feed hay bale)* (2)
@@ -121,14 +121,14 @@ All 56 textures strictly follow the functional prefix taxonomy (`util_`, `deco_`
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **07** | `bricks` | Bricks | **Masonry** | `deco_bricks.png` | 6 uniform faces |
-| **08** | `linen` | Linen | **Textile** | `deco_linen.png` | 6 uniform faces |
-| **09** | `fabric` | Fabric | **Textile** | `deco_fabric.png` | 6 uniform faces |
+| **07** | `bricks` | Bricks | **Masonry** | `deco_bricks.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **08** | `linen` | Linen | **Textile** | `deco_linen.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **09** | `fabric` | Fabric | **Textile** | `deco_fabric.png` *(+ `1`, `2`)* | 6 uniform faces |
 | **10** | `glass` | Glass | **Glasswork** | `deco_glass.png` | 6 uniform faces (Clear transparent) |
 | **11** | `tinted_glass` | Tinted Glass | **Glasswork** | `deco_tinted_glass.png` | 6 uniform faces (Smoked semi-translucent) |
-| **12** | `plaster` | Plaster | **Masonry** | `deco_plaster.png` | 6 uniform faces |
-| **13** | `wool` | Wool | **Textile** | `deco_wool.png` | 6 uniform faces |
-| **14** | `shingles` | Shingles | **Roofing** | `deco_shingles.png` | 6 uniform faces |
+| **12** | `plaster` | Plaster | **Masonry** | `deco_plaster.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **13** | `wool` | Wool | **Textile** | `deco_wool.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **14** | `shingles` | Shingles | **Roofing** | `deco_shingles.png` *(+ `1`, `2`)* | 6 uniform faces |
 
 ---
 
@@ -143,7 +143,7 @@ Each of the 8 master materials multiplies its grayscale luminance texture by the
 | :-: | :--- | :--- | :--- | :--- | :--- |
 | **15–30** | `brick_<color>` | (Color) Bricks *(16 colors)* | **Masonry** | `deco_bricks_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
 | **31–46** | `linen_<color>` | (Color) Linen *(16 colors)* | **Textile** | `deco_linen_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
-| **47–62** | `fabric_<color>` | (Color) Fabric *(16 colors)* | **Textile** | `deco_fabric_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
+| **47–62** | `fabric_<color>` | (Color) Fabric *(16 colors)* | **Textile** | `deco_fabric_painted.png` *(+ `1`, `2`)* | 6 uniform faces (Shader Tint: colors 01–16) |
 | **63–78** | `glass_<color>` | (Color) Glass *(16 colors)* | **Glasswork** | `deco_glass_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
 | **79–94** | `tinted_glass_<color>` | (Color) Tinted Glass *(16 colors)* | **Glasswork** | `deco_tinted_glass_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
 | **95–110** | `plaster_<color>` | (Color) Plaster *(16 colors)* | **Masonry** | `deco_plaster_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |

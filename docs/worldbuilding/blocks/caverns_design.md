@@ -39,16 +39,16 @@ graph TD
 
 ---
 
-## 2. Complete Texture Inventory in `worldbuilding/blocks/caverns/` (74 Active Textures)
+## 2. Complete Texture Inventory in `worldbuilding/blocks/caverns/` (86 Active Textures)
 
-### A. Real Mineral Crystals (18 Files, 16×16 px)
-Each of the 6 crystal minerals features a complete Triad:
-* **Amethyst (3)**: `crystal_amethyst.png`, `crystal_amethyst_cluster.png`, `crystal_amethyst_cluster_glinted.png`
-* **Aquamarine (3)**: `crystal_aquamarine.png`, `crystal_aquamarine_cluster.png`, `crystal_aquamarine_cluster_glinted.png`
-* **Citrine (3)**: `crystal_citrine.png`, `crystal_citrine_cluster.png`, `crystal_citrine_cluster_glinted.png`
-* **Fluorite (3)**: `crystal_fluorite.png`, `crystal_fluorite_cluster.png`, `crystal_fluorite_cluster_glinted.png`
-* **Pink Salt (3)**: `crystal_pink_salt.png`, `crystal_pink_salt_cluster.png`, `crystal_pink_salt_cluster_glinted.png`
-* **Selenite (3)**: `crystal_selenite.png`, `crystal_selenite_cluster.png`, `crystal_selenite_cluster_glinted.png`
+### A. Real Mineral Crystals (30 Files, 16×16 px)
+Each of the 6 crystal minerals features a complete set including 3-fold stochastic solid blocks and dual cross-billboard clusters:
+* **Amethyst (5)**: `crystal_amethyst.png` *(+ `1`, `2`)*, `crystal_amethyst_cluster.png`, `crystal_amethyst_cluster_glinted.png`
+* **Aquamarine (5)**: `crystal_aquamarine.png` *(+ `1`, `2`)*, `crystal_aquamarine_cluster.png`, `crystal_aquamarine_cluster_glinted.png`
+* **Citrine (5)**: `crystal_citrine.png` *(+ `1`, `2`)*, `crystal_citrine_cluster.png`, `crystal_citrine_cluster_glinted.png`
+* **Fluorite (5)**: `crystal_fluorite.png` *(+ `1`, `2`)*, `crystal_fluorite_cluster.png`, `crystal_fluorite_cluster_glinted.png`
+* **Pink Salt (5)**: `crystal_pink_salt.png` *(+ `1`, `2`)*, `crystal_pink_salt_cluster.png`, `crystal_pink_salt_cluster_glinted.png`
+* **Selenite (5)**: `crystal_selenite.png` *(+ `1`, `2`)*, `crystal_selenite_cluster.png`, `crystal_selenite_cluster_glinted.png`
 
 ### B. Modular Speleothems & Dripstones (56 Files, 16×16 px)
 * **Karst Limestone (10)**:
@@ -70,9 +70,9 @@ Each of the 6 crystal minerals features a complete Triad:
   * Stalactite (Down): `speleothem_pink_salt_straw_down_top.png`, `_middle`, `_bottom`
   * Stalagmite (Up): `speleothem_pink_salt_straw_up_bottom.png`, `_middle`, `_top`
 
-### C. Paleontological Fossil Blocks (4 Files, 16×16 px)
-Sedimentary subterranean strata embedding prehistoric biological remains:
-* **Fossil Strata (4)**: `fossil_bones.png`, `fossil_amber.png`, `fossil_bitumen.png`, `fossil_matrix.png`
+### C. Paleontological Fossil Blocks (4 Base Files + Stochastic Variations, 16×16 px)
+Sedimentary subterranean strata embedding prehistoric biological remains. All 4 fossil blocks feature complete 3-fold stochastic variants (`_base`, `1`, `2`) to break repetition in fossil quarry walls:
+* **Fossil Strata (4)**: `fossil_bones.png` *(+ `1`, `2`)*, `fossil_amber.png` *(+ `1`, `2`)*, `fossil_bitumen.png` *(+ `1`, `2`)*, `fossil_matrix.png` *(+ `1`, `2`)*
 
 ---
 
@@ -84,12 +84,12 @@ Dense, solid blocks formed by compacting crystallized mineral geodes. Can be min
 
 | # | Block ID | Name | Category | Texture File(s) | Description |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **01** | `crystal_amethyst_block` | Amethyst Block | **Crystal** | `crystal_amethyst.png` | Violet quartz block with rich purple crystal facets ($SiO_2$). |
-| **02** | `crystal_aquamarine_block` | Aquamarine Block | **Crystal** | `crystal_aquamarine.png` | Translucent cyan-blue beryl block ($Be_3Al_2Si_6O_{18}$). |
-| **03** | `crystal_citrine_block` | Citrine Block | **Crystal** | `crystal_citrine.png` | Solar golden-amber quartz block created by geothermal heating ($SiO_2$). |
-| **04** | `crystal_fluorite_block` | Fluorite Block | **Crystal** | `crystal_fluorite.png` | Mint-green cubic calcium fluoride block with soft natural sheen ($CaF_2$). |
-| **05** | `crystal_pink_salt_block` | Pink Salt Block | **Crystal** | `crystal_pink_salt.png` | Ancient coral-pink evaporite halite salt block ($NaCl$). |
-| **06** | `crystal_selenite_block` | Selenite Block | **Crystal** | `crystal_selenite.png` | Pearlescent silvery-white columnar gypsum block ($CaSO_4 \cdot 2H_2O$). |
+| **01** | `crystal_amethyst_block` | Amethyst Block | **Crystal** | `crystal_amethyst.png` *(+ `1`, `2`)* | Violet quartz block with rich purple crystal facets ($SiO_2$). |
+| **02** | `crystal_aquamarine_block` | Aquamarine Block | **Crystal** | `crystal_aquamarine.png` *(+ `1`, `2`)* | Translucent cyan-blue beryl block ($Be_3Al_2Si_6O_{18}$). |
+| **03** | `crystal_citrine_block` | Citrine Block | **Crystal** | `crystal_citrine.png` *(+ `1`, `2`)* | Solar golden-amber quartz block created by geothermal heating ($SiO_2$). |
+| **04** | `crystal_fluorite_block` | Fluorite Block | **Crystal** | `crystal_fluorite.png` *(+ `1`, `2`)* | Mint-green cubic calcium fluoride block with soft natural sheen ($CaF_2$). |
+| **05** | `crystal_pink_salt_block` | Pink Salt Block | **Crystal** | `crystal_pink_salt.png` *(+ `1`, `2`)* | Ancient coral-pink evaporite halite salt block ($NaCl$). |
+| **06** | `crystal_selenite_block` | Selenite Block | **Crystal** | `crystal_selenite.png` *(+ `1`, `2`)* | Pearlescent silvery-white columnar gypsum block ($CaSO_4 \cdot 2H_2O$). |
 
 ---
 
