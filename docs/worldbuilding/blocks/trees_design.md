@@ -135,7 +135,7 @@ graph TD
 ### C. Tropical & Rainforest Jungles (22 Base Files, 16×16 px)
 * **Mahogany (5)**: `tree_mahogany_bark.png` *(+ bark1, bark2)*, `tree_mahogany_log.png`, `tree_mahogany_planks.png` *(+ planks1, planks2)*, `tree_mahogany_leaves.png`, `tree_mahogany_leaves_dead.png`
 * **Bamboo (4)**: `tree_bamboo_stalk.png`, `tree_bamboo_planks.png` *(+ planks1, planks2)*, `tree_bamboo_large_leaves.png`, `tree_bamboo_small_leaves.png`
-* **Mangrove (7)**: `tree_mangrove_bark.png` *(+ bark1, bark2)*, `tree_mangrove_log.png`, `tree_mangrove_planks.png` *(+ planks1, planks2)*, `tree_mangrove_leaves.png`, `tree_mangrove_roots.png`, `tree_mangrove_roots_top.png`, `tree_mangrove_leaves_dead.png`
+* **Mangrove (7)**: `tree_mangrove_bark.png` *(+ bark1, bark2)*, `tree_mangrove_log.png`, `tree_mangrove_planks.png` *(+ planks1, planks2)*, `tree_mangrove_leaves.png`, `tree_mangrove_roots.png` *(+ roots1, roots2)*, `tree_mangrove_roots_top.png` *(+ top1, top2)*, `tree_mangrove_leaves_dead.png`
 * **Kapok (5)**: `tree_kapok_bark.png` *(+ bark1, bark2)*, `tree_kapok_log.png`, `tree_kapok_planks.png` *(+ planks1, planks2)*, `tree_kapok_leaves.png`, `tree_kapok_leaves_dead.png`
 
 ### D. Arid Savannas & Woodlands (10 Base Files, 16×16 px)

@@ -45,15 +45,16 @@ graph TD
 
 All 38 textures follow strict taxonomy prefixes (`frost_` for cryology, `liquid_` for fluid triads):
 
-### A. Cryology and Ice Blocks (`frost_`) (8 Files, 16×16 px)
-* `frost_ice.png` *(Clear crystalline translucent surface ice, alpha=153)*
-* `frost_ice_fragile.png` *(Translucent surface ice with subtle stress hairline cracks, alpha=153)*
-* `frost_ice_packed.png` *(Dense massive firn snow-compressed ice, 100% opaque RGB)*
-* `frost_ice_black.png` *(Abyssal deep-water obsidian-clear black ice, alpha=160)*
-* `frost_ice_black_fragile.png` *(Abyssal black ice with bold geometric cleavage fractures, alpha=160)*
-* `frost_ice_black_packed.png` *(Deep permafrost sediment-rich solid black ice rock, 100% opaque RGB)*
-* `frost_blue_ice.png` *(Colossal pressure glacial blue ice, 100% opaque RGB)*
-* `frost_blue_ice_cracked.png` *(Glacial blue ice with cellular web of frost veins and trapped bubbles, 100% opaque RGB)*
+### A. Cryology and Ice Blocks (`frost_`) (8 Base Files + Stochastic Variations, 16×16 px)
+All 8 ice types feature complete 3-fold stochastic variants (`1` and `2`) to break tiling repetition across frozen lakes and glaciers:
+* `frost_ice.png` *(Clear crystalline translucent surface ice, alpha=153; + `1`, `2`)*
+* `frost_ice_fragile.png` *(Translucent surface ice with subtle stress hairline cracks, alpha=153; + `1`, `2`)*
+* `frost_ice_packed.png` *(Dense massive firn snow-compressed ice, 100% opaque RGB; + `1`, `2`)*
+* `frost_ice_black.png` *(Abyssal deep-water obsidian-clear black ice, alpha=160; + `1`, `2`)*
+* `frost_ice_black_fragile.png` *(Abyssal black ice with bold geometric cleavage fractures, alpha=160; + `1`, `2`)*
+* `frost_ice_black_packed.png` *(Deep permafrost sediment-rich solid black ice rock, 100% opaque RGB; + `1`, `2`)*
+* `frost_blue_ice.png` *(Colossal pressure glacial blue ice, 100% opaque RGB; + `1`, `2`)*
+* `frost_blue_ice_cracked.png` *(Glacial blue ice with cellular web of frost veins and trapped bubbles, 100% opaque RGB; + `1`, `2`)*
 
 ### B. Static Fluid Block Icons (`liquid_`) (10 Files, 16×16 px)
 Used for static block representations, bucket items, inventory icons, and particles:

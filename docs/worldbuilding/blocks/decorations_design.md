@@ -61,13 +61,13 @@ All 56 textures strictly follow the functional prefix taxonomy (`util_`, `deco_`
 * `deco_wool_painted.png` *(High-luminance neutral wool for 16-color shader tinting)*
 * `deco_shingles_painted.png` *(Grayscale curved shingles for 16-color glazed ceramic roofing)*
 
-### D. Agricultural Fibers & Pathways (`deco_`) (8 Files)
+### D. Agricultural Fibers & Pathways (`deco_`) (8 Base Files + Stochastic Variations)
 * `deco_hay_bale_side.png`, `deco_hay_bale_top.png` *(Orientable animal feed hay bale)* (2)
 * `deco_straw_bale_side.png`, `deco_straw_bale_top.png` *(Orientable dry golden straw bale)* (2)
-* `deco_path_stony.png` *(Cobblestone pebble paving)* (1)
-* `deco_path_dirty.png` *(Compacted dirt trail)* (1)
-* `deco_path_sandy.png` *(Compacted sand pathway)* (1)
-* `deco_path_snowy.png` *(Compacted alpine snow trail)* (1)
+* `deco_path_stony.png` *(Cobblestone pebble paving; + `1`, `2`)* (1)
+* `deco_path_dirty.png` *(Compacted dirt trail; + `1`, `2`)* (1)
+* `deco_path_sandy.png` *(Compacted sand pathway; + `1`, `2`)* (1)
+* `deco_path_snowy.png` *(Compacted alpine snow trail; + `1`, `2`)* (1)
 
 ### E. Decorative Lighting & Radiant Emitters (`emit_`) (15 Files)
 * `emit_lamp.png`, `emit_lamp_top.png`, `emit_lamp_on.png`, `emit_lamp_top_on.png` *(Switchable ceiling lamp Normal / On)* (4)
