@@ -54,12 +54,12 @@ To maintain strict geological realism and prevent visual anomalies (e.g., surfac
 
 ### B. Mined Cobblestone Variants (26 Files, 16×16 px)
 All mineable solid rocks drop an unrefined fractured cobblestone upon excavation:
-* **Sandstones (6)**: `cobbled_sandstone_common.png`, `cobbled_sandstone_red.png`, `cobbled_sandstone_dune.png`, `cobbled_sandstone_white.png`, `cobbled_sandstone_pink.png`, `cobbled_sandstone_black.png`
-* **Continental Plutonics (4)**: `cobbled_granite.png`, `cobbled_diorite.png`, `cobbled_andesite.png`, `cobbled_gabbro.png`
-* **Sedimentary Strata (4)**: `cobbled_dolomite.png`, `cobbled_limestone.png`, `cobbled_chalk.png`, `cobbled_argillite.png`
-* **Volcanics & Pyroclastics (4)**: `cobbled_basalt.png`, `cobbled_obsidian.png`, `cobbled_tuff.png`, `cobbled_scoria.png`
-* **Metamorphic Foundations (4)**: `cobbled_slate.png`, `cobbled_marble.png`, `cobbled_gneiss.png`, `cobbled_serpentinite.png`
-* **Subterranean & Specials (4)**: `cobbled_magma.png` *(animated)*, `cobbled_brimstone.png`, `cobbled_calcite.png`, `cobbled_karst.png`
+* **Sandstones (6)**: `rock_sandstone_common_cobbled.png`, `rock_sandstone_red_cobbled.png`, `rock_sandstone_dune_cobbled.png`, `rock_sandstone_white_cobbled.png`, `rock_sandstone_pink_cobbled.png`, `rock_sandstone_black_cobbled.png`
+* **Continental Plutonics (4)**: `rock_granite_cobbled.png`, `rock_diorite_cobbled.png`, `rock_andesite_cobbled.png`, `rock_gabbro_cobbled.png`
+* **Sedimentary Strata (4)**: `rock_dolomite_cobbled.png`, `rock_limestone_cobbled.png`, `rock_chalk_cobbled.png`, `rock_argillite_cobbled.png`
+* **Volcanics & Pyroclastics (4)**: `rock_basalt_cobbled.png`, `rock_obsidian_cobbled.png`, `rock_tuff_cobbled.png`, `rock_scoria_cobbled.png`
+* **Metamorphic Foundations (4)**: `rock_slate_cobbled.png`, `rock_marble_cobbled.png`, `rock_gneiss_cobbled.png`, `rock_serpentinite_cobbled.png`
+* **Subterranean & Specials (4)**: `rock_magma_cobbled.png` *(animated)*, `rock_brimstone_cobbled.png`, `rock_calcite_cobbled.png`, `rock_karst_cobbled.png`
 *(Note: `mantle` and `mantle_plume` are unbreakable and have no cobbled variants).*
 
 ### C. Mountain Outcrop Veg/Snow Sides (16 Files, 16×16 px)
@@ -81,17 +81,17 @@ Loose surface pebbles collectable by hand, generated on riverbeds, beaches, grav
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
 | **01** | `sandstone_common` | Common Sandstone | **Sedimentary** | `rock_sandstone_common.png` | 6 uniform faces |
-| **02** | `cobbled_sandstone_common` | Cobbled Sandstone | **Sedimentary** | `cobbled_sandstone_common.png` | 6 uniform faces |
+| **02** | `cobbled_sandstone_common` | Cobbled Sandstone | **Sedimentary** | `rock_sandstone_common_cobbled.png` | 6 uniform faces |
 | **03** | `sandstone_red` | Red Sandstone | **Sedimentary** | `rock_sandstone_red.png` | 6 uniform faces |
-| **04** | `cobbled_sandstone_red` | Cobbled Red Sandstone | **Sedimentary** | `cobbled_sandstone_red.png` | 6 uniform faces |
+| **04** | `cobbled_sandstone_red` | Cobbled Red Sandstone | **Sedimentary** | `rock_sandstone_red_cobbled.png` | 6 uniform faces |
 | **05** | `sandstone_dune` | Dune Sandstone | **Sedimentary** | `rock_sandstone_dune.png` | 6 uniform faces |
-| **06** | `cobbled_sandstone_dune` | Cobbled Dune Sandstone | **Sedimentary** | `cobbled_sandstone_dune.png` | 6 uniform faces |
+| **06** | `cobbled_sandstone_dune` | Cobbled Dune Sandstone | **Sedimentary** | `rock_sandstone_dune_cobbled.png` | 6 uniform faces |
 | **07** | `sandstone_white` | White Sandstone | **Sedimentary** | `rock_sandstone_white.png` | 6 uniform faces |
-| **08** | `cobbled_sandstone_white` | Cobbled White Sandstone | **Sedimentary** | `cobbled_sandstone_white.png` | 6 uniform faces |
+| **08** | `cobbled_sandstone_white` | Cobbled White Sandstone | **Sedimentary** | `rock_sandstone_white_cobbled.png` | 6 uniform faces |
 | **09** | `sandstone_pink` | Pink Sandstone | **Sedimentary** | `rock_sandstone_pink.png` | 6 uniform faces |
-| **10** | `cobbled_sandstone_pink` | Cobbled Pink Sandstone | **Sedimentary** | `cobbled_sandstone_pink.png` | 6 uniform faces |
+| **10** | `cobbled_sandstone_pink` | Cobbled Pink Sandstone | **Sedimentary** | `rock_sandstone_pink_cobbled.png` | 6 uniform faces |
 | **11** | `sandstone_black` | Black Sandstone | **Sedimentary** | `rock_sandstone_black.png` | 6 uniform faces |
-| **12** | `cobbled_sandstone_black` | Cobbled Black Sandstone | **Sedimentary** | `cobbled_sandstone_black.png` | 6 uniform faces |
+| **12** | `cobbled_sandstone_black` | Cobbled Black Sandstone | **Sedimentary** | `rock_sandstone_black_cobbled.png` | 6 uniform faces |
 
 ---
 
@@ -100,17 +100,17 @@ Loose surface pebbles collectable by hand, generated on riverbeds, beaches, grav
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
 | **13** | `granite` | Granite | **Plutonic** | `rock_granite.png` | 6 uniform faces |
-| **14** | `cobbled_granite` | Cobbled Granite | **Plutonic** | `cobbled_granite.png` | 6 uniform faces |
+| **14** | `cobbled_granite` | Cobbled Granite | **Plutonic** | `rock_granite_cobbled.png` | 6 uniform faces |
 | **15** | `granite_grass` | Granite Grass Outcrop | **Plutonic** | Top: `soil_grass.png`<br>Bot: `rock_granite.png`<br>Sides: `rock_granite_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **16** | `granite_snow` | Granite Snow Outcrop | **Plutonic** | Top: `soil_snow.png`<br>Bot: `rock_granite.png`<br>Sides: `rock_granite_snow_side.png` | Top + Bot + 4 sides |
 | **17** | `andesite` | Andesite | **Continental** | `rock_andesite.png` | 6 uniform faces |
-| **18** | `cobbled_andesite` | Cobbled Andesite | **Continental** | `cobbled_andesite.png` | 6 uniform faces |
+| **18** | `cobbled_andesite` | Cobbled Andesite | **Continental** | `rock_andesite_cobbled.png` | 6 uniform faces |
 | **19** | `andesite_grass` | Andesite Grass Outcrop | **Continental** | Top: `soil_grass.png`<br>Bot: `rock_andesite.png`<br>Sides: `rock_andesite_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **20** | `andesite_snow` | Andesite Snow Outcrop | **Continental** | Top: `soil_snow.png`<br>Bot: `rock_andesite.png`<br>Sides: `rock_andesite_snow_side.png` | Top + Bot + 4 sides |
 | **21** | `diorite` | Diorite | **Plutonic** | `rock_diorite.png` | 6 uniform faces |
-| **22** | `cobbled_diorite` | Cobbled Diorite | **Plutonic** | `cobbled_diorite.png` | 6 uniform faces |
+| **22** | `cobbled_diorite` | Cobbled Diorite | **Plutonic** | `rock_diorite_cobbled.png` | 6 uniform faces |
 | **23** | `gabbro` | Gabbro | **Plutonic** | `rock_gabbro.png` | 6 uniform faces *(Deep intrusive mafic bedrock)* |
-| **24** | `cobbled_gabbro` | Cobbled Gabbro | **Plutonic** | `cobbled_gabbro.png` | 6 uniform faces |
+| **24** | `cobbled_gabbro` | Cobbled Gabbro | **Plutonic** | `rock_gabbro_cobbled.png` | 6 uniform faces |
 
 ---
 
@@ -119,19 +119,19 @@ Loose surface pebbles collectable by hand, generated on riverbeds, beaches, grav
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
 | **25** | `dolomite` | Dolomite (Alpine Stone) | **Sedimentary** | `rock_dolomite.png` | 6 uniform faces *(The classic Stone baseline)* |
-| **26** | `cobbled_dolomite` | Cobbled Dolomite | **Sedimentary** | `cobbled_dolomite.png` | 6 uniform faces |
+| **26** | `cobbled_dolomite` | Cobbled Dolomite | **Sedimentary** | `rock_dolomite_cobbled.png` | 6 uniform faces |
 | **27** | `dolomite_grass` | Dolomite Grass Outcrop | **Sedimentary** | Top: `soil_grass.png`<br>Bot: `rock_dolomite.png`<br>Sides: `rock_dolomite_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **28** | `dolomite_snow` | Dolomite Snow Outcrop | **Sedimentary** | Top: `soil_snow.png`<br>Bot: `rock_dolomite.png`<br>Sides: `rock_dolomite_snow_side.png` | Top + Bot + 4 sides |
 | **29** | `limestone` | Limestone | **Sedimentary** | `rock_limestone.png` | 6 uniform faces *(Fibrous travertine matrix)* |
-| **30** | `cobbled_limestone` | Cobbled Limestone | **Sedimentary** | `cobbled_limestone.png` | 6 uniform faces |
+| **30** | `cobbled_limestone` | Cobbled Limestone | **Sedimentary** | `rock_limestone_cobbled.png` | 6 uniform faces |
 | **31** | `limestone_grass` | Limestone Grass Outcrop | **Sedimentary** | Top: `soil_grass.png`<br>Bot: `rock_limestone.png`<br>Sides: `rock_limestone_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **32** | `limestone_snow` | Limestone Snow Outcrop | **Sedimentary** | Top: `soil_snow.png`<br>Bot: `rock_limestone.png`<br>Sides: `rock_limestone_snow_side.png` | Top + Bot + 4 sides |
 | **33** | `chalk` | Chalk | **Sedimentary** | `rock_chalk.png` | 6 uniform faces *(Oceanic white cliff face)* |
-| **34** | `cobbled_chalk` | Cobbled Chalk | **Sedimentary** | `cobbled_chalk.png` | 6 uniform faces |
+| **34** | `cobbled_chalk` | Cobbled Chalk | **Sedimentary** | `rock_chalk_cobbled.png` | 6 uniform faces |
 | **35** | `chalk_grass` | Chalk Grass Outcrop | **Sedimentary** | Top: `soil_grass.png`<br>Bot: `rock_chalk.png`<br>Sides: `rock_chalk_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **36** | `chalk_snow` | Chalk Snow Outcrop | **Sedimentary** | Top: `soil_snow.png`<br>Bot: `rock_chalk.png`<br>Sides: `rock_chalk_snow_side.png` | Top + Bot + 4 sides |
 | **37** | `argillite` | Argillite | **Sedimentary** | `rock_argillite.png` | 6 uniform faces *(Clay bedrock)* |
-| **38** | `cobbled_argillite` | Cobbled Argillite | **Sedimentary** | `cobbled_argillite.png` | 6 uniform faces |
+| **38** | `cobbled_argillite` | Cobbled Argillite | **Sedimentary** | `rock_argillite_cobbled.png` | 6 uniform faces |
 | **39** | `argillite_grass` | Argillite Grass Outcrop | **Sedimentary** | Top: `soil_grass.png`<br>Bot: `rock_argillite.png`<br>Sides: `rock_argillite_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **40** | `argillite_snow` | Argillite Snow Outcrop | **Sedimentary** | Top: `soil_snow.png`<br>Bot: `rock_argillite.png`<br>Sides: `rock_argillite_snow_side.png` | Top + Bot + 4 sides |
 
@@ -142,15 +142,15 @@ Loose surface pebbles collectable by hand, generated on riverbeds, beaches, grav
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
 | **41** | `basalt` | Basalt | **Volcanic** | `rock_basalt.png` | 6 uniform faces |
-| **42** | `cobbled_basalt` | Cobbled Basalt | **Volcanic** | `cobbled_basalt.png` | 6 uniform faces |
+| **42** | `cobbled_basalt` | Cobbled Basalt | **Volcanic** | `rock_basalt_cobbled.png` | 6 uniform faces |
 | **43** | `basalt_grass` | Basalt Grass Outcrop | **Volcanic** | Top: `soil_grass.png`<br>Bot: `rock_basalt.png`<br>Sides: `rock_basalt_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **44** | `basalt_snow` | Basalt Snow Outcrop | **Volcanic** | Top: `soil_snow.png`<br>Bot: `rock_basalt.png`<br>Sides: `rock_basalt_snow_side.png` | Top + Bot + 4 sides |
 | **45** | `obsidian` | Obsidian | **Volcanic** | `rock_obsidian.png` | 6 uniform faces *(Amorphous volcanic glass)* |
-| **46** | `cobbled_obsidian` | Cobbled Obsidian | **Volcanic** | `cobbled_obsidian.png` | 6 uniform faces |
+| **46** | `cobbled_obsidian` | Cobbled Obsidian | **Volcanic** | `rock_obsidian_cobbled.png` | 6 uniform faces |
 | **47** | `tuff` | Tuff | **Pyroclastic** | `rock_tuff.png` | 6 uniform faces *(Compacted volcanic ash)* |
-| **48** | `cobbled_tuff` | Cobbled Tuff | **Pyroclastic** | `cobbled_tuff.png` | 6 uniform faces |
+| **48** | `cobbled_tuff` | Cobbled Tuff | **Pyroclastic** | `rock_tuff_cobbled.png` | 6 uniform faces |
 | **49** | `scoria` | Scoria | **Pyroclastic** | `rock_scoria.png` | 6 uniform faces *(Vesicular basaltic cinders)* |
-| **50** | `cobbled_scoria` | Cobbled Scoria | **Pyroclastic** | `cobbled_scoria.png` | 6 uniform faces |
+| **50** | `cobbled_scoria` | Cobbled Scoria | **Pyroclastic** | `rock_scoria_cobbled.png` | 6 uniform faces |
 
 ---
 
@@ -159,15 +159,15 @@ Loose surface pebbles collectable by hand, generated on riverbeds, beaches, grav
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
 | **51** | `slate` | Slate | **Metamorphic** | `rock_slate.png` | 6 uniform faces *(Laminated deep underground stone)* |
-| **52** | `cobbled_slate` | Cobbled Slate | **Metamorphic** | `cobbled_slate.png` | 6 uniform faces |
+| **52** | `cobbled_slate` | Cobbled Slate | **Metamorphic** | `rock_slate_cobbled.png` | 6 uniform faces |
 | **53** | `marble` | Marble | **Metamorphic** | `rock_marble.png` | 6 uniform faces *(Pure white architectural stone)* |
-| **54** | `cobbled_marble` | Cobbled Marble | **Metamorphic** | `cobbled_marble.png` | 6 uniform faces |
+| **54** | `cobbled_marble` | Cobbled Marble | **Metamorphic** | `rock_marble_cobbled.png` | 6 uniform faces |
 | **55** | `gneiss` | Gneiss | **Metamorphic** | `rock_gneiss.png` | 6 uniform faces *(Ancient banded shield bedrock)* |
-| **56** | `cobbled_gneiss` | Cobbled Gneiss | **Metamorphic** | `cobbled_gneiss.png` | 6 uniform faces |
+| **56** | `cobbled_gneiss` | Cobbled Gneiss | **Metamorphic** | `rock_gneiss_cobbled.png` | 6 uniform faces |
 | **57** | `gneiss_grass` | Gneiss Grass Outcrop | **Metamorphic** | Top: `soil_grass.png`<br>Bot: `rock_gneiss.png`<br>Sides: `rock_gneiss_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **58** | `gneiss_snow` | Gneiss Snow Outcrop | **Metamorphic** | Top: `soil_snow.png`<br>Bot: `rock_gneiss.png`<br>Sides: `rock_gneiss_snow_side.png` | Top + Bot + 4 sides |
 | **59** | `serpentinite` | Serpentinite | **Metamorphic** | `rock_serpentinite.png` | 6 uniform faces *(Deep muted olive-slate hydrated rock)* |
-| **60** | `cobbled_serpentinite`| Cobbled Serpentinite | **Metamorphic** | `cobbled_serpentinite.png` | 6 uniform faces |
+| **60** | `cobbled_serpentinite`| Cobbled Serpentinite | **Metamorphic** | `rock_serpentinite_cobbled.png` | 6 uniform faces |
 
 ---
 
@@ -176,13 +176,13 @@ Loose surface pebbles collectable by hand, generated on riverbeds, beaches, grav
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
 | **61** | `magma` | Magma Rock | **Geothermal** | `rock_magma.png` | 6 uniform faces *(Animated incandescent veins, emits light)* |
-| **62** | `cobbled_magma` | Cobbled Magma | **Geothermal** | `cobbled_magma.png` | 6 uniform faces *(Animated incandescent veins)* |
+| **62** | `cobbled_magma` | Cobbled Magma | **Geothermal** | `rock_magma_cobbled.png` | 6 uniform faces *(Animated incandescent veins)* |
 | **63** | `brimstone` | Brimstone | **Hydrothermal** | `rock_brimstone.png` | 6 uniform faces *(Sulfur fumaroles, cave speleothems)* |
-| **64** | `cobbled_brimstone` | Cobbled Brimstone | **Hydrothermal** | `cobbled_brimstone.png` | 6 uniform faces |
+| **64** | `cobbled_brimstone` | Cobbled Brimstone | **Hydrothermal** | `rock_brimstone_cobbled.png` | 6 uniform faces |
 | **65** | `calcite` | Calcite | **Mineral** | `rock_calcite.png` | 6 uniform faces *(Crystalline geode matrix, speleothems)* |
-| **66** | `cobbled_calcite` | Cobbled Calcite | **Mineral** | `cobbled_calcite.png` | 6 uniform faces |
+| **66** | `cobbled_calcite` | Cobbled Calcite | **Mineral** | `rock_calcite_cobbled.png` | 6 uniform faces |
 | **67** | `karst` | Karst Limestone | **Speleological** | `rock_karst.png` | 6 uniform faces *(Porous cave limestone, speleothems)* |
-| **68** | `cobbled_karst` | Cobbled Karst | **Speleological** | `cobbled_karst.png` | 6 uniform faces |
+| **68** | `cobbled_karst` | Cobbled Karst | **Speleological** | `rock_karst_cobbled.png` | 6 uniform faces |
 
 ---
 

@@ -1,20 +1,21 @@
-# Worldbuilding Architecture & Catalog: Caverns, Crystals & Speleothems (Caverns)
+# Worldbuilding Architecture & Catalog: Caverns, Crystals, Speleothems & Fossils (Caverns)
 
-All active textures for subterranean geological formations, mineral crystals, and modular dripstones are organized in the folder:
-📂 **`docs/worldbuilding/blocks/caverns`** *(74 active PNG textures on disk)*
+All active textures for subterranean geological formations, mineral crystals, modular dripstones, and paleontological fossil beds are organized in the folder:
+📂 **`docs/worldbuilding/blocks/caverns`** *(78 active PNG textures on disk)*
 
-Generating **24 unique blocks** in the master catalog: 6 solid crystal blocks + 6 crystal clusters + 6 glinted crystal clusters + 6 modular speleothem/dripstone systems (comprising 56 modular geometric pieces).
+Generating **28 unique blocks** in the master catalog: 6 solid crystal blocks + 6 crystal clusters + 6 glinted crystal clusters + 6 modular speleothem/dripstone systems (comprising 56 modular geometric pieces) + 4 standalone paleontological fossil blocks.
 
 ---
 
-## 1. Speleological & Crystallographic Classification
+## 1. Speleological, Crystallographic & Paleontological Classification
 
-The subterranean caverns domain is divided into **2 Core Morphological Branches (6 Real Crystals & 6 Speleothem Formations)**:
+The subterranean caverns domain is divided into **3 Core Geological Branches (6 Real Crystals, 6 Speleothem Formations & 4 Fossil Strata)**:
 
 ```mermaid
 graph TD
-    C["Subterranean Caverns (24 Blocks / 74 Textures)"] --> B1["1. Crystallogenesis & Geodes (6 Minerals / 18 Textures)"]
+    C["Subterranean Caverns (28 Blocks / 78 Textures)"] --> B1["1. Crystallogenesis & Geodes (6 Minerals / 18 Textures)"]
     C --> B2["2. Speleothems & Dripstones (6 Materials / 56 Textures)"]
+    C --> B3["3. Paleontology & Fossil Strata (4 Blocks / 4 Textures)"]
 
     B1 --> C1["Amethyst: Classic purple quartz geodes in basaltic cavities"]
     B1 --> C2["Aquamarine: Hydrothermal cyan-blue beryl in granitic pegmatites"]
@@ -29,6 +30,11 @@ graph TD
     B2 --> S4["Basalt / Lava Icicle: Cooled mafic dripstones with thermal veins (10 pieces)"]
     B2 --> S5["Ice / Glacial Icicle: Compact glacial icicles in permafrost caves (10 pieces)"]
     B2 --> S6["Pink Salt Straw: Delicate hollow tubular soda straws (6 pieces)"]
+
+    B3 --> F1["Fossil Bones: Mineralized primordial skeletons in dark strata"]
+    B3 --> F2["Fossil Amber: Golden fossilized resin nodules with ancient inclusions"]
+    B3 --> F3["Fossil Bitumen: Viscous lustrous hydrocarbon pitch seams"]
+    B3 --> F4["Fossil Matrix: Barren host sedimentary stone surrounding bonebeds"]
 ```
 
 ---
@@ -64,9 +70,13 @@ Each of the 6 crystal minerals features a complete Triad:
   * Stalactite (Down): `speleothem_pink_salt_straw_down_top.png`, `_middle`, `_bottom`
   * Stalagmite (Up): `speleothem_pink_salt_straw_up_bottom.png`, `_middle`, `_top`
 
+### C. Paleontological Fossil Blocks (4 Files, 16×16 px)
+Sedimentary subterranean strata embedding prehistoric biological remains:
+* **Fossil Strata (4)**: `fossil_bones.png`, `fossil_amber.png`, `fossil_bitumen.png`, `fossil_matrix.png`
+
 ---
 
-## 3. Complete Block Catalog (24 Unique Blocks)
+## 3. Complete Block Catalog (28 Unique Blocks)
 
 ### 3.1. Solid Crystal Blocks (6 Blocks)
 
@@ -125,6 +135,19 @@ Dynamic, multi-stage subterranean dripstones. Each material supports procedural 
 | **22** | `speleothem_basalt` | Lava Icicle | `rock_basalt.png` | **10** | Charcoal basalt with glowing lava cracks | Lava tube stalactites formed by remelting and dripping basaltic magma. |
 | **23** | `speleothem_ice` | Glacial Icicle | `frost_ice_packed.png` | **10** | Clear, crystalline glacial ice needles | Water dripping and refreezing inside polar cryosphere and permafrost caves. |
 | **24** | `speleothem_salt_straw` | Pink Salt Soda Straw | `crystal_pink_salt.png` | **6** | Ultra-thin hollow coral-pink salt tubes | Fragile tubular soda straws precipitating from the outer rims of saline droplets. |
+
+---
+
+### 3.5. Paleontological Fossil Strata (4 Blocks)
+
+Sedimentary subterranean formations containing ancient organic remnants, petroleum hydrocarbons, and amber inclusions. Can be excavated for paleontology, alchemy, and specialized chemical resources:
+
+| # | Block ID | Name | Category | Texture File(s) | Face Mapping | Description |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- |
+| **25** | `fossil_bones` | Fossil Bones | **Fossil** | `fossil_bones.png` | 6 uniform faces | Dark sedimentary rock embedding mineralized prehistoric vertebrate bones and skull fragments ($Ca_3(PO_4)_2$). |
+| **26** | `fossil_amber` | Fossil Amber | **Fossil** | `fossil_amber.png` | 6 uniform faces | Deep strata embedding golden translucent fossilized tree resin droplets with ancient botanical/insect inclusions. |
+| **27** | `fossil_bitumen` | Fossil Bitumen | **Fossil** | `fossil_bitumen.png` | 6 uniform faces | Dark hydrocarbon-saturated sedimentary seam containing viscous lustrous petroleum pitch and asphaltum. |
+| **28** | `fossil_matrix` | Fossil Matrix | **Fossil** | `fossil_matrix.png` | 6 uniform faces | Barren host sedimentary siltstone enclosing bonebeds and fossil deposits; thematic structural block. |
 
 ---
 
