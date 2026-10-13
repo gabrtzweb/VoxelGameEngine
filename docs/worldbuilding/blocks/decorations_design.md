@@ -34,15 +34,15 @@ graph TD
 
 All 56 textures strictly follow the functional prefix taxonomy (`util_`, `deco_`, and `emit_`):
 
-### A. Utilitarian Containers & Structural Furniture (`util_`) (17 Files)
+### A. Utilitarian Containers & Structural Furniture (`util_`) (17 Base Files)
 * `util_barrel_top.png`, `util_barrel_side.png`, `util_barrel_bot.png` (3)
 * `util_crate_top.png`, `util_crate_side.png`, `util_crate_bot.png` (3)
 * `util_basket_top.png`, `util_basket_side.png`, `util_basket_bot.png` (3)
-* `util_bookshelf_front.png`, `util_bookshelf_front_empty.png`, `util_bookshelf_side.png`, `util_bookshelf_top.png` (4)
+* `util_bookshelf_front.png` *(+ stochastic book arrangements `util_bookshelf_front1.png`, `util_bookshelf_front2.png`)*, `util_bookshelf_front_empty.png`, `util_bookshelf_side.png`, `util_bookshelf_top.png` (4)
 * `util_bag_top.png`, `util_bag_side.png`, `util_bag_side_front.png`, `util_bag_bot.png` (4)
 
-### B. Basic Traditional Masonry, Glass & Textiles (`deco_`) (8 Files)
-* `deco_bricks.png` *(Classic red fired clay bricks)*
+### B. Basic Traditional Masonry, Glass & Textiles (`deco_`) (8 Base Files)
+* `deco_bricks.png` *(Classic red fired clay bricks; + stochastic shader variants `deco_bricks1.png`, `deco_bricks2.png`)*
 * `deco_linen.png` *(Raw natural linen textile)*
 * `deco_fabric.png` *(Heavy cross-weave rustic textile)*
 * `deco_glass.png` *(Crystal-clear softened transparent glass with optimal visibility)*
@@ -51,8 +51,8 @@ All 56 textures strictly follow the functional prefix taxonomy (`util_`, `deco_`
 * `deco_wool.png` *(Natural shorn white sheep wool)*
 * `deco_shingles.png` *(Curved terracotta fish-scale roof shingles)*
 
-### C. Master Dyeable Grayscale Textures (`deco_`) (8 Files)
-* `deco_bricks_painted.png` *(Grayscale bricks for 16-color shader tinting)*
+### C. Master Dyeable Grayscale Textures (`deco_`) (8 Base Files)
+* `deco_bricks_painted.png` *(Grayscale bricks for 16-color shader tinting; + stochastic shader variants `deco_bricks_painted1.png`, `deco_bricks_painted2.png`)*
 * `deco_linen_painted.png` *(Neutral grayscale linen for 16-color shader tinting)*
 * `deco_fabric_painted.png` *(Neutral grayscale heavy fabric for 16-color shader tinting)*
 * `deco_glass_painted.png` *(Glass with translucent center and neutral frames for 16 clear stained-glass windows)*

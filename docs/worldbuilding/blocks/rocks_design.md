@@ -41,14 +41,18 @@ To maintain strict geological realism and prevent visual anomalies (e.g., surfac
 
 ---
 
-## 2. Complete Texture Inventory in `worldbuilding/rocks/`
+## 2. Complete Texture Inventory in `worldbuilding/blocks/rocks/`
 
-### A. Solid Rock Matrix Textures (28 Base Files, 16×16 px)
+> [!NOTE]
+> **Stochastic Variations for Dynamic Shader Sampling:**
+> To break visual repetition across expansive cliff faces, mountain peaks, and deep caverns, key rock matrices possess 3-fold texture variations (`_base`, `1`, `2`) dynamically sampled by terrain shaders. These apply strictly to the solid rock base matrices without registering duplicate blocks.
+
+### A. Solid Rock Matrix Textures (28 Base Files + Stochastic Variations, 16×16 px)
 * **Sandstones (6)**: `rock_sandstone_common.png`, `rock_sandstone_red.png`, `rock_sandstone_dune.png`, `rock_sandstone_white.png`, `rock_sandstone_pink.png`, `rock_sandstone_black.png`
-* **Continental Plutonics (4)**: `rock_granite.png`, `rock_diorite.png`, `rock_andesite.png`, `rock_gabbro.png`
-* **Sedimentary Strata (4)**: `rock_dolomite.png`, `rock_limestone.png`, `rock_chalk.png`, `rock_argillite.png`
-* **Volcanics & Pyroclastics (4)**: `rock_basalt.png`, `rock_obsidian.png`, `rock_tuff.png`, `rock_scoria.png`
-* **Metamorphic Foundations (4)**: `rock_slate.png`, `rock_marble.png`, `rock_gneiss.png`, `rock_serpentinite.png`
+* **Continental Plutonics (4)**: `rock_granite.png` *(+ stochastic variants `rock_granite1.png`, `rock_granite2.png`)*, `rock_diorite.png`, `rock_andesite.png`, `rock_gabbro.png`
+* **Sedimentary Strata (4)**: `rock_dolomite.png` *(+ stochastic variants `rock_dolomite1.png`, `rock_dolomite2.png`)*, `rock_limestone.png` *(+ stochastic variants `rock_limestone1.png`, `rock_limestone2.png`)*, `rock_chalk.png` *(+ stochastic variants `rock_chalk1.png`, `rock_chalk2.png`)*, `rock_argillite.png` *(+ stochastic variants `rock_argillite1.png`, `rock_argillite2.png`)*
+* **Volcanics & Pyroclastics (4)**: `rock_basalt.png` *(+ stochastic variants `rock_basalt1.png`, `rock_basalt2.png`)*, `rock_obsidian.png`, `rock_tuff.png`, `rock_scoria.png`
+* **Metamorphic Foundations (4)**: `rock_slate.png` *(+ stochastic variants `rock_slate1.png`, `rock_slate2.png`)*, `rock_marble.png`, `rock_gneiss.png` *(+ stochastic variants `rock_gneiss1.png`, `rock_gneiss2.png`)*, `rock_serpentinite.png`
 * **Subterranean & Specials (4)**: `rock_magma.png` *(animated)*, `rock_brimstone.png`, `rock_calcite.png`, `rock_karst.png`
 * **Primordial Mantle (2)**: `rock_mantle.png`, `rock_mantle_plume.png`
 

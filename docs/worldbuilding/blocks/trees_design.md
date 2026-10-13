@@ -111,35 +111,40 @@ graph TD
 
 ---
 
-## 4. Technical Texture Inventory in `worldbuilding/blocks/trees/` (100 Active Textures)
+## 4. Technical Texture Inventory in `worldbuilding/blocks/trees/` (100 Base Textures + Stochastic Variations)
 
-### A. Temperate & Deciduous Forests (35 Files, 16×16 px)
-* **Oak (7)**: `tree_oak_bark.png`, `tree_oak_log.png`, `tree_oak_planks.png`, `tree_oak_leaves.png`, `tree_oak_leaves_flowering.png`, `tree_oak_leaves_lush.png`, `tree_oak_leaves_dead.png`
-* **Birch (5)**: `tree_birch_bark.png`, `tree_birch_log.png`, `tree_birch_planks.png`, `tree_birch_leaves.png`, `tree_birch_leaves_dead.png`
-* **Maple (7)**: `tree_maple_bark.png`, `tree_maple_log.png`, `tree_maple_planks.png`, `tree_maple_leaves_orange.png`, `tree_maple_leaves_red.png`, `tree_maple_leaves_yellow.png`, `tree_maple_leaves_dead.png`
-* **Cherry (5)**: `tree_cherry_bark.png`, `tree_cherry_log.png`, `tree_cherry_planks.png`, `tree_cherry_leaves.png`, `tree_cherry_leaves_dead.png`
-* **Aspen (6)**: `tree_aspen_bark.png`, `tree_aspen_log.png`, `tree_aspen_planks.png`, `tree_aspen_leaves.png`, `tree_aspen_leaves_snowy_top.png`, `tree_aspen_leaves_snowy_side.png`, `tree_aspen_leaves_dead.png` *(Aspen uses 7 textures)*
-* **Willow (5)**: `tree_willow_bark.png`, `tree_willow_log.png`, `tree_willow_planks.png`, `tree_willow_leaves.png`, `tree_willow_leaves_dead.png`
+> [!NOTE]
+> **Stochastic Variations for Dynamic Shader Sampling:**
+> * **Planks**: All 18 wood species feature complete 3-fold plank variations (`tree_<species>_planks.png`, `tree_<species>_planks1.png`, `tree_<species>_planks2.png`) based on universal staggered lumber patterns A, B, and C.
+> * **Barks**: All 17 bark-bearing tree species feature complete 3-fold bark variations (`tree_<species>_bark.png`, `tree_<species>_bark1.png`, `tree_<species>_bark2.png`) to break vertical trunk wallpapering and seam repetition across forest biomes.
 
-### B. Boreal & Coniferous Taigas (23 Files, 16×16 px)
-* **Pine (6)**: `tree_pine_bark.png`, `tree_pine_log.png`, `tree_pine_planks.png`, `tree_pine_leaves.png`, `tree_pine_leaves_snowy_top.png`, `tree_pine_leaves_dead.png`
-* **Fir (6)**: `tree_fir_bark.png`, `tree_fir_log.png`, `tree_fir_planks.png`, `tree_fir_leaves.png`, `tree_fir_leaves_snowy.png`, `tree_fir_leaves_dead.png`
-* **Redwood (5)**: `tree_redwood_bark.png`, `tree_redwood_log.png`, `tree_redwood_planks.png`, `tree_redwood_leaves.png`, `tree_redwood_leaves_dead.png`
-* **Yew (6)**: `tree_yew_bark.png`, `tree_yew_log.png`, `tree_yew_planks.png`, `tree_yew_leaves.png`, `tree_yew_leaves_snowy_top.png`, `tree_yew_leaves_dead.png`
+### A. Temperate & Deciduous Forests (35 Base Files, 16×16 px)
+* **Oak (7)**: `tree_oak_bark.png` *(+ bark1, bark2)*, `tree_oak_log.png`, `tree_oak_planks.png` *(+ planks1, planks2)*, `tree_oak_leaves.png`, `tree_oak_leaves_flowering.png`, `tree_oak_leaves_lush.png`, `tree_oak_leaves_dead.png`
+* **Birch (5)**: `tree_birch_bark.png` *(+ bark1, bark2)*, `tree_birch_log.png`, `tree_birch_planks.png` *(+ planks1, planks2)*, `tree_birch_leaves.png`, `tree_birch_leaves_dead.png`
+* **Maple (7)**: `tree_maple_bark.png` *(+ bark1, bark2)*, `tree_maple_log.png`, `tree_maple_planks.png` *(+ planks1, planks2)*, `tree_maple_leaves_orange.png`, `tree_maple_leaves_red.png`, `tree_maple_leaves_yellow.png`, `tree_maple_leaves_dead.png`
+* **Cherry (5)**: `tree_cherry_bark.png` *(+ bark1, bark2)*, `tree_cherry_log.png`, `tree_cherry_planks.png` *(+ planks1, planks2)*, `tree_cherry_leaves.png`, `tree_cherry_leaves_dead.png`
+* **Aspen (6)**: `tree_aspen_bark.png` *(+ bark1, bark2)*, `tree_aspen_log.png`, `tree_aspen_planks.png` *(+ planks1, planks2)*, `tree_aspen_leaves.png`, `tree_aspen_leaves_snowy_top.png`, `tree_aspen_leaves_snowy_side.png`, `tree_aspen_leaves_dead.png` *(Aspen uses 7 textures)*
+* **Willow (5)**: `tree_willow_bark.png` *(+ bark1, bark2)*, `tree_willow_log.png`, `tree_willow_planks.png` *(+ planks1, planks2)*, `tree_willow_leaves.png`, `tree_willow_leaves_dead.png`
 
-### C. Tropical & Rainforest Jungles (22 Files, 16×16 px)
-* **Mahogany (5)**: `tree_mahogany_bark.png`, `tree_mahogany_log.png`, `tree_mahogany_planks.png`, `tree_mahogany_leaves.png`, `tree_mahogany_leaves_dead.png`
-* **Bamboo (4)**: `tree_bamboo_stalk.png`, `tree_bamboo_planks.png`, `tree_bamboo_large_leaves.png`, `tree_bamboo_small_leaves.png`
-* **Mangrove (7)**: `tree_mangrove_bark.png`, `tree_mangrove_log.png`, `tree_mangrove_planks.png`, `tree_mangrove_leaves.png`, `tree_mangrove_roots.png`, `tree_mangrove_roots_top.png`, `tree_mangrove_leaves_dead.png`
-* **Kapok (5)**: `tree_kapok_bark.png`, `tree_kapok_log.png`, `tree_kapok_planks.png`, `tree_kapok_leaves.png`, `tree_kapok_leaves_dead.png`
+### B. Boreal & Coniferous Taigas (23 Base Files, 16×16 px)
+* **Pine (6)**: `tree_pine_bark.png` *(+ bark1, bark2)*, `tree_pine_log.png`, `tree_pine_planks.png` *(+ planks1, planks2)*, `tree_pine_leaves.png`, `tree_pine_leaves_snowy_top.png`, `tree_pine_leaves_dead.png`
+* **Fir (6)**: `tree_fir_bark.png` *(+ bark1, bark2)*, `tree_fir_log.png`, `tree_fir_planks.png` *(+ planks1, planks2)*, `tree_fir_leaves.png`, `tree_fir_leaves_snowy.png`, `tree_fir_leaves_dead.png`
+* **Redwood (5)**: `tree_redwood_bark.png` *(+ bark1, bark2)*, `tree_redwood_log.png`, `tree_redwood_planks.png` *(+ planks1, planks2)*, `tree_redwood_leaves.png`, `tree_redwood_leaves_dead.png`
+* **Yew (6)**: `tree_yew_bark.png` *(+ bark1, bark2)*, `tree_yew_log.png`, `tree_yew_planks.png` *(+ planks1, planks2)*, `tree_yew_leaves.png`, `tree_yew_leaves_snowy_top.png`, `tree_yew_leaves_dead.png`
 
-### D. Arid Savannas & Woodlands (10 Files, 16×16 px)
-* **Acacia (5)**: `tree_acacia_bark.png`, `tree_acacia_log.png`, `tree_acacia_planks.png`, `tree_acacia_leaves.png`, `tree_acacia_leaves_dead.png`
-* **Baobab (5)**: `tree_baobab_bark.png`, `tree_baobab_log.png`, `tree_baobab_planks.png`, `tree_baobab_leaves.png`, `tree_baobab_leaves_dead.png`
+### C. Tropical & Rainforest Jungles (22 Base Files, 16×16 px)
+* **Mahogany (5)**: `tree_mahogany_bark.png` *(+ bark1, bark2)*, `tree_mahogany_log.png`, `tree_mahogany_planks.png` *(+ planks1, planks2)*, `tree_mahogany_leaves.png`, `tree_mahogany_leaves_dead.png`
+* **Bamboo (4)**: `tree_bamboo_stalk.png`, `tree_bamboo_planks.png` *(+ planks1, planks2)*, `tree_bamboo_large_leaves.png`, `tree_bamboo_small_leaves.png`
+* **Mangrove (7)**: `tree_mangrove_bark.png` *(+ bark1, bark2)*, `tree_mangrove_log.png`, `tree_mangrove_planks.png` *(+ planks1, planks2)*, `tree_mangrove_leaves.png`, `tree_mangrove_roots.png`, `tree_mangrove_roots_top.png`, `tree_mangrove_leaves_dead.png`
+* **Kapok (5)**: `tree_kapok_bark.png` *(+ bark1, bark2)*, `tree_kapok_log.png`, `tree_kapok_planks.png` *(+ planks1, planks2)*, `tree_kapok_leaves.png`, `tree_kapok_leaves_dead.png`
 
-### E. Coastal & Wetland Groves (10 Files, 16×16 px)
-* **Palm (5)**: `tree_palm_bark.png`, `tree_palm_log.png`, `tree_palm_planks.png`, `tree_palm_leaves.png`, `tree_palm_leaves_dead.png`
-* **Cypress (5)**: `tree_cypress_bark.png`, `tree_cypress_log.png`, `tree_cypress_planks.png`, `tree_cypress_leaves.png`, `tree_cypress_leaves_dead.png`
+### D. Arid Savannas & Woodlands (10 Base Files, 16×16 px)
+* **Acacia (5)**: `tree_acacia_bark.png` *(+ bark1, bark2)*, `tree_acacia_log.png`, `tree_acacia_planks.png` *(+ planks1, planks2)*, `tree_acacia_leaves.png`, `tree_acacia_leaves_dead.png`
+* **Baobab (5)**: `tree_baobab_bark.png` *(+ bark1, bark2)*, `tree_baobab_log.png`, `tree_baobab_planks.png` *(+ planks1, planks2)*, `tree_baobab_leaves.png`, `tree_baobab_leaves_dead.png`
+
+### E. Coastal & Wetland Groves (10 Base Files, 16×16 px)
+* **Palm (5)**: `tree_palm_bark.png` *(+ bark1, bark2)*, `tree_palm_log.png`, `tree_palm_planks.png` *(+ planks1, planks2)*, `tree_palm_leaves.png`, `tree_palm_leaves_dead.png`
+* **Cypress (5)**: `tree_cypress_bark.png` *(+ bark1, bark2)*, `tree_cypress_log.png`, `tree_cypress_planks.png` *(+ planks1, planks2)*, `tree_cypress_leaves.png`, `tree_cypress_leaves_dead.png`
 
 ---
 
