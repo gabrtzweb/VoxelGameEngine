@@ -4,7 +4,7 @@ All active textures for living forest trees, timbers, foliage, and lumber are or
 📂 **`docs/worldbuilding/blocks/trees`** *(100 active PNG textures on disk across 18 botanical species)*
 
 Dynamic canopy overlays for seasonal flowers and snowy side accumulations are located in:
-📂 **`docs/worldbuilding/overlays`** *(2 snowy branch overlays and 8 modular flowering overlays)*
+📂 **`docs/worldbuilding/blocks/overlays`** *(2 snowy branch overlays and 12 modular flowering overlays across 4 colors)*
 
 Generating **98 unique blocks** in the master catalog:
 * **18 Tree Species**: All true, living trees organized across 5 planetary bioclimatic zones.
@@ -148,7 +148,7 @@ graph TD
 
 ---
 
-## 5. Canopy Overlays in `worldbuilding/overlays/` (10 Active Files)
+## 5. Canopy Overlays in `worldbuilding/blocks/overlays/` (14 Active Files)
 
 | Overlay File | Function | Primary Associated Species |
 | :--- | :--- | :--- |

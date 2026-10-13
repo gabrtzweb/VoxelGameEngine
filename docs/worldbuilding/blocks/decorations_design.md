@@ -5,7 +5,7 @@ All active textures for architectural elements, utilitarian furniture (`util_`),
 Generating **160 unique blocks** in the master catalog: 6 utilitarian storage/furniture blocks + 8 pure original masonry, textiles, and glass + 128 colored variants across 16 colors via shader [8 master materials $\times$ 16] + 6 agricultural fibers and rural pathways + 12 radiant emitters and torches*.
 
 Shared surface overlays are located in:
-📂 **`docs/worldbuilding/overlays`**
+📂 **`docs/worldbuilding/blocks/overlays`**
 
 ---
 

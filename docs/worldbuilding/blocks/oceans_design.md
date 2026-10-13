@@ -2,7 +2,7 @@
 
 This master document specifies the marine geology, biogenic coral reef systems, hydrothermal venting structures, benthic substrates, and subaquatic flora for the Voxel Game Engine, located in:
 📂 **`docs/worldbuilding/blocks/oceans`** *(140 active PNG textures on disk)*  
-📂 **`docs/worldbuilding/overlays`** *(Procedural marine overlays: `algae_dead_overlay.png`, `barnacles_overlay.png`)*
+📂 **`docs/worldbuilding/blocks/overlays`** *(Procedural marine overlays: `algae_dead_overlay.png`, `barnacles_overlay.png`)*
 
 Generating **50 unique blocks** in the master catalog divided into 5 ecological categories:
 1. **Living Massive Coral Blocks** (14 species)
@@ -116,7 +116,7 @@ All textures adhere to the engine's naming conventions and geometry profiles:
 * `aqua_geothermal_vent_top.png`, `aqua_geothermal_vent_side.png`, `aqua_geothermal_vent_bot.png` *(Top active vent, side column, and bottom conduit)* (3)
 * `aqua_scute_top.png`, `aqua_scute_side.png`, `aqua_scute_bot.png` *(Dorsal carapace, lateral margin, and ventral plastron plates)* (3)
 
-### B. Procedural Marine Overlays in `worldbuilding/overlays/` (External Decals)
+### B. Procedural Marine Overlays in `worldbuilding/blocks/overlays/` (External Decals)
 * `algae_dead_overlay.png` *(Surface/dead reddish-brown marine algal biofilm layer)*
 * `barnacles_overlay.png` *(Cleaned calcified acorn barnacle crust without stone halos)*
 

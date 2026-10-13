@@ -6,7 +6,7 @@ All active textures for engine fallback placeholders (`null_`) and development p
 Generating **8 unique technical blocks** in the master catalog: 4 engine fallback placeholders (solid cube, fluid, cross-billboard cutout, and generic 3D model) + 4 developer validation markers.
 
 Shared surface overlays are located in:
-📂 **`docs/worldbuilding/overlays`**
+📂 **`docs/worldbuilding/blocks/overlays`**
 
 ---
 

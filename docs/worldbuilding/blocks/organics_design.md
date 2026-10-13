@@ -3,9 +3,9 @@
 All active textures for animal architecture, nests, living animal tissues, osteology, secretions, natural waxes, biological droppings, and spiderwebs are organized in the folder:
 📂 **`docs/worldbuilding/blocks/organics`** *(53 active PNG textures on disk)*
 
-Generating **34 unique blocks** in the master catalog divided into 3 biological categories (all strictly even numbers):
+Generating **36 unique blocks** in the master catalog divided into 3 biological categories (all strictly even numbers):
 * **14 Fauna Architecture & Animal Nests (`nest_`)**: Hives, colonies, half-height nests, oothecae, cocoons, dams, and multi-soil animal burrows.
-* **6 Living Tissues, Organs & Osteology (`bio_`)**: Raw muscle, adipose blubber, nervous tissue, animal pelt, and axial skeletal bones.
+* **8 Living Tissues, Organs & Osteology (`bio_`)**: Raw muscle, bloody flesh, adipose blubber, nervous tissue, bloody brain, animal pelt, and axial skeletal bones.: Raw muscle, adipose blubber, nervous tissue, animal pelt, and axial skeletal bones.
 * **14 Secretions, Waxes, Droppings & Spiderwebs (`organic_`)**: Honey, honeycomb, pure beeswax, colloidal gels, guano, manure, fossils, seashells, and modular vertical spiderwebs.
 
 ---
@@ -16,8 +16,8 @@ The biomaterial and zoological domain is structured into **3 Core Categories (34
 
 ```mermaid
 graph TD
-    O["Biomaterials & Organics (34 Unique Blocks / 53 Textures)"] --> A["1. Fauna Architecture & Nests: nest_ (14 Blocks)"]
-    O --> B["2. Living Tissues & Osteology: bio_ (6 Blocks)"]
+    O["Biomaterials & Organics (36 Unique Blocks / 53 Textures)"] --> A["1. Fauna Architecture & Nests: nest_ (14 Blocks)"]
+    O --> B["2. Living Tissues & Osteology: bio_ (8 Blocks)"]
     O --> C["3. Secretions, Droppings & Webs: organic_ (14 Blocks)"]
 
     A --> A1["Ant Hill (Closed/Open), Termite Mound (Closed/Open)"]
@@ -25,7 +25,7 @@ graph TD
     A --> A3["Spider Egg Ootheca, Silk Cocoon"]
     A --> A4["Loam Burrow, Silt Burrow, Peat Burrow (Soil-bound animal burrows)"]
 
-    B --> B1["Raw Flesh Block, Blubber Block (Marine fat), Brain Block, Fur Block (Pelt)"]
+    B --> B1["Raw Flesh Block, Bloody Flesh Block, Blubber Block, Brain Block, Bloody Brain Block, Fur Block"]
     B --> B2["Bone Block (Axial marrow), Calcined Bone (Pyromineralized fossil)"]
 
     C --> C1["Honey Block, Honeycomb Block, Beeswax Block, Slime Block, Jelly Block"]
@@ -105,7 +105,7 @@ Animal burrows (rabbits, badgers, marmots) utilize a dual-texture composite top 
 
 ---
 
-## 4. Complete Block Catalog (34 Unique Blocks)
+## 4. Complete Block Catalog (36 Unique Blocks)
 
 ### 4.1. Fauna Architecture & Animal Nests (14 Blocks)
 
@@ -130,7 +130,7 @@ Structures engineered by colonial insects, avian species, mammals, and arachnids
 
 ---
 
-### 4.2. Living Tissues, Organs & Osteology (6 Blocks)
+### 4.2. Living Tissues, Organs & Osteology (8 Blocks)
 
 Biological anatomical materials harvested from animal carcasses or skeletal deposits.
 
@@ -139,9 +139,11 @@ Biological anatomical materials harvested from animal carcasses or skeletal depo
 | **15** | `bone_block` | Bone Block | **Osteology** | `bio_bone_top.png`<br>`bio_bone_side.png` | Axial Column (2 faces) | Deserts, Fossils, Caves | Dense calcium phosphate and hydroxyapatite fossil megafauna bone with central marrow canal. |
 | **16** | `calcined_bone` | Calcined Bone | **Osteology** | `bio_calcined_bone_top.png`<br>`bio_calcined_bone_side.png` | Axial Column (2 faces) | Volcanic Ash, Kilns, Catacombs | Thermally altered, pyromineralized bone recrystallized into chalky pale grey hydroxyapatite. |
 | **17** | `flesh_block` | Raw Flesh Block | **Tissue** | `bio_flesh_top.png`<br>`bio_flesh_side.png` | Directional (2 faces) | Butcheries, Lairs, Carcasses | Fresh striated skeletal muscle and fibrous connective tissue with membrane top and fibril sides. |
-| **18** | `blubber_block` | Blubber Block | **Adipose** | `bio_blubber.png` | Translucent (Alpha 204) | Polar Oceans, Arctic Tundras | Thick subcutaneous marine adipose tissue; excellent thermal insulator and long-burning fuel. |
-| **19** | `brain_block` | Brain Block | **Neural** | `bio_brain.png` | Uniform (6 faces) | Abyssal Depths, Lairs | Convoluted cerebral gray and pink neural matter exhibiting synaptic twitching. |
-| **20** | `fur_block` | Animal Fur Block | **Integument** | `bio_fur_top.png`<br>`bio_fur_side.png` | Directional (2 faces) | Arctic Taigas, Pastures | Heavy mammal hide with dense vertical hair flow on sides and whorled rosette on top. |
+| **18** | `bloody_flesh` | Bloody Flesh Block | **Tissue** | Top/Bot: `bio_flesh_top.png`<br>Sides: `bio_flesh_side.png` *(+ `bloody_overlay.png`)* | Directional (2 faces) + Lateral Shader Bloody Overlay | Butcheries, Lairs, Abattoirs | Striated raw skeletal muscle with fresh dripping blood stains and clotted streaks along vertical sides. |
+| **19** | `blubber_block` | Blubber Block | **Adipose** | `bio_blubber.png` | Translucent (Alpha 204) | Polar Oceans, Arctic Tundras | Thick subcutaneous marine adipose tissue; excellent thermal insulator and long-burning fuel. |
+| **20** | `brain_block` | Brain Block | **Neural** | `bio_brain.png` | Uniform (6 faces) | Abyssal Depths, Lairs | Convoluted cerebral gray and pink neural matter exhibiting synaptic twitching. |
+| **21** | `bloody_brain` | Bloody Brain Block | **Neural** | `bio_brain.png` *(+ `bloody_overlay.png`)* | Uniform (6 faces) + Shader Bloody Overlay | Abyssal Depths, Eldritch Lairs | Pulsating cerebral gray-pink mass dripping with arterial coagulated blood on all 6 faces. |
+| **22** | `fur_block` | Animal Fur Block | **Integument** | `bio_fur_top.png`<br>`bio_fur_side.png` | Directional (2 faces) | Arctic Taigas, Pastures | Heavy mammal hide with dense vertical hair flow on sides and whorled rosette on top. |
 
 ---
 
@@ -151,17 +153,17 @@ Physiological secretions, insect products, biological wastes, and structural spi
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping | Biome Occurrence | Description |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **21** | `honey_block` | Honey Block | **Secretion** | `organic_honey_block_bot...top.png` | Translucent (3 faces) | Beehives, Apiaries | Viscous colloidal nectar concentrate; cushions kinetic impact and adheres to surfaces. |
-| **22** | `honeycomb_block`| Honeycomb Block | **Wax Matrix** | `organic_honeycomb_block.png` | Uniform (6 faces) | Apiaries, Tree Cavities | Regular hexagonal prismatic matrix of pure insect wax synthesized by honeybee workers. |
-| **23** | `wax_block` | Beeswax Block | **Wax** | `organic_wax.png` | Uniform (6 faces) | Domestic Hives, Workshops | Compact block of rendered virgin beeswax; waterproof sealant and architectural candle craft. |
-| **24** | `slime_block` | Slime Block | **Colloid** | `organic_slime.png`<br>`organic_slime_bot.png` | Top/Sides + Bottom split | Swamps, Deep Caves | Elastic green colloidal gel; high viscoelastic resilience providing kinetic bounce. |
-| **25** | `jelly_block` | Royal Jelly Block | **Colloid** | `organic_jelly.png`<br>`organic_jelly_bot.png` | Top/Sides + Bottom split | Queen Chambers, Orchards | Viscoelastic translucent purple royal gel providing bounce without slime stickiness. |
-| **26** | `guano_block` | Guano Block | **Dropping** | `organic_guano.png` | Uniform (6 faces) | Bat Caves, Sea Islands | Compact nitrogen and phosphate-rich natural fertilizer accumulated from bat and seabird guano. |
-| **27** | `poop_block` | Manure Block | **Dropping** | `organic_poop.png` | Uniform (6 faces) | Pastures, Livestock Corrals | Rich agricultural farm animal dung with undigested vegetable fiber; high-potency soil fertilizer. |
-| **28** | `coprolite_block`| Coprolite Block | **Fossil** | `organic_coprolite.png` | Uniform (6 faces) | Fossil Beds, Dry Caves | Prehistoric petrified fossil dung mineralized into solid calcium phosphate sedimentary rock. |
-| **29** | `dust_block` | Organic Dust | **Detritus** | `organic_dust.png` | Uniform (6 faces) | Tombs, Forgotten Crypts | Dense accumulation of inert biological detritus, dead epithelial cells, and micro-arthropod debris. |
-| **30** | `seashell_block`| Seashell Block | **Sediment** | `organic_seashell.png` | Uniform (6 faces) | Warm Beaches, Coastlines | Dense coastal coquina formed from crushed whole marine bivalves and iridescent sea shells. |
-| **31** | `cobweb` | Cobweb Block | **Silk** | `organic_cobweb.png` | Volumetric 3D Cross | Abandoned Mines, Crypts | Full-voxel 3D intersecting cross of adhesive proteinaceous spider silk threads. |
-| **32** | `cobweb_arch` | Cobweb Arch | **Silk** | `organic_cobweb_arch.png` | Flat Vertical Quad | Tunnel Corners, Doorways | Diagonal fan-shaped silk web mounted flush in the upper corner between wall and ceiling. |
-| **33** | `cobweb_hanging`| Hanging Cobweb | **Silk** | `organic_cobweb_hanging.png` | Flat Vertical Quad | Tunnel Ceilings, Architraves | Pendant veil of cobweb fringe suspended from top horizontal joints and lintels. |
-| **34** | `cobweb_stretched`| Stretched Cobweb | **Silk** | `organic_cobweb_stretched.png` | Flat Vertical Quad | Narrow Corridors, Gaps | Tensioned vertical silk web stretched taut between two parallel vertical surfaces. |
+| **23** | `honey_block` | Honey Block | **Secretion** | `organic_honey_block_bot...top.png` | Translucent (3 faces) | Beehives, Apiaries | Viscous colloidal nectar concentrate; cushions kinetic impact and adheres to surfaces. |
+| **24** | `honeycomb_block`| Honeycomb Block | **Wax Matrix** | `organic_honeycomb_block.png` | Uniform (6 faces) | Apiaries, Tree Cavities | Regular hexagonal prismatic matrix of pure insect wax synthesized by honeybee workers. |
+| **25** | `wax_block` | Beeswax Block | **Wax** | `organic_wax.png` | Uniform (6 faces) | Domestic Hives, Workshops | Compact block of rendered virgin beeswax; waterproof sealant and architectural candle craft. |
+| **26** | `slime_block` | Slime Block | **Colloid** | `organic_slime.png`<br>`organic_slime_bot.png` | Top/Sides + Bottom split | Swamps, Deep Caves | Elastic green colloidal gel; high viscoelastic resilience providing kinetic bounce. |
+| **27** | `jelly_block` | Royal Jelly Block | **Colloid** | `organic_jelly.png`<br>`organic_jelly_bot.png` | Top/Sides + Bottom split | Queen Chambers, Orchards | Viscoelastic translucent purple royal gel providing bounce without slime stickiness. |
+| **28** | `guano_block` | Guano Block | **Dropping** | `organic_guano.png` | Uniform (6 faces) | Bat Caves, Sea Islands | Compact nitrogen and phosphate-rich natural fertilizer accumulated from bat and seabird guano. |
+| **29** | `poop_block` | Manure Block | **Dropping** | `organic_poop.png` | Uniform (6 faces) | Pastures, Livestock Corrals | Rich agricultural farm animal dung with undigested vegetable fiber; high-potency soil fertilizer. |
+| **30** | `coprolite_block`| Coprolite Block | **Fossil** | `organic_coprolite.png` | Uniform (6 faces) | Fossil Beds, Dry Caves | Prehistoric petrified fossil dung mineralized into solid calcium phosphate sedimentary rock. |
+| **31** | `dust_block` | Organic Dust | **Detritus** | `organic_dust.png` | Uniform (6 faces) | Tombs, Forgotten Crypts | Dense accumulation of inert biological detritus, dead epithelial cells, and micro-arthropod debris. |
+| **32** | `seashell_block`| Seashell Block | **Sediment** | `organic_seashell.png` | Uniform (6 faces) | Warm Beaches, Coastlines | Dense coastal coquina formed from crushed whole marine bivalves and iridescent sea shells. |
+| **33** | `cobweb` | Cobweb Block | **Silk** | `organic_cobweb.png` | Volumetric 3D Cross | Abandoned Mines, Crypts | Full-voxel 3D intersecting cross of adhesive proteinaceous spider silk threads. |
+| **34** | `cobweb_arch` | Cobweb Arch | **Silk** | `organic_cobweb_arch.png` | Flat Vertical Quad | Tunnel Corners, Doorways | Diagonal fan-shaped silk web mounted flush in the upper corner between wall and ceiling. |
+| **35** | `cobweb_hanging`| Hanging Cobweb | **Silk** | `organic_cobweb_hanging.png` | Flat Vertical Quad | Tunnel Ceilings, Architraves | Pendant veil of cobweb fringe suspended from top horizontal joints and lintels. |
+| **36** | `cobweb_stretched`| Stretched Cobweb | **Silk** | `organic_cobweb_stretched.png` | Flat Vertical Quad | Narrow Corridors, Gaps | Tensioned vertical silk web stretched taut between two parallel vertical surfaces. |

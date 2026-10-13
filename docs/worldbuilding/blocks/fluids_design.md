@@ -6,7 +6,7 @@ All active textures for cryogenic ice blocks (`frost_`) and dynamic liquids (`li
 Generating **18 unique blocks** in the master catalog: 8 cryogenic ice blocks + 10 dynamic physical liquids (each supported by static block, animated still surface, and cascading flow strips).
 
 Shared surface overlays are located in:
-📂 **`docs/worldbuilding/overlays`**
+📂 **`docs/worldbuilding/blocks/overlays`**
 
 ---
 

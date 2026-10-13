@@ -6,7 +6,7 @@ All active textures for wild cross-billboard mushrooms, giant mushroom caps, and
 Generating **18 unique blocks** in the master catalog: 8 wild understory ground mushrooms (cross-billboards with procedural variations) + 8 giant macrofungal caps + 2 shared macrofungal structural blocks.
 
 Shared surface overlays are located in:
-📂 **`docs/worldbuilding/overlays`**
+📂 **`docs/worldbuilding/blocks/overlays`**
 
 ---
 

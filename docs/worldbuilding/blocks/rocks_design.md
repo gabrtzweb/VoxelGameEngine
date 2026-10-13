@@ -4,7 +4,7 @@ All active textures for geological matrices, bedrock strata, cobbled stones, and
 📂 **`docs/worldbuilding/rocks`**
 
 Shared surface overlays are located in:
-📂 **`docs/worldbuilding/overlays`**
+📂 **`docs/worldbuilding/blocks/overlays`**
 
 ---
 
@@ -66,10 +66,10 @@ All mineable solid rocks drop an unrefined fractured cobblestone upon excavation
 * **Subterranean & Specials (4)**: `rock_magma_cobbled.png` *(animated 16×112 px, + `1`, `2`)*, `rock_brimstone_cobbled.png` *(+ `1`, `2`)*, `rock_calcite_cobbled.png` *(+ `1`, `2`)*, `rock_karst_cobbled.png` *(+ `1`, `2`)*
 *(Note: `mantle` and `mantle_plume` are unbreakable bedrock and have no cobbled variants).*
 
-### C. Mountain Outcrop Veg/Snow Sides (16 Files, 16×16 px)
-Exactly **8 surface alpine and cliff rocks** possess lateral turf and snow shelf cutouts:
-* **Grass Sides (8)**: `rock_dolomite_grass_side.png`, `rock_granite_grass_side.png`, `rock_andesite_grass_side.png`, `rock_basalt_grass_side.png`, `rock_limestone_grass_side.png`, `rock_chalk_grass_side.png`, `rock_argillite_grass_side.png`, `rock_gneiss_grass_side.png`
-* **Snow Sides (8)**: `rock_dolomite_snow_side.png`, `rock_granite_snow_side.png`, `rock_andesite_snow_side.png`, `rock_basalt_snow_side.png`, `rock_limestone_snow_side.png`, `rock_chalk_snow_side.png`, `rock_argillite_snow_side.png`, `rock_gneiss_snow_side.png`
+### C. Mountain Outcrop Veg/Snow Sides (16 Base Files + Stochastic Variations, 16×16 px)
+Exactly **8 surface alpine and cliff rocks** possess lateral turf and snow shelf cutouts with complete 3-fold stochastic variants (`base`, `1`, `2`):
+* **Grass Sides (8)**: `rock_dolomite_grass_side.png` *(+ `1`, `2`)*, `rock_granite_grass_side.png` *(+ `1`, `2`)*, `rock_andesite_grass_side.png` *(+ `1`, `2`)*, `rock_basalt_grass_side.png` *(+ `1`, `2`)*, `rock_limestone_grass_side.png` *(+ `1`, `2`)*, `rock_chalk_grass_side.png` *(+ `1`, `2`)*, `rock_argillite_grass_side.png` *(+ `1`, `2`)*, `rock_gneiss_grass_side.png` *(+ `1`, `2`)* *(all 8 maintain 100% identical turf cutout areas for perfect shader alignment, with rock matrix variation underneath)*.
+* **Snow Sides (8)**: `rock_dolomite_snow_side.png` *(+ `1`, `2`)*, `rock_granite_snow_side.png` *(+ `1`, `2`)*, `rock_andesite_snow_side.png` *(+ `1`, `2`)*, `rock_basalt_snow_side.png` *(+ `1`, `2`)*, `rock_limestone_snow_side.png` *(+ `1`, `2`)*, `rock_chalk_snow_side.png` *(+ `1`, `2`)*, `rock_argillite_snow_side.png` *(+ `1`, `2`)*, `rock_gneiss_snow_side.png` *(+ `1`, `2`)* *(organic variations in snow shelf drift tips and underlying rock)*.
 
 ### D. Ground Pebbles & River Shingle (2 Types × 3 Cluster Stages = 6 Files, 16×16 px)
 Loose surface pebbles collectable by hand, generated on riverbeds, beaches, gravel banks, and cavern floors. Pebble types are strictly minerals/rocks without full solid block equivalents (Flint and Quartz). Each pebble type features 3 cluster density stages (1 pebble, 2 pebbles, and 3 pebbles):
@@ -78,7 +78,7 @@ Loose surface pebbles collectable by hand, generated on riverbeds, beaches, grav
 
 ---
 
-## 3. Block Catalog (76 Unique Blocks: 70 Structural Blocks + 6 Ground Pebble Blocks)
+## 3. Block Catalog (92 Unique Blocks: 70 Structural Blocks + 6 Ground Pebble Blocks + 16 Humid Mossy Composite Blocks)
 
 ### 3.1. Aeolian & Marine Arenites (12 Blocks: 6 Solid + 6 Cobbled)
 
@@ -209,3 +209,28 @@ Loose surface pebbles collectable by hand, generated on riverbeds, beaches, grav
 | **74** | `pebble_quartz_one` | Quartz Pebble (Single) | 1 Pebble | `pebble_quartz_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
 | **75** | `pebble_quartz_two` | Quartz Pebble (Pair) | 2 Pebbles | `pebble_quartz_two.png` | Corner micro-box `[3..5, 0..1, 10..12]` |
 | **76** | `pebble_quartz_three`| Quartz Pebble (Cluster)| 3 Pebbles | `pebble_quartz_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
+
+---
+
+### 3.9. Humid Biome Mossy Rocks (16 Composite Blocks: 8 Solid + 8 Cobbled)
+
+Natural weathering and bryophyte colonization across temperate, rainforest, wetland, and riparian zones. Rendered via dynamic shader composite using base rock matrices and 3-fold stochastic moss overlays (`mossy_rock_overlay*.png` for solid matrices; `mossy_cobbled_overlay*.png` for fractured cobblestones):
+
+| # | Block ID | Name | Category | Texture File(s) & Overlays | Face Mapping / Shaders | Biome Occurrence |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- |
+| **77** | `mossy_dolomite` | Mossy Dolomite | **Sedimentary** | `rock_dolomite.png`<br>*(+ `mossy_rock_overlay.png`, `1`, `2`)* | 6 faces + Shader Moss Overlay | Humid Alpine Forests, Overgrown Ruins, Dungeons |
+| **78** | `mossy_cobbled_dolomite` | Mossy Cobbled Dolomite | **Sedimentary** | `rock_dolomite_cobbled.png`<br>*(+ `mossy_cobbled_overlay.png`, `1`, `2`)* | 6 faces + Shader Cobble Joint Moss | Ruined Keeps, Dungeons, Ancient Cobbled Roads |
+| **79** | `mossy_granite` | Mossy Granite | **Plutonic** | `rock_granite.png`<br>*(+ `mossy_rock_overlay.png`, `1`, `2`)* | 6 faces + Shader Moss Overlay | Temperate Old-Growth Woods, Riverbanks |
+| **80** | `mossy_cobbled_granite` | Mossy Cobbled Granite | **Plutonic** | `rock_granite_cobbled.png`<br>*(+ `mossy_cobbled_overlay.png`, `1`, `2`)* | 6 faces + Shader Cobble Joint Moss | Forest Ruins, Riverbed Foundations |
+| **81** | `mossy_andesite` | Mossy Andesite | **Continental** | `rock_andesite.png`<br>*(+ `mossy_rock_overlay.png`, `1`, `2`)* | 6 faces + Shader Moss Overlay | Rainforest Cordilleras, Misty Taiga Cliffs |
+| **82** | `mossy_cobbled_andesite` | Mossy Cobbled Andesite | **Continental** | `rock_andesite_cobbled.png`<br>*(+ `mossy_cobbled_overlay.png`, `1`, `2`)* | 6 faces + Shader Cobble Joint Moss | Mountain Passes, Damp Fortress Walls |
+| **83** | `mossy_basalt` | Mossy Basalt | **Volcanic** | `rock_basalt.png`<br>*(+ `mossy_rock_overlay.png`, `1`, `2`)* | 6 faces + Shader Moss Overlay | Cloud Forests, Coastal Sea Caves, Waterfalls |
+| **84** | `mossy_cobbled_basalt` | Mossy Cobbled Basalt | **Volcanic** | `rock_basalt_cobbled.png`<br>*(+ `mossy_cobbled_overlay.png`, `1`, `2`)* | 6 faces + Shader Cobble Joint Moss | Damp Volcanic Ruin Basements |
+| **85** | `mossy_limestone` | Mossy Limestone | **Sedimentary** | `rock_limestone.png`<br>*(+ `mossy_rock_overlay.png`, `1`, `2`)* | 6 faces + Shader Moss Overlay | Karstic Springs, Humid River Gorges, Caves |
+| **86** | `mossy_cobbled_limestone` | Mossy Cobbled Limestone | **Sedimentary** | `rock_limestone_cobbled.png`<br>*(+ `mossy_cobbled_overlay.png`, `1`, `2`)* | 6 faces + Shader Cobble Joint Moss | Aqueducts, Wet Caves, Riparian Structures |
+| **87** | `mossy_argillite` | Mossy Argillite | **Sedimentary** | `rock_argillite.png`<br>*(+ `mossy_rock_overlay.png`, `1`, `2`)* | 6 faces + Shader Moss Overlay | River Floodplains, Mangroves, Dense Swamps |
+| **88** | `mossy_cobbled_argillite` | Mossy Cobbled Argillite | **Sedimentary** | `rock_argillite_cobbled.png`<br>*(+ `mossy_cobbled_overlay.png`, `1`, `2`)* | 6 faces + Shader Cobble Joint Moss | Swamp Dikes, Bog Pathways |
+| **89** | `mossy_gneiss` | Mossy Gneiss | **Metamorphic** | `rock_gneiss.png`<br>*(+ `mossy_rock_overlay.png`, `1`, `2`)* | 6 faces + Shader Moss Overlay | Ancient Boreal Shields, Wet Shaded Slopes |
+| **90** | `mossy_cobbled_gneiss` | Mossy Cobbled Gneiss | **Metamorphic** | `rock_gneiss_cobbled.png`<br>*(+ `mossy_cobbled_overlay.png`, `1`, `2`)* | 6 faces + Shader Cobble Joint Moss | Archaic Megaliths, Mossy Flagstones |
+| **91** | `mossy_serpentinite` | Mossy Serpentinite | **Metamorphic** | `rock_serpentinite.png`<br>*(+ `mossy_rock_overlay.png`, `1`, `2`)* | 6 faces + Shader Moss Overlay | Serpentine Wetland Barrens, Springhead Pools |
+| **92** | `mossy_cobbled_serpentinite`| Mossy Cobbled Serpentinite | **Metamorphic** | `rock_serpentinite_cobbled.png`<br>*(+ `mossy_cobbled_overlay.png`, `1`, `2`)* | 6 faces + Shader Cobble Joint Moss | Moist Emerald-Slate Masonry |

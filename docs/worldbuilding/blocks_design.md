@@ -3,9 +3,9 @@
 This master document centralizes, unifies, and catalogs **all blocks implemented in the Voxel Engine**, organized across the 13 worldbuilding subdomains located in `docs/worldbuilding/blocks/`.
 
 > [!IMPORTANT]
-> **Project Grand Total: 776 Cataloged Unique Blocks**  
+> **Project Grand Total: 794 Cataloged Unique Blocks**  
 > Summing all 13 core domains of the engine's block ecosystem:  
-> **8** (systems) + **18** (fluids) + **58** (soils) + **76** (rocks) + **98** (trees) + **158** (ores) + **28** (caverns) + **50** (oceans) + **34** (organics) + **160** (decorations) + **18** (mushrooms) + **38** (vegetation) + **32** (flowers) = **776 Total Blocks**.
+> **8** (systems) + **18** (fluids) + **58** (soils) + **92** (rocks) + **98** (trees) + **158** (ores) + **28** (caverns) + **50** (oceans) + **36** (organics) + **160** (decorations) + **18** (mushrooms) + **38** (vegetation) + **32** (flowers) = **794 Total Blocks**.
 
 For each block, the following properties are systematically specified:
 1. **Unique Block Identifier (`Block ID`)**.
@@ -16,48 +16,48 @@ For each block, the following properties are systematically specified:
 > [!NOTE]
 > In accordance with project architectural guidelines:
 > - **Stochastic / procedural variations** (e.g. suffixes `1`, `2`, `3`) are dynamically sampled by shaders to break visual tiling repetition across terrain and are **not** registered as duplicate blocks.
-> - **Non-autonomous decal/cosmetic overlays** (such as `lichen`, `bloody`, `slimy`, and `moss_*_side`) remain dynamic multi-texturing shader passes.
-> - **Integrated compositional variants** (such as `mossy_rock`, `mossy_cobbled`, `mossy_tree`, `algae_overlay`, snow caps, and flower overlays) generate distinct registered engine blocks cataloged below.
+> - **Procedural texture overlays & decal layers** are centralized in `docs/worldbuilding/blocks/overlays/` and documented in [overlays_design.md](blocks/overlays_design.md). They register **0 standalone blocks** and are composited via multi-pass shaders.
+> - **Integrated compositional variants** (such as the 16 `mossy_rock` / `mossy_cobbled` variants, `bloody_brain` / `bloody_flesh`, `algae_reefstone` / `barnacles_reefstone`, and flowering foliage) generate distinct registered engine blocks cataloged in their respective domain specifications.
 
 ---
 
 ## Master Summary & Block Census
 
-| Category | Domain / Directory | Block Count | Primary Architectural Specification | Navigation Link |
-| :---: | :--- | :---: | :--- | :--- |
-| **01** | Technical & System Blocks (`systems`) | **8 blocks** | [systems_design.md](blocks/systems_design.md) | [Go to Section 01](#01-technical--system-blocks-systems--8-blocks) |
-| **02** | Hydrosphere & Cryology (`fluids`) | **18 blocks** | [fluids_design.md](blocks/fluids_design.md) | [Go to Section 02](#02-hydrosphere--cryology-fluids--18-blocks) |
-| **03** | Pedology & Soils (`soils`) | **58 blocks** | [soils_design.md](blocks/soils_design.md) | [Go to Section 03](#03-pedology--soils-soils--58-blocks) |
-| **04** | Geology & Rocks (`rocks`) | **76 blocks** | [rocks_design.md](blocks/rocks_design.md) | [Go to Section 04](#04-geology--rocks-rocks--76-blocks) |
-| **05** | Trees, Forestry & Dendrology (`trees`) | **98 blocks** | [trees_design.md](blocks/trees_design.md) | [Go to Section 05](#05-trees-forestry--dendrology-trees--98-blocks) |
-| **06** | Ores, Minerals & Gemology (`ores`) | **158 blocks** | [ores_design.md](blocks/ores_design.md) | [Go to Section 06](#06-ores-minerals--gemology-ores--158-blocks) |
-| **07** | Speleology & Crystals (`caverns`) | **28 blocks** | [caverns_design.md](blocks/caverns_design.md) | [Go to Section 07](#07-speleology--crystals-caverns--28-blocks) |
-| **08** | Ocean & Benthic Ecosystems (`oceans`) | **46 blocks** | [oceans_design.md](blocks/oceans_design.md) | [Go to Section 08](#08-ocean--benthic-ecosystems-oceans--46-blocks) |
-| **09** | Biomaterials, Fauna & Organic Matter (`organics`) | **34 blocks** | [organics_design.md](blocks/organics_design.md) | [Go to Section 09](#09-biomaterials-fauna--organic-matter-organics--34-blocks) |
-| **10** | Decorations, Lighting & Architecture (`decorations`) | **160 blocks** | [decorations_design.md](blocks/decorations_design.md) | [Go to Section 10](#10-decorations-lighting--architecture-decorations--160-blocks) |
-| **11** | Mycology: Mushrooms (`mushrooms`) | **18 blocks** | [mushrooms_design.md](blocks/mushrooms_design.md) | [Go to Section 11](#11-mycology-mushrooms-mushrooms--18-blocks) |
-| **12** | Botany: Groundcover & Herbaceous Flora (`vegetation`) | **38 blocks** | [vegetation_design.md](blocks/vegetation_design.md) | [Go to Section 12](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks) |
-| **13** | Botany: Flowers & Flowering Flora (`flowers`) | **32 blocks** | [flowers_design.md](blocks/flowers_design.md) | [Go to Section 13](#13-botany-flowers--flowering-flora-flowers--32-blocks) |
-| **TOTAL** | **Grand Master Sum** | **772 blocks** | — | — |
+| Category | Domain / Directory | Block Count | Status | Primary Architectural Specification | Navigation Link |
+| :---: | :--- | :--- | :---: | :--- | :--- |
+| **01** | Technical & System Blocks (`systems`) | **8 blocks** | ✅ **100% Complete** | [systems_design.md](blocks/systems_design.md) | [Go to Section 01](#01-technical--system-blocks-systems--8-blocks-100-complete) |
+| **02** | Hydrosphere & Cryology (`fluids`) | **18 blocks** | ✅ **100% Complete** | [fluids_design.md](blocks/fluids_design.md) | [Go to Section 02](#02-hydrosphere--cryology-fluids--18-blocks-100-complete) |
+| **03** | Pedology & Soils (`soils`) | **58 blocks** | ✅ **100% Complete** | [soils_design.md](blocks/soils_design.md) | [Go to Section 03](#03-pedology--soils-soils--58-blocks-100-complete) |
+| **04** | Geology & Rocks (`rocks`) | **92 blocks** | ✅ **100% Complete** | [rocks_design.md](blocks/rocks_design.md) | [Go to Section 04](#04-geology--rocks-rocks--92-blocks-100-complete) |
+| **05** | Trees, Forestry & Dendrology (`trees`) | **98 blocks** | 🔄 *In Progress* | [trees_design.md](blocks/trees_design.md) | [Go to Section 05](#05-trees-forestry--dendrology-trees--98-blocks) |
+| **06** | Ores, Minerals & Gemology (`ores`) | **158 blocks** | 🔄 *In Progress* | [ores_design.md](blocks/ores_design.md) | [Go to Section 06](#06-ores-minerals--gemology-ores--158-blocks) |
+| **07** | Speleology & Crystals (`caverns`) | **28 blocks** | 🔄 *In Progress* | [caverns_design.md](blocks/caverns_design.md) | [Go to Section 07](#07-speleology--crystals-caverns--28-blocks) |
+| **08** | Ocean & Benthic Ecosystems (`oceans`) | **50 blocks** | ✅ **100% Complete** | [oceans_design.md](blocks/oceans_design.md) | [Go to Section 08](#08-ocean--benthic-ecosystems-oceans--50-blocks-100-complete) |
+| **09** | Biomaterials, Fauna & Organic Matter (`organics`) | **36 blocks** | 🔄 *In Progress* | [organics_design.md](blocks/organics_design.md) | [Go to Section 09](#09-biomaterials-fauna--organic-matter-organics--36-blocks) |
+| **10** | Decorations, Lighting & Architecture (`decorations`) | **160 blocks** | 🔄 *In Progress* | [decorations_design.md](blocks/decorations_design.md) | [Go to Section 10](#10-decorations-lighting--architecture-decorations--160-blocks) |
+| **11** | Mycology: Mushrooms (`mushrooms`) | **18 blocks** | ✅ **100% Complete** | [mushrooms_design.md](blocks/mushrooms_design.md) | [Go to Section 11](#11-mycology-mushrooms-mushrooms--18-blocks-100-complete) |
+| **12** | Botany: Groundcover & Herbaceous Flora (`vegetation`) | **38 blocks** | 🔄 *In Progress* | [vegetation_design.md](blocks/vegetation_design.md) | [Go to Section 12](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks) |
+| **13** | Botany: Flowers & Flowering Flora (`flowers`) | **32 blocks** | 🔄 *In Progress* | [flowers_design.md](blocks/flowers_design.md) | [Go to Section 13](#13-botany-flowers--flowering-flora-flowers--32-blocks) |
+| **TOTAL** | **Grand Master Sum** | **794 blocks** | — | — | — |
 
-01. [Technical & System Blocks (`systems`) — 8 Blocks [✅ 100% Completo]](#01-technical--system-blocks-systems--8-blocks-100-completo)
-02. [Hydrosphere & Cryology (`fluids`) — 18 Blocks [✅ 100% Completo]](#02-hydrosphere--cryology-fluids--18-blocks-100-completo)
-03. [Pedology & Soils (`soils`) — 58 Blocks](#03-pedology--soils-soils--58-blocks)
-04. [Geology & Rocks (`rocks`) — 76 Blocks](#04-geology--rocks-rocks--76-blocks)
+01. [Technical & System Blocks (`systems`) — 8 Blocks [✅ 100% Complete]](#01-technical--system-blocks-systems--8-blocks-100-complete)
+02. [Hydrosphere & Cryology (`fluids`) — 18 Blocks [✅ 100% Complete]](#02-hydrosphere--cryology-fluids--18-blocks-100-complete)
+03. [Pedology & Soils (`soils`) — 58 Blocks [✅ 100% Complete]](#03-pedology--soils-soils--58-blocks-100-complete)
+04. [Geology & Rocks (`rocks`) — 92 Blocks [✅ 100% Complete]](#04-geology--rocks-rocks--92-blocks-100-complete)
 05. [Trees, Forestry & Dendrology (`trees`) — 98 Blocks](#05-trees-forestry--dendrology-trees--98-blocks)
 06. [Ores, Minerals & Gemology (`ores`) — 158 Blocks](#06-ores-minerals--gemology-ores--158-blocks)
 07. [Speleology & Crystals (`caverns`) — 28 Blocks](#07-speleology--crystals-caverns--28-blocks)
-08. [Ocean & Benthic Ecosystems (`oceans`) — 50 Blocks [✅ 100% Completo]](#08-ocean--benthic-ecosystems-oceans--50-blocks-100-completo)
-09. [Biomaterials, Fauna & Organic Matter (`organics`) — 34 Blocks](#09-biomaterials-fauna--organic-matter-organics--34-blocks)
+08. [Ocean & Benthic Ecosystems (`oceans`) — 50 Blocks [✅ 100% Complete]](#08-ocean--benthic-ecosystems-oceans--50-blocks-100-complete)
+09. [Biomaterials, Fauna & Organic Matter (`organics`) — 36 Blocks](#09-biomaterials-fauna--organic-matter-organics--36-blocks)
 10. [Decorations, Lighting & Architecture (`decorations`) — 160 Blocks](#10-decorations-lighting--architecture-decorations--160-blocks)
-11. [Mycology: Mushrooms (`mushrooms`) — 18 Blocks [✅ 100% Completo]](#11-mycology-mushrooms-mushrooms--18-blocks-100-completo)
+11. [Mycology: Mushrooms (`mushrooms`) — 18 Blocks [✅ 100% Complete]](#11-mycology-mushrooms-mushrooms--18-blocks-100-complete)
 12. [Botany: Groundcover & Herbaceous Flora (`vegetation`) — 38 Blocks](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks)
 13. [Botany: Flowers & Flowering Flora (`flowers`) — 32 Blocks](#13-botany-flowers--flowering-flora-flowers--32-blocks)
 14. [Future Roadmap: Agriculture, Crops & Food (`crops` / `foods`)](#14-future-roadmap-agriculture-crops--food-crops--foods)
 
 ---
 
-## 01. Technical & System Blocks (`systems`) — 8 Blocks [✅ 100% Completo]
+## 01. Technical & System Blocks (`systems`) — 8 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/systems`  
 📄 **Comprehensive Specification**: [systems_design.md](blocks/systems_design.md)
@@ -79,7 +79,7 @@ The engine internal technical and validation domain comprises **4 engine fallbac
 
 ---
 
-## 02. Hydrosphere & Cryology (`fluids`) — 18 Blocks [✅ 100% Completo]
+## 02. Hydrosphere & Cryology (`fluids`) — 18 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/fluids`  
 📄 **Comprehensive Specification**: [fluids_design.md](blocks/fluids_design.md)
@@ -111,7 +111,7 @@ The hydrosphere, rheology, and cryosphere domain comprises **8 cryogenic ice blo
 
 ---
 
-## 03. Pedology & Soils (`soils`) — 58 Blocks
+## 03. Pedology & Soils (`soils`) — 58 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/soils`  
 📄 **Comprehensive Specification**: [soils_design.md](blocks/soils_design.md)
@@ -127,7 +127,7 @@ The planetary pedology system classifies soils into **3 core functional division
 | **03** | `caliche_coarse` | Caliche Coarse | **Climatic** | `soil_caliche_coarse.png` | 6 uniform faces |
 | **04** | `caliche_cracked` | Caliche Cracked | **Climatic** | `soil_caliche_cracked.png` | 6 uniform faces |
 | **05** | `caliche_dirt` | Caliche Dirt | **Climatic** | `soil_caliche_dirt.png` | 6 uniform faces |
-| **06** | `caliche_grass` | Caliche Grass | **Climatic** | Top: `soil_grass.png`<br>Bottom: `soil_caliche_dirt.png`<br>Sides: `soil_caliche_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `overlays/soil_grass_side_overlay.png`) |
+| **06** | `caliche_grass` | Caliche Grass | **Climatic** | Top: `soil_grass.png`<br>Bottom: `soil_caliche_dirt.png`<br>Sides: `soil_caliche_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `blocks/overlays/soil_grass_side_overlay.png`) |
 | **07** | `clay_blue` | Blue Clay | **Clay** | `soil_clay_blue.png` | 6 uniform faces |
 | **08** | `clay_red` | Red Clay | **Clay** | `soil_clay_red.png` | 6 uniform faces |
 | **09** | `clay_white` | White Clay | **Clay** | `soil_clay_white.png` | 6 uniform faces |
@@ -138,11 +138,11 @@ The planetary pedology system classifies soils into **3 core functional division
 | **14** | `gravel_snowy` | Snowy Gravel | **Gravel** | `soil_gravel_snowy.png` | 6 uniform faces |
 | **15** | `laterite_coarse` | Laterite Coarse | **Climatic** | `soil_laterite_coarse.png` | 6 uniform faces |
 | **16** | `laterite_dirt` | Laterite Dirt | **Climatic** | `soil_laterite_dirt.png` | 6 uniform faces |
-| **17** | `laterite_grass` | Laterite Grass | **Climatic** | Top: `soil_grass.png`<br>Bottom: `soil_laterite_dirt.png`<br>Sides: `soil_laterite_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `overlays/soil_grass_side_overlay.png`) |
+| **17** | `laterite_grass` | Laterite Grass | **Climatic** | Top: `soil_grass.png`<br>Bottom: `soil_laterite_dirt.png`<br>Sides: `soil_laterite_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `blocks/overlays/soil_grass_side_overlay.png`) |
 | **18** | `laterite_hardpan` | Laterite Hardpan | **Climatic** | `soil_laterite_hardpan.png` | 6 uniform faces |
 | **19** | `loam_coarse` | Loam Coarse | **Biological** | `soil_loam_coarse.png` | 6 uniform faces |
 | **20** | `loam_dirt` | Loam Dirt | **Biological** | `soil_loam_dirt.png` | 6 uniform faces |
-| **21** | `loam_grass` | Loam Grass | **Biological** | Top: `soil_grass.png`<br>Bottom: `soil_loam_dirt.png`<br>Sides: `soil_loam_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `overlays/soil_grass_side_overlay.png`) |
+| **21** | `loam_grass` | Loam Grass | **Biological** | Top: `soil_grass.png`<br>Bottom: `soil_loam_dirt.png`<br>Sides: `soil_loam_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `blocks/overlays/soil_grass_side_overlay.png`) |
 | **22** | `loam_mud` | Loam Mud | **Biological** | `soil_loam_mud.png` | 6 uniform faces |
 | **23** | `loam_mulch` | Loam Mulch | **Biological** | Top: `soil_loam_mulch.png`<br>Bottom: `soil_loam_dirt.png`<br>Sides: `soil_loam_mulch_side.png` | Top + Bottom + 4 sides |
 | **24** | `loam_rooted` | Loam Rooted | **Biological** | `soil_loam_rooted.png` | 6 uniform faces |
@@ -154,7 +154,7 @@ The planetary pedology system classifies soils into **3 core functional division
 | **30** | `moss_forest` | Forest Moss | **Ground Moss** | `soil_moss_forest.png` | 6 uniform faces |
 | **31** | `peat_coarse` | Peat Coarse | **Biological** | `soil_peat_coarse.png` | 6 uniform faces |
 | **32** | `peat_dirt` | Peat Dirt | **Biological** | `soil_peat_dirt.png` | 6 uniform faces |
-| **33** | `peat_grass` | Peat Grass | **Biological** | Top: `soil_grass.png`<br>Bottom: `soil_peat_dirt.png`<br>Sides: `soil_peat_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `overlays/soil_grass_side_overlay.png`) |
+| **33** | `peat_grass` | Peat Grass | **Biological** | Top: `soil_grass.png`<br>Bottom: `soil_peat_dirt.png`<br>Sides: `soil_peat_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `blocks/overlays/soil_grass_side_overlay.png`) |
 | **34** | `peat_mud` | Peat Mud | **Biological** | `soil_peat_mud.png` | 6 uniform faces |
 | **35** | `peat_mulch` | Peat Mulch | **Biological** | Top: `soil_peat_mulch.png`<br>Bottom: `soil_peat_dirt.png`<br>Sides: `soil_peat_mulch_side.png` | Top + Bottom + 4 sides |
 | **36** | `peat_rooted` | Peat Rooted | **Biological** | `soil_peat_rooted.png` | 6 uniform faces |
@@ -162,7 +162,7 @@ The planetary pedology system classifies soils into **3 core functional division
 | **38** | `peat_tilled` | Peat Tilled | **Biological** | Top: `soil_peat_tilled_top.png`<br>Bottom: `soil_peat_dirt.png`<br>Sides: `soil_peat_tilled_side.png` | Top + Bottom + 4 sides |
 | **39** | `permafrost_coarse` | Permafrost Coarse | **Climatic** | `soil_permafrost_coarse.png` | 6 uniform faces |
 | **40** | `permafrost_dirt` | Permafrost Dirt | **Climatic** | `soil_permafrost_dirt.png` | 6 uniform faces |
-| **41** | `permafrost_grass` | Permafrost Grass | **Climatic** | Top: `soil_grass.png`<br>Bottom: `soil_permafrost_dirt.png`<br>Sides: `soil_permafrost_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `overlays/soil_grass_side_overlay.png`) |
+| **41** | `permafrost_grass` | Permafrost Grass | **Climatic** | Top: `soil_grass.png`<br>Bottom: `soil_permafrost_dirt.png`<br>Sides: `soil_permafrost_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `blocks/overlays/soil_grass_side_overlay.png`) |
 | **42** | `permafrost_icy` | Permafrost Icy | **Climatic** | `soil_permafrost_icy.png` | 6 uniform faces |
 | **43** | `powder_snow` | Powder Snow | **Cryosphere** | `soil_snow_powder.png` | 6 uniform faces |
 | **44** | `sand_black` | Black Sand | **Sand** | `soil_sand_black.png` | 6 uniform faces |
@@ -173,7 +173,7 @@ The planetary pedology system classifies soils into **3 core functional division
 | **49** | `sand_white` | White Sand | **Sand** | `soil_sand_white.png` | 6 uniform faces |
 | **50** | `silt_coarse` | Silt Coarse | **Biological** | `soil_silt_coarse.png` | 6 uniform faces |
 | **51** | `silt_dirt` | Silt Dirt | **Biological** | `soil_silt_dirt.png` | 6 uniform faces |
-| **52** | `silt_grass` | Silt Grass | **Biological** | Top: `soil_grass.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `overlays/soil_grass_side_overlay.png`) |
+| **52** | `silt_grass` | Silt Grass | **Biological** | Top: `soil_grass.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `blocks/overlays/soil_grass_side_overlay.png`) |
 | **53** | `silt_mud` | Silt Mud | **Biological** | `soil_silt_mud.png` | 6 uniform faces |
 | **54** | `silt_mulch` | Silt Mulch | **Biological** | Top: `soil_silt_mulch.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_mulch_side.png` | Top + Bottom + 4 sides |
 | **55** | `silt_rooted` | Silt Rooted | **Biological** | `soil_silt_rooted.png` | 6 uniform faces |
@@ -183,12 +183,12 @@ The planetary pedology system classifies soils into **3 core functional division
 
 ---
 
-## 04. Geology & Rocks (`rocks`) — 76 Blocks
+## 04. Geology & Rocks (`rocks`) — 92 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/rocks`  
 📄 **Comprehensive Specification**: [rocks_design.md](blocks/rocks_design.md)
 
-The geological framework comprises **28 mineable rock matrices** across 7 core petrological domains (each yielding native solid stone and mined cobbled stone = 56 blocks), **16 surface relief outcrops** (grass and snow transitions = 16 blocks), **2 primordial mantle bedrock blocks**, and **6 hand-collectable surface pebbles** = **76 Total Geological Blocks**.
+The geological framework comprises **28 mineable rock matrices** across 7 core petrological domains (yielding 28 solid stone and 26 mined cobbled stone = 54 structural blocks + 2 unbreakable mantle bedrock blocks), **16 surface relief outcrops** (grass and snow transitions = 16 blocks), **6 hand-collectable surface pebbles**, and **16 humid biome mossy composite blocks** (8 solid mossy rocks + 8 mossy cobbled stones) = **92 Total Geological Blocks**.
 
 ---
 
@@ -253,23 +253,39 @@ The geological framework comprises **28 mineable rock matrices** across 7 core p
 | **57** | `mantle` | Primordial Mantle | **Bedrock** | `rock_mantle.png` *(+ `1`, `2`)* | 6 uniform faces *(Cold high-pressure world floor, unbreakable)* |
 | **58** | `mantle_plume` | Mantle Plume | **Bedrock** | `rock_mantle_plume.png` *(+ `1`, `2`)* | 6 uniform faces *(Thermal hotspot ascending plume, unbreakable)* |
 | **59** | `marble` | Marble | **Metamorphic** | `rock_marble.png` | 6 uniform faces *(Pure white architectural stone)* |
-| **60** | `obsidian` | Obsidian | **Volcanic** | `rock_obsidian.png` | 6 uniform faces *(Amorphous volcanic glass)* |
-| **61** | `pebble_flint_one` | Flint Pebble (Single) | **Pebble Cluster** (1 Pebble) | `pebble_flint_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
-| **62** | `pebble_flint_three` | Flint Pebble (Cluster) | **Pebble Cluster** (3 Pebbles) | `pebble_flint_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
-| **63** | `pebble_flint_two` | Flint Pebble (Pair) | **Pebble Cluster** (2 Pebbles) | `pebble_flint_two.png` | Corner micro-box `[3..5, 0..1, 10..12]` |
-| **64** | `pebble_quartz_one` | Quartz Pebble (Single) | **Pebble Cluster** (1 Pebble) | `pebble_quartz_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
-| **65** | `pebble_quartz_three` | Quartz Pebble (Cluster) | **Pebble Cluster** (3 Pebbles) | `pebble_quartz_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
-| **66** | `pebble_quartz_two` | Quartz Pebble (Pair) | **Pebble Cluster** (2 Pebbles) | `pebble_quartz_two.png` | Corner micro-box `[3..5, 0..1, 10..12]` |
-| **67** | `sandstone_black` | Black Sandstone | **Sedimentary** | `rock_sandstone_black.png` | 6 uniform faces |
-| **68** | `sandstone_common` | Common Sandstone | **Sedimentary** | `rock_sandstone_common.png` | 6 uniform faces |
-| **69** | `sandstone_dune` | Dune Sandstone | **Sedimentary** | `rock_sandstone_dune.png` | 6 uniform faces |
-| **70** | `sandstone_pink` | Pink Sandstone | **Sedimentary** | `rock_sandstone_pink.png` | 6 uniform faces |
-| **71** | `sandstone_red` | Red Sandstone | **Sedimentary** | `rock_sandstone_red.png` | 6 uniform faces |
-| **72** | `sandstone_white` | White Sandstone | **Sedimentary** | `rock_sandstone_white.png` | 6 uniform faces |
-| **73** | `scoria` | Scoria | **Pyroclastic** | `rock_scoria.png` | 6 uniform faces *(Vesicular basaltic cinders)* |
-| **74** | `serpentinite` | Serpentinite | **Metamorphic** | `rock_serpentinite.png` | 6 uniform faces *(Deep muted olive-slate hydrated rock)* |
-| **75** | `slate` | Slate | **Metamorphic** | `rock_slate.png` | 6 uniform faces *(Laminated deep underground stone)* |
-| **76** | `tuff` | Tuff | **Pyroclastic** | `rock_tuff.png` | 6 uniform faces *(Compacted volcanic ash)* |
+| **60** | `mossy_andesite` | Mossy Andesite | **Continental** | `rock_andesite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
+| **61** | `mossy_argillite` | Mossy Argillite | **Sedimentary** | `rock_argillite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
+| **62** | `mossy_basalt` | Mossy Basalt | **Volcanic** | `rock_basalt.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
+| **63** | `mossy_cobbled_andesite` | Mossy Cobbled Andesite | **Continental** | `rock_andesite_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
+| **64** | `mossy_cobbled_argillite` | Mossy Cobbled Argillite | **Sedimentary** | `rock_argillite_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
+| **65** | `mossy_cobbled_basalt` | Mossy Cobbled Basalt | **Volcanic** | `rock_basalt_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
+| **66** | `mossy_cobbled_dolomite` | Mossy Cobbled Dolomite | **Sedimentary** | `rock_dolomite_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
+| **67** | `mossy_cobbled_gneiss` | Mossy Cobbled Gneiss | **Metamorphic** | `rock_gneiss_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
+| **68** | `mossy_cobbled_granite` | Mossy Cobbled Granite | **Plutonic** | `rock_granite_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
+| **69** | `mossy_cobbled_limestone` | Mossy Cobbled Limestone | **Sedimentary** | `rock_limestone_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
+| **70** | `mossy_cobbled_serpentinite` | Mossy Cobbled Serpentinite | **Metamorphic** | `rock_serpentinite_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
+| **71** | `mossy_dolomite` | Mossy Dolomite | **Sedimentary** | `rock_dolomite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
+| **72** | `mossy_gneiss` | Mossy Gneiss | **Metamorphic** | `rock_gneiss.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
+| **73** | `mossy_granite` | Mossy Granite | **Plutonic** | `rock_granite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
+| **74** | `mossy_limestone` | Mossy Limestone | **Sedimentary** | `rock_limestone.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
+| **75** | `mossy_serpentinite` | Mossy Serpentinite | **Metamorphic** | `rock_serpentinite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
+| **76** | `obsidian` | Obsidian | **Volcanic** | `rock_obsidian.png` | 6 uniform faces *(Amorphous volcanic glass)* |
+| **77** | `pebble_flint_one` | Flint Pebble (Single) | **Pebble Cluster (1 Pebble)** | `pebble_flint_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
+| **78** | `pebble_flint_three` | Flint Pebble (Cluster) | **Pebble Cluster (3 Pebbles)** | `pebble_flint_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
+| **79** | `pebble_flint_two` | Flint Pebble (Pair) | **Pebble Cluster (2 Pebbles)** | `pebble_flint_two.png` | Corner micro-box `[3..5, 0..1, 10..12]` |
+| **80** | `pebble_quartz_one` | Quartz Pebble (Single) | **Pebble Cluster (1 Pebble)** | `pebble_quartz_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
+| **81** | `pebble_quartz_three` | Quartz Pebble (Cluster) | **Pebble Cluster (3 Pebbles)** | `pebble_quartz_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
+| **82** | `pebble_quartz_two` | Quartz Pebble (Pair) | **Pebble Cluster (2 Pebbles)** | `pebble_quartz_two.png` | Corner micro-box `[3..5, 0..1, 10..12]` |
+| **83** | `sandstone_black` | Black Sandstone | **Sedimentary** | `rock_sandstone_black.png` | 6 uniform faces |
+| **84** | `sandstone_common` | Common Sandstone | **Sedimentary** | `rock_sandstone_common.png` | 6 uniform faces |
+| **85** | `sandstone_dune` | Dune Sandstone | **Sedimentary** | `rock_sandstone_dune.png` | 6 uniform faces |
+| **86** | `sandstone_pink` | Pink Sandstone | **Sedimentary** | `rock_sandstone_pink.png` | 6 uniform faces |
+| **87** | `sandstone_red` | Red Sandstone | **Sedimentary** | `rock_sandstone_red.png` | 6 uniform faces |
+| **88** | `sandstone_white` | White Sandstone | **Sedimentary** | `rock_sandstone_white.png` | 6 uniform faces |
+| **89** | `scoria` | Scoria | **Pyroclastic** | `rock_scoria.png` | 6 uniform faces *(Vesicular basaltic cinders)* |
+| **90** | `serpentinite` | Serpentinite | **Metamorphic** | `rock_serpentinite.png` | 6 uniform faces *(Deep muted olive-slate hydrated rock)* |
+| **91** | `slate` | Slate | **Metamorphic** | `rock_slate.png` | 6 uniform faces *(Laminated deep underground stone)* |
+| **92** | `tuff` | Tuff | **Pyroclastic** | `rock_tuff.png` | 6 uniform faces *(Compacted volcanic ash)* |
 
 ---
 
@@ -599,7 +615,7 @@ The subterranean speleological domain comprises **6 solid mineral crystal blocks
 
 ---
 
-## 08. Ocean & Benthic Ecosystems (`oceans`) — 50 Blocks [✅ 100% Completo]
+## 08. Ocean & Benthic Ecosystems (`oceans`) — 50 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/oceans`  
 📄 **Comprehensive Specification**: [oceans_design.md](blocks/oceans_design.md)
@@ -663,12 +679,12 @@ The benthic and subaquatic oceanic domain comprises **14 colonial massive coral 
 
 ---
 
-## 09. Biomaterials, Fauna & Organic Matter (`organics`) — 34 Blocks
+## 09. Biomaterials, Fauna & Organic Matter (`organics`) — 36 Blocks
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/organics`  
 📄 **Comprehensive Specification**: [organics_design.md](blocks/organics_design.md)
 
-The biological biomaterials and organic domain comprises **14 insect colony and architecture blocks** (termites, ants, bees, wasps), **6 calcified skeletal fossil formations** (bones, skulls, ribs, tusks), and **14 visceral biological tissues & arachnid webbings** = **34 Total Organic Blocks**.
+The biological biomaterials and organic domain comprises **14 insect colony and architecture blocks** (termites, ants, bees, wasps), **6 calcified skeletal fossil formations** (bones, skulls, ribs, tusks), and **16 visceral biological tissues, organ masses & arachnid webbings** (including bloody brain and bloody flesh) = **36 Total Organic Blocks**.
 
 ---
 
@@ -676,38 +692,40 @@ The biological biomaterials and organic domain comprises **14 insect colony and 
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **01** | `ant_hill` | Ant Hill (Closed) | **Colony** | `nest_ant_hill.png` | Uniform (6 faces) | Plains, Savannas | Cemented mound of mineral soil particles and salivary secretions in dormant closed state. |
 | **02** | `ant_hill_open` | Ant Hill (Active) | **Colony** | `nest_ant_hill_open.png` | Uniform (6 faces) | Plains, Savannas | Active ant mound featuring excavated gallery entryways and active insect swarms. |
-| **03** | `beaver_dam` | Beaver Dam | **Architecture** | `nest_beaver_dam.png` | Uniform (6 faces) | Forest Rivers, Swamps | Hydraulic blockage matrix woven from debarked river branches, mud mortar, and river gravel. |
+| **03** | `beaver_dam` | Beaver Dam | **Architecture** | `nest_beaver_dam.png` *(+ `1`, `2`)* | Uniform (6 faces) | Forest Rivers, Swamps | Hydraulic blockage matrix woven from debarked river branches, mud mortar, and river gravel. |
 | **04** | `bee_nest` | Wild Bee Nest | **Hive** | `nest_bee_nest_bot...top.png`<br>`nest_bee_nest_front_honey.png` | Directional (5 faces) | Flower Forests, Meadows | Natural hive hanging from tree canopies, filled with wax comb cells and dripping wild honey. |
 | **05** | `bird_nest` | Songbird Nest | **Nest** | `nest_bird_nest_bot...top.png` | Half-height Slab | Forest Canopies, Cliffs | Woven bowl of twigs and moss featuring speckled cyan robin eggs; half-height slab geometry. |
-| **06** | `blubber_block` | Blubber Block | **Adipose** | `bio_blubber.png` | Translucent (Alpha 204) | Polar Oceans, Arctic Tundras | Thick subcutaneous marine adipose tissue; excellent thermal insulator and long-burning fuel. |
-| **07** | `bone_block` | Bone Block | **Osteology** | `bio_bone_top.png`<br>`bio_bone_side.png` | Axial Column (2 faces) | Deserts, Fossils, Caves | Dense calcium phosphate and hydroxyapatite fossil megafauna bone with central marrow canal. |
-| **08** | `brain_block` | Brain Block | **Neural** | `bio_brain.png` | Uniform (6 faces) | Abyssal Depths, Lairs | Convoluted cerebral gray and pink neural matter exhibiting synaptic twitching. |
-| **09** | `calcined_bone` | Calcined Bone | **Osteology** | `bio_calcined_bone_top.png`<br>`bio_calcined_bone_side.png` | Axial Column (2 faces) | Volcanic Ash, Kilns, Catacombs | Thermally altered, pyromineralized bone recrystallized into chalky pale grey hydroxyapatite. |
-| **10** | `cobweb` | Cobweb Block | **Silk** | `organic_cobweb.png` | Volumetric 3D Cross | Abandoned Mines, Crypts | Full-voxel 3D intersecting cross of adhesive proteinaceous spider silk threads. |
-| **11** | `cobweb_arch` | Cobweb Arch | **Silk** | `organic_cobweb_arch.png` | Flat Vertical Quad | Tunnel Corners, Doorways | Diagonal fan-shaped silk web mounted flush in the upper corner between wall and ceiling. |
-| **12** | `cobweb_hanging` | Hanging Cobweb | **Silk** | `organic_cobweb_hanging.png` | Flat Vertical Quad | Tunnel Ceilings, Architraves | Pendant veil of cobweb fringe suspended from top horizontal joints and lintels. |
-| **13** | `cobweb_stretched` | Stretched Cobweb | **Silk** | `organic_cobweb_stretched.png` | Flat Vertical Quad | Narrow Corridors, Gaps | Tensioned vertical silk web stretched taut between two parallel vertical surfaces. |
-| **14** | `coprolite_block` | Coprolite Block | **Fossil** | `organic_coprolite.png` | Uniform (6 faces) | Fossil Beds, Dry Caves | Prehistoric petrified fossil dung mineralized into solid calcium phosphate sedimentary rock. |
-| **15** | `dust_block` | Organic Dust | **Detritus** | `organic_dust.png` | Uniform (6 faces) | Tombs, Forgotten Crypts | Dense accumulation of inert biological detritus, dead epithelial cells, and micro-arthropod debris. |
-| **16** | `flesh_block` | Raw Flesh Block | **Tissue** | `bio_flesh_top.png`<br>`bio_flesh_side.png` | Directional (2 faces) | Butcheries, Lairs, Carcasses | Fresh striated skeletal muscle and fibrous connective tissue with membrane top and fibril sides. |
-| **17** | `fur_block` | Animal Fur Block | **Integument** | `bio_fur_top.png`<br>`bio_fur_side.png` | Directional (2 faces) | Arctic Taigas, Pastures | Heavy mammal hide with dense vertical hair flow on sides and whorled rosette on top. |
-| **18** | `guano_block` | Guano Block | **Dropping** | `organic_guano.png` | Uniform (6 faces) | Bat Caves, Sea Islands | Compact nitrogen and phosphate-rich natural fertilizer accumulated from bat and seabird guano. |
-| **19** | `hay_nest` | Hay Poultry Nest | **Nest** | `nest_hay_nest_bot...top.png` | Half-height Slab | Barnyards, Farmsteads | Agricultural laying nest woven from golden cured straw and dry hay; half-height slab geometry. |
-| **20** | `honey_block` | Honey Block | **Secretion** | `organic_honey_block_bot...top.png` | Translucent (3 faces) | Beehives, Apiaries | Viscous colloidal nectar concentrate; cushions kinetic impact and adheres to surfaces. |
-| **21** | `honeycomb_block` | Honeycomb Block | **Wax Matrix** | `organic_honeycomb_block.png` | Uniform (6 faces) | Apiaries, Tree Cavities | Regular hexagonal prismatic matrix of pure insect wax synthesized by honeybee workers. |
-| **22** | `jelly_block` | Royal Jelly Block | **Colloid** | `organic_jelly.png`<br>`organic_jelly_bot.png` | Top/Sides + Bottom split | Queen Chambers, Orchards | Viscoelastic translucent purple royal gel providing bounce without slime stickiness. |
-| **23** | `loam_burrow` | Loam Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png`<br>Bot: `soils/soil_loam_dirt.png`<br>Sides: `soils/soil_loam_grass_side.png` | Composite Top + Loam soil | Fertile Plains, Meadows | Excavated wildlife den in rich loam soil with grass-fringed aperture and earth depth. |
-| **24** | `peat_burrow` | Peat Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png`<br>Bot: `soils/soil_peat_dirt.png`<br>Sides: `soils/soil_peat_grass_side.png` | Composite Top + Peat soil | Bogs, Moorlands, Fens | Subterranean burrow dug into dense dark acidic peat moorland, sheltering hardy marsh fauna. |
-| **25** | `poop_block` | Manure Block | **Dropping** | `organic_poop.png` | Uniform (6 faces) | Pastures, Livestock Corrals | Rich agricultural farm animal dung with undigested vegetable fiber; high-potency soil fertilizer. |
-| **26** | `seashell_block` | Seashell Block | **Sediment** | `organic_seashell.png` | Uniform (6 faces) | Warm Beaches, Coastlines | Dense coastal coquina formed from crushed whole marine bivalves and iridescent sea shells. |
-| **27** | `silk_cocoon` | Wild Silk Cocoon | **Pupa** | `nest_silk_cocoon_bot...top.png` | Directional (3 faces) | Temperate Woods, Jungles | Compact ellipsoidal pupal shell of continuous pearlescent silk fibers; premium silk harvest. |
-| **28** | `silt_burrow` | Silt Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png`<br>Bot: `soils/soil_silt_dirt.png`<br>Sides: `soils/soil_silt_grass_side.png` | Composite Top + Silt soil | Woodland Hills, Slopes | Excavated wildlife den in fine silt forest soils with shaded earthen entry tunnel. |
-| **29** | `slime_block` | Slime Block | **Colloid** | `organic_slime.png`<br>`organic_slime_bot.png` | Top/Sides + Bottom split | Swamps, Deep Caves | Elastic green colloidal gel; high viscoelastic resilience providing kinetic bounce. |
-| **30** | `spider_egg` | Spider Egg Sac | **Ootheca** | `nest_spider_egg_bot...top.png` | Directional (3 faces) | Deep Caverns, Mines | Dense fibrous silk ootheca enclosing clutches of gestating scarlet spider eggs. |
-| **31** | `termite_mound` | Termite Mound (Closed) | **Colony** | `nest_termite_mound.png` | Uniform (6 faces) | Arid Savannas | Towering spire of red clay soil cemented by termites with monolithic flute ridges. |
-| **32** | `termite_mound_open` | Termite Mound (Active) | **Colony** | `nest_termite_mound_open.png` | Uniform (6 faces) | Arid Savannas | Active termite mound displaying open thermal chimneys and ventilation tunnels. |
-| **33** | `wasp_nest` | Paper Wasp Nest | **Hive** | `nest_wasp_nest_bot...top.png` | Directional (3 faces) | Dense Forests, Ruins | Papery cellulose nest chewed from plant fibers by social wasps, with inverted entry pore. |
-| **34** | `wax_block` | Beeswax Block | **Wax** | `organic_wax.png` | Uniform (6 faces) | Domestic Hives, Workshops | Compact block of rendered virgin beeswax; waterproof sealant and architectural candle craft. |
+| **06** | `bloody_brain` | Bloody Brain Block | **Neural** | `bio_brain.png` *(+ `bloody_overlay.png`, `1`, `2`)* | Uniform (6 faces) + Shader Bloody Overlay | Abyssal Depths, Eldritch Lairs | Pulsating cerebral gray-pink neural mass dripping with arterial coagulated blood on all 6 faces. |
+| **07** | `bloody_flesh` | Bloody Flesh Block | **Tissue** | Top/Bot: `bio_flesh_top.png`<br>Sides: `bio_flesh_side.png` *(+ `bloody_overlay.png`, `1`, `2`)* | Directional (2 faces) + Lateral Shader Bloody Overlay | Butcheries, Lairs, Abattoirs | Striated raw skeletal muscle with fresh dripping blood stains and clotted streaks along vertical sides. |
+| **08** | `blubber_block` | Blubber Block | **Adipose** | `bio_blubber.png` | Translucent (Alpha 204) | Polar Oceans, Arctic Tundras | Thick subcutaneous marine adipose tissue; excellent thermal insulator and long-burning fuel. |
+| **09** | `bone_block` | Bone Block | **Osteology** | `bio_bone_top.png`<br>`bio_bone_side.png` *(+ `1`, `2`)* | Axial Column (2 faces) | Deserts, Fossils, Caves | Dense calcium phosphate and hydroxyapatite fossil megafauna bone with central marrow canal. |
+| **10** | `brain_block` | Brain Block | **Neural** | `bio_brain.png` | Uniform (6 faces) | Abyssal Depths, Lairs | Convoluted cerebral gray and pink neural matter exhibiting synaptic twitching. |
+| **11** | `calcined_bone` | Calcined Bone | **Osteology** | `bio_calcined_bone_top.png`<br>`bio_calcined_bone_side.png` | Axial Column (2 faces) | Volcanic Ash, Kilns, Catacombs | Thermally altered, pyromineralized bone recrystallized into chalky pale grey hydroxyapatite. |
+| **12** | `cobweb` | Cobweb Block | **Silk** | `organic_cobweb.png` *(+ `1`, `2`)* | Volumetric 3D Cross | Abandoned Mines, Crypts | Full-voxel 3D intersecting cross of adhesive proteinaceous spider silk threads. |
+| **13** | `cobweb_arch` | Cobweb Arch | **Silk** | `organic_cobweb_arch.png` | Flat Vertical Quad | Tunnel Corners, Doorways | Diagonal fan-shaped silk web mounted flush in the upper corner between wall and ceiling. |
+| **14** | `cobweb_hanging` | Hanging Cobweb | **Silk** | `organic_cobweb_hanging.png` | Flat Vertical Quad | Tunnel Ceilings, Architraves | Pendant veil of cobweb fringe suspended from top horizontal joints and lintels. |
+| **15** | `cobweb_stretched` | Stretched Cobweb | **Silk** | `organic_cobweb_stretched.png` | Flat Vertical Quad | Narrow Corridors, Gaps | Tensioned vertical silk web stretched taut between two parallel vertical surfaces. |
+| **16** | `coprolite_block` | Coprolite Block | **Fossil** | `organic_coprolite.png` | Uniform (6 faces) | Fossil Beds, Dry Caves | Prehistoric petrified fossil dung mineralized into solid calcium phosphate sedimentary rock. |
+| **17** | `dust_block` | Organic Dust | **Detritus** | `organic_dust.png` *(+ `1`, `2`)* | Uniform (6 faces) | Tombs, Forgotten Crypts | Dense accumulation of inert biological detritus, dead epithelial cells, and micro-arthropod debris. |
+| **18** | `flesh_block` | Raw Flesh Block | **Tissue** | `bio_flesh_top.png`<br>`bio_flesh_side.png` *(+ `1`, `2`)* | Directional (2 faces) | Butcheries, Lairs, Carcasses | Fresh striated skeletal muscle and fibrous connective tissue with membrane top and fibril sides. |
+| **19** | `fur_block` | Animal Fur Block | **Integument** | `bio_fur_top.png`<br>`bio_fur_side.png` | Directional (2 faces) | Arctic Taigas, Pastures | Heavy mammal hide with dense vertical hair flow on sides and whorled rosette on top. |
+| **20** | `guano_block` | Guano Block | **Dropping** | `organic_guano.png` | Uniform (6 faces) | Bat Caves, Sea Islands | Compact nitrogen and phosphate-rich natural fertilizer accumulated from bat and seabird guano. |
+| **21** | `hay_nest` | Hay Poultry Nest | **Nest** | `nest_hay_nest_bot...top.png` | Half-height Slab | Barnyards, Farmsteads | Agricultural laying nest woven from golden cured straw and dry hay; half-height slab geometry. |
+| **22** | `honey_block` | Honey Block | **Secretion** | `organic_honey_block_bot...top.png` | Translucent (3 faces) | Beehives, Apiaries | Viscous colloidal nectar concentrate; cushions kinetic impact and adheres to surfaces. |
+| **23** | `honeycomb_block` | Honeycomb Block | **Wax Matrix** | `organic_honeycomb_block.png` *(+ `1`, `2`)* | Uniform (6 faces) | Apiaries, Tree Cavities | Regular hexagonal prismatic matrix of pure insect wax synthesized by honeybee workers. |
+| **24** | `jelly_block` | Royal Jelly Block | **Colloid** | `organic_jelly.png`<br>`organic_jelly_bot.png` | Top/Sides + Bottom split | Queen Chambers, Orchards | Viscoelastic translucent purple royal gel providing bounce without slime stickiness. |
+| **25** | `loam_burrow` | Loam Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png`<br>Bot: `soils/soil_loam_dirt.png`<br>Sides: `soils/soil_loam_grass_side.png` | Composite Top + Loam soil | Fertile Plains, Meadows | Excavated wildlife den in rich loam soil with grass-fringed aperture and earth depth. |
+| **26** | `peat_burrow` | Peat Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png`<br>Bot: `soils/soil_peat_dirt.png`<br>Sides: `soils/soil_peat_grass_side.png` | Composite Top + Peat soil | Bogs, Moorlands, Fens | Subterranean burrow dug into dense dark acidic peat moorland, sheltering hardy marsh fauna. |
+| **27** | `poop_block` | Manure Block | **Dropping** | `organic_poop.png` *(+ `1`, `2`)* | Uniform (6 faces) | Pastures, Livestock Corrals | Rich agricultural farm animal dung with undigested vegetable fiber; high-potency soil fertilizer. |
+| **28** | `seashell_block` | Seashell Block | **Sediment** | `organic_seashell.png` | Uniform (6 faces) | Warm Beaches, Coastlines | Dense coastal coquina formed from crushed whole marine bivalves and iridescent sea shells. |
+| **29** | `silk_cocoon` | Wild Silk Cocoon | **Pupa** | `nest_silk_cocoon_bot...top.png` | Directional (3 faces) | Temperate Woods, Jungles | Compact ellipsoidal pupal shell of continuous pearlescent silk fibers; premium silk harvest. |
+| **30** | `silt_burrow` | Silt Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png`<br>Bot: `soils/soil_silt_dirt.png`<br>Sides: `soils/soil_silt_grass_side.png` | Composite Top + Silt soil | Woodland Hills, Slopes | Excavated wildlife den in fine silt forest soils with shaded earthen entry tunnel. |
+| **31** | `slime_block` | Slime Block | **Colloid** | `organic_slime.png`<br>`organic_slime_bot.png` | Top/Sides + Bottom split | Swamps, Deep Caves | Elastic green colloidal gel; high viscoelastic resilience providing kinetic bounce. |
+| **32** | `spider_egg` | Spider Egg Sac | **Ootheca** | `nest_spider_egg_bot...top.png` | Directional (3 faces) | Deep Caverns, Mines | Dense fibrous silk ootheca enclosing clutches of gestating scarlet spider eggs. |
+| **33** | `termite_mound` | Termite Mound (Closed) | **Colony** | `nest_termite_mound.png` | Uniform (6 faces) | Arid Savannas | Towering spire of red clay soil cemented by termites with monolithic flute ridges. |
+| **34** | `termite_mound_open` | Termite Mound (Active) | **Colony** | `nest_termite_mound_open.png` | Uniform (6 faces) | Arid Savannas | Active termite mound displaying open thermal chimneys and ventilation tunnels. |
+| **35** | `wasp_nest` | Paper Wasp Nest | **Hive** | `nest_wasp_nest_bot...top.png` | Directional (3 faces) | Dense Forests, Ruins | Papery cellulose nest chewed from plant fibers by social wasps, with inverted entry pore. |
+| **36** | `wax_block` | Beeswax Block | **Wax** | `organic_wax.png` | Uniform (6 faces) | Domestic Hives, Workshops | Compact block of rendered virgin beeswax; waterproof sealant and architectural candle craft. |
 
 ---
 
@@ -768,7 +786,7 @@ The architectural, utilitarian, and illumination domain comprises **6 utilitaria
 
 ---
 
-## 11. Mycology: Mushrooms (`mushrooms`) — 18 Blocks [✅ 100% Completo]
+## 11. Mycology: Mushrooms (`mushrooms`) — 18 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/mushrooms`  
 📄 **Comprehensive Specification**: [mushrooms_design.md](blocks/mushrooms_design.md)

@@ -6,7 +6,7 @@ All active textures for soils and terrain surfaces (`soil_`) are organized in th
 Generating **58 unique blocks** in the master catalog: 24 Biological soils + 12 climatic soils + 4 clays + 6 sands + 4 gravels + 2 volcanic ashes + 4 ground mosses + 4 snows & grass tops (the grass top is a grayscale image that can be colored with a shader).
 
 Shared surface overlays are located in:
-📂 **`docs/worldbuilding/overlays`**
+📂 **`docs/worldbuilding/blocks/overlays`**
 
 ---
 
@@ -46,20 +46,20 @@ graph TD
 For each biological soil type (**Loam**, **Silt**, **Peat**):
 * `dirt`: Pure foundational soil block (`soil_<type>_dirt.png`) *(+ stochastic shader variants `soil_<type>_dirt1.png`, `soil_<type>_dirt2.png`)*
 * `coarse`: Rugged soil packed with embedded pebbles (`soil_<type>_coarse.png`) *(+ stochastic shader variants `soil_<type>_coarse1.png`, `soil_<type>_coarse2.png`)*
-* `grass_side`: Lateral face with hanging grass vegetation sod (`soil_<type>_grass_side.png`)
+* `grass_side`: Lateral face with hanging grass vegetation sod (`soil_<type>_grass_side.png`) *(+ stochastic variants `1`, `2` with turf cutout area 100% identical for shader alignment and dirt varying underneath)*
 * `mud`: Water-saturated, soft muddy soil (`soil_<type>_mud.png`) *(+ stochastic shader variants `soil_<type>_mud1.png`, `soil_<type>_mud2.png`)*
 * `mulch`: Top surface coated with organic leaf litter (`soil_<type>_mulch.png`) *(+ stochastic shader variants `soil_<type>_mulch1.png`, `soil_<type>_mulch2.png`)*
 * `mulch_side`: Lateral face displaying trailing mulch litter (`soil_<type>_mulch_side.png`)
 * `rooted`: Soil densely webbed with exposed tree roots (`soil_<type>_rooted.png`) *(+ stochastic shader variants `soil_<type>_rooted1.png`, `soil_<type>_rooted2.png`)*
-* `snow_side`: Lateral face displaying a top snow crust (`soil_<type>_snow_side.png`)
+* `snow_side`: Lateral face displaying a top snow crust (`soil_<type>_snow_side.png`) *(+ stochastic variants `1`, `2` with organic snow shelf drip variations and dirt varying underneath)*
 * `tilled_top`: Top face plowed and hoed into agricultural furrows (`soil_<type>_tilled_top.png`) *(+ stochastic variants `soil_<type>_tilled_top1.png` with sprouting weeds, `soil_<type>_tilled_top2.png` with embedded pebbles)*
 * `tilled_side`: Lateral face showing agricultural furrow cutouts (`soil_<type>_tilled_side.png`)
 
 ### B. Climatic Soils (4 variants each = 12 textures + stochastic variations)
 All base solid and coarse faces feature complete 3-fold stochastic variants (`1` and `2`):
-* **Permafrost**: `soil_permafrost_dirt.png` *(+ `1`, `2`)*, `soil_permafrost_coarse.png` *(+ `1`, `2`)*, `soil_permafrost_grass_side.png`, `soil_permafrost_icy.png` *(+ `1`, `2`)*
-* **Caliche**: `soil_caliche_dirt.png` *(+ `1`, `2`)*, `soil_caliche_coarse.png` *(+ `1`, `2`)*, `soil_caliche_grass_side.png`, `soil_caliche_cracked.png` *(+ `1`, `2`)*
-* **Laterite**: `soil_laterite_dirt.png` *(+ `1`, `2`)*, `soil_laterite_coarse.png` *(+ `1`, `2`)*, `soil_laterite_grass_side.png`, `soil_laterite_hardpan.png` *(+ `1`, `2`)*
+* **Permafrost**: `soil_permafrost_dirt.png` *(+ `1`, `2`)*, `soil_permafrost_coarse.png` *(+ `1`, `2`)*, `soil_permafrost_grass_side.png` *(+ `1`, `2`)*, `soil_permafrost_icy.png` *(+ `1`, `2`)*
+* **Caliche**: `soil_caliche_dirt.png` *(+ `1`, `2`)*, `soil_caliche_coarse.png` *(+ `1`, `2`)*, `soil_caliche_grass_side.png` *(+ `1`, `2`)*, `soil_caliche_cracked.png` *(+ `1`, `2`)*
+* **Laterite**: `soil_laterite_dirt.png` *(+ `1`, `2`)*, `soil_laterite_coarse.png` *(+ `1`, `2`)*, `soil_laterite_grass_side.png` *(+ `1`, `2`)*, `soil_laterite_hardpan.png` *(+ `1`, `2`)*
 
 ### C. Clays (4 base textures + 8 stochastic variations)
 All 4 colors share the canonical alluvial marbling pattern and include stochastic variants `1` and `2`:
@@ -114,7 +114,7 @@ All 4 moss biomes feature complete 3-fold stochastic variants (`1` and `2`):
 | **02** | `loam_coarse` | Loam Coarse | **Biological** | `soil_loam_coarse.png` | 6 uniform faces |
 | **03** | `loam_mud` | Loam Mud | **Biological** | `soil_loam_mud.png` | 6 uniform faces |
 | **04** | `loam_rooted` | Loam Rooted | **Biological** | `soil_loam_rooted.png` | 6 uniform faces |
-| **05** | `loam_grass` | Loam Grass | **Biological** | Top: `soil_grass.png`<br>Bottom: `soil_loam_dirt.png`<br>Sides: `soil_loam_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `overlays/soil_grass_side_overlay.png`) |
+| **05** | `loam_grass` | Loam Grass | **Biological** | Top: `soil_grass.png`<br>Bottom: `soil_loam_dirt.png`<br>Sides: `soil_loam_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `blocks/overlays/soil_grass_side_overlay.png`) |
 | **06** | `loam_snow` | Loam Snow | **Biological** | Top: `soil_snow.png`<br>Bottom: `soil_loam_dirt.png`<br>Sides: `soil_loam_snow_side.png` | Top + Bottom + 4 sides |
 | **07** | `loam_mulch` | Loam Mulch | **Biological** | Top: `soil_loam_mulch.png`<br>Bottom: `soil_loam_dirt.png`<br>Sides: `soil_loam_mulch_side.png` | Top + Bottom + 4 sides |
 | **08** | `loam_tilled` | Loam Tilled | **Biological** | Top: `soil_loam_tilled_top.png`<br>Bottom: `soil_loam_dirt.png`<br>Sides: `soil_loam_tilled_side.png` | Top + Bottom + 4 sides |
@@ -122,7 +122,7 @@ All 4 moss biomes feature complete 3-fold stochastic variants (`1` and `2`):
 | **10** | `silt_coarse` | Silt Coarse | **Biological** | `soil_silt_coarse.png` | 6 uniform faces |
 | **11** | `silt_mud` | Silt Mud | **Biological** | `soil_silt_mud.png` | 6 uniform faces |
 | **12** | `silt_rooted` | Silt Rooted | **Biological** | `soil_silt_rooted.png` | 6 uniform faces |
-| **13** | `silt_grass` | Silt Grass | **Biological** | Top: `soil_grass.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `overlays/soil_grass_side_overlay.png`) |
+| **13** | `silt_grass` | Silt Grass | **Biological** | Top: `soil_grass.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `blocks/overlays/soil_grass_side_overlay.png`) |
 | **14** | `silt_snow` | Silt Snow | **Biological** | Top: `soil_snow.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_snow_side.png` | Top + Bottom + 4 sides |
 | **15** | `silt_mulch` | Silt Mulch | **Biological** | Top: `soil_silt_mulch.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_mulch_side.png` | Top + Bottom + 4 sides |
 | **16** | `silt_tilled` | Silt Tilled | **Biological** | Top: `soil_silt_tilled_top.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_tilled_side.png` | Top + Bottom + 4 sides |
@@ -130,7 +130,7 @@ All 4 moss biomes feature complete 3-fold stochastic variants (`1` and `2`):
 | **18** | `peat_coarse` | Peat Coarse | **Biological** | `soil_peat_coarse.png` | 6 uniform faces |
 | **19** | `peat_mud` | Peat Mud | **Biological** | `soil_peat_mud.png` | 6 uniform faces |
 | **20** | `peat_rooted` | Peat Rooted | **Biological** | `soil_peat_rooted.png` | 6 uniform faces |
-| **21** | `peat_grass` | Peat Grass | **Biological** | Top: `soil_grass.png`<br>Bottom: `soil_peat_dirt.png`<br>Sides: `soil_peat_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `overlays/soil_grass_side_overlay.png`) |
+| **21** | `peat_grass` | Peat Grass | **Biological** | Top: `soil_grass.png`<br>Bottom: `soil_peat_dirt.png`<br>Sides: `soil_peat_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `blocks/overlays/soil_grass_side_overlay.png`) |
 | **22** | `peat_snow` | Peat Snow | **Biological** | Top: `soil_snow.png`<br>Bottom: `soil_peat_dirt.png`<br>Sides: `soil_peat_snow_side.png` | Top + Bottom + 4 sides |
 | **23** | `peat_mulch` | Peat Mulch | **Biological** | Top: `soil_peat_mulch.png`<br>Bottom: `soil_peat_dirt.png`<br>Sides: `soil_peat_mulch_side.png` | Top + Bottom + 4 sides |
 | **24** | `peat_tilled` | Peat Tilled | **Biological** | Top: `soil_peat_tilled_top.png`<br>Bottom: `soil_peat_dirt.png`<br>Sides: `soil_peat_tilled_side.png` | Top + Bottom + 4 sides |
@@ -143,16 +143,16 @@ All 4 moss biomes feature complete 3-fold stochastic variants (`1` and `2`):
 | :-: | :--- | :--- | :--- | :--- | :--- |
 | **25** | `permafrost_dirt` | Permafrost Dirt | **Climatic** | `soil_permafrost_dirt.png` | 6 uniform faces |
 | **26** | `permafrost_coarse` | Permafrost Coarse | **Climatic** | `soil_permafrost_coarse.png` | 6 uniform faces |
-| **27** | `permafrost_grass` | Permafrost Grass | **Climatic** | Top: `soil_grass.png`<br>Bottom: `soil_permafrost_dirt.png`<br>Sides: `soil_permafrost_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `overlays/soil_grass_side_overlay.png`) |
+| **27** | `permafrost_grass` | Permafrost Grass | **Climatic** | Top: `soil_grass.png`<br>Bottom: `soil_permafrost_dirt.png`<br>Sides: `soil_permafrost_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `blocks/overlays/soil_grass_side_overlay.png`) |
 | **28** | `permafrost_icy` | Permafrost Icy | **Climatic** | `soil_permafrost_icy.png` | 6 uniform faces |
 | **29** | `caliche_dirt` | Caliche Dirt | **Climatic** | `soil_caliche_dirt.png` | 6 uniform faces |
 | **30** | `caliche_coarse` | Caliche Coarse | **Climatic** | `soil_caliche_coarse.png` | 6 uniform faces |
 | **31** | `caliche_cracked` | Caliche Cracked | **Climatic** | `soil_caliche_cracked.png` | 6 uniform faces |
-| **32** | `caliche_grass` | Caliche Grass | **Climatic** | Top: `soil_grass.png`<br>Bottom: `soil_caliche_dirt.png`<br>Sides: `soil_caliche_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `overlays/soil_grass_side_overlay.png`) |
+| **32** | `caliche_grass` | Caliche Grass | **Climatic** | Top: `soil_grass.png`<br>Bottom: `soil_caliche_dirt.png`<br>Sides: `soil_caliche_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `blocks/overlays/soil_grass_side_overlay.png`) |
 | **33** | `laterite_dirt` | Laterite Dirt | **Climatic** | `soil_laterite_dirt.png` | 6 uniform faces |
 | **34** | `laterite_coarse` | Laterite Coarse | **Climatic** | `soil_laterite_coarse.png` | 6 uniform faces |
 | **35** | `laterite_hardpan` | Laterite Hardpan | **Climatic** | `soil_laterite_hardpan.png` | 6 uniform faces |
-| **36** | `laterite_grass` | Laterite Grass | **Climatic** | Top: `soil_grass.png`<br>Bottom: `soil_laterite_dirt.png`<br>Sides: `soil_laterite_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `overlays/soil_grass_side_overlay.png`) |
+| **36** | `laterite_grass` | Laterite Grass | **Climatic** | Top: `soil_grass.png`<br>Bottom: `soil_laterite_dirt.png`<br>Sides: `soil_laterite_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `blocks/overlays/soil_grass_side_overlay.png`) |
 
 ---
 
@@ -160,10 +160,10 @@ All 4 moss biomes feature complete 3-fold stochastic variants (`1` and `2`):
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **37** | `moss_forest` | Forest Moss | **Ground Moss** | `soil_moss_forest.png` | 6 uniform faces *(Overlay: `overlays/moss_forest_side_overlay.png`)* |
-| **38** | `moss_crimson` | Crimson Moss | **Ground Moss** | `soil_moss_crimson.png` | 6 uniform faces *(Overlay: `overlays/moss_crimson_side_overlay.png`)* |
-| **39** | `moss_amber` | Amber Moss | **Ground Moss** | `soil_moss_amber.png` | 6 uniform faces *(Overlay: `overlays/moss_amber_side_overlay.png`)* |
-| **40** | `moss_cave` | Cave Moss | **Ground Moss** | `soil_moss_cave.png` | 6 uniform faces *(Overlay: `overlays/moss_cave_side_overlay.png`)* |
+| **37** | `moss_forest` | Forest Moss | **Ground Moss** | `soil_moss_forest.png` | 6 uniform faces |
+| **38** | `moss_crimson` | Crimson Moss | **Ground Moss** | `soil_moss_crimson.png` | 6 uniform faces |
+| **39** | `moss_amber` | Amber Moss | **Ground Moss** | `soil_moss_amber.png` | 6 uniform faces |
+| **40** | `moss_cave` | Cave Moss | **Ground Moss** | `soil_moss_cave.png` | 6 uniform faces |
 
 ---
 
