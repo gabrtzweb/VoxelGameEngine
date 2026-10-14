@@ -2,7 +2,7 @@
 
 All active textures for metallogenic ore veins, mineral crystals, precious gems, and solid raw/rough blocks are organized in the folder:
 
-📂 **`docs/worldbuilding/blocks/ores`** *(52 active PNG textures on disk: 26 vein overlays and 26 solid blocks)*
+📂 **`docs/worldbuilding/blocks/ores`** *(156 active PNG textures on disk: 78 vein overlays and 78 solid blocks across 3 variations: base, 1, 2)*
 
 Host rock matrices that receive dynamic procedural ore overlays are located in:
 

@@ -1,7 +1,7 @@
 # Worldbuilding Architecture & Catalog: Caverns, Crystals, Speleothems & Fossils (Caverns)
 
 All active textures for subterranean geological formations, mineral crystals, modular dripstones, and paleontological fossil beds are organized in the folder:
-📂 **`docs/worldbuilding/blocks/caverns`** *(78 active PNG textures on disk)*
+📂 **`docs/worldbuilding/blocks/caverns`** *(122 active PNG textures on disk: 18 solid blocks, 18 normal clusters, 18 animated glinted clusters, 56 modular speleothem pieces, 12 fossils)*
 
 Generating **28 unique blocks** in the master catalog: 6 solid crystal blocks + 6 crystal clusters + 6 glinted crystal clusters + 6 modular speleothem/dripstone systems (comprising 56 modular geometric pieces) + 4 standalone paleontological fossil blocks.
 
@@ -13,9 +13,9 @@ The subterranean caverns domain is divided into **3 Core Geological Branches (6 
 
 ```mermaid
 graph TD
-    C["Subterranean Caverns (28 Blocks / 78 Textures)"] --> B1["1. Crystallogenesis & Geodes (6 Minerals / 18 Textures)"]
+    C["Subterranean Caverns (28 Blocks / 122 Textures)"] --> B1["1. Crystallogenesis & Geodes (6 Minerals / 54 Textures)"]
     C --> B2["2. Speleothems & Dripstones (6 Materials / 56 Textures)"]
-    C --> B3["3. Paleontology & Fossil Strata (4 Blocks / 4 Textures)"]
+    C --> B3["3. Paleontology & Fossil Strata (4 Blocks / 12 Textures)"]
 
     B1 --> C1["Amethyst: Classic purple quartz geodes in basaltic cavities"]
     B1 --> C2["Aquamarine: Hydrothermal cyan-blue beryl in granitic pegmatites"]
@@ -39,16 +39,16 @@ graph TD
 
 ---
 
-## 2. Complete Texture Inventory in `worldbuilding/blocks/caverns/` (86 Active Textures)
+## 2. Complete Texture Inventory in `worldbuilding/blocks/caverns/` (122 Active Textures)
 
-### A. Real Mineral Crystals (30 Files, 16×16 px)
-Each of the 6 crystal minerals features a complete set including 3-fold stochastic solid blocks and dual cross-billboard clusters:
-* **Amethyst (5)**: `crystal_amethyst.png` *(+ `1`, `2`)*, `crystal_amethyst_cluster.png`, `crystal_amethyst_cluster_glinted.png`
-* **Aquamarine (5)**: `crystal_aquamarine.png` *(+ `1`, `2`)*, `crystal_aquamarine_cluster.png`, `crystal_aquamarine_cluster_glinted.png`
-* **Citrine (5)**: `crystal_citrine.png` *(+ `1`, `2`)*, `crystal_citrine_cluster.png`, `crystal_citrine_cluster_glinted.png`
-* **Fluorite (5)**: `crystal_fluorite.png` *(+ `1`, `2`)*, `crystal_fluorite_cluster.png`, `crystal_fluorite_cluster_glinted.png`
-* **Pink Salt (5)**: `crystal_pink_salt.png` *(+ `1`, `2`)*, `crystal_pink_salt_cluster.png`, `crystal_pink_salt_cluster_glinted.png`
-* **Selenite (5)**: `crystal_selenite.png` *(+ `1`, `2`)*, `crystal_selenite_cluster.png`, `crystal_selenite_cluster_glinted.png`
+### A. Real Mineral Crystals (54 Files: 18 Solid Blocks, 18 Normal Clusters, 18 Animated Glinted Clusters)
+Each of the 6 crystal minerals features a complete set including 3-fold stochastic solid blocks, 3-fold cross-billboard clusters, and 3-fold animated 16×64 glinted emissive clusters (4 frames each):
+* **Amethyst (9)**: `crystal_amethyst.png` *(+ `1`, `2`)*, `crystal_amethyst_cluster.png` *(+ `1`, `2`)*, `crystal_amethyst_cluster_glinted.png` *(16×64 + `1`, `2`)*
+* **Aquamarine (9)**: `crystal_aquamarine.png` *(+ `1`, `2`)*, `crystal_aquamarine_cluster.png` *(+ `1`, `2`)*, `crystal_aquamarine_cluster_glinted.png` *(16×64 + `1`, `2`)*
+* **Citrine (9)**: `crystal_citrine.png` *(+ `1`, `2`)*, `crystal_citrine_cluster.png` *(+ `1`, `2`)*, `crystal_citrine_cluster_glinted.png` *(16×64 + `1`, `2`)*
+* **Fluorite (9)**: `crystal_fluorite.png` *(+ `1`, `2`)*, `crystal_fluorite_cluster.png` *(+ `1`, `2`)*, `crystal_fluorite_cluster_glinted.png` *(16×64 + `1`, `2`)*
+* **Pink Salt (9)**: `crystal_pink_salt.png` *(+ `1`, `2`)*, `crystal_pink_salt_cluster.png` *(+ `1`, `2`)*, `crystal_pink_salt_cluster_glinted.png` *(16×64 + `1`, `2`)*
+* **Selenite (9)**: `crystal_selenite.png` *(+ `1`, `2`)*, `crystal_selenite_cluster.png` *(+ `1`, `2`)*, `crystal_selenite_cluster_glinted.png` *(16×64 + `1`, `2`)*
 
 ### B. Modular Speleothems & Dripstones (56 Files, 16×16 px)
 * **Karst Limestone (10)**:
@@ -99,12 +99,12 @@ Natural mineral prism clusters growing on geode cavity walls, floors, and ceilin
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping | Description |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **07** | `crystal_amethyst_cluster` | Amethyst Cluster | **Cluster** | `crystal_amethyst_cluster.png` | Cross-billboard | Clustered prismatic violet quartz crystals. |
-| **08** | `crystal_aquamarine_cluster` | Aquamarine Cluster | **Cluster** | `crystal_aquamarine_cluster.png` | Cross-billboard | Hexagonal prismatic sea-blue beryl cluster. |
-| **09** | `crystal_citrine_cluster` | Citrine Cluster | **Cluster** | `crystal_citrine_cluster.png` | Cross-billboard | Radiant golden-amber hydrothermal quartz cluster. |
-| **10** | `crystal_fluorite_cluster` | Fluorite Cluster | **Cluster** | `crystal_fluorite_cluster.png` | Cross-billboard | Cubic mint-green crystal cluster with natural cleavage. |
-| **11** | `crystal_pink_salt_cluster` | Pink Salt Cluster | **Cluster** | `crystal_pink_salt_cluster.png` | Cross-billboard | Crystalline halite hopper crystals in coral pink. |
-| **12** | `crystal_selenite_cluster` | Selenite Cluster | **Cluster** | `crystal_selenite_cluster.png` | Cross-billboard | Needle-sharp translucent pearlescent gypsum spires. |
+| **07** | `crystal_amethyst_cluster` | Amethyst Cluster | **Cluster** | `crystal_amethyst_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Clustered prismatic violet quartz crystals. |
+| **08** | `crystal_aquamarine_cluster` | Aquamarine Cluster | **Cluster** | `crystal_aquamarine_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Hexagonal prismatic sea-blue beryl cluster. |
+| **09** | `crystal_citrine_cluster` | Citrine Cluster | **Cluster** | `crystal_citrine_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Radiant golden-amber hydrothermal quartz cluster. |
+| **10** | `crystal_fluorite_cluster` | Fluorite Cluster | **Cluster** | `crystal_fluorite_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Cubic mint-green crystal cluster with natural cleavage. |
+| **11** | `crystal_pink_salt_cluster` | Pink Salt Cluster | **Cluster** | `crystal_pink_salt_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Crystalline halite hopper crystals in coral pink. |
+| **12** | `crystal_selenite_cluster` | Selenite Cluster | **Cluster** | `crystal_selenite_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Needle-sharp translucent pearlescent gypsum spires. |
 
 ---
 
@@ -114,12 +114,12 @@ Rare, high-grade crystalline clusters featuring radiant optical reflections and 
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping | Description |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **13** | `crystal_amethyst_glinted` | Glinted Amethyst Cluster | **Emissive** | `crystal_amethyst_cluster_glinted.png` | Cross-billboard | Deep purple cluster flashing radiant lavender glints. |
-| **14** | `crystal_aquamarine_glinted` | Glinted Aquamarine Cluster | **Emissive** | `crystal_aquamarine_cluster_glinted.png` | Cross-billboard | Bioluminescent sea-foam cyan glints and reflections. |
-| **15** | `crystal_citrine_glinted` | Glinted Citrine Cluster | **Emissive** | `crystal_citrine_cluster_glinted.png` | Cross-billboard | Fiery solar amber gleam emanating warm subterranean light. |
-| **16** | `crystal_fluorite_glinted` | Glinted Fluorite Cluster | **Emissive** | `crystal_fluorite_cluster_glinted.png` | Cross-billboard | Naturally fluorescent ultraviolet emerald-green sparkle. |
-| **17** | `crystal_pink_salt_glinted` | Glinted Pink Salt Cluster | **Emissive** | `crystal_pink_salt_cluster_glinted.png` | Cross-billboard | Warm salmon-pink shimmering salt cluster. |
-| **18** | `crystal_selenite_glinted` | Glinted Selenite Cluster | **Emissive** | `crystal_selenite_cluster_glinted.png` | Cross-billboard | Pure silvery lunar brilliance reflecting ambient cavern light. |
+| **13** | `crystal_amethyst_glinted` | Glinted Amethyst Cluster | **Emissive** | `crystal_amethyst_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Deep purple cluster flashing radiant animated lavender glints. |
+| **14** | `crystal_aquamarine_glinted` | Glinted Aquamarine Cluster | **Emissive** | `crystal_aquamarine_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Bioluminescent sea-foam cyan glints and animated traveling reflections. |
+| **15** | `crystal_citrine_glinted` | Glinted Citrine Cluster | **Emissive** | `crystal_citrine_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Fiery solar amber gleam emanating warm pulsing subterranean light. |
+| **16** | `crystal_fluorite_glinted` | Glinted Fluorite Cluster | **Emissive** | `crystal_fluorite_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Naturally fluorescent ultraviolet emerald-green traveling sparkle. |
+| **17** | `crystal_pink_salt_glinted` | Glinted Pink Salt Cluster | **Emissive** | `crystal_pink_salt_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Warm salmon-pink shimmering and sparkling salt cluster. |
+| **18** | `crystal_selenite_glinted` | Glinted Selenite Cluster | **Emissive** | `crystal_selenite_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Pure silvery lunar brilliance flashing across crystal facets. |
 
 ---
 

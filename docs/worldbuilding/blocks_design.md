@@ -23,30 +23,30 @@ For each block, the following properties are systematically specified:
 
 ## Master Summary & Block Census
 
-| Category | Domain / Directory | Block Count | Status | Primary Architectural Specification | Navigation Link |
-| :---: | :--- | :--- | :---: | :--- | :--- |
-| **01** | Technical & System Blocks (`systems`) | **8 blocks** | ✅ **100% Complete** | [systems_design.md](blocks/systems_design.md) | [Go to Section 01](#01-technical--system-blocks-systems--8-blocks-100-complete) |
-| **02** | Hydrosphere & Cryology (`fluids`) | **18 blocks** | ✅ **100% Complete** | [fluids_design.md](blocks/fluids_design.md) | [Go to Section 02](#02-hydrosphere--cryology-fluids--18-blocks-100-complete) |
-| **03** | Pedology & Soils (`soils`) | **58 blocks** | ✅ **100% Complete** | [soils_design.md](blocks/soils_design.md) | [Go to Section 03](#03-pedology--soils-soils--58-blocks-100-complete) |
-| **04** | Geology & Rocks (`rocks`) | **92 blocks** | ✅ **100% Complete** | [rocks_design.md](blocks/rocks_design.md) | [Go to Section 04](#04-geology--rocks-rocks--92-blocks-100-complete) |
-| **05** | Trees, Forestry & Dendrology (`trees`) | **98 blocks** | 🔄 *In Progress* | [trees_design.md](blocks/trees_design.md) | [Go to Section 05](#05-trees-forestry--dendrology-trees--98-blocks) |
-| **06** | Ores, Minerals & Gemology (`ores`) | **158 blocks** | 🔄 *In Progress* | [ores_design.md](blocks/ores_design.md) | [Go to Section 06](#06-ores-minerals--gemology-ores--158-blocks) |
-| **07** | Speleology & Crystals (`caverns`) | **28 blocks** | 🔄 *In Progress* | [caverns_design.md](blocks/caverns_design.md) | [Go to Section 07](#07-speleology--crystals-caverns--28-blocks) |
-| **08** | Ocean & Benthic Ecosystems (`oceans`) | **50 blocks** | ✅ **100% Complete** | [oceans_design.md](blocks/oceans_design.md) | [Go to Section 08](#08-ocean--benthic-ecosystems-oceans--50-blocks-100-complete) |
-| **09** | Biomaterials, Fauna & Organic Matter (`organics`) | **36 blocks** | 🔄 *In Progress* | [organics_design.md](blocks/organics_design.md) | [Go to Section 09](#09-biomaterials-fauna--organic-matter-organics--36-blocks) |
-| **10** | Decorations, Lighting & Architecture (`decorations`) | **160 blocks** | 🔄 *In Progress* | [decorations_design.md](blocks/decorations_design.md) | [Go to Section 10](#10-decorations-lighting--architecture-decorations--160-blocks) |
-| **11** | Mycology: Mushrooms (`mushrooms`) | **18 blocks** | ✅ **100% Complete** | [mushrooms_design.md](blocks/mushrooms_design.md) | [Go to Section 11](#11-mycology-mushrooms-mushrooms--18-blocks-100-complete) |
-| **12** | Botany: Groundcover & Herbaceous Flora (`vegetation`) | **38 blocks** | 🔄 *In Progress* | [vegetation_design.md](blocks/vegetation_design.md) | [Go to Section 12](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks) |
-| **13** | Botany: Flowers & Flowering Flora (`flowers`) | **32 blocks** | 🔄 *In Progress* | [flowers_design.md](blocks/flowers_design.md) | [Go to Section 13](#13-botany-flowers--flowering-flora-flowers--32-blocks) |
-| **TOTAL** | **Grand Master Sum** | **794 blocks** | — | — | — |
+| Category | Domain / Directory | Block Count | Texture Count | Status | Primary Architectural Specification | Navigation Link |
+| :---: | :--- | :--- | :--- | :---: | :--- | :--- |
+| **01** | Technical & System Blocks (`systems`) | **8 blocks** | **8 textures** | ✅ **100% Complete** | [systems_design.md](blocks/systems_design.md) | [Go to Section 01](#01-technical--system-blocks-systems--8-blocks-100-complete) |
+| **02** | Hydrosphere & Cryology (`fluids`) | **18 blocks** | **54 textures** | ✅ **100% Complete** | [fluids_design.md](blocks/fluids_design.md) | [Go to Section 02](#02-hydrosphere--cryology-fluids--18-blocks-100-complete) |
+| **03** | Pedology & Soils (`soils`) | **58 blocks** | **184 textures** | ✅ **100% Complete** | [soils_design.md](blocks/soils_design.md) | [Go to Section 03](#03-pedology--soils-soils--58-blocks-100-complete) |
+| **04** | Geology & Rocks (`rocks`) | **92 blocks** | **216 textures** | ✅ **100% Complete** | [rocks_design.md](blocks/rocks_design.md) | [Go to Section 04](#04-geology--rocks-rocks--92-blocks-100-complete) |
+| **05** | Trees, Forestry & Dendrology (`trees`) | **98 blocks** | **174 textures** | 🔄 *In Progress* | [trees_design.md](blocks/trees_design.md) | [Go to Section 05](#05-trees-forestry--dendrology-trees--98-blocks) |
+| **06** | Ores, Minerals & Gemology (`ores`) | **158 blocks** | **156 textures** | ✅ **100% Complete** | [ores_design.md](blocks/ores_design.md) | [Go to Section 06](#06-ores-minerals--gemology-ores--158-blocks-100-complete) |
+| **07** | Speleology & Crystals (`caverns`) | **28 blocks** | **122 textures** | ✅ **100% Complete** | [caverns_design.md](blocks/caverns_design.md) | [Go to Section 07](#07-speleology--crystals-caverns--28-blocks-100-complete) |
+| **08** | Ocean & Benthic Ecosystems (`oceans`) | **50 blocks** | **140 textures** | ✅ **100% Complete** | [oceans_design.md](blocks/oceans_design.md) | [Go to Section 08](#08-ocean--benthic-ecosystems-oceans--50-blocks-100-complete) |
+| **09** | Biomaterials, Fauna & Organic Matter (`organics`) | **36 blocks** | **69 textures** | 🔄 *In Progress* | [organics_design.md](blocks/organics_design.md) | [Go to Section 09](#09-biomaterials-fauna--organic-matter-organics--36-blocks) |
+| **10** | Decorations, Lighting & Architecture (`decorations`) | **160 blocks** | **90 textures** | 🔄 *In Progress* | [decorations_design.md](blocks/decorations_design.md) | [Go to Section 10](#10-decorations-lighting--architecture-decorations--160-blocks) |
+| **11** | Mycology: Mushrooms (`mushrooms`) | **18 blocks** | **54 textures** | ✅ **100% Complete** | [mushrooms_design.md](blocks/mushrooms_design.md) | [Go to Section 11](#11-mycology-mushrooms-mushrooms--18-blocks-100-complete) |
+| **12** | Botany: Groundcover & Herbaceous Flora (`vegetation`) | **38 blocks** | **111 textures** | 🔄 *In Progress* | [vegetation_design.md](blocks/vegetation_design.md) | [Go to Section 12](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks) |
+| **13** | Botany: Flowers & Flowering Flora (`flowers`) | **32 blocks** | **87 textures** | 🔄 *In Progress* | [flowers_design.md](blocks/flowers_design.md) | [Go to Section 13](#13-botany-flowers--flowering-flora-flowers--32-blocks) |
+| **TOTAL** | **Grand Master Sum** | **794 blocks** | **1,465 textures** | — | — | — |
 
 01. [Technical & System Blocks (`systems`) — 8 Blocks [✅ 100% Complete]](#01-technical--system-blocks-systems--8-blocks-100-complete)
 02. [Hydrosphere & Cryology (`fluids`) — 18 Blocks [✅ 100% Complete]](#02-hydrosphere--cryology-fluids--18-blocks-100-complete)
 03. [Pedology & Soils (`soils`) — 58 Blocks [✅ 100% Complete]](#03-pedology--soils-soils--58-blocks-100-complete)
 04. [Geology & Rocks (`rocks`) — 92 Blocks [✅ 100% Complete]](#04-geology--rocks-rocks--92-blocks-100-complete)
 05. [Trees, Forestry & Dendrology (`trees`) — 98 Blocks](#05-trees-forestry--dendrology-trees--98-blocks)
-06. [Ores, Minerals & Gemology (`ores`) — 158 Blocks](#06-ores-minerals--gemology-ores--158-blocks)
-07. [Speleology & Crystals (`caverns`) — 28 Blocks](#07-speleology--crystals-caverns--28-blocks)
+06. [Ores, Minerals & Gemology (`ores`) — 158 Blocks [✅ 100% Complete]](#06-ores-minerals--gemology-ores--158-blocks-100-complete)
+07. [Speleology & Crystals (`caverns`) — 28 Blocks [✅ 100% Complete]](#07-speleology--crystals-caverns--28-blocks-100-complete)
 08. [Ocean & Benthic Ecosystems (`oceans`) — 50 Blocks [✅ 100% Complete]](#08-ocean--benthic-ecosystems-oceans--50-blocks-100-complete)
 09. [Biomaterials, Fauna & Organic Matter (`organics`) — 36 Blocks](#09-biomaterials-fauna--organic-matter-organics--36-blocks)
 10. [Decorations, Lighting & Architecture (`decorations`) — 160 Blocks](#10-decorations-lighting--architecture-decorations--160-blocks)
@@ -401,7 +401,7 @@ Planetary dendrology encompasses **18 living forest tree species** distributed a
 
 ---
 
-## 06. Ores, Minerals & Gemology (`ores`) — 158 Blocks
+## 06. Ores, Minerals & Gemology (`ores`) — 158 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/ores`  
 📄 **Comprehensive Specification**: [ores_design.md](blocks/ores_design.md)
@@ -573,7 +573,7 @@ The metallogenic and mineralogical domain comprises **26 solid unrefined raw blo
 
 ---
 
-## 07. Speleology & Crystals (`caverns`) — 28 Blocks
+## 07. Speleology & Crystals (`caverns`) — 28 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/caverns`  
 📄 **Comprehensive Specification**: [caverns_design.md](blocks/caverns_design.md)
@@ -585,23 +585,23 @@ The subterranean speleological domain comprises **6 solid mineral crystal blocks
 | # | Block ID | Name | Category | Texture File(s) / Parent | Face Mapping / Geometry | Geological Description |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
 | **01** | `crystal_amethyst_block` | Amethyst Block | **Crystal** | `crystal_amethyst.png` *(+ `1`, `2`)* | 6 uniform faces | Violet quartz block with rich purple crystal facets ($SiO_2$). |
-| **02** | `crystal_amethyst_cluster` | Amethyst Cluster | **Cluster** | `crystal_amethyst_cluster.png` | Cross-billboard | Clustered prismatic violet quartz crystals. |
-| **03** | `crystal_amethyst_glinted` | Glinted Amethyst Cluster | **Emissive** | `crystal_amethyst_cluster_glinted.png` | Cross-billboard | Deep purple cluster flashing radiant lavender glints. |
+| **02** | `crystal_amethyst_cluster` | Amethyst Cluster | **Cluster** | `crystal_amethyst_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Clustered prismatic violet quartz crystals. |
+| **03** | `crystal_amethyst_glinted` | Glinted Amethyst Cluster | **Emissive** | `crystal_amethyst_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Deep purple cluster flashing radiant animated lavender glints. |
 | **04** | `crystal_aquamarine_block` | Aquamarine Block | **Crystal** | `crystal_aquamarine.png` *(+ `1`, `2`)* | 6 uniform faces | Translucent cyan-blue beryl block ($Be_3Al_2Si_6O_{18}$). |
-| **05** | `crystal_aquamarine_cluster` | Aquamarine Cluster | **Cluster** | `crystal_aquamarine_cluster.png` | Cross-billboard | Hexagonal prismatic sea-blue beryl cluster. |
-| **06** | `crystal_aquamarine_glinted` | Glinted Aquamarine Cluster | **Emissive** | `crystal_aquamarine_cluster_glinted.png` | Cross-billboard | Bioluminescent sea-foam cyan glints and reflections. |
+| **05** | `crystal_aquamarine_cluster` | Aquamarine Cluster | **Cluster** | `crystal_aquamarine_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Hexagonal prismatic sea-blue beryl cluster. |
+| **06** | `crystal_aquamarine_glinted` | Glinted Aquamarine Cluster | **Emissive** | `crystal_aquamarine_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Bioluminescent sea-foam cyan glints and animated traveling reflections. |
 | **07** | `crystal_citrine_block` | Citrine Block | **Crystal** | `crystal_citrine.png` *(+ `1`, `2`)* | 6 uniform faces | Solar golden-amber quartz block created by geothermal heating ($SiO_2$). |
-| **08** | `crystal_citrine_cluster` | Citrine Cluster | **Cluster** | `crystal_citrine_cluster.png` | Cross-billboard | Radiant golden-amber hydrothermal quartz cluster. |
-| **09** | `crystal_citrine_glinted` | Glinted Citrine Cluster | **Emissive** | `crystal_citrine_cluster_glinted.png` | Cross-billboard | Fiery solar amber gleam emanating warm subterranean light. |
+| **08** | `crystal_citrine_cluster` | Citrine Cluster | **Cluster** | `crystal_citrine_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Radiant golden-amber hydrothermal quartz cluster. |
+| **09** | `crystal_citrine_glinted` | Glinted Citrine Cluster | **Emissive** | `crystal_citrine_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Fiery solar amber gleam emanating warm pulsing subterranean light. |
 | **10** | `crystal_fluorite_block` | Fluorite Block | **Crystal** | `crystal_fluorite.png` *(+ `1`, `2`)* | 6 uniform faces | Mint-green cubic calcium fluoride block with soft natural sheen ($CaF_2$). |
-| **11** | `crystal_fluorite_cluster` | Fluorite Cluster | **Cluster** | `crystal_fluorite_cluster.png` | Cross-billboard | Cubic mint-green crystal cluster with natural cleavage. |
-| **12** | `crystal_fluorite_glinted` | Glinted Fluorite Cluster | **Emissive** | `crystal_fluorite_cluster_glinted.png` | Cross-billboard | Naturally fluorescent ultraviolet emerald-green sparkle. |
+| **11** | `crystal_fluorite_cluster` | Fluorite Cluster | **Cluster** | `crystal_fluorite_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Cubic mint-green crystal cluster with natural cleavage. |
+| **12** | `crystal_fluorite_glinted` | Glinted Fluorite Cluster | **Emissive** | `crystal_fluorite_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Naturally fluorescent ultraviolet emerald-green traveling sparkle. |
 | **13** | `crystal_pink_salt_block` | Pink Salt Block | **Crystal** | `crystal_pink_salt.png` *(+ `1`, `2`)* | 6 uniform faces | Ancient coral-pink evaporite halite salt block ($NaCl$). |
-| **14** | `crystal_pink_salt_cluster` | Pink Salt Cluster | **Cluster** | `crystal_pink_salt_cluster.png` | Cross-billboard | Crystalline halite hopper crystals in coral pink. |
-| **15** | `crystal_pink_salt_glinted` | Glinted Pink Salt Cluster | **Emissive** | `crystal_pink_salt_cluster_glinted.png` | Cross-billboard | Warm salmon-pink shimmering salt cluster. |
+| **14** | `crystal_pink_salt_cluster` | Pink Salt Cluster | **Cluster** | `crystal_pink_salt_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Crystalline halite hopper crystals in coral pink. |
+| **15** | `crystal_pink_salt_glinted` | Glinted Pink Salt Cluster | **Emissive** | `crystal_pink_salt_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Warm salmon-pink shimmering and sparkling salt cluster. |
 | **16** | `crystal_selenite_block` | Selenite Block | **Crystal** | `crystal_selenite.png` *(+ `1`, `2`)* | 6 uniform faces | Pearlescent silvery-white columnar gypsum block ($CaSO_4 \cdot 2H_2O$). |
-| **17** | `crystal_selenite_cluster` | Selenite Cluster | **Cluster** | `crystal_selenite_cluster.png` | Cross-billboard | Needle-sharp translucent pearlescent gypsum spires. |
-| **18** | `crystal_selenite_glinted` | Glinted Selenite Cluster | **Emissive** | `crystal_selenite_cluster_glinted.png` | Cross-billboard | Pure silvery lunar brilliance reflecting ambient cavern light. |
+| **17** | `crystal_selenite_cluster` | Selenite Cluster | **Cluster** | `crystal_selenite_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Needle-sharp translucent pearlescent gypsum spires. |
+| **18** | `crystal_selenite_glinted` | Glinted Selenite Cluster | **Emissive** | `crystal_selenite_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Pure silvery lunar brilliance flashing across crystal facets. |
 | **19** | `dripstone_calcite` | Calcite Flowstone | **Speleothem** | `rock_calcite.png` | Modular system (**10** pieces) | Smooth, pearlescent milk-white flowstone — Pure carbonate precipitation in pristine mineral-rich groundwater caverns. |
 | **20** | `dripstone_karst` | Karst Dripstone | **Speleothem** | `rock_karst.png` | Modular system (**10** pieces) | Rugged dark-grey weathered limestone — Classic dissolution caves formed by slow calcium bicarbonate seepage. |
 | **21** | `fossil_amber` | Fossil Amber | **Fossil** | `fossil_amber.png` | 6 uniform faces | Deep strata embedding golden translucent fossilized tree resin droplets with ancient botanical/insect inclusions. |
