@@ -1,102 +1,145 @@
 # Worldbuilding Architecture & Catalog: Agriculture & Domestic Crops (crops)
 
-All active textures for domestic agricultural cultivars, cereal grains, root vegetables, climbing vines, hanging canopy fruits, and wild ancestral crops are organized in the folder:
-📂 **`docs/worldbuilding/blocks/crops`** *(54 active PNG textures on disk)*
+All active textures for domestic agricultural cultivars, cereal grains, root vegetables, leafy greens, solanaceous fruiting crops, climbing vines, arboreal trunk/canopy pods, semi-aquatic grains, and wild ancestral crops are organized in the folder:
+📂 **`docs/worldbuilding/blocks/crops`** *(171 active PNG textures on disk)*
 
-Generating **15 unique blocks** in the master catalog spanning 3 distinct agricultural divisions:
-1. **7 Domestic Farmland Cultivars**: Wheat, Carrots, Potatoes, Beetroots, Cabbages, Onions, Tomatoes.
+Generating **34 unique blocks** in the master catalog spanning 3 distinct agricultural divisions:
+1. **16 Domestic Farmland & Bush Cultivars**: Beetroots, Bell Peppers, Cabbages, Carrots, Chili Pepper, Coffee, Corn, Garlic, Lettuce, Onions, Parsnips, Potatoes, Rice, Sweet Potato, Tomatoes, Wheat.
 2. **2 Arboreal Fruit & Pod Crops**: Cocoa, Coconut.
-3. **6 Wild Ancestral Harvestable Crops**: Wild Beetroots, Wild Cabbages, Wild Carrots, Wild Onions, Wild Potatoes, Wild Tomatoes.
+3. **16 Wild Ancestral Harvestable Crops**: Wild Beetroots, Wild Bell Peppers, Wild Cabbages, Wild Carrots, Wild Chili Pepper, Wild Coffee, Wild Corn, Wild Garlic, Wild Lettuce, Wild Onions, Wild Parsnips, Wild Potatoes, Wild Rice, Wild Sweet Potato, Wild Tomatoes, Wild Wheat.
 
 ---
 
 ## 1. Agricultural Cultivation & Growth Lifecycle Mechanics
 
 Domestic crops feature dynamic multi-stage vegetative lifecycles:
-* **Substrate Requirements**:
-  - **Farmland Crops** (`wheat`, `carrots`, `potatoes`, `beetroots`, `cabbages`, `onions`, `tomatoes`) require tilled, hydrated **Farmland** (`soil_loam_farmland_wet` / `soil_loam_farmland_dry`).
-  - **Arboreal Trunk Pods** (`cocoa`) attach laterally to living jungle trunks (`mahogany_log`, `kapok_log`).
-  - **Arboreal Canopy Pods** (`coconut`) hang suspended beneath living palm canopies (`palm_leaves`).
-  - **Wild Ancestral Crops** spawn naturally in wild terrain on untreated natural soils, sand, and coastal cliffs.
-* **Growth Progression**: Growth advances on stochastic block ticks provided sunlight levels ($L \ge 9$) and hydration conditions are satisfied.
-* **Double-Tall Climbing Mechanics**:
-  - `crop_tomatoes` develops initially as a lower bush/stem (`budding_tomatoes` stages 0–3).
-  - Upon reaching stage 3, it enables or grows the upper climbing trellis/vine (`tomatoes` stages 0–3). Harvesting the mature top block leaves the lower stem intact to produce subsequent harvests.
-* **Harvest Yields**: Fully matured final stages yield harvested food products and seed replenishment; premature harvesting drops only seeds or immature shoots.
+* **Farmland & Field Crops** require tilled, hydrated **Farmland** (`soil_loam_farmland_wet` / `soil_loam_farmland_dry`) or flooded paddy substrate.
+* **Arboreal Trunk Pods** (`cocoa`) attach laterally to living jungle trunks (`mahogany_log`, `kapok_log`).
+* **Arboreal Canopy Pods** (`coconut`) hang suspended beneath living palm canopies (`palm_leaves`).
+* **Wild Ancestral Crops** (`wild_*`) spawn naturally across wild biomes (meadows, steppes, savannas, wetlands, and coastal dunes). Single-stage forbs feature **3 stochastic texture variants** (`base`, `1`, `2`) to introduce natural field variation, while double-tall wild flora (`wild_rice`, `wild_corn`, `wild_wheat`) utilize vertical dual-mesh pairing.
+* **Multi-Block & Double-Tall Crop Growth Mechanics**:
+  - `crop_tomatoes`: develops as a lower budding stem (`crops_budding_tomatoes_stage0...3.png`), then grows the upper fruiting trellis vine (`crops_tomatoes_stage0...3.png`).
+  - `crop_rice`: develops as a lower paddy shoot (`crops_rice_stage0...3.png`), transitions to supporting foliage (`crops_rice_supporting.png`), and sprouts the upper panicle (`crops_rice_panicles_stage0...3.png`).
+  - `crop_corn`: develops as a seedling bush (`crops_corn_budding_stage0...3.png`), then extends into a tall stalk (`crops_corn_bottom_stage0...3.png`) and flowering tassel canopy (`crops_corn_top_stage0...3.png`).
+  - `crop_coffee`: develops initially as a young coffee bush (`crops_coffee_budding_stage0...3.png`), then extends into a productive two-tier shrub with lower woody branches (`crops_coffee_bottom_stage0...3.png`) and an upper blossoming/cherry canopy (`crops_coffee_top_stage0...3.png`).
+  - `wild_wheat`: double-tall wild ancestral emmer/einkorn grass with lower grassy culms (`wild_wheat_bottom.png`) and tall swaying golden-olive awn spikes (`wild_wheat_top.png`).
 
 ```mermaid
 graph TD
-    C["Agricultural Crops (15 Unique Blocks / 54 Textures)"] --> F["1. Domestic Farmland Crops (7 Blocks)"]
+    C["Agricultural Crops (34 Unique Blocks / 171 Textures)"] --> F["1. Domestic Farmland & Bush Crops (16 Blocks)"]
     C --> A["2. Arboreal Canopy & Trunk Pods (2 Blocks)"]
-    C --> W["3. Wild Ancestral Flora (6 Blocks)"]
+    C --> W["3. Wild Ancestral Flora (16 Blocks)"]
 
-    F --> F1["Wheat: crop_wheat (Stages 0 to 5)"]
-    F --> F2["Carrots: crop_carrots (Stages 0 to 3)"]
-    F --> F3["Potatoes: crop_potatoes (Stages 0 to 3)"]
-    F --> F4["Beetroots: crop_beetroots (Stages 0 to 3)"]
-    F --> F5["Cabbages: crop_cabbages (Stages 0 to 7)"]
-    F --> F6["Onions: crop_onions (Stages 0 to 3)"]
-    F --> F7["Tomatoes: crop_tomatoes (Budding 0-3 + Vine 0-3)"]
+    F --> F1["crop_wheat, crop_carrots, crop_potatoes, crop_beetroots"]
+    F --> F2["crop_cabbages, crop_onions, crop_lettuce, crop_parsnips"]
+    F --> F3["crop_sweet_potato, crop_garlic, crop_chili_pepper, crop_bell_peppers"]
+    F --> F4["Double-Tall: crop_tomatoes, crop_rice, crop_corn, crop_coffee"]
 
-    A --> A1["Cocoa Pod: crop_cocoa (Stages 0 to 2)"]
-    A --> A2["Hanging Coconut: crop_coconut (Stages 1 to 3)"]
+    A --> A1["crop_cocoa (Stages 0–2)"]
+    A --> A2["crop_coconut (Stages 1–3)"]
 
-    W --> W1["Wild Beetroots, Wild Cabbages, Wild Carrots"]
-    W --> W2["Wild Onions, Wild Potatoes, Wild Tomatoes"]
+    W --> W1["Single-Block (3 Variants Each): wild_beetroots, wild_bell_peppers, wild_cabbages, wild_carrots, wild_chili_pepper, wild_coffee, wild_garlic, wild_lettuce, wild_onions, wild_parsnips, wild_potatoes, wild_sweet_potato, wild_tomatoes"]
+    W --> W2["Double-Tall: wild_rice, wild_corn, wild_wheat"]
 ```
 
 ---
 
-## 2. Technical Texture Inventory in `worldbuilding/blocks/crops/` (54 Active Textures)
+## 2. Technical Texture Inventory in `worldbuilding/blocks/crops/` (171 Active Textures)
 
-All crop textures adhere to the standard prefix `crops_` and standard 16×16 px resolution:
+All textures adhere to strict nomenclature conventions: multi-stage growing crops use the `crops_` prefix, while single-stage wild ancestral forbs use the `wild_` prefix:
 
-### A. Cereal Grains & Field Crops (7 Files)
-* **Wheat (7)**: `crops_wheat_stage0.png`, `crops_wheat_stage1.png`, `crops_wheat_stage2.png`, `crops_wheat_stage3.png`, `crops_wheat_stage4.png`, `crops_wheat_stage5.png`, `crops_wheat_stage5_1.png` *(Mature stochastic variant)*
+### A. Cereal Grains & Field Crops (39 Files)
+* **Wheat (6)**: `crops_wheat_stage0.png` through `crops_wheat_stage5.png`
+* **Rice (9)**:
+  - Lower Stems: `crops_rice_stage0.png` through `crops_rice_stage3.png`, `crops_rice_supporting.png`
+  - Upper Panicles: `crops_rice_panicles_stage0.png` through `crops_rice_panicles_stage3.png`
+* **Corn (12)**:
+  - Seedling Budding: `crops_corn_budding_stage0.png` through `crops_corn_budding_stage3.png`
+  - Lower Stalk: `crops_corn_bottom_stage0.png` through `crops_corn_bottom_stage3.png`
+  - Upper Tassel: `crops_corn_top_stage0.png` through `crops_corn_top_stage3.png`
+* **Coffee (12)**:
+  - Young Bush: `crops_coffee_budding_stage0.png` through `crops_coffee_budding_stage3.png`
+  - Lower Canopy: `crops_coffee_bottom_stage0.png` through `crops_coffee_bottom_stage3.png`
+  - Upper Blossoms / Cherries: `crops_coffee_top_stage0.png` through `crops_coffee_top_stage3.png`
 
-### B. Root, Tuber & Bulb Crops (14 Files)
-* **Carrots (5)**: `crops_carrots_stage0.png`, `crops_carrots_stage1.png`, `crops_carrots_stage2.png`, `crops_carrots_stage3.png`, `crops_carrots_stage3_1.png` *(Mature stochastic variant)*
-* **Potatoes (5)**: `crops_potatoes_stage0.png`, `crops_potatoes_stage1.png`, `crops_potatoes_stage2.png`, `crops_potatoes_stage3.png`, `crops_potatoes_stage3_1.png` *(Mature stochastic variant)*
-* **Onions (4)**: `crops_onions_stage0.png`, `crops_onions_stage1.png`, `crops_onions_stage2.png`, `crops_onions_stage3.png`
+### B. Root, Tuber & Bulb Crops (36 Files)
+* **Carrots (4)**: `crops_carrots_stage0.png` through `crops_carrots_stage3.png`
+* **Potatoes (4)**: `crops_potatoes_stage0.png` through `crops_potatoes_stage3.png`
+* **Onions (4)**: `crops_onions_stage0.png` through `crops_onions_stage3.png`
+* **Parsnips (4)**: `crops_parsnips_stage0.png` through `crops_parsnips_stage3.png`
+* **Sweet Potato (8)**: `crops_sweet_potato_stage0.png` through `crops_sweet_potato_stage7.png`
+* **Beetroots (4)**: `crops_beetroots_stage0.png` through `crops_beetroots_stage3.png`
+* **Garlic (8)**: `crops_garlic_stage0.png` through `crops_garlic_stage7.png`
 
-### C. Brassica & Taproot Crops (13 Files)
-* **Beetroots (5)**: `crops_beetroots_stage0.png`, `crops_beetroots_stage1.png`, `crops_beetroots_stage2.png`, `crops_beetroots_stage3.png`, `crops_beetroots_stage3_1.png` *(Mature stochastic variant)*
-* **Cabbages (8)**: `crops_cabbages_stage0.png`, `crops_cabbages_stage1.png`, `crops_cabbages_stage2.png`, `crops_cabbages_stage3.png`, `crops_cabbages_stage4.png`, `crops_cabbages_stage5.png`, `crops_cabbages_stage6.png`, `crops_cabbages_stage7.png`
+### C. Brassica & Leafy Greens (13 Files)
+* **Cabbages (8)**: `crops_cabbages_stage0.png` through `crops_cabbages_stage7.png`
+* **Lettuce (5)**: `crops_lettuce_stage0.png` through `crops_lettuce_stage4.png`
 
-### D. Trellis & Climbing Vine Crops (8 Files)
-* **Tomato Stem / Budding (4)**: `crops_budding_tomatoes_stage0.png`, `crops_budding_tomatoes_stage1.png`, `crops_budding_tomatoes_stage2.png`, `crops_budding_tomatoes_stage3.png`
-* **Tomato Upper Fruiting Vine (4)**: `crops_tomatoes_stage0.png`, `crops_tomatoes_stage1.png`, `crops_tomatoes_stage2.png`, `crops_tomatoes_stage3.png`
+### D. Solanaceous & Climbing Vine Crops (24 Files)
+* **Chili Pepper (8)**: `crops_chili_pepper_stage0.png` through `crops_chili_pepper_stage7.png`
+* **Bell Peppers (8)**: `crops_bell_peppers_stage0.png` through `crops_bell_peppers_stage7.png`
+* **Tomato Stem / Budding (4)**: `crops_budding_tomatoes_stage0.png` through `crops_budding_tomatoes_stage3.png`
+* **Tomato Upper Fruiting Vine (4)**: `crops_tomatoes_stage0.png` through `crops_tomatoes_stage3.png`
 
 ### E. Arboreal Pods & Canopy Fruits (6 Files)
-* **Cocoa (3)**: `crops_cocoa_stage0.png` *(Small green pod)*, `crops_cocoa_stage1.png` *(Medium yellow pod)*, `crops_cocoa_stage2.png` *(Large orange-brown ripe pod)*
-* **Coconut (3)**: `crops_coconut_hanging_stage_1.png` *(Small green pod)*, `crops_coconut_hanging_stage_2.png` *(Medium green drupe)*, `crops_coconut_hanging_stage_3.png` *(Mature brown coconut cluster)*
+* **Cocoa (3)**: `crops_cocoa_stage0.png`, `crops_cocoa_stage1.png`, `crops_cocoa_stage2.png`
+* **Coconut (3)**: `crops_coconut_hanging_stage1.png`, `crops_coconut_hanging_stage2.png`, `crops_coconut_hanging_stage3.png`
 
-### F. Wild Ancestral Crops (6 Files)
-* **Wild Beetroots (1)**: `crops_wild_beetroots.png`
-* **Wild Cabbages (1)**: `crops_wild_cabbages.png`
-* **Wild Carrots (1)**: `crops_wild_carrots.png`
-* **Wild Onions (1)**: `crops_wild_onions.png`
-* **Wild Potatoes (1)**: `crops_wild_potatoes.png`
-* **Wild Tomatoes (1)**: `crops_wild_tomatoes.png`
+### F. Wild Ancestral Harvestable Forbs & Grasses (53 Files)
+* **Wild Beetroots (3)**: `wild_beetroots.png`, `wild_beetroots1.png`, `wild_beetroots2.png`
+* **Wild Bell Peppers (3)**: `wild_bell_peppers.png`, `wild_bell_peppers1.png`, `wild_bell_peppers2.png`
+* **Wild Cabbages (3)**: `wild_cabbages.png`, `wild_cabbages1.png`, `wild_cabbages2.png`
+* **Wild Carrots (3)**: `wild_carrots.png`, `wild_carrots1.png`, `wild_carrots2.png`
+* **Wild Chili Pepper (3)**: `wild_chili_pepper.png`, `wild_chili_pepper1.png`, `wild_chili_pepper2.png`
+* **Wild Coffee (3)**: `wild_coffee.png`, `wild_coffee1.png`, `wild_coffee2.png`
+* **Wild Corn (6)**: `wild_corn_bottom.png` *(+ `1`, `2`)*, `wild_corn_top.png` *(+ `1`, `2`)*
+* **Wild Garlic (3)**: `wild_garlic.png`, `wild_garlic1.png`, `wild_garlic2.png`
+* **Wild Lettuce (3)**: `wild_lettuce.png`, `wild_lettuce1.png`, `wild_lettuce2.png`
+* **Wild Onions (3)**: `wild_onions.png`, `wild_onions1.png`, `wild_onions2.png`
+* **Wild Parsnips (3)**: `wild_parsnips.png`, `wild_parsnips1.png`, `wild_parsnips2.png`
+* **Wild Potatoes (3)**: `wild_potatoes.png`, `wild_potatoes1.png`, `wild_potatoes2.png`
+* **Wild Rice (2)**: `wild_rice_bottom.png`, `wild_rice_top.png`
+* **Wild Sweet Potato (3)**: `wild_sweet_potato.png`, `wild_sweet_potato1.png`, `wild_sweet_potato2.png`
+* **Wild Tomatoes (3)**: `wild_tomatoes.png`, `wild_tomatoes1.png`, `wild_tomatoes2.png`
+* **Wild Wheat (6)**: `wild_wheat_bottom.png` *(+ `1`, `2`)*, `wild_wheat_top.png` *(+ `1`, `2`)*
 
 ---
 
-## 3. Complete Crop Catalog (15 Unique Blocks)
+## 3. Complete Crop Catalog (34 Unique Blocks)
 
-| # | Block ID | Name | Category | Texture Stages | Growth Stages | Substrate Requirement | Agricultural Description |
-| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **01** | `crop_wheat` | Wheat Crop | **Cereal** | `crops_wheat_stage0...5.png` *(+ `5_1`)* | 6 Stages (0–5) | Hydrated Farmland | Golden domestic wheat grain; primary agricultural staple for baking bread and livestock feed. |
-| **02** | `crop_carrots` | Carrot Crop | **Root Crop** | `crops_carrots_stage0...3.png` *(+ `3_1`)* | 4 Stages (0–3) | Hydrated Farmland | Crisp sweet orange biennial taproot with feathery green foliage; versatile nutritious vegetable. |
-| **03** | `crop_potatoes`| Potato Crop | **Tuber** | `crops_potatoes_stage0...3.png` *(+ `3_1`)* | 4 Stages (0–3) | Hydrated Farmland | Underground starchy edible tubers with leafy bushy stems; high caloric staple yield. |
-| **04** | `crop_beetroots`| Beetroot Crop | **Taproot** | `crops_beetroots_stage0...3.png` *(+ `3_1`)* | 4 Stages (0–3) | Hydrated Farmland | Bulbous deep-crimson sweet taproot and ruby-veined leaves; yields rich soup broth and dye. |
-| **05** | `crop_cabbages` | Cabbage Crop | **Brassica** | `crops_cabbages_stage0...7.png` | 8 Stages (0–7) | Hydrated Farmland | Robust layered leafy green cabbage head maturing through 8 fine developmental stages. |
-| **06** | `crop_onions` | Onion Crop | **Bulb** | `crops_onions_stage0...3.png` | 4 Stages (0–3) | Hydrated Farmland | Layered subterranean pungently aromatic allium bulb with slender erect hollow green scapes. |
-| **07** | `crop_tomatoes` | Tomato Crop | **Climbing Vine** | Bottom: `crops_budding_tomatoes_stage0...3.png`<br>Top: `crops_tomatoes_stage0...3.png` | Double-Tall (4 Lower + 4 Upper Stages) | Hydrated Farmland (Trellis) | 2-block climbing vine; lower budding stem supports an upper perennial fruiting tomato vine. |
-| **08** | `crop_cocoa` | Cocoa Pod | **Arboreal Pod** | `crops_cocoa_stage0...2.png` | 3 Stages (0–2) | Jungle Wood Trunk | Woody pendant pod maturing on tropical tree trunks, housing bitter cocoa beans for chocolate. |
-| **09** | `crop_coconut` | Hanging Coconut | **Arboreal Drupe** | `crops_coconut_hanging_stage_1...3.png` | 3 Stages (1–3) | Palm Tree Foliage | Fibrous palm drupe hanging beneath tropical palm canopies; yields coconut meat and water. |
-| **10** | `crop_wild_beetroots` | Wild Beetroots | **Wild Ancestor** | `crops_wild_beetroots.png` | 1 (Harvestable Forb) | Coastal Beaches, Dunes | Wild ancestral sea-beet growing in littoral sands; source of early domestic cultivars. |
-| **11** | `crop_wild_cabbages` | Wild Cabbages | **Wild Ancestor** | `crops_wild_cabbages.png` | 1 (Harvestable Forb) | Maritime Sea Cliffs | Hardy maritime wild brassica clinging to salty windswept limestone cliffs and shorelines. |
-| **12** | `crop_wild_carrots` | Wild Carrots | **Wild Ancestor** | `crops_wild_carrots.png` | 1 (Harvestable Forb) | Meadows, Temperate Plains | Queen Anne's lace wild ancestor with umbels of white florets and slender edible taproots. |
-| **13** | `crop_wild_onions` | Wild Onions | **Wild Ancestor** | `crops_wild_onions.png` | 1 (Harvestable Forb) | Grasslands, Savannas | Wild allium tuft growing in open savannahs, harvestable for pungent small bulbs. |
-| **14** | `crop_wild_potatoes` | Wild Potatoes | **Wild Ancestor** | `crops_wild_potatoes.png` | 1 (Harvestable Forb) | Cold Slopes, Montane Taigas | Hardy montane ancestor bearing small starchy tubers adapted to high altitudes. |
-| **15** | `crop_wild_tomatoes` | Wild Tomatoes | **Wild Ancestor** | `crops_wild_tomatoes.png` | 1 (Harvestable Forb) | Warm Riverbanks, Valleys | Bushy ancestral wild nightshade producing clusters of tart miniature cherry-sized fruit. |
+| # | Block ID | Name | Category | Texture File(s) | Face Mapping / Lifecycle |
+| :-: | :--- | :--- | :--- | :--- | :--- |
+| **01** | `crop_beetroots` | Beetroot Crop | **Taproot** | `crops_beetroots_stage0...3.png` | 4 Stages (0–3) |
+| **02** | `crop_bell_peppers` | Bell Pepper Crop | **Solanaceae** | `crops_bell_peppers_stage0...7.png` | 8 Stages (0–7) |
+| **03** | `crop_cabbages` | Cabbage Crop | **Brassica** | `crops_cabbages_stage0...7.png` | 8 Stages (0–7) |
+| **04** | `crop_carrots` | Carrot Crop | **Root Crop** | `crops_carrots_stage0...3.png` | 4 Stages (0–3) |
+| **05** | `crop_chili_pepper` | Chili Pepper Crop | **Solanaceae** | `crops_chili_pepper_stage0...7.png` | 8 Stages (0–7) |
+| **06** | `crop_cocoa` | Cocoa Pod | **Arboreal Pod** | `crops_cocoa_stage0...2.png` | 3 Stages (0–2) |
+| **07** | `crop_coconut` | Hanging Coconut | **Arboreal Drupe** | `crops_coconut_hanging_stage1...3.png` | 3 Stages (1–3) |
+| **08** | `crop_coffee` | Coffee Crop | **Beverage Shrub** | Budding: `crops_coffee_budding_stage0...3.png`<br>Bottom: `crops_coffee_bottom_stage0...3.png`<br>Top: `crops_coffee_top_stage0...3.png` | Double-Tall Shrub (4 Budding + 4 Lower + 4 Upper Stages) |
+| **09** | `crop_corn` | Corn Crop | **Cereal** | Budding: `crops_corn_budding_stage0...3.png`<br>Bottom: `crops_corn_bottom_stage0...3.png`<br>Top: `crops_corn_top_stage0...3.png` | Double-Tall Stalk (4 Budding + 4 Lower + 4 Upper Stages) |
+| **10** | `crop_garlic` | Garlic Crop | **Bulb** | `crops_garlic_stage0...7.png` | 8 Stages (0–7) |
+| **11** | `crop_lettuce` | Lettuce Crop | **Leafy Vegetable** | `crops_lettuce_stage0...4.png` | 5 Stages (0–4) |
+| **12** | `crop_onions` | Onion Crop | **Bulb** | `crops_onions_stage0...3.png` | 4 Stages (0–3) |
+| **13** | `crop_parsnips` | Parsnip Crop | **Root Crop** | `crops_parsnips_stage0...3.png` | 4 Stages (0–3) |
+| **14** | `crop_potatoes` | Potato Crop | **Tuber** | `crops_potatoes_stage0...3.png` | 4 Stages (0–3) |
+| **15** | `crop_rice` | Rice Crop | **Cereal** | Bottom: `crops_rice_stage0...3.png` *(+ `supporting`)*<br>Top: `crops_rice_panicles_stage0...3.png` | Double-Tall (4 Lower + Supporting + 4 Upper Stages) |
+| **16** | `crop_sweet_potato` | Sweet Potato Crop | **Tuber** | `crops_sweet_potato_stage0...7.png` | 8 Stages (0–7) |
+| **17** | `crop_tomatoes` | Tomato Crop | **Climbing Vine** | Bottom: `crops_budding_tomatoes_stage0...3.png`<br>Top: `crops_tomatoes_stage0...3.png` | Double-Tall (4 Lower + 4 Upper Stages) |
+| **18** | `crop_wheat` | Wheat Crop | **Cereal** | `crops_wheat_stage0...5.png` | 6 Stages (0–5) |
+| **19** | `wild_beetroots` | Wild Beetroots | **Wild Ancestor** | `wild_beetroots.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **20** | `wild_bell_peppers` | Wild Bell Peppers | **Wild Ancestor** | `wild_bell_peppers.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **21** | `wild_cabbages` | Wild Cabbages | **Wild Ancestor** | `wild_cabbages.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **22** | `wild_carrots` | Wild Carrots | **Wild Ancestor** | `wild_carrots.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **23** | `wild_chili_pepper` | Wild Chili Pepper | **Wild Ancestor** | `wild_chili_pepper.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **24** | `wild_coffee` | Wild Coffee | **Wild Ancestor** | `wild_coffee.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **25** | `wild_corn` | Wild Corn | **Wild Ancestor** | Bottom: `wild_corn_bottom.png` *(+ `1`, `2`)*<br>Top: `wild_corn_top.png` *(+ `1`, `2`)* | Double-Tall Cross-billboard (Harvestable Forb, 3 Variants) |
+| **26** | `wild_garlic` | Wild Garlic | **Wild Ancestor** | `wild_garlic.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **27** | `wild_lettuce` | Wild Lettuce | **Wild Ancestor** | `wild_lettuce.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **28** | `wild_onions` | Wild Onions | **Wild Ancestor** | `wild_onions.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **29** | `wild_parsnips` | Wild Parsnips | **Wild Ancestor** | `wild_parsnips.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **30** | `wild_potatoes` | Wild Potatoes | **Wild Ancestor** | `wild_potatoes.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **31** | `wild_rice` | Wild Rice | **Wild Ancestor** | Bottom: `wild_rice_bottom.png`<br>Top: `wild_rice_top.png` | Double-Tall Cross-billboard (Harvestable Forb) |
+| **32** | `wild_sweet_potato` | Wild Sweet Potato | **Wild Ancestor** | `wild_sweet_potato.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **33** | `wild_tomatoes` | Wild Tomatoes | **Wild Ancestor** | `wild_tomatoes.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **34** | `wild_wheat` | Wild Wheat | **Wild Ancestor** | Bottom: `wild_wheat_bottom.png` *(+ `1`, `2`)*<br>Top: `wild_wheat_top.png` *(+ `1`, `2`)* | Double-Tall Cross-billboard (Harvestable Grain, 3 Variants) |

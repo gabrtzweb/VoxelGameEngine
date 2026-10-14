@@ -1,8 +1,8 @@
 # Worldbuilding Architecture & Catalog: Decorations, Lighting & Finishes (Decorations)
 
-All active textures for architectural elements, utilitarian furniture (`util_`), lighting emitters (`emit_`), textiles, glasswork, masonry, and dyeable finishes (`deco_`) are organized in 📂 **`docs/worldbuilding/blocks/decorations`** *(56 active base PNG textures on disk).
+All active textures for architectural elements, utilitarian furniture (`util_`), lighting emitters (`emit_`), textiles, glasswork, masonry, and dyeable finishes (`deco_`) are organized in 📂 **`docs/worldbuilding/blocks/decorations`** *(62 active base PNG textures on disk / 96 total textures with shader variants)*.
 
-Generating **160 unique blocks** in the master catalog: 6 utilitarian storage/furniture blocks + 8 pure original masonry, textiles, and glass + 128 colored variants across 16 colors via shader [8 master materials $\times$ 16] + 6 agricultural fibers and rural pathways + 12 radiant emitters and torches*.
+Generating **162 unique blocks** in the master catalog: 6 utilitarian storage/furniture blocks + 8 pure original masonry, textiles, and glass + 128 colored variants across 16 colors via shader [8 master materials $\times$ 16] + 8 agricultural fibers and rural pathways + 12 radiant emitters and torches.
 
 Shared surface overlays are located in:
 📂 **`docs/worldbuilding/blocks/overlays`**
@@ -11,20 +11,20 @@ Shared surface overlays are located in:
 
 ## 1. Structural and Architectural Classification
 
-The world building, decoration, and illumination assets are organized into **5 Functional Categories (160 Unique Blocks / 56 Base Textures)**:
+The world building, decoration, and illumination assets are organized into **5 Functional Categories (162 Unique Blocks / 62 Base Textures)**:
 
 ```mermaid
 graph TD
-    D["Decorations & Architecture (160 Unique Blocks / 56 Base Textures)"] --> C1["1. Furniture & Utilities (util_) (6 Blocks)"]
+    D["Decorations & Architecture (162 Unique Blocks / 62 Base Textures)"] --> C1["1. Furniture & Utilities (util_) (6 Blocks)"]
     D --> C2["2. Basic Pure Traditional Materials & Masonry (8 Blocks)"]
     D --> C3["3. Dyed Finishes & Glazed Surfaces in 16 Colors (128 Blocks)"]
-    D --> C4["4. Agricultural Fibers & Rural Pathways (6 Blocks)"]
+    D --> C4["4. Agricultural Fibers & Rural Pathways (8 Blocks)"]
     D --> C5["5. Decorative Lighting & Radiant Emitters (emit_) (12 Blocks)"]
 
     C1 --> C1a["Barrel (util_barrel_*), Crate (util_crate_*), Basket (util_basket_*), Bookshelf (util_bookshelf_*), Bookshelf Empty (util_bookshelf_*_empty), Bag (util_bag_*)"]
     C2 --> C2a["Bricks, Linen, Fabric, Glass, Tinted Glass, Plaster, Wool, Shingles"]
     C3 --> C3a["8 Materials x 16 Colors: Bricks (16), Linen (16), Fabric (16), Stained Glass (16), Smoked Tinted Glass (16), Plaster (16), Wool (16), Glazed Shingles (16)"]
-    C4 --> C4a["Hay Bale (Top, Side), Straw Bale (Top, Side), Stony Path, Dirty Path, Sandy Path, Snowy Path"]
+    C4 --> C4a["Hay Bale, Straw Bale, Rice Bale, Corn Bale, Stony Path, Dirty Path, Sandy Path, Snowy Path"]
     C5 --> C5a["Lamp (emit_lamp_*), 6 Torches (Fire, Cold, Warm, Red, Green, Blue), 5 Light Blocks (Cold, Warm, Red, Green, Blue)"]
 ```
 
@@ -61,9 +61,11 @@ All 56 textures strictly follow the functional prefix taxonomy (`util_`, `deco_`
 * `deco_wool_painted.png` *(+ `1`, `2`)* *(High-luminance neutral wool for 16-color shader tinting)*
 * `deco_shingles_painted.png` *(+ `1`, `2`)* *(Grayscale curved shingles for 16-color glazed ceramic roofing)*
 
-### D. Agricultural Fibers & Pathways (`deco_`) (8 Base Files + Stochastic Variations)
+### D. Agricultural Fibers & Pathways (`deco_`) (14 Base Files + Stochastic Variations)
 * `deco_hay_bale_side.png`, `deco_hay_bale_top.png` *(Orientable animal feed hay bale)* (2)
 * `deco_straw_bale_side.png`, `deco_straw_bale_top.png` *(Orientable dry golden straw bale)* (2)
+* `deco_rice_bale_top.png`, `deco_rice_bale_side.png`, `deco_rice_bale_bottom.png` *(Orientable harvested rice grain & stalk bale)* (3)
+* `deco_corn_bale_top.png`, `deco_corn_bale_side.png`, `deco_corn_bale_bottom.png` *(Orientable dried maize stalk & husk bale)* (3)
 * `deco_path_stony.png` *(Cobblestone pebble paving; + `1`, `2`)* (1)
 * `deco_path_dirty.png` *(Compacted dirt trail; + `1`, `2`)* (1)
 * `deco_path_sandy.png` *(Compacted sand pathway; + `1`, `2`)* (1)
@@ -152,16 +154,18 @@ Each of the 8 master materials multiplies its grayscale luminance texture by the
 
 ---
 
-### 4.4. Agricultural Fibers & Rural Pathways (6 Blocks)
+### 4.4. Agricultural Fibers & Rural Pathways (8 Blocks)
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
 | **143** | `hay_bale` | Hay Bale | **Fibers** | `deco_hay_bale_top.png`<br>`deco_hay_bale_side.png` | Top & Bottom top + 4 sides side *(Orientable)* |
 | **144** | `straw_bale` | Straw Bale | **Fibers** | `deco_straw_bale_top.png`<br>`deco_straw_bale_side.png` | Top & Bottom top + 4 sides side *(Orientable)* |
-| **145** | `path_stony` | Stony Path | **Paths** | `deco_path_stony.png` | 6 uniform faces |
-| **146** | `path_dirty` | Dirty Path | **Paths** | `deco_path_dirty.png` | 6 uniform faces |
-| **147** | `path_sandy` | Sandy Path | **Paths** | `deco_path_sandy.png` | 6 uniform faces |
-| **148** | `path_snowy` | Snowy Path | **Paths** | `deco_path_snowy.png` | 6 uniform faces |
+| **145** | `rice_bale` | Rice Bale | **Fibers** | `deco_rice_bale_top.png`<br>`deco_rice_bale_side.png`<br>`deco_rice_bale_bottom.png` | Top top + Bottom bottom + 4 sides side *(Orientable)* |
+| **146** | `corn_bale` | Corn Bale | **Fibers** | `deco_corn_bale_top.png`<br>`deco_corn_bale_side.png`<br>`deco_corn_bale_bottom.png` | Top top + Bottom bottom + 4 sides side *(Orientable)* |
+| **147** | `path_stony` | Stony Path | **Paths** | `deco_path_stony.png` | 6 uniform faces |
+| **148** | `path_dirty` | Dirty Path | **Paths** | `deco_path_dirty.png` | 6 uniform faces |
+| **149** | `path_sandy` | Sandy Path | **Paths** | `deco_path_sandy.png` | 6 uniform faces |
+| **150** | `path_snowy` | Snowy Path | **Paths** | `deco_path_snowy.png` | 6 uniform faces |
 
 ---
 
@@ -169,15 +173,15 @@ Each of the 8 master materials multiplies its grayscale luminance texture by the
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **149** | `emit_lamp` | Lamp | **Lighting** | `emit_lamp.png`<br>`emit_lamp_top.png`<br>`emit_lamp_on.png`<br>`emit_lamp_top_on.png` | Top top + 4 sides + Bottom (`emit_lamp.png`) *(2 states: Normal / On)* |
-| **150** | `emit_torch_fire` | Fire Torch | **Lighting** | `emit_torch_fire.png` | Vertical stem model *(5 animated fire frames)* |
-| **151** | `emit_torch_cold` | Cold Torch | **Lighting** | `emit_torch_cold.png` | Vertical stem model *(Cold light 6500K)* |
-| **152** | `emit_torch_warm` | Warm Torch | **Lighting** | `emit_torch_warm.png` | Vertical stem model *(Warm light 2700K)* |
-| **153** | `emit_torch_red` | Red Torch | **Lighting** | `emit_torch_red.png` | Vertical stem model *(Ruby red diode)* |
-| **154** | `emit_torch_green` | Green Torch | **Lighting** | `emit_torch_green.png` | Vertical stem model *(Emerald green diode)* |
-| **155** | `emit_torch_blue` | Blue Torch | **Lighting** | `emit_torch_blue.png` | Vertical stem model *(Sapphire blue diode)* |
-| **156** | `emit_light_cold` | Cold Light | **Radiant Emitter** | `emit_light_cold.png` | 6 uniform faces |
-| **157** | `emit_light_warm` | Warm Light | **Radiant Emitter** | `emit_light_warm.png` | 6 uniform faces |
-| **158** | `emit_light_red` | Red Light | **Radiant Emitter** | `emit_light_red.png` | 6 uniform faces |
-| **159** | `emit_light_green` | Green Light | **Radiant Emitter** | `emit_light_green.png` | 6 uniform faces |
-| **160** | `emit_light_blue` | Blue Light | **Radiant Emitter** | `emit_light_blue.png` | 6 uniform faces |
+| **151** | `emit_lamp` | Lamp | **Lighting** | `emit_lamp.png`<br>`emit_lamp_top.png`<br>`emit_lamp_on.png`<br>`emit_lamp_top_on.png` | Top top + 4 sides + Bottom (`emit_lamp.png`) *(2 states: Normal / On)* |
+| **152** | `emit_torch_fire` | Fire Torch | **Lighting** | `emit_torch_fire.png` | Vertical stem model *(5 animated fire frames)* |
+| **153** | `emit_torch_cold` | Cold Torch | **Lighting** | `emit_torch_cold.png` | Vertical stem model *(Cold light 6500K)* |
+| **154** | `emit_torch_warm` | Warm Torch | **Lighting** | `emit_torch_warm.png` | Vertical stem model *(Warm light 2700K)* |
+| **155** | `emit_torch_red` | Red Torch | **Lighting** | `emit_torch_red.png` | Vertical stem model *(Ruby red diode)* |
+| **156** | `emit_torch_green` | Green Torch | **Lighting** | `emit_torch_green.png` | Vertical stem model *(Emerald green diode)* |
+| **157** | `emit_torch_blue` | Blue Torch | **Lighting** | `emit_torch_blue.png` | Vertical stem model *(Sapphire blue diode)* |
+| **158** | `emit_light_cold` | Cold Light | **Radiant Emitter** | `emit_light_cold.png` | 6 uniform faces |
+| **159** | `emit_light_warm` | Warm Light | **Radiant Emitter** | `emit_light_warm.png` | 6 uniform faces |
+| **160** | `emit_light_red` | Red Light | **Radiant Emitter** | `emit_light_red.png` | 6 uniform faces |
+| **161** | `emit_light_green` | Green Light | **Radiant Emitter** | `emit_light_green.png` | 6 uniform faces |
+| **162** | `emit_light_blue` | Blue Light | **Radiant Emitter** | `emit_light_blue.png` | 6 uniform faces |

@@ -145,10 +145,10 @@ All textures adhere to the engine's naming conventions and geometry profiles:
 * `vege_red_algae.png`, `1.png`, `2.png` *(16×320 px animated strips, 20 frames)* (3)
 
 ### E. Multi-Block Tall Pelagic Macroalgae Strips (8 Files, 16×320 px Strips RGBA)
-* `vege_kelp.png` *(Topo)*, `vege_kelp_plant.png` *(Corpo)* (2)
-* `vege_bull_kelp.png` *(Topo)*, `vege_bull_kelp_plant.png` *(Corpo)* (2)
-* `vege_delesseria.png` *(Topo)*, `vege_delesseria_plant.png` *(Corpo)* (2)
-* `vege_sargassum.png` *(Topo)*, `vege_sargassum_plant.png` *(Corpo)* (2)
+* `vege_kelp.png` *(Top)*, `vege_kelp_plant.png` *(Body)* (2)
+* `vege_bull_kelp.png` *(Top)*, `vege_bull_kelp_plant.png` *(Body)* (2)
+* `vege_delesseria.png` *(Top)*, `vege_delesseria_plant.png` *(Body)* (2)
+* `vege_sargassum.png` *(Top)*, `vege_sargassum_plant.png` *(Body)* (2)
 
 ---
 
@@ -158,22 +158,22 @@ All textures adhere to the engine's naming conventions and geometry profiles:
 
 Solid calcareous biogenic blocks forming the massive framework of tropical coral reefs. Rendered as standard full-block solids with procedural stochastic variation (`base`, `1`, `2`).
 
-| # | Block ID | Name | Category | Texture File(s) | Variations | Biome Occurrence | Ecological Description |
-| :-: | :--- | :--- | :--- | :--- | :-: | :--- | :--- |
-| **01** | `tube_coral` | Tube Coral | **Massive Coral** | `aqua_tube_coral.png` *(+ `1`, `2`)* | 3 | Shallow Tropical Seas | Dense cylindrical tubular aragonite corallites in vibrant cobalt blue. |
-| **02** | `brain_coral` | Brain Coral | **Massive Coral** | `aqua_brain_coral.png` *(+ `1`, `2`)* | 3 | Shallow Warm Lagoons | Hemispherical massive colony with convoluted, meandering ridges in rose pink. |
-| **03** | `bubble_coral` | Bubble Coral | **Massive Coral** | `aqua_bubble_coral.png` *(+ `1`, `2`)* | 3 | Sunlit Reef Slopes | Inflated vesicular water-filled polyps of vivid violet-purple coloration. |
-| **04** | `fire_coral` | Fire Coral | **Massive Coral** | `aqua_fire_coral.png` *(+ `1`, `2`)* | 3 | Outer Reef Crests | Calcified hydrocoral in bright scarlet with stinging defensive nematocysts. |
-| **05** | `horn_coral` | Horn Coral | **Massive Coral** | `aqua_horn_coral.png` *(+ `1`, `2`)* | 3 | Clear Tropical Waters | Upright columnar gold-yellow corallum reaching toward intense sunlight. |
-| **06** | `staghorn_coral` | Staghorn Coral | **Massive Coral** | `aqua_staghorn_coral.png` *(+ `1`, `2`)* | 3 | Barrier Reef Flats | Fast-growing emerald-green branching acroporid structure with angular antlers. |
-| **07** | `heart_coral` | Heart Coral | **Massive Coral** | `aqua_heart_coral.png` *(+ `1`, `2`)* | 3 | Tropical Reef Drop-offs | Massive calcium colony displaying intense crimson-magenta polyps. |
-| **08** | `leaf_coral` | Leaf Coral | **Massive Coral** | `aqua_leaf_coral.png` *(+ `1`, `2`)* | 3 | Calm Sheltered Lagoons | Foliaceous ruffled plates and wavy ridges rich in olive-green pigments. |
-| **09** | `reed_coral` | Reed Coral | **Massive Coral** | `aqua_reed_coral.png` *(+ `1`, `2`)* | 3 | Mid-Depth Patch Reefs | Articulated vertical clustered stems in deep indigo and violet tones. |
-| **10** | `spike_coral` | Spike Coral | **Massive Coral** | `aqua_spike_coral.png` *(+ `1`, `2`)* | 3 | Deep Reef Margins | Heavy skeletal base with prominent conical spires in cyan-turquoise hues. |
-| **11** | `thorn_coral` | Thorn Coral | **Massive Coral** | `aqua_thorn_coral.png` *(+ `1`, `2`)* | 3 | Deep Trenches & Sea Caves | Antipatharian black coral with a tough, thorny obsidian-colored chitin skeleton. |
-| **12** | `wax_coral` | Wax Coral | **Massive Coral** | `aqua_wax_coral.png` *(+ `1`, `2`)* | 3 | Calcareous Reef Plateaus | Smooth, pale ivory-white colonial formation with a velvety waxy finish. |
-| **13** | `sun_coral` | Sun Coral | **Massive Coral** | `aqua_sun_coral.png` *(+ `1`, `2`)* | 3 | Tropical Atolls & Sunlit Reefs | Radiating golden-orange corallites with intense saffron centers. |
-| **14** | `zigzag_coral` | Zigzag Coral | **Massive Coral** | `aqua_zigzag_coral.png` *(+ `1`, `2`)* | 3 | Deep Barrier Slopes, Mesophotic Reefs | Angular labyrinthine skeletal ridges in graphite dark grey hues. |
+| # | Block ID | Name | Category | Texture File(s) | Face Mapping / Geometry |
+| :-: | :--- | :--- | :--- | :--- | :--- |
+| **01** | `tube_coral` | Tube Coral | **Massive Coral** | `aqua_tube_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **02** | `brain_coral` | Brain Coral | **Massive Coral** | `aqua_brain_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **03** | `bubble_coral` | Bubble Coral | **Massive Coral** | `aqua_bubble_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **04** | `fire_coral` | Fire Coral | **Massive Coral** | `aqua_fire_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **05** | `horn_coral` | Horn Coral | **Massive Coral** | `aqua_horn_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **06** | `staghorn_coral` | Staghorn Coral | **Massive Coral** | `aqua_staghorn_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **07** | `heart_coral` | Heart Coral | **Massive Coral** | `aqua_heart_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **08** | `leaf_coral` | Leaf Coral | **Massive Coral** | `aqua_leaf_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **09** | `reed_coral` | Reed Coral | **Massive Coral** | `aqua_reed_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **10** | `spike_coral` | Spike Coral | **Massive Coral** | `aqua_spike_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **11** | `thorn_coral` | Thorn Coral | **Massive Coral** | `aqua_thorn_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **12** | `wax_coral` | Wax Coral | **Massive Coral** | `aqua_wax_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **13** | `sun_coral` | Sun Coral | **Massive Coral** | `aqua_sun_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **14** | `zigzag_coral` | Zigzag Coral | **Massive Coral** | `aqua_zigzag_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
 
 ---
 
@@ -238,10 +238,10 @@ Sessile photosynthetic marine vegetation, kelp forests, and deep-sea hydrotherma
 
 | # | Block ID | Name | Category | Texture File(s) | Structure | Animation / Frames | Biological Description |
 | :-: | :--- | :--- | :--- | :--- | :-: | :--- | :--- |
-| **43** | `kelp` | Giant Kelp | **Laminar Macroalga** | `vege_kelp.png` *(Topo)*<br>`vege_kelp_plant.png` *(Corpo)* | Multi-block Column | 16×320 px (20 frames) | Giant vertical brown laminar kelp forming dense underwater forest canopies. |
-| **44** | `bull_kelp` | Bull Kelp | **Laminar Macroalga** | `vege_bull_kelp.png` *(Topo)*<br>`vege_bull_kelp_plant.png` *(Corpo)* | Multi-block Column | 16×320 px (20 frames) | Heavy annual kelp with hollow bulbous pneumatocyst bulb supporting long trailing blades. |
-| **45** | `delesseria` | Delesseria | **Rhodophyte** | `vege_delesseria.png` *(Topo)*<br>`vege_delesseria_plant.png` *(Corpo)* | Multi-block Column | 16×320 px (20 frames) | Elegant deep-sea red alga with delicate leaf-like sinuous fronds with midribs. |
-| **46** | `sargassum` | Sargassum | **Pelagic Phaeophyte**| `vege_sargassum.png` *(Topo)*<br>`vege_sargassum_plant.png` *(Corpo)* | Multi-block Column | 16×320 px (20 frames) | Free-floating or anchored bushy brown macroalga with berry-like gas vesicles. |
+| **43** | `kelp` | Giant Kelp | **Laminar Macroalga** | `vege_kelp.png` *(Top)*<br>`vege_kelp_plant.png` *(Body)* | Multi-block Column | 16×320 px (20 frames) | Giant vertical brown laminar kelp forming dense underwater forest canopies. |
+| **44** | `bull_kelp` | Bull Kelp | **Laminar Macroalga** | `vege_bull_kelp.png` *(Top)*<br>`vege_bull_kelp_plant.png` *(Body)* | Multi-block Column | 16×320 px (20 frames) | Heavy annual kelp with hollow bulbous pneumatocyst bulb supporting long trailing blades. |
+| **45** | `delesseria` | Delesseria | **Rhodophyte** | `vege_delesseria.png` *(Top)*<br>`vege_delesseria_plant.png` *(Body)* | Multi-block Column | 16×320 px (20 frames) | Elegant deep-sea red alga with delicate leaf-like sinuous fronds with midribs. |
+| **46** | `sargassum` | Sargassum | **Pelagic Phaeophyte**| `vege_sargassum.png` *(Top)*<br>`vege_sargassum_plant.png` *(Body)* | Multi-block Column | 16×320 px (20 frames) | Free-floating or anchored bushy brown macroalga with berry-like gas vesicles. |
 | **47** | `seagrass` | Seagrass | **Marine Angiosperm** | `vege_seagrass.png` *(+ `1`, `2`)* | Single-block (1 bloco) | 16×240 px (15 frames) | Flowering marine grass meadows stabilizing sandy benthic sediment shelves. |
 | **48** | `bone_worms` | Bone Worms | **Siboglinid Annelid** | `vege_bone_worms.png` *(+ `1`, `2`)* | Single-block (1 bloco) | 16×16 px Cross-billboard | Deep-sea *Osedax* bone-eating tube worms with vibrant scarlet respiratory feather plumes. |
 | **49** | `seaweed` | Seaweed | **Littoral Macroalga** | `vege_seaweed.png` *(+ `1`, `2`)* | Single-block (1 bloco) | 16×16 px Cross-billboard | Intertidal golden-brown wrack anchoring to stones and tide pools. |

@@ -3,9 +3,9 @@
 This master document centralizes, unifies, and catalogs **all blocks implemented in the Voxel Engine**, organized across the 14 worldbuilding subdomains located in `docs/worldbuilding/blocks/`.
 
 > [!IMPORTANT]
-> **Project Grand Total: 803 Cataloged Unique Blocks**  
+> **Project Grand Total: 824 Cataloged Unique Blocks**  
 > Summing all 14 core domains of the engine's block ecosystem:  
-> **8** (systems) + **18** (fluids) + **58** (soils) + **92** (rocks) + **92** (trees) + **158** (ores) + **28** (caverns) + **50** (oceans) + **36** (organics) + **160** (decorations) + **18** (mushrooms) + **38** (vegetation) + **32** (flowers) + **15** (crops) = **803 Total Blocks**.
+> **8** (systems) + **18** (fluids) + **58** (soils) + **92** (rocks) + **92** (trees) + **158** (ores) + **28** (caverns) + **50** (oceans) + **36** (organics) + **162** (decorations) + **18** (mushrooms) + **38** (vegetation) + **32** (flowers) + **34** (crops) = **824 Total Blocks**.
 
 For each block, the following properties are systematically specified:
 1. **Unique Block Identifier (`Block ID`)**.
@@ -34,12 +34,12 @@ For each block, the following properties are systematically specified:
 | **07** | Speleology & Crystals (`caverns`) | **28 blocks** | **122 textures** | ✅ **100% Complete** | [caverns_design.md](blocks/caverns_design.md) | [Go to Section 07](#07-speleology--crystals-caverns--28-blocks-100-complete) |
 | **08** | Ocean & Benthic Ecosystems (`oceans`) | **50 blocks** | **140 textures** | ✅ **100% Complete** | [oceans_design.md](blocks/oceans_design.md) | [Go to Section 08](#08-ocean--benthic-ecosystems-oceans--50-blocks-100-complete) |
 | **09** | Biomaterials, Fauna & Organic Matter (`organics`) | **36 blocks** | **94 textures** | ✅ **100% Complete** | [organics_design.md](blocks/organics_design.md) | [Go to Section 09](#09-biomaterials-fauna--organic-matter-organics--36-blocks-100-complete) |
-| **10** | Decorations, Lighting & Architecture (`decorations`) | **160 blocks** | **90 textures** | ✅ **100% Complete** | [decorations_design.md](blocks/decorations_design.md) | [Go to Section 10](#10-decorations-lighting--architecture-decorations--160-blocks-100-complete) |
+| **10** | Decorations, Lighting & Architecture (`decorations`) | **162 blocks** | **96 textures** | ✅ **100% Complete** | [decorations_design.md](blocks/decorations_design.md) | [Go to Section 10](#10-decorations-lighting--architecture-decorations--162-blocks-100-complete) |
 | **11** | Mycology: Mushrooms (`mushrooms`) | **18 blocks** | **54 textures** | ✅ **100% Complete** | [mushrooms_design.md](blocks/mushrooms_design.md) | [Go to Section 11](#11-mycology-mushrooms-mushrooms--18-blocks-100-complete) |
 | **12** | Botany: Groundcover & Herbaceous Flora (`vegetation`) | **38 blocks** | **111 textures** | 🔄 *In Progress* | [vegetation_design.md](blocks/vegetation_design.md) | [Go to Section 12](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks) |
 | **13** | Botany: Flowers & Flowering Flora (`flowers`) | **32 blocks** | **87 textures** | 🔄 *In Progress* | [flowers_design.md](blocks/flowers_design.md) | [Go to Section 13](#13-botany-flowers--flowering-flora-flowers--32-blocks) |
-| **14** | Agriculture & Domestic Crops (`crops`) | **15 blocks** | **54 textures** | 🔄 *In Progress* | [crops_design.md](blocks/crops_design.md) | [Go to Section 14](#14-agriculture--domestic-crops-crops--15-blocks) |
-| **TOTAL** | **Grand Master Sum** | **803 blocks** | **1,612 textures** | — | — | — |
+| **14** | Agriculture & Domestic Crops (`crops`) | **34 blocks** | **171 textures** | 🔄 *In Progress* | [crops_design.md](blocks/crops_design.md) | [Go to Section 14](#14-agriculture--domestic-crops-crops--34-blocks) |
+| **TOTAL** | **Grand Master Sum** | **824 blocks** | **1,736 textures** | — | — | — |
 
 01. [Technical & System Blocks (`systems`) — 8 Blocks [✅ 100% Complete]](#01-technical--system-blocks-systems--8-blocks-100-complete)
 02. [Hydrosphere & Cryology (`fluids`) — 18 Blocks [✅ 100% Complete]](#02-hydrosphere--cryology-fluids--18-blocks-100-complete)
@@ -50,11 +50,11 @@ For each block, the following properties are systematically specified:
 07. [Speleology & Crystals (`caverns`) — 28 Blocks [✅ 100% Complete]](#07-speleology--crystals-caverns--28-blocks-100-complete)
 08. [Ocean & Benthic Ecosystems (`oceans`) — 50 Blocks [✅ 100% Complete]](#08-ocean--benthic-ecosystems-oceans--50-blocks-100-complete)
 09. [Biomaterials, Fauna & Organic Matter (`organics`) — 36 Blocks [✅ 100% Complete]](#09-biomaterials-fauna--organic-matter-organics--36-blocks-100-complete)
-10. [Decorations, Lighting & Architecture (`decorations`) — 160 Blocks [✅ 100% Complete]](#10-decorations-lighting--architecture-decorations--160-blocks-100-complete)
+10. [Decorations, Lighting & Architecture (`decorations`) — 162 Blocks [✅ 100% Complete]](#10-decorations-lighting--architecture-decorations--162-blocks-100-complete)
 11. [Mycology: Mushrooms (`mushrooms`) — 18 Blocks [✅ 100% Complete]](#11-mycology-mushrooms-mushrooms--18-blocks-100-complete)
 12. [Botany: Groundcover & Herbaceous Flora (`vegetation`) — 38 Blocks](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks)
 13. [Botany: Flowers & Flowering Flora (`flowers`) — 32 Blocks](#13-botany-flowers--flowering-flora-flowers--32-blocks)
-14. [Agriculture & Domestic Crops (`crops`) — 15 Blocks](#14-agriculture--domestic-crops-crops--15-blocks)
+14. [Agriculture & Domestic Crops (`crops`) — 34 Blocks](#14-agriculture--domestic-crops-crops--34-blocks)
 
 ---
 
@@ -198,15 +198,15 @@ The geological framework comprises **28 mineable rock matrices** across 7 core p
 | **01** | `andesite` | Andesite | **Continental** | `rock_andesite.png` | 6 uniform faces |
 | **02** | `andesite_grass` | Andesite Grass Outcrop | **Continental** | Top: `soil_grass.png`<br>Bot: `rock_andesite.png`<br>Sides: `rock_andesite_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **03** | `andesite_snow` | Andesite Snow Outcrop | **Continental** | Top: `soil_snow.png`<br>Bot: `rock_andesite.png`<br>Sides: `rock_andesite_snow_side.png` | Top + Bot + 4 sides |
-| **04** | `argillite` | Argillite | **Sedimentary** | `rock_argillite.png` | 6 uniform faces *(Clay bedrock)* |
+| **04** | `argillite` | Argillite | **Sedimentary** | `rock_argillite.png` | 6 uniform faces |
 | **05** | `argillite_grass` | Argillite Grass Outcrop | **Sedimentary** | Top: `soil_grass.png`<br>Bot: `rock_argillite.png`<br>Sides: `rock_argillite_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **06** | `argillite_snow` | Argillite Snow Outcrop | **Sedimentary** | Top: `soil_snow.png`<br>Bot: `rock_argillite.png`<br>Sides: `rock_argillite_snow_side.png` | Top + Bot + 4 sides |
 | **07** | `basalt` | Basalt | **Volcanic** | `rock_basalt.png` | 6 uniform faces |
 | **08** | `basalt_grass` | Basalt Grass Outcrop | **Volcanic** | Top: `soil_grass.png`<br>Bot: `rock_basalt.png`<br>Sides: `rock_basalt_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **09** | `basalt_snow` | Basalt Snow Outcrop | **Volcanic** | Top: `soil_snow.png`<br>Bot: `rock_basalt.png`<br>Sides: `rock_basalt_snow_side.png` | Top + Bot + 4 sides |
-| **10** | `brimstone` | Brimstone | **Hydrothermal** | `rock_brimstone.png` | 6 uniform faces *(Sulfur fumaroles, cave speleothems)* |
-| **11** | `calcite` | Calcite | **Mineral** | `rock_calcite.png` | 6 uniform faces *(Crystalline geode matrix, speleothems)* |
-| **12** | `chalk` | Chalk | **Sedimentary** | `rock_chalk.png` | 6 uniform faces *(Oceanic white cliff face)* |
+| **10** | `brimstone` | Brimstone | **Hydrothermal** | `rock_brimstone.png` | 6 uniform faces |
+| **11** | `calcite` | Calcite | **Mineral** | `rock_calcite.png` | 6 uniform faces |
+| **12** | `chalk` | Chalk | **Sedimentary** | `rock_chalk.png` | 6 uniform faces |
 | **13** | `chalk_grass` | Chalk Grass Outcrop | **Sedimentary** | Top: `soil_grass.png`<br>Bot: `rock_chalk.png`<br>Sides: `rock_chalk_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **14** | `chalk_snow` | Chalk Snow Outcrop | **Sedimentary** | Top: `soil_snow.png`<br>Bot: `rock_chalk.png`<br>Sides: `rock_chalk_snow_side.png` | Top + Bot + 4 sides |
 | **15** | `cobbled_andesite` | Cobbled Andesite | **Continental** | `rock_andesite_cobbled.png` | 6 uniform faces |
@@ -236,24 +236,24 @@ The geological framework comprises **28 mineable rock matrices** across 7 core p
 | **39** | `cobbled_slate` | Cobbled Slate | **Metamorphic** | `rock_slate_cobbled.png` | 6 uniform faces |
 | **40** | `cobbled_tuff` | Cobbled Tuff | **Pyroclastic** | `rock_tuff_cobbled.png` | 6 uniform faces |
 | **41** | `diorite` | Diorite | **Plutonic** | `rock_diorite.png` | 6 uniform faces |
-| **42** | `dolomite` | Dolomite (Alpine Stone) | **Sedimentary** | `rock_dolomite.png` | 6 uniform faces *(The classic Stone baseline)* |
+| **42** | `dolomite` | Dolomite (Alpine Stone) | **Sedimentary** | `rock_dolomite.png` | 6 uniform faces |
 | **43** | `dolomite_grass` | Dolomite Grass Outcrop | **Sedimentary** | Top: `soil_grass.png`<br>Bot: `rock_dolomite.png`<br>Sides: `rock_dolomite_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **44** | `dolomite_snow` | Dolomite Snow Outcrop | **Sedimentary** | Top: `soil_snow.png`<br>Bot: `rock_dolomite.png`<br>Sides: `rock_dolomite_snow_side.png` | Top + Bot + 4 sides |
-| **45** | `gabbro` | Gabbro | **Plutonic** | `rock_gabbro.png` | 6 uniform faces *(Deep intrusive mafic bedrock)* |
-| **46** | `gneiss` | Gneiss | **Metamorphic** | `rock_gneiss.png` | 6 uniform faces *(Ancient banded shield bedrock)* |
+| **45** | `gabbro` | Gabbro | **Plutonic** | `rock_gabbro.png` | 6 uniform faces |
+| **46** | `gneiss` | Gneiss | **Metamorphic** | `rock_gneiss.png` | 6 uniform faces |
 | **47** | `gneiss_grass` | Gneiss Grass Outcrop | **Metamorphic** | Top: `soil_grass.png`<br>Bot: `rock_gneiss.png`<br>Sides: `rock_gneiss_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **48** | `gneiss_snow` | Gneiss Snow Outcrop | **Metamorphic** | Top: `soil_snow.png`<br>Bot: `rock_gneiss.png`<br>Sides: `rock_gneiss_snow_side.png` | Top + Bot + 4 sides |
 | **49** | `granite` | Granite | **Plutonic** | `rock_granite.png` | 6 uniform faces |
 | **50** | `granite_grass` | Granite Grass Outcrop | **Plutonic** | Top: `soil_grass.png`<br>Bot: `rock_granite.png`<br>Sides: `rock_granite_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **51** | `granite_snow` | Granite Snow Outcrop | **Plutonic** | Top: `soil_snow.png`<br>Bot: `rock_granite.png`<br>Sides: `rock_granite_snow_side.png` | Top + Bot + 4 sides |
-| **52** | `karst` | Karst Limestone | **Speleological** | `rock_karst.png` | 6 uniform faces *(Porous cave limestone, speleothems)* |
-| **53** | `limestone` | Limestone | **Sedimentary** | `rock_limestone.png` | 6 uniform faces *(Fibrous travertine matrix)* |
+| **52** | `karst` | Karst Limestone | **Speleological** | `rock_karst.png` | 6 uniform faces |
+| **53** | `limestone` | Limestone | **Sedimentary** | `rock_limestone.png` | 6 uniform faces |
 | **54** | `limestone_grass` | Limestone Grass Outcrop | **Sedimentary** | Top: `soil_grass.png`<br>Bot: `rock_limestone.png`<br>Sides: `rock_limestone_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **55** | `limestone_snow` | Limestone Snow Outcrop | **Sedimentary** | Top: `soil_snow.png`<br>Bot: `rock_limestone.png`<br>Sides: `rock_limestone_snow_side.png` | Top + Bot + 4 sides |
 | **56** | `magma` | Magma Rock | **Geothermal** | `rock_magma.png` *(+ `1`, `2`)* | 6 uniform faces *(Animated incandescent veins, emits light)* |
-| **57** | `mantle` | Primordial Mantle | **Bedrock** | `rock_mantle.png` *(+ `1`, `2`)* | 6 uniform faces *(Cold high-pressure world floor, unbreakable)* |
-| **58** | `mantle_plume` | Mantle Plume | **Bedrock** | `rock_mantle_plume.png` *(+ `1`, `2`)* | 6 uniform faces *(Thermal hotspot ascending plume, unbreakable)* |
-| **59** | `marble` | Marble | **Metamorphic** | `rock_marble.png` | 6 uniform faces *(Pure white architectural stone)* |
+| **57** | `mantle` | Primordial Mantle | **Bedrock** | `rock_mantle.png` *(+ `1`, `2`)* | 6 uniform faces *(Unbreakable)* |
+| **58** | `mantle_plume` | Mantle Plume | **Bedrock** | `rock_mantle_plume.png` *(+ `1`, `2`)* | 6 uniform faces *(Unbreakable)* |
+| **59** | `marble` | Marble | **Metamorphic** | `rock_marble.png` | 6 uniform faces |
 | **60** | `mossy_andesite` | Mossy Andesite | **Continental** | `rock_andesite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
 | **61** | `mossy_argillite` | Mossy Argillite | **Sedimentary** | `rock_argillite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
 | **62** | `mossy_basalt` | Mossy Basalt | **Volcanic** | `rock_basalt.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
@@ -270,7 +270,7 @@ The geological framework comprises **28 mineable rock matrices** across 7 core p
 | **73** | `mossy_granite` | Mossy Granite | **Plutonic** | `rock_granite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
 | **74** | `mossy_limestone` | Mossy Limestone | **Sedimentary** | `rock_limestone.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
 | **75** | `mossy_serpentinite` | Mossy Serpentinite | **Metamorphic** | `rock_serpentinite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
-| **76** | `obsidian` | Obsidian | **Volcanic** | `rock_obsidian.png` | 6 uniform faces *(Amorphous volcanic glass)* |
+| **76** | `obsidian` | Obsidian | **Volcanic** | `rock_obsidian.png` | 6 uniform faces |
 | **77** | `pebble_flint_one` | Flint Pebble (Single) | **Pebble Cluster (1 Pebble)** | `pebble_flint_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
 | **78** | `pebble_flint_three` | Flint Pebble (Cluster) | **Pebble Cluster (3 Pebbles)** | `pebble_flint_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
 | **79** | `pebble_flint_two` | Flint Pebble (Pair) | **Pebble Cluster (2 Pebbles)** | `pebble_flint_two.png` | Corner micro-box `[3..5, 0..1, 10..12]` |
@@ -283,10 +283,10 @@ The geological framework comprises **28 mineable rock matrices** across 7 core p
 | **86** | `sandstone_pink` | Pink Sandstone | **Sedimentary** | `rock_sandstone_pink.png` | 6 uniform faces |
 | **87** | `sandstone_red` | Red Sandstone | **Sedimentary** | `rock_sandstone_red.png` | 6 uniform faces |
 | **88** | `sandstone_white` | White Sandstone | **Sedimentary** | `rock_sandstone_white.png` | 6 uniform faces |
-| **89** | `scoria` | Scoria | **Pyroclastic** | `rock_scoria.png` | 6 uniform faces *(Vesicular basaltic cinders)* |
-| **90** | `serpentinite` | Serpentinite | **Metamorphic** | `rock_serpentinite.png` | 6 uniform faces *(Deep muted olive-slate hydrated rock)* |
-| **91** | `slate` | Slate | **Metamorphic** | `rock_slate.png` | 6 uniform faces *(Laminated deep underground stone)* |
-| **92** | `tuff` | Tuff | **Pyroclastic** | `rock_tuff.png` | 6 uniform faces *(Compacted volcanic ash)* |
+| **89** | `scoria` | Scoria | **Pyroclastic** | `rock_scoria.png` | 6 uniform faces |
+| **90** | `serpentinite` | Serpentinite | **Metamorphic** | `rock_serpentinite.png` | 6 uniform faces |
+| **91** | `slate` | Slate | **Metamorphic** | `rock_slate.png` | 6 uniform faces |
+| **92** | `tuff` | Tuff | **Pyroclastic** | `rock_tuff.png` | 6 uniform faces |
 
 ---
 
@@ -295,107 +295,107 @@ The geological framework comprises **28 mineable rock matrices** across 7 core p
 📂 **Domain Directory**: `docs/worldbuilding/blocks/trees`  
 📄 **Comprehensive Specification**: [trees_design.md](blocks/trees_design.md)
 
-Planetary dendrology encompasses **18 living forest tree species** distributed across 5 major bioclimatic zones. Tree blocks are systematically classified into: 36 wood/trunk blocks (`log` with concentric rings and `wood` with 6-sided bark), 18 dressed lumber building blocks (`planks`), 43 canopy foliage blocks (`leaves` in healthy, flowering, lush, seasonal autumn, snowy, and dead states), and 1 estuarine aerial root block = **98 Total Forestry Blocks**.
+Planetary dendrology encompasses **18 living forest tree species** distributed across 5 major bioclimatic zones. Tree blocks are systematically classified into: 35 wood/trunk blocks (34 logs and full bark blocks, plus 1 bamboo stalk), 18 dressed lumber building blocks (planks), 38 canopy foliage blocks (healthy and dead states), and 1 estuarine aerial root block = **92 Total Forestry Blocks**.
 
 ---
 
-| # | Block ID | Name | Category | Top Face | Bottom Face | Side Faces | Properties |
-| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **01** | `acacia_leaves` | Acacia Leaves | **Foliage** | `tree_acacia_leaves.png` | `tree_acacia_leaves.png` | `tree_acacia_leaves.png` | Cutout, Umbrella Canopy Decay |
-| **02** | `acacia_leaves_dead` | Dead Acacia Leaves | **Foliage** | `tree_acacia_leaves_dead.png` | `tree_acacia_leaves_dead.png` | `tree_acacia_leaves_dead.png` | Cutout, Brittle, Arid Drought Decay |
-| **03** | `acacia_log` | Acacia Log | **Wood** | `tree_acacia_log.png` | `tree_acacia_log.png` | `tree_acacia_bark.png` | 3D Axis, Flammable |
-| **04** | `acacia_planks` | Acacia Planks | **Planks** | `tree_acacia_planks.png` | `tree_acacia_planks.png` | `tree_acacia_planks.png` | Solid, Vibrant Terracotta Material |
-| **05** | `acacia_wood` | Acacia Wood | **Wood** | `tree_acacia_bark.png` | `tree_acacia_bark.png` | `tree_acacia_bark.png` | Solid Bark, Flammable |
-| **06** | `aspen_leaves` | Golden Aspen Leaves | **Foliage** | `tree_aspen_leaves.png` | `tree_aspen_leaves.png` | `tree_aspen_leaves.png` | Cutout, Canopy Decay |
-| **07** | `aspen_leaves_dead` | Dead Aspen Leaves | **Foliage** | `tree_aspen_leaves_dead.png` | `tree_aspen_leaves_dead.png` | `tree_aspen_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **08** | `aspen_log` | Aspen Log | **Wood** | `tree_aspen_log.png` | `tree_aspen_log.png` | `tree_aspen_bark.png` | 3D Axis, Flammable |
-| **09** | `aspen_planks` | Aspen Planks | **Planks** | `tree_aspen_planks.png` | `tree_aspen_planks.png` | `tree_aspen_planks.png` | Solid, Building Material |
-| **10** | `aspen_wood` | Aspen Wood | **Wood** | `tree_aspen_bark.png` | `tree_aspen_bark.png` | `tree_aspen_bark.png` | Solid Bark, Flammable |
-| **11** | `bamboo_large_leaves` | Large Bamboo Leaves | **Foliage** | `tree_bamboo_large_leaves.png` | `tree_bamboo_large_leaves.png` | `tree_bamboo_large_leaves.png` | Cutout, High Canopy |
-| **12** | `bamboo_planks` | Bamboo Planks | **Planks** | `tree_bamboo_planks.png` | `tree_bamboo_planks.png` | `tree_bamboo_planks.png` | Solid, Woven Mat Pattern |
-| **13** | `bamboo_small_leaves` | Small Bamboo Leaves | **Foliage** | `tree_bamboo_small_leaves.png` | `tree_bamboo_small_leaves.png` | `tree_bamboo_small_leaves.png` | Cutout, Low Shoot Leaves |
-| **14** | `bamboo_stalk` | Bamboo Stalk | **Wood / Stalk** | `tree_bamboo_stalk.png` | `tree_bamboo_stalk.png` | `tree_bamboo_stalk.png` | Slim Tube / Column, Orientable |
-| **15** | `baobab_leaves` | Baobab Leaves | **Foliage** | `tree_baobab_leaves.png` | `tree_baobab_leaves.png` | `tree_baobab_leaves.png` | Cutout, Tufted Canopy Decay |
-| **16** | `baobab_leaves_dead` | Dead Baobab Leaves | **Foliage** | `tree_baobab_leaves_dead.png` | `tree_baobab_leaves_dead.png` | `tree_baobab_leaves_dead.png` | Cutout, Brittle, Severe Estivation Decay |
-| **17** | `baobab_log` | Baobab Log | **Wood** | `tree_baobab_log.png` | `tree_baobab_log.png` | `tree_baobab_bark.png` | 3D Axis, Pachycaul Water-Rich |
-| **18** | `baobab_planks` | Baobab Planks | **Planks** | `tree_baobab_planks.png` | `tree_baobab_planks.png` | `tree_baobab_planks.png` | Solid, Fibrous Copper-Orange |
-| **19** | `baobab_wood` | Baobab Wood | **Wood** | `tree_baobab_bark.png` | `tree_baobab_bark.png` | `tree_baobab_bark.png` | Solid Bark, Massive Trunk Core |
-| **20** | `birch_leaves` | Birch Leaves | **Foliage** | `tree_birch_leaves.png` | `tree_birch_leaves.png` | `tree_birch_leaves.png` | Cutout, Canopy Decay |
-| **21** | `birch_leaves_dead` | Dead Birch Leaves | **Foliage** | `tree_birch_leaves_dead.png` | `tree_birch_leaves_dead.png` | `tree_birch_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **22** | `birch_log` | Birch Log | **Wood** | `tree_birch_log.png` | `tree_birch_log.png` | `tree_birch_bark.png` | 3D Axis, Flammable |
-| **23** | `birch_planks` | Birch Planks | **Planks** | `tree_birch_planks.png` | `tree_birch_planks.png` | `tree_birch_planks.png` | Solid, Building Material |
-| **24** | `birch_wood` | Birch Wood | **Wood** | `tree_birch_bark.png` | `tree_birch_bark.png` | `tree_birch_bark.png` | Solid Bark, Flammable |
-| **25** | `cherry_leaves` | Cherry Blossom Leaves | **Foliage** | `tree_cherry_leaves.png` | `tree_cherry_leaves.png` | `tree_cherry_leaves.png` | Cutout, Sakura Canopy Decay |
-| **26** | `cherry_leaves_dead` | Dead Cherry Leaves | **Foliage** | `tree_cherry_leaves_dead.png` | `tree_cherry_leaves_dead.png` | `tree_cherry_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **27** | `cherry_log` | Cherry Log | **Wood** | `tree_cherry_log.png` | `tree_cherry_log.png` | `tree_cherry_bark.png` | 3D Axis, Flammable |
-| **28** | `cherry_planks` | Cherry Planks | **Planks** | `tree_cherry_planks.png` | `tree_cherry_planks.png` | `tree_cherry_planks.png` | Solid, Building Material |
-| **29** | `cherry_wood` | Cherry Wood | **Wood** | `tree_cherry_bark.png` | `tree_cherry_bark.png` | `tree_cherry_bark.png` | Solid Bark, Flammable |
-| **30** | `cypress_leaves` | Cypress Foliage | **Foliage** | `tree_cypress_leaves.png` | `tree_cypress_leaves.png` | `tree_cypress_leaves.png` | Cutout, Dense Columnar Foliage |
-| **31** | `cypress_leaves_dead` | Dead Cypress Foliage | **Foliage** | `tree_cypress_leaves_dead.png` | `tree_cypress_leaves_dead.png` | `tree_cypress_leaves_dead.png` | Cutout, Brittle, Swamp Decay |
-| **32** | `cypress_log` | Cypress Log | **Wood** | `tree_cypress_log.png` | `tree_cypress_log.png` | `tree_cypress_bark.png` | 3D Axis, Rot-Resistant |
-| **33** | `cypress_planks` | Cypress Planks | **Planks** | `tree_cypress_planks.png` | `tree_cypress_planks.png` | `tree_cypress_planks.png` | Solid, Resilient Hazel Material |
-| **34** | `cypress_wood` | Cypress Wood | **Wood** | `tree_cypress_bark.png` | `tree_cypress_bark.png` | `tree_cypress_bark.png` | Solid Bark, Rot-Resistant |
-| **35** | `fir_leaves` | Fir Needles | **Foliage** | `tree_fir_leaves.png` | `tree_fir_leaves.png` | `tree_fir_leaves.png` | Cutout, Canopy Decay |
-| **36** | `fir_leaves_dead` | Dead Fir Needles | **Foliage** | `tree_fir_leaves_dead.png` | `tree_fir_leaves_dead.png` | `tree_fir_leaves_dead.png` | Cutout, Dry Needles, Flammable |
-| **37** | `fir_log` | Fir Log | **Wood** | `tree_fir_log.png` | `tree_fir_log.png` | `tree_fir_bark.png` | 3D Axis, Flammable |
-| **38** | `fir_planks` | Fir Planks | **Planks** | `tree_fir_planks.png` | `tree_fir_planks.png` | `tree_fir_planks.png` | Solid, Building Material |
-| **39** | `fir_wood` | Fir Wood | **Wood** | `tree_fir_bark.png` | `tree_fir_bark.png` | `tree_fir_bark.png` | Solid Bark, Flammable |
-| **40** | `kapok_leaves` | Kapok Leaves | **Foliage** | `tree_kapok_leaves.png` | `tree_kapok_leaves.png` | `tree_kapok_leaves.png` | Cutout, Palmate Canopy Decay |
-| **41** | `kapok_leaves_dead` | Dead Kapok Leaves | **Foliage** | `tree_kapok_leaves_dead.png` | `tree_kapok_leaves_dead.png` | `tree_kapok_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **42** | `kapok_log` | Kapok Log | **Wood** | `tree_kapok_log.png` | `tree_kapok_log.png` | `tree_kapok_bark.png` | 3D Axis, Colossal Emergent |
-| **43** | `kapok_planks` | Kapok Planks | **Planks** | `tree_kapok_planks.png` | `tree_kapok_planks.png` | `tree_kapok_planks.png` | Solid, Warm Pale Tropical Wood |
-| **44** | `kapok_wood` | Kapok Wood | **Wood** | `tree_kapok_bark.png` | `tree_kapok_bark.png` | `tree_kapok_bark.png` | Solid Bark, Buttress Core |
-| **45** | `mahogany_leaves` | Mahogany Leaves | **Foliage** | `tree_mahogany_leaves.png` | `tree_mahogany_leaves.png` | `tree_mahogany_leaves.png` | Cutout, Canopy Decay |
-| **46** | `mahogany_leaves_dead` | Dead Mahogany Leaves | **Foliage** | `tree_mahogany_leaves_dead.png` | `tree_mahogany_leaves_dead.png` | `tree_mahogany_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **47** | `mahogany_log` | Mahogany Log | **Wood** | `tree_mahogany_log.png` | `tree_mahogany_log.png` | `tree_mahogany_bark.png` | 3D Axis, Flammable |
-| **48** | `mahogany_planks` | Mahogany Planks | **Planks** | `tree_mahogany_planks.png` | `tree_mahogany_planks.png` | `tree_mahogany_planks.png` | Solid, Deep Auburn Material |
-| **49** | `mahogany_wood` | Mahogany Wood | **Wood** | `tree_mahogany_bark.png` | `tree_mahogany_bark.png` | `tree_mahogany_bark.png` | Solid Bark, Flammable |
-| **50** | `mangrove_leaves` | Mangrove Leaves | **Foliage** | `tree_mangrove_leaves.png` | `tree_mangrove_leaves.png` | `tree_mangrove_leaves.png` | Cutout, Canopy Decay |
-| **51** | `mangrove_leaves_dead` | Dead Mangrove Leaves | **Foliage** | `tree_mangrove_leaves_dead.png` | `tree_mangrove_leaves_dead.png` | `tree_mangrove_leaves_dead.png` | Cutout, Brittle, Salted Decay |
-| **52** | `mangrove_log` | Mangrove Log | **Wood** | `tree_mangrove_log.png` | `tree_mangrove_log.png` | `tree_mangrove_bark.png` | 3D Axis, Salt-Tolerant |
-| **53** | `mangrove_planks` | Mangrove Planks | **Planks** | `tree_mangrove_planks.png` | `tree_mangrove_planks.png` | `tree_mangrove_planks.png` | Solid, Coppery-Tan Material |
-| **54** | `mangrove_roots` | Mangrove Aerial Roots | **Root** | `tree_mangrove_roots_top.png` | `tree_mangrove_roots_top.png` | `tree_mangrove_roots.png` | Semi-Solid, Waterlogged Permeable |
-| **55** | `mangrove_wood` | Mangrove Wood | **Wood** | `tree_mangrove_bark.png` | `tree_mangrove_bark.png` | `tree_mangrove_bark.png` | Solid Bark, Flammable |
-| **56** | `maple_leaves_dead` | Dead Maple Leaves | **Foliage** | `tree_maple_leaves_dead.png` | `tree_maple_leaves_dead.png` | `tree_maple_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **57** | `maple_leaves_orange` | Orange Maple Leaves | **Foliage** | `tree_maple_leaves_orange.png` | `tree_maple_leaves_orange.png` | `tree_maple_leaves_orange.png` | Cutout, Canopy Decay |
-| **58** | `maple_leaves_red` | Red Maple Leaves | **Foliage** | `tree_maple_leaves_red.png` | `tree_maple_leaves_red.png` | `tree_maple_leaves_red.png` | Cutout, Canopy Decay |
-| **59** | `maple_leaves_yellow` | Yellow Maple Leaves | **Foliage** | `tree_maple_leaves_yellow.png` | `tree_maple_leaves_yellow.png` | `tree_maple_leaves_yellow.png` | Cutout, Canopy Decay |
-| **60** | `maple_log` | Maple Log | **Wood** | `tree_maple_log.png` | `tree_maple_log.png` | `tree_maple_bark.png` | 3D Axis, Flammable |
-| **61** | `maple_planks` | Maple Planks | **Planks** | `tree_maple_planks.png` | `tree_maple_planks.png` | `tree_maple_planks.png` | Solid, Building Material |
-| **62** | `maple_wood` | Maple Wood | **Wood** | `tree_maple_bark.png` | `tree_maple_bark.png` | `tree_maple_bark.png` | Solid Bark, Flammable |
-| **63** | `oak_leaves` | Oak Leaves | **Foliage** | `tree_oak_leaves.png` | `tree_oak_leaves.png` | `tree_oak_leaves.png` | Cutout, Canopy Decay |
-| **64** | `oak_leaves_dead` | Dead Oak Leaves | **Foliage** | `tree_oak_leaves_dead.png` | `tree_oak_leaves_dead.png` | `tree_oak_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **65** | `oak_log` | Oak Log | **Wood** | `tree_oak_log.png` | `tree_oak_log.png` | `tree_oak_bark.png` | 3D Axis, Flammable |
-| **66** | `oak_planks` | Oak Planks | **Planks** | `tree_oak_planks.png` | `tree_oak_planks.png` | `tree_oak_planks.png` | Solid, Building Material |
-| **67** | `oak_wood` | Oak Wood | **Wood** | `tree_oak_bark.png` | `tree_oak_bark.png` | `tree_oak_bark.png` | Solid Bark, Flammable |
-| **68** | `palm_leaves` | Palm Fronds | **Foliage** | `tree_palm_leaves.png` | `tree_palm_leaves.png` | `tree_palm_leaves.png` | Cutout, Broad Arching Fronds |
-| **69** | `palm_leaves_dead` | Dead Palm Fronds | **Foliage** | `tree_palm_leaves_dead.png` | `tree_palm_leaves_dead.png` | `tree_palm_leaves_dead.png` | Cutout, Dry Thatch Straw Fronds |
-| **70** | `palm_log` | Palm Log | **Wood** | `tree_palm_log.png` | `tree_palm_log.png` | `tree_palm_bark.png` | 3D Axis, Fibrous Stipe |
-| **71** | `palm_planks` | Palm Planks | **Planks** | `tree_palm_planks.png` | `tree_palm_planks.png` | `tree_palm_planks.png` | Solid, Golden Blonde Material |
-| **72** | `palm_wood` | Palm Wood | **Wood** | `tree_palm_bark.png` | `tree_palm_bark.png` | `tree_palm_bark.png` | Solid Stipe Bark, Flammable |
-| **73** | `pine_leaves` | Pine Needles | **Foliage** | `tree_pine_leaves.png` | `tree_pine_leaves.png` | `tree_pine_leaves.png` | Cutout, Canopy Decay, Tintable |
-| **74** | `pine_leaves_dead` | Dead Pine Needles | **Foliage** | `tree_pine_leaves_dead.png` | `tree_pine_leaves_dead.png` | `tree_pine_leaves_dead.png` | Cutout, Dry Needles, Flammable |
-| **75** | `pine_log` | Pine Log | **Wood** | `tree_pine_log.png` | `tree_pine_log.png` | `tree_pine_bark.png` | 3D Axis, Flammable |
-| **76** | `pine_planks` | Pine Planks | **Planks** | `tree_pine_planks.png` | `tree_pine_planks.png` | `tree_pine_planks.png` | Solid, Building Material |
-| **77** | `pine_wood` | Pine Wood | **Wood** | `tree_pine_bark.png` | `tree_pine_bark.png` | `tree_pine_bark.png` | Solid Bark, Flammable |
-| **78** | `redwood_leaves` | Redwood Foliage | **Foliage** | `tree_redwood_leaves.png` | `tree_redwood_leaves.png` | `tree_redwood_leaves.png` | Cutout, Canopy Decay |
-| **79** | `redwood_leaves_dead` | Dead Redwood Foliage | **Foliage** | `tree_redwood_leaves_dead.png` | `tree_redwood_leaves_dead.png` | `tree_redwood_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **80** | `redwood_log` | Redwood Log | **Wood** | `tree_redwood_log.png` | `tree_redwood_log.png` | `tree_redwood_bark.png` | 3D Axis, Colossal Trunk |
-| **81** | `redwood_planks` | Redwood Planks | **Planks** | `tree_redwood_planks.png` | `tree_redwood_planks.png` | `tree_redwood_planks.png` | Solid, Brick-Red Building Material |
-| **82** | `redwood_wood` | Redwood Wood | **Wood** | `tree_redwood_bark.png` | `tree_redwood_bark.png` | `tree_redwood_bark.png` | Solid Bark, Flammable |
-| **83** | `willow_leaves` | Weeping Willow Leaves | **Foliage** | `tree_willow_leaves.png` | `tree_willow_leaves.png` | `tree_willow_leaves.png` | Cutout, Drooping Canopy Decay |
-| **84** | `willow_leaves_dead` | Dead Willow Leaves | **Foliage** | `tree_willow_leaves_dead.png` | `tree_willow_leaves_dead.png` | `tree_willow_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **85** | `willow_log` | Willow Log | **Wood** | `tree_willow_log.png` | `tree_willow_log.png` | `tree_willow_bark.png` | 3D Axis, Flammable |
-| **86** | `willow_planks` | Willow Planks | **Planks** | `tree_willow_planks.png` | `tree_willow_planks.png` | `tree_willow_planks.png` | Solid, Building Material |
-| **87** | `willow_wood` | Willow Wood | **Wood** | `tree_willow_bark.png` | `tree_willow_bark.png` | `tree_willow_bark.png` | Solid Bark, Flammable |
-| **88** | `yew_leaves` | Yew Foliage | **Foliage** | `tree_yew_leaves.png` | `tree_yew_leaves.png` | `tree_yew_leaves.png` | Cutout, Canopy Decay |
-| **89** | `yew_leaves_dead` | Dead Yew Foliage | **Foliage** | `tree_yew_leaves_dead.png` | `tree_yew_leaves_dead.png` | `tree_yew_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **90** | `yew_log` | Yew Log | **Wood** | `tree_yew_log.png` | `tree_yew_log.png` | `tree_yew_bark.png` | 3D Axis, Dark Heartwood |
-| **91** | `yew_planks` | Yew Planks | **Planks** | `tree_yew_planks.png` | `tree_yew_planks.png` | `tree_yew_planks.png` | Solid, Dark Ebony Material |
-| **92** | `yew_wood` | Yew Wood | **Wood** | `tree_yew_bark.png` | `tree_yew_bark.png` | `tree_yew_bark.png` | Solid Bark, Flammable |
+| # | Block ID | Name | Category | Texture File(s) | Face Mapping |
+| :-: | :--- | :--- | :--- | :--- | :--- |
+| **01** | `acacia_leaves` | Acacia Leaves | **Foliage** | `tree_acacia_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **02** | `acacia_leaves_dead` | Dead Acacia Leaves | **Foliage** | `tree_acacia_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **03** | `acacia_log` | Acacia Log | **Wood** | Top/Bottom: `tree_acacia_log.png`<br>Sides: `tree_acacia_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **04** | `acacia_planks` | Acacia Planks | **Planks** | `tree_acacia_planks.png` | 6 uniform faces |
+| **05** | `acacia_wood` | Acacia Wood | **Wood** | `tree_acacia_bark.png` | 6 uniform faces |
+| **06** | `aspen_leaves` | Golden Aspen Leaves | **Foliage** | `tree_aspen_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **07** | `aspen_leaves_dead` | Dead Aspen Leaves | **Foliage** | `tree_aspen_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **08** | `aspen_log` | Aspen Log | **Wood** | Top/Bottom: `tree_aspen_log.png`<br>Sides: `tree_aspen_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **09** | `aspen_planks` | Aspen Planks | **Planks** | `tree_aspen_planks.png` | 6 uniform faces |
+| **10** | `aspen_wood` | Aspen Wood | **Wood** | `tree_aspen_bark.png` | 6 uniform faces |
+| **11** | `bamboo_large_leaves` | Large Bamboo Leaves | **Foliage** | `tree_bamboo_large_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **12** | `bamboo_planks` | Bamboo Planks | **Planks** | `tree_bamboo_planks.png` | 6 uniform faces |
+| **13** | `bamboo_small_leaves` | Small Bamboo Leaves | **Foliage** | `tree_bamboo_small_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **14** | `bamboo_stalk` | Bamboo Stalk | **Wood / Stalk** | Top/Bottom: `tree_bamboo_stalk_top.png`<br>Sides: `tree_bamboo_stalk.png` | Directional column (3×3 top/bottom, 3×16 sides) |
+| **15** | `baobab_leaves` | Baobab Leaves | **Foliage** | `tree_baobab_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **16** | `baobab_leaves_dead` | Dead Baobab Leaves | **Foliage** | `tree_baobab_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **17** | `baobab_log` | Baobab Log | **Wood** | Top/Bottom: `tree_baobab_log.png`<br>Sides: `tree_baobab_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **18** | `baobab_planks` | Baobab Planks | **Planks** | `tree_baobab_planks.png` | 6 uniform faces |
+| **19** | `baobab_wood` | Baobab Wood | **Wood** | `tree_baobab_bark.png` | 6 uniform faces |
+| **20** | `birch_leaves` | Birch Leaves | **Foliage** | `tree_birch_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **21** | `birch_leaves_dead` | Dead Birch Leaves | **Foliage** | `tree_birch_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **22** | `birch_log` | Birch Log | **Wood** | Top/Bottom: `tree_birch_log.png`<br>Sides: `tree_birch_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **23** | `birch_planks` | Birch Planks | **Planks** | `tree_birch_planks.png` | 6 uniform faces |
+| **24** | `birch_wood` | Birch Wood | **Wood** | `tree_birch_bark.png` | 6 uniform faces |
+| **25** | `cherry_leaves` | Cherry Blossom Leaves | **Foliage** | `tree_cherry_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **26** | `cherry_leaves_dead` | Dead Cherry Leaves | **Foliage** | `tree_cherry_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **27** | `cherry_log` | Cherry Log | **Wood** | Top/Bottom: `tree_cherry_log.png`<br>Sides: `tree_cherry_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **28** | `cherry_planks` | Cherry Planks | **Planks** | `tree_cherry_planks.png` | 6 uniform faces |
+| **29** | `cherry_wood` | Cherry Wood | **Wood** | `tree_cherry_bark.png` | 6 uniform faces |
+| **30** | `cypress_leaves` | Cypress Foliage | **Foliage** | `tree_cypress_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **31** | `cypress_leaves_dead` | Dead Cypress Foliage | **Foliage** | `tree_cypress_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **32** | `cypress_log` | Cypress Log | **Wood** | Top/Bottom: `tree_cypress_log.png`<br>Sides: `tree_cypress_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **33** | `cypress_planks` | Cypress Planks | **Planks** | `tree_cypress_planks.png` | 6 uniform faces |
+| **34** | `cypress_wood` | Cypress Wood | **Wood** | `tree_cypress_bark.png` | 6 uniform faces |
+| **35** | `fir_leaves` | Fir Needles | **Foliage** | `tree_fir_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **36** | `fir_leaves_dead` | Dead Fir Needles | **Foliage** | `tree_fir_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **37** | `fir_log` | Fir Log | **Wood** | Top/Bottom: `tree_fir_log.png`<br>Sides: `tree_fir_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **38** | `fir_planks` | Fir Planks | **Planks** | `tree_fir_planks.png` | 6 uniform faces |
+| **39** | `fir_wood` | Fir Wood | **Wood** | `tree_fir_bark.png` | 6 uniform faces |
+| **40** | `kapok_leaves` | Kapok Leaves | **Foliage** | `tree_kapok_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **41** | `kapok_leaves_dead` | Dead Kapok Leaves | **Foliage** | `tree_kapok_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **42** | `kapok_log` | Kapok Log | **Wood** | Top/Bottom: `tree_kapok_log.png`<br>Sides: `tree_kapok_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **43** | `kapok_planks` | Kapok Planks | **Planks** | `tree_kapok_planks.png` | 6 uniform faces |
+| **44** | `kapok_wood` | Kapok Wood | **Wood** | `tree_kapok_bark.png` | 6 uniform faces |
+| **45** | `mahogany_leaves` | Mahogany Leaves | **Foliage** | `tree_mahogany_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **46** | `mahogany_leaves_dead` | Dead Mahogany Leaves | **Foliage** | `tree_mahogany_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **47** | `mahogany_log` | Mahogany Log | **Wood** | Top/Bottom: `tree_mahogany_log.png`<br>Sides: `tree_mahogany_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **48** | `mahogany_planks` | Mahogany Planks | **Planks** | `tree_mahogany_planks.png` | 6 uniform faces |
+| **49** | `mahogany_wood` | Mahogany Wood | **Wood** | `tree_mahogany_bark.png` | 6 uniform faces |
+| **50** | `mangrove_leaves` | Mangrove Leaves | **Foliage** | `tree_mangrove_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **51** | `mangrove_leaves_dead` | Dead Mangrove Leaves | **Foliage** | `tree_mangrove_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **52** | `mangrove_log` | Mangrove Log | **Wood** | Top/Bottom: `tree_mangrove_log.png`<br>Sides: `tree_mangrove_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **53** | `mangrove_planks` | Mangrove Planks | **Planks** | `tree_mangrove_planks.png` | 6 uniform faces |
+| **54** | `mangrove_roots` | Mangrove Aerial Roots | **Root** | Top/Bottom: `tree_mangrove_roots_top.png`<br>Sides: `tree_mangrove_roots.png` | Directional (Top/Bottom + 4 sides, Cutout) |
+| **55** | `mangrove_wood` | Mangrove Wood | **Wood** | `tree_mangrove_bark.png` | 6 uniform faces |
+| **56** | `maple_leaves_dead` | Dead Maple Leaves | **Foliage** | `tree_maple_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **57** | `maple_leaves_orange` | Orange Maple Leaves | **Foliage** | `tree_maple_leaves_orange.png` | 6 uniform faces (Cutout alpha transparency) |
+| **58** | `maple_leaves_red` | Red Maple Leaves | **Foliage** | `tree_maple_leaves_red.png` | 6 uniform faces (Cutout alpha transparency) |
+| **59** | `maple_leaves_yellow` | Yellow Maple Leaves | **Foliage** | `tree_maple_leaves_yellow.png` | 6 uniform faces (Cutout alpha transparency) |
+| **60** | `maple_log` | Maple Log | **Wood** | Top/Bottom: `tree_maple_log.png`<br>Sides: `tree_maple_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **61** | `maple_planks` | Maple Planks | **Planks** | `tree_maple_planks.png` | 6 uniform faces |
+| **62** | `maple_wood` | Maple Wood | **Wood** | `tree_maple_bark.png` | 6 uniform faces |
+| **63** | `oak_leaves` | Oak Leaves | **Foliage** | `tree_oak_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **64** | `oak_leaves_dead` | Dead Oak Leaves | **Foliage** | `tree_oak_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **65** | `oak_log` | Oak Log | **Wood** | Top/Bottom: `tree_oak_log.png`<br>Sides: `tree_oak_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **66** | `oak_planks` | Oak Planks | **Planks** | `tree_oak_planks.png` | 6 uniform faces |
+| **67** | `oak_wood` | Oak Wood | **Wood** | `tree_oak_bark.png` | 6 uniform faces |
+| **68** | `palm_leaves` | Palm Fronds | **Foliage** | `tree_palm_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **69** | `palm_leaves_dead` | Dead Palm Fronds | **Foliage** | `tree_palm_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **70** | `palm_log` | Palm Log | **Wood** | Top/Bottom: `tree_palm_log.png`<br>Sides: `tree_palm_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **71** | `palm_planks` | Palm Planks | **Planks** | `tree_palm_planks.png` | 6 uniform faces |
+| **72** | `palm_wood` | Palm Wood | **Wood** | `tree_palm_bark.png` | 6 uniform faces |
+| **73** | `pine_leaves` | Pine Needles | **Foliage** | `tree_pine_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **74** | `pine_leaves_dead` | Dead Pine Needles | **Foliage** | `tree_pine_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **75** | `pine_log` | Pine Log | **Wood** | Top/Bottom: `tree_pine_log.png`<br>Sides: `tree_pine_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **76** | `pine_planks` | Pine Planks | **Planks** | `tree_pine_planks.png` | 6 uniform faces |
+| **77** | `pine_wood` | Pine Wood | **Wood** | `tree_pine_bark.png` | 6 uniform faces |
+| **78** | `redwood_leaves` | Redwood Foliage | **Foliage** | `tree_redwood_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **79** | `redwood_leaves_dead` | Dead Redwood Foliage | **Foliage** | `tree_redwood_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **80** | `redwood_log` | Redwood Log | **Wood** | Top/Bottom: `tree_redwood_log.png`<br>Sides: `tree_redwood_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **81** | `redwood_planks` | Redwood Planks | **Planks** | `tree_redwood_planks.png` | 6 uniform faces |
+| **82** | `redwood_wood` | Redwood Wood | **Wood** | `tree_redwood_bark.png` | 6 uniform faces |
+| **83** | `willow_leaves` | Weeping Willow Leaves | **Foliage** | `tree_willow_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **84** | `willow_leaves_dead` | Dead Willow Leaves | **Foliage** | `tree_willow_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **85** | `willow_log` | Willow Log | **Wood** | Top/Bottom: `tree_willow_log.png`<br>Sides: `tree_willow_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **86** | `willow_planks` | Willow Planks | **Planks** | `tree_willow_planks.png` | 6 uniform faces |
+| **87** | `willow_wood` | Willow Wood | **Wood** | `tree_willow_bark.png` | 6 uniform faces |
+| **88** | `yew_leaves` | Yew Foliage | **Foliage** | `tree_yew_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **89** | `yew_leaves_dead` | Dead Yew Foliage | **Foliage** | `tree_yew_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **90** | `yew_log` | Yew Log | **Wood** | Top/Bottom: `tree_yew_log.png`<br>Sides: `tree_yew_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **91** | `yew_planks` | Yew Planks | **Planks** | `tree_yew_planks.png` | 6 uniform faces |
+| **92** | `yew_wood` | Yew Wood | **Wood** | `tree_yew_bark.png` | 6 uniform faces |
 
 ---
-## 06. Ores, Minerals & Gemology (`ores`) — 158 Blocks [✅ 100% Complete]
+## 06. Ores, Minerals & Gemology (`ores`) — 158 Blocks
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/ores`  
 📄 **Comprehensive Specification**: [ores_design.md](blocks/ores_design.md)
@@ -404,170 +404,170 @@ The metallogenic and mineralogical domain comprises **26 solid unrefined raw blo
 
 ---
 
-| # | Block ID | Name | Category | Texture / Host Rock | Overlay / State | Face Mapping | Geological Setting & Origin |
-| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **001** | `gem_diamond_gabbro` | Diamond Ore (Gabbro) | **Gemstone** | `rock_gabbro.png` | `gem_diamond_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Gabbro` |
-| **002** | `gem_diamond_rough` | Rough Diamond Block | **Gemstone** | `gem_diamond_rough.png` | Solid Raw Block | Uniform (6 faces) | Hosts: Gabbro, Serpentinite — Uncut octahedral carbon diamond crystal cluster with brilliant icy-white and pale cyan highlights. |
-| **003** | `gem_diamond_serpentinite` | Diamond Ore (Serpentinite) | **Gemstone** | `rock_serpentinite.png` | `gem_diamond_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Serpentinite` |
-| **004** | `gem_emerald_marble` | Emerald Ore (Marble) | **Gemstone** | `rock_marble.png` | `gem_emerald_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Marble` |
-| **005** | `gem_emerald_rough` | Rough Emerald Block | **Gemstone** | `gem_emerald_rough.png` | Solid Raw Block | Uniform (6 faces) | Hosts: Slate, Marble — Vivid deep forest-green hexagonal beryl crystals intergrown in a crystalline emerald aggregate. |
-| **006** | `gem_emerald_slate` | Emerald Ore (Slate) | **Gemstone** | `rock_slate.png` | `gem_emerald_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Slate` |
-| **007** | `gem_jade_marble` | Jade Ore (Marble) | **Gemstone** | `rock_marble.png` | `gem_jade_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Marble` |
-| **008** | `gem_jade_rough` | Rough Jade Block | **Gemstone** | `gem_jade_rough.png` | Solid Raw Block | Uniform (6 faces) | Hosts: Marble, Serpentinite — Smooth, fibrous nephrite/jadeite aggregate with silky apple-green to sage-green translucency. |
-| **009** | `gem_jade_serpentinite` | Jade Ore (Serpentinite) | **Gemstone** | `rock_serpentinite.png` | `gem_jade_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Serpentinite` |
-| **010** | `gem_onyx_calcite` | Onyx Ore (Calcite) | **Gemstone** | `rock_calcite.png` | `gem_onyx_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) | Vein in `Calcite` |
-| **011** | `gem_onyx_marble` | Onyx Ore (Marble) | **Gemstone** | `rock_marble.png` | `gem_onyx_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) | Vein in `Marble` |
-| **012** | `gem_onyx_rough` | Rough Onyx Block | **Gemstone** | `gem_onyx_rough.png` *(16×64)* | Solid Raw Block | Animated (4 frames) | Hosts: Sandstone Black, Slate, Marble, Calcite — Deep jet-black banded chalcedony with subtle parallel micro-layers and traveling silver glints. |
-| **013** | `gem_onyx_sandstone_black` | Onyx Ore (Black Sandstone) | **Gemstone** | `rock_sandstone_black.png` | `gem_onyx_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) | Vein in `Sandstone Black` |
-| **014** | `gem_onyx_slate` | Onyx Ore (Slate) | **Gemstone** | `rock_slate.png` | `gem_onyx_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) | Vein in `Slate` |
-| **015** | `gem_opal_basalt` | Opal Ore (Basalt) | **Gemstone** | `rock_basalt.png` | `gem_opal_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) | Vein in `Basalt` |
-| **016** | `gem_opal_rough` | Rough Opal Block | **Gemstone** | `gem_opal_rough.png` *(16×64)* | Solid Raw Block | Animated (4 frames) | Hosts: Sandstone White, Sandstone Pink, Basalt, Tuff — Hydrated silica matrix with dynamic 4-phase animated rainbow play-of-color across faces. |
-| **017** | `gem_opal_sandstone_pink` | Opal Ore (Pink Sandstone) | **Gemstone** | `rock_sandstone_pink.png` | `gem_opal_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) | Vein in `Sandstone Pink` |
-| **018** | `gem_opal_sandstone_white` | Opal Ore (White Sandstone) | **Gemstone** | `rock_sandstone_white.png` | `gem_opal_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) | Vein in `Sandstone White` |
-| **019** | `gem_opal_tuff` | Opal Ore (Tuff) | **Gemstone** | `rock_tuff.png` | `gem_opal_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) | Vein in `Tuff` |
-| **020** | `gem_ruby_basalt` | Ruby Ore (Basalt) | **Gemstone** | `rock_basalt.png` | `gem_ruby_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Basalt` |
-| **021** | `gem_ruby_marble` | Ruby Ore (Marble) | **Gemstone** | `rock_marble.png` | `gem_ruby_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Marble` |
-| **022** | `gem_ruby_rough` | Rough Ruby Block | **Gemstone** | `gem_ruby_rough.png` | Solid Raw Block | Uniform (6 faces) | Hosts: Basalt, Marble — Deep crimson and scarlet corundum crystal mass with rich vitreous ruby cleavage facets. |
-| **023** | `gem_sapphire_basalt` | Sapphire Ore (Basalt) | **Gemstone** | `rock_basalt.png` | `gem_sapphire_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Basalt` |
-| **024** | `gem_sapphire_marble` | Sapphire Ore (Marble) | **Gemstone** | `rock_marble.png` | `gem_sapphire_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Marble` |
-| **025** | `gem_sapphire_rough` | Rough Sapphire Block | **Gemstone** | `gem_sapphire_rough.png` | Solid Raw Block | Uniform (6 faces) | Hosts: Basalt, Marble — Royal ocean-blue corundum crystal mass with navy undertones and vitreous cleavage facets. |
-| **026** | `gem_topaz_granite` | Topaz Ore (Granite) | **Gemstone** | `rock_granite.png` | `gem_topaz_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Granite` |
-| **027** | `gem_topaz_rough` | Rough Topaz Block | **Gemstone** | `gem_topaz_rough.png` | Solid Raw Block | Uniform (6 faces) | Hosts: Sandstone Pink, Granite — Radiant golden-amber and solar-orange prismatic nesosilicate crystal aggregate. |
-| **028** | `gem_topaz_sandstone_pink` | Topaz Ore (Pink Sandstone) | **Gemstone** | `rock_sandstone_pink.png` | `gem_topaz_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone Pink` |
-| **029** | `ore_aluminum_argillite` | Aluminum Ore (Argillite) | **Metal** | `rock_argillite.png` | `ore_aluminum_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Argillite` |
-| **030** | `ore_aluminum_chalk` | Aluminum Ore (Chalk) | **Metal** | `rock_chalk.png` | `ore_aluminum_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Chalk` |
-| **031** | `ore_aluminum_limestone` | Aluminum Ore (Limestone) | **Metal** | `rock_limestone.png` | `ore_aluminum_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Limestone` |
-| **032** | `ore_aluminum_raw` | Raw Aluminum Block | **Metal** | `ore_aluminum_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: 4 Host Rocks — Earthy pisolitic bauxite block with characteristic reddish-brown and pale ochre clay nodules. |
-| **033** | `ore_aluminum_sandstone_white` | Aluminum Ore (White Sandstone) | **Metal** | `rock_sandstone_white.png` | `ore_aluminum_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone White` |
-| **034** | `ore_cinnabar_basalt` | Cinnabar Ore (Basalt) | **Chemical** | `rock_basalt.png` | `ore_cinnabar_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Basalt` |
-| **035** | `ore_cinnabar_brimstone` | Cinnabar Ore (Brimstone) | **Chemical** | `rock_brimstone.png` | `ore_cinnabar_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Brimstone` |
-| **036** | `ore_cinnabar_karst` | Cinnabar Ore (Karst) | **Chemical** | `rock_karst.png` | `ore_cinnabar_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Karst` |
-| **037** | `ore_cinnabar_raw` | Raw Cinnabar Block | **Chemical** | `ore_cinnabar_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: Basalt, Tuff, Brimstone, Karst — Bright cochineal to vermilion scarlet mercury sulfide mineral block with adamantine luster. |
-| **038** | `ore_cinnabar_tuff` | Cinnabar Ore (Tuff) | **Chemical** | `rock_tuff.png` | `ore_cinnabar_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Tuff` |
-| **039** | `ore_coal_andesite` | Coal Ore (Andesite) | **Chemical** | `rock_andesite.png` | `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Andesite` |
-| **040** | `ore_coal_argillite` | Coal Ore (Argillite) | **Chemical** | `rock_argillite.png` | `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Argillite` |
-| **041** | `ore_coal_chalk` | Coal Ore (Chalk) | **Chemical** | `rock_chalk.png` | `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Chalk` |
-| **042** | `ore_coal_diorite` | Coal Ore (Diorite) | **Chemical** | `rock_diorite.png` | `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Diorite` |
-| **043** | `ore_coal_dolomite` | Coal Ore (Dolomite) | **Chemical** | `rock_dolomite.png` | `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Dolomite` |
-| **044** | `ore_coal_gneiss` | Coal Ore (Gneiss) | **Chemical** | `rock_gneiss.png` | `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Gneiss` |
-| **045** | `ore_coal_granite` | Coal Ore (Granite) | **Chemical** | `rock_granite.png` | `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Granite` |
-| **046** | `ore_coal_limestone` | Coal Ore (Limestone) | **Chemical** | `rock_limestone.png` | `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Limestone` |
-| **047** | `ore_coal_raw` | Raw Coal Block | **Chemical** | `ore_coal_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: 12 Host Rocks — Dense, jet-black carbonaceous sedimentary block with vitreous to sub-metallic fracture surfaces. |
-| **048** | `ore_coal_sandstone_black` | Coal Ore (Black Sandstone) | **Chemical** | `rock_sandstone_black.png` | `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone Black` |
-| **049** | `ore_coal_sandstone_common` | Coal Ore (Common Sandstone) | **Chemical** | `rock_sandstone_common.png` | `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone Common` |
-| **050** | `ore_coal_sandstone_dune` | Coal Ore (Dune Sandstone) | **Chemical** | `rock_sandstone_dune.png` | `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone Dune` |
-| **051** | `ore_coal_slate` | Coal Ore (Slate) | **Chemical** | `rock_slate.png` | `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Slate` |
-| **052** | `ore_copper_andesite` | Copper Ore (Andesite) | **Metal** | `rock_andesite.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Andesite` |
-| **053** | `ore_copper_argillite` | Copper Ore (Argillite) | **Metal** | `rock_argillite.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Argillite` |
-| **054** | `ore_copper_chalk` | Copper Ore (Chalk) | **Metal** | `rock_chalk.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Chalk` |
-| **055** | `ore_copper_diorite` | Copper Ore (Diorite) | **Metal** | `rock_diorite.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Diorite` |
-| **056** | `ore_copper_dolomite` | Copper Ore (Dolomite) | **Metal** | `rock_dolomite.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Dolomite` |
-| **057** | `ore_copper_gabbro` | Copper Ore (Gabbro) | **Metal** | `rock_gabbro.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Gabbro` |
-| **058** | `ore_copper_gneiss` | Copper Ore (Gneiss) | **Metal** | `rock_gneiss.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Gneiss` |
-| **059** | `ore_copper_granite` | Copper Ore (Granite) | **Metal** | `rock_granite.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Granite` |
-| **060** | `ore_copper_limestone` | Copper Ore (Limestone) | **Metal** | `rock_limestone.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Limestone` |
-| **061** | `ore_copper_raw` | Raw Copper Block | **Metal** | `ore_copper_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: 14 Host Rocks — Aggregate of raw native copper and green malachite nodules with warm terracotta-bronze hues. |
-| **062** | `ore_copper_sandstone_common` | Copper Ore (Common Sandstone) | **Metal** | `rock_sandstone_common.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone Common` |
-| **063** | `ore_copper_sandstone_red` | Copper Ore (Red Sandstone) | **Metal** | `rock_sandstone_red.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone Red` |
-| **064** | `ore_copper_serpentinite` | Copper Ore (Serpentinite) | **Metal** | `rock_serpentinite.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Serpentinite` |
-| **065** | `ore_copper_slate` | Copper Ore (Slate) | **Metal** | `rock_slate.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Slate` |
-| **066** | `ore_copper_tuff` | Copper Ore (Tuff) | **Metal** | `rock_tuff.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Tuff` |
-| **067** | `ore_gold_granite` | Gold Ore (Granite) | **Metal** | `rock_granite.png` | `ore_gold_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Granite` |
-| **068** | `ore_gold_marble` | Gold Ore (Marble) | **Metal** | `rock_marble.png` | `ore_gold_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Marble` |
-| **069** | `ore_gold_raw` | Raw Gold Block | **Metal** | `ore_gold_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: 4 Host Rocks — Brilliant unrefined native gold chunk mass with rich yellow metallic grains and quartz traces. |
-| **070** | `ore_gold_sandstone_red` | Gold Ore (Red Sandstone) | **Metal** | `rock_sandstone_red.png` | `ore_gold_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone Red` |
-| **071** | `ore_gold_slate` | Gold Ore (Slate) | **Metal** | `rock_slate.png` | `ore_gold_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Slate` |
-| **072** | `ore_iron_andesite` | Iron Ore (Andesite) | **Metal** | `rock_andesite.png` | `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Andesite` |
-| **073** | `ore_iron_basalt` | Iron Ore (Basalt) | **Metal** | `rock_basalt.png` | `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Basalt` |
-| **074** | `ore_iron_diorite` | Iron Ore (Diorite) | **Metal** | `rock_diorite.png` | `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Diorite` |
-| **075** | `ore_iron_dolomite` | Iron Ore (Dolomite) | **Metal** | `rock_dolomite.png` | `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Dolomite` |
-| **076** | `ore_iron_gabbro` | Iron Ore (Gabbro) | **Metal** | `rock_gabbro.png` | `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Gabbro` |
-| **077** | `ore_iron_gneiss` | Iron Ore (Gneiss) | **Metal** | `rock_gneiss.png` | `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Gneiss` |
-| **078** | `ore_iron_granite` | Iron Ore (Granite) | **Metal** | `rock_granite.png` | `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Granite` |
-| **079** | `ore_iron_raw` | Raw Iron Block | **Metal** | `ore_iron_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: 12 Host Rocks — Dense unrefined block of hematite and magnetite ore with dark brown-orange mineral crust. |
-| **080** | `ore_iron_sandstone_black` | Iron Ore (Black Sandstone) | **Metal** | `rock_sandstone_black.png` | `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone Black` |
-| **081** | `ore_iron_sandstone_common` | Iron Ore (Common Sandstone) | **Metal** | `rock_sandstone_common.png` | `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone Common` |
-| **082** | `ore_iron_sandstone_red` | Iron Ore (Red Sandstone) | **Metal** | `rock_sandstone_red.png` | `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone Red` |
-| **083** | `ore_iron_scoria` | Iron Ore (Scoria) | **Metal** | `rock_scoria.png` | `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Scoria` |
-| **084** | `ore_iron_serpentinite` | Iron Ore (Serpentinite) | **Metal** | `rock_serpentinite.png` | `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Serpentinite` |
-| **085** | `ore_lazurite_calcite` | Lazurite Ore (Calcite) | **Chemical** | `rock_calcite.png` | `ore_lazurite_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Calcite` |
-| **086** | `ore_lazurite_limestone` | Lazurite Ore (Limestone) | **Chemical** | `rock_limestone.png` | `ore_lazurite_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Limestone` |
-| **087** | `ore_lazurite_marble` | Lazurite Ore (Marble) | **Chemical** | `rock_marble.png` | `ore_lazurite_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Marble` |
-| **088** | `ore_lazurite_raw` | Raw Lazurite Block | **Chemical** | `ore_lazurite_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: Sandstone Black, Limestone, Marble, Calcite — Deep royal ultramarine blue sodalite mineral aggregate speckled with golden pyrite flecks. |
-| **089** | `ore_lazurite_sandstone_black` | Lazurite Ore (Black Sandstone) | **Chemical** | `rock_sandstone_black.png` | `ore_lazurite_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone Black` |
-| **090** | `ore_lead_andesite` | Lead Ore (Andesite) | **Heavy Metal** | `rock_andesite.png` | `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Andesite` |
-| **091** | `ore_lead_argillite` | Lead Ore (Argillite) | **Heavy Metal** | `rock_argillite.png` | `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Argillite` |
-| **092** | `ore_lead_chalk` | Lead Ore (Chalk) | **Heavy Metal** | `rock_chalk.png` | `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Chalk` |
-| **093** | `ore_lead_diorite` | Lead Ore (Diorite) | **Heavy Metal** | `rock_diorite.png` | `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Diorite` |
-| **094** | `ore_lead_karst` | Lead Ore (Karst) | **Heavy Metal** | `rock_karst.png` | `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Karst` |
-| **095** | `ore_lead_limestone` | Lead Ore (Limestone) | **Heavy Metal** | `rock_limestone.png` | `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Limestone` |
-| **096** | `ore_lead_raw` | Raw Lead Block | **Heavy Metal** | `ore_lead_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: 8 Host Rocks — Heavy block of cubic galena ore with distinctive steely-grey metallic luster and cubic cleavage planes. |
-| **097** | `ore_lead_sandstone_common` | Lead Ore (Common Sandstone) | **Heavy Metal** | `rock_sandstone_common.png` | `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone Common` |
-| **098** | `ore_lead_slate` | Lead Ore (Slate) | **Heavy Metal** | `rock_slate.png` | `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Slate` |
-| **099** | `ore_manganese_argillite` | Manganese Ore (Argillite) | **Heavy Metal** | `rock_argillite.png` | `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Argillite` |
-| **100** | `ore_manganese_chalk` | Manganese Ore (Chalk) | **Heavy Metal** | `rock_chalk.png` | `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Chalk` |
-| **101** | `ore_manganese_dolomite` | Manganese Ore (Dolomite) | **Heavy Metal** | `rock_dolomite.png` | `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Dolomite` |
-| **102** | `ore_manganese_gneiss` | Manganese Ore (Gneiss) | **Heavy Metal** | `rock_gneiss.png` | `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Gneiss` |
-| **103** | `ore_manganese_limestone` | Manganese Ore (Limestone) | **Heavy Metal** | `rock_limestone.png` | `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Limestone` |
-| **104** | `ore_manganese_raw` | Raw Manganese Block | **Heavy Metal** | `ore_manganese_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: 6 Host Rocks — Raspberry-pink crystalline rhodochrosite mineral block with rose-red banded carbonate patterns. |
-| **105** | `ore_manganese_slate` | Manganese Ore (Slate) | **Heavy Metal** | `rock_slate.png` | `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Slate` |
-| **106** | `ore_nickel_basalt` | Nickel Ore (Basalt) | **Heavy Metal** | `rock_basalt.png` | `ore_nickel_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Basalt` |
-| **107** | `ore_nickel_gabbro` | Nickel Ore (Gabbro) | **Heavy Metal** | `rock_gabbro.png` | `ore_nickel_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Gabbro` |
-| **108** | `ore_nickel_raw` | Raw Nickel Block | **Heavy Metal** | `ore_nickel_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: 4 Host Rocks — Dense pentlandite and pyrrhotite aggregate with pale bronze-yellow to brassy metallic sheen. |
-| **109** | `ore_nickel_scoria` | Nickel Ore (Scoria) | **Heavy Metal** | `rock_scoria.png` | `ore_nickel_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Scoria` |
-| **110** | `ore_nickel_serpentinite` | Nickel Ore (Serpentinite) | **Heavy Metal** | `rock_serpentinite.png` | `ore_nickel_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Serpentinite` |
-| **111** | `ore_platinum_basalt` | Platinum Ore (Basalt) | **Metal** | `rock_basalt.png` | `ore_platinum_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Basalt` |
-| **112** | `ore_platinum_gabbro` | Platinum Ore (Gabbro) | **Metal** | `rock_gabbro.png` | `ore_platinum_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Gabbro` |
-| **113** | `ore_platinum_raw` | Raw Platinum Block | **Metal** | `ore_platinum_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: 4 Host Rocks — Ultra-dense compact block of native platinum grains with cool silvery-white metallic sheen. |
-| **114** | `ore_platinum_scoria` | Platinum Ore (Scoria) | **Metal** | `rock_scoria.png` | `ore_platinum_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Scoria` |
-| **115** | `ore_platinum_serpentinite` | Platinum Ore (Serpentinite) | **Metal** | `rock_serpentinite.png` | `ore_platinum_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Serpentinite` |
-| **116** | `ore_quartz_andesite` | Quartz Ore (Andesite) | **Chemical** | `rock_andesite.png` | `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Andesite` |
-| **117** | `ore_quartz_gneiss` | Quartz Ore (Gneiss) | **Chemical** | `rock_gneiss.png` | `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Gneiss` |
-| **118** | `ore_quartz_granite` | Quartz Ore (Granite) | **Chemical** | `rock_granite.png` | `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Granite` |
-| **119** | `ore_quartz_raw` | Raw Quartz Block | **Chemical** | `ore_quartz_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: 6 Host Rocks — Crystalline mass of milky to vitreous clear hydrothermal quartz with interlocking trigonal prisms. |
-| **120** | `ore_quartz_sandstone_common` | Quartz Ore (Common Sandstone) | **Chemical** | `rock_sandstone_common.png` | `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone Common` |
-| **121** | `ore_quartz_sandstone_red` | Quartz Ore (Red Sandstone) | **Chemical** | `rock_sandstone_red.png` | `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone Red` |
-| **122** | `ore_quartz_sandstone_white` | Quartz Ore (White Sandstone) | **Chemical** | `rock_sandstone_white.png` | `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone White` |
-| **123** | `ore_saltpeter_karst` | Saltpeter Ore (Karst) | **Chemical** | `rock_karst.png` | `ore_saltpeter_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Karst` |
-| **124** | `ore_saltpeter_limestone` | Saltpeter Ore (Limestone) | **Chemical** | `rock_limestone.png` | `ore_saltpeter_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Limestone` |
-| **125** | `ore_saltpeter_raw` | Raw Saltpeter Block | **Chemical** | `ore_saltpeter_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: 4 Host Rocks — Powdery, chalky white to pale grey encrustation of crystalline potassium nitrate niter. |
-| **126** | `ore_saltpeter_sandstone_dune` | Saltpeter Ore (Dune Sandstone) | **Chemical** | `rock_sandstone_dune.png` | `ore_saltpeter_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone Dune` |
-| **127** | `ore_saltpeter_sandstone_white` | Saltpeter Ore (White Sandstone) | **Chemical** | `rock_sandstone_white.png` | `ore_saltpeter_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone White` |
-| **128** | `ore_silver_andesite` | Silver Ore (Andesite) | **Metal** | `rock_andesite.png` | `ore_silver_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Andesite` |
-| **129** | `ore_silver_diorite` | Silver Ore (Diorite) | **Metal** | `rock_diorite.png` | `ore_silver_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Diorite` |
-| **130** | `ore_silver_gneiss` | Silver Ore (Gneiss) | **Metal** | `rock_gneiss.png` | `ore_silver_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Gneiss` |
-| **131** | `ore_silver_marble` | Silver Ore (Marble) | **Metal** | `rock_marble.png` | `ore_silver_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Marble` |
-| **132** | `ore_silver_raw` | Raw Silver Block | **Metal** | `ore_silver_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: 4 Host Rocks — Dense tarnished argentite and native silver aggregate with shimmering grey-white metallic veins. |
-| **133** | `ore_sulfur_basalt` | Sulfur Ore (Basalt) | **Chemical** | `rock_basalt.png` | `ore_sulfur_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Basalt` |
-| **134** | `ore_sulfur_brimstone` | Sulfur Ore (Brimstone) | **Chemical** | `rock_brimstone.png` | `ore_sulfur_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Brimstone` |
-| **135** | `ore_sulfur_raw` | Raw Sulfur Block | **Chemical** | `ore_sulfur_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: Basalt, Tuff, Scoria, Brimstone — Vivid canary-yellow crystalline native sulfur aggregate with resinous to greasy luster. |
-| **136** | `ore_sulfur_scoria` | Sulfur Ore (Scoria) | **Chemical** | `rock_scoria.png` | `ore_sulfur_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Scoria` |
-| **137** | `ore_sulfur_tuff` | Sulfur Ore (Tuff) | **Chemical** | `rock_tuff.png` | `ore_sulfur_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Tuff` |
-| **138** | `ore_tin_andesite` | Tin Ore (Andesite) | **Metal** | `rock_andesite.png` | `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Andesite` |
-| **139** | `ore_tin_diorite` | Tin Ore (Diorite) | **Metal** | `rock_diorite.png` | `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Diorite` |
-| **140** | `ore_tin_dolomite` | Tin Ore (Dolomite) | **Metal** | `rock_dolomite.png` | `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Dolomite` |
-| **141** | `ore_tin_gneiss` | Tin Ore (Gneiss) | **Metal** | `rock_gneiss.png` | `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Gneiss` |
-| **142** | `ore_tin_granite` | Tin Ore (Granite) | **Metal** | `rock_granite.png` | `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Granite` |
-| **143** | `ore_tin_raw` | Raw Tin Block | **Metal** | `ore_tin_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: 6 Host Rocks — Heavy crystalline cassiterite block with mottled brownish-grey and silvery-white facets. |
-| **144** | `ore_tin_sandstone_common` | Tin Ore (Common Sandstone) | **Metal** | `rock_sandstone_common.png` | `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Sandstone Common` |
-| **145** | `ore_uranium_diorite` | Uranium Ore (Diorite) | **Heavy Metal** | `rock_diorite.png` | `ore_uranium_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Diorite` |
-| **146** | `ore_uranium_gabbro` | Uranium Ore (Gabbro) | **Heavy Metal** | `rock_gabbro.png` | `ore_uranium_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Gabbro` |
-| **147** | `ore_uranium_granite` | Uranium Ore (Granite) | **Heavy Metal** | `rock_granite.png` | `ore_uranium_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Granite` |
-| **148** | `ore_uranium_raw` | Raw Uranium Block | **Heavy Metal** | `ore_uranium_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: 4 Host Rocks — Heavy pitchblende uraninite block displaying mottled pitch-black surface with sulfur-yellow oxide flecks. |
-| **149** | `ore_uranium_slate` | Uranium Ore (Slate) | **Heavy Metal** | `rock_slate.png` | `ore_uranium_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Slate` |
-| **150** | `ore_zinc_andesite` | Zinc Ore (Andesite) | **Metal** | `rock_andesite.png` | `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Andesite` |
-| **151** | `ore_zinc_argillite` | Zinc Ore (Argillite) | **Metal** | `rock_argillite.png` | `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Argillite` |
-| **152** | `ore_zinc_chalk` | Zinc Ore (Chalk) | **Metal** | `rock_chalk.png` | `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Chalk` |
-| **153** | `ore_zinc_diorite` | Zinc Ore (Diorite) | **Metal** | `rock_diorite.png` | `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Diorite` |
-| **154** | `ore_zinc_dolomite` | Zinc Ore (Dolomite) | **Metal** | `rock_dolomite.png` | `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Dolomite` |
-| **155** | `ore_zinc_gneiss` | Zinc Ore (Gneiss) | **Metal** | `rock_gneiss.png` | `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Gneiss` |
-| **156** | `ore_zinc_karst` | Zinc Ore (Karst) | **Metal** | `rock_karst.png` | `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Karst` |
-| **157** | `ore_zinc_limestone` | Zinc Ore (Limestone) | **Metal** | `rock_limestone.png` | `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) | Vein in `Limestone` |
-| **158** | `ore_zinc_raw` | Raw Zinc Block | **Metal** | `ore_zinc_raw.png` | Solid Raw Block | Uniform (6 faces) | Hosts: 8 Host Rocks — Compact sphalerite ore block with dark sub-metallic luster and dull greyish-brown crystalline veins. |
+| # | Block ID | Name | Category | Texture File(s) | Face Mapping |
+| :-: | :--- | :--- | :--- | :--- | :--- |
+| **001** | `gem_diamond_gabbro` | Diamond Ore (Gabbro) | **Gemstone** | Host: `rock_gabbro.png`<br>Overlay: `gem_diamond_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **002** | `gem_diamond_rough` | Rough Diamond Block | **Gemstone** | `gem_diamond_rough.png` | Uniform (6 faces) |
+| **003** | `gem_diamond_serpentinite` | Diamond Ore (Serpentinite) | **Gemstone** | Host: `rock_serpentinite.png`<br>Overlay: `gem_diamond_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **004** | `gem_emerald_marble` | Emerald Ore (Marble) | **Gemstone** | Host: `rock_marble.png`<br>Overlay: `gem_emerald_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **005** | `gem_emerald_rough` | Rough Emerald Block | **Gemstone** | `gem_emerald_rough.png` | Uniform (6 faces) |
+| **006** | `gem_emerald_slate` | Emerald Ore (Slate) | **Gemstone** | Host: `rock_slate.png`<br>Overlay: `gem_emerald_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **007** | `gem_jade_marble` | Jade Ore (Marble) | **Gemstone** | Host: `rock_marble.png`<br>Overlay: `gem_jade_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **008** | `gem_jade_rough` | Rough Jade Block | **Gemstone** | `gem_jade_rough.png` | Uniform (6 faces) |
+| **009** | `gem_jade_serpentinite` | Jade Ore (Serpentinite) | **Gemstone** | Host: `rock_serpentinite.png`<br>Overlay: `gem_jade_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **010** | `gem_onyx_calcite` | Onyx Ore (Calcite) | **Gemstone** | Host: `rock_calcite.png`<br>Overlay: `gem_onyx_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) |
+| **011** | `gem_onyx_marble` | Onyx Ore (Marble) | **Gemstone** | Host: `rock_marble.png`<br>Overlay: `gem_onyx_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) |
+| **012** | `gem_onyx_rough` | Rough Onyx Block | **Gemstone** | `gem_onyx_rough.png` *(16×64)* | Animated (4 frames) |
+| **013** | `gem_onyx_sandstone_black` | Onyx Ore (Black Sandstone) | **Gemstone** | Host: `rock_sandstone_black.png`<br>Overlay: `gem_onyx_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) |
+| **014** | `gem_onyx_slate` | Onyx Ore (Slate) | **Gemstone** | Host: `rock_slate.png`<br>Overlay: `gem_onyx_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) |
+| **015** | `gem_opal_basalt` | Opal Ore (Basalt) | **Gemstone** | Host: `rock_basalt.png`<br>Overlay: `gem_opal_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) |
+| **016** | `gem_opal_rough` | Rough Opal Block | **Gemstone** | `gem_opal_rough.png` *(16×64)* | Animated (4 frames) |
+| **017** | `gem_opal_sandstone_pink` | Opal Ore (Pink Sandstone) | **Gemstone** | Host: `rock_sandstone_pink.png`<br>Overlay: `gem_opal_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) |
+| **018** | `gem_opal_sandstone_white` | Opal Ore (White Sandstone) | **Gemstone** | Host: `rock_sandstone_white.png`<br>Overlay: `gem_opal_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) |
+| **019** | `gem_opal_tuff` | Opal Ore (Tuff) | **Gemstone** | Host: `rock_tuff.png`<br>Overlay: `gem_opal_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) |
+| **020** | `gem_ruby_basalt` | Ruby Ore (Basalt) | **Gemstone** | Host: `rock_basalt.png`<br>Overlay: `gem_ruby_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **021** | `gem_ruby_marble` | Ruby Ore (Marble) | **Gemstone** | Host: `rock_marble.png`<br>Overlay: `gem_ruby_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **022** | `gem_ruby_rough` | Rough Ruby Block | **Gemstone** | `gem_ruby_rough.png` | Uniform (6 faces) |
+| **023** | `gem_sapphire_basalt` | Sapphire Ore (Basalt) | **Gemstone** | Host: `rock_basalt.png`<br>Overlay: `gem_sapphire_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **024** | `gem_sapphire_marble` | Sapphire Ore (Marble) | **Gemstone** | Host: `rock_marble.png`<br>Overlay: `gem_sapphire_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **025** | `gem_sapphire_rough` | Rough Sapphire Block | **Gemstone** | `gem_sapphire_rough.png` | Uniform (6 faces) |
+| **026** | `gem_topaz_granite` | Topaz Ore (Granite) | **Gemstone** | Host: `rock_granite.png`<br>Overlay: `gem_topaz_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **027** | `gem_topaz_rough` | Rough Topaz Block | **Gemstone** | `gem_topaz_rough.png` | Uniform (6 faces) |
+| **028** | `gem_topaz_sandstone_pink` | Topaz Ore (Pink Sandstone) | **Gemstone** | Host: `rock_sandstone_pink.png`<br>Overlay: `gem_topaz_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **029** | `ore_aluminum_argillite` | Aluminum Ore (Argillite) | **Metal** | Host: `rock_argillite.png`<br>Overlay: `ore_aluminum_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **030** | `ore_aluminum_chalk` | Aluminum Ore (Chalk) | **Metal** | Host: `rock_chalk.png`<br>Overlay: `ore_aluminum_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **031** | `ore_aluminum_limestone` | Aluminum Ore (Limestone) | **Metal** | Host: `rock_limestone.png`<br>Overlay: `ore_aluminum_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **032** | `ore_aluminum_raw` | Raw Aluminum Block | **Metal** | `ore_aluminum_raw.png` | Uniform (6 faces) |
+| **033** | `ore_aluminum_sandstone_white` | Aluminum Ore (White Sandstone) | **Metal** | Host: `rock_sandstone_white.png`<br>Overlay: `ore_aluminum_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **034** | `ore_cinnabar_basalt` | Cinnabar Ore (Basalt) | **Chemical** | Host: `rock_basalt.png`<br>Overlay: `ore_cinnabar_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **035** | `ore_cinnabar_brimstone` | Cinnabar Ore (Brimstone) | **Chemical** | Host: `rock_brimstone.png`<br>Overlay: `ore_cinnabar_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **036** | `ore_cinnabar_karst` | Cinnabar Ore (Karst) | **Chemical** | Host: `rock_karst.png`<br>Overlay: `ore_cinnabar_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **037** | `ore_cinnabar_raw` | Raw Cinnabar Block | **Chemical** | `ore_cinnabar_raw.png` | Uniform (6 faces) |
+| **038** | `ore_cinnabar_tuff` | Cinnabar Ore (Tuff) | **Chemical** | Host: `rock_tuff.png`<br>Overlay: `ore_cinnabar_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **039** | `ore_coal_andesite` | Coal Ore (Andesite) | **Chemical** | Host: `rock_andesite.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **040** | `ore_coal_argillite` | Coal Ore (Argillite) | **Chemical** | Host: `rock_argillite.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **041** | `ore_coal_chalk` | Coal Ore (Chalk) | **Chemical** | Host: `rock_chalk.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **042** | `ore_coal_diorite` | Coal Ore (Diorite) | **Chemical** | Host: `rock_diorite.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **043** | `ore_coal_dolomite` | Coal Ore (Dolomite) | **Chemical** | Host: `rock_dolomite.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **044** | `ore_coal_gneiss` | Coal Ore (Gneiss) | **Chemical** | Host: `rock_gneiss.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **045** | `ore_coal_granite` | Coal Ore (Granite) | **Chemical** | Host: `rock_granite.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **046** | `ore_coal_limestone` | Coal Ore (Limestone) | **Chemical** | Host: `rock_limestone.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **047** | `ore_coal_raw` | Raw Coal Block | **Chemical** | `ore_coal_raw.png` | Uniform (6 faces) |
+| **048** | `ore_coal_sandstone_black` | Coal Ore (Black Sandstone) | **Chemical** | Host: `rock_sandstone_black.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **049** | `ore_coal_sandstone_common` | Coal Ore (Common Sandstone) | **Chemical** | Host: `rock_sandstone_common.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **050** | `ore_coal_sandstone_dune` | Coal Ore (Dune Sandstone) | **Chemical** | Host: `rock_sandstone_dune.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **051** | `ore_coal_slate` | Coal Ore (Slate) | **Chemical** | Host: `rock_slate.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **052** | `ore_copper_andesite` | Copper Ore (Andesite) | **Metal** | Host: `rock_andesite.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **053** | `ore_copper_argillite` | Copper Ore (Argillite) | **Metal** | Host: `rock_argillite.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **054** | `ore_copper_chalk` | Copper Ore (Chalk) | **Metal** | Host: `rock_chalk.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **055** | `ore_copper_diorite` | Copper Ore (Diorite) | **Metal** | Host: `rock_diorite.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **056** | `ore_copper_dolomite` | Copper Ore (Dolomite) | **Metal** | Host: `rock_dolomite.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **057** | `ore_copper_gabbro` | Copper Ore (Gabbro) | **Metal** | Host: `rock_gabbro.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **058** | `ore_copper_gneiss` | Copper Ore (Gneiss) | **Metal** | Host: `rock_gneiss.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **059** | `ore_copper_granite` | Copper Ore (Granite) | **Metal** | Host: `rock_granite.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **060** | `ore_copper_limestone` | Copper Ore (Limestone) | **Metal** | Host: `rock_limestone.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **061** | `ore_copper_raw` | Raw Copper Block | **Metal** | `ore_copper_raw.png` | Uniform (6 faces) |
+| **062** | `ore_copper_sandstone_common` | Copper Ore (Common Sandstone) | **Metal** | Host: `rock_sandstone_common.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **063** | `ore_copper_sandstone_red` | Copper Ore (Red Sandstone) | **Metal** | Host: `rock_sandstone_red.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **064** | `ore_copper_serpentinite` | Copper Ore (Serpentinite) | **Metal** | Host: `rock_serpentinite.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **065** | `ore_copper_slate` | Copper Ore (Slate) | **Metal** | Host: `rock_slate.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **066** | `ore_copper_tuff` | Copper Ore (Tuff) | **Metal** | Host: `rock_tuff.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **067** | `ore_gold_granite` | Gold Ore (Granite) | **Metal** | Host: `rock_granite.png`<br>Overlay: `ore_gold_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **068** | `ore_gold_marble` | Gold Ore (Marble) | **Metal** | Host: `rock_marble.png`<br>Overlay: `ore_gold_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **069** | `ore_gold_raw` | Raw Gold Block | **Metal** | `ore_gold_raw.png` | Uniform (6 faces) |
+| **070** | `ore_gold_sandstone_red` | Gold Ore (Red Sandstone) | **Metal** | Host: `rock_sandstone_red.png`<br>Overlay: `ore_gold_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **071** | `ore_gold_slate` | Gold Ore (Slate) | **Metal** | Host: `rock_slate.png`<br>Overlay: `ore_gold_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **072** | `ore_iron_andesite` | Iron Ore (Andesite) | **Metal** | Host: `rock_andesite.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **073** | `ore_iron_basalt` | Iron Ore (Basalt) | **Metal** | Host: `rock_basalt.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **074** | `ore_iron_diorite` | Iron Ore (Diorite) | **Metal** | Host: `rock_diorite.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **075** | `ore_iron_dolomite` | Iron Ore (Dolomite) | **Metal** | Host: `rock_dolomite.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **076** | `ore_iron_gabbro` | Iron Ore (Gabbro) | **Metal** | Host: `rock_gabbro.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **077** | `ore_iron_gneiss` | Iron Ore (Gneiss) | **Metal** | Host: `rock_gneiss.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **078** | `ore_iron_granite` | Iron Ore (Granite) | **Metal** | Host: `rock_granite.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **079** | `ore_iron_raw` | Raw Iron Block | **Metal** | `ore_iron_raw.png` | Uniform (6 faces) |
+| **080** | `ore_iron_sandstone_black` | Iron Ore (Black Sandstone) | **Metal** | Host: `rock_sandstone_black.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **081** | `ore_iron_sandstone_common` | Iron Ore (Common Sandstone) | **Metal** | Host: `rock_sandstone_common.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **082** | `ore_iron_sandstone_red` | Iron Ore (Red Sandstone) | **Metal** | Host: `rock_sandstone_red.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **083** | `ore_iron_scoria` | Iron Ore (Scoria) | **Metal** | Host: `rock_scoria.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **084** | `ore_iron_serpentinite` | Iron Ore (Serpentinite) | **Metal** | Host: `rock_serpentinite.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **085** | `ore_lazurite_calcite` | Lazurite Ore (Calcite) | **Chemical** | Host: `rock_calcite.png`<br>Overlay: `ore_lazurite_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **086** | `ore_lazurite_limestone` | Lazurite Ore (Limestone) | **Chemical** | Host: `rock_limestone.png`<br>Overlay: `ore_lazurite_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **087** | `ore_lazurite_marble` | Lazurite Ore (Marble) | **Chemical** | Host: `rock_marble.png`<br>Overlay: `ore_lazurite_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **088** | `ore_lazurite_raw` | Raw Lazurite Block | **Chemical** | `ore_lazurite_raw.png` | Uniform (6 faces) |
+| **089** | `ore_lazurite_sandstone_black` | Lazurite Ore (Black Sandstone) | **Chemical** | Host: `rock_sandstone_black.png`<br>Overlay: `ore_lazurite_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **090** | `ore_lead_andesite` | Lead Ore (Andesite) | **Heavy Metal** | Host: `rock_andesite.png`<br>Overlay: `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **091** | `ore_lead_argillite` | Lead Ore (Argillite) | **Heavy Metal** | Host: `rock_argillite.png`<br>Overlay: `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **092** | `ore_lead_chalk` | Lead Ore (Chalk) | **Heavy Metal** | Host: `rock_chalk.png`<br>Overlay: `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **093** | `ore_lead_diorite` | Lead Ore (Diorite) | **Heavy Metal** | Host: `rock_diorite.png`<br>Overlay: `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **094** | `ore_lead_karst` | Lead Ore (Karst) | **Heavy Metal** | Host: `rock_karst.png`<br>Overlay: `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **095** | `ore_lead_limestone` | Lead Ore (Limestone) | **Heavy Metal** | Host: `rock_limestone.png`<br>Overlay: `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **096** | `ore_lead_raw` | Raw Lead Block | **Heavy Metal** | `ore_lead_raw.png` | Uniform (6 faces) |
+| **097** | `ore_lead_sandstone_common` | Lead Ore (Common Sandstone) | **Heavy Metal** | Host: `rock_sandstone_common.png`<br>Overlay: `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **098** | `ore_lead_slate` | Lead Ore (Slate) | **Heavy Metal** | Host: `rock_slate.png`<br>Overlay: `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **099** | `ore_manganese_argillite` | Manganese Ore (Argillite) | **Heavy Metal** | Host: `rock_argillite.png`<br>Overlay: `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **100** | `ore_manganese_chalk` | Manganese Ore (Chalk) | **Heavy Metal** | Host: `rock_chalk.png`<br>Overlay: `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **101** | `ore_manganese_dolomite` | Manganese Ore (Dolomite) | **Heavy Metal** | Host: `rock_dolomite.png`<br>Overlay: `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **102** | `ore_manganese_gneiss` | Manganese Ore (Gneiss) | **Heavy Metal** | Host: `rock_gneiss.png`<br>Overlay: `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **103** | `ore_manganese_limestone` | Manganese Ore (Limestone) | **Heavy Metal** | Host: `rock_limestone.png`<br>Overlay: `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **104** | `ore_manganese_raw` | Raw Manganese Block | **Heavy Metal** | `ore_manganese_raw.png` | Uniform (6 faces) |
+| **105** | `ore_manganese_slate` | Manganese Ore (Slate) | **Heavy Metal** | Host: `rock_slate.png`<br>Overlay: `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **106** | `ore_nickel_basalt` | Nickel Ore (Basalt) | **Heavy Metal** | Host: `rock_basalt.png`<br>Overlay: `ore_nickel_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **107** | `ore_nickel_gabbro` | Nickel Ore (Gabbro) | **Heavy Metal** | Host: `rock_gabbro.png`<br>Overlay: `ore_nickel_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **108** | `ore_nickel_raw` | Raw Nickel Block | **Heavy Metal** | `ore_nickel_raw.png` | Uniform (6 faces) |
+| **109** | `ore_nickel_scoria` | Nickel Ore (Scoria) | **Heavy Metal** | Host: `rock_scoria.png`<br>Overlay: `ore_nickel_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **110** | `ore_nickel_serpentinite` | Nickel Ore (Serpentinite) | **Heavy Metal** | Host: `rock_serpentinite.png`<br>Overlay: `ore_nickel_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **111** | `ore_platinum_basalt` | Platinum Ore (Basalt) | **Metal** | Host: `rock_basalt.png`<br>Overlay: `ore_platinum_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **112** | `ore_platinum_gabbro` | Platinum Ore (Gabbro) | **Metal** | Host: `rock_gabbro.png`<br>Overlay: `ore_platinum_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **113** | `ore_platinum_raw` | Raw Platinum Block | **Metal** | `ore_platinum_raw.png` | Uniform (6 faces) |
+| **114** | `ore_platinum_scoria` | Platinum Ore (Scoria) | **Metal** | Host: `rock_scoria.png`<br>Overlay: `ore_platinum_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **115** | `ore_platinum_serpentinite` | Platinum Ore (Serpentinite) | **Metal** | Host: `rock_serpentinite.png`<br>Overlay: `ore_platinum_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **116** | `ore_quartz_andesite` | Quartz Ore (Andesite) | **Chemical** | Host: `rock_andesite.png`<br>Overlay: `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **117** | `ore_quartz_gneiss` | Quartz Ore (Gneiss) | **Chemical** | Host: `rock_gneiss.png`<br>Overlay: `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **118** | `ore_quartz_granite` | Quartz Ore (Granite) | **Chemical** | Host: `rock_granite.png`<br>Overlay: `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **119** | `ore_quartz_raw` | Raw Quartz Block | **Chemical** | `ore_quartz_raw.png` | Uniform (6 faces) |
+| **120** | `ore_quartz_sandstone_common` | Quartz Ore (Common Sandstone) | **Chemical** | Host: `rock_sandstone_common.png`<br>Overlay: `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **121** | `ore_quartz_sandstone_red` | Quartz Ore (Red Sandstone) | **Chemical** | Host: `rock_sandstone_red.png`<br>Overlay: `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **122** | `ore_quartz_sandstone_white` | Quartz Ore (White Sandstone) | **Chemical** | Host: `rock_sandstone_white.png`<br>Overlay: `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **123** | `ore_saltpeter_karst` | Saltpeter Ore (Karst) | **Chemical** | Host: `rock_karst.png`<br>Overlay: `ore_saltpeter_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **124** | `ore_saltpeter_limestone` | Saltpeter Ore (Limestone) | **Chemical** | Host: `rock_limestone.png`<br>Overlay: `ore_saltpeter_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **125** | `ore_saltpeter_raw` | Raw Saltpeter Block | **Chemical** | `ore_saltpeter_raw.png` | Uniform (6 faces) |
+| **126** | `ore_saltpeter_sandstone_dune` | Saltpeter Ore (Dune Sandstone) | **Chemical** | Host: `rock_sandstone_dune.png`<br>Overlay: `ore_saltpeter_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **127** | `ore_saltpeter_sandstone_white` | Saltpeter Ore (White Sandstone) | **Chemical** | Host: `rock_sandstone_white.png`<br>Overlay: `ore_saltpeter_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **128** | `ore_silver_andesite` | Silver Ore (Andesite) | **Metal** | Host: `rock_andesite.png`<br>Overlay: `ore_silver_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **129** | `ore_silver_diorite` | Silver Ore (Diorite) | **Metal** | Host: `rock_diorite.png`<br>Overlay: `ore_silver_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **130** | `ore_silver_gneiss` | Silver Ore (Gneiss) | **Metal** | Host: `rock_gneiss.png`<br>Overlay: `ore_silver_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **131** | `ore_silver_marble` | Silver Ore (Marble) | **Metal** | Host: `rock_marble.png`<br>Overlay: `ore_silver_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **132** | `ore_silver_raw` | Raw Silver Block | **Metal** | `ore_silver_raw.png` | Uniform (6 faces) |
+| **133** | `ore_sulfur_basalt` | Sulfur Ore (Basalt) | **Chemical** | Host: `rock_basalt.png`<br>Overlay: `ore_sulfur_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **134** | `ore_sulfur_brimstone` | Sulfur Ore (Brimstone) | **Chemical** | Host: `rock_brimstone.png`<br>Overlay: `ore_sulfur_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **135** | `ore_sulfur_raw` | Raw Sulfur Block | **Chemical** | `ore_sulfur_raw.png` | Uniform (6 faces) |
+| **136** | `ore_sulfur_scoria` | Sulfur Ore (Scoria) | **Chemical** | Host: `rock_scoria.png`<br>Overlay: `ore_sulfur_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **137** | `ore_sulfur_tuff` | Sulfur Ore (Tuff) | **Chemical** | Host: `rock_tuff.png`<br>Overlay: `ore_sulfur_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **138** | `ore_tin_andesite` | Tin Ore (Andesite) | **Metal** | Host: `rock_andesite.png`<br>Overlay: `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **139** | `ore_tin_diorite` | Tin Ore (Diorite) | **Metal** | Host: `rock_diorite.png`<br>Overlay: `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **140** | `ore_tin_dolomite` | Tin Ore (Dolomite) | **Metal** | Host: `rock_dolomite.png`<br>Overlay: `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **141** | `ore_tin_gneiss` | Tin Ore (Gneiss) | **Metal** | Host: `rock_gneiss.png`<br>Overlay: `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **142** | `ore_tin_granite` | Tin Ore (Granite) | **Metal** | Host: `rock_granite.png`<br>Overlay: `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **143** | `ore_tin_raw` | Raw Tin Block | **Metal** | `ore_tin_raw.png` | Uniform (6 faces) |
+| **144** | `ore_tin_sandstone_common` | Tin Ore (Common Sandstone) | **Metal** | Host: `rock_sandstone_common.png`<br>Overlay: `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **145** | `ore_uranium_diorite` | Uranium Ore (Diorite) | **Heavy Metal** | Host: `rock_diorite.png`<br>Overlay: `ore_uranium_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **146** | `ore_uranium_gabbro` | Uranium Ore (Gabbro) | **Heavy Metal** | Host: `rock_gabbro.png`<br>Overlay: `ore_uranium_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **147** | `ore_uranium_granite` | Uranium Ore (Granite) | **Heavy Metal** | Host: `rock_granite.png`<br>Overlay: `ore_uranium_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **148** | `ore_uranium_raw` | Raw Uranium Block | **Heavy Metal** | `ore_uranium_raw.png` | Uniform (6 faces) |
+| **149** | `ore_uranium_slate` | Uranium Ore (Slate) | **Heavy Metal** | Host: `rock_slate.png`<br>Overlay: `ore_uranium_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **150** | `ore_zinc_andesite` | Zinc Ore (Andesite) | **Metal** | Host: `rock_andesite.png`<br>Overlay: `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **151** | `ore_zinc_argillite` | Zinc Ore (Argillite) | **Metal** | Host: `rock_argillite.png`<br>Overlay: `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **152** | `ore_zinc_chalk` | Zinc Ore (Chalk) | **Metal** | Host: `rock_chalk.png`<br>Overlay: `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **153** | `ore_zinc_diorite` | Zinc Ore (Diorite) | **Metal** | Host: `rock_diorite.png`<br>Overlay: `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **154** | `ore_zinc_dolomite` | Zinc Ore (Dolomite) | **Metal** | Host: `rock_dolomite.png`<br>Overlay: `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **155** | `ore_zinc_gneiss` | Zinc Ore (Gneiss) | **Metal** | Host: `rock_gneiss.png`<br>Overlay: `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **156** | `ore_zinc_karst` | Zinc Ore (Karst) | **Metal** | Host: `rock_karst.png`<br>Overlay: `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **157** | `ore_zinc_limestone` | Zinc Ore (Limestone) | **Metal** | Host: `rock_limestone.png`<br>Overlay: `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **158** | `ore_zinc_raw` | Raw Zinc Block | **Metal** | `ore_zinc_raw.png` | Uniform (6 faces) |
 
 ---
 
-## 07. Speleology & Crystals (`caverns`) — 28 Blocks [✅ 100% Complete]
+## 07. Speleology & Crystals (`caverns`) — 28 Blocks
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/caverns`  
 📄 **Comprehensive Specification**: [caverns_design.md](blocks/caverns_design.md)
@@ -576,36 +576,36 @@ The subterranean speleological domain comprises **6 solid mineral crystal blocks
 
 ---
 
-| # | Block ID | Name | Category | Texture File(s) / Parent | Face Mapping / Geometry | Geological Description |
-| :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **01** | `crystal_amethyst_block` | Amethyst Block | **Crystal** | `crystal_amethyst.png` *(+ `1`, `2`)* | 6 uniform faces | Violet quartz block with rich purple crystal facets ($SiO_2$). |
-| **02** | `crystal_amethyst_cluster` | Amethyst Cluster | **Cluster** | `crystal_amethyst_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Clustered prismatic violet quartz crystals. |
-| **03** | `crystal_amethyst_glinted` | Glinted Amethyst Cluster | **Emissive** | `crystal_amethyst_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Deep purple cluster flashing radiant animated lavender glints. |
-| **04** | `crystal_aquamarine_block` | Aquamarine Block | **Crystal** | `crystal_aquamarine.png` *(+ `1`, `2`)* | 6 uniform faces | Translucent cyan-blue beryl block ($Be_3Al_2Si_6O_{18}$). |
-| **05** | `crystal_aquamarine_cluster` | Aquamarine Cluster | **Cluster** | `crystal_aquamarine_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Hexagonal prismatic sea-blue beryl cluster. |
-| **06** | `crystal_aquamarine_glinted` | Glinted Aquamarine Cluster | **Emissive** | `crystal_aquamarine_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Bioluminescent sea-foam cyan glints and animated traveling reflections. |
-| **07** | `crystal_citrine_block` | Citrine Block | **Crystal** | `crystal_citrine.png` *(+ `1`, `2`)* | 6 uniform faces | Solar golden-amber quartz block created by geothermal heating ($SiO_2$). |
-| **08** | `crystal_citrine_cluster` | Citrine Cluster | **Cluster** | `crystal_citrine_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Radiant golden-amber hydrothermal quartz cluster. |
-| **09** | `crystal_citrine_glinted` | Glinted Citrine Cluster | **Emissive** | `crystal_citrine_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Fiery solar amber gleam emanating warm pulsing subterranean light. |
-| **10** | `crystal_fluorite_block` | Fluorite Block | **Crystal** | `crystal_fluorite.png` *(+ `1`, `2`)* | 6 uniform faces | Mint-green cubic calcium fluoride block with soft natural sheen ($CaF_2$). |
-| **11** | `crystal_fluorite_cluster` | Fluorite Cluster | **Cluster** | `crystal_fluorite_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Cubic mint-green crystal cluster with natural cleavage. |
-| **12** | `crystal_fluorite_glinted` | Glinted Fluorite Cluster | **Emissive** | `crystal_fluorite_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Naturally fluorescent ultraviolet emerald-green traveling sparkle. |
-| **13** | `crystal_pink_salt_block` | Pink Salt Block | **Crystal** | `crystal_pink_salt.png` *(+ `1`, `2`)* | 6 uniform faces | Ancient coral-pink evaporite halite salt block ($NaCl$). |
-| **14** | `crystal_pink_salt_cluster` | Pink Salt Cluster | **Cluster** | `crystal_pink_salt_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Crystalline halite hopper crystals in coral pink. |
-| **15** | `crystal_pink_salt_glinted` | Glinted Pink Salt Cluster | **Emissive** | `crystal_pink_salt_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Warm salmon-pink shimmering and sparkling salt cluster. |
-| **16** | `crystal_selenite_block` | Selenite Block | **Crystal** | `crystal_selenite.png` *(+ `1`, `2`)* | 6 uniform faces | Pearlescent silvery-white columnar gypsum block ($CaSO_4 \cdot 2H_2O$). |
-| **17** | `crystal_selenite_cluster` | Selenite Cluster | **Cluster** | `crystal_selenite_cluster.png` *(+ `1`, `2`)* | Cross-billboard | Needle-sharp translucent pearlescent gypsum spires. |
-| **18** | `crystal_selenite_glinted` | Glinted Selenite Cluster | **Emissive** | `crystal_selenite_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) | Pure silvery lunar brilliance flashing across crystal facets. |
-| **19** | `dripstone_calcite` | Calcite Flowstone | **Speleothem** | `rock_calcite.png` | Modular system (**10** pieces) | Smooth, pearlescent milk-white flowstone — Pure carbonate precipitation in pristine mineral-rich groundwater caverns. |
-| **20** | `dripstone_karst` | Karst Dripstone | **Speleothem** | `rock_karst.png` | Modular system (**10** pieces) | Rugged dark-grey weathered limestone — Classic dissolution caves formed by slow calcium bicarbonate seepage. |
-| **21** | `fossil_amber` | Fossil Amber | **Fossil** | `fossil_amber.png` | 6 uniform faces | Deep strata embedding golden translucent fossilized tree resin droplets with ancient botanical/insect inclusions. |
-| **22** | `fossil_bitumen` | Fossil Bitumen | **Fossil** | `fossil_bitumen.png` | 6 uniform faces | Dark hydrocarbon-saturated sedimentary seam containing viscous lustrous petroleum pitch and asphaltum. |
-| **23** | `fossil_bones` | Fossil Bones | **Fossil** | `fossil_bones.png` | 6 uniform faces | Dark sedimentary rock embedding mineralized prehistoric vertebrate bones and skull fragments ($Ca_3(PO_4)_2$). |
-| **24** | `fossil_matrix` | Fossil Matrix | **Fossil** | `fossil_matrix.png` | 6 uniform faces | Barren host sedimentary siltstone enclosing bonebeds and fossil deposits; thematic structural block. |
-| **25** | `speleothem_basalt` | Lava Icicle | **Speleothem** | `rock_basalt.png` | Modular system (**10** pieces) | Charcoal basalt with glowing lava cracks — Lava tube stalactites formed by remelting and dripping basaltic magma. |
-| **26** | `speleothem_brimstone` | Brimstone Spike | **Speleothem** | `rock_brimstone.png` | Modular system (**10** pieces) | Sharp vivid sulfur-yellow needles — Acicular mineral spikes grown from gaseous sublimation around volcanic vents. |
-| **27** | `speleothem_ice` | Glacial Icicle | **Speleothem** | `frost_ice_packed.png` | Modular system (**10** pieces) | Clear, crystalline glacial ice needles — Water dripping and refreezing inside polar cryosphere and permafrost caves. |
-| **28** | `speleothem_salt_straw` | Pink Salt Soda Straw | **Speleothem** | `crystal_pink_salt.png` | Modular system (**6** pieces) | Ultra-thin hollow coral-pink salt tubes — Fragile tubular soda straws precipitating from the outer rims of saline droplets. |
+| # | Block ID | Name | Category | Texture File(s) | Face Mapping / Geometry |
+| :-: | :--- | :--- | :--- | :--- | :--- |
+| **01** | `crystal_amethyst_block` | Amethyst Block | **Crystal** | `crystal_amethyst.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **02** | `crystal_amethyst_cluster` | Amethyst Cluster | **Cluster** | `crystal_amethyst_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
+| **03** | `crystal_amethyst_glinted` | Glinted Amethyst Cluster | **Emissive** | `crystal_amethyst_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
+| **04** | `crystal_aquamarine_block` | Aquamarine Block | **Crystal** | `crystal_aquamarine.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **05** | `crystal_aquamarine_cluster` | Aquamarine Cluster | **Cluster** | `crystal_aquamarine_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
+| **06** | `crystal_aquamarine_glinted` | Glinted Aquamarine Cluster | **Emissive** | `crystal_aquamarine_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
+| **07** | `crystal_citrine_block` | Citrine Block | **Crystal** | `crystal_citrine.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **08** | `crystal_citrine_cluster` | Citrine Cluster | **Cluster** | `crystal_citrine_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
+| **09** | `crystal_citrine_glinted` | Glinted Citrine Cluster | **Emissive** | `crystal_citrine_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
+| **10** | `crystal_fluorite_block` | Fluorite Block | **Crystal** | `crystal_fluorite.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **11** | `crystal_fluorite_cluster` | Fluorite Cluster | **Cluster** | `crystal_fluorite_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
+| **12** | `crystal_fluorite_glinted` | Glinted Fluorite Cluster | **Emissive** | `crystal_fluorite_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
+| **13** | `crystal_pink_salt_block` | Pink Salt Block | **Crystal** | `crystal_pink_salt.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **14** | `crystal_pink_salt_cluster` | Pink Salt Cluster | **Cluster** | `crystal_pink_salt_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
+| **15** | `crystal_pink_salt_glinted` | Glinted Pink Salt Cluster | **Emissive** | `crystal_pink_salt_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
+| **16** | `crystal_selenite_block` | Selenite Block | **Crystal** | `crystal_selenite.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **17** | `crystal_selenite_cluster` | Selenite Cluster | **Cluster** | `crystal_selenite_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
+| **18** | `crystal_selenite_glinted` | Glinted Selenite Cluster | **Emissive** | `crystal_selenite_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
+| **19** | `dripstone_calcite` | Calcite Flowstone | **Speleothem** | `rock_calcite.png` | Modular system (**10** pieces) |
+| **20** | `dripstone_karst` | Karst Dripstone | **Speleothem** | `rock_karst.png` | Modular system (**10** pieces) |
+| **21** | `fossil_amber` | Fossil Amber | **Fossil** | `fossil_amber.png` | 6 uniform faces |
+| **22** | `fossil_bitumen` | Fossil Bitumen | **Fossil** | `fossil_bitumen.png` | 6 uniform faces |
+| **23** | `fossil_bones` | Fossil Bones | **Fossil** | `fossil_bones.png` | 6 uniform faces |
+| **24** | `fossil_matrix` | Fossil Matrix | **Fossil** | `fossil_matrix.png` | 6 uniform faces |
+| **25** | `speleothem_basalt` | Lava Icicle | **Speleothem** | `rock_basalt.png` | Modular system (**10** pieces) |
+| **26** | `speleothem_brimstone` | Brimstone Spike | **Speleothem** | `rock_brimstone.png` | Modular system (**10** pieces) |
+| **27** | `speleothem_ice` | Glacial Icicle | **Speleothem** | `frost_ice_packed.png` | Modular system (**10** pieces) |
+| **28** | `speleothem_salt_straw` | Pink Salt Soda Straw | **Speleothem** | `crystal_pink_salt.png` | Modular system (**6** pieces) |
 
 ---
 
@@ -618,62 +618,62 @@ The benthic and subaquatic oceanic domain comprises **14 colonial massive coral 
 
 ---
 
-| # | Block ID | Name | Category | Texture File(s) | Variations / Geometry | Occurrence / Biome | Biological Description |
-| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **01** | `algae_mat` | Algae Mat | **Biofilm** | `aqua_algae_mat.png` *(+ `1`, `2`)* | Uniform (6 faces) | Intertidal Shores, Docks | Dense green biofilm of microalgae and bryophytes coating coastal stone. |
-| **02** | `algae_reefstone` | Algae Reefstone | **Encrusted Rock** | `aqua_reefstone.png` *(+ `algae_dead_overlay.png`)* | Uniform + Overlay | Sunlit Reef Slopes | Dark reefstone heavily coated with surface/dead marine algal biofilm layer. |
-| **03** | `barnacles_reefstone` | Barnacles Reefstone | **Crustacean Encrusted Rock** | `aqua_reefstone.png` *(+ `barnacles_overlay.png`)* | Uniform + Overlay | Rocky Coasts, Shipwrecks | Compact colonial crust of conical calcified acorn barnacles encrusting dark reefstone. |
-| **04** | `bone_worms` | Bone Worms | **Siboglinid Annelid** | `vege_bone_worms.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Abyssal Whale Falls, Vents | Deep-sea *Osedax* bone-eating tube worms with vibrant scarlet respiratory feather plumes. |
-| **05** | `brain_coral` | Brain Coral | **Massive Coral** | `aqua_brain_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Shallow Warm Lagoons | Hemispherical massive colony with convoluted, meandering ridges in rose pink. |
-| **06** | `brain_coral_fan` | Brain Coral Fan | **Coral Fan** | `vege_brain_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Compact wavy pink frilled fan extending into tidal currents. |
-| **07** | `bubble_coral` | Bubble Coral | **Massive Coral** | `aqua_bubble_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Sunlit Reef Slopes | Inflated vesicular water-filled polyps of vivid violet-purple coloration. |
-| **08** | `bubble_coral_fan` | Bubble Coral Fan | **Coral Fan** | `vege_bubble_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Clustered delicate purple vesicles on a thin flexible calcareous stem. |
-| **09** | `bull_kelp` | Bull Kelp | **Laminar Macroalga** | `vege_bull_kelp.png` *(Topo)*<br>`vege_bull_kelp_plant.png` *(Corpo)* | Multi-block Column | Cold Temperate Depths | Heavy annual kelp with hollow bulbous pneumatocyst bulb supporting trailing blades. |
-| **10** | `coralstone` | Coralstone | **Biogenic Rock** | `aqua_coralstone.png` *(+ `1`, `2`)* | Uniform (6 faces) | Shallow Reefs, Sandbars | Porous light-colored calcarenite formed from consolidated coral fragments. |
-| **11** | `dead_coral` | Dead Coral Block | **Dead Coral** | `aqua_dead_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Bleached Reefs, Sunken Atolls | Porous, chalky mineralized calcium carbonate block in ghostly grey. |
-| **12** | `dead_coral_fan` | Dead Coral Fan | **Dead Coral** | `vege_dead_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Dead Reefs | Brittle, desaturated skeletal fan with chalky grey limestone texture. |
-| **13** | `delesseria` | Delesseria | **Rhodophyte** | `vege_delesseria.png` *(Topo)*<br>`vege_delesseria_plant.png` *(Corpo)* | Multi-block Column | Deep Sublittoral Shallows | Elegant deep-sea red alga with delicate leaf-like sinuous fronds with midribs. |
-| **14** | `dying_coral` | Dying Coral Block | **Senescent Coral** | `aqua_dying_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Stressed Reef Margins, Warming Shallows | Moribund, decaying coral colony displaying dull necrotic brownish-tan tones with fading bleached rims. |
-| **15** | `dying_coral_fan` | Dying Coral Fan | **Senescent Coral** | `vege_dying_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Stressed Reefs | Fading brownish-ochre gorgonian fan with decaying petal lobes and withered tips. |
-| **16** | `fire_coral` | Fire Coral | **Massive Coral** | `aqua_fire_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Outer Reef Crests | Calcified hydrocoral in bright scarlet with stinging defensive nematocysts. |
-| **17** | `fire_coral_fan` | Fire Coral Fan | **Coral Fan** | `vege_fire_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Upright fiery scarlet branching fan thriving in energetic breaker zones. |
-| **18** | `geothermal_vent` | Geothermal Vent | **Hydrothermal** | `aqua_geothermal_vent_top.png`<br>`aqua_geothermal_vent_side.png`<br>`aqua_geothermal_vent_bot.png` | Top / Side / Bottom split | Abyssal Trenches | Submarine volcanic chimney venting superheated mineral-rich water; dark basal feeding conduit. |
-| **19** | `heart_coral` | Heart Coral | **Massive Coral** | `aqua_heart_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Tropical Reef Drop-offs | Massive calcium colony displaying intense crimson-magenta polyps. |
-| **20** | `heart_coral_fan` | Heart Coral Fan | **Coral Fan** | `vege_heart_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Broad crimson-pink fan displaying gentle lobed contours. |
-| **21** | `horn_coral` | Horn Coral | **Massive Coral** | `aqua_horn_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Clear Tropical Waters | Upright columnar gold-yellow corallum reaching toward intense sunlight. |
-| **22** | `horn_coral_fan` | Horn Coral Fan | **Coral Fan** | `vege_horn_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Slender yellow antlers spreading outward to catch drifting micro-nutrients. |
-| **23** | `kelp` | Giant Kelp | **Laminar Macroalga** | `vege_kelp.png` *(Topo)*<br>`vege_kelp_plant.png` *(Corpo)* | Multi-block Column | Temperate Kelp Forests | Giant vertical brown laminar kelp forming dense underwater forest canopies. |
-| **24** | `leaf_coral` | Leaf Coral | **Massive Coral** | `aqua_leaf_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Calm Sheltered Lagoons | Foliaceous ruffled plates and wavy ridges rich in olive-green pigments. |
-| **25** | `leaf_coral_fan` | Leaf Coral Fan | **Coral Fan** | `vege_leaf_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Leaf-like ruffled olive-green fronds undulating with ocean swell. |
-| **26** | `pearl_block` | Pearl Block | **Biogenic Nacre** | `aqua_pearl_top.png`<br>`aqua_pearl_side.png`<br>`aqua_pearl_bot.png` | Top / Side / Bottom split | Deep Pearl Oyster Beds | Iridescent aragonite-conchiolin nacreous block with lustrous rosy sheen and shadowed attachment base. |
-| **27** | `red_algae` | Red Algae | **Rhodophyte** | `vege_red_algae.png` *(+ `1`, `2`)* | 3 (Animated Strip) | Shallow Reef Slopes | Crimson coastal marine rhodophyte rich in phycoerythrin pigments. |
-| **28** | `reed_coral` | Reed Coral | **Massive Coral** | `aqua_reed_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Mid-Depth Patch Reefs | Articulated vertical clustered stems in deep indigo and violet tones. |
-| **29** | `reed_coral_fan` | Reed Coral Fan | **Coral Fan** | `vege_reed_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Vertical violet spires and delicate reedy branches rising from a basal cup. |
-| **30** | `reefstone` | Reefstone | **Volcanic Rock** | `aqua_reefstone.png` *(+ `1`, `2`)* | Uniform (6 faces) | Reef Foundations | Dense, dark basaltic bedrock providing geological support for coral reefs. |
-| **31** | `sargassum` | Sargassum | **Pelagic Phaeophyte** | `vege_sargassum.png` *(Topo)*<br>`vege_sargassum_plant.png` *(Corpo)* | Multi-block Column | Open Pelagic Gyres, Reefs | Free-floating or anchored bushy brown macroalga with berry-like gas vesicles. |
-| **32** | `scute_block` | Turtle Scute Block | **Biogenic Shell** | `aqua_scute_top.png`<br>`aqua_scute_side.png`<br>`aqua_scute_bot.png` | Top / Side / Bottom split | Sandy Beaches, Coastal Dunes | Dense keratinous carapace plates harvested from sea turtles; high impact resistance. |
-| **33** | `sea_anemone` | Sea Anemone | **Anthozoan** | `aqua_sea_anemone_top.png`<br>`aqua_sea_anemone_side.png`<br>`aqua_sea_anemone_bot.png` | Top / Side / Bottom split | Reef Walls, Tide Pools | Predatory sessile anthozoan block with crown of stinging tentacles, fleshy scapus column, and basal pedal disc. |
-| **34** | `seagrass` | Seagrass | **Marine Angiosperm** | `vege_seagrass.png` *(+ `1`, `2`)* | 3 (Animated Strip) | Shallow Coastal Meadows | Flowering marine grass anchoring soft sediments in shallow coastal meadows. |
-| **35** | `seaweed` | Seaweed | **Littoral Macroalga** | `vege_seaweed.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Intertidal Reefs, Tide Pools | Intertidal golden-brown wrack anchoring to stones and tide pools. |
-| **36** | `spike_coral` | Spike Coral | **Massive Coral** | `aqua_spike_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Deep Reef Margins | Heavy skeletal base with prominent conical spires in cyan-turquoise hues. |
-| **37** | `spike_coral_fan` | Spike Coral Fan | **Coral Fan** | `vege_spike_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Radiant turquoise thorny fan with sharp needle-pointed tips. |
-| **38** | `sponge` | Natural Sponge | **Poriferan** | `aqua_sponge.png` *(+ `1`, `2`)* | Uniform (6 faces) | Deep Warm Reefs | Multicellular sessile poriferan with porous water-filtration canals. |
-| **39** | `staghorn_coral` | Staghorn Coral | **Massive Coral** | `aqua_staghorn_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Barrier Reef Flats | Fast-growing emerald-green branching acroporid structure with angular antlers. |
-| **40** | `staghorn_coral_fan` | Staghorn Coral Fan | **Coral Fan** | `vege_staghorn_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Intricate green digitiform branching fan mimicking juvenile staghorns. |
-| **41** | `sun_coral` | Sun Coral | **Massive Coral** | `aqua_sun_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Tropical Atolls & Sunlit Reefs | Radiating golden-orange corallites with intense saffron centers. |
-| **42** | `sun_coral_fan` | Sun Coral Fan | **Coral Fan** | `vege_sun_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Branching cup-shaped golden-orange fan radiating into sunlit waters. |
-| **43** | `thorn_coral` | Thorn Coral | **Massive Coral** | `aqua_thorn_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Deep Trenches & Sea Caves | Antipatharian black coral with a tough, thorny obsidian-colored chitin skeleton. |
-| **44** | `thorn_coral_fan` | Thorn Coral Fan | **Coral Fan** | `vege_thorn_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Delicate black obsidian fan armed with minute microscopic thorns. |
-| **45** | `tube_coral` | Tube Coral | **Massive Coral** | `aqua_tube_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Shallow Tropical Seas | Dense cylindrical tubular aragonite corallites in vibrant cobalt blue. |
-| **46** | `tube_coral_fan` | Tube Coral Fan | **Coral Fan** | `vege_tube_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Branching tubular cobalt-blue fan anchored perpendicularly to reef strata. |
-| **47** | `wax_coral` | Wax Coral | **Massive Coral** | `aqua_wax_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Calcareous Reef Plateaus | Smooth, pale ivory-white colonial formation with a velvety waxy finish. |
-| **48** | `wax_coral_fan` | Wax Coral Fan | **Coral Fan** | `vege_wax_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Translucent ivory-white fan with velvety waxy texture. |
-| **49** | `zigzag_coral` | Zigzag Coral | **Massive Coral** | `aqua_zigzag_coral.png` *(+ `1`, `2`)* | 3 (Uniform) | Deep Barrier Slopes, Mesophotic Reefs | Angular labyrinthine skeletal ridges in graphite dark grey hues. |
-| **50** | `zigzag_coral_fan` | Zigzag Coral Fan | **Coral Fan** | `vege_zigzag_coral_fan.png` *(+ `1`, `2`)* | 3 (Cross-billboard) | Top of Coral Blocks | Rigid angular branching dark grey fan with step-like zigzag structure. |
+| # | Block ID | Name | Category | Texture File(s) | Face Mapping / Geometry |
+| :-: | :--- | :--- | :--- | :--- | :--- |
+| **01** | `algae_mat` | Algae Mat | **Biofilm** | `aqua_algae_mat.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **02** | `algae_reefstone` | Algae Reefstone | **Encrusted Rock** | `aqua_reefstone.png` *(+ `algae_dead_overlay.png`)* | 6 uniform faces (Shader Overlay) |
+| **03** | `barnacles_reefstone` | Barnacles Reefstone | **Crustacean Encrusted Rock** | `aqua_reefstone.png` *(+ `barnacles_overlay.png`)* | 6 uniform faces (Shader Overlay) |
+| **04** | `bone_worms` | Bone Worms | **Siboglinid Annelid** | `vege_bone_worms.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **05** | `brain_coral` | Brain Coral | **Massive Coral** | `aqua_brain_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **06** | `brain_coral_fan` | Brain Coral Fan | **Coral Fan** | `vege_brain_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **07** | `bubble_coral` | Bubble Coral | **Massive Coral** | `aqua_bubble_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **08** | `bubble_coral_fan` | Bubble Coral Fan | **Coral Fan** | `vege_bubble_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **09** | `bull_kelp` | Bull Kelp | **Laminar Macroalga** | `vege_bull_kelp.png` *(Top)*<br>`vege_bull_kelp_plant.png` *(Body)* | Columnar (Multi-block) |
+| **10** | `coralstone` | Coralstone | **Biogenic Rock** | `aqua_coralstone.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **11** | `dead_coral` | Dead Coral Block | **Dead Coral** | `aqua_dead_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **12** | `dead_coral_fan` | Dead Coral Fan | **Dead Coral** | `vege_dead_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **13** | `delesseria` | Delesseria | **Rhodophyte** | `vege_delesseria.png` *(Top)*<br>`vege_delesseria_plant.png` *(Body)* | Columnar (Multi-block) |
+| **14** | `dying_coral` | Dying Coral Block | **Senescent Coral** | `aqua_dying_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **15** | `dying_coral_fan` | Dying Coral Fan | **Senescent Coral** | `vege_dying_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **16** | `fire_coral` | Fire Coral | **Massive Coral** | `aqua_fire_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **17** | `fire_coral_fan` | Fire Coral Fan | **Coral Fan** | `vege_fire_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **18** | `geothermal_vent` | Geothermal Vent | **Hydrothermal** | `aqua_geothermal_vent_top.png`<br>`aqua_geothermal_vent_side.png`<br>`aqua_geothermal_vent_bot.png` | Directional (Top / Sides / Bottom) |
+| **19** | `heart_coral` | Heart Coral | **Massive Coral** | `aqua_heart_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **20** | `heart_coral_fan` | Heart Coral Fan | **Coral Fan** | `vege_heart_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **21** | `horn_coral` | Horn Coral | **Massive Coral** | `aqua_horn_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **22** | `horn_coral_fan` | Horn Coral Fan | **Coral Fan** | `vege_horn_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **23** | `kelp` | Giant Kelp | **Laminar Macroalga** | `vege_kelp.png` *(Top)*<br>`vege_kelp_plant.png` *(Body)* | Columnar (Multi-block) |
+| **24** | `leaf_coral` | Leaf Coral | **Massive Coral** | `aqua_leaf_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **25** | `leaf_coral_fan` | Leaf Coral Fan | **Coral Fan** | `vege_leaf_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **26** | `pearl_block` | Pearl Block | **Biogenic Nacre** | `aqua_pearl_top.png`<br>`aqua_pearl_side.png`<br>`aqua_pearl_bot.png` | Directional (Top / Sides / Bottom) |
+| **27** | `red_algae` | Red Algae | **Rhodophyte** | `vege_red_algae.png` *(+ `1`, `2`)* | Animated strip (3 variants) |
+| **28** | `reed_coral` | Reed Coral | **Massive Coral** | `aqua_reed_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **29** | `reed_coral_fan` | Reed Coral Fan | **Coral Fan** | `vege_reed_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **30** | `reefstone` | Reefstone | **Volcanic Rock** | `aqua_reefstone.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **31** | `sargassum` | Sargassum | **Pelagic Phaeophyte** | `vege_sargassum.png` *(Top)*<br>`vege_sargassum_plant.png` *(Body)* | Columnar (Multi-block) |
+| **32** | `scute_block` | Turtle Scute Block | **Biogenic Shell** | `aqua_scute_top.png`<br>`aqua_scute_side.png`<br>`aqua_scute_bot.png` | Directional (Top / Sides / Bottom) |
+| **33** | `sea_anemone` | Sea Anemone | **Anthozoan** | `aqua_sea_anemone_top.png`<br>`aqua_sea_anemone_side.png`<br>`aqua_sea_anemone_bot.png` | Directional (Top / Sides / Bottom) |
+| **34** | `seagrass` | Seagrass | **Marine Angiosperm** | `vege_seagrass.png` *(+ `1`, `2`)* | Animated strip (3 variants) |
+| **35** | `seaweed` | Seaweed | **Littoral Macroalga** | `vege_seaweed.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **36** | `spike_coral` | Spike Coral | **Massive Coral** | `aqua_spike_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **37** | `spike_coral_fan` | Spike Coral Fan | **Coral Fan** | `vege_spike_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **38** | `sponge` | Natural Sponge | **Poriferan** | `aqua_sponge.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **39** | `staghorn_coral` | Staghorn Coral | **Massive Coral** | `aqua_staghorn_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **40** | `staghorn_coral_fan` | Staghorn Coral Fan | **Coral Fan** | `vege_staghorn_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **41** | `sun_coral` | Sun Coral | **Massive Coral** | `aqua_sun_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **42** | `sun_coral_fan` | Sun Coral Fan | **Coral Fan** | `vege_sun_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **43** | `thorn_coral` | Thorn Coral | **Massive Coral** | `aqua_thorn_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **44** | `thorn_coral_fan` | Thorn Coral Fan | **Coral Fan** | `vege_thorn_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **45** | `tube_coral` | Tube Coral | **Massive Coral** | `aqua_tube_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **46** | `tube_coral_fan` | Tube Coral Fan | **Coral Fan** | `vege_tube_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **47** | `wax_coral` | Wax Coral | **Massive Coral** | `aqua_wax_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **48** | `wax_coral_fan` | Wax Coral Fan | **Coral Fan** | `vege_wax_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **49** | `zigzag_coral` | Zigzag Coral | **Massive Coral** | `aqua_zigzag_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **50** | `zigzag_coral_fan` | Zigzag Coral Fan | **Coral Fan** | `vege_zigzag_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 
 ---
 
-## 09. Biomaterials, Fauna & Organic Matter (`organics`) — 36 Blocks [✅ 100% Complete]
+## 09. Biomaterials, Fauna & Organic Matter (`organics`) — 36 Blocks
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/organics`  
 📄 **Comprehensive Specification**: [organics_design.md](blocks/organics_design.md)
@@ -682,53 +682,53 @@ The biological biomaterials and organic domain comprises **14 insect colony and 
 
 ---
 
-| # | Block ID | Name | Category | Texture File(s) | Face Mapping | Biome Occurrence | Biological Description |
-| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **01** | `ant_hill` | Ant Hill (Closed) | **Colony** | `nest_ant_hill.png` | Uniform (6 faces) | Plains, Savannas | Cemented mound of mineral soil particles and salivary secretions in dormant closed state. |
-| **02** | `ant_hill_open` | Ant Hill (Active) | **Colony** | `nest_ant_hill_open.png` | Uniform (6 faces) | Plains, Savannas | Active ant mound featuring excavated gallery entryways and active insect swarms. |
-| **03** | `beaver_dam` | Beaver Dam | **Architecture** | `nest_beaver_dam.png` *(+ `1`, `2`)* | Uniform (6 faces) | Forest Rivers, Swamps | Hydraulic blockage matrix woven from debarked river branches, mud mortar, and river gravel. |
-| **04** | `bee_nest` | Wild Bee Nest | **Hive** | `nest_bee_nest_bot...top.png`<br>`nest_bee_nest_front_honey.png` | Directional (5 faces) | Flower Forests, Meadows | Natural hive hanging from tree canopies, filled with wax comb cells and dripping wild honey. |
-| **05** | `bird_nest` | Songbird Nest | **Nest** | `nest_bird_nest_bot...top.png` | Half-height Slab | Forest Canopies, Cliffs | Woven bowl of twigs and soft moss; hollow concave nest chamber in half-height slab geometry. |
-| **06** | `bloody_brain` | Bloody Brain Block | **Neural** | `bio_brain.png` *(+ `bloody_overlay.png`, `1`, `2`)* | Uniform (6 faces) + Shader Bloody Overlay | Abyssal Depths, Eldritch Lairs | Pulsating cerebral gray-pink neural mass dripping with arterial coagulated blood on all 6 faces. |
-| **07** | `bloody_flesh` | Bloody Flesh Block | **Tissue** | Top/Bot: `bio_flesh_top.png`<br>Sides: `bio_flesh_side.png` *(+ `bloody_overlay.png`, `1`, `2`)* | Directional (2 faces) + Lateral Shader Bloody Overlay | Butcheries, Lairs, Abattoirs | Striated raw skeletal muscle with fresh dripping blood stains and clotted streaks along vertical sides. |
-| **08** | `blubber_block` | Blubber Block | **Adipose** | `bio_blubber.png` *(+ `1`, `2`)* | Translucent (Alpha 204) | Polar Oceans, Arctic Tundras | Thick subcutaneous marine adipose tissue; excellent thermal insulator and long-burning fuel. |
-| **09** | `bone_block` | Bone Block | **Osteology** | `bio_bone_top.png`<br>`bio_bone_side.png` *(+ `1`, `2`)* | Axial Column (2 faces) | Deserts, Fossils, Caves | Dense calcium phosphate and hydroxyapatite fossil megafauna bone with central marrow canal. |
-| **10** | `brain_block` | Brain Block | **Neural** | `bio_brain.png` *(+ `1`, `2`)* | Uniform (6 faces) | Abyssal Depths, Lairs | Convoluted cerebral gray and pink neural matter exhibiting synaptic twitching. |
-| **11** | `calcined_bone` | Calcined Bone | **Osteology** | `bio_calcined_bone_top.png`<br>`bio_calcined_bone_side.png` *(+ `1`, `2`)* | Axial Column (2 faces) | Volcanic Ash, Kilns, Catacombs | Thermally altered, pyromineralized bone recrystallized into chalky pale grey hydroxyapatite. |
-| **12** | `cobweb` | Cobweb Block | **Silk** | `organic_cobweb.png` *(+ `1`, `2`)* | Volumetric 3D Cross | Abandoned Mines, Crypts | Full-voxel 3D intersecting cross of adhesive proteinaceous spider silk threads. |
-| **13** | `cobweb_arch` | Cobweb Arch | **Silk** | `organic_cobweb_arch.png` *(+ `1`, `2`)* | Flat Vertical Quad | Tunnel Corners, Doorways | Diagonal fan-shaped silk web mounted flush in the upper corner between wall and ceiling. |
-| **14** | `cobweb_hanging` | Hanging Cobweb | **Silk** | `organic_cobweb_hanging.png` *(+ `1`, `2`)* | Flat Vertical Quad | Tunnel Ceilings, Architraves | Pendant veil of cobweb fringe suspended from top horizontal joints and lintels. |
-| **15** | `cobweb_stretched` | Stretched Cobweb | **Silk** | `organic_cobweb_stretched.png` *(+ `1`, `2`)* | Flat Vertical Quad | Narrow Corridors, Gaps | Tensioned vertical silk web stretched taut between two parallel vertical surfaces. |
-| **16** | `coprolite_block` | Coprolite Block | **Fossil** | `organic_coprolite.png` *(+ `1`, `2`)* | Uniform (6 faces) | Fossil Beds, Dry Caves | Prehistoric petrified fossil dung mineralized into solid calcium phosphate sedimentary rock. |
-| **17** | `dust_block` | Organic Dust | **Detritus** | `organic_dust.png` *(+ `1`, `2`)* | Uniform (6 faces) | Tombs, Forgotten Crypts | Dense accumulation of inert biological detritus, dead epithelial cells, and micro-arthropod debris. |
-| **18** | `flesh_block` | Raw Flesh Block | **Tissue** | `bio_flesh_top.png`<br>`bio_flesh_side.png` *(+ `1`, `2`)* | Directional (2 faces) | Butcheries, Lairs, Carcasses | Fresh striated skeletal muscle and fibrous connective tissue with membrane top and fibril sides. |
-| **19** | `fur_block` | Animal Fur Block | **Integument** | `bio_fur_top.png`<br>`bio_fur_side.png`<br>`bio_fur_bot.png` | Directional (3 faces) | Arctic Taigas, Pastures | Heavy mammal pelt with dense vertical hair flow on sides, whorled rosette on top, and tanned suede backing on bottom. |
-| **20** | `guano_block` | Guano Block | **Dropping** | `organic_guano.png` *(+ `1`, `2`)* | Uniform (6 faces) | Bat Caves, Sea Islands | Compact nitrogen and phosphate-rich natural fertilizer accumulated from bat and seabird guano. |
-| **21** | `hay_nest` | Hay Poultry Nest | **Nest** | `nest_hay_nest_bot...top.png` | Half-height Slab | Barnyards, Farmsteads | Agricultural laying nest woven from golden cured straw and dry hay; half-height slab geometry. |
-| **22** | `honey_block` | Honey Block | **Secretion** | `organic_honey_block_bot...top.png` | Translucent (3 faces) | Beehives, Apiaries | Viscous colloidal nectar concentrate; cushions kinetic impact and adheres to surfaces. |
-| **23** | `honeycomb_block` | Honeycomb Block | **Wax Matrix** | `organic_honeycomb_block.png` *(+ `1`, `2`)* | Uniform (6 faces) | Apiaries, Tree Cavities | Regular hexagonal prismatic matrix of pure insect wax synthesized by honeybee workers. |
-| **24** | `jelly_block` | Royal Jelly Block | **Colloid** | `organic_jelly_top.png`<br>`organic_jelly_side.png`<br>`organic_jelly_bot.png` | Translucent (3 faces) | Queen Chambers, Orchards | Viscoelastic translucent purple royal gel providing bounce without slime stickiness. |
-| **25** | `loam_burrow` | Loam Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png` *(+ `1`, `2`)*<br>Bot: `soils/soil_loam_dirt.png`<br>Sides: `soils/soil_loam_grass_side.png` | Composite Top + Loam soil | Fertile Plains, Meadows | Excavated wildlife den in rich loam soil with grass-fringed aperture and earth depth. |
-| **26** | `peat_burrow` | Peat Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png` *(+ `1`, `2`)*<br>Bot: `soils/soil_peat_dirt.png`<br>Sides: `soils/soil_peat_grass_side.png` | Composite Top + Peat soil | Bogs, Moorlands, Fens | Subterranean burrow dug into dense dark acidic peat moorland, sheltering hardy marsh fauna. |
-| **27** | `poop_block` | Manure Block | **Dropping** | `organic_poop.png` *(+ `1`, `2`)* | Uniform (6 faces) | Pastures, Livestock Corrals | Rich agricultural farm animal dung with undigested vegetable fiber; high-potency soil fertilizer. |
-| **28** | `seashell_block` | Seashell Block | **Sediment** | `organic_seashell.png` *(+ `1`, `2`)* | Uniform (6 faces) | Warm Beaches, Coastlines | Dense coastal coquina formed from crushed whole marine bivalves and iridescent sea shells. |
-| **29** | `silk_cocoon` | Wild Silk Cocoon | **Pupa** | `nest_silk_cocoon_bot...top.png` | Directional (3 faces) | Temperate Woods, Jungles | Compact ellipsoidal pupal shell of continuous pearlescent silk fibers; premium silk harvest. |
-| **30** | `silt_burrow` | Silt Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png` *(+ `1`, `2`)*<br>Bot: `soils/soil_silt_dirt.png`<br>Sides: `soils/soil_silt_grass_side.png` | Composite Top + Silt soil | Woodland Hills, Slopes | Excavated wildlife den in fine silt forest soils with shaded earthen entry tunnel. |
-| **31** | `slime_block` | Slime Block | **Colloid** | `organic_slime_top.png`<br>`organic_slime_side.png`<br>`organic_slime_bot.png` | Translucent (3 faces) | Swamps, Deep Caves | Elastic green colloidal gel; high viscoelastic resilience providing kinetic bounce. |
-| **32** | `spider_egg` | Spider Egg Sac | **Ootheca** | `nest_spider_egg_bot...top.png` | Directional (3 faces) | Deep Caverns, Mines | Dense fibrous silk ootheca enclosing clutches of gestating scarlet spider eggs. |
-| **33** | `termite_mound` | Termite Mound (Closed) | **Colony** | `nest_termite_mound.png` | Uniform (6 faces) | Arid Savannas | Towering spire of red clay soil cemented by termites with monolithic flute ridges. |
-| **34** | `termite_mound_open` | Termite Mound (Active) | **Colony** | `nest_termite_mound_open.png` | Uniform (6 faces) | Arid Savannas | Active termite mound displaying open thermal chimneys and ventilation tunnels. |
-| **35** | `wasp_nest` | Paper Wasp Nest | **Hive** | `nest_wasp_nest_bot...top.png` | Directional (3 faces) | Dense Forests, Ruins | Papery cellulose nest chewed from plant fibers by social wasps, with inverted entry pore. |
-| **36** | `wax_block` | Beeswax Block | **Wax** | `organic_wax.png` *(+ `1`, `2`)* | Uniform (6 faces) | Domestic Hives, Workshops | Compact block of rendered virgin beeswax; waterproof sealant and architectural candle craft. |
+| # | Block ID | Name | Category | Texture File(s) | Face Mapping |
+| :-: | :--- | :--- | :--- | :--- | :--- |
+| **01** | `ant_hill` | Ant Hill (Closed) | **Colony** | `nest_ant_hill.png` | Uniform (6 faces) |
+| **02** | `ant_hill_open` | Ant Hill (Active) | **Colony** | `nest_ant_hill_open.png` | Uniform (6 faces) |
+| **03** | `beaver_dam` | Beaver Dam | **Architecture** | `nest_beaver_dam.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **04** | `bee_nest` | Wild Bee Nest | **Hive** | `nest_bee_nest_bot...top.png`<br>`nest_bee_nest_front_honey.png` | Directional (5 faces) |
+| **05** | `bird_nest` | Songbird Nest | **Nest** | `nest_bird_nest_bot...top.png` | Half-height Slab |
+| **06** | `bloody_brain` | Bloody Brain Block | **Neural** | `bio_brain.png` *(+ `bloody_overlay.png`, `1`, `2`)* | Uniform (6 faces) + Shader Bloody Overlay |
+| **07** | `bloody_flesh` | Bloody Flesh Block | **Tissue** | Top/Bot: `bio_flesh_top.png`<br>Sides: `bio_flesh_side.png` *(+ `bloody_overlay.png`, `1`, `2`)* | Directional (2 faces) + Lateral Shader Bloody Overlay |
+| **08** | `blubber_block` | Blubber Block | **Adipose** | `bio_blubber.png` *(+ `1`, `2`)* | Translucent (Alpha 204) |
+| **09** | `bone_block` | Bone Block | **Osteology** | `bio_bone_top.png`<br>`bio_bone_side.png` *(+ `1`, `2`)* | Axial Column (2 faces) |
+| **10** | `brain_block` | Brain Block | **Neural** | `bio_brain.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **11** | `calcined_bone` | Calcined Bone | **Osteology** | `bio_calcined_bone_top.png`<br>`bio_calcined_bone_side.png` *(+ `1`, `2`)* | Axial Column (2 faces) |
+| **12** | `cobweb` | Cobweb Block | **Silk** | `organic_cobweb.png` *(+ `1`, `2`)* | Volumetric 3D Cross |
+| **13** | `cobweb_arch` | Cobweb Arch | **Silk** | `organic_cobweb_arch.png` *(+ `1`, `2`)* | Flat Vertical Quad |
+| **14** | `cobweb_hanging` | Hanging Cobweb | **Silk** | `organic_cobweb_hanging.png` *(+ `1`, `2`)* | Flat Vertical Quad |
+| **15** | `cobweb_stretched` | Stretched Cobweb | **Silk** | `organic_cobweb_stretched.png` *(+ `1`, `2`)* | Flat Vertical Quad |
+| **16** | `coprolite_block` | Coprolite Block | **Fossil** | `organic_coprolite.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **17** | `dust_block` | Organic Dust | **Detritus** | `organic_dust.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **18** | `flesh_block` | Raw Flesh Block | **Tissue** | `bio_flesh_top.png`<br>`bio_flesh_side.png` *(+ `1`, `2`)* | Directional (2 faces) |
+| **19** | `fur_block` | Animal Fur Block | **Integument** | `bio_fur_top.png`<br>`bio_fur_side.png`<br>`bio_fur_bot.png` | Directional (3 faces) |
+| **20** | `guano_block` | Guano Block | **Dropping** | `organic_guano.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **21** | `hay_nest` | Hay Poultry Nest | **Nest** | `nest_hay_nest_bot...top.png` | Half-height Slab |
+| **22** | `honey_block` | Honey Block | **Secretion** | `organic_honey_block_bot...top.png` | Translucent (3 faces) |
+| **23** | `honeycomb_block` | Honeycomb Block | **Wax Matrix** | `organic_honeycomb_block.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **24** | `jelly_block` | Royal Jelly Block | **Colloid** | `organic_jelly_top.png`<br>`organic_jelly_side.png`<br>`organic_jelly_bot.png` | Translucent (3 faces) |
+| **25** | `loam_burrow` | Loam Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png` *(+ `1`, `2`)*<br>Bot: `soils/soil_loam_dirt.png`<br>Sides: `soils/soil_loam_grass_side.png` | Composite Top + Loam soil |
+| **26** | `peat_burrow` | Peat Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png` *(+ `1`, `2`)*<br>Bot: `soils/soil_peat_dirt.png`<br>Sides: `soils/soil_peat_grass_side.png` | Composite Top + Peat soil |
+| **27** | `poop_block` | Manure Block | **Dropping** | `organic_poop.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **28** | `seashell_block` | Seashell Block | **Sediment** | `organic_seashell.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **29** | `silk_cocoon` | Wild Silk Cocoon | **Pupa** | `nest_silk_cocoon_bot...top.png` | Directional (3 faces) |
+| **30** | `silt_burrow` | Silt Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png` *(+ `1`, `2`)*<br>Bot: `soils/soil_silt_dirt.png`<br>Sides: `soils/soil_silt_grass_side.png` | Composite Top + Silt soil |
+| **31** | `slime_block` | Slime Block | **Colloid** | `organic_slime_top.png`<br>`organic_slime_side.png`<br>`organic_slime_bot.png` | Translucent (3 faces) |
+| **32** | `spider_egg` | Spider Egg Sac | **Ootheca** | `nest_spider_egg_bot...top.png` | Directional (3 faces) |
+| **33** | `termite_mound` | Termite Mound (Closed) | **Colony** | `nest_termite_mound.png` | Uniform (6 faces) |
+| **34** | `termite_mound_open` | Termite Mound (Active) | **Colony** | `nest_termite_mound_open.png` | Uniform (6 faces) |
+| **35** | `wasp_nest` | Paper Wasp Nest | **Hive** | `nest_wasp_nest_bot...top.png` | Directional (3 faces) |
+| **36** | `wax_block` | Beeswax Block | **Wax** | `organic_wax.png` *(+ `1`, `2`)* | Uniform (6 faces) |
 
 ---
 
-## 10. Decorations, Lighting & Architecture (`decorations`) — 160 Blocks [✅ 100% Complete]
+## 10. Decorations, Lighting & Architecture (`decorations`) — 162 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/decorations`  
 📄 **Comprehensive Specification**: [decorations_design.md](blocks/decorations_design.md)
 
-The architectural, utilitarian, and illumination domain comprises **6 utilitarian containers & structural furniture blocks**, **8 traditional pure masonry, textile, and glass blocks**, **128 dyed finishes in 16 colors** via shader tinting ($8 \times 16$), **6 agricultural fibers & rural pathways**, and **12 radiant emitters & torches** = **160 Total Architectural Blocks**.
+The architectural, utilitarian, and illumination domain comprises **6 utilitarian containers & structural furniture blocks**, **8 traditional pure masonry, textile, and glass blocks**, **128 dyed finishes in 16 colors** via shader tinting ($8 \times 16$), **8 agricultural fibers & rural pathways**, and **12 radiant emitters & torches** = **162 Total Architectural Blocks**.
 
 > **16 Standard Dye Colors (IDs 1 to 16):**  
 > `01. black` · `02. blue` · `03. brown` · `04. dark_blue` · `05. dark_grey` · `06. green` · `07. light_grey` · `08. light_pink` · `09. lime` · `10. orange` · `11. pink` · `12. purple` · `13. red` · `14. turquoise` · `15. white` · `16. yellow`
@@ -744,39 +744,41 @@ The architectural, utilitarian, and illumination domain comprises **6 utilitaria
 | **005** | `bookshelf_empty` | Empty Bookshelf | **Utility** | `util_bookshelf_top.png`<br>`util_bookshelf_side.png`<br>`util_bookshelf_front_empty.png` | Top & Bottom top + 3 sides side + 1 front `util_bookshelf_front_empty.png` |
 | **006–021** | `brick_<color>` | (Color) Bricks *(16 colors)* | **Masonry** | `deco_bricks_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
 | **022** | `bricks` | Bricks | **Masonry** | `deco_bricks.png` | 6 uniform faces |
-| **023** | `crate` | Crate | **Utility** | `util_crate_top.png`<br>`util_crate_side.png`<br>`util_crate_bot.png` | Top top + Bottom bot + 4 sides side |
-| **024** | `emit_lamp` | Lamp | **Lighting** | `emit_lamp.png`<br>`emit_lamp_top.png`<br>`emit_lamp_on.png`<br>`emit_lamp_top_on.png` | Top top + 4 sides + Bottom (`emit_lamp.png`) *(2 states: Normal / On)* |
-| **025** | `emit_light_blue` | Blue Light | **Radiant Emitter** | `emit_light_blue.png` | 6 uniform faces |
-| **026** | `emit_light_cold` | Cold Light | **Radiant Emitter** | `emit_light_cold.png` | 6 uniform faces |
-| **027** | `emit_light_green` | Green Light | **Radiant Emitter** | `emit_light_green.png` | 6 uniform faces |
-| **028** | `emit_light_red` | Red Light | **Radiant Emitter** | `emit_light_red.png` | 6 uniform faces |
-| **029** | `emit_light_warm` | Warm Light | **Radiant Emitter** | `emit_light_warm.png` | 6 uniform faces |
-| **030** | `emit_torch_blue` | Blue Torch | **Lighting** | `emit_torch_blue.png` | Vertical stem model *(Sapphire blue diode)* |
-| **031** | `emit_torch_cold` | Cold Torch | **Lighting** | `emit_torch_cold.png` | Vertical stem model *(Cold light 6500K)* |
-| **032** | `emit_torch_fire` | Fire Torch | **Lighting** | `emit_torch_fire.png` | Vertical stem model *(5 animated fire frames)* |
-| **033** | `emit_torch_green` | Green Torch | **Lighting** | `emit_torch_green.png` | Vertical stem model *(Emerald green diode)* |
-| **034** | `emit_torch_red` | Red Torch | **Lighting** | `emit_torch_red.png` | Vertical stem model *(Ruby red diode)* |
-| **035** | `emit_torch_warm` | Warm Torch | **Lighting** | `emit_torch_warm.png` | Vertical stem model *(Warm light 2700K)* |
-| **036** | `fabric` | Fabric | **Textile** | `deco_fabric.png` *(+ `1`, `2`)* | 6 uniform faces |
-| **037–052** | `fabric_<color>` | (Color) Fabric *(16 colors)* | **Textile** | `deco_fabric_painted.png` *(+ `1`, `2`)* | 6 uniform faces (Shader Tint: colors 01–16) |
-| **053** | `glass` | Glass | **Glasswork** | `deco_glass.png` | 6 uniform faces (Clear transparent) |
-| **054–069** | `glass_<color>` | (Color) Glass *(16 colors)* | **Glasswork** | `deco_glass_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
-| **070** | `hay_bale` | Hay Bale | **Fibers** | `deco_hay_bale_top.png`<br>`deco_hay_bale_side.png` | Top & Bottom top + 4 sides side *(Orientable)* |
-| **071** | `linen` | Linen | **Textile** | `deco_linen.png` | 6 uniform faces |
-| **072–087** | `linen_<color>` | (Color) Linen *(16 colors)* | **Textile** | `deco_linen_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
-| **088** | `path_dirty` | Dirty Path | **Paths** | `deco_path_dirty.png` | 6 uniform faces |
-| **089** | `path_sandy` | Sandy Path | **Paths** | `deco_path_sandy.png` | 6 uniform faces |
-| **090** | `path_snowy` | Snowy Path | **Paths** | `deco_path_snowy.png` | 6 uniform faces |
-| **091** | `path_stony` | Stony Path | **Paths** | `deco_path_stony.png` | 6 uniform faces |
-| **092** | `plaster` | Plaster | **Masonry** | `deco_plaster.png` | 6 uniform faces |
-| **093–108** | `plaster_<color>` | (Color) Plaster *(16 colors)* | **Masonry** | `deco_plaster_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
-| **109** | `shingles` | Shingles | **Roofing** | `deco_shingles.png` | 6 uniform faces |
-| **110–125** | `shingles_<color>` | (Color) Shingles *(16 colors)* | **Roofing** | `deco_shingles_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
-| **126** | `straw_bale` | Straw Bale | **Fibers** | `deco_straw_bale_top.png`<br>`deco_straw_bale_side.png` | Top & Bottom top + 4 sides side *(Orientable)* |
-| **127** | `tinted_glass` | Tinted Glass | **Glasswork** | `deco_tinted_glass.png` | 6 uniform faces (Smoked semi-translucent) |
-| **128–143** | `tinted_glass_<color>` | (Color) Tinted Glass *(16 colors)* | **Glasswork** | `deco_tinted_glass_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
-| **144** | `wool` | Wool | **Textile** | `deco_wool.png` | 6 uniform faces |
-| **145–160** | `wool_<color>` | (Color) Wool *(16 colors)* | **Textile** | `deco_wool_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
+| **023** | `corn_bale` | Corn Bale | **Fibers** | `deco_corn_bale_top.png`<br>`deco_corn_bale_side.png`<br>`deco_corn_bale_bottom.png` | Top top + Bottom bottom + 4 sides side *(Orientable)* |
+| **024** | `crate` | Crate | **Utility** | `util_crate_top.png`<br>`util_crate_side.png`<br>`util_crate_bot.png` | Top top + Bottom bot + 4 sides side |
+| **025** | `emit_lamp` | Lamp | **Lighting** | `emit_lamp.png`<br>`emit_lamp_top.png`<br>`emit_lamp_on.png`<br>`emit_lamp_top_on.png` | Top top + 4 sides + Bottom (`emit_lamp.png`) *(2 states: Normal / On)* |
+| **026** | `emit_light_blue` | Blue Light | **Radiant Emitter** | `emit_light_blue.png` | 6 uniform faces |
+| **027** | `emit_light_cold` | Cold Light | **Radiant Emitter** | `emit_light_cold.png` | 6 uniform faces |
+| **028** | `emit_light_green` | Green Light | **Radiant Emitter** | `emit_light_green.png` | 6 uniform faces |
+| **029** | `emit_light_red` | Red Light | **Radiant Emitter** | `emit_light_red.png` | 6 uniform faces |
+| **030** | `emit_light_warm` | Warm Light | **Radiant Emitter** | `emit_light_warm.png` | 6 uniform faces |
+| **031** | `emit_torch_blue` | Blue Torch | **Lighting** | `emit_torch_blue.png` | Vertical stem model *(Sapphire blue diode)* |
+| **032** | `emit_torch_cold` | Cold Torch | **Lighting** | `emit_torch_cold.png` | Vertical stem model *(Cold light 6500K)* |
+| **033** | `emit_torch_fire` | Fire Torch | **Lighting** | `emit_torch_fire.png` | Vertical stem model *(5 animated fire frames)* |
+| **034** | `emit_torch_green` | Green Torch | **Lighting** | `emit_torch_green.png` | Vertical stem model *(Emerald green diode)* |
+| **035** | `emit_torch_red` | Red Torch | **Lighting** | `emit_torch_red.png` | Vertical stem model *(Ruby red diode)* |
+| **036** | `emit_torch_warm` | Warm Torch | **Lighting** | `emit_torch_warm.png` | Vertical stem model *(Warm light 2700K)* |
+| **037** | `fabric` | Fabric | **Textile** | `deco_fabric.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **038–053** | `fabric_<color>` | (Color) Fabric *(16 colors)* | **Textile** | `deco_fabric_painted.png` *(+ `1`, `2`)* | 6 uniform faces (Shader Tint: colors 01–16) |
+| **054** | `glass` | Glass | **Glasswork** | `deco_glass.png` | 6 uniform faces (Clear transparent) |
+| **055–070** | `glass_<color>` | (Color) Glass *(16 colors)* | **Glasswork** | `deco_glass_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
+| **071** | `hay_bale` | Hay Bale | **Fibers** | `deco_hay_bale_top.png`<br>`deco_hay_bale_side.png` | Top & Bottom top + 4 sides side *(Orientable)* |
+| **072** | `linen` | Linen | **Textile** | `deco_linen.png` | 6 uniform faces |
+| **073–088** | `linen_<color>` | (Color) Linen *(16 colors)* | **Textile** | `deco_linen_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
+| **089** | `path_dirty` | Dirty Path | **Paths** | `deco_path_dirty.png` | 6 uniform faces |
+| **090** | `path_sandy` | Sandy Path | **Paths** | `deco_path_sandy.png` | 6 uniform faces |
+| **091** | `path_snowy` | Snowy Path | **Paths** | `deco_path_snowy.png` | 6 uniform faces |
+| **092** | `path_stony` | Stony Path | **Paths** | `deco_path_stony.png` | 6 uniform faces |
+| **093** | `plaster` | Plaster | **Masonry** | `deco_plaster.png` | 6 uniform faces |
+| **094–109** | `plaster_<color>` | (Color) Plaster *(16 colors)* | **Masonry** | `deco_plaster_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
+| **110** | `rice_bale` | Rice Bale | **Fibers** | `deco_rice_bale_top.png`<br>`deco_rice_bale_side.png`<br>`deco_rice_bale_bottom.png` | Top top + Bottom bottom + 4 sides side *(Orientable)* |
+| **111** | `shingles` | Shingles | **Roofing** | `deco_shingles.png` | 6 uniform faces |
+| **112–127** | `shingles_<color>` | (Color) Shingles *(16 colors)* | **Roofing** | `deco_shingles_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
+| **128** | `straw_bale` | Straw Bale | **Fibers** | `deco_straw_bale_top.png`<br>`deco_straw_bale_side.png` | Top & Bottom top + 4 sides side *(Orientable)* |
+| **129** | `tinted_glass` | Tinted Glass | **Glasswork** | `deco_tinted_glass.png` | 6 uniform faces (Smoked semi-translucent) |
+| **130–145** | `tinted_glass_<color>` | (Color) Tinted Glass *(16 colors)* | **Glasswork** | `deco_tinted_glass_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
+| **146** | `wool` | Wool | **Textile** | `deco_wool.png` | 6 uniform faces |
+| **147–162** | `wool_<color>` | (Color) Wool *(16 colors)* | **Textile** | `deco_wool_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
 
 ---
 
@@ -821,46 +823,46 @@ The planetary herbaceous flora and groundcover system encompasses **38 distinct 
 
 ---
 
-| # | Block ID | Name | Category | Primary Texture(s) | Variations | Biome & Natural Occurrence | Geometry Profile |
-| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **01** | `vege_barley` | Wild Barley | **Wild Cereal** | `vege_barley_bottom.png`<br>`vege_barley_top.png` | 1 bottom, 3 tops | Alluvial Valleys & Sunlit Hillsides | Double-Tall (2 Blocks) |
-| **02** | `vege_barrel_cactus` | Barrel Cactus | **Cactus** | `vege_barrel_cactus.png` | 2 (`_`, `1`) | Dry Desert Washes & Rocky Arid Flats | Globular Succulent Mesh |
-| **03** | `vege_bluff_grass` | Bluff Grass | **Grass** | `vege_bluff_grass.png` | 3 (`_`, `1`, `2`) | Rocky Crags, Cliffs & Windblown Ridges | Single Cross-Mesh |
-| **04** | `vege_bracken` | Bracken Fern | **Fern** | `vege_bracken.png` | 1 | Temperate Moorlands, Heaths & Woods | Spreading Frond Mesh |
-| **05** | `vege_bush` | Temperate Bush | **Shrub** | `vege_bush.png` | 4 (`_`, `1`, `2`, `3`) | Forest Edges, Meadows & Foothills | Dense Rounded Mesh |
-| **06** | `vege_cactus` | Saguaro Cactus | **Cactus** | `vege_cactus_top.png`<br>`vege_cactus_side.png`<br>`vege_cactus_bottom.png` | 1 | Hot Sand Deserts & Arid Dunes | 3D Full Column Block (Thorns) |
-| **07** | `vege_cactus_bush` | Cactus Bush | **Cactus** | `vege_cactus_bush.png` | 2 (`_`, `1`) | Warm Deserts, Scrub & Chaparrals | Spiny Cross-Mesh |
-| **08** | `vege_cattail` | Cattail | **Wetland** | `vege_cattail_bottom.png`<br>`vege_cattail_top.png` | 1 pair | Muddy Marshes, Swamps & Shallows | Double-Tall Emergent (2 Blocks) |
-| **09** | `vege_cave_growths` | Cave Growths | **Cave Flora** | `vege_cave_growths.png` | 1 | Damp Subterranean Caverns & Chasms | Ground Umbrophilic Thallus |
-| **10** | `vege_cave_hyssop` | Cave Hyssop | **Cave Flora** | `vege_cave_hyssop.png` | 1 | Geodes, Crystal Caverns & Deep Vaults | Subterranean Flowering Herb |
-| **11** | `vege_dead_bush` | Dead Bush | **Shrub** | `vege_dead_bush.png` | 4 (`_`, `1`, `2`, `3`) | Arid Deserts, Badlands & Frozen Tundras | Withered Woody Sticks |
-| **12** | `vege_drygrass` | Drygrass | **Grass** | `vege_drygrass.png` | 4 (`_`, `1`, `2`, `3`) | Savannas, Steppes & Scrublands | Single Cross-Mesh |
-| **13** | `vege_fern` | Common Fern | **Fern** | `vege_fern.png` | 4 (`_`, `1`, `2`, `3`) | Shaded Woodlands & Taiga Understory | Single Cross-Mesh |
-| **14** | `vege_fern_large` | Large Fern | **Fern** | `vege_fern_large.png` | 1 | Temperate Rainwoods & Humid Glades | Robust Cross-Mesh |
-| **15** | `vege_fern_large_snowy` | Snowy Large Fern | **Fern** | `vege_fern_large_snowy.png` | 1 | Cold Taigas & Glacial Forest Floors | Snowy Cross-Mesh |
-| **16** | `vege_frigid_grass` | Frigid Grass | **Grass** | `vege_frigid_grass.png` | 2 (`_`, `1`) | Arctic Tundras, Taigas & Permafrost | Single Cross-Mesh |
-| **17** | `vege_grainy_cave_growths` | Grainy Cave Growths | **Cave Flora** | `vege_grainy_cave_growths.png` | 1 | Mineral-Rich Subterranean Walls & Caves | Ferruginous Granular Crust |
-| **18** | `vege_hanging_moss` | Hanging Moss | **Epiphyte** | `vege_hanging_moss.png` | 1 | Murky Swamps & Gallery Forests | Ceiling Hanging Decal |
-| **19** | `vege_hanging_roots` | Hanging Roots | **Epiphyte** | `vege_hanging_roots.png` | 2 (`_`, `1`) | Dirt Overhangs, Ravines & Cave Ceilings | Ceiling Root Danglers |
-| **20** | `vege_helvola_pad` | Pygmy Helvola Pad | **Floating Pad** | `vege_helvola_pad.png` | 1 | Jungle Springs, Ponds & Estuary Backwaters | Miniature Floating Pad |
-| **21** | `vege_lichen` | Tree & Rock Lichen | **Epiphyte** | `vege_lichen.png` | 3 (`_`, `1`, `2`) | Humid Barks, Damp Rocks & Tundra Boulders | Crustose Surface Patch |
-| **22** | `vege_lily_pad` | Water Lily Pad | **Floating Pad** | `vege_lily_pad.png` | 5 (`_` to `4`) | Calm Lakes, Swamps & River Pools | Floating Water Surface Mesh |
-| **23** | `vege_lurid_cave_growths` | Lurid Cave Growths | **Cave Flora** | `vege_lurid_cave_growths.png` | 1 | Deep Abyssal Caverns & Sunken Grottoes | Bioluminescent Spectral Moss |
-| **24** | `vege_mossgrass` | Mossgrass | **Grass** | `vege_mossgrass.png` | 3 (`_`, `1`, `2`) | Damp Woodlands, River Glades & Bogs | Low Dense Tuft |
-| **25** | `vege_pampas_grass` | Pampas Grass | **Tall Grass** | `vege_pampas_grass_bottom.png`<br>`vege_pampas_grass_top.png` | 2 bottoms, 1 top | Subtropical Plains & Pampas Fields | Double-Tall Plume (2 Blocks) |
-| **26** | `vege_prickly_pear_cactus` | Prickly Pear Cactus | **Cactus** | `vege_prickly_pear_cactus.png` | 1 | Semiarid Slopes, Savannas & Scrub | Fleshy Pad Cross-Mesh |
-| **27** | `vege_red_shrub` | Red Shrub | **Shrub** | `vege_red_shrub.png` | 2 (`_`, `1`) | Autumn Woods, Acid Peat & Moors | Red Pigmented Mesh |
-| **28** | `vege_sea_oats` | Sea Oats | **Tall Grass** | `vege_sea_oats_bottom.png`<br>`vege_sea_oats_top.png` | 1 pair | Subtropical Coasts & Dune Crests | Double-Tall (2 Blocks) |
-| **29** | `vege_small_cactus` | Small Column Cactus | **Cactus** | `vege_small_cactus_top.png`<br>`vege_small_cactus_side.png`<br>`vege_small_cactus_bottom.png` | 1 | Rocky Deserts & Gravelly Flats | 3D Compact Column Block |
-| **30** | `vege_sugar_cane` | Sugar Cane | **Wetland** | `vege_sugar_cane.png` | 5 (`_` to `4`) | Riverbanks, Lakeshores & Swamp Edges | Water-Adjacent Reeds |
-| **31** | `vege_tall_beach_grass` | Tall Beach Grass | **Tall Grass** | `vege_tall_beach_grass_bottom.png`<br>`vege_tall_beach_grass_top.png` | 1 pair | Coastal Sand Dunes & Shorelines | Double-Tall (2 Blocks) |
-| **32** | `vege_tall_bluff_grass` | Tall Bluff Grass | **Tall Grass** | `vege_tall_bluff_grass_bottom.png`<br>`vege_tall_bluff_grass_top.png` | 3 pairs | Mountain Bluffs & Escarpments | Double-Tall (2 Blocks) |
-| **33** | `vege_tall_fern` | Tall Fern | **Tall Fern** | `vege_tall_fern_bottom.png`<br>`vege_tall_fern_top.png` | 4 pairs | Ancient Forests & Mountain Ravines | Double-Tall (2 Blocks) |
-| **34** | `vege_tall_jungle_fern` | Tall Jungle Fern | **Tall Fern** | `vege_tall_jungle_fern_bottom.png`<br>`vege_tall_jungle_fern_top.png` | 1 pair | Tropical Rainforests & Equatorial Valleys | Double-Tall (2 Blocks) |
-| **35** | `vege_tall_prairie_grass` | Tall Prairie Grass | **Tall Grass** | `vege_tall_prairie_grass_bottom.png`<br>`vege_tall_prairie_grass_top.png` | 1 pair | Central Prairies, Steppes & Pampas | Double-Tall (2 Blocks) |
-| **36** | `vege_tall_wildgrass` | Tall Wildgrass | **Tall Grass** | `vege_tall_wildgrass_bottom.png`<br>`vege_tall_wildgrass_top.png` | 4 pairs | High Meadows & Lush River Valleys | Double-Tall (2 Blocks) |
-| **37** | `vege_vines` | Vines (Lianas) | **Epiphyte** | `vege_vines.png` | 3 (`_`, `1`, `2`) | Rainforest Canopies & Cliff Walls | Vertical Wall Climber |
-| **38** | `vege_wildgrass` | Wildgrass | **Grass** | `vege_wildgrass.png` | 4 (`_`, `1`, `2`, `3`) | Plains, Meadows & Temperate Forests | Single Cross-Mesh |
+| # | Block ID | Name | Category | Texture File(s) | Face Mapping / Geometry |
+| :-: | :--- | :--- | :--- | :--- | :--- |
+| **01** | `vege_barley` | Wild Barley | **Wild Cereal** | `vege_barley_bottom.png`<br>`vege_barley_top.png` | Double-Tall (2 Blocks) (1 bottom, 3 tops) |
+| **02** | `vege_barrel_cactus` | Barrel Cactus | **Cactus** | `vege_barrel_cactus.png` | Globular Succulent Mesh (2 (`_`, `1`)) |
+| **03** | `vege_bluff_grass` | Bluff Grass | **Grass** | `vege_bluff_grass.png` | Single Cross-Mesh (3 (`_`, `1`, `2`)) |
+| **04** | `vege_bracken` | Bracken Fern | **Fern** | `vege_bracken.png` | Spreading Frond Mesh |
+| **05** | `vege_bush` | Temperate Bush | **Shrub** | `vege_bush.png` | Dense Rounded Mesh (4 (`_`, `1`, `2`, `3`)) |
+| **06** | `vege_cactus` | Saguaro Cactus | **Cactus** | `vege_cactus_top.png`<br>`vege_cactus_side.png`<br>`vege_cactus_bottom.png` | 3D Full Column Block (Thorns) |
+| **07** | `vege_cactus_bush` | Cactus Bush | **Cactus** | `vege_cactus_bush.png` | Spiny Cross-Mesh (2 (`_`, `1`)) |
+| **08** | `vege_cattail` | Cattail | **Wetland** | `vege_cattail_bottom.png`<br>`vege_cattail_top.png` | Double-Tall Emergent (2 Blocks) (1 pair) |
+| **09** | `vege_cave_growths` | Cave Growths | **Cave Flora** | `vege_cave_growths.png` | Ground Umbrophilic Thallus |
+| **10** | `vege_cave_hyssop` | Cave Hyssop | **Cave Flora** | `vege_cave_hyssop.png` | Subterranean Flowering Herb |
+| **11** | `vege_dead_bush` | Dead Bush | **Shrub** | `vege_dead_bush.png` | Withered Woody Sticks (4 (`_`, `1`, `2`, `3`)) |
+| **12** | `vege_drygrass` | Drygrass | **Grass** | `vege_drygrass.png` | Single Cross-Mesh (4 (`_`, `1`, `2`, `3`)) |
+| **13** | `vege_fern` | Common Fern | **Fern** | `vege_fern.png` | Single Cross-Mesh (4 (`_`, `1`, `2`, `3`)) |
+| **14** | `vege_fern_large` | Large Fern | **Fern** | `vege_fern_large.png` | Robust Cross-Mesh |
+| **15** | `vege_fern_large_snowy` | Snowy Large Fern | **Fern** | `vege_fern_large_snowy.png` | Snowy Cross-Mesh |
+| **16** | `vege_frigid_grass` | Frigid Grass | **Grass** | `vege_frigid_grass.png` | Single Cross-Mesh (2 (`_`, `1`)) |
+| **17** | `vege_grainy_cave_growths` | Grainy Cave Growths | **Cave Flora** | `vege_grainy_cave_growths.png` | Ferruginous Granular Crust |
+| **18** | `vege_hanging_moss` | Hanging Moss | **Epiphyte** | `vege_hanging_moss.png` | Ceiling Hanging Decal |
+| **19** | `vege_hanging_roots` | Hanging Roots | **Epiphyte** | `vege_hanging_roots.png` | Ceiling Root Danglers (2 (`_`, `1`)) |
+| **20** | `vege_helvola_pad` | Pygmy Helvola Pad | **Floating Pad** | `vege_helvola_pad.png` | Miniature Floating Pad |
+| **21** | `vege_lichen` | Tree & Rock Lichen | **Epiphyte** | `vege_lichen.png` | Crustose Surface Patch (3 (`_`, `1`, `2`)) |
+| **22** | `vege_lily_pad` | Water Lily Pad | **Floating Pad** | `vege_lily_pad.png` | Floating Water Surface Mesh (5 (`_` to `4`)) |
+| **23** | `vege_lurid_cave_growths` | Lurid Cave Growths | **Cave Flora** | `vege_lurid_cave_growths.png` | Bioluminescent Spectral Moss |
+| **24** | `vege_mossgrass` | Mossgrass | **Grass** | `vege_mossgrass.png` | Low Dense Tuft (3 (`_`, `1`, `2`)) |
+| **25** | `vege_pampas_grass` | Pampas Grass | **Tall Grass** | `vege_pampas_grass_bottom.png`<br>`vege_pampas_grass_top.png` | Double-Tall Plume (2 Blocks) (2 bottoms, 1 top) |
+| **26** | `vege_prickly_pear_cactus` | Prickly Pear Cactus | **Cactus** | `vege_prickly_pear_cactus.png` | Fleshy Pad Cross-Mesh |
+| **27** | `vege_red_shrub` | Red Shrub | **Shrub** | `vege_red_shrub.png` | Red Pigmented Mesh (2 (`_`, `1`)) |
+| **28** | `vege_sea_oats` | Sea Oats | **Tall Grass** | `vege_sea_oats_bottom.png`<br>`vege_sea_oats_top.png` | Double-Tall (2 Blocks) (1 pair) |
+| **29** | `vege_small_cactus` | Small Column Cactus | **Cactus** | `vege_small_cactus_top.png`<br>`vege_small_cactus_side.png`<br>`vege_small_cactus_bottom.png` | 3D Compact Column Block |
+| **30** | `vege_sugar_cane` | Sugar Cane | **Wetland** | `vege_sugar_cane.png` | Water-Adjacent Reeds (5 (`_` to `4`)) |
+| **31** | `vege_tall_beach_grass` | Tall Beach Grass | **Tall Grass** | `vege_tall_beach_grass_bottom.png`<br>`vege_tall_beach_grass_top.png` | Double-Tall (2 Blocks) (1 pair) |
+| **32** | `vege_tall_bluff_grass` | Tall Bluff Grass | **Tall Grass** | `vege_tall_bluff_grass_bottom.png`<br>`vege_tall_bluff_grass_top.png` | Double-Tall (2 Blocks) (3 pairs) |
+| **33** | `vege_tall_fern` | Tall Fern | **Tall Fern** | `vege_tall_fern_bottom.png`<br>`vege_tall_fern_top.png` | Double-Tall (2 Blocks) (4 pairs) |
+| **34** | `vege_tall_jungle_fern` | Tall Jungle Fern | **Tall Fern** | `vege_tall_jungle_fern_bottom.png`<br>`vege_tall_jungle_fern_top.png` | Double-Tall (2 Blocks) (1 pair) |
+| **35** | `vege_tall_prairie_grass` | Tall Prairie Grass | **Tall Grass** | `vege_tall_prairie_grass_bottom.png`<br>`vege_tall_prairie_grass_top.png` | Double-Tall (2 Blocks) (1 pair) |
+| **36** | `vege_tall_wildgrass` | Tall Wildgrass | **Tall Grass** | `vege_tall_wildgrass_bottom.png`<br>`vege_tall_wildgrass_top.png` | Double-Tall (2 Blocks) (4 pairs) |
+| **37** | `vege_vines` | Vines (Lianas) | **Epiphyte** | `vege_vines.png` | Vertical Wall Climber (3 (`_`, `1`, `2`)) |
+| **38** | `vege_wildgrass` | Wildgrass | **Grass** | `vege_wildgrass.png` | Single Cross-Mesh (4 (`_`, `1`, `2`, `3`)) |
 
 ---
 
@@ -873,66 +875,85 @@ The angiosperm flowering flora domain comprises **32 distinct flowering plant sp
 
 ---
 
-| # | Block ID | Name | Category | Texture File(s) | Variations / Growth Habit | Biome Occurrence | Description |
-| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **01** | `flower_allium` | Allium | **Wildflower** | `flower_allium.png` to `3` | 4 | Prairies, Rocky Slopes | Spherical globose purple-magenta bloom on a tall, slender stem. |
-| **02** | `flower_azure_bluet` | Azure Bluet | **Wildflower** | `flower_azure_bluet.png` to `3` | 4 | Alpine Meadows, Clearings | Tufted dainty perennial with 4-lobed sky-blue petals and yellow eye. |
-| **03** | `flower_begonia` | Begonia | **Double-Tall** | `flower_begonia_bottom.png`<br>`flower_begonia_top.png` | 2 | Tropical Understory | Succulent-stemmed sub-shrub with asymmetrical leaves and scarlet bloom clusters. |
-| **04** | `flower_blue_hydrangea` | Blue Hydrangea | **Double-Tall** | `flower_blue_hydrangea_bottom.png`<br>`flower_blue_hydrangea_top.png` | 2 | Acid-Soil Shrub | Massive globose pompons of saturated cobalt-blue flowers. |
-| **05** | `flower_blue_orchid` | Blue Orchid | **Wildflower** | `flower_blue_orchid.png`, `1` | 2 | Swamps, Moist Floodplains | Exotic electric-cyan zygomorphic orchid thriving in humid marshlands. |
-| **06** | `flower_cactus_flower` | Cactus Flower | **Arid Flora** | `flower_cactus_flower.png` | Stem Crest Perch | Arid Deserts & Badlands | Bright yellow multi-petaled bloom perching atop saguaro cactus ribs. |
-| **07** | `flower_clover` | Clover Carpet | **Carpet** | `flower_clover.png`<br>`flower_clover_stem.png` | Multi-carpet (multi-stage carpet) | Forests & Meadows | Ground-hugging mat of trifoliate green clover with occasional white florets. |
-| **08** | `flower_cornflower` | Cornflower | **Wildflower** | `flower_cornflower.png` to `2` | 3 | Open Fields, Grasslands | Radiant deep-blue fringed ray florets, pioneer of sunlit meadows. |
-| **09** | `flower_dandelion` | Dandelion | **Wildflower** | `flower_dandelion.png` to `3` | 4 | Temperate Plains, Forests | Vibrant golden-yellow composite head with deeply toothed basal leaves. |
-| **10** | `flower_foxglove` | Foxglove | **Double-Tall** | `flower_foxglove_bottom.png`<br>`flower_foxglove_top.png` | 2 | Tall Woodland Spike | Towering stately raceme of pendulous tubular spotted pink bells. |
-| **11** | `flower_gardenia` | Gardenia | **Double-Tall** | `flower_gardenia_bottom.png`<br>`flower_gardenia_top.png` | 2 | Glossy Evergreen Bush | Glossy dark leaves bearing intensely fragrant waxy ivory-white flowers. |
-| **12** | `flower_goldenrod` | Goldenrod | **Double-Tall** | `flower_goldenrod_bottom.png`<br>`flower_goldenrod_top.png` | 2 | Tall Feathered Stalk | Arching feathered plumes of golden-yellow sprays swaying in the breeze. |
-| **13** | `flower_hibiscus` | Hibiscus | **Wildflower** | `flower_hibiscus.png` | 1 | Tropical Jungles, Coasts | Large tropical scarlet-red actinomorphic flower with yellow staminal column. |
-| **14** | `flower_imperial_succulent` | Imperial Succulent | **Arid Flora** | `flower_imperial_succulent.png` | Desert Rosette | Arid Deserts & Badlands | Symmetrical geometric rosette of fleshy blue-green leaves with an erect bloom. |
-| **15** | `flower_iris` | Iris | **Wildflower** | `flower_iris.png` | 1 | Riverbanks, Marsh Edges | Majestic purple-violet flower with drooping falls and upright standards. |
-| **16** | `flower_lavender` | Lavender | **Wildflower** | `flower_lavender.png` | 1 | Mediterranean Hills, Dunes | Aromatic whorled lavender-purple spikes with silver-tinted foliage. |
-| **17** | `flower_lilac` | Lilac | **Double-Tall** | `flower_lilac_bottom.png`, `1`<br>`flower_lilac_top.png`, `1` | 4 | Woody Flowering Shrub | Upright woody shrub crowned with conical lilac-purple fragrant panicles. |
-| **18** | `flower_lily_of_the_valley` | Lily of the Valley | **Wildflower** | `flower_lily_of_the_valley.png` to `2` | 3 | Shaded Woodlands, Glades | Pure white, nodding bell-shaped scented blossoms along a curved stalk. |
-| **19** | `flower_marigold` | Marigold | **Wildflower** | `flower_marigold.png`, `1` | 2 | Valleys, Sunlit Plains | Ruffled pom-pom double heads in radiant orange and amber tones. |
-| **20** | `flower_orange_tulip` | Orange Tulip | **Tulip** | `flower_orange_tulip.png` to `2` | 3 | Sunny Meadows, Savannas | Fiery amber-orange petals with warm golden throat tones. |
-| **21** | `flower_oxeye_daisy` | Oxeye Daisy | **Wildflower** | `flower_oxeye_daisy.png` to `2` | 3 | Pastures, Grassy Meadows | Classic meadow daisy with bright white ray petals and golden disc center. |
-| **22** | `flower_peony` | Peony | **Double-Tall** | `flower_peony_bottom.png`, `1`<br>`flower_peony_top.png`, `1` | 4 | Lush Bushy Perennial | Heavy ruffly globes of pastel-pink petals nestled among dark foliage. |
-| **23** | `flower_pink_petals` | Pink Petals | **Carpet** | `flower_pink_petals.png`<br>`flower_pink_petals_stem.png` | 1–4 layers (multi-stage carpet) | Forests & Meadows | Scattered wind-blown cherry blossom petals accumulating on terrain. |
-| **24** | `flower_pink_tulip` | Pink Tulip | **Tulip** | `flower_pink_tulip.png` to `2` | 3 | Flower Forests, Meadows | Delicate blush-pink petals fading gracefully to soft cream. |
-| **25** | `flower_poppy` | Poppy | **Wildflower** | `flower_poppy.png` to `4` | 5 | Steppes, Dry Hillsides | Delicate paper-thin scarlet-red petals with a dark basal center spot. |
-| **26** | `flower_red_tulip` | Red Tulip | **Tulip** | `flower_red_tulip.png` to `2` | 3 | Temperate Plains, Valleys | Rich crimson-red chalice bloom on an erect stalk. |
-| **27** | `flower_rose_bush` | Rose Bush | **Double-Tall** | `flower_rose_bush_bottom.png`, `1`<br>`flower_rose_bush_top.png` to `3` | 6 | Dense Thorny Shrub | Multi-stemmed shrub densely studded with velvety scarlet roses. |
-| **28** | `flower_snapdragon` | Snapdragon | **Double-Tall** | `flower_snapdragon_bottom.png`<br>`flower_snapdragon_top.png` | 2 | Dense Floral Spike | Upright spike of bilabiate blossoms gradienting from magenta to yellow. |
-| **29** | `flower_sunflower` | Sunflower | **Double-Tall** | `flower_sunflower_bottom.png`, `1`<br>`flower_sunflower_top.png`<br>`flower_sunflower_front.png`, `back.png` | 5 | Heliotropic Tall Stalk | Giant golden composite head that tracks the sun azimutally. |
-| **30** | `flower_white_petals` | White Petals | **Carpet** | `flower_white_petals.png`<br>`flower_white_petals_stem.png` | 1–4 layers (multi-stage carpet) | Forests & Meadows | Soft snowfall of pale deciduous flower petals dusting the forest floor. |
-| **31** | `flower_white_tulip` | White Tulip | **Tulip** | `flower_white_tulip.png` to `2` | 3 | Cold Plains, Foothills | Immaculate porcelain-white petals with cool soft highlights. |
-| **32** | `flower_wildflowers` | Wildflowers Carpet | **Carpet** | `flower_wildflowers.png`, `1`<br>`flower_wildflowers_stem.png` | Multi-carpet (multi-stage carpet) | Forests & Meadows | Dense multi-colored carpet of tiny creeping flowers covering pasture grass. |
+| # | Block ID | Name | Category | Texture File(s) | Face Mapping / Geometry |
+| :-: | :--- | :--- | :--- | :--- | :--- |
+| **01** | `flower_allium` | Allium | **Wildflower** | `flower_allium.png` to `3` | Cross-billboard (4 variants) |
+| **02** | `flower_azure_bluet` | Azure Bluet | **Wildflower** | `flower_azure_bluet.png` to `3` | Cross-billboard (4 variants) |
+| **03** | `flower_begonia` | Begonia | **Double-Tall** | `flower_begonia_bottom.png`<br>`flower_begonia_top.png` | Double-Tall (2 Blocks) |
+| **04** | `flower_blue_hydrangea` | Blue Hydrangea | **Double-Tall** | `flower_blue_hydrangea_bottom.png`<br>`flower_blue_hydrangea_top.png` | Double-Tall (2 Blocks) |
+| **05** | `flower_blue_orchid` | Blue Orchid | **Wildflower** | `flower_blue_orchid.png`, `1` | Cross-billboard (2 variants) |
+| **06** | `flower_cactus_flower` | Cactus Flower | **Arid Flora** | `flower_cactus_flower.png` | Stem Crest Perch |
+| **07** | `flower_clover` | Clover Carpet | **Carpet** | `flower_clover.png`<br>`flower_clover_stem.png` | Multi-layer Carpet |
+| **08** | `flower_cornflower` | Cornflower | **Wildflower** | `flower_cornflower.png` to `2` | Cross-billboard (3 variants) |
+| **09** | `flower_dandelion` | Dandelion | **Wildflower** | `flower_dandelion.png` to `3` | Cross-billboard (4 variants) |
+| **10** | `flower_foxglove` | Foxglove | **Double-Tall** | `flower_foxglove_bottom.png`<br>`flower_foxglove_top.png` | Double-Tall (2 Blocks) |
+| **11** | `flower_gardenia` | Gardenia | **Double-Tall** | `flower_gardenia_bottom.png`<br>`flower_gardenia_top.png` | Double-Tall (2 Blocks) |
+| **12** | `flower_goldenrod` | Goldenrod | **Double-Tall** | `flower_goldenrod_bottom.png`<br>`flower_goldenrod_top.png` | Double-Tall (2 Blocks) |
+| **13** | `flower_hibiscus` | Hibiscus | **Wildflower** | `flower_hibiscus.png` | Cross-billboard |
+| **14** | `flower_imperial_succulent` | Imperial Succulent | **Arid Flora** | `flower_imperial_succulent.png` | Desert Rosette |
+| **15** | `flower_iris` | Iris | **Wildflower** | `flower_iris.png` | Cross-billboard |
+| **16** | `flower_lavender` | Lavender | **Wildflower** | `flower_lavender.png` | Cross-billboard |
+| **17** | `flower_lilac` | Lilac | **Double-Tall** | `flower_lilac_bottom.png`, `1`<br>`flower_lilac_top.png`, `1` | Double-Tall (2 Blocks) |
+| **18** | `flower_lily_of_the_valley` | Lily of the Valley | **Wildflower** | `flower_lily_of_the_valley.png` to `2` | Cross-billboard (3 variants) |
+| **19** | `flower_marigold` | Marigold | **Wildflower** | `flower_marigold.png`, `1` | Cross-billboard (2 variants) |
+| **20** | `flower_orange_tulip` | Orange Tulip | **Tulip** | `flower_orange_tulip.png` to `2` | Cross-billboard (3 variants) |
+| **21** | `flower_oxeye_daisy` | Oxeye Daisy | **Wildflower** | `flower_oxeye_daisy.png` to `2` | Cross-billboard (3 variants) |
+| **22** | `flower_peony` | Peony | **Double-Tall** | `flower_peony_bottom.png`, `1`<br>`flower_peony_top.png`, `1` | Double-Tall (2 Blocks) |
+| **23** | `flower_pink_petals` | Pink Petals | **Carpet** | `flower_pink_petals.png`<br>`flower_pink_petals_stem.png` | Multi-layer Carpet |
+| **24** | `flower_pink_tulip` | Pink Tulip | **Tulip** | `flower_pink_tulip.png` to `2` | Cross-billboard (3 variants) |
+| **25** | `flower_poppy` | Poppy | **Wildflower** | `flower_poppy.png` to `4` | Cross-billboard (5 variants) |
+| **26** | `flower_red_tulip` | Red Tulip | **Tulip** | `flower_red_tulip.png` to `2` | Cross-billboard (3 variants) |
+| **27** | `flower_rose_bush` | Rose Bush | **Double-Tall** | `flower_rose_bush_bottom.png`, `1`<br>`flower_rose_bush_top.png` to `3` | Double-Tall (2 Blocks) |
+| **28** | `flower_snapdragon` | Snapdragon | **Double-Tall** | `flower_snapdragon_bottom.png`<br>`flower_snapdragon_top.png` | Double-Tall (2 Blocks) |
+| **29** | `flower_sunflower` | Sunflower | **Double-Tall** | `flower_sunflower_bottom.png`, `1`<br>`flower_sunflower_top.png`<br>`flower_sunflower_front.png`, `back.png` | Double-Tall (2 Blocks) |
+| **30** | `flower_white_petals` | White Petals | **Carpet** | `flower_white_petals.png`<br>`flower_white_petals_stem.png` | Multi-layer Carpet |
+| **31** | `flower_white_tulip` | White Tulip | **Tulip** | `flower_white_tulip.png` to `2` | Cross-billboard (3 variants) |
+| **32** | `flower_wildflowers` | Wildflowers Carpet | **Carpet** | `flower_wildflowers.png`, `1`<br>`flower_wildflowers_stem.png` | Multi-layer Carpet |
 
 ---
 
-## 14. Agriculture & Domestic Crops (`crops`) — 15 Blocks
+## 14. Agriculture & Domestic Crops (`crops`) — 34 Blocks
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/crops`  
 📄 **Comprehensive Specification**: [crops_design.md](blocks/crops_design.md)
 
-The agricultural crop domain comprises **15 cultivated food crops, arboreal pods, and wild ancestral cultivars** (spanning 7 farmland crops, 2 arboreal canopy/trunk pods, and 6 wild ancestral harvestable forbs) featuring multi-stage developmental growth lifecycles = **15 Total Domestic & Wild Crop Blocks**.
+The agricultural crop domain comprises **34 cultivated food crops, arboreal pods, and wild ancestral cultivars** (spanning 16 farmland & bush crops, 2 arboreal canopy/trunk pods, and 16 wild ancestral harvestable crops) featuring multi-stage developmental growth lifecycles = **34 Total Domestic & Wild Crop Blocks**.
 
 ---
 
-| # | Block ID | Name | Category | Texture Stages | Growth Stages | Substrate Requirement | Description |
-| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **01** | `crop_wheat` | Wheat Crop | **Cereal** | `crops_wheat_stage0...5.png` *(+ `5_1`)* | 6 Stages (0–5) | Hydrated Farmland | Golden domestic wheat grain; primary agricultural staple for baking bread and livestock feed. |
-| **02** | `crop_carrots` | Carrot Crop | **Root Crop** | `crops_carrots_stage0...3.png` *(+ `3_1`)* | 4 Stages (0–3) | Hydrated Farmland | Crisp sweet orange biennial taproot with feathery green foliage; versatile nutritious vegetable. |
-| **03** | `crop_potatoes`| Potato Crop | **Tuber** | `crops_potatoes_stage0...3.png` *(+ `3_1`)* | 4 Stages (0–3) | Hydrated Farmland | Underground starchy edible tubers with leafy bushy stems; high caloric staple yield. |
-| **04** | `crop_beetroots`| Beetroot Crop | **Taproot** | `crops_beetroots_stage0...3.png` *(+ `3_1`)* | 4 Stages (0–3) | Hydrated Farmland | Bulbous deep-crimson sweet taproot and ruby-veined leaves; yields rich soup broth and dye. |
-| **05** | `crop_cabbages` | Cabbage Crop | **Brassica** | `crops_cabbages_stage0...7.png` | 8 Stages (0–7) | Hydrated Farmland | Robust layered leafy green cabbage head maturing through 8 fine developmental stages. |
-| **06** | `crop_onions` | Onion Crop | **Bulb** | `crops_onions_stage0...3.png` | 4 Stages (0–3) | Hydrated Farmland | Layered subterranean pungently aromatic allium bulb with slender erect hollow green scapes. |
-| **07** | `crop_tomatoes` | Tomato Crop | **Climbing Vine** | Bottom: `crops_budding_tomatoes_stage0...3.png`<br>Top: `crops_tomatoes_stage0...3.png` | Double-Tall (4 Lower + 4 Upper Stages) | Hydrated Farmland (Trellis) | 2-block climbing vine; lower budding stem supports an upper perennial fruiting tomato vine. |
-| **08** | `crop_cocoa` | Cocoa Pod | **Arboreal Pod** | `crops_cocoa_stage0...2.png` | 3 Stages (0–2) | Jungle Wood Trunk | Woody pendant pod maturing on tropical tree trunks, housing bitter cocoa beans for chocolate. |
-| **09** | `crop_coconut` | Hanging Coconut | **Arboreal Drupe** | `crops_coconut_hanging_stage_1...3.png` | 3 Stages (1–3) | Palm Tree Foliage | Fibrous palm drupe hanging beneath tropical palm canopies; yields coconut meat and water. |
-| **10** | `crop_wild_beetroots` | Wild Beetroots | **Wild Ancestor** | `crops_wild_beetroots.png` | 1 (Harvestable Forb) | Coastal Beaches, Dunes | Wild ancestral sea-beet growing in littoral sands; source of early domestic cultivars. |
-| **11** | `crop_wild_cabbages` | Wild Cabbages | **Wild Ancestor** | `crops_wild_cabbages.png` | 1 (Harvestable Forb) | Maritime Sea Cliffs | Hardy maritime wild brassica clinging to salty windswept limestone cliffs and shorelines. |
-| **12** | `crop_wild_carrots` | Wild Carrots | **Wild Ancestor** | `crops_wild_carrots.png` | 1 (Harvestable Forb) | Meadows, Temperate Plains | Queen Anne's lace wild ancestor with umbels of white florets and slender edible taproots. |
-| **13** | `crop_wild_onions` | Wild Onions | **Wild Ancestor** | `crops_wild_onions.png` | 1 (Harvestable Forb) | Grasslands, Savannas | Wild allium tuft growing in open savannahs, harvestable for pungent small bulbs. |
-| **14** | `crop_wild_potatoes` | Wild Potatoes | **Wild Ancestor** | `crops_wild_potatoes.png` | 1 (Harvestable Forb) | Cold Slopes, Montane Taigas | Hardy montane ancestor bearing small starchy tubers adapted to high altitudes. |
-| **15** | `crop_wild_tomatoes` | Wild Tomatoes | **Wild Ancestor** | `crops_wild_tomatoes.png` | 1 (Harvestable Forb) | Warm Riverbanks, Valleys | Bushy ancestral wild nightshade producing clusters of tart miniature cherry-sized fruit. |
+| # | Block ID | Name | Category | Texture File(s) | Face Mapping / Lifecycle |
+| :-: | :--- | :--- | :--- | :--- | :--- |
+| **01** | `crop_beetroots` | Beetroot Crop | **Taproot** | `crops_beetroots_stage0...3.png` | 4 Stages (0–3) |
+| **02** | `crop_bell_peppers` | Bell Pepper Crop | **Solanaceae** | `crops_bell_peppers_stage0...7.png` | 8 Stages (0–7) |
+| **03** | `crop_cabbages` | Cabbage Crop | **Brassica** | `crops_cabbages_stage0...7.png` | 8 Stages (0–7) |
+| **04** | `crop_carrots` | Carrot Crop | **Root Crop** | `crops_carrots_stage0...3.png` | 4 Stages (0–3) |
+| **05** | `crop_chili_pepper` | Chili Pepper Crop | **Solanaceae** | `crops_chili_pepper_stage0...7.png` | 8 Stages (0–7) |
+| **06** | `crop_cocoa` | Cocoa Pod | **Arboreal Pod** | `crops_cocoa_stage0...2.png` | 3 Stages (0–2) |
+| **07** | `crop_coconut` | Hanging Coconut | **Arboreal Drupe** | `crops_coconut_hanging_stage1...3.png` | 3 Stages (1–3) |
+| **08** | `crop_coffee` | Coffee Crop | **Beverage Shrub** | Budding: `crops_coffee_budding_stage0...3.png`<br>Bottom: `crops_coffee_bottom_stage0...3.png`<br>Top: `crops_coffee_top_stage0...3.png` | Double-Tall Shrub (4 Budding + 4 Lower + 4 Upper Stages) |
+| **09** | `crop_corn` | Corn Crop | **Cereal** | Budding: `crops_corn_budding_stage0...3.png`<br>Bottom: `crops_corn_bottom_stage0...3.png`<br>Top: `crops_corn_top_stage0...3.png` | Double-Tall Stalk (4 Budding + 4 Lower + 4 Upper Stages) |
+| **10** | `crop_garlic` | Garlic Crop | **Bulb** | `crops_garlic_stage0...7.png` | 8 Stages (0–7) |
+| **11** | `crop_lettuce` | Lettuce Crop | **Leafy Vegetable** | `crops_lettuce_stage0...4.png` | 5 Stages (0–4) |
+| **12** | `crop_onions` | Onion Crop | **Bulb** | `crops_onions_stage0...3.png` | 4 Stages (0–3) |
+| **13** | `crop_parsnips` | Parsnip Crop | **Root Crop** | `crops_parsnips_stage0...3.png` | 4 Stages (0–3) |
+| **14** | `crop_potatoes` | Potato Crop | **Tuber** | `crops_potatoes_stage0...3.png` | 4 Stages (0–3) |
+| **15** | `crop_rice` | Rice Crop | **Cereal** | Bottom: `crops_rice_stage0...3.png` *(+ `supporting`)*<br>Top: `crops_rice_panicles_stage0...3.png` | Double-Tall (4 Lower + Supporting + 4 Upper Stages) |
+| **16** | `crop_sweet_potato` | Sweet Potato Crop | **Tuber** | `crops_sweet_potato_stage0...7.png` | 8 Stages (0–7) |
+| **17** | `crop_tomatoes` | Tomato Crop | **Climbing Vine** | Bottom: `crops_budding_tomatoes_stage0...3.png`<br>Top: `crops_tomatoes_stage0...3.png` | Double-Tall (4 Lower + 4 Upper Stages) |
+| **18** | `crop_wheat` | Wheat Crop | **Cereal** | `crops_wheat_stage0...5.png` | 6 Stages (0–5) |
+| **19** | `wild_beetroots` | Wild Beetroots | **Wild Ancestor** | `wild_beetroots.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **20** | `wild_bell_peppers` | Wild Bell Peppers | **Wild Ancestor** | `wild_bell_peppers.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **21** | `wild_cabbages` | Wild Cabbages | **Wild Ancestor** | `wild_cabbages.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **22** | `wild_carrots` | Wild Carrots | **Wild Ancestor** | `wild_carrots.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **23** | `wild_chili_pepper` | Wild Chili Pepper | **Wild Ancestor** | `wild_chili_pepper.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **24** | `wild_coffee` | Wild Coffee | **Wild Ancestor** | `wild_coffee.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **25** | `wild_corn` | Wild Corn | **Wild Ancestor** | Bottom: `wild_corn_bottom.png` *(+ `1`, `2`)*<br>Top: `wild_corn_top.png` *(+ `1`, `2`)* | Double-Tall Cross-billboard (Harvestable Forb, 3 Variants) |
+| **26** | `wild_garlic` | Wild Garlic | **Wild Ancestor** | `wild_garlic.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **27** | `wild_lettuce` | Wild Lettuce | **Wild Ancestor** | `wild_lettuce.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **28** | `wild_onions` | Wild Onions | **Wild Ancestor** | `wild_onions.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **29** | `wild_parsnips` | Wild Parsnips | **Wild Ancestor** | `wild_parsnips.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **30** | `wild_potatoes` | Wild Potatoes | **Wild Ancestor** | `wild_potatoes.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **31** | `wild_rice` | Wild Rice | **Wild Ancestor** | Bottom: `wild_rice_bottom.png`<br>Top: `wild_rice_top.png` | Double-Tall Cross-billboard (Harvestable Forb) |
+| **32** | `wild_sweet_potato` | Wild Sweet Potato | **Wild Ancestor** | `wild_sweet_potato.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **33** | `wild_tomatoes` | Wild Tomatoes | **Wild Ancestor** | `wild_tomatoes.png` *(+ `1`, `2`)* | Cross-billboard (Harvestable Forb, 3 Variants) |
+| **34** | `wild_wheat` | Wild Wheat | **Wild Ancestor** | Bottom: `wild_wheat_bottom.png` *(+ `1`, `2`)*<br>Top: `wild_wheat_top.png` *(+ `1`, `2`)* | Double-Tall Cross-billboard (Harvestable Grain, 3 Variants) |

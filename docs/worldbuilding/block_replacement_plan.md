@@ -1,155 +1,155 @@
-# Plano Estratégico de Substituição do Catálogo de Blocos & Refatoração do Mundo
+# Master Block Replacement Plan & World Refactoring Specification
 
-Este documento estabelece o **plano operacional detalhado** para a transição completa do antigo catálogo legado de blocos e sistemas de geração de biomas/árvores para a nova arquitetura centralizada documentada nas categorias **01 até 11** de [blocks_design.md](blocks_design.md) (**718 blocos únicos e 1.360 texturas ativas**).
-
----
-
-## 1. Visão Geral & Escopo da Migração
-
-### 1.1. Estado Atual vs Novo Ecossistema
-* **Catálogo Legado**:
-  * Localizado em `assets/textures/blocks/` (aproximadamente 367 arquivos PNG não-padronizados em pasta única).
-  * Lógica de blocos em `src/world/block.rs` fortemente acoplada a nomes antigos e hardcoded fallbacks.
-  * Gerador de terreno e biomas acoplado a regras antigas de solo e árvores legadas.
-* **Novo Ecossistema (Categorias 01–11 — 100% Finalizado)**:
-  * **718 Blocos Únicos Catalogados** distribuídos em 11 domínios estritamente balanceados.
-  * **1.360 Texturas Ativas** (+ 37 overlays procedurais em `overlays/`).
-  * 100% com variações estocásticas triplas (`base`, `1`, `2`) para quebra de repetição de ladrilho (tiling).
-  * Categorias 12 (`vegetation`), 13 (`flowers`) e 14 (`crops`) permanecem reservadas como roadmap futuro e não bloqueiam a refatoração do motor agora.
+This specification establishes the **operational transition plan** for replacing the legacy block catalog, textures, and world/biome generation systems with the centralized architecture documented in Categories **01 through 11** of [blocks_design.md](blocks_design.md) (**720 unique blocks and 1,366 active textures + 37 procedural overlays = 1,403 PNG files**).
 
 ---
 
-## 2. Decisão Arquitetural: Organização das Texturas em `assets/`
+## 1. Overview & Architectural Scope
 
-### 2.1. A Dúvida: Pasta Única (Flat) vs Subpastas por Categoria?
-Atualmente em `assets/textures/blocks/`, todas as texturas legadas estão reunidas em um único diretório.
-
-| Estrutura | Vantagens | Desvantagens | Veredito Técnico |
-| :--- | :--- | :--- | :---: |
-| **Opção A: Pasta Única Flat**<br>`assets/textures/blocks/*.png` | • **Compatibilidade Imediata**: O carregador atual em `src/meshing/textures.rs` busca exatamente `assets/textures/blocks/{base_name}.png`.<br>• **Zero Risco de Conflito**: Como o novo catálogo adotou prefixos semânticos estritos (`rock_`, `soil_`, `tree_`, `crystal_`, `aqua_`, `organic_`, `deco_`, `fungi_`, etc.), não existe nenhuma colisão de nomes entre categorias.<br>• **Performance**: Menor sobrecarga de I/O em runtime para resolver caminhos relativos em Bevy. | • Pasta com 1.360 arquivos pode parecer extensa em exploradores de arquivo do sistema operacional. | ⭐ **Recomendada para `assets/`** |
-| **Opção B: Subpastas por Categoria**<br>`assets/textures/blocks/{categoria}/*.png` | • Espelhamento 1:1 com a pasta de design em `docs/worldbuilding/blocks/`. | • Exige alterar `src/meshing/textures.rs` para realizar busca recursiva em disco ou mapear manualmente o caminho de cada categoria.<br>• Maior complexidade de manutenção no código Rust. | Alternativa opcional |
-
-> [!TIP]
-> **Recomendação Definitiva:**
-> 1. Manter a pasta de design **`docs/worldbuilding/blocks/`** dividida em subpastas categorizadas (`rocks/`, `soils/`, `trees/`, etc.) para organização conceitual, auditoria e controle de arte.
-> 2. No jogo final em **`assets/textures/blocks/`**, manter todas as texturas em pasta única flat. Um simples script de sincronização copia os arquivos das 11 categorias de `docs/` para `assets/`, garantindo 100% de compatibilidade sem alterar uma única linha do resolvedor de caminhos de texturas do Bevy.
+### 1.1 Current Legacy State vs. New Ecosystem
+* **Legacy Catalog**:
+  * Located in `assets/textures/blocks/` (~367 non-standardized PNG files).
+  * Block representation in `src/world/block.rs` restricted to a `u8` enum (`Voxel`), limiting catalog capacity to 256 items.
+  * Meshing and texture arrays in `src/meshing/textures.rs` hardcoded around legacy naming exceptions.
+  * World generator coupled to obsolete legacy soil rules and un-stratified rock layers.
+* **New Unified Ecosystem (Categories 01–11 — 100% Complete)**:
+  * **720 Unique Blocks** rigorously specified with strict semantic IDs across 11 worldbuilding domains.
+  * **1,403 Texture Files**: 1,366 active domain textures (including triple stochastic variations `base`, `1`, `2`) + 37 procedural overlays in `blocks/overlays/`.
+  * Categories 12 (`vegetation` — 38 blocks), 13 (`flowers` — 32 blocks), and 14 (`crops` — 34 blocks) remain in progress on the roadmap and are deferred to a subsequent integration phase.
 
 ---
 
-## 3. Roteiro Operacional em Fases (Step-by-Step)
+## 2. Texture Asset Directory Architecture
+
+### 2.1 Confirmed Decision: Flat Single Directory (`assets/textures/blocks/`)
+The decision has been finalized to maintain a **Flat Single Directory** structure inside the engine runtime asset directory:
+
+* **In-Game Assets (`assets/textures/blocks/*.png`)**:
+  * All 1,403 textures are placed into a single flat directory.
+  * **Immediate Engine Compatibility**: Preserves direct compatibility with Bevy asset loaders and `src/meshing/textures.rs` without complex nested directory resolution or path mapping.
+  * **Zero Naming Collisions**: Strict semantic prefixes across domains (`rock_`, `soil_`, `tree_`, `crystal_`, `aqua_`, `organic_`, `deco_`, `fungi_`, `system_`, `liquid_`, `ore_`) guarantee unique filenames.
+* **Worldbuilding Design Directory (`docs/worldbuilding/blocks/`)**:
+  * Retains organized subdirectories (`rocks/`, `soils/`, `trees/`, `caverns/`, etc.) for documentation, asset auditing, and aesthetic curation.
+  * An automated copy/sync task synchronizes textures from `docs/worldbuilding/blocks/{domain}/*.png` directly into `assets/textures/blocks/`.
+
+---
+
+## 3. Phased Operational Roadmap
 
 ```mermaid
 graph TD
-    P0["Fase 0: Snapshot de Segurança (Branch Legacy no Git)"] --> P1["Fase 1: Substituição de Texturas em assets/"]
-    P1 --> P2["Fase 2: Refatoração do Enum Block em Rust"]
-    P2 --> P3["Fase 3: Atualização do Pipeline de Meshing & Texturas"]
-    P3 --> P4["Fase 4: Reset Limpo da Geração de Mundo & Biomas"]
-    P4 --> P5["Fase 5: Reconstrução das 18 Árvores Modulares"]
-    P5 --> P6["Fase 6: Testes In-Game & Validação de Chunks"]
+    P0["Phase 0: Safety Git Snapshot [✅ COMPLETED]"] --> P1["Phase 1: Texture Asset Synchronization"]
+    P1 --> P2["Phase 2: Rust Voxel Enum & Block Refactoring"]
+    P2 --> P3["Phase 3: Meshing Registry & Texture Array Scaling"]
+    P3 --> P4["Phase 4: Clean World Generation & Biomes Reset (No Ores, Trees Disabled)"]
+    P4 --> P5["Phase 5: Modular Tree Generation [PAUSED / DEFERRED]"]
+    P4 --> P6["Phase 6: In-Game Validation & Visual Field Testing"]
 ```
 
 ---
 
-### Fase 0: Snapshot de Segurança (Git Legacy)
-* **Objetivo**: Salvar todo o estado atual de código, biomas funcionais, geradores antigos e assets legados em uma branch permanente `legacy` no GitHub.
-* **Ação**:
-  1. Commit de todo o progresso atual.
-  2. Criação da branch `legacy`.
-  3. Push da branch `legacy` para o repositório remoto (`origin`).
-  4. Retorno seguro para a branch de trabalho `main`.
+### Phase 0: Safety Git Snapshot [✅ COMPLETED]
+* **Status**: Completed.
+* **Objective**: Preserve the legacy working engine state, legacy textures, and historical biomes.
+* **Actions Taken**:
+  * Created safety branch `legacy` containing the un-refactored codebase.
+  * Published `legacy` branch to the remote repository (`origin`).
+  * Returned to the working branch ready for Phase 1 execution.
 
 ---
 
-### Fase 1: Limpeza & Substituição dos Assets de Textura
-* **Diretório Alvo**: `assets/textures/blocks/`
-* **Passos**:
-  1. Criar um backup de segurança local: `assets/textures/blocks_legacy_backup/`.
-  2. Limpar os arquivos antigos de `assets/textures/blocks/`.
-  3. Copiar em lote todas as texturas das 11 categorias finalizadas de `docs/worldbuilding/blocks/`:
-     * `systems/` (8 texturas)
-     * `fluids/` (54 texturas)
-     * `soils/` (184 texturas)
-     * `rocks/` (216 texturas)
-     * `trees/` (242 texturas)
-     * `ores/` (156 texturas)
-     * `caverns/` (122 texturas)
-     * `oceans/` (140 texturas)
-     * `organics/` (94 texturas)
-     * `decorations/` (90 texturas)
-     * `mushrooms/` (54 texturas)
-     * `overlays/` (37 texturas)
-  4. Total resultante em `assets/textures/blocks/`: **1.397 arquivos PNG**.
+### Phase 1: Texture Asset Synchronization
+* **Target Directory**: `assets/textures/blocks/`
+* **Execution Steps**:
+  1. Create a local safety backup: `assets/textures/blocks_legacy_backup/`.
+  2. Clear legacy textures from `assets/textures/blocks/`.
+  3. Bulk copy all textures from the 11 completed domains in `docs/worldbuilding/blocks/`:
+     * `systems/` (8 textures)
+     * `fluids/` (54 textures)
+     * `soils/` (184 textures)
+     * `rocks/` (216 textures)
+     * `trees/` (242 textures)
+     * `ores/` (156 textures)
+     * `caverns/` (122 textures)
+     * `oceans/` (140 textures)
+     * `organics/` (94 textures)
+     * `decorations/` (96 textures)
+     * `mushrooms/` (54 textures)
+     * `overlays/` (37 textures)
+  4. **Resulting Total**: **1,403 active PNG files** in `assets/textures/blocks/`.
 
 ---
 
-### Fase 2: Refatoração do Catálogo de Blocos em Rust (`src/world/block.rs`)
-* **Substituição do Enum `Block`**:
-  * Substituir a lista antiga de blocos pelo novo catálogo de **718 blocos**.
-  * Organizar os blocos em módulos ou seções bem documentadas seguindo o padrão de `BlockID` de [blocks_design.md](blocks_design.md):
-    * `Block::Air`, `Block::RockBasalt`, `Block::CobbledBasalt`, `Block::SoilLoam`, etc.
-* **Atributos de Bloco (`BlockAttributes`)**:
-  * Definir transparência (`is_transparent`), solidez colisor (`is_solid`), emissão de luz (`light_emission`), dureza (`hardness`) e tipo de drop.
-* **Mapeamento de Faces**:
-  * Configurar o mapeamento de texturas para cada formato:
-    * **Cubo Uniforme (6 faces iguais)**: ex. `rock_granite.png`.
-    * **Topo / Lado / Fundo (Split)**: ex. `soil_grass_top.png`, `soil_grass_side.png`, `soil_dirt.png`.
-    * **Coluna Direcional (Log / Stalk)**: topo com anéis concêntricos + laterais de casca.
-    * **Cross-Billboard (Modelo Cruzado)**: ex. cristais, corais leque, cogumelos.
-    * **Emissivo Animado (4 frames)**: ex. `crystal_*_cluster_glinted.png`.
+### Phase 2: Rust Voxel Enum & Block Refactoring (`src/world/block.rs`)
+* **Scale `Voxel` Enum to `u16`**:
+  * Upgrade `#[repr(u8)] pub enum Voxel` to `#[repr(u16)] pub enum Voxel` to accommodate the 720 unique cataloged blocks plus technical markers.
+  * Structure block definitions into clean domain modules following the canonical IDs from [blocks_design.md](blocks_design.md).
+* **Block Flags & Properties**:
+  * Define functional flags: `FLAG_TRANSPARENT`, `FLAG_SOLID_OPAQUE`, `FLAG_COLLIDABLE`, `FLAG_LEAVES`, `FLAG_POINT_LIGHT`, `FLAG_FLUID`.
+  * Define geometric render shapes: Full Cube, Slab, Stair, Column, Cross-Billboard.
+  * > [!IMPORTANT]
+    > **No Hardness / Survival Attributes**: There is no concept of block hardness or item drop tables in the current engine design (survival gameplay is not yet implemented). Block properties remain strictly focused on collision, opacity, lighting, and rendering geometry.
+* **Face Texture Mapping**:
+  * **Uniform Cube (6 identical faces)**: e.g., `rock_basalt.png`, `soil_clay_blue.png`.
+  * **Top / Side / Bottom Split**: e.g., `soil_grass_top.png`, `soil_grass_side.png`, `soil_dirt.png`.
+  * **Directional Column (Logs / Stems)**: Transverse ring endcaps on top/bottom + longitudinal bark on sides.
+  * **Cross-Billboard**: e.g., crystals, mushrooms, sea fans, corals.
+  * **Animated Strips**: 16×64 vertical strips for flowing liquids and glinting crystal clusters.
 
 ---
 
-### Fase 3: Pipeline de Meshing & Texture Array (`src/meshing/`)
-* **Arquivo**: `src/meshing/textures.rs`
-  * Remover os tratamentos manuais antigos de exceções (ex. mapeamentos provisórios como `cobbled_tuffite -> cobbled_tuff`).
-  * Atualizar o registro do Texture Array para carregar nativamente:
-    * A textura base e suas 2 variantes estocásticas (`nome`, `nome1`, `nome2`).
-    * Os overlays procedurais de musgo (`mossy_rock_overlay`, `mossy_cobbled_overlay`).
-    * As tiras animadas verticais de líquidos (16×64) e cristais cintilantes.
-* **Validação**: Assegurar que os shaders amostrem proceduralmente o índice da variante no array de texturas baseado na coordenada global do voxel `hash(x, y, z) % 3`.
+### Phase 3: Meshing Registry & Texture Array Scaling (`src/meshing/`)
+* **Pipeline Capabilities Already Functioning**:
+  * The engine's meshing pipeline already has native support for:
+    1. Triple stochastic variations (`base`, `1`, `2`) sampled procedurally in shaders via world coordinate hash `hash(x, y, z) % 3`.
+    2. Animated texture strips (16×64 px vertical frames for fluids and emissive crystals).
+    3. Procedural overlay layers (`mossy_rock_overlay`, `mossy_cobbled_overlay`).
+* **Required Adjustments**:
+  * Scale `MAX_VOXEL_VARIANTS` in `src/meshing/textures.rs` from `256` to `1024` (or `2048`) to support indexing all 720+ blocks.
+  * Clean up legacy hardcoded mapping exceptions (such as alias workarounds for old texture names).
+  * Ensure the Texture Array builder registers the new 1,403 textures cleanly.
 
 ---
 
-### Fase 4: Reinicialização Limpa da Geração de Mundo & Biomas
-* **Arquivos Alvo**: `src/world/generation/`
-* **Estratégia de Tabula Rasa (Começar do Zero)**:
-  1. **Remover biomas antigos complexos**: Eliminar a antiga tabela de biomas legado.
-  2. **Estrutura Geológica Estratificada**:
-     * Implementar o subsolo planetário com as **12 litologias de rochas reais** organizadas por profundidade/camadas tectônicas (Sedimentar, Ígnea, Metamórfica).
-     * Distribuir os **158 minérios** de acordo com a matriz exata de 4 ocorrências litológicas por mineral definida em [ores_design.md](blocks/ores_design.md).
-  3. **Superfície & Pedologia Realista**:
-     * Utilizar os **58 solos** para criar transições naturais de horizontes de terra (argilas, podzols, areias, turfos e solos ricos com gramas climáticas).
-  4. **Novo Gerador Simples de Teste**:
-     * Inicializar com 3–4 biomas macro simplificados (ex. *Planície Temperada*, *Floresta Mista*, *Deserto Rochoso*, *Taiga Conífera*) para validar visualmente os novos blocos no mundo antes de expandir.
+### Phase 4: Clean World Generation & Biomes Reset (`src/world/generation/`)
+* **Target Files**: `src/world/generation/`
+* **Clean-Slate Strategy**:
+  1. **Purge Obsolete Complex Biomes**: Remove the legacy biome table and hardcoded terrain rules.
+  2. **Ore Generation**:
+     * **No ore distribution required initially**: Can generate 0 ores during initial terrain validation to maintain maximum simplicity while tuning surface and sub-surface rock layers.
+  3. **Tree Generation Completely Disabled**:
+     * Disable tree and foliage decorators completely until base terrain, elevation, and biomes are satisfactory.
+  4. **Balanced Terrestrial & Aquatic Biome Palette**:
+     * Avoid over-simplification by providing a diverse foundation of both land and water biomes:
+       * **Terrestrial Biomes**:
+         * *Temperate Plains*: Rich loams and climatic grasses.
+         * *Dense Temperate Forest*: Deep forest soils, leaf litter, and mossy understories.
+         * *Arid Desert & Badlands*: Sands, caliche, and scorched earth.
+         * *Snowy Coniferous Taiga*: Permafrost, snowy silt, and cryosphere cover.
+         * *Rocky Highlands / Mountain Tundra*: Exposed rock outcrops, scree, and cold alpine turf.
+         * *Tropical Savanna*: Coarse dirt, laterite soils, and dry grasses.
+       * **Aquatic & Marine Biomes**:
+         * *Shallow Coastal Beach & Reef*: Sandy shallows, reefstone benches, and benthic coral gardens.
+         * *Open Temperate Ocean*: Deep water columns with sand, silt, and kelp beds.
+         * *Abyssal Ocean Trench*: Deep oceanic floor with black volcanic sand, vents, and abyssal mud.
+         * *Inland Rivers & Lakes*: Alluvial silt, clay banks, and freshwater shallows.
+         * *Mangrove Swamp & Wetland*: Muddy turf, peat bogs, and waterlogged soils.
+  5. **Stratified Geological Bedrock**:
+     * Implement realistic rock strata across depths using the 12 base lithologies (Sedimentary, Igneous, Metamorphic).
 
 ---
 
-### Fase 5: Reconstrução do Gerador de Árvores
-* **Arquivos Alvo**: `src/world/generation/features/trees/`
-* **Estratégia**:
-  1. Descartar os geradores de árvores antigos acoplados às texturas antigas.
-  2. Implementar geradores modulares limpos para as **18 espécies de árvores**:
-     * Estrutura de troncos (`tree_<especie>_log` com topo direcional).
-     * Galhos e bifurcações usando o bloco de madeira de casca uniforme (`tree_<especie>_wood`).
-     * Copas foliares (`tree_<especie>_leaves`) com variantes vivas e secas.
-     * Casos especializados:
-       * **Bambu**: colunas finas articuladas e folhas em leque.
-       * **Manguezal**: rede de raízes aéreas (`tree_mangrove_roots`).
-       * **Pinheiros / Coníferas**: silhuetas cônicas piramidais.
+### Phase 5: Modular Tree Generation (`src/world/generation/features/trees/`) [PAUSED / DEFERRED]
+* **Status**: **Paused / Deferred**.
+* **Directive**: Kept completely disabled until terrain elevation, rock strata, and water/coastal transitions meet visual and structural expectations.
+* **Future Scope**: Clean modular procedural generators for the 18 cataloged tree species (log trunk columns, bark branch framing, foliage canopies, mangrove prop roots, and bamboo stalks).
 
 ---
 
-### Fase 6: Validação & Teste de Campo no Jogo
-* **Critérios de Sucesso**:
-  1. O jogo compila sem erros (`cargo check` & `cargo build`).
-  2. Todos os 718 blocos renderizam sem o fallback visual `null_block`.
-  3. Os shaders carregam o Texture Array de 16×16 px sem vazamento de memória.
-  4. As variações estocásticas quebram suavemente a repetição das texturas no terreno.
-  5. As cavernas geram com os novos cristais, espeleotemas e fósseis.
-
----
-
-## 4. Resumo de Execução Imediata (Hoje)
-1. Criar e publicar a branch de segurança `legacy` no GitHub contendo o código atual intacto.
-2. Retornar à branch `main`.
-3. Deixar a base pronta para, na próxima sessão, iniciarmos a migração de assets e a reescrita do catálogo de blocos e gerador de biomas.
+### Phase 6: In-Game Validation & Visual Field Testing
+* **Success Criteria**:
+  1. The project compiles cleanly via `cargo check` and `cargo build`.
+  2. All 720 cataloged blocks load and render without triggering `null_block` fallback.
+  3. Texture array allocates seamlessly without VRAM leakage or out-of-bounds indexing.
+  4. Triple stochastic variants break terrain tiling repetition across continuous surfaces.
+  5. Initial test biomes (both terrestrial and aquatic) display coherent geological stratification, realistic soil horizons, and distinct coastal/oceanic beds.
