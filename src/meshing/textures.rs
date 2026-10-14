@@ -11,7 +11,7 @@ use super::greedy::FaceDirection;
 use crate::world::Voxel;
 
 pub const TEXTURE_RESOLUTION: u32 = 16;
-pub const MAX_VOXEL_VARIANTS: usize = 1024;
+pub const MAX_VOXEL_VARIANTS: usize = 2048;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FaceTextureInfo {
@@ -100,36 +100,63 @@ impl VoxelTextureRegistry {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct FaceCacheKey {
+    texture_name: String,
+    overlay_name: Option<String>,
+    tint: Option<[u8; 4]>,
+    fallback: [u8; 4],
+}
+
 pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
     let mut raw_layers = Vec::new();
     let mut registry = VoxelTextureRegistry::default();
     let mut current_layer: u16 = 0;
+    let mut cache: std::collections::HashMap<FaceCacheKey, FaceTextureInfo> =
+        std::collections::HashMap::new();
 
-    for &voxel in &Voxel::ALL {
-        let Some(base_name) = voxel.texture_name() else {
-            continue;
+    let mut get_or_load_face = |tex_name: &str,
+                                overlay_name: Option<&str>,
+                                tint: Option<[f32; 4]>,
+                                fallback: [u8; 4],
+                                layers: &mut Vec<u8>,
+                                layer_counter: &mut u16|
+     -> FaceTextureInfo {
+        let key = FaceCacheKey {
+            texture_name: tex_name.to_string(),
+            overlay_name: overlay_name.map(|s| s.to_string()),
+            tint: tint.map(|t| {
+                [
+                    (t[0] * 255.0).round().clamp(0.0, 255.0) as u8,
+                    (t[1] * 255.0).round().clamp(0.0, 255.0) as u8,
+                    (t[2] * 255.0).round().clamp(0.0, 255.0) as u8,
+                    (t[3] * 255.0).round().clamp(0.0, 255.0) as u8,
+                ]
+            }),
+            fallback,
         };
 
-        let side_name = voxel.side_texture_name().unwrap_or(base_name);
-        let mut side_variants = load_all_variants_for(side_name, voxel.fallback_color());
+        if let Some(&info) = cache.get(&key) {
+            return info;
+        }
 
-        // Composite texture overlay if defined (e.g. grass side overlay, mossy rock, ore vein overlay)
-        if let Some(overlay_name) = voxel.overlay_texture_name()
-            && let Some(overlay) =
-                try_load_image(&format!("assets/textures/blocks/{overlay_name}.png"))
+        let mut variants = load_all_variants_for(tex_name, fallback);
+
+        if let Some(ov_name) = overlay_name
+            && let Some(overlay) = try_load_image(&format!("assets/textures/blocks/{ov_name}.png"))
             && let Some(overlay_frame) = overlay.frames.first()
         {
-            if overlay_name == "soil_grass_side_overlay" {
-                let tint = voxel.tint_color();
-                for variant in &mut side_variants {
+            if ov_name == "soil_grass_side_overlay" {
+                let t = tint.unwrap_or([1.0, 1.0, 1.0, 1.0]);
+                for variant in &mut variants {
                     for frame in &mut variant.frames {
                         for i in 0..256 {
                             let idx = i * 4;
                             let ov_a = overlay_frame[idx + 3] as f32 / 255.0;
                             if ov_a > 0.0 {
-                                let ov_r = overlay_frame[idx] as f32 * tint[0];
-                                let ov_g = overlay_frame[idx + 1] as f32 * tint[1];
-                                let ov_b = overlay_frame[idx + 2] as f32 * tint[2];
+                                let ov_r = overlay_frame[idx] as f32 * t[0];
+                                let ov_g = overlay_frame[idx + 1] as f32 * t[1];
+                                let ov_b = overlay_frame[idx + 2] as f32 * t[2];
 
                                 let base_r = frame[idx] as f32;
                                 let base_g = frame[idx + 1] as f32;
@@ -152,82 +179,78 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
                     }
                 }
             } else {
-                composite_overlay(&mut side_variants, overlay_frame);
+                composite_overlay(&mut variants, overlay_frame);
             }
         }
 
-        let side_variant_count = side_variants.len() as u16;
-        let side_frame_count = side_variants.first().map_or(1, |v| v.frames.len() as u16);
-        let side_start_layer = current_layer;
+        let variant_count = variants.len() as u16;
+        let frame_count = variants.first().map_or(1, |v| v.frames.len() as u16);
+        let start_layer = *layer_counter;
 
-        for variant in side_variants {
+        for variant in variants {
             for frame in variant.frames {
-                raw_layers.extend_from_slice(&frame);
-                current_layer += 1;
+                layers.extend_from_slice(&frame);
+                *layer_counter += 1;
             }
         }
 
-        let side_info = FaceTextureInfo {
-            start_layer: side_start_layer,
-            variant_count: side_variant_count,
-            frame_count: side_frame_count,
+        let info = FaceTextureInfo {
+            start_layer,
+            variant_count,
+            frame_count,
         };
 
+        cache.insert(key, info);
+        info
+    };
+
+    for &voxel in &Voxel::ALL {
+        let Some(base_name) = voxel.texture_name() else {
+            continue;
+        };
+
+        let side_name = voxel.side_texture_name().unwrap_or(base_name);
+        let side_overlay = voxel.overlay_texture_name();
+        let side_tint = if side_overlay == Some("soil_grass_side_overlay") {
+            Some(voxel.tint_color())
+        } else {
+            None
+        };
+        let side_info = get_or_load_face(
+            side_name,
+            side_overlay,
+            side_tint,
+            voxel.fallback_color(),
+            &mut raw_layers,
+            &mut current_layer,
+        );
+
         let top_info = if let Some(top_name) = voxel.top_texture_name() {
-            let mut top_variants = load_all_variants_for(top_name, voxel.fallback_color());
-            if let Some(overlay_name) = voxel.overlay_texture_name()
-                && overlay_name != "soil_grass_side_overlay"
-                && let Some(overlay) =
-                    try_load_image(&format!("assets/textures/blocks/{overlay_name}.png"))
-                && let Some(overlay_frame) = overlay.frames.first()
-            {
-                composite_overlay(&mut top_variants, overlay_frame);
-            }
-            let top_variant_count = top_variants.len() as u16;
-            let top_frame_count = top_variants.first().map_or(1, |v| v.frames.len() as u16);
-            let top_start_layer = current_layer;
-
-            for variant in top_variants {
-                for frame in variant.frames {
-                    raw_layers.extend_from_slice(&frame);
-                    current_layer += 1;
-                }
-            }
-
-            FaceTextureInfo {
-                start_layer: top_start_layer,
-                variant_count: top_variant_count,
-                frame_count: top_frame_count,
-            }
+            let top_overlay = voxel
+                .overlay_texture_name()
+                .filter(|&o| o != "soil_grass_side_overlay");
+            get_or_load_face(
+                top_name,
+                top_overlay,
+                None,
+                voxel.fallback_color(),
+                &mut raw_layers,
+                &mut current_layer,
+            )
         } else if voxel.side_texture_name().is_some()
             && voxel.side_texture_name() != Some(base_name)
         {
-            // If side was overridden, base_name is used for the top texture (e.g. Basalt, Mulch, Grass)
-            let mut top_variants = load_all_variants_for(base_name, voxel.fallback_color());
-            if let Some(overlay_name) = voxel.overlay_texture_name()
-                && overlay_name != "soil_grass_side_overlay"
-                && let Some(overlay) =
-                    try_load_image(&format!("assets/textures/blocks/{overlay_name}.png"))
-                && let Some(overlay_frame) = overlay.frames.first()
-            {
-                composite_overlay(&mut top_variants, overlay_frame);
-            }
-            let top_variant_count = top_variants.len() as u16;
-            let top_frame_count = top_variants.first().map_or(1, |v| v.frames.len() as u16);
-            let top_start_layer = current_layer;
-
-            for variant in top_variants {
-                for frame in variant.frames {
-                    raw_layers.extend_from_slice(&frame);
-                    current_layer += 1;
-                }
-            }
-
-            FaceTextureInfo {
-                start_layer: top_start_layer,
-                variant_count: top_variant_count,
-                frame_count: top_frame_count,
-            }
+            let top_overlay = voxel
+                .overlay_texture_name()
+                .filter(|&o| o != "soil_grass_side_overlay");
+            get_or_load_face(
+                base_name,
+                top_overlay,
+                None,
+                voxel.fallback_color(),
+                &mut raw_layers,
+                &mut current_layer,
+            )
         } else {
             side_info
         };
@@ -238,31 +261,17 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
             {
                 top_info
             } else {
-                let mut bot_variants = load_all_variants_for(bot_name, voxel.fallback_color());
-                if let Some(overlay_name) = voxel.overlay_texture_name()
-                    && overlay_name != "soil_grass_side_overlay"
-                    && let Some(overlay) =
-                        try_load_image(&format!("assets/textures/blocks/{overlay_name}.png"))
-                    && let Some(overlay_frame) = overlay.frames.first()
-                {
-                    composite_overlay(&mut bot_variants, overlay_frame);
-                }
-                let bot_variant_count = bot_variants.len() as u16;
-                let bot_frame_count = bot_variants.first().map_or(1, |v| v.frames.len() as u16);
-                let bot_start_layer = current_layer;
-
-                for variant in bot_variants {
-                    for frame in variant.frames {
-                        raw_layers.extend_from_slice(&frame);
-                        current_layer += 1;
-                    }
-                }
-
-                FaceTextureInfo {
-                    start_layer: bot_start_layer,
-                    variant_count: bot_variant_count,
-                    frame_count: bot_frame_count,
-                }
+                let bot_overlay = voxel
+                    .overlay_texture_name()
+                    .filter(|&o| o != "soil_grass_side_overlay");
+                get_or_load_face(
+                    bot_name,
+                    bot_overlay,
+                    None,
+                    voxel.fallback_color(),
+                    &mut raw_layers,
+                    &mut current_layer,
+                )
             }
         } else if voxel.side_texture_name().is_some() {
             top_info
@@ -369,6 +378,11 @@ fn load_all_variants_for(base_name: &str, fallback_color: [u8; 4]) -> Vec<Loaded
         }
     }
 
+    if !variants.is_empty() && variants[0].frames.len() > 1 {
+        // Multi-frame animation strips only use their primary animation sequence
+        return variants;
+    }
+
     for i in 1..64 {
         let mut candidate_paths = vec![
             format!("assets/textures/blocks/{base_name}{i}.png"),
@@ -448,7 +462,8 @@ fn try_load_image(path: &str) -> Option<LoadedTexture> {
         return None;
     }
 
-    let frame_count = (final_height / TEXTURE_RESOLUTION) as usize;
+    // Cap animation frames to max 8 to respect GPU texture array layer limits
+    let frame_count = ((final_height / TEXTURE_RESOLUTION) as usize).min(8);
     let mut frames = Vec::with_capacity(frame_count);
     let frame_pixel_count = (TEXTURE_RESOLUTION * TEXTURE_RESOLUTION) as usize;
     let raw = rgba.into_raw();
@@ -474,4 +489,24 @@ fn solid_color_texture(color: [u8; 4]) -> LoadedTexture {
         data.extend_from_slice(&color);
     }
     LoadedTexture { frames: vec![data] }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_build_array() {
+        let (img, _reg) = build_voxel_texture_array();
+        let depth = img.texture_descriptor.size.depth_or_array_layers;
+        let data_len = img.data.as_ref().map_or(0, |d| d.len());
+        println!("TOTAL LAYERS: {}", depth);
+        println!("DATA LEN: {}", data_len);
+        println!("EXPECTED DATA LEN: {}", depth as usize * 16 * 16 * 4);
+        assert!(
+            depth <= 2048,
+            "Texture array depth must be <= 2048 to fit GPU limits, got {}",
+            depth
+        );
+    }
 }

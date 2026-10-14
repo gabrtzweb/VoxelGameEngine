@@ -71,7 +71,19 @@ fn main() {
                     }),
                     ..default()
                 })
-                .set(ImagePlugin::default_nearest()),
+                .set(ImagePlugin::default_nearest())
+                .set(bevy::render::RenderPlugin {
+                    render_creation: bevy::render::settings::RenderCreation::Automatic(Box::new(
+                        bevy::render::settings::WgpuSettings {
+                            limits: bevy::render::settings::WgpuLimits {
+                                max_texture_array_layers: 2048,
+                                ..default()
+                            },
+                            ..default()
+                        },
+                    )),
+                    ..default()
+                }),
         )
         .add_plugins(FontPlugin)
         .add_plugins(AdaptiveUiPlugin)
