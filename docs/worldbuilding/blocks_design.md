@@ -1,11 +1,11 @@
 # Voxel Game Engine Master Block Catalog (Blocks Design)
 
-This master document centralizes, unifies, and catalogs **all blocks implemented in the Voxel Engine**, organized across the 13 worldbuilding subdomains located in `docs/worldbuilding/blocks/`.
+This master document centralizes, unifies, and catalogs **all blocks implemented in the Voxel Engine**, organized across the 14 worldbuilding subdomains located in `docs/worldbuilding/blocks/`.
 
 > [!IMPORTANT]
-> **Project Grand Total: 794 Cataloged Unique Blocks**  
-> Summing all 13 core domains of the engine's block ecosystem:  
-> **8** (systems) + **18** (fluids) + **58** (soils) + **92** (rocks) + **98** (trees) + **158** (ores) + **28** (caverns) + **50** (oceans) + **36** (organics) + **160** (decorations) + **18** (mushrooms) + **38** (vegetation) + **32** (flowers) = **794 Total Blocks**.
+> **Project Grand Total: 803 Cataloged Unique Blocks**  
+> Summing all 14 core domains of the engine's block ecosystem:  
+> **8** (systems) + **18** (fluids) + **58** (soils) + **92** (rocks) + **92** (trees) + **158** (ores) + **28** (caverns) + **50** (oceans) + **36** (organics) + **160** (decorations) + **18** (mushrooms) + **38** (vegetation) + **32** (flowers) + **15** (crops) = **803 Total Blocks**.
 
 For each block, the following properties are systematically specified:
 1. **Unique Block Identifier (`Block ID`)**.
@@ -29,31 +29,32 @@ For each block, the following properties are systematically specified:
 | **02** | Hydrosphere & Cryology (`fluids`) | **18 blocks** | **54 textures** | ✅ **100% Complete** | [fluids_design.md](blocks/fluids_design.md) | [Go to Section 02](#02-hydrosphere--cryology-fluids--18-blocks-100-complete) |
 | **03** | Pedology & Soils (`soils`) | **58 blocks** | **184 textures** | ✅ **100% Complete** | [soils_design.md](blocks/soils_design.md) | [Go to Section 03](#03-pedology--soils-soils--58-blocks-100-complete) |
 | **04** | Geology & Rocks (`rocks`) | **92 blocks** | **216 textures** | ✅ **100% Complete** | [rocks_design.md](blocks/rocks_design.md) | [Go to Section 04](#04-geology--rocks-rocks--92-blocks-100-complete) |
-| **05** | Trees, Forestry & Dendrology (`trees`) | **98 blocks** | **174 textures** | 🔄 *In Progress* | [trees_design.md](blocks/trees_design.md) | [Go to Section 05](#05-trees-forestry--dendrology-trees--98-blocks) |
+| **05** | Trees, Forestry & Dendrology (`trees`) | **92 blocks** | **242 textures** | ✅ **100% Complete** | [trees_design.md](blocks/trees_design.md) | [Go to Section 05](#05-trees-forestry--dendrology-trees--92-blocks-100-complete) |
 | **06** | Ores, Minerals & Gemology (`ores`) | **158 blocks** | **156 textures** | ✅ **100% Complete** | [ores_design.md](blocks/ores_design.md) | [Go to Section 06](#06-ores-minerals--gemology-ores--158-blocks-100-complete) |
 | **07** | Speleology & Crystals (`caverns`) | **28 blocks** | **122 textures** | ✅ **100% Complete** | [caverns_design.md](blocks/caverns_design.md) | [Go to Section 07](#07-speleology--crystals-caverns--28-blocks-100-complete) |
 | **08** | Ocean & Benthic Ecosystems (`oceans`) | **50 blocks** | **140 textures** | ✅ **100% Complete** | [oceans_design.md](blocks/oceans_design.md) | [Go to Section 08](#08-ocean--benthic-ecosystems-oceans--50-blocks-100-complete) |
-| **09** | Biomaterials, Fauna & Organic Matter (`organics`) | **36 blocks** | **69 textures** | 🔄 *In Progress* | [organics_design.md](blocks/organics_design.md) | [Go to Section 09](#09-biomaterials-fauna--organic-matter-organics--36-blocks) |
-| **10** | Decorations, Lighting & Architecture (`decorations`) | **160 blocks** | **90 textures** | 🔄 *In Progress* | [decorations_design.md](blocks/decorations_design.md) | [Go to Section 10](#10-decorations-lighting--architecture-decorations--160-blocks) |
+| **09** | Biomaterials, Fauna & Organic Matter (`organics`) | **36 blocks** | **94 textures** | ✅ **100% Complete** | [organics_design.md](blocks/organics_design.md) | [Go to Section 09](#09-biomaterials-fauna--organic-matter-organics--36-blocks-100-complete) |
+| **10** | Decorations, Lighting & Architecture (`decorations`) | **160 blocks** | **90 textures** | ✅ **100% Complete** | [decorations_design.md](blocks/decorations_design.md) | [Go to Section 10](#10-decorations-lighting--architecture-decorations--160-blocks-100-complete) |
 | **11** | Mycology: Mushrooms (`mushrooms`) | **18 blocks** | **54 textures** | ✅ **100% Complete** | [mushrooms_design.md](blocks/mushrooms_design.md) | [Go to Section 11](#11-mycology-mushrooms-mushrooms--18-blocks-100-complete) |
 | **12** | Botany: Groundcover & Herbaceous Flora (`vegetation`) | **38 blocks** | **111 textures** | 🔄 *In Progress* | [vegetation_design.md](blocks/vegetation_design.md) | [Go to Section 12](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks) |
 | **13** | Botany: Flowers & Flowering Flora (`flowers`) | **32 blocks** | **87 textures** | 🔄 *In Progress* | [flowers_design.md](blocks/flowers_design.md) | [Go to Section 13](#13-botany-flowers--flowering-flora-flowers--32-blocks) |
-| **TOTAL** | **Grand Master Sum** | **794 blocks** | **1,465 textures** | — | — | — |
+| **14** | Agriculture & Domestic Crops (`crops`) | **15 blocks** | **54 textures** | 🔄 *In Progress* | [crops_design.md](blocks/crops_design.md) | [Go to Section 14](#14-agriculture--domestic-crops-crops--15-blocks) |
+| **TOTAL** | **Grand Master Sum** | **803 blocks** | **1,612 textures** | — | — | — |
 
 01. [Technical & System Blocks (`systems`) — 8 Blocks [✅ 100% Complete]](#01-technical--system-blocks-systems--8-blocks-100-complete)
 02. [Hydrosphere & Cryology (`fluids`) — 18 Blocks [✅ 100% Complete]](#02-hydrosphere--cryology-fluids--18-blocks-100-complete)
 03. [Pedology & Soils (`soils`) — 58 Blocks [✅ 100% Complete]](#03-pedology--soils-soils--58-blocks-100-complete)
 04. [Geology & Rocks (`rocks`) — 92 Blocks [✅ 100% Complete]](#04-geology--rocks-rocks--92-blocks-100-complete)
-05. [Trees, Forestry & Dendrology (`trees`) — 98 Blocks](#05-trees-forestry--dendrology-trees--98-blocks)
+05. [Trees, Forestry & Dendrology (`trees`) — 92 Blocks [✅ 100% Complete]](#05-trees-forestry--dendrology-trees--92-blocks-100-complete)
 06. [Ores, Minerals & Gemology (`ores`) — 158 Blocks [✅ 100% Complete]](#06-ores-minerals--gemology-ores--158-blocks-100-complete)
 07. [Speleology & Crystals (`caverns`) — 28 Blocks [✅ 100% Complete]](#07-speleology--crystals-caverns--28-blocks-100-complete)
 08. [Ocean & Benthic Ecosystems (`oceans`) — 50 Blocks [✅ 100% Complete]](#08-ocean--benthic-ecosystems-oceans--50-blocks-100-complete)
-09. [Biomaterials, Fauna & Organic Matter (`organics`) — 36 Blocks](#09-biomaterials-fauna--organic-matter-organics--36-blocks)
-10. [Decorations, Lighting & Architecture (`decorations`) — 160 Blocks](#10-decorations-lighting--architecture-decorations--160-blocks)
+09. [Biomaterials, Fauna & Organic Matter (`organics`) — 36 Blocks [✅ 100% Complete]](#09-biomaterials-fauna--organic-matter-organics--36-blocks-100-complete)
+10. [Decorations, Lighting & Architecture (`decorations`) — 160 Blocks [✅ 100% Complete]](#10-decorations-lighting--architecture-decorations--160-blocks-100-complete)
 11. [Mycology: Mushrooms (`mushrooms`) — 18 Blocks [✅ 100% Complete]](#11-mycology-mushrooms-mushrooms--18-blocks-100-complete)
 12. [Botany: Groundcover & Herbaceous Flora (`vegetation`) — 38 Blocks](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks)
 13. [Botany: Flowers & Flowering Flora (`flowers`) — 32 Blocks](#13-botany-flowers--flowering-flora-flowers--32-blocks)
-14. [Future Roadmap: Agriculture, Crops & Food (`crops` / `foods`)](#14-future-roadmap-agriculture-crops--food-crops--foods)
+14. [Agriculture & Domestic Crops (`crops`) — 15 Blocks](#14-agriculture--domestic-crops-crops--15-blocks)
 
 ---
 
@@ -289,7 +290,7 @@ The geological framework comprises **28 mineable rock matrices** across 7 core p
 
 ---
 
-## 05. Trees, Forestry & Dendrology (`trees`) — 98 Blocks
+## 05. Trees, Forestry & Dendrology (`trees`) — 92 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/trees`  
 📄 **Comprehensive Specification**: [trees_design.md](blocks/trees_design.md)
@@ -300,107 +301,100 @@ Planetary dendrology encompasses **18 living forest tree species** distributed a
 
 | # | Block ID | Name | Category | Top Face | Bottom Face | Side Faces | Properties |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **001** | `acacia_leaves` | Acacia Leaves | **Foliage** | `tree_acacia_leaves.png` | `tree_acacia_leaves.png` | `tree_acacia_leaves.png` | Cutout, Umbrella Canopy Decay |
-| **002** | `acacia_leaves_dead` | Dead Acacia Leaves | **Foliage** | `tree_acacia_leaves_dead.png` | `tree_acacia_leaves_dead.png` | `tree_acacia_leaves_dead.png` | Cutout, Brittle, Arid Drought Decay |
-| **003** | `acacia_log` | Acacia Log | **Wood** | `tree_acacia_log.png` | `tree_acacia_log.png` | `tree_acacia_bark.png` | 3D Axis, Flammable |
-| **004** | `acacia_planks` | Acacia Planks | **Planks** | `tree_acacia_planks.png` | `tree_acacia_planks.png` | `tree_acacia_planks.png` | Solid, Vibrant Terracotta Material |
-| **005** | `acacia_wood` | Acacia Wood | **Wood** | `tree_acacia_bark.png` | `tree_acacia_bark.png` | `tree_acacia_bark.png` | Solid Bark, Flammable |
-| **006** | `aspen_leaves` | Golden Aspen Leaves | **Foliage** | `tree_aspen_leaves.png` | `tree_aspen_leaves.png` | `tree_aspen_leaves.png` | Cutout, Canopy Decay |
-| **007** | `aspen_leaves_dead` | Dead Aspen Leaves | **Foliage** | `tree_aspen_leaves_dead.png` | `tree_aspen_leaves_dead.png` | `tree_aspen_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **008** | `aspen_leaves_snowy` | Snowy Aspen Leaves | **Foliage** | `tree_aspen_leaves_snowy_top.png` | `tree_aspen_leaves.png` | `tree_aspen_leaves_snowy_side.png` | Cutout, Canopy Decay, Snowy |
-| **009** | `aspen_log` | Aspen Log | **Wood** | `tree_aspen_log.png` | `tree_aspen_log.png` | `tree_aspen_bark.png` | 3D Axis, Flammable |
-| **010** | `aspen_planks` | Aspen Planks | **Planks** | `tree_aspen_planks.png` | `tree_aspen_planks.png` | `tree_aspen_planks.png` | Solid, Building Material |
-| **011** | `aspen_wood` | Aspen Wood | **Wood** | `tree_aspen_bark.png` | `tree_aspen_bark.png` | `tree_aspen_bark.png` | Solid Bark, Flammable |
-| **012** | `bamboo_large_leaves` | Large Bamboo Leaves | **Foliage** | `tree_bamboo_large_leaves.png` | `tree_bamboo_large_leaves.png` | `tree_bamboo_large_leaves.png` | Cutout, High Canopy |
-| **013** | `bamboo_planks` | Bamboo Planks | **Planks** | `tree_bamboo_planks.png` | `tree_bamboo_planks.png` | `tree_bamboo_planks.png` | Solid, Woven Mat Pattern |
-| **014** | `bamboo_small_leaves` | Small Bamboo Leaves | **Foliage** | `tree_bamboo_small_leaves.png` | `tree_bamboo_small_leaves.png` | `tree_bamboo_small_leaves.png` | Cutout, Low Shoot Leaves |
-| **015** | `bamboo_stalk` | Bamboo Stalk | **Wood / Stalk** | `tree_bamboo_stalk.png` | `tree_bamboo_stalk.png` | `tree_bamboo_stalk.png` | Slim Tube / Column, Orientable |
-| **016** | `baobab_leaves` | Baobab Leaves | **Foliage** | `tree_baobab_leaves.png` | `tree_baobab_leaves.png` | `tree_baobab_leaves.png` | Cutout, Tufted Canopy Decay |
-| **017** | `baobab_leaves_dead` | Dead Baobab Leaves | **Foliage** | `tree_baobab_leaves_dead.png` | `tree_baobab_leaves_dead.png` | `tree_baobab_leaves_dead.png` | Cutout, Brittle, Severe Estivation Decay |
-| **018** | `baobab_log` | Baobab Log | **Wood** | `tree_baobab_log.png` | `tree_baobab_log.png` | `tree_baobab_bark.png` | 3D Axis, Pachycaul Water-Rich |
-| **019** | `baobab_planks` | Baobab Planks | **Planks** | `tree_baobab_planks.png` | `tree_baobab_planks.png` | `tree_baobab_planks.png` | Solid, Fibrous Copper-Orange |
-| **020** | `baobab_wood` | Baobab Wood | **Wood** | `tree_baobab_bark.png` | `tree_baobab_bark.png` | `tree_baobab_bark.png` | Solid Bark, Massive Trunk Core |
-| **021** | `birch_leaves` | Birch Leaves | **Foliage** | `tree_birch_leaves.png` | `tree_birch_leaves.png` | `tree_birch_leaves.png` | Cutout, Canopy Decay |
-| **022** | `birch_leaves_dead` | Dead Birch Leaves | **Foliage** | `tree_birch_leaves_dead.png` | `tree_birch_leaves_dead.png` | `tree_birch_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **023** | `birch_log` | Birch Log | **Wood** | `tree_birch_log.png` | `tree_birch_log.png` | `tree_birch_bark.png` | 3D Axis, Flammable |
-| **024** | `birch_planks` | Birch Planks | **Planks** | `tree_birch_planks.png` | `tree_birch_planks.png` | `tree_birch_planks.png` | Solid, Building Material |
-| **025** | `birch_wood` | Birch Wood | **Wood** | `tree_birch_bark.png` | `tree_birch_bark.png` | `tree_birch_bark.png` | Solid Bark, Flammable |
-| **026** | `cherry_leaves` | Cherry Blossom Leaves | **Foliage** | `tree_cherry_leaves.png` | `tree_cherry_leaves.png` | `tree_cherry_leaves.png` | Cutout, Sakura Canopy Decay |
-| **027** | `cherry_leaves_dead` | Dead Cherry Leaves | **Foliage** | `tree_cherry_leaves_dead.png` | `tree_cherry_leaves_dead.png` | `tree_cherry_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **028** | `cherry_log` | Cherry Log | **Wood** | `tree_cherry_log.png` | `tree_cherry_log.png` | `tree_cherry_bark.png` | 3D Axis, Flammable |
-| **029** | `cherry_planks` | Cherry Planks | **Planks** | `tree_cherry_planks.png` | `tree_cherry_planks.png` | `tree_cherry_planks.png` | Solid, Building Material |
-| **030** | `cherry_wood` | Cherry Wood | **Wood** | `tree_cherry_bark.png` | `tree_cherry_bark.png` | `tree_cherry_bark.png` | Solid Bark, Flammable |
-| **031** | `cypress_leaves` | Cypress Foliage | **Foliage** | `tree_cypress_leaves.png` | `tree_cypress_leaves.png` | `tree_cypress_leaves.png` | Cutout, Dense Columnar Foliage |
-| **032** | `cypress_leaves_dead` | Dead Cypress Foliage | **Foliage** | `tree_cypress_leaves_dead.png` | `tree_cypress_leaves_dead.png` | `tree_cypress_leaves_dead.png` | Cutout, Brittle, Swamp Decay |
-| **033** | `cypress_log` | Cypress Log | **Wood** | `tree_cypress_log.png` | `tree_cypress_log.png` | `tree_cypress_bark.png` | 3D Axis, Rot-Resistant |
-| **034** | `cypress_planks` | Cypress Planks | **Planks** | `tree_cypress_planks.png` | `tree_cypress_planks.png` | `tree_cypress_planks.png` | Solid, Resilient Hazel Material |
-| **035** | `cypress_wood` | Cypress Wood | **Wood** | `tree_cypress_bark.png` | `tree_cypress_bark.png` | `tree_cypress_bark.png` | Solid Bark, Rot-Resistant |
-| **036** | `fir_leaves` | Fir Needles | **Foliage** | `tree_fir_leaves.png` | `tree_fir_leaves.png` | `tree_fir_leaves.png` | Cutout, Canopy Decay |
-| **037** | `fir_leaves_dead` | Dead Fir Needles | **Foliage** | `tree_fir_leaves_dead.png` | `tree_fir_leaves_dead.png` | `tree_fir_leaves_dead.png` | Cutout, Dry Needles, Flammable |
-| **038** | `fir_leaves_snowy` | Snowy Fir Needles | **Foliage** | `tree_fir_leaves_snowy.png` | `tree_fir_leaves_snowy.png` | `tree_fir_leaves_snowy.png` | Cutout, Canopy Decay, Snowy |
-| **039** | `fir_log` | Fir Log | **Wood** | `tree_fir_log.png` | `tree_fir_log.png` | `tree_fir_bark.png` | 3D Axis, Flammable |
-| **040** | `fir_planks` | Fir Planks | **Planks** | `tree_fir_planks.png` | `tree_fir_planks.png` | `tree_fir_planks.png` | Solid, Building Material |
-| **041** | `fir_wood` | Fir Wood | **Wood** | `tree_fir_bark.png` | `tree_fir_bark.png` | `tree_fir_bark.png` | Solid Bark, Flammable |
-| **042** | `kapok_leaves` | Kapok Leaves | **Foliage** | `tree_kapok_leaves.png` | `tree_kapok_leaves.png` | `tree_kapok_leaves.png` | Cutout, Palmate Canopy Decay |
-| **043** | `kapok_leaves_dead` | Dead Kapok Leaves | **Foliage** | `tree_kapok_leaves_dead.png` | `tree_kapok_leaves_dead.png` | `tree_kapok_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **044** | `kapok_log` | Kapok Log | **Wood** | `tree_kapok_log.png` | `tree_kapok_log.png` | `tree_kapok_bark.png` | 3D Axis, Colossal Emergent |
-| **045** | `kapok_planks` | Kapok Planks | **Planks** | `tree_kapok_planks.png` | `tree_kapok_planks.png` | `tree_kapok_planks.png` | Solid, Warm Pale Tropical Wood |
-| **046** | `kapok_wood` | Kapok Wood | **Wood** | `tree_kapok_bark.png` | `tree_kapok_bark.png` | `tree_kapok_bark.png` | Solid Bark, Buttress Core |
-| **047** | `mahogany_leaves` | Mahogany Leaves | **Foliage** | `tree_mahogany_leaves.png` | `tree_mahogany_leaves.png` | `tree_mahogany_leaves.png` | Cutout, Canopy Decay |
-| **048** | `mahogany_leaves_dead` | Dead Mahogany Leaves | **Foliage** | `tree_mahogany_leaves_dead.png` | `tree_mahogany_leaves_dead.png` | `tree_mahogany_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **049** | `mahogany_log` | Mahogany Log | **Wood** | `tree_mahogany_log.png` | `tree_mahogany_log.png` | `tree_mahogany_bark.png` | 3D Axis, Flammable |
-| **050** | `mahogany_planks` | Mahogany Planks | **Planks** | `tree_mahogany_planks.png` | `tree_mahogany_planks.png` | `tree_mahogany_planks.png` | Solid, Deep Auburn Material |
-| **051** | `mahogany_wood` | Mahogany Wood | **Wood** | `tree_mahogany_bark.png` | `tree_mahogany_bark.png` | `tree_mahogany_bark.png` | Solid Bark, Flammable |
-| **052** | `mangrove_leaves` | Mangrove Leaves | **Foliage** | `tree_mangrove_leaves.png` | `tree_mangrove_leaves.png` | `tree_mangrove_leaves.png` | Cutout, Canopy Decay |
-| **053** | `mangrove_leaves_dead` | Dead Mangrove Leaves | **Foliage** | `tree_mangrove_leaves_dead.png` | `tree_mangrove_leaves_dead.png` | `tree_mangrove_leaves_dead.png` | Cutout, Brittle, Salted Decay |
-| **054** | `mangrove_log` | Mangrove Log | **Wood** | `tree_mangrove_log.png` | `tree_mangrove_log.png` | `tree_mangrove_bark.png` | 3D Axis, Salt-Tolerant |
-| **055** | `mangrove_planks` | Mangrove Planks | **Planks** | `tree_mangrove_planks.png` | `tree_mangrove_planks.png` | `tree_mangrove_planks.png` | Solid, Coppery-Tan Material |
-| **056** | `mangrove_roots` | Mangrove Aerial Roots | **Root** | `tree_mangrove_roots_top.png` | `tree_mangrove_roots_top.png` | `tree_mangrove_roots.png` | Semi-Solid, Waterlogged Permeable |
-| **057** | `mangrove_wood` | Mangrove Wood | **Wood** | `tree_mangrove_bark.png` | `tree_mangrove_bark.png` | `tree_mangrove_bark.png` | Solid Bark, Flammable |
-| **058** | `maple_leaves_dead` | Dead Maple Leaves | **Foliage** | `tree_maple_leaves_dead.png` | `tree_maple_leaves_dead.png` | `tree_maple_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **059** | `maple_leaves_orange` | Orange Maple Leaves | **Foliage** | `tree_maple_leaves_orange.png` | `tree_maple_leaves_orange.png` | `tree_maple_leaves_orange.png` | Cutout, Canopy Decay |
-| **060** | `maple_leaves_red` | Red Maple Leaves | **Foliage** | `tree_maple_leaves_red.png` | `tree_maple_leaves_red.png` | `tree_maple_leaves_red.png` | Cutout, Canopy Decay |
-| **061** | `maple_leaves_yellow` | Yellow Maple Leaves | **Foliage** | `tree_maple_leaves_yellow.png` | `tree_maple_leaves_yellow.png` | `tree_maple_leaves_yellow.png` | Cutout, Canopy Decay |
-| **062** | `maple_log` | Maple Log | **Wood** | `tree_maple_log.png` | `tree_maple_log.png` | `tree_maple_bark.png` | 3D Axis, Flammable |
-| **063** | `maple_planks` | Maple Planks | **Planks** | `tree_maple_planks.png` | `tree_maple_planks.png` | `tree_maple_planks.png` | Solid, Building Material |
-| **064** | `maple_wood` | Maple Wood | **Wood** | `tree_maple_bark.png` | `tree_maple_bark.png` | `tree_maple_bark.png` | Solid Bark, Flammable |
-| **065** | `oak_leaves` | Oak Leaves | **Foliage** | `tree_oak_leaves.png` | `tree_oak_leaves.png` | `tree_oak_leaves.png` | Cutout, Canopy Decay |
-| **066** | `oak_leaves_dead` | Dead Oak Leaves | **Foliage** | `tree_oak_leaves_dead.png` | `tree_oak_leaves_dead.png` | `tree_oak_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **067** | `oak_leaves_lush` | Lush Oak Leaves | **Foliage** | `tree_oak_leaves_lush.png` | `tree_oak_leaves_lush.png` | `tree_oak_leaves_lush.png` | Cutout, Canopy Decay |
-| **068** | `oak_leaves_lush_flowering` | Flowering Lush Oak Leaves | **Foliage** | `tree_oak_leaves_flowering.png` | `tree_oak_leaves_flowering.png` | `tree_oak_leaves_flowering.png` | Cutout, Canopy Decay |
-| **069** | `oak_log` | Oak Log | **Wood** | `tree_oak_log.png` | `tree_oak_log.png` | `tree_oak_bark.png` | 3D Axis, Flammable |
-| **070** | `oak_planks` | Oak Planks | **Planks** | `tree_oak_planks.png` | `tree_oak_planks.png` | `tree_oak_planks.png` | Solid, Building Material |
-| **071** | `oak_wood` | Oak Wood | **Wood** | `tree_oak_bark.png` | `tree_oak_bark.png` | `tree_oak_bark.png` | Solid Bark, Flammable |
-| **072** | `palm_leaves` | Palm Fronds | **Foliage** | `tree_palm_leaves.png` | `tree_palm_leaves.png` | `tree_palm_leaves.png` | Cutout, Broad Arching Fronds |
-| **073** | `palm_leaves_dead` | Dead Palm Fronds | **Foliage** | `tree_palm_leaves_dead.png` | `tree_palm_leaves_dead.png` | `tree_palm_leaves_dead.png` | Cutout, Dry Thatch Straw Fronds |
-| **074** | `palm_log` | Palm Log | **Wood** | `tree_palm_log.png` | `tree_palm_log.png` | `tree_palm_bark.png` | 3D Axis, Fibrous Stipe |
-| **075** | `palm_planks` | Palm Planks | **Planks** | `tree_palm_planks.png` | `tree_palm_planks.png` | `tree_palm_planks.png` | Solid, Golden Blonde Material |
-| **076** | `palm_wood` | Palm Wood | **Wood** | `tree_palm_bark.png` | `tree_palm_bark.png` | `tree_palm_bark.png` | Solid Stipe Bark, Flammable |
-| **077** | `pine_leaves` | Pine Needles | **Foliage** | `tree_pine_leaves.png` | `tree_pine_leaves.png` | `tree_pine_leaves.png` | Cutout, Canopy Decay, Tintable |
-| **078** | `pine_leaves_dead` | Dead Pine Needles | **Foliage** | `tree_pine_leaves_dead.png` | `tree_pine_leaves_dead.png` | `tree_pine_leaves_dead.png` | Cutout, Dry Needles, Flammable |
-| **079** | `pine_leaves_snowy` | Snowy Pine Needles | **Foliage** | `tree_pine_leaves_snowy_top.png` | `tree_pine_leaves.png` | `tree_pine_leaves.png` *(+ overlay)* | Cutout, Snowy |
-| **080** | `pine_log` | Pine Log | **Wood** | `tree_pine_log.png` | `tree_pine_log.png` | `tree_pine_bark.png` | 3D Axis, Flammable |
-| **081** | `pine_planks` | Pine Planks | **Planks** | `tree_pine_planks.png` | `tree_pine_planks.png` | `tree_pine_planks.png` | Solid, Building Material |
-| **082** | `pine_wood` | Pine Wood | **Wood** | `tree_pine_bark.png` | `tree_pine_bark.png` | `tree_pine_bark.png` | Solid Bark, Flammable |
-| **083** | `redwood_leaves` | Redwood Foliage | **Foliage** | `tree_redwood_leaves.png` | `tree_redwood_leaves.png` | `tree_redwood_leaves.png` | Cutout, Canopy Decay |
-| **084** | `redwood_leaves_dead` | Dead Redwood Foliage | **Foliage** | `tree_redwood_leaves_dead.png` | `tree_redwood_leaves_dead.png` | `tree_redwood_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **085** | `redwood_log` | Redwood Log | **Wood** | `tree_redwood_log.png` | `tree_redwood_log.png` | `tree_redwood_bark.png` | 3D Axis, Colossal Trunk |
-| **086** | `redwood_planks` | Redwood Planks | **Planks** | `tree_redwood_planks.png` | `tree_redwood_planks.png` | `tree_redwood_planks.png` | Solid, Brick-Red Building Material |
-| **087** | `redwood_wood` | Redwood Wood | **Wood** | `tree_redwood_bark.png` | `tree_redwood_bark.png` | `tree_redwood_bark.png` | Solid Bark, Flammable |
-| **088** | `willow_leaves` | Weeping Willow Leaves | **Foliage** | `tree_willow_leaves.png` | `tree_willow_leaves.png` | `tree_willow_leaves.png` | Cutout, Drooping Canopy Decay |
-| **089** | `willow_leaves_dead` | Dead Willow Leaves | **Foliage** | `tree_willow_leaves_dead.png` | `tree_willow_leaves_dead.png` | `tree_willow_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **090** | `willow_log` | Willow Log | **Wood** | `tree_willow_log.png` | `tree_willow_log.png` | `tree_willow_bark.png` | 3D Axis, Flammable |
-| **091** | `willow_planks` | Willow Planks | **Planks** | `tree_willow_planks.png` | `tree_willow_planks.png` | `tree_willow_planks.png` | Solid, Building Material |
-| **092** | `willow_wood` | Willow Wood | **Wood** | `tree_willow_bark.png` | `tree_willow_bark.png` | `tree_willow_bark.png` | Solid Bark, Flammable |
-| **093** | `yew_leaves` | Yew Foliage | **Foliage** | `tree_yew_leaves.png` | `tree_yew_leaves.png` | `tree_yew_leaves.png` | Cutout, Canopy Decay |
-| **094** | `yew_leaves_dead` | Dead Yew Foliage | **Foliage** | `tree_yew_leaves_dead.png` | `tree_yew_leaves_dead.png` | `tree_yew_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
-| **095** | `yew_leaves_snowy` | Snowy Yew Foliage | **Foliage** | `tree_yew_leaves_snowy_top.png` | `tree_yew_leaves.png` | `tree_yew_leaves.png` *(+ overlay)* | Cutout, Snowy |
-| **096** | `yew_log` | Yew Log | **Wood** | `tree_yew_log.png` | `tree_yew_log.png` | `tree_yew_bark.png` | 3D Axis, Dark Heartwood |
-| **097** | `yew_planks` | Yew Planks | **Planks** | `tree_yew_planks.png` | `tree_yew_planks.png` | `tree_yew_planks.png` | Solid, Dark Ebony Material |
-| **098** | `yew_wood` | Yew Wood | **Wood** | `tree_yew_bark.png` | `tree_yew_bark.png` | `tree_yew_bark.png` | Solid Bark, Flammable |
+| **01** | `acacia_leaves` | Acacia Leaves | **Foliage** | `tree_acacia_leaves.png` | `tree_acacia_leaves.png` | `tree_acacia_leaves.png` | Cutout, Umbrella Canopy Decay |
+| **02** | `acacia_leaves_dead` | Dead Acacia Leaves | **Foliage** | `tree_acacia_leaves_dead.png` | `tree_acacia_leaves_dead.png` | `tree_acacia_leaves_dead.png` | Cutout, Brittle, Arid Drought Decay |
+| **03** | `acacia_log` | Acacia Log | **Wood** | `tree_acacia_log.png` | `tree_acacia_log.png` | `tree_acacia_bark.png` | 3D Axis, Flammable |
+| **04** | `acacia_planks` | Acacia Planks | **Planks** | `tree_acacia_planks.png` | `tree_acacia_planks.png` | `tree_acacia_planks.png` | Solid, Vibrant Terracotta Material |
+| **05** | `acacia_wood` | Acacia Wood | **Wood** | `tree_acacia_bark.png` | `tree_acacia_bark.png` | `tree_acacia_bark.png` | Solid Bark, Flammable |
+| **06** | `aspen_leaves` | Golden Aspen Leaves | **Foliage** | `tree_aspen_leaves.png` | `tree_aspen_leaves.png` | `tree_aspen_leaves.png` | Cutout, Canopy Decay |
+| **07** | `aspen_leaves_dead` | Dead Aspen Leaves | **Foliage** | `tree_aspen_leaves_dead.png` | `tree_aspen_leaves_dead.png` | `tree_aspen_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
+| **08** | `aspen_log` | Aspen Log | **Wood** | `tree_aspen_log.png` | `tree_aspen_log.png` | `tree_aspen_bark.png` | 3D Axis, Flammable |
+| **09** | `aspen_planks` | Aspen Planks | **Planks** | `tree_aspen_planks.png` | `tree_aspen_planks.png` | `tree_aspen_planks.png` | Solid, Building Material |
+| **10** | `aspen_wood` | Aspen Wood | **Wood** | `tree_aspen_bark.png` | `tree_aspen_bark.png` | `tree_aspen_bark.png` | Solid Bark, Flammable |
+| **11** | `bamboo_large_leaves` | Large Bamboo Leaves | **Foliage** | `tree_bamboo_large_leaves.png` | `tree_bamboo_large_leaves.png` | `tree_bamboo_large_leaves.png` | Cutout, High Canopy |
+| **12** | `bamboo_planks` | Bamboo Planks | **Planks** | `tree_bamboo_planks.png` | `tree_bamboo_planks.png` | `tree_bamboo_planks.png` | Solid, Woven Mat Pattern |
+| **13** | `bamboo_small_leaves` | Small Bamboo Leaves | **Foliage** | `tree_bamboo_small_leaves.png` | `tree_bamboo_small_leaves.png` | `tree_bamboo_small_leaves.png` | Cutout, Low Shoot Leaves |
+| **14** | `bamboo_stalk` | Bamboo Stalk | **Wood / Stalk** | `tree_bamboo_stalk.png` | `tree_bamboo_stalk.png` | `tree_bamboo_stalk.png` | Slim Tube / Column, Orientable |
+| **15** | `baobab_leaves` | Baobab Leaves | **Foliage** | `tree_baobab_leaves.png` | `tree_baobab_leaves.png` | `tree_baobab_leaves.png` | Cutout, Tufted Canopy Decay |
+| **16** | `baobab_leaves_dead` | Dead Baobab Leaves | **Foliage** | `tree_baobab_leaves_dead.png` | `tree_baobab_leaves_dead.png` | `tree_baobab_leaves_dead.png` | Cutout, Brittle, Severe Estivation Decay |
+| **17** | `baobab_log` | Baobab Log | **Wood** | `tree_baobab_log.png` | `tree_baobab_log.png` | `tree_baobab_bark.png` | 3D Axis, Pachycaul Water-Rich |
+| **18** | `baobab_planks` | Baobab Planks | **Planks** | `tree_baobab_planks.png` | `tree_baobab_planks.png` | `tree_baobab_planks.png` | Solid, Fibrous Copper-Orange |
+| **19** | `baobab_wood` | Baobab Wood | **Wood** | `tree_baobab_bark.png` | `tree_baobab_bark.png` | `tree_baobab_bark.png` | Solid Bark, Massive Trunk Core |
+| **20** | `birch_leaves` | Birch Leaves | **Foliage** | `tree_birch_leaves.png` | `tree_birch_leaves.png` | `tree_birch_leaves.png` | Cutout, Canopy Decay |
+| **21** | `birch_leaves_dead` | Dead Birch Leaves | **Foliage** | `tree_birch_leaves_dead.png` | `tree_birch_leaves_dead.png` | `tree_birch_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
+| **22** | `birch_log` | Birch Log | **Wood** | `tree_birch_log.png` | `tree_birch_log.png` | `tree_birch_bark.png` | 3D Axis, Flammable |
+| **23** | `birch_planks` | Birch Planks | **Planks** | `tree_birch_planks.png` | `tree_birch_planks.png` | `tree_birch_planks.png` | Solid, Building Material |
+| **24** | `birch_wood` | Birch Wood | **Wood** | `tree_birch_bark.png` | `tree_birch_bark.png` | `tree_birch_bark.png` | Solid Bark, Flammable |
+| **25** | `cherry_leaves` | Cherry Blossom Leaves | **Foliage** | `tree_cherry_leaves.png` | `tree_cherry_leaves.png` | `tree_cherry_leaves.png` | Cutout, Sakura Canopy Decay |
+| **26** | `cherry_leaves_dead` | Dead Cherry Leaves | **Foliage** | `tree_cherry_leaves_dead.png` | `tree_cherry_leaves_dead.png` | `tree_cherry_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
+| **27** | `cherry_log` | Cherry Log | **Wood** | `tree_cherry_log.png` | `tree_cherry_log.png` | `tree_cherry_bark.png` | 3D Axis, Flammable |
+| **28** | `cherry_planks` | Cherry Planks | **Planks** | `tree_cherry_planks.png` | `tree_cherry_planks.png` | `tree_cherry_planks.png` | Solid, Building Material |
+| **29** | `cherry_wood` | Cherry Wood | **Wood** | `tree_cherry_bark.png` | `tree_cherry_bark.png` | `tree_cherry_bark.png` | Solid Bark, Flammable |
+| **30** | `cypress_leaves` | Cypress Foliage | **Foliage** | `tree_cypress_leaves.png` | `tree_cypress_leaves.png` | `tree_cypress_leaves.png` | Cutout, Dense Columnar Foliage |
+| **31** | `cypress_leaves_dead` | Dead Cypress Foliage | **Foliage** | `tree_cypress_leaves_dead.png` | `tree_cypress_leaves_dead.png` | `tree_cypress_leaves_dead.png` | Cutout, Brittle, Swamp Decay |
+| **32** | `cypress_log` | Cypress Log | **Wood** | `tree_cypress_log.png` | `tree_cypress_log.png` | `tree_cypress_bark.png` | 3D Axis, Rot-Resistant |
+| **33** | `cypress_planks` | Cypress Planks | **Planks** | `tree_cypress_planks.png` | `tree_cypress_planks.png` | `tree_cypress_planks.png` | Solid, Resilient Hazel Material |
+| **34** | `cypress_wood` | Cypress Wood | **Wood** | `tree_cypress_bark.png` | `tree_cypress_bark.png` | `tree_cypress_bark.png` | Solid Bark, Rot-Resistant |
+| **35** | `fir_leaves` | Fir Needles | **Foliage** | `tree_fir_leaves.png` | `tree_fir_leaves.png` | `tree_fir_leaves.png` | Cutout, Canopy Decay |
+| **36** | `fir_leaves_dead` | Dead Fir Needles | **Foliage** | `tree_fir_leaves_dead.png` | `tree_fir_leaves_dead.png` | `tree_fir_leaves_dead.png` | Cutout, Dry Needles, Flammable |
+| **37** | `fir_log` | Fir Log | **Wood** | `tree_fir_log.png` | `tree_fir_log.png` | `tree_fir_bark.png` | 3D Axis, Flammable |
+| **38** | `fir_planks` | Fir Planks | **Planks** | `tree_fir_planks.png` | `tree_fir_planks.png` | `tree_fir_planks.png` | Solid, Building Material |
+| **39** | `fir_wood` | Fir Wood | **Wood** | `tree_fir_bark.png` | `tree_fir_bark.png` | `tree_fir_bark.png` | Solid Bark, Flammable |
+| **40** | `kapok_leaves` | Kapok Leaves | **Foliage** | `tree_kapok_leaves.png` | `tree_kapok_leaves.png` | `tree_kapok_leaves.png` | Cutout, Palmate Canopy Decay |
+| **41** | `kapok_leaves_dead` | Dead Kapok Leaves | **Foliage** | `tree_kapok_leaves_dead.png` | `tree_kapok_leaves_dead.png` | `tree_kapok_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
+| **42** | `kapok_log` | Kapok Log | **Wood** | `tree_kapok_log.png` | `tree_kapok_log.png` | `tree_kapok_bark.png` | 3D Axis, Colossal Emergent |
+| **43** | `kapok_planks` | Kapok Planks | **Planks** | `tree_kapok_planks.png` | `tree_kapok_planks.png` | `tree_kapok_planks.png` | Solid, Warm Pale Tropical Wood |
+| **44** | `kapok_wood` | Kapok Wood | **Wood** | `tree_kapok_bark.png` | `tree_kapok_bark.png` | `tree_kapok_bark.png` | Solid Bark, Buttress Core |
+| **45** | `mahogany_leaves` | Mahogany Leaves | **Foliage** | `tree_mahogany_leaves.png` | `tree_mahogany_leaves.png` | `tree_mahogany_leaves.png` | Cutout, Canopy Decay |
+| **46** | `mahogany_leaves_dead` | Dead Mahogany Leaves | **Foliage** | `tree_mahogany_leaves_dead.png` | `tree_mahogany_leaves_dead.png` | `tree_mahogany_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
+| **47** | `mahogany_log` | Mahogany Log | **Wood** | `tree_mahogany_log.png` | `tree_mahogany_log.png` | `tree_mahogany_bark.png` | 3D Axis, Flammable |
+| **48** | `mahogany_planks` | Mahogany Planks | **Planks** | `tree_mahogany_planks.png` | `tree_mahogany_planks.png` | `tree_mahogany_planks.png` | Solid, Deep Auburn Material |
+| **49** | `mahogany_wood` | Mahogany Wood | **Wood** | `tree_mahogany_bark.png` | `tree_mahogany_bark.png` | `tree_mahogany_bark.png` | Solid Bark, Flammable |
+| **50** | `mangrove_leaves` | Mangrove Leaves | **Foliage** | `tree_mangrove_leaves.png` | `tree_mangrove_leaves.png` | `tree_mangrove_leaves.png` | Cutout, Canopy Decay |
+| **51** | `mangrove_leaves_dead` | Dead Mangrove Leaves | **Foliage** | `tree_mangrove_leaves_dead.png` | `tree_mangrove_leaves_dead.png` | `tree_mangrove_leaves_dead.png` | Cutout, Brittle, Salted Decay |
+| **52** | `mangrove_log` | Mangrove Log | **Wood** | `tree_mangrove_log.png` | `tree_mangrove_log.png` | `tree_mangrove_bark.png` | 3D Axis, Salt-Tolerant |
+| **53** | `mangrove_planks` | Mangrove Planks | **Planks** | `tree_mangrove_planks.png` | `tree_mangrove_planks.png` | `tree_mangrove_planks.png` | Solid, Coppery-Tan Material |
+| **54** | `mangrove_roots` | Mangrove Aerial Roots | **Root** | `tree_mangrove_roots_top.png` | `tree_mangrove_roots_top.png` | `tree_mangrove_roots.png` | Semi-Solid, Waterlogged Permeable |
+| **55** | `mangrove_wood` | Mangrove Wood | **Wood** | `tree_mangrove_bark.png` | `tree_mangrove_bark.png` | `tree_mangrove_bark.png` | Solid Bark, Flammable |
+| **56** | `maple_leaves_dead` | Dead Maple Leaves | **Foliage** | `tree_maple_leaves_dead.png` | `tree_maple_leaves_dead.png` | `tree_maple_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
+| **57** | `maple_leaves_orange` | Orange Maple Leaves | **Foliage** | `tree_maple_leaves_orange.png` | `tree_maple_leaves_orange.png` | `tree_maple_leaves_orange.png` | Cutout, Canopy Decay |
+| **58** | `maple_leaves_red` | Red Maple Leaves | **Foliage** | `tree_maple_leaves_red.png` | `tree_maple_leaves_red.png` | `tree_maple_leaves_red.png` | Cutout, Canopy Decay |
+| **59** | `maple_leaves_yellow` | Yellow Maple Leaves | **Foliage** | `tree_maple_leaves_yellow.png` | `tree_maple_leaves_yellow.png` | `tree_maple_leaves_yellow.png` | Cutout, Canopy Decay |
+| **60** | `maple_log` | Maple Log | **Wood** | `tree_maple_log.png` | `tree_maple_log.png` | `tree_maple_bark.png` | 3D Axis, Flammable |
+| **61** | `maple_planks` | Maple Planks | **Planks** | `tree_maple_planks.png` | `tree_maple_planks.png` | `tree_maple_planks.png` | Solid, Building Material |
+| **62** | `maple_wood` | Maple Wood | **Wood** | `tree_maple_bark.png` | `tree_maple_bark.png` | `tree_maple_bark.png` | Solid Bark, Flammable |
+| **63** | `oak_leaves` | Oak Leaves | **Foliage** | `tree_oak_leaves.png` | `tree_oak_leaves.png` | `tree_oak_leaves.png` | Cutout, Canopy Decay |
+| **64** | `oak_leaves_dead` | Dead Oak Leaves | **Foliage** | `tree_oak_leaves_dead.png` | `tree_oak_leaves_dead.png` | `tree_oak_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
+| **65** | `oak_log` | Oak Log | **Wood** | `tree_oak_log.png` | `tree_oak_log.png` | `tree_oak_bark.png` | 3D Axis, Flammable |
+| **66** | `oak_planks` | Oak Planks | **Planks** | `tree_oak_planks.png` | `tree_oak_planks.png` | `tree_oak_planks.png` | Solid, Building Material |
+| **67** | `oak_wood` | Oak Wood | **Wood** | `tree_oak_bark.png` | `tree_oak_bark.png` | `tree_oak_bark.png` | Solid Bark, Flammable |
+| **68** | `palm_leaves` | Palm Fronds | **Foliage** | `tree_palm_leaves.png` | `tree_palm_leaves.png` | `tree_palm_leaves.png` | Cutout, Broad Arching Fronds |
+| **69** | `palm_leaves_dead` | Dead Palm Fronds | **Foliage** | `tree_palm_leaves_dead.png` | `tree_palm_leaves_dead.png` | `tree_palm_leaves_dead.png` | Cutout, Dry Thatch Straw Fronds |
+| **70** | `palm_log` | Palm Log | **Wood** | `tree_palm_log.png` | `tree_palm_log.png` | `tree_palm_bark.png` | 3D Axis, Fibrous Stipe |
+| **71** | `palm_planks` | Palm Planks | **Planks** | `tree_palm_planks.png` | `tree_palm_planks.png` | `tree_palm_planks.png` | Solid, Golden Blonde Material |
+| **72** | `palm_wood` | Palm Wood | **Wood** | `tree_palm_bark.png` | `tree_palm_bark.png` | `tree_palm_bark.png` | Solid Stipe Bark, Flammable |
+| **73** | `pine_leaves` | Pine Needles | **Foliage** | `tree_pine_leaves.png` | `tree_pine_leaves.png` | `tree_pine_leaves.png` | Cutout, Canopy Decay, Tintable |
+| **74** | `pine_leaves_dead` | Dead Pine Needles | **Foliage** | `tree_pine_leaves_dead.png` | `tree_pine_leaves_dead.png` | `tree_pine_leaves_dead.png` | Cutout, Dry Needles, Flammable |
+| **75** | `pine_log` | Pine Log | **Wood** | `tree_pine_log.png` | `tree_pine_log.png` | `tree_pine_bark.png` | 3D Axis, Flammable |
+| **76** | `pine_planks` | Pine Planks | **Planks** | `tree_pine_planks.png` | `tree_pine_planks.png` | `tree_pine_planks.png` | Solid, Building Material |
+| **77** | `pine_wood` | Pine Wood | **Wood** | `tree_pine_bark.png` | `tree_pine_bark.png` | `tree_pine_bark.png` | Solid Bark, Flammable |
+| **78** | `redwood_leaves` | Redwood Foliage | **Foliage** | `tree_redwood_leaves.png` | `tree_redwood_leaves.png` | `tree_redwood_leaves.png` | Cutout, Canopy Decay |
+| **79** | `redwood_leaves_dead` | Dead Redwood Foliage | **Foliage** | `tree_redwood_leaves_dead.png` | `tree_redwood_leaves_dead.png` | `tree_redwood_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
+| **80** | `redwood_log` | Redwood Log | **Wood** | `tree_redwood_log.png` | `tree_redwood_log.png` | `tree_redwood_bark.png` | 3D Axis, Colossal Trunk |
+| **81** | `redwood_planks` | Redwood Planks | **Planks** | `tree_redwood_planks.png` | `tree_redwood_planks.png` | `tree_redwood_planks.png` | Solid, Brick-Red Building Material |
+| **82** | `redwood_wood` | Redwood Wood | **Wood** | `tree_redwood_bark.png` | `tree_redwood_bark.png` | `tree_redwood_bark.png` | Solid Bark, Flammable |
+| **83** | `willow_leaves` | Weeping Willow Leaves | **Foliage** | `tree_willow_leaves.png` | `tree_willow_leaves.png` | `tree_willow_leaves.png` | Cutout, Drooping Canopy Decay |
+| **84** | `willow_leaves_dead` | Dead Willow Leaves | **Foliage** | `tree_willow_leaves_dead.png` | `tree_willow_leaves_dead.png` | `tree_willow_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
+| **85** | `willow_log` | Willow Log | **Wood** | `tree_willow_log.png` | `tree_willow_log.png` | `tree_willow_bark.png` | 3D Axis, Flammable |
+| **86** | `willow_planks` | Willow Planks | **Planks** | `tree_willow_planks.png` | `tree_willow_planks.png` | `tree_willow_planks.png` | Solid, Building Material |
+| **87** | `willow_wood` | Willow Wood | **Wood** | `tree_willow_bark.png` | `tree_willow_bark.png` | `tree_willow_bark.png` | Solid Bark, Flammable |
+| **88** | `yew_leaves` | Yew Foliage | **Foliage** | `tree_yew_leaves.png` | `tree_yew_leaves.png` | `tree_yew_leaves.png` | Cutout, Canopy Decay |
+| **89** | `yew_leaves_dead` | Dead Yew Foliage | **Foliage** | `tree_yew_leaves_dead.png` | `tree_yew_leaves_dead.png` | `tree_yew_leaves_dead.png` | Cutout, Brittle, Highly Flammable |
+| **90** | `yew_log` | Yew Log | **Wood** | `tree_yew_log.png` | `tree_yew_log.png` | `tree_yew_bark.png` | 3D Axis, Dark Heartwood |
+| **91** | `yew_planks` | Yew Planks | **Planks** | `tree_yew_planks.png` | `tree_yew_planks.png` | `tree_yew_planks.png` | Solid, Dark Ebony Material |
+| **92** | `yew_wood` | Yew Wood | **Wood** | `tree_yew_bark.png` | `tree_yew_bark.png` | `tree_yew_bark.png` | Solid Bark, Flammable |
 
 ---
-
 ## 06. Ores, Minerals & Gemology (`ores`) — 158 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/ores`  
@@ -679,7 +673,7 @@ The benthic and subaquatic oceanic domain comprises **14 colonial massive coral 
 
 ---
 
-## 09. Biomaterials, Fauna & Organic Matter (`organics`) — 36 Blocks
+## 09. Biomaterials, Fauna & Organic Matter (`organics`) — 36 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/organics`  
 📄 **Comprehensive Specification**: [organics_design.md](blocks/organics_design.md)
@@ -694,42 +688,42 @@ The biological biomaterials and organic domain comprises **14 insect colony and 
 | **02** | `ant_hill_open` | Ant Hill (Active) | **Colony** | `nest_ant_hill_open.png` | Uniform (6 faces) | Plains, Savannas | Active ant mound featuring excavated gallery entryways and active insect swarms. |
 | **03** | `beaver_dam` | Beaver Dam | **Architecture** | `nest_beaver_dam.png` *(+ `1`, `2`)* | Uniform (6 faces) | Forest Rivers, Swamps | Hydraulic blockage matrix woven from debarked river branches, mud mortar, and river gravel. |
 | **04** | `bee_nest` | Wild Bee Nest | **Hive** | `nest_bee_nest_bot...top.png`<br>`nest_bee_nest_front_honey.png` | Directional (5 faces) | Flower Forests, Meadows | Natural hive hanging from tree canopies, filled with wax comb cells and dripping wild honey. |
-| **05** | `bird_nest` | Songbird Nest | **Nest** | `nest_bird_nest_bot...top.png` | Half-height Slab | Forest Canopies, Cliffs | Woven bowl of twigs and moss featuring speckled cyan robin eggs; half-height slab geometry. |
+| **05** | `bird_nest` | Songbird Nest | **Nest** | `nest_bird_nest_bot...top.png` | Half-height Slab | Forest Canopies, Cliffs | Woven bowl of twigs and soft moss; hollow concave nest chamber in half-height slab geometry. |
 | **06** | `bloody_brain` | Bloody Brain Block | **Neural** | `bio_brain.png` *(+ `bloody_overlay.png`, `1`, `2`)* | Uniform (6 faces) + Shader Bloody Overlay | Abyssal Depths, Eldritch Lairs | Pulsating cerebral gray-pink neural mass dripping with arterial coagulated blood on all 6 faces. |
 | **07** | `bloody_flesh` | Bloody Flesh Block | **Tissue** | Top/Bot: `bio_flesh_top.png`<br>Sides: `bio_flesh_side.png` *(+ `bloody_overlay.png`, `1`, `2`)* | Directional (2 faces) + Lateral Shader Bloody Overlay | Butcheries, Lairs, Abattoirs | Striated raw skeletal muscle with fresh dripping blood stains and clotted streaks along vertical sides. |
-| **08** | `blubber_block` | Blubber Block | **Adipose** | `bio_blubber.png` | Translucent (Alpha 204) | Polar Oceans, Arctic Tundras | Thick subcutaneous marine adipose tissue; excellent thermal insulator and long-burning fuel. |
+| **08** | `blubber_block` | Blubber Block | **Adipose** | `bio_blubber.png` *(+ `1`, `2`)* | Translucent (Alpha 204) | Polar Oceans, Arctic Tundras | Thick subcutaneous marine adipose tissue; excellent thermal insulator and long-burning fuel. |
 | **09** | `bone_block` | Bone Block | **Osteology** | `bio_bone_top.png`<br>`bio_bone_side.png` *(+ `1`, `2`)* | Axial Column (2 faces) | Deserts, Fossils, Caves | Dense calcium phosphate and hydroxyapatite fossil megafauna bone with central marrow canal. |
-| **10** | `brain_block` | Brain Block | **Neural** | `bio_brain.png` | Uniform (6 faces) | Abyssal Depths, Lairs | Convoluted cerebral gray and pink neural matter exhibiting synaptic twitching. |
-| **11** | `calcined_bone` | Calcined Bone | **Osteology** | `bio_calcined_bone_top.png`<br>`bio_calcined_bone_side.png` | Axial Column (2 faces) | Volcanic Ash, Kilns, Catacombs | Thermally altered, pyromineralized bone recrystallized into chalky pale grey hydroxyapatite. |
+| **10** | `brain_block` | Brain Block | **Neural** | `bio_brain.png` *(+ `1`, `2`)* | Uniform (6 faces) | Abyssal Depths, Lairs | Convoluted cerebral gray and pink neural matter exhibiting synaptic twitching. |
+| **11** | `calcined_bone` | Calcined Bone | **Osteology** | `bio_calcined_bone_top.png`<br>`bio_calcined_bone_side.png` *(+ `1`, `2`)* | Axial Column (2 faces) | Volcanic Ash, Kilns, Catacombs | Thermally altered, pyromineralized bone recrystallized into chalky pale grey hydroxyapatite. |
 | **12** | `cobweb` | Cobweb Block | **Silk** | `organic_cobweb.png` *(+ `1`, `2`)* | Volumetric 3D Cross | Abandoned Mines, Crypts | Full-voxel 3D intersecting cross of adhesive proteinaceous spider silk threads. |
-| **13** | `cobweb_arch` | Cobweb Arch | **Silk** | `organic_cobweb_arch.png` | Flat Vertical Quad | Tunnel Corners, Doorways | Diagonal fan-shaped silk web mounted flush in the upper corner between wall and ceiling. |
-| **14** | `cobweb_hanging` | Hanging Cobweb | **Silk** | `organic_cobweb_hanging.png` | Flat Vertical Quad | Tunnel Ceilings, Architraves | Pendant veil of cobweb fringe suspended from top horizontal joints and lintels. |
-| **15** | `cobweb_stretched` | Stretched Cobweb | **Silk** | `organic_cobweb_stretched.png` | Flat Vertical Quad | Narrow Corridors, Gaps | Tensioned vertical silk web stretched taut between two parallel vertical surfaces. |
-| **16** | `coprolite_block` | Coprolite Block | **Fossil** | `organic_coprolite.png` | Uniform (6 faces) | Fossil Beds, Dry Caves | Prehistoric petrified fossil dung mineralized into solid calcium phosphate sedimentary rock. |
+| **13** | `cobweb_arch` | Cobweb Arch | **Silk** | `organic_cobweb_arch.png` *(+ `1`, `2`)* | Flat Vertical Quad | Tunnel Corners, Doorways | Diagonal fan-shaped silk web mounted flush in the upper corner between wall and ceiling. |
+| **14** | `cobweb_hanging` | Hanging Cobweb | **Silk** | `organic_cobweb_hanging.png` *(+ `1`, `2`)* | Flat Vertical Quad | Tunnel Ceilings, Architraves | Pendant veil of cobweb fringe suspended from top horizontal joints and lintels. |
+| **15** | `cobweb_stretched` | Stretched Cobweb | **Silk** | `organic_cobweb_stretched.png` *(+ `1`, `2`)* | Flat Vertical Quad | Narrow Corridors, Gaps | Tensioned vertical silk web stretched taut between two parallel vertical surfaces. |
+| **16** | `coprolite_block` | Coprolite Block | **Fossil** | `organic_coprolite.png` *(+ `1`, `2`)* | Uniform (6 faces) | Fossil Beds, Dry Caves | Prehistoric petrified fossil dung mineralized into solid calcium phosphate sedimentary rock. |
 | **17** | `dust_block` | Organic Dust | **Detritus** | `organic_dust.png` *(+ `1`, `2`)* | Uniform (6 faces) | Tombs, Forgotten Crypts | Dense accumulation of inert biological detritus, dead epithelial cells, and micro-arthropod debris. |
 | **18** | `flesh_block` | Raw Flesh Block | **Tissue** | `bio_flesh_top.png`<br>`bio_flesh_side.png` *(+ `1`, `2`)* | Directional (2 faces) | Butcheries, Lairs, Carcasses | Fresh striated skeletal muscle and fibrous connective tissue with membrane top and fibril sides. |
-| **19** | `fur_block` | Animal Fur Block | **Integument** | `bio_fur_top.png`<br>`bio_fur_side.png` | Directional (2 faces) | Arctic Taigas, Pastures | Heavy mammal hide with dense vertical hair flow on sides and whorled rosette on top. |
-| **20** | `guano_block` | Guano Block | **Dropping** | `organic_guano.png` | Uniform (6 faces) | Bat Caves, Sea Islands | Compact nitrogen and phosphate-rich natural fertilizer accumulated from bat and seabird guano. |
+| **19** | `fur_block` | Animal Fur Block | **Integument** | `bio_fur_top.png`<br>`bio_fur_side.png`<br>`bio_fur_bot.png` | Directional (3 faces) | Arctic Taigas, Pastures | Heavy mammal pelt with dense vertical hair flow on sides, whorled rosette on top, and tanned suede backing on bottom. |
+| **20** | `guano_block` | Guano Block | **Dropping** | `organic_guano.png` *(+ `1`, `2`)* | Uniform (6 faces) | Bat Caves, Sea Islands | Compact nitrogen and phosphate-rich natural fertilizer accumulated from bat and seabird guano. |
 | **21** | `hay_nest` | Hay Poultry Nest | **Nest** | `nest_hay_nest_bot...top.png` | Half-height Slab | Barnyards, Farmsteads | Agricultural laying nest woven from golden cured straw and dry hay; half-height slab geometry. |
 | **22** | `honey_block` | Honey Block | **Secretion** | `organic_honey_block_bot...top.png` | Translucent (3 faces) | Beehives, Apiaries | Viscous colloidal nectar concentrate; cushions kinetic impact and adheres to surfaces. |
 | **23** | `honeycomb_block` | Honeycomb Block | **Wax Matrix** | `organic_honeycomb_block.png` *(+ `1`, `2`)* | Uniform (6 faces) | Apiaries, Tree Cavities | Regular hexagonal prismatic matrix of pure insect wax synthesized by honeybee workers. |
-| **24** | `jelly_block` | Royal Jelly Block | **Colloid** | `organic_jelly.png`<br>`organic_jelly_bot.png` | Top/Sides + Bottom split | Queen Chambers, Orchards | Viscoelastic translucent purple royal gel providing bounce without slime stickiness. |
-| **25** | `loam_burrow` | Loam Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png`<br>Bot: `soils/soil_loam_dirt.png`<br>Sides: `soils/soil_loam_grass_side.png` | Composite Top + Loam soil | Fertile Plains, Meadows | Excavated wildlife den in rich loam soil with grass-fringed aperture and earth depth. |
-| **26** | `peat_burrow` | Peat Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png`<br>Bot: `soils/soil_peat_dirt.png`<br>Sides: `soils/soil_peat_grass_side.png` | Composite Top + Peat soil | Bogs, Moorlands, Fens | Subterranean burrow dug into dense dark acidic peat moorland, sheltering hardy marsh fauna. |
+| **24** | `jelly_block` | Royal Jelly Block | **Colloid** | `organic_jelly_top.png`<br>`organic_jelly_side.png`<br>`organic_jelly_bot.png` | Translucent (3 faces) | Queen Chambers, Orchards | Viscoelastic translucent purple royal gel providing bounce without slime stickiness. |
+| **25** | `loam_burrow` | Loam Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png` *(+ `1`, `2`)*<br>Bot: `soils/soil_loam_dirt.png`<br>Sides: `soils/soil_loam_grass_side.png` | Composite Top + Loam soil | Fertile Plains, Meadows | Excavated wildlife den in rich loam soil with grass-fringed aperture and earth depth. |
+| **26** | `peat_burrow` | Peat Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png` *(+ `1`, `2`)*<br>Bot: `soils/soil_peat_dirt.png`<br>Sides: `soils/soil_peat_grass_side.png` | Composite Top + Peat soil | Bogs, Moorlands, Fens | Subterranean burrow dug into dense dark acidic peat moorland, sheltering hardy marsh fauna. |
 | **27** | `poop_block` | Manure Block | **Dropping** | `organic_poop.png` *(+ `1`, `2`)* | Uniform (6 faces) | Pastures, Livestock Corrals | Rich agricultural farm animal dung with undigested vegetable fiber; high-potency soil fertilizer. |
-| **28** | `seashell_block` | Seashell Block | **Sediment** | `organic_seashell.png` | Uniform (6 faces) | Warm Beaches, Coastlines | Dense coastal coquina formed from crushed whole marine bivalves and iridescent sea shells. |
+| **28** | `seashell_block` | Seashell Block | **Sediment** | `organic_seashell.png` *(+ `1`, `2`)* | Uniform (6 faces) | Warm Beaches, Coastlines | Dense coastal coquina formed from crushed whole marine bivalves and iridescent sea shells. |
 | **29** | `silk_cocoon` | Wild Silk Cocoon | **Pupa** | `nest_silk_cocoon_bot...top.png` | Directional (3 faces) | Temperate Woods, Jungles | Compact ellipsoidal pupal shell of continuous pearlescent silk fibers; premium silk harvest. |
-| **30** | `silt_burrow` | Silt Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png`<br>Bot: `soils/soil_silt_dirt.png`<br>Sides: `soils/soil_silt_grass_side.png` | Composite Top + Silt soil | Woodland Hills, Slopes | Excavated wildlife den in fine silt forest soils with shaded earthen entry tunnel. |
-| **31** | `slime_block` | Slime Block | **Colloid** | `organic_slime.png`<br>`organic_slime_bot.png` | Top/Sides + Bottom split | Swamps, Deep Caves | Elastic green colloidal gel; high viscoelastic resilience providing kinetic bounce. |
+| **30** | `silt_burrow` | Silt Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png` *(+ `1`, `2`)*<br>Bot: `soils/soil_silt_dirt.png`<br>Sides: `soils/soil_silt_grass_side.png` | Composite Top + Silt soil | Woodland Hills, Slopes | Excavated wildlife den in fine silt forest soils with shaded earthen entry tunnel. |
+| **31** | `slime_block` | Slime Block | **Colloid** | `organic_slime_top.png`<br>`organic_slime_side.png`<br>`organic_slime_bot.png` | Translucent (3 faces) | Swamps, Deep Caves | Elastic green colloidal gel; high viscoelastic resilience providing kinetic bounce. |
 | **32** | `spider_egg` | Spider Egg Sac | **Ootheca** | `nest_spider_egg_bot...top.png` | Directional (3 faces) | Deep Caverns, Mines | Dense fibrous silk ootheca enclosing clutches of gestating scarlet spider eggs. |
 | **33** | `termite_mound` | Termite Mound (Closed) | **Colony** | `nest_termite_mound.png` | Uniform (6 faces) | Arid Savannas | Towering spire of red clay soil cemented by termites with monolithic flute ridges. |
 | **34** | `termite_mound_open` | Termite Mound (Active) | **Colony** | `nest_termite_mound_open.png` | Uniform (6 faces) | Arid Savannas | Active termite mound displaying open thermal chimneys and ventilation tunnels. |
 | **35** | `wasp_nest` | Paper Wasp Nest | **Hive** | `nest_wasp_nest_bot...top.png` | Directional (3 faces) | Dense Forests, Ruins | Papery cellulose nest chewed from plant fibers by social wasps, with inverted entry pore. |
-| **36** | `wax_block` | Beeswax Block | **Wax** | `organic_wax.png` | Uniform (6 faces) | Domestic Hives, Workshops | Compact block of rendered virgin beeswax; waterproof sealant and architectural candle craft. |
+| **36** | `wax_block` | Beeswax Block | **Wax** | `organic_wax.png` *(+ `1`, `2`)* | Uniform (6 faces) | Domestic Hives, Workshops | Compact block of rendered virgin beeswax; waterproof sealant and architectural candle craft. |
 
 ---
 
-## 10. Decorations, Lighting & Architecture (`decorations`) — 160 Blocks
+## 10. Decorations, Lighting & Architecture (`decorations`) — 160 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/decorations`  
 📄 **Comprehensive Specification**: [decorations_design.md](blocks/decorations_design.md)
@@ -913,3 +907,32 @@ The angiosperm flowering flora domain comprises **32 distinct flowering plant sp
 | **30** | `flower_white_petals` | White Petals | **Carpet** | `flower_white_petals.png`<br>`flower_white_petals_stem.png` | 1–4 layers (multi-stage carpet) | Forests & Meadows | Soft snowfall of pale deciduous flower petals dusting the forest floor. |
 | **31** | `flower_white_tulip` | White Tulip | **Tulip** | `flower_white_tulip.png` to `2` | 3 | Cold Plains, Foothills | Immaculate porcelain-white petals with cool soft highlights. |
 | **32** | `flower_wildflowers` | Wildflowers Carpet | **Carpet** | `flower_wildflowers.png`, `1`<br>`flower_wildflowers_stem.png` | Multi-carpet (multi-stage carpet) | Forests & Meadows | Dense multi-colored carpet of tiny creeping flowers covering pasture grass. |
+
+---
+
+## 14. Agriculture & Domestic Crops (`crops`) — 15 Blocks
+
+📂 **Domain Directory**: `docs/worldbuilding/blocks/crops`  
+📄 **Comprehensive Specification**: [crops_design.md](blocks/crops_design.md)
+
+The agricultural crop domain comprises **15 cultivated food crops, arboreal pods, and wild ancestral cultivars** (spanning 7 farmland crops, 2 arboreal canopy/trunk pods, and 6 wild ancestral harvestable forbs) featuring multi-stage developmental growth lifecycles = **15 Total Domestic & Wild Crop Blocks**.
+
+---
+
+| # | Block ID | Name | Category | Texture Stages | Growth Stages | Substrate Requirement | Description |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **01** | `crop_wheat` | Wheat Crop | **Cereal** | `crops_wheat_stage0...5.png` *(+ `5_1`)* | 6 Stages (0–5) | Hydrated Farmland | Golden domestic wheat grain; primary agricultural staple for baking bread and livestock feed. |
+| **02** | `crop_carrots` | Carrot Crop | **Root Crop** | `crops_carrots_stage0...3.png` *(+ `3_1`)* | 4 Stages (0–3) | Hydrated Farmland | Crisp sweet orange biennial taproot with feathery green foliage; versatile nutritious vegetable. |
+| **03** | `crop_potatoes`| Potato Crop | **Tuber** | `crops_potatoes_stage0...3.png` *(+ `3_1`)* | 4 Stages (0–3) | Hydrated Farmland | Underground starchy edible tubers with leafy bushy stems; high caloric staple yield. |
+| **04** | `crop_beetroots`| Beetroot Crop | **Taproot** | `crops_beetroots_stage0...3.png` *(+ `3_1`)* | 4 Stages (0–3) | Hydrated Farmland | Bulbous deep-crimson sweet taproot and ruby-veined leaves; yields rich soup broth and dye. |
+| **05** | `crop_cabbages` | Cabbage Crop | **Brassica** | `crops_cabbages_stage0...7.png` | 8 Stages (0–7) | Hydrated Farmland | Robust layered leafy green cabbage head maturing through 8 fine developmental stages. |
+| **06** | `crop_onions` | Onion Crop | **Bulb** | `crops_onions_stage0...3.png` | 4 Stages (0–3) | Hydrated Farmland | Layered subterranean pungently aromatic allium bulb with slender erect hollow green scapes. |
+| **07** | `crop_tomatoes` | Tomato Crop | **Climbing Vine** | Bottom: `crops_budding_tomatoes_stage0...3.png`<br>Top: `crops_tomatoes_stage0...3.png` | Double-Tall (4 Lower + 4 Upper Stages) | Hydrated Farmland (Trellis) | 2-block climbing vine; lower budding stem supports an upper perennial fruiting tomato vine. |
+| **08** | `crop_cocoa` | Cocoa Pod | **Arboreal Pod** | `crops_cocoa_stage0...2.png` | 3 Stages (0–2) | Jungle Wood Trunk | Woody pendant pod maturing on tropical tree trunks, housing bitter cocoa beans for chocolate. |
+| **09** | `crop_coconut` | Hanging Coconut | **Arboreal Drupe** | `crops_coconut_hanging_stage_1...3.png` | 3 Stages (1–3) | Palm Tree Foliage | Fibrous palm drupe hanging beneath tropical palm canopies; yields coconut meat and water. |
+| **10** | `crop_wild_beetroots` | Wild Beetroots | **Wild Ancestor** | `crops_wild_beetroots.png` | 1 (Harvestable Forb) | Coastal Beaches, Dunes | Wild ancestral sea-beet growing in littoral sands; source of early domestic cultivars. |
+| **11** | `crop_wild_cabbages` | Wild Cabbages | **Wild Ancestor** | `crops_wild_cabbages.png` | 1 (Harvestable Forb) | Maritime Sea Cliffs | Hardy maritime wild brassica clinging to salty windswept limestone cliffs and shorelines. |
+| **12** | `crop_wild_carrots` | Wild Carrots | **Wild Ancestor** | `crops_wild_carrots.png` | 1 (Harvestable Forb) | Meadows, Temperate Plains | Queen Anne's lace wild ancestor with umbels of white florets and slender edible taproots. |
+| **13** | `crop_wild_onions` | Wild Onions | **Wild Ancestor** | `crops_wild_onions.png` | 1 (Harvestable Forb) | Grasslands, Savannas | Wild allium tuft growing in open savannahs, harvestable for pungent small bulbs. |
+| **14** | `crop_wild_potatoes` | Wild Potatoes | **Wild Ancestor** | `crops_wild_potatoes.png` | 1 (Harvestable Forb) | Cold Slopes, Montane Taigas | Hardy montane ancestor bearing small starchy tubers adapted to high altitudes. |
+| **15** | `crop_wild_tomatoes` | Wild Tomatoes | **Wild Ancestor** | `crops_wild_tomatoes.png` | 1 (Harvestable Forb) | Warm Riverbanks, Valleys | Bushy ancestral wild nightshade producing clusters of tart miniature cherry-sized fruit. |

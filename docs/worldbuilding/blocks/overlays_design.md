@@ -1,7 +1,7 @@
 # Worldbuilding Architecture & Catalog: Procedural Texture Overlays
 
 All engine multi-texturing decal overlays, biome masks, and surface compositing textures are organized in the folder:
-📂 **`docs/worldbuilding/blocks/overlays`** *(39 active PNG textures on disk)*
+📂 **`docs/worldbuilding/blocks/overlays`** *(37 active PNG textures on disk)*
 
 > [!IMPORTANT]
 > **Zero Standalone Blocks Registered**:  
@@ -29,7 +29,7 @@ graph TD
         O2["Cobble Decals: mossy_cobbled_overlay (0, 1, 2)"]
         O3["Marine Epifauna: barnacles_overlay, algae_dead_overlay (0, 1, 2)"]
         O4["Visceral Gore: bloody_overlay (0, 1, 2)"]
-        O5["Flora & Snow: flower_leaves_*_overlay, leaves_snowy_*"]
+        O5["Flora Overlays: flower_leaves_*_overlay (0, 1, 2)"]
         O6["Foliage Biome Masks: rock_grass_side_overlay, soil_grass_side_overlay"]
     end
 
@@ -52,7 +52,7 @@ graph TD
 ### Rendering Modes
 1. **Direct Decal Composite (Alpha Blending)**:
    - The shader renders the primary block base (Diffuse Layer 0) and blends the overlay decal (Layer 1) using RGBA alpha channels.
-   - Used by `mossy_rock_overlay*`, `mossy_cobbled_overlay*`, `barnacles_overlay*`, `algae_dead_overlay*`, `bloody_overlay*`, `flower_leaves_*`, and `leaves_snowy_*`.
+   - Used by `mossy_rock_overlay*`, `mossy_cobbled_overlay*`, `barnacles_overlay*`, `algae_dead_overlay*`, `bloody_overlay*`, and `flower_leaves_*`.
 2. **Dynamic Biome-Tinted Alpha Masking**:
    - The greyscale mask defines where biome foliage colors are multiplied against the terrain face.
    - Pixel color = `Base_Pixel * (1 - Mask_Alpha) + (Mask_Alpha * Biome_Colormap_Color * Base_Luminance)`.
@@ -100,8 +100,6 @@ Applied to arboreal foliage in [`trees_design.md`](trees_design.md):
 | `flower_leaves_magenta_overlay.png` | `base`, `1`, `2` | [`trees`](trees_design.md) | Magenta flowering canopy leaves (Cherry Blossom, Redbud) | **Active** (In Use) |
 | `flower_leaves_white_overlay.png` | `base`, `1`, `2` | [`trees`](trees_design.md) | White flowering canopy leaves (Apple, Dogwood, Magnolia) | **Active** (In Use) |
 | `flower_leaves_yellow_overlay.png` | `base`, `1`, `2` | [`trees`](trees_design.md) | Yellow flowering canopy leaves (Golden Wattle, Tabebuia) | **Active** (In Use) |
-| `leaves_snowy_pine_side_overlay.png` | `base` | [`trees`](trees_design.md) | Pine foliage lateral faces under snow climate conditions | **Active** (In Use) |
-| `leaves_snowy_yew_side_overlay.png` | `base` | [`trees`](trees_design.md) | Yew foliage lateral faces under snow climate conditions | **Active** (In Use) |
 
 ### 2.5. Turf Outcrop Biome Tinting Masks (2 Active Files)
 Greyscale alpha masks used by the terrain shader to blend biome colormaps along vertical cliff margins:
