@@ -534,10 +534,7 @@ impl ChunkMesher {
 
                         let (texture_layer, frame_count) =
                             textures.get_face_texture_info(voxel, world_voxel, direction);
-                        let is_grass = matches!(
-                            voxel,
-                            Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass
-                        );
+                        let is_grass = voxel.is_grass_soil();
                         let mut tint_color = if is_grass {
                             match direction {
                                 FaceDirection::PositiveY => voxel.tint_color_at(world_voxel),

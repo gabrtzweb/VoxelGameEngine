@@ -4,7 +4,7 @@ use super::{
     greedy::{FaceDirection, MeshBuffers},
     textures::VoxelTextureRegistry,
 };
-use crate::world::{BlockShape, CHUNK_SIZE, Chunk, VOXEL_SIZE, Voxel, VoxelAccess};
+use crate::world::{BlockShape, CHUNK_SIZE, Chunk, VOXEL_SIZE, VoxelAccess};
 
 pub fn mesh_shaped_voxels(
     world: &impl VoxelAccess,
@@ -55,10 +55,7 @@ pub fn mesh_shaped_voxels(
             1.0
         };
         let top_tint = tint;
-        let is_grass = matches!(
-            voxel,
-            Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass
-        );
+        let is_grass = voxel.is_grass_soil();
         let bottom_tint = if is_grass {
             [1.0, 1.0, 1.0, tint[3]]
         } else {
@@ -132,6 +129,19 @@ pub fn mesh_shaped_voxels(
             continue;
         }
 
+        if voxel.is_cross_billboard() || shape == BlockShape::CrossBillboard {
+            mesh_cross_billboard(
+                transparent_buffers,
+                fx,
+                fy,
+                fz,
+                side_layer,
+                frame_count_f32,
+                side_tint,
+            );
+            continue;
+        }
+
         let (box_a, maybe_box_b) = shape.local_boxes(orientation);
 
         match shape {
@@ -139,7 +149,8 @@ pub fn mesh_shaped_voxels(
             | BlockShape::Basket
             | BlockShape::PebbleOne
             | BlockShape::PebbleTwo
-            | BlockShape::PebbleThree => unreachable!(),
+            | BlockShape::PebbleThree
+            | BlockShape::CrossBillboard => unreachable!(),
             BlockShape::Full | BlockShape::Column => {
                 push_shape_box(
                     buffers,
@@ -222,10 +233,7 @@ pub fn mesh_shaped_voxels(
                         1.0
                     };
                     let extra_top_tint = extra_tint;
-                    let is_extra_grass = matches!(
-                        extra_voxel,
-                        Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass
-                    );
+                    let is_extra_grass = extra_voxel.is_grass_soil();
                     let extra_bottom_tint = if is_extra_grass {
                         [1.0, 1.0, 1.0, extra_tint[3]]
                     } else {
@@ -1400,4 +1408,70 @@ fn push_pebble_element(
             [[u1, v1], [u1, v2], [u2, v2], [u2, v1]],
         );
     }
+}
+
+fn mesh_cross_billboard(
+    buffers: &mut MeshBuffers,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    texture_layer: u16,
+    frame_count: f32,
+    tint_color: [f32; 4],
+) {
+    let p00 = [fx, fy, fz];
+    let p01 = [fx, fy + 1.0, fz];
+    let p11 = [fx + 1.0, fy + 1.0, fz + 1.0];
+    let p10 = [fx + 1.0, fy, fz + 1.0];
+
+    let q00 = [fx, fy, fz + 1.0];
+    let q01 = [fx, fy + 1.0, fz + 1.0];
+    let q11 = [fx + 1.0, fy + 1.0, fz];
+    let q10 = [fx + 1.0, fy, fz];
+
+    let uv_fwd = [[0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0]];
+
+    // Plane 1: from (0,0) to (1,1) diagonal (both front and back faces)
+    let n1 = [0.70710677, 0.0, -0.70710677];
+    let n1_rev = [-0.70710677, 0.0, 0.70710677];
+    push_quad_face_with_uvs(
+        buffers,
+        [p00, p01, p11, p10],
+        n1,
+        texture_layer,
+        frame_count,
+        tint_color,
+        uv_fwd,
+    );
+    push_quad_face_with_uvs(
+        buffers,
+        [p10, p11, p01, p00],
+        n1_rev,
+        texture_layer,
+        frame_count,
+        tint_color,
+        uv_fwd,
+    );
+
+    // Plane 2: from (0,1) to (1,0) diagonal (both front and back faces)
+    let n2 = [0.70710677, 0.0, 0.70710677];
+    let n2_rev = [-0.70710677, 0.0, -0.70710677];
+    push_quad_face_with_uvs(
+        buffers,
+        [q00, q01, q11, q10],
+        n2,
+        texture_layer,
+        frame_count,
+        tint_color,
+        uv_fwd,
+    );
+    push_quad_face_with_uvs(
+        buffers,
+        [q10, q11, q01, q00],
+        n2_rev,
+        texture_layer,
+        frame_count,
+        tint_color,
+        uv_fwd,
+    );
 }

@@ -35,7 +35,7 @@ impl Default for TerrainColumn {
         Self {
             terrain_height: 0,
             water_level: None,
-            biome: BiomeType::Steppe,
+            biome: BiomeType::Plains,
             is_beach: false,
             is_cliff: false,
             is_underground_river: false,
@@ -43,7 +43,7 @@ impl Default for TerrainColumn {
                 continentalness: 0.0,
                 temperature: 0.0,
                 humidity: 0.0,
-                biome: BiomeType::Steppe,
+                biome: BiomeType::Plains,
             },
             surface_shape: BlockShape::Full,
             shape_orientation: 0,
@@ -119,8 +119,8 @@ impl Default for TerrainGenerator {
             caves: CaveGenerator::default(),
             strata: StrataGenerator::default(),
 
-            // Standard tree spawn density multiplier
-            tree_density: 1.0,
+            // Tree generation disabled for initial terrain validation
+            tree_density: 0.0,
 
             version: 0,
         }
@@ -199,7 +199,7 @@ impl TerrainGenerator {
 
         // 1. Bedrock floor fast path: bottom layers below bedrock are 100% solid Dreadstone
         if chunk_max_y <= self.strata.bedrock_min_block_y {
-            let mut chunk = Chunk::filled(Voxel::Rock_Dreadstone);
+            let mut chunk = Chunk::filled(Voxel::Mantle);
             chunk.set_subterranean(true);
             return chunk;
         }
@@ -315,7 +315,7 @@ impl TerrainGenerator {
 
                         let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
                         let voxel = voxels[idx];
-                        if !voxel.is_collidable() || voxel == Voxel::Rock_Dreadstone {
+                        if !voxel.is_collidable() || voxel == Voxel::Mantle {
                             continue;
                         }
 
@@ -535,7 +535,8 @@ impl TerrainGenerator {
                     }
 
                     let is_swamp_tree = species == TreeSpecies::Mangrove
-                        || (species == TreeSpecies::Pine && col.biome == BiomeType::CypressSwamp);
+                        || (species == TreeSpecies::Willow
+                            && col.biome == BiomeType::MangroveWetland);
 
                     let ty = if let Some(water_level) = col.water_level {
                         if !is_swamp_tree {
@@ -599,7 +600,7 @@ impl TerrainGenerator {
 
                                 if is_trunk_or_cactus {
                                     if current == Voxel::Air
-                                        || current == Voxel::Liquid_Water
+                                        || current == Voxel::LiquidWater
                                         || trees::is_leaves(current)
                                     {
                                         voxels[idx] = voxel;
@@ -625,11 +626,8 @@ impl TerrainGenerator {
                         let ly = (ty - chunk_origin.y) as usize;
                         let lz = (tz - chunk_origin.z) as usize;
                         let idx = lx + lz * CHUNK_SIZE + ly * CHUNK_SIZE * CHUNK_SIZE;
-                        if matches!(
-                            voxels[idx],
-                            Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass
-                        ) {
-                            voxels[idx] = Voxel::Soil_Dirt;
+                        if voxels[idx].is_grass_soil() {
+                            voxels[idx] = Voxel::LoamDirt;
                         }
                     }
                 }
@@ -685,14 +683,14 @@ impl TerrainGenerator {
                 let target_height = lerp(raw_height, river_bed, (river_factor * 1.25).min(1.0));
                 raw_height = raw_height.min(target_height);
                 if climate.continentalness < 0.15 {
-                    climate.biome = BiomeType::BrackishEstuary;
+                    climate.biome = BiomeType::RiversLakes;
                 }
             }
         }
 
         let is_beach = self.is_beach_at(logical_x, logical_z, climate.biome, sea_level, &climate);
         let final_biome = if is_beach && !is_river {
-            BiomeType::Beach
+            BiomeType::CoastalBeachReef
         } else {
             climate.biome
         };
@@ -763,7 +761,7 @@ impl TerrainGenerator {
         let raw_heights = self.natural_height_at_x4(wx_f32, wz_f32, &climates);
         let (river_factors, is_river_paths) = self.river_sample_x4(sample_x, sample_z);
 
-        let mut res = [(0.0f32, BiomeType::Steppe, false, climates[0]); 4];
+        let mut res = [(0.0f32, BiomeType::Plains, false, climates[0]); 4];
 
         for i in 0..4 {
             let mut raw_height = raw_heights.0[i];
@@ -784,7 +782,7 @@ impl TerrainGenerator {
                     let target_height = lerp(raw_height, river_bed, (river_factor * 1.25).min(1.0));
                     raw_height = raw_height.min(target_height);
                     if climate.continentalness < 0.15 {
-                        climate.biome = BiomeType::BrackishEstuary;
+                        climate.biome = BiomeType::RiversLakes;
                     }
                 }
             }
@@ -797,7 +795,7 @@ impl TerrainGenerator {
                 &climate,
             );
             let final_biome = if is_beach && !is_river {
-                BiomeType::Beach
+                BiomeType::CoastalBeachReef
             } else {
                 climate.biome
             };
@@ -828,7 +826,7 @@ impl TerrainGenerator {
             None
         };
 
-        let is_beach = final_biome == BiomeType::Beach;
+        let is_beach = final_biome == BiomeType::CoastalBeachReef;
         let mut is_cliff = false;
 
         // Transitions on dry land above water level (terrain at or below sea_level remains strictly full blocks)
@@ -1007,19 +1005,11 @@ impl TerrainGenerator {
         // Exclude sheer cliffs, ocean trenches, rocky crags, tidal flats, and frozen/karst mountain peaks
         if matches!(
             biome,
-            BiomeType::ChalkCliffs
-                | BiomeType::CoastalCrags
-                | BiomeType::AbyssalTrench
-                | BiomeType::DeepOcean
-                | BiomeType::TemperateOcean
-                | BiomeType::BrackishEstuary
-                | BiomeType::TidalMudflats
-                | BiomeType::GlacialPeaks
-                | BiomeType::FrozenCaldera
-                | BiomeType::KarstPeaks
-                | BiomeType::JaggedCrags
-                | BiomeType::ShaleBarrens
-                | BiomeType::VolcanicFields
+            BiomeType::AbyssalTrench
+                | BiomeType::OpenOcean
+                | BiomeType::RiversLakes
+                | BiomeType::MangroveWetland
+                | BiomeType::Highlands
         ) {
             return false;
         }
@@ -1053,54 +1043,33 @@ impl TerrainGenerator {
             return match column.biome {
                 BiomeType::AbyssalTrench => {
                     if dither_noise > 0.0 {
-                        Voxel::Rock_Obsidian
+                        Voxel::SandBlack
                     } else {
-                        Voxel::Rock_Pitchstone
+                        Voxel::Obsidian
                     }
                 }
-                BiomeType::DeepOcean => {
-                    if dither_noise > 0.05 {
-                        Voxel::Soil_Gravel
-                    } else {
-                        Voxel::Rock_Andesite
-                    }
-                }
-                BiomeType::TemperateOcean => Voxel::Soil_White_Sand,
-                BiomeType::BrackishEstuary => {
+                BiomeType::OpenOcean => {
                     if dither_noise > 0.0 {
-                        Voxel::Soil_Silt_Dirt
+                        Voxel::SandCommon
                     } else {
-                        Voxel::Soil_Mud
+                        Voxel::GravelSandy
                     }
                 }
-                BiomeType::TidalMudflats => {
+                BiomeType::CoastalBeachReef => Voxel::SandWhite,
+                BiomeType::RiversLakes => {
                     if dither_noise > 0.0 {
-                        Voxel::Soil_Packed_Mud
+                        Voxel::SiltMud
                     } else {
-                        Voxel::Soil_Clay
+                        Voxel::ClayBlue
                     }
                 }
-                BiomeType::CypressSwamp
-                | BiomeType::MangroveSwamp
-                | BiomeType::Marshland
-                | BiomeType::FungalBog
-                | BiomeType::WeepingBayou => Voxel::Soil_Mud,
-                BiomeType::TarPits => Voxel::Soil_Black_Sand,
-                BiomeType::SludgeWastes => Voxel::Soil_Scorched_Sand,
-                BiomeType::VolcanicPlains | BiomeType::VolcanicFields => Voxel::Rock_Basalt,
-                BiomeType::FrozenCaldera => Voxel::Frost_Black_Ice,
-                BiomeType::Beach => {
-                    if column.climate.temperature > 0.15 {
-                        Voxel::Soil_White_Sand
-                    } else {
-                        Voxel::Soil_Sand
-                    }
-                }
+                BiomeType::MangroveWetland => Voxel::PeatMud,
+                BiomeType::Taiga => Voxel::GravelSnowy,
                 _ => {
                     if column.climate.temperature < -0.15 {
-                        Voxel::Soil_Gravel
+                        Voxel::GravelSnowy
                     } else {
-                        Voxel::Soil_Sand
+                        Voxel::SandCommon
                     }
                 }
             };
@@ -1110,29 +1079,16 @@ impl TerrainGenerator {
         if column.is_beach {
             let beach_warmth = column.climate.temperature + dither_noise * 0.10;
             return if beach_warmth > 0.15 {
-                Voxel::Soil_White_Sand
+                Voxel::SandWhite
             } else {
-                Voxel::Soil_Sand
+                Voxel::SandCommon
             };
         }
 
         // 3. High alpine elevation snowline: cold/temperate mountains above y >= 50 receive snowcaps
-        let is_warm_or_volcanic = matches!(
-            column.biome,
-            BiomeType::ScorchedWastes
-                | BiomeType::VolcanicFields
-                | BiomeType::VolcanicPlains
-                | BiomeType::Badlands
-                | BiomeType::DuneDesert
-                | BiomeType::WhiteDesert
-                | BiomeType::PaintedDesert
-                | BiomeType::TropicalRainforest
-                | BiomeType::Oasis
-                | BiomeType::TarPits
-                | BiomeType::SludgeWastes
-        );
+        let is_warm = matches!(column.biome, BiomeType::Desert | BiomeType::Savanna);
 
-        if !is_warm_or_volcanic && column.climate.temperature < 0.10 {
+        if !is_warm && column.climate.temperature < 0.10 {
             let snowline_jitter = crate::core::noise::gradient_noise_2d(
                 world_x as f32 * 0.05,
                 world_z as f32 * 0.05,
@@ -1149,226 +1105,87 @@ impl TerrainGenerator {
                 if world_y as f32 >= snowline + 8.0 && slope_noise > 0.35 {
                     return column.biome.config().primary_stone;
                 }
-                return Voxel::Soil_Snow;
+                return Voxel::SnowBlock;
             }
         }
 
         // 4. Biome Surface Block Selection with organic dual-surface dithering
         match column.biome {
-            // Forests & Woodlands
-            BiomeType::AncientWeald => {
+            BiomeType::Plains => {
+                if dither_noise > 0.20 {
+                    Voxel::LoamCoarse
+                } else {
+                    Voxel::LoamGrass
+                }
+            }
+            BiomeType::Forest => {
                 if dither_noise > 0.05 {
-                    Voxel::Soil_Mulch
+                    Voxel::LoamMulch
                 } else {
-                    Voxel::Soil_Grass
+                    Voxel::LoamGrass
                 }
             }
-            BiomeType::AutumnalForest => Voxel::Soil_Silt_Grass,
-            BiomeType::BirchCopse => Voxel::Soil_Grass,
-            BiomeType::BlossomGrove => Voxel::Soil_Grass,
-            BiomeType::BorealTaiga => {
-                if dither_noise > 0.0 {
-                    Voxel::Soil_Snowy_Peat
-                } else {
-                    Voxel::Soil_Snowy_Grass
-                }
-            }
-            BiomeType::DeadwoodThicket => {
-                if dither_noise > 0.0 {
-                    Voxel::Soil_Ash
-                } else {
-                    Voxel::Soil_Black_Sand
-                }
-            }
-            BiomeType::TropicalRainforest => {
-                if dither_noise > -0.10 {
-                    Voxel::Soil_Moss
-                } else {
-                    Voxel::Soil_Mud
-                }
-            }
-            BiomeType::YewGrove => Voxel::Soil_Peat_Mulch,
-
-            // Plains & Open Lands
-            BiomeType::AcaciaSavanna => {
+            BiomeType::Desert => {
                 if dither_noise > 0.15 {
-                    Voxel::Soil_Packed_Dirt
+                    Voxel::SandRed
                 } else {
-                    Voxel::Soil_Grass
+                    Voxel::SandCommon
                 }
             }
-            BiomeType::Heath => Voxel::Soil_Silt_Grass,
-            BiomeType::Moorland => Voxel::Soil_Peat_Grass,
-            BiomeType::OutbackScrubland => {
+            BiomeType::Taiga => {
                 if dither_noise > 0.0 {
-                    Voxel::Soil_Scorched_Red_Sand
+                    Voxel::SiltSnow
                 } else {
-                    Voxel::Soil_Packed_Mud
+                    Voxel::PeatSnow
                 }
             }
-            BiomeType::PermafrostSteppe => Voxel::Soil_Snowy_Silt,
-            BiomeType::SnowyTundra => Voxel::Soil_Snowy_Grass,
-            BiomeType::Steppe => Voxel::Soil_Grass,
-            BiomeType::VolcanicPlains => {
-                if dither_noise > 0.0 {
-                    Voxel::Soil_Ash
+            BiomeType::Highlands => {
+                if column.is_cliff || dither_noise > 0.20 {
+                    Voxel::Andesite
                 } else {
-                    Voxel::Soil_Scorched_Black_Sand
+                    Voxel::GravelSandy
                 }
             }
-
-            // Wetlands & Swamps
-            BiomeType::CypressSwamp => Voxel::Soil_Mud,
-            BiomeType::FungalBog => Voxel::Soil_Red_Moss,
-            BiomeType::MangroveSwamp => Voxel::Soil_Mud,
-            BiomeType::Marshland => {
+            BiomeType::Savanna => {
                 if dither_noise > 0.10 {
-                    Voxel::Soil_Packed_Mud
+                    Voxel::LateriteCoarse
                 } else {
-                    Voxel::Soil_Mud
+                    Voxel::LateriteGrass
                 }
             }
-            BiomeType::PeatBog => Voxel::Soil_Peat_Grass,
-            BiomeType::SludgeWastes => Voxel::Soil_Scorched_Sand,
-            BiomeType::TarPits => Voxel::Soil_Black_Sand,
-            BiomeType::WeepingBayou => Voxel::Soil_Silt_Mulch,
-
-            BiomeType::Badlands => {
-                if column.is_cliff {
-                    if (world_y.rem_euclid(8)) < 3 {
-                        Voxel::Rock_Terracotta
-                    } else {
-                        Voxel::Rock_Red_Sandstone
-                    }
-                } else {
-                    Voxel::Soil_Red_Sand
-                }
-            }
-            BiomeType::DuneDesert => Voxel::Soil_Sand,
-            BiomeType::Oasis => Voxel::Soil_Grass,
-            BiomeType::PaintedDesert => {
+            BiomeType::CoastalBeachReef => {
                 if dither_noise > 0.0 {
-                    Voxel::Soil_White_Sand
+                    Voxel::SandWhite
                 } else {
-                    Voxel::Soil_Sand
+                    Voxel::SandCommon
                 }
             }
-            BiomeType::RockyScrubland => {
-                if dither_noise > 0.05 {
-                    Voxel::Soil_Packed_Dirt
+            BiomeType::OpenOcean => {
+                if dither_noise > 0.0 {
+                    Voxel::SandCommon
                 } else {
-                    Voxel::Soil_Sand
+                    Voxel::GravelSandy
                 }
             }
-            BiomeType::ScorchedWastes => Voxel::Soil_Scorched_Sand,
-            BiomeType::WhiteDesert => Voxel::Soil_White_Sand,
-            BiomeType::WindsweptCanyons => Voxel::Soil_Sand,
-
-            // Mountain Biomes
-            BiomeType::AlpineTundra => {
-                if dither_noise > 0.30 {
-                    Voxel::Rock_Diorite
-                } else {
-                    Voxel::Soil_Snowy_Grass
-                }
-            }
-            BiomeType::FrozenCaldera => Voxel::Frost_Black_Ice,
-            BiomeType::GlacialPeaks => Voxel::Soil_Snow,
-            BiomeType::JaggedCrags => {
-                if column.is_cliff {
-                    if dither_noise > 0.0 {
-                        Voxel::Rock_Gabbro
-                    } else {
-                        Voxel::Rock_Andesite
-                    }
-                } else if dither_noise > 0.25 {
-                    Voxel::Rock_Gabbro
-                } else {
-                    Voxel::Soil_Grass
-                }
-            }
-            BiomeType::KarstPeaks => {
-                if column.is_cliff || dither_noise > 0.15 {
-                    Voxel::Rock_Karst
-                } else {
-                    Voxel::Soil_Grass
-                }
-            }
-            BiomeType::ScreeSlopes => Voxel::Soil_Gravel,
-            BiomeType::ShaleBarrens => {
-                if column.is_cliff {
-                    if dither_noise > 0.15 {
-                        Voxel::Rock_Slate
-                    } else {
-                        Voxel::Cobbled_Slate
-                    }
-                } else if dither_noise > 0.20 {
-                    Voxel::Rock_Slate
-                } else {
-                    Voxel::Soil_Silt_Grass
-                }
-            }
-            BiomeType::VolcanicFields => {
-                if dither_noise > 0.05 {
-                    Voxel::Rock_Basalt
-                } else {
-                    Voxel::Rock_Scoria
-                }
-            }
-
-            // Coastal & Aquatic Biomes
             BiomeType::AbyssalTrench => {
                 if dither_noise > 0.0 {
-                    Voxel::Rock_Obsidian
+                    Voxel::SandBlack
                 } else {
-                    Voxel::Rock_Pitchstone
+                    Voxel::Obsidian
                 }
             }
-            BiomeType::Beach => {
-                if column.climate.temperature > 0.15 {
-                    Voxel::Soil_White_Sand
+            BiomeType::RiversLakes => {
+                if dither_noise > 0.10 {
+                    Voxel::SiltMud
                 } else {
-                    Voxel::Soil_Sand
+                    Voxel::ClayBlue
                 }
             }
-            BiomeType::BrackishEstuary => {
-                if dither_noise > 0.0 {
-                    Voxel::Soil_Silt_Dirt
+            BiomeType::MangroveWetland => {
+                if dither_noise > 0.10 {
+                    Voxel::LoamMud
                 } else {
-                    Voxel::Soil_Mud
-                }
-            }
-            BiomeType::ChalkCliffs => {
-                if column.is_cliff {
-                    Voxel::Rock_Chalk
-                } else {
-                    Voxel::Soil_Grass
-                }
-            }
-            BiomeType::CoastalCrags => {
-                if column.is_cliff {
-                    Voxel::Rock_Porphyry
-                } else if dither_noise > 0.10 {
-                    Voxel::Soil_Grass
-                } else if dither_noise > -0.15 {
-                    Voxel::Soil_Gravel
-                } else {
-                    Voxel::Cobbled_Porphyry
-                }
-            }
-            BiomeType::DeepOcean => {
-                if dither_noise > 0.0 {
-                    Voxel::Soil_Gravel
-                } else {
-                    Voxel::Rock_Andesite
-                }
-            }
-            BiomeType::TemperateOcean => Voxel::Soil_White_Sand,
-            BiomeType::TidalMudflats => {
-                if dither_noise > 0.0 {
-                    Voxel::Soil_Packed_Mud
-                } else {
-                    Voxel::Soil_Clay
+                    Voxel::PeatMud
                 }
             }
         }
@@ -1388,7 +1205,7 @@ impl TerrainGenerator {
             let river_roof = self.effective_sea_level() + 5;
             if world_y >= river_floor && world_y <= river_roof {
                 if world_y <= self.effective_sea_level() {
-                    return Voxel::Liquid_Water;
+                    return Voxel::LiquidWater;
                 } else {
                     return Voxel::Air;
                 }
@@ -1399,15 +1216,15 @@ impl TerrainGenerator {
             if let Some(water_level) = column.water_level
                 && world_y <= water_level
             {
-                return Voxel::Liquid_Water;
+                return Voxel::LiquidWater;
             }
 
             return Voxel::Air;
         }
 
-        // Absolute bedrock floor: bottom layers of the world are strictly solid Dreadstone
+        // Absolute bedrock floor: bottom layers of the world are strictly solid Mantle
         if world_y <= self.strata.bedrock_min_block_y {
-            return Voxel::Rock_Dreadstone;
+            return Voxel::Mantle;
         }
 
         let is_underwater =
@@ -1438,9 +1255,9 @@ impl TerrainGenerator {
 
         if column.is_beach && logical_depth <= 3 {
             return if column.climate.temperature > 0.15 {
-                Voxel::Soil_White_Sand
+                Voxel::SandWhite
             } else {
-                Voxel::Soil_Sand
+                Voxel::SandCommon
             };
         }
 
@@ -1448,19 +1265,23 @@ impl TerrainGenerator {
             let surface = self.surface_material_at(world_x, column.terrain_height, world_z, column);
             if matches!(
                 surface,
-                Voxel::Soil_Sand
-                    | Voxel::Soil_Red_Sand
-                    | Voxel::Soil_White_Sand
-                    | Voxel::Soil_Black_Sand
-                    | Voxel::Soil_Scorched_Sand
-                    | Voxel::Soil_Scorched_Red_Sand
-                    | Voxel::Soil_Scorched_Black_Sand
-                    | Voxel::Soil_Gravel
-                    | Voxel::Soil_Mud
-                    | Voxel::Soil_Silt_Dirt
-                    | Voxel::Soil_Ash
-                    | Voxel::Soil_Snow
-                    | Voxel::Frost_Black_Ice
+                Voxel::SandCommon
+                    | Voxel::SandRed
+                    | Voxel::SandWhite
+                    | Voxel::SandBlack
+                    | Voxel::GravelSandy
+                    | Voxel::GravelDirty
+                    | Voxel::GravelAshy
+                    | Voxel::GravelSnowy
+                    | Voxel::LoamMud
+                    | Voxel::PeatMud
+                    | Voxel::SiltMud
+                    | Voxel::SnowBlock
+                    | Voxel::PowderSnow
+                    | Voxel::AshPumice
+                    | Voxel::FrostIce
+                    | Voxel::FrostIcePacked
+                    | Voxel::FrostIceBlack
             ) {
                 return surface;
             }

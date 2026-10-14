@@ -108,15 +108,11 @@ fn push_lod_wall(
         .get_face_texture_info(surface_voxel, world_pos, direction)
         .0 as f32;
 
-    let is_soil = matches!(
-        surface_voxel,
-        Voxel::Soil_Grass
-            | Voxel::Soil_Peat_Grass
-            | Voxel::Soil_Silt_Grass
-            | Voxel::Soil_Snowy_Grass
-            | Voxel::Soil_Snowy_Peat
-            | Voxel::Soil_Snowy_Silt
-    );
+    let is_soil = surface_voxel.is_grass_soil()
+        || matches!(
+            surface_voxel,
+            Voxel::LoamSnow | Voxel::PeatSnow | Voxel::SiltSnow
+        );
 
     if height <= 1.0 || !is_soil {
         push_lod_quad(
@@ -154,7 +150,7 @@ fn push_lod_wall(
 
         // Subsurface remaining drop: stone strata
         let sub_layer = textures
-            .get_face_texture_info(Voxel::Rock_Granite, world_pos - IVec3::Y, direction)
+            .get_face_texture_info(Voxel::Granite, world_pos - IVec3::Y, direction)
             .0 as f32;
 
         push_lod_quad(
@@ -379,7 +375,7 @@ pub fn build_lod_mesh(
                 let water_y = (water_level + 1) as f32 - 0.05;
                 let water_layer = textures
                     .get_face_texture_info(
-                        Voxel::Liquid_Water,
+                        Voxel::LiquidWater,
                         IVec3::new(world_x, water_level, world_z),
                         FaceDirection::PositiveY,
                     )
@@ -446,8 +442,8 @@ pub fn build_lod_mesh(
                 }
 
                 let is_swamp_tree = species == crate::generation::trees::TreeSpecies::Mangrove
-                    || (species == crate::generation::trees::TreeSpecies::Pine
-                        && col_data.biome == crate::generation::BiomeType::CypressSwamp);
+                    || (species == crate::generation::trees::TreeSpecies::Willow
+                        && col_data.biome == crate::generation::BiomeType::MangroveWetland);
 
                 let ty = if let Some(water_level) = col_data.water_level {
                     if !is_swamp_tree || water_level - col_data.terrain_height > 2 {
@@ -515,7 +511,7 @@ fn push_lod_tree(
 
         let cactus_layer = textures
             .get_face_texture_info(
-                Voxel::Tree_Cactus,
+                Voxel::BambooStalk,
                 IVec3::new(tx, ty + 1, tz),
                 FaceDirection::PositiveX,
             )
@@ -679,7 +675,7 @@ fn push_lod_tree(
 
     let log_voxel = species.log_voxel();
     let leaf_voxel = crate::generation::trees::leaves_voxel_variant(species, hash, col_biome)
-        .unwrap_or(Voxel::Tree_Oak_Leaves);
+        .unwrap_or(Voxel::OakLeaves);
 
     // 1. Trunk (from ground to canopy bottom)
     let trunk_h = canopy_base_y - ground_y;

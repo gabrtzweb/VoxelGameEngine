@@ -143,12 +143,12 @@ pub fn generate_lod_map_chunk(
                 && col_data.terrain_height < wl
             {
                 let depth = (wl - col_data.terrain_height).clamp(1, 255) as u8;
-                let color = super::color::voxel_map_color_at(Voxel::Liquid_Water, depth, wx, wz);
+                let color = super::color::voxel_map_color_at(Voxel::LiquidWater, depth, wx, wz);
                 map_chunk.set(
                     lx,
                     lz,
                     MapPixel {
-                        voxel: Voxel::Liquid_Water,
+                        voxel: Voxel::LiquidWater,
                         height: wl as i16,
                         water_depth: depth,
                         color,
@@ -201,8 +201,8 @@ pub fn generate_lod_map_chunk(
                 }
 
                 let is_swamp_tree = species == crate::generation::trees::TreeSpecies::Mangrove
-                    || (species == crate::generation::trees::TreeSpecies::Pine
-                        && col_data.biome == crate::generation::BiomeType::CypressSwamp);
+                    || (species == crate::generation::trees::TreeSpecies::Willow
+                        && col_data.biome == crate::generation::BiomeType::MangroveWetland);
 
                 let ty = if let Some(water_level) = col_data.water_level {
                     if !is_swamp_tree || water_level - col_data.terrain_height > 2 {
@@ -338,12 +338,12 @@ fn extract_column_surface(world: &VoxelWorld, col: IVec2) -> Option<MapChunk> {
                     1
                 };
                 let color =
-                    super::color::voxel_map_color_at(Voxel::Liquid_Water, depth, world_x, world_z);
+                    super::color::voxel_map_color_at(Voxel::LiquidWater, depth, world_x, world_z);
                 map_chunk.set(
                     lx,
                     lz,
                     MapPixel {
-                        voxel: Voxel::Liquid_Water,
+                        voxel: Voxel::LiquidWater,
                         height: water_surface_y as i16,
                         water_depth: depth,
                         color,

@@ -336,50 +336,23 @@ pub fn sample_biome_atmosphere(biome: crate::generation::BiomeType) -> BiomeAtmo
     use crate::generation::BiomeType;
     match biome {
         // Wetlands & Swamps: Low-altitude eerie mist and murky green/cyan haze
-        BiomeType::CypressSwamp
-        | BiomeType::FungalBog
-        | BiomeType::MangroveSwamp
-        | BiomeType::Marshland
-        | BiomeType::PeatBog
-        | BiomeType::SludgeWastes
-        | BiomeType::TarPits
-        | BiomeType::WeepingBayou => BiomeAtmosphere {
+        BiomeType::MangroveWetland => BiomeAtmosphere {
             fog_color_filter: LinearRgba::new(0.68, 0.85, 0.72, 1.0),
             fog_distance_multiplier: 0.68,
             ambient_color_filter: LinearRgba::new(0.82, 0.95, 0.86, 1.0),
             exposure_offset: -0.25,
         },
 
-        // Volcanic Wastelands & Ash Barrens: Dark ash haze, warm ember atmosphere
-        BiomeType::VolcanicFields
-        | BiomeType::VolcanicPlains
-        | BiomeType::DeadwoodThicket
-        | BiomeType::ScorchedWastes => BiomeAtmosphere {
-            fog_color_filter: LinearRgba::new(0.72, 0.62, 0.58, 1.0),
-            fog_distance_multiplier: 0.72,
-            ambient_color_filter: LinearRgba::new(1.05, 0.88, 0.78, 1.0),
-            exposure_offset: -0.30,
-        },
-
-        // Alpine & Glacial: Crisp high-exposure distance fog, bright cyan-white
-        BiomeType::GlacialPeaks
-        | BiomeType::AlpineTundra
-        | BiomeType::FrozenCaldera
-        | BiomeType::KarstPeaks
-        | BiomeType::JaggedCrags => BiomeAtmosphere {
+        // Alpine & Highlands: Crisp high-exposure distance fog, bright cyan-white
+        BiomeType::Highlands | BiomeType::Taiga => BiomeAtmosphere {
             fog_color_filter: LinearRgba::new(0.94, 0.97, 1.06, 1.0),
             fog_distance_multiplier: 1.15,
             ambient_color_filter: LinearRgba::new(0.96, 0.98, 1.04, 1.0),
             exposure_offset: 0.35,
         },
 
-        // Arid, Deserts & Canyons: Warm golden atmospheric haze
-        BiomeType::DuneDesert
-        | BiomeType::Badlands
-        | BiomeType::WhiteDesert
-        | BiomeType::PaintedDesert
-        | BiomeType::WindsweptCanyons
-        | BiomeType::OutbackScrubland => BiomeAtmosphere {
+        // Arid Desert & Savanna: Warm golden atmospheric haze
+        BiomeType::Desert | BiomeType::Savanna => BiomeAtmosphere {
             fog_color_filter: LinearRgba::new(1.06, 0.96, 0.84, 1.0),
             fog_distance_multiplier: 0.90,
             ambient_color_filter: LinearRgba::new(1.06, 0.97, 0.86, 1.0),
@@ -387,18 +360,24 @@ pub fn sample_biome_atmosphere(biome: crate::generation::BiomeType) -> BiomeAtmo
         },
 
         // Ocean & Coastal: Deep blue horizon haze
-        BiomeType::AbyssalTrench
-        | BiomeType::DeepOcean
-        | BiomeType::TemperateOcean
-        | BiomeType::ChalkCliffs
-        | BiomeType::CoastalCrags => BiomeAtmosphere {
-            fog_color_filter: LinearRgba::new(0.88, 0.95, 1.04, 1.0),
-            fog_distance_multiplier: 1.05,
-            ambient_color_filter: LinearRgba::new(0.94, 0.97, 1.02, 1.0),
-            exposure_offset: 0.05,
+        BiomeType::AbyssalTrench | BiomeType::OpenOcean | BiomeType::CoastalBeachReef => {
+            BiomeAtmosphere {
+                fog_color_filter: LinearRgba::new(0.88, 0.95, 1.04, 1.0),
+                fog_distance_multiplier: 1.05,
+                ambient_color_filter: LinearRgba::new(0.94, 0.97, 1.02, 1.0),
+                exposure_offset: 0.05,
+            }
+        }
+
+        // Rivers & Lakes: Fresh aquamarine haze
+        BiomeType::RiversLakes => BiomeAtmosphere {
+            fog_color_filter: LinearRgba::new(0.82, 0.92, 0.95, 1.0),
+            fog_distance_multiplier: 0.95,
+            ambient_color_filter: LinearRgba::new(0.95, 0.98, 1.00, 1.0),
+            exposure_offset: 0.0,
         },
 
-        // Plains, Moors & Forests: Soft golden warmth, clear lush atmosphere
-        _ => BiomeAtmosphere::default(),
+        // Plains & Forests: Soft golden warmth, clear lush atmosphere
+        BiomeType::Plains | BiomeType::Forest => BiomeAtmosphere::default(),
     }
 }

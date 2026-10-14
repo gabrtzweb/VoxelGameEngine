@@ -151,7 +151,7 @@ fn setup_target_hud(
                     card.spawn((
                         TargetHudIcon,
                         ImageNode {
-                            image: icons.get(Voxel::Rock_Stone),
+                            image: icons.get(Voxel::Dolomite),
                             ..default()
                         },
                         Node {

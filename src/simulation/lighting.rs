@@ -46,8 +46,8 @@ pub fn sync_chunk_lights(
         ChunkHomogeneity::Empty => return,
         ChunkHomogeneity::Solid(v)
             if !v.is_point_light_fixture()
-                && v != Voxel::Liquid_Lava
-                && v != Voxel::Liquid_Molten =>
+                && v != Voxel::LiquidLava
+                && v != Voxel::LiquidMolten =>
         {
             return;
         }
@@ -66,7 +66,7 @@ pub fn sync_chunk_lights(
                 if voxel.is_point_light_fixture() {
                     let world_voxel = chunk_origin + IVec3::new(x as i32, y as i32, z as i32);
                     torch_coords.push(world_voxel);
-                } else if voxel == Voxel::Liquid_Lava || voxel == Voxel::Liquid_Molten {
+                } else if voxel == Voxel::LiquidLava || voxel == Voxel::LiquidMolten {
                     let world_pos = (chunk_origin + IVec3::new(x as i32, y as i32, z as i32))
                         .as_vec3()
                         + Vec3::splat(0.5);
@@ -107,7 +107,7 @@ pub fn sync_chunk_lights(
             pool_key,
             LightState {
                 entity,
-                voxel: Voxel::Liquid_Lava,
+                voxel: Voxel::LiquidLava,
                 count: 1,
             },
         );

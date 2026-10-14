@@ -1,7 +1,7 @@
 pub const VOXEL_SIZE: f32 = 1.0;
 pub const CHUNK_SIZE: usize = 16;
 pub const CHUNK_VOLUME: usize = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
-pub const MAX_VOXEL_TYPES: usize = 256;
+pub const MAX_VOXEL_TYPES: usize = 1024;
 
 use bevy::platform::collections::HashMap;
 
@@ -338,20 +338,16 @@ impl Chunk {
                 self.shapes.entry(index).or_insert((BlockShape::Torch, 0));
             } else if voxel.is_basket() {
                 self.shapes.entry(index).or_insert((BlockShape::Basket, 0));
-            } else if self
-                .shapes
-                .get(&index)
-                .is_some_and(|&(s, _)| {
-                    matches!(
-                        s,
-                        BlockShape::Torch
-                            | BlockShape::Basket
-                            | BlockShape::PebbleOne
-                            | BlockShape::PebbleTwo
-                            | BlockShape::PebbleThree
-                    )
-                })
-            {
+            } else if self.shapes.get(&index).is_some_and(|&(s, _)| {
+                matches!(
+                    s,
+                    BlockShape::Torch
+                        | BlockShape::Basket
+                        | BlockShape::PebbleOne
+                        | BlockShape::PebbleTwo
+                        | BlockShape::PebbleThree
+                )
+            }) {
                 self.shapes.remove(&index);
             }
             if !voxel.is_fluid() {

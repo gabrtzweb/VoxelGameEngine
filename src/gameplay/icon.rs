@@ -66,10 +66,7 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
             load_voxel_raw_16x16(voxel)
         };
 
-        let is_grass = matches!(
-            voxel,
-            Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass
-        );
+        let is_grass = voxel.is_grass_soil();
         if is_grass {
             let overlay_path = "assets/textures/blocks/soil_grass_side_overlay.png";
             if Path::new(overlay_path).exists()
@@ -394,9 +391,9 @@ fn apply_silhouette_outline(canvas: &mut [u8]) {
 
 fn voxel_item_texture_path(voxel: Voxel) -> Option<&'static str> {
     match voxel {
-        Voxel::Emit_Blue_Torch => Some("assets/textures/items/emit_blue_torch_item.png"),
-        Voxel::Emit_Green_Torch => Some("assets/textures/items/emit_green_torch_item.png"),
-        Voxel::Emit_Red_Torch => Some("assets/textures/items/emit_red_torch_item.png"),
+        Voxel::EmitTorchBlue => Some("assets/textures/items/emit_blue_torch_item.png"),
+        Voxel::EmitTorchGreen => Some("assets/textures/items/emit_green_torch_item.png"),
+        Voxel::EmitTorchRed => Some("assets/textures/items/emit_red_torch_item.png"),
         _ => None,
     }
 }

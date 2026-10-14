@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use bevy::prelude::*;
 
 #[repr(u8)]
@@ -13,15 +15,17 @@ pub enum BlockShape {
     PebbleOne = 6,
     PebbleTwo = 7,
     PebbleThree = 8,
+    CrossBillboard = 9,
 }
 
 impl BlockShape {
-    pub const fn all() -> [BlockShape; 4] {
+    pub const fn all() -> [BlockShape; 5] {
         [
             BlockShape::Full,
             BlockShape::Slab,
             BlockShape::Stair,
             BlockShape::Column,
+            BlockShape::CrossBillboard,
         ]
     }
 
@@ -36,6 +40,7 @@ impl BlockShape {
             Self::PebbleOne => "Pebble (1)",
             Self::PebbleTwo => "Pebble (2)",
             Self::PebbleThree => "Pebble (3)",
+            Self::CrossBillboard => "Cross-Billboard",
         }
     }
 
@@ -50,12 +55,13 @@ impl BlockShape {
             Self::PebbleOne => "PEBBLE1",
             Self::PebbleTwo => "PEBBLE2",
             Self::PebbleThree => "PEBBLE3",
+            Self::CrossBillboard => "CROSS",
         }
     }
 
     pub const fn orientation_count(self) -> u8 {
         match self {
-            Self::Full | Self::Basket => 1,
+            Self::Full | Self::Basket | Self::CrossBillboard => 1,
             Self::Slab => 6,
             Self::Stair => 8,
             Self::Column => 6,
@@ -66,7 +72,7 @@ impl BlockShape {
 
     pub fn orientation_name(self, orientation: u8) -> &'static str {
         match self {
-            Self::Full | Self::Basket => "Standard",
+            Self::Full | Self::Basket | Self::CrossBillboard => "Standard",
             Self::Slab => match orientation % 6 {
                 0 => "Bottom (Floor)",
                 1 => "Top (Ceiling)",
@@ -119,35 +125,34 @@ impl BlockShape {
             Self::Full => Self::Slab,
             Self::Slab => Self::Stair,
             Self::Stair => Self::Column,
-            Self::Column => Self::Full,
+            Self::Column => Self::CrossBillboard,
+            Self::CrossBillboard => Self::Full,
             other => other,
         }
     }
 
-    /// Returns the local AABB bounding boxes ([min, max] in 0.0..=1.0 coordinates) for this shape and orientation.
-    /// Full, Slab, and Column have 1 box; Stair has 2 boxes (base slab + step).
     pub fn local_boxes(self, orientation: u8) -> ([Vec3; 2], Option<[Vec3; 2]>) {
         match self {
-            Self::Full | Self::Basket => ([Vec3::ZERO, Vec3::ONE], None),
+            Self::Full | Self::Basket | Self::CrossBillboard => ([Vec3::ZERO, Vec3::ONE], None),
             Self::Slab => {
                 let bbox = match orientation % 6 {
-                    0 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 0.5, 1.0)], // Floor
-                    1 => [Vec3::new(0.0, 0.5, 0.0), Vec3::new(1.0, 1.0, 1.0)], // Ceiling
-                    2 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 1.0, 0.5)], // North (-Z)
-                    3 => [Vec3::new(0.0, 0.0, 0.5), Vec3::new(1.0, 1.0, 1.0)], // South (+Z)
-                    4 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.5, 1.0, 1.0)], // West (-X)
-                    _ => [Vec3::new(0.5, 0.0, 0.0), Vec3::new(1.0, 1.0, 1.0)], // East (+X)
+                    0 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 0.5, 1.0)],
+                    1 => [Vec3::new(0.0, 0.5, 0.0), Vec3::new(1.0, 1.0, 1.0)],
+                    2 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 1.0, 0.5)],
+                    3 => [Vec3::new(0.0, 0.0, 0.5), Vec3::new(1.0, 1.0, 1.0)],
+                    4 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.5, 1.0, 1.0)],
+                    _ => [Vec3::new(0.5, 0.0, 0.0), Vec3::new(1.0, 1.0, 1.0)],
                 };
                 (bbox, None)
             }
             Self::Column => {
                 let bbox = match orientation % 6 {
-                    0 => [Vec3::new(0.25, 0.0, 0.25), Vec3::new(0.75, 1.0, 0.75)], // Centered Vert
-                    1 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.5, 1.0, 0.5)],     // MinX, MinZ
-                    2 => [Vec3::new(0.5, 0.0, 0.0), Vec3::new(1.0, 1.0, 0.5)],     // MaxX, MinZ
-                    3 => [Vec3::new(0.0, 0.0, 0.5), Vec3::new(0.5, 1.0, 1.0)],     // MinX, MaxZ
-                    4 => [Vec3::new(0.5, 0.0, 0.5), Vec3::new(1.0, 1.0, 1.0)],     // MaxX, MaxZ
-                    _ => [Vec3::new(0.0, 0.25, 0.25), Vec3::new(1.0, 0.75, 0.75)], // Centered Horiz
+                    0 => [Vec3::new(0.25, 0.0, 0.25), Vec3::new(0.75, 1.0, 0.75)],
+                    1 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.5, 1.0, 0.5)],
+                    2 => [Vec3::new(0.5, 0.0, 0.0), Vec3::new(1.0, 1.0, 0.5)],
+                    3 => [Vec3::new(0.0, 0.0, 0.5), Vec3::new(0.5, 1.0, 1.0)],
+                    4 => [Vec3::new(0.5, 0.0, 0.5), Vec3::new(1.0, 1.0, 1.0)],
+                    _ => [Vec3::new(0.0, 0.25, 0.25), Vec3::new(1.0, 0.75, 0.75)],
                 };
                 (bbox, None)
             }
@@ -162,15 +167,15 @@ impl BlockShape {
                 };
 
                 let step = match (is_inverted, step_dir) {
-                    (false, 0) => [Vec3::new(0.5, 0.5, 0.0), Vec3::new(1.0, 1.0, 1.0)], // +X
-                    (false, 1) => [Vec3::new(0.0, 0.5, 0.0), Vec3::new(0.5, 1.0, 1.0)], // -X
-                    (false, 2) => [Vec3::new(0.0, 0.5, 0.5), Vec3::new(1.0, 1.0, 1.0)], // +Z
-                    (false, 3) => [Vec3::new(0.0, 0.5, 0.0), Vec3::new(1.0, 1.0, 0.5)], // -Z
+                    (false, 0) => [Vec3::new(0.5, 0.5, 0.0), Vec3::new(1.0, 1.0, 1.0)],
+                    (false, 1) => [Vec3::new(0.0, 0.5, 0.0), Vec3::new(0.5, 1.0, 1.0)],
+                    (false, 2) => [Vec3::new(0.0, 0.5, 0.5), Vec3::new(1.0, 1.0, 1.0)],
+                    (false, 3) => [Vec3::new(0.0, 0.5, 0.0), Vec3::new(1.0, 1.0, 0.5)],
 
-                    (true, 0) => [Vec3::new(0.5, 0.0, 0.0), Vec3::new(1.0, 0.5, 1.0)], // +X
-                    (true, 1) => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.5, 0.5, 1.0)], // -X
-                    (true, 2) => [Vec3::new(0.0, 0.0, 0.5), Vec3::new(1.0, 0.5, 1.0)], // +Z
-                    (true, 3) => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 0.5, 0.5)], // -Z
+                    (true, 0) => [Vec3::new(0.5, 0.0, 0.0), Vec3::new(1.0, 0.5, 1.0)],
+                    (true, 1) => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.5, 0.5, 1.0)],
+                    (true, 2) => [Vec3::new(0.0, 0.0, 0.5), Vec3::new(1.0, 0.5, 1.0)],
+                    (true, 3) => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 0.5, 0.5)],
                     _ => unreachable!(),
                 };
 
@@ -178,11 +183,11 @@ impl BlockShape {
             }
             Self::Torch => {
                 let bbox = match orientation % 5 {
-                    0 => [Vec3::new(0.40, 0.0, 0.40), Vec3::new(0.60, 0.65, 0.60)], // Floor
-                    1 => [Vec3::new(0.40, 0.12, 0.0), Vec3::new(0.60, 0.78, 0.45)], // Wall North (-Z)
-                    2 => [Vec3::new(0.40, 0.12, 0.55), Vec3::new(0.60, 0.78, 1.0)], // Wall South (+Z)
-                    3 => [Vec3::new(0.0, 0.12, 0.40), Vec3::new(0.45, 0.78, 0.60)], // Wall West (-X)
-                    _ => [Vec3::new(0.55, 0.12, 0.40), Vec3::new(1.0, 0.78, 0.60)], // Wall East (+X)
+                    0 => [Vec3::new(0.40, 0.0, 0.40), Vec3::new(0.60, 0.65, 0.60)],
+                    1 => [Vec3::new(0.40, 0.12, 0.0), Vec3::new(0.60, 0.78, 0.45)],
+                    2 => [Vec3::new(0.40, 0.12, 0.55), Vec3::new(0.60, 0.78, 1.0)],
+                    3 => [Vec3::new(0.0, 0.12, 0.40), Vec3::new(0.45, 0.78, 0.60)],
+                    _ => [Vec3::new(0.55, 0.12, 0.40), Vec3::new(1.0, 0.78, 0.60)],
                 };
                 (bbox, None)
             }
@@ -237,7 +242,7 @@ fn rotate_aabb_y(min: Vec3, max: Vec3, orientation: u8) -> [Vec3; 2] {
     }
 }
 
-#[repr(u8)]
+#[repr(u16)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Reflect)]
 #[allow(non_camel_case_types)]
 pub enum Voxel {
@@ -246,542 +251,786 @@ pub enum Voxel {
     Occupied = 1,
     WaterOccupied = 2,
 
-    // Testing / Debug Blocks (8)
-    Null_Block = 3,
-    Null_Liquid = 4,
-    Test_Accept = 5,
-    Test_Debug = 6,
-    Test_Numbers = 7,
-    Test_Fail = 8,
-    Test_Instance = 9,
-    Test_Start = 10,
+    // --- Category 01: Technical & System Blocks ---
+    DebugAccept = 3,
+    DebugFail = 4,
+    DebugInstance = 5,
+    DebugStart = 6,
+    NullBlock = 7,
+    NullCrossmesh = 8,
+    NullGeneric = 9,
+    NullLiquid = 10,
 
-    // Liquid / Fluid Blocks (8)
-    Liquid_Acid = 11,
-    Liquid_Blood = 12,
-    Liquid_Lava = 13,
-    Liquid_Molten = 14,
-    Liquid_Ooze = 15,
-    Liquid_Sludge = 16,
-    Liquid_Tar = 17,
-    Liquid_Water = 18,
+    // --- Category 02: Hydrosphere & Cryology ---
+    FrostBlueIce = 11,
+    FrostBlueIceCracked = 12,
+    FrostIce = 13,
+    FrostIceBlack = 14,
+    FrostIceBlackFragile = 15,
+    FrostIceBlackPacked = 16,
+    FrostIceFragile = 17,
+    FrostIcePacked = 18,
+    LiquidAcid = 19,
+    LiquidBlood = 20,
+    LiquidCoreMagma = 21,
+    LiquidLava = 22,
+    LiquidMolten = 23,
+    LiquidOoze = 24,
+    LiquidSludge = 25,
+    LiquidSpringWater = 26,
+    LiquidTar = 27,
+    LiquidWater = 28,
 
-    // Frost Blocks (4)
-    Frost_Black_Ice = 19,
-    Frost_Fragile_Ice = 20,
-    Frost_Ice = 21,
-    Frost_Packed_Ice = 22,
+    // --- Category 03: Pedology & Soils ---
+    AshPumice = 29,
+    AshVolcanic = 30,
+    CalicheCoarse = 31,
+    CalicheCracked = 32,
+    CalicheDirt = 33,
+    CalicheGrass = 34,
+    ClayBlue = 35,
+    ClayRed = 36,
+    ClayWhite = 37,
+    ClayYellow = 38,
+    GravelAshy = 39,
+    GravelDirty = 40,
+    GravelSandy = 41,
+    GravelSnowy = 42,
+    LateriteCoarse = 43,
+    LateriteDirt = 44,
+    LateriteGrass = 45,
+    LateriteHardpan = 46,
+    LoamCoarse = 47,
+    LoamDirt = 48,
+    LoamGrass = 49,
+    LoamMud = 50,
+    LoamMulch = 51,
+    LoamRooted = 52,
+    LoamSnow = 53,
+    LoamTilled = 54,
+    MossAmber = 55,
+    MossCave = 56,
+    MossCrimson = 57,
+    MossForest = 58,
+    PeatCoarse = 59,
+    PeatDirt = 60,
+    PeatGrass = 61,
+    PeatMud = 62,
+    PeatMulch = 63,
+    PeatRooted = 64,
+    PeatSnow = 65,
+    PeatTilled = 66,
+    PermafrostCoarse = 67,
+    PermafrostDirt = 68,
+    PermafrostGrass = 69,
+    PermafrostIcy = 70,
+    PowderSnow = 71,
+    SandBlack = 72,
+    SandCommon = 73,
+    SandDune = 74,
+    SandPink = 75,
+    SandRed = 76,
+    SandWhite = 77,
+    SiltCoarse = 78,
+    SiltDirt = 79,
+    SiltGrass = 80,
+    SiltMud = 81,
+    SiltMulch = 82,
+    SiltRooted = 83,
+    SiltSnow = 84,
+    SiltTilled = 85,
+    SnowBlock = 86,
 
-    // Soil Blocks (32)
-    Soil_Ash = 23,
-    Soil_Black_Sand = 24,
-    Soil_Clay = 25,
-    Soil_Dirt = 26,
-    Soil_Grass = 27,
-    Soil_Gravel = 28,
-    Soil_Moss = 29,
-    Soil_Mud = 30,
-    Soil_Mulch = 31,
-    Soil_Packed_Dirt = 32,
-    Soil_Packed_Mud = 33,
-    Soil_Packed_Peat = 34,
-    Soil_Packed_Silt = 35,
-    Soil_Peat_Dirt = 36,
-    Soil_Peat_Grass = 37,
-    Soil_Peat_Mulch = 38,
-    Soil_Red_Moss = 39,
-    Soil_Red_Sand = 40,
-    Soil_Rooted_Dirt = 41,
-    Soil_Sand = 42,
-    Soil_Scorched_Black_Sand = 43,
-    Soil_Scorched_Red_Sand = 44,
-    Soil_Scorched_Sand = 45,
-    Soil_Scorched_White_Sand = 46,
-    Soil_Silt_Dirt = 47,
-    Soil_Silt_Grass = 48,
-    Soil_Silt_Mulch = 49,
-    Soil_Snow = 50,
-    Soil_Snowy_Grass = 51,
-    Soil_Snowy_Peat = 52,
-    Soil_Snowy_Silt = 53,
-    Soil_White_Sand = 54,
+    // --- Category 04: Geology & Rocks ---
+    Andesite = 87,
+    AndesiteGrass = 88,
+    AndesiteSnow = 89,
+    Argillite = 90,
+    ArgilliteGrass = 91,
+    ArgilliteSnow = 92,
+    Basalt = 93,
+    BasaltGrass = 94,
+    BasaltSnow = 95,
+    Brimstone = 96,
+    Calcite = 97,
+    Chalk = 98,
+    ChalkGrass = 99,
+    ChalkSnow = 100,
+    CobbledAndesite = 101,
+    CobbledArgillite = 102,
+    CobbledBasalt = 103,
+    CobbledBrimstone = 104,
+    CobbledCalcite = 105,
+    CobbledChalk = 106,
+    CobbledDiorite = 107,
+    CobbledDolomite = 108,
+    CobbledGabbro = 109,
+    CobbledGneiss = 110,
+    CobbledGranite = 111,
+    CobbledKarst = 112,
+    CobbledLimestone = 113,
+    CobbledMagma = 114,
+    CobbledMarble = 115,
+    CobbledObsidian = 116,
+    CobbledSandstoneBlack = 117,
+    CobbledSandstoneCommon = 118,
+    CobbledSandstoneDune = 119,
+    CobbledSandstonePink = 120,
+    CobbledSandstoneRed = 121,
+    CobbledSandstoneWhite = 122,
+    CobbledScoria = 123,
+    CobbledSerpentinite = 124,
+    CobbledSlate = 125,
+    CobbledTuff = 126,
+    Diorite = 127,
+    Dolomite = 128,
+    DolomiteGrass = 129,
+    DolomiteSnow = 130,
+    Gabbro = 131,
+    Gneiss = 132,
+    GneissGrass = 133,
+    GneissSnow = 134,
+    Granite = 135,
+    GraniteGrass = 136,
+    GraniteSnow = 137,
+    Karst = 138,
+    Limestone = 139,
+    LimestoneGrass = 140,
+    LimestoneSnow = 141,
+    Magma = 142,
+    Mantle = 143,
+    MantlePlume = 144,
+    Marble = 145,
+    MossyAndesite = 146,
+    MossyArgillite = 147,
+    MossyBasalt = 148,
+    MossyCobbledAndesite = 149,
+    MossyCobbledArgillite = 150,
+    MossyCobbledBasalt = 151,
+    MossyCobbledDolomite = 152,
+    MossyCobbledGneiss = 153,
+    MossyCobbledGranite = 154,
+    MossyCobbledLimestone = 155,
+    MossyCobbledSerpentinite = 156,
+    MossyDolomite = 157,
+    MossyGneiss = 158,
+    MossyGranite = 159,
+    MossyLimestone = 160,
+    MossySerpentinite = 161,
+    Obsidian = 162,
+    PebbleFlintOne = 163,
+    PebbleFlintThree = 164,
+    PebbleFlintTwo = 165,
+    PebbleQuartzOne = 166,
+    PebbleQuartzThree = 167,
+    PebbleQuartzTwo = 168,
+    SandstoneBlack = 169,
+    SandstoneCommon = 170,
+    SandstoneDune = 171,
+    SandstonePink = 172,
+    SandstoneRed = 173,
+    SandstoneWhite = 174,
+    Scoria = 175,
+    Serpentinite = 176,
+    Slate = 177,
+    Tuff = 178,
 
-    // Rocky Blocks (96)
-    Rock_Andesite = 55,
-    Cobbled_Andesite = 56,
-    Mossy_Andesite = 57,
-    Mossy_Cobbled_Andesite = 58,
-    Rock_Azurite = 59,
-    Cobbled_Azurite = 60,
-    Mossy_Azurite = 61,
-    Mossy_Cobbled_Azurite = 62,
-    Rock_Basalt = 63,
-    Cobbled_Basalt = 64,
-    Mossy_Basalt = 65,
-    Mossy_Cobbled_Basalt = 66,
-    Rock_Black_Sandstone = 67,
-    Cobbled_Black_Sandstone = 68,
-    Mossy_Black_Sandstone = 69,
-    Mossy_Cobbled_Black_Sandstone = 70,
-    Rock_Calcite = 71,
-    Cobbled_Calcite = 72,
-    Mossy_Calcite = 73,
-    Mossy_Cobbled_Calcite = 74,
-    Rock_Chalk = 75,
-    Cobbled_Chalk = 76,
-    Mossy_Chalk = 77,
-    Mossy_Cobbled_Chalk = 78,
-    Rock_Chert = 79,
-    Cobbled_Chert = 80,
-    Mossy_Chert = 81,
-    Mossy_Cobbled_Chert = 82,
-    Rock_Cinnabar = 83,
-    Cobbled_Cinnabar = 84,
-    Mossy_Cinnabar = 85,
-    Mossy_Cobbled_Cinnabar = 86,
-    Rock_Diorite = 87,
-    Cobbled_Diorite = 88,
-    Mossy_Diorite = 89,
-    Mossy_Cobbled_Diorite = 90,
-    Rock_Gabbro = 91,
-    Cobbled_Gabbro = 92,
-    Mossy_Gabbro = 93,
-    Mossy_Cobbled_Gabbro = 94,
-    Rock_Granite = 95,
-    Cobbled_Granite = 96,
-    Mossy_Granite = 97,
-    Mossy_Cobbled_Granite = 98,
-    Rock_Karst = 99,
-    Cobbled_Karst = 100,
-    Mossy_Karst = 101,
-    Mossy_Cobbled_Karst = 102,
-    Rock_Limestone = 103,
-    Cobbled_Limestone = 104,
-    Mossy_Limestone = 105,
-    Mossy_Cobbled_Limestone = 106,
-    Rock_Marl = 107,
-    Cobbled_Marl = 108,
-    Mossy_Marl = 109,
-    Mossy_Cobbled_Marl = 110,
-    Rock_Pitchstone = 111,
-    Cobbled_Pitchstone = 112,
-    Mossy_Pitchstone = 113,
-    Mossy_Cobbled_Pitchstone = 114,
-    Rock_Porphyry = 115,
-    Cobbled_Porphyry = 116,
-    Mossy_Porphyry = 117,
-    Mossy_Cobbled_Porphyry = 118,
-    Rock_Red_Sandstone = 119,
-    Cobbled_Red_Sandstone = 120,
-    Mossy_Red_Sandstone = 121,
-    Mossy_Cobbled_Red_Sandstone = 122,
-    Rock_Sandstone = 123,
-    Cobbled_Sandstone = 124,
-    Mossy_Sandstone = 125,
-    Mossy_Cobbled_Sandstone = 126,
-    Rock_Scoria = 127,
-    Cobbled_Scoria = 128,
-    Mossy_Scoria = 129,
-    Mossy_Cobbled_Scoria = 130,
-    Rock_Serpentine = 131,
-    Cobbled_Serpentine = 132,
-    Mossy_Serpentine = 133,
-    Mossy_Cobbled_Serpentine = 134,
-    Rock_Slate = 135,
-    Cobbled_Slate = 136,
-    Mossy_Slate = 137,
-    Mossy_Cobbled_Slate = 138,
-    Rock_Stone = 139,
-    Cobbled_Stone = 140,
-    Mossy_Stone = 141,
-    Mossy_Cobbled_Stone = 142,
-    Rock_Tuffite = 143,
-    Cobbled_Tuffite = 144,
-    Mossy_Tuffite = 145,
-    Mossy_Cobbled_Tuffite = 146,
-    Rock_White_Sandstone = 147,
-    Cobbled_White_Sandstone = 148,
-    Mossy_White_Sandstone = 149,
-    Mossy_Cobbled_White_Sandstone = 150,
+    // --- Category 05: Trees & Forestry ---
+    AcaciaLeaves = 179,
+    AcaciaLeavesDead = 180,
+    AcaciaLog = 181,
+    AcaciaPlanks = 182,
+    AcaciaWood = 183,
+    AspenLeaves = 184,
+    AspenLeavesDead = 185,
+    AspenLog = 186,
+    AspenPlanks = 187,
+    AspenWood = 188,
+    BambooLargeLeaves = 189,
+    BambooPlanks = 190,
+    BambooSmallLeaves = 191,
+    BambooStalk = 192,
+    BaobabLeaves = 193,
+    BaobabLeavesDead = 194,
+    BaobabLog = 195,
+    BaobabPlanks = 196,
+    BaobabWood = 197,
+    BirchLeaves = 198,
+    BirchLeavesDead = 199,
+    BirchLog = 200,
+    BirchPlanks = 201,
+    BirchWood = 202,
+    CherryLeaves = 203,
+    CherryLeavesDead = 204,
+    CherryLog = 205,
+    CherryPlanks = 206,
+    CherryWood = 207,
+    CypressLeaves = 208,
+    CypressLeavesDead = 209,
+    CypressLog = 210,
+    CypressPlanks = 211,
+    CypressWood = 212,
+    FirLeaves = 213,
+    FirLeavesDead = 214,
+    FirLog = 215,
+    FirPlanks = 216,
+    FirWood = 217,
+    KapokLeaves = 218,
+    KapokLeavesDead = 219,
+    KapokLog = 220,
+    KapokPlanks = 221,
+    KapokWood = 222,
+    MahoganyLeaves = 223,
+    MahoganyLeavesDead = 224,
+    MahoganyLog = 225,
+    MahoganyPlanks = 226,
+    MahoganyWood = 227,
+    MangroveLeaves = 228,
+    MangroveLeavesDead = 229,
+    MangroveLog = 230,
+    MangrovePlanks = 231,
+    MangroveRoots = 232,
+    MangroveWood = 233,
+    MapleLeavesDead = 234,
+    MapleLeavesOrange = 235,
+    MapleLeavesRed = 236,
+    MapleLeavesYellow = 237,
+    MapleLog = 238,
+    MaplePlanks = 239,
+    MapleWood = 240,
+    OakLeaves = 241,
+    OakLeavesDead = 242,
+    OakLog = 243,
+    OakPlanks = 244,
+    OakWood = 245,
+    PalmLeaves = 246,
+    PalmLeavesDead = 247,
+    PalmLog = 248,
+    PalmPlanks = 249,
+    PalmWood = 250,
+    PineLeaves = 251,
+    PineLeavesDead = 252,
+    PineLog = 253,
+    PinePlanks = 254,
+    PineWood = 255,
+    RedwoodLeaves = 256,
+    RedwoodLeavesDead = 257,
+    RedwoodLog = 258,
+    RedwoodPlanks = 259,
+    RedwoodWood = 260,
+    WillowLeaves = 261,
+    WillowLeavesDead = 262,
+    WillowLog = 263,
+    WillowPlanks = 264,
+    WillowWood = 265,
+    YewLeaves = 266,
+    YewLeavesDead = 267,
+    YewLog = 268,
+    YewPlanks = 269,
+    YewWood = 270,
 
-    // Special Rocky Blocks (8)
-    Rock_Alabaster = 151,
-    Rock_Brimstone = 152,
-    Rock_Cryolite = 153,
-    Rock_Dreadstone = 154,
-    Rock_Flint = 155,
-    Rock_Magma = 156,
-    Rock_Obsidian = 157,
-    Rock_Terracotta = 158,
+    // --- Category 06: Ores, Minerals & Gemology ---
+    GemDiamondGabbro = 271,
+    GemDiamondRough = 272,
+    GemDiamondSerpentinite = 273,
+    GemEmeraldMarble = 274,
+    GemEmeraldRough = 275,
+    GemEmeraldSlate = 276,
+    GemJadeMarble = 277,
+    GemJadeRough = 278,
+    GemJadeSerpentinite = 279,
+    GemOnyxCalcite = 280,
+    GemOnyxMarble = 281,
+    GemOnyxRough = 282,
+    GemOnyxSandstoneBlack = 283,
+    GemOnyxSlate = 284,
+    GemOpalBasalt = 285,
+    GemOpalRough = 286,
+    GemOpalSandstonePink = 287,
+    GemOpalSandstoneWhite = 288,
+    GemOpalTuff = 289,
+    GemRubyBasalt = 290,
+    GemRubyMarble = 291,
+    GemRubyRough = 292,
+    GemSapphireBasalt = 293,
+    GemSapphireMarble = 294,
+    GemSapphireRough = 295,
+    GemTopazGranite = 296,
+    GemTopazRough = 297,
+    GemTopazSandstonePink = 298,
+    OreAluminumArgillite = 299,
+    OreAluminumChalk = 300,
+    OreAluminumLimestone = 301,
+    OreAluminumRaw = 302,
+    OreAluminumSandstoneWhite = 303,
+    OreCinnabarBasalt = 304,
+    OreCinnabarBrimstone = 305,
+    OreCinnabarKarst = 306,
+    OreCinnabarRaw = 307,
+    OreCinnabarTuff = 308,
+    OreCoalAndesite = 309,
+    OreCoalArgillite = 310,
+    OreCoalChalk = 311,
+    OreCoalDiorite = 312,
+    OreCoalDolomite = 313,
+    OreCoalGneiss = 314,
+    OreCoalGranite = 315,
+    OreCoalLimestone = 316,
+    OreCoalRaw = 317,
+    OreCoalSandstoneBlack = 318,
+    OreCoalSandstoneCommon = 319,
+    OreCoalSandstoneDune = 320,
+    OreCoalSlate = 321,
+    OreCopperAndesite = 322,
+    OreCopperArgillite = 323,
+    OreCopperChalk = 324,
+    OreCopperDiorite = 325,
+    OreCopperDolomite = 326,
+    OreCopperGabbro = 327,
+    OreCopperGneiss = 328,
+    OreCopperGranite = 329,
+    OreCopperLimestone = 330,
+    OreCopperRaw = 331,
+    OreCopperSandstoneCommon = 332,
+    OreCopperSandstoneRed = 333,
+    OreCopperSerpentinite = 334,
+    OreCopperSlate = 335,
+    OreCopperTuff = 336,
+    OreGoldGranite = 337,
+    OreGoldMarble = 338,
+    OreGoldRaw = 339,
+    OreGoldSandstoneRed = 340,
+    OreGoldSlate = 341,
+    OreIronAndesite = 342,
+    OreIronBasalt = 343,
+    OreIronDiorite = 344,
+    OreIronDolomite = 345,
+    OreIronGabbro = 346,
+    OreIronGneiss = 347,
+    OreIronGranite = 348,
+    OreIronRaw = 349,
+    OreIronSandstoneBlack = 350,
+    OreIronSandstoneCommon = 351,
+    OreIronSandstoneRed = 352,
+    OreIronScoria = 353,
+    OreIronSerpentinite = 354,
+    OreLazuriteCalcite = 355,
+    OreLazuriteLimestone = 356,
+    OreLazuriteMarble = 357,
+    OreLazuriteRaw = 358,
+    OreLazuriteSandstoneBlack = 359,
+    OreLeadAndesite = 360,
+    OreLeadArgillite = 361,
+    OreLeadChalk = 362,
+    OreLeadDiorite = 363,
+    OreLeadKarst = 364,
+    OreLeadLimestone = 365,
+    OreLeadRaw = 366,
+    OreLeadSandstoneCommon = 367,
+    OreLeadSlate = 368,
+    OreManganeseArgillite = 369,
+    OreManganeseChalk = 370,
+    OreManganeseDolomite = 371,
+    OreManganeseGneiss = 372,
+    OreManganeseLimestone = 373,
+    OreManganeseRaw = 374,
+    OreManganeseSlate = 375,
+    OreNickelBasalt = 376,
+    OreNickelGabbro = 377,
+    OreNickelRaw = 378,
+    OreNickelScoria = 379,
+    OreNickelSerpentinite = 380,
+    OrePlatinumBasalt = 381,
+    OrePlatinumGabbro = 382,
+    OrePlatinumRaw = 383,
+    OrePlatinumScoria = 384,
+    OrePlatinumSerpentinite = 385,
+    OreQuartzAndesite = 386,
+    OreQuartzGneiss = 387,
+    OreQuartzGranite = 388,
+    OreQuartzRaw = 389,
+    OreQuartzSandstoneCommon = 390,
+    OreQuartzSandstoneRed = 391,
+    OreQuartzSandstoneWhite = 392,
+    OreSaltpeterKarst = 393,
+    OreSaltpeterLimestone = 394,
+    OreSaltpeterRaw = 395,
+    OreSaltpeterSandstoneDune = 396,
+    OreSaltpeterSandstoneWhite = 397,
+    OreSilverAndesite = 398,
+    OreSilverDiorite = 399,
+    OreSilverGneiss = 400,
+    OreSilverMarble = 401,
+    OreSilverRaw = 402,
+    OreSulfurBasalt = 403,
+    OreSulfurBrimstone = 404,
+    OreSulfurRaw = 405,
+    OreSulfurScoria = 406,
+    OreSulfurTuff = 407,
+    OreTinAndesite = 408,
+    OreTinDiorite = 409,
+    OreTinDolomite = 410,
+    OreTinGneiss = 411,
+    OreTinGranite = 412,
+    OreTinRaw = 413,
+    OreTinSandstoneCommon = 414,
+    OreUraniumDiorite = 415,
+    OreUraniumGabbro = 416,
+    OreUraniumGranite = 417,
+    OreUraniumRaw = 418,
+    OreUraniumSlate = 419,
+    OreZincAndesite = 420,
+    OreZincArgillite = 421,
+    OreZincChalk = 422,
+    OreZincDiorite = 423,
+    OreZincDolomite = 424,
+    OreZincGneiss = 425,
+    OreZincKarst = 426,
+    OreZincLimestone = 427,
+    OreZincRaw = 428,
 
-    // Wood Blocks (56)
-    Tree_Acacia_Bark = 159,
-    Tree_Acacia_Log = 160,
-    Tree_Acacia_Leaves = 161,
-    Tree_Acacia_Planks = 162,
-    Tree_Birch_Bark = 163,
-    Tree_Birch_Log = 164,
-    Tree_Birch_Leaves = 165,
-    Tree_Birch_Planks = 166,
-    Tree_Cherry_Bark = 167,
-    Tree_Cherry_Log = 168,
-    Tree_Cherry_Leaves = 169,
-    Tree_Cherry_Planks = 170,
-    Tree_Mahogany_Bark = 171,
-    Tree_Mahogany_Log = 172,
-    Tree_Mahogany_Leaves = 173,
-    Tree_Mahogany_Planks = 174,
-    Tree_Mangrove_Bark = 175,
-    Tree_Mangrove_Log = 176,
-    Tree_Mangrove_Leaves = 177,
-    Tree_Mangrove_Planks = 178,
-    Tree_Mangrove_Roots = 179,
-    Tree_Maple_Bark = 180,
-    Tree_Maple_Log = 181,
-    Tree_Maple_Leaves_Red = 182,
-    Tree_Maple_Leaves_Orange = 183,
-    Tree_Maple_Leaves_Yellow = 184,
-    Tree_Maple_Planks = 185,
-    Tree_Oak_Bark = 186,
-    Tree_Oak_Log = 187,
-    Tree_Oak_Leaves = 188,
-    Tree_Oak_Leaves_Lush = 189,
-    Tree_Oak_Leaves_Flowering = 190,
-    Tree_Oak_Planks = 191,
-    Tree_Palm_Bark = 192,
-    Tree_Palm_Log = 193,
-    Tree_Palm_Leaves = 194,
-    Tree_Palm_Planks = 195,
-    Tree_Pine_Bark = 196,
-    Tree_Pine_Log = 197,
-    Tree_Pine_Leaves = 198,
-    Tree_Pine_Planks = 199,
-    Tree_Willow_Bark = 200,
-    Tree_Willow_Log = 201,
-    Tree_Willow_Leaves = 202,
-    Tree_Willow_Planks = 203,
-    Tree_Yew_Bark = 204,
-    Tree_Yew_Log = 205,
-    Tree_Yew_Leaves = 206,
-    Tree_Yew_Planks = 207,
-    Tree_Cactus = 208,
-    Tree_Charred_Bark = 209,
-    Tree_Charred_Log = 210,
-    Tree_Charred_Planks = 211,
-    Tree_Dead_Bark = 212,
-    Tree_Dead_Log = 213,
-    Tree_Dead_Planks = 214,
+    // --- Category 07: Speleology & Crystals ---
+    CrystalAmethystBlock = 429,
+    CrystalAmethystCluster = 430,
+    CrystalAmethystGlinted = 431,
+    CrystalAquamarineBlock = 432,
+    CrystalAquamarineCluster = 433,
+    CrystalAquamarineGlinted = 434,
+    CrystalCitrineBlock = 435,
+    CrystalCitrineCluster = 436,
+    CrystalCitrineGlinted = 437,
+    CrystalFluoriteBlock = 438,
+    CrystalFluoriteCluster = 439,
+    CrystalFluoriteGlinted = 440,
+    CrystalPinkSaltBlock = 441,
+    CrystalPinkSaltCluster = 442,
+    CrystalPinkSaltGlinted = 443,
+    CrystalSeleniteBlock = 444,
+    CrystalSeleniteCluster = 445,
+    CrystalSeleniteGlinted = 446,
+    DripstoneCalcite = 447,
+    DripstoneKarst = 448,
+    FossilAmber = 449,
+    FossilBitumen = 450,
+    FossilBones = 451,
+    FossilMatrix = 452,
+    SpeleothemBasalt = 453,
+    SpeleothemBrimstone = 454,
+    SpeleothemIce = 455,
+    SpeleothemSaltStraw = 456,
 
-    // Aquatic Blocks (8)
-    Aqua_Algae_Mat = 215,
-    Aqua_Brain_Coral = 216,
-    Aqua_Bubble_Coral = 217,
-    Aqua_Fire_Coral = 218,
-    Aqua_Geothermal_Vent = 219,
-    Aqua_Horn_Coral = 220,
-    Aqua_Sponge = 221,
-    Aqua_Tube_Coral = 222,
+    // --- Category 08: Ocean & Benthic Ecosystems ---
+    AlgaeMat = 457,
+    AlgaeReefstone = 458,
+    BarnaclesReefstone = 459,
+    BoneWorms = 460,
+    BrainCoral = 461,
+    BrainCoralFan = 462,
+    BubbleCoral = 463,
+    BubbleCoralFan = 464,
+    BullKelp = 465,
+    Coralstone = 466,
+    DeadCoral = 467,
+    DeadCoralFan = 468,
+    Delesseria = 469,
+    DyingCoral = 470,
+    DyingCoralFan = 471,
+    FireCoral = 472,
+    FireCoralFan = 473,
+    GeothermalVent = 474,
+    HeartCoral = 475,
+    HeartCoralFan = 476,
+    HornCoral = 477,
+    HornCoralFan = 478,
+    Kelp = 479,
+    LeafCoral = 480,
+    LeafCoralFan = 481,
+    PearlBlock = 482,
+    RedAlgae = 483,
+    ReedCoral = 484,
+    ReedCoralFan = 485,
+    Reefstone = 486,
+    Sargassum = 487,
+    ScuteBlock = 488,
+    SeaAnemone = 489,
+    Seagrass = 490,
+    Seaweed = 491,
+    SpikeCoral = 492,
+    SpikeCoralFan = 493,
+    Sponge = 494,
+    StaghornCoral = 495,
+    StaghornCoralFan = 496,
+    SunCoral = 497,
+    SunCoralFan = 498,
+    ThornCoral = 499,
+    ThornCoralFan = 500,
+    TubeCoral = 501,
+    TubeCoralFan = 502,
+    WaxCoral = 503,
+    WaxCoralFan = 504,
+    ZigzagCoral = 505,
+    ZigzagCoralFan = 506,
 
-    // Light Source Blocks (8)
-    Emit_Blue_Light = 223,
-    Emit_Blue_Torch = 224,
-    Emit_Cold_Light = 225,
-    Emit_Green_Light = 226,
-    Emit_Green_Torch = 227,
-    Emit_Red_Light = 228,
-    Emit_Red_Torch = 229,
-    Emit_Warm_Light = 230,
+    // --- Category 09: Biomaterials, Fauna & Organic Matter ---
+    AntHill = 507,
+    AntHillOpen = 508,
+    BeaverDam = 509,
+    BeeNest = 510,
+    BirdNest = 511,
+    BloodyBrain = 512,
+    BloodyFlesh = 513,
+    BlubberBlock = 514,
+    BoneBlock = 515,
+    BrainBlock = 516,
+    CalcinedBone = 517,
+    Cobweb = 518,
+    CobwebArch = 519,
+    CobwebHanging = 520,
+    CobwebStretched = 521,
+    CoproliteBlock = 522,
+    DustBlock = 523,
+    FleshBlock = 524,
+    FurBlock = 525,
+    GuanoBlock = 526,
+    HayNest = 527,
+    HoneyBlock = 528,
+    HoneycombBlock = 529,
+    JellyBlock = 530,
+    LoamBurrow = 531,
+    PeatBurrow = 532,
+    PoopBlock = 533,
+    SeashellBlock = 534,
+    SilkCocoon = 535,
+    SiltBurrow = 536,
+    SlimeBlock = 537,
+    SpiderEgg = 538,
+    TermiteMound = 539,
+    TermiteMoundOpen = 540,
+    WaspNest = 541,
+    WaxBlock = 542,
 
-    // Decoration Blocks (16)
-    Deco_Barrel = 231,
-    Deco_Basket = 232,
-    Deco_Bone = 233,
-    Deco_Bookshelf = 234,
-    Deco_Brick = 235,
-    Deco_Fabric = 236,
-    Deco_Flesh = 237,
-    Deco_Glass = 238,
-    Deco_Hay = 239,
-    Deco_Plaster = 240,
-    Deco_Slime = 241,
-    Deco_Stone_Path = 242,
-    Deco_Thatch = 243,
-    Deco_Wax = 244,
-    Deco_Wicker = 245,
-    Deco_Wool = 246,
+    // --- Category 10: Decorations, Lighting & Architecture ---
+    Bag = 543,
+    Barrel = 544,
+    Basket = 545,
+    Bookshelf = 546,
+    BookshelfEmpty = 547,
+    BrickBlack = 548,
+    BrickBlue = 549,
+    BrickBrown = 550,
+    BrickDarkBlue = 551,
+    BrickDarkGrey = 552,
+    BrickGreen = 553,
+    BrickLightGrey = 554,
+    BrickLightPink = 555,
+    BrickLime = 556,
+    BrickOrange = 557,
+    BrickPink = 558,
+    BrickPurple = 559,
+    BrickRed = 560,
+    BrickTurquoise = 561,
+    BrickWhite = 562,
+    BrickYellow = 563,
+    Bricks = 564,
+    CornBale = 565,
+    Crate = 566,
+    EmitLamp = 567,
+    EmitLightBlue = 568,
+    EmitLightCold = 569,
+    EmitLightGreen = 570,
+    EmitLightRed = 571,
+    EmitLightWarm = 572,
+    EmitTorchBlue = 573,
+    EmitTorchCold = 574,
+    EmitTorchFire = 575,
+    EmitTorchGreen = 576,
+    EmitTorchRed = 577,
+    EmitTorchWarm = 578,
+    Fabric = 579,
+    FabricBlack = 580,
+    FabricBlue = 581,
+    FabricBrown = 582,
+    FabricDarkBlue = 583,
+    FabricDarkGrey = 584,
+    FabricGreen = 585,
+    FabricLightGrey = 586,
+    FabricLightPink = 587,
+    FabricLime = 588,
+    FabricOrange = 589,
+    FabricPink = 590,
+    FabricPurple = 591,
+    FabricRed = 592,
+    FabricTurquoise = 593,
+    FabricWhite = 594,
+    FabricYellow = 595,
+    Glass = 596,
+    GlassBlack = 597,
+    GlassBlue = 598,
+    GlassBrown = 599,
+    GlassDarkBlue = 600,
+    GlassDarkGrey = 601,
+    GlassGreen = 602,
+    GlassLightGrey = 603,
+    GlassLightPink = 604,
+    GlassLime = 605,
+    GlassOrange = 606,
+    GlassPink = 607,
+    GlassPurple = 608,
+    GlassRed = 609,
+    GlassTurquoise = 610,
+    GlassWhite = 611,
+    GlassYellow = 612,
+    HayBale = 613,
+    Linen = 614,
+    LinenBlack = 615,
+    LinenBlue = 616,
+    LinenBrown = 617,
+    LinenDarkBlue = 618,
+    LinenDarkGrey = 619,
+    LinenGreen = 620,
+    LinenLightGrey = 621,
+    LinenLightPink = 622,
+    LinenLime = 623,
+    LinenOrange = 624,
+    LinenPink = 625,
+    LinenPurple = 626,
+    LinenRed = 627,
+    LinenTurquoise = 628,
+    LinenWhite = 629,
+    LinenYellow = 630,
+    PathDirty = 631,
+    PathSandy = 632,
+    PathSnowy = 633,
+    PathStony = 634,
+    Plaster = 635,
+    PlasterBlack = 636,
+    PlasterBlue = 637,
+    PlasterBrown = 638,
+    PlasterDarkBlue = 639,
+    PlasterDarkGrey = 640,
+    PlasterGreen = 641,
+    PlasterLightGrey = 642,
+    PlasterLightPink = 643,
+    PlasterLime = 644,
+    PlasterOrange = 645,
+    PlasterPink = 646,
+    PlasterPurple = 647,
+    PlasterRed = 648,
+    PlasterTurquoise = 649,
+    PlasterWhite = 650,
+    PlasterYellow = 651,
+    RiceBale = 652,
+    Shingles = 653,
+    ShinglesBlack = 654,
+    ShinglesBlue = 655,
+    ShinglesBrown = 656,
+    ShinglesDarkBlue = 657,
+    ShinglesDarkGrey = 658,
+    ShinglesGreen = 659,
+    ShinglesLightGrey = 660,
+    ShinglesLightPink = 661,
+    ShinglesLime = 662,
+    ShinglesOrange = 663,
+    ShinglesPink = 664,
+    ShinglesPurple = 665,
+    ShinglesRed = 666,
+    ShinglesTurquoise = 667,
+    ShinglesWhite = 668,
+    ShinglesYellow = 669,
+    StrawBale = 670,
+    TintedGlass = 671,
+    TintedGlassBlack = 672,
+    TintedGlassBlue = 673,
+    TintedGlassBrown = 674,
+    TintedGlassDarkBlue = 675,
+    TintedGlassDarkGrey = 676,
+    TintedGlassGreen = 677,
+    TintedGlassLightGrey = 678,
+    TintedGlassLightPink = 679,
+    TintedGlassLime = 680,
+    TintedGlassOrange = 681,
+    TintedGlassPink = 682,
+    TintedGlassPurple = 683,
+    TintedGlassRed = 684,
+    TintedGlassTurquoise = 685,
+    TintedGlassWhite = 686,
+    TintedGlassYellow = 687,
+    Wool = 688,
+    WoolBlack = 689,
+    WoolBlue = 690,
+    WoolBrown = 691,
+    WoolDarkBlue = 692,
+    WoolDarkGrey = 693,
+    WoolGreen = 694,
+    WoolLightGrey = 695,
+    WoolLightPink = 696,
+    WoolLime = 697,
+    WoolOrange = 698,
+    WoolPink = 699,
+    WoolPurple = 700,
+    WoolRed = 701,
+    WoolTurquoise = 702,
+    WoolWhite = 703,
+    WoolYellow = 704,
+
+    // --- Category 11: Mycology: Mushrooms ---
+    FungiAmanita = 705,
+    FungiAmanitaCap = 706,
+    FungiChanterelle = 707,
+    FungiChanterelleCap = 708,
+    FungiIndigo = 709,
+    FungiIndigoCap = 710,
+    FungiInside = 711,
+    FungiMycena = 712,
+    FungiMycenaCap = 713,
+    FungiPorcini = 714,
+    FungiPorciniCap = 715,
+    FungiRussula = 716,
+    FungiRussulaCap = 717,
+    FungiShiitake = 718,
+    FungiShiitakeCap = 719,
+    FungiStem = 720,
+    FungiVerdigris = 721,
+    FungiVerdigrisCap = 722,
 }
 
 impl Voxel {
-    /// All voxels that map to a texture and are loaded into the terrain texture array.
-    pub const ALL: [Voxel; 244] = [
-        // Testing / Debug Blocks
-        Voxel::Null_Block,
-        Voxel::Null_Liquid,
-        Voxel::Test_Accept,
-        Voxel::Test_Debug,
-        Voxel::Test_Numbers,
-        Voxel::Test_Fail,
-        Voxel::Test_Instance,
-        Voxel::Test_Start,
-        // Liquid / Fluid Blocks
-        Voxel::Liquid_Acid,
-        Voxel::Liquid_Blood,
-        Voxel::Liquid_Lava,
-        Voxel::Liquid_Molten,
-        Voxel::Liquid_Ooze,
-        Voxel::Liquid_Sludge,
-        Voxel::Liquid_Tar,
-        Voxel::Liquid_Water,
-        // Frost Blocks
-        Voxel::Frost_Black_Ice,
-        Voxel::Frost_Fragile_Ice,
-        Voxel::Frost_Ice,
-        Voxel::Frost_Packed_Ice,
-        // Soil Blocks
-        Voxel::Soil_Ash,
-        Voxel::Soil_Black_Sand,
-        Voxel::Soil_Clay,
-        Voxel::Soil_Dirt,
-        Voxel::Soil_Grass,
-        Voxel::Soil_Gravel,
-        Voxel::Soil_Moss,
-        Voxel::Soil_Mud,
-        Voxel::Soil_Mulch,
-        Voxel::Soil_Packed_Dirt,
-        Voxel::Soil_Packed_Mud,
-        Voxel::Soil_Packed_Peat,
-        Voxel::Soil_Packed_Silt,
-        Voxel::Soil_Peat_Dirt,
-        Voxel::Soil_Peat_Grass,
-        Voxel::Soil_Peat_Mulch,
-        Voxel::Soil_Red_Moss,
-        Voxel::Soil_Red_Sand,
-        Voxel::Soil_Rooted_Dirt,
-        Voxel::Soil_Sand,
-        Voxel::Soil_Scorched_Black_Sand,
-        Voxel::Soil_Scorched_Red_Sand,
-        Voxel::Soil_Scorched_Sand,
-        Voxel::Soil_Scorched_White_Sand,
-        Voxel::Soil_Silt_Dirt,
-        Voxel::Soil_Silt_Grass,
-        Voxel::Soil_Silt_Mulch,
-        Voxel::Soil_Snow,
-        Voxel::Soil_Snowy_Grass,
-        Voxel::Soil_Snowy_Peat,
-        Voxel::Soil_Snowy_Silt,
-        Voxel::Soil_White_Sand,
-        // Rocky Blocks
-        Voxel::Rock_Andesite,
-        Voxel::Cobbled_Andesite,
-        Voxel::Mossy_Andesite,
-        Voxel::Mossy_Cobbled_Andesite,
-        Voxel::Rock_Azurite,
-        Voxel::Cobbled_Azurite,
-        Voxel::Mossy_Azurite,
-        Voxel::Mossy_Cobbled_Azurite,
-        Voxel::Rock_Basalt,
-        Voxel::Cobbled_Basalt,
-        Voxel::Mossy_Basalt,
-        Voxel::Mossy_Cobbled_Basalt,
-        Voxel::Rock_Black_Sandstone,
-        Voxel::Cobbled_Black_Sandstone,
-        Voxel::Mossy_Black_Sandstone,
-        Voxel::Mossy_Cobbled_Black_Sandstone,
-        Voxel::Rock_Calcite,
-        Voxel::Cobbled_Calcite,
-        Voxel::Mossy_Calcite,
-        Voxel::Mossy_Cobbled_Calcite,
-        Voxel::Rock_Chalk,
-        Voxel::Cobbled_Chalk,
-        Voxel::Mossy_Chalk,
-        Voxel::Mossy_Cobbled_Chalk,
-        Voxel::Rock_Chert,
-        Voxel::Cobbled_Chert,
-        Voxel::Mossy_Chert,
-        Voxel::Mossy_Cobbled_Chert,
-        Voxel::Rock_Cinnabar,
-        Voxel::Cobbled_Cinnabar,
-        Voxel::Mossy_Cinnabar,
-        Voxel::Mossy_Cobbled_Cinnabar,
-        Voxel::Rock_Diorite,
-        Voxel::Cobbled_Diorite,
-        Voxel::Mossy_Diorite,
-        Voxel::Mossy_Cobbled_Diorite,
-        Voxel::Rock_Gabbro,
-        Voxel::Cobbled_Gabbro,
-        Voxel::Mossy_Gabbro,
-        Voxel::Mossy_Cobbled_Gabbro,
-        Voxel::Rock_Granite,
-        Voxel::Cobbled_Granite,
-        Voxel::Mossy_Granite,
-        Voxel::Mossy_Cobbled_Granite,
-        Voxel::Rock_Karst,
-        Voxel::Cobbled_Karst,
-        Voxel::Mossy_Karst,
-        Voxel::Mossy_Cobbled_Karst,
-        Voxel::Rock_Limestone,
-        Voxel::Cobbled_Limestone,
-        Voxel::Mossy_Limestone,
-        Voxel::Mossy_Cobbled_Limestone,
-        Voxel::Rock_Marl,
-        Voxel::Cobbled_Marl,
-        Voxel::Mossy_Marl,
-        Voxel::Mossy_Cobbled_Marl,
-        Voxel::Rock_Pitchstone,
-        Voxel::Cobbled_Pitchstone,
-        Voxel::Mossy_Pitchstone,
-        Voxel::Mossy_Cobbled_Pitchstone,
-        Voxel::Rock_Porphyry,
-        Voxel::Cobbled_Porphyry,
-        Voxel::Mossy_Porphyry,
-        Voxel::Mossy_Cobbled_Porphyry,
-        Voxel::Rock_Red_Sandstone,
-        Voxel::Cobbled_Red_Sandstone,
-        Voxel::Mossy_Red_Sandstone,
-        Voxel::Mossy_Cobbled_Red_Sandstone,
-        Voxel::Rock_Sandstone,
-        Voxel::Cobbled_Sandstone,
-        Voxel::Mossy_Sandstone,
-        Voxel::Mossy_Cobbled_Sandstone,
-        Voxel::Rock_Scoria,
-        Voxel::Cobbled_Scoria,
-        Voxel::Mossy_Scoria,
-        Voxel::Mossy_Cobbled_Scoria,
-        Voxel::Rock_Serpentine,
-        Voxel::Cobbled_Serpentine,
-        Voxel::Mossy_Serpentine,
-        Voxel::Mossy_Cobbled_Serpentine,
-        Voxel::Rock_Slate,
-        Voxel::Cobbled_Slate,
-        Voxel::Mossy_Slate,
-        Voxel::Mossy_Cobbled_Slate,
-        Voxel::Rock_Stone,
-        Voxel::Cobbled_Stone,
-        Voxel::Mossy_Stone,
-        Voxel::Mossy_Cobbled_Stone,
-        Voxel::Rock_Tuffite,
-        Voxel::Cobbled_Tuffite,
-        Voxel::Mossy_Tuffite,
-        Voxel::Mossy_Cobbled_Tuffite,
-        Voxel::Rock_White_Sandstone,
-        Voxel::Cobbled_White_Sandstone,
-        Voxel::Mossy_White_Sandstone,
-        Voxel::Mossy_Cobbled_White_Sandstone,
-        // Special Rocky Blocks
-        Voxel::Rock_Alabaster,
-        Voxel::Rock_Brimstone,
-        Voxel::Rock_Cryolite,
-        Voxel::Rock_Dreadstone,
-        Voxel::Rock_Flint,
-        Voxel::Rock_Magma,
-        Voxel::Rock_Obsidian,
-        Voxel::Rock_Terracotta,
-        // Wood Blocks
-        Voxel::Tree_Acacia_Bark,
-        Voxel::Tree_Acacia_Log,
-        Voxel::Tree_Acacia_Leaves,
-        Voxel::Tree_Acacia_Planks,
-        Voxel::Tree_Birch_Bark,
-        Voxel::Tree_Birch_Log,
-        Voxel::Tree_Birch_Leaves,
-        Voxel::Tree_Birch_Planks,
-        Voxel::Tree_Cherry_Bark,
-        Voxel::Tree_Cherry_Log,
-        Voxel::Tree_Cherry_Leaves,
-        Voxel::Tree_Cherry_Planks,
-        Voxel::Tree_Mahogany_Bark,
-        Voxel::Tree_Mahogany_Log,
-        Voxel::Tree_Mahogany_Leaves,
-        Voxel::Tree_Mahogany_Planks,
-        Voxel::Tree_Mangrove_Bark,
-        Voxel::Tree_Mangrove_Log,
-        Voxel::Tree_Mangrove_Leaves,
-        Voxel::Tree_Mangrove_Planks,
-        Voxel::Tree_Mangrove_Roots,
-        Voxel::Tree_Maple_Bark,
-        Voxel::Tree_Maple_Log,
-        Voxel::Tree_Maple_Leaves_Red,
-        Voxel::Tree_Maple_Leaves_Orange,
-        Voxel::Tree_Maple_Leaves_Yellow,
-        Voxel::Tree_Maple_Planks,
-        Voxel::Tree_Oak_Bark,
-        Voxel::Tree_Oak_Log,
-        Voxel::Tree_Oak_Leaves,
-        Voxel::Tree_Oak_Leaves_Lush,
-        Voxel::Tree_Oak_Leaves_Flowering,
-        Voxel::Tree_Oak_Planks,
-        Voxel::Tree_Palm_Bark,
-        Voxel::Tree_Palm_Log,
-        Voxel::Tree_Palm_Leaves,
-        Voxel::Tree_Palm_Planks,
-        Voxel::Tree_Pine_Bark,
-        Voxel::Tree_Pine_Log,
-        Voxel::Tree_Pine_Leaves,
-        Voxel::Tree_Pine_Planks,
-        Voxel::Tree_Willow_Bark,
-        Voxel::Tree_Willow_Log,
-        Voxel::Tree_Willow_Leaves,
-        Voxel::Tree_Willow_Planks,
-        Voxel::Tree_Yew_Bark,
-        Voxel::Tree_Yew_Log,
-        Voxel::Tree_Yew_Leaves,
-        Voxel::Tree_Yew_Planks,
-        Voxel::Tree_Cactus,
-        Voxel::Tree_Charred_Bark,
-        Voxel::Tree_Charred_Log,
-        Voxel::Tree_Charred_Planks,
-        Voxel::Tree_Dead_Bark,
-        Voxel::Tree_Dead_Log,
-        Voxel::Tree_Dead_Planks,
-        // Aquatic Blocks
-        Voxel::Aqua_Algae_Mat,
-        Voxel::Aqua_Brain_Coral,
-        Voxel::Aqua_Bubble_Coral,
-        Voxel::Aqua_Fire_Coral,
-        Voxel::Aqua_Geothermal_Vent,
-        Voxel::Aqua_Horn_Coral,
-        Voxel::Aqua_Sponge,
-        Voxel::Aqua_Tube_Coral,
-        // Light Source Blocks
-        Voxel::Emit_Blue_Light,
-        Voxel::Emit_Blue_Torch,
-        Voxel::Emit_Cold_Light,
-        Voxel::Emit_Green_Light,
-        Voxel::Emit_Green_Torch,
-        Voxel::Emit_Red_Light,
-        Voxel::Emit_Red_Torch,
-        Voxel::Emit_Warm_Light,
-        // Decoration Blocks
-        Voxel::Deco_Barrel,
-        Voxel::Deco_Basket,
-        Voxel::Deco_Bone,
-        Voxel::Deco_Bookshelf,
-        Voxel::Deco_Brick,
-        Voxel::Deco_Fabric,
-        Voxel::Deco_Flesh,
-        Voxel::Deco_Glass,
-        Voxel::Deco_Hay,
-        Voxel::Deco_Plaster,
-        Voxel::Deco_Slime,
-        Voxel::Deco_Stone_Path,
-        Voxel::Deco_Thatch,
-        Voxel::Deco_Wax,
-        Voxel::Deco_Wicker,
-        Voxel::Deco_Wool,
-    ];
+    #[inline(always)]
+    pub const fn from_u16(val: u16) -> Option<Self> {
+        if val <= 722 {
+            Some(unsafe { core::mem::transmute::<u16, Self>(val) })
+        } else {
+            None
+        }
+    }
 }
 
-const FLAG_EMPTY: u16 = 1 << 0;
-const FLAG_WATER: u16 = 1 << 1;
-const FLAG_FLUID: u16 = 1 << 2;
-const FLAG_COLLIDABLE: u16 = 1 << 3;
-const FLAG_TORCH: u16 = 1 << 4;
-const FLAG_BASKET: u16 = 1 << 5;
-const FLAG_TRANSPARENT: u16 = 1 << 6;
-const FLAG_LEAVES: u16 = 1 << 7;
-const FLAG_SOLID_OPAQUE: u16 = 1 << 8;
-const FLAG_LIGHT: u16 = 1 << 9;
-const FLAG_POINT_LIGHT: u16 = 1 << 10;
+const fn generate_all_voxels() -> [Voxel; 720] {
+    let mut arr = [Voxel::Air; 720];
+    let mut i = 0;
+    while i < 720 {
+        arr[i] = unsafe { core::mem::transmute::<u16, Voxel>((i as u16) + 3) };
+        i += 1;
+    }
+    arr
+}
+
+impl Voxel {
+    pub const ALL: [Voxel; 720] = generate_all_voxels();
+}
+
+pub const FLAG_EMPTY: u16 = 1 << 0;
+pub const FLAG_WATER: u16 = 1 << 1;
+pub const FLAG_FLUID: u16 = 1 << 2;
+pub const FLAG_COLLIDABLE: u16 = 1 << 3;
+pub const FLAG_TORCH: u16 = 1 << 4;
+pub const FLAG_BASKET: u16 = 1 << 5;
+pub const FLAG_TRANSPARENT: u16 = 1 << 6;
+pub const FLAG_LEAVES: u16 = 1 << 7;
+pub const FLAG_SOLID_OPAQUE: u16 = 1 << 8;
+pub const FLAG_LIGHT: u16 = 1 << 9;
+pub const FLAG_POINT_LIGHT: u16 = 1 << 10;
+pub const FLAG_CROSS_BILLBOARD: u16 = 1 << 11;
 
 #[derive(Clone, Copy)]
 struct VoxelProps {
@@ -791,128 +1040,80 @@ struct VoxelProps {
 
 const fn compute_voxel_props(v: Voxel) -> VoxelProps {
     let mut flags = 0u16;
+    let id = v as u16;
 
-    let is_empty = matches!(v, Voxel::Air);
-    if is_empty {
+    if id == 0 {
         flags |= FLAG_EMPTY;
     }
 
-    let is_water = matches!(v, Voxel::Liquid_Water | Voxel::WaterOccupied);
-    if is_water {
+    if matches!(id, 2 | 26 | 28) {
         flags |= FLAG_WATER;
     }
 
-    let is_fluid = is_water
-        || matches!(
-            v,
-            Voxel::Liquid_Acid
-                | Voxel::Liquid_Blood
-                | Voxel::Liquid_Lava
-                | Voxel::Liquid_Molten
-                | Voxel::Liquid_Ooze
-                | Voxel::Liquid_Sludge
-                | Voxel::Liquid_Tar
-                | Voxel::Null_Liquid
-        );
-    if is_fluid {
+    if matches!(id, 2 | 10 | 19..=28) {
         flags |= FLAG_FLUID;
     }
 
-    let is_torch = matches!(
-        v,
-        Voxel::Emit_Blue_Torch | Voxel::Emit_Green_Torch | Voxel::Emit_Red_Torch
-    );
-    if is_torch {
+    if v.is_torch_const() {
         flags |= FLAG_TORCH;
     }
 
-    let is_basket = matches!(v, Voxel::Deco_Basket);
-    if is_basket {
+    if v.is_basket_const() {
         flags |= FLAG_BASKET;
     }
 
-    let is_transparent = is_water
-        || matches!(
-            v,
-            Voxel::Deco_Glass
-                | Voxel::Frost_Ice
-                | Voxel::Frost_Fragile_Ice
-                | Voxel::Frost_Black_Ice
-        );
-    if is_transparent {
+    if v.is_cross_billboard_const() {
+        flags |= FLAG_CROSS_BILLBOARD;
+    }
+
+    if v.is_transparent_const() {
         flags |= FLAG_TRANSPARENT;
     }
 
-    let is_leaves = matches!(
-        v,
-        Voxel::Tree_Acacia_Leaves
-            | Voxel::Tree_Birch_Leaves
-            | Voxel::Tree_Cherry_Leaves
-            | Voxel::Tree_Mahogany_Leaves
-            | Voxel::Tree_Mangrove_Leaves
-            | Voxel::Tree_Maple_Leaves_Red
-            | Voxel::Tree_Maple_Leaves_Orange
-            | Voxel::Tree_Maple_Leaves_Yellow
-            | Voxel::Tree_Oak_Leaves
-            | Voxel::Tree_Oak_Leaves_Lush
-            | Voxel::Tree_Oak_Leaves_Flowering
-            | Voxel::Tree_Palm_Leaves
-            | Voxel::Tree_Pine_Leaves
-            | Voxel::Tree_Willow_Leaves
-            | Voxel::Tree_Yew_Leaves
-    );
-    if is_leaves {
+    if v.is_leaves_const() {
         flags |= FLAG_LEAVES;
     }
 
-    let is_occupied = matches!(v, Voxel::Occupied | Voxel::WaterOccupied);
+    let is_empty = (flags & FLAG_EMPTY) != 0;
+    let is_fluid = (flags & FLAG_FLUID) != 0;
+    let is_torch = (flags & FLAG_TORCH) != 0;
+    let is_occupied = matches!(id, 1 | 2);
 
     let is_collidable = !is_empty && !is_fluid && !is_torch && !is_occupied;
     if is_collidable {
         flags |= FLAG_COLLIDABLE;
     }
 
-    let is_solid_opaque = !is_empty
-        && !is_fluid
-        && !is_leaves
-        && !is_transparent
-        && !is_torch
-        && !is_basket
-        && !is_occupied;
+    // Rocks (87..=178 without pebbles 163..=168) + Ores (271..=428): 250 blocks resolved in 1 single line
+    let is_solid_opaque = matches!(id, 87..=162 | 169..=178 | 271..=428)
+        || (!is_empty
+            && !is_fluid
+            && (flags & FLAG_LEAVES) == 0
+            && (flags & FLAG_TRANSPARENT) == 0
+            && !is_torch
+            && (flags & FLAG_BASKET) == 0
+            && (flags & FLAG_CROSS_BILLBOARD) == 0
+            && !v.is_pebble_const()
+            && !is_occupied);
+
     if is_solid_opaque {
         flags |= FLAG_SOLID_OPAQUE;
     }
 
-    let is_point_light = matches!(
-        v,
-        Voxel::Emit_Blue_Light
-            | Voxel::Emit_Blue_Torch
-            | Voxel::Emit_Cold_Light
-            | Voxel::Emit_Green_Light
-            | Voxel::Emit_Green_Torch
-            | Voxel::Emit_Red_Light
-            | Voxel::Emit_Red_Torch
-            | Voxel::Emit_Warm_Light
-    );
-    if is_point_light {
+    if v.is_point_light_const() {
         flags |= FLAG_POINT_LIGHT;
     }
 
-    let is_light = is_point_light
-        || matches!(
-            v,
-            Voxel::Liquid_Lava | Voxel::Liquid_Molten | Voxel::Rock_Magma
-        );
-    if is_light {
+    if v.is_light_const() {
         flags |= FLAG_LIGHT;
     }
 
-    let max_fluid_spread = match v {
-        Voxel::Liquid_Water | Voxel::WaterOccupied => 8,
-        Voxel::Liquid_Acid => 5,
-        Voxel::Liquid_Blood | Voxel::Null_Liquid => 4,
-        Voxel::Liquid_Lava | Voxel::Liquid_Molten | Voxel::Liquid_Sludge | Voxel::Liquid_Ooze => 3,
-        Voxel::Liquid_Tar => 2,
+    let max_fluid_spread = match id {
+        2 | 26 | 28 => 8,
+        19 => 5,
+        10 | 20 => 4,
+        21..=25 => 3,
+        27 => 2,
         _ => 0,
     };
 
@@ -922,510 +1123,2061 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
     }
 }
 
-const fn init_voxel_properties() -> [VoxelProps; 256] {
+pub const MAX_VOXEL_COUNT: usize = 1024;
+
+const fn init_voxel_properties() -> [VoxelProps; MAX_VOXEL_COUNT] {
     let mut table = [VoxelProps {
         flags: 0,
         max_fluid_spread: 0,
-    }; 256];
-
-    table[Voxel::Air as usize] = compute_voxel_props(Voxel::Air);
-    table[Voxel::Occupied as usize] = compute_voxel_props(Voxel::Occupied);
-    table[Voxel::WaterOccupied as usize] = compute_voxel_props(Voxel::WaterOccupied);
+    }; MAX_VOXEL_COUNT];
 
     let mut idx = 0;
-    while idx < Voxel::ALL.len() {
-        let v = Voxel::ALL[idx];
-        table[v as usize] = compute_voxel_props(v);
+    while idx <= 722 {
+        if let Some(v) = Voxel::from_u16(idx as u16) {
+            table[idx] = compute_voxel_props(v);
+        }
         idx += 1;
     }
 
     table
 }
 
-static VOXEL_PROPS: [VoxelProps; 256] = init_voxel_properties();
+static VOXEL_PROPS: [VoxelProps; MAX_VOXEL_COUNT] = init_voxel_properties();
 
 impl Voxel {
-    /// The base texture name under `assets/textures/blocks/` without extension.
-    pub fn texture_name(self) -> Option<&'static str> {
-        match self {
-            Self::Air | Self::Occupied | Self::WaterOccupied => None,
-            // Testing / Debug Blocks
-            Self::Null_Block => Some("null_block"),
-            Self::Null_Liquid => Some("null_liquid"),
-            Self::Test_Accept => Some("test_accept"),
-            Self::Test_Debug => Some("test_debug"),
-            Self::Test_Numbers => Some("test_numbers"),
-            Self::Test_Fail => Some("test_fail"),
-            Self::Test_Instance => Some("test_instance"),
-            Self::Test_Start => Some("test_start"),
-            // Liquid / Fluid Blocks
-            Self::Liquid_Acid => Some("liquid_acid_still"),
-            Self::Liquid_Blood => Some("liquid_blood_still"),
-            Self::Liquid_Lava => Some("liquid_lava_still"),
-            Self::Liquid_Molten => Some("liquid_molten_still"),
-            Self::Liquid_Ooze => Some("liquid_ooze_still"),
-            Self::Liquid_Sludge => Some("liquid_sludge_still"),
-            Self::Liquid_Tar => Some("liquid_tar_still"),
-            Self::Liquid_Water => Some("liquid_water_still"),
-            // Frost Blocks
-            Self::Frost_Black_Ice => Some("frost_black_ice"),
-            Self::Frost_Fragile_Ice => Some("frost_fragile_ice"),
-            Self::Frost_Ice => Some("frost_ice"),
-            Self::Frost_Packed_Ice => Some("frost_packed_ice"),
-            // Soil Blocks
-            Self::Soil_Ash => Some("soil_ash"),
-            Self::Soil_Black_Sand => Some("soil_black_sand"),
-            Self::Soil_Clay => Some("soil_clay"),
-            Self::Soil_Dirt => Some("soil_dirt"),
-            Self::Soil_Grass => Some("soil_grass"),
-            Self::Soil_Gravel => Some("soil_gravel"),
-            Self::Soil_Moss => Some("soil_moss"),
-            Self::Soil_Mud => Some("soil_mud"),
-            Self::Soil_Mulch => Some("soil_mulch"),
-            Self::Soil_Packed_Dirt => Some("soil_packed_dirt"),
-            Self::Soil_Packed_Mud => Some("soil_packed_mud"),
-            Self::Soil_Packed_Peat => Some("soil_packed_peat"),
-            Self::Soil_Packed_Silt => Some("soil_packed_silt"),
-            Self::Soil_Peat_Dirt => Some("soil_peat_dirt"),
-            Self::Soil_Peat_Grass => Some("soil_grass"),
-            Self::Soil_Peat_Mulch => Some("soil_peat_mulch"),
-            Self::Soil_Red_Moss => Some("soil_red_moss"),
-            Self::Soil_Red_Sand => Some("soil_red_sand"),
-            Self::Soil_Rooted_Dirt => Some("soil_rooted_dirt"),
-            Self::Soil_Sand => Some("soil_sand"),
-            Self::Soil_Scorched_Black_Sand => Some("soil_scorched_black_sand"),
-            Self::Soil_Scorched_Red_Sand => Some("soil_scorched_red_sand"),
-            Self::Soil_Scorched_Sand => Some("soil_scorched_sand"),
-            Self::Soil_Scorched_White_Sand => Some("soil_scorched_white_sand"),
-            Self::Soil_Silt_Dirt => Some("soil_silt_dirt"),
-            Self::Soil_Silt_Grass => Some("soil_grass"),
-            Self::Soil_Silt_Mulch => Some("soil_silt_mulch"),
-            Self::Soil_Snow => Some("soil_snow"),
-            Self::Soil_Snowy_Grass => Some("soil_snow"),
-            Self::Soil_Snowy_Peat => Some("soil_snow"),
-            Self::Soil_Snowy_Silt => Some("soil_snow"),
-            Self::Soil_White_Sand => Some("soil_white_sand"),
-            // Rocky Blocks
-            Self::Rock_Andesite => Some("rock_andesite"),
-            Self::Cobbled_Andesite => Some("cobbled_andesite"),
-            Self::Mossy_Andesite => Some("rock_andesite"),
-            Self::Mossy_Cobbled_Andesite => Some("cobbled_andesite"),
-            Self::Rock_Azurite => Some("rock_azurite"),
-            Self::Cobbled_Azurite => Some("cobbled_azurite"),
-            Self::Mossy_Azurite => Some("rock_azurite"),
-            Self::Mossy_Cobbled_Azurite => Some("cobbled_azurite"),
-            Self::Rock_Basalt => Some("rock_basalt"),
-            Self::Cobbled_Basalt => Some("cobbled_basalt"),
-            Self::Mossy_Basalt => Some("rock_basalt"),
-            Self::Mossy_Cobbled_Basalt => Some("cobbled_basalt"),
-            Self::Rock_Black_Sandstone => Some("rock_black_sandstone"),
-            Self::Cobbled_Black_Sandstone => Some("cobbled_black_sandstone"),
-            Self::Mossy_Black_Sandstone => Some("rock_black_sandstone"),
-            Self::Mossy_Cobbled_Black_Sandstone => Some("cobbled_black_sandstone"),
-            Self::Rock_Calcite => Some("rock_calcite"),
-            Self::Cobbled_Calcite => Some("cobbled_calcite"),
-            Self::Mossy_Calcite => Some("rock_calcite"),
-            Self::Mossy_Cobbled_Calcite => Some("cobbled_calcite"),
-            Self::Rock_Chalk => Some("rock_chalk"),
-            Self::Cobbled_Chalk => Some("cobbled_chalk"),
-            Self::Mossy_Chalk => Some("rock_chalk"),
-            Self::Mossy_Cobbled_Chalk => Some("cobbled_chalk"),
-            Self::Rock_Chert => Some("rock_chert"),
-            Self::Cobbled_Chert => Some("cobbled_chert"),
-            Self::Mossy_Chert => Some("rock_chert"),
-            Self::Mossy_Cobbled_Chert => Some("cobbled_chert"),
-            Self::Rock_Cinnabar => Some("rock_cinnabar"),
-            Self::Cobbled_Cinnabar => Some("cobbled_cinnabar"),
-            Self::Mossy_Cinnabar => Some("rock_cinnabar"),
-            Self::Mossy_Cobbled_Cinnabar => Some("cobbled_cinnabar"),
-            Self::Rock_Diorite => Some("rock_diorite"),
-            Self::Cobbled_Diorite => Some("cobbled_diorite"),
-            Self::Mossy_Diorite => Some("rock_diorite"),
-            Self::Mossy_Cobbled_Diorite => Some("cobbled_diorite"),
-            Self::Rock_Gabbro => Some("rock_gabbro"),
-            Self::Cobbled_Gabbro => Some("cobbled_gabbro"),
-            Self::Mossy_Gabbro => Some("rock_gabbro"),
-            Self::Mossy_Cobbled_Gabbro => Some("cobbled_gabbro"),
-            Self::Rock_Granite => Some("rock_granite"),
-            Self::Cobbled_Granite => Some("cobbled_granite"),
-            Self::Mossy_Granite => Some("rock_granite"),
-            Self::Mossy_Cobbled_Granite => Some("cobbled_granite"),
-            Self::Rock_Karst => Some("rock_karst"),
-            Self::Cobbled_Karst => Some("cobbled_karst"),
-            Self::Mossy_Karst => Some("rock_karst"),
-            Self::Mossy_Cobbled_Karst => Some("cobbled_karst"),
-            Self::Rock_Limestone => Some("rock_limestone"),
-            Self::Cobbled_Limestone => Some("cobbled_limestone"),
-            Self::Mossy_Limestone => Some("rock_limestone"),
-            Self::Mossy_Cobbled_Limestone => Some("cobbled_limestone"),
-            Self::Rock_Marl => Some("rock_marl"),
-            Self::Cobbled_Marl => Some("cobbled_marl"),
-            Self::Mossy_Marl => Some("rock_marl"),
-            Self::Mossy_Cobbled_Marl => Some("cobbled_marl"),
-            Self::Rock_Pitchstone => Some("rock_pitchstone"),
-            Self::Cobbled_Pitchstone => Some("cobbled_pitchstone"),
-            Self::Mossy_Pitchstone => Some("rock_pitchstone"),
-            Self::Mossy_Cobbled_Pitchstone => Some("cobbled_pitchstone"),
-            Self::Rock_Porphyry => Some("rock_porphyry"),
-            Self::Cobbled_Porphyry => Some("cobbled_porphyry"),
-            Self::Mossy_Porphyry => Some("rock_porphyry"),
-            Self::Mossy_Cobbled_Porphyry => Some("cobbled_porphyry"),
-            Self::Rock_Red_Sandstone => Some("rock_red_sandstone"),
-            Self::Cobbled_Red_Sandstone => Some("cobbled_red_sandstone"),
-            Self::Mossy_Red_Sandstone => Some("rock_red_sandstone"),
-            Self::Mossy_Cobbled_Red_Sandstone => Some("cobbled_red_sandstone"),
-            Self::Rock_Sandstone => Some("rock_sandstone"),
-            Self::Cobbled_Sandstone => Some("cobbled_sandstone"),
-            Self::Mossy_Sandstone => Some("rock_sandstone"),
-            Self::Mossy_Cobbled_Sandstone => Some("cobbled_sandstone"),
-            Self::Rock_Scoria => Some("rock_scoria"),
-            Self::Cobbled_Scoria => Some("cobbled_scoria"),
-            Self::Mossy_Scoria => Some("rock_scoria"),
-            Self::Mossy_Cobbled_Scoria => Some("cobbled_scoria"),
-            Self::Rock_Serpentine => Some("rock_serpentine"),
-            Self::Cobbled_Serpentine => Some("cobbled_serpentine"),
-            Self::Mossy_Serpentine => Some("rock_serpentine"),
-            Self::Mossy_Cobbled_Serpentine => Some("cobbled_serpentine"),
-            Self::Rock_Slate => Some("rock_slate"),
-            Self::Cobbled_Slate => Some("cobbled_slate"),
-            Self::Mossy_Slate => Some("rock_slate"),
-            Self::Mossy_Cobbled_Slate => Some("cobbled_slate"),
-            Self::Rock_Stone => Some("rock_stone"),
-            Self::Cobbled_Stone => Some("cobbled_stone"),
-            Self::Mossy_Stone => Some("rock_stone"),
-            Self::Mossy_Cobbled_Stone => Some("cobbled_stone"),
-            Self::Rock_Tuffite => Some("rock_tuffite"),
-            Self::Cobbled_Tuffite => Some("cobbled_tuff"),
-            Self::Mossy_Tuffite => Some("rock_tuffite"),
-            Self::Mossy_Cobbled_Tuffite => Some("cobbled_tuff"),
-            Self::Rock_White_Sandstone => Some("rock_white_sandstone"),
-            Self::Cobbled_White_Sandstone => Some("cobbled_white_sandstone"),
-            Self::Mossy_White_Sandstone => Some("rock_white_sandstone"),
-            Self::Mossy_Cobbled_White_Sandstone => Some("cobbled_white_sandstone"),
-            // Special Rocky Blocks
-            Self::Rock_Alabaster => Some("rock_alabaster"),
-            Self::Rock_Brimstone => Some("rock_brimstone"),
-            Self::Rock_Cryolite => Some("rock_cryolite"),
-            Self::Rock_Dreadstone => Some("rock_dreadstone"),
-            Self::Rock_Flint => Some("rock_flint"),
-            Self::Rock_Magma => Some("rock_magma"),
-            Self::Rock_Obsidian => Some("rock_obsidian"),
-            Self::Rock_Terracotta => Some("rock_terracotta"),
-            // Wood Blocks
-            Self::Tree_Acacia_Bark => Some("tree_acacia_bark"),
-            Self::Tree_Acacia_Log => Some("tree_acacia_log"),
-            Self::Tree_Acacia_Leaves => Some("tree_acacia_leaves"),
-            Self::Tree_Acacia_Planks => Some("tree_acacia_planks"),
-            Self::Tree_Birch_Bark => Some("tree_birch_bark"),
-            Self::Tree_Birch_Log => Some("tree_birch_log"),
-            Self::Tree_Birch_Leaves => Some("tree_birch_leaves"),
-            Self::Tree_Birch_Planks => Some("tree_birch_planks"),
-            Self::Tree_Cherry_Bark => Some("tree_cherry_bark"),
-            Self::Tree_Cherry_Log => Some("tree_cherry_log"),
-            Self::Tree_Cherry_Leaves => Some("tree_cherry_leaves"),
-            Self::Tree_Cherry_Planks => Some("tree_cherry_planks"),
-            Self::Tree_Mahogany_Bark => Some("tree_mahogany_bark"),
-            Self::Tree_Mahogany_Log => Some("tree_mahogany_log"),
-            Self::Tree_Mahogany_Leaves => Some("tree_mahogany_leaves"),
-            Self::Tree_Mahogany_Planks => Some("tree_mahogany_planks"),
-            Self::Tree_Mangrove_Bark => Some("tree_mangrove_bark"),
-            Self::Tree_Mangrove_Log => Some("tree_mangrove_log"),
-            Self::Tree_Mangrove_Leaves => Some("tree_mangrove_leaves"),
-            Self::Tree_Mangrove_Planks => Some("tree_mangrove_planks"),
-            Self::Tree_Mangrove_Roots => Some("tree_mangrove_roots"),
-            Self::Tree_Maple_Bark => Some("tree_maple_bark"),
-            Self::Tree_Maple_Log => Some("tree_maple_log"),
-            Self::Tree_Maple_Leaves_Red => Some("tree_maple_leaves_red"),
-            Self::Tree_Maple_Leaves_Orange => Some("tree_maple_leaves_orange"),
-            Self::Tree_Maple_Leaves_Yellow => Some("tree_maple_leaves_yellow"),
-            Self::Tree_Maple_Planks => Some("tree_maple_planks"),
-            Self::Tree_Oak_Bark => Some("tree_oak_bark"),
-            Self::Tree_Oak_Log => Some("tree_oak_log"),
-            Self::Tree_Oak_Leaves => Some("tree_oak_leaves"),
-            Self::Tree_Oak_Leaves_Lush => Some("tree_oak_leaves_lush"),
-            Self::Tree_Oak_Leaves_Flowering => Some("tree_oak_leaves_flowering"),
-            Self::Tree_Oak_Planks => Some("tree_oak_planks"),
-            Self::Tree_Palm_Bark => Some("tree_palm_bark"),
-            Self::Tree_Palm_Log => Some("tree_palm_log"),
-            Self::Tree_Palm_Leaves => Some("tree_palm_leaves"),
-            Self::Tree_Palm_Planks => Some("tree_palm_planks"),
-            Self::Tree_Pine_Bark => Some("tree_pine_bark"),
-            Self::Tree_Pine_Log => Some("tree_pine_log"),
-            Self::Tree_Pine_Leaves => Some("tree_pine_leaves"),
-            Self::Tree_Pine_Planks => Some("tree_pine_planks"),
-            Self::Tree_Willow_Bark => Some("tree_willow_bark"),
-            Self::Tree_Willow_Log => Some("tree_willow_log"),
-            Self::Tree_Willow_Leaves => Some("tree_willow_leaves"),
-            Self::Tree_Willow_Planks => Some("tree_willow_planks"),
-            Self::Tree_Yew_Bark => Some("tree_yew_bark"),
-            Self::Tree_Yew_Log => Some("tree_yew_log"),
-            Self::Tree_Yew_Leaves => Some("tree_yew_leaves"),
-            Self::Tree_Yew_Planks => Some("tree_yew_planks"),
-            Self::Tree_Cactus => Some("tree_cactus_side"),
-            Self::Tree_Charred_Bark => Some("tree_charred_bark"),
-            Self::Tree_Charred_Log => Some("tree_charred_log"),
-            Self::Tree_Charred_Planks => Some("tree_charred_planks"),
-            Self::Tree_Dead_Bark => Some("tree_dead_bark"),
-            Self::Tree_Dead_Log => Some("tree_dead_log"),
-            Self::Tree_Dead_Planks => Some("tree_dead_planks"),
-            // Aquatic Blocks
-            Self::Aqua_Algae_Mat => Some("aqua_algae_mat_side"),
-            Self::Aqua_Brain_Coral => Some("aqua_brain_coral"),
-            Self::Aqua_Bubble_Coral => Some("aqua_bubble_coral"),
-            Self::Aqua_Fire_Coral => Some("aqua_fire_coral"),
-            Self::Aqua_Geothermal_Vent => Some("aqua_geothermal_vent"),
-            Self::Aqua_Horn_Coral => Some("aqua_horn_coral"),
-            Self::Aqua_Sponge => Some("aqua_sponge"),
-            Self::Aqua_Tube_Coral => Some("aqua_tube_coral"),
-            // Light Source Blocks
-            Self::Emit_Blue_Light => Some("emit_blue_light"),
-            Self::Emit_Blue_Torch => Some("emit_blue_torch"),
-            Self::Emit_Cold_Light => Some("emit_cold_light"),
-            Self::Emit_Green_Light => Some("emit_green_light"),
-            Self::Emit_Green_Torch => Some("emit_green_torch"),
-            Self::Emit_Red_Light => Some("emit_red_light"),
-            Self::Emit_Red_Torch => Some("emit_red_torch"),
-            Self::Emit_Warm_Light => Some("emit_warm_light"),
-            // Decoration Blocks
-            Self::Deco_Barrel => Some("deco_barrel"),
-            Self::Deco_Basket => Some("deco_basket_side"),
-            Self::Deco_Bone => Some("deco_bone"),
-            Self::Deco_Bookshelf => Some("deco_bookshelf"),
-            Self::Deco_Brick => Some("deco_bricks"),
-            Self::Deco_Fabric => Some("deco_fabric"),
-            Self::Deco_Flesh => Some("deco_flesh"),
-            Self::Deco_Glass => Some("deco_glass"),
-            Self::Deco_Hay => Some("deco_hay"),
-            Self::Deco_Plaster => Some("deco_plaster"),
-            Self::Deco_Slime => Some("deco_slime"),
-            Self::Deco_Stone_Path => Some("deco_stone_path"),
-            Self::Deco_Thatch => Some("deco_thatch"),
-            Self::Deco_Wax => Some("deco_wax"),
-            Self::Deco_Wicker => Some("deco_wicker"),
-            Self::Deco_Wool => Some("deco_wool"),
-        }
+    #[inline(always)]
+    pub const fn is_torch_const(self) -> bool {
+        matches!(self as u16, 573..=578)
     }
 
-    /// Optional texture override for the side faces (+X, -X, +Z, -Z).
-    /// If None, falls back to `texture_name()`.
-    pub fn side_texture_name(self) -> Option<&'static str> {
-        match self {
-            Self::Rock_Basalt | Self::Mossy_Basalt => Some("rock_basalt_side"),
-            Self::Soil_Grass => Some("soil_grass_side"),
-            Self::Soil_Peat_Grass => Some("soil_peat_grass_side"),
-            Self::Soil_Silt_Grass => Some("soil_silt_grass_side"),
-            Self::Soil_Mulch => Some("soil_mulch_side"),
-            Self::Soil_Peat_Mulch => Some("soil_peat_mulch_side"),
-            Self::Soil_Silt_Mulch => Some("soil_silt_mulch_side"),
-            Self::Soil_Snowy_Grass => Some("soil_snowy_grass_side"),
-            Self::Soil_Snowy_Peat => Some("soil_snowy_peat_side"),
-            Self::Soil_Snowy_Silt => Some("soil_snowy_silt_side"),
-            Self::Tree_Acacia_Log => Some("tree_acacia_bark"),
-            Self::Tree_Birch_Log => Some("tree_birch_bark"),
-            Self::Tree_Charred_Log => Some("tree_charred_bark"),
-            Self::Tree_Cherry_Log => Some("tree_cherry_bark"),
-            Self::Tree_Dead_Log => Some("tree_dead_bark"),
-            Self::Tree_Mahogany_Log => Some("tree_mahogany_bark"),
-            Self::Tree_Mangrove_Log => Some("tree_mangrove_bark"),
-            Self::Tree_Maple_Log => Some("tree_maple_bark"),
-            Self::Tree_Oak_Log => Some("tree_oak_bark"),
-            Self::Tree_Palm_Log => Some("tree_palm_bark"),
-            Self::Tree_Pine_Log => Some("tree_pine_bark"),
-            Self::Tree_Willow_Log => Some("tree_willow_bark"),
-            Self::Tree_Yew_Log => Some("tree_yew_bark"),
-            Self::Tree_Cactus => Some("tree_cactus_side"),
-            Self::Tree_Mangrove_Roots => Some("tree_mangrove_roots"),
-            Self::Aqua_Algae_Mat => Some("aqua_algae_mat_side"),
-            Self::Aqua_Geothermal_Vent => Some("aqua_geothermal_vent_side"),
-            Self::Deco_Barrel => Some("deco_barrel"),
-            Self::Deco_Basket => Some("deco_basket_side"),
-            Self::Deco_Bookshelf => Some("deco_bookshelf"),
-            Self::Deco_Bone => Some("deco_bone"),
-            Self::Deco_Hay => Some("deco_hay"),
-            Self::Deco_Thatch => Some("deco_thatch_sides"),
-            _ => None,
-        }
+    #[inline(always)]
+    pub const fn is_basket_const(self) -> bool {
+        matches!(self as u16, 511 | 527 | 545)
     }
 
-    /// Optional texture override for the top face (+Y).
-    /// If None, falls back to `texture_name()`.
-    pub fn top_texture_name(self) -> Option<&'static str> {
-        match self {
-            Self::Rock_Basalt | Self::Mossy_Basalt => Some("rock_basalt"),
-            Self::Soil_Grass | Self::Soil_Peat_Grass | Self::Soil_Silt_Grass => Some("soil_grass"),
-            Self::Soil_Mulch => Some("soil_mulch"),
-            Self::Soil_Peat_Mulch => Some("soil_peat_mulch"),
-            Self::Soil_Silt_Mulch => Some("soil_silt_mulch"),
-            Self::Soil_Snowy_Grass | Self::Soil_Snowy_Peat | Self::Soil_Snowy_Silt => {
-                Some("soil_snow")
-            }
-            Self::Tree_Acacia_Log => Some("tree_acacia_log"),
-            Self::Tree_Birch_Log => Some("tree_birch_log"),
-            Self::Tree_Charred_Log => Some("tree_charred_log"),
-            Self::Tree_Cherry_Log => Some("tree_cherry_log"),
-            Self::Tree_Dead_Log => Some("tree_dead_log"),
-            Self::Tree_Mahogany_Log => Some("tree_mahogany_log"),
-            Self::Tree_Mangrove_Log => Some("tree_mangrove_log"),
-            Self::Tree_Maple_Log => Some("tree_maple_log"),
-            Self::Tree_Oak_Log => Some("tree_oak_log"),
-            Self::Tree_Palm_Log => Some("tree_palm_log"),
-            Self::Tree_Pine_Log => Some("tree_pine_log"),
-            Self::Tree_Willow_Log => Some("tree_willow_log"),
-            Self::Tree_Yew_Log => Some("tree_yew_log"),
-            Self::Tree_Cactus => Some("tree_cactus_top"),
-            Self::Tree_Mangrove_Roots => Some("tree_mangrove_roots_top"),
-            Self::Aqua_Algae_Mat => Some("aqua_algae_mat_top"),
-            Self::Aqua_Geothermal_Vent => Some("aqua_geothermal_vent"),
-            Self::Deco_Barrel => Some("deco_barrel_top"),
-            Self::Deco_Basket => Some("deco_basket_top"),
-            Self::Deco_Bookshelf => Some("deco_bookshelf_top"),
-            Self::Deco_Bone => Some("deco_bone_top"),
-            Self::Deco_Hay => Some("deco_hay_top"),
-            Self::Deco_Thatch => Some("deco_thatch"),
-            _ => None,
-        }
+    #[inline(always)]
+    pub const fn is_pebble_const(self) -> bool {
+        matches!(self as u16, 163..=168)
     }
 
-    /// Optional texture override for the bottom face (-Y).
-    /// If None, falls back to `texture_name()`.
-    pub fn bottom_texture_name(self) -> Option<&'static str> {
-        match self {
-            Self::Rock_Basalt | Self::Mossy_Basalt => Some("rock_basalt"),
-            Self::Soil_Grass | Self::Soil_Snowy_Grass | Self::Soil_Mulch => Some("soil_dirt"),
-            Self::Soil_Peat_Grass | Self::Soil_Snowy_Peat | Self::Soil_Peat_Mulch => {
-                Some("soil_peat_dirt")
-            }
-            Self::Soil_Silt_Grass | Self::Soil_Snowy_Silt | Self::Soil_Silt_Mulch => {
-                Some("soil_silt_dirt")
-            }
-            Self::Tree_Acacia_Log => Some("tree_acacia_log"),
-            Self::Tree_Birch_Log => Some("tree_birch_log"),
-            Self::Tree_Charred_Log => Some("tree_charred_log"),
-            Self::Tree_Cherry_Log => Some("tree_cherry_log"),
-            Self::Tree_Dead_Log => Some("tree_dead_log"),
-            Self::Tree_Mahogany_Log => Some("tree_mahogany_log"),
-            Self::Tree_Mangrove_Log => Some("tree_mangrove_log"),
-            Self::Tree_Maple_Log => Some("tree_maple_log"),
-            Self::Tree_Oak_Log => Some("tree_oak_log"),
-            Self::Tree_Palm_Log => Some("tree_palm_log"),
-            Self::Tree_Pine_Log => Some("tree_pine_log"),
-            Self::Tree_Willow_Log => Some("tree_willow_log"),
-            Self::Tree_Yew_Log => Some("tree_yew_log"),
-            Self::Tree_Cactus => Some("tree_cactus_bot"),
-            Self::Tree_Mangrove_Roots => Some("tree_mangrove_roots_top"),
-            Self::Aqua_Algae_Mat => Some("aqua_algae_mat_top"),
-            Self::Aqua_Geothermal_Vent => Some("aqua_geothermal_vent"),
-            Self::Deco_Barrel => Some("deco_barrel_bot"),
-            Self::Deco_Basket => Some("deco_basket_bot"),
-            Self::Deco_Bookshelf => Some("deco_bookshelf_top"),
-            Self::Deco_Bone => Some("deco_bone_top"),
-            Self::Deco_Hay => Some("deco_hay_top"),
-            Self::Deco_Thatch => Some("deco_thatch"),
-            _ => None,
-        }
+    #[inline(always)]
+    pub const fn is_point_light_const(self) -> bool {
+        matches!(self as u16, 567 | 573..=578)
     }
 
-    /// Optional overlay texture (like mossy rock or mossy cobbled layers) rendered on top of the base texture.
-    pub fn overlay_texture_name(&self) -> Option<&'static str> {
-        match self {
-            Self::Mossy_Andesite
-            | Self::Mossy_Azurite
-            | Self::Mossy_Basalt
-            | Self::Mossy_Black_Sandstone
-            | Self::Mossy_Calcite
-            | Self::Mossy_Chalk
-            | Self::Mossy_Chert
-            | Self::Mossy_Cinnabar
-            | Self::Mossy_Diorite
-            | Self::Mossy_Gabbro
-            | Self::Mossy_Granite
-            | Self::Mossy_Karst
-            | Self::Mossy_Limestone
-            | Self::Mossy_Marl
-            | Self::Mossy_Pitchstone
-            | Self::Mossy_Porphyry
-            | Self::Mossy_Red_Sandstone
-            | Self::Mossy_Sandstone
-            | Self::Mossy_Scoria
-            | Self::Mossy_Serpentine
-            | Self::Mossy_Slate
-            | Self::Mossy_Stone
-            | Self::Mossy_Tuffite
-            | Self::Mossy_White_Sandstone => Some("mossy_rock_overlay"),
-
-            Self::Mossy_Cobbled_Andesite
-            | Self::Mossy_Cobbled_Azurite
-            | Self::Mossy_Cobbled_Basalt
-            | Self::Mossy_Cobbled_Black_Sandstone
-            | Self::Mossy_Cobbled_Calcite
-            | Self::Mossy_Cobbled_Chalk
-            | Self::Mossy_Cobbled_Chert
-            | Self::Mossy_Cobbled_Cinnabar
-            | Self::Mossy_Cobbled_Diorite
-            | Self::Mossy_Cobbled_Gabbro
-            | Self::Mossy_Cobbled_Granite
-            | Self::Mossy_Cobbled_Karst
-            | Self::Mossy_Cobbled_Limestone
-            | Self::Mossy_Cobbled_Marl
-            | Self::Mossy_Cobbled_Pitchstone
-            | Self::Mossy_Cobbled_Porphyry
-            | Self::Mossy_Cobbled_Red_Sandstone
-            | Self::Mossy_Cobbled_Sandstone
-            | Self::Mossy_Cobbled_Scoria
-            | Self::Mossy_Cobbled_Serpentine
-            | Self::Mossy_Cobbled_Slate
-            | Self::Mossy_Cobbled_Stone
-            | Self::Mossy_Cobbled_Tuffite
-            | Self::Mossy_Cobbled_White_Sandstone => Some("mossy_cobbled_overlay"),
-
-            _ => None,
-        }
-    }
-
-    /// Whether this voxel receives custom biome or foliage tinting.
-    pub fn is_tinted(self) -> bool {
+    pub const fn is_leaves_const(self) -> bool {
         matches!(
-            self,
-            Self::Soil_Grass
-                | Self::Soil_Peat_Grass
-                | Self::Soil_Silt_Grass
-                | Self::Soil_Snowy_Grass
-                | Self::Liquid_Water
-                | Self::WaterOccupied
-                | Self::Tree_Acacia_Leaves
-                | Self::Tree_Birch_Leaves
-                | Self::Tree_Mahogany_Leaves
-                | Self::Tree_Mangrove_Leaves
-                | Self::Tree_Oak_Leaves
-                | Self::Tree_Palm_Leaves
-                | Self::Tree_Pine_Leaves
-                | Self::Tree_Willow_Leaves
-                | Self::Tree_Yew_Leaves
+            self as u16,
+            179..=180
+                | 184..=185
+                | 189
+                | 191
+                | 193..=194
+                | 198..=199
+                | 203..=204
+                | 208..=209
+                | 213..=214
+                | 218..=219
+                | 223..=224
+                | 228..=229
+                | 234..=237
+                | 241..=242
+                | 246..=247
+                | 251..=252
+                | 256..=257
+                | 261..=262
+                | 266..=267
         )
     }
 
-    /// Color tint applied to vertices for biome / atmospheric coloring.
+    pub const fn is_cross_billboard_const(self) -> bool {
+        matches!(
+            self as u16,
+            8
+                | 430..=431
+                | 433..=434
+                | 436..=437
+                | 439..=440
+                | 442..=443
+                | 445..=446
+                | 460
+                | 462
+                | 464
+                | 468
+                | 471
+                | 473
+                | 476
+                | 478
+                | 481
+                | 485
+                | 490
+                | 493
+                | 496
+                | 498
+                | 500
+                | 502
+                | 504
+                | 506
+                | 518..=521
+                | 705
+                | 707
+                | 709
+                | 712
+                | 714
+                | 716
+                | 718
+                | 721
+        )
+    }
+
+    pub const fn is_transparent_const(self) -> bool {
+        self.is_leaves_const()
+            || matches!(
+                self as u16,
+                2 | 26 | 28
+                    | 11..=15
+                    | 17
+                    | 272
+                    | 275
+                    | 292
+                    | 295
+                    | 297
+                    | 429..=446
+                    | 460
+                    | 462
+                    | 464..=465
+                    | 468..=469
+                    | 471
+                    | 473
+                    | 476
+                    | 478..=479
+                    | 481
+                    | 485
+                    | 490
+                    | 493
+                    | 496
+                    | 498
+                    | 500
+                    | 502
+                    | 504
+                    | 506
+                    | 514
+                    | 518..=521
+                    | 528
+                    | 530
+                    | 537
+                    | 596..=612
+                    | 671..=687
+                    | 705
+                    | 707
+                    | 709
+                    | 712
+                    | 714
+                    | 716
+                    | 718
+                    | 721
+            )
+    }
+
+    pub const fn is_light_const(self) -> bool {
+        matches!(
+            self as u16,
+            19 | 21..=23
+                | 142
+                | 144
+                | 431
+                | 434
+                | 437
+                | 440
+                | 443
+                | 446
+                | 474
+                | 567..=578
+                | 712..=713
+        )
+    }
+}
+
+static VOXEL_DATA: [(&str, &str, &str); 723] = [
+    ("air", "Air", ""),
+    ("occupied", "Occupied", ""),
+    ("water_occupied", "Waterlogged Occupied", ""),
+    ("debug_accept", "Debug Accept Marker", "debug_accept"),
+    ("debug_fail", "Debug Fail Marker", "debug_fail"),
+    ("debug_instance", "Debug Instance Marker", "debug_instance"),
+    ("debug_start", "Debug Start Marker", "debug_start"),
+    ("null_block", "Null Block", "null_block"),
+    ("null_crossmesh", "Null Crossmesh", "null_crossmesh"),
+    ("null_generic", "Null Generic", "null_generic"),
+    ("null_liquid", "Null Liquid", "null_liquid"),
+    ("frost_blue_ice", "Blue Ice", "frost_blue_ice"),
+    (
+        "frost_blue_ice_cracked",
+        "Cracked Blue Ice",
+        "frost_blue_ice_cracked",
+    ),
+    ("frost_ice", "Clear Ice", "frost_ice"),
+    ("frost_ice_black", "Black Ice", "frost_ice_black"),
+    (
+        "frost_ice_black_fragile",
+        "Fragile Black Ice",
+        "frost_ice_black_fragile",
+    ),
+    (
+        "frost_ice_black_packed",
+        "Packed Black Ice",
+        "frost_ice_black_packed",
+    ),
+    ("frost_ice_fragile", "Fragile Ice", "frost_ice_fragile"),
+    ("frost_ice_packed", "Packed Ice", "frost_ice_packed"),
+    ("liquid_acid", "Acid", "liquid_acid_still"),
+    ("liquid_blood", "Blood", "liquid_blood_still"),
+    ("liquid_core_magma", "Core Magma", "liquid_core_magma_still"),
+    ("liquid_lava", "Lava", "liquid_lava_still"),
+    ("liquid_molten", "Molten Slag", "liquid_molten_still"),
+    ("liquid_ooze", "Ooze", "liquid_ooze_still"),
+    ("liquid_sludge", "Sludge", "liquid_sludge_still"),
+    (
+        "liquid_spring_water",
+        "Spring Water",
+        "liquid_spring_water_still",
+    ),
+    ("liquid_tar", "Tar", "liquid_tar_still"),
+    ("liquid_water", "Water", "liquid_water_still"),
+    ("ash_pumice", "Pumice Ash", "soil_ash_pumice"),
+    ("ash_volcanic", "Volcanic Ash", "soil_ash_vulcanic"),
+    ("caliche_coarse", "Caliche Coarse", "soil_caliche_coarse"),
+    ("caliche_cracked", "Caliche Cracked", "soil_caliche_cracked"),
+    ("caliche_dirt", "Caliche Dirt", "soil_caliche_dirt"),
+    ("caliche_grass", "Caliche Grass", "soil_caliche_dirt"),
+    ("clay_blue", "Blue Clay", "soil_clay_blue"),
+    ("clay_red", "Red Clay", "soil_clay_red"),
+    ("clay_white", "White Clay", "soil_clay_white"),
+    ("clay_yellow", "Yellow Clay", "soil_clay_yellow"),
+    ("gravel_ashy", "Ashy Gravel", "soil_gravel_ashy"),
+    ("gravel_dirty", "Dirty Gravel", "soil_gravel_dirty"),
+    ("gravel_sandy", "Sandy Gravel", "soil_gravel_sandy"),
+    ("gravel_snowy", "Snowy Gravel", "soil_gravel_snowy"),
+    ("laterite_coarse", "Laterite Coarse", "soil_laterite_coarse"),
+    ("laterite_dirt", "Laterite Dirt", "soil_laterite_dirt"),
+    ("laterite_grass", "Laterite Grass", "soil_laterite_dirt"),
+    (
+        "laterite_hardpan",
+        "Laterite Hardpan",
+        "soil_laterite_hardpan",
+    ),
+    ("loam_coarse", "Loam Coarse", "soil_loam_coarse"),
+    ("loam_dirt", "Loam Dirt", "soil_loam_dirt"),
+    ("loam_grass", "Loam Grass", "soil_loam_dirt"),
+    ("loam_mud", "Loam Mud", "soil_loam_mud"),
+    ("loam_mulch", "Loam Mulch", "soil_loam_dirt"),
+    ("loam_rooted", "Loam Rooted", "soil_loam_rooted"),
+    ("loam_snow", "Loam Snow", "soil_loam_dirt"),
+    ("loam_tilled", "Loam Tilled", "soil_loam_dirt"),
+    ("moss_amber", "Amber Moss", "soil_moss_amber"),
+    ("moss_cave", "Cave Moss", "soil_moss_cave"),
+    ("moss_crimson", "Crimson Moss", "soil_moss_crimson"),
+    ("moss_forest", "Forest Moss", "soil_moss_forest"),
+    ("peat_coarse", "Peat Coarse", "soil_peat_coarse"),
+    ("peat_dirt", "Peat Dirt", "soil_peat_dirt"),
+    ("peat_grass", "Peat Grass", "soil_peat_dirt"),
+    ("peat_mud", "Peat Mud", "soil_peat_mud"),
+    ("peat_mulch", "Peat Mulch", "soil_peat_dirt"),
+    ("peat_rooted", "Peat Rooted", "soil_peat_rooted"),
+    ("peat_snow", "Peat Snow", "soil_peat_dirt"),
+    ("peat_tilled", "Peat Tilled", "soil_peat_dirt"),
+    (
+        "permafrost_coarse",
+        "Permafrost Coarse",
+        "soil_permafrost_coarse",
+    ),
+    ("permafrost_dirt", "Permafrost Dirt", "soil_permafrost_dirt"),
+    (
+        "permafrost_grass",
+        "Permafrost Grass",
+        "soil_permafrost_dirt",
+    ),
+    ("permafrost_icy", "Permafrost Icy", "soil_permafrost_icy"),
+    ("powder_snow", "Powder Snow", "soil_snow_powder"),
+    ("sand_black", "Black Sand", "soil_sand_black"),
+    ("sand_common", "Common Sand", "soil_sand_common"),
+    ("sand_dune", "Dune Sand", "soil_sand_dune"),
+    ("sand_pink", "Pink Sand", "soil_sand_pink"),
+    ("sand_red", "Red Sand", "soil_sand_red"),
+    ("sand_white", "White Sand", "soil_sand_white"),
+    ("silt_coarse", "Silt Coarse", "soil_silt_coarse"),
+    ("silt_dirt", "Silt Dirt", "soil_silt_dirt"),
+    ("silt_grass", "Silt Grass", "soil_silt_dirt"),
+    ("silt_mud", "Silt Mud", "soil_silt_mud"),
+    ("silt_mulch", "Silt Mulch", "soil_silt_dirt"),
+    ("silt_rooted", "Silt Rooted", "soil_silt_rooted"),
+    ("silt_snow", "Silt Snow", "soil_silt_dirt"),
+    ("silt_tilled", "Silt Tilled", "soil_silt_dirt"),
+    ("snow_block", "Snow Block", "soil_snow"),
+    ("andesite", "Andesite", "rock_andesite"),
+    ("andesite_grass", "Andesite Grass Outcrop", "rock_andesite"),
+    ("andesite_snow", "Andesite Snow Outcrop", "rock_andesite"),
+    ("argillite", "Argillite", "rock_argillite"),
+    (
+        "argillite_grass",
+        "Argillite Grass Outcrop",
+        "rock_argillite",
+    ),
+    ("argillite_snow", "Argillite Snow Outcrop", "rock_argillite"),
+    ("basalt", "Basalt", "rock_basalt"),
+    ("basalt_grass", "Basalt Grass Outcrop", "rock_basalt"),
+    ("basalt_snow", "Basalt Snow Outcrop", "rock_basalt"),
+    ("brimstone", "Brimstone", "rock_brimstone"),
+    ("calcite", "Calcite", "rock_calcite"),
+    ("chalk", "Chalk", "rock_chalk"),
+    ("chalk_grass", "Chalk Grass Outcrop", "rock_chalk"),
+    ("chalk_snow", "Chalk Snow Outcrop", "rock_chalk"),
+    (
+        "cobbled_andesite",
+        "Cobbled Andesite",
+        "rock_andesite_cobbled",
+    ),
+    (
+        "cobbled_argillite",
+        "Cobbled Argillite",
+        "rock_argillite_cobbled",
+    ),
+    ("cobbled_basalt", "Cobbled Basalt", "rock_basalt_cobbled"),
+    (
+        "cobbled_brimstone",
+        "Cobbled Brimstone",
+        "rock_brimstone_cobbled",
+    ),
+    ("cobbled_calcite", "Cobbled Calcite", "rock_calcite_cobbled"),
+    ("cobbled_chalk", "Cobbled Chalk", "rock_chalk_cobbled"),
+    ("cobbled_diorite", "Cobbled Diorite", "rock_diorite_cobbled"),
+    (
+        "cobbled_dolomite",
+        "Cobbled Dolomite",
+        "rock_dolomite_cobbled",
+    ),
+    ("cobbled_gabbro", "Cobbled Gabbro", "rock_gabbro_cobbled"),
+    ("cobbled_gneiss", "Cobbled Gneiss", "rock_gneiss_cobbled"),
+    ("cobbled_granite", "Cobbled Granite", "rock_granite_cobbled"),
+    ("cobbled_karst", "Cobbled Karst", "rock_karst_cobbled"),
+    (
+        "cobbled_limestone",
+        "Cobbled Limestone",
+        "rock_limestone_cobbled",
+    ),
+    ("cobbled_magma", "Cobbled Magma", "rock_magma_cobbled"),
+    ("cobbled_marble", "Cobbled Marble", "rock_marble_cobbled"),
+    (
+        "cobbled_obsidian",
+        "Cobbled Obsidian",
+        "rock_obsidian_cobbled",
+    ),
+    (
+        "cobbled_sandstone_black",
+        "Cobbled Black Sandstone",
+        "rock_sandstone_black_cobbled",
+    ),
+    (
+        "cobbled_sandstone_common",
+        "Cobbled Sandstone",
+        "rock_sandstone_common_cobbled",
+    ),
+    (
+        "cobbled_sandstone_dune",
+        "Cobbled Dune Sandstone",
+        "rock_sandstone_dune_cobbled",
+    ),
+    (
+        "cobbled_sandstone_pink",
+        "Cobbled Pink Sandstone",
+        "rock_sandstone_pink_cobbled",
+    ),
+    (
+        "cobbled_sandstone_red",
+        "Cobbled Red Sandstone",
+        "rock_sandstone_red_cobbled",
+    ),
+    (
+        "cobbled_sandstone_white",
+        "Cobbled White Sandstone",
+        "rock_sandstone_white_cobbled",
+    ),
+    ("cobbled_scoria", "Cobbled Scoria", "rock_scoria_cobbled"),
+    (
+        "cobbled_serpentinite",
+        "Cobbled Serpentinite",
+        "rock_serpentinite_cobbled",
+    ),
+    ("cobbled_slate", "Cobbled Slate", "rock_slate_cobbled"),
+    ("cobbled_tuff", "Cobbled Tuff", "rock_tuff_cobbled"),
+    ("diorite", "Diorite", "rock_diorite"),
+    ("dolomite", "Dolomite (Alpine Stone)", "rock_dolomite"),
+    ("dolomite_grass", "Dolomite Grass Outcrop", "rock_dolomite"),
+    ("dolomite_snow", "Dolomite Snow Outcrop", "rock_dolomite"),
+    ("gabbro", "Gabbro", "rock_gabbro"),
+    ("gneiss", "Gneiss", "rock_gneiss"),
+    ("gneiss_grass", "Gneiss Grass Outcrop", "rock_gneiss"),
+    ("gneiss_snow", "Gneiss Snow Outcrop", "rock_gneiss"),
+    ("granite", "Granite", "rock_granite"),
+    ("granite_grass", "Granite Grass Outcrop", "rock_granite"),
+    ("granite_snow", "Granite Snow Outcrop", "rock_granite"),
+    ("karst", "Karst Limestone", "rock_karst"),
+    ("limestone", "Limestone", "rock_limestone"),
+    (
+        "limestone_grass",
+        "Limestone Grass Outcrop",
+        "rock_limestone",
+    ),
+    ("limestone_snow", "Limestone Snow Outcrop", "rock_limestone"),
+    ("magma", "Magma Rock", "rock_magma"),
+    ("mantle", "Primordial Mantle", "rock_mantle"),
+    ("mantle_plume", "Mantle Plume", "rock_mantle_plume"),
+    ("marble", "Marble", "rock_marble"),
+    ("mossy_andesite", "Mossy Andesite", "rock_andesite"),
+    ("mossy_argillite", "Mossy Argillite", "rock_argillite"),
+    ("mossy_basalt", "Mossy Basalt", "rock_basalt"),
+    (
+        "mossy_cobbled_andesite",
+        "Mossy Cobbled Andesite",
+        "rock_andesite_cobbled",
+    ),
+    (
+        "mossy_cobbled_argillite",
+        "Mossy Cobbled Argillite",
+        "rock_argillite_cobbled",
+    ),
+    (
+        "mossy_cobbled_basalt",
+        "Mossy Cobbled Basalt",
+        "rock_basalt_cobbled",
+    ),
+    (
+        "mossy_cobbled_dolomite",
+        "Mossy Cobbled Dolomite",
+        "rock_dolomite_cobbled",
+    ),
+    (
+        "mossy_cobbled_gneiss",
+        "Mossy Cobbled Gneiss",
+        "rock_gneiss_cobbled",
+    ),
+    (
+        "mossy_cobbled_granite",
+        "Mossy Cobbled Granite",
+        "rock_granite_cobbled",
+    ),
+    (
+        "mossy_cobbled_limestone",
+        "Mossy Cobbled Limestone",
+        "rock_limestone_cobbled",
+    ),
+    (
+        "mossy_cobbled_serpentinite",
+        "Mossy Cobbled Serpentinite",
+        "rock_serpentinite_cobbled",
+    ),
+    ("mossy_dolomite", "Mossy Dolomite", "rock_dolomite"),
+    ("mossy_gneiss", "Mossy Gneiss", "rock_gneiss"),
+    ("mossy_granite", "Mossy Granite", "rock_granite"),
+    ("mossy_limestone", "Mossy Limestone", "rock_limestone"),
+    (
+        "mossy_serpentinite",
+        "Mossy Serpentinite",
+        "rock_serpentinite",
+    ),
+    ("obsidian", "Obsidian", "rock_obsidian"),
+    (
+        "pebble_flint_one",
+        "Flint Pebble (Single)",
+        "pebble_flint_one",
+    ),
+    (
+        "pebble_flint_three",
+        "Flint Pebble (Cluster)",
+        "pebble_flint_three",
+    ),
+    (
+        "pebble_flint_two",
+        "Flint Pebble (Pair)",
+        "pebble_flint_two",
+    ),
+    (
+        "pebble_quartz_one",
+        "Quartz Pebble (Single)",
+        "pebble_quartz_one",
+    ),
+    (
+        "pebble_quartz_three",
+        "Quartz Pebble (Cluster)",
+        "pebble_quartz_three",
+    ),
+    (
+        "pebble_quartz_two",
+        "Quartz Pebble (Pair)",
+        "pebble_quartz_two",
+    ),
+    ("sandstone_black", "Black Sandstone", "rock_sandstone_black"),
+    (
+        "sandstone_common",
+        "Common Sandstone",
+        "rock_sandstone_common",
+    ),
+    ("sandstone_dune", "Dune Sandstone", "rock_sandstone_dune"),
+    ("sandstone_pink", "Pink Sandstone", "rock_sandstone_pink"),
+    ("sandstone_red", "Red Sandstone", "rock_sandstone_red"),
+    ("sandstone_white", "White Sandstone", "rock_sandstone_white"),
+    ("scoria", "Scoria", "rock_scoria"),
+    ("serpentinite", "Serpentinite", "rock_serpentinite"),
+    ("slate", "Slate", "rock_slate"),
+    ("tuff", "Tuff", "rock_tuff"),
+    ("acacia_leaves", "Acacia Leaves", "tree_acacia_leaves"),
+    (
+        "acacia_leaves_dead",
+        "Dead Acacia Leaves",
+        "tree_acacia_leaves_dead",
+    ),
+    ("acacia_log", "Acacia Log", "tree_acacia_bark"),
+    ("acacia_planks", "Acacia Planks", "tree_acacia_planks"),
+    ("acacia_wood", "Acacia Wood", "tree_acacia_bark"),
+    ("aspen_leaves", "Golden Aspen Leaves", "tree_aspen_leaves"),
+    (
+        "aspen_leaves_dead",
+        "Dead Aspen Leaves",
+        "tree_aspen_leaves_dead",
+    ),
+    ("aspen_log", "Aspen Log", "tree_aspen_bark"),
+    ("aspen_planks", "Aspen Planks", "tree_aspen_planks"),
+    ("aspen_wood", "Aspen Wood", "tree_aspen_bark"),
+    (
+        "bamboo_large_leaves",
+        "Large Bamboo Leaves",
+        "tree_bamboo_large_leaves",
+    ),
+    ("bamboo_planks", "Bamboo Planks", "tree_bamboo_planks"),
+    (
+        "bamboo_small_leaves",
+        "Small Bamboo Leaves",
+        "tree_bamboo_small_leaves",
+    ),
+    ("bamboo_stalk", "Bamboo Stalk", "tree_bamboo_stalk"),
+    ("baobab_leaves", "Baobab Leaves", "tree_baobab_leaves"),
+    (
+        "baobab_leaves_dead",
+        "Dead Baobab Leaves",
+        "tree_baobab_leaves_dead",
+    ),
+    ("baobab_log", "Baobab Log", "tree_baobab_bark"),
+    ("baobab_planks", "Baobab Planks", "tree_baobab_planks"),
+    ("baobab_wood", "Baobab Wood", "tree_baobab_bark"),
+    ("birch_leaves", "Birch Leaves", "tree_birch_leaves"),
+    (
+        "birch_leaves_dead",
+        "Dead Birch Leaves",
+        "tree_birch_leaves_dead",
+    ),
+    ("birch_log", "Birch Log", "tree_birch_bark"),
+    ("birch_planks", "Birch Planks", "tree_birch_planks"),
+    ("birch_wood", "Birch Wood", "tree_birch_bark"),
+    (
+        "cherry_leaves",
+        "Cherry Blossom Leaves",
+        "tree_cherry_leaves",
+    ),
+    (
+        "cherry_leaves_dead",
+        "Dead Cherry Leaves",
+        "tree_cherry_leaves_dead",
+    ),
+    ("cherry_log", "Cherry Log", "tree_cherry_bark"),
+    ("cherry_planks", "Cherry Planks", "tree_cherry_planks"),
+    ("cherry_wood", "Cherry Wood", "tree_cherry_bark"),
+    ("cypress_leaves", "Cypress Foliage", "tree_cypress_leaves"),
+    (
+        "cypress_leaves_dead",
+        "Dead Cypress Foliage",
+        "tree_cypress_leaves_dead",
+    ),
+    ("cypress_log", "Cypress Log", "tree_cypress_bark"),
+    ("cypress_planks", "Cypress Planks", "tree_cypress_planks"),
+    ("cypress_wood", "Cypress Wood", "tree_cypress_bark"),
+    ("fir_leaves", "Fir Needles", "tree_fir_leaves"),
+    (
+        "fir_leaves_dead",
+        "Dead Fir Needles",
+        "tree_fir_leaves_dead",
+    ),
+    ("fir_log", "Fir Log", "tree_fir_bark"),
+    ("fir_planks", "Fir Planks", "tree_fir_planks"),
+    ("fir_wood", "Fir Wood", "tree_fir_bark"),
+    ("kapok_leaves", "Kapok Leaves", "tree_kapok_leaves"),
+    (
+        "kapok_leaves_dead",
+        "Dead Kapok Leaves",
+        "tree_kapok_leaves_dead",
+    ),
+    ("kapok_log", "Kapok Log", "tree_kapok_bark"),
+    ("kapok_planks", "Kapok Planks", "tree_kapok_planks"),
+    ("kapok_wood", "Kapok Wood", "tree_kapok_bark"),
+    ("mahogany_leaves", "Mahogany Leaves", "tree_mahogany_leaves"),
+    (
+        "mahogany_leaves_dead",
+        "Dead Mahogany Leaves",
+        "tree_mahogany_leaves_dead",
+    ),
+    ("mahogany_log", "Mahogany Log", "tree_mahogany_bark"),
+    ("mahogany_planks", "Mahogany Planks", "tree_mahogany_planks"),
+    ("mahogany_wood", "Mahogany Wood", "tree_mahogany_bark"),
+    ("mangrove_leaves", "Mangrove Leaves", "tree_mangrove_leaves"),
+    (
+        "mangrove_leaves_dead",
+        "Dead Mangrove Leaves",
+        "tree_mangrove_leaves_dead",
+    ),
+    ("mangrove_log", "Mangrove Log", "tree_mangrove_bark"),
+    ("mangrove_planks", "Mangrove Planks", "tree_mangrove_planks"),
+    (
+        "mangrove_roots",
+        "Mangrove Aerial Roots",
+        "tree_mangrove_roots",
+    ),
+    ("mangrove_wood", "Mangrove Wood", "tree_mangrove_bark"),
+    (
+        "maple_leaves_dead",
+        "Dead Maple Leaves",
+        "tree_maple_leaves_dead",
+    ),
+    (
+        "maple_leaves_orange",
+        "Orange Maple Leaves",
+        "tree_maple_leaves_orange",
+    ),
+    (
+        "maple_leaves_red",
+        "Red Maple Leaves",
+        "tree_maple_leaves_red",
+    ),
+    (
+        "maple_leaves_yellow",
+        "Yellow Maple Leaves",
+        "tree_maple_leaves_yellow",
+    ),
+    ("maple_log", "Maple Log", "tree_maple_bark"),
+    ("maple_planks", "Maple Planks", "tree_maple_planks"),
+    ("maple_wood", "Maple Wood", "tree_maple_bark"),
+    ("oak_leaves", "Oak Leaves", "tree_oak_leaves"),
+    ("oak_leaves_dead", "Dead Oak Leaves", "tree_oak_leaves_dead"),
+    ("oak_log", "Oak Log", "tree_oak_bark"),
+    ("oak_planks", "Oak Planks", "tree_oak_planks"),
+    ("oak_wood", "Oak Wood", "tree_oak_bark"),
+    ("palm_leaves", "Palm Fronds", "tree_palm_leaves"),
+    (
+        "palm_leaves_dead",
+        "Dead Palm Fronds",
+        "tree_palm_leaves_dead",
+    ),
+    ("palm_log", "Palm Log", "tree_palm_bark"),
+    ("palm_planks", "Palm Planks", "tree_palm_planks"),
+    ("palm_wood", "Palm Wood", "tree_palm_bark"),
+    ("pine_leaves", "Pine Needles", "tree_pine_leaves"),
+    (
+        "pine_leaves_dead",
+        "Dead Pine Needles",
+        "tree_pine_leaves_dead",
+    ),
+    ("pine_log", "Pine Log", "tree_pine_bark"),
+    ("pine_planks", "Pine Planks", "tree_pine_planks"),
+    ("pine_wood", "Pine Wood", "tree_pine_bark"),
+    ("redwood_leaves", "Redwood Foliage", "tree_redwood_leaves"),
+    (
+        "redwood_leaves_dead",
+        "Dead Redwood Foliage",
+        "tree_redwood_leaves_dead",
+    ),
+    ("redwood_log", "Redwood Log", "tree_redwood_bark"),
+    ("redwood_planks", "Redwood Planks", "tree_redwood_planks"),
+    ("redwood_wood", "Redwood Wood", "tree_redwood_bark"),
+    (
+        "willow_leaves",
+        "Weeping Willow Leaves",
+        "tree_willow_leaves",
+    ),
+    (
+        "willow_leaves_dead",
+        "Dead Willow Leaves",
+        "tree_willow_leaves_dead",
+    ),
+    ("willow_log", "Willow Log", "tree_willow_bark"),
+    ("willow_planks", "Willow Planks", "tree_willow_planks"),
+    ("willow_wood", "Willow Wood", "tree_willow_bark"),
+    ("yew_leaves", "Yew Foliage", "tree_yew_leaves"),
+    (
+        "yew_leaves_dead",
+        "Dead Yew Foliage",
+        "tree_yew_leaves_dead",
+    ),
+    ("yew_log", "Yew Log", "tree_yew_bark"),
+    ("yew_planks", "Yew Planks", "tree_yew_planks"),
+    ("yew_wood", "Yew Wood", "tree_yew_bark"),
+    ("gem_diamond_gabbro", "Diamond Ore (Gabbro)", "rock_gabbro"),
+    (
+        "gem_diamond_rough",
+        "Rough Diamond Block",
+        "gem_diamond_rough",
+    ),
+    (
+        "gem_diamond_serpentinite",
+        "Diamond Ore (Serpentinite)",
+        "rock_serpentinite",
+    ),
+    ("gem_emerald_marble", "Emerald Ore (Marble)", "rock_marble"),
+    (
+        "gem_emerald_rough",
+        "Rough Emerald Block",
+        "gem_emerald_rough",
+    ),
+    ("gem_emerald_slate", "Emerald Ore (Slate)", "rock_slate"),
+    ("gem_jade_marble", "Jade Ore (Marble)", "rock_marble"),
+    ("gem_jade_rough", "Rough Jade Block", "gem_jade_rough"),
+    (
+        "gem_jade_serpentinite",
+        "Jade Ore (Serpentinite)",
+        "rock_serpentinite",
+    ),
+    ("gem_onyx_calcite", "Onyx Ore (Calcite)", "rock_calcite"),
+    ("gem_onyx_marble", "Onyx Ore (Marble)", "rock_marble"),
+    ("gem_onyx_rough", "Rough Onyx Block", "gem_onyx_rough"),
+    (
+        "gem_onyx_sandstone_black",
+        "Onyx Ore (Black Sandstone)",
+        "rock_sandstone_black",
+    ),
+    ("gem_onyx_slate", "Onyx Ore (Slate)", "rock_slate"),
+    ("gem_opal_basalt", "Opal Ore (Basalt)", "rock_basalt"),
+    ("gem_opal_rough", "Rough Opal Block", "gem_opal_rough"),
+    (
+        "gem_opal_sandstone_pink",
+        "Opal Ore (Pink Sandstone)",
+        "rock_sandstone_pink",
+    ),
+    (
+        "gem_opal_sandstone_white",
+        "Opal Ore (White Sandstone)",
+        "rock_sandstone_white",
+    ),
+    ("gem_opal_tuff", "Opal Ore (Tuff)", "rock_tuff"),
+    ("gem_ruby_basalt", "Ruby Ore (Basalt)", "rock_basalt"),
+    ("gem_ruby_marble", "Ruby Ore (Marble)", "rock_marble"),
+    ("gem_ruby_rough", "Rough Ruby Block", "gem_ruby_rough"),
+    (
+        "gem_sapphire_basalt",
+        "Sapphire Ore (Basalt)",
+        "rock_basalt",
+    ),
+    (
+        "gem_sapphire_marble",
+        "Sapphire Ore (Marble)",
+        "rock_marble",
+    ),
+    (
+        "gem_sapphire_rough",
+        "Rough Sapphire Block",
+        "gem_sapphire_rough",
+    ),
+    ("gem_topaz_granite", "Topaz Ore (Granite)", "rock_granite"),
+    ("gem_topaz_rough", "Rough Topaz Block", "gem_topaz_rough"),
+    (
+        "gem_topaz_sandstone_pink",
+        "Topaz Ore (Pink Sandstone)",
+        "rock_sandstone_pink",
+    ),
+    (
+        "ore_aluminum_argillite",
+        "Aluminum Ore (Argillite)",
+        "rock_argillite",
+    ),
+    ("ore_aluminum_chalk", "Aluminum Ore (Chalk)", "rock_chalk"),
+    (
+        "ore_aluminum_limestone",
+        "Aluminum Ore (Limestone)",
+        "rock_limestone",
+    ),
+    ("ore_aluminum_raw", "Raw Aluminum Block", "ore_aluminum_raw"),
+    (
+        "ore_aluminum_sandstone_white",
+        "Aluminum Ore (White Sandstone)",
+        "rock_sandstone_white",
+    ),
+    (
+        "ore_cinnabar_basalt",
+        "Cinnabar Ore (Basalt)",
+        "rock_basalt",
+    ),
+    (
+        "ore_cinnabar_brimstone",
+        "Cinnabar Ore (Brimstone)",
+        "rock_brimstone",
+    ),
+    ("ore_cinnabar_karst", "Cinnabar Ore (Karst)", "rock_karst"),
+    ("ore_cinnabar_raw", "Raw Cinnabar Block", "ore_cinnabar_raw"),
+    ("ore_cinnabar_tuff", "Cinnabar Ore (Tuff)", "rock_tuff"),
+    ("ore_coal_andesite", "Coal Ore (Andesite)", "rock_andesite"),
+    (
+        "ore_coal_argillite",
+        "Coal Ore (Argillite)",
+        "rock_argillite",
+    ),
+    ("ore_coal_chalk", "Coal Ore (Chalk)", "rock_chalk"),
+    ("ore_coal_diorite", "Coal Ore (Diorite)", "rock_diorite"),
+    ("ore_coal_dolomite", "Coal Ore (Dolomite)", "rock_dolomite"),
+    ("ore_coal_gneiss", "Coal Ore (Gneiss)", "rock_gneiss"),
+    ("ore_coal_granite", "Coal Ore (Granite)", "rock_granite"),
+    (
+        "ore_coal_limestone",
+        "Coal Ore (Limestone)",
+        "rock_limestone",
+    ),
+    ("ore_coal_raw", "Raw Coal Block", "ore_coal_raw"),
+    (
+        "ore_coal_sandstone_black",
+        "Coal Ore (Black Sandstone)",
+        "rock_sandstone_black",
+    ),
+    (
+        "ore_coal_sandstone_common",
+        "Coal Ore (Common Sandstone)",
+        "rock_sandstone_common",
+    ),
+    (
+        "ore_coal_sandstone_dune",
+        "Coal Ore (Dune Sandstone)",
+        "rock_sandstone_dune",
+    ),
+    ("ore_coal_slate", "Coal Ore (Slate)", "rock_slate"),
+    (
+        "ore_copper_andesite",
+        "Copper Ore (Andesite)",
+        "rock_andesite",
+    ),
+    (
+        "ore_copper_argillite",
+        "Copper Ore (Argillite)",
+        "rock_argillite",
+    ),
+    ("ore_copper_chalk", "Copper Ore (Chalk)", "rock_chalk"),
+    ("ore_copper_diorite", "Copper Ore (Diorite)", "rock_diorite"),
+    (
+        "ore_copper_dolomite",
+        "Copper Ore (Dolomite)",
+        "rock_dolomite",
+    ),
+    ("ore_copper_gabbro", "Copper Ore (Gabbro)", "rock_gabbro"),
+    ("ore_copper_gneiss", "Copper Ore (Gneiss)", "rock_gneiss"),
+    ("ore_copper_granite", "Copper Ore (Granite)", "rock_granite"),
+    (
+        "ore_copper_limestone",
+        "Copper Ore (Limestone)",
+        "rock_limestone",
+    ),
+    ("ore_copper_raw", "Raw Copper Block", "ore_copper_raw"),
+    (
+        "ore_copper_sandstone_common",
+        "Copper Ore (Common Sandstone)",
+        "rock_sandstone_common",
+    ),
+    (
+        "ore_copper_sandstone_red",
+        "Copper Ore (Red Sandstone)",
+        "rock_sandstone_red",
+    ),
+    (
+        "ore_copper_serpentinite",
+        "Copper Ore (Serpentinite)",
+        "rock_serpentinite",
+    ),
+    ("ore_copper_slate", "Copper Ore (Slate)", "rock_slate"),
+    ("ore_copper_tuff", "Copper Ore (Tuff)", "rock_tuff"),
+    ("ore_gold_granite", "Gold Ore (Granite)", "rock_granite"),
+    ("ore_gold_marble", "Gold Ore (Marble)", "rock_marble"),
+    ("ore_gold_raw", "Raw Gold Block", "ore_gold_raw"),
+    (
+        "ore_gold_sandstone_red",
+        "Gold Ore (Red Sandstone)",
+        "rock_sandstone_red",
+    ),
+    ("ore_gold_slate", "Gold Ore (Slate)", "rock_slate"),
+    ("ore_iron_andesite", "Iron Ore (Andesite)", "rock_andesite"),
+    ("ore_iron_basalt", "Iron Ore (Basalt)", "rock_basalt"),
+    ("ore_iron_diorite", "Iron Ore (Diorite)", "rock_diorite"),
+    ("ore_iron_dolomite", "Iron Ore (Dolomite)", "rock_dolomite"),
+    ("ore_iron_gabbro", "Iron Ore (Gabbro)", "rock_gabbro"),
+    ("ore_iron_gneiss", "Iron Ore (Gneiss)", "rock_gneiss"),
+    ("ore_iron_granite", "Iron Ore (Granite)", "rock_granite"),
+    ("ore_iron_raw", "Raw Iron Block", "ore_iron_raw"),
+    (
+        "ore_iron_sandstone_black",
+        "Iron Ore (Black Sandstone)",
+        "rock_sandstone_black",
+    ),
+    (
+        "ore_iron_sandstone_common",
+        "Iron Ore (Common Sandstone)",
+        "rock_sandstone_common",
+    ),
+    (
+        "ore_iron_sandstone_red",
+        "Iron Ore (Red Sandstone)",
+        "rock_sandstone_red",
+    ),
+    ("ore_iron_scoria", "Iron Ore (Scoria)", "rock_scoria"),
+    (
+        "ore_iron_serpentinite",
+        "Iron Ore (Serpentinite)",
+        "rock_serpentinite",
+    ),
+    (
+        "ore_lazurite_calcite",
+        "Lazurite Ore (Calcite)",
+        "rock_calcite",
+    ),
+    (
+        "ore_lazurite_limestone",
+        "Lazurite Ore (Limestone)",
+        "rock_limestone",
+    ),
+    (
+        "ore_lazurite_marble",
+        "Lazurite Ore (Marble)",
+        "rock_marble",
+    ),
+    ("ore_lazurite_raw", "Raw Lazurite Block", "ore_lazurite_raw"),
+    (
+        "ore_lazurite_sandstone_black",
+        "Lazurite Ore (Black Sandstone)",
+        "rock_sandstone_black",
+    ),
+    ("ore_lead_andesite", "Lead Ore (Andesite)", "rock_andesite"),
+    (
+        "ore_lead_argillite",
+        "Lead Ore (Argillite)",
+        "rock_argillite",
+    ),
+    ("ore_lead_chalk", "Lead Ore (Chalk)", "rock_chalk"),
+    ("ore_lead_diorite", "Lead Ore (Diorite)", "rock_diorite"),
+    ("ore_lead_karst", "Lead Ore (Karst)", "rock_karst"),
+    (
+        "ore_lead_limestone",
+        "Lead Ore (Limestone)",
+        "rock_limestone",
+    ),
+    ("ore_lead_raw", "Raw Lead Block", "ore_lead_raw"),
+    (
+        "ore_lead_sandstone_common",
+        "Lead Ore (Common Sandstone)",
+        "rock_sandstone_common",
+    ),
+    ("ore_lead_slate", "Lead Ore (Slate)", "rock_slate"),
+    (
+        "ore_manganese_argillite",
+        "Manganese Ore (Argillite)",
+        "rock_argillite",
+    ),
+    ("ore_manganese_chalk", "Manganese Ore (Chalk)", "rock_chalk"),
+    (
+        "ore_manganese_dolomite",
+        "Manganese Ore (Dolomite)",
+        "rock_dolomite",
+    ),
+    (
+        "ore_manganese_gneiss",
+        "Manganese Ore (Gneiss)",
+        "rock_gneiss",
+    ),
+    (
+        "ore_manganese_limestone",
+        "Manganese Ore (Limestone)",
+        "rock_limestone",
+    ),
+    (
+        "ore_manganese_raw",
+        "Raw Manganese Block",
+        "ore_manganese_raw",
+    ),
+    ("ore_manganese_slate", "Manganese Ore (Slate)", "rock_slate"),
+    ("ore_nickel_basalt", "Nickel Ore (Basalt)", "rock_basalt"),
+    ("ore_nickel_gabbro", "Nickel Ore (Gabbro)", "rock_gabbro"),
+    ("ore_nickel_raw", "Raw Nickel Block", "ore_nickel_raw"),
+    ("ore_nickel_scoria", "Nickel Ore (Scoria)", "rock_scoria"),
+    (
+        "ore_nickel_serpentinite",
+        "Nickel Ore (Serpentinite)",
+        "rock_serpentinite",
+    ),
+    (
+        "ore_platinum_basalt",
+        "Platinum Ore (Basalt)",
+        "rock_basalt",
+    ),
+    (
+        "ore_platinum_gabbro",
+        "Platinum Ore (Gabbro)",
+        "rock_gabbro",
+    ),
+    ("ore_platinum_raw", "Raw Platinum Block", "ore_platinum_raw"),
+    (
+        "ore_platinum_scoria",
+        "Platinum Ore (Scoria)",
+        "rock_scoria",
+    ),
+    (
+        "ore_platinum_serpentinite",
+        "Platinum Ore (Serpentinite)",
+        "rock_serpentinite",
+    ),
+    (
+        "ore_quartz_andesite",
+        "Quartz Ore (Andesite)",
+        "rock_andesite",
+    ),
+    ("ore_quartz_gneiss", "Quartz Ore (Gneiss)", "rock_gneiss"),
+    ("ore_quartz_granite", "Quartz Ore (Granite)", "rock_granite"),
+    ("ore_quartz_raw", "Raw Quartz Block", "ore_quartz_raw"),
+    (
+        "ore_quartz_sandstone_common",
+        "Quartz Ore (Common Sandstone)",
+        "rock_sandstone_common",
+    ),
+    (
+        "ore_quartz_sandstone_red",
+        "Quartz Ore (Red Sandstone)",
+        "rock_sandstone_red",
+    ),
+    (
+        "ore_quartz_sandstone_white",
+        "Quartz Ore (White Sandstone)",
+        "rock_sandstone_white",
+    ),
+    ("ore_saltpeter_karst", "Saltpeter Ore (Karst)", "rock_karst"),
+    (
+        "ore_saltpeter_limestone",
+        "Saltpeter Ore (Limestone)",
+        "rock_limestone",
+    ),
+    (
+        "ore_saltpeter_raw",
+        "Raw Saltpeter Block",
+        "ore_saltpeter_raw",
+    ),
+    (
+        "ore_saltpeter_sandstone_dune",
+        "Saltpeter Ore (Dune Sandstone)",
+        "rock_sandstone_dune",
+    ),
+    (
+        "ore_saltpeter_sandstone_white",
+        "Saltpeter Ore (White Sandstone)",
+        "rock_sandstone_white",
+    ),
+    (
+        "ore_silver_andesite",
+        "Silver Ore (Andesite)",
+        "rock_andesite",
+    ),
+    ("ore_silver_diorite", "Silver Ore (Diorite)", "rock_diorite"),
+    ("ore_silver_gneiss", "Silver Ore (Gneiss)", "rock_gneiss"),
+    ("ore_silver_marble", "Silver Ore (Marble)", "rock_marble"),
+    ("ore_silver_raw", "Raw Silver Block", "ore_silver_raw"),
+    ("ore_sulfur_basalt", "Sulfur Ore (Basalt)", "rock_basalt"),
+    (
+        "ore_sulfur_brimstone",
+        "Sulfur Ore (Brimstone)",
+        "rock_brimstone",
+    ),
+    ("ore_sulfur_raw", "Raw Sulfur Block", "ore_sulfur_raw"),
+    ("ore_sulfur_scoria", "Sulfur Ore (Scoria)", "rock_scoria"),
+    ("ore_sulfur_tuff", "Sulfur Ore (Tuff)", "rock_tuff"),
+    ("ore_tin_andesite", "Tin Ore (Andesite)", "rock_andesite"),
+    ("ore_tin_diorite", "Tin Ore (Diorite)", "rock_diorite"),
+    ("ore_tin_dolomite", "Tin Ore (Dolomite)", "rock_dolomite"),
+    ("ore_tin_gneiss", "Tin Ore (Gneiss)", "rock_gneiss"),
+    ("ore_tin_granite", "Tin Ore (Granite)", "rock_granite"),
+    ("ore_tin_raw", "Raw Tin Block", "ore_tin_raw"),
+    (
+        "ore_tin_sandstone_common",
+        "Tin Ore (Common Sandstone)",
+        "rock_sandstone_common",
+    ),
+    (
+        "ore_uranium_diorite",
+        "Uranium Ore (Diorite)",
+        "rock_diorite",
+    ),
+    ("ore_uranium_gabbro", "Uranium Ore (Gabbro)", "rock_gabbro"),
+    (
+        "ore_uranium_granite",
+        "Uranium Ore (Granite)",
+        "rock_granite",
+    ),
+    ("ore_uranium_raw", "Raw Uranium Block", "ore_uranium_raw"),
+    ("ore_uranium_slate", "Uranium Ore (Slate)", "rock_slate"),
+    ("ore_zinc_andesite", "Zinc Ore (Andesite)", "rock_andesite"),
+    (
+        "ore_zinc_argillite",
+        "Zinc Ore (Argillite)",
+        "rock_argillite",
+    ),
+    ("ore_zinc_chalk", "Zinc Ore (Chalk)", "rock_chalk"),
+    ("ore_zinc_diorite", "Zinc Ore (Diorite)", "rock_diorite"),
+    ("ore_zinc_dolomite", "Zinc Ore (Dolomite)", "rock_dolomite"),
+    ("ore_zinc_gneiss", "Zinc Ore (Gneiss)", "rock_gneiss"),
+    ("ore_zinc_karst", "Zinc Ore (Karst)", "rock_karst"),
+    (
+        "ore_zinc_limestone",
+        "Zinc Ore (Limestone)",
+        "rock_limestone",
+    ),
+    ("ore_zinc_raw", "Raw Zinc Block", "ore_zinc_raw"),
+    (
+        "crystal_amethyst_block",
+        "Amethyst Block",
+        "crystal_amethyst",
+    ),
+    (
+        "crystal_amethyst_cluster",
+        "Amethyst Cluster",
+        "crystal_amethyst_cluster",
+    ),
+    (
+        "crystal_amethyst_glinted",
+        "Glinted Amethyst Cluster",
+        "crystal_amethyst_cluster_glinted",
+    ),
+    (
+        "crystal_aquamarine_block",
+        "Aquamarine Block",
+        "crystal_aquamarine",
+    ),
+    (
+        "crystal_aquamarine_cluster",
+        "Aquamarine Cluster",
+        "crystal_aquamarine_cluster",
+    ),
+    (
+        "crystal_aquamarine_glinted",
+        "Glinted Aquamarine Cluster",
+        "crystal_aquamarine_cluster_glinted",
+    ),
+    ("crystal_citrine_block", "Citrine Block", "crystal_citrine"),
+    (
+        "crystal_citrine_cluster",
+        "Citrine Cluster",
+        "crystal_citrine_cluster",
+    ),
+    (
+        "crystal_citrine_glinted",
+        "Glinted Citrine Cluster",
+        "crystal_citrine_cluster_glinted",
+    ),
+    (
+        "crystal_fluorite_block",
+        "Fluorite Block",
+        "crystal_fluorite",
+    ),
+    (
+        "crystal_fluorite_cluster",
+        "Fluorite Cluster",
+        "crystal_fluorite_cluster",
+    ),
+    (
+        "crystal_fluorite_glinted",
+        "Glinted Fluorite Cluster",
+        "crystal_fluorite_cluster_glinted",
+    ),
+    (
+        "crystal_pink_salt_block",
+        "Pink Salt Block",
+        "crystal_pink_salt",
+    ),
+    (
+        "crystal_pink_salt_cluster",
+        "Pink Salt Cluster",
+        "crystal_pink_salt_cluster",
+    ),
+    (
+        "crystal_pink_salt_glinted",
+        "Glinted Pink Salt Cluster",
+        "crystal_pink_salt_cluster_glinted",
+    ),
+    (
+        "crystal_selenite_block",
+        "Selenite Block",
+        "crystal_selenite",
+    ),
+    (
+        "crystal_selenite_cluster",
+        "Selenite Cluster",
+        "crystal_selenite_cluster",
+    ),
+    (
+        "crystal_selenite_glinted",
+        "Glinted Selenite Cluster",
+        "crystal_selenite_cluster_glinted",
+    ),
+    ("dripstone_calcite", "Calcite Flowstone", "rock_calcite"),
+    ("dripstone_karst", "Karst Dripstone", "rock_karst"),
+    ("fossil_amber", "Fossil Amber", "fossil_amber"),
+    ("fossil_bitumen", "Fossil Bitumen", "fossil_bitumen"),
+    ("fossil_bones", "Fossil Bones", "fossil_bones"),
+    ("fossil_matrix", "Fossil Matrix", "fossil_matrix"),
+    ("speleothem_basalt", "Lava Icicle", "None"),
+    ("speleothem_brimstone", "Brimstone Spike", "None"),
+    ("speleothem_ice", "Glacial Icicle", "None"),
+    ("speleothem_salt_straw", "Pink Salt Soda Straw", "None"),
+    ("algae_mat", "Algae Mat", "aqua_algae_mat"),
+    ("algae_reefstone", "Algae Reefstone", "aqua_reefstone"),
+    (
+        "barnacles_reefstone",
+        "Barnacles Reefstone",
+        "aqua_reefstone",
+    ),
+    ("bone_worms", "Bone Worms", "vege_bone_worms"),
+    ("brain_coral", "Brain Coral", "aqua_brain_coral"),
+    ("brain_coral_fan", "Brain Coral Fan", "vege_brain_coral_fan"),
+    ("bubble_coral", "Bubble Coral", "aqua_bubble_coral"),
+    (
+        "bubble_coral_fan",
+        "Bubble Coral Fan",
+        "vege_bubble_coral_fan",
+    ),
+    ("bull_kelp", "Bull Kelp", "vege_bull_kelp"),
+    ("coralstone", "Coralstone", "aqua_coralstone"),
+    ("dead_coral", "Dead Coral Block", "aqua_dead_coral"),
+    ("dead_coral_fan", "Dead Coral Fan", "vege_dead_coral_fan"),
+    ("delesseria", "Delesseria", "vege_delesseria"),
+    ("dying_coral", "Dying Coral Block", "aqua_dying_coral"),
+    ("dying_coral_fan", "Dying Coral Fan", "vege_dying_coral_fan"),
+    ("fire_coral", "Fire Coral", "aqua_fire_coral"),
+    ("fire_coral_fan", "Fire Coral Fan", "vege_fire_coral_fan"),
+    (
+        "geothermal_vent",
+        "Geothermal Vent",
+        "aqua_geothermal_vent_side",
+    ),
+    ("heart_coral", "Heart Coral", "aqua_heart_coral"),
+    ("heart_coral_fan", "Heart Coral Fan", "vege_heart_coral_fan"),
+    ("horn_coral", "Horn Coral", "aqua_horn_coral"),
+    ("horn_coral_fan", "Horn Coral Fan", "vege_horn_coral_fan"),
+    ("kelp", "Giant Kelp", "vege_kelp"),
+    ("leaf_coral", "Leaf Coral", "aqua_leaf_coral"),
+    ("leaf_coral_fan", "Leaf Coral Fan", "vege_leaf_coral_fan"),
+    ("pearl_block", "Pearl Block", "aqua_pearl_side"),
+    ("red_algae", "Red Algae", "vege_red_algae"),
+    ("reed_coral", "Reed Coral", "aqua_reed_coral"),
+    ("reed_coral_fan", "Reed Coral Fan", "vege_reed_coral_fan"),
+    ("reefstone", "Reefstone", "aqua_reefstone"),
+    ("sargassum", "Sargassum", "vege_sargassum"),
+    ("scute_block", "Turtle Scute Block", "aqua_scute_side"),
+    ("sea_anemone", "Sea Anemone", "aqua_sea_anemone_side"),
+    ("seagrass", "Seagrass", "vege_seagrass"),
+    ("seaweed", "Seaweed", "vege_seaweed"),
+    ("spike_coral", "Spike Coral", "aqua_spike_coral"),
+    ("spike_coral_fan", "Spike Coral Fan", "vege_spike_coral_fan"),
+    ("sponge", "Natural Sponge", "aqua_sponge"),
+    ("staghorn_coral", "Staghorn Coral", "aqua_staghorn_coral"),
+    (
+        "staghorn_coral_fan",
+        "Staghorn Coral Fan",
+        "vege_staghorn_coral_fan",
+    ),
+    ("sun_coral", "Sun Coral", "aqua_sun_coral"),
+    ("sun_coral_fan", "Sun Coral Fan", "vege_sun_coral_fan"),
+    ("thorn_coral", "Thorn Coral", "aqua_thorn_coral"),
+    ("thorn_coral_fan", "Thorn Coral Fan", "vege_thorn_coral_fan"),
+    ("tube_coral", "Tube Coral", "aqua_tube_coral"),
+    ("tube_coral_fan", "Tube Coral Fan", "vege_tube_coral_fan"),
+    ("wax_coral", "Wax Coral", "aqua_wax_coral"),
+    ("wax_coral_fan", "Wax Coral Fan", "vege_wax_coral_fan"),
+    ("zigzag_coral", "Zigzag Coral", "aqua_zigzag_coral"),
+    (
+        "zigzag_coral_fan",
+        "Zigzag Coral Fan",
+        "vege_zigzag_coral_fan",
+    ),
+    ("ant_hill", "Ant Hill (Closed)", "nest_ant_hill"),
+    ("ant_hill_open", "Ant Hill (Active)", "nest_ant_hill_open"),
+    ("beaver_dam", "Beaver Dam", "nest_beaver_dam"),
+    ("bee_nest", "Wild Bee Nest", "nest_bee_nest_side"),
+    ("bird_nest", "Songbird Nest", "nest_bird_nest_side"),
+    ("bloody_brain", "Bloody Brain Block", "bio_brain"),
+    ("bloody_flesh", "Bloody Flesh Block", "bio_flesh_side"),
+    ("blubber_block", "Blubber Block", "bio_blubber"),
+    ("bone_block", "Bone Block", "bio_bone_side"),
+    ("brain_block", "Brain Block", "bio_brain"),
+    ("calcined_bone", "Calcined Bone", "bio_calcined_bone_side"),
+    ("cobweb", "Cobweb Block", "organic_cobweb"),
+    ("cobweb_arch", "Cobweb Arch", "organic_cobweb_arch"),
+    ("cobweb_hanging", "Hanging Cobweb", "organic_cobweb_hanging"),
+    (
+        "cobweb_stretched",
+        "Stretched Cobweb",
+        "organic_cobweb_stretched",
+    ),
+    ("coprolite_block", "Coprolite Block", "organic_coprolite"),
+    ("dust_block", "Organic Dust", "organic_dust"),
+    ("flesh_block", "Raw Flesh Block", "bio_flesh_side"),
+    ("fur_block", "Animal Fur Block", "bio_fur_side"),
+    ("guano_block", "Guano Block", "organic_guano"),
+    ("hay_nest", "Hay Poultry Nest", "nest_hay_nest_side"),
+    ("honey_block", "Honey Block", "organic_honey_block_side"),
+    (
+        "honeycomb_block",
+        "Honeycomb Block",
+        "organic_honeycomb_block",
+    ),
+    ("jelly_block", "Royal Jelly Block", "organic_jelly_side"),
+    ("loam_burrow", "Loam Animal Burrow", "soil_loam_dirt"),
+    ("peat_burrow", "Peat Animal Burrow", "soil_peat_dirt"),
+    ("poop_block", "Manure Block", "organic_poop"),
+    ("seashell_block", "Seashell Block", "organic_seashell"),
+    ("silk_cocoon", "Wild Silk Cocoon", "nest_silk_cocoon_side"),
+    ("silt_burrow", "Silt Animal Burrow", "soil_silt_dirt"),
+    ("slime_block", "Slime Block", "organic_slime_side"),
+    ("spider_egg", "Spider Egg Sac", "nest_spider_egg_side"),
+    (
+        "termite_mound",
+        "Termite Mound (Closed)",
+        "nest_termite_mound",
+    ),
+    (
+        "termite_mound_open",
+        "Termite Mound (Active)",
+        "nest_termite_mound_open",
+    ),
+    ("wasp_nest", "Paper Wasp Nest", "nest_wasp_nest_side"),
+    ("wax_block", "Beeswax Block", "organic_wax"),
+    ("bag", "Burlap Bag", "util_bag_side"),
+    ("barrel", "Barrel", "util_barrel_side"),
+    ("basket", "Basket", "util_basket_side"),
+    ("bookshelf", "Bookshelf", "util_bookshelf_side"),
+    ("bookshelf_empty", "Empty Bookshelf", "util_bookshelf_side"),
+    ("brick_black", "Black Bricks", "deco_bricks_painted"),
+    ("brick_blue", "Blue Bricks", "deco_bricks_painted"),
+    ("brick_brown", "Brown Bricks", "deco_bricks_painted"),
+    ("brick_dark_blue", "Dark Blue Bricks", "deco_bricks_painted"),
+    ("brick_dark_grey", "Dark Grey Bricks", "deco_bricks_painted"),
+    ("brick_green", "Green Bricks", "deco_bricks_painted"),
+    (
+        "brick_light_grey",
+        "Light Grey Bricks",
+        "deco_bricks_painted",
+    ),
+    (
+        "brick_light_pink",
+        "Light Pink Bricks",
+        "deco_bricks_painted",
+    ),
+    ("brick_lime", "Lime Bricks", "deco_bricks_painted"),
+    ("brick_orange", "Orange Bricks", "deco_bricks_painted"),
+    ("brick_pink", "Pink Bricks", "deco_bricks_painted"),
+    ("brick_purple", "Purple Bricks", "deco_bricks_painted"),
+    ("brick_red", "Red Bricks", "deco_bricks_painted"),
+    ("brick_turquoise", "Turquoise Bricks", "deco_bricks_painted"),
+    ("brick_white", "White Bricks", "deco_bricks_painted"),
+    ("brick_yellow", "Yellow Bricks", "deco_bricks_painted"),
+    ("bricks", "Bricks", "deco_bricks"),
+    ("corn_bale", "Corn Bale", "deco_corn_bale_side"),
+    ("crate", "Crate", "util_crate_side"),
+    ("emit_lamp", "Lamp", "emit_lamp"),
+    ("emit_light_blue", "Blue Light", "emit_light_blue"),
+    ("emit_light_cold", "Cold Light", "emit_light_cold"),
+    ("emit_light_green", "Green Light", "emit_light_green"),
+    ("emit_light_red", "Red Light", "emit_light_red"),
+    ("emit_light_warm", "Warm Light", "emit_light_warm"),
+    ("emit_torch_blue", "Blue Torch", "emit_torch_blue"),
+    ("emit_torch_cold", "Cold Torch", "emit_torch_cold"),
+    ("emit_torch_fire", "Fire Torch", "emit_torch_fire"),
+    ("emit_torch_green", "Green Torch", "emit_torch_green"),
+    ("emit_torch_red", "Red Torch", "emit_torch_red"),
+    ("emit_torch_warm", "Warm Torch", "emit_torch_warm"),
+    ("fabric", "Fabric", "deco_fabric"),
+    ("fabric_black", "Black Fabric", "deco_fabric_painted"),
+    ("fabric_blue", "Blue Fabric", "deco_fabric_painted"),
+    ("fabric_brown", "Brown Fabric", "deco_fabric_painted"),
+    (
+        "fabric_dark_blue",
+        "Dark Blue Fabric",
+        "deco_fabric_painted",
+    ),
+    (
+        "fabric_dark_grey",
+        "Dark Grey Fabric",
+        "deco_fabric_painted",
+    ),
+    ("fabric_green", "Green Fabric", "deco_fabric_painted"),
+    (
+        "fabric_light_grey",
+        "Light Grey Fabric",
+        "deco_fabric_painted",
+    ),
+    (
+        "fabric_light_pink",
+        "Light Pink Fabric",
+        "deco_fabric_painted",
+    ),
+    ("fabric_lime", "Lime Fabric", "deco_fabric_painted"),
+    ("fabric_orange", "Orange Fabric", "deco_fabric_painted"),
+    ("fabric_pink", "Pink Fabric", "deco_fabric_painted"),
+    ("fabric_purple", "Purple Fabric", "deco_fabric_painted"),
+    ("fabric_red", "Red Fabric", "deco_fabric_painted"),
+    (
+        "fabric_turquoise",
+        "Turquoise Fabric",
+        "deco_fabric_painted",
+    ),
+    ("fabric_white", "White Fabric", "deco_fabric_painted"),
+    ("fabric_yellow", "Yellow Fabric", "deco_fabric_painted"),
+    ("glass", "Glass", "deco_glass"),
+    ("glass_black", "Black Glass", "deco_glass_painted"),
+    ("glass_blue", "Blue Glass", "deco_glass_painted"),
+    ("glass_brown", "Brown Glass", "deco_glass_painted"),
+    ("glass_dark_blue", "Dark Blue Glass", "deco_glass_painted"),
+    ("glass_dark_grey", "Dark Grey Glass", "deco_glass_painted"),
+    ("glass_green", "Green Glass", "deco_glass_painted"),
+    ("glass_light_grey", "Light Grey Glass", "deco_glass_painted"),
+    ("glass_light_pink", "Light Pink Glass", "deco_glass_painted"),
+    ("glass_lime", "Lime Glass", "deco_glass_painted"),
+    ("glass_orange", "Orange Glass", "deco_glass_painted"),
+    ("glass_pink", "Pink Glass", "deco_glass_painted"),
+    ("glass_purple", "Purple Glass", "deco_glass_painted"),
+    ("glass_red", "Red Glass", "deco_glass_painted"),
+    ("glass_turquoise", "Turquoise Glass", "deco_glass_painted"),
+    ("glass_white", "White Glass", "deco_glass_painted"),
+    ("glass_yellow", "Yellow Glass", "deco_glass_painted"),
+    ("hay_bale", "Hay Bale", "deco_hay_bale_side"),
+    ("linen", "Linen", "deco_linen"),
+    ("linen_black", "Black Linen", "deco_linen_painted"),
+    ("linen_blue", "Blue Linen", "deco_linen_painted"),
+    ("linen_brown", "Brown Linen", "deco_linen_painted"),
+    ("linen_dark_blue", "Dark Blue Linen", "deco_linen_painted"),
+    ("linen_dark_grey", "Dark Grey Linen", "deco_linen_painted"),
+    ("linen_green", "Green Linen", "deco_linen_painted"),
+    ("linen_light_grey", "Light Grey Linen", "deco_linen_painted"),
+    ("linen_light_pink", "Light Pink Linen", "deco_linen_painted"),
+    ("linen_lime", "Lime Linen", "deco_linen_painted"),
+    ("linen_orange", "Orange Linen", "deco_linen_painted"),
+    ("linen_pink", "Pink Linen", "deco_linen_painted"),
+    ("linen_purple", "Purple Linen", "deco_linen_painted"),
+    ("linen_red", "Red Linen", "deco_linen_painted"),
+    ("linen_turquoise", "Turquoise Linen", "deco_linen_painted"),
+    ("linen_white", "White Linen", "deco_linen_painted"),
+    ("linen_yellow", "Yellow Linen", "deco_linen_painted"),
+    ("path_dirty", "Dirty Path", "deco_path_dirty"),
+    ("path_sandy", "Sandy Path", "deco_path_sandy"),
+    ("path_snowy", "Snowy Path", "deco_path_snowy"),
+    ("path_stony", "Stony Path", "deco_path_stony"),
+    ("plaster", "Plaster", "deco_plaster"),
+    ("plaster_black", "Black Plaster", "deco_plaster_painted"),
+    ("plaster_blue", "Blue Plaster", "deco_plaster_painted"),
+    ("plaster_brown", "Brown Plaster", "deco_plaster_painted"),
+    (
+        "plaster_dark_blue",
+        "Dark Blue Plaster",
+        "deco_plaster_painted",
+    ),
+    (
+        "plaster_dark_grey",
+        "Dark Grey Plaster",
+        "deco_plaster_painted",
+    ),
+    ("plaster_green", "Green Plaster", "deco_plaster_painted"),
+    (
+        "plaster_light_grey",
+        "Light Grey Plaster",
+        "deco_plaster_painted",
+    ),
+    (
+        "plaster_light_pink",
+        "Light Pink Plaster",
+        "deco_plaster_painted",
+    ),
+    ("plaster_lime", "Lime Plaster", "deco_plaster_painted"),
+    ("plaster_orange", "Orange Plaster", "deco_plaster_painted"),
+    ("plaster_pink", "Pink Plaster", "deco_plaster_painted"),
+    ("plaster_purple", "Purple Plaster", "deco_plaster_painted"),
+    ("plaster_red", "Red Plaster", "deco_plaster_painted"),
+    (
+        "plaster_turquoise",
+        "Turquoise Plaster",
+        "deco_plaster_painted",
+    ),
+    ("plaster_white", "White Plaster", "deco_plaster_painted"),
+    ("plaster_yellow", "Yellow Plaster", "deco_plaster_painted"),
+    ("rice_bale", "Rice Bale", "deco_rice_bale_side"),
+    ("shingles", "Shingles", "deco_shingles"),
+    ("shingles_black", "Black Shingles", "deco_shingles_painted"),
+    ("shingles_blue", "Blue Shingles", "deco_shingles_painted"),
+    ("shingles_brown", "Brown Shingles", "deco_shingles_painted"),
+    (
+        "shingles_dark_blue",
+        "Dark Blue Shingles",
+        "deco_shingles_painted",
+    ),
+    (
+        "shingles_dark_grey",
+        "Dark Grey Shingles",
+        "deco_shingles_painted",
+    ),
+    ("shingles_green", "Green Shingles", "deco_shingles_painted"),
+    (
+        "shingles_light_grey",
+        "Light Grey Shingles",
+        "deco_shingles_painted",
+    ),
+    (
+        "shingles_light_pink",
+        "Light Pink Shingles",
+        "deco_shingles_painted",
+    ),
+    ("shingles_lime", "Lime Shingles", "deco_shingles_painted"),
+    (
+        "shingles_orange",
+        "Orange Shingles",
+        "deco_shingles_painted",
+    ),
+    ("shingles_pink", "Pink Shingles", "deco_shingles_painted"),
+    (
+        "shingles_purple",
+        "Purple Shingles",
+        "deco_shingles_painted",
+    ),
+    ("shingles_red", "Red Shingles", "deco_shingles_painted"),
+    (
+        "shingles_turquoise",
+        "Turquoise Shingles",
+        "deco_shingles_painted",
+    ),
+    ("shingles_white", "White Shingles", "deco_shingles_painted"),
+    (
+        "shingles_yellow",
+        "Yellow Shingles",
+        "deco_shingles_painted",
+    ),
+    ("straw_bale", "Straw Bale", "deco_straw_bale_side"),
+    ("tinted_glass", "Tinted Glass", "deco_tinted_glass"),
+    (
+        "tinted_glass_black",
+        "Black Tinted Glass",
+        "deco_tinted_glass_painted",
+    ),
+    (
+        "tinted_glass_blue",
+        "Blue Tinted Glass",
+        "deco_tinted_glass_painted",
+    ),
+    (
+        "tinted_glass_brown",
+        "Brown Tinted Glass",
+        "deco_tinted_glass_painted",
+    ),
+    (
+        "tinted_glass_dark_blue",
+        "Dark Blue Tinted Glass",
+        "deco_tinted_glass_painted",
+    ),
+    (
+        "tinted_glass_dark_grey",
+        "Dark Grey Tinted Glass",
+        "deco_tinted_glass_painted",
+    ),
+    (
+        "tinted_glass_green",
+        "Green Tinted Glass",
+        "deco_tinted_glass_painted",
+    ),
+    (
+        "tinted_glass_light_grey",
+        "Light Grey Tinted Glass",
+        "deco_tinted_glass_painted",
+    ),
+    (
+        "tinted_glass_light_pink",
+        "Light Pink Tinted Glass",
+        "deco_tinted_glass_painted",
+    ),
+    (
+        "tinted_glass_lime",
+        "Lime Tinted Glass",
+        "deco_tinted_glass_painted",
+    ),
+    (
+        "tinted_glass_orange",
+        "Orange Tinted Glass",
+        "deco_tinted_glass_painted",
+    ),
+    (
+        "tinted_glass_pink",
+        "Pink Tinted Glass",
+        "deco_tinted_glass_painted",
+    ),
+    (
+        "tinted_glass_purple",
+        "Purple Tinted Glass",
+        "deco_tinted_glass_painted",
+    ),
+    (
+        "tinted_glass_red",
+        "Red Tinted Glass",
+        "deco_tinted_glass_painted",
+    ),
+    (
+        "tinted_glass_turquoise",
+        "Turquoise Tinted Glass",
+        "deco_tinted_glass_painted",
+    ),
+    (
+        "tinted_glass_white",
+        "White Tinted Glass",
+        "deco_tinted_glass_painted",
+    ),
+    (
+        "tinted_glass_yellow",
+        "Yellow Tinted Glass",
+        "deco_tinted_glass_painted",
+    ),
+    ("wool", "Wool", "deco_wool"),
+    ("wool_black", "Black Wool", "deco_wool_painted"),
+    ("wool_blue", "Blue Wool", "deco_wool_painted"),
+    ("wool_brown", "Brown Wool", "deco_wool_painted"),
+    ("wool_dark_blue", "Dark Blue Wool", "deco_wool_painted"),
+    ("wool_dark_grey", "Dark Grey Wool", "deco_wool_painted"),
+    ("wool_green", "Green Wool", "deco_wool_painted"),
+    ("wool_light_grey", "Light Grey Wool", "deco_wool_painted"),
+    ("wool_light_pink", "Light Pink Wool", "deco_wool_painted"),
+    ("wool_lime", "Lime Wool", "deco_wool_painted"),
+    ("wool_orange", "Orange Wool", "deco_wool_painted"),
+    ("wool_pink", "Pink Wool", "deco_wool_painted"),
+    ("wool_purple", "Purple Wool", "deco_wool_painted"),
+    ("wool_red", "Red Wool", "deco_wool_painted"),
+    ("wool_turquoise", "Turquoise Wool", "deco_wool_painted"),
+    ("wool_white", "White Wool", "deco_wool_painted"),
+    ("wool_yellow", "Yellow Wool", "deco_wool_painted"),
+    ("fungi_amanita", "Amanita (Fly Agaric)", "fungi_amanita"),
+    ("fungi_amanita_cap", "Amanita Cap", "fungi_amanita_cap"),
+    (
+        "fungi_chanterelle",
+        "Golden Chanterelle",
+        "fungi_chanterelle",
+    ),
+    (
+        "fungi_chanterelle_cap",
+        "Chanterelle Cap",
+        "fungi_chanterelle_cap",
+    ),
+    ("fungi_indigo", "Indigo Milk Cap", "fungi_indigo"),
+    ("fungi_indigo_cap", "Indigo Cap", "fungi_indigo_cap"),
+    ("fungi_inside", "Fungi Inside Flesh", "fungi_inside"),
+    ("fungi_mycena", "Mycena (Bioluminescent)", "fungi_mycena"),
+    ("fungi_mycena_cap", "Mycena Cap", "fungi_mycena_cap"),
+    ("fungi_porcini", "Porcini (King Bolete)", "fungi_porcini"),
+    ("fungi_porcini_cap", "Porcini Cap", "fungi_porcini_cap"),
+    ("fungi_russula", "Russula (Sickener)", "fungi_russula"),
+    ("fungi_russula_cap", "Russula Cap", "fungi_russula_cap"),
+    ("fungi_shiitake", "Shiitake", "fungi_shiitake"),
+    ("fungi_shiitake_cap", "Shiitake Cap", "fungi_shiitake_cap"),
+    ("fungi_stem", "Fungi Stem", "fungi_stem"),
+    ("fungi_verdigris", "Verdigris Agaric", "fungi_verdigris"),
+    (
+        "fungi_verdigris_cap",
+        "Verdigris Cap",
+        "fungi_verdigris_cap",
+    ),
+];
+
+impl Voxel {
+    #[inline(always)]
+    pub fn id(self) -> &'static str {
+        VOXEL_DATA[self as usize].0
+    }
+
+    #[inline(always)]
+    pub fn label(self) -> &'static str {
+        VOXEL_DATA[self as usize].1
+    }
+
+    pub fn from_id(id: &str) -> Option<Self> {
+        VOXEL_DATA
+            .iter()
+            .position(|&(i, _, _)| i == id)
+            .and_then(|idx| Self::from_u16(idx as u16))
+    }
+
+    #[inline(always)]
+    pub fn texture_name(self) -> Option<&'static str> {
+        let t = VOXEL_DATA[self as usize].2;
+        if t.is_empty() { None } else { Some(t) }
+    }
+
+    pub fn side_texture_name(self) -> Option<&'static str> {
+        match self {
+            Self::LiquidAcid => Some("liquid_acid_flow"),
+            Self::LiquidBlood => Some("liquid_blood_flow"),
+            Self::LiquidCoreMagma => Some("liquid_core_magma_flow"),
+            Self::LiquidLava => Some("liquid_lava_flow"),
+            Self::LiquidMolten => Some("liquid_molten_flow"),
+            Self::LiquidOoze => Some("liquid_ooze_flow"),
+            Self::LiquidSludge => Some("liquid_sludge_flow"),
+            Self::LiquidSpringWater => Some("liquid_spring_water_flow"),
+            Self::LiquidTar => Some("liquid_tar_flow"),
+            Self::LiquidWater => Some("liquid_water_flow"),
+
+            Self::CalicheGrass => Some("soil_caliche_grass_side"),
+            Self::LateriteGrass => Some("soil_laterite_grass_side"),
+            Self::LoamGrass => Some("soil_loam_grass_side"),
+            Self::LoamMulch => Some("soil_loam_mulch_side"),
+            Self::LoamSnow => Some("soil_loam_snow_side"),
+            Self::LoamTilled => Some("soil_loam_tilled_side"),
+            Self::PeatGrass => Some("soil_peat_grass_side"),
+            Self::PeatMulch => Some("soil_peat_mulch_side"),
+            Self::PeatSnow => Some("soil_peat_snow_side"),
+            Self::PeatTilled => Some("soil_peat_tilled_side"),
+            Self::PermafrostGrass => Some("soil_permafrost_grass_side"),
+            Self::SiltGrass => Some("soil_silt_grass_side"),
+            Self::SiltMulch => Some("soil_silt_mulch_side"),
+            Self::SiltSnow => Some("soil_silt_snow_side"),
+            Self::SiltTilled => Some("soil_silt_tilled_side"),
+            Self::LoamBurrow => Some("soil_loam_grass_side"),
+            Self::PeatBurrow => Some("soil_peat_grass_side"),
+            Self::SiltBurrow => Some("soil_silt_grass_side"),
+
+            Self::AndesiteGrass => Some("rock_andesite_grass_side"),
+            Self::AndesiteSnow => Some("rock_andesite_snow_side"),
+            Self::ArgilliteGrass => Some("rock_argillite_grass_side"),
+            Self::ArgilliteSnow => Some("rock_argillite_snow_side"),
+            Self::BasaltGrass => Some("rock_basalt_grass_side"),
+            Self::BasaltSnow => Some("rock_basalt_snow_side"),
+            Self::ChalkGrass => Some("rock_chalk_grass_side"),
+            Self::ChalkSnow => Some("rock_chalk_snow_side"),
+            Self::DolomiteGrass => Some("rock_dolomite_grass_side"),
+            Self::DolomiteSnow => Some("rock_dolomite_snow_side"),
+            Self::GneissGrass => Some("rock_gneiss_grass_side"),
+            Self::GneissSnow => Some("rock_gneiss_snow_side"),
+            Self::GraniteGrass => Some("rock_granite_grass_side"),
+            Self::GraniteSnow => Some("rock_granite_snow_side"),
+            Self::LimestoneGrass => Some("rock_limestone_grass_side"),
+            Self::LimestoneSnow => Some("rock_limestone_snow_side"),
+            _ => None,
+        }
+    }
+
+    pub fn top_texture_name(self) -> Option<&'static str> {
+        match self {
+            Self::CalicheGrass
+            | Self::LateriteGrass
+            | Self::LoamGrass
+            | Self::PeatGrass
+            | Self::PermafrostGrass
+            | Self::SiltGrass
+            | Self::AndesiteGrass
+            | Self::ArgilliteGrass
+            | Self::BasaltGrass
+            | Self::ChalkGrass
+            | Self::DolomiteGrass
+            | Self::GneissGrass
+            | Self::GraniteGrass
+            | Self::LimestoneGrass => Some("soil_grass"),
+
+            Self::LoamSnow
+            | Self::PeatSnow
+            | Self::SiltSnow
+            | Self::AndesiteSnow
+            | Self::ArgilliteSnow
+            | Self::BasaltSnow
+            | Self::ChalkSnow
+            | Self::DolomiteSnow
+            | Self::GneissSnow
+            | Self::GraniteSnow
+            | Self::LimestoneSnow => Some("soil_snow"),
+
+            Self::LoamMulch => Some("soil_loam_mulch"),
+            Self::PeatMulch => Some("soil_peat_mulch"),
+            Self::SiltMulch => Some("soil_silt_mulch"),
+            Self::LoamTilled => Some("soil_loam_tilled_top"),
+            Self::PeatTilled => Some("soil_peat_tilled_top"),
+            Self::SiltTilled => Some("soil_silt_tilled_top"),
+
+            Self::AcaciaLog => Some("tree_acacia_log"),
+            Self::AspenLog => Some("tree_aspen_log"),
+            Self::BambooStalk => Some("tree_bamboo_stalk_top"),
+            Self::BaobabLog => Some("tree_baobab_log"),
+            Self::BirchLog => Some("tree_birch_log"),
+            Self::CherryLog => Some("tree_cherry_log"),
+            Self::CypressLog => Some("tree_cypress_log"),
+            Self::FirLog => Some("tree_fir_log"),
+            Self::KapokLog => Some("tree_kapok_log"),
+            Self::MahoganyLog => Some("tree_mahogany_log"),
+            Self::MangroveLog => Some("tree_mangrove_log"),
+            Self::MangroveRoots => Some("tree_mangrove_roots_top"),
+            Self::MapleLog => Some("tree_maple_log"),
+            Self::OakLog => Some("tree_oak_log"),
+            Self::PalmLog => Some("tree_palm_log"),
+            Self::PineLog => Some("tree_pine_log"),
+            Self::RedwoodLog => Some("tree_redwood_log"),
+            Self::WillowLog => Some("tree_willow_log"),
+            Self::YewLog => Some("tree_yew_log"),
+
+            Self::GeothermalVent => Some("aqua_geothermal_vent_top"),
+            Self::PearlBlock => Some("aqua_pearl_top"),
+            Self::ScuteBlock => Some("aqua_scute_top"),
+            Self::SeaAnemone => Some("aqua_sea_anemone_top"),
+            Self::BeeNest => Some("nest_bee_nest_top"),
+            Self::BirdNest => Some("nest_bird_nest_top"),
+            Self::BloodyFlesh | Self::FleshBlock => Some("bio_flesh_top"),
+            Self::BoneBlock => Some("bio_bone_top"),
+            Self::CalcinedBone => Some("bio_calcined_bone_top"),
+            Self::FurBlock => Some("bio_fur_top"),
+            Self::HayNest => Some("nest_hay_nest_top"),
+            Self::HoneyBlock => Some("organic_honey_block_top"),
+            Self::JellyBlock => Some("organic_jelly_top"),
+            Self::LoamBurrow | Self::PeatBurrow | Self::SiltBurrow => Some("nest_burrow_top"),
+            Self::SilkCocoon => Some("nest_silk_cocoon_top"),
+            Self::SlimeBlock => Some("organic_slime_top"),
+            Self::SpiderEgg => Some("nest_spider_egg_top"),
+            Self::WaspNest => Some("nest_wasp_nest_top"),
+            Self::Bag => Some("util_bag_top"),
+            Self::Barrel => Some("util_barrel_top"),
+            Self::Basket => Some("util_basket_top"),
+            Self::Bookshelf | Self::BookshelfEmpty => Some("util_bookshelf_top"),
+            Self::CornBale => Some("deco_corn_bale_top"),
+            Self::Crate => Some("util_crate_top"),
+            Self::EmitLamp => Some("emit_lamp_top"),
+            Self::HayBale => Some("deco_hay_bale_top"),
+            Self::RiceBale => Some("deco_rice_bale_top"),
+            Self::StrawBale => Some("deco_straw_bale_top"),
+            _ => None,
+        }
+    }
+
+    pub fn bottom_texture_name(self) -> Option<&'static str> {
+        match self {
+            Self::AcaciaLog => Some("tree_acacia_log"),
+            Self::AspenLog => Some("tree_aspen_log"),
+            Self::BambooStalk => Some("tree_bamboo_stalk_top"),
+            Self::BaobabLog => Some("tree_baobab_log"),
+            Self::BirchLog => Some("tree_birch_log"),
+            Self::CherryLog => Some("tree_cherry_log"),
+            Self::CypressLog => Some("tree_cypress_log"),
+            Self::FirLog => Some("tree_fir_log"),
+            Self::KapokLog => Some("tree_kapok_log"),
+            Self::MahoganyLog => Some("tree_mahogany_log"),
+            Self::MangroveLog => Some("tree_mangrove_log"),
+            Self::MangroveRoots => Some("tree_mangrove_roots_top"),
+            Self::MapleLog => Some("tree_maple_log"),
+            Self::OakLog => Some("tree_oak_log"),
+            Self::PalmLog => Some("tree_palm_log"),
+            Self::PineLog => Some("tree_pine_log"),
+            Self::RedwoodLog => Some("tree_redwood_log"),
+            Self::WillowLog => Some("tree_willow_log"),
+            Self::YewLog => Some("tree_yew_log"),
+
+            Self::GeothermalVent => Some("aqua_geothermal_vent_bot"),
+            Self::PearlBlock => Some("aqua_pearl_bot"),
+            Self::ScuteBlock => Some("aqua_scute_bot"),
+            Self::SeaAnemone => Some("aqua_sea_anemone_bot"),
+            Self::BeeNest => Some("nest_bee_nest_bot"),
+            Self::BirdNest => Some("nest_bird_nest_bot"),
+            Self::BloodyFlesh | Self::FleshBlock => Some("bio_flesh_top"),
+            Self::BoneBlock => Some("bio_bone_top"),
+            Self::CalcinedBone => Some("bio_calcined_bone_top"),
+            Self::FurBlock => Some("bio_fur_bot"),
+            Self::HayNest => Some("nest_hay_nest_bot"),
+            Self::HoneyBlock => Some("organic_honey_block_bot"),
+            Self::JellyBlock => Some("organic_jelly_bot"),
+            Self::SilkCocoon => Some("nest_silk_cocoon_bot"),
+            Self::SlimeBlock => Some("organic_slime_bot"),
+            Self::SpiderEgg => Some("nest_spider_egg_bot"),
+            Self::WaspNest => Some("nest_wasp_nest_bot"),
+            Self::Bag => Some("util_bag_bot"),
+            Self::Barrel => Some("util_barrel_bot"),
+            Self::Basket => Some("util_basket_bot"),
+            Self::Bookshelf | Self::BookshelfEmpty => Some("util_bookshelf_top"),
+            Self::CornBale => Some("deco_corn_bale_bottom"),
+            Self::Crate => Some("util_crate_bot"),
+            Self::HayBale | Self::StrawBale => Some("deco_hay_bale_top"),
+            Self::RiceBale => Some("deco_rice_bale_bottom"),
+
+            Self::FungiAmanitaCap
+            | Self::FungiChanterelleCap
+            | Self::FungiIndigoCap
+            | Self::FungiMycenaCap
+            | Self::FungiPorciniCap
+            | Self::FungiRussulaCap
+            | Self::FungiShiitakeCap
+            | Self::FungiVerdigrisCap => Some("fungi_inside"),
+            _ => None,
+        }
+    }
+
+    pub fn overlay_texture_name(&self) -> Option<&'static str> {
+        let id = *self as u16;
+        match id {
+            34
+            | 45
+            | 49
+            | 61
+            | 69
+            | 80
+            | 88
+            | 91
+            | 94
+            | 99
+            | 129
+            | 133
+            | 136
+            | 140
+            | 531..=532
+            | 536 => Some("soil_grass_side_overlay"),
+            146..=148 | 157..=161 => Some("mossy_rock_overlay"),
+            149..=156 => Some("mossy_cobbled_overlay"),
+            271 | 273 => Some("gem_diamond_overlay"),
+            274 | 276 => Some("gem_emerald_overlay"),
+            277 | 279 => Some("gem_jade_overlay"),
+            280..=281 | 283..=284 => Some("gem_onyx_overlay"),
+            285 | 287..=289 => Some("gem_opal_overlay"),
+            290..=291 => Some("gem_ruby_overlay"),
+            293..=294 => Some("gem_sapphire_overlay"),
+            296 | 298 => Some("gem_topaz_overlay"),
+            299..=301 | 303 => Some("ore_aluminum_overlay"),
+            304..=306 | 308 => Some("ore_cinnabar_overlay"),
+            309..=316 | 318..=321 => Some("ore_coal_overlay"),
+            322..=330 | 332..=336 => Some("ore_copper_overlay"),
+            337..=338 | 340..=341 => Some("ore_gold_overlay"),
+            342..=348 | 350..=354 => Some("ore_iron_overlay"),
+            355..=357 | 359 => Some("ore_lazurite_overlay"),
+            360..=365 | 367..=368 => Some("ore_lead_overlay"),
+            369..=373 | 375 => Some("ore_manganese_overlay"),
+            376..=377 | 379..=380 => Some("ore_nickel_overlay"),
+            381..=382 | 384..=385 => Some("ore_platinum_overlay"),
+            386..=388 | 390..=392 => Some("ore_quartz_overlay"),
+            393..=394 | 396..=397 => Some("ore_saltpeter_overlay"),
+            398..=401 => Some("ore_silver_overlay"),
+            403..=404 | 406..=407 => Some("ore_sulfur_overlay"),
+            408..=412 | 414 => Some("ore_tin_overlay"),
+            415..=417 | 419 => Some("ore_uranium_overlay"),
+            420..=427 => Some("ore_zinc_overlay"),
+            458 => Some("algae_dead_overlay"),
+            459 => Some("barnacles_overlay"),
+            512..=513 => Some("bloody_overlay"),
+            _ => None,
+        }
+    }
+
+    pub fn default_shape(self) -> BlockShape {
+        let id = self as u16;
+        if self.is_cross_billboard_const() {
+            BlockShape::CrossBillboard
+        } else if self.is_torch_const() {
+            BlockShape::Torch
+        } else if self.is_basket_const() {
+            BlockShape::Basket
+        } else if matches!(id, 163 | 166) {
+            BlockShape::PebbleOne
+        } else if matches!(id, 165 | 168) {
+            BlockShape::PebbleTwo
+        } else if matches!(id, 164 | 167) {
+            BlockShape::PebbleThree
+        } else if matches!(
+            id,
+            181 | 186
+                | 192
+                | 195
+                | 200
+                | 205
+                | 210
+                | 215
+                | 220
+                | 225
+                | 230
+                | 238
+                | 243
+                | 248
+                | 253
+                | 258
+                | 263
+                | 268
+                | 465
+                | 469
+                | 479
+        ) {
+            BlockShape::Column
+        } else {
+            BlockShape::Full
+        }
+    }
+
+    #[inline]
+    pub const fn is_grass_soil(self) -> bool {
+        matches!(
+            self as u16,
+            34 | 45 | 49 | 61 | 69 | 80 | 88 | 91 | 94 | 99 | 129 | 133 | 136 | 140
+        )
+    }
+
+    pub fn is_tinted(self) -> bool {
+        let id = self as u16;
+        matches!(
+            id,
+            2 | 28
+                | 34
+                | 45
+                | 49
+                | 61
+                | 69
+                | 80
+                | 88
+                | 91
+                | 94
+                | 99
+                | 129
+                | 133
+                | 136
+                | 140
+                | 179
+                | 184
+                | 189
+                | 191
+                | 193
+                | 198
+                | 203
+                | 208
+                | 213
+                | 218
+                | 223
+                | 228
+                | 241
+                | 246
+                | 251
+                | 261
+                | 266
+                | 531..=532 | 536
+        )
+    }
+
     pub fn tint_color(self) -> [f32; 4] {
         match self {
-            Self::Soil_Grass | Self::Soil_Peat_Grass | Self::Soil_Silt_Grass => {
-                [0.55, 0.94, 0.42, 1.0]
-            }
-            Self::Soil_Snowy_Grass => [0.90, 0.95, 1.0, 1.0],
-            Self::Liquid_Water | Self::WaterOccupied => [0.35, 0.65, 0.92, 1.0],
-            Self::Tree_Oak_Leaves => [0.60, 1.15, 0.35, 1.0],
-            Self::Tree_Birch_Leaves => [0.85, 1.25, 0.40, 1.0],
-            Self::Tree_Pine_Leaves => [0.40, 0.90, 0.55, 1.0],
-            Self::Tree_Acacia_Leaves => [0.72, 0.92, 0.28, 1.0],
-            Self::Tree_Mahogany_Leaves => [0.45, 1.00, 0.40, 1.0],
-            Self::Tree_Mangrove_Leaves => [0.40, 0.95, 0.42, 1.0],
-            Self::Tree_Palm_Leaves => [0.55, 1.05, 0.30, 1.0],
-            Self::Tree_Willow_Leaves => [0.52, 0.88, 0.48, 1.0],
-            Self::Tree_Yew_Leaves => [0.28, 0.70, 0.38, 1.0],
+            Self::LiquidWater | Self::WaterOccupied => [0.35, 0.65, 0.92, 1.0],
+            Self::OakLeaves => [0.60, 1.15, 0.35, 1.0],
+            Self::BirchLeaves => [0.85, 1.25, 0.40, 1.0],
+            Self::PineLeaves => [0.40, 0.90, 0.55, 1.0],
+            Self::AcaciaLeaves => [0.72, 0.92, 0.28, 1.0],
+            Self::MahoganyLeaves => [0.45, 1.00, 0.40, 1.0],
+            Self::MangroveLeaves => [0.40, 0.95, 0.42, 1.0],
+            Self::PalmLeaves => [0.55, 1.05, 0.30, 1.0],
+            Self::WillowLeaves => [0.52, 0.88, 0.48, 1.0],
+            Self::YewLeaves => [0.28, 0.70, 0.38, 1.0],
+            s if s.is_tinted() => [0.55, 0.94, 0.42, 1.0],
             _ => [1.0, 1.0, 1.0, 1.0],
         }
     }
 
-    /// Biome-aware blended color tint at a specific world coordinate.
     pub fn tint_color_at(self, world_voxel: IVec3) -> [f32; 4] {
         if !self.is_tinted() {
             return [1.0, 1.0, 1.0, 1.0];
@@ -1438,264 +3190,43 @@ impl Voxel {
         )
     }
 
-    /// Fallback 1x1 solid RGBA pixel if the texture file is not found on disk.
     pub fn fallback_color(self) -> [u8; 4] {
         match self {
             Self::Air | Self::Occupied | Self::WaterOccupied => [0, 0, 0, 0],
-            // Testing / Debug Blocks
-            Self::Null_Block => [255, 0, 255, 255],
-            Self::Null_Liquid => [255, 0, 255, 255],
-            Self::Test_Accept => [50, 200, 50, 255],
-            Self::Test_Debug => [200, 200, 50, 255],
-            Self::Test_Numbers => [200, 200, 50, 255],
-            Self::Test_Fail => [200, 50, 50, 255],
-            Self::Test_Instance => [200, 200, 50, 255],
-            Self::Test_Start => [50, 150, 250, 255],
-            // Liquid / Fluid Blocks
-            Self::Liquid_Acid => [120, 230, 40, 255],
-            Self::Liquid_Blood => [180, 20, 20, 255],
-            Self::Liquid_Lava => [230, 100, 20, 255],
-            Self::Liquid_Molten => [255, 140, 0, 255],
-            Self::Liquid_Ooze => [130, 50, 160, 255],
-            Self::Liquid_Sludge => [70, 80, 50, 255],
-            Self::Liquid_Tar => [25, 25, 30, 255],
-            Self::Liquid_Water => [60, 140, 220, 255],
-            // Frost Blocks
-            Self::Frost_Black_Ice => [30, 35, 45, 170],
-            Self::Frost_Fragile_Ice => [140, 185, 235, 200],
-            Self::Frost_Ice => [140, 185, 235, 220],
-            Self::Frost_Packed_Ice => [160, 200, 245, 255],
-            // Soil Blocks
-            Self::Soil_Ash => [140, 140, 145, 255],
-            Self::Soil_Black_Sand => [45, 45, 50, 255],
-            Self::Soil_Clay => [150, 155, 175, 255],
-            Self::Soil_Dirt => [107, 66, 33, 255],
-            Self::Soil_Grass => [110, 180, 80, 255],
-            Self::Soil_Gravel => [130, 125, 125, 255],
-            Self::Soil_Moss => [80, 130, 60, 255],
-            Self::Soil_Mud => [85, 60, 45, 255],
-            Self::Soil_Mulch => [90, 55, 35, 255],
-            Self::Soil_Packed_Dirt => [100, 60, 30, 255],
-            Self::Soil_Packed_Mud => [80, 55, 40, 255],
-            Self::Soil_Packed_Peat => [70, 50, 35, 255],
-            Self::Soil_Packed_Silt => [115, 110, 100, 255],
-            Self::Soil_Peat_Dirt => [75, 55, 40, 255],
-            Self::Soil_Peat_Grass => [95, 150, 60, 255],
-            Self::Soil_Peat_Mulch => [80, 50, 35, 255],
-            Self::Soil_Red_Moss => [175, 45, 45, 255],
-            Self::Soil_Red_Sand => [190, 100, 50, 255],
-            Self::Soil_Rooted_Dirt => [115, 75, 40, 255],
-            Self::Soil_Sand => [209, 194, 128, 255],
-            Self::Soil_Scorched_Black_Sand => [35, 35, 40, 255],
-            Self::Soil_Scorched_Red_Sand => [160, 70, 40, 255],
-            Self::Soil_Scorched_Sand => [175, 150, 100, 255],
-            Self::Soil_Scorched_White_Sand => [190, 190, 185, 255],
-            Self::Soil_Silt_Dirt => [130, 125, 115, 255],
-            Self::Soil_Silt_Grass => [110, 160, 70, 255],
-            Self::Soil_Silt_Mulch => [100, 80, 60, 255],
-            Self::Soil_Snow => [240, 245, 255, 255],
-            Self::Soil_Snowy_Grass => [240, 245, 255, 255],
-            Self::Soil_Snowy_Peat => [220, 225, 235, 255],
-            Self::Soil_Snowy_Silt => [225, 230, 240, 255],
-            Self::Soil_White_Sand => [235, 230, 215, 255],
-            // Rocky Blocks
-            Self::Rock_Andesite => [136, 136, 136, 255],
-            Self::Cobbled_Andesite => [136, 136, 136, 255],
-            Self::Mossy_Andesite => [122, 134, 117, 255],
-            Self::Mossy_Cobbled_Andesite => [122, 134, 117, 255],
-            Self::Rock_Azurite => [45, 85, 160, 255],
-            Self::Cobbled_Azurite => [45, 85, 160, 255],
-            Self::Mossy_Azurite => [53, 96, 135, 255],
-            Self::Mossy_Cobbled_Azurite => [53, 96, 135, 255],
-            Self::Rock_Basalt => [75, 75, 80, 255],
-            Self::Cobbled_Basalt => [75, 75, 80, 255],
-            Self::Mossy_Basalt => [76, 88, 75, 255],
-            Self::Mossy_Cobbled_Basalt => [76, 88, 75, 255],
-            Self::Rock_Black_Sandstone => [50, 50, 55, 255],
-            Self::Cobbled_Black_Sandstone => [50, 50, 55, 255],
-            Self::Mossy_Black_Sandstone => [57, 70, 56, 255],
-            Self::Mossy_Cobbled_Black_Sandstone => [57, 70, 56, 255],
-            Self::Rock_Calcite => [220, 220, 225, 255],
-            Self::Cobbled_Calcite => [220, 220, 225, 255],
-            Self::Mossy_Calcite => [185, 197, 183, 255],
-            Self::Mossy_Cobbled_Calcite => [185, 197, 183, 255],
-            Self::Rock_Chalk => [235, 235, 230, 255],
-            Self::Cobbled_Chalk => [235, 235, 230, 255],
-            Self::Mossy_Chalk => [196, 208, 187, 255],
-            Self::Mossy_Cobbled_Chalk => [196, 208, 187, 255],
-            Self::Rock_Chert => [160, 140, 120, 255],
-            Self::Cobbled_Chert => [160, 140, 120, 255],
-            Self::Mossy_Chert => [140, 137, 105, 255],
-            Self::Mossy_Cobbled_Chert => [140, 137, 105, 255],
-            Self::Rock_Cinnabar => [160, 50, 50, 255],
-            Self::Cobbled_Cinnabar => [160, 50, 50, 255],
-            Self::Mossy_Cinnabar => [140, 70, 52, 255],
-            Self::Mossy_Cobbled_Cinnabar => [140, 70, 52, 255],
-            Self::Rock_Diorite => [180, 180, 185, 255],
-            Self::Cobbled_Diorite => [180, 180, 185, 255],
-            Self::Mossy_Diorite => [155, 167, 153, 255],
-            Self::Mossy_Cobbled_Diorite => [155, 167, 153, 255],
-            Self::Rock_Gabbro => [90, 95, 95, 255],
-            Self::Cobbled_Gabbro => [90, 95, 95, 255],
-            Self::Mossy_Gabbro => [87, 103, 86, 255],
-            Self::Mossy_Cobbled_Gabbro => [87, 103, 86, 255],
-            Self::Rock_Granite => [150, 105, 90, 255],
-            Self::Cobbled_Granite => [150, 105, 90, 255],
-            Self::Mossy_Granite => [132, 111, 82, 255],
-            Self::Mossy_Cobbled_Granite => [132, 111, 82, 255],
-            Self::Rock_Karst => [140, 145, 140, 255],
-            Self::Cobbled_Karst => [140, 145, 140, 255],
-            Self::Mossy_Karst => [125, 141, 120, 255],
-            Self::Mossy_Cobbled_Karst => [125, 141, 120, 255],
-            Self::Rock_Limestone => [195, 185, 165, 255],
-            Self::Cobbled_Limestone => [195, 185, 165, 255],
-            Self::Mossy_Limestone => [166, 171, 138, 255],
-            Self::Mossy_Cobbled_Limestone => [166, 171, 138, 255],
-            Self::Rock_Marl => [170, 165, 150, 255],
-            Self::Cobbled_Marl => [170, 165, 150, 255],
-            Self::Mossy_Marl => [147, 156, 127, 255],
-            Self::Mossy_Cobbled_Marl => [147, 156, 127, 255],
-            Self::Rock_Pitchstone => [60, 70, 65, 255],
-            Self::Cobbled_Pitchstone => [60, 70, 65, 255],
-            Self::Mossy_Pitchstone => [65, 85, 63, 255],
-            Self::Mossy_Cobbled_Pitchstone => [65, 85, 63, 255],
-            Self::Rock_Porphyry => [140, 95, 105, 255],
-            Self::Cobbled_Porphyry => [140, 95, 105, 255],
-            Self::Mossy_Porphyry => [125, 103, 93, 255],
-            Self::Mossy_Cobbled_Porphyry => [125, 103, 93, 255],
-            Self::Rock_Red_Sandstone => [185, 95, 45, 255],
-            Self::Cobbled_Red_Sandstone => [185, 95, 45, 255],
-            Self::Mossy_Red_Sandstone => [158, 103, 48, 255],
-            Self::Mossy_Cobbled_Red_Sandstone => [158, 103, 48, 255],
-            Self::Rock_Sandstone => [215, 205, 150, 255],
-            Self::Cobbled_Sandstone => [215, 205, 150, 255],
-            Self::Mossy_Sandstone => [181, 186, 127, 255],
-            Self::Mossy_Cobbled_Sandstone => [181, 186, 127, 255],
-            Self::Rock_Scoria => [105, 60, 55, 255],
-            Self::Cobbled_Scoria => [105, 60, 55, 255],
-            Self::Mossy_Scoria => [98, 77, 56, 255],
-            Self::Mossy_Cobbled_Scoria => [98, 77, 56, 255],
-            Self::Rock_Serpentine => [70, 115, 85, 255],
-            Self::Cobbled_Serpentine => [70, 115, 85, 255],
-            Self::Mossy_Serpentine => [72, 118, 78, 255],
-            Self::Mossy_Cobbled_Serpentine => [72, 118, 78, 255],
-            Self::Rock_Slate => [80, 85, 95, 255],
-            Self::Cobbled_Slate => [80, 85, 95, 255],
-            Self::Mossy_Slate => [80, 96, 86, 255],
-            Self::Mossy_Cobbled_Slate => [80, 96, 86, 255],
-            Self::Rock_Stone => [122, 128, 133, 255],
-            Self::Cobbled_Stone => [122, 128, 133, 255],
-            Self::Mossy_Stone => [111, 128, 114, 255],
-            Self::Mossy_Cobbled_Stone => [111, 128, 114, 255],
-            Self::Rock_Tuffite => [105, 108, 100, 255],
-            Self::Cobbled_Tuffite => [105, 108, 100, 255],
-            Self::Mossy_Tuffite => [98, 113, 90, 255],
-            Self::Mossy_Cobbled_Tuffite => [98, 113, 90, 255],
-            Self::Rock_White_Sandstone => [230, 225, 210, 255],
-            Self::Cobbled_White_Sandstone => [230, 225, 210, 255],
-            Self::Mossy_White_Sandstone => [192, 201, 172, 255],
-            Self::Mossy_Cobbled_White_Sandstone => [192, 201, 172, 255],
-            // Special Rocky Blocks
-            Self::Rock_Alabaster => [220, 220, 220, 255],
-            Self::Rock_Brimstone => [210, 180, 50, 255],
-            Self::Rock_Cryolite => [200, 230, 240, 255],
-            Self::Rock_Dreadstone => [35, 30, 40, 255],
-            Self::Rock_Flint => [55, 55, 60, 255],
-            Self::Rock_Magma => [180, 70, 30, 255],
-            Self::Rock_Obsidian => [25, 20, 35, 255],
-            Self::Rock_Terracotta => [165, 95, 65, 255],
-            // Wood Blocks
-            Self::Tree_Acacia_Bark => [160, 85, 45, 255],
-            Self::Tree_Acacia_Log => [160, 85, 45, 255],
-            Self::Tree_Acacia_Leaves => [100, 140, 40, 255],
-            Self::Tree_Acacia_Planks => [180, 100, 50, 255],
-            Self::Tree_Birch_Bark => [225, 222, 210, 255],
-            Self::Tree_Birch_Log => [225, 222, 210, 255],
-            Self::Tree_Birch_Leaves => [133, 199, 56, 255],
-            Self::Tree_Birch_Planks => [200, 195, 180, 255],
-            Self::Tree_Cherry_Bark => [57, 39, 48, 255],
-            Self::Tree_Cherry_Log => [57, 39, 48, 255],
-            Self::Tree_Cherry_Leaves => [230, 176, 197, 255],
-            Self::Tree_Cherry_Planks => [155, 125, 110, 255],
-            Self::Tree_Mahogany_Bark => [100, 50, 40, 255],
-            Self::Tree_Mahogany_Log => [100, 50, 40, 255],
-            Self::Tree_Mahogany_Leaves => [70, 120, 45, 255],
-            Self::Tree_Mahogany_Planks => [120, 60, 45, 255],
-            Self::Tree_Mangrove_Bark => [110, 75, 60, 255],
-            Self::Tree_Mangrove_Log => [110, 75, 60, 255],
-            Self::Tree_Mangrove_Leaves => [65, 125, 55, 255],
-            Self::Tree_Mangrove_Planks => [130, 85, 65, 255],
-            Self::Tree_Mangrove_Roots => [95, 65, 50, 255],
-            Self::Tree_Maple_Bark => [130, 90, 60, 255],
-            Self::Tree_Maple_Log => [130, 90, 60, 255],
-            Self::Tree_Maple_Leaves_Red => [185, 45, 30, 255],
-            Self::Tree_Maple_Leaves_Orange => [225, 115, 25, 255],
-            Self::Tree_Maple_Leaves_Yellow => [225, 185, 30, 255],
-            Self::Tree_Maple_Planks => [150, 105, 70, 255],
-            Self::Tree_Oak_Bark => [133, 94, 56, 255],
-            Self::Tree_Oak_Log => [133, 94, 56, 255],
-            Self::Tree_Oak_Leaves => [87, 166, 46, 255],
-            Self::Tree_Oak_Leaves_Lush => [69, 91, 36, 255],
-            Self::Tree_Oak_Leaves_Flowering => [87, 93, 51, 255],
-            Self::Tree_Oak_Planks => [155, 115, 75, 255],
-            Self::Tree_Palm_Bark => [140, 110, 70, 255],
-            Self::Tree_Palm_Log => [140, 110, 70, 255],
-            Self::Tree_Palm_Leaves => [90, 160, 50, 255],
-            Self::Tree_Palm_Planks => [160, 130, 85, 255],
-            Self::Tree_Pine_Bark => [74, 48, 28, 255],
-            Self::Tree_Pine_Log => [74, 48, 28, 255],
-            Self::Tree_Pine_Leaves => [46, 107, 66, 255],
-            Self::Tree_Pine_Planks => [115, 80, 50, 255],
-            Self::Tree_Willow_Bark => [90, 85, 60, 255],
-            Self::Tree_Willow_Log => [90, 85, 60, 255],
-            Self::Tree_Willow_Leaves => [75, 130, 50, 255],
-            Self::Tree_Willow_Planks => [110, 105, 75, 255],
-            Self::Tree_Yew_Bark => [105, 65, 45, 255],
-            Self::Tree_Yew_Log => [105, 65, 45, 255],
-            Self::Tree_Yew_Leaves => [45, 95, 55, 255],
-            Self::Tree_Yew_Planks => [125, 80, 55, 255],
-            Self::Tree_Cactus => [85, 135, 45, 255],
-            Self::Tree_Charred_Bark => [30, 30, 30, 255],
-            Self::Tree_Charred_Log => [35, 35, 35, 255],
-            Self::Tree_Charred_Planks => [45, 45, 45, 255],
-            Self::Tree_Dead_Bark => [110, 100, 90, 255],
-            Self::Tree_Dead_Log => [120, 110, 100, 255],
-            Self::Tree_Dead_Planks => [135, 125, 115, 255],
-            // Aquatic Blocks
-            Self::Aqua_Algae_Mat => [50, 120, 70, 255],
-            Self::Aqua_Brain_Coral => [220, 100, 130, 255],
-            Self::Aqua_Bubble_Coral => [180, 70, 160, 255],
-            Self::Aqua_Fire_Coral => [220, 50, 50, 255],
-            Self::Aqua_Geothermal_Vent => [80, 80, 80, 255],
-            Self::Aqua_Horn_Coral => [220, 180, 60, 255],
-            Self::Aqua_Sponge => [190, 175, 50, 255],
-            Self::Aqua_Tube_Coral => [60, 120, 220, 255],
-            // Light Source Blocks
-            Self::Emit_Blue_Light => [64, 128, 255, 255],
-            Self::Emit_Blue_Torch => [64, 128, 255, 255],
-            Self::Emit_Cold_Light => [200, 230, 255, 255],
-            Self::Emit_Green_Light => [64, 255, 64, 255],
-            Self::Emit_Green_Torch => [64, 255, 64, 255],
-            Self::Emit_Red_Light => [255, 64, 64, 255],
-            Self::Emit_Red_Torch => [255, 64, 64, 255],
-            Self::Emit_Warm_Light => [255, 199, 64, 255],
-            // Decoration Blocks
-            Self::Deco_Barrel => [133, 94, 56, 255],
-            Self::Deco_Basket => [170, 130, 75, 255],
-            Self::Deco_Bone => [225, 220, 200, 255],
-            Self::Deco_Bookshelf => [140, 100, 60, 255],
-            Self::Deco_Brick => [160, 80, 60, 255],
-            Self::Deco_Fabric => [210, 210, 210, 255],
-            Self::Deco_Flesh => [160, 60, 60, 255],
-            Self::Deco_Glass => [200, 225, 235, 120],
-            Self::Deco_Hay => [200, 180, 70, 255],
-            Self::Deco_Plaster => [215, 215, 210, 255],
-            Self::Deco_Slime => [100, 210, 90, 220],
-            Self::Deco_Stone_Path => [120, 120, 120, 255],
-            Self::Deco_Thatch => [190, 160, 80, 255],
-            Self::Deco_Wax => [230, 210, 120, 255],
-            Self::Deco_Wicker => [180, 140, 80, 255],
-            Self::Deco_Wool => [230, 230, 230, 255],
+            Self::NullBlock | Self::NullLiquid => [255, 0, 255, 255],
+            Self::LiquidWater | Self::LiquidSpringWater => [60, 140, 220, 255],
+            Self::LiquidLava | Self::LiquidCoreMagma | Self::LiquidMolten | Self::Magma => {
+                [230, 100, 20, 255]
+            }
+            Self::LiquidAcid => [120, 230, 40, 255],
+            Self::LiquidBlood => [180, 20, 20, 255],
+            Self::LiquidOoze => [130, 50, 160, 255],
+            Self::LiquidSludge => [70, 80, 50, 255],
+            Self::LiquidTar => [25, 25, 30, 255],
+            s if s.is_water() => [60, 140, 220, 255],
+            s if s.is_leaves() => [80, 150, 50, 255],
+            s if s.is_transparent() => [200, 225, 235, 160],
+            s if s.is_light() => [255, 220, 100, 255],
+            _ => [128, 128, 128, 255],
+        }
+    }
+
+    pub fn light_color(self) -> Color {
+        match self {
+            Self::EmitLightWarm | Self::EmitTorchWarm | Self::EmitLamp => {
+                Color::srgb(1.0, 0.82, 0.42)
+            }
+            Self::EmitTorchFire => Color::srgb(1.0, 0.65, 0.25),
+            Self::EmitLightCold | Self::EmitTorchCold => Color::srgb(0.80, 0.90, 1.0),
+            Self::EmitLightRed | Self::EmitTorchRed => Color::srgb(1.0, 0.25, 0.25),
+            Self::EmitLightGreen | Self::EmitTorchGreen => Color::srgb(0.25, 1.0, 0.25),
+            Self::EmitLightBlue | Self::EmitTorchBlue => Color::srgb(0.25, 0.50, 1.0),
+            Self::LiquidLava
+            | Self::LiquidCoreMagma
+            | Self::LiquidMolten
+            | Self::Magma
+            | Self::MantlePlume => Color::srgb(1.0, 0.45, 0.15),
+            _ => Color::WHITE,
         }
     }
 
@@ -1735,8 +3266,14 @@ impl Voxel {
     }
 
     #[inline(always)]
+    pub fn is_cross_billboard(self) -> bool {
+        (VOXEL_PROPS[self as usize].flags & FLAG_CROSS_BILLBOARD) != 0
+    }
+
+    #[inline(always)]
     pub fn has_custom_mesh(self) -> bool {
-        (VOXEL_PROPS[self as usize].flags & (FLAG_TORCH | FLAG_BASKET)) != 0
+        (VOXEL_PROPS[self as usize].flags & (FLAG_TORCH | FLAG_BASKET | FLAG_CROSS_BILLBOARD)) != 0
+            || self.is_pebble_const()
     }
 
     #[inline(always)]
@@ -1749,7 +3286,6 @@ impl Voxel {
         (VOXEL_PROPS[self as usize].flags & FLAG_LEAVES) != 0
     }
 
-    /// Solid opaque blocks that completely occlude light and adjacent faces (not leaves, transparent, fluid, or air).
     #[inline(always)]
     pub fn is_solid_opaque(self) -> bool {
         (VOXEL_PROPS[self as usize].flags & FLAG_SOLID_OPAQUE) != 0
@@ -1760,292 +3296,13 @@ impl Voxel {
         (VOXEL_PROPS[self as usize].flags & FLAG_LIGHT) != 0
     }
 
-    /// Returns true strictly for discrete player-placeable light fixtures (torches, lamps)
-    /// that are eligible to spawn individual 3D GPU PointLight entities.
-    /// Excludes bulk terrain/fluid emitters (Lava, Magma) which are rendered emissively in shaders.
     #[inline(always)]
     pub fn is_point_light_fixture(self) -> bool {
         (VOXEL_PROPS[self as usize].flags & FLAG_POINT_LIGHT) != 0
     }
 
-    pub fn light_color(self) -> Color {
-        match self {
-            Self::Emit_Warm_Light => Color::srgb(1.0, 0.82, 0.42),
-            Self::Emit_Cold_Light => Color::srgb(0.80, 0.90, 1.0),
-            Self::Emit_Red_Light | Self::Emit_Red_Torch => Color::srgb(1.0, 0.25, 0.25),
-            Self::Emit_Green_Light | Self::Emit_Green_Torch => Color::srgb(0.25, 1.0, 0.25),
-            Self::Emit_Blue_Light | Self::Emit_Blue_Torch => Color::srgb(0.25, 0.50, 1.0),
-            Self::Liquid_Lava | Self::Liquid_Molten | Self::Rock_Magma => {
-                Color::srgb(1.0, 0.45, 0.15)
-            }
-            _ => Color::WHITE,
-        }
-    }
-
-    pub fn label(self) -> &'static str {
-        match self {
-            Self::Air => "Air",
-            Self::Occupied => "Occupied",
-            Self::WaterOccupied => "Waterlogged Occupied",
-            // Testing / Debug Blocks
-            Self::Null_Block => "Null Block",
-            Self::Null_Liquid => "Null Liquid",
-            Self::Test_Accept => "Test Accept",
-            Self::Test_Debug => "Test Debug",
-            Self::Test_Numbers => "Test Numbers",
-            Self::Test_Fail => "Test Fail",
-            Self::Test_Instance => "Test Instance",
-            Self::Test_Start => "Test Start",
-            // Liquid / Fluid Blocks
-            Self::Liquid_Acid => "Acid",
-            Self::Liquid_Blood => "Blood",
-            Self::Liquid_Lava => "Lava",
-            Self::Liquid_Molten => "Molten",
-            Self::Liquid_Ooze => "Ooze",
-            Self::Liquid_Sludge => "Sludge",
-            Self::Liquid_Tar => "Tar",
-            Self::Liquid_Water => "Water",
-            // Frost Blocks
-            Self::Frost_Black_Ice => "Black Ice",
-            Self::Frost_Fragile_Ice => "Fragile Ice",
-            Self::Frost_Ice => "Ice",
-            Self::Frost_Packed_Ice => "Packed Ice",
-            // Soil Blocks
-            Self::Soil_Ash => "Ash",
-            Self::Soil_Black_Sand => "Black Sand",
-            Self::Soil_Clay => "Clay",
-            Self::Soil_Dirt => "Dirt",
-            Self::Soil_Grass => "Grass",
-            Self::Soil_Gravel => "Gravel",
-            Self::Soil_Moss => "Moss",
-            Self::Soil_Mud => "Mud",
-            Self::Soil_Mulch => "Mulch",
-            Self::Soil_Packed_Dirt => "Packed Dirt",
-            Self::Soil_Packed_Mud => "Packed Mud",
-            Self::Soil_Packed_Peat => "Packed Peat",
-            Self::Soil_Packed_Silt => "Packed Silt",
-            Self::Soil_Peat_Dirt => "Peat Dirt",
-            Self::Soil_Peat_Grass => "Peat Grass",
-            Self::Soil_Peat_Mulch => "Peat Mulch",
-            Self::Soil_Red_Moss => "Red Moss",
-            Self::Soil_Red_Sand => "Red Sand",
-            Self::Soil_Rooted_Dirt => "Rooted Dirt",
-            Self::Soil_Sand => "Sand",
-            Self::Soil_Scorched_Black_Sand => "Scorched Black Sand",
-            Self::Soil_Scorched_Red_Sand => "Scorched Red Sand",
-            Self::Soil_Scorched_Sand => "Scorched Sand",
-            Self::Soil_Scorched_White_Sand => "Scorched White Sand",
-            Self::Soil_Silt_Dirt => "Silt Dirt",
-            Self::Soil_Silt_Grass => "Silt Grass",
-            Self::Soil_Silt_Mulch => "Silt Mulch",
-            Self::Soil_Snow => "Snow",
-            Self::Soil_Snowy_Grass => "Snowy Grass",
-            Self::Soil_Snowy_Peat => "Snowy Peat",
-            Self::Soil_Snowy_Silt => "Snowy Silt",
-            Self::Soil_White_Sand => "White Sand",
-            // Rocky Blocks
-            Self::Rock_Andesite => "Andesite",
-            Self::Cobbled_Andesite => "Cobbled Andesite",
-            Self::Mossy_Andesite => "Mossy Andesite",
-            Self::Mossy_Cobbled_Andesite => "Mossy Cobbled Andesite",
-            Self::Rock_Azurite => "Azurite",
-            Self::Cobbled_Azurite => "Cobbled Azurite",
-            Self::Mossy_Azurite => "Mossy Azurite",
-            Self::Mossy_Cobbled_Azurite => "Mossy Cobbled Azurite",
-            Self::Rock_Basalt => "Basalt",
-            Self::Cobbled_Basalt => "Cobbled Basalt",
-            Self::Mossy_Basalt => "Mossy Basalt",
-            Self::Mossy_Cobbled_Basalt => "Mossy Cobbled Basalt",
-            Self::Rock_Black_Sandstone => "Black Sandstone",
-            Self::Cobbled_Black_Sandstone => "Cobbled Black Sandstone",
-            Self::Mossy_Black_Sandstone => "Mossy Black Sandstone",
-            Self::Mossy_Cobbled_Black_Sandstone => "Mossy Cobbled Black Sandstone",
-            Self::Rock_Calcite => "Calcite",
-            Self::Cobbled_Calcite => "Cobbled Calcite",
-            Self::Mossy_Calcite => "Mossy Calcite",
-            Self::Mossy_Cobbled_Calcite => "Mossy Cobbled Calcite",
-            Self::Rock_Chalk => "Chalk",
-            Self::Cobbled_Chalk => "Cobbled Chalk",
-            Self::Mossy_Chalk => "Mossy Chalk",
-            Self::Mossy_Cobbled_Chalk => "Mossy Cobbled Chalk",
-            Self::Rock_Chert => "Chert",
-            Self::Cobbled_Chert => "Cobbled Chert",
-            Self::Mossy_Chert => "Mossy Chert",
-            Self::Mossy_Cobbled_Chert => "Mossy Cobbled Chert",
-            Self::Rock_Cinnabar => "Cinnabar",
-            Self::Cobbled_Cinnabar => "Cobbled Cinnabar",
-            Self::Mossy_Cinnabar => "Mossy Cinnabar",
-            Self::Mossy_Cobbled_Cinnabar => "Mossy Cobbled Cinnabar",
-            Self::Rock_Diorite => "Diorite",
-            Self::Cobbled_Diorite => "Cobbled Diorite",
-            Self::Mossy_Diorite => "Mossy Diorite",
-            Self::Mossy_Cobbled_Diorite => "Mossy Cobbled Diorite",
-            Self::Rock_Gabbro => "Gabbro",
-            Self::Cobbled_Gabbro => "Cobbled Gabbro",
-            Self::Mossy_Gabbro => "Mossy Gabbro",
-            Self::Mossy_Cobbled_Gabbro => "Mossy Cobbled Gabbro",
-            Self::Rock_Granite => "Granite",
-            Self::Cobbled_Granite => "Cobbled Granite",
-            Self::Mossy_Granite => "Mossy Granite",
-            Self::Mossy_Cobbled_Granite => "Mossy Cobbled Granite",
-            Self::Rock_Karst => "Karst",
-            Self::Cobbled_Karst => "Cobbled Karst",
-            Self::Mossy_Karst => "Mossy Karst",
-            Self::Mossy_Cobbled_Karst => "Mossy Cobbled Karst",
-            Self::Rock_Limestone => "Limestone",
-            Self::Cobbled_Limestone => "Cobbled Limestone",
-            Self::Mossy_Limestone => "Mossy Limestone",
-            Self::Mossy_Cobbled_Limestone => "Mossy Cobbled Limestone",
-            Self::Rock_Marl => "Marl",
-            Self::Cobbled_Marl => "Cobbled Marl",
-            Self::Mossy_Marl => "Mossy Marl",
-            Self::Mossy_Cobbled_Marl => "Mossy Cobbled Marl",
-            Self::Rock_Pitchstone => "Pitchstone",
-            Self::Cobbled_Pitchstone => "Cobbled Pitchstone",
-            Self::Mossy_Pitchstone => "Mossy Pitchstone",
-            Self::Mossy_Cobbled_Pitchstone => "Mossy Cobbled Pitchstone",
-            Self::Rock_Porphyry => "Porphyry",
-            Self::Cobbled_Porphyry => "Cobbled Porphyry",
-            Self::Mossy_Porphyry => "Mossy Porphyry",
-            Self::Mossy_Cobbled_Porphyry => "Mossy Cobbled Porphyry",
-            Self::Rock_Red_Sandstone => "Red Sandstone",
-            Self::Cobbled_Red_Sandstone => "Cobbled Red Sandstone",
-            Self::Mossy_Red_Sandstone => "Mossy Red Sandstone",
-            Self::Mossy_Cobbled_Red_Sandstone => "Mossy Cobbled Red Sandstone",
-            Self::Rock_Sandstone => "Sandstone",
-            Self::Cobbled_Sandstone => "Cobbled Sandstone",
-            Self::Mossy_Sandstone => "Mossy Sandstone",
-            Self::Mossy_Cobbled_Sandstone => "Mossy Cobbled Sandstone",
-            Self::Rock_Scoria => "Scoria",
-            Self::Cobbled_Scoria => "Cobbled Scoria",
-            Self::Mossy_Scoria => "Mossy Scoria",
-            Self::Mossy_Cobbled_Scoria => "Mossy Cobbled Scoria",
-            Self::Rock_Serpentine => "Serpentine",
-            Self::Cobbled_Serpentine => "Cobbled Serpentine",
-            Self::Mossy_Serpentine => "Mossy Serpentine",
-            Self::Mossy_Cobbled_Serpentine => "Mossy Cobbled Serpentine",
-            Self::Rock_Slate => "Slate",
-            Self::Cobbled_Slate => "Cobbled Slate",
-            Self::Mossy_Slate => "Mossy Slate",
-            Self::Mossy_Cobbled_Slate => "Mossy Cobbled Slate",
-            Self::Rock_Stone => "Stone",
-            Self::Cobbled_Stone => "Cobbled Stone",
-            Self::Mossy_Stone => "Mossy Stone",
-            Self::Mossy_Cobbled_Stone => "Mossy Cobbled Stone",
-            Self::Rock_Tuffite => "Tuffite",
-            Self::Cobbled_Tuffite => "Cobbled Tuffite",
-            Self::Mossy_Tuffite => "Mossy Tuffite",
-            Self::Mossy_Cobbled_Tuffite => "Mossy Cobbled Tuffite",
-            Self::Rock_White_Sandstone => "White Sandstone",
-            Self::Cobbled_White_Sandstone => "Cobbled White Sandstone",
-            Self::Mossy_White_Sandstone => "Mossy White Sandstone",
-            Self::Mossy_Cobbled_White_Sandstone => "Mossy Cobbled White Sandstone",
-            // Special Rocky Blocks
-            Self::Rock_Alabaster => "Alabaster",
-            Self::Rock_Brimstone => "Brimstone",
-            Self::Rock_Cryolite => "Cryolite",
-            Self::Rock_Dreadstone => "Dreadstone",
-            Self::Rock_Flint => "Flint",
-            Self::Rock_Magma => "Magma",
-            Self::Rock_Obsidian => "Obsidian",
-            Self::Rock_Terracotta => "Terracotta",
-            // Wood Blocks
-            Self::Tree_Acacia_Bark => "Acacia Bark",
-            Self::Tree_Acacia_Log => "Acacia Log",
-            Self::Tree_Acacia_Leaves => "Acacia Leaves",
-            Self::Tree_Acacia_Planks => "Acacia Planks",
-            Self::Tree_Birch_Bark => "Birch Bark",
-            Self::Tree_Birch_Log => "Birch Log",
-            Self::Tree_Birch_Leaves => "Birch Leaves",
-            Self::Tree_Birch_Planks => "Birch Planks",
-            Self::Tree_Cherry_Bark => "Cherry Bark",
-            Self::Tree_Cherry_Log => "Cherry Log",
-            Self::Tree_Cherry_Leaves => "Cherry Leaves",
-            Self::Tree_Cherry_Planks => "Cherry Planks",
-            Self::Tree_Mahogany_Bark => "Mahogany Bark",
-            Self::Tree_Mahogany_Log => "Mahogany Log",
-            Self::Tree_Mahogany_Leaves => "Mahogany Leaves",
-            Self::Tree_Mahogany_Planks => "Mahogany Planks",
-            Self::Tree_Mangrove_Bark => "Mangrove Bark",
-            Self::Tree_Mangrove_Log => "Mangrove Log",
-            Self::Tree_Mangrove_Leaves => "Mangrove Leaves",
-            Self::Tree_Mangrove_Planks => "Mangrove Planks",
-            Self::Tree_Mangrove_Roots => "Mangrove Roots",
-            Self::Tree_Maple_Bark => "Maple Bark",
-            Self::Tree_Maple_Log => "Maple Log",
-            Self::Tree_Maple_Leaves_Red => "Red Maple Leaves",
-            Self::Tree_Maple_Leaves_Orange => "Orange Maple Leaves",
-            Self::Tree_Maple_Leaves_Yellow => "Yellow Maple Leaves",
-            Self::Tree_Maple_Planks => "Maple Planks",
-            Self::Tree_Oak_Bark => "Oak Bark",
-            Self::Tree_Oak_Log => "Oak Log",
-            Self::Tree_Oak_Leaves => "Oak Leaves",
-            Self::Tree_Oak_Leaves_Lush => "Lush Oak Leaves",
-            Self::Tree_Oak_Leaves_Flowering => "Flowering Oak Leaves",
-            Self::Tree_Oak_Planks => "Oak Planks",
-            Self::Tree_Palm_Bark => "Palm Bark",
-            Self::Tree_Palm_Log => "Palm Log",
-            Self::Tree_Palm_Leaves => "Palm Leaves",
-            Self::Tree_Palm_Planks => "Palm Planks",
-            Self::Tree_Pine_Bark => "Pine Bark",
-            Self::Tree_Pine_Log => "Pine Log",
-            Self::Tree_Pine_Leaves => "Pine Leaves",
-            Self::Tree_Pine_Planks => "Pine Planks",
-            Self::Tree_Willow_Bark => "Willow Bark",
-            Self::Tree_Willow_Log => "Willow Log",
-            Self::Tree_Willow_Leaves => "Willow Leaves",
-            Self::Tree_Willow_Planks => "Willow Planks",
-            Self::Tree_Yew_Bark => "Yew Bark",
-            Self::Tree_Yew_Log => "Yew Log",
-            Self::Tree_Yew_Leaves => "Yew Leaves",
-            Self::Tree_Yew_Planks => "Yew Planks",
-            Self::Tree_Cactus => "Cactus",
-            Self::Tree_Charred_Bark => "Charred Wood Bark",
-            Self::Tree_Charred_Log => "Charred Wood Log",
-            Self::Tree_Charred_Planks => "Charred Wood Planks",
-            Self::Tree_Dead_Bark => "Dead Wood Bark",
-            Self::Tree_Dead_Log => "Dead Wood Log",
-            Self::Tree_Dead_Planks => "Dead Wood Planks",
-            // Aquatic Blocks
-            Self::Aqua_Algae_Mat => "Algae Mat",
-            Self::Aqua_Brain_Coral => "Brain Coral",
-            Self::Aqua_Bubble_Coral => "Bubble Coral",
-            Self::Aqua_Fire_Coral => "Fire Coral",
-            Self::Aqua_Geothermal_Vent => "Geothermal Vent",
-            Self::Aqua_Horn_Coral => "Horn Coral",
-            Self::Aqua_Sponge => "Sponge",
-            Self::Aqua_Tube_Coral => "Tube Coral",
-            // Light Source Blocks
-            Self::Emit_Blue_Light => "Blue Light Block",
-            Self::Emit_Blue_Torch => "Blue Torch",
-            Self::Emit_Cold_Light => "Cold Light Block",
-            Self::Emit_Green_Light => "Green Light Block",
-            Self::Emit_Green_Torch => "Green Torch",
-            Self::Emit_Red_Light => "Red Light Block",
-            Self::Emit_Red_Torch => "Red Torch",
-            Self::Emit_Warm_Light => "Warm Light Block",
-            // Decoration Blocks
-            Self::Deco_Barrel => "Barrel",
-            Self::Deco_Basket => "Basket",
-            Self::Deco_Bone => "Bone Block",
-            Self::Deco_Bookshelf => "Bookshelf",
-            Self::Deco_Brick => "Brick",
-            Self::Deco_Fabric => "Fabric",
-            Self::Deco_Flesh => "Flesh",
-            Self::Deco_Glass => "Glass",
-            Self::Deco_Hay => "Hay",
-            Self::Deco_Plaster => "Plaster",
-            Self::Deco_Slime => "Slime",
-            Self::Deco_Stone_Path => "Stone Path",
-            Self::Deco_Thatch => "Thatch",
-            Self::Deco_Wax => "Wax",
-            Self::Deco_Wicker => "Wicker",
-            Self::Deco_Wool => "Wool",
-        }
-    }
-
-    /// Whether this voxel is completely unbreakable (like bedrock).
+    #[inline(always)]
     pub fn is_unbreakable(self) -> bool {
-        self == Self::Rock_Dreadstone
+        matches!(self, Self::Mantle | Self::MantlePlume)
     }
 }

@@ -225,7 +225,7 @@ fn process_fluid(
     if let Some(voxel_below) = world.get_voxel(below) {
         if voxel_below == Voxel::Air {
             let flow_voxel = if current_voxel == Voxel::WaterOccupied {
-                Voxel::Liquid_Water
+                Voxel::LiquidWater
             } else {
                 current_voxel
             };
@@ -278,7 +278,7 @@ fn process_fluid(
     if effective_level < max_spread {
         let next_level = effective_level + 1;
         let spread_voxel = if current_voxel == Voxel::WaterOccupied {
-            Voxel::Liquid_Water
+            Voxel::LiquidWater
         } else {
             current_voxel
         };
@@ -343,14 +343,14 @@ fn check_infinite_source(
     let source_count = horizontals
         .iter()
         .filter(|&&n| {
-            world.get_voxel(n) == Some(Voxel::Liquid_Water) && world.get_fluid_level(n) == 0
+            world.get_voxel(n) == Some(Voxel::LiquidWater) && world.get_fluid_level(n) == 0
         })
         .count();
 
     if source_count >= 2 {
-        world.set_voxel(pos, Voxel::Liquid_Water);
+        world.set_voxel(pos, Voxel::LiquidWater);
         world.set_fluid_level(pos, 0);
-        modifications.record(pos, Voxel::Liquid_Water);
+        modifications.record(pos, Voxel::LiquidWater);
         modifications.record_fluid_level(pos, 0);
         queue.enqueue_with_neighbors(pos);
         edited.push(pos);

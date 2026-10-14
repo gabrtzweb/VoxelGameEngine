@@ -156,7 +156,9 @@ impl ChunkMeshRegistry {
 
     #[inline]
     pub fn has_column_surface_mesh(&self, column: IVec2) -> bool {
-        self.surface_columns.get(&column).is_some_and(|&count| count > 0)
+        self.surface_columns
+            .get(&column)
+            .is_some_and(|&count| count > 0)
     }
 
     pub fn iter_coordinates(&self) -> impl Iterator<Item = &IVec3> {
@@ -352,12 +354,10 @@ pub fn apply_chunk_mesh(
                     registry.columns.remove(&column);
                 }
             }
-            if !is_subterranean {
-                if let Some(count) = registry.surface_columns.get_mut(&column) {
-                    *count = count.saturating_sub(1);
-                    if *count == 0 {
-                        registry.surface_columns.remove(&column);
-                    }
+            if !is_subterranean && let Some(count) = registry.surface_columns.get_mut(&column) {
+                *count = count.saturating_sub(1);
+                if *count == 0 {
+                    registry.surface_columns.remove(&column);
                 }
             }
         } else {
@@ -471,12 +471,12 @@ pub fn remove_chunk_render(
                 registry.columns.remove(&column);
             }
         }
-        if !render_data.is_subterranean {
-            if let Some(count) = registry.surface_columns.get_mut(&column) {
-                *count = count.saturating_sub(1);
-                if *count == 0 {
-                    registry.surface_columns.remove(&column);
-                }
+        if !render_data.is_subterranean
+            && let Some(count) = registry.surface_columns.get_mut(&column)
+        {
+            *count = count.saturating_sub(1);
+            if *count == 0 {
+                registry.surface_columns.remove(&column);
             }
         }
     }

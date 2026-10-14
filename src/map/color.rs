@@ -4,7 +4,7 @@ use crate::world::Voxel;
 pub fn voxel_map_color(voxel: Voxel, water_depth: u8) -> [u8; 4] {
     match voxel {
         Voxel::Air | Voxel::Occupied => [0, 0, 0, 0],
-        Voxel::Liquid_Water | Voxel::WaterOccupied => {
+        Voxel::LiquidWater | Voxel::WaterOccupied => {
             if water_depth <= 2 {
                 // Shallow coastal water
                 [72, 165, 235, 255]
@@ -51,7 +51,12 @@ pub fn voxel_map_color_at(voxel: Voxel, water_depth: u8, world_x: i32, world_z: 
             ];
         } else if matches!(
             voxel,
-            Voxel::Soil_Grass | Voxel::Soil_Peat_Grass | Voxel::Soil_Silt_Grass
+            Voxel::LoamGrass
+                | Voxel::PeatGrass
+                | Voxel::SiltGrass
+                | Voxel::CalicheGrass
+                | Voxel::LateriteGrass
+                | Voxel::PermafrostGrass
         ) {
             return [
                 (tint[0] * 175.0).clamp(0.0, 255.0) as u8,

@@ -54,7 +54,7 @@ pub fn update_player_environment_status(
         let underground = pos.y < (col.terrain_height as f32 - 0.5);
         (col.biome, underground)
     } else {
-        (BiomeType::Steppe, false)
+        (BiomeType::Plains, false)
     };
 
     status.is_camera_in_water = is_camera_in_water;

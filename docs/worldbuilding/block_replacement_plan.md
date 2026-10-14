@@ -58,84 +58,71 @@ graph TD
 
 ---
 
-### Phase 1: Texture Asset Synchronization
+### Phase 1: Texture Asset Synchronization [✅ COMPLETED]
 * **Target Directory**: `assets/textures/blocks/`
-* **Execution Steps**:
-  1. Create a local safety backup: `assets/textures/blocks_legacy_backup/`.
-  2. Clear legacy textures from `assets/textures/blocks/`.
-  3. Bulk copy all textures from the 11 completed domains in `docs/worldbuilding/blocks/`:
-     * `systems/` (8 textures)
-     * `fluids/` (54 textures)
-     * `soils/` (184 textures)
-     * `rocks/` (216 textures)
-     * `trees/` (242 textures)
-     * `ores/` (156 textures)
-     * `caverns/` (122 textures)
-     * `oceans/` (140 textures)
-     * `organics/` (94 textures)
-     * `decorations/` (96 textures)
-     * `mushrooms/` (54 textures)
-     * `overlays/` (37 textures)
-  4. **Resulting Total**: **1,403 active PNG files** in `assets/textures/blocks/`.
+* **Status**: Completed.
+* **Results**: All 1,403 active PNG textures (1,366 domain textures across Categories 01–11 + 37 procedural overlays) are synchronized into a single flat directory `assets/textures/blocks/`.
 
 ---
 
-### Phase 2: Rust Voxel Enum & Block Refactoring (`src/world/block.rs`)
-* **Scale `Voxel` Enum to `u16`**:
-  * Upgrade `#[repr(u8)] pub enum Voxel` to `#[repr(u16)] pub enum Voxel` to accommodate the 720 unique cataloged blocks plus technical markers.
-  * Structure block definitions into clean domain modules following the canonical IDs from [blocks_design.md](blocks_design.md).
-* **Block Flags & Properties**:
-  * Define functional flags: `FLAG_TRANSPARENT`, `FLAG_SOLID_OPAQUE`, `FLAG_COLLIDABLE`, `FLAG_LEAVES`, `FLAG_POINT_LIGHT`, `FLAG_FLUID`.
-  * Define geometric render shapes: Full Cube, Slab, Stair, Column, Cross-Billboard.
-  * > [!IMPORTANT]
-    > **No Hardness / Survival Attributes**: There is no concept of block hardness or item drop tables in the current engine design (survival gameplay is not yet implemented). Block properties remain strictly focused on collision, opacity, lighting, and rendering geometry.
-* **Face Texture Mapping**:
-  * **Uniform Cube (6 identical faces)**: e.g., `rock_basalt.png`, `soil_clay_blue.png`.
-  * **Top / Side / Bottom Split**: e.g., `soil_grass_top.png`, `soil_grass_side.png`, `soil_dirt.png`.
-  * **Directional Column (Logs / Stems)**: Transverse ring endcaps on top/bottom + longitudinal bark on sides.
-  * **Cross-Billboard**: e.g., crystals, mushrooms, sea fans, corals.
-  * **Animated Strips**: 16×64 vertical strips for flowing liquids and glinting crystal clusters.
+### Phase 2: Rust Voxel Enum & Intelligent Compaction (`src/world/block.rs`)
+* **Status**: Active / Refinement.
+* **Problem in Naive Implementation**: Repeating 720 blocks across 10 handwritten `match` statements and duplicate category modules ballooned `block.rs` to 7,520 lines.
+* **Algorithmic Solution (Shrinking from 7,520 to ~880 lines in a single file)**:
+  1. **Single Source of Truth**:
+     - `#[repr(u16)] pub enum Voxel`: Lists the 720 block variants once (~725 lines). No duplicate constant arrays or redundant category submodules (`pub mod soils`, etc.).
+  2. **Contiguous Numeric Range Clustering for Physics & Flags**:
+     - Instead of 600+ lines of handwritten `match` arms for every block, properties are evaluated via contiguous integer ID ranges (`matches!(self as u16, ...)`):
+       - Rocks (92 blocks) + Ores (158 blocks): **250 blocks resolved in 1 single line** for `is_solid_opaque`.
+       - Fluids (11..=18): All 8 fluids evaluated in 1 single range.
+       - Cross-billboards: Crystals, coral fans, and mushrooms grouped into contiguous ranges.
+       - Compiles down to instant, branchless integer range comparisons in assembly.
+  3. **Algorithmic String & Label Derivation**:
+     - Block IDs (`"rock_andesite"`) and display labels (`"Andesite"`) follow strict semantic conventions derived from the variant name (`PascalCase` -> `snake_case` and spaced words) or a compact static string table, eliminating ~1,450 lines of duplicate match arms.
+  4. **Minimal Exception Table for Faces**:
+     - Over 650 of the 720 blocks are uniform 6-face cubes.
+     - Only the ~30 split-face blocks (soils with grass tops, tree logs with ring endcaps, bookshelves, baskets) are registered in a compact exceptions list.
+  5. **No Hardness / Survival Attributes**:
+     - Attributes remain strictly focused on collision, opacity, lighting, and rendering geometry.
+  6. **Purge Legacy Aliases & Obsolete Tools**:
+     - Remove the temporary 240 lines of backward-compatibility aliases (`Soil_Grass`, `Rock_Stone`) once the world generator uses canonical names.
+     - Delete obsolete files in `tools/` (`all_textures.txt` and `build_voxel_registry.py`).
 
 ---
 
-### Phase 3: Meshing Registry & Texture Array Scaling (`src/meshing/`)
-* **Pipeline Capabilities Already Functioning**:
-  * The engine's meshing pipeline already has native support for:
-    1. Triple stochastic variations (`base`, `1`, `2`) sampled procedurally in shaders via world coordinate hash `hash(x, y, z) % 3`.
-    2. Animated texture strips (16×64 px vertical frames for fluids and emissive crystals).
-    3. Procedural overlay layers (`mossy_rock_overlay`, `mossy_cobbled_overlay`).
-* **Required Adjustments**:
-  * Scale `MAX_VOXEL_VARIANTS` in `src/meshing/textures.rs` from `256` to `1024` (or `2048`) to support indexing all 720+ blocks.
-  * Clean up legacy hardcoded mapping exceptions (such as alias workarounds for old texture names).
-  * Ensure the Texture Array builder registers the new 1,403 textures cleanly.
+### Phase 3: Meshing Registry & Texture Array Scaling (`src/meshing/`) [✅ COMPLETED]
+* **Status**: Completed.
+* **Results**:
+  - `MAX_VOXEL_VARIANTS` in `src/meshing/textures.rs` scaled to `2048`.
+  - Texture Array natively supports triple stochastic variations (`base`, `1`, `2`), animated strips (16×64), and procedural overlays (`mossy_rock_overlay`, etc.).
+  - `cargo check` compiles cleanly with zero errors.
 
 ---
 
-### Phase 4: Clean World Generation & Biomes Reset (`src/world/generation/`)
-* **Target Files**: `src/world/generation/`
+### Phase 4: Clean World Generation & Biomes Reset (`src/generation/`)
+* **Target Directory**: `src/generation/` (`biome.rs`, `generator.rs`, `trees.rs`)
 * **Clean-Slate Strategy**:
-  1. **Purge Obsolete Complex Biomes**: Remove the legacy biome table and hardcoded terrain rules.
+  1. **Purge Obsolete Complex Biomes**: Replace the legacy biome table with the new clean generator using canonical block names (`Voxel::LoamGrass`, `Voxel::Andesite`, etc.).
   2. **Ore Generation**:
-     * **No ore distribution required initially**: Can generate 0 ores during initial terrain validation to maintain maximum simplicity while tuning surface and sub-surface rock layers.
+     - **No ore distribution required initially**: Generate 0 ores during initial terrain validation to maintain maximum simplicity while tuning surface and sub-surface rock layers.
   3. **Tree Generation Completely Disabled**:
-     * Disable tree and foliage decorators completely until base terrain, elevation, and biomes are satisfactory.
+     - Keep tree and foliage decorators completely disabled initially until base terrain, elevation, and biomes are satisfactory.
   4. **Balanced Terrestrial & Aquatic Biome Palette**:
-     * Avoid over-simplification by providing a diverse foundation of both land and water biomes:
-       * **Terrestrial Biomes**:
-         * *Temperate Plains*: Rich loams and climatic grasses.
-         * *Dense Temperate Forest*: Deep forest soils, leaf litter, and mossy understories.
-         * *Arid Desert & Badlands*: Sands, caliche, and scorched earth.
-         * *Snowy Coniferous Taiga*: Permafrost, snowy silt, and cryosphere cover.
-         * *Rocky Highlands / Mountain Tundra*: Exposed rock outcrops, scree, and cold alpine turf.
-         * *Tropical Savanna*: Coarse dirt, laterite soils, and dry grasses.
-       * **Aquatic & Marine Biomes**:
-         * *Shallow Coastal Beach & Reef*: Sandy shallows, reefstone benches, and benthic coral gardens.
-         * *Open Temperate Ocean*: Deep water columns with sand, silt, and kelp beds.
-         * *Abyssal Ocean Trench*: Deep oceanic floor with black volcanic sand, vents, and abyssal mud.
-         * *Inland Rivers & Lakes*: Alluvial silt, clay banks, and freshwater shallows.
-         * *Mangrove Swamp & Wetland*: Muddy turf, peat bogs, and waterlogged soils.
+     - **Terrestrial Biomes**:
+       - *Temperate Plains*: Rich loams and climatic grasses.
+       - *Dense Temperate Forest*: Deep forest soils, leaf litter, and mossy understories.
+       - *Arid Desert & Badlands*: Sands, caliche, and scorched earth.
+       - *Snowy Coniferous Taiga*: Permafrost, snowy silt, and cryosphere cover.
+       - *Rocky Highlands / Mountain Tundra*: Exposed rock outcrops, scree, and cold alpine turf.
+       - *Tropical Savanna*: Coarse dirt, laterite soils, and dry grasses.
+     - **Aquatic & Marine Biomes**:
+       - *Shallow Coastal Beach & Reef*: Sandy shallows, reefstone benches, and benthic coral gardens.
+       - *Open Temperate Ocean*: Deep water columns with sand, silt, and kelp beds.
+       - *Abyssal Ocean Trench*: Deep oceanic floor with black volcanic sand, vents, and abyssal mud.
+       - *Inland Rivers & Lakes*: Alluvial silt, clay banks, and freshwater shallows.
+       - *Mangrove Swamp & Wetland*: Muddy turf, peat bogs, and waterlogged soils.
   5. **Stratified Geological Bedrock**:
-     * Implement realistic rock strata across depths using the 12 base lithologies (Sedimentary, Igneous, Metamorphic).
+     - Implement realistic rock strata across depths using the 12 base lithologies (Sedimentary, Igneous, Metamorphic).
 
 ---
 

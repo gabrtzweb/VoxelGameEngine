@@ -19,7 +19,7 @@ pub const INVENTORY_VISIBLE_ROWS: usize = 4;
 pub const INVENTORY_PANEL_TEX_W: f32 = 190.0;
 pub const INVENTORY_PANEL_TEX_H: f32 = 152.0;
 
-pub const AVAILABLE_BLOCKS: [Voxel; 244] = Voxel::ALL;
+pub const AVAILABLE_BLOCKS: [Voxel; 720] = Voxel::ALL;
 
 pub fn filtered_creative_blocks(query: &str) -> Vec<Voxel> {
     if query.trim().is_empty() {
@@ -415,7 +415,7 @@ fn build_inventory_ui(
                                     let voxel = player_inv.get(slot_idx);
                                     let icon_handle = voxel
                                         .map(|v| icons.get(v))
-                                        .unwrap_or_else(|| icons.get(Voxel::Rock_Stone));
+                                        .unwrap_or_else(|| icons.get(Voxel::Dolomite));
                                     let icon_vis = if voxel.is_some() {
                                         Visibility::Visible
                                     } else {
@@ -548,7 +548,7 @@ fn build_inventory_ui(
                                     let voxel = filtered.get(block_idx).copied();
                                     let icon_handle = voxel
                                         .map(|v| icons.get(v))
-                                        .unwrap_or_else(|| icons.get(Voxel::Rock_Stone));
+                                        .unwrap_or_else(|| icons.get(Voxel::Dolomite));
                                     let icon_vis = if voxel.is_some() {
                                         Visibility::Visible
                                     } else {
@@ -654,7 +654,7 @@ fn build_inventory_ui(
                         let slot_voxel = hotbar.slots[c];
                         let icon_handle = slot_voxel
                             .map(|v| icons.get(v))
-                            .unwrap_or_else(|| icons.get(Voxel::Rock_Stone));
+                            .unwrap_or_else(|| icons.get(Voxel::Dolomite));
                         let icon_vis = if slot_voxel.is_some() {
                             Visibility::Visible
                         } else {
