@@ -26,6 +26,14 @@ pub fn voxel_map_color(voxel: Voxel, water_depth: u8) -> [u8; 4] {
 /// Returns the RGBA map color for a voxel at world coordinates (world_x, world_z),
 /// applying biome-specific palettes and smooth multi-sample transitions.
 pub fn voxel_map_color_at(voxel: Voxel, water_depth: u8, world_x: i32, world_z: i32) -> [u8; 4] {
+    if let Some(paint) = voxel.paint_color() {
+        return [
+            (paint[0] * 255.0).round().clamp(0.0, 255.0) as u8,
+            (paint[1] * 255.0).round().clamp(0.0, 255.0) as u8,
+            (paint[2] * 255.0).round().clamp(0.0, 255.0) as u8,
+            255,
+        ];
+    }
     if voxel.is_tinted() {
         let tint = crate::generation::sample_blended_biome_color(
             voxel,

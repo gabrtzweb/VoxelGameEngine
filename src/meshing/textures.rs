@@ -63,18 +63,50 @@ impl VoxelTextureRegistry {
         world_voxel: IVec3,
         direction: FaceDirection,
     ) -> (u16, u16) {
+        self.get_face_texture_info_oriented(voxel, world_voxel, direction, 0)
+    }
+
+    #[inline(always)]
+    pub fn get_face_texture_info_oriented(
+        &self,
+        voxel: Voxel,
+        world_voxel: IVec3,
+        direction: FaceDirection,
+        orientation: u8,
+    ) -> (u16, u16) {
         let Some(m) = self.mappings.get(voxel as usize).and_then(|m| *m) else {
             return (0, 1);
         };
 
-        let face = match direction {
-            FaceDirection::PositiveY => m.top,
-            FaceDirection::NegativeY => m.bottom,
-            _ => {
-                if (voxel.is_tinted() || voxel.side_texture_name().is_some()) && self.full_grass {
-                    m.top
-                } else {
-                    m.side
+        let face = if voxel.is_axis_aligned() {
+            match orientation % 3 {
+                1 => match direction {
+                    FaceDirection::PositiveX => m.top,
+                    FaceDirection::NegativeX => m.bottom,
+                    _ => m.side,
+                },
+                2 => match direction {
+                    FaceDirection::PositiveZ => m.top,
+                    FaceDirection::NegativeZ => m.bottom,
+                    _ => m.side,
+                },
+                _ => match direction {
+                    FaceDirection::PositiveY => m.top,
+                    FaceDirection::NegativeY => m.bottom,
+                    _ => m.side,
+                },
+            }
+        } else {
+            match direction {
+                FaceDirection::PositiveY => m.top,
+                FaceDirection::NegativeY => m.bottom,
+                _ => {
+                    if (voxel.is_tinted() || voxel.side_texture_name().is_some()) && self.full_grass
+                    {
+                        m.top
+                    } else {
+                        m.side
+                    }
                 }
             }
         };
@@ -105,7 +137,6 @@ struct FaceCacheKey {
     texture_name: String,
     overlay_name: Option<String>,
     tint: Option<[u8; 4]>,
-    fallback: [u8; 4],
 }
 
 pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
@@ -133,7 +164,6 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
                     (t[3] * 255.0).round().clamp(0.0, 255.0) as u8,
                 ]
             }),
-            fallback,
         };
 
         if let Some(&info) = cache.get(&key) {
@@ -260,6 +290,8 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
                 || (voxel.top_texture_name().is_none() && Some(bot_name) == Some(base_name))
             {
                 top_info
+            } else if Some(bot_name) == voxel.side_texture_name() {
+                side_info
             } else {
                 let bot_overlay = voxel
                     .overlay_texture_name()
@@ -273,8 +305,22 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
                     &mut current_layer,
                 )
             }
-        } else if voxel.side_texture_name().is_some() {
-            top_info
+        } else if voxel.side_texture_name().is_some() || voxel.top_texture_name().is_some() {
+            if voxel.side_texture_name() == Some(base_name) && voxel.top_texture_name().is_none() {
+                side_info
+            } else {
+                let bot_overlay = voxel
+                    .overlay_texture_name()
+                    .filter(|&o| o != "soil_grass_side_overlay");
+                get_or_load_face(
+                    base_name,
+                    bot_overlay,
+                    None,
+                    voxel.fallback_color(),
+                    &mut raw_layers,
+                    &mut current_layer,
+                )
+            }
         } else {
             side_info
         };
@@ -507,6 +553,188 @@ mod tests {
             depth <= 2048,
             "Texture array depth must be <= 2048 to fit GPU limits, got {}",
             depth
+        );
+    }
+
+    #[test]
+    fn test_oriented_pillar_textures() {
+        let mut registry = VoxelTextureRegistry::default();
+        let side = FaceTextureInfo {
+            start_layer: 10,
+            variant_count: 1,
+            frame_count: 1,
+        };
+        let top = FaceTextureInfo {
+            start_layer: 20,
+            variant_count: 1,
+            frame_count: 1,
+        };
+        let bottom = FaceTextureInfo {
+            start_layer: 21,
+            variant_count: 1,
+            frame_count: 1,
+        };
+
+        registry.register_multi_face(Voxel::OakLog, side, top, bottom);
+
+        // Axis Y (orientation 0): Top/Bottom get caps, lateral get side
+        assert_eq!(
+            registry
+                .get_face_texture_info_oriented(
+                    Voxel::OakLog,
+                    IVec3::ZERO,
+                    FaceDirection::PositiveY,
+                    0
+                )
+                .0,
+            20
+        );
+        assert_eq!(
+            registry
+                .get_face_texture_info_oriented(
+                    Voxel::OakLog,
+                    IVec3::ZERO,
+                    FaceDirection::NegativeY,
+                    0
+                )
+                .0,
+            21
+        );
+        assert_eq!(
+            registry
+                .get_face_texture_info_oriented(
+                    Voxel::OakLog,
+                    IVec3::ZERO,
+                    FaceDirection::PositiveX,
+                    0
+                )
+                .0,
+            10
+        );
+        assert_eq!(
+            registry
+                .get_face_texture_info_oriented(
+                    Voxel::OakLog,
+                    IVec3::ZERO,
+                    FaceDirection::PositiveZ,
+                    0
+                )
+                .0,
+            10
+        );
+
+        // Axis X (orientation 1): PositiveX/NegativeX get caps, Y/Z get side
+        assert_eq!(
+            registry
+                .get_face_texture_info_oriented(
+                    Voxel::OakLog,
+                    IVec3::ZERO,
+                    FaceDirection::PositiveX,
+                    1
+                )
+                .0,
+            20
+        );
+        assert_eq!(
+            registry
+                .get_face_texture_info_oriented(
+                    Voxel::OakLog,
+                    IVec3::ZERO,
+                    FaceDirection::NegativeX,
+                    1
+                )
+                .0,
+            21
+        );
+        assert_eq!(
+            registry
+                .get_face_texture_info_oriented(
+                    Voxel::OakLog,
+                    IVec3::ZERO,
+                    FaceDirection::PositiveY,
+                    1
+                )
+                .0,
+            10
+        );
+        assert_eq!(
+            registry
+                .get_face_texture_info_oriented(
+                    Voxel::OakLog,
+                    IVec3::ZERO,
+                    FaceDirection::NegativeY,
+                    1
+                )
+                .0,
+            10
+        );
+        assert_eq!(
+            registry
+                .get_face_texture_info_oriented(
+                    Voxel::OakLog,
+                    IVec3::ZERO,
+                    FaceDirection::PositiveZ,
+                    1
+                )
+                .0,
+            10
+        );
+
+        // Axis Z (orientation 2): PositiveZ/NegativeZ get caps, X/Y get side
+        assert_eq!(
+            registry
+                .get_face_texture_info_oriented(
+                    Voxel::OakLog,
+                    IVec3::ZERO,
+                    FaceDirection::PositiveZ,
+                    2
+                )
+                .0,
+            20
+        );
+        assert_eq!(
+            registry
+                .get_face_texture_info_oriented(
+                    Voxel::OakLog,
+                    IVec3::ZERO,
+                    FaceDirection::NegativeZ,
+                    2
+                )
+                .0,
+            21
+        );
+        assert_eq!(
+            registry
+                .get_face_texture_info_oriented(
+                    Voxel::OakLog,
+                    IVec3::ZERO,
+                    FaceDirection::PositiveX,
+                    2
+                )
+                .0,
+            10
+        );
+        assert_eq!(
+            registry
+                .get_face_texture_info_oriented(
+                    Voxel::OakLog,
+                    IVec3::ZERO,
+                    FaceDirection::NegativeX,
+                    2
+                )
+                .0,
+            10
+        );
+        assert_eq!(
+            registry
+                .get_face_texture_info_oriented(
+                    Voxel::OakLog,
+                    IVec3::ZERO,
+                    FaceDirection::PositiveY,
+                    2
+                )
+                .0,
+            10
         );
     }
 }

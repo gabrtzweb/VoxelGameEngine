@@ -369,7 +369,7 @@ fn fragment(
 
     // Biome / Vertex Tint
     var biome_tint = vertex_output.color.rgb;
-    if (length(biome_tint) < 0.1) {
+    if (length(biome_tint) < 0.001) {
         biome_tint = vec3<f32>(1.0);
     }
 

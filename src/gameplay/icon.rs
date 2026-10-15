@@ -67,13 +67,18 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
         };
 
         let is_grass = voxel.is_grass_soil();
-        if is_grass {
-            let overlay_path = "assets/textures/blocks/soil_grass_side_overlay.png";
-            if Path::new(overlay_path).exists()
-                && let Ok(img) = image::open(overlay_path)
+
+        if let Some(overlay_name) = voxel.overlay_texture_name() {
+            let overlay_path = format!("assets/textures/blocks/{overlay_name}.png");
+            if Path::new(&overlay_path).exists()
+                && let Ok(img) = image::open(&overlay_path)
             {
                 let rgba = img.into_rgba8();
-                let tint = [0.58f32, 0.90, 0.44];
+                let tint = if overlay_name == "soil_grass_side_overlay" {
+                    voxel.tint_color()
+                } else {
+                    [1.0, 1.0, 1.0, 1.0]
+                };
                 let raw = rgba.into_raw();
                 for idx in (0..raw_side.len().min(raw.len())).step_by(4) {
                     let ov_a = (raw[idx + 3] as f32) / 255.0;
@@ -100,41 +105,12 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
             }
         }
 
-        if let Some(overlay_name) = voxel.overlay_texture_name() {
-            let overlay_path = format!("assets/textures/blocks/{overlay_name}.png");
-            if Path::new(&overlay_path).exists()
-                && let Ok(img) = image::open(&overlay_path)
-            {
-                let rgba = img.into_rgba8();
-                let raw = rgba.into_raw();
-                for idx in (0..raw_side.len().min(raw.len())).step_by(4) {
-                    let ov_a = (raw[idx + 3] as f32) / 255.0;
-                    if ov_a > 0.001 {
-                        let ov_r = raw[idx] as f32;
-                        let ov_g = raw[idx + 1] as f32;
-                        let ov_b = raw[idx + 2] as f32;
-
-                        let base_r = raw_side[idx] as f32;
-                        let base_g = raw_side[idx + 1] as f32;
-                        let base_b = raw_side[idx + 2] as f32;
-
-                        raw_side[idx] = (base_r * (1.0 - ov_a) + ov_r * ov_a)
-                            .round()
-                            .clamp(0.0, 255.0) as u8;
-                        raw_side[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a)
-                            .round()
-                            .clamp(0.0, 255.0) as u8;
-                        raw_side[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a)
-                            .round()
-                            .clamp(0.0, 255.0) as u8;
-                    }
-                }
-            }
-        }
-
         let raw_top = if let Some(top_name) = voxel.top_texture_name() {
             let mut top_bytes = load_raw_16x16_by_name(top_name, voxel.fallback_color());
-            if let Some(overlay_name) = voxel.overlay_texture_name() {
+            if let Some(overlay_name) = voxel
+                .overlay_texture_name()
+                .filter(|&o| o != "soil_grass_side_overlay")
+            {
                 let overlay_path = format!("assets/textures/blocks/{overlay_name}.png");
                 if Path::new(&overlay_path).exists()
                     && let Ok(img) = image::open(&overlay_path)

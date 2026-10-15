@@ -287,6 +287,25 @@ fn edit_voxels(
                 modifications.record_shape(place_position, BlockShape::Basket, 0);
             }
             placed
+        } else if place_voxel_type.is_axis_aligned() {
+            let placed = place_block(
+                &mut world,
+                &mut modifications,
+                place_position,
+                place_voxel_type,
+            );
+            if !placed.is_empty() {
+                let orientation = if target.face_normal.x != 0 {
+                    1 // Axis X (horizontal East-West)
+                } else if target.face_normal.z != 0 {
+                    2 // Axis Z (horizontal North-South)
+                } else {
+                    0 // Axis Y (vertical Upright)
+                };
+                world.set_shape(place_position, BlockShape::Full, orientation);
+                modifications.record_shape(place_position, BlockShape::Full, orientation);
+            }
+            placed
         } else {
             place_block(
                 &mut world,

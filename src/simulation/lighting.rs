@@ -44,11 +44,7 @@ pub fn sync_chunk_lights(
 
     match chunk.homogeneity() {
         ChunkHomogeneity::Empty => return,
-        ChunkHomogeneity::Solid(v)
-            if !v.is_point_light_fixture()
-                && v != Voxel::LiquidLava
-                && v != Voxel::LiquidMolten =>
-        {
+        ChunkHomogeneity::Solid(v) if !v.is_point_light_fixture() && v.emission_level() == 0 => {
             return;
         }
         _ => {}
@@ -66,7 +62,7 @@ pub fn sync_chunk_lights(
                 if voxel.is_point_light_fixture() {
                     let world_voxel = chunk_origin + IVec3::new(x as i32, y as i32, z as i32);
                     torch_coords.push(world_voxel);
-                } else if voxel == Voxel::LiquidLava || voxel == Voxel::LiquidMolten {
+                } else if voxel.is_light() {
                     let world_pos = (chunk_origin + IVec3::new(x as i32, y as i32, z as i32))
                         .as_vec3()
                         + Vec3::splat(0.5);
@@ -154,13 +150,14 @@ fn sync_block_light(
         }
 
         let pos = block_coord.as_vec3() * VOXEL_SIZE + Vec3::splat(VOXEL_SIZE * 0.5);
+        let emission = (voxel.emission_level().max(1) as f32) / 15.0;
 
         let entity = commands
             .spawn((
                 PointLight {
                     color: voxel.light_color(),
-                    intensity: LIGHT_INTENSITY,
-                    range: LIGHT_RANGE,
+                    intensity: LIGHT_INTENSITY * emission,
+                    range: LIGHT_RANGE * emission.max(0.6),
                     radius: 0.0,
                     shadow_maps_enabled: false,
                     ..default()

@@ -380,7 +380,7 @@ impl Chunk {
 
     pub fn set_shape(&mut self, x: usize, y: usize, z: usize, shape: BlockShape, orientation: u8) {
         let index = Self::index(x, y, z);
-        if shape == BlockShape::Full {
+        if shape == BlockShape::Full && orientation == 0 {
             self.shapes.remove(&index);
         } else {
             self.shapes.insert(index, (shape, orientation));

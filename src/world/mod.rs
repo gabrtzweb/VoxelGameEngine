@@ -5,7 +5,8 @@ pub mod modifications;
 pub mod storage;
 pub mod streaming;
 
-pub use block::{BlockShape, Voxel};
+#[allow(unused_imports)]
+pub use block::{BlockShape, NaturalRotationMode, PillarAxis, Voxel};
 pub use cache::ChunkCache;
 pub use chunk::{CHUNK_SIZE, CHUNK_VOLUME, Chunk, ChunkHomogeneity, VOXEL_SIZE};
 pub use modifications::WorldModificationStore;

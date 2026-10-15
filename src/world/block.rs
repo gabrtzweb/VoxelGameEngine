@@ -18,6 +18,37 @@ pub enum BlockShape {
     CrossBillboard = 9,
 }
 
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default, Reflect)]
+pub enum NaturalRotationMode {
+    #[default]
+    None = 0,
+    Isotropic = 1,
+    SoilSide = 2,
+}
+
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default, Reflect)]
+pub enum PillarAxis {
+    #[default]
+    Y = 0,
+    X = 1,
+    Z = 2,
+}
+
+impl PillarAxis {
+    #[inline]
+    pub fn from_normal(normal: IVec3) -> Self {
+        if normal.x != 0 {
+            Self::X
+        } else if normal.z != 0 {
+            Self::Z
+        } else {
+            Self::Y
+        }
+    }
+}
+
 impl BlockShape {
     pub const fn all() -> [BlockShape; 5] {
         [
@@ -61,7 +92,8 @@ impl BlockShape {
 
     pub const fn orientation_count(self) -> u8 {
         match self {
-            Self::Full | Self::Basket | Self::CrossBillboard => 1,
+            Self::Full => 3,
+            Self::Basket | Self::CrossBillboard => 1,
             Self::Slab => 6,
             Self::Stair => 8,
             Self::Column => 6,
@@ -72,7 +104,13 @@ impl BlockShape {
 
     pub fn orientation_name(self, orientation: u8) -> &'static str {
         match self {
-            Self::Full | Self::Basket | Self::CrossBillboard => "Standard",
+            Self::Full => match orientation % 3 {
+                0 => "Vertical (Y)",
+                1 => "Horizontal (X)",
+                2 => "Horizontal (Z)",
+                _ => "Standard",
+            },
+            Self::Basket | Self::CrossBillboard => "Standard",
             Self::Slab => match orientation % 6 {
                 0 => "Bottom (Floor)",
                 1 => "Top (Ceiling)",
@@ -1162,7 +1200,22 @@ impl Voxel {
 
     #[inline(always)]
     pub const fn is_point_light_const(self) -> bool {
-        matches!(self as u16, 567 | 573..=578)
+        matches!(
+            self as u16,
+            437 | 440 | 443 | 446 | 474 | 567..=578 | 712..=713
+        )
+    }
+
+    #[inline(always)]
+    pub const fn emission_level(self) -> u8 {
+        match self as u16 {
+            567..=572 | 19 | 21..=23 | 142 | 144 => 15,
+            573..=578 => 14,
+            474 => 12,
+            712..=713 => 9,
+            437 | 440 | 443 | 446 => 8,
+            _ => 0,
+        }
     }
 
     pub const fn is_leaves_const(self) -> bool {
@@ -3004,6 +3057,34 @@ impl Voxel {
             Self::HayBale | Self::StrawBale => Some("deco_hay_bale_top"),
             Self::RiceBale => Some("deco_rice_bale_bottom"),
 
+            Self::CalicheGrass => Some("soil_caliche_dirt"),
+            Self::LateriteGrass => Some("soil_laterite_dirt"),
+            Self::LoamGrass
+            | Self::LoamSnow
+            | Self::LoamMulch
+            | Self::LoamTilled
+            | Self::LoamBurrow => Some("soil_loam_dirt"),
+            Self::PeatGrass
+            | Self::PeatSnow
+            | Self::PeatMulch
+            | Self::PeatTilled
+            | Self::PeatBurrow => Some("soil_peat_dirt"),
+            Self::PermafrostGrass => Some("soil_permafrost_dirt"),
+            Self::SiltGrass
+            | Self::SiltSnow
+            | Self::SiltMulch
+            | Self::SiltTilled
+            | Self::SiltBurrow => Some("soil_silt_dirt"),
+
+            Self::AndesiteGrass | Self::AndesiteSnow => Some("rock_andesite"),
+            Self::ArgilliteGrass | Self::ArgilliteSnow => Some("rock_argillite"),
+            Self::BasaltGrass | Self::BasaltSnow => Some("rock_basalt"),
+            Self::ChalkGrass | Self::ChalkSnow => Some("rock_chalk"),
+            Self::DolomiteGrass | Self::DolomiteSnow => Some("rock_dolomite"),
+            Self::GneissGrass | Self::GneissSnow => Some("rock_gneiss"),
+            Self::GraniteGrass | Self::GraniteSnow => Some("rock_granite"),
+            Self::LimestoneGrass | Self::LimestoneSnow => Some("rock_limestone"),
+
             Self::FungiAmanitaCap
             | Self::FungiChanterelleCap
             | Self::FungiIndigoCap
@@ -3116,8 +3197,24 @@ impl Voxel {
     #[inline]
     pub const fn is_grass_soil(self) -> bool {
         matches!(
-            self as u16,
-            34 | 45 | 49 | 61 | 69 | 80 | 88 | 91 | 94 | 99 | 129 | 133 | 136 | 140
+            self,
+            Self::CalicheGrass
+                | Self::LateriteGrass
+                | Self::LoamGrass
+                | Self::PeatGrass
+                | Self::PermafrostGrass
+                | Self::SiltGrass
+                | Self::AndesiteGrass
+                | Self::ArgilliteGrass
+                | Self::BasaltGrass
+                | Self::ChalkGrass
+                | Self::DolomiteGrass
+                | Self::GneissGrass
+                | Self::GraniteGrass
+                | Self::LimestoneGrass
+                | Self::LoamBurrow
+                | Self::PeatBurrow
+                | Self::SiltBurrow
         )
     }
 
@@ -3161,7 +3258,161 @@ impl Voxel {
         )
     }
 
+    #[inline]
+    pub fn is_axis_aligned(self) -> bool {
+        matches!(
+            self,
+            Self::AcaciaLog
+                | Self::AspenLog
+                | Self::BaobabLog
+                | Self::BirchLog
+                | Self::CherryLog
+                | Self::CypressLog
+                | Self::FirLog
+                | Self::KapokLog
+                | Self::MahoganyLog
+                | Self::MangroveLog
+                | Self::MapleLog
+                | Self::OakLog
+                | Self::PalmLog
+                | Self::PineLog
+                | Self::RedwoodLog
+                | Self::WillowLog
+                | Self::YewLog
+                | Self::BambooStalk
+                | Self::BoneBlock
+                | Self::CalcinedBone
+                | Self::BloodyFlesh
+                | Self::FleshBlock
+                | Self::CornBale
+                | Self::HayBale
+                | Self::RiceBale
+                | Self::StrawBale
+        )
+    }
+
+    #[inline]
+    pub fn is_pillar_block(self) -> bool {
+        self.is_axis_aligned()
+    }
+
+    pub fn natural_rotation_mode(self) -> NaturalRotationMode {
+        if self.is_empty()
+            || self.is_fluid()
+            || self.is_transparent()
+            || self.is_leaves()
+            || self.is_painted()
+            || self.is_light()
+            || self.is_axis_aligned()
+        {
+            return NaturalRotationMode::None;
+        }
+
+        let id = self as u16;
+
+        // Trees & Wood (logs, planks, wood, bamboo): 179..=270
+        if matches!(id, 179..=270) {
+            return NaturalRotationMode::None;
+        }
+
+        // Architecture, furniture, utilities, lighting, fibers: 543..=720
+        if matches!(id, 543..=720) {
+            return NaturalRotationMode::None;
+        }
+
+        // Soils with grass/snow/mulch/tilled overlays on side (keep vertical side upright, mirror U only)
+        if self.is_grass_soil()
+            || matches!(
+                self,
+                Self::LoamSnow
+                    | Self::PeatSnow
+                    | Self::SiltSnow
+                    | Self::AndesiteSnow
+                    | Self::ArgilliteSnow
+                    | Self::BasaltSnow
+                    | Self::ChalkSnow
+                    | Self::DolomiteSnow
+                    | Self::GneissSnow
+                    | Self::GraniteSnow
+                    | Self::LimestoneSnow
+                    | Self::LoamMulch
+                    | Self::PeatMulch
+                    | Self::SiltMulch
+                    | Self::LoamTilled
+                    | Self::PeatTilled
+                    | Self::SiltTilled
+            )
+        {
+            return NaturalRotationMode::SoilSide;
+        }
+
+        // Natural isotropic: Soils, sands, gravels, clays, ashes (29..=86)
+        if matches!(id, 29..=86) {
+            return NaturalRotationMode::Isotropic;
+        }
+
+        // Geology & Rocks (87..=178)
+        if matches!(id, 87..=178) {
+            return NaturalRotationMode::Isotropic;
+        }
+
+        // Ores, Minerals & Gemology (271..=428)
+        if matches!(id, 271..=428) {
+            return NaturalRotationMode::Isotropic;
+        }
+
+        // Crystals, Speleothems, Volcanism, Fossils (429..=530)
+        if matches!(id, 429..=530) {
+            return NaturalRotationMode::Isotropic;
+        }
+
+        NaturalRotationMode::None
+    }
+
+    pub const PAINT_PALETTE: [[f32; 4]; 16] = [
+        [0.102, 0.102, 0.102, 1.0], // 0: Black (#1A1A1A)
+        [0.145, 0.267, 0.549, 1.0], // 1: Blue (#25448C)
+        [0.361, 0.220, 0.118, 1.0], // 2: Brown (#5C381E)
+        [0.078, 0.137, 0.294, 1.0], // 3: Dark Blue (#14234B)
+        [0.247, 0.267, 0.282, 1.0], // 4: Dark Grey (#3F4448)
+        [0.231, 0.416, 0.149, 1.0], // 5: Green (#3B6A26)
+        [0.604, 0.631, 0.651, 1.0], // 6: Light Grey (#9AA1A6)
+        [0.957, 0.710, 0.784, 1.0], // 7: Light Pink (#F4B5C8)
+        [0.416, 0.745, 0.188, 1.0], // 8: Lime (#6ABE30)
+        [0.851, 0.431, 0.078, 1.0], // 9: Orange (#D96E14)
+        [0.910, 0.416, 0.573, 1.0], // 10: Pink (#E86A92)
+        [0.455, 0.196, 0.557, 1.0], // 11: Purple (#74328E)
+        [0.698, 0.133, 0.133, 1.0], // 12: Red (#B22222)
+        [0.157, 0.627, 0.627, 1.0], // 13: Turquoise (#28A0A0)
+        [0.941, 0.941, 0.941, 1.0], // 14: White (#F0F0F0)
+        [0.902, 0.722, 0.000, 1.0], // 15: Yellow (#E6B800)
+    ];
+
+    #[inline]
+    pub const fn is_painted(self) -> bool {
+        self.paint_color().is_some()
+    }
+
+    pub const fn paint_color(self) -> Option<[f32; 4]> {
+        let id = self as u16;
+        let color_idx = match id {
+            548..=563 => id - 548, // Brick
+            580..=595 => id - 580, // Fabric
+            597..=612 => id - 597, // Glass
+            615..=630 => id - 615, // Linen
+            636..=651 => id - 636, // Plaster
+            654..=669 => id - 654, // Shingles
+            672..=687 => id - 672, // TintedGlass
+            689..=704 => id - 689, // Wool
+            _ => return None,
+        };
+        Some(Self::PAINT_PALETTE[color_idx as usize])
+    }
+
     pub fn tint_color(self) -> [f32; 4] {
+        if let Some(paint) = self.paint_color() {
+            return paint;
+        }
         match self {
             Self::LiquidWater | Self::WaterOccupied => [0.35, 0.65, 0.92, 1.0],
             Self::OakLeaves => [0.60, 1.15, 0.35, 1.0],
@@ -3179,6 +3430,9 @@ impl Voxel {
     }
 
     pub fn tint_color_at(self, world_voxel: IVec3) -> [f32; 4] {
+        if let Some(paint) = self.paint_color() {
+            return paint;
+        }
         if !self.is_tinted() {
             return [1.0, 1.0, 1.0, 1.0];
         }
@@ -3191,6 +3445,14 @@ impl Voxel {
     }
 
     pub fn fallback_color(self) -> [u8; 4] {
+        if let Some(paint) = self.paint_color() {
+            return [
+                (paint[0] * 255.0).round().clamp(0.0, 255.0) as u8,
+                (paint[1] * 255.0).round().clamp(0.0, 255.0) as u8,
+                (paint[2] * 255.0).round().clamp(0.0, 255.0) as u8,
+                255,
+            ];
+        }
         match self {
             Self::Air | Self::Occupied | Self::WaterOccupied => [0, 0, 0, 0],
             Self::NullBlock | Self::NullLiquid => [255, 0, 255, 255],
@@ -3226,6 +3488,12 @@ impl Voxel {
             | Self::LiquidMolten
             | Self::Magma
             | Self::MantlePlume => Color::srgb(1.0, 0.45, 0.15),
+            Self::GeothermalVent => Color::srgb(1.0, 0.55, 0.20),
+            Self::FungiMycena | Self::FungiMycenaCap => Color::srgb(0.20, 0.90, 0.70),
+            Self::CrystalCitrineGlinted => Color::srgb(1.0, 0.85, 0.30),
+            Self::CrystalFluoriteGlinted => Color::srgb(0.70, 0.40, 0.95),
+            Self::CrystalPinkSaltGlinted => Color::srgb(1.0, 0.60, 0.75),
+            Self::CrystalSeleniteGlinted => Color::srgb(0.85, 0.92, 1.0),
             _ => Color::WHITE,
         }
     }
@@ -3304,5 +3572,113 @@ impl Voxel {
     #[inline(always)]
     pub fn is_unbreakable(self) -> bool {
         matches!(self, Self::Mantle | Self::MantlePlume)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_natural_rotation_modes() {
+        // Natural isotropic blocks: rock, sand, gravel, dirt
+        assert_eq!(
+            Voxel::Granite.natural_rotation_mode(),
+            NaturalRotationMode::Isotropic
+        );
+        assert_eq!(
+            Voxel::Basalt.natural_rotation_mode(),
+            NaturalRotationMode::Isotropic
+        );
+        assert_eq!(
+            Voxel::Andesite.natural_rotation_mode(),
+            NaturalRotationMode::Isotropic
+        );
+        assert_eq!(
+            Voxel::SandCommon.natural_rotation_mode(),
+            NaturalRotationMode::Isotropic
+        );
+        assert_eq!(
+            Voxel::LoamDirt.natural_rotation_mode(),
+            NaturalRotationMode::Isotropic
+        );
+        assert_eq!(
+            Voxel::GravelSandy.natural_rotation_mode(),
+            NaturalRotationMode::Isotropic
+        );
+
+        // Natural soils with side overlays: top rotated 4-way, side flipped horizontally only
+        assert_eq!(
+            Voxel::LoamGrass.natural_rotation_mode(),
+            NaturalRotationMode::SoilSide
+        );
+        assert_eq!(
+            Voxel::PeatGrass.natural_rotation_mode(),
+            NaturalRotationMode::SoilSide
+        );
+        assert_eq!(
+            Voxel::BasaltSnow.natural_rotation_mode(),
+            NaturalRotationMode::SoilSide
+        );
+        assert_eq!(
+            Voxel::LoamSnow.natural_rotation_mode(),
+            NaturalRotationMode::SoilSide
+        );
+
+        // Directional / architectural blocks: must NOT rotate
+        assert_eq!(
+            Voxel::OakLog.natural_rotation_mode(),
+            NaturalRotationMode::None
+        );
+        assert_eq!(
+            Voxel::BirchPlanks.natural_rotation_mode(),
+            NaturalRotationMode::None
+        );
+        assert_eq!(
+            Voxel::Bricks.natural_rotation_mode(),
+            NaturalRotationMode::None
+        );
+        assert_eq!(
+            Voxel::BrickRed.natural_rotation_mode(),
+            NaturalRotationMode::None
+        );
+        assert_eq!(
+            Voxel::Barrel.natural_rotation_mode(),
+            NaturalRotationMode::None
+        );
+        assert_eq!(
+            Voxel::EmitTorchFire.natural_rotation_mode(),
+            NaturalRotationMode::None
+        );
+    }
+
+    #[test]
+    fn test_axis_aligned_pillar_properties() {
+        // Normal to axis conversion
+        assert_eq!(PillarAxis::from_normal(IVec3::new(1, 0, 0)), PillarAxis::X);
+        assert_eq!(PillarAxis::from_normal(IVec3::new(-1, 0, 0)), PillarAxis::X);
+        assert_eq!(PillarAxis::from_normal(IVec3::new(0, 0, 1)), PillarAxis::Z);
+        assert_eq!(PillarAxis::from_normal(IVec3::new(0, 0, -1)), PillarAxis::Z);
+        assert_eq!(PillarAxis::from_normal(IVec3::new(0, 1, 0)), PillarAxis::Y);
+        assert_eq!(PillarAxis::from_normal(IVec3::new(0, -1, 0)), PillarAxis::Y);
+
+        // Axis-aligned pillar detection
+        assert!(Voxel::OakLog.is_axis_aligned());
+        assert!(Voxel::BaobabLog.is_axis_aligned());
+        assert!(Voxel::BoneBlock.is_axis_aligned());
+        assert!(Voxel::FleshBlock.is_axis_aligned());
+        assert!(Voxel::HayBale.is_axis_aligned());
+        assert!(Voxel::BambooStalk.is_axis_aligned());
+
+        // Non-pillar blocks
+        assert!(!Voxel::OakPlanks.is_axis_aligned());
+        assert!(!Voxel::Granite.is_axis_aligned());
+        assert!(!Voxel::LoamDirt.is_axis_aligned());
+
+        // BlockShape::Full has 3 orientations (Y, X, Z)
+        assert_eq!(BlockShape::Full.orientation_count(), 3);
+        assert_eq!(BlockShape::Full.orientation_name(0), "Vertical (Y)");
+        assert_eq!(BlockShape::Full.orientation_name(1), "Horizontal (X)");
+        assert_eq!(BlockShape::Full.orientation_name(2), "Horizontal (Z)");
     }
 }

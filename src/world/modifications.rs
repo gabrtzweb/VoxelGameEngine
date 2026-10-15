@@ -41,7 +41,7 @@ impl WorldModificationStore {
     pub fn record_shape(&mut self, world_voxel: IVec3, shape: BlockShape, orientation: u8) {
         let (chunk_coordinate, local_coordinate) = VoxelWorld::world_voxel_to_chunk(world_voxel);
 
-        if shape == BlockShape::Full {
+        if shape == BlockShape::Full && orientation == 0 {
             if let Some(shape_map) = self.shapes.get_mut(&chunk_coordinate) {
                 shape_map.remove(&local_coordinate);
             }

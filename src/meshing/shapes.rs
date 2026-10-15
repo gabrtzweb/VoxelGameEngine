@@ -20,7 +20,7 @@ pub fn mesh_shaped_voxels(
         let (x, y, z) = Chunk::index_to_xyz(index);
 
         let voxel = chunk.get(x, y, z);
-        if voxel.is_empty() {
+        if voxel.is_empty() || shape == BlockShape::Full {
             continue;
         }
 
@@ -38,8 +38,11 @@ pub fn mesh_shaped_voxels(
         let (bottom_layer, _) =
             textures.get_face_texture_info(voxel, world_voxel, FaceDirection::NegativeY);
 
+        let rot_mode = voxel.natural_rotation_mode() as u8;
         let frame_count_f32 = if voxel.is_light() {
             -(frame_count.max(1) as f32)
+        } else if frame_count == 1 && rot_mode > 0 {
+            1.0 + (rot_mode as f32) * 0.25
         } else {
             frame_count as f32
         };
@@ -51,6 +54,8 @@ pub fn mesh_shaped_voxels(
             2.0
         } else if voxel.is_transparent() {
             0.0
+        } else if voxel.is_painted() {
+            0.5
         } else {
             1.0
         };
@@ -229,6 +234,8 @@ pub fn mesh_shaped_voxels(
                         2.0
                     } else if extra_voxel.is_transparent() {
                         0.0
+                    } else if extra_voxel.is_painted() {
+                        0.5
                     } else {
                         1.0
                     };

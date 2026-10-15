@@ -70,6 +70,7 @@ pub struct FaceKey {
     pub surface_offset_cm: u8,
     pub step_bottom_offset_cm: u8,
     pub is_isolated_voxel: bool,
+    pub orientation: u8,
 }
 
 impl FaceKey {
@@ -81,6 +82,7 @@ impl FaceKey {
             && self.surface_offset_cm == other.surface_offset_cm
             && self.step_bottom_offset_cm == other.step_bottom_offset_cm
             && self.is_isolated_voxel == other.is_isolated_voxel
+            && self.orientation == other.orientation
     }
 }
 
@@ -148,12 +150,17 @@ impl MeshBuffers {
             2.0
         } else if key.voxel.is_transparent() {
             0.0
+        } else if key.voxel.is_painted() {
+            0.5
         } else {
             1.0
         };
         let layer = key.texture_layer as f32;
+        let rot_mode = key.voxel.natural_rotation_mode() as u8;
         let frame_count = if key.voxel.is_light() {
             -(key.frame_count.max(1) as f32)
+        } else if key.frame_count == 1 && rot_mode > 0 {
+            1.0 + (rot_mode as f32) * 0.25
         } else {
             key.frame_count as f32
         };
@@ -211,6 +218,36 @@ impl MeshBuffers {
                 [u_max, v_min],
                 [u_max, v_max],
             ],
+        };
+
+        let should_swap_uv = if key.voxel.is_axis_aligned() {
+            match key.orientation % 3 {
+                1 => matches!(
+                    direction,
+                    FaceDirection::PositiveY
+                        | FaceDirection::NegativeY
+                        | FaceDirection::PositiveZ
+                        | FaceDirection::NegativeZ
+                ),
+                2 => matches!(
+                    direction,
+                    FaceDirection::PositiveX | FaceDirection::NegativeX
+                ),
+                _ => false,
+            }
+        } else {
+            false
+        };
+
+        let uvs_to_push = if should_swap_uv {
+            [
+                [uvs_to_push[0][1], uvs_to_push[0][0]],
+                [uvs_to_push[1][1], uvs_to_push[1][0]],
+                [uvs_to_push[2][1], uvs_to_push[2][0]],
+                [uvs_to_push[3][1], uvs_to_push[3][0]],
+            ]
+        } else {
+            uvs_to_push
         };
 
         self.uvs.extend_from_slice(&uvs_to_push);
@@ -485,10 +522,9 @@ impl ChunkMesher {
                         let ly = local_voxel.y as usize;
                         let lz = local_voxel.z as usize;
                         let voxel = chunk.get(lx, ly, lz);
+                        let (shape, orientation) = chunk.get_shape(lx, ly, lz);
 
-                        if voxel.is_empty()
-                            || chunk.get_shape(lx, ly, lz).0 != BlockShape::Full
-                            || voxel.has_custom_mesh()
+                        if voxel.is_empty() || shape != BlockShape::Full || voxel.has_custom_mesh()
                         {
                             continue;
                         }
@@ -532,8 +568,12 @@ impl ChunkMesher {
                             continue;
                         }
 
-                        let (texture_layer, frame_count) =
-                            textures.get_face_texture_info(voxel, world_voxel, direction);
+                        let (texture_layer, frame_count) = textures.get_face_texture_info_oriented(
+                            voxel,
+                            world_voxel,
+                            direction,
+                            orientation,
+                        );
                         let is_grass = voxel.is_grass_soil();
                         let mut tint_color = if is_grass {
                             match direction {
@@ -557,6 +597,8 @@ impl ChunkMesher {
                             2.0
                         } else if voxel.is_transparent() {
                             0.0
+                        } else if voxel.is_painted() {
+                            0.5
                         } else {
                             1.0
                         };
@@ -577,6 +619,7 @@ impl ChunkMesher {
                             surface_offset_cm,
                             step_bottom_offset_cm,
                             is_isolated_voxel,
+                            orientation,
                         });
                     }
                 }
