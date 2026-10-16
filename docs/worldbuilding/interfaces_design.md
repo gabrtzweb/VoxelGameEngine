@@ -252,10 +252,10 @@ System buttons are standardized with 1px pixel-art chamfered corners, brushed-st
 
 | Component | Default Texture | Hover Texture | Dimensions | Aspect Ratio | Primary Use Case |
 | :--- | :--- | :--- | :---: | :---: | :--- |
-| **Button Tiny (Util)** | [`button_util.png`](interfaces/button_util.png) | [`button_util_hover.png`](interfaces/button_util_hover.png) | **8 × 8 px** | 1:1 | Card header utility actions (B2..B5, D2..D5). *(Note: Not used as clickable buttons on gameplay hotbar).* |
-| **Button Small** | [`button_small.png`](interfaces/button_small.png) | [`button_small_hover.png`](interfaces/button_small_hover.png) | **16 × 16 px** | 1:1 | Compact icon buttons, page pagination, and secondary interface actions. |
-| **Button Medium** | [`button_medium.png`](interfaces/button_medium.png) | [`button_medium_hover.png`](interfaces/button_medium_hover.png) | **64 × 16 px** | 4:1 | Confirmation prompts, cancel, save, modal buttons, and major tabs. |
-| **Button Large** | [`button_large.png`](interfaces/button_large.png) | [`button_large_hover.png`](interfaces/button_large_hover.png) | **96 × 16 px** | 6:1 | Main menu screens, "Enter World", "Settings", and "Quit Game". |
+| **Button Tiny (Util)** | [`button_util.png`](interfaces/containers/button_util.png) | [`button_util_hover.png`](interfaces/containers/button_util_hover.png) | **8 × 8 px** | 1:1 | Card header utility actions (B2..B5, D2..D5). *(Note: Not used as clickable buttons on gameplay hotbar).* |
+| **Button Small** | [`button_small.png`](interfaces/containers/button_small.png) | [`button_small_hover.png`](interfaces/containers/button_small_hover.png) | **16 × 16 px** | 1:1 | Compact icon buttons, page pagination, and secondary interface actions. |
+| **Button Medium** | [`button_medium.png`](interfaces/containers/button_medium.png) | [`button_medium_hover.png`](interfaces/containers/button_medium_hover.png) | **64 × 16 px** | 4:1 | Confirmation prompts, cancel, save, modal buttons, and major tabs. |
+| **Button Large** | [`button_large.png`](interfaces/containers/button_large.png) | [`button_large_hover.png`](interfaces/containers/button_large_hover.png) | **96 × 16 px** | 6:1 | Main menu screens, "Enter World", "Settings", and "Quit Game". |
 
 ### 5.1 Button Construction Rules
 * **Outer Rim (Layer 0)**: `#2d2e30` top, `#1e1e20` sides, and `#000000` base with 1px cut corners.
@@ -302,7 +302,7 @@ In addition to full interface backplates, the engine utilizes standalone modular
 
 ---
 
-## 7. Slot Overlay System (`docs/worldbuilding/interfaces/slots/`)
+## 7. Slot Overlay System (`docs/worldbuilding/interfaces/containers/slots/`)
 
 To achieve a compact footprint for player equipment (Card A) and hotbar utility slots, these receptacles are dimensioned to **14 × 14 px**.
 
@@ -316,20 +316,20 @@ Accordingly, **all 14 slot overlays are standardized at 14 × 14 px**, with each
 
 | Overlay (14 × 14 px) | Texture File | Target Interface Slot |
 | :--- | :--- | :--- |
-| **Helmet / Headgear** | [`helmet.png`](interfaces/slots/helmet.png) | Slot **A3** (Card A) |
-| **Chestplate / Torso Armor** | [`chestplate.png`](interfaces/slots/chestplate.png) | Slot **A4** (Card A) |
-| **Leggings / Leg Armor** | [`leggings.png`](interfaces/slots/leggings.png) | Slot **A5** (Card A) |
-| **Boots / Footwear** | [`boots.png`](interfaces/slots/boots.png) | Slot **A6** (Card A) |
-| **Gloves / Gauntlets** | [`gloves.png`](interfaces/slots/gloves.png) | Slot **A7** (Card A) |
-| **Amulet / Necklace** | [`necklace.png`](interfaces/slots/necklace.png) | Slot **A8** (Card A) |
-| **Shield / Off-hand** | [`shield.png`](interfaces/slots/shield.png) | Slot **B42** (Inventory) / **Field 4** (Hotbar) |
-| **Quiver / Projectiles** | [`quiver.png`](interfaces/slots/quiver.png) | Slot **B52** (Inventory) / **Field 14** (Hotbar) |
-| **Backpack / Caddy** | [`backpack.png`](interfaces/slots/backpack.png) | Future expansion bag / extra storage slot |
-| **Tool Belt / Pouch** | [`belt.png`](interfaces/slots/belt.png) | Utility quick-belt accessory slot |
-| **Attribute Ring** | [`ring.png`](interfaces/slots/ring.png) | Finger ring / stat jewel slot |
-| **Magic Rune** | [`rune.png`](interfaces/slots/rune.png) | Runic socket / catalyst gem slot |
-| **Alchemy Potion** | [`potion.png`](interfaces/slots/potion.png) | Quick potion / elixir flask slot |
-| **Cape / Mantle / Glider** | [`cape.png`](interfaces/slots/cape.png) | Cosmetic mantle / cloak / gliding wing slot |
+| **Helmet / Headgear** | [`helmet.png`](interfaces/containers/slots/helmet.png) | Slot **A3** (Card A) |
+| **Chestplate / Torso Armor** | [`chestplate.png`](interfaces/containers/slots/chestplate.png) | Slot **A4** (Card A) |
+| **Leggings / Leg Armor** | [`leggings.png`](interfaces/containers/slots/leggings.png) | Slot **A5** (Card A) |
+| **Boots / Footwear** | [`boots.png`](interfaces/containers/slots/boots.png) | Slot **A6** (Card A) |
+| **Gloves / Gauntlets** | [`gloves.png`](interfaces/containers/slots/gloves.png) | Slot **A7** (Card A) |
+| **Amulet / Necklace** | [`necklace.png`](interfaces/containers/slots/necklace.png) | Slot **A8** (Card A) |
+| **Shield / Off-hand** | [`shield.png`](interfaces/containers/slots/shield.png) | Slot **B42** (Inventory) / **Field 4** (Hotbar) |
+| **Quiver / Projectiles** | [`quiver.png`](interfaces/containers/slots/quiver.png) | Slot **B52** (Inventory) / **Field 14** (Hotbar) |
+| **Backpack / Caddy** | [`backpack.png`](interfaces/containers/slots/backpack.png) | Future expansion bag / extra storage slot |
+| **Tool Belt / Pouch** | [`belt.png`](interfaces/containers/slots/belt.png) | Utility quick-belt accessory slot |
+| **Attribute Ring** | [`ring.png`](interfaces/containers/slots/ring.png) | Finger ring / stat jewel slot |
+| **Magic Rune** | [`rune.png`](interfaces/containers/slots/rune.png) | Runic socket / catalyst gem slot |
+| **Alchemy Potion** | [`potion.png`](interfaces/containers/slots/potion.png) | Quick potion / elixir flask slot |
+| **Cape / Mantle / Glider** | [`cape.png`](interfaces/containers/slots/cape.png) | Cosmetic mantle / cloak / gliding wing slot |
 
 ---
 

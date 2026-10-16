@@ -3,9 +3,16 @@ use bevy::{input::mouse::AccumulatedMouseScroll, prelude::*, ui::widget::TextSha
 use crate::core::{AppFont, text_shadow_default};
 use crate::gameplay::{BlockIcons, SelectedVoxel};
 use crate::player::InspectorInteraction;
+use crate::player::inventory::PlayerInventory;
 use crate::world::Voxel;
 
-pub const HOTBAR_SLOT_COUNT: usize = 8;
+pub const HOTBAR_SLOT_COUNT: usize = 9;
+
+pub const HOTBAR_SLOT_X_COORDS: [f32; HOTBAR_SLOT_COUNT] = [
+    65.0, 87.0, 109.0, 131.0, 153.0, 175.0, 197.0, 219.0, 241.0,
+];
+pub const HOTBAR_SLOT_Y: f32 = 14.0;
+pub const HOTBAR_SCALE: f32 = 3.0;
 
 #[derive(Resource, Debug, Clone)]
 pub struct Hotbar {
@@ -23,7 +30,8 @@ impl Default for Hotbar {
                 Some(Voxel::SandCommon),
                 Some(Voxel::LiquidWater),
                 Some(Voxel::EmitLightWarm),
-                None,
+                Some(Voxel::OakLog),
+                Some(Voxel::OakPlanks),
                 None,
             ],
             active_slot: 0,
@@ -37,6 +45,7 @@ pub const TOOLTIP_TOTAL_SECS: f32 = TOOLTIP_HOLD_SECS + TOOLTIP_FADE_SECS;
 
 #[derive(Component)]
 pub struct HotbarSlotUi {
+    #[allow(dead_code)]
     pub index: usize,
 }
 
@@ -44,6 +53,15 @@ pub struct HotbarSlotUi {
 pub struct HotbarSlotIcon {
     pub index: usize,
 }
+
+#[derive(Component)]
+pub struct HotbarOffhandIcon;
+
+#[derive(Component)]
+pub struct HotbarUtilityIcon;
+
+#[derive(Component)]
+pub struct HotbarSelectionBox;
 
 #[derive(Resource, Debug, Clone)]
 pub struct HotbarTooltipState {
@@ -95,17 +113,16 @@ fn setup_hotbar_ui(
     let initial_hotbar = Hotbar::default();
     let font_handle = app_font.as_ref().map(|f| f.source());
     let hotbar_texture = asset_server.load("textures/interfaces/containers/hotbar.png");
+    let selection_texture = asset_server.load("textures/interfaces/containers/hotbar_selection.png");
+    let shield_overlay = asset_server.load("textures/interfaces/containers/slots/shield.png");
+    let quiver_overlay = asset_server.load("textures/interfaces/containers/slots/quiver.png");
 
-    // Scale multiplier for hotbar UI rendering (3x integer scaling = 768x96 px)
-    const HOTBAR_SCALE: f32 = 3.0;
-    let tray_width = 256.0 * HOTBAR_SCALE;
-    let tray_height = 32.0 * HOTBAR_SCALE;
-    let slot_stride = 20.0 * HOTBAR_SCALE;
-    let slot_left_offset = 49.0 * HOTBAR_SCALE;
-    let slot_top = 7.0 * HOTBAR_SCALE;
-    let slot_size = 18.0 * HOTBAR_SCALE;
+    let tray_width = 320.0 * HOTBAR_SCALE;
+    let tray_height = 44.0 * HOTBAR_SCALE;
+    let slot_size = 16.0 * HOTBAR_SCALE;
     let icon_size = 16.0 * HOTBAR_SCALE;
-    let border_width = 1.0 * HOTBAR_SCALE;
+    let special_slot_size = 14.0 * HOTBAR_SCALE;
+    let selection_size = 20.0 * HOTBAR_SCALE;
 
     // Centered bottom container spanning screen width
     commands
@@ -149,7 +166,8 @@ fn setup_hotbar_ui(
                 Visibility::Hidden,
             ));
 
-            // Scaled hotbar texture (256x32 px at 3x = 768x96 px)
+            // Scaled hotbar texture (320x44 px at 3x = 960x132 px)
+            // NO mouse hover / NO mouse clicks in 3D gameplay
             parent
                 .spawn((
                     ImageNode {
@@ -164,21 +182,169 @@ fn setup_hotbar_ui(
                     },
                 ))
                 .with_children(|tray| {
+                    // Static Visual Progress Bars (Placeholders per specification)
+                    // Field 1: XP Progress Bar at (59, 4), 204x4 px
+                    tray.spawn(Node {
+                        position_type: PositionType::Absolute,
+                        left: px(59.0 * HOTBAR_SCALE),
+                        top: px(4.0 * HOTBAR_SCALE),
+                        width: px(204.0 * HOTBAR_SCALE),
+                        height: px(4.0 * HOTBAR_SCALE),
+                        ..default()
+                    })
+                    .with_children(|xp_bar| {
+                        // Static 45% level fill in ambient green
+                        xp_bar.spawn((
+                            Node {
+                                width: Val::Percent(45.0),
+                                height: Val::Percent(100.0),
+                                ..default()
+                            },
+                            BackgroundColor(Color::srgba(0.22, 0.78, 0.32, 0.75)),
+                        ));
+                    });
+
+                    // Field 17: Health Bar (HP) at (68, 36), 82x4 px
+                    tray.spawn(Node {
+                        position_type: PositionType::Absolute,
+                        left: px(68.0 * HOTBAR_SCALE),
+                        top: px(36.0 * HOTBAR_SCALE),
+                        width: px(82.0 * HOTBAR_SCALE),
+                        height: px(4.0 * HOTBAR_SCALE),
+                        ..default()
+                    })
+                    .with_children(|hp_bar| {
+                        // Static full health fill in crimson
+                        hp_bar.spawn((
+                            Node {
+                                width: Val::Percent(100.0),
+                                height: Val::Percent(100.0),
+                                ..default()
+                            },
+                            BackgroundColor(Color::srgba(0.85, 0.18, 0.18, 0.90)),
+                        ));
+                    });
+
+                    // Field 18: Mana / Stamina Bar at (172, 36), 82x4 px
+                    tray.spawn(Node {
+                        position_type: PositionType::Absolute,
+                        left: px(172.0 * HOTBAR_SCALE),
+                        top: px(36.0 * HOTBAR_SCALE),
+                        width: px(82.0 * HOTBAR_SCALE),
+                        height: px(4.0 * HOTBAR_SCALE),
+                        ..default()
+                    })
+                    .with_children(|mana_bar| {
+                        // Static full mana fill in azure
+                        mana_bar.spawn((
+                            Node {
+                                width: Val::Percent(100.0),
+                                height: Val::Percent(100.0),
+                                ..default()
+                            },
+                            BackgroundColor(Color::srgba(0.20, 0.45, 0.88, 0.90)),
+                        ));
+                    });
+
+                    // Non-clickable HUD wing indicator badges (Fields 2, 3, 15, 16)
+                    let badge_font = TextFont {
+                        font_size: FontSize::Px(10.0 * (HOTBAR_SCALE / 3.0)),
+                        ..default()
+                    };
+
+                    let badges = [
+                        (18.0, 25.0, "M"), // Field 2: Map
+                        (30.0, 24.0, "J"), // Field 3: Journal
+                        (284.0, 24.0, "C"), // Field 15: Craft
+                        (296.0, 25.0, "T"), // Field 16: Chat
+                    ];
+
+                    for (bx, by, label) in badges {
+                        let mut bf = badge_font.clone();
+                        if let Some(ref font) = font_handle {
+                            bf.font = font.clone();
+                        }
+                        tray.spawn((
+                            Node {
+                                position_type: PositionType::Absolute,
+                                left: px(bx * HOTBAR_SCALE),
+                                top: px(by * HOTBAR_SCALE),
+                                width: px(8.0 * HOTBAR_SCALE),
+                                height: px(8.0 * HOTBAR_SCALE),
+                                display: Display::Flex,
+                                justify_content: JustifyContent::Center,
+                                align_items: AlignItems::Center,
+                                ..default()
+                            },
+                        ))
+                        .with_children(|b| {
+                            b.spawn((
+                                Text::new(label),
+                                bf,
+                                TextColor(Color::srgba(0.68, 0.72, 0.78, 0.85)),
+                                text_shadow_default(),
+                            ));
+                        });
+                    }
+
+                    // Field 4: Off-hand Slot display at (45, 17), 14x14 px (non-clickable visual readout)
+                    tray.spawn(Node {
+                        position_type: PositionType::Absolute,
+                        left: px(45.0 * HOTBAR_SCALE),
+                        top: px(17.0 * HOTBAR_SCALE),
+                        width: px(special_slot_size),
+                        height: px(special_slot_size),
+                        display: Display::Flex,
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    })
+                    .with_children(|slot| {
+                        slot.spawn((
+                            HotbarOffhandIcon,
+                            ImageNode {
+                                image: shield_overlay,
+                                ..default()
+                            },
+                            Node {
+                                width: px(special_slot_size),
+                                height: px(special_slot_size),
+                                ..default()
+                            },
+                        ));
+                    });
+
+                    // Field 14: Quick Utility Slot display at (263, 17), 14x14 px (non-clickable visual readout)
+                    tray.spawn(Node {
+                        position_type: PositionType::Absolute,
+                        left: px(263.0 * HOTBAR_SCALE),
+                        top: px(17.0 * HOTBAR_SCALE),
+                        width: px(special_slot_size),
+                        height: px(special_slot_size),
+                        display: Display::Flex,
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    })
+                    .with_children(|slot| {
+                        slot.spawn((
+                            HotbarUtilityIcon,
+                            ImageNode {
+                                image: quiver_overlay,
+                                ..default()
+                            },
+                            Node {
+                                width: px(special_slot_size),
+                                height: px(special_slot_size),
+                                ..default()
+                            },
+                        ));
+                    });
+
+                    // Fields 5 to 13: 9 Primary Hotbar Item Slots (16x16 px)
                     for index in 0..HOTBAR_SLOT_COUNT {
-                        let is_active = index == initial_hotbar.active_slot;
                         let initial_voxel = initial_hotbar.slots[index];
-
-                        let border_color = if is_active {
-                            Color::srgb(1.0, 0.85, 0.30)
-                        } else {
-                            Color::NONE
-                        };
-
-                        let bg_color = if is_active {
-                            Color::srgba(1.0, 1.0, 1.0, 0.12)
-                        } else {
-                            Color::NONE
-                        };
+                        let slot_x = HOTBAR_SLOT_X_COORDS[index];
 
                         let icon_handle = initial_voxel
                             .map(|v| icons.get(v))
@@ -194,22 +360,18 @@ fn setup_hotbar_ui(
                             HotbarSlotUi { index },
                             Node {
                                 position_type: PositionType::Absolute,
-                                left: px(slot_left_offset + index as f32 * slot_stride),
-                                top: px(slot_top),
+                                left: px(slot_x * HOTBAR_SCALE),
+                                top: px(HOTBAR_SLOT_Y * HOTBAR_SCALE),
                                 width: px(slot_size),
                                 height: px(slot_size),
                                 display: Display::Flex,
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
-                                border: UiRect::all(px(border_width)),
-                                border_radius: BorderRadius::all(px(border_width)),
                                 ..default()
                             },
-                            BackgroundColor(bg_color),
-                            BorderColor::all(border_color),
                         ))
                         .with_children(|slot| {
-                            // Centered 2D item icon (rendered first, below slot number)
+                            // Centered 2D item icon
                             slot.spawn((
                                 HotbarSlotIcon { index },
                                 ImageNode {
@@ -224,9 +386,9 @@ fn setup_hotbar_ui(
                                 icon_visibility,
                             ));
 
-                            // Slot index number (1 through 8, rendered in front with ZIndex)
+                            // Slot index number (1 through 9, rendered in front with ZIndex)
                             let mut num_font = TextFont {
-                                font_size: FontSize::Px(16.0),
+                                font_size: FontSize::Px(12.0 * (HOTBAR_SCALE / 3.0)),
                                 ..default()
                             };
                             if let Some(ref font) = font_handle {
@@ -236,18 +398,37 @@ fn setup_hotbar_ui(
                             slot.spawn((
                                 Text::new(format!("{}", index + 1)),
                                 num_font,
-                                TextColor(Color::srgba(0.95, 0.95, 0.95, 0.90)),
+                                TextColor(Color::srgba(0.85, 0.88, 0.92, 0.85)),
                                 text_shadow_default(),
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    top: px(2.0),
-                                    left: px(4.0),
+                                    top: px(1.0 * HOTBAR_SCALE),
+                                    left: px(2.0 * HOTBAR_SCALE),
                                     ..default()
                                 },
                                 ZIndex(10),
                             ));
                         });
                     }
+
+                    // Active Selection Box (20x20 px bevel frame centered over active slot)
+                    let active_slot_x = HOTBAR_SLOT_X_COORDS[initial_hotbar.active_slot];
+                    tray.spawn((
+                        HotbarSelectionBox,
+                        ImageNode {
+                            image: selection_texture,
+                            ..default()
+                        },
+                        Node {
+                            position_type: PositionType::Absolute,
+                            left: px((active_slot_x - 2.0) * HOTBAR_SCALE),
+                            top: px((HOTBAR_SLOT_Y - 2.0) * HOTBAR_SCALE),
+                            width: px(selection_size),
+                            height: px(selection_size),
+                            ..default()
+                        },
+                        ZIndex(20),
+                    ));
                 });
         });
 }
@@ -274,6 +455,7 @@ fn handle_hotbar_input(
         KeyCode::Digit6,
         KeyCode::Digit7,
         KeyCode::Digit8,
+        KeyCode::Digit9,
     ];
 
     for (idx, key) in digit_keys.iter().enumerate() {
@@ -306,32 +488,57 @@ fn handle_hotbar_input(
 
 fn sync_hotbar_ui(
     hotbar: Res<Hotbar>,
+    player_inventory: Option<Res<PlayerInventory>>,
     icons: Res<BlockIcons>,
-    mut slot_query: Query<(&HotbarSlotUi, &mut BorderColor, &mut BackgroundColor)>,
+    asset_server: Res<AssetServer>,
+    mut selection_query: Query<&mut Node, (With<HotbarSelectionBox>, Without<HotbarSlotUi>)>,
     mut icon_query: Query<(&HotbarSlotIcon, &mut ImageNode, &mut Visibility)>,
+    mut offhand_query: Query<&mut ImageNode, (With<HotbarOffhandIcon>, Without<HotbarSlotIcon>)>,
+    mut utility_query: Query<
+        &mut ImageNode,
+        (
+            With<HotbarUtilityIcon>,
+            Without<HotbarSlotIcon>,
+            Without<HotbarOffhandIcon>,
+        ),
+    >,
 ) {
-    if !hotbar.is_changed() {
-        return;
+    // Update active selection box position
+    if let Ok(mut sel_node) = selection_query.single_mut() {
+        let slot_x = HOTBAR_SLOT_X_COORDS[hotbar.active_slot % HOTBAR_SLOT_COUNT];
+        sel_node.left = px((slot_x - 2.0) * HOTBAR_SCALE);
     }
 
-    for (slot, mut border_color, mut bg_color) in &mut slot_query {
-        if slot.index == hotbar.active_slot {
-            *border_color = BorderColor::all(Color::srgb(1.0, 0.85, 0.30));
-            bg_color.0 = Color::srgba(1.0, 1.0, 1.0, 0.12);
-        } else {
-            *border_color = BorderColor::all(Color::NONE);
-            bg_color.0 = Color::NONE;
+    if hotbar.is_changed() {
+        for (icon, mut img_node, mut visibility) in &mut icon_query {
+            match hotbar.slots[icon.index] {
+                Some(voxel) => {
+                    img_node.image = icons.get(voxel);
+                    *visibility = Visibility::Visible;
+                }
+                None => {
+                    *visibility = Visibility::Hidden;
+                }
+            }
         }
     }
 
-    for (icon, mut img_node, mut visibility) in &mut icon_query {
-        match hotbar.slots[icon.index] {
-            Some(voxel) => {
-                img_node.image = icons.get(voxel);
-                *visibility = Visibility::Visible;
+    // Sync offhand & utility slots from player inventory if changed
+    if let Some(ref inv) = player_inventory {
+        if inv.is_changed() {
+            if let Ok(mut offhand_img) = offhand_query.single_mut() {
+                if let Some(voxel) = inv.offhand_slot {
+                    offhand_img.image = icons.get(voxel);
+                } else {
+                    offhand_img.image = asset_server.load("textures/interfaces/containers/slots/shield.png");
+                }
             }
-            None => {
-                *visibility = Visibility::Hidden;
+            if let Ok(mut utility_img) = utility_query.single_mut() {
+                if let Some(voxel) = inv.utility_slot {
+                    utility_img.image = icons.get(voxel);
+                } else {
+                    utility_img.image = asset_server.load("textures/interfaces/containers/slots/quiver.png");
+                }
             }
         }
     }
@@ -383,6 +590,7 @@ fn update_hotbar_tooltip(
         KeyCode::Digit6,
         KeyCode::Digit7,
         KeyCode::Digit8,
+        KeyCode::Digit9,
     ];
 
     let explicit_key_press = digit_keys

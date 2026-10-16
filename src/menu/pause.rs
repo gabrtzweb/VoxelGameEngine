@@ -43,8 +43,8 @@ fn spawn_pause_menu(
     asset_server: Res<AssetServer>,
 ) {
     let font_handle = app_font.as_ref().map(|f| f.source());
-    let btn_normal = asset_server.load("textures/interfaces/containers/button.png");
-    let btn_hover = asset_server.load("textures/interfaces/containers/button_hover.png");
+    let btn_normal = asset_server.load("textures/interfaces/containers/button_large.png");
+    let btn_hover = asset_server.load("textures/interfaces/containers/button_large_hover.png");
 
     let mut title_font = TextFont {
         font_size: FontSize::Px(32.0),
@@ -189,7 +189,7 @@ fn spawn_menu_button(
                 ..default()
             },
             Node {
-                width: px(220.0),
+                width: px(240.0),
                 height: px(40.0),
                 display: Display::Flex,
                 justify_content: JustifyContent::Center,

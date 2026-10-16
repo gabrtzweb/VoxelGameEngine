@@ -10,7 +10,7 @@ More information about how the project works and future plans can be found at [p
 
 ## Current Game Controls
 
-    Mouse             Look'
+    Mouse             Look
 
     W                 Forward / Swim forward
     S                 Backward / Swim backward
@@ -26,17 +26,17 @@ More information about how the project works and future plans can be found at [p
     Z                 Camera Zoom (Hold Z + Mouse Wheel to adjust magnification)
 
     Left Mouse        Break block
-    Right Mouse       Place block
+    Right Mouse       Place block (3-axis directional placement for logs and pillars)
     Middle Mouse      Pick block
 
-    1 - 8             Hotbar slot selection
+    1 - 9             Hotbar slot selection (9 primary slots)
     Mouse Wheel       Scroll hotbar slots (when not zooming)
     Q                 Clear active hotbar slot
     R                 Block shape (Tap: cycle sequentially / Hold: 4-slice circular radial menu)
     T                 Rotate block shape 90° clockwise
 
-    ESC               Pause Menu With Settings
-    E                 Personal & Creative inventory
+    ESC               Pause Menu With Settings (unified obsidian/steel buttons)
+    E                 Personal & Creative Inventory (standardized 416x256 px 9-slot interface)
     M                 World Map (Full-screen interactive map, pan & zoom, player tracking)
 
     F1                Toggle Inspector (bevy_inspector_egui)
@@ -76,9 +76,11 @@ assets/
 
 docs/
 ├── worldbuilding/
+│   ├── blocks/
+│   ├── blocks_design.md
+│   └── interfaces_design.md
 ├── project_context.md
-├── project_roadmap.md
-└── world_definition.md
+└── project_roadmap.md
 
 src/
 ├── core/

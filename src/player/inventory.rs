@@ -2,24 +2,33 @@ use bevy::prelude::*;
 
 use crate::world::Voxel;
 
-pub const PLAYER_INVENTORY_COLS: usize = 8;
+pub const PLAYER_INVENTORY_COLS: usize = 9;
 pub const PLAYER_INVENTORY_ROWS: usize = 4;
-pub const PLAYER_INVENTORY_SLOTS: usize = PLAYER_INVENTORY_COLS * PLAYER_INVENTORY_ROWS; // 32 slots
+pub const PLAYER_INVENTORY_SLOTS: usize = PLAYER_INVENTORY_COLS * PLAYER_INVENTORY_ROWS; // 36 slots
 
-/// Represents the player's personal persistent inventory storage (8 columns x 4 rows).
+/// Represents the player's personal persistent inventory storage (9 columns x 4 rows)
+/// plus equipment and auxiliary slots.
 #[derive(Resource, Debug, Clone)]
 pub struct PlayerInventory {
     pub slots: [Option<Voxel>; PLAYER_INVENTORY_SLOTS],
+    pub offhand_slot: Option<Voxel>,
+    pub utility_slot: Option<Voxel>,
+    #[allow(dead_code)]
+    pub armor_slots: [Option<Voxel>; 6],
 }
 
 impl Default for PlayerInventory {
     fn default() -> Self {
         Self {
             slots: [None; PLAYER_INVENTORY_SLOTS],
+            offhand_slot: None,
+            utility_slot: None,
+            armor_slots: [None; 6],
         }
     }
 }
 
+#[allow(dead_code)]
 impl PlayerInventory {
     #[inline]
     pub fn get(&self, slot: usize) -> Option<Voxel> {

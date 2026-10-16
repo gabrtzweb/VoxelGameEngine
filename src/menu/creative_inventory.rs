@@ -4,45 +4,249 @@ use crate::{
     core::{AppFont, FontSource, text_shadow_default},
     gameplay::BlockIcons,
     player::hotbar::{HOTBAR_SLOT_COUNT, Hotbar},
-    player::inventory::PlayerInventory,
+    player::inventory::{PLAYER_INVENTORY_COLS, PLAYER_INVENTORY_ROWS, PLAYER_INVENTORY_SLOTS, PlayerInventory},
     world::Voxel,
 };
 
 use super::{HeldInventoryItem, MenuState};
 
-pub const GUI_SCALE: f32 = 3.5;
+pub const GUI_SCALE: f32 = 2.0;
 
-pub const INVENTORY_COLS: usize = 8;
-pub const INVENTORY_VISIBLE_ROWS: usize = 4;
+pub const WINDOW_WIDTH: f32 = 416.0 * GUI_SCALE;   // 832 px
+pub const WINDOW_HEIGHT: f32 = 256.0 * GUI_SCALE;  // 512 px
 
-// Central Inventory Panel base texture size (190 x 152 px)
-pub const INVENTORY_PANEL_TEX_W: f32 = 190.0;
-pub const INVENTORY_PANEL_TEX_H: f32 = 152.0;
+pub const CATALOG_COLS: usize = 9;
+pub const CATALOG_VISIBLE_ROWS: usize = 10;
+#[allow(dead_code)]
+pub const CATALOG_VISIBLE_SLOTS: usize = CATALOG_COLS * CATALOG_VISIBLE_ROWS; // 90 slots
+
+pub const INVENTORY_SLOT_X_COORDS: [f32; 9] = [
+    124.0, 143.0, 162.0, 181.0, 200.0, 219.0, 238.0, 257.0, 276.0,
+];
+pub const INVENTORY_ROW_Y_COORDS: [f32; 4] = [148.0, 166.0, 184.0, 202.0];
+pub const HOTBAR_ROW_Y: f32 = 227.0;
+
+pub const CATALOG_ROW_Y_COORDS: [f32; 10] = [
+    43.0, 61.0, 79.0, 97.0, 115.0, 133.0, 151.0, 169.0, 187.0, 205.0,
+];
 
 pub const AVAILABLE_BLOCKS: [Voxel; 720] = Voxel::ALL;
 
-pub fn filtered_creative_blocks(query: &str) -> Vec<Voxel> {
-    if query.trim().is_empty() {
-        return AVAILABLE_BLOCKS.to_vec();
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum CreativeCategory {
+    #[default]
+    Rocks,        // B2 (132, 8)
+    Trees,        // B3 (146, 8)
+    Soils,        // B4 (160, 8)
+    Ores,         // B5 (174, 8)
+    Caverns,      // B6 (188, 8)
+    Oceans,       // B7 (202, 8)
+    Organics,     // B8 (216, 8)
+    Decorations,  // B9 (230, 8)
+    Mushrooms,    // B10 (244, 8)
+    Vegetation,   // B11 (258, 8)
+    Fluids,       // B12 (272, 8)
+}
+
+impl CreativeCategory {
+    pub const ALL: [CreativeCategory; 11] = [
+        CreativeCategory::Rocks,
+        CreativeCategory::Trees,
+        CreativeCategory::Soils,
+        CreativeCategory::Ores,
+        CreativeCategory::Caverns,
+        CreativeCategory::Oceans,
+        CreativeCategory::Organics,
+        CreativeCategory::Decorations,
+        CreativeCategory::Mushrooms,
+        CreativeCategory::Vegetation,
+        CreativeCategory::Fluids,
+    ];
+
+    pub fn title(self) -> &'static str {
+        match self {
+            Self::Rocks => "Rocks & Geology",
+            Self::Trees => "Trees & Timber",
+            Self::Soils => "Soils & Terrain",
+            Self::Ores => "Ores & Minerals",
+            Self::Caverns => "Caverns & Crystals",
+            Self::Oceans => "Oceans & Marine",
+            Self::Organics => "Organics & Fauna",
+            Self::Decorations => "Decorations & Architecture",
+            Self::Mushrooms => "Mycology & Fungi",
+            Self::Vegetation => "Vegetation & Flora",
+            Self::Fluids => "Fluids & Systems",
+        }
     }
+
+    pub fn icon_voxel(self) -> Voxel {
+        match self {
+            Self::Rocks => Voxel::Dolomite,
+            Self::Trees => Voxel::OakLog,
+            Self::Soils => Voxel::LoamDirt,
+            Self::Ores => Voxel::OreCoalRaw,
+            Self::Caverns => Voxel::Limestone,
+            Self::Oceans => Voxel::SandCommon,
+            Self::Organics => Voxel::BoneBlock,
+            Self::Decorations => Voxel::BrickRed,
+            Self::Mushrooms => Voxel::FungiAmanita,
+            Self::Vegetation => Voxel::Seagrass,
+            Self::Fluids => Voxel::LiquidWater,
+        }
+    }
+
+    pub fn matches(self, voxel: Voxel) -> bool {
+        let id = voxel.id();
+        match self {
+            Self::Rocks => {
+                id.starts_with("rock_")
+                    || id.starts_with("stone_")
+                    || id.contains("dolomite")
+                    || id.contains("granite")
+                    || id.contains("basalt")
+                    || id.contains("andesite")
+                    || id.contains("diorite")
+                    || id.contains("slate")
+                    || id.contains("sandstone")
+                    || id.contains("limestone")
+                    || id.contains("marble")
+                    || id.contains("obsidian")
+                    || id.contains("cobblestone")
+            }
+            Self::Trees => {
+                id.starts_with("wood_")
+                    || id.starts_with("leaves_")
+                    || id.contains("log")
+                    || id.contains("plank")
+                    || id.contains("bark")
+                    || id.contains("branch")
+                    || id.contains("sapling")
+            }
+            Self::Soils => {
+                id.starts_with("soil_")
+                    || id.starts_with("sand_")
+                    || id.starts_with("gravel_")
+                    || id.contains("dirt")
+                    || id.contains("grass")
+                    || id.contains("mud")
+                    || id.contains("clay")
+                    || id.contains("peat")
+                    || id.contains("loam")
+                    || id.contains("laterite")
+            }
+            Self::Ores => {
+                id.starts_with("ore_")
+                    || id.starts_with("metal_")
+                    || id.contains("coal")
+                    || id.contains("copper")
+                    || id.contains("iron")
+                    || id.contains("gold")
+                    || id.contains("gem_")
+                    || id.contains("crystal")
+            }
+            Self::Caverns => {
+                id.starts_with("cavern_")
+                    || id.starts_with("dripstone_")
+                    || id.starts_with("frost_")
+                    || id.contains("stalactite")
+                    || id.contains("stalagmite")
+                    || id.contains("permafrost")
+            }
+            Self::Oceans => {
+                id.starts_with("ocean_")
+                    || id.starts_with("coral_")
+                    || id.starts_with("sponge_")
+                    || id.contains("reef")
+                    || id.contains("seaweed")
+                    || id.contains("kelp")
+                    || id.contains("marine")
+            }
+            Self::Organics => {
+                id.starts_with("organic_")
+                    || id.starts_with("bone_")
+                    || id.contains("flesh")
+                    || id.contains("bale")
+                    || id.contains("carcass")
+                    || id.contains("amber")
+                    || id.contains("slime")
+                    || id.contains("honey")
+            }
+            Self::Decorations => {
+                id.starts_with("deco_")
+                    || id.starts_with("brick_")
+                    || id.starts_with("glass_")
+                    || id.starts_with("lantern_")
+                    || id.starts_with("torch_")
+                    || id.contains("carpet")
+                    || id.contains("fence")
+                    || id.contains("gate")
+                    || id.contains("chain")
+                    || id.contains("pillar")
+                    || id.contains("barrel")
+                    || id.contains("pot")
+            }
+            Self::Mushrooms => {
+                id.starts_with("fungi_")
+                    || id.starts_with("mushroom_")
+                    || id.starts_with("spore_")
+                    || id.contains("mycelium")
+                    || id.contains("shroom")
+            }
+            Self::Vegetation => {
+                id.starts_with("plant_")
+                    || id.starts_with("flower_")
+                    || id.starts_with("crop_")
+                    || id.contains("flora")
+                    || id.contains("fern")
+                    || id.contains("vine")
+                    || id.contains("bush")
+                    || id.contains("wildflower")
+                    || id.contains("reed")
+                    || id.contains("bamboo")
+                    || id.contains("cactus")
+            }
+            Self::Fluids => {
+                id.starts_with("liquid_")
+                    || id.starts_with("fluid_")
+                    || id.starts_with("debug_")
+                    || id.starts_with("null_")
+                    || id.contains("water")
+                    || id.contains("lava")
+                    || id.contains("acid")
+                    || id.contains("magma")
+            }
+        }
+    }
+}
+
+pub fn filtered_creative_blocks(category: CreativeCategory, query: &str) -> Vec<Voxel> {
     let q = query.trim().to_lowercase();
     AVAILABLE_BLOCKS
         .iter()
         .copied()
         .filter(|&v| {
-            format!("{:?}", v).to_lowercase().contains(&q) || v.label().to_lowercase().contains(&q)
+            if v.is_empty() || v == Voxel::Occupied || v == Voxel::WaterOccupied {
+                return false;
+            }
+            if !q.is_empty() {
+                format!("{:?}", v).to_lowercase().contains(&q)
+                    || v.label().to_lowercase().contains(&q)
+                    || v.id().to_lowercase().contains(&q)
+            } else {
+                category.matches(v)
+            }
         })
         .collect()
 }
 
 pub fn total_filtered_rows(filtered_count: usize) -> usize {
     filtered_count
-        .div_ceil(INVENTORY_COLS)
-        .max(INVENTORY_VISIBLE_ROWS)
+        .div_ceil(CATALOG_COLS)
+        .max(CATALOG_VISIBLE_ROWS)
 }
 
 pub fn max_filtered_scroll(filtered_count: usize) -> usize {
-    total_filtered_rows(filtered_count).saturating_sub(INVENTORY_VISIBLE_ROWS)
+    total_filtered_rows(filtered_count).saturating_sub(CATALOG_VISIBLE_ROWS)
 }
 
 /// The active inventory view mode.
@@ -56,6 +260,7 @@ pub enum InventoryTab {
 #[derive(Resource, Default)]
 pub struct InventoryScrollState {
     pub scroll_row: usize,
+    #[allow(dead_code)]
     pub is_dragging_thumb: bool,
 }
 
@@ -67,6 +272,9 @@ pub struct CreativeSearchQuery {
     pub selection: Option<(usize, usize)>,
 }
 
+#[derive(Resource, Default, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ActiveCreativeCategory(pub CreativeCategory);
+
 #[derive(Component)]
 pub struct CreativeSearchBar;
 
@@ -77,53 +285,89 @@ pub struct CreativeSearchText;
 pub struct InventoryMenuEntity;
 
 #[derive(Component)]
-struct InventoryMenuRoot;
+pub struct InventoryMenuRoot;
 
 #[derive(Component)]
-struct InventoryCard;
+pub struct InventoryCard;
 
 #[derive(Component)]
-struct InventoryTabButton {
-    tab: InventoryTab,
+pub struct InventoryToggleTabButton;
+
+#[derive(Component)]
+pub struct CategoryTabButton {
+    pub category: CreativeCategory,
 }
 
 #[derive(Component)]
-struct InventoryTabButtonText {
-    tab: InventoryTab,
+pub struct CategoryTabSelectionDock;
+
+#[derive(Component)]
+pub struct InventoryCatalogSlot {
+    #[allow(dead_code)]
+    pub slot_index: usize,
+    pub voxel: Option<Voxel>,
 }
 
 #[derive(Component)]
-struct InventoryPaletteSlot {
-    slot_index: usize,
-    voxel: Option<Voxel>,
+pub struct InventoryCatalogSlotIcon {
+    #[allow(dead_code)]
+    pub slot_index: usize,
 }
 
 #[derive(Component)]
-struct InventoryPaletteSlotIcon {
-    slot_index: usize,
+pub struct PlayerStorageSlot {
+    pub slot_index: usize,
 }
 
 #[derive(Component)]
-struct InventoryScrollTrack;
-
-#[derive(Component)]
-struct InventoryScrollThumb;
-
-#[derive(Component)]
-struct InventoryHotbarSlot {
-    index: usize,
+pub struct PlayerStorageSlotIcon {
+    pub slot_index: usize,
 }
 
 #[derive(Component)]
-struct InventoryHotbarSlotIcon {
-    index: usize,
+pub struct InventoryOffhandSlot;
+
+#[derive(Component)]
+pub struct InventoryUtilitySlot;
+
+#[derive(Component)]
+pub struct InventoryOffhandIcon;
+
+#[derive(Component)]
+pub struct InventoryUtilityIcon;
+
+#[derive(Component)]
+pub struct InventoryHotbarSlot {
+    pub index: usize,
 }
+
+#[derive(Component)]
+pub struct InventoryHotbarSlotIcon {
+    pub index: usize,
+}
+
+#[derive(Component)]
+pub struct SlotHoverHighlight;
+
+#[derive(Component)]
+pub struct InventoryScrollTrack;
+
+#[derive(Component)]
+pub struct InventoryScrollThumb;
 
 #[derive(Component)]
 pub struct InventoryTooltipBox;
 
 #[derive(Component)]
 pub struct InventoryTooltipText;
+
+#[derive(Component)]
+pub enum InventoryAction {
+    Sort,
+    Trash,
+    Options,
+    Lock,
+}
 
 pub struct InventoryMenuPlugin;
 
@@ -132,15 +376,18 @@ impl Plugin for InventoryMenuPlugin {
         app.init_resource::<InventoryScrollState>()
             .init_resource::<InventoryTab>()
             .init_resource::<CreativeSearchQuery>()
+            .init_resource::<ActiveCreativeCategory>()
             .add_systems(OnEnter(MenuState::Inventory), spawn_inventory_menu)
             .add_systems(OnExit(MenuState::Inventory), despawn_inventory_menu)
             .add_systems(
                 Update,
                 (
                     handle_inventory_tab_key,
-                    handle_inventory_tab_interaction,
+                    handle_creative_toggle_interaction,
+                    handle_category_tab_interaction,
                     handle_creative_search_input,
                     handle_inventory_scroll,
+                    handle_inventory_action_buttons,
                     handle_inventory_slot_interaction,
                     update_inventory_tooltip,
                     sync_inventory_hotbar_icons,
@@ -158,6 +405,7 @@ fn spawn_inventory_menu(
     player_inv: Res<PlayerInventory>,
     icons: Res<BlockIcons>,
     tab_state: Res<InventoryTab>,
+    active_cat: Res<ActiveCreativeCategory>,
     scroll_state: Res<InventoryScrollState>,
     search_query: Res<CreativeSearchQuery>,
     app_font: Option<Res<AppFont>>,
@@ -169,10 +417,17 @@ fn spawn_inventory_menu(
         &player_inv,
         &icons,
         *tab_state,
+        active_cat.0,
         &scroll_state,
         &search_query,
         app_font.as_ref().map(|f| f.source()),
     );
+}
+
+fn despawn_inventory_menu(mut commands: Commands, query: Query<Entity, With<InventoryMenuRoot>>) {
+    for entity in &query {
+        commands.entity(entity).despawn();
+    }
 }
 
 fn build_inventory_ui(
@@ -182,6 +437,7 @@ fn build_inventory_ui(
     player_inv: &PlayerInventory,
     icons: &BlockIcons,
     current_tab: InventoryTab,
+    active_cat: CreativeCategory,
     scroll_state: &InventoryScrollState,
     search_query: &CreativeSearchQuery,
     font_source: Option<FontSource>,
@@ -197,13 +453,18 @@ fn build_inventory_ui(
         tf
     };
 
-    let inv_tex = asset_server.load("textures/interfaces/containers/inventory.png");
-    let cre_tex = asset_server.load("textures/interfaces/containers/inventory_creative.png");
-    let scr_tex = asset_server.load("textures/interfaces/containers/inventory_scroller.png");
+    let closed_tex = asset_server.load("textures/interfaces/containers/inventory_creative_closed.png");
+    let open_tex = asset_server.load("textures/interfaces/containers/inventory_creative_open.png");
+    let scroller_tex = asset_server.load("textures/interfaces/containers/inventory_creative_scroller.png");
+    let tab_select_tex = asset_server.load("textures/interfaces/containers/inventory_creative_tab_selection.png");
+    let slot_hover_tex = asset_server.load("textures/interfaces/containers/inventory_slot_hover.png");
+    let special_hover_tex = asset_server.load("textures/interfaces/containers/inventory_slot_special_hover.png");
+    let btn_util_tex = asset_server.load("textures/interfaces/containers/button_util.png");
 
-    let tab_font = make_font(16.0);
-    let title_font = make_font(16.0);
-    let btn_font = make_font(16.0);
+    let shield_overlay = asset_server.load("textures/interfaces/containers/slots/shield.png");
+    let quiver_overlay = asset_server.load("textures/interfaces/containers/slots/quiver.png");
+
+    let title_font = make_font(12.0 * GUI_SCALE);
 
     commands
         .spawn((
@@ -220,199 +481,143 @@ fn build_inventory_ui(
                 align_items: AlignItems::Center,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.55)),
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.60)),
             ZIndex(300),
         ))
         .with_children(|backdrop| {
-            // Main Central Panel (190 x 152 px base image)
+            // Main Central Panel (416 x 256 px scaled to 832 x 512 px)
             backdrop
                 .spawn((
                     InventoryMenuEntity,
                     InventoryCard,
                     ImageNode {
                         image: if current_tab == InventoryTab::Creative {
-                            cre_tex.clone()
+                            open_tex.clone()
                         } else {
-                            inv_tex.clone()
+                            closed_tex.clone()
                         },
                         ..default()
                     },
                     Node {
-                        width: px(INVENTORY_PANEL_TEX_W * GUI_SCALE), // 570.0 px
-                        height: px(INVENTORY_PANEL_TEX_H * GUI_SCALE), // 456.0 px
+                        width: px(WINDOW_WIDTH),
+                        height: px(WINDOW_HEIGHT),
                         position_type: PositionType::Relative,
                         ..default()
                     },
                 ))
                 .with_children(|card| {
-                    // 1. Two Top Toggle Buttons (Mode Switcher above both interfaces)
-                    // Button 1: Personal Mode (X=21..92, Y=1..14)
-                    card.spawn((
-                        InventoryMenuEntity,
-                        Button,
-                        InventoryTabButton {
-                            tab: InventoryTab::Player,
-                        },
-                        Node {
-                            position_type: PositionType::Absolute,
-                            left: px(21.0 * GUI_SCALE),   // 63.0
-                            top: px(1.0 * GUI_SCALE),     // 3.0
-                            width: px(72.0 * GUI_SCALE),  // 216.0
-                            height: px(14.0 * GUI_SCALE), // 42.0
-                            display: Display::Flex,
-                            align_items: AlignItems::Center,
-                            justify_content: JustifyContent::Center,
-                            ..default()
-                        },
-                        BackgroundColor(Color::NONE),
-                        BorderColor::all(Color::NONE),
-                    ))
-                    .with_children(|btn| {
-                        btn.spawn((
-                            InventoryMenuEntity,
-                            InventoryTabButtonText {
-                                tab: InventoryTab::Player,
-                            },
-                            Text::new("Personal"),
-                            tab_font.clone(),
-                            TextColor(if current_tab == InventoryTab::Player {
-                                Color::srgb(1.0, 0.90, 0.40)
-                            } else {
-                                Color::srgb(0.70, 0.72, 0.78)
-                            }),
-                            text_shadow_default(),
-                        ));
-                    });
-
-                    // Button 2: Creative Mode (X=97..168, Y=1..14)
-                    card.spawn((
-                        InventoryMenuEntity,
-                        Button,
-                        InventoryTabButton {
-                            tab: InventoryTab::Creative,
-                        },
-                        Node {
-                            position_type: PositionType::Absolute,
-                            left: px(97.0 * GUI_SCALE),   // 291.0
-                            top: px(1.0 * GUI_SCALE),     // 3.0
-                            width: px(72.0 * GUI_SCALE),  // 216.0
-                            height: px(14.0 * GUI_SCALE), // 42.0
-                            display: Display::Flex,
-                            align_items: AlignItems::Center,
-                            justify_content: JustifyContent::Center,
-                            ..default()
-                        },
-                        BackgroundColor(Color::NONE),
-                        BorderColor::all(Color::NONE),
-                    ))
-                    .with_children(|btn| {
-                        btn.spawn((
-                            InventoryMenuEntity,
-                            InventoryTabButtonText {
-                                tab: InventoryTab::Creative,
-                            },
-                            Text::new("Creative"),
-                            tab_font,
-                            TextColor(if current_tab == InventoryTab::Creative {
-                                Color::srgb(1.0, 0.90, 0.40)
-                            } else {
-                                Color::srgb(0.70, 0.72, 0.78)
-                            }),
-                            text_shadow_default(),
-                        ));
-                    });
-
-                    // 2. Title Area (X=22..90, Y=32..43)
-                    card.spawn((
-                        InventoryMenuEntity,
-                        Node {
-                            position_type: PositionType::Absolute,
-                            left: px(22.0 * GUI_SCALE),   // 66.0
-                            top: px(32.0 * GUI_SCALE),    // 96.0
-                            width: px(75.0 * GUI_SCALE),  // 225.0
-                            height: px(12.0 * GUI_SCALE), // 36.0
-                            display: Display::Flex,
-                            align_items: AlignItems::Center,
-                            padding: UiRect::left(px(6.0)),
-                            ..default()
-                        },
-                    ))
-                    .with_children(|title_box| {
-                        let title_text = match current_tab {
-                            InventoryTab::Player => "Personal Inventory",
-                            InventoryTab::Creative => "Creative Inventory",
-                        };
-                        title_box.spawn((
-                            InventoryMenuEntity,
-                            Text::new(title_text),
-                            title_font,
-                            TextColor(Color::srgb(0.92, 0.92, 0.95)),
-                            text_shadow_default(),
-                        ));
-                    });
-
                     match current_tab {
                         InventoryTab::Player => {
-                            // Section for two buttons (currently non-functional)
-                            // Button A: X=138..149, Y=32..43
+                            // ==========================================
+                            // 1. INVENTORY_CREATIVE_CLOSED
+                            // ==========================================
+
+                            // Creative Toggle Tab B1: (118, 116), 10x10 px
                             card.spawn((
                                 InventoryMenuEntity,
                                 Button,
+                                InventoryToggleTabButton,
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    left: px(138.0 * GUI_SCALE),  // 414.0
-                                    top: px(32.0 * GUI_SCALE),    // 96.0
-                                    width: px(12.0 * GUI_SCALE),  // 36.0
-                                    height: px(12.0 * GUI_SCALE), // 36.0
-                                    display: Display::Flex,
-                                    justify_content: JustifyContent::Center,
-                                    align_items: AlignItems::Center,
+                                    left: px(118.0 * GUI_SCALE),
+                                    top: px(116.0 * GUI_SCALE),
+                                    width: px(10.0 * GUI_SCALE),
+                                    height: px(10.0 * GUI_SCALE),
                                     ..default()
                                 },
                                 BackgroundColor(Color::NONE),
+                            ));
+
+                            // Title Header Plate B2: (121, 135), 60x8 px
+                            card.spawn((
+                                InventoryMenuEntity,
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    left: px(121.0 * GUI_SCALE),
+                                    top: px(134.0 * GUI_SCALE),
+                                    width: px(60.0 * GUI_SCALE),
+                                    height: px(8.0 * GUI_SCALE),
+                                    display: Display::Flex,
+                                    align_items: AlignItems::Center,
+                                    justify_content: JustifyContent::Center,
+                                    ..default()
+                                },
                             ))
-                            .with_children(|b1| {
-                                b1.spawn((
+                            .with_children(|header| {
+                                header.spawn((
                                     InventoryMenuEntity,
-                                    Text::new("B"),
-                                    btn_font.clone(),
-                                    TextColor(Color::srgba(0.85, 0.85, 0.90, 0.70)),
+                                    Text::new("Inventory"),
+                                    title_font.clone(),
+                                    TextColor(Color::srgb(0.90, 0.90, 0.95)),
                                     text_shadow_default(),
                                 ));
                             });
 
-                            // Button B: X=156..167, Y=32..43
-                            card.spawn((
-                                InventoryMenuEntity,
-                                Button,
-                                Node {
-                                    position_type: PositionType::Absolute,
-                                    left: px(156.0 * GUI_SCALE),  // 468.0
-                                    top: px(32.0 * GUI_SCALE),    // 96.0
-                                    width: px(12.0 * GUI_SCALE),  // 36.0
-                                    height: px(12.0 * GUI_SCALE), // 36.0
-                                    display: Display::Flex,
-                                    justify_content: JustifyContent::Center,
-                                    align_items: AlignItems::Center,
-                                    ..default()
-                                },
-                                BackgroundColor(Color::NONE),
-                            ))
-                            .with_children(|b2| {
-                                b2.spawn((
-                                    InventoryMenuEntity,
-                                    Text::new("B"),
-                                    btn_font,
-                                    TextColor(Color::srgba(0.85, 0.85, 0.90, 0.70)),
-                                    text_shadow_default(),
-                                ));
-                            });
+                            // Action Buttons B3..B6: (268, 278, 288, 298, 135), 8x8 px
+                            let actions = [
+                                (268.0, InventoryAction::Sort),
+                                (278.0, InventoryAction::Trash),
+                                (288.0, InventoryAction::Options),
+                                (298.0, InventoryAction::Lock),
+                            ];
 
-                            // 8x4 Grid Slots for PlayerInventory
-                            for r in 0..INVENTORY_VISIBLE_ROWS {
-                                for c in 0..INVENTORY_COLS {
-                                    let slot_idx = r * INVENTORY_COLS + c;
-                                    let voxel = player_inv.get(slot_idx);
+                            for (btn_x, action) in actions {
+                                card.spawn((
+                                    InventoryMenuEntity,
+                                    Button,
+                                    action,
+                                    ImageNode {
+                                        image: btn_util_tex.clone(),
+                                        ..default()
+                                    },
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        left: px(btn_x * GUI_SCALE),
+                                        top: px(135.0 * GUI_SCALE),
+                                        width: px(8.0 * GUI_SCALE),
+                                        height: px(8.0 * GUI_SCALE),
+                                        ..default()
+                                    },
+                                ));
+                            }
+
+                            // Card A: Player Character & Armor Slots (Visual Placeholders)
+                            // Armor slots A3..A8 (14x14 px)
+                            let armor_slots = [
+                                (25.0, 210.0, "helmet.png"),
+                                (42.0, 210.0, "chestplate.png"),
+                                (59.0, 210.0, "leggings.png"),
+                                (25.0, 226.0, "boots.png"),
+                                (42.0, 226.0, "gloves.png"),
+                                (59.0, 226.0, "necklace.png"),
+                            ];
+
+                            for (ax, ay, overlay_name) in armor_slots {
+                                card.spawn((
+                                    InventoryMenuEntity,
+                                    ImageNode {
+                                        image: asset_server.load(format!("textures/interfaces/containers/slots/{overlay_name}")),
+                                        ..default()
+                                    },
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        left: px(ax * GUI_SCALE),
+                                        top: px(ay * GUI_SCALE),
+                                        width: px(14.0 * GUI_SCALE),
+                                        height: px(14.0 * GUI_SCALE),
+                                        ..default()
+                                    },
+                                ));
+                            }
+
+                            // Card B: 36 Main Inventory Slots B7..B42 (4 rows of 9)
+                            for row in 0..PLAYER_INVENTORY_ROWS {
+                                for col in 0..PLAYER_INVENTORY_COLS {
+                                    let slot_idx = row * PLAYER_INVENTORY_COLS + col;
+                                    let slot_x = INVENTORY_SLOT_X_COORDS[col];
+                                    let slot_y = INVENTORY_ROW_Y_COORDS[row];
+
+                                    let voxel = player_inv.slots.get(slot_idx).copied().flatten();
                                     let icon_handle = voxel
                                         .map(|v| icons.get(v))
                                         .unwrap_or_else(|| icons.get(Voxel::Dolomite));
@@ -422,130 +627,432 @@ fn build_inventory_ui(
                                         Visibility::Hidden
                                     };
 
-                                    let slot_left = (24.0 + c as f32 * 18.0) * GUI_SCALE;
-                                    let slot_top = (52.0 + r as f32 * 18.0) * GUI_SCALE;
-
                                     card.spawn((
                                         InventoryMenuEntity,
                                         Button,
-                                        InventoryPaletteSlot {
-                                            slot_index: slot_idx,
-                                            voxel,
-                                        },
+                                        PlayerStorageSlot { slot_index: slot_idx },
                                         Node {
                                             position_type: PositionType::Absolute,
-                                            left: px(slot_left),
-                                            top: px(slot_top),
+                                            left: px(slot_x * GUI_SCALE),
+                                            top: px(slot_y * GUI_SCALE),
                                             width: px(16.0 * GUI_SCALE),
                                             height: px(16.0 * GUI_SCALE),
                                             display: Display::Flex,
                                             justify_content: JustifyContent::Center,
                                             align_items: AlignItems::Center,
-                                            border: UiRect::all(px(2.0)),
-                                            border_radius: BorderRadius::all(px(2.0)),
                                             ..default()
                                         },
                                         BackgroundColor(Color::NONE),
-                                        BorderColor::all(Color::NONE),
                                     ))
                                     .with_children(|slot| {
+                                        // Item Icon
                                         slot.spawn((
                                             InventoryMenuEntity,
-                                            InventoryPaletteSlotIcon {
-                                                slot_index: slot_idx,
-                                            },
+                                            PlayerStorageSlotIcon { slot_index: slot_idx },
                                             ImageNode {
                                                 image: icon_handle,
                                                 ..default()
                                             },
                                             Node {
-                                                width: px(36.0),
-                                                height: px(36.0),
+                                                width: px(16.0 * GUI_SCALE),
+                                                height: px(16.0 * GUI_SCALE),
                                                 ..default()
                                             },
                                             icon_vis,
                                         ));
+
+                                        // Slot Hover Highlight Overlay (16x16 px)
+                                        slot.spawn((
+                                            InventoryMenuEntity,
+                                            SlotHoverHighlight,
+                                            ImageNode {
+                                                image: slot_hover_tex.clone(),
+                                                ..default()
+                                            },
+                                            Node {
+                                                position_type: PositionType::Absolute,
+                                                left: px(0.0),
+                                                top: px(0.0),
+                                                width: px(16.0 * GUI_SCALE),
+                                                height: px(16.0 * GUI_SCALE),
+                                                ..default()
+                                            },
+                                            ZIndex(10),
+                                            Visibility::Hidden,
+                                        ));
                                     });
                                 }
                             }
+
+                            // Card B: Off-hand Slot B43 at (104, 228), 14x14 px
+                            let offhand_voxel = player_inv.offhand_slot;
+                            let offhand_img = offhand_voxel
+                                .map(|v| icons.get(v))
+                                .unwrap_or_else(|| shield_overlay.clone());
+
+                            card.spawn((
+                                InventoryMenuEntity,
+                                Button,
+                                InventoryOffhandSlot,
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    left: px(104.0 * GUI_SCALE),
+                                    top: px(228.0 * GUI_SCALE),
+                                    width: px(14.0 * GUI_SCALE),
+                                    height: px(14.0 * GUI_SCALE),
+                                    display: Display::Flex,
+                                    justify_content: JustifyContent::Center,
+                                    align_items: AlignItems::Center,
+                                    ..default()
+                                },
+                                BackgroundColor(Color::NONE),
+                            ))
+                            .with_children(|slot| {
+                                slot.spawn((
+                                    InventoryMenuEntity,
+                                    InventoryOffhandIcon,
+                                    ImageNode {
+                                        image: offhand_img,
+                                        ..default()
+                                    },
+                                    Node {
+                                        width: px(14.0 * GUI_SCALE),
+                                        height: px(14.0 * GUI_SCALE),
+                                        ..default()
+                                    },
+                                ));
+
+                                slot.spawn((
+                                    InventoryMenuEntity,
+                                    SlotHoverHighlight,
+                                    ImageNode {
+                                        image: special_hover_tex.clone(),
+                                        ..default()
+                                    },
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        left: px(0.0),
+                                        top: px(0.0),
+                                        width: px(14.0 * GUI_SCALE),
+                                        height: px(14.0 * GUI_SCALE),
+                                        ..default()
+                                    },
+                                    ZIndex(10),
+                                    Visibility::Hidden,
+                                ));
+                            });
+
+                            // Card B: Quick Utility Slot B53 at (298, 228), 14x14 px
+                            let util_voxel = player_inv.utility_slot;
+                            let util_img = util_voxel
+                                .map(|v| icons.get(v))
+                                .unwrap_or_else(|| quiver_overlay.clone());
+
+                            card.spawn((
+                                InventoryMenuEntity,
+                                Button,
+                                InventoryUtilitySlot,
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    left: px(298.0 * GUI_SCALE),
+                                    top: px(228.0 * GUI_SCALE),
+                                    width: px(14.0 * GUI_SCALE),
+                                    height: px(14.0 * GUI_SCALE),
+                                    display: Display::Flex,
+                                    justify_content: JustifyContent::Center,
+                                    align_items: AlignItems::Center,
+                                    ..default()
+                                },
+                                BackgroundColor(Color::NONE),
+                            ))
+                            .with_children(|slot| {
+                                slot.spawn((
+                                    InventoryMenuEntity,
+                                    InventoryUtilityIcon,
+                                    ImageNode {
+                                        image: util_img,
+                                        ..default()
+                                    },
+                                    Node {
+                                        width: px(14.0 * GUI_SCALE),
+                                        height: px(14.0 * GUI_SCALE),
+                                        ..default()
+                                    },
+                                ));
+
+                                slot.spawn((
+                                    InventoryMenuEntity,
+                                    SlotHoverHighlight,
+                                    ImageNode {
+                                        image: special_hover_tex.clone(),
+                                        ..default()
+                                    },
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        left: px(0.0),
+                                        top: px(0.0),
+                                        width: px(14.0 * GUI_SCALE),
+                                        height: px(14.0 * GUI_SCALE),
+                                        ..default()
+                                    },
+                                    ZIndex(10),
+                                    Visibility::Hidden,
+                                ));
+                            });
+
+                            // Card B: Mirrored 9 Hotbar Slots B44..B52 at (124..276, 227), 16x16 px
+                            for c in 0..HOTBAR_SLOT_COUNT {
+                                let slot_voxel = hotbar.slots[c];
+                                let icon_handle = slot_voxel
+                                    .map(|v| icons.get(v))
+                                    .unwrap_or_else(|| icons.get(Voxel::Dolomite));
+                                let icon_vis = if slot_voxel.is_some() {
+                                    Visibility::Visible
+                                } else {
+                                    Visibility::Hidden
+                                };
+
+                                let slot_x = INVENTORY_SLOT_X_COORDS[c];
+
+                                card.spawn((
+                                    InventoryMenuEntity,
+                                    Button,
+                                    InventoryHotbarSlot { index: c },
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        left: px(slot_x * GUI_SCALE),
+                                        top: px(HOTBAR_ROW_Y * GUI_SCALE),
+                                        width: px(16.0 * GUI_SCALE),
+                                        height: px(16.0 * GUI_SCALE),
+                                        display: Display::Flex,
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    BackgroundColor(Color::NONE),
+                                ))
+                                .with_children(|slot| {
+                                    slot.spawn((
+                                        InventoryMenuEntity,
+                                        InventoryHotbarSlotIcon { index: c },
+                                        ImageNode {
+                                            image: icon_handle,
+                                            ..default()
+                                        },
+                                        Node {
+                                            width: px(16.0 * GUI_SCALE),
+                                            height: px(16.0 * GUI_SCALE),
+                                            ..default()
+                                        },
+                                        icon_vis,
+                                    ));
+
+                                    slot.spawn((
+                                        InventoryMenuEntity,
+                                        SlotHoverHighlight,
+                                        ImageNode {
+                                            image: slot_hover_tex.clone(),
+                                            ..default()
+                                        },
+                                        Node {
+                                            position_type: PositionType::Absolute,
+                                            left: px(0.0),
+                                            top: px(0.0),
+                                            width: px(16.0 * GUI_SCALE),
+                                            height: px(16.0 * GUI_SCALE),
+                                            ..default()
+                                        },
+                                        ZIndex(10),
+                                        Visibility::Hidden,
+                                    ));
+
+                                    // Slot index number (1 through 9)
+                                    let num_font = make_font(8.0 * GUI_SCALE);
+                                    slot.spawn((
+                                        InventoryMenuEntity,
+                                        Text::new(format!("{}", c + 1)),
+                                        num_font,
+                                        TextColor(Color::srgba(0.85, 0.88, 0.92, 0.80)),
+                                        text_shadow_default(),
+                                        Node {
+                                            position_type: PositionType::Absolute,
+                                            top: px(1.0 * GUI_SCALE),
+                                            left: px(2.0 * GUI_SCALE),
+                                            ..default()
+                                        },
+                                        ZIndex(15),
+                                    ));
+                                });
+                            }
                         }
                         InventoryTab::Creative => {
-                            // Search Bar: X=98..168, Y=32..43
+                            // ==========================================
+                            // 2. INVENTORY_CREATIVE_OPEN
+                            // ==========================================
+
+                            // Creative Toggle Tab B1: (118, 8), 10x10 px (click to collapse)
+                            card.spawn((
+                                InventoryMenuEntity,
+                                Button,
+                                InventoryToggleTabButton,
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    left: px(118.0 * GUI_SCALE),
+                                    top: px(8.0 * GUI_SCALE),
+                                    width: px(10.0 * GUI_SCALE),
+                                    height: px(10.0 * GUI_SCALE),
+                                    ..default()
+                                },
+                                BackgroundColor(Color::NONE),
+                            ));
+
+                            // Active Tab Selection Dock: docked over active category tab
+                            let active_idx = CreativeCategory::ALL
+                                .iter()
+                                .position(|&c| c == active_cat)
+                                .unwrap_or(0);
+                            let active_tab_x = 132.0 + active_idx as f32 * 14.0;
+
+                            card.spawn((
+                                InventoryMenuEntity,
+                                CategoryTabSelectionDock,
+                                ImageNode {
+                                    image: tab_select_tex.clone(),
+                                    ..default()
+                                },
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    left: px((active_tab_x - 2.0) * GUI_SCALE),
+                                    top: px(6.0 * GUI_SCALE),
+                                    width: px(16.0 * GUI_SCALE),
+                                    height: px(16.0 * GUI_SCALE),
+                                    ..default()
+                                },
+                                ZIndex(15),
+                            ));
+
+                            // 11 Category Tabs B2..B12: (132..272, 8), 12x12 px with 3D block icons
+                            for (idx, &cat) in CreativeCategory::ALL.iter().enumerate() {
+                                let tab_x = 132.0 + idx as f32 * 14.0;
+                                let tab_icon = icons.get(cat.icon_voxel());
+
+                                card.spawn((
+                                    InventoryMenuEntity,
+                                    Button,
+                                    CategoryTabButton { category: cat },
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        left: px(tab_x * GUI_SCALE),
+                                        top: px(8.0 * GUI_SCALE),
+                                        width: px(12.0 * GUI_SCALE),
+                                        height: px(12.0 * GUI_SCALE),
+                                        display: Display::Flex,
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    BackgroundColor(Color::NONE),
+                                    ZIndex(20),
+                                ))
+                                .with_children(|tab| {
+                                    tab.spawn((
+                                        InventoryMenuEntity,
+                                        ImageNode {
+                                            image: tab_icon,
+                                            ..default()
+                                        },
+                                        Node {
+                                            width: px(12.0 * GUI_SCALE),
+                                            height: px(12.0 * GUI_SCALE),
+                                            ..default()
+                                        },
+                                    ));
+                                });
+                            }
+
+                            // Category Title Header Plate B13: (121, 27), 60x8 px
+                            card.spawn((
+                                InventoryMenuEntity,
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    left: px(121.0 * GUI_SCALE),
+                                    top: px(27.0 * GUI_SCALE),
+                                    width: px(70.0 * GUI_SCALE),
+                                    height: px(8.0 * GUI_SCALE),
+                                    display: Display::Flex,
+                                    align_items: AlignItems::Center,
+                                    padding: UiRect::left(px(2.0 * GUI_SCALE)),
+                                    ..default()
+                                },
+                            ))
+                            .with_children(|header| {
+                                header.spawn((
+                                    InventoryMenuEntity,
+                                    Text::new(active_cat.title()),
+                                    make_font(7.5 * GUI_SCALE),
+                                    TextColor(Color::srgb(0.92, 0.92, 0.96)),
+                                    text_shadow_default(),
+                                ));
+                            });
+
+                            // Live Search Box B14: (223, 27), 72x8 px
                             card.spawn((
                                 InventoryMenuEntity,
                                 Button,
                                 CreativeSearchBar,
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    left: px(98.0 * GUI_SCALE),   // 294.0
-                                    top: px(32.0 * GUI_SCALE),    // 96.0
-                                    width: px(71.0 * GUI_SCALE),  // 213.0
-                                    height: px(12.0 * GUI_SCALE), // 36.0
-                                    padding: UiRect::horizontal(px(6.0)),
+                                    left: px(223.0 * GUI_SCALE),
+                                    top: px(27.0 * GUI_SCALE),
+                                    width: px(72.0 * GUI_SCALE),
+                                    height: px(8.0 * GUI_SCALE),
                                     display: Display::Flex,
                                     align_items: AlignItems::Center,
-                                    border: UiRect::all(px(1.5)),
-                                    border_radius: BorderRadius::all(px(2.0)),
+                                    padding: UiRect::left(px(2.0 * GUI_SCALE)),
                                     ..default()
                                 },
-                                BackgroundColor(if search_query.selection.is_some() {
-                                    Color::srgba(0.20, 0.50, 0.95, 0.35)
-                                } else {
-                                    Color::NONE
-                                }),
-                                BorderColor::all(if search_query.is_focused {
-                                    Color::srgb(1.0, 0.85, 0.30)
-                                } else {
-                                    Color::NONE
-                                }),
+                                BackgroundColor(Color::NONE),
                             ))
                             .with_children(|sb| {
-                                let search_font = make_font(15.0);
+                                let search_font = make_font(7.0 * GUI_SCALE);
                                 let is_empty = search_query.query.is_empty();
-                                let has_selection = search_query.selection.is_some() && !is_empty;
                                 let display_text = if !search_query.is_focused {
                                     if is_empty {
-                                        "Search".to_string()
+                                        "Search...".to_string()
                                     } else {
                                         search_query.query.clone()
                                     }
-                                } else if has_selection {
-                                    search_query.query.clone()
                                 } else if is_empty {
                                     "|".to_string()
                                 } else {
                                     let cur = search_query.cursor.min(search_query.query.len());
-                                    format!(
-                                        "{}|{}",
-                                        &search_query.query[..cur],
-                                        &search_query.query[cur..]
-                                    )
+                                    format!("{}|{}", &search_query.query[..cur], &search_query.query[cur..])
                                 };
+
                                 sb.spawn((
                                     InventoryMenuEntity,
                                     CreativeSearchText,
                                     Text::new(display_text),
                                     search_font,
                                     TextColor(if !search_query.is_focused && is_empty {
-                                        Color::srgba(0.70, 0.70, 0.75, 0.60)
-                                    } else if has_selection {
-                                        Color::srgb(0.40, 0.85, 1.0)
+                                        Color::srgba(0.65, 0.68, 0.75, 0.60)
                                     } else {
-                                        Color::srgb(0.95, 0.95, 0.95)
+                                        Color::srgb(0.95, 0.95, 0.98)
                                     }),
                                     text_shadow_default(),
                                 ));
                             });
 
-                            // 8x4 Grid Slots for Creative Blocks
-                            let filtered = filtered_creative_blocks(&search_query.query);
+                            // 90 Creative Catalog Slots B16..B105: 10 rows of 9 (16x16 px)
+                            let filtered = filtered_creative_blocks(active_cat, &search_query.query);
                             let start_row = scroll_state.scroll_row;
 
-                            for r in 0..INVENTORY_VISIBLE_ROWS {
-                                for c in 0..INVENTORY_COLS {
-                                    let slot_idx = r * INVENTORY_COLS + c;
-                                    let block_idx = start_row * INVENTORY_COLS + slot_idx;
+                            for row in 0..CATALOG_VISIBLE_ROWS {
+                                for col in 0..CATALOG_COLS {
+                                    let slot_idx = row * CATALOG_COLS + col;
+                                    let block_idx = (start_row + row) * CATALOG_COLS + col;
                                     let voxel = filtered.get(block_idx).copied();
+
                                     let icon_handle = voxel
                                         .map(|v| icons.get(v))
                                         .unwrap_or_else(|| icons.get(Voxel::Dolomite));
@@ -555,57 +1062,71 @@ fn build_inventory_ui(
                                         Visibility::Hidden
                                     };
 
-                                    let slot_left = (24.0 + c as f32 * 18.0) * GUI_SCALE;
-                                    let slot_top = (52.0 + r as f32 * 18.0) * GUI_SCALE;
+                                    let slot_x = INVENTORY_SLOT_X_COORDS[col];
+                                    let slot_y = CATALOG_ROW_Y_COORDS[row];
 
                                     card.spawn((
                                         InventoryMenuEntity,
                                         Button,
-                                        InventoryPaletteSlot {
+                                        InventoryCatalogSlot {
                                             slot_index: slot_idx,
                                             voxel,
                                         },
                                         Node {
                                             position_type: PositionType::Absolute,
-                                            left: px(slot_left),
-                                            top: px(slot_top),
+                                            left: px(slot_x * GUI_SCALE),
+                                            top: px(slot_y * GUI_SCALE),
                                             width: px(16.0 * GUI_SCALE),
                                             height: px(16.0 * GUI_SCALE),
                                             display: Display::Flex,
                                             justify_content: JustifyContent::Center,
                                             align_items: AlignItems::Center,
-                                            border: UiRect::all(px(2.0)),
-                                            border_radius: BorderRadius::all(px(2.0)),
                                             ..default()
                                         },
                                         BackgroundColor(Color::NONE),
-                                        BorderColor::all(Color::NONE),
                                     ))
                                     .with_children(|slot| {
                                         slot.spawn((
                                             InventoryMenuEntity,
-                                            InventoryPaletteSlotIcon {
-                                                slot_index: slot_idx,
-                                            },
+                                            InventoryCatalogSlotIcon { slot_index: slot_idx },
                                             ImageNode {
                                                 image: icon_handle,
                                                 ..default()
                                             },
                                             Node {
-                                                width: px(36.0),
-                                                height: px(36.0),
+                                                width: px(16.0 * GUI_SCALE),
+                                                height: px(16.0 * GUI_SCALE),
                                                 ..default()
                                             },
                                             icon_vis,
+                                        ));
+
+                                        slot.spawn((
+                                            InventoryMenuEntity,
+                                            SlotHoverHighlight,
+                                            ImageNode {
+                                                image: slot_hover_tex.clone(),
+                                                ..default()
+                                            },
+                                            Node {
+                                                position_type: PositionType::Absolute,
+                                                left: px(0.0),
+                                                top: px(0.0),
+                                                width: px(16.0 * GUI_SCALE),
+                                                height: px(16.0 * GUI_SCALE),
+                                                ..default()
+                                            },
+                                            ZIndex(10),
+                                            Visibility::Hidden,
                                         ));
                                     });
                                 }
                             }
 
-                            // Scrollbar Track & Thumb (X=178..183, Y=33..142)
-                            let track_height = 110.0 * GUI_SCALE; // 330.0
-                            let thumb_height = 15.0 * GUI_SCALE; // 45.0
-                            let max_travel = track_height - thumb_height; // 285.0
+                            // Scrollbar Track & Thumb B15: (298, 40..205), 6x166 px
+                            let track_height = 166.0 * GUI_SCALE;
+                            let thumb_height = 16.0 * GUI_SCALE;
+                            let max_travel = track_height - thumb_height;
                             let max_scroll = max_filtered_scroll(filtered.len());
                             let thumb_top = if max_scroll > 0 {
                                 (start_row as f32 / max_scroll as f32) * max_travel
@@ -619,10 +1140,10 @@ fn build_inventory_ui(
                                 InventoryScrollTrack,
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    left: px(175.0 * GUI_SCALE), // 525.0
-                                    top: px(33.0 * GUI_SCALE),   // 99.0
-                                    width: px(12.0 * GUI_SCALE), // 36.0
-                                    height: px(track_height),    // 330.0
+                                    left: px(296.0 * GUI_SCALE),
+                                    top: px(40.0 * GUI_SCALE),
+                                    width: px(10.0 * GUI_SCALE),
+                                    height: px(track_height),
                                     ..default()
                                 },
                                 BackgroundColor(Color::NONE),
@@ -633,96 +1154,226 @@ fn build_inventory_ui(
                                     Button,
                                     InventoryScrollThumb,
                                     ImageNode {
-                                        image: scr_tex.clone(),
+                                        image: scroller_tex.clone(),
                                         ..default()
                                     },
                                     Node {
                                         position_type: PositionType::Absolute,
                                         left: px(0.0),
                                         top: px(thumb_top),
-                                        width: px(12.0 * GUI_SCALE),
+                                        width: px(10.0 * GUI_SCALE),
                                         height: px(thumb_height),
                                         ..default()
                                     },
                                 ));
                             });
-                        }
-                    }
 
-                    // 1x8 Hotbar Row (Y=128..143)
-                    for c in 0..HOTBAR_SLOT_COUNT {
-                        let slot_voxel = hotbar.slots[c];
-                        let icon_handle = slot_voxel
-                            .map(|v| icons.get(v))
-                            .unwrap_or_else(|| icons.get(Voxel::Dolomite));
-                        let icon_vis = if slot_voxel.is_some() {
-                            Visibility::Visible
-                        } else {
-                            Visibility::Hidden
-                        };
+                            // Bottom Hotbar Row B106..B116 (mirrored hotbar accessible in creative)
+                            // Off-hand at (104, 228), 14x14 px
+                            let offhand_voxel = player_inv.offhand_slot;
+                            let offhand_img = offhand_voxel
+                                .map(|v| icons.get(v))
+                                .unwrap_or_else(|| shield_overlay.clone());
 
-                        let slot_left = (24.0 + c as f32 * 18.0) * GUI_SCALE;
-                        let slot_top = 128.0 * GUI_SCALE; // 384.0
-
-                        card.spawn((
-                            InventoryMenuEntity,
-                            Button,
-                            InventoryHotbarSlot { index: c },
-                            Node {
-                                position_type: PositionType::Absolute,
-                                left: px(slot_left),
-                                top: px(slot_top),
-                                width: px(16.0 * GUI_SCALE),
-                                height: px(16.0 * GUI_SCALE),
-                                display: Display::Flex,
-                                justify_content: JustifyContent::Center,
-                                align_items: AlignItems::Center,
-                                border: UiRect::all(px(2.0)),
-                                border_radius: BorderRadius::all(px(2.0)),
-                                ..default()
-                            },
-                            BackgroundColor(Color::NONE),
-                            BorderColor::all(Color::NONE),
-                        ))
-                        .with_children(|slot| {
-                            // Centered 2D item icon (rendered first, below slot number)
-                            slot.spawn((
+                            card.spawn((
                                 InventoryMenuEntity,
-                                InventoryHotbarSlotIcon { index: c },
-                                ImageNode {
-                                    image: icon_handle,
-                                    ..default()
-                                },
-                                Node {
-                                    width: px(36.0),
-                                    height: px(36.0),
-                                    ..default()
-                                },
-                                icon_vis,
-                            ));
-
-                            // Slot index number (1 through 8, rendered in front with ZIndex)
-                            let num_font = make_font(13.0);
-                            slot.spawn((
-                                InventoryMenuEntity,
-                                Text::new(format!("{}", c + 1)),
-                                num_font,
-                                TextColor(Color::srgba(0.95, 0.95, 0.95, 0.90)),
-                                text_shadow_default(),
+                                Button,
+                                InventoryOffhandSlot,
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    top: px(2.0),
-                                    left: px(4.0),
+                                    left: px(104.0 * GUI_SCALE),
+                                    top: px(228.0 * GUI_SCALE),
+                                    width: px(14.0 * GUI_SCALE),
+                                    height: px(14.0 * GUI_SCALE),
+                                    display: Display::Flex,
+                                    justify_content: JustifyContent::Center,
+                                    align_items: AlignItems::Center,
                                     ..default()
                                 },
-                                ZIndex(10),
-                            ));
-                        });
+                                BackgroundColor(Color::NONE),
+                            ))
+                            .with_children(|slot| {
+                                slot.spawn((
+                                    InventoryMenuEntity,
+                                    InventoryOffhandIcon,
+                                    ImageNode {
+                                        image: offhand_img,
+                                        ..default()
+                                    },
+                                    Node {
+                                        width: px(14.0 * GUI_SCALE),
+                                        height: px(14.0 * GUI_SCALE),
+                                        ..default()
+                                    },
+                                ));
+
+                                slot.spawn((
+                                    InventoryMenuEntity,
+                                    SlotHoverHighlight,
+                                    ImageNode {
+                                        image: special_hover_tex.clone(),
+                                        ..default()
+                                    },
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        left: px(0.0),
+                                        top: px(0.0),
+                                        width: px(14.0 * GUI_SCALE),
+                                        height: px(14.0 * GUI_SCALE),
+                                        ..default()
+                                    },
+                                    ZIndex(10),
+                                    Visibility::Hidden,
+                                ));
+                            });
+
+                            // 9 Hotbar slots at (124..276, 227), 16x16 px
+                            for c in 0..HOTBAR_SLOT_COUNT {
+                                let slot_voxel = hotbar.slots[c];
+                                let icon_handle = slot_voxel
+                                    .map(|v| icons.get(v))
+                                    .unwrap_or_else(|| icons.get(Voxel::Dolomite));
+                                let icon_vis = if slot_voxel.is_some() {
+                                    Visibility::Visible
+                                } else {
+                                    Visibility::Hidden
+                                };
+
+                                let slot_x = INVENTORY_SLOT_X_COORDS[c];
+
+                                card.spawn((
+                                    InventoryMenuEntity,
+                                    Button,
+                                    InventoryHotbarSlot { index: c },
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        left: px(slot_x * GUI_SCALE),
+                                        top: px(HOTBAR_ROW_Y * GUI_SCALE),
+                                        width: px(16.0 * GUI_SCALE),
+                                        height: px(16.0 * GUI_SCALE),
+                                        display: Display::Flex,
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    BackgroundColor(Color::NONE),
+                                ))
+                                .with_children(|slot| {
+                                    slot.spawn((
+                                        InventoryMenuEntity,
+                                        InventoryHotbarSlotIcon { index: c },
+                                        ImageNode {
+                                            image: icon_handle,
+                                            ..default()
+                                        },
+                                        Node {
+                                            width: px(16.0 * GUI_SCALE),
+                                            height: px(16.0 * GUI_SCALE),
+                                            ..default()
+                                        },
+                                        icon_vis,
+                                    ));
+
+                                    slot.spawn((
+                                        InventoryMenuEntity,
+                                        SlotHoverHighlight,
+                                        ImageNode {
+                                            image: slot_hover_tex.clone(),
+                                            ..default()
+                                        },
+                                        Node {
+                                            position_type: PositionType::Absolute,
+                                            left: px(0.0),
+                                            top: px(0.0),
+                                            width: px(16.0 * GUI_SCALE),
+                                            height: px(16.0 * GUI_SCALE),
+                                            ..default()
+                                        },
+                                        ZIndex(10),
+                                        Visibility::Hidden,
+                                    ));
+
+                                    let num_font = make_font(8.0 * GUI_SCALE);
+                                    slot.spawn((
+                                        InventoryMenuEntity,
+                                        Text::new(format!("{}", c + 1)),
+                                        num_font,
+                                        TextColor(Color::srgba(0.85, 0.88, 0.92, 0.80)),
+                                        text_shadow_default(),
+                                        Node {
+                                            position_type: PositionType::Absolute,
+                                            top: px(1.0 * GUI_SCALE),
+                                            left: px(2.0 * GUI_SCALE),
+                                            ..default()
+                                        },
+                                        ZIndex(15),
+                                    ));
+                                });
+                            }
+
+                            // Quick Utility Slot at (298, 228), 14x14 px
+                            let util_voxel = player_inv.utility_slot;
+                            let util_img = util_voxel
+                                .map(|v| icons.get(v))
+                                .unwrap_or_else(|| quiver_overlay.clone());
+
+                            card.spawn((
+                                InventoryMenuEntity,
+                                Button,
+                                InventoryUtilitySlot,
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    left: px(298.0 * GUI_SCALE),
+                                    top: px(228.0 * GUI_SCALE),
+                                    width: px(14.0 * GUI_SCALE),
+                                    height: px(14.0 * GUI_SCALE),
+                                    display: Display::Flex,
+                                    justify_content: JustifyContent::Center,
+                                    align_items: AlignItems::Center,
+                                    ..default()
+                                },
+                                BackgroundColor(Color::NONE),
+                            ))
+                            .with_children(|slot| {
+                                slot.spawn((
+                                    InventoryMenuEntity,
+                                    InventoryUtilityIcon,
+                                    ImageNode {
+                                        image: util_img,
+                                        ..default()
+                                    },
+                                    Node {
+                                        width: px(14.0 * GUI_SCALE),
+                                        height: px(14.0 * GUI_SCALE),
+                                        ..default()
+                                    },
+                                ));
+
+                                slot.spawn((
+                                    InventoryMenuEntity,
+                                    SlotHoverHighlight,
+                                    ImageNode {
+                                        image: special_hover_tex.clone(),
+                                        ..default()
+                                    },
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        left: px(0.0),
+                                        top: px(0.0),
+                                        width: px(14.0 * GUI_SCALE),
+                                        height: px(14.0 * GUI_SCALE),
+                                        ..default()
+                                    },
+                                    ZIndex(10),
+                                    Visibility::Hidden,
+                                ));
+                            });
+                        }
                     }
                 });
 
             // Floating hover tooltip for items
-            let tip_font = make_font(15.0);
+            let tip_font = make_font(14.0);
             backdrop
                 .spawn((
                     InventoryMenuEntity,
@@ -757,43 +1408,6 @@ fn build_inventory_ui(
         });
 }
 
-fn despawn_inventory_menu(
-    mut commands: Commands,
-    query: Query<Entity, With<InventoryMenuRoot>>,
-    mut held_item: ResMut<HeldInventoryItem>,
-    mut scroll_state: ResMut<InventoryScrollState>,
-    mut search_query: ResMut<CreativeSearchQuery>,
-    mut player_inv: ResMut<PlayerInventory>,
-    mut hotbar: ResMut<Hotbar>,
-) {
-    if let Some(held) = held_item.voxel {
-        if !player_inv.add_item(held)
-            && let Some(empty_idx) = hotbar.slots.iter().position(|s| s.is_none())
-        {
-            hotbar.slots[empty_idx] = Some(held);
-        }
-        held_item.voxel = None;
-    }
-
-    scroll_state.scroll_row = 0;
-    scroll_state.is_dragging_thumb = false;
-    search_query.query.clear();
-    search_query.cursor = 0;
-    search_query.is_focused = false;
-    search_query.selection = None;
-
-    for entity in &query {
-        commands.entity(entity).despawn();
-    }
-}
-
-#[derive(Default)]
-struct InventoryDragState {
-    last_shift_palette_slot: Option<usize>,
-    hotbar_drag_start_slot: Option<usize>,
-    is_hotbar_dragging: bool,
-}
-
 fn handle_inventory_tab_key(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut tab_state: ResMut<InventoryTab>,
@@ -803,6 +1417,7 @@ fn handle_inventory_tab_key(
     hotbar: Res<Hotbar>,
     player_inv: Res<PlayerInventory>,
     icons: Res<BlockIcons>,
+    active_cat: Res<ActiveCreativeCategory>,
     scroll_state: Res<InventoryScrollState>,
     mut search_query: ResMut<CreativeSearchQuery>,
     app_font: Option<Res<AppFont>>,
@@ -825,6 +1440,7 @@ fn handle_inventory_tab_key(
             &player_inv,
             &icons,
             *tab_state,
+            active_cat.0,
             &scroll_state,
             &search_query,
             app_font.as_ref().map(|f| f.source()),
@@ -832,7 +1448,7 @@ fn handle_inventory_tab_key(
     }
 }
 
-fn handle_inventory_tab_interaction(
+fn handle_creative_toggle_interaction(
     mouse: Res<ButtonInput<MouseButton>>,
     mut tab_state: ResMut<InventoryTab>,
     mut commands: Commands,
@@ -841,58 +1457,223 @@ fn handle_inventory_tab_interaction(
     hotbar: Res<Hotbar>,
     player_inv: Res<PlayerInventory>,
     icons: Res<BlockIcons>,
+    active_cat: Res<ActiveCreativeCategory>,
     scroll_state: Res<InventoryScrollState>,
     mut search_query: ResMut<CreativeSearchQuery>,
     app_font: Option<Res<AppFont>>,
-    mut tab_button_query: Query<
-        (
-            &Interaction,
-            &InventoryTabButton,
-            &mut BackgroundColor,
-            &mut BorderColor,
-        ),
-        With<InventoryTabButton>,
-    >,
-    mut tab_text_query: Query<(&InventoryTabButtonText, &mut TextColor)>,
+    toggle_query: Query<&Interaction, (With<InventoryToggleTabButton>, Changed<Interaction>)>,
 ) {
-    let left_just_pressed = mouse.just_pressed(MouseButton::Left);
-    let mut tab_switched = false;
-
-    for (interaction, tab_btn, mut bg, mut border) in &mut tab_button_query {
-        let is_active = *tab_state == tab_btn.tab;
-        let is_hovered = *interaction == Interaction::Hovered;
-        let is_pressed = *interaction == Interaction::Pressed;
-
-        if left_just_pressed && is_pressed && !is_active {
-            *tab_state = tab_btn.tab;
-            tab_switched = true;
+    for interaction in &toggle_query {
+        if *interaction == Interaction::Pressed || mouse.just_pressed(MouseButton::Left) && *interaction == Interaction::Hovered {
+            *tab_state = match *tab_state {
+                InventoryTab::Creative => InventoryTab::Player,
+                InventoryTab::Player => InventoryTab::Creative,
+            };
+            search_query.is_focused = false;
+            search_query.cursor = 0;
+            search_query.selection = None;
+            for entity in &query {
+                commands.entity(entity).despawn();
+            }
+            build_inventory_ui(
+                &mut commands,
+                &asset_server,
+                &hotbar,
+                &player_inv,
+                &icons,
+                *tab_state,
+                active_cat.0,
+                &scroll_state,
+                &search_query,
+                app_font.as_ref().map(|f| f.source()),
+            );
+            break;
         }
+    }
+}
 
-        if is_active {
-            *bg = BackgroundColor(Color::NONE);
-            *border = BorderColor::all(Color::NONE);
-        } else if is_hovered {
-            *bg = BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.08));
-            *border = BorderColor::all(Color::NONE);
-        } else {
-            *bg = BackgroundColor(Color::NONE);
-            *border = BorderColor::all(Color::NONE);
+fn handle_category_tab_interaction(
+    mouse: Res<ButtonInput<MouseButton>>,
+    mut active_cat: ResMut<ActiveCreativeCategory>,
+    mut scroll_state: ResMut<InventoryScrollState>,
+    mut commands: Commands,
+    query: Query<Entity, With<InventoryMenuRoot>>,
+    asset_server: Res<AssetServer>,
+    hotbar: Res<Hotbar>,
+    player_inv: Res<PlayerInventory>,
+    icons: Res<BlockIcons>,
+    tab_state: Res<InventoryTab>,
+    search_query: Res<CreativeSearchQuery>,
+    app_font: Option<Res<AppFont>>,
+    cat_query: Query<(&Interaction, &CategoryTabButton)>,
+) {
+    if !mouse.just_pressed(MouseButton::Left) {
+        return;
+    }
+
+    for (interaction, cat_btn) in &cat_query {
+        if *interaction == Interaction::Pressed || *interaction == Interaction::Hovered {
+            if active_cat.0 != cat_btn.category {
+                active_cat.0 = cat_btn.category;
+                scroll_state.scroll_row = 0;
+                for entity in &query {
+                    commands.entity(entity).despawn();
+                }
+                build_inventory_ui(
+                    &mut commands,
+                    &asset_server,
+                    &hotbar,
+                    &player_inv,
+                    &icons,
+                    *tab_state,
+                    active_cat.0,
+                    &scroll_state,
+                    &search_query,
+                    app_font.as_ref().map(|f| f.source()),
+                );
+                break;
+            }
+        }
+    }
+}
+
+fn handle_inventory_action_buttons(
+    mut player_inv: ResMut<PlayerInventory>,
+    mut held_item: ResMut<HeldInventoryItem>,
+    action_query: Query<(&Interaction, &InventoryAction)>,
+    mouse: Res<ButtonInput<MouseButton>>,
+) {
+    if !mouse.just_pressed(MouseButton::Left) {
+        return;
+    }
+
+    for (interaction, action) in &action_query {
+        if *interaction == Interaction::Pressed || *interaction == Interaction::Hovered {
+            match action {
+                InventoryAction::Sort => {
+                    let mut items: Vec<Voxel> = player_inv.slots.iter().filter_map(|&s| s).collect();
+                    items.sort_by_key(|v| v.id());
+                    player_inv.slots = [None; PLAYER_INVENTORY_SLOTS];
+                    for (i, v) in items.into_iter().enumerate() {
+                        if i < PLAYER_INVENTORY_SLOTS {
+                            player_inv.slots[i] = Some(v);
+                        }
+                    }
+                }
+                InventoryAction::Trash => {
+                    held_item.voxel = None;
+                }
+                InventoryAction::Options => {}
+                InventoryAction::Lock => {}
+            }
+        }
+    }
+}
+
+fn handle_creative_search_input(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
+    mut search_query: ResMut<CreativeSearchQuery>,
+    mut scroll_state: ResMut<InventoryScrollState>,
+    search_bar_query: Query<&Interaction, With<CreativeSearchBar>>,
+    mut text_query: Query<&mut Text, With<CreativeSearchText>>,
+    mut commands: Commands,
+    menu_query: Query<Entity, With<InventoryMenuRoot>>,
+    asset_server: Res<AssetServer>,
+    hotbar: Res<Hotbar>,
+    player_inv: Res<PlayerInventory>,
+    icons: Res<BlockIcons>,
+    tab_state: Res<InventoryTab>,
+    active_cat: Res<ActiveCreativeCategory>,
+    app_font: Option<Res<AppFont>>,
+) {
+    let mut changed = false;
+
+    if mouse.just_pressed(MouseButton::Left) {
+        for interaction in &search_bar_query {
+            if *interaction == Interaction::Pressed || *interaction == Interaction::Hovered {
+                search_query.is_focused = true;
+                search_query.cursor = search_query.query.len();
+                changed = true;
+            } else {
+                search_query.is_focused = false;
+                changed = true;
+            }
         }
     }
 
-    for (tab_text, mut text_color) in &mut tab_text_query {
-        if *tab_state == tab_text.tab {
-            text_color.0 = Color::srgb(1.0, 0.90, 0.40);
-        } else {
-            text_color.0 = Color::srgb(0.70, 0.72, 0.78);
+    if search_query.is_focused {
+        for key in keyboard.get_just_pressed() {
+            let ch = match key {
+                KeyCode::KeyA => Some('a'),
+                KeyCode::KeyB => Some('b'),
+                KeyCode::KeyC => Some('c'),
+                KeyCode::KeyD => Some('d'),
+                KeyCode::KeyE => Some('e'),
+                KeyCode::KeyF => Some('f'),
+                KeyCode::KeyG => Some('g'),
+                KeyCode::KeyH => Some('h'),
+                KeyCode::KeyI => Some('i'),
+                KeyCode::KeyJ => Some('j'),
+                KeyCode::KeyK => Some('k'),
+                KeyCode::KeyL => Some('l'),
+                KeyCode::KeyM => Some('m'),
+                KeyCode::KeyN => Some('n'),
+                KeyCode::KeyO => Some('o'),
+                KeyCode::KeyP => Some('p'),
+                KeyCode::KeyQ => Some('q'),
+                KeyCode::KeyR => Some('r'),
+                KeyCode::KeyS => Some('s'),
+                KeyCode::KeyT => Some('t'),
+                KeyCode::KeyU => Some('u'),
+                KeyCode::KeyV => Some('v'),
+                KeyCode::KeyW => Some('w'),
+                KeyCode::KeyX => Some('x'),
+                KeyCode::KeyY => Some('y'),
+                KeyCode::KeyZ => Some('z'),
+                KeyCode::Space => Some(' '),
+                KeyCode::Backspace => {
+                    if !search_query.query.is_empty() {
+                        search_query.query.pop();
+                        search_query.cursor = search_query.query.len();
+                        scroll_state.scroll_row = 0;
+                        changed = true;
+                    }
+                    None
+                }
+                KeyCode::Escape | KeyCode::Enter => {
+                    search_query.is_focused = false;
+                    changed = true;
+                    None
+                }
+                _ => None,
+            };
+
+            if let Some(c) = ch {
+                if search_query.query.len() < 20 {
+                    search_query.query.push(c);
+                    search_query.cursor = search_query.query.len();
+                    scroll_state.scroll_row = 0;
+                    changed = true;
+                }
+            }
         }
     }
 
-    if tab_switched {
-        search_query.is_focused = false;
-        search_query.cursor = 0;
-        search_query.selection = None;
-        for entity in &query {
+    if changed {
+        for mut text in &mut text_query {
+            let display_text = if !search_query.is_focused && search_query.query.is_empty() {
+                "Search...".to_string()
+            } else if search_query.is_focused && search_query.query.is_empty() {
+                "|".to_string()
+            } else {
+                search_query.query.clone()
+            };
+            text.0 = display_text;
+        }
+
+        // Rebuild catalog grid slots
+        for entity in &menu_query {
             commands.entity(entity).despawn();
         }
         build_inventory_ui(
@@ -902,6 +1683,7 @@ fn handle_inventory_tab_interaction(
             &player_inv,
             &icons,
             *tab_state,
+            active_cat.0,
             &scroll_state,
             &search_query,
             app_font.as_ref().map(|f| f.source()),
@@ -909,601 +1691,52 @@ fn handle_inventory_tab_interaction(
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum KeyAction {
-    Char(char),
-    Backspace,
-    Delete,
-    Left,
-    Right,
-}
-
-#[derive(Default)]
-struct SearchInputState {
-    active_repeat: Option<(KeyCode, KeyAction)>,
-    repeat_timer: f32,
-    last_click_time: f32,
-    drag_start_cursor: Option<usize>,
-}
-
-fn apply_search_key_action(
-    action: KeyAction,
-    search_query: &mut CreativeSearchQuery,
-    changed: &mut bool,
-) {
-    match action {
-        KeyAction::Char(ch) => {
-            if let Some((start, end)) = search_query.selection {
-                let start = start.min(search_query.query.len());
-                let end = end.min(search_query.query.len());
-                if start < end {
-                    search_query
-                        .query
-                        .replace_range(start..end, &ch.to_string());
-                    search_query.cursor = start + 1;
-                    search_query.selection = None;
-                    *changed = true;
-                }
-            } else if search_query.query.len() < 24 {
-                let cur = search_query.cursor.min(search_query.query.len());
-                search_query.query.insert(cur, ch);
-                search_query.cursor = cur + 1;
-                *changed = true;
-            }
-        }
-        KeyAction::Backspace => {
-            if let Some((start, end)) = search_query.selection {
-                let start = start.min(search_query.query.len());
-                let end = end.min(search_query.query.len());
-                if start < end {
-                    search_query.query.drain(start..end);
-                    search_query.cursor = start;
-                    search_query.selection = None;
-                    *changed = true;
-                }
-            } else if search_query.cursor > 0 && !search_query.query.is_empty() {
-                let cur = search_query.cursor.min(search_query.query.len());
-                search_query.query.remove(cur - 1);
-                search_query.cursor = cur - 1;
-                *changed = true;
-            }
-        }
-        KeyAction::Delete => {
-            if let Some((start, end)) = search_query.selection {
-                let start = start.min(search_query.query.len());
-                let end = end.min(search_query.query.len());
-                if start < end {
-                    search_query.query.drain(start..end);
-                    search_query.cursor = start;
-                    search_query.selection = None;
-                    *changed = true;
-                }
-            } else {
-                let cur = search_query.cursor.min(search_query.query.len());
-                if cur < search_query.query.len() {
-                    search_query.query.remove(cur);
-                    *changed = true;
-                }
-            }
-        }
-        KeyAction::Left => {
-            if let Some((start, _)) = search_query.selection {
-                search_query.cursor = start.min(search_query.query.len());
-                search_query.selection = None;
-            } else {
-                search_query.cursor = search_query.cursor.saturating_sub(1);
-            }
-        }
-        KeyAction::Right => {
-            if let Some((_, end)) = search_query.selection {
-                search_query.cursor = end.min(search_query.query.len());
-                search_query.selection = None;
-            } else {
-                search_query.cursor = (search_query.cursor + 1).min(search_query.query.len());
-            }
-        }
-    }
-}
-
-fn get_card_top_left(
-    card_query: &Query<(&GlobalTransform, &ComputedNode), With<InventoryCard>>,
-    window_query: &Query<&Window, With<PrimaryWindow>>,
-    scale: f32,
-) -> Option<Vec2> {
-    if let Some((card_tf, card_node)) = card_query.iter().next() {
-        let center = card_tf.translation().truncate();
-        let half = card_node.size() * 0.5;
-        if half.x > 10.0 && half.y > 10.0 {
-            return Some(center - half);
-        }
-    }
-    if let Some(w) = window_query.iter().next() {
-        return Some(Vec2::new(
-            (w.width() - INVENTORY_PANEL_TEX_W * GUI_SCALE * scale) * 0.5,
-            (w.height() - INVENTORY_PANEL_TEX_H * GUI_SCALE * scale) * 0.5,
-        ));
-    }
-    None
-}
-
-#[cfg(target_os = "windows")]
-fn is_caps_lock_on() -> bool {
-    #[link(name = "user32")]
-    unsafe extern "system" {
-        fn GetKeyState(n_virt_key: i32) -> i16;
-    }
-    unsafe { (GetKeyState(0x14) & 1) != 0 }
-}
-
-#[cfg(not(target_os = "windows"))]
-fn is_caps_lock_on() -> bool {
-    false
-}
-
-fn handle_creative_search_input(
-    time: Res<Time>,
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mouse: Res<ButtonInput<MouseButton>>,
-    tab_state: Res<InventoryTab>,
-    mut search_query: ResMut<CreativeSearchQuery>,
-    mut scroll_state: ResMut<InventoryScrollState>,
-    mut search_text_query: Query<(&mut Text, &mut TextColor), With<CreativeSearchText>>,
-    mut search_bar_query: Query<
-        (&Interaction, &mut BorderColor, &mut BackgroundColor),
-        With<CreativeSearchBar>,
-    >,
-    mut palette_query: Query<&mut InventoryPaletteSlot>,
-    mut slot_icon_query: Query<(&InventoryPaletteSlotIcon, &mut ImageNode, &mut Visibility)>,
-    card_query: Query<(&GlobalTransform, &ComputedNode), With<InventoryCard>>,
-    icons: Res<BlockIcons>,
-    window_query: Query<&Window, With<PrimaryWindow>>,
-    ui_scale: Option<Res<UiScale>>,
-    mut input_state: Local<SearchInputState>,
-) {
-    if *tab_state != InventoryTab::Creative {
-        return;
-    }
-
-    let scale = ui_scale.as_ref().map_or(1.0, |s| s.0);
-    let eff_scale = GUI_SCALE * scale;
-    let cursor_pos = window_query.iter().next().and_then(|w| w.cursor_position());
-    let card_top_left = get_card_top_left(&card_query, &window_query, scale);
-
-    let (search_bar_rect, text_start_x) = if let Some(top_left) = card_top_left {
-        let min_x = top_left.x + 98.0 * eff_scale;
-        let min_y = top_left.y + 32.0 * eff_scale;
-        let max_x = min_x + 71.0 * eff_scale;
-        let max_y = min_y + 12.0 * eff_scale;
-        (
-            Some(Rect::new(
-                min_x - 4.0 * scale,
-                min_y - 4.0 * scale,
-                max_x + 4.0 * scale,
-                max_y + 4.0 * scale,
-            )),
-            min_x + 6.0 * scale,
-        )
-    } else {
-        (None, 0.0)
-    };
-
-    let left_just_pressed = mouse.just_pressed(MouseButton::Left);
-    let left_pressed = mouse.pressed(MouseButton::Left);
-
-    let is_inside_search_bar =
-        cursor_pos.is_some_and(|pos| search_bar_rect.is_some_and(|r| r.contains(pos)));
-
-    let is_search_pressed = search_bar_query
-        .iter()
-        .any(|(i, _, _)| *i == Interaction::Pressed)
-        || (left_just_pressed && is_inside_search_bar);
-
-    let is_search_hovered = search_bar_query
-        .iter()
-        .any(|(i, _, _)| *i == Interaction::Hovered || *i == Interaction::Pressed)
-        || is_inside_search_bar;
-
-    if left_just_pressed {
-        if is_inside_search_bar || is_search_pressed {
-            search_query.is_focused = true;
-            let now = time.elapsed_secs();
-            let is_double_click = (now - input_state.last_click_time) < 0.35
-                && (now - input_state.last_click_time) > 0.0;
-
-            if is_double_click && !search_query.query.is_empty() {
-                search_query.selection = Some((0, search_query.query.len()));
-                search_query.cursor = search_query.query.len();
-                input_state.last_click_time = 0.0;
-                input_state.drag_start_cursor = None;
-            } else {
-                input_state.last_click_time = now;
-                search_query.selection = None;
-                if let Some(pos) = cursor_pos {
-                    let click_x = (pos.x - text_start_x).max(0.0);
-                    let char_width = 8.5 * scale;
-                    let approx_idx = (click_x / char_width).round() as usize;
-                    search_query.cursor = approx_idx.min(search_query.query.len());
-                    input_state.drag_start_cursor = Some(search_query.cursor);
-                } else {
-                    search_query.cursor = search_query.query.len();
-                }
-            }
-        } else {
-            search_query.is_focused = false;
-            search_query.selection = None;
-            input_state.active_repeat = None;
-            input_state.drag_start_cursor = None;
-        }
-    }
-
-    // Drag selection while holding left mouse
-    if left_pressed
-        && search_query.is_focused
-        && let (Some(anchor), Some(pos)) = (input_state.drag_start_cursor, cursor_pos)
-    {
-        let click_x = (pos.x - text_start_x).max(0.0);
-        let char_width = 8.5 * scale;
-        let cur_idx = ((click_x / char_width).round() as usize).min(search_query.query.len());
-        if cur_idx != anchor && !search_query.query.is_empty() {
-            let start = anchor.min(cur_idx);
-            let end = anchor.max(cur_idx);
-            search_query.selection = Some((start, end));
-            search_query.cursor = cur_idx;
-        }
-    }
-
-    if mouse.just_released(MouseButton::Left) {
-        input_state.drag_start_cursor = None;
-    }
-
-    let target_border = if search_query.is_focused {
-        BorderColor::all(Color::srgb(1.0, 0.85, 0.30))
-    } else if is_search_hovered {
-        BorderColor::all(Color::srgba(1.0, 1.0, 1.0, 0.40))
-    } else {
-        BorderColor::all(Color::NONE)
-    };
-    if let Some((_, mut border, _)) = search_bar_query.iter_mut().next()
-        && *border != target_border
-    {
-        *border = target_border;
-    }
-
-    let target_bg = if search_query.is_focused
-        && search_query.selection.is_some()
-        && !search_query.query.is_empty()
-    {
-        BackgroundColor(Color::srgba(0.20, 0.50, 0.95, 0.35))
-    } else {
-        BackgroundColor(Color::NONE)
-    };
-    if let Some((_, _, mut bg)) = search_bar_query.iter_mut().next()
-        && *bg != target_bg
-    {
-        *bg = target_bg;
-    }
-
-    let mut changed = false;
-
-    if keyboard.just_pressed(KeyCode::Escape) && search_query.is_focused {
-        search_query.is_focused = false;
-        search_query.selection = None;
-        input_state.active_repeat = None;
-        input_state.drag_start_cursor = None;
-    }
-
-    let char_keys: &[(KeyCode, char, char)] = &[
-        (KeyCode::KeyA, 'a', 'A'),
-        (KeyCode::KeyB, 'b', 'B'),
-        (KeyCode::KeyC, 'c', 'C'),
-        (KeyCode::KeyD, 'd', 'D'),
-        (KeyCode::KeyE, 'e', 'E'),
-        (KeyCode::KeyF, 'f', 'F'),
-        (KeyCode::KeyG, 'g', 'G'),
-        (KeyCode::KeyH, 'h', 'H'),
-        (KeyCode::KeyI, 'i', 'I'),
-        (KeyCode::KeyJ, 'j', 'J'),
-        (KeyCode::KeyK, 'k', 'K'),
-        (KeyCode::KeyL, 'l', 'L'),
-        (KeyCode::KeyM, 'm', 'M'),
-        (KeyCode::KeyN, 'n', 'N'),
-        (KeyCode::KeyO, 'o', 'O'),
-        (KeyCode::KeyP, 'p', 'P'),
-        (KeyCode::KeyQ, 'q', 'Q'),
-        (KeyCode::KeyR, 'r', 'R'),
-        (KeyCode::KeyS, 's', 'S'),
-        (KeyCode::KeyT, 't', 'T'),
-        (KeyCode::KeyU, 'u', 'U'),
-        (KeyCode::KeyV, 'v', 'V'),
-        (KeyCode::KeyW, 'w', 'W'),
-        (KeyCode::KeyX, 'x', 'X'),
-        (KeyCode::KeyY, 'y', 'Y'),
-        (KeyCode::KeyZ, 'z', 'Z'),
-        (KeyCode::Digit0, '0', '0'),
-        (KeyCode::Digit1, '1', '1'),
-        (KeyCode::Digit2, '2', '2'),
-        (KeyCode::Digit3, '3', '3'),
-        (KeyCode::Digit4, '4', '4'),
-        (KeyCode::Digit5, '5', '5'),
-        (KeyCode::Digit6, '6', '6'),
-        (KeyCode::Digit7, '7', '7'),
-        (KeyCode::Digit8, '8', '8'),
-        (KeyCode::Digit9, '9', '9'),
-        (KeyCode::Numpad0, '0', '0'),
-        (KeyCode::Numpad1, '1', '1'),
-        (KeyCode::Numpad2, '2', '2'),
-        (KeyCode::Numpad3, '3', '3'),
-        (KeyCode::Numpad4, '4', '4'),
-        (KeyCode::Numpad5, '5', '5'),
-        (KeyCode::Numpad6, '6', '6'),
-        (KeyCode::Numpad7, '7', '7'),
-        (KeyCode::Numpad8, '8', '8'),
-        (KeyCode::Numpad9, '9', '9'),
-        (KeyCode::Space, ' ', ' '),
-        (KeyCode::Minus, '-', '_'),
-    ];
-
-    if search_query.is_focused {
-        let ctrl =
-            keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight);
-        let shift = keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight);
-        let caps = is_caps_lock_on();
-
-        let mut triggered_action: Option<(KeyCode, KeyAction)> = None;
-
-        if ctrl && keyboard.just_pressed(KeyCode::KeyA) {
-            if !search_query.query.is_empty() {
-                search_query.selection = Some((0, search_query.query.len()));
-                search_query.cursor = search_query.query.len();
-            }
-        } else if !ctrl {
-            if keyboard.just_pressed(KeyCode::Backspace) {
-                triggered_action = Some((KeyCode::Backspace, KeyAction::Backspace));
-            } else if keyboard.just_pressed(KeyCode::Delete) {
-                triggered_action = Some((KeyCode::Delete, KeyAction::Delete));
-            } else if keyboard.just_pressed(KeyCode::ArrowLeft) {
-                triggered_action = Some((KeyCode::ArrowLeft, KeyAction::Left));
-            } else if keyboard.just_pressed(KeyCode::ArrowRight) {
-                triggered_action = Some((KeyCode::ArrowRight, KeyAction::Right));
-            } else if keyboard.just_pressed(KeyCode::Home) {
-                search_query.cursor = 0;
-                search_query.selection = None;
-            } else if keyboard.just_pressed(KeyCode::End) {
-                search_query.cursor = search_query.query.len();
-                search_query.selection = None;
-            } else {
-                for &(key, normal_ch, shift_ch) in char_keys {
-                    if keyboard.just_pressed(key) {
-                        let is_letter = normal_ch.is_ascii_alphabetic();
-                        let ch = if is_letter {
-                            if shift ^ caps { shift_ch } else { normal_ch }
-                        } else if shift {
-                            shift_ch
-                        } else {
-                            normal_ch
-                        };
-                        triggered_action = Some((key, KeyAction::Char(ch)));
-                        break;
-                    }
-                }
-            }
-        }
-
-        if let Some((k, act)) = triggered_action {
-            apply_search_key_action(act, &mut search_query, &mut changed);
-            input_state.active_repeat = Some((k, act));
-            input_state.repeat_timer = 0.40;
-        }
-
-        // Key repeat processing for holding any key down
-        if let Some((active_k, active_act)) = input_state.active_repeat {
-            if keyboard.pressed(active_k) {
-                if triggered_action.map(|(k, _)| k) != Some(active_k) {
-                    input_state.repeat_timer -= time.delta_secs();
-                    while input_state.repeat_timer <= 0.0 {
-                        apply_search_key_action(active_act, &mut search_query, &mut changed);
-                        input_state.repeat_timer += 0.04;
-                    }
-                }
-            } else {
-                input_state.active_repeat = None;
-            }
-        }
-    } else {
-        input_state.active_repeat = None;
-    }
-
-    if changed {
-        scroll_state.scroll_row = 0;
-        let filtered = filtered_creative_blocks(&search_query.query);
-
-        // Update slots
-        for mut slot in &mut palette_query {
-            let block_idx = slot.slot_index;
-            slot.voxel = filtered.get(block_idx).copied();
-        }
-
-        for (icon, mut img, mut vis) in &mut slot_icon_query {
-            let block_idx = icon.slot_index;
-            if let Some(&v) = filtered.get(block_idx) {
-                *vis = Visibility::Visible;
-                img.image = icons.get(v);
-            } else {
-                *vis = Visibility::Hidden;
-            }
-        }
-    }
-
-    // Always update search text rendering to reflect query, cursor, and selection
-    let has_selection = search_query.is_focused
-        && search_query.selection.is_some()
-        && !search_query.query.is_empty();
-    for (mut text, mut color) in &mut search_text_query {
-        let target_str = if !search_query.is_focused {
-            if search_query.query.is_empty() {
-                "Search".to_string()
-            } else {
-                search_query.query.clone()
-            }
-        } else if has_selection {
-            search_query.query.clone()
-        } else if search_query.query.is_empty() {
-            "|".to_string()
-        } else {
-            let cur = search_query.cursor.min(search_query.query.len());
-            format!(
-                "{}|{}",
-                &search_query.query[..cur],
-                &search_query.query[cur..]
-            )
-        };
-
-        if text.0 != target_str {
-            text.0 = target_str;
-        }
-
-        let target_color = if !search_query.is_focused && search_query.query.is_empty() {
-            Color::srgba(0.70, 0.70, 0.75, 0.60)
-        } else if has_selection {
-            Color::srgb(0.40, 0.85, 1.0)
-        } else {
-            Color::srgb(0.95, 0.95, 0.95)
-        };
-        if color.0 != target_color {
-            color.0 = target_color;
-        }
-    }
-}
-
 fn handle_inventory_scroll(
-    mouse: Res<ButtonInput<MouseButton>>,
     mouse_scroll: Res<AccumulatedMouseScroll>,
-    tab_state: Res<InventoryTab>,
-    search_query: Res<CreativeSearchQuery>,
     mut scroll_state: ResMut<InventoryScrollState>,
+    tab_state: Res<InventoryTab>,
+    active_cat: Res<ActiveCreativeCategory>,
+    search_query: Res<CreativeSearchQuery>,
+    mut commands: Commands,
+    query: Query<Entity, With<InventoryMenuRoot>>,
+    asset_server: Res<AssetServer>,
+    hotbar: Res<Hotbar>,
+    player_inv: Res<PlayerInventory>,
     icons: Res<BlockIcons>,
-    window_query: Query<&Window, With<PrimaryWindow>>,
-    card_query: Query<(&GlobalTransform, &ComputedNode), With<InventoryCard>>,
-    track_interaction_query: Query<&Interaction, With<InventoryScrollTrack>>,
-    thumb_query: Query<&Interaction, With<InventoryScrollThumb>>,
-    mut thumb_node_query: Query<&mut Node, With<InventoryScrollThumb>>,
-    mut palette_query: Query<&mut InventoryPaletteSlot>,
-    mut slot_icon_query: Query<(&InventoryPaletteSlotIcon, &mut ImageNode, &mut Visibility)>,
-    ui_scale: Option<Res<UiScale>>,
+    app_font: Option<Res<AppFont>>,
 ) {
     if *tab_state != InventoryTab::Creative {
         return;
     }
 
-    let scale = ui_scale.as_ref().map_or(1.0, |s| s.0);
-    let eff_scale = GUI_SCALE * scale;
-    let filtered = filtered_creative_blocks(&search_query.query);
-    let max_scroll = max_filtered_scroll(filtered.len());
-    let mut row_changed = false;
+    let delta = mouse_scroll.delta.y;
+    if delta.abs() > 0.05 {
+        let filtered = filtered_creative_blocks(active_cat.0, &search_query.query);
+        let max_scroll = max_filtered_scroll(filtered.len());
+        let old_row = scroll_state.scroll_row;
 
-    let track_height_logical = 110.0 * GUI_SCALE; // 385.0 px (with 3.5 GUI_SCALE)
-    let thumb_height_logical = 15.0 * GUI_SCALE; // 52.5 px
-    let max_travel_logical = (track_height_logical - thumb_height_logical).max(1.0);
-
-    let track_height = track_height_logical * scale;
-    let thumb_height = thumb_height_logical * scale;
-    let max_travel = max_travel_logical * scale;
-
-    // 1. Mouse wheel scrolling
-    let scroll_y = mouse_scroll.delta.y;
-    if scroll_y > 0.05 && scroll_state.scroll_row > 0 {
-        scroll_state.scroll_row -= 1;
-        row_changed = true;
-    } else if scroll_y < -0.05 && scroll_state.scroll_row < max_scroll {
-        scroll_state.scroll_row += 1;
-        row_changed = true;
-    }
-
-    // 2. Dragging the thumb or clicking on the track
-    let left_pressed = mouse.pressed(MouseButton::Left);
-    let left_just_pressed = mouse.just_pressed(MouseButton::Left);
-    let cursor_pos = window_query.iter().next().and_then(|w| w.cursor_position());
-    let card_top_left = get_card_top_left(&card_query, &window_query, scale);
-
-    let (track_screen_x, track_screen_y) = if let Some(top_left) = card_top_left {
-        (
-            top_left.x + 175.0 * eff_scale,
-            top_left.y + 33.0 * eff_scale,
-        )
-    } else {
-        (0.0, 0.0)
-    };
-
-    let track_hit_rect = Rect::new(
-        track_screen_x - 16.0 * scale,
-        track_screen_y - 6.0 * scale,
-        track_screen_x + (12.0 * GUI_SCALE + 16.0) * scale,
-        track_screen_y + track_height + 6.0 * scale,
-    );
-
-    let is_inside_track = cursor_pos.is_some_and(|pos| track_hit_rect.contains(pos));
-
-    let track_pressed = track_interaction_query
-        .iter()
-        .any(|i| *i == Interaction::Pressed)
-        || thumb_query.iter().any(|i| *i == Interaction::Pressed);
-
-    if left_just_pressed && (is_inside_track || track_pressed) {
-        scroll_state.is_dragging_thumb = true;
-    }
-
-    if !left_pressed {
-        scroll_state.is_dragging_thumb = false;
-    }
-
-    if scroll_state.is_dragging_thumb && left_pressed {
-        if let Some(pos) = cursor_pos {
-            let cursor_rel_y = pos.y - track_screen_y;
-            let clamped_y = (cursor_rel_y - thumb_height * 0.5).clamp(0.0, max_travel);
-            let fraction = clamped_y / max_travel;
-            let thumb_top_logical = fraction * max_travel_logical;
-
-            for mut thumb_node in &mut thumb_node_query {
-                thumb_node.top = px(thumb_top_logical);
-            }
-
-            let target_row = ((fraction * max_scroll as f32).round() as usize).min(max_scroll);
-
-            if target_row != scroll_state.scroll_row {
-                scroll_state.scroll_row = target_row;
-                row_changed = true;
-            }
-        }
-    } else {
-        // Sync thumb position whenever not actively dragging
-        let cur_row = scroll_state.scroll_row;
-        let thumb_top_logical = if max_scroll > 0 {
-            (cur_row as f32 / max_scroll as f32) * max_travel_logical
+        if delta > 0.0 {
+            scroll_state.scroll_row = scroll_state.scroll_row.saturating_sub(1);
         } else {
-            0.0
-        };
-
-        for mut thumb_node in &mut thumb_node_query {
-            thumb_node.top = px(thumb_top_logical);
-        }
-    }
-
-    // 3. Update slot icons when row changes
-    if row_changed {
-        let cur_row = scroll_state.scroll_row;
-        for mut slot in &mut palette_query {
-            let block_idx = cur_row * INVENTORY_COLS + slot.slot_index;
-            slot.voxel = filtered.get(block_idx).copied();
+            scroll_state.scroll_row = (scroll_state.scroll_row + 1).min(max_scroll);
         }
 
-        for (icon, mut img, mut vis) in &mut slot_icon_query {
-            let block_idx = cur_row * INVENTORY_COLS + icon.slot_index;
-            if let Some(&v) = filtered.get(block_idx) {
-                *vis = Visibility::Visible;
-                img.image = icons.get(v);
-            } else {
-                *vis = Visibility::Hidden;
+        if scroll_state.scroll_row != old_row {
+            for entity in &query {
+                commands.entity(entity).despawn();
             }
+            build_inventory_ui(
+                &mut commands,
+                &asset_server,
+                &hotbar,
+                &player_inv,
+                &icons,
+                *tab_state,
+                active_cat.0,
+                &scroll_state,
+                &search_query,
+                app_font.as_ref().map(|f| f.source()),
+            );
         }
     }
 }
@@ -1515,38 +1748,30 @@ fn handle_inventory_slot_interaction(
     mut hotbar: ResMut<Hotbar>,
     mut player_inv: ResMut<PlayerInventory>,
     tab_state: Res<InventoryTab>,
-    icons: Res<BlockIcons>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     card_query: Query<(&GlobalTransform, &ComputedNode), With<InventoryCard>>,
-    mut palette_query: Query<
-        (
-            &Interaction,
-            &mut InventoryPaletteSlot,
-            &mut BorderColor,
-            &mut BackgroundColor,
-        ),
-        (With<InventoryPaletteSlot>, Without<InventoryHotbarSlot>),
+    mut storage_slot_query: Query<
+        (&Interaction, &PlayerStorageSlot, &Children),
+        (With<PlayerStorageSlot>, Without<InventoryHotbarSlot>, Without<InventoryCatalogSlot>),
     >,
-    mut slot_icon_query: Query<(&InventoryPaletteSlotIcon, &mut ImageNode, &mut Visibility)>,
     mut hotbar_slot_query: Query<
-        (
-            &Interaction,
-            &InventoryHotbarSlot,
-            &mut BorderColor,
-            &mut BackgroundColor,
-        ),
-        (With<InventoryHotbarSlot>, Without<InventoryPaletteSlot>),
+        (&Interaction, &InventoryHotbarSlot, &Children),
+        (With<InventoryHotbarSlot>, Without<PlayerStorageSlot>, Without<InventoryCatalogSlot>),
     >,
-    mut drag_state: Local<InventoryDragState>,
+    mut catalog_slot_query: Query<
+        (&Interaction, &InventoryCatalogSlot, &Children),
+        (With<InventoryCatalogSlot>, Without<PlayerStorageSlot>, Without<InventoryHotbarSlot>),
+    >,
+    mut offhand_query: Query<(&Interaction, &Children), (With<InventoryOffhandSlot>, Without<InventoryUtilitySlot>)>,
+    mut utility_query: Query<(&Interaction, &Children), (With<InventoryUtilitySlot>, Without<InventoryOffhandSlot>)>,
+    mut hover_overlay_query: Query<&mut Visibility, With<SlotHoverHighlight>>,
 ) {
     let is_shift = keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight);
-    let left_just_pressed = mouse.just_pressed(MouseButton::Left);
-    let right_just_pressed = mouse.just_pressed(MouseButton::Right);
-    let middle_just_pressed = mouse.just_pressed(MouseButton::Middle);
-    let left_pressed = mouse.pressed(MouseButton::Left);
+    let left_click = mouse.just_pressed(MouseButton::Left);
+    let right_click = mouse.just_pressed(MouseButton::Right);
 
-    // 1. Deselect held item if clicking outside the central inventory card (on the backdrop)
-    if (left_just_pressed || right_just_pressed)
+    // 1. Deselect held item if clicking outside the card
+    if (left_click || right_click)
         && let (Some(window), Some((transform, computed))) =
             (window_query.iter().next(), card_query.iter().next())
         && let Some(cursor_pos) = window.cursor_position()
@@ -1554,397 +1779,293 @@ fn handle_inventory_slot_interaction(
         let center = transform.translation().truncate();
         let half = computed.size() * 0.5;
         let card_rect = Rect::from_corners(center - half, center + half);
-        if !card_rect.contains(cursor_pos)
-            && let Some(held) = held_item.voxel
-        {
-            if *tab_state == InventoryTab::Player {
+        if !card_rect.contains(cursor_pos) {
+            if let Some(held) = held_item.voxel {
                 player_inv.add_item(held);
+                held_item.voxel = None;
             }
-            held_item.voxel = None;
         }
     }
 
-    // 2. Right-click deselect if not hovering over any hotbar slot or palette slot
-    let any_hotbar_hovered = hotbar_slot_query
-        .iter()
-        .any(|(i, _, _, _)| *i == Interaction::Hovered || *i == Interaction::Pressed);
-    let any_palette_hovered = palette_query
-        .iter()
-        .any(|(i, _, _, _)| *i == Interaction::Hovered || *i == Interaction::Pressed);
-
-    if right_just_pressed
-        && !any_hotbar_hovered
-        && !any_palette_hovered
-        && let Some(held) = held_item.voxel
-    {
-        if *tab_state == InventoryTab::Player {
-            player_inv.add_item(held);
-        }
-        held_item.voxel = None;
-    }
-
-    // Check digit keys 1..8 for quick assignment / hotbar swap
-    let digit_pressed = if keyboard.just_pressed(KeyCode::Digit1) {
-        Some(0)
-    } else if keyboard.just_pressed(KeyCode::Digit2) {
-        Some(1)
-    } else if keyboard.just_pressed(KeyCode::Digit3) {
-        Some(2)
-    } else if keyboard.just_pressed(KeyCode::Digit4) {
-        Some(3)
-    } else if keyboard.just_pressed(KeyCode::Digit5) {
-        Some(4)
-    } else if keyboard.just_pressed(KeyCode::Digit6) {
-        Some(5)
-    } else if keyboard.just_pressed(KeyCode::Digit7) {
-        Some(6)
-    } else if keyboard.just_pressed(KeyCode::Digit8) {
-        Some(7)
-    } else {
-        None
-    };
-
-    let mut sync_player_grid_icons = false;
-
-    // 4. Process Grid Slots (Creative vs Player mode)
-    for (interaction, mut slot, mut border, mut bg) in &mut palette_query {
+    // 2. Main Player Storage Slots
+    for (interaction, slot, children) in &mut storage_slot_query {
         let is_hovered = *interaction == Interaction::Hovered;
-        let is_pressed = *interaction == Interaction::Pressed;
-        let s_idx = slot.slot_index;
+        for child in children.iter() {
+            if let Ok(mut vis) = hover_overlay_query.get_mut(child) {
+                *vis = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
+            }
+        }
 
-        if is_hovered || is_pressed {
-            *border = BorderColor::all(Color::srgb(1.0, 0.85, 0.30));
-            *bg = BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.12));
+        if is_hovered && (left_click || right_click) {
+            let slot_idx = slot.slot_index;
+            let current_item = player_inv.slots[slot_idx];
 
-            match *tab_state {
-                InventoryTab::Creative => {
-                    if let Some(v) = slot.voxel {
-                        if let Some(target_slot) = digit_pressed {
-                            hotbar.slots[target_slot] = Some(v);
-                        }
-
-                        if is_shift {
-                            if (left_just_pressed || left_pressed)
-                                && drag_state.last_shift_palette_slot != Some(s_idx)
-                            {
-                                drag_state.last_shift_palette_slot = Some(s_idx);
-                                if let Some(empty_idx) =
-                                    hotbar.slots.iter().position(|s| s.is_none())
-                                {
-                                    hotbar.slots[empty_idx] = Some(v);
-                                } else {
-                                    let active_slot = hotbar.active_slot;
-                                    hotbar.slots[active_slot] = Some(v);
-                                }
-                            }
-                        } else {
-                            if middle_just_pressed {
-                                held_item.voxel = Some(v);
-                            }
-
-                            if left_just_pressed && is_pressed {
-                                if held_item.voxel == Some(v) {
-                                    held_item.voxel = None;
-                                } else {
-                                    held_item.voxel = Some(v);
-                                }
-                            }
-                        }
-                    }
-                }
-                InventoryTab::Player => {
-                    // Quick swap / move with hotbar via digit keys 1..8
-                    if let Some(target_slot) = digit_pressed {
-                        let inv_item = player_inv.get(s_idx);
-                        let hotbar_item = hotbar.slots[target_slot];
-                        player_inv.set(s_idx, hotbar_item);
-                        hotbar.slots[target_slot] = inv_item;
-                        slot.voxel = player_inv.get(s_idx);
-                        sync_player_grid_icons = true;
-                    }
-
-                    // Shift + Click: transfer from Personal Inventory to Hotbar
-                    if is_shift {
-                        if (left_just_pressed || (left_pressed && is_hovered))
-                            && drag_state.last_shift_palette_slot != Some(s_idx)
-                            && let Some(item) = player_inv.get(s_idx)
-                        {
-                            drag_state.last_shift_palette_slot = Some(s_idx);
-                            if let Some(empty_idx) = hotbar.slots.iter().position(|s| s.is_none()) {
-                                hotbar.slots[empty_idx] = Some(item);
-                                player_inv.set(s_idx, None);
-                            } else {
-                                let active_slot = hotbar.active_slot;
-                                let existing = hotbar.slots[active_slot];
-                                hotbar.slots[active_slot] = Some(item);
-                                player_inv.set(s_idx, existing);
-                            }
-                            slot.voxel = player_inv.get(s_idx);
-                            sync_player_grid_icons = true;
-                        }
-                    } else if let Some(held) = held_item.voxel {
-                        // Left-click with held item on cursor
-                        if left_just_pressed && is_pressed {
-                            if let Some(existing) = player_inv.get(s_idx) {
-                                if existing == held {
-                                    held_item.voxel = None;
-                                } else {
-                                    player_inv.set(s_idx, Some(held));
-                                    held_item.voxel = Some(existing);
-                                }
-                            } else {
-                                player_inv.set(s_idx, Some(held));
-                                held_item.voxel = None;
-                            }
-                            slot.voxel = player_inv.get(s_idx);
-                            sync_player_grid_icons = true;
-                        } else if right_just_pressed {
-                            player_inv.set(s_idx, Some(held));
-                            slot.voxel = player_inv.get(s_idx);
-                            sync_player_grid_icons = true;
-                        }
+            if is_shift && left_click {
+                if let Some(item) = current_item {
+                    // Transfer to hotbar
+                    if let Some(empty_idx) = hotbar.slots.iter().position(|s| s.is_none()) {
+                        hotbar.slots[empty_idx] = Some(item);
+                        player_inv.slots[slot_idx] = None;
                     } else {
-                        // Left-click with empty cursor picks up item
-                        if left_just_pressed
-                            && is_pressed
-                            && let Some(item) = player_inv.get(s_idx)
-                        {
-                            held_item.voxel = Some(item);
-                            player_inv.set(s_idx, None);
-                            slot.voxel = None;
-                            sync_player_grid_icons = true;
-                        } else if (middle_just_pressed || keyboard.just_pressed(KeyCode::KeyQ))
-                            && player_inv.get(s_idx).is_some()
-                        {
-                            player_inv.set(s_idx, None);
-                            slot.voxel = None;
-                            sync_player_grid_icons = true;
-                        }
+                        let active = hotbar.active_slot;
+                        let displaced = hotbar.slots[active];
+                        hotbar.slots[active] = Some(item);
+                        player_inv.slots[slot_idx] = displaced;
+                    }
+                }
+            } else if left_click {
+                let temp = held_item.voxel;
+                held_item.voxel = current_item;
+                player_inv.slots[slot_idx] = temp;
+            } else if right_click {
+                if held_item.voxel.is_none() && current_item.is_some() {
+                    held_item.voxel = current_item;
+                    player_inv.slots[slot_idx] = None;
+                } else if let Some(held) = held_item.voxel {
+                    if current_item.is_none() {
+                        player_inv.slots[slot_idx] = Some(held);
+                    } else {
+                        let temp = held_item.voxel;
+                        held_item.voxel = current_item;
+                        player_inv.slots[slot_idx] = temp;
                     }
                 }
             }
-        } else {
-            *border = BorderColor::all(Color::NONE);
-            *bg = BackgroundColor(Color::NONE);
         }
     }
 
-    // 5. Process Hotbar Slots
-    for (interaction, hotbar_slot, mut border, mut bg) in &mut hotbar_slot_query {
+    // 3. Mirrored Hotbar Slots
+    for (interaction, slot, children) in &mut hotbar_slot_query {
         let is_hovered = *interaction == Interaction::Hovered;
-        let is_pressed = *interaction == Interaction::Pressed;
-        let idx = hotbar_slot.index;
-
-        if is_hovered || is_pressed {
-            *border = BorderColor::all(Color::srgb(1.0, 0.85, 0.30));
-            *bg = BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.12));
-
-            // Q key clears hovered hotbar slot
-            if keyboard.just_pressed(KeyCode::KeyQ) {
-                hotbar.slots[idx] = None;
+        for child in children.iter() {
+            if let Ok(mut vis) = hover_overlay_query.get_mut(child) {
+                *vis = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
             }
+        }
 
-            // Middle click clears hotbar slot
-            if middle_just_pressed {
-                hotbar.slots[idx] = None;
-            }
+        if is_hovered && (left_click || right_click) {
+            let h_idx = slot.index;
+            let current_item = hotbar.slots[h_idx];
 
-            // Quick swap / move via keys 1..8
-            if let Some(target_slot) = digit_pressed
-                && target_slot != idx
-            {
-                hotbar.slots.swap(idx, target_slot);
-            }
-
-            // Shift + Click handling
-            if is_shift {
-                if *tab_state == InventoryTab::Player {
-                    // In Personal tab, Shift-click or Shift-drag transfers hotbar item into Player Inventory!
-                    if (left_just_pressed || (left_pressed && is_hovered))
-                        && let Some(item) = hotbar.slots[idx]
-                        && player_inv.add_item(item)
-                    {
-                        hotbar.slots[idx] = None;
-                        sync_player_grid_icons = true;
-                    }
-                } else {
-                    // In Creative tab, Shift-click clears hotbar slot
-                    if left_just_pressed || (left_pressed && is_hovered) {
-                        hotbar.slots[idx] = None;
+            if is_shift && left_click && *tab_state == InventoryTab::Player {
+                if let Some(item) = current_item {
+                    // Transfer to storage
+                    if player_inv.add_item(item) {
+                        hotbar.slots[h_idx] = None;
                     }
                 }
-            } else {
-                // Right click on hotbar slot: place/stamp held item into slot
-                if right_just_pressed && let Some(held) = held_item.voxel {
-                    hotbar.slots[idx] = Some(held);
-                }
-
-                // Left click or Left-drag (Mouse Tweaks LMB Tweak)
-                if let Some(held) = held_item.voxel {
-                    if left_pressed && (is_hovered || is_pressed) {
-                        if left_just_pressed {
-                            drag_state.hotbar_drag_start_slot = Some(idx);
-                            drag_state.is_hotbar_dragging = false;
-
-                            if let Some(existing) = hotbar.slots[idx] {
-                                if existing != held {
-                                    hotbar.slots[idx] = Some(held);
-                                    held_item.voxel = Some(existing);
-                                    drag_state.hotbar_drag_start_slot = None;
-                                } else {
-                                    held_item.voxel = None;
-                                }
-                            } else {
-                                hotbar.slots[idx] = Some(held);
-                            }
-                        } else if drag_state.hotbar_drag_start_slot.is_some()
-                            && drag_state.hotbar_drag_start_slot != Some(idx)
-                        {
-                            drag_state.is_hotbar_dragging = true;
-                            hotbar.slots[idx] = Some(held);
-                        }
-                    }
-                } else {
-                    // Not holding item: Left click picks up item from hotbar slot
-                    if left_just_pressed && is_pressed && hotbar.slots[idx].is_some() {
-                        held_item.voxel = hotbar.slots[idx];
-                        hotbar.slots[idx] = None;
-                    }
+            } else if left_click {
+                let temp = held_item.voxel;
+                held_item.voxel = current_item;
+                hotbar.slots[h_idx] = temp;
+            } else if right_click {
+                if held_item.voxel.is_none() && current_item.is_some() {
+                    held_item.voxel = current_item;
+                    hotbar.slots[h_idx] = None;
+                } else if held_item.voxel.is_some() {
+                    let temp = held_item.voxel;
+                    held_item.voxel = current_item;
+                    hotbar.slots[h_idx] = temp;
                 }
             }
-        } else {
-            *border = BorderColor::all(Color::NONE);
-            *bg = BackgroundColor(Color::NONE);
         }
     }
 
-    if sync_player_grid_icons && *tab_state == InventoryTab::Player {
-        for (_, mut slot, _, _) in &mut palette_query {
-            slot.voxel = player_inv.get(slot.slot_index);
+    // 4. Off-hand Slot
+    for (interaction, children) in &mut offhand_query {
+        let is_hovered = *interaction == Interaction::Hovered;
+        for child in children.iter() {
+            if let Ok(mut vis) = hover_overlay_query.get_mut(child) {
+                *vis = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
+            }
         }
-        for (icon, mut img, mut vis) in &mut slot_icon_query {
-            if let Some(v) = player_inv.get(icon.slot_index) {
+
+        if is_hovered && left_click {
+            let temp = held_item.voxel;
+            held_item.voxel = player_inv.offhand_slot;
+            player_inv.offhand_slot = temp;
+        }
+    }
+
+    // 5. Quick Utility Slot
+    for (interaction, children) in &mut utility_query {
+        let is_hovered = *interaction == Interaction::Hovered;
+        for child in children.iter() {
+            if let Ok(mut vis) = hover_overlay_query.get_mut(child) {
+                *vis = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
+            }
+        }
+
+        if is_hovered && left_click {
+            let temp = held_item.voxel;
+            held_item.voxel = player_inv.utility_slot;
+            player_inv.utility_slot = temp;
+        }
+    }
+
+    // 6. Creative Catalog Slots
+    for (interaction, slot, children) in &mut catalog_slot_query {
+        let is_hovered = *interaction == Interaction::Hovered;
+        for child in children.iter() {
+            if let Ok(mut vis) = hover_overlay_query.get_mut(child) {
+                *vis = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
+            }
+        }
+
+        if is_hovered && (left_click || right_click) {
+            if let Some(voxel) = slot.voxel {
+                if is_shift {
+                    // Shift click directly inserts into hotbar
+                    if let Some(empty_idx) = hotbar.slots.iter().position(|s| s.is_none()) {
+                        hotbar.slots[empty_idx] = Some(voxel);
+                    } else {
+                        let active = hotbar.active_slot;
+                        hotbar.slots[active] = Some(voxel);
+                    }
+                } else {
+                    held_item.voxel = Some(voxel);
+                }
+            }
+        }
+    }
+}
+
+fn sync_inventory_hotbar_icons(
+    hotbar: Res<Hotbar>,
+    player_inv: Res<PlayerInventory>,
+    icons: Res<BlockIcons>,
+    asset_server: Res<AssetServer>,
+    mut hotbar_icons: Query<(&InventoryHotbarSlotIcon, &mut ImageNode, &mut Visibility)>,
+    mut storage_icons: Query<
+        (&PlayerStorageSlotIcon, &mut ImageNode, &mut Visibility),
+        Without<InventoryHotbarSlotIcon>,
+    >,
+    mut offhand_icons: Query<
+        &mut ImageNode,
+        (With<InventoryOffhandIcon>, Without<InventoryHotbarSlotIcon>, Without<PlayerStorageSlotIcon>),
+    >,
+    mut utility_icons: Query<
+        &mut ImageNode,
+        (
+            With<InventoryUtilityIcon>,
+            Without<InventoryHotbarSlotIcon>,
+            Without<PlayerStorageSlotIcon>,
+            Without<InventoryOffhandIcon>,
+        ),
+    >,
+) {
+    if hotbar.is_changed() {
+        for (icon, mut img, mut vis) in &mut hotbar_icons {
+            if let Some(voxel) = hotbar.slots[icon.index] {
+                img.image = icons.get(voxel);
                 *vis = Visibility::Visible;
-                img.image = icons.get(v);
             } else {
                 *vis = Visibility::Hidden;
             }
         }
     }
 
-    // 6. Mouse release cleanup
-    if mouse.just_released(MouseButton::Left) {
-        if drag_state.hotbar_drag_start_slot.is_some() {
-            held_item.voxel = None;
+    if player_inv.is_changed() {
+        for (icon, mut img, mut vis) in &mut storage_icons {
+            if let Some(voxel) = player_inv.slots.get(icon.slot_index).copied().flatten() {
+                img.image = icons.get(voxel);
+                *vis = Visibility::Visible;
+            } else {
+                *vis = Visibility::Hidden;
+            }
         }
-        drag_state.last_shift_palette_slot = None;
-        drag_state.is_hotbar_dragging = false;
-        drag_state.hotbar_drag_start_slot = None;
-    }
-}
 
-fn sync_inventory_hotbar_icons(
-    hotbar: Res<Hotbar>,
-    icons: Res<BlockIcons>,
-    mut icons_query: Query<(&InventoryHotbarSlotIcon, &mut ImageNode, &mut Visibility)>,
-) {
-    if !hotbar.is_changed() {
-        return;
-    }
+        for mut img in &mut offhand_icons {
+            if let Some(voxel) = player_inv.offhand_slot {
+                img.image = icons.get(voxel);
+            } else {
+                img.image = asset_server.load("textures/interfaces/containers/slots/shield.png");
+            }
+        }
 
-    for (icon, mut img, mut vis) in &mut icons_query {
-        let slot_voxel = hotbar.slots[icon.index];
-        if let Some(voxel) = slot_voxel {
-            *vis = Visibility::Visible;
-            img.image = icons.get(voxel);
-        } else {
-            *vis = Visibility::Hidden;
+        for mut img in &mut utility_icons {
+            if let Some(voxel) = player_inv.utility_slot {
+                img.image = icons.get(voxel);
+            } else {
+                img.image = asset_server.load("textures/interfaces/containers/slots/quiver.png");
+            }
         }
     }
 }
 
 fn update_inventory_tooltip(
     window_query: Query<&Window, With<PrimaryWindow>>,
-    ui_scale: Option<Res<UiScale>>,
     hotbar: Res<Hotbar>,
-    palette_query: Query<(&Interaction, &InventoryPaletteSlot)>,
-    hotbar_slot_query: Query<(&Interaction, &InventoryHotbarSlot)>,
-    mut tooltip_box_query: Query<(&mut Node, &mut Visibility), With<InventoryTooltipBox>>,
-    mut tooltip_text_query: Query<&mut Text, With<InventoryTooltipText>>,
+    player_inv: Res<PlayerInventory>,
+    storage_query: Query<(&Interaction, &PlayerStorageSlot)>,
+    hotbar_query: Query<(&Interaction, &InventoryHotbarSlot)>,
+    catalog_query: Query<(&Interaction, &InventoryCatalogSlot)>,
+    offhand_query: Query<&Interaction, With<InventoryOffhandSlot>>,
+    utility_query: Query<&Interaction, With<InventoryUtilitySlot>>,
+    mut tooltip_box: Query<(&mut Node, &mut Visibility), With<InventoryTooltipBox>>,
+    mut tooltip_text: Query<&mut Text, With<InventoryTooltipText>>,
 ) {
-    let Ok((mut box_node, mut box_vis)) = tooltip_box_query.single_mut() else {
+    let Ok((mut box_node, mut box_vis)) = tooltip_box.single_mut() else {
         return;
     };
-    let Ok(mut text) = tooltip_text_query.single_mut() else {
+    let Ok(mut text) = tooltip_text.single_mut() else {
+        return;
+    };
+    let Ok(window) = window_query.single() else {
         return;
     };
 
-    // Find any hovered slot that contains an item
-    let mut hovered_voxel: Option<Voxel> = None;
+    let mut hovered_voxel = None;
 
-    // 1. Check palette grid slots
-    for (interaction, slot) in &palette_query {
-        if (*interaction == Interaction::Hovered || *interaction == Interaction::Pressed)
-            && let Some(v) = slot.voxel
-        {
-            hovered_voxel = Some(v);
+    for (interaction, slot) in &storage_query {
+        if *interaction == Interaction::Hovered {
+            hovered_voxel = player_inv.slots.get(slot.slot_index).copied().flatten();
             break;
         }
     }
 
-    // 2. Check hotbar row slots in the inventory
     if hovered_voxel.is_none() {
-        for (interaction, slot) in &hotbar_slot_query {
-            if (*interaction == Interaction::Hovered || *interaction == Interaction::Pressed)
-                && let Some(v) = hotbar.slots[slot.index]
-            {
-                hovered_voxel = Some(v);
+        for (interaction, slot) in &hotbar_query {
+            if *interaction == Interaction::Hovered {
+                hovered_voxel = hotbar.slots.get(slot.index).copied().flatten();
                 break;
             }
         }
     }
 
-    let Some(voxel) = hovered_voxel else {
-        *box_vis = Visibility::Hidden;
-        return;
-    };
+    if hovered_voxel.is_none() {
+        for (interaction, slot) in &catalog_query {
+            if *interaction == Interaction::Hovered {
+                hovered_voxel = slot.voxel;
+                break;
+            }
+        }
+    }
 
-    let Some(window) = window_query.iter().next() else {
-        *box_vis = Visibility::Hidden;
-        return;
-    };
+    if hovered_voxel.is_none() {
+        for interaction in &offhand_query {
+            if *interaction == Interaction::Hovered {
+                hovered_voxel = player_inv.offhand_slot;
+                break;
+            }
+        }
+    }
 
-    let Some(cursor_pos) = window.cursor_position() else {
-        *box_vis = Visibility::Hidden;
-        return;
-    };
+    if hovered_voxel.is_none() {
+        for interaction in &utility_query {
+            if *interaction == Interaction::Hovered {
+                hovered_voxel = player_inv.utility_slot;
+                break;
+            }
+        }
+    }
 
-    let label = voxel.label();
-    text.0 = label.to_string();
-    *box_vis = Visibility::Visible;
-
-    let scale = ui_scale.as_ref().map_or(1.0, |s| s.0);
-    let cur_x = cursor_pos.x / scale;
-    let cur_y = cursor_pos.y / scale;
-
-    let win_w = window.width() / scale;
-    let win_h = window.height() / scale;
-
-    let approx_w = (label.len() as f32 * 10.0 + 20.0).max(60.0);
-    let approx_h = 28.0;
-
-    let left = if cur_x + 18.0 + approx_w > win_w - 8.0 {
-        (cur_x - approx_w - 12.0).max(8.0)
+    if let (Some(voxel), Some(cursor_pos)) = (hovered_voxel, window.cursor_position()) {
+        text.0 = voxel.label().to_string();
+        box_node.left = px(cursor_pos.x + 16.0);
+        box_node.top = px(cursor_pos.y - 12.0);
+        *box_vis = Visibility::Visible;
     } else {
-        cur_x + 18.0
-    };
-
-    let top = if cur_y - approx_h - 10.0 < 8.0 {
-        (cur_y + 24.0).min(win_h - approx_h - 8.0)
-    } else {
-        cur_y - approx_h - 6.0
-    };
-
-    box_node.left = px(left);
-    box_node.top = px(top);
+        *box_vis = Visibility::Hidden;
+    }
 }

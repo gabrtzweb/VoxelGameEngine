@@ -1,6 +1,8 @@
 # Voxel Game Engine - Development Roadmap
 
-This document outlines the planned development phases for the voxel game engine, with foundational architectural systems, gameplay tools, fluids, procedural generation, and high-performance scaling.
+> [!NOTE]
+> **Roadmap Status: Set Aside / Reset Pending**  
+> Following substantial architecture refactorings—including the 720-block worldbuilding catalog expansion, shader-level natural texture rotation, 3-axis directional placement, and the standardized 9-horizontal-slot interface architecture—the existing roadmap sequence is set aside. A revised roadmap will be established to outline the next generation of world generation, gameplay systems, and survival mechanics.
 
 ### Roadmap Phase Directory
 
@@ -17,9 +19,10 @@ This document outlines the planned development phases for the voxel game engine,
 | **Phase 9** | [Engine-Wide Architecture Modernization, 1m Shapes & Codebase Cleanup](#phase-9-engine-wide-architecture-modernization-1m-shapes--codebase-cleanup-completed) | **Completed** | 1m block shapes (`Full`, `Slab`, `Stair`, `Column`), dead code purged across 10 engine subsystems |
 | **Phase 10** | [Gameplay Polish, Interaction Feedback & Quality-of-Life](#phase-10-gameplay-polish-interaction-feedback--quality-of-life-completed) | **Completed** | Block break/place feedback particles, dual-card inventory, minimap & world map, DoF blur |
 | **Phase 11** | [World Generation & Worldbuilding Expansion (High Fantasy & Dark Fantasy Realism)](#phase-11-world-generation--worldbuilding-expansion-high-fantasy--dark-fantasy-realism-completed) | **Completed** | 512-block world depth, 14 fantasy biomes, multi-noise climate mapping, natural edge dithering |
-| **Phase 12** | [Flora, Procedural Trees & Surface Vegetation](#phase-12-flora-procedural-trees--surface-vegetation-upcoming) | **Upcoming** | 1m procedural trees (Oak, Birch, Pine, Rainwood), ground cover, flowering plants, wind sway shader |
+| **Phase 12** | [Flora, Procedural Trees & Surface Vegetation](#phase-12-flora-procedural-trees--surface-vegetation-upcoming) | **Deferred** | Procedural trees and surface vegetation to be restructured under the new roadmap |
 | **Phase 13** | [High-Performance Scaling, Level-of-Detail (LOD) & Engine Optimization](#phase-13-high-performance-scaling-level-of-detail-lod--engine-optimization-completed) | **Completed** | Multi-tier chunk mesh LOD, GPU Hi-Z occlusion culling, Multi-Draw Indirect, MCA region saves |
 | **Phase 14** | [Comprehensive Technical Review, Performance Engineering & Architecture Audit](#phase-14-comprehensive-technical-review-performance-engineering--architecture-audit-completed) | **Completed** | 4-wide SIMD noise (3.2x), Arc<Chunk> (95% alloc cut), bitwise math, U16 index compaction, L1 voxel table, ChunkCache LRU |
+| **Phase 15** | [Roadmap Reset & Architectural Transition](#phase-15-roadmap-reset--architectural-transition-current) | **Current / Set Aside** | Roadmap reset to chart a fresh development path aligned with recent engine-wide modernization |
 
 ---
 
@@ -873,4 +876,11 @@ Phase 14 represents an exhaustive, engine-wide performance audit and architectur
   - **Named Generator Constants & Window Setup Cleanup**:
     - Replaced undocumented magic seed offsets in `generator.rs` with named constants (`SEED_OFFSET_BEACH_NOISE`, `SEED_OFFSET_SURFACE_DITHER`, etc.).
     - Converted window icon initialization to run once via `.run_if(run_once)`.
+
+---
+
+## Phase 15: Roadmap Reset & Architectural Transition (Current)
+- [x] **Transition Milestone**:
+  - The engine has undergone major foundational expansions (720-block worldbuilding catalog, shader-level natural texture rotation, 3-axis directional placement, and standardized 9-slot interface architecture).
+  - The previous linear roadmap is officially set aside to allow resetting and restructuring future milestones around upcoming gameplay, procedural world features, and survival mechanics.
 
