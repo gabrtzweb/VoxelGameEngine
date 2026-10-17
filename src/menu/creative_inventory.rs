@@ -1,4 +1,11 @@
-use bevy::{input::mouse::AccumulatedMouseScroll, prelude::*, window::PrimaryWindow};
+use bevy::{
+    input::mouse::AccumulatedMouseScroll,
+    picking::hover::Hovered,
+    prelude::*,
+    ui::Pressed,
+    ui_widgets::Button,
+    window::PrimaryWindow,
+};
 
 use crate::{
     core::{AppFont, FontSource, text_shadow_default},
@@ -461,6 +468,7 @@ fn build_inventory_ui(
                             card.spawn((
                                 InventoryMenuEntity,
                                 Button,
+                                Hovered::default(),
                                 InventoryToggleTabButton,
                                 Node {
                                     position_type: PositionType::Absolute,
@@ -512,6 +520,7 @@ fn build_inventory_ui(
                                 card.spawn((
                                     InventoryMenuEntity,
                                     Button,
+                                    Hovered::default(),
                                     action,
                                     Node {
                                         position_type: PositionType::Absolute,
@@ -593,6 +602,7 @@ fn build_inventory_ui(
                                     card.spawn((
                                         InventoryMenuEntity,
                                         Button,
+                                        Hovered::default(),
                                         PlayerStorageSlot { slot_index: slot_idx },
                                         Node {
                                             position_type: PositionType::Absolute,
@@ -662,6 +672,7 @@ fn build_inventory_ui(
                             card.spawn((
                                 InventoryMenuEntity,
                                 Button,
+                                Hovered::default(),
                                 InventoryOffhandSlot,
                                 Node {
                                     position_type: PositionType::Absolute,
@@ -727,6 +738,7 @@ fn build_inventory_ui(
                             card.spawn((
                                 InventoryMenuEntity,
                                 Button,
+                                Hovered::default(),
                                 InventoryUtilitySlot,
                                 Node {
                                     position_type: PositionType::Absolute,
@@ -795,6 +807,7 @@ fn build_inventory_ui(
                                 card.spawn((
                                     InventoryMenuEntity,
                                     Button,
+                                    Hovered::default(),
                                     InventoryHotbarSlot { index: c },
                                     Node {
                                         position_type: PositionType::Absolute,
@@ -901,6 +914,7 @@ fn build_inventory_ui(
                             card.spawn((
                                 InventoryMenuEntity,
                                 Button,
+                                Hovered::default(),
                                 InventoryToggleTabButton,
                                 Node {
                                     position_type: PositionType::Absolute,
@@ -946,6 +960,7 @@ fn build_inventory_ui(
                                 card.spawn((
                                     InventoryMenuEntity,
                                     Button,
+                                    Hovered::default(),
                                     CategoryTabButton { category: cat },
                                     Node {
                                         position_type: PositionType::Absolute,
@@ -1009,6 +1024,7 @@ fn build_inventory_ui(
                             card.spawn((
                                 InventoryMenuEntity,
                                 Button,
+                                Hovered::default(),
                                 CreativeSearchBar,
                                 Node {
                                     position_type: PositionType::Absolute,
@@ -1080,6 +1096,7 @@ fn build_inventory_ui(
                                     card.spawn((
                                         InventoryMenuEntity,
                                         Button,
+                                        Hovered::default(),
                                         InventoryCatalogSlot {
                                             slot_index: slot_idx,
                                             voxel,
@@ -1150,6 +1167,7 @@ fn build_inventory_ui(
                             card.spawn((
                                 InventoryMenuEntity,
                                 Button,
+                                Hovered::default(),
                                 InventoryScrollTrack,
                                 Node {
                                     position_type: PositionType::Absolute,
@@ -1165,6 +1183,7 @@ fn build_inventory_ui(
                                 track.spawn((
                                     InventoryMenuEntity,
                                     Button,
+                                    Hovered::default(),
                                     InventoryScrollThumb,
                                     ImageNode {
                                         image: scroller_tex.clone(),
@@ -1197,6 +1216,7 @@ fn build_inventory_ui(
                             card.spawn((
                                 InventoryMenuEntity,
                                 Button,
+                                Hovered::default(),
                                 InventoryOffhandSlot,
                                 Node {
                                     position_type: PositionType::Absolute,
@@ -1265,6 +1285,7 @@ fn build_inventory_ui(
                                 card.spawn((
                                     InventoryMenuEntity,
                                     Button,
+                                    Hovered::default(),
                                     InventoryHotbarSlot { index: c },
                                     Node {
                                         position_type: PositionType::Absolute,
@@ -1346,6 +1367,7 @@ fn build_inventory_ui(
                             card.spawn((
                                 InventoryMenuEntity,
                                 Button,
+                                Hovered::default(),
                                 InventoryUtilitySlot,
                                 Node {
                                     position_type: PositionType::Absolute,
@@ -1489,10 +1511,10 @@ fn handle_creative_toggle_interaction(
     scroll_state: Res<InventoryScrollState>,
     mut search_query: ResMut<CreativeSearchQuery>,
     app_font: Option<Res<AppFont>>,
-    toggle_query: Query<&Interaction, (With<InventoryToggleTabButton>, Changed<Interaction>)>,
+    toggle_query: Query<(&Hovered, Has<Pressed>), With<InventoryToggleTabButton>>,
 ) {
-    for interaction in &toggle_query {
-        if *interaction == Interaction::Pressed || mouse.just_pressed(MouseButton::Left) && *interaction == Interaction::Hovered {
+    for (hovered, is_pressed) in &toggle_query {
+        if is_pressed || (mouse.just_pressed(MouseButton::Left) && hovered.get()) {
             *tab_state = match *tab_state {
                 InventoryTab::Creative => InventoryTab::Player,
                 InventoryTab::Player => InventoryTab::Creative,
@@ -1533,14 +1555,14 @@ fn handle_category_tab_interaction(
     tab_state: Res<InventoryTab>,
     search_query: Res<CreativeSearchQuery>,
     app_font: Option<Res<AppFont>>,
-    cat_query: Query<(&Interaction, &CategoryTabButton)>,
+    cat_query: Query<(&Hovered, &CategoryTabButton)>,
 ) {
     if !mouse.just_pressed(MouseButton::Left) {
         return;
     }
 
-    for (interaction, cat_btn) in &cat_query {
-        if *interaction == Interaction::Pressed || *interaction == Interaction::Hovered {
+    for (hovered, cat_btn) in &cat_query {
+        if hovered.get() {
             if active_cat.0 != cat_btn.category {
                 active_cat.0 = cat_btn.category;
                 scroll_state.scroll_row = 0;
@@ -1568,14 +1590,14 @@ fn handle_category_tab_interaction(
 fn handle_inventory_action_buttons(
     mut player_inv: ResMut<PlayerInventory>,
     mut held_item: ResMut<HeldInventoryItem>,
-    action_query: Query<(&Interaction, &InventoryAction, &Children)>,
+    action_query: Query<(&Hovered, &InventoryAction, &Children)>,
     mut hover_query: Query<&mut Visibility, With<ActionBtnHover>>,
     mouse: Res<ButtonInput<MouseButton>>,
 ) {
     let left_click = mouse.just_pressed(MouseButton::Left);
 
-    for (interaction, action, children) in &action_query {
-        let is_hovered = *interaction == Interaction::Hovered || *interaction == Interaction::Pressed;
+    for (hovered, action, children) in &action_query {
+        let is_hovered = hovered.get();
         for child in children.iter() {
             if let Ok(mut vis) = hover_query.get_mut(child) {
                 let target = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
@@ -1623,7 +1645,7 @@ fn handle_creative_search_input(
     mouse: Res<ButtonInput<MouseButton>>,
     mut search_query: ResMut<CreativeSearchQuery>,
     mut scroll_state: ResMut<InventoryScrollState>,
-    search_bar_query: Query<&Interaction, With<CreativeSearchBar>>,
+    search_bar_query: Query<&Hovered, With<CreativeSearchBar>>,
     mut text_query: Query<&mut Text, With<CreativeSearchText>>,
     tab_state: Res<InventoryTab>,
     active_cat: Res<ActiveCreativeCategory>,
@@ -1639,7 +1661,7 @@ fn handle_creative_search_input(
     if mouse.just_pressed(MouseButton::Left) {
         let is_over_search = search_bar_query
             .iter()
-            .any(|i| *i == Interaction::Pressed || *i == Interaction::Hovered);
+            .any(|h| h.get());
         if is_over_search {
             if !search_query.is_focused {
                 search_query.is_focused = true;
@@ -1753,8 +1775,8 @@ fn handle_inventory_scroll(
     icons: Res<BlockIcons>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     card_query: Query<(&GlobalTransform, &ComputedNode), With<InventoryCard>>,
-    track_interaction_query: Query<&Interaction, With<InventoryScrollTrack>>,
-    thumb_interaction_query: Query<&Interaction, With<InventoryScrollThumb>>,
+    track_interaction_query: Query<Has<Pressed>, With<InventoryScrollTrack>>,
+    thumb_interaction_query: Query<Has<Pressed>, With<InventoryScrollThumb>>,
     mut thumb_node_query: Query<&mut Node, With<InventoryScrollThumb>>,
     mut catalog_slot_query: Query<&mut InventoryCatalogSlot>,
     mut catalog_icon_query: Query<(&InventoryCatalogSlotIcon, &mut ImageNode, &mut Visibility)>,
@@ -1825,8 +1847,8 @@ fn handle_inventory_scroll(
     let is_inside_track = cursor_pos.is_some_and(|pos| track_hit_rect.contains(pos));
     let track_pressed = track_interaction_query
         .iter()
-        .any(|i| *i == Interaction::Pressed)
-        || thumb_interaction_query.iter().any(|i| *i == Interaction::Pressed);
+        .any(|p| p)
+        || thumb_interaction_query.iter().any(|p| p);
 
     if left_just_pressed && (is_inside_track || track_pressed) {
         scroll_state.is_dragging_thumb = true;
@@ -1892,23 +1914,23 @@ struct SlotInteractionQueries<'w, 's> {
     storage_slot_query: Query<
         'w,
         's,
-        (&'static Interaction, &'static PlayerStorageSlot, &'static Children),
+        (&'static Hovered, &'static PlayerStorageSlot, &'static Children),
         (With<PlayerStorageSlot>, Without<InventoryHotbarSlot>, Without<InventoryCatalogSlot>),
     >,
     hotbar_slot_query: Query<
         'w,
         's,
-        (&'static Interaction, &'static InventoryHotbarSlot, &'static Children),
+        (&'static Hovered, &'static InventoryHotbarSlot, &'static Children),
         (With<InventoryHotbarSlot>, Without<PlayerStorageSlot>, Without<InventoryCatalogSlot>),
     >,
     catalog_slot_query: Query<
         'w,
         's,
-        (&'static Interaction, &'static InventoryCatalogSlot, &'static Children),
+        (&'static Hovered, &'static InventoryCatalogSlot, &'static Children),
         (With<InventoryCatalogSlot>, Without<PlayerStorageSlot>, Without<InventoryHotbarSlot>),
     >,
-    offhand_query: Query<'w, 's, (&'static Interaction, &'static Children), (With<InventoryOffhandSlot>, Without<InventoryUtilitySlot>)>,
-    utility_query: Query<'w, 's, (&'static Interaction, &'static Children), (With<InventoryUtilitySlot>, Without<InventoryOffhandSlot>)>,
+    offhand_query: Query<'w, 's, (&'static Hovered, &'static Children), (With<InventoryOffhandSlot>, Without<InventoryUtilitySlot>)>,
+    utility_query: Query<'w, 's, (&'static Hovered, &'static Children), (With<InventoryUtilitySlot>, Without<InventoryOffhandSlot>)>,
     hover_overlay_query: Query<'w, 's, &'static mut Visibility, With<SlotHoverHighlight>>,
 }
 
@@ -1962,8 +1984,8 @@ fn handle_inventory_slot_interaction(
     } = slots;
 
     // 1. Main Player Storage Slots
-    for (interaction, slot, children) in &mut storage_slot_query {
-        let is_hovered = *interaction == Interaction::Hovered || *interaction == Interaction::Pressed;
+    for (hovered, slot, children) in &mut storage_slot_query {
+        let is_hovered = hovered.get();
         for child in children.iter() {
             if let Ok(mut vis) = hover_overlay_query.get_mut(child) {
                 let target = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
@@ -2032,8 +2054,8 @@ fn handle_inventory_slot_interaction(
     }
 
     // 2. Mirrored Hotbar Slots
-    for (interaction, slot, children) in &mut hotbar_slot_query {
-        let is_hovered = *interaction == Interaction::Hovered || *interaction == Interaction::Pressed;
+    for (hovered, slot, children) in &mut hotbar_slot_query {
+        let is_hovered = hovered.get();
         for child in children.iter() {
             if let Ok(mut vis) = hover_overlay_query.get_mut(child) {
                 let target = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
@@ -2094,8 +2116,8 @@ fn handle_inventory_slot_interaction(
     }
 
     // 3. Off-hand Slot
-    for (interaction, children) in &mut offhand_query {
-        let is_hovered = *interaction == Interaction::Hovered || *interaction == Interaction::Pressed;
+    for (hovered, children) in &mut offhand_query {
+        let is_hovered = hovered.get();
         for child in children.iter() {
             if let Ok(mut vis) = hover_overlay_query.get_mut(child) {
                 let target = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
@@ -2114,8 +2136,8 @@ fn handle_inventory_slot_interaction(
     }
 
     // 4. Quick Utility Slot
-    for (interaction, children) in &mut utility_query {
-        let is_hovered = *interaction == Interaction::Hovered || *interaction == Interaction::Pressed;
+    for (hovered, children) in &mut utility_query {
+        let is_hovered = hovered.get();
         for child in children.iter() {
             if let Ok(mut vis) = hover_overlay_query.get_mut(child) {
                 let target = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
@@ -2134,8 +2156,8 @@ fn handle_inventory_slot_interaction(
     }
 
     // 5. Creative Catalog Slots
-    for (interaction, slot, children) in &mut catalog_slot_query {
-        let is_hovered = *interaction == Interaction::Hovered || *interaction == Interaction::Pressed;
+    for (hovered, slot, children) in &mut catalog_slot_query {
+        let is_hovered = hovered.get();
         for child in children.iter() {
             if let Ok(mut vis) = hover_overlay_query.get_mut(child) {
                 let target = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
@@ -2279,12 +2301,12 @@ fn update_inventory_tooltip(
     window_query: Query<&Window, With<PrimaryWindow>>,
     hotbar: Res<Hotbar>,
     player_inv: Res<PlayerInventory>,
-    storage_query: Query<(&Interaction, &PlayerStorageSlot)>,
-    hotbar_query: Query<(&Interaction, &InventoryHotbarSlot)>,
-    catalog_query: Query<(&Interaction, &InventoryCatalogSlot)>,
-    offhand_query: Query<&Interaction, With<InventoryOffhandSlot>>,
-    utility_query: Query<&Interaction, With<InventoryUtilitySlot>>,
-    action_btn_query: Query<(&Interaction, &InventoryAction)>,
+    storage_query: Query<(&Hovered, &PlayerStorageSlot)>,
+    hotbar_query: Query<(&Hovered, &InventoryHotbarSlot)>,
+    catalog_query: Query<(&Hovered, &InventoryCatalogSlot)>,
+    offhand_query: Query<&Hovered, With<InventoryOffhandSlot>>,
+    utility_query: Query<&Hovered, With<InventoryUtilitySlot>>,
+    action_btn_query: Query<(&Hovered, &InventoryAction)>,
     ui_scale: Option<Res<bevy::ui::UiScale>>,
     mut tooltip_box: Query<(&mut Node, &mut Visibility), With<InventoryTooltipBox>>,
     mut tooltip_text: Query<&mut Text, With<InventoryTooltipText>>,
@@ -2301,8 +2323,8 @@ fn update_inventory_tooltip(
 
     let mut hovered_text: Option<String> = None;
 
-    for (interaction, slot) in &storage_query {
-        if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
+    for (hovered, slot) in &storage_query {
+        if hovered.get() {
             if let Some(voxel) = player_inv.slots.get(slot.slot_index).copied().flatten() {
                 hovered_text = Some(voxel.label().to_string());
             }
@@ -2311,8 +2333,8 @@ fn update_inventory_tooltip(
     }
 
     if hovered_text.is_none() {
-        for (interaction, slot) in &hotbar_query {
-            if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
+        for (hovered, slot) in &hotbar_query {
+            if hovered.get() {
                 if let Some(voxel) = hotbar.slots.get(slot.index).copied().flatten() {
                     hovered_text = Some(voxel.label().to_string());
                 }
@@ -2322,8 +2344,8 @@ fn update_inventory_tooltip(
     }
 
     if hovered_text.is_none() {
-        for (interaction, slot) in &catalog_query {
-            if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
+        for (hovered, slot) in &catalog_query {
+            if hovered.get() {
                 if let Some(voxel) = slot.voxel {
                     hovered_text = Some(voxel.label().to_string());
                 }
@@ -2333,8 +2355,8 @@ fn update_inventory_tooltip(
     }
 
     if hovered_text.is_none() {
-        for interaction in &offhand_query {
-            if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
+        for hovered in &offhand_query {
+            if hovered.get() {
                 if let Some(voxel) = player_inv.offhand_slot {
                     hovered_text = Some(voxel.label().to_string());
                 }
@@ -2344,8 +2366,8 @@ fn update_inventory_tooltip(
     }
 
     if hovered_text.is_none() {
-        for interaction in &utility_query {
-            if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
+        for hovered in &utility_query {
+            if hovered.get() {
                 if let Some(voxel) = player_inv.utility_slot {
                     hovered_text = Some(voxel.label().to_string());
                 }
@@ -2355,8 +2377,8 @@ fn update_inventory_tooltip(
     }
 
     if hovered_text.is_none() {
-        for (interaction, action) in &action_btn_query {
-            if *interaction == Interaction::Hovered || *interaction == Interaction::Pressed {
+        for (hovered, action) in &action_btn_query {
+            if hovered.get() {
                 hovered_text = Some(match action {
                     InventoryAction::Sort => "Auto-Sort Inventory".to_string(),
                     InventoryAction::Trash => "Quick Discard Held Item".to_string(),

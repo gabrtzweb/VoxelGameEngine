@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::{picking::hover::Hovered, ui::Pressed, ui_widgets::Button};
 
 use crate::{
     core::{AppFont, text_shadow_default},
@@ -179,6 +180,7 @@ fn spawn_menu_button(
     parent
         .spawn((
             Button,
+            Hovered::default(),
             action,
             crate::menu::MenuButtonTexture {
                 normal: btn_normal.clone(),
@@ -213,132 +215,148 @@ fn despawn_pause_menu(mut commands: Commands, query: Query<Entity, With<PauseMen
     }
 }
 
+type PauseRestartParams<'w> = (
+    Option<ResMut<'w, VoxelWorld>>,
+    Option<ResMut<'w, WorldModificationStore>>,
+    Option<Res<'w, TerrainGenerator>>,
+    Option<ResMut<'w, VoxelLightRegistry>>,
+    Option<ResMut<'w, ChunkMeshRegistry>>,
+    Option<ResMut<'w, Assets<Mesh>>>,
+    Option<Res<'w, ChunkMaterial>>,
+    Option<ResMut<'w, Hotbar>>,
+    Option<ResMut<'w, SelectedVoxel>>,
+    Option<ResMut<'w, crate::map::MapCache>>,
+);
+
 fn handle_pause_menu_buttons(
     mut interaction_query: Query<
         (
-            &Interaction,
+            &Hovered,
+            Has<Pressed>,
             &PauseMenuAction,
             &crate::menu::MenuButtonTexture,
             &mut ImageNode,
         ),
-        (Changed<Interaction>, With<Button>),
+        With<Button>,
     >,
+    mouse: Res<ButtonInput<MouseButton>>,
     mut next_state: ResMut<NextState<MenuState>>,
     mut env_state: Option<ResMut<EnvironmentState>>,
     mut player_query: Query<(&mut Transform, &mut PlayerMotion), With<Player>>,
     mut camera_query: Query<(&mut Transform, &mut PlayerCamera), (With<Camera3d>, Without<Player>)>,
-    mut world_query: Option<ResMut<VoxelWorld>>,
-    mut modifications_query: Option<ResMut<WorldModificationStore>>,
-    terrain_generator_query: Option<Res<TerrainGenerator>>,
-    mut light_registry_query: Option<ResMut<VoxelLightRegistry>>,
-    mut mesh_registry_query: Option<ResMut<ChunkMeshRegistry>>,
-    mut meshes_query: Option<ResMut<Assets<Mesh>>>,
-    chunk_material_query: Option<Res<ChunkMaterial>>,
-    mut hotbar_query: Option<ResMut<Hotbar>>,
-    mut selected_voxel_query: Option<ResMut<SelectedVoxel>>,
-    mut map_cache_query: Option<ResMut<crate::map::MapCache>>,
+    (
+        mut world_query,
+        mut modifications_query,
+        terrain_generator_query,
+        mut light_registry_query,
+        mut mesh_registry_query,
+        mut meshes_query,
+        chunk_material_query,
+        mut hotbar_query,
+        mut selected_voxel_query,
+        mut map_cache_query,
+    ): PauseRestartParams,
     mut commands: Commands,
 ) {
-    for (interaction, action, btn_tex, mut img) in &mut interaction_query {
-        match *interaction {
-            Interaction::Pressed => {
-                img.image = btn_tex.hover.clone();
+    let left_clicked = mouse.just_pressed(MouseButton::Left);
 
-                match action {
-                    PauseMenuAction::Resume => {
-                        next_state.set(MenuState::None);
-                    }
-                    PauseMenuAction::Settings => {
-                        next_state.set(MenuState::Settings);
-                    }
-                    PauseMenuAction::Restart => {
-                        // 1. Reset Environment to Day 1 Noon
-                        if let Some(ref mut env) = env_state {
-                            env.day_count = 1;
-                            env.time_of_day = 0.20;
-                            env.phase = DayPhase::Noon;
-                            env.is_time_paused = false;
-                            env.f6_hold_duration = 0.0;
-                        }
+    for (hovered, is_pressed, action, btn_tex, mut img) in &mut interaction_query {
+        let is_hovered = hovered.get();
+        if is_hovered || is_pressed {
+            img.image = btn_tex.hover.clone();
+        } else {
+            img.image = btn_tex.normal.clone();
+        }
 
-                        // 2. Teleport player and camera to spawn
-                        let spawn_pos = Vec3::new(-10.0, 10.38, 14.0);
-                        for (mut transform, mut motion) in &mut player_query {
-                            transform.translation = spawn_pos;
-                            motion.velocity = Vec3::ZERO;
-                            motion.flying = false;
-                        }
-
-                        for (mut transform, mut camera) in &mut camera_query {
-                            let cam_pos = spawn_pos + Vec3::Y * PLAYER_EYE_HEIGHT;
-                            *transform = Transform::from_translation(cam_pos)
-                                .looking_at(Vec3::new(4.0, 3.0, 4.0), Vec3::Y);
-                            let new_pc = PlayerCamera::from_transform(&transform);
-                            *camera = new_pc;
-                        }
-
-                        // 3. Reverse world modifications
-                        if let (
-                            Some(ref mut world),
-                            Some(ref mut modifications),
-                            Some(terrain_gen),
-                            Some(ref mut light_reg),
-                            Some(ref mut mesh_reg),
-                            Some(ref mut meshes),
-                            Some(chunk_mat),
-                        ) = (
-                            world_query.as_deref_mut(),
-                            modifications_query.as_deref_mut(),
-                            terrain_generator_query.as_deref(),
-                            light_registry_query.as_deref_mut(),
-                            mesh_registry_query.as_deref_mut(),
-                            meshes_query.as_deref_mut(),
-                            chunk_material_query.as_deref(),
-                        ) {
-                            let modified_coords = modifications.modified_chunks();
-                            modifications.clear();
-
-                            for coord in modified_coords {
-                                let fresh_chunk = terrain_gen.generate_chunk(coord);
-                                world.insert_chunk(coord, fresh_chunk);
-                                sync_chunk_lights(&mut commands, world, coord, light_reg);
-                                sync_chunk_render(
-                                    &mut commands,
-                                    world,
-                                    coord,
-                                    mesh_reg,
-                                    meshes,
-                                    chunk_mat,
-                                );
-                            }
-                        }
-
-                        // 4. Reset hotbar and selected voxel
-                        if let Some(ref mut hotbar) = hotbar_query {
-                            **hotbar = Hotbar::default();
-                        }
-                        if let Some(ref mut selected) = selected_voxel_query {
-                            selected.0 = Some(Voxel::LoamGrass);
-                        }
-                        if let Some(ref mut cache) = map_cache_query {
-                            cache.clear();
-                        }
-
-                        info!(
-                            "Game restarted: player teleported to spawn, world modifications reversed, day reset to 1"
-                        );
-                        next_state.set(MenuState::None);
-                    }
-                    PauseMenuAction::Quit => {
-                        commands.write_message(bevy::app::AppExit::Success);
-                    }
+        if is_hovered && left_clicked {
+            match action {
+                PauseMenuAction::Resume => {
+                    next_state.set(MenuState::None);
                 }
-            }
-            Interaction::Hovered => {
-                img.image = btn_tex.hover.clone();
-            }
-            Interaction::None => {
-                img.image = btn_tex.normal.clone();
+                PauseMenuAction::Settings => {
+                    next_state.set(MenuState::Settings);
+                }
+                PauseMenuAction::Restart => {
+                    // 1. Reset Environment to Day 1 Noon
+                    if let Some(ref mut env) = env_state {
+                        env.day_count = 1;
+                        env.time_of_day = 0.20;
+                        env.phase = DayPhase::Noon;
+                        env.is_time_paused = false;
+                        env.f6_hold_duration = 0.0;
+                    }
+
+                    // 2. Teleport player and camera to spawn
+                    let spawn_pos = Vec3::new(-10.0, 10.38, 14.0);
+                    for (mut transform, mut motion) in &mut player_query {
+                        transform.translation = spawn_pos;
+                        motion.velocity = Vec3::ZERO;
+                        motion.flying = false;
+                    }
+
+                    for (mut transform, mut camera) in &mut camera_query {
+                        let cam_pos = spawn_pos + Vec3::Y * PLAYER_EYE_HEIGHT;
+                        *transform = Transform::from_translation(cam_pos)
+                            .looking_at(Vec3::new(4.0, 3.0, 4.0), Vec3::Y);
+                        let new_pc = PlayerCamera::from_transform(&transform);
+                        *camera = new_pc;
+                    }
+
+                    // 3. Reverse world modifications
+                    if let (
+                        Some(ref mut world),
+                        Some(ref mut modifications),
+                        Some(terrain_gen),
+                        Some(ref mut light_reg),
+                        Some(ref mut mesh_reg),
+                        Some(ref mut meshes),
+                        Some(chunk_mat),
+                    ) = (
+                        world_query.as_deref_mut(),
+                        modifications_query.as_deref_mut(),
+                        terrain_generator_query.as_deref(),
+                        light_registry_query.as_deref_mut(),
+                        mesh_registry_query.as_deref_mut(),
+                        meshes_query.as_deref_mut(),
+                        chunk_material_query.as_deref(),
+                    ) {
+                        let modified_coords = modifications.modified_chunks();
+                        modifications.clear();
+
+                        for coord in modified_coords {
+                            let fresh_chunk = terrain_gen.generate_chunk(coord);
+                            world.insert_chunk(coord, fresh_chunk);
+                            sync_chunk_lights(&mut commands, world, coord, light_reg);
+                            sync_chunk_render(
+                                &mut commands,
+                                world,
+                                coord,
+                                mesh_reg,
+                                meshes,
+                                chunk_mat,
+                            );
+                        }
+                    }
+
+                    // 4. Reset hotbar and selected voxel
+                    if let Some(ref mut hotbar) = hotbar_query {
+                        **hotbar = Hotbar::default();
+                    }
+                    if let Some(ref mut selected) = selected_voxel_query {
+                        selected.0 = Some(Voxel::LoamGrass);
+                    }
+                    if let Some(ref mut cache) = map_cache_query {
+                        cache.clear();
+                    }
+
+                    info!(
+                        "Game restarted: player teleported to spawn, world modifications reversed, day reset to 1"
+                    );
+                    next_state.set(MenuState::None);
+                }
+                PauseMenuAction::Quit => {
+                    commands.write_message(bevy::app::AppExit::Success);
+                }
             }
         }
     }

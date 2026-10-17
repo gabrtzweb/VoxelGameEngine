@@ -31,10 +31,11 @@ use crate::{
     player::{InspectorInteraction, PlayerCamera},
 };
 
-pub const POST_PROCESS_SHADER_PATH: &str = "shaders/post_process.wgsl";
+pub const POST_PROCESS_SHADER_PATH: &str = "shaders/post_process.wesl";
 
 /// Uniform settings for screen-space crepuscular rays (god rays) and lens flare supporting Sun and Moon.
 #[derive(Component, ExtractComponent, Clone, Copy, ShaderType, Reflect, Debug)]
+#[extract_app(RenderApp)]
 pub struct PostProcessSettings {
     pub light_ndc_position: Vec2,
     pub light_screen_uv: Vec2,

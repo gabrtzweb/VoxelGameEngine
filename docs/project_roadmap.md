@@ -56,7 +56,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | :---: | :--- | :---: | :--- |
 | **01** | **[Full Block Catalog & Texture System Refactoring](#phase-1-full-block-catalog--texture-system-refactoring-completed)** | **Completed** | 720+ worldbuilding block specs, 120+ active blocks, WGSL stochastic rotation, 3-axis directional placement, natural strata variants |
 | **02** | **[Standardized 9-Slot Interface Architecture & Menu Modernization](#phase-2-standardized-9-slot-interface-architecture--menu-modernization-completed)** | **Completed** | Unified 9-slot standard, 416×256 px windows, 320×44 px hotbar HUD, unified button suite, Dark Iron slot overlays, clean asset layout |
-| **03** | **[Core Engine Upgrade (Bevy 0.19 to Bevy 0.20 Migration)](#phase-3-core-engine-upgrade-bevy-019-to-bevy-020-migration-planned)** | **Planned** | Upgrade to Bevy 0.20, adopt direct `bevy_egui = "0.43"`, migrate deprecated `Interaction` to modern UI states, WESL shader validation |
+| **03** | **[Core Engine Upgrade (Bevy 0.19 to Bevy 0.20 Migration)](#phase-3-core-engine-upgrade-bevy-019-to-bevy-020-migration-completed)** | **Completed** | Upgraded to Bevy 0.20, adopted direct `bevy_egui = "0.43"`, eliminated deprecated `Interaction` across all UI, full WESL shader migration, ScreenSpaceTransmission |
 | **04** | **[Flora, Crops & Interactive Mechanical Blocks](#phase-4-flora-crops--interactive-mechanical-blocks-planned)** | **Planned** | Multistage crops, wild vegetation, connected fences/walls, functional doors/gates, interactive storage chests, and light fixtures |
 | **05** | **[World Generation & Biome Overhaul](#phase-5-world-generation--biome-overhaul-planned)** | **Planned** | Geological rock strata, 2D continuous climate noise, 3D subterranean cave biomes, organic boundary dithering, cliff overhangs |
 | **06** | **[System Menus & Cartography Overhaul](#phase-6-system-menus--cartography-overhaul-planned)** | **Planned** | Dark Iron & Parchment menu polish (Pause, Settings, Keybindings), full-screen world map cartography, fog of war, map markers |
@@ -100,21 +100,21 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 3: Core Engine Upgrade (Bevy 0.19 to Bevy 0.20 Migration) (Planned)
+### Phase 3: Core Engine Upgrade (Bevy 0.19 to Bevy 0.20 Migration) (Completed)
 
-> [!NOTE]
-> Detailed technical specifications, code change mappings, and execution steps are documented in [docs/bevy_0_20_migration_plan.md](bevy_0_20_migration_plan.md).
-
-- [ ] **Bevy 0.20 Dependency & API Migration**:
-  - Upgrade engine dependency from Bevy 0.19 to Bevy 0.20 in `Cargo.toml`.
-  - Replace `bevy-inspector-egui = "0.37"` with direct `bevy_egui = "0.43"`, decoupling from wrapper crates.
-  - Update renamed and relocated APIs: `compute_aabb()` -> `get_aabb()` in `src/meshing/pipeline.rs`, and `Tonemapping` import to `bevy::render::view::Tonemapping` in `src/player/mod.rs`.
-- [ ] **Full UI Modernization & Deprecation Elimination**:
-  - Actively replace deprecated `bevy::ui::Interaction` polling loops across `src/menu/creative_inventory.rs`, `src/menu/pause.rs`, and `src/menu/settings.rs`.
-  - Adopt Bevy 0.20 modern pointer events and hover/pressed state components, ensuring zero deprecation warnings.
-- [ ] **WESL Shader Framework Validation**:
-  - Validate custom shaders (`assets/shaders/voxel_opaque.wgsl`, `voxel_transparent.wgsl`, `voxel_prepass.wgsl`, `post_process.wgsl`) under the new WESL shader framework.
-  - Verify material bindings, texture arrays, and vertex attribute passes compile cleanly.
+- [x] **Bevy 0.20 Dependency & API Migration**:
+  - Upgraded engine dependency from Bevy 0.19 to Bevy 0.20 in `Cargo.toml`.
+  - Decoupled from `bevy-inspector-egui = "0.37"` and adopted direct `bevy_egui = "0.43"`.
+  - Migrated core engine APIs: `compute_aabb()` -> `get_aabb()` in `src/meshing/pipeline.rs`, `Tonemapping` relocated to `bevy::render::view::Tonemapping` in `src/player/mod.rs`, and `#[extract_app(RenderApp)]` on `PostProcessSettings`.
+  - Added `bevy::pbr::ScreenSpaceTransmission` to `Camera3d` to preserve water, fluid, and glass specular transmission under Bevy 0.20's opt-in transmission architecture.
+- [x] **Full UI Modernization & Deprecation Elimination**:
+  - Eliminated deprecated `bevy::ui::Interaction` and `bevy::ui::widget::Button` across `src/menu/creative_inventory.rs`, `src/menu/pause.rs`, `src/menu/settings.rs`, and `src/menu/mod.rs`.
+  - Adopted modern `bevy::ui_widgets::Button`, `bevy::picking::hover::Hovered`, and `bevy::ui::Pressed`, guaranteeing zero compiler deprecation warnings across the entire interface codebase.
+- [x] **WESL Shader Framework Migration**:
+  - Migrated engine shaders to native `.wesl` format (`assets/shaders/voxel_opaque.wesl`, `voxel_transparent.wesl`, `voxel_prepass.wesl`, `post_process.wesl`).
+  - Standardized module imports (`import bevy_pbr::render::{...};`, `import bevy_pbr::prepass::io::{...};`, `import bevy_core_pipeline::fullscreen_vertex_shader::FullscreenVertexOutput;`).
+  - Applied `@group(constants::MATERIAL_BIND_GROUP)` and replaced `#ifdef` preprocessors with `@if(...)` / `@else` attributes.
+  - Purged obsolete legacy `.wgsl` files.
 
 ---
 

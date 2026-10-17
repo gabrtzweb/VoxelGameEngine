@@ -16,7 +16,7 @@ use bevy::{
     winit::WinitWindows,
 };
 
-use bevy_inspector_egui::bevy_egui::EguiPlugin;
+use bevy_egui::EguiPlugin;
 
 use core::{AdaptiveUiPlugin, DevStatsPlugin, DynamicFpsPlugin, FontPlugin};
 use environment::EnvironmentPlugin;

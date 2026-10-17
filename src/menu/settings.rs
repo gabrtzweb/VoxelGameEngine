@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::{picking::hover::Hovered, ui::Pressed, ui_widgets::Button};
 
 use crate::{
     core::{AppFont, DynamicFpsSettings, text_shadow_default},
@@ -360,6 +361,7 @@ fn spawn_settings_menu(
 
                     card.spawn((
                         Button,
+                        Hovered::default(),
                         SettingsAction::Back,
                         crate::menu::MenuButtonTexture {
                             normal: btn_normal.clone(),
@@ -452,6 +454,7 @@ fn spawn_stepper_row<T: Component>(
                 controls
                     .spawn((
                         Button,
+                        Hovered::default(),
                         dec_action,
                         crate::menu::MenuButtonTexture {
                             normal: small_normal.clone(),
@@ -499,6 +502,7 @@ fn spawn_stepper_row<T: Component>(
                 controls
                     .spawn((
                         Button,
+                        Hovered::default(),
                         inc_action,
                         crate::menu::MenuButtonTexture {
                             normal: small_normal.clone(),
@@ -549,6 +553,7 @@ fn spawn_toggle_button<T: Component>(
     parent
         .spawn((
             Button,
+            Hovered::default(),
             action,
             crate::menu::MenuButtonTexture {
                 normal: btn_normal.clone(),
@@ -587,13 +592,15 @@ fn despawn_settings_menu(mut commands: Commands, query: Query<Entity, With<Setti
 fn handle_settings_buttons(
     mut interaction_query: Query<
         (
-            &Interaction,
+            &Hovered,
+            Has<Pressed>,
             &SettingsAction,
             &crate::menu::MenuButtonTexture,
             &mut ImageNode,
         ),
-        (Changed<Interaction>, With<Button>),
+        With<Button>,
     >,
+    mouse: Res<ButtonInput<MouseButton>>,
     mut chunk_settings: ResMut<ChunkStreamingSettings>,
     mut game_settings: ResMut<GameSettings>,
     mut env_state: Option<ResMut<EnvironmentState>>,
@@ -605,107 +612,106 @@ fn handle_settings_buttons(
     world: Option<Res<VoxelWorld>>,
     mut window_query: Query<&mut Window, With<bevy::window::PrimaryWindow>>,
 ) {
-    for (interaction, action, btn_tex, mut img) in &mut interaction_query {
-        match *interaction {
-            Interaction::Pressed => {
-                img.image = btn_tex.hover.clone();
+    let left_clicked = mouse.just_pressed(MouseButton::Left);
 
-                match action {
-                    SettingsAction::DecScreenMode => {
-                        game_settings.screen_mode = game_settings.screen_mode.prev();
-                        if let Ok(mut window) = window_query.single_mut() {
-                            window.mode = game_settings.screen_mode.to_window_mode();
-                        }
-                    }
-                    SettingsAction::IncScreenMode => {
-                        game_settings.screen_mode = game_settings.screen_mode.next();
-                        if let Ok(mut window) = window_query.single_mut() {
-                            window.mode = game_settings.screen_mode.to_window_mode();
-                        }
-                    }
-                    SettingsAction::DecRenderDistance => {
-                        chunk_settings.render_distance =
-                            (chunk_settings.render_distance - 1).max(2);
-                    }
-                    SettingsAction::IncRenderDistance => {
-                        chunk_settings.render_distance =
-                            (chunk_settings.render_distance + 1).min(16);
-                    }
-                    SettingsAction::DecLodDistance => {
-                        chunk_settings.lod_render_distance =
-                            (chunk_settings.lod_render_distance - 2).max(0);
-                    }
-                    SettingsAction::IncLodDistance => {
-                        chunk_settings.lod_render_distance =
-                            (chunk_settings.lod_render_distance + 2).min(32);
-                    }
-                    SettingsAction::DecSimulationDistance => {
-                        chunk_settings.simulation_distance =
-                            (chunk_settings.simulation_distance - 1).max(2);
-                    }
-                    SettingsAction::IncSimulationDistance => {
-                        chunk_settings.simulation_distance =
-                            (chunk_settings.simulation_distance + 1).min(8);
-                    }
-                    SettingsAction::DecFov => {
-                        game_settings.fov_degrees = (game_settings.fov_degrees - 5.0).max(60.0);
-                    }
-                    SettingsAction::IncFov => {
-                        game_settings.fov_degrees = (game_settings.fov_degrees + 5.0).min(110.0);
-                    }
-                    SettingsAction::ToggleFog => {
-                        game_settings.fog_enabled = !game_settings.fog_enabled;
-                    }
-                    SettingsAction::ToggleViewBobbing => {
-                        game_settings.view_bobbing = !game_settings.view_bobbing;
-                    }
-                    SettingsAction::ToggleFullGrass => {
-                        game_settings.full_grass = !game_settings.full_grass;
-                        if let Some(ref mut reg) = texture_registry {
-                            reg.full_grass = game_settings.full_grass;
-                        }
-                        if let Some(ref mut mat) = chunk_material {
-                            mat.texture_registry.full_grass = game_settings.full_grass;
-                        }
-                        if let Some(ref world) = world
-                            && let Some(ref mut queues) = streaming_queues
-                        {
-                            for (&coord, _) in world.iter_chunks() {
-                                queues.enqueue_remesh(coord);
-                            }
-                        }
-                    }
-                    SettingsAction::ToggleVsync => {
-                        game_settings.vsync_enabled = !game_settings.vsync_enabled;
-                        if let Ok(mut window) = window_query.single_mut() {
-                            window.present_mode = if game_settings.vsync_enabled {
-                                bevy::window::PresentMode::AutoVsync
-                            } else {
-                                bevy::window::PresentMode::AutoNoVsync
-                            };
-                        }
-                    }
-                    SettingsAction::ToggleDynamicFps => {
-                        game_settings.dynamic_fps_enabled = !game_settings.dynamic_fps_enabled;
-                        if let Some(ref mut dyn_fps) = dynamic_fps_settings {
-                            dyn_fps.enabled = game_settings.dynamic_fps_enabled;
-                        }
-                    }
-                    SettingsAction::ToggleTimePause => {
-                        if let Some(ref mut env) = env_state {
-                            env.is_time_paused = !env.is_time_paused;
-                        }
-                    }
-                    SettingsAction::Back => {
-                        next_state.set(MenuState::Pause);
+    for (hovered, is_pressed, action, btn_tex, mut img) in &mut interaction_query {
+        let is_hovered = hovered.get();
+        if is_hovered || is_pressed {
+            img.image = btn_tex.hover.clone();
+        } else {
+            img.image = btn_tex.normal.clone();
+        }
+
+        if is_hovered && left_clicked {
+            match action {
+                SettingsAction::DecScreenMode => {
+                    game_settings.screen_mode = game_settings.screen_mode.prev();
+                    if let Ok(mut window) = window_query.single_mut() {
+                        window.mode = game_settings.screen_mode.to_window_mode();
                     }
                 }
-            }
-            Interaction::Hovered => {
-                img.image = btn_tex.hover.clone();
-            }
-            Interaction::None => {
-                img.image = btn_tex.normal.clone();
+                SettingsAction::IncScreenMode => {
+                    game_settings.screen_mode = game_settings.screen_mode.next();
+                    if let Ok(mut window) = window_query.single_mut() {
+                        window.mode = game_settings.screen_mode.to_window_mode();
+                    }
+                }
+                SettingsAction::DecRenderDistance => {
+                    chunk_settings.render_distance =
+                        (chunk_settings.render_distance - 1).max(2);
+                }
+                SettingsAction::IncRenderDistance => {
+                    chunk_settings.render_distance =
+                        (chunk_settings.render_distance + 1).min(16);
+                }
+                SettingsAction::DecLodDistance => {
+                    chunk_settings.lod_render_distance =
+                        (chunk_settings.lod_render_distance - 2).max(0);
+                }
+                SettingsAction::IncLodDistance => {
+                    chunk_settings.lod_render_distance =
+                        (chunk_settings.lod_render_distance + 2).min(32);
+                }
+                SettingsAction::DecSimulationDistance => {
+                    chunk_settings.simulation_distance =
+                        (chunk_settings.simulation_distance - 1).max(2);
+                }
+                SettingsAction::IncSimulationDistance => {
+                    chunk_settings.simulation_distance =
+                        (chunk_settings.simulation_distance + 1).min(8);
+                }
+                SettingsAction::DecFov => {
+                    game_settings.fov_degrees = (game_settings.fov_degrees - 5.0).max(60.0);
+                }
+                SettingsAction::IncFov => {
+                    game_settings.fov_degrees = (game_settings.fov_degrees + 5.0).min(110.0);
+                }
+                SettingsAction::ToggleFog => {
+                    game_settings.fog_enabled = !game_settings.fog_enabled;
+                }
+                SettingsAction::ToggleViewBobbing => {
+                    game_settings.view_bobbing = !game_settings.view_bobbing;
+                }
+                SettingsAction::ToggleFullGrass => {
+                    game_settings.full_grass = !game_settings.full_grass;
+                    if let Some(ref mut reg) = texture_registry {
+                        reg.full_grass = game_settings.full_grass;
+                    }
+                    if let Some(ref mut mat) = chunk_material {
+                        mat.texture_registry.full_grass = game_settings.full_grass;
+                    }
+                    if let Some(ref world) = world
+                        && let Some(ref mut queues) = streaming_queues
+                    {
+                        for (&coord, _) in world.iter_chunks() {
+                            queues.enqueue_remesh(coord);
+                        }
+                    }
+                }
+                SettingsAction::ToggleVsync => {
+                    game_settings.vsync_enabled = !game_settings.vsync_enabled;
+                    if let Ok(mut window) = window_query.single_mut() {
+                        window.present_mode = if game_settings.vsync_enabled {
+                            bevy::window::PresentMode::AutoVsync
+                        } else {
+                            bevy::window::PresentMode::AutoNoVsync
+                        };
+                    }
+                }
+                SettingsAction::ToggleDynamicFps => {
+                    game_settings.dynamic_fps_enabled = !game_settings.dynamic_fps_enabled;
+                    if let Some(ref mut dyn_fps) = dynamic_fps_settings {
+                        dyn_fps.enabled = game_settings.dynamic_fps_enabled;
+                    }
+                }
+                SettingsAction::ToggleTimePause => {
+                    if let Some(ref mut env) = env_state {
+                        env.is_time_paused = !env.is_time_paused;
+                    }
+                }
+                SettingsAction::Back => {
+                    next_state.set(MenuState::Pause);
+                }
             }
         }
     }

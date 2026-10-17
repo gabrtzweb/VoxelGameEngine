@@ -39,7 +39,7 @@ More information about how the project works and future plans can be found at [p
     E                 Personal & Creative Inventory (standardized 416x256 px 9-slot interface)
     M                 World Map (Full-screen interactive map, pan & zoom, player tracking)
 
-    F1                Toggle Inspector (bevy_inspector_egui)
+    F1                Toggle Inspector (bevy_egui)
     F2                Chunk debug borders
     F3                Toggle HUD (Minimal / Extended debug)
     Shift + F3        Toggle HUD visibility (Show / Hide)
@@ -55,9 +55,10 @@ assets/
 ├── fonts/
 │   └── CutePixel.ttf
 ├── shaders/
-│   ├── post_process.wgsl
-│   ├── voxel_opaque.wgsl
-│   └── voxel_transparent.wgsl
+│   ├── post_process.wesl
+│   ├── voxel_opaque.wesl
+│   ├── voxel_prepass.wesl
+│   └── voxel_transparent.wesl
 ├── sounds/
 │   ├── ambience/
 │   ├── blocks/

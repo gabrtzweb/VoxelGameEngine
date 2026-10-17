@@ -15,8 +15,8 @@ use super::{
 };
 use crate::world::{Chunk, VoxelWorld};
 
-pub const OPAQUE_VOXEL_SHADER_PATH: &str = "shaders/voxel_opaque.wgsl";
-pub const TRANSPARENT_VOXEL_SHADER_PATH: &str = "shaders/voxel_transparent.wgsl";
+pub const OPAQUE_VOXEL_SHADER_PATH: &str = "shaders/voxel_opaque.wesl";
+pub const TRANSPARENT_VOXEL_SHADER_PATH: &str = "shaders/voxel_transparent.wesl";
 
 #[derive(Asset, AsBindGroup, Reflect, Debug, Clone)]
 pub struct OpaqueVoxelMaterial {
@@ -35,7 +35,7 @@ impl MaterialExtension for OpaqueVoxelMaterial {
     }
 
     fn prepass_fragment_shader() -> ShaderRef {
-        "shaders/voxel_prepass.wgsl".into()
+        "shaders/voxel_prepass.wesl".into()
     }
 }
 
@@ -394,7 +394,7 @@ fn sync_render_part<M: Material>(
         .map(|indices| indices.len() / 3)
         .unwrap_or(0);
 
-    let tight_aabb = rebuilt_mesh.compute_aabb().unwrap_or(aabb);
+    let tight_aabb = rebuilt_mesh.get_aabb().unwrap_or(aabb);
 
     if let Some(existing) = part.as_mut()
         && let Some(mut mesh) = meshes.get_mut(&existing.mesh_handle)

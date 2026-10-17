@@ -3,8 +3,11 @@ pub mod pause;
 pub mod settings;
 
 use bevy::{
+    picking::hover::Hovered,
     post_process::dof::{DepthOfField, DepthOfFieldMode},
     prelude::*,
+    ui::Pressed,
+    ui_widgets::Button,
     window::{CursorGrabMode, CursorOptions, PrimaryWindow},
 };
 
@@ -289,7 +292,7 @@ fn manage_cursor_mode(
     menu_state: Res<State<MenuState>>,
     held_item: Res<HeldInventoryItem>,
     keyboard: Res<ButtonInput<KeyCode>>,
-    buttons_query: Query<&Interaction, With<Button>>,
+    buttons_query: Query<(&Hovered, Has<Pressed>), With<Button>>,
     mut cursor_mode: ResMut<CursorMode>,
 ) {
     if *menu_state.get() == MenuState::None {
@@ -316,8 +319,8 @@ fn manage_cursor_mode(
     }
 
     let is_shift = keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight);
-    let is_hovering_button = buttons_query.iter().any(|interaction| {
-        *interaction == Interaction::Hovered || *interaction == Interaction::Pressed
+    let is_hovering_button = buttons_query.iter().any(|(hovered, pressed)| {
+        hovered.get() || pressed
     });
 
     let next_mode = if held_item.voxel.is_some() {

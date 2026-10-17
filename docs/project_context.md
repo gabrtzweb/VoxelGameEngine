@@ -15,8 +15,13 @@ This is an attempt to develop an experimental voxel engine and game, built from 
   - 720 block definitions across 11 thematic categories (`rocks`, `trees`, `soils`, `ores`, `caverns`, `oceans`, `organics`, `decorations`, `mushrooms`, `vegetation`, `fluids`/`systems`).
   - Documented in `docs/worldbuilding/blocks_design.md` and `docs/worldbuilding/blocks/*.md`.
 - **Deterministic Natural Texture Rotation & Flipping**:
-  - Implemented in WGSL fragment shader (`assets/shaders/voxel_opaque.wgsl`) using an integer coordinate hash of `floor(world_position)`.
+  - Implemented in WESL fragment shader (`assets/shaders/voxel_opaque.wesl`) using an integer coordinate hash of `floor(world_position)`.
   - Natural terrain blocks (stone, soils, sands, gravels) rotate and flip pseudo-randomly to eliminate grid tiling patterns over large cliff faces and cave walls without breaking CPU greedy meshing efficiency.
+- **Engine Architecture & Bevy 0.20 Platform**:
+  - Built on **Bevy 0.20.0** utilizing direct **`bevy_egui = "0.43"`** for developer diagnostics.
+  - Complete adoption of Bevy's **WESL shader framework** (`assets/shaders/*.wesl`) replacing legacy WGSL/`naga_oil` preprocessing with explicit package imports (`import bevy_pbr::...`), `@if` conditional compilation, and standard bind groups.
+  - Full modernization of UI state handling, transitioning away from deprecated `bevy::ui::Interaction` to retained components (`bevy::ui_widgets::Button`, `bevy::picking::hover::Hovered`, and `bevy::ui::Pressed`).
+  - Explicit `ScreenSpaceTransmission` registration for physical fluid and translucent material rendering.
 - **Outcrop Dual-Layer Rendering**:
   - Grass and snow outcrop blocks across soils and rocks render top and side layers while ensuring the bottom face (`Face::Bottom` / `Face::Down`) renders the base mineral material (e.g., Dolomite Grass bottom renders Dolomite; Peat Grass bottom renders Peat Dirt).
 - **Tactile Gameplay Feedback**:
@@ -98,9 +103,14 @@ The player uses a custom AABB collision system that directly queries voxel data.
 
 ## Roadmap Status & Development Transition
 
-The engine has concluded foundational development across Phases 1 through 14 (rendering, atmosphere, fluids, greedy mesher optimizations, SIMD noise, 512-block world generation, and interface modernization).
+The engine has concluded foundational development across Version 0.1 (Phases 1 through 20: rendering, atmosphere, fluids, greedy mesher optimizations, SIMD noise, 512-block world generation, and interface modernization).
 
-The legacy linear roadmap has been set aside. A revised roadmap is currently being structured to outline upcoming milestones, focusing on procedural vegetation, world generation refinements, and survival gameplay systems.
+In Version 0.2 (Modernization, Worldbuilding & Deep Systems), the project has completed:
+- **Phase 1**: Full Block Catalog & Texture System Refactoring (720 block definitions, stochastic rotation, 3-axis directional placement).
+- **Phase 2**: Standardized 9-Slot Interface Architecture & Menu Modernization (Unified 9-slot standard, 416×256 px windows, 320×44 px hotbar HUD, unified button suite).
+- **Phase 3**: Core Engine Upgrade (Bevy 0.19 to Bevy 0.20 Migration, direct `bevy_egui = "0.43"`, UI picking modernization, WESL shader framework, and ScreenSpaceTransmission).
+
+The project is now advancing to **Phase 4: Flora, Crops & Interactive Mechanical Blocks** (multistage crops, wild vegetation, connected fences/walls, functional doors/gates, interactive storage chests, and light fixtures). Detailed progress and milestones are tracked in `docs/project_roadmap.md`.
 
 ---
 
