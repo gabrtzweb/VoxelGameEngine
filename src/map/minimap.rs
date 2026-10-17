@@ -502,7 +502,7 @@ fn manage_minimap_visibility(
 
     let hide = matches!(
         *menu_state.get(),
-        MenuState::WorldMap | MenuState::Pause | MenuState::Settings
+        MenuState::WorldMap | MenuState::Pause | MenuState::Settings | MenuState::Inventory
     );
 
     let target_vis = if hide {

@@ -3465,6 +3465,84 @@ impl Voxel {
             Self::LiquidOoze => [130, 50, 160, 255],
             Self::LiquidSludge => [70, 80, 50, 255],
             Self::LiquidTar => [25, 25, 30, 255],
+            // Snow & Cryology variants
+            Self::SnowBlock
+            | Self::PowderSnow
+            | Self::LoamSnow
+            | Self::PeatSnow
+            | Self::SiltSnow
+            | Self::PathSnowy
+            | Self::GravelSnowy
+            | Self::AndesiteSnow
+            | Self::ArgilliteSnow
+            | Self::BasaltSnow
+            | Self::ChalkSnow
+            | Self::DolomiteSnow
+            | Self::GneissSnow
+            | Self::GraniteSnow
+            | Self::LimestoneSnow => [245, 248, 252, 255],
+            Self::PermafrostIcy => [210, 225, 240, 255],
+            Self::FrostBlueIce | Self::FrostBlueIceCracked => [120, 180, 240, 255],
+            Self::FrostIce | Self::FrostIceFragile | Self::FrostIcePacked => [180, 215, 245, 255],
+            Self::FrostIceBlack | Self::FrostIceBlackFragile | Self::FrostIceBlackPacked => [60, 70, 85, 255],
+
+            // Sand variants
+            Self::SandCommon => [222, 202, 148, 255],
+            Self::SandDune => [228, 188, 120, 255],
+            Self::SandRed => [194, 102, 62, 255],
+            Self::SandWhite => [242, 238, 222, 255],
+            Self::SandPink => [228, 180, 185, 255],
+            Self::SandBlack => [46, 44, 52, 255],
+            Self::GravelSandy | Self::PathSandy => [204, 184, 138, 255],
+
+            // Sandstones
+            Self::SandstoneCommon | Self::CobbledSandstoneCommon => [212, 190, 138, 255],
+            Self::SandstoneDune | Self::CobbledSandstoneDune => [218, 178, 112, 255],
+            Self::SandstoneRed | Self::CobbledSandstoneRed => [184, 92, 54, 255],
+            Self::SandstoneWhite | Self::CobbledSandstoneWhite => [232, 228, 212, 255],
+            Self::SandstonePink | Self::CobbledSandstonePink => [218, 170, 175, 255],
+            Self::SandstoneBlack | Self::CobbledSandstoneBlack => [42, 40, 48, 255],
+
+            // Clay variants
+            Self::ClayBlue => [120, 140, 155, 255],
+            Self::ClayRed => [170, 85, 65, 255],
+            Self::ClayWhite => [220, 220, 215, 255],
+            Self::ClayYellow => [195, 160, 90, 255],
+
+            // Mulch variants
+            Self::LoamMulch => [65, 45, 30, 255],
+            Self::PeatMulch => [45, 35, 28, 255],
+            Self::SiltMulch => [80, 65, 50, 255],
+
+            // Mud variants
+            Self::LoamMud => [75, 55, 40, 255],
+            Self::PeatMud => [50, 38, 30, 255],
+            Self::SiltMud => [90, 75, 60, 255],
+
+            // Dirt and soil variants
+            Self::LoamDirt | Self::LoamCoarse | Self::LoamRooted | Self::LoamBurrow => [110, 80, 55, 255],
+            Self::LoamTilled => [95, 68, 45, 255],
+            Self::PeatDirt | Self::PeatCoarse | Self::PeatRooted | Self::PeatBurrow => [70, 52, 40, 255],
+            Self::PeatTilled => [60, 45, 35, 255],
+            Self::SiltDirt | Self::SiltCoarse | Self::SiltRooted | Self::SiltBurrow => [135, 110, 80, 255],
+            Self::SiltTilled => [115, 95, 70, 255],
+            Self::CalicheDirt | Self::CalicheCoarse | Self::CalicheCracked => [200, 185, 160, 255],
+            Self::LateriteDirt | Self::LateriteCoarse | Self::LateriteHardpan => [150, 60, 45, 255],
+            Self::PermafrostDirt | Self::PermafrostCoarse => [105, 95, 85, 255],
+
+            // Ash and gravels
+            Self::AshPumice => [160, 160, 155, 255],
+            Self::AshVolcanic => [70, 70, 75, 255],
+            Self::GravelDirty | Self::PathDirty => [120, 100, 80, 255],
+            Self::GravelAshy => [105, 105, 105, 255],
+            Self::PathStony => [145, 140, 135, 255],
+
+            // Moss
+            Self::MossAmber => [180, 150, 40, 255],
+            Self::MossCave => [40, 100, 70, 255],
+            Self::MossCrimson => [140, 30, 45, 255],
+            Self::MossForest => [60, 120, 45, 255],
+
             s if s.is_water() => [60, 140, 220, 255],
             s if s.is_leaves() => [80, 150, 50, 255],
             s if s.is_transparent() => [200, 225, 235, 160],

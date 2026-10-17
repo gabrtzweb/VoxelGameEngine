@@ -87,6 +87,9 @@ impl Default for HotbarTooltipState {
 #[derive(Component)]
 pub struct HotbarTooltipText;
 
+#[derive(Component)]
+pub struct HotbarRoot;
+
 pub struct HotbarPlugin;
 
 impl Plugin for HotbarPlugin {
@@ -99,7 +102,13 @@ impl Plugin for HotbarPlugin {
             )
             .add_systems(
                 Update,
-                (handle_hotbar_input, sync_hotbar_ui, update_hotbar_tooltip).chain(),
+                (
+                    handle_hotbar_input,
+                    sync_hotbar_ui,
+                    update_hotbar_tooltip,
+                    manage_hotbar_visibility,
+                )
+                    .chain(),
             );
     }
 }
@@ -114,8 +123,6 @@ fn setup_hotbar_ui(
     let font_handle = app_font.as_ref().map(|f| f.source());
     let hotbar_texture = asset_server.load("textures/interfaces/containers/hotbar.png");
     let selection_texture = asset_server.load("textures/interfaces/containers/hotbar_selection.png");
-    let shield_overlay = asset_server.load("textures/interfaces/containers/slots/shield.png");
-    let quiver_overlay = asset_server.load("textures/interfaces/containers/slots/quiver.png");
 
     let tray_width = 320.0 * HOTBAR_SCALE;
     let tray_height = 44.0 * HOTBAR_SCALE;
@@ -127,6 +134,7 @@ fn setup_hotbar_ui(
     // Centered bottom container spanning screen width
     commands
         .spawn((
+            HotbarRoot,
             Node {
                 position_type: PositionType::Absolute,
                 bottom: px(16.0),
@@ -147,6 +155,14 @@ fn setup_hotbar_ui(
             };
             if let Some(ref font) = font_handle {
                 tooltip_font.font = font.clone();
+            }
+
+            let mut num_font = TextFont {
+                font_size: FontSize::Px(3.5 * HOTBAR_SCALE),
+                ..default()
+            };
+            if let Some(ref font) = font_handle {
+                num_font.font = font.clone();
             }
 
             parent.spawn((
@@ -183,13 +199,13 @@ fn setup_hotbar_ui(
                 ))
                 .with_children(|tray| {
                     // Static Visual Progress Bars (Placeholders per specification)
-                    // Field 1: XP Progress Bar at (59, 4), 204x4 px
+                    // Field 1: XP Progress Bar at (60, 5), 203x2 px
                     tray.spawn(Node {
                         position_type: PositionType::Absolute,
-                        left: px(59.0 * HOTBAR_SCALE),
-                        top: px(4.0 * HOTBAR_SCALE),
-                        width: px(204.0 * HOTBAR_SCALE),
-                        height: px(4.0 * HOTBAR_SCALE),
+                        left: px(60.0 * HOTBAR_SCALE),
+                        top: px(5.0 * HOTBAR_SCALE),
+                        width: px(202.0 * HOTBAR_SCALE),
+                        height: px(2.0 * HOTBAR_SCALE),
                         ..default()
                     })
                     .with_children(|xp_bar| {
@@ -203,89 +219,6 @@ fn setup_hotbar_ui(
                             BackgroundColor(Color::srgba(0.22, 0.78, 0.32, 0.75)),
                         ));
                     });
-
-                    // Field 17: Health Bar (HP) at (68, 36), 82x4 px
-                    tray.spawn(Node {
-                        position_type: PositionType::Absolute,
-                        left: px(68.0 * HOTBAR_SCALE),
-                        top: px(36.0 * HOTBAR_SCALE),
-                        width: px(82.0 * HOTBAR_SCALE),
-                        height: px(4.0 * HOTBAR_SCALE),
-                        ..default()
-                    })
-                    .with_children(|hp_bar| {
-                        // Static full health fill in crimson
-                        hp_bar.spawn((
-                            Node {
-                                width: Val::Percent(100.0),
-                                height: Val::Percent(100.0),
-                                ..default()
-                            },
-                            BackgroundColor(Color::srgba(0.85, 0.18, 0.18, 0.90)),
-                        ));
-                    });
-
-                    // Field 18: Mana / Stamina Bar at (172, 36), 82x4 px
-                    tray.spawn(Node {
-                        position_type: PositionType::Absolute,
-                        left: px(172.0 * HOTBAR_SCALE),
-                        top: px(36.0 * HOTBAR_SCALE),
-                        width: px(82.0 * HOTBAR_SCALE),
-                        height: px(4.0 * HOTBAR_SCALE),
-                        ..default()
-                    })
-                    .with_children(|mana_bar| {
-                        // Static full mana fill in azure
-                        mana_bar.spawn((
-                            Node {
-                                width: Val::Percent(100.0),
-                                height: Val::Percent(100.0),
-                                ..default()
-                            },
-                            BackgroundColor(Color::srgba(0.20, 0.45, 0.88, 0.90)),
-                        ));
-                    });
-
-                    // Non-clickable HUD wing indicator badges (Fields 2, 3, 15, 16)
-                    let badge_font = TextFont {
-                        font_size: FontSize::Px(10.0 * (HOTBAR_SCALE / 3.0)),
-                        ..default()
-                    };
-
-                    let badges = [
-                        (18.0, 25.0, "M"), // Field 2: Map
-                        (30.0, 24.0, "J"), // Field 3: Journal
-                        (284.0, 24.0, "C"), // Field 15: Craft
-                        (296.0, 25.0, "T"), // Field 16: Chat
-                    ];
-
-                    for (bx, by, label) in badges {
-                        let mut bf = badge_font.clone();
-                        if let Some(ref font) = font_handle {
-                            bf.font = font.clone();
-                        }
-                        tray.spawn((
-                            Node {
-                                position_type: PositionType::Absolute,
-                                left: px(bx * HOTBAR_SCALE),
-                                top: px(by * HOTBAR_SCALE),
-                                width: px(8.0 * HOTBAR_SCALE),
-                                height: px(8.0 * HOTBAR_SCALE),
-                                display: Display::Flex,
-                                justify_content: JustifyContent::Center,
-                                align_items: AlignItems::Center,
-                                ..default()
-                            },
-                        ))
-                        .with_children(|b| {
-                            b.spawn((
-                                Text::new(label),
-                                bf,
-                                TextColor(Color::srgba(0.68, 0.72, 0.78, 0.85)),
-                                text_shadow_default(),
-                            ));
-                        });
-                    }
 
                     // Field 4: Off-hand Slot display at (45, 17), 14x14 px (non-clickable visual readout)
                     tray.spawn(Node {
@@ -302,15 +235,13 @@ fn setup_hotbar_ui(
                     .with_children(|slot| {
                         slot.spawn((
                             HotbarOffhandIcon,
-                            ImageNode {
-                                image: shield_overlay,
-                                ..default()
-                            },
+                            ImageNode::default(),
                             Node {
                                 width: px(special_slot_size),
                                 height: px(special_slot_size),
                                 ..default()
                             },
+                            Visibility::Hidden,
                         ));
                     });
 
@@ -329,15 +260,13 @@ fn setup_hotbar_ui(
                     .with_children(|slot| {
                         slot.spawn((
                             HotbarUtilityIcon,
-                            ImageNode {
-                                image: quiver_overlay,
-                                ..default()
-                            },
+                            ImageNode::default(),
                             Node {
                                 width: px(special_slot_size),
                                 height: px(special_slot_size),
                                 ..default()
                             },
+                            Visibility::Hidden,
                         ));
                     });
 
@@ -351,7 +280,7 @@ fn setup_hotbar_ui(
                             .unwrap_or_else(|| icons.get(Voxel::Dolomite));
 
                         let icon_visibility = if initial_voxel.is_some() {
-                            Visibility::Visible
+                            Visibility::Inherited
                         } else {
                             Visibility::Hidden
                         };
@@ -386,19 +315,11 @@ fn setup_hotbar_ui(
                                 icon_visibility,
                             ));
 
-                            // Slot index number (1 through 9, rendered in front with ZIndex)
-                            let mut num_font = TextFont {
-                                font_size: FontSize::Px(12.0 * (HOTBAR_SCALE / 3.0)),
-                                ..default()
-                            };
-                            if let Some(ref font) = font_handle {
-                                num_font.font = font.clone();
-                            }
-
+                            // Slot index number (1 through 9)
                             slot.spawn((
                                 Text::new(format!("{}", index + 1)),
-                                num_font,
-                                TextColor(Color::srgba(0.85, 0.88, 0.92, 0.85)),
+                                num_font.clone(),
+                                TextColor(Color::srgba(0.85, 0.88, 0.92, 0.80)),
                                 text_shadow_default(),
                                 Node {
                                     position_type: PositionType::Absolute,
@@ -490,12 +411,12 @@ fn sync_hotbar_ui(
     hotbar: Res<Hotbar>,
     player_inventory: Option<Res<PlayerInventory>>,
     icons: Res<BlockIcons>,
-    asset_server: Res<AssetServer>,
+    _asset_server: Res<AssetServer>,
     mut selection_query: Query<&mut Node, (With<HotbarSelectionBox>, Without<HotbarSlotUi>)>,
     mut icon_query: Query<(&HotbarSlotIcon, &mut ImageNode, &mut Visibility)>,
-    mut offhand_query: Query<&mut ImageNode, (With<HotbarOffhandIcon>, Without<HotbarSlotIcon>)>,
+    mut offhand_query: Query<(&mut ImageNode, &mut Visibility), (With<HotbarOffhandIcon>, Without<HotbarSlotIcon>)>,
     mut utility_query: Query<
-        &mut ImageNode,
+        (&mut ImageNode, &mut Visibility),
         (
             With<HotbarUtilityIcon>,
             Without<HotbarSlotIcon>,
@@ -514,7 +435,7 @@ fn sync_hotbar_ui(
             match hotbar.slots[icon.index] {
                 Some(voxel) => {
                     img_node.image = icons.get(voxel);
-                    *visibility = Visibility::Visible;
+                    *visibility = Visibility::Inherited;
                 }
                 None => {
                     *visibility = Visibility::Hidden;
@@ -526,18 +447,20 @@ fn sync_hotbar_ui(
     // Sync offhand & utility slots from player inventory if changed
     if let Some(ref inv) = player_inventory {
         if inv.is_changed() {
-            if let Ok(mut offhand_img) = offhand_query.single_mut() {
+            if let Ok((mut offhand_img, mut offhand_vis)) = offhand_query.single_mut() {
                 if let Some(voxel) = inv.offhand_slot {
                     offhand_img.image = icons.get(voxel);
+                    *offhand_vis = Visibility::Inherited;
                 } else {
-                    offhand_img.image = asset_server.load("textures/interfaces/containers/slots/shield.png");
+                    *offhand_vis = Visibility::Hidden;
                 }
             }
-            if let Ok(mut utility_img) = utility_query.single_mut() {
+            if let Ok((mut utility_img, mut utility_vis)) = utility_query.single_mut() {
                 if let Some(voxel) = inv.utility_slot {
                     utility_img.image = icons.get(voxel);
+                    *utility_vis = Visibility::Inherited;
                 } else {
-                    utility_img.image = asset_server.load("textures/interfaces/containers/slots/quiver.png");
+                    *utility_vis = Visibility::Hidden;
                 }
             }
         }
@@ -637,5 +560,35 @@ fn update_hotbar_tooltip(
             s.color = Color::srgba(0.0, 0.0, 0.0, 0.85 * alpha);
         }
         *vis = Visibility::Inherited;
+    }
+}
+
+fn manage_hotbar_visibility(
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
+    mut root_query: Query<(&mut Visibility, &mut Node), With<HotbarRoot>>,
+) {
+    let Some(menu_state) = menu_state else {
+        return;
+    };
+
+    let hide = *menu_state.get() != crate::menu::MenuState::None;
+    let target_vis = if hide {
+        Visibility::Hidden
+    } else {
+        Visibility::Visible
+    };
+    let target_display = if hide {
+        Display::None
+    } else {
+        Display::Flex
+    };
+
+    for (mut vis, mut node) in &mut root_query {
+        if *vis != target_vis {
+            *vis = target_vis;
+        }
+        if node.display != target_display {
+            node.display = target_display;
+        }
     }
 }
