@@ -361,6 +361,7 @@ pub fn update_post_process_light_position(
     state: Res<EnvironmentState>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
     inspector: Option<Res<InspectorInteraction>>,
+    local_config: Option<Res<crate::core::config::LocalConfig>>,
     camera_query: Query<(&Camera, &GlobalTransform), (With<Camera3d>, With<PlayerCamera>)>,
     mut settings_query: Query<&mut PostProcessSettings, (With<Camera3d>, With<PlayerCamera>)>,
 ) {
@@ -371,10 +372,15 @@ pub fn update_post_process_light_position(
         return;
     };
 
-    // If game is in a menu or the inspector is open, disable sun rays to prevent post-process flicker with UI
+    let god_rays_enabled = local_config
+        .as_ref()
+        .map(|c| c.god_rays_enabled)
+        .unwrap_or(true);
+
+    // If game is in a menu, the inspector is open, or god rays are disabled, disable post-process rays
     let in_menu = menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None);
     let inspector_active = inspector.is_some_and(|i| i.active);
-    if in_menu || inspector_active {
+    if in_menu || inspector_active || !god_rays_enabled {
         settings.light_visible = 0.0;
         settings.exposure = 0.0;
         return;

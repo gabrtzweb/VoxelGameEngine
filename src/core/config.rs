@@ -103,6 +103,18 @@ pub struct LocalConfig {
     /// Display screen mode: "windowed", "borderless", "fullscreen".
     #[serde(default = "default_screen_mode")]
     pub screen_mode: String,
+
+    /// Whether screen-space transmission is enabled (disabled on Low-Spec / Medium to prevent costly framebuffer blits).
+    #[serde(default = "default_transmission_enabled")]
+    pub transmission_enabled: bool,
+
+    /// Whether directional shadows are enabled (disabled on Low-Spec to eliminate 4-cascade render overhead).
+    #[serde(default = "default_shadows_enabled")]
+    pub shadows_enabled: bool,
+
+    /// Whether volumetric god rays / crepuscular rays post-processing is enabled.
+    #[serde(default = "default_god_rays_enabled")]
+    pub god_rays_enabled: bool,
 }
 
 fn default_backend() -> String {
@@ -149,6 +161,18 @@ fn default_screen_mode() -> String {
     "windowed".to_string()
 }
 
+fn default_transmission_enabled() -> bool {
+    false
+}
+
+fn default_shadows_enabled() -> bool {
+    true
+}
+
+fn default_god_rays_enabled() -> bool {
+    true
+}
+
 impl Default for LocalConfig {
     fn default() -> Self {
         Self {
@@ -164,6 +188,9 @@ impl Default for LocalConfig {
             vsync_enabled: default_vsync_enabled(),
             dynamic_fps_enabled: default_dynamic_fps_enabled(),
             screen_mode: default_screen_mode(),
+            transmission_enabled: default_transmission_enabled(),
+            shadows_enabled: default_shadows_enabled(),
+            god_rays_enabled: default_god_rays_enabled(),
         }
     }
 }
@@ -194,13 +221,16 @@ impl LocalConfig {
         match preset {
             PerformancePreset::LowSpec => {
                 self.render_distance = 2;
-                self.lod_render_distance = 6;
+                self.lod_render_distance = 0;
                 self.simulation_distance = 4;
                 self.fog_enabled = false;
                 self.view_bobbing = true;
                 self.full_grass = false;
                 self.vsync_enabled = false;
                 self.dynamic_fps_enabled = true;
+                self.transmission_enabled = false;
+                self.shadows_enabled = false;
+                self.god_rays_enabled = false;
             }
             PerformancePreset::Medium => {
                 self.render_distance = 8;
@@ -211,6 +241,9 @@ impl LocalConfig {
                 self.full_grass = false;
                 self.vsync_enabled = false;
                 self.dynamic_fps_enabled = true;
+                self.transmission_enabled = false;
+                self.shadows_enabled = true;
+                self.god_rays_enabled = true;
             }
             PerformancePreset::High => {
                 self.render_distance = 12;
@@ -221,6 +254,9 @@ impl LocalConfig {
                 self.full_grass = true;
                 self.vsync_enabled = false;
                 self.dynamic_fps_enabled = true;
+                self.transmission_enabled = true;
+                self.shadows_enabled = true;
+                self.god_rays_enabled = true;
             }
             PerformancePreset::Ultra => {
                 self.render_distance = 16;
@@ -231,6 +267,9 @@ impl LocalConfig {
                 self.full_grass = true;
                 self.vsync_enabled = true;
                 self.dynamic_fps_enabled = false;
+                self.transmission_enabled = true;
+                self.shadows_enabled = true;
+                self.god_rays_enabled = true;
             }
         }
     }

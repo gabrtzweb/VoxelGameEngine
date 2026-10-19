@@ -70,6 +70,7 @@ impl Plugin for PlayerPlugin {
                     spectator::spectator_movement,
                     water::update_underwater_effect,
                     update_crosshair_visibility,
+                    sync_camera_transmission,
                 )
                     .chain()
                     .in_set(PlayerSet::Movement),
@@ -80,6 +81,7 @@ impl Plugin for PlayerPlugin {
 fn spawn_player_and_camera(
     mut commands: Commands,
     terrain_generator: Option<Res<crate::generation::TerrainGenerator>>,
+    local_config: Option<Res<crate::core::config::LocalConfig>>,
 ) {
     let spawn_x = -10.0;
     let spawn_z = 14.0;
@@ -105,9 +107,8 @@ fn spawn_player_and_camera(
 
     let player_camera = PlayerCamera::from_transform(&camera_transform);
 
-    commands.spawn((
+    let mut camera_builder = commands.spawn((
         Camera3d::default(),
-        bevy::pbr::ScreenSpaceTransmission::default(),
         bevy::camera::Hdr,
         DepthPrepass,
         DistanceFog {
@@ -134,6 +135,41 @@ fn spawn_player_and_camera(
         camera_transform,
         player_camera,
     ));
+
+    let transmission_active = local_config
+        .as_ref()
+        .map(|c| c.transmission_enabled)
+        .unwrap_or(false);
+
+    if transmission_active {
+        camera_builder.insert(bevy::pbr::ScreenSpaceTransmission::default());
+    }
+}
+
+fn sync_camera_transmission(
+    local_config: Option<Res<crate::core::config::LocalConfig>>,
+    camera_query: Query<Entity, With<PlayerCamera>>,
+    transmission_query: Query<&bevy::pbr::ScreenSpaceTransmission, With<PlayerCamera>>,
+    mut commands: Commands,
+) {
+    let Some(local_config) = local_config else {
+        return;
+    };
+    if !local_config.is_changed() {
+        return;
+    }
+    if let Ok(camera_entity) = camera_query.single() {
+        let has_transmission = transmission_query.get(camera_entity).is_ok();
+        if local_config.transmission_enabled && !has_transmission {
+            commands
+                .entity(camera_entity)
+                .insert(bevy::pbr::ScreenSpaceTransmission::default());
+        } else if !local_config.transmission_enabled && has_transmission {
+            commands
+                .entity(camera_entity)
+                .remove::<bevy::pbr::ScreenSpaceTransmission>();
+        }
+    }
 }
 
 fn lock_cursor(mut cursor_options: Single<&mut CursorOptions>) {

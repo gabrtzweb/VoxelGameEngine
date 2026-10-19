@@ -18,8 +18,8 @@ use crate::world::{
     streaming::{ChunkStreamingQueues, ChunkStreamingState},
 };
 
-const MAX_MESHING_TASKS_IN_FLIGHT: usize = 64;
-const MAX_MESHING_TASKS_STARTED_PER_FRAME: usize = 24;
+const MAX_MESHING_TASKS_IN_FLIGHT: usize = 16;
+const MAX_MESHING_TASKS_STARTED_PER_FRAME: usize = 8;
 
 #[derive(Component)]
 pub struct ChunkMeshingTask {

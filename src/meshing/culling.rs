@@ -231,6 +231,7 @@ pub fn update_cave_culling_system(
     registry: Res<ChunkMeshRegistry>,
     mut culling_state: ResMut<CaveCullingState>,
     mut chunk_meshes: Query<(&ChunkCoordinate, &mut Visibility)>,
+    streaming_settings: Option<Res<crate::world::streaming::ChunkStreamingSettings>>,
 ) {
     let Some(cam_tf) = camera_query.iter().next() else {
         return;
@@ -275,6 +276,15 @@ pub fn update_cave_culling_system(
             }
         }
     } else {
+        let max_h_radius = streaming_settings
+            .as_ref()
+            .map(|s| (s.render_distance + 1).min(MAX_HORIZONTAL_RADIUS))
+            .unwrap_or(MAX_HORIZONTAL_RADIUS);
+        let max_v_radius = streaming_settings
+            .as_ref()
+            .map(|s| (s.render_distance + 1).min(MAX_VERTICAL_RADIUS))
+            .unwrap_or(MAX_VERTICAL_RADIUS);
+
         let cam_mask = get_chunk_permeability(cam_chunk, &registry, world.as_deref());
         let reachable_faces =
             get_camera_reachable_faces(cam_pos, cam_chunk, cam_mask, world.as_deref());
@@ -305,9 +315,9 @@ pub fn update_cave_culling_system(
                 }
 
                 let neighbor = curr + FACE_OFFSETS[out_face];
-                if (neighbor.x - cam_chunk.x).abs() > MAX_HORIZONTAL_RADIUS
-                    || (neighbor.z - cam_chunk.z).abs() > MAX_HORIZONTAL_RADIUS
-                    || (neighbor.y - cam_chunk.y).abs() > MAX_VERTICAL_RADIUS
+                if (neighbor.x - cam_chunk.x).abs() > max_h_radius
+                    || (neighbor.z - cam_chunk.z).abs() > max_h_radius
+                    || (neighbor.y - cam_chunk.y).abs() > max_v_radius
                 {
                     continue;
                 }

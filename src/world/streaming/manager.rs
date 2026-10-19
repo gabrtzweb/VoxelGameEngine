@@ -26,11 +26,11 @@ pub const DEFAULT_SIMULATION_DISTANCE: i32 = 8;
 pub const WORLD_MIN_CHUNK_Y: i32 = -16;
 pub const WORLD_MAX_CHUNK_Y: i32 = 16;
 
-const MAX_GENERATION_TASKS_IN_FLIGHT: usize = 64;
-const MAX_GENERATION_TASKS_STARTED_PER_FRAME: usize = 32;
+const MAX_GENERATION_TASKS_IN_FLIGHT: usize = 16;
+const MAX_GENERATION_TASKS_STARTED_PER_FRAME: usize = 8;
 
-const MAX_LOD_TASKS_IN_FLIGHT: usize = 32;
-const MAX_LOD_TASKS_STARTED_PER_FRAME: usize = 16;
+const MAX_LOD_TASKS_IN_FLIGHT: usize = 8;
+const MAX_LOD_TASKS_STARTED_PER_FRAME: usize = 4;
 
 const MAX_CHUNK_UNLOADS_PER_FRAME: usize = 128;
 const MAX_LOD_UNLOADS_PER_FRAME: usize = 64;
@@ -727,7 +727,10 @@ pub fn desired_chunk_coordinates(
 ) -> HashSet<IVec3> {
     let radius_squared = render_distance * render_distance;
 
-    let mut chunks = HashSet::new();
+    let diameter = (render_distance * 2 + 1) as usize;
+    let est_cols = diameter * diameter;
+    let est_chunks = (est_cols * 6).max(32);
+    let mut chunks = HashSet::with_capacity(est_chunks);
 
     let max_y = (center.y + render_distance).min(WORLD_MAX_CHUNK_Y);
 

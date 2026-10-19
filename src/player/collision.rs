@@ -315,6 +315,21 @@ fn resolve_y(world: &VoxelWorld, position: Vec3, movement: f32, height: f32) -> 
 
 pub fn collides_at(world: &VoxelWorld, position: Vec3, height: f32) -> bool {
     let (min_voxel, max_voxel) = body_voxel_bounds(position, height);
+
+    // Fast O(1) path: If the bounding box lies entirely within an Empty chunk (open sky / airborne),
+    // return false immediately without querying voxels.
+    let (min_chunk, _) = VoxelWorld::world_voxel_to_chunk(min_voxel);
+    let (max_chunk, _) = VoxelWorld::world_voxel_to_chunk(max_voxel);
+    if min_chunk == max_chunk {
+        if let Some(chunk) = world.get_chunk(min_chunk) {
+            if chunk.homogeneity() == ChunkHomogeneity::Empty {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
     let half_width = PLAYER_WIDTH * 0.5;
     let p_min = Vec3::new(position.x - half_width, position.y, position.z - half_width);
     let p_max = Vec3::new(

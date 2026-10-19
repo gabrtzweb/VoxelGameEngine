@@ -40,7 +40,9 @@ pub fn setup_celestial(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut images: ResMut<Assets<Image>>,
+    local_config: Option<Res<crate::core::config::LocalConfig>>,
 ) {
+    let shadows_enabled = local_config.as_ref().map(|c| c.shadows_enabled).unwrap_or(true);
     let (sun_image, moon_images) = load_celestial_images();
 
     let sun_handle = images.add(sun_image);
@@ -102,7 +104,7 @@ pub fn setup_celestial(
         DirectionalLight {
             color: Color::srgb(1.0, 0.95, 0.85),
             illuminance: 6_500.0,
-            shadow_maps_enabled: true,
+            shadow_maps_enabled: shadows_enabled,
             ..default()
         },
         CascadeShadowConfigBuilder {
@@ -132,7 +134,7 @@ pub fn setup_celestial(
         DirectionalLight {
             color: Color::srgb(0.48, 0.56, 0.88),
             illuminance: 0.0,
-            shadow_maps_enabled: true,
+            shadow_maps_enabled: shadows_enabled,
             ..default()
         },
         CascadeShadowConfigBuilder {
@@ -205,6 +207,7 @@ pub fn sync_celestial_transforms(
     day_sun_illuminance: f32,
     day_fill_illuminance: f32,
     night_moon_illuminance: f32,
+    shadows_enabled: bool,
 ) {
     let camera_translation = camera.translation;
     let sun_dir = calculate_sun_direction(time_of_day);
@@ -246,7 +249,7 @@ pub fn sync_celestial_transforms(
     // Directional sunlight shining from sun towards the world (-sun_dir).
     let sun_elev = sun_dir.y.max(0.0);
     sun_l.illuminance = sun_elev.powf(0.6) * day_sun_illuminance;
-    sun_l.shadow_maps_enabled = sun_elev > 0.04;
+    sun_l.shadow_maps_enabled = shadows_enabled && sun_elev > 0.04;
     *sun_lt = Transform::default().looking_to(-sun_dir, Vec3::Y);
 
     // Dynamic sun color: deep golden-orange at dawn/dusk, warm white at noon
@@ -264,7 +267,8 @@ pub fn sync_celestial_transforms(
     let moon_elev = moon_dir.y.max(0.0);
     moon_l.illuminance =
         moon_elev.powf(0.6) * (moon_phase_illuminance_factor * night_moon_illuminance);
-    moon_l.shadow_maps_enabled = moon_elev > 0.04 && moon_phase_illuminance_factor > 0.20;
+    moon_l.shadow_maps_enabled =
+        shadows_enabled && moon_elev > 0.04 && moon_phase_illuminance_factor > 0.20;
     *moon_lt = Transform::default().looking_to(-moon_dir, Vec3::Y);
 
     // Sky fill light softens shadows during daytime, oriented opposite the sun's horizontal azimuth

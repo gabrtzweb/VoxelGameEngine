@@ -7,6 +7,9 @@ fn test_default_config() {
     assert_eq!(config.render_distance, 8);
     assert_eq!(config.lod_render_distance, 8);
     assert_eq!(config.simulation_distance, 8);
+    assert!(!config.transmission_enabled);
+    assert!(config.shadows_enabled);
+    assert!(config.god_rays_enabled);
 }
 
 #[test]
@@ -14,15 +17,21 @@ fn test_presets() {
     let mut config = LocalConfig::default();
     config.apply_preset(PerformancePreset::LowSpec);
     assert_eq!(config.render_distance, 2);
-    assert_eq!(config.lod_render_distance, 6);
+    assert_eq!(config.lod_render_distance, 0);
     assert_eq!(config.simulation_distance, 4);
     assert!(!config.fog_enabled);
+    assert!(!config.transmission_enabled);
+    assert!(!config.shadows_enabled);
+    assert!(!config.god_rays_enabled);
 
     config.apply_preset(PerformancePreset::Ultra);
     assert_eq!(config.render_distance, 16);
     assert_eq!(config.lod_render_distance, 32);
     assert!(config.fog_enabled);
     assert!(config.vsync_enabled);
+    assert!(config.transmission_enabled);
+    assert!(config.shadows_enabled);
+    assert!(config.god_rays_enabled);
 }
 
 #[test]
@@ -33,4 +42,7 @@ fn test_json_roundtrip() {
     let parsed: LocalConfig = serde_json::from_str(&json).expect("Deserialize failed");
     assert_eq!(parsed.render_distance, 2);
     assert_eq!(parsed.preset, Some(PerformancePreset::LowSpec));
+    assert!(!parsed.transmission_enabled);
+    assert!(!parsed.shadows_enabled);
+    assert!(!parsed.god_rays_enabled);
 }

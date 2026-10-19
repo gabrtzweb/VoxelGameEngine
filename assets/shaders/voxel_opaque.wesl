@@ -9,10 +9,11 @@ import bevy_pbr::render::{
 @group(constants::MATERIAL_BIND_GROUP) @binding(100) var voxel_texture_array: texture_2d_array<f32>;
 @group(constants::MATERIAL_BIND_GROUP) @binding(101) var voxel_sampler: sampler;
 
-// Procedural ambient color noise ("Ambient Environment" mod style)
+// Fast procedural noise using Dave Hoskins' sine-free hash (ultra-fast on integrated GPUs)
 fn hash2_noise(p: vec2<f32>) -> f32 {
-    let q = fract(sin(vec2<f32>(dot(p, vec2<f32>(127.1, 311.7)), dot(p, vec2<f32>(269.5, 183.3)))) * 43758.5453);
-    return fract(q.x + q.y);
+    let p3 = fract(vec3<f32>(p.xyx) * 0.1031);
+    let p4 = p3 + dot(p3, p3.yzx + 33.33);
+    return fract((p4.x + p4.y) * p4.z);
 }
 
 fn smooth_noise2(p: vec2<f32>) -> f32 {
@@ -29,10 +30,7 @@ fn smooth_noise2(p: vec2<f32>) -> f32 {
 }
 
 fn ambient_environment_noise(pos_xz: vec2<f32>) -> f32 {
-    // 2-octave smooth noise: broad undulating patches (freq ~0.04) and gentle local depth (freq ~0.09)
-    let n1 = smooth_noise2(pos_xz * 0.04);
-    let n2 = smooth_noise2(pos_xz * 0.09 + vec2<f32>(17.3, 31.7));
-    return n1 * 0.7 + n2 * 0.3;
+    return smooth_noise2(pos_xz * 0.04);
 }
 
 // Fast deterministic integer block face hash (Murmur3 style bit avalanche)

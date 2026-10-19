@@ -118,7 +118,9 @@ fn sync_celestial_system(
     celestial_materials: Res<celestial::CelestialMaterials>,
     moon_textures: Res<celestial::MoonPhaseTextures>,
     materials: ResMut<Assets<StandardMaterial>>,
+    local_config: Option<Res<crate::core::config::LocalConfig>>,
 ) {
+    let shadows_enabled = local_config.as_ref().map(|c| c.shadows_enabled).unwrap_or(true);
     celestial::sync_celestial_transforms(
         camera,
         sun_visual,
@@ -135,6 +137,7 @@ fn sync_celestial_system(
         DAY_SUN_ILLUMINANCE,
         DAY_FILL_ILLUMINANCE,
         NIGHT_MOON_ILLUMINANCE,
+        shadows_enabled,
     );
 }
 
