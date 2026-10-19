@@ -2,9 +2,7 @@ use bevy::prelude::*;
 use bevy::{picking::hover::Hovered, ui::Pressed, ui_widgets::Button};
 
 use crate::{
-    core::{
-        AppFont, DynamicFpsSettings, LocalConfig, PerformancePreset, text_shadow_default,
-    },
+    core::{AppFont, DynamicFpsSettings, LocalConfig, PerformancePreset, text_shadow_default},
     environment::EnvironmentState,
     meshing::{ChunkMaterial, VoxelTextureRegistry},
     world::{ChunkStreamingQueues, ChunkStreamingSettings, VoxelWorld},
@@ -741,12 +739,10 @@ fn handle_settings_buttons(
                     }
                 }
                 SettingsAction::DecRenderDistance => {
-                    chunk_settings.render_distance =
-                        (chunk_settings.render_distance - 1).max(2);
+                    chunk_settings.render_distance = (chunk_settings.render_distance - 1).max(2);
                 }
                 SettingsAction::IncRenderDistance => {
-                    chunk_settings.render_distance =
-                        (chunk_settings.render_distance + 1).min(16);
+                    chunk_settings.render_distance = (chunk_settings.render_distance + 1).min(16);
                 }
                 SettingsAction::DecLodDistance => {
                     chunk_settings.lod_render_distance =

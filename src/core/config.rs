@@ -1,8 +1,8 @@
-use std::fs;
-use std::path::Path;
 use bevy::prelude::Resource;
 use bevy::render::settings::Backends;
 use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::Path;
 
 pub const CONFIG_PATH: &str = "local_config.json";
 
@@ -184,8 +184,7 @@ impl LocalConfig {
 
     /// Saves the current configuration to `local_config.json`.
     pub fn save(&self) -> Result<(), std::io::Error> {
-        let serialized = serde_json::to_string_pretty(self)
-            .map_err(std::io::Error::other)?;
+        let serialized = serde_json::to_string_pretty(self).map_err(std::io::Error::other)?;
         fs::write(CONFIG_PATH, serialized)
     }
 

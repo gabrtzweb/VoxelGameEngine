@@ -319,9 +319,9 @@ fn manage_cursor_mode(
     }
 
     let is_shift = keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight);
-    let is_hovering_button = buttons_query.iter().any(|(hovered, pressed)| {
-        hovered.get() || pressed
-    });
+    let is_hovering_button = buttons_query
+        .iter()
+        .any(|(hovered, pressed)| hovered.get() || pressed);
 
     let next_mode = if held_item.voxel.is_some() {
         CursorMode::Grabbing

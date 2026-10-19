@@ -8,9 +8,8 @@ use crate::world::Voxel;
 
 pub const HOTBAR_SLOT_COUNT: usize = 9;
 
-pub const HOTBAR_SLOT_X_COORDS: [f32; HOTBAR_SLOT_COUNT] = [
-    65.0, 87.0, 109.0, 131.0, 153.0, 175.0, 197.0, 219.0, 241.0,
-];
+pub const HOTBAR_SLOT_X_COORDS: [f32; HOTBAR_SLOT_COUNT] =
+    [65.0, 87.0, 109.0, 131.0, 153.0, 175.0, 197.0, 219.0, 241.0];
 pub const HOTBAR_SLOT_Y: f32 = 14.0;
 pub const HOTBAR_SCALE: f32 = 3.0;
 
@@ -122,7 +121,8 @@ fn setup_hotbar_ui(
     let initial_hotbar = Hotbar::default();
     let font_handle = app_font.as_ref().map(|f| f.source());
     let hotbar_texture = asset_server.load("textures/interfaces/containers/hotbar.png");
-    let selection_texture = asset_server.load("textures/interfaces/containers/hotbar_selection.png");
+    let selection_texture =
+        asset_server.load("textures/interfaces/containers/hotbar_selection.png");
 
     let tray_width = 320.0 * HOTBAR_SCALE;
     let tray_height = 44.0 * HOTBAR_SCALE;
@@ -271,8 +271,10 @@ fn setup_hotbar_ui(
                     });
 
                     // Fields 5 to 13: 9 Primary Hotbar Item Slots (16x16 px)
-                    for (index, &slot_x) in
-                        HOTBAR_SLOT_X_COORDS.iter().enumerate().take(HOTBAR_SLOT_COUNT)
+                    for (index, &slot_x) in HOTBAR_SLOT_X_COORDS
+                        .iter()
+                        .enumerate()
+                        .take(HOTBAR_SLOT_COUNT)
                     {
                         let initial_voxel = initial_hotbar.slots[index];
 
@@ -415,7 +417,10 @@ fn sync_hotbar_ui(
     _asset_server: Res<AssetServer>,
     mut selection_query: Query<&mut Node, (With<HotbarSelectionBox>, Without<HotbarSlotUi>)>,
     mut icon_query: Query<(&HotbarSlotIcon, &mut ImageNode, &mut Visibility)>,
-    mut offhand_query: Query<(&mut ImageNode, &mut Visibility), (With<HotbarOffhandIcon>, Without<HotbarSlotIcon>)>,
+    mut offhand_query: Query<
+        (&mut ImageNode, &mut Visibility),
+        (With<HotbarOffhandIcon>, Without<HotbarSlotIcon>),
+    >,
     mut utility_query: Query<
         (&mut ImageNode, &mut Visibility),
         (
@@ -578,11 +583,7 @@ fn manage_hotbar_visibility(
     } else {
         Visibility::Visible
     };
-    let target_display = if hide {
-        Display::None
-    } else {
-        Display::Flex
-    };
+    let target_display = if hide { Display::None } else { Display::Flex };
 
     for (mut vis, mut node) in &mut root_query {
         if *vis != target_vis {

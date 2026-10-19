@@ -1,17 +1,15 @@
 use bevy::{
-    input::mouse::AccumulatedMouseScroll,
-    picking::hover::Hovered,
-    prelude::*,
-    ui::Pressed,
-    ui_widgets::Button,
-    window::PrimaryWindow,
+    input::mouse::AccumulatedMouseScroll, picking::hover::Hovered, prelude::*, ui::Pressed,
+    ui_widgets::Button, window::PrimaryWindow,
 };
 
 use crate::{
     core::{AppFont, FontSource, text_shadow_default},
     gameplay::BlockIcons,
     player::hotbar::{HOTBAR_SLOT_COUNT, Hotbar},
-    player::inventory::{PLAYER_INVENTORY_COLS, PLAYER_INVENTORY_ROWS, PLAYER_INVENTORY_SLOTS, PlayerInventory},
+    player::inventory::{
+        PLAYER_INVENTORY_COLS, PLAYER_INVENTORY_ROWS, PLAYER_INVENTORY_SLOTS, PlayerInventory,
+    },
     world::Voxel,
 };
 
@@ -19,8 +17,8 @@ use super::{HeldInventoryItem, MenuState};
 
 pub const GUI_SCALE: f32 = 3.0;
 
-pub const WINDOW_WIDTH: f32 = 416.0 * GUI_SCALE;   // 1248 px
-pub const WINDOW_HEIGHT: f32 = 256.0 * GUI_SCALE;  // 768 px
+pub const WINDOW_WIDTH: f32 = 416.0 * GUI_SCALE; // 1248 px
+pub const WINDOW_HEIGHT: f32 = 256.0 * GUI_SCALE; // 768 px
 
 pub const CATALOG_COLS: usize = 9;
 pub const CATALOG_VISIBLE_ROWS: usize = 10;
@@ -42,17 +40,17 @@ pub const AVAILABLE_BLOCKS: [Voxel; 720] = Voxel::ALL;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CreativeCategory {
     #[default]
-    All,          // B2 (136, 7)
-    Rocks,        // B3
-    Soils,        // B4
-    Trees,        // B5
-    Ores,         // B6
-    Oceans,       // B7
-    Vegetation,   // B8
-    Organics,     // B9
-    Decorations,  // B10
-    Lighting,     // B11
-    Fluids,       // B12
+    All, // B2 (136, 7)
+    Rocks,       // B3
+    Soils,       // B4
+    Trees,       // B5
+    Ores,        // B6
+    Oceans,      // B7
+    Vegetation,  // B8
+    Organics,    // B9
+    Decorations, // B10
+    Lighting,    // B11
+    Fluids,      // B12
 }
 
 impl CreativeCategory {
@@ -118,7 +116,8 @@ impl CreativeCategory {
         let is_path = id.starts_with("path_");
         let is_moss = id.starts_with("moss_");
         // Marine flora (kelp, seagrass, algae...) — vege_ textures that are not coral fans.
-        let is_marine_flora = tex.starts_with("vege_") && !id.contains("coral") && id != "bone_worms";
+        let is_marine_flora =
+            tex.starts_with("vege_") && !id.contains("coral") && id != "bone_worms";
 
         match self {
             Self::All => true,
@@ -406,13 +405,19 @@ fn build_inventory_ui(
         tf
     };
 
-    let closed_tex = asset_server.load("textures/interfaces/containers/inventory_creative_closed.png");
+    let closed_tex =
+        asset_server.load("textures/interfaces/containers/inventory_creative_closed.png");
     let open_tex = asset_server.load("textures/interfaces/containers/inventory_creative_open.png");
-    let scroller_tex = asset_server.load("textures/interfaces/containers/inventory_creative_scroller.png");
-    let tab_select_tex = asset_server.load("textures/interfaces/containers/inventory_creative_tab_selection.png");
-    let slot_hover_tex = asset_server.load("textures/interfaces/containers/inventory_slot_hover.png");
-    let special_hover_tex = asset_server.load("textures/interfaces/containers/inventory_slot_special_hover.png");
-    let btn_util_hover_tex = asset_server.load("textures/interfaces/containers/button_util_hover.png");
+    let scroller_tex =
+        asset_server.load("textures/interfaces/containers/inventory_creative_scroller.png");
+    let tab_select_tex =
+        asset_server.load("textures/interfaces/containers/inventory_creative_tab_selection.png");
+    let slot_hover_tex =
+        asset_server.load("textures/interfaces/containers/inventory_slot_hover.png");
+    let special_hover_tex =
+        asset_server.load("textures/interfaces/containers/inventory_slot_special_hover.png");
+    let btn_util_hover_tex =
+        asset_server.load("textures/interfaces/containers/button_util_hover.png");
 
     let title_font = make_font(4.5 * GUI_SCALE);
     let num_font = make_font(3.5 * GUI_SCALE);
@@ -567,7 +572,9 @@ fn build_inventory_ui(
                                 card.spawn((
                                     InventoryMenuEntity,
                                     ImageNode {
-                                        image: asset_server.load(format!("textures/interfaces/containers/slots/{overlay_name}")),
+                                        image: asset_server.load(format!(
+                                            "textures/interfaces/containers/slots/{overlay_name}"
+                                        )),
                                         ..default()
                                     },
                                     Node {
@@ -582,11 +589,15 @@ fn build_inventory_ui(
                             }
 
                             // Card B: 36 Main Inventory Slots B7..B42 (4 rows of 9)
-                            for (row, &slot_y) in
-                                INVENTORY_ROW_Y_COORDS.iter().enumerate().take(PLAYER_INVENTORY_ROWS)
+                            for (row, &slot_y) in INVENTORY_ROW_Y_COORDS
+                                .iter()
+                                .enumerate()
+                                .take(PLAYER_INVENTORY_ROWS)
                             {
-                                for (col, &slot_x) in
-                                    INVENTORY_SLOT_X_COORDS.iter().enumerate().take(PLAYER_INVENTORY_COLS)
+                                for (col, &slot_x) in INVENTORY_SLOT_X_COORDS
+                                    .iter()
+                                    .enumerate()
+                                    .take(PLAYER_INVENTORY_COLS)
                                 {
                                     let slot_idx = row * PLAYER_INVENTORY_COLS + col;
 
@@ -604,7 +615,9 @@ fn build_inventory_ui(
                                         InventoryMenuEntity,
                                         Button,
                                         Hovered::default(),
-                                        PlayerStorageSlot { slot_index: slot_idx },
+                                        PlayerStorageSlot {
+                                            slot_index: slot_idx,
+                                        },
                                         Node {
                                             position_type: PositionType::Absolute,
                                             left: px(slot_x * GUI_SCALE),
@@ -622,7 +635,9 @@ fn build_inventory_ui(
                                         // Item Icon
                                         slot.spawn((
                                             InventoryMenuEntity,
-                                            PlayerStorageSlotIcon { slot_index: slot_idx },
+                                            PlayerStorageSlotIcon {
+                                                slot_index: slot_idx,
+                                            },
                                             ImageNode {
                                                 image: icon_handle,
                                                 ..default()
@@ -792,8 +807,10 @@ fn build_inventory_ui(
                             });
 
                             // Card B: Mirrored 9 Hotbar Slots B44..B52 at (124..276, 227), 16x16 px
-                            for (c, &slot_x) in
-                                INVENTORY_SLOT_X_COORDS.iter().enumerate().take(HOTBAR_SLOT_COUNT)
+                            for (c, &slot_x) in INVENTORY_SLOT_X_COORDS
+                                .iter()
+                                .enumerate()
+                                .take(HOTBAR_SLOT_COUNT)
                             {
                                 let slot_voxel = hotbar.slots[c];
                                 let icon_handle = slot_voxel
@@ -897,7 +914,9 @@ fn build_inventory_ui(
                                 card.spawn((
                                     InventoryMenuEntity,
                                     ImageNode {
-                                        image: asset_server.load(format!("textures/interfaces/containers/slots/{overlay_name}")),
+                                        image: asset_server.load(format!(
+                                            "textures/interfaces/containers/slots/{overlay_name}"
+                                        )),
                                         ..default()
                                     },
                                     Node {
@@ -1054,7 +1073,11 @@ fn build_inventory_ui(
                                     "|".to_string()
                                 } else {
                                     let cur = search_query.cursor.min(search_query.query.len());
-                                    format!("{}|{}", &search_query.query[..cur], &search_query.query[cur..])
+                                    format!(
+                                        "{}|{}",
+                                        &search_query.query[..cur],
+                                        &search_query.query[cur..]
+                                    )
                                 };
 
                                 sb.spawn((
@@ -1073,14 +1096,19 @@ fn build_inventory_ui(
                             });
 
                             // 90 Creative Catalog Slots B16..B105: 10 rows of 9 (16x16 px)
-                            let filtered = filtered_creative_blocks(active_cat, &search_query.query);
+                            let filtered =
+                                filtered_creative_blocks(active_cat, &search_query.query);
                             let start_row = scroll_state.scroll_row;
 
-                            for (row, &slot_y) in
-                                CATALOG_ROW_Y_COORDS.iter().enumerate().take(CATALOG_VISIBLE_ROWS)
+                            for (row, &slot_y) in CATALOG_ROW_Y_COORDS
+                                .iter()
+                                .enumerate()
+                                .take(CATALOG_VISIBLE_ROWS)
                             {
-                                for (col, &slot_x) in
-                                    INVENTORY_SLOT_X_COORDS.iter().enumerate().take(CATALOG_COLS)
+                                for (col, &slot_x) in INVENTORY_SLOT_X_COORDS
+                                    .iter()
+                                    .enumerate()
+                                    .take(CATALOG_COLS)
                                 {
                                     let slot_idx = row * CATALOG_COLS + col;
                                     let block_idx = (start_row + row) * CATALOG_COLS + col;
@@ -1119,7 +1147,9 @@ fn build_inventory_ui(
                                     .with_children(|slot| {
                                         slot.spawn((
                                             InventoryMenuEntity,
-                                            InventoryCatalogSlotIcon { slot_index: slot_idx },
+                                            InventoryCatalogSlotIcon {
+                                                slot_index: slot_idx,
+                                            },
                                             ImageNode {
                                                 image: icon_handle,
                                                 ..default()
@@ -1271,8 +1301,10 @@ fn build_inventory_ui(
                             });
 
                             // 9 Hotbar slots at (124..276, 227), 16x16 px
-                            for (c, &slot_x) in
-                                INVENTORY_SLOT_X_COORDS.iter().enumerate().take(HOTBAR_SLOT_COUNT)
+                            for (c, &slot_x) in INVENTORY_SLOT_X_COORDS
+                                .iter()
+                                .enumerate()
+                                .take(HOTBAR_SLOT_COUNT)
                             {
                                 let slot_voxel = hotbar.slots[c];
                                 let icon_handle = slot_voxel
@@ -1600,7 +1632,11 @@ fn handle_inventory_action_buttons(
         let is_hovered = hovered.get();
         for child in children.iter() {
             if let Ok(mut vis) = hover_query.get_mut(child) {
-                let target = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
+                let target = if is_hovered {
+                    Visibility::Visible
+                } else {
+                    Visibility::Hidden
+                };
                 if *vis != target {
                     *vis = target;
                 }
@@ -1610,7 +1646,8 @@ fn handle_inventory_action_buttons(
         if is_hovered && left_click {
             match action {
                 InventoryAction::Sort => {
-                    let mut items: Vec<Voxel> = player_inv.slots.iter().filter_map(|&s| s).collect();
+                    let mut items: Vec<Voxel> =
+                        player_inv.slots.iter().filter_map(|&s| s).collect();
                     items.sort_by_key(|v| v.id());
                     player_inv.slots = [None; PLAYER_INVENTORY_SLOTS];
                     for (i, v) in items.into_iter().enumerate() {
@@ -1659,9 +1696,7 @@ fn handle_creative_search_input(
     let mut query_changed = false;
 
     if mouse.just_pressed(MouseButton::Left) {
-        let is_over_search = search_bar_query
-            .iter()
-            .any(|h| h.get());
+        let is_over_search = search_bar_query.iter().any(|h| h.get());
         if is_over_search {
             if !search_query.is_focused {
                 search_query.is_focused = true;
@@ -1817,13 +1852,21 @@ fn handle_inventory_scroll(
             (center - size * 0.5, size.x, size.y)
         } else if let Some(w) = window_query.iter().next() {
             let w_size = Vec2::new(WINDOW_WIDTH * scale, WINDOW_HEIGHT * scale);
-            (Vec2::new((w.width() - w_size.x) * 0.5, (w.height() - w_size.y) * 0.5), w_size.x, w_size.y)
+            (
+                Vec2::new((w.width() - w_size.x) * 0.5, (w.height() - w_size.y) * 0.5),
+                w_size.x,
+                w_size.y,
+            )
         } else {
             (Vec2::ZERO, WINDOW_WIDTH, WINDOW_HEIGHT)
         }
     } else if let Some(w) = window_query.iter().next() {
         let w_size = Vec2::new(WINDOW_WIDTH * scale, WINDOW_HEIGHT * scale);
-        (Vec2::new((w.width() - w_size.x) * 0.5, (w.height() - w_size.y) * 0.5), w_size.x, w_size.y)
+        (
+            Vec2::new((w.width() - w_size.x) * 0.5, (w.height() - w_size.y) * 0.5),
+            w_size.x,
+            w_size.y,
+        )
     } else {
         (Vec2::ZERO, WINDOW_WIDTH, WINDOW_HEIGHT)
     };
@@ -1845,10 +1888,8 @@ fn handle_inventory_scroll(
     );
 
     let is_inside_track = cursor_pos.is_some_and(|pos| track_hit_rect.contains(pos));
-    let track_pressed = track_interaction_query
-        .iter()
-        .any(|p| p)
-        || thumb_interaction_query.iter().any(|p| p);
+    let track_pressed =
+        track_interaction_query.iter().any(|p| p) || thumb_interaction_query.iter().any(|p| p);
 
     if left_just_pressed && (is_inside_track || track_pressed) {
         scroll_state.is_dragging_thumb = true;
@@ -1914,23 +1955,57 @@ struct SlotInteractionQueries<'w, 's> {
     storage_slot_query: Query<
         'w,
         's,
-        (&'static Hovered, &'static PlayerStorageSlot, &'static Children),
-        (With<PlayerStorageSlot>, Without<InventoryHotbarSlot>, Without<InventoryCatalogSlot>),
+        (
+            &'static Hovered,
+            &'static PlayerStorageSlot,
+            &'static Children,
+        ),
+        (
+            With<PlayerStorageSlot>,
+            Without<InventoryHotbarSlot>,
+            Without<InventoryCatalogSlot>,
+        ),
     >,
     hotbar_slot_query: Query<
         'w,
         's,
-        (&'static Hovered, &'static InventoryHotbarSlot, &'static Children),
-        (With<InventoryHotbarSlot>, Without<PlayerStorageSlot>, Without<InventoryCatalogSlot>),
+        (
+            &'static Hovered,
+            &'static InventoryHotbarSlot,
+            &'static Children,
+        ),
+        (
+            With<InventoryHotbarSlot>,
+            Without<PlayerStorageSlot>,
+            Without<InventoryCatalogSlot>,
+        ),
     >,
     catalog_slot_query: Query<
         'w,
         's,
-        (&'static Hovered, &'static InventoryCatalogSlot, &'static Children),
-        (With<InventoryCatalogSlot>, Without<PlayerStorageSlot>, Without<InventoryHotbarSlot>),
+        (
+            &'static Hovered,
+            &'static InventoryCatalogSlot,
+            &'static Children,
+        ),
+        (
+            With<InventoryCatalogSlot>,
+            Without<PlayerStorageSlot>,
+            Without<InventoryHotbarSlot>,
+        ),
     >,
-    offhand_query: Query<'w, 's, (&'static Hovered, &'static Children), (With<InventoryOffhandSlot>, Without<InventoryUtilitySlot>)>,
-    utility_query: Query<'w, 's, (&'static Hovered, &'static Children), (With<InventoryUtilitySlot>, Without<InventoryOffhandSlot>)>,
+    offhand_query: Query<
+        'w,
+        's,
+        (&'static Hovered, &'static Children),
+        (With<InventoryOffhandSlot>, Without<InventoryUtilitySlot>),
+    >,
+    utility_query: Query<
+        'w,
+        's,
+        (&'static Hovered, &'static Children),
+        (With<InventoryUtilitySlot>, Without<InventoryOffhandSlot>),
+    >,
     hover_overlay_query: Query<'w, 's, &'static mut Visibility, With<SlotHoverHighlight>>,
 }
 
@@ -1970,7 +2045,13 @@ fn handle_inventory_slot_interaction(
         (KeyCode::Digit9, 8),
     ]
     .into_iter()
-    .find_map(|(k, idx)| if keyboard.just_pressed(k) { Some(idx) } else { None });
+    .find_map(|(k, idx)| {
+        if keyboard.just_pressed(k) {
+            Some(idx)
+        } else {
+            None
+        }
+    });
 
     let mut any_interacted = false;
 
@@ -1988,7 +2069,11 @@ fn handle_inventory_slot_interaction(
         let is_hovered = hovered.get();
         for child in children.iter() {
             if let Ok(mut vis) = hover_overlay_query.get_mut(child) {
-                let target = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
+                let target = if is_hovered {
+                    Visibility::Visible
+                } else {
+                    Visibility::Hidden
+                };
                 if *vis != target {
                     *vis = target;
                 }
@@ -2002,7 +2087,9 @@ fn handle_inventory_slot_interaction(
             if let Some(h_idx) = digit_pressed {
                 any_interacted = true;
                 std::mem::swap(&mut hotbar.slots[h_idx], &mut player_inv.slots[slot_idx]);
-            } else if is_shift && (left_click || (left_held && !dragged_slots.contains(&(0, slot_idx)))) {
+            } else if is_shift
+                && (left_click || (left_held && !dragged_slots.contains(&(0, slot_idx))))
+            {
                 any_interacted = true;
                 dragged_slots.insert((0, slot_idx));
                 let current_item = player_inv.slots[slot_idx];
@@ -2025,7 +2112,10 @@ fn handle_inventory_slot_interaction(
                 let temp = held_item.voxel;
                 held_item.voxel = current_item;
                 player_inv.slots[slot_idx] = temp;
-            } else if left_released && held_item.voxel.is_some() && !dragged_slots.contains(&(0, slot_idx)) {
+            } else if left_released
+                && held_item.voxel.is_some()
+                && !dragged_slots.contains(&(0, slot_idx))
+            {
                 any_interacted = true;
                 let current_item = player_inv.slots[slot_idx];
                 let temp = held_item.voxel;
@@ -2056,7 +2146,11 @@ fn handle_inventory_slot_interaction(
         let is_hovered = hovered.get();
         for child in children.iter() {
             if let Ok(mut vis) = hover_overlay_query.get_mut(child) {
-                let target = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
+                let target = if is_hovered {
+                    Visibility::Visible
+                } else {
+                    Visibility::Hidden
+                };
                 if *vis != target {
                     *vis = target;
                 }
@@ -2065,7 +2159,10 @@ fn handle_inventory_slot_interaction(
 
         if is_hovered {
             let h_idx = slot.index;
-            if is_shift && *tab_state == InventoryTab::Player && (left_click || (left_held && !dragged_slots.contains(&(1, h_idx)))) {
+            if is_shift
+                && *tab_state == InventoryTab::Player
+                && (left_click || (left_held && !dragged_slots.contains(&(1, h_idx))))
+            {
                 any_interacted = true;
                 dragged_slots.insert((1, h_idx));
                 let current_item = hotbar.slots[h_idx];
@@ -2075,7 +2172,10 @@ fn handle_inventory_slot_interaction(
                         hotbar.slots[h_idx] = None;
                     }
                 }
-            } else if is_shift && *tab_state == InventoryTab::Creative && (left_click || (left_held && !dragged_slots.contains(&(1, h_idx)))) {
+            } else if is_shift
+                && *tab_state == InventoryTab::Creative
+                && (left_click || (left_held && !dragged_slots.contains(&(1, h_idx))))
+            {
                 // In Creative tab, Shift+Click or Shift+Drag discards/deletes hotbar item
                 any_interacted = true;
                 dragged_slots.insert((1, h_idx));
@@ -2087,7 +2187,10 @@ fn handle_inventory_slot_interaction(
                 let temp = held_item.voxel;
                 held_item.voxel = current_item;
                 hotbar.slots[h_idx] = temp;
-            } else if left_released && held_item.voxel.is_some() && !dragged_slots.contains(&(1, h_idx)) {
+            } else if left_released
+                && held_item.voxel.is_some()
+                && !dragged_slots.contains(&(1, h_idx))
+            {
                 any_interacted = true;
                 let current_item = hotbar.slots[h_idx];
                 let temp = held_item.voxel;
@@ -2118,7 +2221,11 @@ fn handle_inventory_slot_interaction(
         let is_hovered = hovered.get();
         for child in children.iter() {
             if let Ok(mut vis) = hover_overlay_query.get_mut(child) {
-                let target = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
+                let target = if is_hovered {
+                    Visibility::Visible
+                } else {
+                    Visibility::Hidden
+                };
                 if *vis != target {
                     *vis = target;
                 }
@@ -2136,7 +2243,11 @@ fn handle_inventory_slot_interaction(
         let is_hovered = hovered.get();
         for child in children.iter() {
             if let Ok(mut vis) = hover_overlay_query.get_mut(child) {
-                let target = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
+                let target = if is_hovered {
+                    Visibility::Visible
+                } else {
+                    Visibility::Hidden
+                };
                 if *vis != target {
                     *vis = target;
                 }
@@ -2154,7 +2265,11 @@ fn handle_inventory_slot_interaction(
         let is_hovered = hovered.get();
         for child in children.iter() {
             if let Ok(mut vis) = hover_overlay_query.get_mut(child) {
-                let target = if is_hovered { Visibility::Visible } else { Visibility::Hidden };
+                let target = if is_hovered {
+                    Visibility::Visible
+                } else {
+                    Visibility::Hidden
+                };
                 if *vis != target {
                     *vis = target;
                 }
@@ -2168,7 +2283,9 @@ fn handle_inventory_slot_interaction(
                 if let Some(voxel) = slot.voxel {
                     hotbar.slots[h_idx] = Some(voxel);
                 }
-            } else if is_shift && (left_click || (left_held && !dragged_slots.contains(&(2, c_idx)))) {
+            } else if is_shift
+                && (left_click || (left_held && !dragged_slots.contains(&(2, c_idx))))
+            {
                 any_interacted = true;
                 dragged_slots.insert((2, c_idx));
                 if let Some(voxel) = slot.voxel {
@@ -2237,7 +2354,11 @@ fn sync_inventory_hotbar_icons(
     >,
     mut offhand_icons: Query<
         (&mut ImageNode, &mut Visibility),
-        (With<InventoryOffhandIcon>, Without<InventoryHotbarSlotIcon>, Without<PlayerStorageSlotIcon>),
+        (
+            With<InventoryOffhandIcon>,
+            Without<InventoryHotbarSlotIcon>,
+            Without<PlayerStorageSlotIcon>,
+        ),
     >,
     mut utility_icons: Query<
         (&mut ImageNode, &mut Visibility),
