@@ -102,8 +102,9 @@ pub struct MeshBuffers {
 }
 
 impl MeshBuffers {
+    #[allow(dead_code)]
     pub fn new() -> Self {
-        Self::with_capacity(0)
+        Self::with_capacity(128)
     }
 
     pub fn with_capacity(quads: usize) -> Self {
@@ -421,7 +422,7 @@ impl ChunkMesher {
 
         let chunk_voxel_origin = chunk_coordinate * CHUNK_SIZE as i32;
 
-        let mut opaque_buffers = MeshBuffers::with_capacity(256);
+        let mut opaque_buffers = MeshBuffers::with_capacity(512);
         let mut transparent_buffers = MeshBuffers::with_capacity(64);
 
         for direction in FACE_DIRECTIONS {

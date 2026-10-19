@@ -2,7 +2,9 @@ use bevy::prelude::*;
 use bevy::{picking::hover::Hovered, ui::Pressed, ui_widgets::Button};
 
 use crate::{
-    core::{AppFont, DynamicFpsSettings, text_shadow_default},
+    core::{
+        AppFont, DynamicFpsSettings, LocalConfig, PerformancePreset, text_shadow_default,
+    },
     environment::EnvironmentState,
     meshing::{ChunkMaterial, VoxelTextureRegistry},
     world::{ChunkStreamingQueues, ChunkStreamingSettings, VoxelWorld},
@@ -15,6 +17,8 @@ struct SettingsMenuRoot;
 
 #[derive(Component)]
 enum SettingsAction {
+    DecPreset,
+    IncPreset,
     DecScreenMode,
     IncScreenMode,
     DecRenderDistance,
@@ -33,6 +37,9 @@ enum SettingsAction {
     ToggleTimePause,
     Back,
 }
+
+#[derive(Component)]
+struct PresetLabel;
 
 #[derive(Component)]
 struct ScreenModeLabel;
@@ -85,6 +92,7 @@ fn spawn_settings_menu(
     mut commands: Commands,
     chunk_settings: Res<ChunkStreamingSettings>,
     game_settings: Res<GameSettings>,
+    local_config: Res<LocalConfig>,
     env_state: Option<Res<EnvironmentState>>,
     app_font: Option<Res<AppFont>>,
     asset_server: Res<AssetServer>,
@@ -262,6 +270,22 @@ fn spawn_settings_menu(
                                 ..default()
                             })
                             .with_children(|col_right| {
+                                // 0. Performance Preset Stepper
+                                let preset_label_str = local_config
+                                    .preset
+                                    .map_or("Custom".to_string(), |p| p.short_name().to_string());
+                                spawn_stepper_row(
+                                    col_right,
+                                    "Preset",
+                                    preset_label_str,
+                                    SettingsAction::DecPreset,
+                                    SettingsAction::IncPreset,
+                                    PresetLabel,
+                                    font_handle.as_ref(),
+                                    &small_normal,
+                                    &small_hover,
+                                );
+
                                 // 4. VSync Toggle Button
                                 spawn_toggle_button(
                                     col_right,
@@ -603,6 +627,7 @@ fn handle_settings_buttons(
     mouse: Res<ButtonInput<MouseButton>>,
     mut chunk_settings: ResMut<ChunkStreamingSettings>,
     mut game_settings: ResMut<GameSettings>,
+    mut local_config: ResMut<LocalConfig>,
     mut env_state: Option<ResMut<EnvironmentState>>,
     mut dynamic_fps_settings: Option<ResMut<DynamicFpsSettings>>,
     mut next_state: ResMut<NextState<MenuState>>,
@@ -623,7 +648,86 @@ fn handle_settings_buttons(
         }
 
         if is_hovered && left_clicked {
+            let mut sync_config = true;
             match action {
+                SettingsAction::DecPreset => {
+                    let current = local_config.preset.unwrap_or(PerformancePreset::Medium);
+                    let prev = current.prev();
+                    local_config.apply_preset(prev);
+                    chunk_settings.render_distance = local_config.render_distance;
+                    chunk_settings.lod_render_distance = local_config.lod_render_distance;
+                    chunk_settings.simulation_distance = local_config.simulation_distance;
+                    game_settings.fog_enabled = local_config.fog_enabled;
+                    game_settings.view_bobbing = local_config.view_bobbing;
+                    game_settings.full_grass = local_config.full_grass;
+                    game_settings.vsync_enabled = local_config.vsync_enabled;
+                    game_settings.dynamic_fps_enabled = local_config.dynamic_fps_enabled;
+
+                    if let Ok(mut window) = window_query.single_mut() {
+                        window.present_mode = if game_settings.vsync_enabled {
+                            bevy::window::PresentMode::AutoVsync
+                        } else {
+                            bevy::window::PresentMode::AutoNoVsync
+                        };
+                    }
+                    if let Some(ref mut dyn_fps) = dynamic_fps_settings {
+                        dyn_fps.enabled = game_settings.dynamic_fps_enabled;
+                    }
+                    if let Some(ref mut reg) = texture_registry {
+                        reg.full_grass = game_settings.full_grass;
+                    }
+                    if let Some(ref mut mat) = chunk_material {
+                        mat.texture_registry.full_grass = game_settings.full_grass;
+                    }
+                    if let Some(ref world) = world
+                        && let Some(ref mut queues) = streaming_queues
+                    {
+                        for (&coord, _) in world.iter_chunks() {
+                            queues.enqueue_remesh(coord);
+                        }
+                    }
+                    let _ = local_config.save();
+                    sync_config = false;
+                }
+                SettingsAction::IncPreset => {
+                    let current = local_config.preset.unwrap_or(PerformancePreset::Medium);
+                    let next = current.next();
+                    local_config.apply_preset(next);
+                    chunk_settings.render_distance = local_config.render_distance;
+                    chunk_settings.lod_render_distance = local_config.lod_render_distance;
+                    chunk_settings.simulation_distance = local_config.simulation_distance;
+                    game_settings.fog_enabled = local_config.fog_enabled;
+                    game_settings.view_bobbing = local_config.view_bobbing;
+                    game_settings.full_grass = local_config.full_grass;
+                    game_settings.vsync_enabled = local_config.vsync_enabled;
+                    game_settings.dynamic_fps_enabled = local_config.dynamic_fps_enabled;
+
+                    if let Ok(mut window) = window_query.single_mut() {
+                        window.present_mode = if game_settings.vsync_enabled {
+                            bevy::window::PresentMode::AutoVsync
+                        } else {
+                            bevy::window::PresentMode::AutoNoVsync
+                        };
+                    }
+                    if let Some(ref mut dyn_fps) = dynamic_fps_settings {
+                        dyn_fps.enabled = game_settings.dynamic_fps_enabled;
+                    }
+                    if let Some(ref mut reg) = texture_registry {
+                        reg.full_grass = game_settings.full_grass;
+                    }
+                    if let Some(ref mut mat) = chunk_material {
+                        mat.texture_registry.full_grass = game_settings.full_grass;
+                    }
+                    if let Some(ref world) = world
+                        && let Some(ref mut queues) = streaming_queues
+                    {
+                        for (&coord, _) in world.iter_chunks() {
+                            queues.enqueue_remesh(coord);
+                        }
+                    }
+                    let _ = local_config.save();
+                    sync_config = false;
+                }
                 SettingsAction::DecScreenMode => {
                     game_settings.screen_mode = game_settings.screen_mode.prev();
                     if let Ok(mut window) = window_query.single_mut() {
@@ -708,10 +812,27 @@ fn handle_settings_buttons(
                     if let Some(ref mut env) = env_state {
                         env.is_time_paused = !env.is_time_paused;
                     }
+                    sync_config = false;
                 }
                 SettingsAction::Back => {
                     next_state.set(MenuState::Pause);
+                    sync_config = false;
                 }
+            }
+
+            if sync_config {
+                local_config.preset = None;
+                local_config.render_distance = chunk_settings.render_distance;
+                local_config.lod_render_distance = chunk_settings.lod_render_distance;
+                local_config.simulation_distance = chunk_settings.simulation_distance;
+                local_config.fov_degrees = game_settings.fov_degrees;
+                local_config.fog_enabled = game_settings.fog_enabled;
+                local_config.view_bobbing = game_settings.view_bobbing;
+                local_config.full_grass = game_settings.full_grass;
+                local_config.vsync_enabled = game_settings.vsync_enabled;
+                local_config.dynamic_fps_enabled = game_settings.dynamic_fps_enabled;
+                local_config.screen_mode = game_settings.screen_mode.label().to_lowercase();
+                let _ = local_config.save();
             }
         }
     }
@@ -720,6 +841,7 @@ fn handle_settings_buttons(
 fn update_settings_labels(
     chunk_settings: Res<ChunkStreamingSettings>,
     game_settings: Res<GameSettings>,
+    local_config: Res<LocalConfig>,
     env_state: Option<Res<EnvironmentState>>,
     mut labels_query: Query<(
         &mut Text,
@@ -734,13 +856,15 @@ fn update_settings_labels(
         Option<&VsyncLabel>,
         Option<&DynamicFpsLabel>,
         Option<&TimePauseLabel>,
+        Option<&PresetLabel>,
     )>,
 ) {
     let chunk_changed = chunk_settings.is_changed();
     let game_changed = game_settings.is_changed();
+    let config_changed = local_config.is_changed();
     let env_changed = env_state.as_ref().is_some_and(|e| e.is_changed());
 
-    if !chunk_changed && !game_changed && !env_changed {
+    if !chunk_changed && !game_changed && !config_changed && !env_changed {
         return;
     }
 
@@ -757,8 +881,14 @@ fn update_settings_labels(
         vsync,
         dyn_fps,
         time_pause,
+        preset,
     ) in &mut labels_query
     {
+        if config_changed && preset.is_some() {
+            text.0 = local_config
+                .preset
+                .map_or("Custom".to_string(), |p| p.short_name().to_string());
+        }
         if game_changed {
             if screen_mode.is_some() {
                 text.0 = game_settings.screen_mode.label().to_string();

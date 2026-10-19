@@ -206,8 +206,9 @@ pub fn build_lod_mesh(
         }
     }
 
-    let mut opaque_buffers = MeshBuffers::new();
-    let mut transparent_buffers = MeshBuffers::new();
+    let quad_estimate = (num_cells * num_cells * 2) as usize;
+    let mut opaque_buffers = MeshBuffers::with_capacity(quad_estimate);
+    let mut transparent_buffers = MeshBuffers::with_capacity(32);
 
     let cell_w = stride as f32;
 

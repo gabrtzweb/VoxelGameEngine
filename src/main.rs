@@ -18,16 +18,18 @@ use bevy::{
 
 use bevy_egui::EguiPlugin;
 
-use core::{AdaptiveUiPlugin, DevStatsPlugin, DynamicFpsPlugin, FontPlugin, LocalConfig};
+use core::{
+    AdaptiveUiPlugin, DevStatsPlugin, DynamicFpsPlugin, DynamicFpsSettings, FontPlugin, LocalConfig,
+};
 use environment::EnvironmentPlugin;
 use gameplay::GameplayPlugin;
 use generation::TerrainInspectorPlugin;
 use map::MapPlugin;
-use menu::MenuPlugin;
+use menu::{GameSettings, MenuPlugin, ScreenMode};
 use meshing::MeshingPlugin;
 use player::PlayerPlugin;
 use simulation::SimulationPlugin;
-use world::WorldPlugin;
+use world::{ChunkStreamingSettings, WorldPlugin};
 
 use winit::{platform::windows::WindowExtWindows, window::Icon};
 
@@ -62,15 +64,53 @@ fn main() {
     let local_config = LocalConfig::load_or_default();
     let backends = local_config.resolve_backends();
 
+    let present_mode = if local_config.vsync_enabled {
+        PresentMode::AutoVsync
+    } else {
+        PresentMode::AutoNoVsync
+    };
+
+    let screen_mode = match local_config.screen_mode.to_lowercase().as_str() {
+        "borderless" | "borderlessfullscreen" => ScreenMode::BorderlessFullscreen,
+        "fullscreen" | "exclusivefullscreen" => ScreenMode::ExclusiveFullscreen,
+        _ => ScreenMode::Windowed,
+    };
+    let window_mode = screen_mode.to_window_mode();
+
+    let chunk_settings = ChunkStreamingSettings {
+        render_distance: local_config.render_distance,
+        lod_render_distance: local_config.lod_render_distance,
+        simulation_distance: local_config.simulation_distance,
+    };
+
+    let game_settings = GameSettings {
+        fov_degrees: local_config.fov_degrees,
+        fog_enabled: local_config.fog_enabled,
+        view_bobbing: local_config.view_bobbing,
+        full_grass: local_config.full_grass,
+        screen_mode,
+        vsync_enabled: local_config.vsync_enabled,
+        dynamic_fps_enabled: local_config.dynamic_fps_enabled,
+    };
+
+    let dynamic_fps_settings = DynamicFpsSettings {
+        enabled: local_config.dynamic_fps_enabled,
+        ..default()
+    };
+
     App::new()
         .insert_resource(local_config)
+        .insert_resource(chunk_settings)
+        .insert_resource(game_settings)
+        .insert_resource(dynamic_fps_settings)
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         title: "Voxel Game".to_string(),
                         resolution: (1280, 720).into(),
-                        present_mode: PresentMode::AutoNoVsync,
+                        present_mode,
+                        mode: window_mode,
                         ..default()
                     }),
                     ..default()

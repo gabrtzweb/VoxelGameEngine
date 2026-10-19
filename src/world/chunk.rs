@@ -29,7 +29,7 @@ pub enum ChunkStorage {
         palette_len: u8,
         indices: Box<[u8; CHUNK_VOLUME / 2]>,
     },
-    /// Flat uncompressed buffer (4,096 heap bytes) for complex chunks with > 16 distinct materials.
+    /// Flat uncompressed buffer (8,192 heap bytes, 4,096 voxels × 2 bytes) for complex chunks with > 16 distinct materials.
     Dense(Box<[Voxel; CHUNK_VOLUME]>),
 }
 
@@ -52,12 +52,7 @@ impl ChunkStorage {
     }
 
     /// Updates a single voxel, promoting/demoting storage tiers if necessary.
-    pub fn set(&mut self, index: usize, new_voxel: Voxel, unique_count: u16) {
-        if unique_count == 1 {
-            *self = Self::Uniform(new_voxel);
-            return;
-        }
-
+    pub fn set(&mut self, index: usize, new_voxel: Voxel) {
         match self {
             Self::Uniform(old_voxel) => {
                 let old = *old_voxel;
@@ -166,8 +161,6 @@ pub struct Chunk {
     storage: ChunkStorage,
     non_air_count: usize,
     solid_opaque_count: usize,
-    variant_counts: [u16; MAX_VOXEL_TYPES],
-    unique_voxel_count: u16,
     homogeneity: ChunkHomogeneity,
     shapes: HashMap<usize, (BlockShape, u8)>,
     extra_slabs: HashMap<usize, (Voxel, u8)>,
@@ -181,8 +174,6 @@ impl Chunk {
     }
 
     pub fn filled(voxel: Voxel) -> Self {
-        let mut variant_counts = [0u16; MAX_VOXEL_TYPES];
-        variant_counts[voxel as usize] = CHUNK_VOLUME as u16;
         let non_air_count = if voxel.is_empty() { 0 } else { CHUNK_VOLUME };
         let solid_opaque_count = if voxel.is_solid_opaque() {
             CHUNK_VOLUME
@@ -202,8 +193,6 @@ impl Chunk {
             storage: ChunkStorage::Uniform(voxel),
             non_air_count,
             solid_opaque_count,
-            variant_counts,
-            unique_voxel_count: 1,
             homogeneity,
             shapes: HashMap::default(),
             extra_slabs: HashMap::default(),
@@ -217,16 +206,8 @@ impl Chunk {
         assert_eq!(voxels.len(), CHUNK_VOLUME);
         let mut non_air_count = 0;
         let mut solid_opaque_count = 0;
-        let mut variant_counts = [0u16; MAX_VOXEL_TYPES];
-        let mut unique_voxel_count = 0;
 
         for &v in &voxels {
-            let idx = v as usize;
-            if variant_counts[idx] == 0 {
-                unique_voxel_count += 1;
-            }
-            variant_counts[idx] += 1;
-
             if !v.is_empty() {
                 non_air_count += 1;
                 if v.is_solid_opaque() {
@@ -235,22 +216,24 @@ impl Chunk {
             }
         }
 
+        let storage = ChunkStorage::from_voxels_slice(&voxels);
+
         let homogeneity = if non_air_count == 0 {
             ChunkHomogeneity::Empty
-        } else if unique_voxel_count == 1 && solid_opaque_count == CHUNK_VOLUME {
-            ChunkHomogeneity::Solid(voxels[0])
+        } else if let ChunkStorage::Uniform(v) = storage {
+            if v.is_solid_opaque() {
+                ChunkHomogeneity::Solid(v)
+            } else {
+                ChunkHomogeneity::Mixed
+            }
         } else {
             ChunkHomogeneity::Mixed
         };
-
-        let storage = ChunkStorage::from_voxels_slice(&voxels);
 
         Self {
             storage,
             non_air_count,
             solid_opaque_count,
-            variant_counts,
-            unique_voxel_count,
             homogeneity,
             shapes: HashMap::default(),
             extra_slabs: HashMap::default(),
@@ -300,18 +283,6 @@ impl Chunk {
         }
 
         let index = Self::index(x, y, z);
-        let old_idx = old as usize;
-        let new_idx = voxel as usize;
-
-        self.variant_counts[old_idx] -= 1;
-        if self.variant_counts[old_idx] == 0 {
-            self.unique_voxel_count -= 1;
-        }
-
-        if self.variant_counts[new_idx] == 0 {
-            self.unique_voxel_count += 1;
-        }
-        self.variant_counts[new_idx] += 1;
 
         if old.is_empty() {
             self.non_air_count += 1;
@@ -327,7 +298,7 @@ impl Chunk {
             self.solid_opaque_count -= 1;
         }
 
-        self.storage.set(index, voxel, self.unique_voxel_count);
+        self.storage.set(index, voxel);
 
         if voxel.is_empty() {
             self.shapes.remove(&index);
@@ -358,12 +329,26 @@ impl Chunk {
         self.homogeneity = if self.non_air_count == 0 {
             self.storage = ChunkStorage::Uniform(Voxel::Air);
             ChunkHomogeneity::Empty
-        } else if self.unique_voxel_count == 1 && self.solid_opaque_count == CHUNK_VOLUME {
+        } else if self.solid_opaque_count == CHUNK_VOLUME && self.is_uniform(voxel) {
             self.storage = ChunkStorage::Uniform(voxel);
             ChunkHomogeneity::Solid(voxel)
         } else {
             ChunkHomogeneity::Mixed
         };
+    }
+
+    /// Returns true if all voxels in the chunk match `voxel`.
+    #[inline]
+    pub fn is_uniform(&self, voxel: Voxel) -> bool {
+        match &self.storage {
+            ChunkStorage::Uniform(v) => *v == voxel,
+            ChunkStorage::Paletted {
+                palette,
+                palette_len,
+                ..
+            } => *palette_len == 1 && palette[0] == voxel,
+            ChunkStorage::Dense(voxels) => voxels.iter().all(|&v| v == voxel),
+        }
     }
 
     #[inline]
@@ -513,5 +498,44 @@ impl Chunk {
 impl Default for Chunk {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_chunk_memory_size() {
+        let chunk_size = std::mem::size_of::<Chunk>();
+        assert!(
+            chunk_size < 384,
+            "Chunk size must be small for cache efficiency, was {chunk_size} bytes"
+        );
+    }
+
+    #[test]
+    fn test_chunk_storage_uniform_and_set() {
+        let mut chunk = Chunk::new();
+        assert!(chunk.is_empty());
+        assert_eq!(chunk.get(0, 0, 0), Voxel::Air);
+        assert_eq!(chunk.homogeneity, ChunkHomogeneity::Empty);
+
+        chunk.set(0, 0, 0, Voxel::LoamGrass);
+        assert_eq!(chunk.get(0, 0, 0), Voxel::LoamGrass);
+        assert!(!chunk.is_empty());
+        assert_eq!(chunk.homogeneity, ChunkHomogeneity::Mixed);
+
+        chunk.set(0, 0, 0, Voxel::Air);
+        assert!(chunk.is_empty());
+        assert_eq!(chunk.homogeneity, ChunkHomogeneity::Empty);
+    }
+
+    #[test]
+    fn test_chunk_from_voxels() {
+        let voxels = vec![Voxel::Air; CHUNK_VOLUME];
+        let chunk = Chunk::from_voxels(voxels);
+        assert!(chunk.is_empty());
+        assert_eq!(chunk.homogeneity, ChunkHomogeneity::Empty);
     }
 }

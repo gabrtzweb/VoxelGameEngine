@@ -6,7 +6,7 @@ pub mod math;
 pub mod noise;
 pub mod ui_scale;
 
-pub use config::LocalConfig;
+pub use config::{LocalConfig, PerformancePreset};
 pub use dev_stats::DevStatsPlugin;
 pub use dynamic_fps::{DynamicFpsPlugin, DynamicFpsSettings, DynamicFpsState};
 pub use font::{AppFont, FontPlugin, FontSource, text_shadow_default};
