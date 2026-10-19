@@ -271,9 +271,10 @@ fn setup_hotbar_ui(
                     });
 
                     // Fields 5 to 13: 9 Primary Hotbar Item Slots (16x16 px)
-                    for index in 0..HOTBAR_SLOT_COUNT {
+                    for (index, &slot_x) in
+                        HOTBAR_SLOT_X_COORDS.iter().enumerate().take(HOTBAR_SLOT_COUNT)
+                    {
                         let initial_voxel = initial_hotbar.slots[index];
-                        let slot_x = HOTBAR_SLOT_X_COORDS[index];
 
                         let icon_handle = initial_voxel
                             .map(|v| icons.get(v))
@@ -445,23 +446,23 @@ fn sync_hotbar_ui(
     }
 
     // Sync offhand & utility slots from player inventory if changed
-    if let Some(ref inv) = player_inventory {
-        if inv.is_changed() {
-            if let Ok((mut offhand_img, mut offhand_vis)) = offhand_query.single_mut() {
-                if let Some(voxel) = inv.offhand_slot {
-                    offhand_img.image = icons.get(voxel);
-                    *offhand_vis = Visibility::Inherited;
-                } else {
-                    *offhand_vis = Visibility::Hidden;
-                }
+    if let Some(ref inv) = player_inventory
+        && inv.is_changed()
+    {
+        if let Ok((mut offhand_img, mut offhand_vis)) = offhand_query.single_mut() {
+            if let Some(voxel) = inv.offhand_slot {
+                offhand_img.image = icons.get(voxel);
+                *offhand_vis = Visibility::Inherited;
+            } else {
+                *offhand_vis = Visibility::Hidden;
             }
-            if let Ok((mut utility_img, mut utility_vis)) = utility_query.single_mut() {
-                if let Some(voxel) = inv.utility_slot {
-                    utility_img.image = icons.get(voxel);
-                    *utility_vis = Visibility::Inherited;
-                } else {
-                    *utility_vis = Visibility::Hidden;
-                }
+        }
+        if let Ok((mut utility_img, mut utility_vis)) = utility_query.single_mut() {
+            if let Some(voxel) = inv.utility_slot {
+                utility_img.image = icons.get(voxel);
+                *utility_vis = Visibility::Inherited;
+            } else {
+                *utility_vis = Visibility::Hidden;
             }
         }
     }

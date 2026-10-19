@@ -127,7 +127,7 @@ fn handle_block_shaping(
                 let slice_step = TAU / 4.0;
                 let slice_idx =
                     ((rel_angle + (slice_step * 0.5)) / slice_step).floor() as usize % 4;
-                radial_state.selected_shape = BlockShape::all()[slice_idx];
+                radial_state.selected_shape = BlockShape::shapable()[slice_idx];
             }
         }
     }

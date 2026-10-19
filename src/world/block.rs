@@ -50,13 +50,29 @@ impl PillarAxis {
 }
 
 impl BlockShape {
-    pub const fn all() -> [BlockShape; 5] {
+    /// All 10 registered block shapes in the engine.
+    pub const fn all() -> [BlockShape; 10] {
         [
             BlockShape::Full,
             BlockShape::Slab,
             BlockShape::Stair,
             BlockShape::Column,
+            BlockShape::Torch,
+            BlockShape::Basket,
+            BlockShape::PebbleOne,
+            BlockShape::PebbleTwo,
+            BlockShape::PebbleThree,
             BlockShape::CrossBillboard,
+        ]
+    }
+
+    /// The 4 geometric shapes selectable via the player radial wheel.
+    pub const fn shapable() -> [BlockShape; 4] {
+        [
+            BlockShape::Full,
+            BlockShape::Slab,
+            BlockShape::Stair,
+            BlockShape::Column,
         ]
     }
 
@@ -3758,5 +3774,26 @@ mod tests {
         assert_eq!(BlockShape::Full.orientation_name(0), "Vertical (Y)");
         assert_eq!(BlockShape::Full.orientation_name(1), "Horizontal (X)");
         assert_eq!(BlockShape::Full.orientation_name(2), "Horizontal (Z)");
+    }
+
+    #[test]
+    fn test_voxel_discriminants_continuity() {
+        for id in 0..=722u16 {
+            let maybe_voxel = Voxel::from_u16(id);
+            assert!(maybe_voxel.is_some(), "Voxel discriminant {id} must be valid");
+            assert_eq!(maybe_voxel.unwrap() as u16, id);
+        }
+        assert_eq!(Voxel::from_u16(723), None);
+        assert_eq!(Voxel::from_u16(1000), None);
+
+        assert_eq!(Voxel::ALL.len(), 720);
+        assert_eq!(Voxel::ALL[0], Voxel::DebugAccept);
+        assert_eq!(Voxel::ALL[719], Voxel::FungiVerdigrisCap);
+    }
+
+    #[test]
+    fn test_block_shapes_all() {
+        assert_eq!(BlockShape::all().len(), 10);
+        assert_eq!(BlockShape::shapable().len(), 4);
     }
 }

@@ -169,22 +169,23 @@ impl Default for LocalConfig {
 }
 
 impl LocalConfig {
-    /// Loads `local_config.json` if it exists, otherwise returns default settings.
+    /// Loads `local_config.json` if it exists, otherwise creates and saves default settings.
     pub fn load_or_default() -> Self {
-        if Path::new(CONFIG_PATH).exists() {
-            if let Ok(content) = fs::read_to_string(CONFIG_PATH) {
-                if let Ok(config) = serde_json::from_str::<LocalConfig>(&content) {
-                    return config;
-                }
-            }
+        if Path::new(CONFIG_PATH).exists()
+            && let Ok(content) = fs::read_to_string(CONFIG_PATH)
+            && let Ok(config) = serde_json::from_str::<LocalConfig>(&content)
+        {
+            return config;
         }
-        Self::default()
+        let default_config = Self::default();
+        let _ = default_config.save();
+        default_config
     }
 
     /// Saves the current configuration to `local_config.json`.
     pub fn save(&self) -> Result<(), std::io::Error> {
         let serialized = serde_json::to_string_pretty(self)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+            .map_err(std::io::Error::other)?;
         fs::write(CONFIG_PATH, serialized)
     }
 

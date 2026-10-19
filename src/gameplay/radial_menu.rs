@@ -34,7 +34,7 @@ pub fn spawn_radial_menu(
     selected_shape: BlockShape,
     font_handle: Option<&crate::core::FontSource>,
 ) {
-    let shapes = BlockShape::all();
+    let shapes = BlockShape::shapable();
 
     let mut title_font = TextFont {
         font_size: FontSize::Px(16.0),
@@ -211,7 +211,7 @@ pub fn update_radial_menu_ui(
         return;
     }
 
-    let shapes = BlockShape::all();
+    let shapes = BlockShape::shapable();
     let selected_idx = shapes
         .iter()
         .position(|&s| s == radial_state.selected_shape)
