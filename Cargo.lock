@@ -6336,6 +6336,8 @@ dependencies = [
  "bevy",
  "bevy_egui",
  "image",
+ "serde",
+ "serde_json",
  "winit",
  "winres",
 ]

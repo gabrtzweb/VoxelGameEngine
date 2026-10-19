@@ -18,7 +18,7 @@ use bevy::{
 
 use bevy_egui::EguiPlugin;
 
-use core::{AdaptiveUiPlugin, DevStatsPlugin, DynamicFpsPlugin, FontPlugin};
+use core::{AdaptiveUiPlugin, DevStatsPlugin, DynamicFpsPlugin, FontPlugin, LocalConfig};
 use environment::EnvironmentPlugin;
 use gameplay::GameplayPlugin;
 use generation::TerrainInspectorPlugin;
@@ -59,7 +59,11 @@ fn set_window_icons(
 }
 
 fn main() {
+    let local_config = LocalConfig::load_or_default();
+    let backends = local_config.resolve_backends();
+
     App::new()
+        .insert_resource(local_config)
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
@@ -75,6 +79,7 @@ fn main() {
                 .set(bevy::render::RenderPlugin {
                     render_creation: bevy::render::settings::RenderCreation::Automatic(Box::new(
                         bevy::render::settings::WgpuSettings {
+                            backends: Some(backends),
                             limits: bevy::render::settings::WgpuLimits {
                                 max_texture_array_layers: 2048,
                                 ..default()
