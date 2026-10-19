@@ -4,6 +4,20 @@ version = "0.1.0"
 edition = "2024"
 build = "build.rs"
 
+[lib]
+name = "voxel_game_engine"
+path = "src/lib.rs"
+test = false
+
+[[bin]]
+name = "voxel_game_engine"
+path = "src/main.rs"
+test = false
+
+[[test]]
+name = "integration_tests"
+path = "tests/integration_tests.rs"
+
 [dependencies]
 bevy = "0.20"
 bevy_egui = "0.43"

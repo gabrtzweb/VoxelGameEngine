@@ -1,5 +1,5 @@
-use super::*;
 use bevy::prelude::*;
+use voxel_game_engine::world::block::{BlockShape, NaturalRotationMode, PillarAxis, Voxel};
 
 #[test]
 fn test_natural_rotation_modes() {
@@ -108,10 +108,7 @@ fn test_axis_aligned_pillar_properties() {
 fn test_voxel_discriminants_continuity() {
     for id in 0..=722u16 {
         let maybe_voxel = Voxel::from_u16(id);
-        assert!(
-            maybe_voxel.is_some(),
-            "Voxel discriminant {id} must be valid"
-        );
+        assert!(maybe_voxel.is_some(), "Voxel discriminant {id} must be valid");
         assert_eq!(maybe_voxel.unwrap() as u16, id);
     }
     assert_eq!(Voxel::from_u16(723), None);

@@ -101,6 +101,12 @@ pub struct MeshBuffers {
     pub indices: Vec<u32>,
 }
 
+impl Default for MeshBuffers {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MeshBuffers {
     #[allow(dead_code)]
     pub fn new() -> Self {

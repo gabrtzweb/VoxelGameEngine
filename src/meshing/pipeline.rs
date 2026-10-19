@@ -126,6 +126,10 @@ impl ChunkMeshRegistry {
         self.entries.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+
     pub fn total_vertices(&self) -> usize {
         self.entries
             .values()
@@ -176,6 +180,10 @@ pub struct LodMeshRegistry {
 impl LodMeshRegistry {
     pub fn len(&self) -> usize {
         self.entries.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
     }
 
     pub fn total_vertices(&self) -> usize {

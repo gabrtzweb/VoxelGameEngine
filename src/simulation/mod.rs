@@ -1,8 +1,10 @@
+pub mod crops;
 pub mod fluid;
 pub mod lighting;
 
 use bevy::prelude::*;
 
+pub use crops::*;
 pub use fluid::FluidSimulationPlugin;
 pub use lighting::{VoxelLightRegistry, sync_chunk_lights};
 

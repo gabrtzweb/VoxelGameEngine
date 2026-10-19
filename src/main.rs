@@ -1,14 +1,3 @@
-mod core;
-mod environment;
-mod gameplay;
-mod generation;
-mod map;
-mod menu;
-mod meshing;
-mod player;
-mod simulation;
-mod world;
-
 use bevy::{
     diagnostic::FrameTimeDiagnosticsPlugin,
     prelude::*,
@@ -18,18 +7,20 @@ use bevy::{
 
 use bevy_egui::EguiPlugin;
 
-use core::{
-    AdaptiveUiPlugin, DevStatsPlugin, DynamicFpsPlugin, DynamicFpsSettings, FontPlugin, LocalConfig,
+use voxel_game_engine::{
+    core::{
+        AdaptiveUiPlugin, DevStatsPlugin, DynamicFpsPlugin, DynamicFpsSettings, FontPlugin, LocalConfig,
+    },
+    environment::EnvironmentPlugin,
+    gameplay::GameplayPlugin,
+    generation::TerrainInspectorPlugin,
+    map::MapPlugin,
+    menu::{GameSettings, MenuPlugin, ScreenMode},
+    meshing::MeshingPlugin,
+    player::PlayerPlugin,
+    simulation::SimulationPlugin,
+    world::{ChunkStreamingSettings, WorldPlugin},
 };
-use environment::EnvironmentPlugin;
-use gameplay::GameplayPlugin;
-use generation::TerrainInspectorPlugin;
-use map::MapPlugin;
-use menu::{GameSettings, MenuPlugin, ScreenMode};
-use meshing::MeshingPlugin;
-use player::PlayerPlugin;
-use simulation::SimulationPlugin;
-use world::{ChunkStreamingSettings, WorldPlugin};
 
 use winit::{platform::windows::WindowExtWindows, window::Icon};
 

@@ -1,4 +1,4 @@
-use super::voxel::Voxel;
+use super::{data::VOXEL_DATA, voxel::Voxel};
 
 pub const FLAG_EMPTY: u16 = 1 << 0;
 pub const FLAG_WATER: u16 = 1 << 1;
@@ -369,5 +369,25 @@ impl Voxel {
     #[inline(always)]
     pub fn is_unbreakable(self) -> bool {
         matches!(self, Self::Mantle | Self::MantlePlume)
+    }
+
+    #[inline(always)]
+    pub fn id_str(self) -> &'static str {
+        let idx = self as usize;
+        if idx < VOXEL_DATA.len() {
+            VOXEL_DATA[idx].0
+        } else {
+            ""
+        }
+    }
+
+    #[inline(always)]
+    pub fn label_str(self) -> &'static str {
+        let idx = self as usize;
+        if idx < VOXEL_DATA.len() {
+            VOXEL_DATA[idx].1
+        } else {
+            ""
+        }
     }
 }
