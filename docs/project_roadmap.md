@@ -57,7 +57,8 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **01** | **[Full Block Catalog & Texture System Refactoring](#phase-1-full-block-catalog--texture-system-refactoring-completed)** | **Completed** | 720+ worldbuilding block specs, 120+ active blocks, WGSL stochastic rotation, 3-axis directional placement, natural strata variants |
 | **02** | **[Standardized 9-Slot Interface Architecture & Menu Modernization](#phase-2-standardized-9-slot-interface-architecture--menu-modernization-completed)** | **Completed** | Unified 9-slot standard, 416×256 px windows, 320×44 px hotbar HUD, unified button suite, Dark Iron slot overlays, clean asset layout |
 | **03** | **[Core Engine Upgrade (Bevy 0.19 to Bevy 0.20 Migration)](#phase-3-core-engine-upgrade-bevy-019-to-bevy-020-migration-completed)** | **Completed** | Upgraded to Bevy 0.20, adopted direct `bevy_egui = "0.43"`, eliminated deprecated `Interaction` across all UI, full WESL shader migration, ScreenSpaceTransmission |
-| **04** | **[Flora, Crops & Interactive Mechanical Blocks](#phase-4-flora-crops--interactive-mechanical-blocks-planned)** | **Planned** | Multistage crops, wild vegetation, connected fences/walls, functional doors/gates, interactive storage chests, and light fixtures |
+| **—**  | **[Architecture, Soundness & Testing Modernization](#architecture-soundness--testing-modernization-completed)** | **Completed** | Hardware isolation (`local_config.json`, LowSpec preset), ~92% chunk struct memory reduction, monolithic `block.rs` decomposition, sound `Voxel::from_u16`, root `tests/` integration suite |
+| **04** | **[Flora, Crops & Interactive Mechanical Blocks](#phase-4-flora-crops--interactive-mechanical-blocks-in-progress)** | **In Progress** | Multistage crops, hydration simulation, connected fences/walls/panes bitwise logic, functional doors/gates, containers, and fixtures |
 | **05** | **[World Generation & Biome Overhaul](#phase-5-world-generation--biome-overhaul-planned)** | **Planned** | Geological rock strata, 2D continuous climate noise, 3D subterranean cave biomes, organic boundary dithering, cliff overhangs |
 | **06** | **[System Menus & Cartography Overhaul](#phase-6-system-menus--cartography-overhaul-planned)** | **Planned** | Dark Iron & Parchment menu polish (Pause, Settings, Keybindings), full-screen world map cartography, fog of war, map markers |
 | **07** | **[Sound Engine & Spatial Audio System](#phase-7-sound-engine--spatial-audio-system-planned)** | **Planned** | 3D spatial audio, block break/place audio, material-based footsteps, ambient environmental loops, weather sounds, dynamic music |
@@ -118,17 +119,40 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 4: Flora, Crops & Interactive Mechanical Blocks (Planned)
+### Architecture, Soundness & Testing Modernization (Completed)
 
-- [ ] **Crop Lifecycle & Agricultural Mechanics**:
-  - Implement multistage growth cycles (seed -> sprout -> growing -> ripe/harvestable) for agricultural crops (`crop_wheat`, `crop_barley`, `crop_carrot`, `crop_potato`, etc.).
-  - Implement farmland hydration mechanics, growth tick schedules, and seed drop harvesting.
+- [x] **Multi-Machine Hardware Profiles & Local Configuration**:
+  - Implemented `LocalConfig` in `src/core/config.rs` with automatic first-boot creation of `local_config.json` (isolated from Git).
+  - Added calibrated performance profiles (`LowSpec`, `Medium`, `High`, `Ultra`) adjusting render distance, LOD distance, fog, vsync, and FPS limits.
+- [x] **Chunk Memory Footprint Optimization**:
+  - Refactored `src/world/chunk.rs` to compute variant distributions lazily, reducing the inline struct footprint of `Chunk` by ~92% (from 2,192 bytes down to 144 bytes).
+- [x] **Voxel Enum Soundness & Safe Transmutation**:
+  - Eliminated unsafe memory transmutation risks in `Voxel::from_u16` across all 723 variants, with exhaustive discriminant validation tests.
+  - Resolved `BlockShape` radial menu overlapping bug via `BlockShape::shapable()`.
+- [x] **Monolithic Block Decomposition**:
+  - Modularized the 3,763-line `src/world/block.rs` monolith into clean, cohesive submodules under `src/world/block/` (`catalog.rs`, `connection.rs`, `data.rs`, `props.rs`, `shape.rs`, `voxel.rs`, `mod.rs`).
+- [x] **Pure Architectural Test Isolation**:
+  - Decoupled engine code into `src/lib.rs` and `src/main.rs`.
+  - Removed 100% of `#[cfg(test)]` blocks from `src/`, establishing a unified single-binary integration test suite in `tests/integration_tests.rs` with modular domain suites (`tests/suite/`).
+
+---
+
+### Phase 4: Flora, Crops & Interactive Mechanical Blocks (In Progress)
+
+- [x] **Crop Lifecycle & Agricultural Mechanics (Pure Simulation Foundation)**:
+  - Implemented pure simulation data models (`CropType`, `CropStage`, `SoilMoisture`, `CropSimulator` in `src/simulation/crops.rs`) with Chebyshev water hydration distance (4-block radius), weather hydration (rain), growth tick chance evaluation, and harvest yields (`CropHarvestResult`).
+  - Validated with automated unit tests in `tests/suite/crops.rs`.
+- [ ] **Crop In-World Meshing & Block Placement Hooks**:
+  - Connect crop growth stages to world block ticks and visual billboard rendering models.
+- [x] **Connected Block Algorithmic Logic (Pure Topology Masks)**:
+  - Implemented bitwise connection topology (`ConnectionMask` and `ConnectedCategory` in `src/world/block/connection.rs`) calculating 4-way cardinal adjacency and 6-way adjacency for fences, walls, glass panes, and iron bars.
+  - Recognizes isolated posts, straight lines (N-S, E-W), perpendicular L-corners, 3-way T-junctions, and 4-way intersections.
+  - Validated with automated unit tests in `tests/suite/connection.rs`.
 - [ ] **Wild Flowers, Vegetation & Fungal Colonies**:
   - Deploy wild flower variants with biome-specific color palettes and harvestable botanical seeds.
   - Add decorative undergrowth: forest ferns, desert shrubs, tundra mosses, hanging cavern vines, and shelf fungi.
 - [ ] **Interactive Mechanical & Structural Blocks**:
   - Implement functional doors, trapdoors, and fence gates with distinct open/closed states and interaction sounds.
-  - Add connected block logic for wooden fences, stone walls, iron bars, and glass panes.
   - Implement interactive container blocks (chests, barrels, baskets) with lid animations and container UI hooks.
   - Support wall-mounted torches, lantern posts, and decorative hanging fixtures.
 

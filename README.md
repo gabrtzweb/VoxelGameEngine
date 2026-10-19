@@ -85,6 +85,7 @@ docs/
 
 src/
 ├── core/
+│   ├── config.rs
 │   ├── dev_stats.rs
 │   ├── dynamic_fps.rs
 │   ├── font.rs
@@ -152,21 +153,41 @@ src/
 │   ├── state.rs
 │   └── water.rs
 ├── simulation/
+│   ├── crops.rs
 │   ├── fluid.rs
 │   ├── lighting.rs
 │   └── mod.rs
 ├── world/
+│   ├── block/
+│   │   ├── catalog.rs
+│   │   ├── connection.rs
+│   │   ├── data.rs
+│   │   ├── mod.rs
+│   │   ├── props.rs
+│   │   ├── shape.rs
+│   │   └── voxel.rs
 │   ├── streaming/
 │   │   ├── manager.rs
 │   │   ├── mod.rs
 │   │   └── queues.rs
-│   ├── block.rs
 │   ├── cache.rs
 │   ├── chunk.rs
 │   ├── mod.rs
 │   ├── modifications.rs
 │   └── storage.rs
+├── lib.rs
 └── main.rs
+
+tests/
+├── suite/
+│   ├── block.rs
+│   ├── chunk.rs
+│   ├── config.rs
+│   ├── connection.rs
+│   ├── crops.rs
+│   ├── noise.rs
+│   └── texture.rs
+└── integration_tests.rs
 ```
 
 ## Development Commands
@@ -178,6 +199,10 @@ Run:
 Optimized build:
 
     cargo run --release
+
+Run automated test suite:
+
+    cargo test
 
 Recommended before commits:
 

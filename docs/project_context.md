@@ -108,9 +108,17 @@ The engine has concluded foundational development across Version 0.1 (Phases 1 t
 In Version 0.2 (Modernization, Worldbuilding & Deep Systems), the project has completed:
 - **Phase 1**: Full Block Catalog & Texture System Refactoring (720 block definitions, stochastic rotation, 3-axis directional placement).
 - **Phase 2**: Standardized 9-Slot Interface Architecture & Menu Modernization (Unified 9-slot standard, 416×256 px windows, 320×44 px hotbar HUD, unified button suite).
-- **Phase 3**: Core Engine Upgrade (Bevy 0.19 to Bevy 0.20 Migration, direct `bevy_egui = "0.43"`, UI picking modernization, WESL shader framework, and ScreenSpaceTransmission).
+- **Phase 3**: Core Engine Upgrade (Bevy 0.20 Migration, direct `bevy_egui = "0.43"`, modern UI picking/hover/press, WESL shader framework, and ScreenSpaceTransmission).
+- **Architecture, Memory & Testing Overhaul**:
+  - **Multi-Machine Hardware Profiles (`src/core/config.rs`)**: Automatic persistence via `local_config.json` with presets (`LowSpec` for laptops up to `Ultra` for desktops), isolating local hardware settings outside Git.
+  - **Chunk Memory Optimization (`src/world/chunk.rs`)**: Reduced per-chunk struct overhead by ~92% (from ~2.1 KB to 144 bytes per chunk instance) by computing variant distributions lazily on-demand.
+  - **Block Monolith Modularization (`src/world/block/`)**: Decomposed the monolithic 3,763-line `block.rs` into focused submodules (`catalog.rs`, `connection.rs`, `data.rs`, `props.rs`, `shape.rs`, `voxel.rs`).
+  - **Soundness & Zero-`#[cfg(test)]` Policy**: Completely eradicated unsafe `transmute` risks in `Voxel::from_u16` across all 723 variants; moved 100% of unit tests out of `src/` into a dedicated integration test runner in `tests/integration_tests.rs`.
+- **Phase 4 (In Progress — Pure Domain Systems)**:
+  - **Connected Block Logic (`src/world/block/connection.rs`)**: Bitwise connection masks (`ConnectionMask`) and topology resolvers for fences, walls, glass panes, and iron bars.
+  - **Agricultural Lifecycle (`src/simulation/crops.rs`)**: Pure simulation data models (`CropType`, `CropStage`, `SoilMoisture`, `CropSimulator`) modeling Chebyshev water hydration radiuses, weather moisture, and harvest drop yields.
 
-The project is now advancing to **Phase 4: Flora, Crops & Interactive Mechanical Blocks** (multistage crops, wild vegetation, connected fences/walls, functional doors/gates, interactive storage chests, and light fixtures). Detailed progress and milestones are tracked in `docs/project_roadmap.md`.
+Detailed progress and milestones are tracked in `docs/project_roadmap.md`.
 
 ---
 
