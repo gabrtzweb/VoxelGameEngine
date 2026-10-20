@@ -32,8 +32,8 @@ impl Default for RenderScaleState {
         Self {
             scale: 1.0,
             target_image: None,
-            last_window_size: UVec2::new(1280, 720),
-            last_applied_scale: 1.0,
+            last_window_size: UVec2::ZERO,
+            last_applied_scale: -1.0,
         }
     }
 }
@@ -54,7 +54,8 @@ fn setup_render_scale(
 ) {
     let initial_scale = local_config.render_scale.clamp(0.50, 1.00);
     state.scale = initial_scale;
-    state.last_applied_scale = initial_scale;
+    state.last_applied_scale = -1.0;
+    state.last_window_size = UVec2::ZERO;
 
     let w = ((1280.0 * initial_scale).round() as u32).max(1);
     let h = ((720.0 * initial_scale).round() as u32).max(1);

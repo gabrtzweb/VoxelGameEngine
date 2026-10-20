@@ -57,16 +57,17 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **01** | **[Full Block Catalog & Texture System Refactoring](#phase-1-full-block-catalog--texture-system-refactoring-completed)** | **Completed** | 720+ worldbuilding block specs, 120+ active blocks, WGSL stochastic rotation, 3-axis directional placement, natural strata variants |
 | **02** | **[Standardized 9-Slot Interface Architecture & Menu Modernization](#phase-2-standardized-9-slot-interface-architecture--menu-modernization-completed)** | **Completed** | Unified 9-slot standard, 416×256 px windows, 320×44 px hotbar HUD, unified button suite, Dark Iron slot overlays, clean asset layout |
 | **03** | **[Core Engine Upgrade (Bevy 0.19 to Bevy 0.20 Migration)](#phase-3-core-engine-upgrade-bevy-019-to-bevy-020-migration-completed)** | **Completed** | Upgraded to Bevy 0.20, adopted direct `bevy_egui = "0.43"`, eliminated deprecated `Interaction` across all UI, full WESL shader migration, ScreenSpaceTransmission |
-| **—**  | **[Architecture, Soundness & Testing Modernization](#architecture-soundness--testing-modernization-completed)** | **Completed** | Hardware isolation (`local_config.json`, Potato and Low presets), ~92% chunk struct memory reduction, monolithic `block.rs` decomposition, sound `Voxel::from_u16`, root `tests/` integration suite |
-| **04** | **[Flora, Crops & Interactive Mechanical Blocks](#phase-4-flora-crops--interactive-mechanical-blocks-in-progress)** | **In Progress** | Multistage crops, hydration simulation, connected fences/walls/panes bitwise logic, functional doors/gates, containers, and fixtures |
-| **05** | **[World Generation & Biome Overhaul](#phase-5-world-generation--biome-overhaul-planned)** | **Planned** | Geological rock strata, 2D continuous climate noise, 3D subterranean cave biomes, organic boundary dithering, cliff overhangs |
-| **06** | **[System Menus & Cartography Overhaul](#phase-6-system-menus--cartography-overhaul-planned)** | **Planned** | Dark Iron & Parchment menu polish (Pause, Settings, Keybindings), full-screen world map cartography, fog of war, map markers |
-| **07** | **[Sound Engine & Spatial Audio System](#phase-7-sound-engine--spatial-audio-system-planned)** | **Planned** | 3D spatial audio, block break/place audio, material-based footsteps, ambient environmental loops, weather sounds, dynamic music |
-| **08** | **[Custom Voxel Player Character & Modular Character Creator](#phase-8-custom-voxel-player-character--modular-character-creator-planned)** | **Planned** | Modular voxel character rig, Character Creator interface, fantasy races (Human, Elf, Dwarf, Orc), custom hair, skin, and eyes |
-| **09** | **[First-Person Item Rendering & Creative Utility Tools](#phase-9-first-person-item-rendering--creative-utility-tools-planned)** | **Planned** | 3D held items/blocks in player hand, paint roller, lumberjack tree-felling saw, multi-block sledgehammer, tool animations |
-| **10** | **[Physics Engine, Fluid Dynamics & Item Drops](#phase-10-physics-engine-fluid-dynamics--item-drops-planned)** | **Planned** | Overhauled fluid propagation, gravity blocks (sand, gravel), 3D floating item drops with magnetism, projectile trajectories |
-| **11** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-11-visual-aesthetics-shaders--atmospheric-fx-overhaul-planned)** | **Planned** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, weather particles |
-| **12** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-12-performance-engineering-chunk-streaming--lod-enhancements-planned)** | **Planned** | Worker thread scaling, GPU frustum/occlusion culling, smooth LOD horizon transitions, runtime voxel memory compression |
+| **04** | **[Architecture, Graphics Modernization & Soundness](#phase-4-architecture-graphics-modernization--soundness-in-progress)** | **In Progress** | Hardware profiles, chunk memory optimization, monolithic decomposition, render scale, 16:9 snap, presets, tests |
+| **05** | **[High-Impact Performance & Graphics Pipeline](#phase-5-high-impact-performance--graphics-pipeline-planned)** | **Planned** | Target FPS Limiter (30–240/Unlocked), Preset Chunk Mesh Upload Budget, Subterranean Cave Occlusion Culling, FSR 1.0 Upscaling Filter |
+| **06** | **[Flora, Crops & Interactive Mechanical Blocks](#phase-6-flora-crops--interactive-mechanical-blocks-in-progress)** | **In Progress** | Multistage crops, hydration simulation, connected fences/walls/panes bitwise logic, functional doors/gates, containers, and fixtures |
+| **07** | **[World Generation & Biome Overhaul](#phase-7-world-generation--biome-overhaul-planned)** | **Planned** | Geological rock strata, 2D continuous climate noise, 3D subterranean cave biomes, organic boundary dithering, cliff overhangs |
+| **08** | **[System Menus & Cartography Overhaul](#phase-8-system-menus--cartography-overhaul-planned)** | **Planned** | Dark Iron & Parchment menu polish (Pause, Settings, Keybindings), full-screen world map cartography, fog of war, map markers |
+| **09** | **[Sound Engine & Spatial Audio System](#phase-9-sound-engine--spatial-audio-system-planned)** | **Planned** | 3D spatial audio, block break/place audio, material-based footsteps, ambient environmental loops, weather sounds, dynamic music |
+| **10** | **[Custom Voxel Player Character & Modular Character Creator](#phase-10-custom-voxel-player-character--modular-character-creator-planned)** | **Planned** | Modular voxel character rig, Character Creator interface, fantasy races (Human, Elf, Dwarf, Orc), custom hair, skin, and eyes |
+| **11** | **[First-Person Item Rendering & Creative Utility Tools](#phase-11-first-person-item-rendering--creative-utility-tools-planned)** | **Planned** | 3D held items/blocks in player hand, paint roller, lumberjack tree-felling saw, multi-block sledgehammer, tool animations |
+| **12** | **[Physics Engine, Fluid Dynamics & Item Drops](#phase-12-physics-engine-fluid-dynamics--item-drops-planned)** | **Planned** | Overhauled fluid propagation, gravity blocks (sand, gravel), 3D floating item drops with magnetism, projectile trajectories |
+| **13** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-13-visual-aesthetics-shaders--atmospheric-fx-overhaul-planned)** | **Planned** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, weather particles |
+| **14** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-14-performance-engineering-chunk-streaming--lod-enhancements-planned)** | **Planned** | Worker thread scaling, GPU frustum/occlusion culling, smooth LOD horizon transitions, runtime voxel memory compression |
 
 ---
 
@@ -153,7 +154,27 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 5: Flora, Crops & Interactive Mechanical Blocks (In Progress)
+### Phase 5: High-Impact Performance & Graphics Pipeline (Planned)
+
+- [ ] **Target Frame Rate Limiter (`DynamicFpsSettings` / `FpsCap`)**:
+  - Implement a configurable maximum frame rate limiter supporting standard display refresh steps: `30`, `60`, `75`, `90`, `120`, `144`, `165`, `180`, `240`, and `Unlocked`.
+  - Decouple FPS capping from VSync, eliminating GPU/CPU thermal throttling, fan noise, and excessive battery drain on low-spec laptops even when running with VSync disabled or on high-refresh panels.
+- [ ] **Preset-Calibrated Chunk Mesh Upload Budgeting**:
+  - Implement a per-frame vertex/index buffer GPU transfer limiter in `ChunkStreamingManager`, scaling dynamically by performance preset:
+    - `Potato`: 2–4 chunk mesh uploads per frame (eliminates PCIe bus saturation and micro-stutter on weak integrated graphics / laptops).
+    - `Low`: 6–8 chunk mesh uploads per frame.
+    - `Medium`: 12–16 chunk mesh uploads per frame.
+    - `High` / `Ultra`: Unlimited / 64+ chunk mesh uploads per frame for instant high-end desktop world streaming.
+- [ ] **Subterranean Cave Occlusion Face Culling**:
+  - Implement surface-to-underground occlusion mask checks, culling complete chunk meshes and interior cavern faces occluded by solid surface terrain when the player is on the surface.
+  - Significantly slashes drawn vertex counts, triangle counts, and GPU draw calls across worlds with complex underground cave systems.
+- [ ] **AMD FidelityFX Super Resolution 1.0 (FSR 1.0) Upscaling Filter**:
+  - Integrate selectable upscaling reconstruction filter options into `RenderScalePlugin`: `Bilinear` (fastest / baseline) vs `FSR 1.0` (Edge-Adaptive Spatial Upsampling + RCAS Robust Contrast-Adaptive Sharpening).
+  - Pairs with 3D render scales (`0.50x`, `0.66x`, `0.75x`, `0.85x`) to reconstruct sharp edges, crisp voxel geometry, and clear high-frequency textures with the rendering cost of low resolution.
+
+---
+
+### Phase 6: Flora, Crops & Interactive Mechanical Blocks (In Progress)
 
 - [x] **Crop Lifecycle & Agricultural Mechanics (Pure Simulation Foundation)**:
   - Implemented pure simulation data models (`CropType`, `CropStage`, `SoilMoisture`, `CropSimulator` in `src/simulation/crops.rs`) with Chebyshev water hydration distance (4-block radius), weather hydration (rain), growth tick chance evaluation, and harvest yields (`CropHarvestResult`).
@@ -174,7 +195,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 6: World Generation & Biome Overhaul (Planned)
+### Phase 7: World Generation & Biome Overhaul (Planned)
 
 - [ ] **Geological Rock Strata & Mineral Distribution**:
   - Restructure underground generation into realistic geological strata layers (Limestone, Slate, Granite, Basalt, Blackstone, Dreadstone Bedrock).
@@ -187,7 +208,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 7: System Menus & Cartography Overhaul (Planned)
+### Phase 8: System Menus & Cartography Overhaul (Planned)
 
 - [ ] **Unified Dark Iron & Parchment System Menus**:
   - Overhaul the in-game Pause Menu, Settings Menu, Audio/Video Options, and Keybindings to strictly adhere to the unified Dark Iron design system.
@@ -198,7 +219,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 8: Sound Engine & Spatial Audio System (Planned)
+### Phase 9: Sound Engine & Spatial Audio System (Planned)
 
 - [ ] **Audio Pipeline & Category Systems**:
   - Integrate Bevy's audio engine with the categorized audio assets in `assets/sounds/` (`ambience`, `blocks`, `footsteps`, `liquids`, `music`, `weather`).
@@ -212,7 +233,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 9: Custom Voxel Player Character & Modular Character Creator (Planned)
+### Phase 10: Custom Voxel Player Character & Modular Character Creator (Planned)
 
 - [ ] **Proprietary Modular Voxel Character Rig**:
   - Retire the legacy Minecraft skin player model in favor of a bespoke, modular voxel humanoid character rig.
@@ -224,7 +245,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 10: First-Person Item Rendering & Creative Utility Tools (Planned)
+### Phase 11: First-Person Item Rendering & Creative Utility Tools (Planned)
 
 - [ ] **First-Person & Third-Person Hand Rendering**:
   - Render the actively selected hotbar item or block directly in the player's hand in first-person and third-person views.
@@ -237,7 +258,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 11: Physics Engine, Fluid Dynamics & Item Drops (Planned)
+### Phase 12: Physics Engine, Fluid Dynamics & Item Drops (Planned)
 
 - [ ] **Fluid Simulation & Propagation Overhaul**:
   - Overhaul fluid cellular automata mechanics to deliver realistic volume conservation, natural slope cascading, and viscous lava flow.
@@ -253,7 +274,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 12: Visual Aesthetics, Shaders & Atmospheric FX Overhaul (Planned)
+### Phase 13: Visual Aesthetics, Shaders & Atmospheric FX Overhaul (Planned)
 
 - [ ] **Voxel Ambient Occlusion (Smooth Lighting)**:
   - Implement per-vertex ambient occlusion calculating corner and edge block occlusion, adding deep geometric contrast to all surfaces.
@@ -269,7 +290,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 13: Performance Engineering, Chunk Streaming & LOD Enhancements (Planned)
+### Phase 14: Performance Engineering, Chunk Streaming & LOD Enhancements (Planned)
 
 - [ ] **Streaming Throughput & Worker Scaling**:
   - Optimize asynchronous compute worker pools for chunk generation and greedy meshing with dynamic per-frame upload budgets.

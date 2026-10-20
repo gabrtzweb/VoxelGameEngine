@@ -335,10 +335,18 @@ pub fn generate_cloud_mesh(
     quality: crate::core::CloudQuality,
 ) -> Mesh {
     match quality {
-        crate::core::CloudQuality::Off => Mesh::new(
-            PrimitiveTopology::TriangleList,
-            RenderAssetUsages::default(),
-        ),
+        crate::core::CloudQuality::Off => {
+            let mut mesh = Mesh::new(
+                PrimitiveTopology::TriangleList,
+                RenderAssetUsages::default(),
+            );
+            mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0.0, 0.0, 0.0]; 4]);
+            mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 1.0, 0.0]; 4]);
+            mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0.0, 0.0]; 4]);
+            mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, vec![[1.0, 1.0, 1.0, 0.0]; 4]);
+            mesh.insert_indices(bevy::render::mesh::Indices::U32(vec![0, 1, 2, 0, 2, 3]));
+            mesh
+        }
         crate::core::CloudQuality::Fast2D => generate_2d_cloud_mesh(cloud_map, config, center),
         crate::core::CloudQuality::Fancy3D => generate_3d_cloud_mesh(cloud_map, config, center),
     }

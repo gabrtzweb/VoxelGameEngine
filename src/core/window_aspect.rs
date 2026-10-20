@@ -70,34 +70,33 @@ pub fn enforce_aspect_ratio_16_9(
         return;
     }
 
+    let current_aspect = current_w / current_h;
+    let aspect_diff = (current_aspect - TARGET_ASPECT_RATIO).abs();
+
     let dw = (current_w - state.last_width).abs();
     let dh = (current_h - state.last_height).abs();
 
-    // If dimensions have not changed by at least 1 logical pixel, do nothing.
-    if dw < 1.0 && dh < 1.0 {
-        return;
-    }
-
-    let current_aspect = current_w / current_h;
-    // If the aspect ratio is already within a small margin of 16:9, update state without setting.
-    if (current_aspect - TARGET_ASPECT_RATIO).abs() < 0.015 {
+    // If already matching 16:9 (within a small margin), just record dimensions and do nothing.
+    if aspect_diff <= 0.015 {
         state.last_width = current_w;
         state.last_height = current_h;
         return;
     }
 
-    // Determine dominant resize direction.
-    let (target_w, target_h) = if dw >= dh {
-        let adjusted_w = current_w.max(MIN_WINDOW_WIDTH);
-        let adjusted_h = (adjusted_w / TARGET_ASPECT_RATIO)
-            .round()
-            .max(MIN_WINDOW_HEIGHT);
-        (adjusted_w, adjusted_h)
-    } else {
+    // Determine target dimensions matching 16:9.
+    // If the window is being resized vertically, adjust width based on height.
+    // Otherwise (horizontal resize or static non-16:9 window), adjust height based on width.
+    let (target_w, target_h) = if dh > dw {
         let adjusted_h = current_h.max(MIN_WINDOW_HEIGHT);
         let adjusted_w = (adjusted_h * TARGET_ASPECT_RATIO)
             .round()
             .max(MIN_WINDOW_WIDTH);
+        (adjusted_w, adjusted_h)
+    } else {
+        let adjusted_w = current_w.max(MIN_WINDOW_WIDTH);
+        let adjusted_h = (adjusted_w / TARGET_ASPECT_RATIO)
+            .round()
+            .max(MIN_WINDOW_HEIGHT);
         (adjusted_w, adjusted_h)
     };
 
