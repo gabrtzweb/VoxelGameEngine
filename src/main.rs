@@ -69,10 +69,14 @@ fn main() {
     };
     let window_mode = screen_mode.to_window_mode();
 
+    let mesh_budget = local_config.mesh_upload_budget.max(1);
     let chunk_settings = ChunkStreamingSettings {
         render_distance: local_config.render_distance,
         lod_render_distance: local_config.lod_render_distance,
         simulation_distance: local_config.simulation_distance,
+        mesh_upload_budget: mesh_budget,
+        max_meshing_tasks_in_flight: (mesh_budget * 2).clamp(4, 64),
+        max_meshing_tasks_started_per_frame: mesh_budget.clamp(2, 32),
     };
 
     let game_settings = GameSettings {
@@ -88,6 +92,7 @@ fn main() {
 
     let dynamic_fps_settings = DynamicFpsSettings {
         enabled: local_config.dynamic_fps_enabled,
+        active_target_fps: local_config.target_fps.to_fps(),
         ..default()
     };
 

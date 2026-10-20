@@ -15,11 +15,11 @@ use super::{
 };
 use crate::world::{
     Chunk, ChunkHomogeneity, ChunkNeighborhood, NEIGHBOR_DIRECTIONS, VoxelWorld,
-    streaming::{ChunkStreamingQueues, ChunkStreamingState},
+    streaming::{ChunkStreamingQueues, ChunkStreamingSettings, ChunkStreamingState},
 };
 
-const MAX_MESHING_TASKS_IN_FLIGHT: usize = 16;
-const MAX_MESHING_TASKS_STARTED_PER_FRAME: usize = 8;
+const DEFAULT_MAX_MESHING_TASKS_IN_FLIGHT: usize = 16;
+const DEFAULT_MAX_MESHING_TASKS_STARTED_PER_FRAME: usize = 8;
 
 #[derive(Component)]
 pub struct ChunkMeshingTask {
@@ -55,16 +55,25 @@ pub fn start_meshing_tasks(
     material: Res<ChunkMaterial>,
     mut registry: ResMut<ChunkMeshRegistry>,
     mut meshes: ResMut<Assets<Mesh>>,
+    streaming_settings: Option<Res<ChunkStreamingSettings>>,
     streaming_state: Option<Res<ChunkStreamingState>>,
 ) {
+    let max_in_flight = streaming_settings
+        .as_ref()
+        .map(|s| s.max_meshing_tasks_in_flight)
+        .unwrap_or(DEFAULT_MAX_MESHING_TASKS_IN_FLIGHT);
+    let max_started = streaming_settings
+        .as_ref()
+        .map(|s| s.max_meshing_tasks_started_per_frame)
+        .unwrap_or(DEFAULT_MAX_MESHING_TASKS_STARTED_PER_FRAME);
+
     let active_count = active_tasks.iter().count();
-    if active_count >= MAX_MESHING_TASKS_IN_FLIGHT {
+    if active_count >= max_in_flight {
         return;
     }
 
     let in_flight: HashSet<IVec3> = active_tasks.iter().map(|t| t.coordinate).collect();
-    let available_slots =
-        (MAX_MESHING_TASKS_IN_FLIGHT - active_count).min(MAX_MESHING_TASKS_STARTED_PER_FRAME);
+    let available_slots = (max_in_flight - active_count).min(max_started);
 
     let pool = AsyncComputeTaskPool::get();
     let mut started = 0;
@@ -140,7 +149,7 @@ pub fn start_meshing_tasks(
     }
 }
 
-const MAX_CHUNK_MESH_UPLOADS_PER_FRAME: usize = 12;
+const DEFAULT_CHUNK_MESH_UPLOADS_PER_FRAME: usize = 12;
 
 pub fn collect_meshing_tasks(
     mut commands: Commands,
@@ -151,10 +160,16 @@ pub fn collect_meshing_tasks(
     mut registry: ResMut<ChunkMeshRegistry>,
     mut lod_registry: ResMut<LodMeshRegistry>,
     mut meshes: ResMut<Assets<Mesh>>,
+    streaming_settings: Option<Res<ChunkStreamingSettings>>,
 ) {
+    let upload_budget = streaming_settings
+        .as_ref()
+        .map(|s| s.mesh_upload_budget)
+        .unwrap_or(DEFAULT_CHUNK_MESH_UPLOADS_PER_FRAME);
+
     let mut uploaded = 0;
     for (entity, mut meshing_task) in &mut tasks {
-        if uploaded >= MAX_CHUNK_MESH_UPLOADS_PER_FRAME {
+        if uploaded >= upload_budget {
             break;
         }
 

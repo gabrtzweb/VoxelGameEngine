@@ -49,6 +49,9 @@ pub struct ChunkStreamingSettings {
     pub render_distance: i32,
     pub lod_render_distance: i32,
     pub simulation_distance: i32,
+    pub mesh_upload_budget: usize,
+    pub max_meshing_tasks_in_flight: usize,
+    pub max_meshing_tasks_started_per_frame: usize,
 }
 
 impl Default for ChunkStreamingSettings {
@@ -57,6 +60,9 @@ impl Default for ChunkStreamingSettings {
             render_distance: DEFAULT_RENDER_DISTANCE,
             lod_render_distance: DEFAULT_LOD_RENDER_DISTANCE,
             simulation_distance: DEFAULT_SIMULATION_DISTANCE,
+            mesh_upload_budget: 12,
+            max_meshing_tasks_in_flight: 16,
+            max_meshing_tasks_started_per_frame: 8,
         }
     }
 }

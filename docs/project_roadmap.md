@@ -58,7 +58,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **02** | **[Standardized 9-Slot Interface Architecture & Menu Modernization](#phase-2-standardized-9-slot-interface-architecture--menu-modernization-completed)** | **Completed** | Unified 9-slot standard, 416×256 px windows, 320×44 px hotbar HUD, unified button suite, Dark Iron slot overlays, clean asset layout |
 | **03** | **[Core Engine Upgrade (Bevy 0.19 to Bevy 0.20 Migration)](#phase-3-core-engine-upgrade-bevy-019-to-bevy-020-migration-completed)** | **Completed** | Upgraded to Bevy 0.20, adopted direct `bevy_egui = "0.43"`, eliminated deprecated `Interaction` across all UI, full WESL shader migration, ScreenSpaceTransmission |
 | **04** | **[Architecture, Graphics Modernization & Soundness](#phase-4-architecture-graphics-modernization--soundness-in-progress)** | **In Progress** | Hardware profiles, chunk memory optimization, monolithic decomposition, render scale, 16:9 snap, presets, tests |
-| **05** | **[High-Impact Performance & Graphics Pipeline](#phase-5-high-impact-performance--graphics-pipeline-planned)** | **Planned** | Target FPS Limiter (30–240/Unlocked), Preset Chunk Mesh Upload Budget, Subterranean Cave Occlusion Culling, FSR 1.0 Upscaling Filter |
+| **05** | **[High-Impact Performance & Graphics Pipeline](#phase-5-high-impact-performance--graphics-pipeline-in-progress)** | **In Progress** | 5-Step Target FPS Limiter (30/60/120/144/Unlocked), Preset Chunk Mesh Upload Budget, FSR 1.0 Upscaling Filter, Subterranean Culling |
 | **06** | **[Flora, Crops & Interactive Mechanical Blocks](#phase-6-flora-crops--interactive-mechanical-blocks-in-progress)** | **In Progress** | Multistage crops, hydration simulation, connected fences/walls/panes bitwise logic, functional doors/gates, containers, and fixtures |
 | **07** | **[World Generation & Biome Overhaul](#phase-7-world-generation--biome-overhaul-planned)** | **Planned** | Geological rock strata, 2D continuous climate noise, 3D subterranean cave biomes, organic boundary dithering, cliff overhangs |
 | **08** | **[System Menus & Cartography Overhaul](#phase-8-system-menus--cartography-overhaul-planned)** | **Planned** | Dark Iron & Parchment menu polish (Pause, Settings, Keybindings), full-screen world map cartography, fog of war, map markers |
@@ -154,23 +154,26 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 5: High-Impact Performance & Graphics Pipeline (Planned)
+### Phase 5: High-Impact Performance & Graphics Pipeline (In Progress)
 
-- [ ] **Target Frame Rate Limiter (`DynamicFpsSettings` / `FpsCap`)**:
-  - Implement a configurable maximum frame rate limiter supporting standard display refresh steps: `30`, `60`, `75`, `90`, `120`, `144`, `165`, `180`, `240`, and `Unlocked`.
-  - Decouple FPS capping from VSync, eliminating GPU/CPU thermal throttling, fan noise, and excessive battery drain on low-spec laptops even when running with VSync disabled or on high-refresh panels.
-- [ ] **Preset-Calibrated Chunk Mesh Upload Budgeting**:
-  - Implement a per-frame vertex/index buffer GPU transfer limiter in `ChunkStreamingManager`, scaling dynamically by performance preset:
-    - `Potato`: 2–4 chunk mesh uploads per frame (eliminates PCIe bus saturation and micro-stutter on weak integrated graphics / laptops).
-    - `Low`: 6–8 chunk mesh uploads per frame.
-    - `Medium`: 12–16 chunk mesh uploads per frame.
-    - `High` / `Ultra`: Unlimited / 64+ chunk mesh uploads per frame for instant high-end desktop world streaming.
+- [x] **5-Step Target Frame Rate Limiter (`TargetFpsLimit` / `DynamicFpsSettings`)**:
+  - Implemented 5 calibrated display refresh steps: `30 FPS` (battery / entry laptops), `60 FPS` (standard 60Hz), `120 FPS` (high refresh), `144 FPS` (esports standard), and `Unlocked` (unconstrained).
+  - Decoupled frame pacing from VSync in `dynamic_fps.rs`, preventing CPU/GPU thermal throttling, fan noise, and excessive battery drain on low-spec laptops even with VSync disabled or on high-refresh panels.
+  - Interactive stepper row exposed in the in-game Settings menu (`SettingsAction::DecTargetFps` / `IncTargetFps`), saving to `local_config.json` and adjusting pacing in real time.
+- [x] **Preset-Calibrated Chunk Mesh Upload Budgeting**:
+  - Integrated per-frame vertex/index buffer GPU transfer throttling in `ChunkStreamingManager` and `async_mesher.rs`, scaling dynamically by performance preset:
+    - `Potato`: 3 chunk mesh uploads per frame (eliminates PCIe bus saturation and micro-stutter on weak integrated graphics / laptops).
+    - `Low`: 6 chunk mesh uploads per frame.
+    - `Medium`: 12 chunk mesh uploads per frame.
+    - `High`: 24 chunk mesh uploads per frame.
+    - `Ultra`: 64 chunk mesh uploads per frame for instant high-end desktop world streaming.
+- [x] **AMD FidelityFX Super Resolution 1.0 (FSR 1.0) Upscaling Filter**:
+  - Integrated selectable upscaling reconstruction filter options in `LocalConfig` and `RenderScalePlugin`: `Bilinear` (ultra-fast baseline interpolation for potato laptops) vs `FSR 1.0` (Spatial Edge-Adaptive Filtering + RCAS Robust Contrast-Adaptive Sharpening).
+  - Pairs with 3D render scales (`0.50x`, `0.66x`, `0.75x`, `0.85x`) to restore sharp geometric voxel edges and contrast without ringing or haloing.
+  - Interactive stepper row exposed directly beneath Render Scale in the in-game Settings menu (`SettingsAction::DecUpscalingFilter` / `IncUpscalingFilter`).
 - [ ] **Subterranean Cave Occlusion Face Culling**:
   - Implement surface-to-underground occlusion mask checks, culling complete chunk meshes and interior cavern faces occluded by solid surface terrain when the player is on the surface.
   - Significantly slashes drawn vertex counts, triangle counts, and GPU draw calls across worlds with complex underground cave systems.
-- [ ] **AMD FidelityFX Super Resolution 1.0 (FSR 1.0) Upscaling Filter**:
-  - Integrate selectable upscaling reconstruction filter options into `RenderScalePlugin`: `Bilinear` (fastest / baseline) vs `FSR 1.0` (Edge-Adaptive Spatial Upsampling + RCAS Robust Contrast-Adaptive Sharpening).
-  - Pairs with 3D render scales (`0.50x`, `0.66x`, `0.75x`, `0.85x`) to reconstruct sharp edges, crisp voxel geometry, and clear high-frequency textures with the rendering cost of low resolution.
 
 ---
 

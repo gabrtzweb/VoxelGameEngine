@@ -31,6 +31,7 @@ impl DynamicFpsStateKind {
 #[derive(Resource, Debug, Clone, Reflect)]
 pub struct DynamicFpsSettings {
     pub enabled: bool,
+    pub active_target_fps: Option<u32>,
     pub unfocused_target_fps: u32,
     pub idle_target_fps: u32,
     pub battery_target_fps: u32,
@@ -41,6 +42,7 @@ impl Default for DynamicFpsSettings {
     fn default() -> Self {
         Self {
             enabled: true,
+            active_target_fps: Some(60),
             unfocused_target_fps: 15,
             idle_target_fps: 30,
             battery_target_fps: 60,
@@ -166,7 +168,7 @@ pub fn dynamic_fps_state_update(
 
     if !settings.enabled {
         state.state_kind = DynamicFpsStateKind::Normal;
-        state.target_fps = None;
+        state.target_fps = settings.active_target_fps;
         return;
     }
 
@@ -183,12 +185,16 @@ pub fn dynamic_fps_state_update(
     // Priority 3: Laptop running on battery power
     else if state.on_battery {
         state.state_kind = DynamicFpsStateKind::Battery;
-        state.target_fps = Some(settings.battery_target_fps);
+        let cap = match settings.active_target_fps {
+            Some(active) => active.min(settings.battery_target_fps),
+            None => settings.battery_target_fps,
+        };
+        state.target_fps = Some(cap);
     }
     // Priority 4: Normal active gameplay
     else {
         state.state_kind = DynamicFpsStateKind::Normal;
-        state.target_fps = None;
+        state.target_fps = settings.active_target_fps;
     }
 }
 

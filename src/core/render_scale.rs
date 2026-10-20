@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages};
 use bevy::window::{PrimaryWindow, WindowRef};
 
-use crate::core::LocalConfig;
+use crate::core::{LocalConfig, UpscalingFilter};
 use crate::player::PlayerCamera;
 
 pub struct RenderScalePlugin;
@@ -22,18 +22,22 @@ impl Plugin for RenderScalePlugin {
 #[derive(Resource)]
 pub struct RenderScaleState {
     pub scale: f32,
+    pub upscaling_filter: UpscalingFilter,
     pub target_image: Option<Handle<Image>>,
     pub last_window_size: UVec2,
     pub last_applied_scale: f32,
+    pub last_applied_filter: Option<UpscalingFilter>,
 }
 
 impl Default for RenderScaleState {
     fn default() -> Self {
         Self {
             scale: 1.0,
+            upscaling_filter: UpscalingFilter::Bilinear,
             target_image: None,
             last_window_size: UVec2::ZERO,
             last_applied_scale: -1.0,
+            last_applied_filter: None,
         }
     }
 }
@@ -53,8 +57,11 @@ fn setup_render_scale(
     mut state: ResMut<RenderScaleState>,
 ) {
     let initial_scale = local_config.render_scale.clamp(0.50, 1.00);
+    let initial_filter = local_config.upscaling_filter;
     state.scale = initial_scale;
+    state.upscaling_filter = initial_filter;
     state.last_applied_scale = -1.0;
+    state.last_applied_filter = None;
     state.last_window_size = UVec2::ZERO;
 
     let w = ((1280.0 * initial_scale).round() as u32).max(1);
@@ -141,7 +148,9 @@ fn sync_render_scale(
     };
 
     let target_scale = local_config.render_scale.clamp(0.50, 1.00);
+    let target_filter = local_config.upscaling_filter;
     state.scale = target_scale;
+    state.upscaling_filter = target_filter;
 
     let window_w = window.physical_width().max(1);
     let window_h = window.physical_height().max(1);
@@ -149,12 +158,14 @@ fn sync_render_scale(
 
     let scale_changed = (target_scale - state.last_applied_scale).abs() > 0.005;
     let size_changed = current_window_size != state.last_window_size;
+    let filter_changed = state.last_applied_filter != Some(target_filter);
 
-    if !scale_changed && !size_changed {
+    if !scale_changed && !size_changed && !filter_changed {
         return;
     }
 
     state.last_applied_scale = target_scale;
+    state.last_applied_filter = Some(target_filter);
     state.last_window_size = current_window_size;
 
     let Some(image_handle) = &state.target_image else {
@@ -184,6 +195,15 @@ fn sync_render_scale(
                     height: scaled_h,
                     depth_or_array_layers: 1,
                 });
+            }
+
+            match target_filter {
+                UpscalingFilter::Bilinear => {
+                    image.sampler = ImageSampler::linear();
+                }
+                UpscalingFilter::Fsr1 => {
+                    image.sampler = ImageSampler::linear();
+                }
             }
         }
 

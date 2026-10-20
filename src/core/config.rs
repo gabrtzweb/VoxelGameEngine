@@ -169,6 +169,100 @@ impl CloudQuality {
     }
 }
 
+/// Target frame rate limit for active gameplay.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum TargetFpsLimit {
+    Fps30,
+    #[default]
+    Fps60,
+    Fps120,
+    Fps144,
+    Unlocked,
+}
+
+impl TargetFpsLimit {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Fps30 => "30 FPS",
+            Self::Fps60 => "60 FPS",
+            Self::Fps120 => "120 FPS",
+            Self::Fps144 => "144 FPS",
+            Self::Unlocked => "Unlocked",
+        }
+    }
+
+    pub fn to_fps(self) -> Option<u32> {
+        match self {
+            Self::Fps30 => Some(30),
+            Self::Fps60 => Some(60),
+            Self::Fps120 => Some(120),
+            Self::Fps144 => Some(144),
+            Self::Unlocked => None,
+        }
+    }
+
+    pub fn from_fps(fps: u32) -> Self {
+        match fps {
+            30 => Self::Fps30,
+            60 => Self::Fps60,
+            120 => Self::Fps120,
+            144 => Self::Fps144,
+            _ => Self::Unlocked,
+        }
+    }
+
+    pub fn next(self) -> Self {
+        match self {
+            Self::Fps30 => Self::Fps60,
+            Self::Fps60 => Self::Fps120,
+            Self::Fps120 => Self::Fps144,
+            Self::Fps144 => Self::Unlocked,
+            Self::Unlocked => Self::Fps30,
+        }
+    }
+
+    pub fn prev(self) -> Self {
+        match self {
+            Self::Fps30 => Self::Unlocked,
+            Self::Fps60 => Self::Fps30,
+            Self::Fps120 => Self::Fps60,
+            Self::Fps144 => Self::Fps120,
+            Self::Unlocked => Self::Fps144,
+        }
+    }
+}
+
+/// 3D Upscaling reconstruction filter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum UpscalingFilter {
+    #[default]
+    Bilinear,
+    Fsr1,
+}
+
+impl UpscalingFilter {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Bilinear => "Bilinear",
+            Self::Fsr1 => "FSR 1.0",
+        }
+    }
+
+    pub fn next(self) -> Self {
+        match self {
+            Self::Bilinear => Self::Fsr1,
+            Self::Fsr1 => Self::Bilinear,
+        }
+    }
+
+    pub fn prev(self) -> Self {
+        match self {
+            Self::Bilinear => Self::Fsr1,
+            Self::Fsr1 => Self::Bilinear,
+        }
+    }
+}
+
 #[derive(Resource, Debug, Clone, Serialize, Deserialize)]
 pub struct LocalConfig {
     /// Preferred graphics backend: "auto" (default, uses PRIMARY/Vulkan), "dx12", "vulkan", "gl"
@@ -219,6 +313,14 @@ pub struct LocalConfig {
     #[serde(default = "default_dynamic_fps_enabled")]
     pub dynamic_fps_enabled: bool,
 
+    /// Target frame rate limiter during active gameplay (Fps30, Fps60, Fps120, Fps144, Unlocked).
+    #[serde(default = "default_target_fps")]
+    pub target_fps: TargetFpsLimit,
+
+    /// Per-frame limit on chunk mesh buffer uploads to the GPU.
+    #[serde(default = "default_mesh_upload_budget")]
+    pub mesh_upload_budget: usize,
+
     /// Display screen mode: "windowed", "borderless", "fullscreen".
     #[serde(default = "default_screen_mode")]
     pub screen_mode: String,
@@ -255,6 +357,10 @@ pub struct LocalConfig {
     /// 0.50 = Performance (50%)
     #[serde(default = "default_render_scale")]
     pub render_scale: f32,
+
+    /// 3D Upscaling reconstruction filter (Bilinear or FSR 1.0).
+    #[serde(default = "default_upscaling_filter")]
+    pub upscaling_filter: UpscalingFilter,
 }
 
 fn default_backend() -> String {
@@ -333,6 +439,18 @@ fn default_render_scale() -> f32 {
     1.0
 }
 
+fn default_target_fps() -> TargetFpsLimit {
+    TargetFpsLimit::Fps60
+}
+
+fn default_mesh_upload_budget() -> usize {
+    12
+}
+
+fn default_upscaling_filter() -> UpscalingFilter {
+    UpscalingFilter::Bilinear
+}
+
 impl Default for LocalConfig {
     fn default() -> Self {
         Self {
@@ -348,6 +466,8 @@ impl Default for LocalConfig {
             full_grass: default_full_grass(),
             vsync_enabled: default_vsync_enabled(),
             dynamic_fps_enabled: default_dynamic_fps_enabled(),
+            target_fps: default_target_fps(),
+            mesh_upload_budget: default_mesh_upload_budget(),
             screen_mode: default_screen_mode(),
             transmission_enabled: default_transmission_enabled(),
             shadow_quality: default_shadow_quality(),
@@ -356,6 +476,7 @@ impl Default for LocalConfig {
             anti_aliasing: default_anti_aliasing(),
             god_rays_enabled: default_god_rays_enabled(),
             render_scale: default_render_scale(),
+            upscaling_filter: default_upscaling_filter(),
         }
     }
 }
@@ -393,6 +514,8 @@ impl LocalConfig {
                 self.full_grass = true;
                 self.vsync_enabled = false;
                 self.dynamic_fps_enabled = true;
+                self.target_fps = TargetFpsLimit::Fps30;
+                self.mesh_upload_budget = 3;
                 self.transmission_enabled = false;
                 self.shadow_quality = ShadowQuality::Off;
                 self.shadows_enabled = false;
@@ -400,6 +523,7 @@ impl LocalConfig {
                 self.anti_aliasing = AntiAliasingMode::Off;
                 self.god_rays_enabled = false;
                 self.render_scale = 0.50;
+                self.upscaling_filter = UpscalingFilter::Bilinear;
             }
             PerformancePreset::Low => {
                 self.render_distance = 4;
@@ -410,6 +534,8 @@ impl LocalConfig {
                 self.full_grass = true;
                 self.vsync_enabled = false;
                 self.dynamic_fps_enabled = true;
+                self.target_fps = TargetFpsLimit::Fps60;
+                self.mesh_upload_budget = 6;
                 self.transmission_enabled = false;
                 self.shadow_quality = ShadowQuality::Off;
                 self.shadows_enabled = false;
@@ -417,6 +543,7 @@ impl LocalConfig {
                 self.anti_aliasing = AntiAliasingMode::Off;
                 self.god_rays_enabled = false;
                 self.render_scale = 0.75;
+                self.upscaling_filter = UpscalingFilter::Bilinear;
             }
             PerformancePreset::Medium => {
                 self.render_distance = 8;
@@ -427,6 +554,8 @@ impl LocalConfig {
                 self.full_grass = false;
                 self.vsync_enabled = false;
                 self.dynamic_fps_enabled = true;
+                self.target_fps = TargetFpsLimit::Fps60;
+                self.mesh_upload_budget = 12;
                 self.transmission_enabled = false;
                 self.shadow_quality = ShadowQuality::Medium;
                 self.shadows_enabled = true;
@@ -434,6 +563,7 @@ impl LocalConfig {
                 self.anti_aliasing = AntiAliasingMode::Fxaa;
                 self.god_rays_enabled = true;
                 self.render_scale = 1.00;
+                self.upscaling_filter = UpscalingFilter::Fsr1;
             }
             PerformancePreset::High => {
                 self.render_distance = 8;
@@ -444,6 +574,8 @@ impl LocalConfig {
                 self.full_grass = false;
                 self.vsync_enabled = false;
                 self.dynamic_fps_enabled = true;
+                self.target_fps = TargetFpsLimit::Fps144;
+                self.mesh_upload_budget = 24;
                 self.transmission_enabled = true;
                 self.shadow_quality = ShadowQuality::High;
                 self.shadows_enabled = true;
@@ -451,6 +583,7 @@ impl LocalConfig {
                 self.anti_aliasing = AntiAliasingMode::Msaa2x;
                 self.god_rays_enabled = true;
                 self.render_scale = 1.00;
+                self.upscaling_filter = UpscalingFilter::Fsr1;
             }
             PerformancePreset::Ultra => {
                 self.render_distance = 16;
@@ -461,6 +594,8 @@ impl LocalConfig {
                 self.full_grass = false;
                 self.vsync_enabled = false;
                 self.dynamic_fps_enabled = true;
+                self.target_fps = TargetFpsLimit::Unlocked;
+                self.mesh_upload_budget = 64;
                 self.transmission_enabled = true;
                 self.shadow_quality = ShadowQuality::Ultra;
                 self.shadows_enabled = true;
@@ -468,6 +603,7 @@ impl LocalConfig {
                 self.anti_aliasing = AntiAliasingMode::Msaa4x;
                 self.god_rays_enabled = true;
                 self.render_scale = 1.00;
+                self.upscaling_filter = UpscalingFilter::Fsr1;
             }
         }
     }
@@ -521,4 +657,24 @@ pub fn format_render_scale(scale: f32) -> String {
     } else {
         format!("{:.0}%", scale * 100.0)
     }
+}
+
+pub const MESH_UPLOAD_BUDGET_STEPS: [usize; 5] = [3, 6, 12, 24, 64];
+
+pub fn next_mesh_upload_budget(current: usize) -> usize {
+    for &step in &MESH_UPLOAD_BUDGET_STEPS {
+        if step > current {
+            return step;
+        }
+    }
+    64
+}
+
+pub fn prev_mesh_upload_budget(current: usize) -> usize {
+    for &step in MESH_UPLOAD_BUDGET_STEPS.iter().rev() {
+        if step < current {
+            return step;
+        }
+    }
+    3
 }
