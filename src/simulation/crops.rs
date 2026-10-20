@@ -38,7 +38,7 @@ impl CropType {
     /// Total distinct growth stages from Seed (0) to Harvestable/Ripe.
     pub const fn total_stages(&self) -> u8 {
         match self {
-            Self::Wheat | Self::Barley => 8, // 0..=7 (classic 8 stages)
+            Self::Wheat | Self::Barley => 8,  // 0..=7 (classic 8 stages)
             Self::Carrot | Self::Potato => 4, // 0..=3 (4 stages)
             Self::Beetroot => 4,
             Self::Herb => 3,
@@ -93,12 +93,18 @@ impl CropStage {
     #[inline(always)]
     pub const fn new(stage: u8, max_stage: u8) -> Self {
         let clamped = if stage > max_stage { max_stage } else { stage };
-        Self { stage: clamped, max_stage }
+        Self {
+            stage: clamped,
+            max_stage,
+        }
     }
 
     #[inline(always)]
     pub const fn seed(crop: CropType) -> Self {
-        Self { stage: 0, max_stage: crop.max_stage() }
+        Self {
+            stage: 0,
+            max_stage: crop.max_stage(),
+        }
     }
 
     #[inline(always)]
@@ -120,7 +126,10 @@ impl CropStage {
     #[inline(always)]
     pub const fn advance(self) -> Self {
         if self.stage < self.max_stage {
-            Self { stage: self.stage + 1, max_stage: self.max_stage }
+            Self {
+                stage: self.stage + 1,
+                max_stage: self.max_stage,
+            }
         } else {
             self
         }

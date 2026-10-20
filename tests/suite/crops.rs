@@ -1,6 +1,4 @@
-use voxel_game_engine::simulation::crops::{
-    CropSimulator, CropStage, CropType, SoilMoisture,
-};
+use voxel_game_engine::simulation::crops::{CropSimulator, CropStage, CropType, SoilMoisture};
 
 #[test]
 fn test_crop_stages_lifecycle() {
@@ -30,19 +28,40 @@ fn test_crop_stages_lifecycle() {
 #[test]
 fn test_soil_hydration_rules() {
     // Within 4 blocks of water -> Hydrated
-    assert_eq!(SoilMoisture::calculate_hydration(0, false), SoilMoisture::Hydrated);
-    assert_eq!(SoilMoisture::calculate_hydration(4, false), SoilMoisture::Hydrated);
+    assert_eq!(
+        SoilMoisture::calculate_hydration(0, false),
+        SoilMoisture::Hydrated
+    );
+    assert_eq!(
+        SoilMoisture::calculate_hydration(4, false),
+        SoilMoisture::Hydrated
+    );
 
     // 5-6 blocks without rain -> Moist
-    assert_eq!(SoilMoisture::calculate_hydration(5, false), SoilMoisture::Moist);
-    assert_eq!(SoilMoisture::calculate_hydration(6, false), SoilMoisture::Moist);
+    assert_eq!(
+        SoilMoisture::calculate_hydration(5, false),
+        SoilMoisture::Moist
+    );
+    assert_eq!(
+        SoilMoisture::calculate_hydration(6, false),
+        SoilMoisture::Moist
+    );
 
     // Far from water without rain -> Dry
-    assert_eq!(SoilMoisture::calculate_hydration(7, false), SoilMoisture::Dry);
-    assert_eq!(SoilMoisture::calculate_hydration(20, false), SoilMoisture::Dry);
+    assert_eq!(
+        SoilMoisture::calculate_hydration(7, false),
+        SoilMoisture::Dry
+    );
+    assert_eq!(
+        SoilMoisture::calculate_hydration(20, false),
+        SoilMoisture::Dry
+    );
 
     // Rain provides at least Moist even when far away
-    assert_eq!(SoilMoisture::calculate_hydration(15, true), SoilMoisture::Moist);
+    assert_eq!(
+        SoilMoisture::calculate_hydration(15, true),
+        SoilMoisture::Moist
+    );
 }
 
 #[test]
@@ -51,13 +70,23 @@ fn test_crop_growth_conditions_and_ticks() {
     let seed = CropStage::seed(crop);
 
     // Insufficient light (< 9) -> cannot grow
-    assert!(!CropSimulator::can_grow(crop, seed, SoilMoisture::Hydrated, 5));
+    assert!(!CropSimulator::can_grow(
+        crop,
+        seed,
+        SoilMoisture::Hydrated,
+        5
+    ));
 
     // Dry soil for wheat (requires Moist) -> cannot grow
     assert!(!CropSimulator::can_grow(crop, seed, SoilMoisture::Dry, 12));
 
     // Sufficient light and hydration -> can grow
-    assert!(CropSimulator::can_grow(crop, seed, SoilMoisture::Hydrated, 12));
+    assert!(CropSimulator::can_grow(
+        crop,
+        seed,
+        SoilMoisture::Hydrated,
+        12
+    ));
 
     // Evaluate tick with a successful roll
     let next = CropSimulator::evaluate_tick(crop, seed, SoilMoisture::Hydrated, 12, 0.1);

@@ -9,8 +9,8 @@ use bevy_egui::EguiPlugin;
 
 use voxel_game_engine::{
     core::{
-        AdaptiveUiPlugin, DevStatsPlugin, DynamicFpsPlugin, DynamicFpsSettings, FontPlugin, LocalConfig,
-        RenderScalePlugin, WindowAspectPlugin,
+        AdaptiveUiPlugin, DevStatsPlugin, DynamicFpsPlugin, DynamicFpsSettings, FontPlugin,
+        LocalConfig, RenderScalePlugin, WindowAspectPlugin,
     },
     environment::EnvironmentPlugin,
     gameplay::GameplayPlugin,
@@ -77,6 +77,7 @@ fn main() {
 
     let game_settings = GameSettings {
         fov_degrees: local_config.fov_degrees,
+        dynamic_fov_enabled: local_config.dynamic_fov_enabled,
         fog_enabled: local_config.fog_enabled,
         view_bobbing: local_config.view_bobbing,
         full_grass: local_config.full_grass,

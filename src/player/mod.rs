@@ -71,6 +71,7 @@ impl Plugin for PlayerPlugin {
                     water::update_underwater_effect,
                     update_crosshair_visibility,
                     sync_camera_transmission,
+                    sync_camera_anti_aliasing,
                 )
                     .chain()
                     .in_set(PlayerSet::Movement),
@@ -144,6 +145,29 @@ fn spawn_player_and_camera(
     if transmission_active {
         camera_builder.insert(bevy::pbr::ScreenSpaceTransmission::default());
     }
+
+    let aa_mode = local_config
+        .as_ref()
+        .map(|c| c.anti_aliasing)
+        .unwrap_or(crate::core::AntiAliasingMode::Fxaa);
+
+    match aa_mode {
+        crate::core::AntiAliasingMode::Off => {
+            camera_builder.insert(bevy::render::view::Msaa::Off);
+        }
+        crate::core::AntiAliasingMode::Fxaa => {
+            camera_builder.insert((
+                bevy::render::view::Msaa::Off,
+                bevy::anti_alias::fxaa::Fxaa::default(),
+            ));
+        }
+        crate::core::AntiAliasingMode::Msaa2x => {
+            camera_builder.insert(bevy::render::view::Msaa::Sample2);
+        }
+        crate::core::AntiAliasingMode::Msaa4x => {
+            camera_builder.insert(bevy::render::view::Msaa::Sample4);
+        }
+    }
 }
 
 fn sync_camera_transmission(
@@ -168,6 +192,47 @@ fn sync_camera_transmission(
             commands
                 .entity(camera_entity)
                 .remove::<bevy::pbr::ScreenSpaceTransmission>();
+        }
+    }
+}
+
+fn sync_camera_anti_aliasing(
+    local_config: Option<Res<crate::core::config::LocalConfig>>,
+    camera_query: Query<Entity, With<PlayerCamera>>,
+    mut commands: Commands,
+) {
+    let Some(local_config) = local_config else {
+        return;
+    };
+    if !local_config.is_changed() {
+        return;
+    }
+    if let Ok(camera_entity) = camera_query.single() {
+        match local_config.anti_aliasing {
+            crate::core::AntiAliasingMode::Off => {
+                commands
+                    .entity(camera_entity)
+                    .insert(bevy::render::view::Msaa::Off)
+                    .remove::<bevy::anti_alias::fxaa::Fxaa>();
+            }
+            crate::core::AntiAliasingMode::Fxaa => {
+                commands.entity(camera_entity).insert((
+                    bevy::render::view::Msaa::Off,
+                    bevy::anti_alias::fxaa::Fxaa::default(),
+                ));
+            }
+            crate::core::AntiAliasingMode::Msaa2x => {
+                commands
+                    .entity(camera_entity)
+                    .insert(bevy::render::view::Msaa::Sample2)
+                    .remove::<bevy::anti_alias::fxaa::Fxaa>();
+            }
+            crate::core::AntiAliasingMode::Msaa4x => {
+                commands
+                    .entity(camera_entity)
+                    .insert(bevy::render::view::Msaa::Sample4)
+                    .remove::<bevy::anti_alias::fxaa::Fxaa>();
+            }
         }
     }
 }

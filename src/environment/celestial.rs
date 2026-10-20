@@ -35,6 +35,88 @@ pub struct CelestialMaterials {
     pub moon: Handle<StandardMaterial>,
 }
 
+pub fn build_sun_cascade_config(
+    quality: crate::core::ShadowQuality,
+) -> bevy::light::CascadeShadowConfig {
+    match quality {
+        crate::core::ShadowQuality::Off | crate::core::ShadowQuality::Low => {
+            CascadeShadowConfigBuilder {
+                num_cascades: 1,
+                minimum_distance: 0.1,
+                maximum_distance: 32.0,
+                first_cascade_far_bound: 32.0,
+                overlap_proportion: 0.0,
+            }
+            .build()
+        }
+        crate::core::ShadowQuality::Medium => CascadeShadowConfigBuilder {
+            num_cascades: 2,
+            minimum_distance: 0.1,
+            maximum_distance: 64.0,
+            first_cascade_far_bound: 16.0,
+            overlap_proportion: 0.20,
+        }
+        .build(),
+        crate::core::ShadowQuality::High => CascadeShadowConfigBuilder {
+            num_cascades: 4,
+            minimum_distance: 0.1,
+            maximum_distance: 128.0,
+            first_cascade_far_bound: 14.0,
+            overlap_proportion: 0.25,
+        }
+        .build(),
+        crate::core::ShadowQuality::Ultra => CascadeShadowConfigBuilder {
+            num_cascades: 4,
+            minimum_distance: 0.1,
+            maximum_distance: 192.0,
+            first_cascade_far_bound: 16.0,
+            overlap_proportion: 0.25,
+        }
+        .build(),
+    }
+}
+
+pub fn build_moon_cascade_config(
+    quality: crate::core::ShadowQuality,
+) -> bevy::light::CascadeShadowConfig {
+    match quality {
+        crate::core::ShadowQuality::Off | crate::core::ShadowQuality::Low => {
+            CascadeShadowConfigBuilder {
+                num_cascades: 1,
+                minimum_distance: 0.1,
+                maximum_distance: 24.0,
+                first_cascade_far_bound: 24.0,
+                overlap_proportion: 0.0,
+            }
+            .build()
+        }
+        crate::core::ShadowQuality::Medium => CascadeShadowConfigBuilder {
+            num_cascades: 2,
+            minimum_distance: 0.1,
+            maximum_distance: 48.0,
+            first_cascade_far_bound: 14.0,
+            overlap_proportion: 0.20,
+        }
+        .build(),
+        crate::core::ShadowQuality::High => CascadeShadowConfigBuilder {
+            num_cascades: 3,
+            minimum_distance: 0.1,
+            maximum_distance: 64.0,
+            first_cascade_far_bound: 12.0,
+            overlap_proportion: 0.25,
+        }
+        .build(),
+        crate::core::ShadowQuality::Ultra => CascadeShadowConfigBuilder {
+            num_cascades: 4,
+            minimum_distance: 0.1,
+            maximum_distance: 128.0,
+            first_cascade_far_bound: 14.0,
+            overlap_proportion: 0.25,
+        }
+        .build(),
+    }
+}
+
 pub fn setup_celestial(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -42,7 +124,11 @@ pub fn setup_celestial(
     mut images: ResMut<Assets<Image>>,
     local_config: Option<Res<crate::core::config::LocalConfig>>,
 ) {
-    let shadows_enabled = local_config.as_ref().map(|c| c.shadows_enabled).unwrap_or(true);
+    let shadow_quality = local_config
+        .as_ref()
+        .map(|c| c.shadow_quality)
+        .unwrap_or(crate::core::ShadowQuality::Medium);
+    let shadows_enabled = shadow_quality != crate::core::ShadowQuality::Off;
     let (sun_image, moon_images) = load_celestial_images();
 
     let sun_handle = images.add(sun_image);
@@ -107,14 +193,7 @@ pub fn setup_celestial(
             shadow_maps_enabled: shadows_enabled,
             ..default()
         },
-        CascadeShadowConfigBuilder {
-            num_cascades: 4,
-            minimum_distance: 0.1,
-            maximum_distance: 128.0,
-            first_cascade_far_bound: 14.0,
-            overlap_proportion: 0.25,
-        }
-        .build(),
+        build_sun_cascade_config(shadow_quality),
         Transform::default(),
     ));
 
@@ -137,16 +216,35 @@ pub fn setup_celestial(
             shadow_maps_enabled: shadows_enabled,
             ..default()
         },
-        CascadeShadowConfigBuilder {
-            num_cascades: 3,
-            minimum_distance: 0.1,
-            maximum_distance: 64.0,
-            first_cascade_far_bound: 12.0,
-            overlap_proportion: 0.25,
-        }
-        .build(),
+        build_moon_cascade_config(shadow_quality),
         Transform::default(),
     ));
+}
+
+pub fn sync_celestial_shadow_quality(
+    local_config: Option<Res<crate::core::config::LocalConfig>>,
+    sun_query: Query<Entity, With<SunLight>>,
+    moon_query: Query<Entity, With<MoonLight>>,
+    mut commands: Commands,
+) {
+    let Some(local_config) = local_config else {
+        return;
+    };
+    if !local_config.is_changed() {
+        return;
+    }
+
+    let quality = local_config.shadow_quality;
+    if let Ok(sun_entity) = sun_query.single() {
+        commands
+            .entity(sun_entity)
+            .insert(build_sun_cascade_config(quality));
+    }
+    if let Ok(moon_entity) = moon_query.single() {
+        commands
+            .entity(moon_entity)
+            .insert(build_moon_cascade_config(quality));
+    }
 }
 
 pub fn calculate_sun_direction(time_of_day: f32) -> Vec3 {

@@ -77,12 +77,15 @@ fn setup_render_scale(
     let image_handle = images.add(image);
     state.target_image = Some(image_handle.clone());
 
-    // Spawn 2D UI Camera (order: 1, clear_color: None) to preserve 3D render and draw UI
+    let is_scaling = initial_scale < 0.999;
+
+    // Spawn 2D UI Camera (order: 1) only active when render scaling is active
     commands.spawn((
         Camera2d,
         Camera {
             order: 1,
-            clear_color: ClearColorConfig::None,
+            is_active: is_scaling,
+            clear_color: ClearColorConfig::Default,
             ..default()
         },
         RenderScaleUiCamera,
@@ -96,7 +99,7 @@ fn setup_render_scale(
             top: Val::Px(0.0),
             width: Val::Percent(100.0),
             height: Val::Percent(100.0),
-            display: if initial_scale < 0.999 {
+            display: if is_scaling {
                 Display::Flex
             } else {
                 Display::None
@@ -119,6 +122,14 @@ fn sync_render_scale(
     mut commands: Commands,
     primary_window: Query<&Window, With<PrimaryWindow>>,
     camera_3d_query: Query<Entity, (With<Camera3d>, With<PlayerCamera>)>,
+    mut ui_camera_query: Query<
+        &mut Camera,
+        (
+            With<Camera2d>,
+            With<RenderScaleUiCamera>,
+            Without<PlayerCamera>,
+        ),
+    >,
     mut bg_node_query: Query<&mut Node, With<RenderScaleBackgroundNode>>,
 ) {
     let Ok(window) = primary_window.single() else {
@@ -149,7 +160,13 @@ fn sync_render_scale(
         return;
     };
 
-    if target_scale < 0.999 {
+    let is_scaling = target_scale < 0.999;
+
+    if let Ok(mut ui_cam) = ui_camera_query.single_mut() {
+        ui_cam.is_active = is_scaling;
+    }
+
+    if is_scaling {
         // Render 3D world into scaled off-screen image
         commands
             .entity(camera_entity)

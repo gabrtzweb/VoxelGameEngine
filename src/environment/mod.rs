@@ -54,6 +54,7 @@ impl Plugin for EnvironmentPlugin {
                     update_atmosphere,
                     sync_fog_distance,
                     sync_celestial_system,
+                    celestial::sync_celestial_shadow_quality,
                     sync_starfield_system,
                     sync_cloud_system,
                 )
@@ -120,7 +121,10 @@ fn sync_celestial_system(
     materials: ResMut<Assets<StandardMaterial>>,
     local_config: Option<Res<crate::core::config::LocalConfig>>,
 ) {
-    let shadows_enabled = local_config.as_ref().map(|c| c.shadows_enabled).unwrap_or(true);
+    let shadows_enabled = local_config
+        .as_ref()
+        .map(|c| c.shadow_quality != crate::core::ShadowQuality::Off)
+        .unwrap_or(true);
     celestial::sync_celestial_transforms(
         camera,
         sun_visual,
@@ -167,8 +171,13 @@ fn sync_cloud_system(
     cloud_map: Res<clouds::CloudTextureMap>,
     mut layers_res: ResMut<clouds::CloudLayersResource>,
     env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
+    local_config: Option<Res<crate::core::config::LocalConfig>>,
 ) {
     let is_underwater = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
+    let cloud_quality = local_config
+        .as_ref()
+        .map(|c| c.cloud_quality)
+        .unwrap_or(crate::core::CloudQuality::Fancy3D);
 
     clouds::sync_clouds(
         state.total_in_game_seconds(),
@@ -181,5 +190,6 @@ fn sync_cloud_system(
         &mut layers_res,
         state.time_of_day,
         is_underwater,
+        cloud_quality,
     );
 }

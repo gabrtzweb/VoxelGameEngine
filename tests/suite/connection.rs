@@ -1,6 +1,4 @@
-use voxel_game_engine::world::block::{
-    ConnectedCategory, ConnectionMask, Voxel,
-};
+use voxel_game_engine::world::block::{ConnectedCategory, ConnectionMask, Voxel};
 
 #[test]
 fn test_connection_mask_cardinal_counts() {

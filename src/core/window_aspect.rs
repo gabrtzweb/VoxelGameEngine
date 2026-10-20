@@ -20,6 +20,7 @@ pub struct WindowAspectState {
     pub last_width: f32,
     pub last_height: f32,
     pub is_locked: bool,
+    pub initial_frames: u32,
 }
 
 impl Default for WindowAspectState {
@@ -28,11 +29,12 @@ impl Default for WindowAspectState {
             last_width: 1280.0,
             last_height: 720.0,
             is_locked: true,
+            initial_frames: 5,
         }
     }
 }
 
-/// Enforces 16:9 aspect ratio in windowed mode by snapping dimensions when resized.
+/// Enforces 16:9 aspect ratio in windowed mode by snapping dimensions in real-time when resized.
 pub fn enforce_aspect_ratio_16_9(
     mut primary_window: Query<&mut Window, With<PrimaryWindow>>,
     mut state: ResMut<WindowAspectState>,
@@ -60,6 +62,14 @@ pub fn enforce_aspect_ratio_16_9(
         return;
     }
 
+    // Allow window to initialize cleanly during startup frames
+    if state.initial_frames > 0 {
+        state.initial_frames -= 1;
+        state.last_width = current_w;
+        state.last_height = current_h;
+        return;
+    }
+
     let dw = (current_w - state.last_width).abs();
     let dh = (current_h - state.last_height).abs();
 
@@ -79,11 +89,15 @@ pub fn enforce_aspect_ratio_16_9(
     // Determine dominant resize direction.
     let (target_w, target_h) = if dw >= dh {
         let adjusted_w = current_w.max(MIN_WINDOW_WIDTH);
-        let adjusted_h = (adjusted_w / TARGET_ASPECT_RATIO).round().max(MIN_WINDOW_HEIGHT);
+        let adjusted_h = (adjusted_w / TARGET_ASPECT_RATIO)
+            .round()
+            .max(MIN_WINDOW_HEIGHT);
         (adjusted_w, adjusted_h)
     } else {
         let adjusted_h = current_h.max(MIN_WINDOW_HEIGHT);
-        let adjusted_w = (adjusted_h * TARGET_ASPECT_RATIO).round().max(MIN_WINDOW_WIDTH);
+        let adjusted_w = (adjusted_h * TARGET_ASPECT_RATIO)
+            .round()
+            .max(MIN_WINDOW_WIDTH);
         (adjusted_w, adjusted_h)
     };
 

@@ -341,7 +341,7 @@ pub fn creative_movement(
         }
 
         target_fov = (game_settings.fov_degrees * camera_controller.zoom_factor).clamp(4.0, 85.0);
-    } else if is_sprinting {
+    } else if is_sprinting && game_settings.dynamic_fov_enabled {
         target_fov += 8.0;
     }
 

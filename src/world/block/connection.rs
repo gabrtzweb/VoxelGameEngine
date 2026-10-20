@@ -16,9 +16,8 @@ impl ConnectionMask {
     pub const UP: Self = Self(1 << 4);
     pub const DOWN: Self = Self(1 << 5);
 
-    pub const CARDINAL_ALL: Self = Self(
-        Self::NORTH.0 | Self::SOUTH.0 | Self::EAST.0 | Self::WEST.0,
-    );
+    pub const CARDINAL_ALL: Self =
+        Self(Self::NORTH.0 | Self::SOUTH.0 | Self::EAST.0 | Self::WEST.0);
 
     #[inline(always)]
     pub const fn contains(self, other: Self) -> bool {
@@ -179,10 +178,7 @@ impl ConnectedCategory {
     }
 
     /// Pure function computing full 6-way connection mask [North, South, East, West, Up, Down].
-    pub fn compute_6way_mask(
-        &self,
-        neighbors: [Option<Voxel>; 6],
-    ) -> ConnectionMask {
+    pub fn compute_6way_mask(&self, neighbors: [Option<Voxel>; 6]) -> ConnectionMask {
         let [north, south, east, west, up, down] = neighbors;
         let mut mask = self.compute_cardinal_mask(north, south, east, west);
 

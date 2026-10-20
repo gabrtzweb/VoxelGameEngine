@@ -119,11 +119,11 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Architecture, Soundness & Testing Modernization (Completed)
+### Phase 4: Architecture, Graphics Modernization & Soundness (In Progress)
 
-- [x] **Multi-Machine Hardware Profiles & Local Configuration**:
+- [x] **Multi-Machine Hardware Profiles & Calibrated Presets**:
   - Implemented `LocalConfig` in `src/core/config.rs` with automatic first-boot creation of `local_config.json` (isolated from Git).
-  - Added calibrated performance profiles (`Potato`, `Low`, `Medium`, `High`, `Ultra`) adjusting render distance, LOD distance, fog, vsync, and FPS limits.
+  - Added 5 calibrated performance profiles (`Potato`, `Low`, `Medium`, `High`, `Ultra`) calibrating render distance, LOD distance, simulation distance, shadows, clouds, full grass, anti-aliasing, and render scale.
 - [x] **Chunk Memory Footprint Optimization**:
   - Refactored `src/world/chunk.rs` to compute variant distributions lazily, reducing the inline struct footprint of `Chunk` by ~92% (from 2,192 bytes down to 144 bytes).
 - [x] **Voxel Enum Soundness & Safe Transmutation**:
@@ -134,13 +134,26 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 - [x] **Pure Architectural Test Isolation**:
   - Decoupled engine code into `src/lib.rs` and `src/main.rs`.
   - Removed 100% of `#[cfg(test)]` blocks from `src/`, establishing a unified single-binary integration test suite in `tests/integration_tests.rs` with modular domain suites (`tests/suite/`).
-- [x] **Render Scale & 16:9 Aspect Ratio Controls**:
-  - Implemented dynamic 3D Render Scale (`src/core/render_scale.rs`) routing `Camera3d` to an off-screen render texture with hardware-accelerated bilinear upscaling, preserving 100% native resolution for 2D UI, HUD, and menus.
-  - Implemented 16:9 aspect ratio window snapping (`src/core/window_aspect.rs`) for windowed mode with delta-dominant edge calculation and 640×360 px minimum constraints.
+- [x] **Dynamic 3D Render Scale & Native 2D UI Overlay**:
+  - Implemented dynamic 3D Render Scale (`src/core/render_scale.rs`) routing `Camera3d` to an off-screen render texture with hardware-accelerated bilinear upscaling (50%, 66%, 75%, 85%, 100%).
+  - UI and HUD retain 100% native display crispness. At 100% native scale, offscreen overhead is automatically bypassed.
+- [x] **Debounced 16:9 Aspect Ratio Window Snapping**:
+  - Implemented 16:9 aspect ratio window snapping (`src/core/window_aspect.rs`) for windowed mode with minimum constraints (640×360 px).
+  - Engineered startup grace period and drag-settle debounce timer (250ms) to ensure DirectX 12 / WGPU swapchain buffers never experience re-entrant resize collisions (`0x887A0001`).
+- [x] **Hardware Anti-Aliasing Quality Modes**:
+  - Added configurable anti-aliasing (`AntiAliasingMode`: `Off`, `Fxaa`, `Msaa2x`, `Msaa4x`), dynamically configuring camera MSAA sample counts and FXAA post-processing passes.
+- [x] **Directional Shadow Quality & Cascade Configuration**:
+  - Implemented directional shadow cascade control (`ShadowQuality`: `Off`, `Low`, `Medium`, `High`, `Ultra`), adjusting shadow map resolution and 1 to 4 cascade split levels on `SunLight` and `MoonLight`.
+- [x] **Dual-Mode Cloud Rendering System**:
+  - Implemented dual-mode clouds (`CloudQuality`: `Off`, `Fast2D`, `Fancy3D`), offering flat planar dual-face quads with 70% vertex reduction on lower tiers, and full volumetric 3D blocks on higher tiers.
+- [x] **Dynamic FOV Kick & Motion Accessibility Toggle**:
+  - Integrated dynamic sprint FOV kick (+8° FOV expansion during sprint) with an accessibility toggle (`dynamic_fov_enabled`) for motion-sensitive players.
+- [ ] **Unified 480×270 Base UI Redesign & Integer Scaling**:
+  - Standardize all container, inventory, and HUD layouts onto a fixed 480×270 px (16:9) base canvas, scaled up to 4× with integer pixel-perfect alignment.
 
 ---
 
-### Phase 4: Flora, Crops & Interactive Mechanical Blocks (In Progress)
+### Phase 5: Flora, Crops & Interactive Mechanical Blocks (In Progress)
 
 - [x] **Crop Lifecycle & Agricultural Mechanics (Pure Simulation Foundation)**:
   - Implemented pure simulation data models (`CropType`, `CropStage`, `SoilMoisture`, `CropSimulator` in `src/simulation/crops.rs`) with Chebyshev water hydration distance (4-block radius), weather hydration (rain), growth tick chance evaluation, and harvest yields (`CropHarvestResult`).
@@ -161,7 +174,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 5: World Generation & Biome Overhaul (Planned)
+### Phase 6: World Generation & Biome Overhaul (Planned)
 
 - [ ] **Geological Rock Strata & Mineral Distribution**:
   - Restructure underground generation into realistic geological strata layers (Limestone, Slate, Granite, Basalt, Blackstone, Dreadstone Bedrock).
@@ -174,7 +187,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 6: System Menus & Cartography Overhaul (Planned)
+### Phase 7: System Menus & Cartography Overhaul (Planned)
 
 - [ ] **Unified Dark Iron & Parchment System Menus**:
   - Overhaul the in-game Pause Menu, Settings Menu, Audio/Video Options, and Keybindings to strictly adhere to the unified Dark Iron design system.
@@ -185,7 +198,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 7: Sound Engine & Spatial Audio System (Planned)
+### Phase 8: Sound Engine & Spatial Audio System (Planned)
 
 - [ ] **Audio Pipeline & Category Systems**:
   - Integrate Bevy's audio engine with the categorized audio assets in `assets/sounds/` (`ambience`, `blocks`, `footsteps`, `liquids`, `music`, `weather`).
@@ -199,7 +212,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 8: Custom Voxel Player Character & Modular Character Creator (Planned)
+### Phase 9: Custom Voxel Player Character & Modular Character Creator (Planned)
 
 - [ ] **Proprietary Modular Voxel Character Rig**:
   - Retire the legacy Minecraft skin player model in favor of a bespoke, modular voxel humanoid character rig.
@@ -211,7 +224,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 9: First-Person Item Rendering & Creative Utility Tools (Planned)
+### Phase 10: First-Person Item Rendering & Creative Utility Tools (Planned)
 
 - [ ] **First-Person & Third-Person Hand Rendering**:
   - Render the actively selected hotbar item or block directly in the player's hand in first-person and third-person views.
@@ -224,7 +237,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 10: Physics Engine, Fluid Dynamics & Item Drops (Planned)
+### Phase 11: Physics Engine, Fluid Dynamics & Item Drops (Planned)
 
 - [ ] **Fluid Simulation & Propagation Overhaul**:
   - Overhaul fluid cellular automata mechanics to deliver realistic volume conservation, natural slope cascading, and viscous lava flow.
@@ -240,7 +253,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 11: Visual Aesthetics, Shaders & Atmospheric FX Overhaul (Planned)
+### Phase 12: Visual Aesthetics, Shaders & Atmospheric FX Overhaul (Planned)
 
 - [ ] **Voxel Ambient Occlusion (Smooth Lighting)**:
   - Implement per-vertex ambient occlusion calculating corner and edge block occlusion, adding deep geometric contrast to all surfaces.
@@ -256,7 +269,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 12: Performance Engineering, Chunk Streaming & LOD Enhancements (Planned)
+### Phase 13: Performance Engineering, Chunk Streaming & LOD Enhancements (Planned)
 
 - [ ] **Streaming Throughput & Worker Scaling**:
   - Optimize asynchronous compute worker pools for chunk generation and greedy meshing with dynamic per-frame upload budgets.

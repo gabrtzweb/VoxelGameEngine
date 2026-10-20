@@ -19,6 +19,12 @@ enum SettingsAction {
     IncPreset,
     DecRenderScale,
     IncRenderScale,
+    DecAntiAliasing,
+    IncAntiAliasing,
+    DecShadowQuality,
+    IncShadowQuality,
+    DecCloudQuality,
+    IncCloudQuality,
     DecScreenMode,
     IncScreenMode,
     DecRenderDistance,
@@ -29,6 +35,7 @@ enum SettingsAction {
     IncSimulationDistance,
     DecFov,
     IncFov,
+    ToggleDynamicFov,
     ToggleFog,
     ToggleViewBobbing,
     ToggleFullGrass,
@@ -45,6 +52,15 @@ struct PresetLabel;
 struct RenderScaleLabel;
 
 #[derive(Component)]
+struct AntiAliasingLabel;
+
+#[derive(Component)]
+struct ShadowQualityLabel;
+
+#[derive(Component)]
+struct CloudQualityLabel;
+
+#[derive(Component)]
 struct ScreenModeLabel;
 
 #[derive(Component)]
@@ -58,6 +74,9 @@ struct SimulationDistanceLabel;
 
 #[derive(Component)]
 struct FovLabel;
+
+#[derive(Component)]
+struct DynamicFovLabel;
 
 #[derive(Component)]
 struct FogLabel;
@@ -248,7 +267,43 @@ fn spawn_settings_menu(
                                     &small_hover,
                                 );
 
-                                // 3. Fog Toggle Button
+                                // 3. Dynamic FOV / Reduced Motion Toggle Button
+                                spawn_toggle_button(
+                                    col_left,
+                                    SettingsAction::ToggleDynamicFov,
+                                    format!(
+                                        "FOV Effects: {}",
+                                        if game_settings.dynamic_fov_enabled {
+                                            "Normal"
+                                        } else {
+                                            "Reduced"
+                                        }
+                                    ),
+                                    DynamicFovLabel,
+                                    font_handle.as_ref(),
+                                    &btn_normal,
+                                    &btn_hover,
+                                );
+
+                                // 4. View Bobbing Toggle Button
+                                spawn_toggle_button(
+                                    col_left,
+                                    SettingsAction::ToggleViewBobbing,
+                                    format!(
+                                        "View Bobbing: {}",
+                                        if game_settings.view_bobbing {
+                                            "Enabled"
+                                        } else {
+                                            "Disabled"
+                                        }
+                                    ),
+                                    ViewBobbingLabel,
+                                    font_handle.as_ref(),
+                                    &btn_normal,
+                                    &btn_hover,
+                                );
+
+                                // 5. Fog Toggle Button
                                 spawn_toggle_button(
                                     col_left,
                                     SettingsAction::ToggleFog,
@@ -293,7 +348,9 @@ fn spawn_settings_menu(
                                 spawn_stepper_row(
                                     col_right,
                                     "Render Scale",
-                                    crate::core::config::format_render_scale(local_config.render_scale),
+                                    crate::core::config::format_render_scale(
+                                        local_config.render_scale,
+                                    ),
                                     SettingsAction::DecRenderScale,
                                     SettingsAction::IncRenderScale,
                                     RenderScaleLabel,
@@ -302,61 +359,46 @@ fn spawn_settings_menu(
                                     &small_hover,
                                 );
 
-                                // 4. VSync Toggle Button
-                                spawn_toggle_button(
+                                // 1. Anti-Aliasing Stepper
+                                spawn_stepper_row(
                                     col_right,
-                                    SettingsAction::ToggleVsync,
-                                    format!(
-                                        "VSync: {}",
-                                        if game_settings.vsync_enabled {
-                                            "Enabled"
-                                        } else {
-                                            "Disabled"
-                                        }
-                                    ),
-                                    VsyncLabel,
+                                    "Anti-Aliasing",
+                                    local_config.anti_aliasing.label().to_string(),
+                                    SettingsAction::DecAntiAliasing,
+                                    SettingsAction::IncAntiAliasing,
+                                    AntiAliasingLabel,
                                     font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
+                                    &small_normal,
+                                    &small_hover,
                                 );
 
-                                // 5. Dynamic FPS Toggle Button
-                                spawn_toggle_button(
+                                // 2. Shadow Quality Stepper
+                                spawn_stepper_row(
                                     col_right,
-                                    SettingsAction::ToggleDynamicFps,
-                                    format!(
-                                        "Dynamic FPS: {}",
-                                        if game_settings.dynamic_fps_enabled {
-                                            "Enabled"
-                                        } else {
-                                            "Disabled"
-                                        }
-                                    ),
-                                    DynamicFpsLabel,
+                                    "Shadows",
+                                    local_config.shadow_quality.label().to_string(),
+                                    SettingsAction::DecShadowQuality,
+                                    SettingsAction::IncShadowQuality,
+                                    ShadowQualityLabel,
                                     font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
+                                    &small_normal,
+                                    &small_hover,
                                 );
 
-                                // 6. View Bobbing Toggle Button
-                                spawn_toggle_button(
+                                // 3. Cloud Quality Stepper
+                                spawn_stepper_row(
                                     col_right,
-                                    SettingsAction::ToggleViewBobbing,
-                                    format!(
-                                        "View Bobbing: {}",
-                                        if game_settings.view_bobbing {
-                                            "Enabled"
-                                        } else {
-                                            "Disabled"
-                                        }
-                                    ),
-                                    ViewBobbingLabel,
+                                    "Clouds",
+                                    local_config.cloud_quality.label().to_string(),
+                                    SettingsAction::DecCloudQuality,
+                                    SettingsAction::IncCloudQuality,
+                                    CloudQualityLabel,
                                     font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
+                                    &small_normal,
+                                    &small_hover,
                                 );
 
-                                // 7. Full Surface Sides Toggle Button
+                                // 4. Full Surface Sides Toggle Button
                                 spawn_toggle_button(
                                     col_right,
                                     SettingsAction::ToggleFullGrass,
@@ -374,7 +416,43 @@ fn spawn_settings_menu(
                                     &btn_hover,
                                 );
 
-                                // 8. Time Pause Toggle Button
+                                // 5. VSync Toggle Button
+                                spawn_toggle_button(
+                                    col_right,
+                                    SettingsAction::ToggleVsync,
+                                    format!(
+                                        "VSync: {}",
+                                        if game_settings.vsync_enabled {
+                                            "Enabled"
+                                        } else {
+                                            "Disabled"
+                                        }
+                                    ),
+                                    VsyncLabel,
+                                    font_handle.as_ref(),
+                                    &btn_normal,
+                                    &btn_hover,
+                                );
+
+                                // 6. Dynamic FPS Toggle Button
+                                spawn_toggle_button(
+                                    col_right,
+                                    SettingsAction::ToggleDynamicFps,
+                                    format!(
+                                        "Dynamic FPS: {}",
+                                        if game_settings.dynamic_fps_enabled {
+                                            "Enabled"
+                                        } else {
+                                            "Disabled"
+                                        }
+                                    ),
+                                    DynamicFpsLabel,
+                                    font_handle.as_ref(),
+                                    &btn_normal,
+                                    &btn_hover,
+                                );
+
+                                // 7. Time Pause Toggle Button
                                 spawn_toggle_button(
                                     col_right,
                                     SettingsAction::ToggleTimePause,
@@ -678,6 +756,7 @@ fn handle_settings_buttons(
                     game_settings.full_grass = local_config.full_grass;
                     game_settings.vsync_enabled = local_config.vsync_enabled;
                     game_settings.dynamic_fps_enabled = local_config.dynamic_fps_enabled;
+                    game_settings.dynamic_fov_enabled = local_config.dynamic_fov_enabled;
 
                     if let Ok(mut window) = window_query.single_mut() {
                         window.present_mode = if game_settings.vsync_enabled {
@@ -717,6 +796,7 @@ fn handle_settings_buttons(
                     game_settings.full_grass = local_config.full_grass;
                     game_settings.vsync_enabled = local_config.vsync_enabled;
                     game_settings.dynamic_fps_enabled = local_config.dynamic_fps_enabled;
+                    game_settings.dynamic_fov_enabled = local_config.dynamic_fov_enabled;
 
                     if let Ok(mut window) = window_query.single_mut() {
                         window.present_mode = if game_settings.vsync_enabled {
@@ -751,6 +831,31 @@ fn handle_settings_buttons(
                 SettingsAction::IncRenderScale => {
                     local_config.render_scale =
                         crate::core::config::next_render_scale(local_config.render_scale);
+                }
+                SettingsAction::DecAntiAliasing => {
+                    local_config.anti_aliasing = local_config.anti_aliasing.prev();
+                }
+                SettingsAction::IncAntiAliasing => {
+                    local_config.anti_aliasing = local_config.anti_aliasing.next();
+                }
+                SettingsAction::DecShadowQuality => {
+                    local_config.shadow_quality = local_config.shadow_quality.prev();
+                    local_config.shadows_enabled =
+                        local_config.shadow_quality != crate::core::ShadowQuality::Off;
+                }
+                SettingsAction::IncShadowQuality => {
+                    local_config.shadow_quality = local_config.shadow_quality.next();
+                    local_config.shadows_enabled =
+                        local_config.shadow_quality != crate::core::ShadowQuality::Off;
+                }
+                SettingsAction::DecCloudQuality => {
+                    local_config.cloud_quality = local_config.cloud_quality.prev();
+                }
+                SettingsAction::IncCloudQuality => {
+                    local_config.cloud_quality = local_config.cloud_quality.next();
+                }
+                SettingsAction::ToggleDynamicFov => {
+                    game_settings.dynamic_fov_enabled = !game_settings.dynamic_fov_enabled;
                 }
                 SettingsAction::DecScreenMode => {
                     game_settings.screen_mode = game_settings.screen_mode.prev();
@@ -853,6 +958,7 @@ fn handle_settings_buttons(
                 local_config.full_grass = game_settings.full_grass;
                 local_config.vsync_enabled = game_settings.vsync_enabled;
                 local_config.dynamic_fps_enabled = game_settings.dynamic_fps_enabled;
+                local_config.dynamic_fov_enabled = game_settings.dynamic_fov_enabled;
                 local_config.screen_mode = game_settings.screen_mode.label().to_lowercase();
                 let _ = local_config.save();
             }
@@ -867,19 +973,27 @@ fn update_settings_labels(
     env_state: Option<Res<EnvironmentState>>,
     mut labels_query: Query<(
         &mut Text,
-        Option<&ScreenModeLabel>,
-        Option<&RenderDistanceLabel>,
-        Option<&LodDistanceLabel>,
-        Option<&SimulationDistanceLabel>,
-        Option<&FovLabel>,
-        Option<&FogLabel>,
-        Option<&ViewBobbingLabel>,
-        Option<&FullGrassLabel>,
-        Option<&VsyncLabel>,
-        Option<&DynamicFpsLabel>,
-        Option<&TimePauseLabel>,
-        Option<&PresetLabel>,
-        Option<&RenderScaleLabel>,
+        (
+            Option<&ScreenModeLabel>,
+            Option<&RenderDistanceLabel>,
+            Option<&LodDistanceLabel>,
+            Option<&SimulationDistanceLabel>,
+            Option<&FovLabel>,
+            Option<&DynamicFovLabel>,
+            Option<&FogLabel>,
+            Option<&ViewBobbingLabel>,
+        ),
+        (
+            Option<&FullGrassLabel>,
+            Option<&VsyncLabel>,
+            Option<&DynamicFpsLabel>,
+            Option<&TimePauseLabel>,
+            Option<&PresetLabel>,
+            Option<&RenderScaleLabel>,
+            Option<&AntiAliasingLabel>,
+            Option<&ShadowQualityLabel>,
+            Option<&CloudQualityLabel>,
+        ),
     )>,
 ) {
     let chunk_changed = chunk_settings.is_changed();
@@ -893,19 +1007,18 @@ fn update_settings_labels(
 
     for (
         mut text,
-        screen_mode,
-        render_dist,
-        lod_dist,
-        sim_dist,
-        fov,
-        fog,
-        bobbing,
-        grass,
-        vsync,
-        dyn_fps,
-        time_pause,
-        preset,
-        render_scale,
+        (screen_mode, render_dist, lod_dist, sim_dist, fov, dynamic_fov, fog, bobbing),
+        (
+            grass,
+            vsync,
+            dyn_fps,
+            time_pause,
+            preset,
+            render_scale,
+            anti_aliasing,
+            shadow_quality,
+            cloud_quality,
+        ),
     ) in &mut labels_query
     {
         if config_changed {
@@ -914,8 +1027,13 @@ fn update_settings_labels(
                     .preset
                     .map_or("Custom".to_string(), |p| p.short_name().to_string());
             } else if render_scale.is_some() {
-                text.0 =
-                    crate::core::config::format_render_scale(local_config.render_scale);
+                text.0 = crate::core::config::format_render_scale(local_config.render_scale);
+            } else if anti_aliasing.is_some() {
+                text.0 = local_config.anti_aliasing.label().to_string();
+            } else if shadow_quality.is_some() {
+                text.0 = local_config.shadow_quality.label().to_string();
+            } else if cloud_quality.is_some() {
+                text.0 = local_config.cloud_quality.label().to_string();
             }
         }
         if game_changed {
@@ -923,6 +1041,15 @@ fn update_settings_labels(
                 text.0 = game_settings.screen_mode.label().to_string();
             } else if fov.is_some() {
                 text.0 = format!("{}°", game_settings.fov_degrees as i32);
+            } else if dynamic_fov.is_some() {
+                text.0 = format!(
+                    "FOV Effects: {}",
+                    if game_settings.dynamic_fov_enabled {
+                        "Normal"
+                    } else {
+                        "Reduced"
+                    }
+                );
             } else if fog.is_some() {
                 text.0 = format!(
                     "Fog: {}",

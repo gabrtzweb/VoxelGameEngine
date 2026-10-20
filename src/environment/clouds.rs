@@ -88,6 +88,7 @@ pub struct SingleLayerState {
     pub current_cell_center: IVec2,
     pub mesh_handle: Handle<Mesh>,
     pub active_task: Option<Task<(IVec2, Mesh)>>,
+    pub active_quality: crate::core::CloudQuality,
 }
 
 #[derive(Resource)]
@@ -99,7 +100,12 @@ pub fn setup_clouds(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    local_config: Option<Res<crate::core::config::LocalConfig>>,
 ) {
+    let cloud_quality = local_config
+        .as_ref()
+        .map(|c| c.cloud_quality)
+        .unwrap_or(crate::core::CloudQuality::Fancy3D);
     let cloud_map = load_cloud_texture_map();
 
     let material_handle = materials.add(StandardMaterial {
@@ -117,15 +123,21 @@ pub fn setup_clouds(
     let active_configs = &CLOUD_LAYER_CONFIGS[..active_count];
 
     for (index, config) in active_configs.iter().enumerate() {
-        let initial_mesh = generate_3d_cloud_mesh(&cloud_map, config, IVec2::ZERO);
+        let initial_mesh = generate_cloud_mesh(&cloud_map, config, IVec2::ZERO, cloud_quality);
         let mesh_handle = meshes.add(initial_mesh);
+
+        let initial_visibility = if cloud_quality == crate::core::CloudQuality::Off {
+            Visibility::Hidden
+        } else {
+            Visibility::Visible
+        };
 
         commands.spawn((
             CloudLayerVisual { layer_index: index },
             Mesh3d(mesh_handle.clone()),
             MeshMaterial3d(material_handle.clone()),
             Transform::from_xyz(0.0, config.altitude, 0.0),
-            Visibility::Visible,
+            initial_visibility,
             NotShadowCaster,
             NotShadowReceiver,
         ));
@@ -134,6 +146,7 @@ pub fn setup_clouds(
             current_cell_center: IVec2::ZERO,
             mesh_handle,
             active_task: None,
+            active_quality: cloud_quality,
         });
     }
 
@@ -173,15 +186,20 @@ pub fn sync_clouds(
     layers_res: &mut CloudLayersResource,
     time_of_day: f32,
     is_underwater: bool,
+    cloud_quality: crate::core::CloudQuality,
 ) {
     let camera_translation = camera.0.translation;
 
     for (layer_visual, mut cloud_transform, mut visibility) in &mut cloud_layers {
-        if is_underwater {
-            *visibility = Visibility::Hidden;
+        if is_underwater || cloud_quality == crate::core::CloudQuality::Off {
+            if *visibility != Visibility::Hidden {
+                *visibility = Visibility::Hidden;
+            }
             continue;
         }
-        *visibility = Visibility::Visible;
+        if *visibility != Visibility::Visible {
+            *visibility = Visibility::Visible;
+        }
 
         let index = layer_visual.layer_index;
         if index >= CLOUD_LAYER_CONFIGS.len() || index >= layers_res.layers.len() {
@@ -189,6 +207,11 @@ pub fn sync_clouds(
         }
         let config = &CLOUD_LAYER_CONFIGS[index];
         let layer_state = &mut layers_res.layers[index];
+
+        if layer_state.active_quality != cloud_quality {
+            layer_state.active_quality = cloud_quality;
+            layer_state.current_cell_center = IVec2::splat(i32::MIN);
+        }
 
         // 1. Poll in-flight async cloud meshing task
         if let Some(mut task) = layer_state.active_task.take() {
@@ -226,7 +249,12 @@ pub fn sync_clouds(
             let map_clone = cloud_map.clone();
             let config_clone = config.clone();
             layer_state.active_task = Some(pool.spawn(async move {
-                let mesh = generate_3d_cloud_mesh(&map_clone, &config_clone, target_cell_center);
+                let mesh = generate_cloud_mesh(
+                    &map_clone,
+                    &config_clone,
+                    target_cell_center,
+                    cloud_quality,
+                );
                 (target_cell_center, mesh)
             }));
         }
@@ -298,6 +326,170 @@ pub fn sample_cloud_color(time_of_day: f32) -> Color {
     );
 
     Color::LinearRgba(lerped)
+}
+
+pub fn generate_cloud_mesh(
+    cloud_map: &CloudTextureMap,
+    config: &CloudLayerConfig,
+    center: IVec2,
+    quality: crate::core::CloudQuality,
+) -> Mesh {
+    match quality {
+        crate::core::CloudQuality::Off => Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::default(),
+        ),
+        crate::core::CloudQuality::Fast2D => generate_2d_cloud_mesh(cloud_map, config, center),
+        crate::core::CloudQuality::Fancy3D => generate_3d_cloud_mesh(cloud_map, config, center),
+    }
+}
+
+pub fn generate_2d_cloud_mesh(
+    cloud_map: &CloudTextureMap,
+    config: &CloudLayerConfig,
+    center: IVec2,
+) -> Mesh {
+    let cell_size = config.cell_size;
+    let grid_radius = config.grid_radius;
+
+    let estimated_cells = (grid_radius as usize * 2 + 1) * (grid_radius as usize * 2 + 1) / 2;
+    let estimated_quads = estimated_cells * 2;
+    let estimated_verts = estimated_quads * 4;
+    let estimated_indices = estimated_quads * 6;
+    let mut positions: Vec<[f32; 3]> = Vec::with_capacity(estimated_verts);
+    let mut normals: Vec<[f32; 3]> = Vec::with_capacity(estimated_verts);
+    let mut uvs: Vec<[f32; 2]> = Vec::with_capacity(estimated_verts);
+    let mut colors: Vec<[f32; 4]> = Vec::with_capacity(estimated_verts);
+    let mut indices: Vec<u32> = Vec::with_capacity(estimated_indices);
+    let fade_inner = cell_size * (grid_radius as f32 * 0.58);
+    let fade_outer = cell_size * (grid_radius as f32 * 0.95);
+    let fade_inner_sq = fade_inner * fade_inner;
+    let fade_outer_sq = fade_outer * fade_outer;
+    let fade_range = fade_outer - fade_inner;
+    let y0 = 0.0;
+    let y1 = 0.05;
+    let base_alpha = config.base_alpha;
+
+    let calc_alpha = |x: f32, z: f32| -> f32 {
+        let d_sq = x * x + z * z;
+        if d_sq <= fade_inner_sq {
+            base_alpha
+        } else if d_sq >= fade_outer_sq {
+            0.0
+        } else {
+            let d = d_sq.sqrt();
+            let t = (d - fade_inner) / fade_range;
+            let smooth = crate::core::math::smoothstep(t);
+            (1.0 - smooth) * base_alpha
+        }
+    };
+
+    let add_quad = |p: [[f32; 3]; 4],
+                    norm: [f32; 3],
+                    shade: [f32; 3],
+                    pos_out: &mut Vec<[f32; 3]>,
+                    norm_out: &mut Vec<[f32; 3]>,
+                    uv_out: &mut Vec<[f32; 2]>,
+                    col_out: &mut Vec<[f32; 4]>,
+                    idx_out: &mut Vec<u32>| {
+        let start_idx = pos_out.len() as u32;
+        let uv_coords = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
+        for (i, pt) in p.iter().enumerate() {
+            let a = calc_alpha(pt[0], pt[2]);
+            pos_out.push(*pt);
+            norm_out.push(norm);
+            uv_out.push(uv_coords[i]);
+            col_out.push([shade[0], shade[1], shade[2], a]);
+        }
+        idx_out.extend_from_slice(&[
+            start_idx,
+            start_idx + 1,
+            start_idx + 2,
+            start_idx,
+            start_idx + 2,
+            start_idx + 3,
+        ]);
+    };
+
+    let bottom_shade = [0.93, 0.94, 0.95];
+    let top_shade = [1.00, 1.00, 1.00];
+
+    for cz in -grid_radius..=grid_radius {
+        let wz = cz as f32 * cell_size;
+        let z0 = wz;
+        let z1 = wz + cell_size;
+
+        let mut cx = -grid_radius;
+        while cx <= grid_radius {
+            let sample_x = center.x + cx + config.texture_offset.x;
+            let sample_z = center.y + cz + config.texture_offset.y;
+            let wx = cx as f32 * cell_size;
+            let dist_sq = wx * wx + wz * wz;
+
+            if dist_sq > fade_outer_sq || !cloud_map.is_cloud(sample_x, sample_z) {
+                cx += 1;
+                continue;
+            }
+
+            let run_start_cx = cx;
+            let mut run_end_cx = cx;
+
+            while run_end_cx < grid_radius {
+                let next_cx = run_end_cx + 1;
+                let next_wx = next_cx as f32 * cell_size;
+                let next_dist_sq = next_wx * next_wx + wz * wz;
+                if next_dist_sq > fade_outer_sq
+                    || !cloud_map.is_cloud(
+                        center.x + next_cx + config.texture_offset.x,
+                        center.y + cz + config.texture_offset.y,
+                    )
+                {
+                    break;
+                }
+                run_end_cx = next_cx;
+            }
+
+            let x0 = run_start_cx as f32 * cell_size;
+            let x1 = (run_end_cx + 1) as f32 * cell_size;
+
+            // Merged Bottom face (normal [0, -1, 0])
+            add_quad(
+                [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]],
+                [0.0, -1.0, 0.0],
+                bottom_shade,
+                &mut positions,
+                &mut normals,
+                &mut uvs,
+                &mut colors,
+                &mut indices,
+            );
+
+            // Merged Top face (normal [0, 1, 0])
+            add_quad(
+                [[x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0]],
+                [0.0, 1.0, 0.0],
+                top_shade,
+                &mut positions,
+                &mut normals,
+                &mut uvs,
+                &mut colors,
+                &mut indices,
+            );
+
+            cx = run_end_cx + 1;
+        }
+    }
+
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
+    mesh.insert_indices(Indices::U32(indices));
+    mesh
 }
 
 pub fn generate_3d_cloud_mesh(

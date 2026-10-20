@@ -8,7 +8,7 @@ pub mod render_scale;
 pub mod ui_scale;
 pub mod window_aspect;
 
-pub use config::{LocalConfig, PerformancePreset};
+pub use config::{AntiAliasingMode, CloudQuality, LocalConfig, PerformancePreset, ShadowQuality};
 pub use dev_stats::DevStatsPlugin;
 pub use dynamic_fps::{DynamicFpsPlugin, DynamicFpsSettings, DynamicFpsState};
 pub use font::{AppFont, FontPlugin, FontSource, text_shadow_default};

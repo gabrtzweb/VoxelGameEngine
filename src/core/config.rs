@@ -52,6 +52,123 @@ impl PerformancePreset {
     }
 }
 
+/// Anti-Aliasing technique for edge smoothing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum AntiAliasingMode {
+    Off,
+    #[default]
+    Fxaa,
+    Msaa2x,
+    Msaa4x,
+}
+
+impl AntiAliasingMode {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Off => "Off",
+            Self::Fxaa => "FXAA",
+            Self::Msaa2x => "MSAA 2x",
+            Self::Msaa4x => "MSAA 4x",
+        }
+    }
+
+    pub fn next(self) -> Self {
+        match self {
+            Self::Off => Self::Fxaa,
+            Self::Fxaa => Self::Msaa2x,
+            Self::Msaa2x => Self::Msaa4x,
+            Self::Msaa4x => Self::Off,
+        }
+    }
+
+    pub fn prev(self) -> Self {
+        match self {
+            Self::Off => Self::Msaa4x,
+            Self::Fxaa => Self::Off,
+            Self::Msaa2x => Self::Fxaa,
+            Self::Msaa4x => Self::Msaa2x,
+        }
+    }
+}
+
+/// Directional shadow quality and cascade fidelity.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum ShadowQuality {
+    Off,
+    Low,
+    #[default]
+    Medium,
+    High,
+    Ultra,
+}
+
+impl ShadowQuality {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Off => "Off",
+            Self::Low => "Low",
+            Self::Medium => "Medium",
+            Self::High => "High",
+            Self::Ultra => "Ultra",
+        }
+    }
+
+    pub fn next(self) -> Self {
+        match self {
+            Self::Off => Self::Low,
+            Self::Low => Self::Medium,
+            Self::Medium => Self::High,
+            Self::High => Self::Ultra,
+            Self::Ultra => Self::Off,
+        }
+    }
+
+    pub fn prev(self) -> Self {
+        match self {
+            Self::Off => Self::Ultra,
+            Self::Low => Self::Off,
+            Self::Medium => Self::Low,
+            Self::High => Self::Medium,
+            Self::Ultra => Self::High,
+        }
+    }
+}
+
+/// Cloud rendering quality: Off, 2D flat planar, 3D volumetric blocks.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum CloudQuality {
+    Off,
+    Fast2D,
+    #[default]
+    Fancy3D,
+}
+
+impl CloudQuality {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Off => "Off",
+            Self::Fast2D => "Fast (2D)",
+            Self::Fancy3D => "Fancy (3D)",
+        }
+    }
+
+    pub fn next(self) -> Self {
+        match self {
+            Self::Off => Self::Fast2D,
+            Self::Fast2D => Self::Fancy3D,
+            Self::Fancy3D => Self::Off,
+        }
+    }
+
+    pub fn prev(self) -> Self {
+        match self {
+            Self::Off => Self::Fancy3D,
+            Self::Fast2D => Self::Off,
+            Self::Fancy3D => Self::Fast2D,
+        }
+    }
+}
+
 #[derive(Resource, Debug, Clone, Serialize, Deserialize)]
 pub struct LocalConfig {
     /// Preferred graphics backend: "auto" (default, uses PRIMARY/Vulkan), "dx12", "vulkan", "gl"
@@ -77,6 +194,10 @@ pub struct LocalConfig {
     /// Vertical field of view in degrees (60.0 ..= 110.0).
     #[serde(default = "default_fov_degrees")]
     pub fov_degrees: f32,
+
+    /// Dynamic FOV kick on sprint (can be disabled for motion-sensitive players).
+    #[serde(default = "default_dynamic_fov_enabled")]
+    pub dynamic_fov_enabled: bool,
 
     /// Whether distance horizon fog is enabled.
     #[serde(default = "default_fog_enabled")]
@@ -106,9 +227,21 @@ pub struct LocalConfig {
     #[serde(default = "default_transmission_enabled")]
     pub transmission_enabled: bool,
 
-    /// Whether directional shadows are enabled (disabled on Low-Spec to eliminate 4-cascade render overhead).
+    /// Directional shadow quality (Off, Low, Medium, High, Ultra).
+    #[serde(default = "default_shadow_quality")]
+    pub shadow_quality: ShadowQuality,
+
+    /// Whether directional shadows are enabled (kept for compatibility with shadow_quality != Off).
     #[serde(default = "default_shadows_enabled")]
     pub shadows_enabled: bool,
+
+    /// Cloud rendering fidelity (Off, Fast2D, Fancy3D).
+    #[serde(default = "default_cloud_quality")]
+    pub cloud_quality: CloudQuality,
+
+    /// Anti-aliasing mode (Off, FXAA, MSAA 2x, MSAA 4x).
+    #[serde(default = "default_anti_aliasing")]
+    pub anti_aliasing: AntiAliasingMode,
 
     /// Whether volumetric god rays / crepuscular rays post-processing is enabled.
     #[serde(default = "default_god_rays_enabled")]
@@ -144,6 +277,10 @@ fn default_fov_degrees() -> f32 {
     90.0
 }
 
+fn default_dynamic_fov_enabled() -> bool {
+    true
+}
+
 fn default_fog_enabled() -> bool {
     true
 }
@@ -172,8 +309,20 @@ fn default_transmission_enabled() -> bool {
     false
 }
 
+fn default_shadow_quality() -> ShadowQuality {
+    ShadowQuality::Medium
+}
+
 fn default_shadows_enabled() -> bool {
     true
+}
+
+fn default_cloud_quality() -> CloudQuality {
+    CloudQuality::Fancy3D
+}
+
+fn default_anti_aliasing() -> AntiAliasingMode {
+    AntiAliasingMode::Fxaa
 }
 
 fn default_god_rays_enabled() -> bool {
@@ -193,6 +342,7 @@ impl Default for LocalConfig {
             lod_render_distance: default_lod_render_distance(),
             simulation_distance: default_simulation_distance(),
             fov_degrees: default_fov_degrees(),
+            dynamic_fov_enabled: default_dynamic_fov_enabled(),
             fog_enabled: default_fog_enabled(),
             view_bobbing: default_view_bobbing(),
             full_grass: default_full_grass(),
@@ -200,7 +350,10 @@ impl Default for LocalConfig {
             dynamic_fps_enabled: default_dynamic_fps_enabled(),
             screen_mode: default_screen_mode(),
             transmission_enabled: default_transmission_enabled(),
+            shadow_quality: default_shadow_quality(),
             shadows_enabled: default_shadows_enabled(),
+            cloud_quality: default_cloud_quality(),
+            anti_aliasing: default_anti_aliasing(),
             god_rays_enabled: default_god_rays_enabled(),
             render_scale: default_render_scale(),
         }
@@ -241,7 +394,10 @@ impl LocalConfig {
                 self.vsync_enabled = false;
                 self.dynamic_fps_enabled = true;
                 self.transmission_enabled = false;
+                self.shadow_quality = ShadowQuality::Off;
                 self.shadows_enabled = false;
+                self.cloud_quality = CloudQuality::Off;
+                self.anti_aliasing = AntiAliasingMode::Off;
                 self.god_rays_enabled = false;
                 self.render_scale = 0.50;
             }
@@ -255,7 +411,10 @@ impl LocalConfig {
                 self.vsync_enabled = false;
                 self.dynamic_fps_enabled = true;
                 self.transmission_enabled = false;
+                self.shadow_quality = ShadowQuality::Off;
                 self.shadows_enabled = false;
+                self.cloud_quality = CloudQuality::Fast2D;
+                self.anti_aliasing = AntiAliasingMode::Off;
                 self.god_rays_enabled = false;
                 self.render_scale = 0.75;
             }
@@ -269,7 +428,10 @@ impl LocalConfig {
                 self.vsync_enabled = false;
                 self.dynamic_fps_enabled = true;
                 self.transmission_enabled = false;
+                self.shadow_quality = ShadowQuality::Medium;
                 self.shadows_enabled = true;
+                self.cloud_quality = CloudQuality::Fancy3D;
+                self.anti_aliasing = AntiAliasingMode::Fxaa;
                 self.god_rays_enabled = true;
                 self.render_scale = 1.00;
             }
@@ -283,7 +445,10 @@ impl LocalConfig {
                 self.vsync_enabled = false;
                 self.dynamic_fps_enabled = true;
                 self.transmission_enabled = true;
+                self.shadow_quality = ShadowQuality::High;
                 self.shadows_enabled = true;
+                self.cloud_quality = CloudQuality::Fancy3D;
+                self.anti_aliasing = AntiAliasingMode::Msaa2x;
                 self.god_rays_enabled = true;
                 self.render_scale = 1.00;
             }
@@ -297,7 +462,10 @@ impl LocalConfig {
                 self.vsync_enabled = false;
                 self.dynamic_fps_enabled = true;
                 self.transmission_enabled = true;
+                self.shadow_quality = ShadowQuality::Ultra;
                 self.shadows_enabled = true;
+                self.cloud_quality = CloudQuality::Fancy3D;
+                self.anti_aliasing = AntiAliasingMode::Msaa4x;
                 self.god_rays_enabled = true;
                 self.render_scale = 1.00;
             }

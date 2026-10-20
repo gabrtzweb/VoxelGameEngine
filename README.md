@@ -92,7 +92,9 @@ src/
 │   ├── math.rs
 │   ├── mod.rs
 │   ├── noise.rs
-│   └── ui_scale.rs
+│   ├── render_scale.rs
+│   ├── ui_scale.rs
+│   └── window_aspect.rs
 ├── environment/
 │   ├── atmosphere.rs
 │   ├── celestial.rs
