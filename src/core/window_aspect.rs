@@ -70,20 +70,34 @@ pub fn enforce_aspect_ratio_16_9(
         return;
     }
 
-    let current_aspect = current_w / current_h;
-    let aspect_diff = (current_aspect - TARGET_ASPECT_RATIO).abs();
-
     let dw = (current_w - state.last_width).abs();
     let dh = (current_h - state.last_height).abs();
 
+    // If the window dimensions haven't significantly changed, do nothing.
+    // This prevents continuous resize loops and OS event queue saturation.
+    if dw < 2.0 && dh < 2.0 {
+        return;
+    }
+
+    let current_aspect = current_w / current_h;
+    let aspect_diff = (current_aspect - TARGET_ASPECT_RATIO).abs();
+
     // If already matching 16:9 (within a small margin), just record dimensions and do nothing.
-    if aspect_diff <= 0.015 {
+    if aspect_diff <= 0.02 {
         state.last_width = current_w;
         state.last_height = current_h;
         return;
     }
 
-    // Determine target dimensions matching 16:9.
+    // If a sudden large resize occurs (e.g. maximizing window, window snapping/tiling),
+    // respect the user's window management and do not fight the OS.
+    if dw > 100.0 || dh > 100.0 {
+        state.last_width = current_w;
+        state.last_height = current_h;
+        return;
+    }
+
+    // Determine target dimensions matching 16:9 for manual drag resizing.
     // If the window is being resized vertically, adjust width based on height.
     // Otherwise (horizontal resize or static non-16:9 window), adjust height based on width.
     let (target_w, target_h) = if dh > dw {

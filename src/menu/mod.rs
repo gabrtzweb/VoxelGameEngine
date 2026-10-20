@@ -257,6 +257,7 @@ fn setup_custom_cursor(mut commands: Commands, asset_server: Res<AssetServer>) {
             },
             ZIndex(1000),
             Visibility::Hidden,
+            bevy::picking::Pickable::IGNORE,
         ))
         .with_children(|parent| {
             parent.spawn((
@@ -271,6 +272,7 @@ fn setup_custom_cursor(mut commands: Commands, asset_server: Res<AssetServer>) {
                 },
                 ImageNode::default(),
                 Visibility::Hidden,
+                bevy::picking::Pickable::IGNORE,
             ));
         });
 }

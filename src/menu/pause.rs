@@ -188,6 +188,10 @@ fn spawn_menu_button(
             },
             ImageNode {
                 image: btn_normal.clone(),
+                image_mode: NodeImageMode::Sliced(TextureSlicer {
+                    border: BorderRect::all(4.0),
+                    ..default()
+                }),
                 ..default()
             },
             Node {

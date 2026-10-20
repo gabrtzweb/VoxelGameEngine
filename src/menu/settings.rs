@@ -217,7 +217,7 @@ fn spawn_settings_menu(
                                 display: Display::Flex,
                                 flex_direction: FlexDirection::Column,
                                 row_gap: px(10.0),
-                                width: px(280.0),
+                                width: px(330.0),
                                 ..default()
                             })
                             .with_children(|col_left| {
@@ -395,7 +395,7 @@ fn spawn_settings_menu(
                                 display: Display::Flex,
                                 flex_direction: FlexDirection::Column,
                                 row_gap: px(10.0),
-                                width: px(280.0),
+                                width: px(330.0),
                                 ..default()
                             })
                             .with_children(|col_right| {
@@ -585,10 +585,14 @@ fn spawn_settings_menu(
                         },
                         ImageNode {
                             image: btn_normal.clone(),
+                            image_mode: NodeImageMode::Sliced(TextureSlicer {
+                                border: BorderRect::all(4.0),
+                                ..default()
+                            }),
                             ..default()
                         },
                         Node {
-                            width: px(280.0),
+                            width: px(330.0),
                             height: px(38.0),
                             display: Display::Flex,
                             justify_content: JustifyContent::Center,
@@ -621,15 +625,15 @@ fn spawn_stepper_row<T: Component>(
     small_hover: &Handle<Image>,
 ) {
     let mut title_font = TextFont {
-        font_size: FontSize::Px(16.0),
+        font_size: FontSize::Px(15.0),
         ..default()
     };
     let mut btn_font = TextFont {
-        font_size: FontSize::Px(16.0),
+        font_size: FontSize::Px(15.0),
         ..default()
     };
     let mut val_font = TextFont {
-        font_size: FontSize::Px(16.0),
+        font_size: FontSize::Px(15.0),
         ..default()
     };
     if let Some(font) = font_handle {
@@ -640,12 +644,12 @@ fn spawn_stepper_row<T: Component>(
 
     parent
         .spawn(Node {
-            width: px(280.0),
+            width: px(330.0),
             display: Display::Flex,
             flex_direction: FlexDirection::Row,
             justify_content: JustifyContent::SpaceBetween,
             align_items: AlignItems::Center,
-            padding: UiRect::axes(px(8.0), px(3.0)),
+            padding: UiRect::axes(px(6.0), px(3.0)),
             ..default()
         })
         .with_children(|row| {
@@ -706,7 +710,7 @@ fn spawn_stepper_row<T: Component>(
                     TextColor(Color::srgb(1.0, 0.88, 0.45)),
                     text_shadow_default(),
                     Node {
-                        width: px(90.0),
+                        width: px(125.0),
                         display: Display::Flex,
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
@@ -759,7 +763,7 @@ fn spawn_toggle_button<T: Component>(
     btn_hover: &Handle<Image>,
 ) {
     let mut btn_font = TextFont {
-        font_size: FontSize::Px(16.0),
+        font_size: FontSize::Px(14.5),
         ..default()
     };
     if let Some(font) = font_handle {
@@ -777,11 +781,15 @@ fn spawn_toggle_button<T: Component>(
             },
             ImageNode {
                 image: btn_normal.clone(),
+                image_mode: NodeImageMode::Sliced(TextureSlicer {
+                    border: BorderRect::all(4.0),
+                    ..default()
+                }),
                 ..default()
             },
             Node {
-                width: px(280.0),
-                height: px(34.0),
+                width: px(330.0),
+                height: px(36.0),
                 display: Display::Flex,
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,

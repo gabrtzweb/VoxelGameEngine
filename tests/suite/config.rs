@@ -233,3 +233,33 @@ fn test_aa_components_on_camera() {
     let fxaa = app.world().get::<bevy::anti_alias::fxaa::Fxaa>(entity);
     assert!(fxaa.is_some());
 }
+
+#[test]
+fn test_render_scale_ui_camera_properties() {
+    use bevy::camera::{Camera2d, ClearColorConfig};
+    use voxel_game_engine::core::RenderScaleUiCamera;
+
+    let mut app = bevy::app::App::new();
+    let entity = app
+        .world_mut()
+        .spawn((
+            Camera2d,
+            bevy::prelude::Camera {
+                order: 1,
+                clear_color: ClearColorConfig::None,
+                ..bevy::prelude::default()
+            },
+            RenderScaleUiCamera,
+        ))
+        .id();
+
+    let camera = app.world().get::<bevy::prelude::Camera>(entity).unwrap();
+    assert!(camera.is_active);
+    assert_eq!(camera.order, 1);
+    match camera.clear_color {
+        ClearColorConfig::None => {}
+        _ => panic!("UI Camera must have ClearColorConfig::None to preserve 3D render"),
+    }
+}
+
+
