@@ -9,45 +9,43 @@ pub const CONFIG_PATH: &str = "local_config.json";
 /// Performance presets tailored for different hardware profiles.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PerformancePreset {
-    LowSpec,
+    Potato,
+    Low,
     Medium,
     High,
     Ultra,
 }
 
 impl PerformancePreset {
-    #[allow(dead_code)]
     pub fn name(self) -> &'static str {
         match self {
-            Self::LowSpec => "Low-Spec (Laptop)",
-            Self::Medium => "Medium (Balanced)",
-            Self::High => "High",
-            Self::Ultra => "Ultra (Desktop)",
-        }
-    }
-
-    pub fn short_name(self) -> &'static str {
-        match self {
-            Self::LowSpec => "Low-Spec",
+            Self::Potato => "Potato",
+            Self::Low => "Low",
             Self::Medium => "Medium",
             Self::High => "High",
             Self::Ultra => "Ultra",
         }
     }
 
+    pub fn short_name(self) -> &'static str {
+        self.name()
+    }
+
     pub fn next(self) -> Self {
         match self {
-            Self::LowSpec => Self::Medium,
+            Self::Potato => Self::Low,
+            Self::Low => Self::Medium,
             Self::Medium => Self::High,
             Self::High => Self::Ultra,
-            Self::Ultra => Self::LowSpec,
+            Self::Ultra => Self::Potato,
         }
     }
 
     pub fn prev(self) -> Self {
         match self {
-            Self::LowSpec => Self::Ultra,
-            Self::Medium => Self::LowSpec,
+            Self::Potato => Self::Ultra,
+            Self::Low => Self::Potato,
+            Self::Medium => Self::Low,
             Self::High => Self::Medium,
             Self::Ultra => Self::High,
         }
@@ -115,6 +113,15 @@ pub struct LocalConfig {
     /// Whether volumetric god rays / crepuscular rays post-processing is enabled.
     #[serde(default = "default_god_rays_enabled")]
     pub god_rays_enabled: bool,
+
+    /// Render scale factor for 3D world rendering (0.50 ..= 1.00).
+    /// 1.00 = Native resolution (100%)
+    /// 0.85 = Ultra Quality (85%)
+    /// 0.75 = Quality (75%)
+    /// 0.66 = Balanced (66%)
+    /// 0.50 = Performance (50%)
+    #[serde(default = "default_render_scale")]
+    pub render_scale: f32,
 }
 
 fn default_backend() -> String {
@@ -138,7 +145,7 @@ fn default_fov_degrees() -> f32 {
 }
 
 fn default_fog_enabled() -> bool {
-    false
+    true
 }
 
 fn default_view_bobbing() -> bool {
@@ -173,6 +180,10 @@ fn default_god_rays_enabled() -> bool {
     true
 }
 
+fn default_render_scale() -> f32 {
+    1.0
+}
+
 impl Default for LocalConfig {
     fn default() -> Self {
         Self {
@@ -191,6 +202,7 @@ impl Default for LocalConfig {
             transmission_enabled: default_transmission_enabled(),
             shadows_enabled: default_shadows_enabled(),
             god_rays_enabled: default_god_rays_enabled(),
+            render_scale: default_render_scale(),
         }
     }
 }
@@ -219,24 +231,39 @@ impl LocalConfig {
     pub fn apply_preset(&mut self, preset: PerformancePreset) {
         self.preset = Some(preset);
         match preset {
-            PerformancePreset::LowSpec => {
+            PerformancePreset::Potato => {
                 self.render_distance = 2;
-                self.lod_render_distance = 0;
-                self.simulation_distance = 4;
+                self.lod_render_distance = 2;
+                self.simulation_distance = 2;
                 self.fog_enabled = false;
                 self.view_bobbing = true;
-                self.full_grass = false;
+                self.full_grass = true;
                 self.vsync_enabled = false;
                 self.dynamic_fps_enabled = true;
                 self.transmission_enabled = false;
                 self.shadows_enabled = false;
                 self.god_rays_enabled = false;
+                self.render_scale = 0.50;
+            }
+            PerformancePreset::Low => {
+                self.render_distance = 4;
+                self.lod_render_distance = 4;
+                self.simulation_distance = 4;
+                self.fog_enabled = false;
+                self.view_bobbing = true;
+                self.full_grass = true;
+                self.vsync_enabled = false;
+                self.dynamic_fps_enabled = true;
+                self.transmission_enabled = false;
+                self.shadows_enabled = false;
+                self.god_rays_enabled = false;
+                self.render_scale = 0.75;
             }
             PerformancePreset::Medium => {
                 self.render_distance = 8;
                 self.lod_render_distance = 8;
                 self.simulation_distance = 8;
-                self.fog_enabled = false;
+                self.fog_enabled = true;
                 self.view_bobbing = true;
                 self.full_grass = false;
                 self.vsync_enabled = false;
@@ -244,32 +271,35 @@ impl LocalConfig {
                 self.transmission_enabled = false;
                 self.shadows_enabled = true;
                 self.god_rays_enabled = true;
+                self.render_scale = 1.00;
             }
             PerformancePreset::High => {
-                self.render_distance = 12;
+                self.render_distance = 8;
                 self.lod_render_distance = 16;
                 self.simulation_distance = 8;
                 self.fog_enabled = true;
                 self.view_bobbing = true;
-                self.full_grass = true;
+                self.full_grass = false;
                 self.vsync_enabled = false;
                 self.dynamic_fps_enabled = true;
                 self.transmission_enabled = true;
                 self.shadows_enabled = true;
                 self.god_rays_enabled = true;
+                self.render_scale = 1.00;
             }
             PerformancePreset::Ultra => {
                 self.render_distance = 16;
                 self.lod_render_distance = 32;
-                self.simulation_distance = 8;
+                self.simulation_distance = 16;
                 self.fog_enabled = true;
                 self.view_bobbing = true;
-                self.full_grass = true;
-                self.vsync_enabled = true;
-                self.dynamic_fps_enabled = false;
+                self.full_grass = false;
+                self.vsync_enabled = false;
+                self.dynamic_fps_enabled = true;
                 self.transmission_enabled = true;
                 self.shadows_enabled = true;
                 self.god_rays_enabled = true;
+                self.render_scale = 1.00;
             }
         }
     }
@@ -286,5 +316,41 @@ impl LocalConfig {
             "metal" => Backends::METAL,
             _ => Backends::from_env().unwrap_or(Backends::PRIMARY),
         }
+    }
+}
+
+pub const RENDER_SCALE_PRESETS: [f32; 5] = [0.50, 0.66, 0.75, 0.85, 1.00];
+
+pub fn next_render_scale(current: f32) -> f32 {
+    for &step in &RENDER_SCALE_PRESETS {
+        if step > current + 0.02 {
+            return step;
+        }
+    }
+    1.00
+}
+
+pub fn prev_render_scale(current: f32) -> f32 {
+    for &step in RENDER_SCALE_PRESETS.iter().rev() {
+        if step < current - 0.02 {
+            return step;
+        }
+    }
+    0.50
+}
+
+pub fn format_render_scale(scale: f32) -> String {
+    if (scale - 1.00).abs() < 0.02 {
+        "100% (Native)".to_string()
+    } else if (scale - 0.85).abs() < 0.02 {
+        "85% (Ultra Quality)".to_string()
+    } else if (scale - 0.75).abs() < 0.02 {
+        "75% (Quality)".to_string()
+    } else if (scale - 0.66).abs() < 0.02 {
+        "66% (Balanced)".to_string()
+    } else if (scale - 0.50).abs() < 0.02 {
+        "50% (Performance)".to_string()
+    } else {
+        format!("{:.0}%", scale * 100.0)
     }
 }

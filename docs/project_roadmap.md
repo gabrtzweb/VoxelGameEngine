@@ -57,7 +57,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **01** | **[Full Block Catalog & Texture System Refactoring](#phase-1-full-block-catalog--texture-system-refactoring-completed)** | **Completed** | 720+ worldbuilding block specs, 120+ active blocks, WGSL stochastic rotation, 3-axis directional placement, natural strata variants |
 | **02** | **[Standardized 9-Slot Interface Architecture & Menu Modernization](#phase-2-standardized-9-slot-interface-architecture--menu-modernization-completed)** | **Completed** | Unified 9-slot standard, 416×256 px windows, 320×44 px hotbar HUD, unified button suite, Dark Iron slot overlays, clean asset layout |
 | **03** | **[Core Engine Upgrade (Bevy 0.19 to Bevy 0.20 Migration)](#phase-3-core-engine-upgrade-bevy-019-to-bevy-020-migration-completed)** | **Completed** | Upgraded to Bevy 0.20, adopted direct `bevy_egui = "0.43"`, eliminated deprecated `Interaction` across all UI, full WESL shader migration, ScreenSpaceTransmission |
-| **—**  | **[Architecture, Soundness & Testing Modernization](#architecture-soundness--testing-modernization-completed)** | **Completed** | Hardware isolation (`local_config.json`, LowSpec preset), ~92% chunk struct memory reduction, monolithic `block.rs` decomposition, sound `Voxel::from_u16`, root `tests/` integration suite |
+| **—**  | **[Architecture, Soundness & Testing Modernization](#architecture-soundness--testing-modernization-completed)** | **Completed** | Hardware isolation (`local_config.json`, Potato and Low presets), ~92% chunk struct memory reduction, monolithic `block.rs` decomposition, sound `Voxel::from_u16`, root `tests/` integration suite |
 | **04** | **[Flora, Crops & Interactive Mechanical Blocks](#phase-4-flora-crops--interactive-mechanical-blocks-in-progress)** | **In Progress** | Multistage crops, hydration simulation, connected fences/walls/panes bitwise logic, functional doors/gates, containers, and fixtures |
 | **05** | **[World Generation & Biome Overhaul](#phase-5-world-generation--biome-overhaul-planned)** | **Planned** | Geological rock strata, 2D continuous climate noise, 3D subterranean cave biomes, organic boundary dithering, cliff overhangs |
 | **06** | **[System Menus & Cartography Overhaul](#phase-6-system-menus--cartography-overhaul-planned)** | **Planned** | Dark Iron & Parchment menu polish (Pause, Settings, Keybindings), full-screen world map cartography, fog of war, map markers |
@@ -123,7 +123,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 - [x] **Multi-Machine Hardware Profiles & Local Configuration**:
   - Implemented `LocalConfig` in `src/core/config.rs` with automatic first-boot creation of `local_config.json` (isolated from Git).
-  - Added calibrated performance profiles (`LowSpec`, `Medium`, `High`, `Ultra`) adjusting render distance, LOD distance, fog, vsync, and FPS limits.
+  - Added calibrated performance profiles (`Potato`, `Low`, `Medium`, `High`, `Ultra`) adjusting render distance, LOD distance, fog, vsync, and FPS limits.
 - [x] **Chunk Memory Footprint Optimization**:
   - Refactored `src/world/chunk.rs` to compute variant distributions lazily, reducing the inline struct footprint of `Chunk` by ~92% (from 2,192 bytes down to 144 bytes).
 - [x] **Voxel Enum Soundness & Safe Transmutation**:
@@ -134,6 +134,9 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 - [x] **Pure Architectural Test Isolation**:
   - Decoupled engine code into `src/lib.rs` and `src/main.rs`.
   - Removed 100% of `#[cfg(test)]` blocks from `src/`, establishing a unified single-binary integration test suite in `tests/integration_tests.rs` with modular domain suites (`tests/suite/`).
+- [x] **Render Scale & 16:9 Aspect Ratio Controls**:
+  - Implemented dynamic 3D Render Scale (`src/core/render_scale.rs`) routing `Camera3d` to an off-screen render texture with hardware-accelerated bilinear upscaling, preserving 100% native resolution for 2D UI, HUD, and menus.
+  - Implemented 16:9 aspect ratio window snapping (`src/core/window_aspect.rs`) for windowed mode with delta-dominant edge calculation and 640×360 px minimum constraints.
 
 ---
 

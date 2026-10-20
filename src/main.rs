@@ -10,6 +10,7 @@ use bevy_egui::EguiPlugin;
 use voxel_game_engine::{
     core::{
         AdaptiveUiPlugin, DevStatsPlugin, DynamicFpsPlugin, DynamicFpsSettings, FontPlugin, LocalConfig,
+        RenderScalePlugin, WindowAspectPlugin,
     },
     environment::EnvironmentPlugin,
     gameplay::GameplayPlugin,
@@ -102,6 +103,11 @@ fn main() {
                         resolution: (1280, 720).into(),
                         present_mode,
                         mode: window_mode,
+                        resize_constraints: bevy::window::WindowResizeConstraints {
+                            min_width: 640.0,
+                            min_height: 360.0,
+                            ..default()
+                        },
                         ..default()
                     }),
                     ..default()
@@ -123,6 +129,8 @@ fn main() {
         )
         .add_plugins(FontPlugin)
         .add_plugins(AdaptiveUiPlugin)
+        .add_plugins(WindowAspectPlugin)
+        .add_plugins(RenderScalePlugin)
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(EguiPlugin::default())
         .add_plugins(TerrainInspectorPlugin)

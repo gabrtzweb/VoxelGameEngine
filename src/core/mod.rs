@@ -4,10 +4,14 @@ pub mod dynamic_fps;
 pub mod font;
 pub mod math;
 pub mod noise;
+pub mod render_scale;
 pub mod ui_scale;
+pub mod window_aspect;
 
 pub use config::{LocalConfig, PerformancePreset};
 pub use dev_stats::DevStatsPlugin;
 pub use dynamic_fps::{DynamicFpsPlugin, DynamicFpsSettings, DynamicFpsState};
 pub use font::{AppFont, FontPlugin, FontSource, text_shadow_default};
+pub use render_scale::{RenderScalePlugin, RenderScaleState};
 pub use ui_scale::AdaptiveUiPlugin;
+pub use window_aspect::{WindowAspectPlugin, WindowAspectState};

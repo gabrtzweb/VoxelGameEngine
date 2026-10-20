@@ -17,6 +17,8 @@ struct SettingsMenuRoot;
 enum SettingsAction {
     DecPreset,
     IncPreset,
+    DecRenderScale,
+    IncRenderScale,
     DecScreenMode,
     IncScreenMode,
     DecRenderDistance,
@@ -38,6 +40,9 @@ enum SettingsAction {
 
 #[derive(Component)]
 struct PresetLabel;
+
+#[derive(Component)]
+struct RenderScaleLabel;
 
 #[derive(Component)]
 struct ScreenModeLabel;
@@ -279,6 +284,19 @@ fn spawn_settings_menu(
                                     SettingsAction::DecPreset,
                                     SettingsAction::IncPreset,
                                     PresetLabel,
+                                    font_handle.as_ref(),
+                                    &small_normal,
+                                    &small_hover,
+                                );
+
+                                // 0b. Render Scale Stepper
+                                spawn_stepper_row(
+                                    col_right,
+                                    "Render Scale",
+                                    crate::core::config::format_render_scale(local_config.render_scale),
+                                    SettingsAction::DecRenderScale,
+                                    SettingsAction::IncRenderScale,
+                                    RenderScaleLabel,
                                     font_handle.as_ref(),
                                     &small_normal,
                                     &small_hover,
@@ -726,6 +744,14 @@ fn handle_settings_buttons(
                     let _ = local_config.save();
                     sync_config = false;
                 }
+                SettingsAction::DecRenderScale => {
+                    local_config.render_scale =
+                        crate::core::config::prev_render_scale(local_config.render_scale);
+                }
+                SettingsAction::IncRenderScale => {
+                    local_config.render_scale =
+                        crate::core::config::next_render_scale(local_config.render_scale);
+                }
                 SettingsAction::DecScreenMode => {
                     game_settings.screen_mode = game_settings.screen_mode.prev();
                     if let Ok(mut window) = window_query.single_mut() {
@@ -853,6 +879,7 @@ fn update_settings_labels(
         Option<&DynamicFpsLabel>,
         Option<&TimePauseLabel>,
         Option<&PresetLabel>,
+        Option<&RenderScaleLabel>,
     )>,
 ) {
     let chunk_changed = chunk_settings.is_changed();
@@ -878,12 +905,18 @@ fn update_settings_labels(
         dyn_fps,
         time_pause,
         preset,
+        render_scale,
     ) in &mut labels_query
     {
-        if config_changed && preset.is_some() {
-            text.0 = local_config
-                .preset
-                .map_or("Custom".to_string(), |p| p.short_name().to_string());
+        if config_changed {
+            if preset.is_some() {
+                text.0 = local_config
+                    .preset
+                    .map_or("Custom".to_string(), |p| p.short_name().to_string());
+            } else if render_scale.is_some() {
+                text.0 =
+                    crate::core::config::format_render_scale(local_config.render_scale);
+            }
         }
         if game_changed {
             if screen_mode.is_some() {
