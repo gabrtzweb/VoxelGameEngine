@@ -26,7 +26,7 @@ More information about how the project works and future plans can be found at [p
     Z                 Camera Zoom (Hold Z + Mouse Wheel to adjust magnification)
 
     Left Mouse        Break block
-    Right Mouse       Place block (3-axis directional placement for logs and pillars)
+    Right Mouse       Place block (3-axis directional placement for logs, wood bark, and pillars)
     Middle Mouse      Pick block
 
     1 - 9             Hotbar slot selection (9 primary slots)
@@ -119,6 +119,7 @@ src/
 │   ├── generator.rs
 │   ├── inspector.rs
 │   ├── mod.rs
+│   ├── ores.rs
 │   ├── strata.rs
 │   └── trees.rs
 ├── map/
@@ -187,7 +188,9 @@ tests/
 │   ├── config.rs
 │   ├── connection.rs
 │   ├── crops.rs
+│   ├── culling.rs
 │   ├── noise.rs
+│   ├── ores.rs
 │   └── texture.rs
 └── integration_tests.rs
 ```

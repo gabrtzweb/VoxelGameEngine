@@ -54,167 +54,123 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 | Phase | Milestone Title | Status | Focus / Key Deliverables |
 | :---: | :--- | :---: | :--- |
-| **01** | **[Full Block Catalog & Texture System Refactoring](#phase-1-full-block-catalog--texture-system-refactoring-completed)** | **Completed** | 720+ worldbuilding block specs, 120+ active blocks, WGSL stochastic rotation, 3-axis directional placement, natural strata variants |
-| **02** | **[Standardized 9-Slot Interface Architecture & Menu Modernization](#phase-2-standardized-9-slot-interface-architecture--menu-modernization-in-progress)** | **In Progress** | Unified 9-slot standard, 416×256 px windows, 320×44 px hotbar HUD, unified button suite, Dark Iron slot overlays, 480×270 integer scaling |
-| **03** | **[Core Engine Upgrade (Bevy 0.19 to Bevy 0.20 Migration)](#phase-3-core-engine-upgrade-bevy-019-to-bevy-020-migration-completed)** | **Completed** | Upgraded to Bevy 0.20, adopted direct `bevy_egui = "0.43"`, eliminated deprecated `Interaction` across all UI, full WESL shader migration, ScreenSpaceTransmission |
-| **04** | **[Architecture, Graphics Modernization & Soundness](#phase-4-architecture-graphics-modernization--soundness-completed)** | **Completed** | Hardware profiles, chunk memory optimization, monolithic decomposition, render scale, 16:9 snap, presets, tests |
-| **05** | **[High-Impact Performance & Graphics Pipeline](#phase-5-high-impact-performance--graphics-pipeline-completed)** | **Completed** | 5-Step Target FPS Limiter (30/60/120/144/Unlocked), Preset Chunk Mesh Upload Budget, FSR 1.0 Upscaling Filter, Subterranean Culling |
-| **06** | **[Flora, Crops & Interactive Mechanical Blocks](#phase-6-flora-crops--interactive-mechanical-blocks-in-progress)** | **In Progress** | Multistage crops, hydration simulation, connected fences/walls/panes bitwise logic, functional doors/gates, containers, and fixtures |
-| **07** | **[World Generation & Biome Overhaul](#phase-7-world-generation--biome-overhaul-planned)** | **Planned** | Geological rock strata, 2D continuous climate noise, 3D subterranean cave biomes, organic boundary dithering, cliff overhangs |
-| **08** | **[System Menus & Cartography Overhaul](#phase-8-system-menus--cartography-overhaul-planned)** | **Planned** | Dark Iron & Parchment menu polish (Pause, Settings, Keybindings), full-screen world map cartography, fog of war, map markers |
-| **09** | **[Sound Engine & Spatial Audio System](#phase-9-sound-engine--spatial-audio-system-planned)** | **Planned** | 3D spatial audio, block break/place audio, material-based footsteps, ambient environmental loops, weather sounds, dynamic music |
-| **10** | **[Custom Voxel Player Character & Modular Character Creator](#phase-10-custom-voxel-player-character--modular-character-creator-planned)** | **Planned** | Modular voxel character rig, Character Creator interface, fantasy races (Human, Elf, Dwarf, Orc), custom hair, skin, and eyes |
-| **11** | **[First-Person Item Rendering & Creative Utility Tools](#phase-11-first-person-item-rendering--creative-utility-tools-planned)** | **Planned** | 3D held items/blocks in player hand, paint roller, lumberjack tree-felling saw, multi-block sledgehammer, tool animations |
-| **12** | **[Physics Engine, Fluid Dynamics & Item Drops](#phase-12-physics-engine-fluid-dynamics--item-drops-planned)** | **Planned** | Overhauled fluid propagation, gravity blocks (sand, gravel), 3D floating item drops with magnetism, projectile trajectories |
-| **13** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-13-visual-aesthetics-shaders--atmospheric-fx-overhaul-planned)** | **Planned** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, weather particles |
-| **14** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-14-performance-engineering-chunk-streaming--lod-enhancements-planned)** | **Planned** | Worker thread scaling, GPU frustum/occlusion culling, smooth LOD horizon transitions, runtime voxel memory compression |
+| **01** | **[Full Block Catalog & Geological Systems Foundation](#phase-1-full-block-catalog--geological-systems-foundation-completed)** | **Completed** | 615 active engine voxels, geological strata catalog, 3-axis directional placement, selective foliage tinting, shader de-tiling |
+| **02** | **[Standardized 9-Slot Interface Architecture & Menu Modernization](#phase-2-standardized-9-slot-interface-architecture--menu-modernization-in-progress)** | **In Progress** | Standardized 9-slot container and HUD geometry, Dark Iron design suite, 480×270 base integer scaling |
+| **03** | **[Core Engine Upgrade (Bevy 0.19 to Bevy 0.20 Migration)](#phase-3-core-engine-upgrade-bevy-019-to-bevy-020-migration-completed)** | **Completed** | Bevy 0.20 migration, direct `bevy_egui = "0.43"`, modernized UI widgets, native WESL shader framework, ScreenSpaceTransmission |
+| **04** | **[Architecture, Graphics Modernization & Soundness](#phase-4-architecture-graphics-modernization--soundness-completed)** | **Completed** | Multi-tier hardware profiles, chunk memory optimization, modular domain crates, dynamic 3D render scaling, 16:9 window snapping |
+| **05** | **[High-Impact Performance & Graphics Pipeline](#phase-5-high-impact-performance--graphics-pipeline-completed)** | **Completed** | Dynamic frame rate limiter, hardware GPU upload budgets, AMD FSR 1.0 upscaling, subterranean occlusion culling |
+| **06** | **[Flora, Crops & Interactive Mechanical Blocks](#phase-6-flora-crops--interactive-mechanical-blocks-in-progress)** | **In Progress** | Agricultural lifecycle simulation, in-world crop growth, connected block topology masks, wild flora, interactive doors and containers |
+| **07** | **[Subterranean Strata, Caverns & Geological Generation](#phase-7-subterranean-strata-caverns--geological-generation-in-progress)** | **In Progress** | Multi-tier geological strata, Mantle bedrock at Y = -254, 54 authentic ore vein pairings, crystal geodes, subterranean cave biomes |
+| **08** | **[Biome Refactoring, Climate Modeling & Tree/Flora Distribution](#phase-8-biome-refactoring-climate-modeling--treeflora-distribution-planned)** | **Planned** | Multi-noise climate fields (continentalness/temperature/moisture), organic biome dithering, ecological tree dispersion, canopy models |
+| **09** | **[System Menus & Cartography Overhaul](#phase-9-system-menus--cartography-overhaul-planned)** | **Planned** | Unified Dark Iron system menus (Pause, Settings, Keybindings), full-screen world map cartography, fog of war, map markers |
+| **10** | **[Sound Engine & Spatial Audio System](#phase-10-sound-engine--spatial-audio-system-planned)** | **Planned** | 3D spatial audio, material-based block break/place and footsteps, ambient environmental soundscapes, weather audio, dynamic music |
+| **11** | **[Custom Voxel Player Character & Modular Character Creator](#phase-11-custom-voxel-player-character--modular-character-creator-planned)** | **Planned** | Modular voxel character rig, Character Creator interface, fantasy races, custom hair, skin, eye, and cosmetic customization |
+| **12** | **[First-Person Item Rendering & Creative Utility Tools](#phase-12-first-person-item-rendering--creative-utility-tools-planned)** | **Planned** | 3D held items/blocks in player hand, paint roller, lumberjack tree-felling saw, multi-block sledgehammer, measurement tools |
+| **13** | **[Physics Engine, Fluid Dynamics & Item Drops](#phase-13-physics-engine-fluid-dynamics--item-drops-planned)** | **Planned** | Overhauled fluid propagation, gravity blocks (sand, gravel), 3D floating item drops with magnetism, projectile trajectories |
+| **14** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-14-visual-aesthetics-shaders--atmospheric-fx-overhaul-planned)** | **Planned** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, weather particles |
+| **15** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-15-performance-engineering-chunk-streaming--lod-enhancements-planned)** | **Planned** | Worker thread scaling, GPU frustum/occlusion culling, smooth LOD horizon transitions, runtime voxel memory compression |
 
 ---
 
-### Phase 1: Full Block Catalog & Texture System Refactoring (Completed)
+### Phase 1: Full Block Catalog & Geological Systems Foundation (Completed)
 
-- [x] **Comprehensive 720-Block Worldbuilding Catalog**:
-  - Documented complete high-fantasy block catalog across 11 thematic categories (`docs/worldbuilding/blocks_design.md` and `docs/worldbuilding/blocks/*.md`).
-  - Standardized 120+ active engine blocks under clean 4-letter prefixes (`terr_`, `rock_`, `wood_`, `deco_`, `liqd_`, `ore_`, `emit_`, `meta_`).
-- [x] **Stochastic WGSL Texture Rotation & Flipping**:
-  - Implemented fragment-level integer coordinate hashing in `assets/shaders/voxel.wgsl` and `assets/shaders/voxel_opaque.wgsl`.
-  - Eliminates visual grid repetition and repetitive tiling across vast cliff walls, cave surfaces, and soil expanses with zero CPU meshing overhead.
-- [x] **3-Axis Directional Placement (`AxisAlignedPillar`)**:
-  - Implemented in `src/voxel/placement.rs` allowing wood logs, structural columns, and bone pillars to align along X, Y, or Z axes based on raycast hit normal.
-- [x] **Natural Strata, Weaves & Grayscale Tinting**:
-  - Deployed natural texture variants and grayscale tint masters for blocks including Limestone (`rock_limestone`, `rock_limestone_cobbled`) and Linen (`deco_linen`, `deco_linen_painted`).
+- [x] **615-Block Engine Voxel Architecture & Geological Catalog**:
+  - Unified catalog of 615 active voxel variants across engine registries, greedy meshing pipelines, and runtime properties.
+  - Comprehensive geological foundation comprising 10 host mother rocks, 20 minerals and gemstones, 54 authentic ore vein pairings, subterranean crystal geodes, and indestructible Mantle bedrock.
+- [x] **3-Axis Directional Block Placement**:
+  - Universal orientation (Vertical Y, Horizontal X, Horizontal Z) for structural blocks, all tree log species, wood bark variants, organic pillars, and agricultural bales.
+  - Dynamic face UV mapping ensuring consistent grain continuity and endcap orientation across all placement axes in greedy meshing.
+- [x] **Selective Biome Foliage Tinting**:
+  - Biome-driven foliage color mapping applied strictly to living grayscale canopy species, preserving natural intrinsic pigments for seasonal, dead, and evergreen foliage.
+- [x] **Procedural 2D & Handheld Item Rendering Pipeline**:
+  - Real-time procedural 2D icon generation for cubic blocks, planar cross-billboards, animated fluid frames, and handheld items across container interfaces.
+- [x] **Stochastic WESL Texture Rotation & De-tiling**:
+  - Fragment-level coordinate hashing in the opaque voxel shader, breaking repetitive grid patterns on cliffs, cavern walls, and terrain surfaces with zero CPU meshing overhead.
 
 ---
 
 ### Phase 2: Standardized 9-Slot Interface Architecture & Menu Modernization (In Progress)
 
-- [x] **Standardized 9-Horizontal-Slot UI Geometry**:
-  - Unified all container windows to exact 416×256 px canvas dimensions with consistent 9-slot row grids matching the in-game HUD hotbar.
-  - Redesigned gameplay Hotbar HUD to 320×44 px with 9 primary item slots, 2 specialized readout slots (offhand and utility with Dark Iron backdrops), 4 non-clickable wing key badges (`[M]`, `[J]`, `[C]`, `[T]`), static visual meters (XP, HP, Mana), and centered 20×20 px selection frame.
-- [x] **Unified Button Component Family**:
-  - Created standardized 3-tier button suite (`button_large.png` 96×16 px, `button_medium.png` 64×16 px, `button_small.png` 16×16 px) with normal, hover, and pressed states.
-  - Integrated frosted slate-blue metallic highlights (`#3c4552`) across all interactive menus.
-- [x] **Dark Iron Specialized Slot Overlays & Clean Asset Layout**:
-  - Created 14 bespoke Dark Iron slot overlays in `assets/textures/interfaces/containers/slots/` (Armor Helm, Chest, Legs, Boots; Weapons; Tools; Offhand; Rings; Amulet; Crafting Output; Fuel; Ticking).
-  - Purged legacy 8-slot assets and organized UI directories into `containers/`, `containers/slots/`, `containers/outlines/`, `atlases/`, `cursors/`, and `icons/`.
-- [x] **Codebase Integration**:
-  - Updated container textures and button geometries across `src/menu/creative_inventory.rs`, `src/menu/pause.rs`, `src/menu/settings.rs`, and `src/player/hotbar.rs`.
-- [ ] **Unified 480×270 Base UI Redesign & Integer Scaling**:
-  - Standardize all container, inventory, and HUD layouts onto a fixed 480×270 px (16:9) base canvas, scaled up to 4× with integer pixel-perfect alignment.
+- [x] **Standardized 9-Slot Container & HUD Geometry**:
+  - Unified 9-slot row grid architecture across all container windows and gameplay hotbar HUD, standardizing inventory navigation and equipment readouts.
+- [x] **Unified Dark Iron Interface Component Suite**:
+  - Standardized multi-tier interactive button suite and contextual equipment slot overlays (armor, offhand, accessories, crafting) across all menus.
+- [ ] **Unified 480×270 Base UI & Integer Scaling**:
+  - Standardize all container, inventory, and HUD layouts onto a fixed 480×270 px (16:9) base canvas, supporting integer pixel-perfect scaling up to 4× across display resolutions.
 
 ---
 
 ### Phase 3: Core Engine Upgrade (Bevy 0.19 to Bevy 0.20 Migration) (Completed)
 
-- [x] **Bevy 0.20 Dependency & API Migration**:
-  - Upgraded engine dependency from Bevy 0.19 to Bevy 0.20 in `Cargo.toml`.
-  - Decoupled from `bevy-inspector-egui = "0.37"` and adopted direct `bevy_egui = "0.43"`.
-  - Migrated core engine APIs: `compute_aabb()` -> `get_aabb()` in `src/meshing/pipeline.rs`, `Tonemapping` relocated to `bevy::render::view::Tonemapping` in `src/player/mod.rs`, and `#[extract_app(RenderApp)]` on `PostProcessSettings`.
-  - Added `bevy::pbr::ScreenSpaceTransmission` to `Camera3d` to preserve water, fluid, and glass specular transmission under Bevy 0.20's opt-in transmission architecture.
-- [x] **Full UI Modernization & Deprecation Elimination**:
-  - Eliminated deprecated `bevy::ui::Interaction` and `bevy::ui::widget::Button` across `src/menu/creative_inventory.rs`, `src/menu/pause.rs`, `src/menu/settings.rs`, and `src/menu/mod.rs`.
-  - Adopted modern `bevy::ui_widgets::Button`, `bevy::picking::hover::Hovered`, and `bevy::ui::Pressed`, guaranteeing zero compiler deprecation warnings across the entire interface codebase.
-- [x] **WESL Shader Framework Migration**:
-  - Migrated engine shaders to native `.wesl` format (`assets/shaders/voxel_opaque.wesl`, `voxel_transparent.wesl`, `voxel_prepass.wesl`, `post_process.wesl`).
-  - Standardized module imports (`import bevy_pbr::render::{...};`, `import bevy_pbr::prepass::io::{...};`, `import bevy_core_pipeline::fullscreen_vertex_shader::FullscreenVertexOutput;`).
-  - Applied `@group(constants::MATERIAL_BIND_GROUP)` and replaced `#ifdef` preprocessors with `@if(...)` / `@else` attributes.
-  - Purged obsolete legacy `.wgsl` files.
+- [x] **Bevy 0.20 & Direct Egui Migration**:
+  - Upgraded engine core to Bevy 0.20 and direct `bevy_egui = "0.43"`, migrating rendering pipelines and adding `ScreenSpaceTransmission` for fluid/glass specular refraction.
+- [x] **UI Widget Modernization**:
+  - Modernized interface event handling with retained widget components (`Hovered`, `Pressed`, `Button`), eliminating deprecated UI interaction patterns across all menus.
+- [x] **Native WESL Shader Framework Adoption**:
+  - Fully transitioned shader architecture from legacy WGSL preprocessors to modular WESL shaders (`voxel_opaque.wesl`, `voxel_transparent.wesl`, `voxel_prepass.wesl`, `post_process.wesl`).
 
 ---
 
 ### Phase 4: Architecture, Graphics Modernization & Soundness (Completed)
 
-- [x] **Multi-Machine Hardware Profiles & Calibrated Presets**:
-  - Implemented `LocalConfig` in `src/core/config.rs` with automatic first-boot creation of `local_config.json` (isolated from Git).
-  - Added 5 calibrated performance profiles (`Potato`, `Low`, `Medium`, `High`, `Ultra`) calibrating render distance, LOD distance, simulation distance, shadows, clouds, full grass, anti-aliasing, and render scale.
-- [x] **Chunk Memory Footprint Optimization**:
-  - Refactored `src/world/chunk.rs` to compute variant distributions lazily, reducing the inline struct footprint of `Chunk` by ~92% (from 2,192 bytes down to 144 bytes).
-- [x] **Voxel Enum Soundness & Safe Transmutation**:
-  - Eliminated unsafe memory transmutation risks in `Voxel::from_u16` across all 723 variants, with exhaustive discriminant validation tests.
-  - Resolved `BlockShape` radial menu overlapping bug via `BlockShape::shapable()`.
-- [x] **Monolithic Block Decomposition**:
-  - Modularized the 3,763-line `src/world/block.rs` monolith into clean, cohesive submodules under `src/world/block/` (`catalog.rs`, `connection.rs`, `data.rs`, `props.rs`, `shape.rs`, `voxel.rs`, `mod.rs`).
-- [x] **Pure Architectural Test Isolation**:
-  - Decoupled engine code into `src/lib.rs` and `src/main.rs`.
-  - Removed 100% of `#[cfg(test)]` blocks from `src/`, establishing a unified single-binary integration test suite in `tests/integration_tests.rs` with modular domain suites (`tests/suite/`).
-- [x] **Dynamic 3D Render Scale & Native 2D UI Overlay**:
-  - Implemented dynamic 3D Render Scale (`src/core/render_scale.rs`) routing `Camera3d` to an off-screen render texture with hardware-accelerated bilinear upscaling (50%, 66%, 75%, 85%, 100%).
-  - UI and HUD retain 100% native display crispness. At 100% native scale, offscreen overhead is automatically bypassed.
-- [x] **Debounced 16:9 Aspect Ratio Window Snapping**:
-  - Implemented 16:9 aspect ratio window snapping (`src/core/window_aspect.rs`) for windowed mode with minimum constraints (640×360 px).
-  - Engineered startup grace period and drag-settle debounce timer (250ms) to ensure DirectX 12 / WGPU swapchain buffers never experience re-entrant resize collisions (`0x887A0001`).
-- [x] **Hardware Anti-Aliasing Quality Modes**:
-  - Added configurable anti-aliasing (`AntiAliasingMode`: `Off`, `Fxaa`, `Msaa2x`, `Msaa4x`), dynamically configuring camera MSAA sample counts and FXAA post-processing passes.
-- [x] **Directional Shadow Quality & Cascade Configuration**:
-  - Implemented directional shadow cascade control (`ShadowQuality`: `Off`, `Low`, `Medium`, `High`, `Ultra`), adjusting shadow map resolution and 1 to 4 cascade split levels on `SunLight` and `MoonLight`.
-- [x] **Dual-Mode Cloud Rendering System**:
-  - Implemented dual-mode clouds (`CloudQuality`: `Off`, `Fast2D`, `Fancy3D`), offering flat planar dual-face quads with 70% vertex reduction on lower tiers, and full volumetric 3D blocks on higher tiers.
-- [x] **Dynamic FOV Kick & Motion Accessibility Toggle**:
-  - Integrated dynamic sprint FOV kick (+8° FOV expansion during sprint) with an accessibility toggle (`dynamic_fov_enabled`) for motion-sensitive players.
+- [x] **Multi-Tier Hardware Profiles & Quality Calibration**:
+  - Automated hardware config (`Potato` to `Ultra`) managing render scale, shadow cascades, dual-mode clouds, anti-aliasing (FXAA/MSAA), and view distances.
+- [x] **Engine Soundness & Memory Footprint Optimization**:
+  - Lazy chunk variant distribution reducing memory footprint by ~92%, safe discriminant validation, and decomposition into modular domain crates with pure integration test isolation.
+- [x] **Dynamic 3D Render Scaling & Window Presentation**:
+  - Decoupled 3D resolution scaling with native 2D interface crispness, and debounced 16:9 window snapping eliminating swapchain resize collisions.
 
 ---
 
 ### Phase 5: High-Impact Performance & Graphics Pipeline (Completed)
 
-- [x] **5-Step Target Frame Rate Limiter (`TargetFpsLimit` / `DynamicFpsSettings`)**:
-  - Implemented 5 calibrated display refresh steps: `30 FPS` (battery / entry laptops), `60 FPS` (standard 60Hz), `120 FPS` (high refresh), `144 FPS` (esports standard), and `Unlocked` (unconstrained).
-  - Decoupled frame pacing from VSync in `dynamic_fps.rs`, preventing CPU/GPU thermal throttling, fan noise, and excessive battery drain on low-spec laptops even with VSync disabled or on high-refresh panels.
-  - Interactive stepper row exposed in the in-game Settings menu (`SettingsAction::DecTargetFps` / `IncTargetFps`), saving to `local_config.json` and adjusting pacing in real time.
-- [x] **Preset-Calibrated Chunk Mesh Upload Budgeting**:
-  - Integrated per-frame vertex/index buffer GPU transfer throttling in `ChunkStreamingManager` and `async_mesher.rs`, scaling dynamically by performance preset:
-    - `Potato`: 3 chunk mesh uploads per frame (eliminates PCIe bus saturation and micro-stutter on weak integrated graphics / laptops).
-    - `Low`: 6 chunk mesh uploads per frame.
-    - `Medium`: 12 chunk mesh uploads per frame.
-    - `High`: 24 chunk mesh uploads per frame.
-    - `Ultra`: 64 chunk mesh uploads per frame for instant high-end desktop world streaming.
-- [x] **AMD FidelityFX Super Resolution 1.0 (FSR 1.0) Upscaling Filter**:
-  - Integrated selectable upscaling reconstruction filter options in `LocalConfig` and `RenderScalePlugin`: `Bilinear` (ultra-fast baseline interpolation for potato laptops) vs `FSR 1.0` (Spatial Edge-Adaptive Filtering + RCAS Robust Contrast-Adaptive Sharpening).
-  - Pairs with 3D render scales (`0.50x`, `0.66x`, `0.75x`, `0.85x`) to restore sharp geometric voxel edges and contrast without ringing or haloing.
-  - Interactive stepper row exposed directly beneath Render Scale in the in-game Settings menu (`SettingsAction::DecUpscalingFilter` / `IncUpscalingFilter`).
+- [x] **Dynamic Display Frame Pacing & Limiter**:
+  - Calibrated target frame rate limiter (30, 60, 120, 144, Unlocked) decoupled from VSync, preventing thermal throttling and excessive power consumption.
+- [x] **Hardware-Scaled Chunk Mesh GPU Upload Budgeting**:
+  - Per-frame vertex and index buffer upload limits dynamically scaled by hardware profile, eliminating PCIe saturation and frame stutter during rapid world streaming.
+- [x] **AMD FidelityFX Super Resolution (FSR 1.0) Pipeline**:
+  - Spatial edge-adaptive filtering and contrast-adaptive sharpening (RCAS) paired with 3D render scaling for sharp voxel edges on lower-spec hardware.
 - [x] **Subterranean Cave Occlusion Face Culling**:
-  - Implemented surface-to-underground occlusion mask checks, culling complete chunk meshes and interior cavern faces occluded by solid surface terrain when the player is on the surface.
-  - Integrated real-time underground state detection (`is_position_underground`) casting vertical occlusion rays and checking subterranean chunk elevation.
-  - Enhanced chunk graph traversal (Sodium architecture) to halt horizontal propagation into subterranean cave chambers from surface openings, preventing cave networks from illuminating under solid ground.
-  - Added real-time chunk and vertex culling metrics (`rendered_vertices`, `culled_vertices`, `rendered_chunks`, `culled_chunks`) and exposed live culling environment telemetry in the F3 HUD.
-  - Validated with automated unit tests in `tests/suite/culling.rs`.
+  - Surface-to-underground occlusion masking and directional chunk graph traversal culling occluded subterranean cave chambers when the player is on the surface.
 
 ---
 
 ### Phase 6: Flora, Crops & Interactive Mechanical Blocks (In Progress)
 
-- [x] **Crop Lifecycle & Agricultural Mechanics (Pure Simulation Foundation)**:
-  - Implemented pure simulation data models (`CropType`, `CropStage`, `SoilMoisture`, `CropSimulator` in `src/simulation/crops.rs`) with Chebyshev water hydration distance (4-block radius), weather hydration (rain), growth tick chance evaluation, and harvest yields (`CropHarvestResult`).
-  - Validated with automated unit tests in `tests/suite/crops.rs`.
-- [ ] **Crop In-World Meshing & Block Placement Hooks**:
-  - Connect crop growth stages to world block ticks and visual billboard rendering models.
-- [x] **Connected Block Algorithmic Logic (Pure Topology Masks)**:
-  - Implemented bitwise connection topology (`ConnectionMask` and `ConnectedCategory` in `src/world/block/connection.rs`) calculating 4-way cardinal adjacency and 6-way adjacency for fences, walls, glass panes, and iron bars.
-  - Recognizes isolated posts, straight lines (N-S, E-W), perpendicular L-corners, 3-way T-junctions, and 4-way intersections.
-  - Validated with automated unit tests in `tests/suite/connection.rs`.
-- [ ] **Wild Flowers, Vegetation & Fungal Colonies**:
-  - Deploy wild flower variants with biome-specific color palettes and harvestable botanical seeds.
-  - Add decorative undergrowth: forest ferns, desert shrubs, tundra mosses, hanging cavern vines, and shelf fungi.
+- [x] **Agricultural Simulation Engine**:
+  - Simulation model for crop lifecycles, soil moisture propagation, rainfall hydration, and harvest yield evaluation.
+- [ ] **In-World Crop Meshing & Growth Integration**:
+  - Connect crop growth stages to world block ticks, seasonal growth rates, and visual stage models.
+- [x] **Connected Block Topology Logic**:
+  - Bitwise connection solver evaluating 4-way and 6-way adjacency for fences, walls, glass panes, and iron bars.
+- [ ] **Wild Botanical Flora & Fungal Colonies**:
+  - Biome-specific wildflowers, harvestable seeds, undergrowth scatter (ferns, shrubs, mosses), and subterranean fungi.
 - [ ] **Interactive Mechanical & Structural Blocks**:
-  - Implement functional doors, trapdoors, and fence gates with distinct open/closed states and interaction sounds.
-  - Implement interactive container blocks (chests, barrels, baskets) with lid animations and container UI hooks.
-  - Support wall-mounted torches, lantern posts, and decorative hanging fixtures.
+  - Functional doors, trapdoors, and fence gates with distinct states, container blocks (chests, barrels) with lid animations, and wall-mounted fixtures.
 
 ---
 
-### Phase 7: World Generation & Biome Overhaul (Planned)
+### Phase 7: Subterranean Strata, Caverns & Geological Generation (In Progress)
 
-- [ ] **Geological Rock Strata & Mineral Distribution**:
-  - Restructure underground generation into realistic geological strata layers (Limestone, Slate, Granite, Basalt, Blackstone, Dreadstone Bedrock).
-  - Embed mineral veins, ore clusters, and gem geodes naturally within their corresponding host stone layers.
-- [ ] **Continuous Multi-Noise Climate Mapping**:
-  - Refactor 2D continentalness, temperature, and moisture noise fields to generate coherent high-fantasy biomes with smooth transitional boundaries.
-  - Implement organic biome edge dithering to eliminate harsh rectangular biome borders.
-- [ ] **3D Subterranean Cave Biomes**:
-  - Generate distinct underground cave environments: lush overgrown caverns, crystal grottos, deep magma chambers, and dripstone chasms.
+- [x] **Geological Strata Generation Architecture**:
+  - Multi-tier vertical strata system replacing uniform filler stone with realistic geological depth layers (Surface, Upper, Middle, and Deep tectonic crusts) bounded by indestructible Mantle bedrock at Y = -254.
+- [x] **Subterranean Mineral & Ore Vein Matrix**:
+  - Procedural distribution of 54 authentic host-rock mineral pairings across 10 mother rocks, alongside subterranean crystal geodes with basalt/calcite protective shells.
+- [ ] **3D Subterranean Cave Biomes & Unique Caverns**:
+  - Distinct subterranean environments including karst caverns, flooded calcite grottoes, dripstone chasms, and volcanic lava tube corridors.
 
 ---
 
-### Phase 8: System Menus & Cartography Overhaul (Planned)
+### Phase 8: Biome Refactoring, Climate Modeling & Tree/Flora Distribution (Planned)
+
+- [ ] **Continuous Multi-Noise Climate Modeling**:
+  - Multi-noise climate fields (continentalness, temperature, moisture) generating coherent macro-biomes with organic edge dithering and transitional micro-climates.
+- [ ] **Ecological Tree & Flora Distribution**:
+  - Climate-driven procedural tree generation and canopy density modeling across tropical, temperate, boreal, and montane environments, accompanied by fallen logs and natural undergrowth scatter.
+
+---
+
+### Phase 9: System Menus & Cartography Overhaul (Planned)
 
 - [ ] **Unified Dark Iron & Parchment System Menus**:
   - Overhaul the in-game Pause Menu, Settings Menu, Audio/Video Options, and Keybindings to strictly adhere to the unified Dark Iron design system.
@@ -225,11 +181,10 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 9: Sound Engine & Spatial Audio System (Planned)
+### Phase 10: Sound Engine & Spatial Audio System (Planned)
 
-- [ ] **Audio Pipeline & Category Systems**:
-  - Integrate Bevy's audio engine with the categorized audio assets in `assets/sounds/` (`ambience`, `blocks`, `footsteps`, `liquids`, `music`, `weather`).
-  - Add independent master, ambient, block, sound effect, and music volume sliders in the Settings Menu.
+- [ ] **Audio Pipeline & Channel Architecture**:
+  - Multi-channel audio engine with independent volume buses for master, ambience, blocks, footsteps, sound effects, and music.
 - [ ] **Block Interaction & Footstep Audio**:
   - Implement material-specific block break, place, and impact audio cues (stone, wood, dirt, sand, gravel, glass, foliage).
   - Implement dynamic 3D spatial footstep sounds based on surface block material, movement stance (walking, sprinting, sneaking), and submersion.
@@ -239,7 +194,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 10: Custom Voxel Player Character & Modular Character Creator (Planned)
+### Phase 11: Custom Voxel Player Character & Modular Character Creator (Planned)
 
 - [ ] **Proprietary Modular Voxel Character Rig**:
   - Retire the legacy Minecraft skin player model in favor of a bespoke, modular voxel humanoid character rig.
@@ -251,7 +206,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 11: First-Person Item Rendering & Creative Utility Tools (Planned)
+### Phase 12: First-Person Item Rendering & Creative Utility Tools (Planned)
 
 - [ ] **First-Person & Third-Person Hand Rendering**:
   - Render the actively selected hotbar item or block directly in the player's hand in first-person and third-person views.
@@ -264,7 +219,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 12: Physics Engine, Fluid Dynamics & Item Drops (Planned)
+### Phase 13: Physics Engine, Fluid Dynamics & Item Drops (Planned)
 
 - [ ] **Fluid Simulation & Propagation Overhaul**:
   - Overhaul fluid cellular automata mechanics to deliver realistic volume conservation, natural slope cascading, and viscous lava flow.
@@ -280,7 +235,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 13: Visual Aesthetics, Shaders & Atmospheric FX Overhaul (Planned)
+### Phase 14: Visual Aesthetics, Shaders & Atmospheric FX Overhaul (Planned)
 
 - [ ] **Voxel Ambient Occlusion (Smooth Lighting)**:
   - Implement per-vertex ambient occlusion calculating corner and edge block occlusion, adding deep geometric contrast to all surfaces.
@@ -296,7 +251,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 14: Performance Engineering, Chunk Streaming & LOD Enhancements (Planned)
+### Phase 15: Performance Engineering, Chunk Streaming & LOD Enhancements (Planned)
 
 - [ ] **Streaming Throughput & Worker Scaling**:
   - Optimize asynchronous compute worker pools for chunk generation and greedy meshing with dynamic per-frame upload budgets.

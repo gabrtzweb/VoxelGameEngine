@@ -9,11 +9,16 @@ This is an attempt to develop an experimental voxel engine and game, built from 
 - **1.0 m Voxel World**: The world is stored using 1.0 m voxels (identical to Minecraft blocks). Sub-voxels are completely eliminated; full 1.0 m³ blocks form the atomic spatial unit.
 - **Chunk Geometry**: Chunks contain 16 × 16 × 16 voxels (16 m × 16 m × 16 m physical sections), with 4,096 voxels per chunk.
 - **Block Shapes & Directional Placement**:
-  - Native 1.0 m block shapes: `Full`, `Slab`, `Stair`, `Column`, `Torch`, and `Basket`, with 3D orientations, custom meshes, and passable non-solid collision for torches.
-  - Minecraft-style 3-axis directional placement for full-sized pillar blocks (`AxisAlignedPillar` on logs, bone blocks, and structural columns) aligning their 6-face texture mapping along the X, Y, or Z placement axis based on hit normal.
-- **Comprehensive 720-Block Worldbuilding Catalog**:
-  - 720 block definitions across 11 thematic categories (`rocks`, `trees`, `soils`, `ores`, `caverns`, `oceans`, `organics`, `decorations`, `mushrooms`, `vegetation`, `fluids`/`systems`).
-  - Documented in `docs/worldbuilding/blocks_design.md` and `docs/worldbuilding/blocks/*.md`.
+  - Native 1.0 m block shapes: `Full`, `Slab`, `Stair`, `Column`, `Torch`, `Basket`, `PebbleOne`, `PebbleTwo`, `PebbleThree`, and `CrossBillboard`, with 3D orientations, custom meshes, and passable non-solid collision for torches and pebbles.
+  - 3-axis directional placement (`is_axis_aligned`): all 17 tree species logs (`*Log`) and wood bark (`*Wood`), `BambooStalk`, `BoneBlock`, `CalcinedBone`, `BloodyFlesh`, `FleshBlock`, and bales (`CornBale`, `HayBale`, `RiceBale`, `StrawBale`). Automatically aligns along the X, Y, or Z placement axis based on hit normal, rotating face textures and swapping UVs in greedy meshing.
+- **615-Block Engine Catalog & Geological Systems Foundation**:
+  - 615 active engine voxel variants across 11 thematic categories (`rocks`, `trees`, `soils`, `ores`, `caverns`, `oceans`, `organics`, `decorations`, `mushrooms`, `vegetation`, `fluids`/`systems`).
+  - Geological rock strata: 10 primary mother rocks (`Dolomite`, `Slate`, `Gabbro`, `Andesite`, `Limestone`, `Argillite`, `Granite`, `Basalt`, `Sandstone`, `Marble`), 54 authentic host-rock ore veins, 6 crystal geode varieties (Amethyst, Aquamarine, Citrine, Fluorite, Pink Salt, Selenite), and indestructible Mantle bedrock at Y = -254.
+- **Strict Grayscale Selective Foliage Tinting**:
+  - Biome foliage tinting restricted exclusively to living grayscale canopy species, grass soils, and water.
+  - Natural pre-colored pigments for seasonal, dead, and evergreen foliage are preserved without green tint multiplication.
+- **Procedural 2D & Handheld Item Rendering Pipeline**:
+  - Real-time procedural 2D icon generation for cubic blocks, planar cross-billboards, animated fluid frames, and handheld items across container interfaces.
 - **Deterministic Natural Texture Rotation & Flipping**:
   - Implemented in WESL fragment shader (`assets/shaders/voxel_opaque.wesl`) using an integer coordinate hash of `floor(world_position)`.
   - Natural terrain blocks (stone, soils, sands, gravels) rotate and flip pseudo-randomly to eliminate grid tiling patterns over large cliff faces and cave walls without breaking CPU greedy meshing efficiency.
@@ -24,6 +29,7 @@ This is an attempt to develop an experimental voxel engine and game, built from 
   - Explicit `ScreenSpaceTransmission` registration for physical fluid and translucent material rendering.
 - **Outcrop Dual-Layer Rendering**:
   - Grass and snow outcrop blocks across soils and rocks render top and side layers while ensuring the bottom face (`Face::Bottom` / `Face::Down`) renders the base mineral material (e.g., Dolomite Grass bottom renders Dolomite; Peat Grass bottom renders Peat Dirt).
+  - Outcrop blocks are dual-indexed to appear seamlessly in both Soils and Rocks inventory tabs.
 - **Tactile Gameplay Feedback**:
   - Subtle 8-particle debris bursts with terrain collision bouncing on block break.
   - 0.18s elastic scale bounce on block placement.
@@ -111,28 +117,14 @@ The player uses a custom AABB collision system that directly queries voxel data.
 The engine has concluded foundational development across Version 0.1 (Phases 1 through 20: rendering, atmosphere, fluids, greedy mesher optimizations, SIMD noise, 512-block world generation, and interface modernization).
 
 In Version 0.2 (Modernization, Worldbuilding & Deep Systems), the project status:
-- **Phase 1 (Completed)**: Full Block Catalog & Texture System Refactoring (720 block definitions, stochastic rotation, 3-axis directional placement).
-- **Phase 2 (In Progress)**: Standardized 9-Slot Interface Architecture & Menu Modernization (Unified 9-slot standard, 416×256 px windows, 320×44 px hotbar HUD, unified button suite; pending 480×270 px base integer scaling and upcoming interface refactorings).
-- **Phase 3 (Completed)**: Core Engine Upgrade (Bevy 0.20 Migration, direct `bevy_egui = "0.43"`, modern UI picking/hover/press, WESL shader framework, and ScreenSpaceTransmission).
-- **Phase 4 (Completed)**: Architecture, Graphics Modernization & Soundness:
-  - **Multi-Machine Hardware Profiles (`src/core/config.rs`)**: Automatic persistence via `local_config.json` with 5-tier presets (`Potato`, `Low`, `Medium`, `High`, `Ultra`), isolating local hardware settings outside Git.
-  - **Dynamic Graphics Pipeline & Accessibility**:
-    - **Render Scale**: Dynamic 3D off-screen rendering scaled between 50% and 100% (Native), keeping 2D UI razor-sharp at 100%.
-    - **Anti-Aliasing (`AntiAliasingMode`)**: Multi-tier edge smoothing supporting `Off`, `FXAA`, `MSAA 2x`, and `MSAA 4x` on cameras.
-    - **Shadow Quality (`ShadowQuality`)**: Multi-tier directional cascade shadow fidelity (`Off`, `Low`, `Medium`, `High`, `Ultra`) controlling cascade count, bounds, and directional light shadow maps dynamically.
-    - **Cloud Quality (`CloudQuality`)**: Cloud fidelity toggling between `Off` (hidden/no-mesh), `Fast (2D)` (planar dual-quads with ~70% vertex reduction), and `Fancy (3D)` (full volumetric blocks).
-    - **Dynamic FOV Kick / Reduced Motion (`dynamic_fov_enabled`)**: Accessibility setting allowing motion-sensitive players to disable the sprinting +8° FOV distortion.
-  - **Chunk Memory Optimization (`src/world/chunk.rs`)**: Reduced per-chunk struct overhead by ~92% (from ~2.1 KB to 144 bytes per chunk instance) by computing variant distributions lazily on-demand.
-  - **Block Monolith Modularization (`src/world/block/`)**: Decomposed the monolithic 3,763-line `block.rs` into focused submodules (`catalog.rs`, `connection.rs`, `data.rs`, `props.rs`, `shape.rs`, `voxel.rs`).
-  - **Soundness & Zero-`#[cfg(test)]` Policy**: Completely eradicated unsafe `transmute` risks in `Voxel::from_u16` across all 723 variants; moved 100% of unit tests out of `src/` into a dedicated integration test runner in `tests/integration_tests.rs`.
-- **Phase 5 (Completed)**: High-Impact Performance & Graphics Pipeline:
-  - **5-Step Target Frame Rate Limiter**: 30 / 60 / 120 / 144 / Unlocked frame pacing decoupled from VSync.
-  - **Preset-Calibrated Mesh Upload Budgeting**: Per-frame vertex/index GPU transfer throttling scaling by preset (3 to 64 uploads/frame).
-  - **AMD FidelityFX Super Resolution 1.0 (FSR 1.0)**: Edge-adaptive spatial reconstruction and contrast-adaptive sharpening (RCAS).
-  - **Subterranean Cave Occlusion Face Culling**: Surface-to-underground occlusion mask checks culling complete subterranean chunk meshes when the player is on the surface, preventing deep cave illumination and tracking live culling metrics in F3 HUD.
-- **Phase 6 (In Progress / On Hold)**:
-  - **Connected Block Logic (`src/world/block/connection.rs`)**: Bitwise connection masks (`ConnectionMask`) and topology resolvers for fences, walls, glass panes, and iron bars.
-  - **Agricultural Lifecycle (`src/simulation/crops.rs`)**: Pure simulation data models (`CropType`, `CropStage`, `SoilMoisture`, `CropSimulator`).
+- **Phase 1 (Completed)**: Full Block Catalog & Geological Systems Foundation (615 active engine voxels, geological strata catalog, 3-axis directional placement, selective foliage tinting, shader de-tiling).
+- **Phase 2 (In Progress)**: Standardized 9-Slot Interface Architecture & Menu Modernization (Unified 9-slot container and HUD geometry, Dark Iron design suite, 480×270 base integer scaling).
+- **Phase 3 (Completed)**: Core Engine Upgrade (Bevy 0.20 Migration, direct `bevy_egui = "0.43"`, modern UI widgets, WESL shader framework, and ScreenSpaceTransmission).
+- **Phase 4 (Completed)**: Architecture, Graphics Modernization & Soundness (Multi-tier hardware profiles, chunk memory optimization, modular domain crates, dynamic 3D render scaling, 16:9 window snapping, test isolation).
+- **Phase 5 (Completed)**: High-Impact Performance & Graphics Pipeline (Dynamic frame rate limiter, hardware GPU upload budgets, AMD FSR 1.0 upscaling, subterranean occlusion culling).
+- **Phase 6 (In Progress)**: Flora, Crops & Interactive Mechanical Blocks (Agricultural lifecycle simulation, in-world crop growth, connected block topology masks, wild flora, interactive doors and containers).
+- **Phase 7 (In Progress)**: Subterranean Strata, Caverns & Geological Generation (Multi-tier geological strata, Mantle bedrock at Y = -254, 54 authentic ore vein pairings, crystal geodes, subterranean cave biomes).
+- **Phase 8 (Planned)**: Biome Refactoring, Climate Modeling & Tree/Flora Distribution (Multi-noise climate fields, organic biome dithering, ecological tree dispersion, canopy density models).
 
 Detailed progress and milestones are tracked in `docs/project_roadmap.md`.
 
