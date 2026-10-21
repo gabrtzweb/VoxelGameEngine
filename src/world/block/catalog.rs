@@ -69,12 +69,36 @@ impl Voxel {
             Self::ChalkSnow => Some("rock_chalk_snow_side"),
             Self::DolomiteGrass => Some("rock_dolomite_grass_side"),
             Self::DolomiteSnow => Some("rock_dolomite_snow_side"),
-            Self::GneissGrass => Some("rock_gneiss_grass_side"),
-            Self::GneissSnow => Some("rock_gneiss_snow_side"),
             Self::GraniteGrass => Some("rock_granite_grass_side"),
             Self::GraniteSnow => Some("rock_granite_snow_side"),
             Self::LimestoneGrass => Some("rock_limestone_grass_side"),
             Self::LimestoneSnow => Some("rock_limestone_snow_side"),
+
+            Self::AcaciaLog => Some("tree_acacia_bark"),
+            Self::AspenLog => Some("tree_aspen_bark"),
+            Self::BaobabLog => Some("tree_baobab_bark"),
+            Self::BirchLog => Some("tree_birch_bark"),
+            Self::CherryLog => Some("tree_cherry_bark"),
+            Self::CypressLog => Some("tree_cypress_bark"),
+            Self::FirLog => Some("tree_fir_bark"),
+            Self::KapokLog => Some("tree_kapok_bark"),
+            Self::MahoganyLog => Some("tree_mahogany_bark"),
+            Self::MangroveLog => Some("tree_mangrove_bark"),
+            Self::MapleLog => Some("tree_maple_bark"),
+            Self::OakLog => Some("tree_oak_bark"),
+            Self::PalmLog => Some("tree_palm_bark"),
+            Self::PineLog => Some("tree_pine_bark"),
+            Self::RedwoodLog => Some("tree_redwood_bark"),
+            Self::WillowLog => Some("tree_willow_bark"),
+            Self::YewLog => Some("tree_yew_bark"),
+            Self::BambooStalk => Some("tree_bamboo_stalk"),
+            Self::BoneBlock => Some("bio_bone_side"),
+            Self::CalcinedBone => Some("bio_calcined_bone_side"),
+            Self::BloodyFlesh | Self::FleshBlock => Some("bio_flesh_side"),
+            Self::CornBale => Some("deco_corn_bale_side"),
+            Self::HayBale => Some("deco_hay_bale_side"),
+            Self::RiceBale => Some("deco_rice_bale_side"),
+            Self::StrawBale => Some("deco_straw_bale_side"),
             _ => None,
         }
     }
@@ -92,7 +116,6 @@ impl Voxel {
             | Self::BasaltGrass
             | Self::ChalkGrass
             | Self::DolomiteGrass
-            | Self::GneissGrass
             | Self::GraniteGrass
             | Self::LimestoneGrass => Some("soil_grass"),
 
@@ -104,7 +127,6 @@ impl Voxel {
             | Self::BasaltSnow
             | Self::ChalkSnow
             | Self::DolomiteSnow
-            | Self::GneissSnow
             | Self::GraniteSnow
             | Self::LimestoneSnow => Some("soil_snow"),
 
@@ -148,7 +170,9 @@ impl Voxel {
             Self::HayNest => Some("nest_hay_nest_top"),
             Self::HoneyBlock => Some("organic_honey_block_top"),
             Self::JellyBlock => Some("organic_jelly_top"),
-            Self::LoamBurrow | Self::PeatBurrow | Self::SiltBurrow => Some("nest_burrow_top"),
+            Self::LoamBurrow | Self::PeatBurrow | Self::SiltBurrow => {
+                Some("nest_burrow_top_colored")
+            }
             Self::SilkCocoon => Some("nest_silk_cocoon_top"),
             Self::SlimeBlock => Some("organic_slime_top"),
             Self::SpiderEgg => Some("nest_spider_egg_top"),
@@ -239,7 +263,6 @@ impl Voxel {
             Self::BasaltGrass | Self::BasaltSnow => Some("rock_basalt"),
             Self::ChalkGrass | Self::ChalkSnow => Some("rock_chalk"),
             Self::DolomiteGrass | Self::DolomiteSnow => Some("rock_dolomite"),
-            Self::GneissGrass | Self::GneissSnow => Some("rock_gneiss"),
             Self::GraniteGrass | Self::GraniteSnow => Some("rock_granite"),
             Self::LimestoneGrass | Self::LimestoneSnow => Some("rock_limestone"),
 
@@ -256,96 +279,121 @@ impl Voxel {
     }
 
     pub fn overlay_texture_name(&self) -> Option<&'static str> {
-        let id = *self as u16;
-        match id {
-            34
-            | 45
-            | 49
-            | 61
-            | 69
-            | 80
-            | 88
-            | 91
-            | 94
-            | 99
-            | 129
-            | 133
-            | 136
-            | 140
-            | 531..=532
-            | 536 => Some("soil_grass_side_overlay"),
-            146..=148 | 157..=161 => Some("mossy_rock_overlay"),
-            149..=156 => Some("mossy_cobbled_overlay"),
-            271 | 273 => Some("gem_diamond_overlay"),
-            274 | 276 => Some("gem_emerald_overlay"),
-            277 | 279 => Some("gem_jade_overlay"),
-            280..=281 | 283..=284 => Some("gem_onyx_overlay"),
-            285 | 287..=289 => Some("gem_opal_overlay"),
-            290..=291 => Some("gem_ruby_overlay"),
-            293..=294 => Some("gem_sapphire_overlay"),
-            296 | 298 => Some("gem_topaz_overlay"),
-            299..=301 | 303 => Some("ore_aluminum_overlay"),
-            304..=306 | 308 => Some("ore_cinnabar_overlay"),
-            309..=316 | 318..=321 => Some("ore_coal_overlay"),
-            322..=330 | 332..=336 => Some("ore_copper_overlay"),
-            337..=338 | 340..=341 => Some("ore_gold_overlay"),
-            342..=348 | 350..=354 => Some("ore_iron_overlay"),
-            355..=357 | 359 => Some("ore_lazurite_overlay"),
-            360..=365 | 367..=368 => Some("ore_lead_overlay"),
-            369..=373 | 375 => Some("ore_manganese_overlay"),
-            376..=377 | 379..=380 => Some("ore_nickel_overlay"),
-            381..=382 | 384..=385 => Some("ore_platinum_overlay"),
-            386..=388 | 390..=392 => Some("ore_quartz_overlay"),
-            393..=394 | 396..=397 => Some("ore_saltpeter_overlay"),
-            398..=401 => Some("ore_silver_overlay"),
-            403..=404 | 406..=407 => Some("ore_sulfur_overlay"),
-            408..=412 | 414 => Some("ore_tin_overlay"),
-            415..=417 | 419 => Some("ore_uranium_overlay"),
-            420..=427 => Some("ore_zinc_overlay"),
-            458 => Some("algae_dead_overlay"),
-            459 => Some("barnacles_overlay"),
-            512..=513 => Some("bloody_overlay"),
+        match *self {
+            Self::CalicheGrass
+            | Self::LateriteGrass
+            | Self::LoamGrass
+            | Self::PeatGrass
+            | Self::PermafrostGrass
+            | Self::SiltGrass
+            | Self::AndesiteGrass
+            | Self::ArgilliteGrass
+            | Self::BasaltGrass
+            | Self::ChalkGrass
+            | Self::DolomiteGrass
+            | Self::GraniteGrass
+            | Self::LimestoneGrass => Some("soil_grass_side_overlay"),
+
+            Self::MossyAndesite
+            | Self::MossyArgillite
+            | Self::MossyBasalt
+            | Self::MossyChalk
+            | Self::MossyDolomite
+            | Self::MossyGranite
+            | Self::MossyLimestone => Some("mossy_rock_overlay"),
+
+            Self::MossyCobbledAndesite
+            | Self::MossyCobbledArgillite
+            | Self::MossyCobbledBasalt
+            | Self::MossyCobbledChalk
+            | Self::MossyCobbledDolomite
+            | Self::MossyCobbledGranite
+            | Self::MossyCobbledLimestone => Some("mossy_cobbled_overlay"),
+
+            Self::GemDiamondBasalt | Self::GemDiamondGabbro => Some("gem_diamond_overlay"),
+            Self::GemEmeraldMarble | Self::GemEmeraldSlate => Some("gem_emerald_overlay"),
+            Self::GemOnyxSlate => Some("gem_onyx_overlay"),
+            Self::GemOpalSandstoneWhite => Some("gem_opal_overlay"),
+
+            Self::GemVeinAndesite
+            | Self::GemVeinBasalt
+            | Self::GemVeinDolomite
+            | Self::GemVeinGabbro
+            | Self::GemVeinGranite
+            | Self::GemVeinMarble
+            | Self::GemVeinSlate => Some("gem_vein_overlay"),
+
+            Self::OreCinnabarBasalt => Some("ore_cinnabar_overlay"),
+
+            Self::OreCoalArgillite
+            | Self::OreCoalChalk
+            | Self::OreCoalDolomite
+            | Self::OreCoalGranite
+            | Self::OreCoalLimestone
+            | Self::OreCoalSandstoneCommon => Some("ore_coal_overlay"),
+
+            Self::OreCopperAndesite
+            | Self::OreCopperDolomite
+            | Self::OreCopperGranite
+            | Self::OreCopperSandstoneCommon
+            | Self::OreCopperSandstoneRed
+            | Self::OreCopperSandstoneWhite => Some("ore_copper_overlay"),
+
+            Self::OreGoldGabbro
+            | Self::OreGoldGranite
+            | Self::OreGoldSandstoneRed
+            | Self::OreGoldSlate => Some("ore_gold_overlay"),
+
+            Self::OreIronAndesite
+            | Self::OreIronBasalt
+            | Self::OreIronDolomite
+            | Self::OreIronGabbro
+            | Self::OreIronGranite
+            | Self::OreIronSlate => Some("ore_iron_overlay"),
+
+            Self::OreLazuriteLimestone | Self::OreLazuriteMarble => Some("ore_lazurite_overlay"),
+
+            Self::OrePlatinumBasalt | Self::OrePlatinumGabbro => Some("ore_platinum_overlay"),
+
+            Self::OreSilverAndesite | Self::OreSilverMarble | Self::OreSilverSlate => {
+                Some("ore_silver_overlay")
+            }
+
+            Self::OreSulfurBasalt => Some("ore_sulfur_overlay"),
+
+            Self::OreTinAndesite
+            | Self::OreTinChalk
+            | Self::OreTinDolomite
+            | Self::OreTinGranite => Some("ore_tin_overlay"),
+
+            Self::OreUraniumGabbro | Self::OreUraniumSlate => Some("ore_uranium_overlay"),
+
+            Self::OreZincAndesite
+            | Self::OreZincArgillite
+            | Self::OreZincDolomite
+            | Self::OreZincSlate => Some("ore_zinc_overlay"),
+
+            Self::AlgaeReefstone => Some("algae_dead_overlay"),
+            Self::BarnaclesReefstone => Some("barnacles_overlay"),
+            Self::BloodyBrain | Self::BloodyFlesh => Some("bloody_overlay"),
             _ => None,
         }
     }
 
     pub fn default_shape(self) -> BlockShape {
-        let id = self as u16;
         if self.is_cross_billboard_const() {
             BlockShape::CrossBillboard
         } else if self.is_torch_const() {
             BlockShape::Torch
         } else if self.is_basket_const() {
             BlockShape::Basket
-        } else if matches!(id, 163 | 166) {
+        } else if matches!(self, Self::PebbleFlintOne | Self::PebbleQuartzOne) {
             BlockShape::PebbleOne
-        } else if matches!(id, 165 | 168) {
+        } else if matches!(self, Self::PebbleFlintTwo | Self::PebbleQuartzTwo) {
             BlockShape::PebbleTwo
-        } else if matches!(id, 164 | 167) {
+        } else if matches!(self, Self::PebbleFlintThree | Self::PebbleQuartzThree) {
             BlockShape::PebbleThree
-        } else if matches!(
-            id,
-            181 | 186
-                | 192
-                | 195
-                | 200
-                | 205
-                | 210
-                | 215
-                | 220
-                | 225
-                | 230
-                | 238
-                | 243
-                | 248
-                | 253
-                | 258
-                | 263
-                | 268
-                | 465
-                | 469
-                | 479
-        ) {
+        } else if matches!(self, Self::BambooStalk) {
             BlockShape::Column
         } else {
             BlockShape::Full
@@ -367,7 +415,6 @@ impl Voxel {
                 | Self::BasaltGrass
                 | Self::ChalkGrass
                 | Self::DolomiteGrass
-                | Self::GneissGrass
                 | Self::GraniteGrass
                 | Self::LimestoneGrass
                 | Self::LoamBurrow
@@ -377,42 +424,37 @@ impl Voxel {
     }
 
     pub fn is_tinted(self) -> bool {
-        let id = self as u16;
         matches!(
-            id,
-            2 | 28
-                | 34
-                | 45
-                | 49
-                | 61
-                | 69
-                | 80
-                | 88
-                | 91
-                | 94
-                | 99
-                | 129
-                | 133
-                | 136
-                | 140
-                | 179
-                | 184
-                | 189
-                | 191
-                | 193
-                | 198
-                | 203
-                | 208
-                | 213
-                | 218
-                | 223
-                | 228
-                | 241
-                | 246
-                | 251
-                | 261
-                | 266
-                | 531..=532 | 536
+            self,
+            Self::OakLeaves
+                | Self::BirchLeaves
+                | Self::PalmLeaves
+                | Self::AcaciaLeaves
+                | Self::BaobabLeaves
+                | Self::KapokLeaves
+                | Self::MahoganyLeaves
+                | Self::MangroveLeaves
+                | Self::WillowLeaves
+                | Self::PineLeaves
+                | Self::YewLeaves
+                | Self::WaterOccupied
+                | Self::LiquidWater
+                | Self::CalicheGrass
+                | Self::LateriteGrass
+                | Self::LoamGrass
+                | Self::PeatGrass
+                | Self::PermafrostGrass
+                | Self::SiltGrass
+                | Self::AndesiteGrass
+                | Self::ArgilliteGrass
+                | Self::BasaltGrass
+                | Self::ChalkGrass
+                | Self::DolomiteGrass
+                | Self::GraniteGrass
+                | Self::LimestoneGrass
+                | Self::LoamBurrow
+                | Self::PeatBurrow
+                | Self::SiltBurrow
         )
     }
 
@@ -437,6 +479,23 @@ impl Voxel {
                 | Self::RedwoodLog
                 | Self::WillowLog
                 | Self::YewLog
+                | Self::AcaciaWood
+                | Self::AspenWood
+                | Self::BaobabWood
+                | Self::BirchWood
+                | Self::CherryWood
+                | Self::CypressWood
+                | Self::FirWood
+                | Self::KapokWood
+                | Self::MahoganyWood
+                | Self::MangroveWood
+                | Self::MapleWood
+                | Self::OakWood
+                | Self::PalmWood
+                | Self::PineWood
+                | Self::RedwoodWood
+                | Self::WillowWood
+                | Self::YewWood
                 | Self::BambooStalk
                 | Self::BoneBlock
                 | Self::CalcinedBone
@@ -468,13 +527,13 @@ impl Voxel {
 
         let id = self as u16;
 
-        // Trees & Wood (logs, planks, wood, bamboo): 179..=270
-        if matches!(id, 179..=270) {
+        // Trees & Wood (logs, planks, wood, bamboo): 153..=244
+        if matches!(id, 153..=244) {
             return NaturalRotationMode::None;
         }
 
-        // Architecture, furniture, utilities, lighting, fibers: 543..=720
-        if matches!(id, 543..=720) {
+        // Architecture, furniture, utilities, lighting, fibers: 435..=596
+        if matches!(id, 435..=596) {
             return NaturalRotationMode::None;
         }
 
@@ -490,7 +549,6 @@ impl Voxel {
                     | Self::BasaltSnow
                     | Self::ChalkSnow
                     | Self::DolomiteSnow
-                    | Self::GneissSnow
                     | Self::GraniteSnow
                     | Self::LimestoneSnow
                     | Self::LoamMulch
@@ -504,23 +562,23 @@ impl Voxel {
             return NaturalRotationMode::SoilSide;
         }
 
-        // Natural isotropic: Soils, sands, gravels, clays, ashes (29..=86)
-        if matches!(id, 29..=86) {
+        // Natural isotropic: Soils, sands, gravels, clays, ashes (29..=84)
+        if matches!(id, 29..=84) {
             return NaturalRotationMode::Isotropic;
         }
 
-        // Geology & Rocks (87..=178)
-        if matches!(id, 87..=178) {
+        // Geology & Rocks (85..=152)
+        if matches!(id, 85..=152) {
             return NaturalRotationMode::Isotropic;
         }
 
-        // Ores, Minerals & Gemology (271..=428)
-        if matches!(id, 271..=428) {
+        // Ores, Minerals & Gemology (245..=318)
+        if matches!(id, 245..=318) {
             return NaturalRotationMode::Isotropic;
         }
 
-        // Crystals, Speleothems, Volcanism, Fossils (429..=530)
-        if matches!(id, 429..=530) {
+        // Crystals, Speleothems, Volcanism, Fossils (319..=348)
+        if matches!(id, 319..=348) {
             return NaturalRotationMode::Isotropic;
         }
 
@@ -554,19 +612,18 @@ impl Voxel {
     pub const fn paint_color(self) -> Option<[f32; 4]> {
         let id = self as u16;
         let color_idx = match id {
-            548..=563 => id - 548, // Brick
-            580..=595 => id - 580, // Fabric
-            597..=612 => id - 597, // Glass
-            615..=630 => id - 615, // Linen
-            636..=651 => id - 636, // Plaster
-            654..=669 => id - 654, // Shingles
-            672..=687 => id - 672, // TintedGlass
-            689..=704 => id - 689, // Wool
+            440..=455 => id - 440, // Brick
+            472..=487 => id - 472, // Fabric
+            489..=504 => id - 489, // Glass
+            507..=522 => id - 507, // Linen
+            528..=543 => id - 528, // Plaster
+            546..=561 => id - 546, // Shingles
+            564..=579 => id - 564, // TintedGlass
+            581..=596 => id - 581, // Wool
             _ => return None,
         };
         Some(Self::PAINT_PALETTE[color_idx as usize])
     }
-
     pub fn tint_color(self) -> [f32; 4] {
         if let Some(paint) = self.paint_color() {
             return paint;
@@ -577,12 +634,26 @@ impl Voxel {
             Self::BirchLeaves => [0.85, 1.25, 0.40, 1.0],
             Self::PineLeaves => [0.40, 0.90, 0.55, 1.0],
             Self::AcaciaLeaves => [0.72, 0.92, 0.28, 1.0],
+            Self::BaobabLeaves => [0.65, 0.95, 0.32, 1.0],
+            Self::KapokLeaves => [0.46, 0.98, 0.36, 1.0],
             Self::MahoganyLeaves => [0.45, 1.00, 0.40, 1.0],
             Self::MangroveLeaves => [0.40, 0.95, 0.42, 1.0],
             Self::PalmLeaves => [0.55, 1.05, 0.30, 1.0],
             Self::WillowLeaves => [0.52, 0.88, 0.48, 1.0],
             Self::YewLeaves => [0.28, 0.70, 0.38, 1.0],
-            s if s.is_tinted() => [0.55, 0.94, 0.42, 1.0],
+            Self::LoamBurrow | Self::PeatBurrow | Self::SiltBurrow => [0.55, 0.94, 0.42, 1.0],
+            Self::CalicheGrass | Self::LateriteGrass => [0.72, 0.85, 0.30, 1.0],
+            Self::LoamGrass
+            | Self::PeatGrass
+            | Self::PermafrostGrass
+            | Self::SiltGrass
+            | Self::AndesiteGrass
+            | Self::ArgilliteGrass
+            | Self::BasaltGrass
+            | Self::ChalkGrass
+            | Self::DolomiteGrass
+            | Self::GraniteGrass
+            | Self::LimestoneGrass => [0.55, 0.94, 0.42, 1.0],
             _ => [1.0, 1.0, 1.0, 1.0],
         }
     }
@@ -636,7 +707,6 @@ impl Voxel {
             | Self::BasaltSnow
             | Self::ChalkSnow
             | Self::DolomiteSnow
-            | Self::GneissSnow
             | Self::GraniteSnow
             | Self::LimestoneSnow => [245, 248, 252, 255],
             Self::PermafrostIcy => [210, 225, 240, 255],
@@ -651,8 +721,6 @@ impl Voxel {
             Self::SandDune => [228, 188, 120, 255],
             Self::SandRed => [194, 102, 62, 255],
             Self::SandWhite => [242, 238, 222, 255],
-            Self::SandPink => [228, 180, 185, 255],
-            Self::SandBlack => [46, 44, 52, 255],
             Self::GravelSandy | Self::PathSandy => [204, 184, 138, 255],
 
             // Sandstones
@@ -660,8 +728,6 @@ impl Voxel {
             Self::SandstoneDune | Self::CobbledSandstoneDune => [218, 178, 112, 255],
             Self::SandstoneRed | Self::CobbledSandstoneRed => [184, 92, 54, 255],
             Self::SandstoneWhite | Self::CobbledSandstoneWhite => [232, 228, 212, 255],
-            Self::SandstonePink | Self::CobbledSandstonePink => [218, 170, 175, 255],
-            Self::SandstoneBlack | Self::CobbledSandstoneBlack => [42, 40, 48, 255],
 
             // Clay variants
             Self::ClayBlue => [120, 140, 155, 255],
@@ -730,8 +796,7 @@ impl Voxel {
             Self::LiquidLava
             | Self::LiquidCoreMagma
             | Self::LiquidMolten
-            | Self::Magma
-            | Self::MantlePlume => Color::srgb(1.0, 0.45, 0.15),
+            | Self::Magma => Color::srgb(1.0, 0.45, 0.15),
             Self::GeothermalVent => Color::srgb(1.0, 0.55, 0.20),
             Self::FungiMycena | Self::FungiMycenaCap => Color::srgb(0.20, 0.90, 0.70),
             Self::CrystalCitrineGlinted => Color::srgb(1.0, 0.85, 0.30),

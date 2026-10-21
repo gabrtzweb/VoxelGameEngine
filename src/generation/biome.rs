@@ -52,8 +52,8 @@ impl BiomeType {
                 subsoil_depth: 3,
                 base_height_offset: 2.0,
                 amplitude_multiplier: 0.9,
-                primary_stone: Voxel::Limestone,
-                cliff_material: Voxel::Limestone,
+                primary_stone: Voxel::Granite,
+                cliff_material: Voxel::CobbledGranite,
             },
             Self::Forest => BiomeConfig {
                 biome_type: self,
@@ -85,7 +85,7 @@ impl BiomeType {
                 subsoil_depth: 4,
                 base_height_offset: 6.0,
                 amplitude_multiplier: 1.3,
-                primary_stone: Voxel::Diorite,
+                primary_stone: Voxel::Andesite,
                 cliff_material: Voxel::FrostIcePacked,
             },
             Self::Highlands => BiomeConfig {
@@ -118,8 +118,8 @@ impl BiomeType {
                 subsoil_depth: 4,
                 base_height_offset: -0.5,
                 amplitude_multiplier: 0.3,
-                primary_stone: Voxel::Limestone,
-                cliff_material: Voxel::SandstoneCommon,
+                primary_stone: Voxel::SandstoneWhite,
+                cliff_material: Voxel::SandstoneWhite,
             },
             Self::OpenOcean => BiomeConfig {
                 biome_type: self,
@@ -135,8 +135,8 @@ impl BiomeType {
             Self::AbyssalTrench => BiomeConfig {
                 biome_type: self,
                 name: "Abyssal Ocean Trench",
-                surface_material: Voxel::SandBlack,
-                subsoil_material: Voxel::Scoria,
+                surface_material: Voxel::GravelAshy,
+                subsoil_material: Voxel::Basalt,
                 subsoil_depth: 3,
                 base_height_offset: -38.0,
                 amplitude_multiplier: 0.8,
@@ -162,7 +162,7 @@ impl BiomeType {
                 subsoil_depth: 4,
                 base_height_offset: -0.2,
                 amplitude_multiplier: 0.35,
-                primary_stone: Voxel::Serpentinite,
+                primary_stone: Voxel::Argillite,
                 cliff_material: Voxel::LoamMud,
             },
         }
@@ -221,7 +221,9 @@ impl BiomeType {
 
     /// Primary tint color for a voxel in this biome.
     pub fn voxel_tint(self, voxel: Voxel) -> [f32; 4] {
-        if voxel.is_grass_soil() {
+        if !voxel.is_tinted() {
+            [1.0, 1.0, 1.0, 1.0]
+        } else if voxel.is_grass_soil() {
             self.grass_color()
         } else if matches!(voxel, Voxel::LiquidWater | Voxel::WaterOccupied) {
             self.water_color()

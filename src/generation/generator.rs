@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use super::{
     biome::{BiomeType, ClimateGenerator, ClimateSample},
     caves::{CaveGenerator, CaveNoiseSample},
+    ores,
     strata::StrataGenerator,
     trees::{self, TreeSpecies},
 };
@@ -281,6 +282,10 @@ impl TerrainGenerator {
                 }
             }
 
+            // Subterranean Ores & Crystal Geodes Generation
+            ores::populate_chunk_ores(&mut voxels, chunk_origin, self.seed);
+            ores::populate_chunk_geodes(&mut voxels, chunk_origin, self.seed);
+
             // Cave interior shaping: natural ledges, slabs, and wall transitions
             let get_v = |voxels_buf: &[Voxel], lx: i32, ly: i32, lz: i32| -> Voxel {
                 if lx >= 0
@@ -323,6 +328,56 @@ impl TerrainGenerator {
                         let world_z = chunk_origin.z + z as i32;
 
                         let above = get_v(&voxels, x as i32, y as i32 + 1, z as i32);
+                        let has_air_neighbor = above == Voxel::Air
+                            || get_v(&voxels, x as i32 - 1, y as i32, z as i32) == Voxel::Air
+                            || get_v(&voxels, x as i32 + 1, y as i32, z as i32) == Voxel::Air
+                            || get_v(&voxels, x as i32, y as i32, z as i32 - 1) == Voxel::Air
+                            || get_v(&voxels, x as i32, y as i32, z as i32 + 1) == Voxel::Air;
+
+                        // Unique Subterranean Cavern Chamber Lining (Cave Karst & Cave Calcite)
+                        if has_air_neighbor {
+                            let cavern_noise = crate::core::noise::gradient_noise_3d(
+                                world_x as f32 * 0.024,
+                                world_y as f32 * 0.032,
+                                world_z as f32 * 0.024,
+                                self.seed.wrapping_add(88_112),
+                            );
+
+                            if cavern_noise > 0.45
+                                && matches!(
+                                    voxel,
+                                    Voxel::Dolomite | Voxel::Limestone | Voxel::Marble
+                                )
+                            {
+                                let rubble_roll = (world_x ^ world_y ^ world_z) & 7;
+                                voxels[idx] = if rubble_roll == 0 {
+                                    Voxel::CobbledCaveKarst
+                                } else {
+                                    Voxel::CaveKarst
+                                };
+                            } else {
+                                let calcite_noise = crate::core::noise::gradient_noise_3d(
+                                    world_x as f32 * 0.026,
+                                    world_y as f32 * 0.036,
+                                    world_z as f32 * 0.026,
+                                    self.seed.wrapping_add(66_331),
+                                );
+                                if calcite_noise > 0.52
+                                    && matches!(
+                                        voxel,
+                                        Voxel::Dolomite | Voxel::Limestone | Voxel::Andesite
+                                    )
+                                {
+                                    let rubble_roll = (world_x ^ world_y ^ world_z) & 7;
+                                    voxels[idx] = if rubble_roll == 0 {
+                                        Voxel::CobbledCaveCalcite
+                                    } else {
+                                        Voxel::CaveCalcite
+                                    };
+                                }
+                            }
+                        }
+
                         if above == Voxel::Air {
                             // Cave floor / shelf: use bottom slabs on gentle 1-block steps
                             let d_west = if !get_v(&voxels, x as i32 - 1, y as i32, z as i32)
@@ -1043,7 +1098,7 @@ impl TerrainGenerator {
             return match column.biome {
                 BiomeType::AbyssalTrench => {
                     if dither_noise > 0.0 {
-                        Voxel::SandBlack
+                        Voxel::GravelAshy
                     } else {
                         Voxel::Obsidian
                     }
@@ -1169,7 +1224,7 @@ impl TerrainGenerator {
             }
             BiomeType::AbyssalTrench => {
                 if dither_noise > 0.0 {
-                    Voxel::SandBlack
+                    Voxel::GravelAshy
                 } else {
                     Voxel::Obsidian
                 }
@@ -1266,9 +1321,9 @@ impl TerrainGenerator {
             if matches!(
                 surface,
                 Voxel::SandCommon
+                    | Voxel::SandDune
                     | Voxel::SandRed
                     | Voxel::SandWhite
-                    | Voxel::SandBlack
                     | Voxel::GravelSandy
                     | Voxel::GravelDirty
                     | Voxel::GravelAshy

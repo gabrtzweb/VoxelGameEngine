@@ -27,11 +27,25 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
         flags |= FLAG_EMPTY;
     }
 
-    if matches!(id, 2 | 26 | 28) {
+    if matches!(v, Voxel::WaterOccupied | Voxel::LiquidWater | Voxel::LiquidSpringWater) {
         flags |= FLAG_WATER;
     }
 
-    if matches!(id, 2 | 10 | 19..=28) {
+    if matches!(
+        v,
+        Voxel::WaterOccupied
+            | Voxel::NullLiquid
+            | Voxel::LiquidAcid
+            | Voxel::LiquidBlood
+            | Voxel::LiquidCoreMagma
+            | Voxel::LiquidLava
+            | Voxel::LiquidMolten
+            | Voxel::LiquidOoze
+            | Voxel::LiquidSludge
+            | Voxel::LiquidSpringWater
+            | Voxel::LiquidTar
+            | Voxel::LiquidWater
+    ) {
         flags |= FLAG_FLUID;
     }
 
@@ -65,8 +79,8 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
         flags |= FLAG_COLLIDABLE;
     }
 
-    // Rocks (87..=178 without pebbles 163..=168) + Ores (271..=428): 250 blocks resolved in 1 single line
-    let is_solid_opaque = matches!(id, 87..=162 | 169..=178 | 271..=428)
+    // Rocks (85..=152) and Ores (245..=318)
+    let is_solid_opaque = (matches!(id, 85..=152 | 245..=318) && !v.is_pebble_const())
         || (!is_empty
             && !is_fluid
             && (flags & FLAG_LEAVES) == 0
@@ -89,12 +103,16 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
         flags |= FLAG_LIGHT;
     }
 
-    let max_fluid_spread = match id {
-        2 | 26 | 28 => 8,
-        19 => 5,
-        10 | 20 => 4,
-        21..=25 => 3,
-        27 => 2,
+    let max_fluid_spread = match v {
+        Voxel::WaterOccupied | Voxel::LiquidWater | Voxel::LiquidSpringWater => 8,
+        Voxel::LiquidAcid => 5,
+        Voxel::NullLiquid | Voxel::LiquidBlood => 4,
+        Voxel::LiquidCoreMagma
+        | Voxel::LiquidLava
+        | Voxel::LiquidMolten
+        | Voxel::LiquidOoze
+        | Voxel::LiquidSludge => 3,
+        Voxel::LiquidTar => 2,
         _ => 0,
     };
 
@@ -113,7 +131,7 @@ const fn init_voxel_properties() -> [VoxelProps; MAX_VOXEL_COUNT] {
     }; MAX_VOXEL_COUNT];
 
     let mut idx = 0;
-    while idx <= 722 {
+    while idx <= 614 {
         if let Some(v) = Voxel::from_u16(idx as u16) {
             table[idx] = compute_voxel_props(v);
         }
@@ -128,168 +146,341 @@ static VOXEL_PROPS: [VoxelProps; MAX_VOXEL_COUNT] = init_voxel_properties();
 impl Voxel {
     #[inline(always)]
     pub const fn is_torch_const(self) -> bool {
-        matches!(self as u16, 573..=578)
+        matches!(
+            self,
+            Self::EmitTorchBlue
+                | Self::EmitTorchCold
+                | Self::EmitTorchFire
+                | Self::EmitTorchGreen
+                | Self::EmitTorchRed
+                | Self::EmitTorchWarm
+        )
     }
 
     #[inline(always)]
     pub const fn is_basket_const(self) -> bool {
-        matches!(self as u16, 511 | 527 | 545)
+        matches!(self, Self::Basket | Self::BirdNest | Self::HayNest)
     }
 
     #[inline(always)]
     pub const fn is_pebble_const(self) -> bool {
-        matches!(self as u16, 163..=168)
+        matches!(
+            self,
+            Self::PebbleFlintOne
+                | Self::PebbleFlintTwo
+                | Self::PebbleFlintThree
+                | Self::PebbleQuartzOne
+                | Self::PebbleQuartzTwo
+                | Self::PebbleQuartzThree
+        )
     }
 
     #[inline(always)]
     pub const fn is_point_light_const(self) -> bool {
         matches!(
-            self as u16,
-            437 | 440 | 443 | 446 | 474 | 567..=578 | 712..=713
+            self,
+            Self::CrystalCitrineGlinted
+                | Self::CrystalFluoriteGlinted
+                | Self::CrystalPinkSaltGlinted
+                | Self::CrystalSeleniteGlinted
+                | Self::GeothermalVent
+                | Self::EmitLamp
+                | Self::EmitLightBlue
+                | Self::EmitLightCold
+                | Self::EmitLightGreen
+                | Self::EmitLightRed
+                | Self::EmitLightWarm
+                | Self::EmitTorchBlue
+                | Self::EmitTorchCold
+                | Self::EmitTorchFire
+                | Self::EmitTorchGreen
+                | Self::EmitTorchRed
+                | Self::EmitTorchWarm
+                | Self::FungiMycena
+                | Self::FungiMycenaCap
         )
     }
 
     #[inline(always)]
     pub const fn emission_level(self) -> u8 {
-        match self as u16 {
-            567..=572 | 19 | 21..=23 | 142 | 144 => 15,
-            573..=578 => 14,
-            474 => 12,
-            712..=713 => 9,
-            437 | 440 | 443 | 446 => 8,
+        match self {
+            Self::EmitLightBlue
+            | Self::EmitLightCold
+            | Self::EmitLightGreen
+            | Self::EmitLightRed
+            | Self::EmitLightWarm
+            | Self::LiquidLava
+            | Self::LiquidCoreMagma
+            | Self::LiquidMolten
+            | Self::Magma => 15,
+
+            Self::EmitLamp
+            | Self::EmitTorchBlue
+            | Self::EmitTorchCold
+            | Self::EmitTorchFire
+            | Self::EmitTorchGreen
+            | Self::EmitTorchRed
+            | Self::EmitTorchWarm => 14,
+
+            Self::GeothermalVent => 12,
+
+            Self::FungiMycena | Self::FungiMycenaCap => 9,
+
+            Self::CrystalCitrineGlinted
+            | Self::CrystalFluoriteGlinted
+            | Self::CrystalPinkSaltGlinted
+            | Self::CrystalSeleniteGlinted
+            | Self::CrystalAmethystGlinted
+            | Self::CrystalAquamarineGlinted => 8,
+
             _ => 0,
         }
     }
 
+    #[inline(always)]
     pub const fn is_leaves_const(self) -> bool {
         matches!(
-            self as u16,
-            179..=180
-                | 184..=185
-                | 189
-                | 191
-                | 193..=194
-                | 198..=199
-                | 203..=204
-                | 208..=209
-                | 213..=214
-                | 218..=219
-                | 223..=224
-                | 228..=229
-                | 234..=237
-                | 241..=242
-                | 246..=247
-                | 251..=252
-                | 256..=257
-                | 261..=262
-                | 266..=267
+            self,
+            Self::AcaciaLeaves
+                | Self::AcaciaLeavesDead
+                | Self::AspenLeaves
+                | Self::AspenLeavesDead
+                | Self::BambooLargeLeaves
+                | Self::BambooSmallLeaves
+                | Self::BaobabLeaves
+                | Self::BaobabLeavesDead
+                | Self::BirchLeaves
+                | Self::BirchLeavesDead
+                | Self::CherryLeaves
+                | Self::CherryLeavesDead
+                | Self::CypressLeaves
+                | Self::CypressLeavesDead
+                | Self::FirLeaves
+                | Self::FirLeavesDead
+                | Self::KapokLeaves
+                | Self::KapokLeavesDead
+                | Self::MahoganyLeaves
+                | Self::MahoganyLeavesDead
+                | Self::MangroveLeaves
+                | Self::MangroveLeavesDead
+                | Self::MapleLeavesDead
+                | Self::MapleLeavesOrange
+                | Self::MapleLeavesRed
+                | Self::MapleLeavesYellow
+                | Self::OakLeaves
+                | Self::OakLeavesDead
+                | Self::PalmLeaves
+                | Self::PalmLeavesDead
+                | Self::PineLeaves
+                | Self::PineLeavesDead
+                | Self::RedwoodLeaves
+                | Self::RedwoodLeavesDead
+                | Self::WillowLeaves
+                | Self::WillowLeavesDead
+                | Self::YewLeaves
+                | Self::YewLeavesDead
         )
     }
 
+    #[inline(always)]
     pub const fn is_cross_billboard_const(self) -> bool {
         matches!(
-            self as u16,
-            8
-                | 430..=431
-                | 433..=434
-                | 436..=437
-                | 439..=440
-                | 442..=443
-                | 445..=446
-                | 460
-                | 462
-                | 464
-                | 468
-                | 471
-                | 473
-                | 476
-                | 478
-                | 481
-                | 485
-                | 490
-                | 493
-                | 496
-                | 498
-                | 500
-                | 502
-                | 504
-                | 506
-                | 518..=521
-                | 705
-                | 707
-                | 709
-                | 712
-                | 714
-                | 716
-                | 718
-                | 721
+            self,
+            Self::NullCrossmesh
+                | Self::CrystalAmethystCluster
+                | Self::CrystalAmethystGlinted
+                | Self::CrystalAquamarineCluster
+                | Self::CrystalAquamarineGlinted
+                | Self::CrystalCitrineCluster
+                | Self::CrystalCitrineGlinted
+                | Self::CrystalFluoriteCluster
+                | Self::CrystalFluoriteGlinted
+                | Self::CrystalPinkSaltCluster
+                | Self::CrystalPinkSaltGlinted
+                | Self::CrystalSeleniteCluster
+                | Self::CrystalSeleniteGlinted
+                | Self::BoneWorms
+                | Self::BrainCoralFan
+                | Self::BubbleCoralFan
+                | Self::DeadCoralFan
+                | Self::DyingCoralFan
+                | Self::FireCoralFan
+                | Self::HeartCoralFan
+                | Self::HornCoralFan
+                | Self::LeafCoralFan
+                | Self::ReedCoralFan
+                | Self::Seagrass
+                | Self::BullKelp
+                | Self::Delesseria
+                | Self::Kelp
+                | Self::RedAlgae
+                | Self::Sargassum
+                | Self::Seaweed
+                | Self::SpikeCoralFan
+                | Self::StaghornCoralFan
+                | Self::SunCoralFan
+                | Self::ThornCoralFan
+                | Self::TubeCoralFan
+                | Self::WaxCoralFan
+                | Self::ZigzagCoralFan
+                | Self::Cobweb
+                | Self::CobwebArch
+                | Self::CobwebHanging
+                | Self::CobwebStretched
+                | Self::FungiAmanita
+                | Self::FungiChanterelle
+                | Self::FungiIndigo
+                | Self::FungiMycena
+                | Self::FungiPorcini
+                | Self::FungiRussula
+                | Self::FungiShiitake
+                | Self::FungiVerdigris
         )
     }
 
+    #[inline(always)]
     pub const fn is_transparent_const(self) -> bool {
         self.is_leaves_const()
             || matches!(
-                self as u16,
-                2 | 26 | 28
-                    | 11..=15
-                    | 17
-                    | 272
-                    | 275
-                    | 292
-                    | 295
-                    | 297
-                    | 429..=446
-                    | 460
-                    | 462
-                    | 464..=465
-                    | 468..=469
-                    | 471
-                    | 473
-                    | 476
-                    | 478..=479
-                    | 481
-                    | 485
-                    | 490
-                    | 493
-                    | 496
-                    | 498
-                    | 500
-                    | 502
-                    | 504
-                    | 506
-                    | 514
-                    | 518..=521
-                    | 528
-                    | 530
-                    | 537
-                    | 596..=612
-                    | 671..=687
-                    | 705
-                    | 707
-                    | 709
-                    | 712
-                    | 714
-                    | 716
-                    | 718
-                    | 721
+                self,
+                Self::WaterOccupied
+                    | Self::LiquidSpringWater
+                    | Self::LiquidWater
+                    | Self::FrostBlueIce
+                    | Self::FrostBlueIceCracked
+                    | Self::FrostIce
+                    | Self::FrostIceBlack
+                    | Self::FrostIceBlackFragile
+                    | Self::FrostIceFragile
+                    | Self::GemDiamondRough
+                    | Self::GemEmeraldRough
+                    | Self::GemRubyRough
+                    | Self::GemSapphireRough
+                    | Self::GemTopazRough
+                    | Self::CrystalAmethystBlock
+                    | Self::CrystalAmethystCluster
+                    | Self::CrystalAmethystGlinted
+                    | Self::CrystalAquamarineBlock
+                    | Self::CrystalAquamarineCluster
+                    | Self::CrystalAquamarineGlinted
+                    | Self::CrystalCitrineBlock
+                    | Self::CrystalCitrineCluster
+                    | Self::CrystalCitrineGlinted
+                    | Self::CrystalFluoriteBlock
+                    | Self::CrystalFluoriteCluster
+                    | Self::CrystalFluoriteGlinted
+                    | Self::CrystalPinkSaltBlock
+                    | Self::CrystalPinkSaltCluster
+                    | Self::CrystalPinkSaltGlinted
+                    | Self::CrystalSeleniteBlock
+                    | Self::CrystalSeleniteCluster
+                    | Self::CrystalSeleniteGlinted
+                    | Self::BoneWorms
+                    | Self::BrainCoralFan
+                    | Self::BubbleCoralFan
+                    | Self::BullKelp
+                    | Self::DeadCoralFan
+                    | Self::Delesseria
+                    | Self::DyingCoralFan
+                    | Self::FireCoralFan
+                    | Self::HeartCoralFan
+                    | Self::HornCoralFan
+                    | Self::Kelp
+                    | Self::LeafCoralFan
+                    | Self::RedAlgae
+                    | Self::ReedCoralFan
+                    | Self::Sargassum
+                    | Self::Seagrass
+                    | Self::Seaweed
+                    | Self::SpikeCoralFan
+                    | Self::StaghornCoralFan
+                    | Self::SunCoralFan
+                    | Self::ThornCoralFan
+                    | Self::TubeCoralFan
+                    | Self::WaxCoralFan
+                    | Self::ZigzagCoralFan
+                    | Self::BlubberBlock
+                    | Self::Cobweb
+                    | Self::CobwebArch
+                    | Self::CobwebHanging
+                    | Self::CobwebStretched
+                    | Self::HoneyBlock
+                    | Self::JellyBlock
+                    | Self::SlimeBlock
+                    | Self::Glass
+                    | Self::GlassBlack
+                    | Self::GlassBlue
+                    | Self::GlassBrown
+                    | Self::GlassDarkBlue
+                    | Self::GlassDarkGrey
+                    | Self::GlassGreen
+                    | Self::GlassLightGrey
+                    | Self::GlassLightPink
+                    | Self::GlassLime
+                    | Self::GlassOrange
+                    | Self::GlassPink
+                    | Self::GlassPurple
+                    | Self::GlassRed
+                    | Self::GlassTurquoise
+                    | Self::GlassWhite
+                    | Self::GlassYellow
+                    | Self::TintedGlass
+                    | Self::TintedGlassBlack
+                    | Self::TintedGlassBlue
+                    | Self::TintedGlassBrown
+                    | Self::TintedGlassDarkBlue
+                    | Self::TintedGlassDarkGrey
+                    | Self::TintedGlassGreen
+                    | Self::TintedGlassLightGrey
+                    | Self::TintedGlassLightPink
+                    | Self::TintedGlassLime
+                    | Self::TintedGlassOrange
+                    | Self::TintedGlassPink
+                    | Self::TintedGlassPurple
+                    | Self::TintedGlassRed
+                    | Self::TintedGlassTurquoise
+                    | Self::TintedGlassWhite
+                    | Self::TintedGlassYellow
+                    | Self::FungiAmanita
+                    | Self::FungiChanterelle
+                    | Self::FungiIndigo
+                    | Self::FungiMycena
+                    | Self::FungiPorcini
+                    | Self::FungiRussula
+                    | Self::FungiShiitake
+                    | Self::FungiVerdigris
             )
     }
 
+    #[inline(always)]
     pub const fn is_light_const(self) -> bool {
         matches!(
-            self as u16,
-            19 | 21..=23
-                | 142
-                | 144
-                | 431
-                | 434
-                | 437
-                | 440
-                | 443
-                | 446
-                | 474
-                | 567..=578
-                | 712..=713
+            self,
+            Self::LiquidLava
+                | Self::LiquidCoreMagma
+                | Self::LiquidMolten
+                | Self::Magma
+                | Self::CrystalAmethystGlinted
+                | Self::CrystalAquamarineGlinted
+                | Self::CrystalCitrineGlinted
+                | Self::CrystalFluoriteGlinted
+                | Self::CrystalPinkSaltGlinted
+                | Self::CrystalSeleniteGlinted
+                | Self::GeothermalVent
+                | Self::EmitLamp
+                | Self::EmitLightBlue
+                | Self::EmitLightCold
+                | Self::EmitLightGreen
+                | Self::EmitLightRed
+                | Self::EmitLightWarm
+                | Self::EmitTorchBlue
+                | Self::EmitTorchCold
+                | Self::EmitTorchFire
+                | Self::EmitTorchGreen
+                | Self::EmitTorchRed
+                | Self::EmitTorchWarm
+                | Self::FungiMycena
+                | Self::FungiMycenaCap
         )
     }
 }
@@ -368,7 +559,7 @@ impl Voxel {
 
     #[inline(always)]
     pub fn is_unbreakable(self) -> bool {
-        matches!(self, Self::Mantle | Self::MantlePlume)
+        matches!(self, Self::Mantle)
     }
 
     #[inline(always)]

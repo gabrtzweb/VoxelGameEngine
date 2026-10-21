@@ -2,6 +2,7 @@ pub mod biome;
 pub mod caves;
 pub mod generator;
 pub mod inspector;
+pub mod ores;
 pub mod strata;
 pub mod trees;
 

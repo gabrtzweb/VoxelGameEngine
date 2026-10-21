@@ -353,16 +353,26 @@ fn fragment(
     let frame_count = vertex_output.uv_b.y;
 
     var layer = i32(round(base_layer));
+    var next_layer = layer;
+    var frame_blend = 0.0;
     let is_emissive = frame_count < -0.5;
     let actual_frame_count = abs(frame_count);
     if (actual_frame_count > 1.5) {
-        let fps = 6.0;
+        let fps = 2.0;
         let count = max(1, i32(round(actual_frame_count)));
-        let frame = (i32(floor(time * fps)) % count + count) % count;
-        layer = layer + frame;
+        let t = max(time, 0.0) * fps;
+        let frame_cur = (i32(floor(t)) % count + count) % count;
+        let frame_next = (frame_cur + 1) % count;
+        frame_blend = fract(t);
+        layer = layer + frame_cur;
+        next_layer = i32(round(base_layer)) + frame_next;
     }
 
-    let tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, layer);
+    var tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, layer);
+    if (actual_frame_count > 1.5) {
+        let next_tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, next_layer);
+        tex_color = mix(tex_color, next_tex_color, frame_blend);
+    }
 
     // Biome / Vertex Tint
     var biome_tint = vertex_output.color.rgb;

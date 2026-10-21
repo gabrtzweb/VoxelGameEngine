@@ -35,7 +35,7 @@ pub const CATALOG_ROW_Y_COORDS: [f32; 10] = [
     43.0, 61.0, 79.0, 97.0, 115.0, 133.0, 151.0, 169.0, 187.0, 205.0,
 ];
 
-pub const AVAILABLE_BLOCKS: [Voxel; 720] = Voxel::ALL;
+pub const AVAILABLE_BLOCKS: [Voxel; 612] = Voxel::ALL;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CreativeCategory {
@@ -90,7 +90,7 @@ impl CreativeCategory {
             Self::Rocks => Voxel::Dolomite,
             Self::Soils => Voxel::LoamDirt,
             Self::Trees => Voxel::OakLog,
-            Self::Ores => Voxel::OreCoalRaw,
+            Self::Ores => Voxel::CrystalAmethystCluster,
             Self::Oceans => Voxel::BrainCoral,
             Self::Vegetation => Voxel::FungiAmanita,
             Self::Organics => Voxel::FleshBlock,
@@ -119,17 +119,37 @@ impl CreativeCategory {
         let is_marine_flora =
             tex.starts_with("vege_") && !id.contains("coral") && id != "bone_worms";
 
+        // Rock outcrop variants (grass/snow on rock matrices) belong in both Soils and Rocks.
+        let is_rock_outcrop = matches!(
+            voxel,
+            Voxel::AndesiteGrass
+                | Voxel::AndesiteSnow
+                | Voxel::ArgilliteGrass
+                | Voxel::ArgilliteSnow
+                | Voxel::BasaltGrass
+                | Voxel::BasaltSnow
+                | Voxel::ChalkGrass
+                | Voxel::ChalkSnow
+                | Voxel::DolomiteGrass
+                | Voxel::DolomiteSnow
+                | Voxel::GraniteGrass
+                | Voxel::GraniteSnow
+                | Voxel::LimestoneGrass
+                | Voxel::LimestoneSnow
+        );
+
         match self {
             Self::All => true,
             Self::Rocks => {
                 !is_ore
                     && (tex.starts_with("rock_")
+                        || is_rock_outcrop
                         || id.starts_with("pebble_")
                         || id.starts_with("dripstone_")
                         || id.starts_with("speleothem_")
                         || id.starts_with("fossil_"))
             }
-            Self::Soils => (tex.starts_with("soil_") && !is_burrow) || is_path,
+            Self::Soils => (tex.starts_with("soil_") && !is_burrow) || is_path || is_rock_outcrop,
             Self::Trees => tex.starts_with("tree_"),
             Self::Ores => is_ore,
             Self::Oceans => tex.starts_with("aqua_") || tex.starts_with("vege_"),

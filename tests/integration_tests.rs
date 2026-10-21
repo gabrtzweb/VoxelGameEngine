@@ -19,5 +19,8 @@ mod culling;
 #[path = "suite/noise.rs"]
 mod noise;
 
+#[path = "suite/ores.rs"]
+mod ores;
+
 #[path = "suite/texture.rs"]
 mod texture;

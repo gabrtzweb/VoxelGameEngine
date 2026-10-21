@@ -123,7 +123,7 @@ pub fn is_soil_valid_for_species(species: TreeSpecies, surface_voxel: Voxel) -> 
         TreeSpecies::Dead | TreeSpecies::Charred => matches!(
             surface_voxel,
             Voxel::AshPumice
-                | Voxel::SandBlack
+                | Voxel::AshVolcanic
                 | Voxel::LoamDirt
                 | Voxel::LoamMulch
                 | Voxel::PeatMulch

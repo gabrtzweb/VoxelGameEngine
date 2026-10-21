@@ -87,6 +87,8 @@ fn test_axis_aligned_pillar_properties() {
     // Axis-aligned pillar detection
     assert!(Voxel::OakLog.is_axis_aligned());
     assert!(Voxel::BaobabLog.is_axis_aligned());
+    assert!(Voxel::OakWood.is_axis_aligned());
+    assert!(Voxel::BaobabWood.is_axis_aligned());
     assert!(Voxel::BoneBlock.is_axis_aligned());
     assert!(Voxel::FleshBlock.is_axis_aligned());
     assert!(Voxel::HayBale.is_axis_aligned());
@@ -106,7 +108,7 @@ fn test_axis_aligned_pillar_properties() {
 
 #[test]
 fn test_voxel_discriminants_continuity() {
-    for id in 0..=722u16 {
+    for id in 0..=614u16 {
         let maybe_voxel = Voxel::from_u16(id);
         assert!(
             maybe_voxel.is_some(),
@@ -114,12 +116,12 @@ fn test_voxel_discriminants_continuity() {
         );
         assert_eq!(maybe_voxel.unwrap() as u16, id);
     }
-    assert_eq!(Voxel::from_u16(723), None);
+    assert_eq!(Voxel::from_u16(615), None);
     assert_eq!(Voxel::from_u16(1000), None);
 
-    assert_eq!(Voxel::ALL.len(), 720);
+    assert_eq!(Voxel::ALL.len(), 612);
     assert_eq!(Voxel::ALL[0], Voxel::DebugAccept);
-    assert_eq!(Voxel::ALL[719], Voxel::FungiVerdigrisCap);
+    assert_eq!(Voxel::ALL[611], Voxel::FungiVerdigrisCap);
 }
 
 #[test]

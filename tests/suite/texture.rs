@@ -134,3 +134,43 @@ fn test_oriented_pillar_textures() {
         10
     );
 }
+
+#[test]
+fn test_pillar_and_leaves_textures_and_tinting() {
+    // 1. Pillar blocks must have distinct bark/side textures, never top rings on sides!
+    assert_eq!(Voxel::OakLog.side_texture_name(), Some("tree_oak_bark"));
+    assert_eq!(Voxel::OakLog.top_texture_name(), Some("tree_oak_log"));
+    assert_eq!(Voxel::BoneBlock.side_texture_name(), Some("bio_bone_side"));
+    assert_eq!(Voxel::BoneBlock.top_texture_name(), Some("bio_bone_top"));
+    assert_eq!(Voxel::FleshBlock.side_texture_name(), Some("bio_flesh_side"));
+    assert_eq!(Voxel::FleshBlock.top_texture_name(), Some("bio_flesh_top"));
+    assert_eq!(Voxel::CornBale.side_texture_name(), Some("deco_corn_bale_side"));
+    assert_eq!(Voxel::CornBale.top_texture_name(), Some("deco_corn_bale_top"));
+    assert_eq!(Voxel::BambooStalk.side_texture_name(), Some("tree_bamboo_stalk"));
+    assert_eq!(Voxel::BambooStalk.top_texture_name(), Some("tree_bamboo_stalk_top"));
+
+    // 2. Dead leaves, seasonal maple leaves, cherry, and aspen must NOT be tinted!
+    assert!(!Voxel::OakLeavesDead.is_tinted());
+    assert!(!Voxel::BirchLeavesDead.is_tinted());
+    assert!(!Voxel::PineLeavesDead.is_tinted());
+    assert!(!Voxel::MapleLeavesOrange.is_tinted());
+    assert!(!Voxel::MapleLeavesRed.is_tinted());
+    assert!(!Voxel::MapleLeavesYellow.is_tinted());
+    assert!(!Voxel::MapleLeavesDead.is_tinted());
+    assert!(!Voxel::CherryLeaves.is_tinted());
+    assert!(!Voxel::AspenLeaves.is_tinted());
+    assert!(!Voxel::FirLeaves.is_tinted());
+    assert!(!Voxel::CypressLeaves.is_tinted());
+    assert!(!Voxel::RedwoodLeaves.is_tinted());
+
+    // 3. Living grayscale canopy species MUST be tinted
+    assert!(Voxel::OakLeaves.is_tinted());
+    assert!(Voxel::BirchLeaves.is_tinted());
+    assert!(Voxel::PalmLeaves.is_tinted());
+    assert!(Voxel::AcaciaLeaves.is_tinted());
+
+    // 4. Bloody blocks must have the bloody overlay
+    assert_eq!(Voxel::BloodyBrain.overlay_texture_name(), Some("bloody_overlay"));
+    assert_eq!(Voxel::BloodyFlesh.overlay_texture_name(), Some("bloody_overlay"));
+}
+

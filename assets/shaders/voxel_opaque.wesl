@@ -62,16 +62,22 @@ fn fragment(
     let raw_frame_param = vertex_output.uv_b.y;
 
     var layer = i32(round(base_layer));
+    var next_layer = layer;
+    var frame_blend = 0.0;
     let is_emissive = raw_frame_param < -0.5;
     let abs_frame_param = abs(raw_frame_param);
     let actual_frame_count = floor(abs_frame_param + 0.1);
     let rot_mode = i32(round((abs_frame_param - actual_frame_count) * 4.0));
 
     if (actual_frame_count > 1.5) {
-        let fps = 6.0;
+        let fps = 1.25;
         let count = max(1, i32(round(actual_frame_count)));
-        let frame = (i32(floor(max(globals.time, 0.0) * fps)) % count + count) % count;
-        layer = layer + frame;
+        let t = max(globals.time, 0.0) * fps;
+        let frame_cur = (i32(floor(t)) % count + count) % count;
+        let frame_next = (frame_cur + 1) % count;
+        frame_blend = fract(t);
+        layer = layer + frame_cur;
+        next_layer = i32(round(base_layer)) + frame_next;
     }
 
     var uv = fract(vertex_output.uv);
@@ -125,7 +131,11 @@ fn fragment(
         }
     }
 
-    let tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, layer);
+    var tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, layer);
+    if (actual_frame_count > 1.5) {
+        let next_tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, next_layer);
+        tex_color = mix(tex_color, next_tex_color, frame_blend);
+    }
 
     // Alpha Cutout: Discard see-through pixels (e.g. foliage leaves, alpha-cutout quads)
     if (tex_color.a < 0.5) {

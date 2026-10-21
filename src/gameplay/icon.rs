@@ -26,16 +26,64 @@ impl BlockIcons {
     }
 }
 
+#[derive(Resource)]
+pub struct AnimatedBlockIcons {
+    pub entries: Vec<AnimatedIconEntry>,
+    pub timer: Timer,
+}
+
+impl Default for AnimatedBlockIcons {
+    fn default() -> Self {
+        Self {
+            entries: Vec::new(),
+            timer: Timer::from_seconds(0.125, TimerMode::Repeating),
+        }
+    }
+}
+
+pub struct AnimatedIconEntry {
+    pub handle: Handle<Image>,
+    pub frames: Vec<Vec<u8>>,
+    pub current_frame: usize,
+}
+
+pub fn update_animated_block_icons(
+    time: Res<Time>,
+    mut animated_icons: ResMut<AnimatedBlockIcons>,
+    mut images: ResMut<Assets<Image>>,
+) {
+    animated_icons.timer.tick(time.delta());
+    if !animated_icons.timer.just_finished() {
+        return;
+    }
+
+    for entry in &mut animated_icons.entries {
+        if entry.frames.len() <= 1 {
+            continue;
+        }
+        entry.current_frame = (entry.current_frame + 1) % entry.frames.len();
+        if let Some(mut image) = images.get_mut(&entry.handle) {
+            image.data = Some(entry.frames[entry.current_frame].clone());
+        }
+    }
+}
+
 pub struct BlockIconPlugin;
 
 impl Plugin for BlockIconPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<BlockIcons>()
-            .add_systems(Startup, setup_block_icons);
+            .init_resource::<AnimatedBlockIcons>()
+            .add_systems(Startup, setup_block_icons)
+            .add_systems(Update, update_animated_block_icons);
     }
 }
 
-pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: ResMut<BlockIcons>) {
+pub fn setup_block_icons(
+    mut images: ResMut<Assets<Image>>,
+    mut block_icons: ResMut<BlockIcons>,
+    mut animated_icons: ResMut<AnimatedBlockIcons>,
+) {
     let mut fallback_image = None;
 
     for &voxel in &Voxel::ALL {
@@ -49,15 +97,44 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
             && let Ok(img) = image::open(item_path)
         {
             let rgba = img.into_rgba8();
-            let icon_image = create_item_icon_image(&rgba);
-            let handle = images.add(icon_image);
+            let (src_w, src_h) = rgba.dimensions();
 
-            if fallback_image.is_none() {
-                fallback_image = Some(handle.clone());
+            if src_h > src_w && src_h % src_w == 0 {
+                let frame_count = (src_h / src_w) as usize;
+                let mut icon_frames = Vec::with_capacity(frame_count);
+
+                for f in 0..frame_count {
+                    let frame_y_offset = (f as u32) * src_w;
+                    let frame_rgba = extract_sub_image(&rgba, 0, frame_y_offset, src_w, src_w);
+                    let frame_canvas = create_item_icon_frame(&frame_rgba);
+                    icon_frames.push(frame_canvas);
+                }
+
+                let first_img = create_icon_image_from_canvas(&icon_frames[0]);
+                let handle = images.add(first_img);
+
+                if fallback_image.is_none() {
+                    fallback_image = Some(handle.clone());
+                }
+
+                block_icons.icons.insert(voxel, handle.clone());
+                animated_icons.entries.push(AnimatedIconEntry {
+                    handle,
+                    frames: icon_frames,
+                    current_frame: 0,
+                });
+                continue;
+            } else {
+                let icon_image = create_item_icon_image(&rgba);
+                let handle = images.add(icon_image);
+
+                if fallback_image.is_none() {
+                    fallback_image = Some(handle.clone());
+                }
+
+                block_icons.icons.insert(voxel, handle);
+                continue;
             }
-
-            block_icons.icons.insert(voxel, handle);
-            continue;
         }
 
         let mut raw_side = if let Some(side_name) = voxel.side_texture_name() {
@@ -103,6 +180,44 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
                     }
                 }
             }
+        }
+
+        // Crossmesh billboards (clusters, mushrooms, coral fans, aquatic plants, cobwebs):
+        // rendered directly as crisp, flat 2D icons instead of distorted isometric cubes.
+        if voxel.is_cross_billboard() {
+            let side_tint = voxel.tint_color();
+            let all_frames = load_voxel_all_frames_16x16(voxel);
+
+            if let Some(frames_16x16) = all_frames.filter(|f| f.len() > 1) {
+                let mut icon_frames = Vec::with_capacity(frames_16x16.len());
+                for f_data in &frames_16x16 {
+                    let canvas = render_flat_frame(f_data, side_tint);
+                    icon_frames.push(canvas);
+                }
+                let first_img = create_icon_image_from_canvas(&icon_frames[0]);
+                let handle = images.add(first_img);
+
+                if fallback_image.is_none() {
+                    fallback_image = Some(handle.clone());
+                }
+
+                block_icons.icons.insert(voxel, handle.clone());
+                animated_icons.entries.push(AnimatedIconEntry {
+                    handle,
+                    frames: icon_frames,
+                    current_frame: 0,
+                });
+            } else {
+                let icon_image = render_flat_block_icon(&raw_side, side_tint);
+                let handle = images.add(icon_image);
+
+                if fallback_image.is_none() {
+                    fallback_image = Some(handle.clone());
+                }
+
+                block_icons.icons.insert(voxel, handle);
+            }
+            continue;
         }
 
         let raw_top = if let Some(top_name) = voxel.top_texture_name() {
@@ -154,17 +269,43 @@ pub fn setup_block_icons(mut images: ResMut<Assets<Image>>, mut block_icons: Res
         } else {
             voxel.tint_color()
         };
-        let top_tint = voxel.tint_color();
+        let top_tint = if matches!(voxel, Voxel::LoamBurrow | Voxel::PeatBurrow | Voxel::SiltBurrow) {
+            [1.0, 1.0, 1.0, 1.0]
+        } else {
+            voxel.tint_color()
+        };
 
-        let icon_image =
-            render_isometric_block_icon_multi(&raw_side, &raw_top, side_tint, top_tint);
-        let handle = images.add(icon_image);
+        let all_frames = load_voxel_all_frames_16x16(voxel);
+        if let Some(frames_16x16) = all_frames.filter(|f| f.len() > 1) {
+            let mut icon_frames = Vec::with_capacity(frames_16x16.len());
+            for f_data in &frames_16x16 {
+                let canvas = render_isometric_frame(f_data, f_data, side_tint, top_tint);
+                icon_frames.push(canvas);
+            }
+            let first_img = create_icon_image_from_canvas(&icon_frames[0]);
+            let handle = images.add(first_img);
 
-        if fallback_image.is_none() {
-            fallback_image = Some(handle.clone());
+            if fallback_image.is_none() {
+                fallback_image = Some(handle.clone());
+            }
+
+            block_icons.icons.insert(voxel, handle.clone());
+            animated_icons.entries.push(AnimatedIconEntry {
+                handle,
+                frames: icon_frames,
+                current_frame: 0,
+            });
+        } else {
+            let icon_image =
+                render_isometric_block_icon_multi(&raw_side, &raw_top, side_tint, top_tint);
+            let handle = images.add(icon_image);
+
+            if fallback_image.is_none() {
+                fallback_image = Some(handle.clone());
+            }
+
+            block_icons.icons.insert(voxel, handle);
         }
-
-        block_icons.icons.insert(voxel, handle);
     }
 
     if let Some(fb) = fallback_image {
@@ -232,6 +373,16 @@ pub fn render_isometric_block_icon_multi(
     side_tint: [f32; 4],
     top_tint: [f32; 4],
 ) -> Image {
+    let canvas = render_isometric_frame(side_16x16, top_16x16, side_tint, top_tint);
+    create_icon_image_from_canvas(&canvas)
+}
+
+pub fn render_isometric_frame(
+    side_16x16: &[u8],
+    top_16x16: &[u8],
+    side_tint: [f32; 4],
+    top_tint: [f32; 4],
+) -> Vec<u8> {
     let mut canvas = vec![0u8; (ICON_SIZE * ICON_SIZE * 4) as usize];
 
     for y in 0..ICON_SIZE {
@@ -281,7 +432,43 @@ pub fn render_isometric_block_icon_multi(
     }
 
     apply_silhouette_outline(&mut canvas);
+    canvas
+}
 
+/// Renders crossmesh billboards (clusters, mushrooms, coral fans, cobwebs) as clean flat 2D icons.
+pub fn render_flat_block_icon(raw_16x16: &[u8], tint: [f32; 4]) -> Image {
+    let canvas = render_flat_frame(raw_16x16, tint);
+    create_icon_image_from_canvas(&canvas)
+}
+
+pub fn render_flat_frame(raw_16x16: &[u8], tint: [f32; 4]) -> Vec<u8> {
+    let mut canvas = vec![0u8; (ICON_SIZE * ICON_SIZE * 4) as usize];
+
+    for y in 0..ICON_SIZE {
+        let ty = (y / 2) as usize;
+        for x in 0..ICON_SIZE {
+            let tx = (x / 2) as usize;
+            let src_idx = (ty * 16 + tx) * 4;
+            if src_idx + 3 < raw_16x16.len() {
+                let r = raw_16x16[src_idx] as f32 / 255.0;
+                let g = raw_16x16[src_idx + 1] as f32 / 255.0;
+                let b = raw_16x16[src_idx + 2] as f32 / 255.0;
+                let a = raw_16x16[src_idx + 3] as f32 / 255.0;
+
+                let out_idx = ((y * ICON_SIZE + x) * 4) as usize;
+                canvas[out_idx] = ((r * tint[0]).clamp(0.0, 1.0) * 255.0) as u8;
+                canvas[out_idx + 1] = ((g * tint[1]).clamp(0.0, 1.0) * 255.0) as u8;
+                canvas[out_idx + 2] = ((b * tint[2]).clamp(0.0, 1.0) * 255.0) as u8;
+                canvas[out_idx + 3] = ((a * tint[3]).clamp(0.0, 1.0) * 255.0) as u8;
+            }
+        }
+    }
+
+    apply_silhouette_outline(&mut canvas);
+    canvas
+}
+
+fn create_icon_image_from_canvas(canvas: &[u8]) -> Image {
     let mut image = Image::new_fill(
         Extent3d {
             width: ICON_SIZE,
@@ -289,7 +476,7 @@ pub fn render_isometric_block_icon_multi(
             depth_or_array_layers: 1,
         },
         TextureDimension::D2,
-        &canvas,
+        canvas,
         TextureFormat::Rgba8UnormSrgb,
         RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
     );
@@ -370,11 +557,26 @@ fn voxel_item_texture_path(voxel: Voxel) -> Option<&'static str> {
         Voxel::EmitTorchBlue => Some("assets/textures/items/emit_blue_torch_item.png"),
         Voxel::EmitTorchGreen => Some("assets/textures/items/emit_green_torch_item.png"),
         Voxel::EmitTorchRed => Some("assets/textures/items/emit_red_torch_item.png"),
+        Voxel::EmitTorchWarm => Some("assets/textures/items/emit_warm_torch_item.png"),
+        Voxel::EmitTorchCold => Some("assets/textures/items/emit_cold_torch_item.png"),
+        Voxel::EmitTorchFire => Some("assets/textures/items/emit_torch_item.png"),
+        Voxel::BambooStalk => Some("assets/textures/items/tree_bamboo_stalk_item.png"),
+        Voxel::PebbleFlintOne => Some("assets/textures/items/pebble_flint_one_item.png"),
+        Voxel::PebbleFlintTwo => Some("assets/textures/items/pebble_flint_two_item.png"),
+        Voxel::PebbleFlintThree => Some("assets/textures/items/pebble_flint_three_item.png"),
+        Voxel::PebbleQuartzOne => Some("assets/textures/items/pebble_quartz_one_item.png"),
+        Voxel::PebbleQuartzTwo => Some("assets/textures/items/pebble_quartz_two_item.png"),
+        Voxel::PebbleQuartzThree => Some("assets/textures/items/pebble_quartz_three_item.png"),
         _ => None,
     }
 }
 
 fn create_item_icon_image(rgba: &image::RgbaImage) -> Image {
+    let canvas = create_item_icon_frame(rgba);
+    create_icon_image_from_canvas(&canvas)
+}
+
+fn create_item_icon_frame(rgba: &image::RgbaImage) -> Vec<u8> {
     let (src_w, src_h) = rgba.dimensions();
     let mut canvas = vec![0u8; (ICON_SIZE * ICON_SIZE * 4) as usize];
 
@@ -394,18 +596,94 @@ fn create_item_icon_image(rgba: &image::RgbaImage) -> Image {
         }
     }
 
-    let mut image = Image::new_fill(
-        Extent3d {
-            width: ICON_SIZE,
-            height: ICON_SIZE,
-            depth_or_array_layers: 1,
-        },
-        TextureDimension::D2,
-        &canvas,
-        TextureFormat::Rgba8UnormSrgb,
-        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
-    );
+    canvas
+}
 
-    image.sampler = ImageSampler::nearest();
-    image
+fn extract_sub_image(rgba: &image::RgbaImage, sx: u32, sy: u32, w: u32, h: u32) -> image::RgbaImage {
+    let mut sub = image::RgbaImage::new(w, h);
+    for y in 0..h {
+        for x in 0..w {
+            sub.put_pixel(x, y, *rgba.get_pixel(sx + x, sy + y));
+        }
+    }
+    sub
+}
+
+fn load_voxel_all_frames_16x16(voxel: Voxel) -> Option<Vec<Vec<u8>>> {
+    // 1. Check if voxel has a multi-frame animated overlay (e.g. Onyx and Opal glimmer)
+    if let Some(ov_name) = voxel.overlay_texture_name() {
+        let ov_path = format!("assets/textures/blocks/{ov_name}.png");
+        if Path::new(&ov_path).exists()
+            && let Ok(ov_img) = image::open(&ov_path)
+        {
+            let ov_rgba = ov_img.into_rgba8();
+            let (ov_w, ov_h) = ov_rgba.dimensions();
+            if ov_w == 16 && ov_h > 16 && ov_h % 16 == 0 {
+                let frame_count = (ov_h / 16) as usize;
+                let base_side = if let Some(side_name) = voxel.side_texture_name() {
+                    load_raw_16x16_by_name(side_name, voxel.fallback_color())
+                } else {
+                    load_voxel_raw_16x16(voxel)
+                };
+
+                let mut frames = Vec::with_capacity(frame_count);
+                for f in 0..frame_count {
+                    let mut frame = base_side.clone();
+                    let y_start = (f * 16) as u32;
+                    for y in 0..16 {
+                        for x in 0..16 {
+                            let p = ov_rgba.get_pixel(x, y_start + y);
+                            let ov_a = (p[3] as f32) / 255.0;
+                            if ov_a > 0.001 {
+                                let idx = ((y * 16 + x) * 4) as usize;
+                                let base_r = frame[idx] as f32;
+                                let base_g = frame[idx + 1] as f32;
+                                let base_b = frame[idx + 2] as f32;
+                                frame[idx] = (base_r * (1.0 - ov_a) + p[0] as f32 * ov_a)
+                                    .round()
+                                    .clamp(0.0, 255.0) as u8;
+                                frame[idx + 1] = (base_g * (1.0 - ov_a) + p[1] as f32 * ov_a)
+                                    .round()
+                                    .clamp(0.0, 255.0) as u8;
+                                frame[idx + 2] = (base_b * (1.0 - ov_a) + p[2] as f32 * ov_a)
+                                    .round()
+                                    .clamp(0.0, 255.0) as u8;
+                            }
+                        }
+                    }
+                    frames.push(frame);
+                }
+                return Some(frames);
+            }
+        }
+    }
+
+    // 2. Base texture multi-frame animations (all fluids using _still or base strip)
+    let name = voxel.texture_name()?;
+    let candidate_paths = [
+        format!("assets/textures/blocks/{name}_still.png"),
+        format!("assets/textures/blocks/{name}.png"),
+    ];
+    let path = candidate_paths.into_iter().find(|p| Path::new(p).exists())?;
+    let img = image::open(&path).ok()?;
+    let rgba = img.into_rgba8();
+    let (w, h) = rgba.dimensions();
+    if w == 16 && h > 16 && h % 16 == 0 {
+        let count = (h / 16) as usize;
+        let mut frames = Vec::with_capacity(count);
+        for f in 0..count {
+            let mut frame = Vec::with_capacity(16 * 16 * 4);
+            let y_start = (f * 16) as u32;
+            for y in 0..16 {
+                for x in 0..16 {
+                    let p = rgba.get_pixel(x, y_start + y);
+                    frame.extend_from_slice(&p.0);
+                }
+            }
+            frames.push(frame);
+        }
+        Some(frames)
+    } else {
+        None
+    }
 }

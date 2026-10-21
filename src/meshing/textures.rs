@@ -174,41 +174,57 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
         if let Some(ov_name) = overlay_name
             && let Some(overlay) = try_load_image(&format!("assets/textures/blocks/{ov_name}.png"))
-            && let Some(overlay_frame) = overlay.frames.first()
         {
             if ov_name == "soil_grass_side_overlay" {
-                let t = tint.unwrap_or([1.0, 1.0, 1.0, 1.0]);
-                for variant in &mut variants {
-                    for frame in &mut variant.frames {
-                        for i in 0..256 {
-                            let idx = i * 4;
-                            let ov_a = overlay_frame[idx + 3] as f32 / 255.0;
-                            if ov_a > 0.0 {
-                                let ov_r = overlay_frame[idx] as f32 * t[0];
-                                let ov_g = overlay_frame[idx + 1] as f32 * t[1];
-                                let ov_b = overlay_frame[idx + 2] as f32 * t[2];
+                if let Some(overlay_frame) = overlay.frames.first() {
+                    let t = tint.unwrap_or([1.0, 1.0, 1.0, 1.0]);
+                    for variant in &mut variants {
+                        for frame in &mut variant.frames {
+                            for i in 0..256 {
+                                let idx = i * 4;
+                                let ov_a = overlay_frame[idx + 3] as f32 / 255.0;
+                                if ov_a > 0.0 {
+                                    let ov_r = overlay_frame[idx] as f32 * t[0];
+                                    let ov_g = overlay_frame[idx + 1] as f32 * t[1];
+                                    let ov_b = overlay_frame[idx + 2] as f32 * t[2];
 
-                                let base_r = frame[idx] as f32;
-                                let base_g = frame[idx + 1] as f32;
-                                let base_b = frame[idx + 2] as f32;
+                                    let base_r = frame[idx] as f32;
+                                    let base_g = frame[idx + 1] as f32;
+                                    let base_b = frame[idx + 2] as f32;
 
-                                frame[idx] = (base_r * (1.0 - ov_a) + ov_r * ov_a)
-                                    .round()
-                                    .clamp(0.0, 255.0)
-                                    as u8;
-                                frame[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a)
-                                    .round()
-                                    .clamp(0.0, 255.0)
-                                    as u8;
-                                frame[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a)
-                                    .round()
-                                    .clamp(0.0, 255.0)
-                                    as u8;
+                                    frame[idx] = (base_r * (1.0 - ov_a) + ov_r * ov_a)
+                                        .round()
+                                        .clamp(0.0, 255.0)
+                                        as u8;
+                                    frame[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a)
+                                        .round()
+                                        .clamp(0.0, 255.0)
+                                        as u8;
+                                    frame[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a)
+                                        .round()
+                                        .clamp(0.0, 255.0)
+                                        as u8;
+                                }
                             }
                         }
                     }
                 }
-            } else {
+            } else if overlay.frames.len() > 1 {
+                // Multi-frame animated overlay (e.g. Onyx and Opal glimmering over host stone)
+                for variant in &mut variants {
+                    let base_frame = variant
+                        .frames
+                        .first()
+                        .cloned()
+                        .unwrap_or_else(|| solid_color_texture(fallback).frames[0].clone());
+                    variant.frames.clear();
+                    for ov_frame in &overlay.frames {
+                        let mut blended = base_frame.clone();
+                        blend_single_overlay_frame(&mut blended, ov_frame);
+                        variant.frames.push(blended);
+                    }
+                }
+            } else if let Some(overlay_frame) = overlay.frames.first() {
                 composite_overlay(&mut variants, overlay_frame);
             }
         }
@@ -352,32 +368,36 @@ pub struct LoadedTexture {
     pub frames: Vec<Vec<u8>>,
 }
 
+fn blend_single_overlay_frame(frame: &mut [u8], overlay_frame: &[u8]) {
+    for i in 0..256 {
+        let idx = i * 4;
+        let ov_a = overlay_frame[idx + 3] as f32 / 255.0;
+        if ov_a > 0.0 {
+            let ov_r = overlay_frame[idx] as f32;
+            let ov_g = overlay_frame[idx + 1] as f32;
+            let ov_b = overlay_frame[idx + 2] as f32;
+
+            let base_r = frame[idx] as f32;
+            let base_g = frame[idx + 1] as f32;
+            let base_b = frame[idx + 2] as f32;
+
+            frame[idx] = (base_r * (1.0 - ov_a) + ov_r * ov_a)
+                .round()
+                .clamp(0.0, 255.0) as u8;
+            frame[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a)
+                .round()
+                .clamp(0.0, 255.0) as u8;
+            frame[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a)
+                .round()
+                .clamp(0.0, 255.0) as u8;
+        }
+    }
+}
+
 fn composite_overlay(variants: &mut [LoadedTexture], overlay_frame: &[u8]) {
     for variant in variants {
         for frame in &mut variant.frames {
-            for i in 0..256 {
-                let idx = i * 4;
-                let ov_a = overlay_frame[idx + 3] as f32 / 255.0;
-                if ov_a > 0.0 {
-                    let ov_r = overlay_frame[idx] as f32;
-                    let ov_g = overlay_frame[idx + 1] as f32;
-                    let ov_b = overlay_frame[idx + 2] as f32;
-
-                    let base_r = frame[idx] as f32;
-                    let base_g = frame[idx + 1] as f32;
-                    let base_b = frame[idx + 2] as f32;
-
-                    frame[idx] = (base_r * (1.0 - ov_a) + ov_r * ov_a)
-                        .round()
-                        .clamp(0.0, 255.0) as u8;
-                    frame[idx + 1] = (base_g * (1.0 - ov_a) + ov_g * ov_a)
-                        .round()
-                        .clamp(0.0, 255.0) as u8;
-                    frame[idx + 2] = (base_b * (1.0 - ov_a) + ov_b * ov_a)
-                        .round()
-                        .clamp(0.0, 255.0) as u8;
-                }
-            }
+            blend_single_overlay_frame(frame, overlay_frame);
         }
     }
 }

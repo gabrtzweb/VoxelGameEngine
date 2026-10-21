@@ -7,7 +7,7 @@ pub mod shaping;
 pub mod target_hud;
 pub mod targeting;
 
-pub use icon::{BlockIcons, setup_block_icons};
+pub use icon::{AnimatedBlockIcons, BlockIcons, setup_block_icons};
 pub use interaction::SelectedVoxel;
 pub use radial_menu::RadialMenuState;
 pub use targeting::{CurrentTarget, TargetingSet, VoxelTarget};
