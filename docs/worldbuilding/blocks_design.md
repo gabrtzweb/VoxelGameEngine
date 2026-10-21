@@ -3,9 +3,9 @@
 This master document centralizes, unifies, and catalogs **all blocks implemented in the Voxel Engine**, organized across the 14 worldbuilding subdomains located in `docs/worldbuilding/blocks/`.
 
 > [!IMPORTANT]
-> **Project Grand Total: 824 Cataloged Unique Blocks**  
+> **Project Grand Total: 716 Cataloged Unique Blocks**  
 > Summing all 14 core domains of the engine's block ecosystem:  
-> **8** (systems) + **18** (fluids) + **58** (soils) + **92** (rocks) + **92** (trees) + **158** (ores) + **28** (caverns) + **50** (oceans) + **36** (organics) + **162** (decorations) + **18** (mushrooms) + **38** (vegetation) + **32** (flowers) + **34** (crops) = **824 Total Blocks**.
+> **8** (systems) + **18** (fluids) + **56** (soils) + **68** (rocks) + **92** (trees) + **74** (ores) + **30** (caverns) + **50** (oceans) + **36** (organics) + **162** (decorations) + **18** (mushrooms) + **38** (vegetation) + **32** (flowers) + **34** (crops) = **716 Total Blocks**.
 
 For each block, the following properties are systematically specified:
 1. **Unique Block Identifier (`Block ID`)**.
@@ -24,14 +24,14 @@ For each block, the following properties are systematically specified:
 ## Master Summary & Block Census
 
 | Category | Domain / Directory | Block Count | Texture Count | Status | Primary Architectural Specification | Navigation Link |
-| :---: | :--- | :--- | :--- | :---: | :--- | :--- |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- |
 | **01** | Technical & System Blocks (`systems`) | **8 blocks** | **8 textures** | ✅ **100% Complete** | [systems_design.md](blocks/systems_design.md) | [Go to Section 01](#01-technical--system-blocks-systems--8-blocks-100-complete) |
 | **02** | Hydrosphere & Cryology (`fluids`) | **18 blocks** | **54 textures** | ✅ **100% Complete** | [fluids_design.md](blocks/fluids_design.md) | [Go to Section 02](#02-hydrosphere--cryology-fluids--18-blocks-100-complete) |
-| **03** | Pedology & Soils (`soils`) | **58 blocks** | **184 textures** | ✅ **100% Complete** | [soils_design.md](blocks/soils_design.md) | [Go to Section 03](#03-pedology--soils-soils--58-blocks-100-complete) |
-| **04** | Geology & Rocks (`rocks`) | **92 blocks** | **216 textures** | ✅ **100% Complete** | [rocks_design.md](blocks/rocks_design.md) | [Go to Section 04](#04-geology--rocks-rocks--92-blocks-100-complete) |
+| **03** | Pedology & Soils (`soils`) | **56 blocks** | **178 textures** | ✅ **100% Complete** | [soils_design.md](blocks/soils_design.md) | [Go to Section 03](#03-pedology--soils-soils--56-blocks-100-complete) |
+| **04** | Geology & Rocks (`rocks`) | **68 blocks** | **150 textures** | ✅ **100% Complete** | [rocks_design.md](blocks/rocks_design.md) | [Go to Section 04](#04-geology--rocks-rocks--68-blocks-100-complete) |
 | **05** | Trees, Forestry & Dendrology (`trees`) | **92 blocks** | **242 textures** | ✅ **100% Complete** | [trees_design.md](blocks/trees_design.md) | [Go to Section 05](#05-trees-forestry--dendrology-trees--92-blocks-100-complete) |
-| **06** | Ores, Minerals & Gemology (`ores`) | **158 blocks** | **156 textures** | ✅ **100% Complete** | [ores_design.md](blocks/ores_design.md) | [Go to Section 06](#06-ores-minerals--gemology-ores--158-blocks-100-complete) |
-| **07** | Speleology & Crystals (`caverns`) | **28 blocks** | **122 textures** | ✅ **100% Complete** | [caverns_design.md](blocks/caverns_design.md) | [Go to Section 07](#07-speleology--crystals-caverns--28-blocks-100-complete) |
+| **06** | Ores, Minerals & Gemology (`ores`) | **74 blocks** | **111 textures** | ✅ **100% Complete** | [ores_design.md](blocks/ores_design.md) | [Go to Section 06](#06-ores-minerals--gemology-ores--74-blocks-100-complete) |
+| **07** | Speleology & Crystals (`caverns`) | **30 blocks** | **114 textures** | ✅ **100% Complete** | [caverns_design.md](blocks/caverns_design.md) | [Go to Section 07](#07-speleology--crystals-caverns--30-blocks-100-complete) |
 | **08** | Ocean & Benthic Ecosystems (`oceans`) | **50 blocks** | **140 textures** | ✅ **100% Complete** | [oceans_design.md](blocks/oceans_design.md) | [Go to Section 08](#08-ocean--benthic-ecosystems-oceans--50-blocks-100-complete) |
 | **09** | Biomaterials, Fauna & Organic Matter (`organics`) | **36 blocks** | **94 textures** | ✅ **100% Complete** | [organics_design.md](blocks/organics_design.md) | [Go to Section 09](#09-biomaterials-fauna--organic-matter-organics--36-blocks-100-complete) |
 | **10** | Decorations, Lighting & Architecture (`decorations`) | **162 blocks** | **96 textures** | ✅ **100% Complete** | [decorations_design.md](blocks/decorations_design.md) | [Go to Section 10](#10-decorations-lighting--architecture-decorations--162-blocks-100-complete) |
@@ -39,15 +39,15 @@ For each block, the following properties are systematically specified:
 | **12** | Botany: Groundcover & Herbaceous Flora (`vegetation`) | **38 blocks** | **111 textures** | 🔄 *In Progress* | [vegetation_design.md](blocks/vegetation_design.md) | [Go to Section 12](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks) |
 | **13** | Botany: Flowers & Flowering Flora (`flowers`) | **32 blocks** | **87 textures** | 🔄 *In Progress* | [flowers_design.md](blocks/flowers_design.md) | [Go to Section 13](#13-botany-flowers--flowering-flora-flowers--32-blocks) |
 | **14** | Agriculture & Domestic Crops (`crops`) | **34 blocks** | **171 textures** | 🔄 *In Progress* | [crops_design.md](blocks/crops_design.md) | [Go to Section 14](#14-agriculture--domestic-crops-crops--34-blocks) |
-| **TOTAL** | **Grand Master Sum** | **824 blocks** | **1,736 textures** | — | — | — |
+| **TOTAL** | **Grand Master Sum** | **716 blocks** | **1,610 textures** | — | — | — |
 
 01. [Technical & System Blocks (`systems`) — 8 Blocks [✅ 100% Complete]](#01-technical--system-blocks-systems--8-blocks-100-complete)
 02. [Hydrosphere & Cryology (`fluids`) — 18 Blocks [✅ 100% Complete]](#02-hydrosphere--cryology-fluids--18-blocks-100-complete)
-03. [Pedology & Soils (`soils`) — 58 Blocks [✅ 100% Complete]](#03-pedology--soils-soils--58-blocks-100-complete)
-04. [Geology & Rocks (`rocks`) — 92 Blocks [✅ 100% Complete]](#04-geology--rocks-rocks--92-blocks-100-complete)
+03. [Pedology & Soils (`soils`) — 56 Blocks [✅ 100% Complete]](#03-pedology--soils-soils--56-blocks-100-complete)
+04. [Geology & Rocks (`rocks`) — 68 Blocks [✅ 100% Complete]](#04-geology--rocks-rocks--68-blocks-100-complete)
 05. [Trees, Forestry & Dendrology (`trees`) — 92 Blocks [✅ 100% Complete]](#05-trees-forestry--dendrology-trees--92-blocks-100-complete)
-06. [Ores, Minerals & Gemology (`ores`) — 158 Blocks [✅ 100% Complete]](#06-ores-minerals--gemology-ores--158-blocks-100-complete)
-07. [Speleology & Crystals (`caverns`) — 28 Blocks [✅ 100% Complete]](#07-speleology--crystals-caverns--28-blocks-100-complete)
+06. [Ores, Minerals & Gemology (`ores`) — 74 Blocks [✅ 100% Complete]](#06-ores-minerals--gemology-ores--74-blocks-100-complete)
+07. [Speleology & Crystals (`caverns`) — 30 Blocks [✅ 100% Complete]](#07-speleology--crystals-caverns--30-blocks-100-complete)
 08. [Ocean & Benthic Ecosystems (`oceans`) — 50 Blocks [✅ 100% Complete]](#08-ocean--benthic-ecosystems-oceans--50-blocks-100-complete)
 09. [Biomaterials, Fauna & Organic Matter (`organics`) — 36 Blocks [✅ 100% Complete]](#09-biomaterials-fauna--organic-matter-organics--36-blocks-100-complete)
 10. [Decorations, Lighting & Architecture (`decorations`) — 162 Blocks [✅ 100% Complete]](#10-decorations-lighting--architecture-decorations--162-blocks-100-complete)
@@ -112,7 +112,7 @@ The hydrosphere, rheology, and cryosphere domain comprises **8 cryogenic ice blo
 
 ---
 
-## 03. Pedology & Soils (`soils`) — 58 Blocks [✅ 100% Complete]
+## 03. Pedology & Soils (`soils`) — 56 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/soils`  
 📄 **Comprehensive Specification**: [soils_design.md](blocks/soils_design.md)
@@ -166,30 +166,28 @@ The planetary pedology system classifies soils into **3 core functional division
 | **41** | `permafrost_grass` | Permafrost Grass | **Climatic** | Top: `soil_grass.png`<br>Bottom: `soil_permafrost_dirt.png`<br>Sides: `soil_permafrost_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `blocks/overlays/soil_grass_side_overlay.png`) |
 | **42** | `permafrost_icy` | Permafrost Icy | **Climatic** | `soil_permafrost_icy.png` | 6 uniform faces |
 | **43** | `powder_snow` | Powder Snow | **Cryosphere** | `soil_snow_powder.png` | 6 uniform faces |
-| **44** | `sand_black` | Black Sand | **Sand** | `soil_sand_black.png` | 6 uniform faces |
-| **45** | `sand_common` | Common Sand | **Sand** | `soil_sand_common.png` | 6 uniform faces |
-| **46** | `sand_dune` | Dune Sand | **Sand** | `soil_sand_dune.png` | 6 uniform faces |
-| **47** | `sand_pink` | Pink Sand | **Sand** | `soil_sand_pink.png` | 6 uniform faces |
-| **48** | `sand_red` | Red Sand | **Sand** | `soil_sand_red.png` | 6 uniform faces |
-| **49** | `sand_white` | White Sand | **Sand** | `soil_sand_white.png` | 6 uniform faces |
-| **50** | `silt_coarse` | Silt Coarse | **Biological** | `soil_silt_coarse.png` | 6 uniform faces |
-| **51** | `silt_dirt` | Silt Dirt | **Biological** | `soil_silt_dirt.png` | 6 uniform faces |
-| **52** | `silt_grass` | Silt Grass | **Biological** | Top: `soil_grass.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `blocks/overlays/soil_grass_side_overlay.png`) |
-| **53** | `silt_mud` | Silt Mud | **Biological** | `soil_silt_mud.png` | 6 uniform faces |
-| **54** | `silt_mulch` | Silt Mulch | **Biological** | Top: `soil_silt_mulch.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_mulch_side.png` | Top + Bottom + 4 sides |
-| **55** | `silt_rooted` | Silt Rooted | **Biological** | `soil_silt_rooted.png` | 6 uniform faces |
-| **56** | `silt_snow` | Silt Snow | **Biological** | Top: `soil_snow.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_snow_side.png` | Top + Bottom + 4 sides |
-| **57** | `silt_tilled` | Silt Tilled | **Biological** | Top: `soil_silt_tilled_top.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_tilled_side.png` | Top + Bottom + 4 sides |
-| **58** | `snow_block` | Snow Block | **Cryosphere** | `soil_snow.png` | 6 uniform faces |
+| **44** | `sand_common` | Common Sand | **Sand** | `soil_sand_common.png` | 6 uniform faces |
+| **45** | `sand_dune` | Dune Sand | **Sand** | `soil_sand_dune.png` | 6 uniform faces |
+| **46** | `sand_red` | Red Sand | **Sand** | `soil_sand_red.png` | 6 uniform faces |
+| **47** | `sand_white` | White Sand | **Sand** | `soil_sand_white.png` | 6 uniform faces |
+| **48** | `silt_coarse` | Silt Coarse | **Biological** | `soil_silt_coarse.png` | 6 uniform faces |
+| **49** | `silt_dirt` | Silt Dirt | **Biological** | `soil_silt_dirt.png` | 6 uniform faces |
+| **50** | `silt_grass` | Silt Grass | **Biological** | Top: `soil_grass.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `blocks/overlays/soil_grass_side_overlay.png`) |
+| **51** | `silt_mud` | Silt Mud | **Biological** | `soil_silt_mud.png` | 6 uniform faces |
+| **52** | `silt_mulch` | Silt Mulch | **Biological** | Top: `soil_silt_mulch.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_mulch_side.png` | Top + Bottom + 4 sides |
+| **53** | `silt_rooted` | Silt Rooted | **Biological** | `soil_silt_rooted.png` | 6 uniform faces |
+| **54** | `silt_snow` | Silt Snow | **Biological** | Top: `soil_snow.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_snow_side.png` | Top + Bottom + 4 sides |
+| **55** | `silt_tilled` | Silt Tilled | **Biological** | Top: `soil_silt_tilled_top.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_tilled_side.png` | Top + Bottom + 4 sides |
+| **56** | `snow_block` | Snow Block | **Cryosphere** | `soil_snow.png` | 6 uniform faces |
 
 ---
 
-## 04. Geology & Rocks (`rocks`) — 92 Blocks [✅ 100% Complete]
+## 04. Geology & Rocks (`rocks`) — 68 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/rocks`  
 📄 **Comprehensive Specification**: [rocks_design.md](blocks/rocks_design.md)
 
-The geological framework comprises **28 mineable rock matrices** across 7 core petrological domains (yielding 28 solid stone and 26 mined cobbled stone = 54 structural blocks + 2 unbreakable mantle bedrock blocks), **16 surface relief outcrops** (grass and snow transitions = 16 blocks), **6 hand-collectable surface pebbles**, and **16 humid biome mossy composite blocks** (8 solid mossy rocks + 8 mossy cobbled stones) = **92 Total Geological Blocks**.
+The geological framework comprises **17 mineable rock matrices** across 7 core petrological domains (yielding 17 solid stone and 17 mined cobbled stone = 34 structural blocks), **14 surface relief outcrops** (grass and snow transitions = 14 blocks), **6 hand-collectable surface pebbles**, and **14 humid biome mossy composite blocks** (7 solid mossy rocks + 7 mossy cobbled stones) = **68 Total Geological Blocks**.
 
 ---
 
@@ -204,89 +202,65 @@ The geological framework comprises **28 mineable rock matrices** across 7 core p
 | **07** | `basalt` | Basalt | **Volcanic** | `rock_basalt.png` | 6 uniform faces |
 | **08** | `basalt_grass` | Basalt Grass Outcrop | **Volcanic** | Top: `soil_grass.png`<br>Bot: `rock_basalt.png`<br>Sides: `rock_basalt_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **09** | `basalt_snow` | Basalt Snow Outcrop | **Volcanic** | Top: `soil_snow.png`<br>Bot: `rock_basalt.png`<br>Sides: `rock_basalt_snow_side.png` | Top + Bot + 4 sides |
-| **10** | `brimstone` | Brimstone | **Hydrothermal** | `rock_brimstone.png` | 6 uniform faces |
-| **11** | `calcite` | Calcite | **Mineral** | `rock_calcite.png` | 6 uniform faces |
-| **12** | `chalk` | Chalk | **Sedimentary** | `rock_chalk.png` | 6 uniform faces |
-| **13** | `chalk_grass` | Chalk Grass Outcrop | **Sedimentary** | Top: `soil_grass.png`<br>Bot: `rock_chalk.png`<br>Sides: `rock_chalk_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
-| **14** | `chalk_snow` | Chalk Snow Outcrop | **Sedimentary** | Top: `soil_snow.png`<br>Bot: `rock_chalk.png`<br>Sides: `rock_chalk_snow_side.png` | Top + Bot + 4 sides |
-| **15** | `cobbled_andesite` | Cobbled Andesite | **Continental** | `rock_andesite_cobbled.png` | 6 uniform faces |
-| **16** | `cobbled_argillite` | Cobbled Argillite | **Sedimentary** | `rock_argillite_cobbled.png` | 6 uniform faces |
-| **17** | `cobbled_basalt` | Cobbled Basalt | **Volcanic** | `rock_basalt_cobbled.png` | 6 uniform faces |
-| **18** | `cobbled_brimstone` | Cobbled Brimstone | **Hydrothermal** | `rock_brimstone_cobbled.png` | 6 uniform faces |
-| **19** | `cobbled_calcite` | Cobbled Calcite | **Mineral** | `rock_calcite_cobbled.png` | 6 uniform faces |
-| **20** | `cobbled_chalk` | Cobbled Chalk | **Sedimentary** | `rock_chalk_cobbled.png` | 6 uniform faces |
-| **21** | `cobbled_diorite` | Cobbled Diorite | **Plutonic** | `rock_diorite_cobbled.png` | 6 uniform faces |
-| **22** | `cobbled_dolomite` | Cobbled Dolomite | **Sedimentary** | `rock_dolomite_cobbled.png` | 6 uniform faces |
-| **23** | `cobbled_gabbro` | Cobbled Gabbro | **Plutonic** | `rock_gabbro_cobbled.png` | 6 uniform faces |
-| **24** | `cobbled_gneiss` | Cobbled Gneiss | **Metamorphic** | `rock_gneiss_cobbled.png` | 6 uniform faces |
-| **25** | `cobbled_granite` | Cobbled Granite | **Plutonic** | `rock_granite_cobbled.png` | 6 uniform faces |
-| **26** | `cobbled_karst` | Cobbled Karst | **Speleological** | `rock_karst_cobbled.png` | 6 uniform faces |
-| **27** | `cobbled_limestone` | Cobbled Limestone | **Sedimentary** | `rock_limestone_cobbled.png` | 6 uniform faces |
-| **28** | `cobbled_magma` | Cobbled Magma | **Geothermal** | `rock_magma_cobbled.png` | 6 uniform faces *(Animated incandescent veins)* |
-| **29** | `cobbled_marble` | Cobbled Marble | **Metamorphic** | `rock_marble_cobbled.png` | 6 uniform faces |
-| **30** | `cobbled_obsidian` | Cobbled Obsidian | **Volcanic** | `rock_obsidian_cobbled.png` | 6 uniform faces |
-| **31** | `cobbled_sandstone_black` | Cobbled Black Sandstone | **Sedimentary** | `rock_sandstone_black_cobbled.png` | 6 uniform faces |
-| **32** | `cobbled_sandstone_common` | Cobbled Sandstone | **Sedimentary** | `rock_sandstone_common_cobbled.png` | 6 uniform faces |
-| **33** | `cobbled_sandstone_dune` | Cobbled Dune Sandstone | **Sedimentary** | `rock_sandstone_dune_cobbled.png` | 6 uniform faces |
-| **34** | `cobbled_sandstone_pink` | Cobbled Pink Sandstone | **Sedimentary** | `rock_sandstone_pink_cobbled.png` | 6 uniform faces |
-| **35** | `cobbled_sandstone_red` | Cobbled Red Sandstone | **Sedimentary** | `rock_sandstone_red_cobbled.png` | 6 uniform faces |
-| **36** | `cobbled_sandstone_white` | Cobbled White Sandstone | **Sedimentary** | `rock_sandstone_white_cobbled.png` | 6 uniform faces |
-| **37** | `cobbled_scoria` | Cobbled Scoria | **Pyroclastic** | `rock_scoria_cobbled.png` | 6 uniform faces |
-| **38** | `cobbled_serpentinite` | Cobbled Serpentinite | **Metamorphic** | `rock_serpentinite_cobbled.png` | 6 uniform faces |
-| **39** | `cobbled_slate` | Cobbled Slate | **Metamorphic** | `rock_slate_cobbled.png` | 6 uniform faces |
-| **40** | `cobbled_tuff` | Cobbled Tuff | **Pyroclastic** | `rock_tuff_cobbled.png` | 6 uniform faces |
-| **41** | `diorite` | Diorite | **Plutonic** | `rock_diorite.png` | 6 uniform faces |
-| **42** | `dolomite` | Dolomite (Alpine Stone) | **Sedimentary** | `rock_dolomite.png` | 6 uniform faces |
-| **43** | `dolomite_grass` | Dolomite Grass Outcrop | **Sedimentary** | Top: `soil_grass.png`<br>Bot: `rock_dolomite.png`<br>Sides: `rock_dolomite_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
-| **44** | `dolomite_snow` | Dolomite Snow Outcrop | **Sedimentary** | Top: `soil_snow.png`<br>Bot: `rock_dolomite.png`<br>Sides: `rock_dolomite_snow_side.png` | Top + Bot + 4 sides |
-| **45** | `gabbro` | Gabbro | **Plutonic** | `rock_gabbro.png` | 6 uniform faces |
-| **46** | `gneiss` | Gneiss | **Metamorphic** | `rock_gneiss.png` | 6 uniform faces |
-| **47** | `gneiss_grass` | Gneiss Grass Outcrop | **Metamorphic** | Top: `soil_grass.png`<br>Bot: `rock_gneiss.png`<br>Sides: `rock_gneiss_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
-| **48** | `gneiss_snow` | Gneiss Snow Outcrop | **Metamorphic** | Top: `soil_snow.png`<br>Bot: `rock_gneiss.png`<br>Sides: `rock_gneiss_snow_side.png` | Top + Bot + 4 sides |
-| **49** | `granite` | Granite | **Plutonic** | `rock_granite.png` | 6 uniform faces |
-| **50** | `granite_grass` | Granite Grass Outcrop | **Plutonic** | Top: `soil_grass.png`<br>Bot: `rock_granite.png`<br>Sides: `rock_granite_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
-| **51** | `granite_snow` | Granite Snow Outcrop | **Plutonic** | Top: `soil_snow.png`<br>Bot: `rock_granite.png`<br>Sides: `rock_granite_snow_side.png` | Top + Bot + 4 sides |
-| **52** | `karst` | Karst Limestone | **Speleological** | `rock_karst.png` | 6 uniform faces |
-| **53** | `limestone` | Limestone | **Sedimentary** | `rock_limestone.png` | 6 uniform faces |
-| **54** | `limestone_grass` | Limestone Grass Outcrop | **Sedimentary** | Top: `soil_grass.png`<br>Bot: `rock_limestone.png`<br>Sides: `rock_limestone_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
-| **55** | `limestone_snow` | Limestone Snow Outcrop | **Sedimentary** | Top: `soil_snow.png`<br>Bot: `rock_limestone.png`<br>Sides: `rock_limestone_snow_side.png` | Top + Bot + 4 sides |
-| **56** | `magma` | Magma Rock | **Geothermal** | `rock_magma.png` *(+ `1`, `2`)* | 6 uniform faces *(Animated incandescent veins, emits light)* |
-| **57** | `mantle` | Primordial Mantle | **Bedrock** | `rock_mantle.png` *(+ `1`, `2`)* | 6 uniform faces *(Unbreakable)* |
-| **58** | `mantle_plume` | Mantle Plume | **Bedrock** | `rock_mantle_plume.png` *(+ `1`, `2`)* | 6 uniform faces *(Unbreakable)* |
-| **59** | `marble` | Marble | **Metamorphic** | `rock_marble.png` | 6 uniform faces |
-| **60** | `mossy_andesite` | Mossy Andesite | **Continental** | `rock_andesite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
-| **61** | `mossy_argillite` | Mossy Argillite | **Sedimentary** | `rock_argillite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
-| **62** | `mossy_basalt` | Mossy Basalt | **Volcanic** | `rock_basalt.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
-| **63** | `mossy_cobbled_andesite` | Mossy Cobbled Andesite | **Continental** | `rock_andesite_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
-| **64** | `mossy_cobbled_argillite` | Mossy Cobbled Argillite | **Sedimentary** | `rock_argillite_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
-| **65** | `mossy_cobbled_basalt` | Mossy Cobbled Basalt | **Volcanic** | `rock_basalt_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
-| **66** | `mossy_cobbled_dolomite` | Mossy Cobbled Dolomite | **Sedimentary** | `rock_dolomite_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
-| **67** | `mossy_cobbled_gneiss` | Mossy Cobbled Gneiss | **Metamorphic** | `rock_gneiss_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
-| **68** | `mossy_cobbled_granite` | Mossy Cobbled Granite | **Plutonic** | `rock_granite_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
-| **69** | `mossy_cobbled_limestone` | Mossy Cobbled Limestone | **Sedimentary** | `rock_limestone_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
-| **70** | `mossy_cobbled_serpentinite` | Mossy Cobbled Serpentinite | **Metamorphic** | `rock_serpentinite_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
-| **71** | `mossy_dolomite` | Mossy Dolomite | **Sedimentary** | `rock_dolomite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
-| **72** | `mossy_gneiss` | Mossy Gneiss | **Metamorphic** | `rock_gneiss.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
-| **73** | `mossy_granite` | Mossy Granite | **Plutonic** | `rock_granite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
-| **74** | `mossy_limestone` | Mossy Limestone | **Sedimentary** | `rock_limestone.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
-| **75** | `mossy_serpentinite` | Mossy Serpentinite | **Metamorphic** | `rock_serpentinite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
-| **76** | `obsidian` | Obsidian | **Volcanic** | `rock_obsidian.png` | 6 uniform faces |
-| **77** | `pebble_flint_one` | Flint Pebble (Single) | **Pebble Cluster (1 Pebble)** | `pebble_flint_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
-| **78** | `pebble_flint_three` | Flint Pebble (Cluster) | **Pebble Cluster (3 Pebbles)** | `pebble_flint_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
-| **79** | `pebble_flint_two` | Flint Pebble (Pair) | **Pebble Cluster (2 Pebbles)** | `pebble_flint_two.png` | Corner micro-box `[3..5, 0..1, 10..12]` |
-| **80** | `pebble_quartz_one` | Quartz Pebble (Single) | **Pebble Cluster (1 Pebble)** | `pebble_quartz_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
-| **81** | `pebble_quartz_three` | Quartz Pebble (Cluster) | **Pebble Cluster (3 Pebbles)** | `pebble_quartz_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
-| **82** | `pebble_quartz_two` | Quartz Pebble (Pair) | **Pebble Cluster (2 Pebbles)** | `pebble_quartz_two.png` | Corner micro-box `[3..5, 0..1, 10..12]` |
-| **83** | `sandstone_black` | Black Sandstone | **Sedimentary** | `rock_sandstone_black.png` | 6 uniform faces |
-| **84** | `sandstone_common` | Common Sandstone | **Sedimentary** | `rock_sandstone_common.png` | 6 uniform faces |
-| **85** | `sandstone_dune` | Dune Sandstone | **Sedimentary** | `rock_sandstone_dune.png` | 6 uniform faces |
-| **86** | `sandstone_pink` | Pink Sandstone | **Sedimentary** | `rock_sandstone_pink.png` | 6 uniform faces |
-| **87** | `sandstone_red` | Red Sandstone | **Sedimentary** | `rock_sandstone_red.png` | 6 uniform faces |
-| **88** | `sandstone_white` | White Sandstone | **Sedimentary** | `rock_sandstone_white.png` | 6 uniform faces |
-| **89** | `scoria` | Scoria | **Pyroclastic** | `rock_scoria.png` | 6 uniform faces |
-| **90** | `serpentinite` | Serpentinite | **Metamorphic** | `rock_serpentinite.png` | 6 uniform faces |
-| **91** | `slate` | Slate | **Metamorphic** | `rock_slate.png` | 6 uniform faces |
-| **92** | `tuff` | Tuff | **Pyroclastic** | `rock_tuff.png` | 6 uniform faces |
+| **10** | `chalk` | Chalk | **Sedimentary** | `rock_chalk.png` | 6 uniform faces |
+| **11** | `chalk_grass` | Chalk Grass Outcrop | **Sedimentary** | Top: `soil_grass.png`<br>Bot: `rock_chalk.png`<br>Sides: `rock_chalk_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
+| **12** | `chalk_snow` | Chalk Snow Outcrop | **Sedimentary** | Top: `soil_snow.png`<br>Bot: `rock_chalk.png`<br>Sides: `rock_chalk_snow_side.png` | Top + Bot + 4 sides |
+| **13** | `cobbled_andesite` | Cobbled Andesite | **Continental** | `rock_andesite_cobbled.png` | 6 uniform faces |
+| **14** | `cobbled_argillite` | Cobbled Argillite | **Sedimentary** | `rock_argillite_cobbled.png` | 6 uniform faces |
+| **15** | `cobbled_basalt` | Cobbled Basalt | **Volcanic** | `rock_basalt_cobbled.png` | 6 uniform faces |
+| **16** | `cobbled_chalk` | Cobbled Chalk | **Sedimentary** | `rock_chalk_cobbled.png` | 6 uniform faces |
+| **17** | `cobbled_dolomite` | Cobbled Dolomite | **Sedimentary** | `rock_dolomite_cobbled.png` | 6 uniform faces |
+| **18** | `cobbled_gabbro` | Cobbled Gabbro | **Plutonic** | `rock_gabbro_cobbled.png` | 6 uniform faces |
+| **19** | `cobbled_granite` | Cobbled Granite | **Plutonic** | `rock_granite_cobbled.png` | 6 uniform faces |
+| **20** | `cobbled_limestone` | Cobbled Limestone | **Sedimentary** | `rock_limestone_cobbled.png` | 6 uniform faces |
+| **21** | `cobbled_magma` | Cobbled Magma | **Geothermal** | `rock_magma_cobbled.png` | 6 uniform faces *(Animated incandescent veins)* |
+| **22** | `cobbled_mantle` | Cobbled Mantle | **Bedrock** | `rock_mantle_cobbled.png` | 6 uniform faces *(Fractured primordial bedrock seams, unbreakable)* |
+| **23** | `cobbled_marble` | Cobbled Marble | **Metamorphic** | `rock_marble_cobbled.png` | 6 uniform faces |
+| **24** | `cobbled_obsidian` | Cobbled Obsidian | **Volcanic** | `rock_obsidian_cobbled.png` | 6 uniform faces |
+| **25** | `cobbled_sandstone_common` | Cobbled Sandstone | **Sedimentary** | `rock_sandstone_common_cobbled.png` | 6 uniform faces |
+| **26** | `cobbled_sandstone_dune` | Cobbled Dune Sandstone | **Sedimentary** | `rock_sandstone_dune_cobbled.png` | 6 uniform faces |
+| **27** | `cobbled_sandstone_red` | Cobbled Red Sandstone | **Sedimentary** | `rock_sandstone_red_cobbled.png` | 6 uniform faces |
+| **28** | `cobbled_sandstone_white` | Cobbled White Sandstone | **Sedimentary** | `rock_sandstone_white_cobbled.png` | 6 uniform faces |
+| **29** | `cobbled_slate` | Cobbled Slate | **Metamorphic** | `rock_slate_cobbled.png` | 6 uniform faces |
+| **30** | `dolomite` | Dolomite (Alpine Stone) | **Sedimentary** | `rock_dolomite.png` | 6 uniform faces |
+| **31** | `dolomite_grass` | Dolomite Grass Outcrop | **Sedimentary** | Top: `soil_grass.png`<br>Bot: `rock_dolomite.png`<br>Sides: `rock_dolomite_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
+| **32** | `dolomite_snow` | Dolomite Snow Outcrop | **Sedimentary** | Top: `soil_snow.png`<br>Bot: `rock_dolomite.png`<br>Sides: `rock_dolomite_snow_side.png` | Top + Bot + 4 sides |
+| **33** | `gabbro` | Gabbro | **Plutonic** | `rock_gabbro.png` | 6 uniform faces |
+| **34** | `granite` | Granite | **Plutonic** | `rock_granite.png` | 6 uniform faces |
+| **35** | `granite_grass` | Granite Grass Outcrop | **Plutonic** | Top: `soil_grass.png`<br>Bot: `rock_granite.png`<br>Sides: `rock_granite_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
+| **36** | `granite_snow` | Granite Snow Outcrop | **Plutonic** | Top: `soil_snow.png`<br>Bot: `rock_granite.png`<br>Sides: `rock_granite_snow_side.png` | Top + Bot + 4 sides |
+| **37** | `limestone` | Limestone | **Sedimentary** | `rock_limestone.png` | 6 uniform faces |
+| **38** | `limestone_grass` | Limestone Grass Outcrop | **Sedimentary** | Top: `soil_grass.png`<br>Bot: `rock_limestone.png`<br>Sides: `rock_limestone_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
+| **39** | `limestone_snow` | Limestone Snow Outcrop | **Sedimentary** | Top: `soil_snow.png`<br>Bot: `rock_limestone.png`<br>Sides: `rock_limestone_snow_side.png` | Top + Bot + 4 sides |
+| **40** | `magma` | Magma Rock | **Geothermal** | `rock_magma.png` *(+ `1`, `2`)* | 6 uniform faces *(Animated incandescent veins, emits light)* |
+| **41** | `mantle` | Primordial Mantle | **Bedrock** | `rock_mantle.png` *(+ `1`, `2`)* | 6 uniform faces *(Unbreakable)* |
+| **42** | `marble` | Marble | **Metamorphic** | `rock_marble.png` | 6 uniform faces |
+| **43** | `mossy_andesite` | Mossy Andesite | **Continental** | `rock_andesite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
+| **44** | `mossy_argillite` | Mossy Argillite | **Sedimentary** | `rock_argillite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
+| **45** | `mossy_basalt` | Mossy Basalt | **Volcanic** | `rock_basalt.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
+| **46** | `mossy_chalk` | Mossy Chalk | **Sedimentary** | `rock_chalk.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
+| **47** | `mossy_cobbled_andesite` | Mossy Cobbled Andesite | **Continental** | `rock_andesite_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
+| **48** | `mossy_cobbled_argillite` | Mossy Cobbled Argillite | **Sedimentary** | `rock_argillite_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
+| **49** | `mossy_cobbled_basalt` | Mossy Cobbled Basalt | **Volcanic** | `rock_basalt_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
+| **50** | `mossy_cobbled_chalk` | Mossy Cobbled Chalk | **Sedimentary** | `rock_chalk_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
+| **51** | `mossy_cobbled_dolomite` | Mossy Cobbled Dolomite | **Sedimentary** | `rock_dolomite_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
+| **52** | `mossy_cobbled_granite` | Mossy Cobbled Granite | **Plutonic** | `rock_granite_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
+| **53** | `mossy_cobbled_limestone` | Mossy Cobbled Limestone | **Sedimentary** | `rock_limestone_cobbled.png` *(+ `mossy_cobbled_overlay.png`)* | 6 faces + Shader Cobble Joint Moss (Stochastic: base, 1, 2) |
+| **54** | `mossy_dolomite` | Mossy Dolomite | **Sedimentary** | `rock_dolomite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
+| **55** | `mossy_granite` | Mossy Granite | **Plutonic** | `rock_granite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
+| **56** | `mossy_limestone` | Mossy Limestone | **Sedimentary** | `rock_limestone.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
+| **57** | `obsidian` | Obsidian | **Volcanic** | `rock_obsidian.png` | 6 uniform faces |
+| **58** | `pebble_flint_one` | Flint Pebble (Single) | **Pebble Cluster (1 Pebble)** | `pebble_flint_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
+| **59** | `pebble_flint_three` | Flint Pebble (Cluster) | **Pebble Cluster (3 Pebbles)** | `pebble_flint_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
+| **60** | `pebble_flint_two` | Flint Pebble (Pair) | **Pebble Cluster (2 Pebbles)** | `pebble_flint_two.png` | Corner micro-box `[3..5, 0..1, 10..12]` |
+| **61** | `pebble_quartz_one` | Quartz Pebble (Single) | **Pebble Cluster (1 Pebble)** | `pebble_quartz_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
+| **62** | `pebble_quartz_three` | Quartz Pebble (Cluster) | **Pebble Cluster (3 Pebbles)** | `pebble_quartz_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
+| **63** | `pebble_quartz_two` | Quartz Pebble (Pair) | **Pebble Cluster (2 Pebbles)** | `pebble_quartz_two.png` | Corner micro-box `[3..5, 0..1, 10..12]` |
+| **64** | `sandstone_common` | Common Sandstone | **Sedimentary** | `rock_sandstone_common.png` | 6 uniform faces |
+| **65** | `sandstone_dune` | Dune Sandstone | **Sedimentary** | `rock_sandstone_dune.png` | 6 uniform faces |
+| **66** | `sandstone_red` | Red Sandstone | **Sedimentary** | `rock_sandstone_red.png` | 6 uniform faces |
+| **67** | `sandstone_white` | White Sandstone | **Sedimentary** | `rock_sandstone_white.png` | 6 uniform faces |
+| **68** | `slate` | Slate | **Metamorphic** | `rock_slate.png` | 6 uniform faces |
 
 ---
 
@@ -395,217 +369,133 @@ Planetary dendrology encompasses **18 living forest tree species** distributed a
 | **92** | `yew_wood` | Yew Wood | **Wood** | `tree_yew_bark.png` | 6 uniform faces |
 
 ---
-## 06. Ores, Minerals & Gemology (`ores`) — 158 Blocks
+## 06. Ores, Minerals & Gemology (`ores`) — 74 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/ores`  
 📄 **Comprehensive Specification**: [ores_design.md](blocks/ores_design.md)
 
-The metallogenic and mineralogical domain comprises **26 solid unrefined raw blocks** (18 native/heavy metals and chemicals + 8 rough gemstones) and **132 procedural ore veins** dynamically generated across 24 mineralized host rock matrices (with obsidian, magma, mantle, and mantle plume remaining sterile) = **158 Total Mineral Blocks**. All blocks are organized in strict alphabetical order.
+The metallogenic and mineralogical domain comprises **20 solid unrefined raw/rough blocks** (8 native/precious metals + 4 chemicals + 8 rough gemstones) and **54 procedural ore veins** dynamically generated across 13 mineralized host rock matrices (featuring the 3 primary crustal macro-strata: Slate with 8 veins, Dolomite with 6 veins, and Gabbro with 6 veins, with sandstone_dune, obsidian, magma, and mantle remaining sterile) = **74 Total Mineral Blocks**. All blocks are organized in strict alphabetical order.
 
 ---
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **001** | `gem_diamond_gabbro` | Diamond Ore (Gabbro) | **Gemstone** | Host: `rock_gabbro.png`<br>Overlay: `gem_diamond_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **002** | `gem_diamond_rough` | Rough Diamond Block | **Gemstone** | `gem_diamond_rough.png` | Uniform (6 faces) |
-| **003** | `gem_diamond_serpentinite` | Diamond Ore (Serpentinite) | **Gemstone** | Host: `rock_serpentinite.png`<br>Overlay: `gem_diamond_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **004** | `gem_emerald_marble` | Emerald Ore (Marble) | **Gemstone** | Host: `rock_marble.png`<br>Overlay: `gem_emerald_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **001** | `gem_diamond_basalt` | Diamond Ore (Basalt) | **Gemstone** | `rock_basalt.png` | `gem_diamond_overlay.png` |
+| **002** | `gem_diamond_gabbro` | Diamond Ore (Gabbro) | **Gemstone** | `rock_gabbro.png` | `gem_diamond_overlay.png` |
+| **003** | `gem_diamond_rough` | Rough Diamond Block | **Gemstone** | `gem_diamond_rough.png` | Uniform (6 faces) |
+| **004** | `gem_emerald_marble` | Emerald Ore (Marble) | **Gemstone** | `rock_marble.png` | `gem_emerald_overlay.png` |
 | **005** | `gem_emerald_rough` | Rough Emerald Block | **Gemstone** | `gem_emerald_rough.png` | Uniform (6 faces) |
-| **006** | `gem_emerald_slate` | Emerald Ore (Slate) | **Gemstone** | Host: `rock_slate.png`<br>Overlay: `gem_emerald_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **007** | `gem_jade_marble` | Jade Ore (Marble) | **Gemstone** | Host: `rock_marble.png`<br>Overlay: `gem_jade_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **008** | `gem_jade_rough` | Rough Jade Block | **Gemstone** | `gem_jade_rough.png` | Uniform (6 faces) |
-| **009** | `gem_jade_serpentinite` | Jade Ore (Serpentinite) | **Gemstone** | Host: `rock_serpentinite.png`<br>Overlay: `gem_jade_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **010** | `gem_onyx_calcite` | Onyx Ore (Calcite) | **Gemstone** | Host: `rock_calcite.png`<br>Overlay: `gem_onyx_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) |
-| **011** | `gem_onyx_marble` | Onyx Ore (Marble) | **Gemstone** | Host: `rock_marble.png`<br>Overlay: `gem_onyx_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) |
-| **012** | `gem_onyx_rough` | Rough Onyx Block | **Gemstone** | `gem_onyx_rough.png` *(16×64)* | Animated (4 frames) |
-| **013** | `gem_onyx_sandstone_black` | Onyx Ore (Black Sandstone) | **Gemstone** | Host: `rock_sandstone_black.png`<br>Overlay: `gem_onyx_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) |
-| **014** | `gem_onyx_slate` | Onyx Ore (Slate) | **Gemstone** | Host: `rock_slate.png`<br>Overlay: `gem_onyx_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) |
-| **015** | `gem_opal_basalt` | Opal Ore (Basalt) | **Gemstone** | Host: `rock_basalt.png`<br>Overlay: `gem_opal_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) |
-| **016** | `gem_opal_rough` | Rough Opal Block | **Gemstone** | `gem_opal_rough.png` *(16×64)* | Animated (4 frames) |
-| **017** | `gem_opal_sandstone_pink` | Opal Ore (Pink Sandstone) | **Gemstone** | Host: `rock_sandstone_pink.png`<br>Overlay: `gem_opal_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) |
-| **018** | `gem_opal_sandstone_white` | Opal Ore (White Sandstone) | **Gemstone** | Host: `rock_sandstone_white.png`<br>Overlay: `gem_opal_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) |
-| **019** | `gem_opal_tuff` | Opal Ore (Tuff) | **Gemstone** | Host: `rock_tuff.png`<br>Overlay: `gem_opal_overlay.png` | Uniform 6 faces (Animated 16×64 Overlay) |
-| **020** | `gem_ruby_basalt` | Ruby Ore (Basalt) | **Gemstone** | Host: `rock_basalt.png`<br>Overlay: `gem_ruby_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **021** | `gem_ruby_marble` | Ruby Ore (Marble) | **Gemstone** | Host: `rock_marble.png`<br>Overlay: `gem_ruby_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **022** | `gem_ruby_rough` | Rough Ruby Block | **Gemstone** | `gem_ruby_rough.png` | Uniform (6 faces) |
-| **023** | `gem_sapphire_basalt` | Sapphire Ore (Basalt) | **Gemstone** | Host: `rock_basalt.png`<br>Overlay: `gem_sapphire_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **024** | `gem_sapphire_marble` | Sapphire Ore (Marble) | **Gemstone** | Host: `rock_marble.png`<br>Overlay: `gem_sapphire_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **025** | `gem_sapphire_rough` | Rough Sapphire Block | **Gemstone** | `gem_sapphire_rough.png` | Uniform (6 faces) |
-| **026** | `gem_topaz_granite` | Topaz Ore (Granite) | **Gemstone** | Host: `rock_granite.png`<br>Overlay: `gem_topaz_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **027** | `gem_topaz_rough` | Rough Topaz Block | **Gemstone** | `gem_topaz_rough.png` | Uniform (6 faces) |
-| **028** | `gem_topaz_sandstone_pink` | Topaz Ore (Pink Sandstone) | **Gemstone** | Host: `rock_sandstone_pink.png`<br>Overlay: `gem_topaz_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **029** | `ore_aluminum_argillite` | Aluminum Ore (Argillite) | **Metal** | Host: `rock_argillite.png`<br>Overlay: `ore_aluminum_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **030** | `ore_aluminum_chalk` | Aluminum Ore (Chalk) | **Metal** | Host: `rock_chalk.png`<br>Overlay: `ore_aluminum_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **031** | `ore_aluminum_limestone` | Aluminum Ore (Limestone) | **Metal** | Host: `rock_limestone.png`<br>Overlay: `ore_aluminum_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **032** | `ore_aluminum_raw` | Raw Aluminum Block | **Metal** | `ore_aluminum_raw.png` | Uniform (6 faces) |
-| **033** | `ore_aluminum_sandstone_white` | Aluminum Ore (White Sandstone) | **Metal** | Host: `rock_sandstone_white.png`<br>Overlay: `ore_aluminum_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **034** | `ore_cinnabar_basalt` | Cinnabar Ore (Basalt) | **Chemical** | Host: `rock_basalt.png`<br>Overlay: `ore_cinnabar_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **035** | `ore_cinnabar_brimstone` | Cinnabar Ore (Brimstone) | **Chemical** | Host: `rock_brimstone.png`<br>Overlay: `ore_cinnabar_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **036** | `ore_cinnabar_karst` | Cinnabar Ore (Karst) | **Chemical** | Host: `rock_karst.png`<br>Overlay: `ore_cinnabar_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **037** | `ore_cinnabar_raw` | Raw Cinnabar Block | **Chemical** | `ore_cinnabar_raw.png` | Uniform (6 faces) |
-| **038** | `ore_cinnabar_tuff` | Cinnabar Ore (Tuff) | **Chemical** | Host: `rock_tuff.png`<br>Overlay: `ore_cinnabar_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **039** | `ore_coal_andesite` | Coal Ore (Andesite) | **Chemical** | Host: `rock_andesite.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **040** | `ore_coal_argillite` | Coal Ore (Argillite) | **Chemical** | Host: `rock_argillite.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **041** | `ore_coal_chalk` | Coal Ore (Chalk) | **Chemical** | Host: `rock_chalk.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **042** | `ore_coal_diorite` | Coal Ore (Diorite) | **Chemical** | Host: `rock_diorite.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **043** | `ore_coal_dolomite` | Coal Ore (Dolomite) | **Chemical** | Host: `rock_dolomite.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **044** | `ore_coal_gneiss` | Coal Ore (Gneiss) | **Chemical** | Host: `rock_gneiss.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **045** | `ore_coal_granite` | Coal Ore (Granite) | **Chemical** | Host: `rock_granite.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **046** | `ore_coal_limestone` | Coal Ore (Limestone) | **Chemical** | Host: `rock_limestone.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **047** | `ore_coal_raw` | Raw Coal Block | **Chemical** | `ore_coal_raw.png` | Uniform (6 faces) |
-| **048** | `ore_coal_sandstone_black` | Coal Ore (Black Sandstone) | **Chemical** | Host: `rock_sandstone_black.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **049** | `ore_coal_sandstone_common` | Coal Ore (Common Sandstone) | **Chemical** | Host: `rock_sandstone_common.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **050** | `ore_coal_sandstone_dune` | Coal Ore (Dune Sandstone) | **Chemical** | Host: `rock_sandstone_dune.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **051** | `ore_coal_slate` | Coal Ore (Slate) | **Chemical** | Host: `rock_slate.png`<br>Overlay: `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **052** | `ore_copper_andesite` | Copper Ore (Andesite) | **Metal** | Host: `rock_andesite.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **053** | `ore_copper_argillite` | Copper Ore (Argillite) | **Metal** | Host: `rock_argillite.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **054** | `ore_copper_chalk` | Copper Ore (Chalk) | **Metal** | Host: `rock_chalk.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **055** | `ore_copper_diorite` | Copper Ore (Diorite) | **Metal** | Host: `rock_diorite.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **056** | `ore_copper_dolomite` | Copper Ore (Dolomite) | **Metal** | Host: `rock_dolomite.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **057** | `ore_copper_gabbro` | Copper Ore (Gabbro) | **Metal** | Host: `rock_gabbro.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **058** | `ore_copper_gneiss` | Copper Ore (Gneiss) | **Metal** | Host: `rock_gneiss.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **059** | `ore_copper_granite` | Copper Ore (Granite) | **Metal** | Host: `rock_granite.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **060** | `ore_copper_limestone` | Copper Ore (Limestone) | **Metal** | Host: `rock_limestone.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **061** | `ore_copper_raw` | Raw Copper Block | **Metal** | `ore_copper_raw.png` | Uniform (6 faces) |
-| **062** | `ore_copper_sandstone_common` | Copper Ore (Common Sandstone) | **Metal** | Host: `rock_sandstone_common.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **063** | `ore_copper_sandstone_red` | Copper Ore (Red Sandstone) | **Metal** | Host: `rock_sandstone_red.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **064** | `ore_copper_serpentinite` | Copper Ore (Serpentinite) | **Metal** | Host: `rock_serpentinite.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **065** | `ore_copper_slate` | Copper Ore (Slate) | **Metal** | Host: `rock_slate.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **066** | `ore_copper_tuff` | Copper Ore (Tuff) | **Metal** | Host: `rock_tuff.png`<br>Overlay: `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **067** | `ore_gold_granite` | Gold Ore (Granite) | **Metal** | Host: `rock_granite.png`<br>Overlay: `ore_gold_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **068** | `ore_gold_marble` | Gold Ore (Marble) | **Metal** | Host: `rock_marble.png`<br>Overlay: `ore_gold_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **069** | `ore_gold_raw` | Raw Gold Block | **Metal** | `ore_gold_raw.png` | Uniform (6 faces) |
-| **070** | `ore_gold_sandstone_red` | Gold Ore (Red Sandstone) | **Metal** | Host: `rock_sandstone_red.png`<br>Overlay: `ore_gold_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **071** | `ore_gold_slate` | Gold Ore (Slate) | **Metal** | Host: `rock_slate.png`<br>Overlay: `ore_gold_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **072** | `ore_iron_andesite` | Iron Ore (Andesite) | **Metal** | Host: `rock_andesite.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **073** | `ore_iron_basalt` | Iron Ore (Basalt) | **Metal** | Host: `rock_basalt.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **074** | `ore_iron_diorite` | Iron Ore (Diorite) | **Metal** | Host: `rock_diorite.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **075** | `ore_iron_dolomite` | Iron Ore (Dolomite) | **Metal** | Host: `rock_dolomite.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **076** | `ore_iron_gabbro` | Iron Ore (Gabbro) | **Metal** | Host: `rock_gabbro.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **077** | `ore_iron_gneiss` | Iron Ore (Gneiss) | **Metal** | Host: `rock_gneiss.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **078** | `ore_iron_granite` | Iron Ore (Granite) | **Metal** | Host: `rock_granite.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **079** | `ore_iron_raw` | Raw Iron Block | **Metal** | `ore_iron_raw.png` | Uniform (6 faces) |
-| **080** | `ore_iron_sandstone_black` | Iron Ore (Black Sandstone) | **Metal** | Host: `rock_sandstone_black.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **081** | `ore_iron_sandstone_common` | Iron Ore (Common Sandstone) | **Metal** | Host: `rock_sandstone_common.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **082** | `ore_iron_sandstone_red` | Iron Ore (Red Sandstone) | **Metal** | Host: `rock_sandstone_red.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **083** | `ore_iron_scoria` | Iron Ore (Scoria) | **Metal** | Host: `rock_scoria.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **084** | `ore_iron_serpentinite` | Iron Ore (Serpentinite) | **Metal** | Host: `rock_serpentinite.png`<br>Overlay: `ore_iron_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **085** | `ore_lazurite_calcite` | Lazurite Ore (Calcite) | **Chemical** | Host: `rock_calcite.png`<br>Overlay: `ore_lazurite_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **086** | `ore_lazurite_limestone` | Lazurite Ore (Limestone) | **Chemical** | Host: `rock_limestone.png`<br>Overlay: `ore_lazurite_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **087** | `ore_lazurite_marble` | Lazurite Ore (Marble) | **Chemical** | Host: `rock_marble.png`<br>Overlay: `ore_lazurite_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **088** | `ore_lazurite_raw` | Raw Lazurite Block | **Chemical** | `ore_lazurite_raw.png` | Uniform (6 faces) |
-| **089** | `ore_lazurite_sandstone_black` | Lazurite Ore (Black Sandstone) | **Chemical** | Host: `rock_sandstone_black.png`<br>Overlay: `ore_lazurite_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **090** | `ore_lead_andesite` | Lead Ore (Andesite) | **Heavy Metal** | Host: `rock_andesite.png`<br>Overlay: `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **091** | `ore_lead_argillite` | Lead Ore (Argillite) | **Heavy Metal** | Host: `rock_argillite.png`<br>Overlay: `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **092** | `ore_lead_chalk` | Lead Ore (Chalk) | **Heavy Metal** | Host: `rock_chalk.png`<br>Overlay: `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **093** | `ore_lead_diorite` | Lead Ore (Diorite) | **Heavy Metal** | Host: `rock_diorite.png`<br>Overlay: `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **094** | `ore_lead_karst` | Lead Ore (Karst) | **Heavy Metal** | Host: `rock_karst.png`<br>Overlay: `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **095** | `ore_lead_limestone` | Lead Ore (Limestone) | **Heavy Metal** | Host: `rock_limestone.png`<br>Overlay: `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **096** | `ore_lead_raw` | Raw Lead Block | **Heavy Metal** | `ore_lead_raw.png` | Uniform (6 faces) |
-| **097** | `ore_lead_sandstone_common` | Lead Ore (Common Sandstone) | **Heavy Metal** | Host: `rock_sandstone_common.png`<br>Overlay: `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **098** | `ore_lead_slate` | Lead Ore (Slate) | **Heavy Metal** | Host: `rock_slate.png`<br>Overlay: `ore_lead_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **099** | `ore_manganese_argillite` | Manganese Ore (Argillite) | **Heavy Metal** | Host: `rock_argillite.png`<br>Overlay: `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **100** | `ore_manganese_chalk` | Manganese Ore (Chalk) | **Heavy Metal** | Host: `rock_chalk.png`<br>Overlay: `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **101** | `ore_manganese_dolomite` | Manganese Ore (Dolomite) | **Heavy Metal** | Host: `rock_dolomite.png`<br>Overlay: `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **102** | `ore_manganese_gneiss` | Manganese Ore (Gneiss) | **Heavy Metal** | Host: `rock_gneiss.png`<br>Overlay: `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **103** | `ore_manganese_limestone` | Manganese Ore (Limestone) | **Heavy Metal** | Host: `rock_limestone.png`<br>Overlay: `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **104** | `ore_manganese_raw` | Raw Manganese Block | **Heavy Metal** | `ore_manganese_raw.png` | Uniform (6 faces) |
-| **105** | `ore_manganese_slate` | Manganese Ore (Slate) | **Heavy Metal** | Host: `rock_slate.png`<br>Overlay: `ore_manganese_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **106** | `ore_nickel_basalt` | Nickel Ore (Basalt) | **Heavy Metal** | Host: `rock_basalt.png`<br>Overlay: `ore_nickel_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **107** | `ore_nickel_gabbro` | Nickel Ore (Gabbro) | **Heavy Metal** | Host: `rock_gabbro.png`<br>Overlay: `ore_nickel_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **108** | `ore_nickel_raw` | Raw Nickel Block | **Heavy Metal** | `ore_nickel_raw.png` | Uniform (6 faces) |
-| **109** | `ore_nickel_scoria` | Nickel Ore (Scoria) | **Heavy Metal** | Host: `rock_scoria.png`<br>Overlay: `ore_nickel_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **110** | `ore_nickel_serpentinite` | Nickel Ore (Serpentinite) | **Heavy Metal** | Host: `rock_serpentinite.png`<br>Overlay: `ore_nickel_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **111** | `ore_platinum_basalt` | Platinum Ore (Basalt) | **Metal** | Host: `rock_basalt.png`<br>Overlay: `ore_platinum_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **112** | `ore_platinum_gabbro` | Platinum Ore (Gabbro) | **Metal** | Host: `rock_gabbro.png`<br>Overlay: `ore_platinum_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **113** | `ore_platinum_raw` | Raw Platinum Block | **Metal** | `ore_platinum_raw.png` | Uniform (6 faces) |
-| **114** | `ore_platinum_scoria` | Platinum Ore (Scoria) | **Metal** | Host: `rock_scoria.png`<br>Overlay: `ore_platinum_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **115** | `ore_platinum_serpentinite` | Platinum Ore (Serpentinite) | **Metal** | Host: `rock_serpentinite.png`<br>Overlay: `ore_platinum_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **116** | `ore_quartz_andesite` | Quartz Ore (Andesite) | **Chemical** | Host: `rock_andesite.png`<br>Overlay: `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **117** | `ore_quartz_gneiss` | Quartz Ore (Gneiss) | **Chemical** | Host: `rock_gneiss.png`<br>Overlay: `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **118** | `ore_quartz_granite` | Quartz Ore (Granite) | **Chemical** | Host: `rock_granite.png`<br>Overlay: `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **119** | `ore_quartz_raw` | Raw Quartz Block | **Chemical** | `ore_quartz_raw.png` | Uniform (6 faces) |
-| **120** | `ore_quartz_sandstone_common` | Quartz Ore (Common Sandstone) | **Chemical** | Host: `rock_sandstone_common.png`<br>Overlay: `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **121** | `ore_quartz_sandstone_red` | Quartz Ore (Red Sandstone) | **Chemical** | Host: `rock_sandstone_red.png`<br>Overlay: `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **122** | `ore_quartz_sandstone_white` | Quartz Ore (White Sandstone) | **Chemical** | Host: `rock_sandstone_white.png`<br>Overlay: `ore_quartz_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **123** | `ore_saltpeter_karst` | Saltpeter Ore (Karst) | **Chemical** | Host: `rock_karst.png`<br>Overlay: `ore_saltpeter_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **124** | `ore_saltpeter_limestone` | Saltpeter Ore (Limestone) | **Chemical** | Host: `rock_limestone.png`<br>Overlay: `ore_saltpeter_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **125** | `ore_saltpeter_raw` | Raw Saltpeter Block | **Chemical** | `ore_saltpeter_raw.png` | Uniform (6 faces) |
-| **126** | `ore_saltpeter_sandstone_dune` | Saltpeter Ore (Dune Sandstone) | **Chemical** | Host: `rock_sandstone_dune.png`<br>Overlay: `ore_saltpeter_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **127** | `ore_saltpeter_sandstone_white` | Saltpeter Ore (White Sandstone) | **Chemical** | Host: `rock_sandstone_white.png`<br>Overlay: `ore_saltpeter_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **128** | `ore_silver_andesite` | Silver Ore (Andesite) | **Metal** | Host: `rock_andesite.png`<br>Overlay: `ore_silver_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **129** | `ore_silver_diorite` | Silver Ore (Diorite) | **Metal** | Host: `rock_diorite.png`<br>Overlay: `ore_silver_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **130** | `ore_silver_gneiss` | Silver Ore (Gneiss) | **Metal** | Host: `rock_gneiss.png`<br>Overlay: `ore_silver_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **131** | `ore_silver_marble` | Silver Ore (Marble) | **Metal** | Host: `rock_marble.png`<br>Overlay: `ore_silver_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **132** | `ore_silver_raw` | Raw Silver Block | **Metal** | `ore_silver_raw.png` | Uniform (6 faces) |
-| **133** | `ore_sulfur_basalt` | Sulfur Ore (Basalt) | **Chemical** | Host: `rock_basalt.png`<br>Overlay: `ore_sulfur_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **134** | `ore_sulfur_brimstone` | Sulfur Ore (Brimstone) | **Chemical** | Host: `rock_brimstone.png`<br>Overlay: `ore_sulfur_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **135** | `ore_sulfur_raw` | Raw Sulfur Block | **Chemical** | `ore_sulfur_raw.png` | Uniform (6 faces) |
-| **136** | `ore_sulfur_scoria` | Sulfur Ore (Scoria) | **Chemical** | Host: `rock_scoria.png`<br>Overlay: `ore_sulfur_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **137** | `ore_sulfur_tuff` | Sulfur Ore (Tuff) | **Chemical** | Host: `rock_tuff.png`<br>Overlay: `ore_sulfur_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **138** | `ore_tin_andesite` | Tin Ore (Andesite) | **Metal** | Host: `rock_andesite.png`<br>Overlay: `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **139** | `ore_tin_diorite` | Tin Ore (Diorite) | **Metal** | Host: `rock_diorite.png`<br>Overlay: `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **140** | `ore_tin_dolomite` | Tin Ore (Dolomite) | **Metal** | Host: `rock_dolomite.png`<br>Overlay: `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **141** | `ore_tin_gneiss` | Tin Ore (Gneiss) | **Metal** | Host: `rock_gneiss.png`<br>Overlay: `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **142** | `ore_tin_granite` | Tin Ore (Granite) | **Metal** | Host: `rock_granite.png`<br>Overlay: `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **143** | `ore_tin_raw` | Raw Tin Block | **Metal** | `ore_tin_raw.png` | Uniform (6 faces) |
-| **144** | `ore_tin_sandstone_common` | Tin Ore (Common Sandstone) | **Metal** | Host: `rock_sandstone_common.png`<br>Overlay: `ore_tin_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **145** | `ore_uranium_diorite` | Uranium Ore (Diorite) | **Heavy Metal** | Host: `rock_diorite.png`<br>Overlay: `ore_uranium_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **146** | `ore_uranium_gabbro` | Uranium Ore (Gabbro) | **Heavy Metal** | Host: `rock_gabbro.png`<br>Overlay: `ore_uranium_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **147** | `ore_uranium_granite` | Uranium Ore (Granite) | **Heavy Metal** | Host: `rock_granite.png`<br>Overlay: `ore_uranium_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **148** | `ore_uranium_raw` | Raw Uranium Block | **Heavy Metal** | `ore_uranium_raw.png` | Uniform (6 faces) |
-| **149** | `ore_uranium_slate` | Uranium Ore (Slate) | **Heavy Metal** | Host: `rock_slate.png`<br>Overlay: `ore_uranium_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **150** | `ore_zinc_andesite` | Zinc Ore (Andesite) | **Metal** | Host: `rock_andesite.png`<br>Overlay: `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **151** | `ore_zinc_argillite` | Zinc Ore (Argillite) | **Metal** | Host: `rock_argillite.png`<br>Overlay: `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **152** | `ore_zinc_chalk` | Zinc Ore (Chalk) | **Metal** | Host: `rock_chalk.png`<br>Overlay: `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **153** | `ore_zinc_diorite` | Zinc Ore (Diorite) | **Metal** | Host: `rock_diorite.png`<br>Overlay: `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **154** | `ore_zinc_dolomite` | Zinc Ore (Dolomite) | **Metal** | Host: `rock_dolomite.png`<br>Overlay: `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **155** | `ore_zinc_gneiss` | Zinc Ore (Gneiss) | **Metal** | Host: `rock_gneiss.png`<br>Overlay: `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **156** | `ore_zinc_karst` | Zinc Ore (Karst) | **Metal** | Host: `rock_karst.png`<br>Overlay: `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **157** | `ore_zinc_limestone` | Zinc Ore (Limestone) | **Metal** | Host: `rock_limestone.png`<br>Overlay: `ore_zinc_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **158** | `ore_zinc_raw` | Raw Zinc Block | **Metal** | `ore_zinc_raw.png` | Uniform (6 faces) |
+| **006** | `gem_emerald_slate` | Emerald Ore (Slate) | **Gemstone** | `rock_slate.png` | `gem_emerald_overlay.png` |
+| **007** | `gem_jade_rough` | Rough Jade Block | **Gemstone** | `gem_jade_rough.png` | Uniform (6 faces) |
+| **008** | `gem_onyx_rough` | Rough Onyx Block | **Gemstone** | `gem_onyx_rough.png` *(16×64)* | Animated (4 frames) |
+| **009** | `gem_onyx_slate` | Onyx Ore (Slate) | **Gemstone** | `rock_slate.png` | `gem_onyx_overlay.png` |
+| **010** | `gem_opal_rough` | Rough Opal Block | **Gemstone** | `gem_opal_rough.png` *(16×64)* | Animated (4 frames) |
+| **011** | `gem_opal_sandstone_white` | Opal Ore (White Sandstone) | **Gemstone** | `rock_sandstone_white.png` | `gem_opal_overlay.png` |
+| **012** | `gem_ruby_rough` | Rough Ruby Block | **Gemstone** | `gem_ruby_rough.png` | Uniform (6 faces) |
+| **013** | `gem_sapphire_rough` | Rough Sapphire Block | **Gemstone** | `gem_sapphire_rough.png` | Uniform (6 faces) |
+| **014** | `gem_topaz_rough` | Rough Topaz Block | **Gemstone** | `gem_topaz_rough.png` | Uniform (6 faces) |
+| **015** | `gem_vein_andesite` | Gem Vein (Andesite) | **Gemstone** | `rock_andesite.png` | `gem_vein_overlay.png` |
+| **016** | `gem_vein_basalt` | Gem Vein (Basalt) | **Gemstone** | `rock_basalt.png` | `gem_vein_overlay.png` |
+| **017** | `gem_vein_dolomite` | Gem Vein (Dolomite) | **Gemstone** | `rock_dolomite.png` | `gem_vein_overlay.png` |
+| **018** | `gem_vein_gabbro` | Gem Vein (Gabbro) | **Gemstone** | `rock_gabbro.png` | `gem_vein_overlay.png` |
+| **019** | `gem_vein_granite` | Gem Vein (Granite) | **Gemstone** | `rock_granite.png` | `gem_vein_overlay.png` |
+| **020** | `gem_vein_marble` | Gem Vein (Marble) | **Gemstone** | `rock_marble.png` | `gem_vein_overlay.png` |
+| **021** | `gem_vein_slate` | Gem Vein (Slate) | **Gemstone** | `rock_slate.png` | `gem_vein_overlay.png` |
+| **022** | `ore_cinnabar_basalt` | Cinnabar Ore (Basalt) | **Chemical** | `rock_basalt.png` | `ore_cinnabar_overlay.png` |
+| **023** | `ore_cinnabar_raw` | Raw Cinnabar Block | **Chemical** | `ore_cinnabar_raw.png` | Uniform (6 faces) |
+| **024** | `ore_coal_argillite` | Coal Ore (Argillite) | **Chemical** | `rock_argillite.png` | `ore_coal_overlay.png` |
+| **025** | `ore_coal_chalk` | Coal Ore (Chalk) | **Chemical** | `rock_chalk.png` | `ore_coal_overlay.png` |
+| **026** | `ore_coal_dolomite` | Coal Ore (Dolomite) | **Chemical** | `rock_dolomite.png` | `ore_coal_overlay.png` |
+| **027** | `ore_coal_granite` | Coal Ore (Granite) | **Chemical** | `rock_granite.png` | `ore_coal_overlay.png` |
+| **028** | `ore_coal_limestone` | Coal Ore (Limestone) | **Chemical** | `rock_limestone.png` | `ore_coal_overlay.png` |
+| **029** | `ore_coal_raw` | Raw Coal Block | **Chemical** | `ore_coal_raw.png` | Uniform (6 faces) |
+| **030** | `ore_coal_sandstone_common` | Coal Ore (Common Sandstone) | **Chemical** | `rock_sandstone_common.png` | `ore_coal_overlay.png` |
+| **031** | `ore_copper_andesite` | Copper Ore (Andesite) | **Metal** | `rock_andesite.png` | `ore_copper_overlay.png` |
+| **032** | `ore_copper_dolomite` | Copper Ore (Dolomite) | **Metal** | `rock_dolomite.png` | `ore_copper_overlay.png` |
+| **033** | `ore_copper_granite` | Copper Ore (Granite) | **Metal** | `rock_granite.png` | `ore_copper_overlay.png` |
+| **034** | `ore_copper_raw` | Raw Copper Block | **Metal** | `ore_copper_raw.png` | Uniform (6 faces) |
+| **035** | `ore_copper_sandstone_common` | Copper Ore (Common Sandstone) | **Metal** | `rock_sandstone_common.png` | `ore_copper_overlay.png` |
+| **036** | `ore_copper_sandstone_red` | Copper Ore (Red Sandstone) | **Metal** | `rock_sandstone_red.png` | `ore_copper_overlay.png` |
+| **037** | `ore_copper_sandstone_white` | Copper Ore (White Sandstone) | **Metal** | `rock_sandstone_white.png` | `ore_copper_overlay.png` |
+| **038** | `ore_gold_gabbro` | Gold Ore (Gabbro) | **Metal** | `rock_gabbro.png` | `ore_gold_overlay.png` |
+| **039** | `ore_gold_granite` | Gold Ore (Granite) | **Metal** | `rock_granite.png` | `ore_gold_overlay.png` |
+| **040** | `ore_gold_raw` | Raw Gold Block | **Metal** | `ore_gold_raw.png` | Uniform (6 faces) |
+| **041** | `ore_gold_sandstone_red` | Gold Ore (Red Sandstone) | **Metal** | `rock_sandstone_red.png` | `ore_gold_overlay.png` |
+| **042** | `ore_gold_slate` | Gold Ore (Slate) | **Metal** | `rock_slate.png` | `ore_gold_overlay.png` |
+| **043** | `ore_iron_andesite` | Iron Ore (Andesite) | **Metal** | `rock_andesite.png` | `ore_iron_overlay.png` |
+| **044** | `ore_iron_basalt` | Iron Ore (Basalt) | **Metal** | `rock_basalt.png` | `ore_iron_overlay.png` |
+| **045** | `ore_iron_dolomite` | Iron Ore (Dolomite) | **Metal** | `rock_dolomite.png` | `ore_iron_overlay.png` |
+| **046** | `ore_iron_gabbro` | Iron Ore (Gabbro) | **Metal** | `rock_gabbro.png` | `ore_iron_overlay.png` |
+| **047** | `ore_iron_granite` | Iron Ore (Granite) | **Metal** | `rock_granite.png` | `ore_iron_overlay.png` |
+| **048** | `ore_iron_raw` | Raw Iron Block | **Metal** | `ore_iron_raw.png` | Uniform (6 faces) |
+| **049** | `ore_iron_slate` | Iron Ore (Slate) | **Metal** | `rock_slate.png` | `ore_iron_overlay.png` |
+| **050** | `ore_lazurite_limestone` | Lazurite Ore (Limestone) | **Chemical** | `rock_limestone.png` | `ore_lazurite_overlay.png` |
+| **051** | `ore_lazurite_marble` | Lazurite Ore (Marble) | **Chemical** | `rock_marble.png` | `ore_lazurite_overlay.png` |
+| **052** | `ore_lazurite_raw` | Raw Lazurite Block | **Chemical** | `ore_lazurite_raw.png` | Uniform (6 faces) |
+| **053** | `ore_platinum_basalt` | Platinum Ore (Basalt) | **Metal** | `rock_basalt.png` | `ore_platinum_overlay.png` |
+| **054** | `ore_platinum_gabbro` | Platinum Ore (Gabbro) | **Metal** | `rock_gabbro.png` | `ore_platinum_overlay.png` |
+| **055** | `ore_platinum_raw` | Raw Platinum Block | **Metal** | `ore_platinum_raw.png` | Uniform (6 faces) |
+| **056** | `ore_silver_andesite` | Silver Ore (Andesite) | **Metal** | `rock_andesite.png` | `ore_silver_overlay.png` |
+| **057** | `ore_silver_marble` | Silver Ore (Marble) | **Metal** | `rock_marble.png` | `ore_silver_overlay.png` |
+| **058** | `ore_silver_raw` | Raw Silver Block | **Metal** | `ore_silver_raw.png` | Uniform (6 faces) |
+| **059** | `ore_silver_slate` | Silver Ore (Slate) | **Metal** | `rock_slate.png` | `ore_silver_overlay.png` |
+| **060** | `ore_sulfur_basalt` | Sulfur Ore (Basalt) | **Chemical** | `rock_basalt.png` | `ore_sulfur_overlay.png` |
+| **061** | `ore_sulfur_raw` | Raw Sulfur Block | **Chemical** | `ore_sulfur_raw.png` | Uniform (6 faces) |
+| **062** | `ore_tin_andesite` | Tin Ore (Andesite) | **Metal** | `rock_andesite.png` | `ore_tin_overlay.png` |
+| **063** | `ore_tin_chalk` | Tin Ore (Chalk) | **Metal** | `rock_chalk.png` | `ore_tin_overlay.png` |
+| **064** | `ore_tin_dolomite` | Tin Ore (Dolomite) | **Metal** | `rock_dolomite.png` | `ore_tin_overlay.png` |
+| **065** | `ore_tin_granite` | Tin Ore (Granite) | **Metal** | `rock_granite.png` | `ore_tin_overlay.png` |
+| **066** | `ore_tin_raw` | Raw Tin Block | **Metal** | `ore_tin_raw.png` | Uniform (6 faces) |
+| **067** | `ore_uranium_gabbro` | Uranium Ore (Gabbro) | **Heavy Metal** | `rock_gabbro.png` | `ore_uranium_overlay.png` |
+| **068** | `ore_uranium_raw` | Raw Uranium Block | **Heavy Metal** | `ore_uranium_raw.png` | Uniform (6 faces) |
+| **069** | `ore_uranium_slate` | Uranium Ore (Slate) | **Heavy Metal** | `rock_slate.png` | `ore_uranium_overlay.png` |
+| **070** | `ore_zinc_andesite` | Zinc Ore (Andesite) | **Metal** | `rock_andesite.png` | `ore_zinc_overlay.png` |
+| **071** | `ore_zinc_argillite` | Zinc Ore (Argillite) | **Metal** | `rock_argillite.png` | `ore_zinc_overlay.png` |
+| **072** | `ore_zinc_dolomite` | Zinc Ore (Dolomite) | **Metal** | `rock_dolomite.png` | `ore_zinc_overlay.png` |
+| **073** | `ore_zinc_raw` | Raw Zinc Block | **Metal** | `ore_zinc_raw.png` | Uniform (6 faces) |
+| **074** | `ore_zinc_slate` | Zinc Ore (Slate) | **Metal** | `rock_slate.png` | `ore_zinc_overlay.png` |
 
----
-
-## 07. Speleology & Crystals (`caverns`) — 28 Blocks
+## 07. Speleology & Crystals (`caverns`) — 30 Blocks
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/caverns`  
 📄 **Comprehensive Specification**: [caverns_design.md](blocks/caverns_design.md)
 
-The subterranean speleological domain comprises **6 solid mineral crystal blocks**, **6 crystal clusters**, **6 glinted emissive crystal clusters**, **6 modular speleothem/dripstone systems** (stalactites, stalagmites, columns, and soda straws), and **4 paleontological fossil blocks** = **28 Total Cavern Blocks**.
+The subterranean speleological domain comprises **6 solid mineral crystal blocks**, **6 crystal clusters**, **6 glinted emissive crystal clusters**, **4 modular speleothem/dripstone systems** (stalactites, stalagmites, columns, and soda straws), **4 speleological cave stone strata** (Cave Karst and Cave Calcite solid and cobbled), and **4 paleontological fossil blocks** = **30 Total Cavern Blocks**.
 
 ---
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping / Geometry |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **01** | `crystal_amethyst_block` | Amethyst Block | **Crystal** | `crystal_amethyst.png` *(+ `1`, `2`)* | 6 uniform faces |
-| **02** | `crystal_amethyst_cluster` | Amethyst Cluster | **Cluster** | `crystal_amethyst_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
-| **03** | `crystal_amethyst_glinted` | Glinted Amethyst Cluster | **Emissive** | `crystal_amethyst_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
-| **04** | `crystal_aquamarine_block` | Aquamarine Block | **Crystal** | `crystal_aquamarine.png` *(+ `1`, `2`)* | 6 uniform faces |
-| **05** | `crystal_aquamarine_cluster` | Aquamarine Cluster | **Cluster** | `crystal_aquamarine_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
-| **06** | `crystal_aquamarine_glinted` | Glinted Aquamarine Cluster | **Emissive** | `crystal_aquamarine_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
-| **07** | `crystal_citrine_block` | Citrine Block | **Crystal** | `crystal_citrine.png` *(+ `1`, `2`)* | 6 uniform faces |
-| **08** | `crystal_citrine_cluster` | Citrine Cluster | **Cluster** | `crystal_citrine_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
-| **09** | `crystal_citrine_glinted` | Glinted Citrine Cluster | **Emissive** | `crystal_citrine_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
-| **10** | `crystal_fluorite_block` | Fluorite Block | **Crystal** | `crystal_fluorite.png` *(+ `1`, `2`)* | 6 uniform faces |
-| **11** | `crystal_fluorite_cluster` | Fluorite Cluster | **Cluster** | `crystal_fluorite_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
-| **12** | `crystal_fluorite_glinted` | Glinted Fluorite Cluster | **Emissive** | `crystal_fluorite_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
-| **13** | `crystal_pink_salt_block` | Pink Salt Block | **Crystal** | `crystal_pink_salt.png` *(+ `1`, `2`)* | 6 uniform faces |
-| **14** | `crystal_pink_salt_cluster` | Pink Salt Cluster | **Cluster** | `crystal_pink_salt_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
-| **15** | `crystal_pink_salt_glinted` | Glinted Pink Salt Cluster | **Emissive** | `crystal_pink_salt_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
-| **16** | `crystal_selenite_block` | Selenite Block | **Crystal** | `crystal_selenite.png` *(+ `1`, `2`)* | 6 uniform faces |
-| **17** | `crystal_selenite_cluster` | Selenite Cluster | **Cluster** | `crystal_selenite_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
-| **18** | `crystal_selenite_glinted` | Glinted Selenite Cluster | **Emissive** | `crystal_selenite_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
-| **19** | `dripstone_calcite` | Calcite Flowstone | **Speleothem** | `rock_calcite.png` | Modular system (**10** pieces) |
-| **20** | `dripstone_karst` | Karst Dripstone | **Speleothem** | `rock_karst.png` | Modular system (**10** pieces) |
-| **21** | `fossil_amber` | Fossil Amber | **Fossil** | `fossil_amber.png` | 6 uniform faces |
-| **22** | `fossil_bitumen` | Fossil Bitumen | **Fossil** | `fossil_bitumen.png` | 6 uniform faces |
-| **23** | `fossil_bones` | Fossil Bones | **Fossil** | `fossil_bones.png` | 6 uniform faces |
-| **24** | `fossil_matrix` | Fossil Matrix | **Fossil** | `fossil_matrix.png` | 6 uniform faces |
-| **25** | `speleothem_basalt` | Lava Icicle | **Speleothem** | `rock_basalt.png` | Modular system (**10** pieces) |
-| **26** | `speleothem_brimstone` | Brimstone Spike | **Speleothem** | `rock_brimstone.png` | Modular system (**10** pieces) |
-| **27** | `speleothem_ice` | Glacial Icicle | **Speleothem** | `frost_ice_packed.png` | Modular system (**10** pieces) |
-| **28** | `speleothem_salt_straw` | Pink Salt Soda Straw | **Speleothem** | `crystal_pink_salt.png` | Modular system (**6** pieces) |
+| **01** | `cave_calcite` | Cave Calcite | **Speleological** | `cave_calcite.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **02** | `cave_karst` | Cave Karst | **Speleological** | `cave_karst.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **03** | `cobbled_cave_calcite` | Cobbled Cave Calcite | **Speleological** | `cave_calcite_cobbled.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **04** | `cobbled_cave_karst` | Cobbled Cave Karst | **Speleological** | `cave_karst_cobbled.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **05** | `crystal_amethyst_block` | Amethyst Block | **Crystal** | `crystal_amethyst.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **06** | `crystal_amethyst_cluster` | Amethyst Cluster | **Cluster** | `crystal_amethyst_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
+| **07** | `crystal_amethyst_glinted` | Glinted Amethyst Cluster | **Emissive** | `crystal_amethyst_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
+| **08** | `crystal_aquamarine_block` | Aquamarine Block | **Crystal** | `crystal_aquamarine.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **09** | `crystal_aquamarine_cluster` | Aquamarine Cluster | **Cluster** | `crystal_aquamarine_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
+| **10** | `crystal_aquamarine_glinted` | Glinted Aquamarine Cluster | **Emissive** | `crystal_aquamarine_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
+| **11** | `crystal_citrine_block` | Citrine Block | **Crystal** | `crystal_citrine.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **12** | `crystal_citrine_cluster` | Citrine Cluster | **Cluster** | `crystal_citrine_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
+| **13** | `crystal_citrine_glinted` | Glinted Citrine Cluster | **Emissive** | `crystal_citrine_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
+| **14** | `crystal_fluorite_block` | Fluorite Block | **Crystal** | `crystal_fluorite.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **15** | `crystal_fluorite_cluster` | Fluorite Cluster | **Cluster** | `crystal_fluorite_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
+| **16** | `crystal_fluorite_glinted` | Glinted Fluorite Cluster | **Emissive** | `crystal_fluorite_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
+| **17** | `crystal_pink_salt_block` | Pink Salt Block | **Crystal** | `crystal_pink_salt.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **18** | `crystal_pink_salt_cluster` | Pink Salt Cluster | **Cluster** | `crystal_pink_salt_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
+| **19** | `crystal_pink_salt_glinted` | Glinted Pink Salt Cluster | **Emissive** | `crystal_pink_salt_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
+| **20** | `crystal_selenite_block` | Selenite Block | **Crystal** | `crystal_selenite.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **21** | `crystal_selenite_cluster` | Selenite Cluster | **Cluster** | `crystal_selenite_cluster.png` *(+ `1`, `2`)* | Cross-billboard |
+| **22** | `crystal_selenite_glinted` | Glinted Selenite Cluster | **Emissive** | `crystal_selenite_cluster_glinted.png` *(16×64 + `1`, `2`)* | Animated Cross-billboard (4 frames) |
+| **23** | `fossil_amber` | Fossil Amber | **Fossil** | `fossil_amber.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **24** | `fossil_bitumen` | Fossil Bitumen | **Fossil** | `fossil_bitumen.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **25** | `fossil_bones` | Fossil Bones | **Fossil** | `fossil_bones.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **26** | `fossil_matrix` | Fossil Matrix | **Fossil** | `fossil_matrix.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **27** | `speleothem_blue_ice` | Blue Ice Icicle | **Speleothem** | `speleothem_blue_ice_*.png` | Modular system (**10** pieces) |
+| **28** | `speleothem_calcite` | Calcite Flowstone | **Speleothem** | `speleothem_calcite_*.png` | Modular system (**10** pieces) |
+| **29** | `speleothem_karst` | Karst Dripstone | **Speleothem** | `speleothem_karst_*.png` | Modular system (**10** pieces) |
+| **30** | `speleothem_salt_straw` | Pink Salt Soda Straw | **Speleothem** | `speleothem_pink_salt_straw_*.png` | Modular system (**6** pieces) |
 
 ---
 

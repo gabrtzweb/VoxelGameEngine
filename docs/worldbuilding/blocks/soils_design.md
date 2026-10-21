@@ -3,7 +3,7 @@
 All active textures for soils and terrain surfaces (`soil_`) are organized in the folder:
 📂 **`docs/worldbuilding/blocks/soils`** *(66 active PNG textures on disk)*
 
-Generating **58 unique blocks** in the master catalog: 24 Biological soils + 12 climatic soils + 4 clays + 6 sands + 4 gravels + 2 volcanic ashes + 4 ground mosses + 4 snows & grass tops (the grass top is a grayscale image that can be colored with a shader).
+Generating **56 unique blocks** in the master catalog: 24 Biological soils + 12 climatic soils + 4 clays + 4 sands + 4 gravels + 2 volcanic ashes + 4 ground mosses + 4 snows & grass tops (the grass top is a grayscale image that can be colored with a shader).
 
 Shared surface overlays are located in:
 📂 **`docs/worldbuilding/blocks/overlays`**
@@ -30,7 +30,7 @@ graph TD
     C --> C3["Laterite: Leached iron-rich tropical duricrust (Terra Roxa / Ferricrete)"]
 
     D --> D1["Clays (4 Colors): Plastic impermeable clays (Blue, Red, White, Yellow)"]
-    D --> D2["Sands (6 Colors): Granular aeolian and marine sands (Common, Red, Dune, White, Pink, Black)"]
+    D --> D2["Sands (4 Colors): Granular aeolian and marine sands (Common, Red, Dune, White)"]
     D --> D3["Gravels (Matrix System): Fluvial, loamy, volcanic, and glacial gravels"]
 
     E --> E1["Volcanic Ashes: Tephra deposits (Dark basaltic, Light pumice)"]
@@ -68,14 +68,12 @@ All 4 colors share the canonical alluvial marbling pattern and include stochasti
 * `soil_clay_white.png`, `soil_clay_white1.png`, `soil_clay_white2.png` *(Pure kaolin porcelain clay)*
 * `soil_clay_yellow.png`, `soil_clay_yellow1.png`, `soil_clay_yellow2.png` *(Ochre clay rich in limonite)*
 
-### D. Sands (6 base textures + 12 stochastic variations)
-All 6 sands include stochastic variants `1` and `2` to break desert and beach tiling repetition:
+### D. Sands (4 base textures + 8 stochastic variations)
+All 4 sands include stochastic variants `1` and `2` to break desert and beach tiling repetition:
 * `soil_sand_common.png`, `soil_sand_common1.png`, `soil_sand_common2.png` *(Standard quartzose beach/river sand)*
 * `soil_sand_red.png`, `soil_sand_red1.png`, `soil_sand_red2.png` *(Desert hematite-coated sand)*
 * `soil_sand_dune.png`, `soil_sand_dune1.png`, `soil_sand_dune2.png` *(Fine golden aeolian dune sand)*
 * `soil_sand_white.png`, `soil_sand_white1.png`, `soil_sand_white2.png` *(Coral/gypsum pure white sand)*
-* `soil_sand_pink.png`, `soil_sand_pink1.png`, `soil_sand_pink2.png` *(Foraminifera pink tropical sand)*
-* `soil_sand_black.png`, `soil_sand_black1.png`, `soil_sand_black2.png` *(Heavy basaltic volcanic sand)*
 
 ### E. Matrix Gravels (4 base textures + 8 stochastic variations)
 All 4 gravel matrices feature stochastic variants `1` and `2` with jittered pebble boundaries:
@@ -178,7 +176,7 @@ All 4 moss biomes feature complete 3-fold stochastic variants (`1` and `2`):
 
 ---
 
-### 3.5. Sands (6 Blocks)
+### 3.5. Sands (4 Blocks)
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
@@ -186,8 +184,6 @@ All 4 moss biomes feature complete 3-fold stochastic variants (`1` and `2`):
 | **46** | `sand_red` | Red Sand | **Sand** | `soil_sand_red.png` | 6 uniform faces |
 | **47** | `sand_dune` | Dune Sand | **Sand** | `soil_sand_dune.png` | 6 uniform faces |
 | **48** | `sand_white` | White Sand | **Sand** | `soil_sand_white.png` | 6 uniform faces |
-| **49** | `sand_pink` | Pink Sand | **Sand** | `soil_sand_pink.png` | 6 uniform faces |
-| **50** | `sand_black` | Black Sand | **Sand** | `soil_sand_black.png` | 6 uniform faces |
 
 ---
 
@@ -195,10 +191,10 @@ All 4 moss biomes feature complete 3-fold stochastic variants (`1` and `2`):
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **51** | `gravel_dirty` | Dirty Gravel | **Gravel** | `soil_gravel_dirty.png` | 6 uniform faces |
-| **52** | `gravel_sandy` | Sandy Gravel | **Gravel** | `soil_gravel_sandy.png` | 6 uniform faces |
-| **53** | `gravel_ashy` | Ashy Gravel | **Gravel** | `soil_gravel_ashy.png` | 6 uniform faces |
-| **54** | `gravel_snowy` | Snowy Gravel | **Gravel** | `soil_gravel_snowy.png` | 6 uniform faces |
+| **49** | `gravel_dirty` | Dirty Gravel | **Gravel** | `soil_gravel_dirty.png` | 6 uniform faces |
+| **50** | `gravel_sandy` | Sandy Gravel | **Gravel** | `soil_gravel_sandy.png` | 6 uniform faces |
+| **51** | `gravel_ashy` | Ashy Gravel | **Gravel** | `soil_gravel_ashy.png` | 6 uniform faces |
+| **52** | `gravel_snowy` | Snowy Gravel | **Gravel** | `soil_gravel_snowy.png` | 6 uniform faces |
 
 ---
 
@@ -206,8 +202,8 @@ All 4 moss biomes feature complete 3-fold stochastic variants (`1` and `2`):
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **55** | `ash_volcanic` | Volcanic Ash | **Pyroclastic** | `soil_ash_vulcanic.png` | 6 uniform faces |
-| **56** | `ash_pumice` | Pumice Ash | **Pyroclastic** | `soil_ash_pumice.png` | 6 uniform faces |
+| **53** | `ash_volcanic` | Volcanic Ash | **Pyroclastic** | `soil_ash_vulcanic.png` | 6 uniform faces |
+| **54** | `ash_pumice` | Pumice Ash | **Pyroclastic** | `soil_ash_pumice.png` | 6 uniform faces |
 
 ---
 
@@ -215,5 +211,5 @@ All 4 moss biomes feature complete 3-fold stochastic variants (`1` and `2`):
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **57** | `snow_block` | Snow Block | **Cryosphere** | `soil_snow.png` | 6 uniform faces |
-| **58** | `powder_snow` | Powder Snow | **Cryosphere** | `soil_snow_powder.png` | 6 uniform faces |
+| **55** | `snow_block` | Snow Block | **Cryosphere** | `soil_snow.png` | 6 uniform faces |
+| **56** | `powder_snow` | Powder Snow | **Cryosphere** | `soil_snow_powder.png` | 6 uniform faces |
