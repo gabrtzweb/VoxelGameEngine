@@ -152,6 +152,14 @@ impl ChunkMeshRegistry {
         self.entries.get(coordinate).map(|d| d.visibility_mask)
     }
 
+    pub fn get_render_data(&self, coordinate: &IVec3) -> Option<&ChunkRenderData> {
+        self.entries.get(coordinate)
+    }
+
+    pub fn is_subterranean(&self, coordinate: &IVec3) -> bool {
+        self.entries.get(coordinate).is_some_and(|d| d.is_subterranean)
+    }
+
     #[allow(dead_code)]
     #[inline]
     pub fn has_column_mesh(&self, column: IVec2) -> bool {

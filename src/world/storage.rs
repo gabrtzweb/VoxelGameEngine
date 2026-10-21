@@ -13,6 +13,10 @@ pub struct VoxelWorld {
 }
 
 impl VoxelWorld {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn insert_chunk(&mut self, coordinate: IVec3, chunk: Chunk) {
         self.chunks.insert(coordinate, Arc::new(chunk));
     }

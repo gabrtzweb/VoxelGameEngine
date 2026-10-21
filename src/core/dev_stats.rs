@@ -232,9 +232,17 @@ fn update_dev_stats(
             let mesh_triangles = chunk_meshes.total_triangles();
 
             let culling_info = if let Some(ref cs) = culling_state {
+                let status = if cs.is_player_underground {
+                    "Cave"
+                } else {
+                    "Surface"
+                };
                 format!(
-                    " (Rendered: {} | Culled: {})",
-                    cs.rendered_chunks, cs.culled_chunks
+                    " [Culling ({status}): {}R/{}C | Verts: {}k R / {}k C]",
+                    cs.rendered_chunks,
+                    cs.culled_chunks,
+                    cs.rendered_vertices / 1000,
+                    cs.culled_vertices / 1000,
                 )
             } else {
                 String::new()
@@ -355,10 +363,13 @@ fn update_dev_stats(
                 Position: {}, {}, {}\n\
                 Player chunk: {}, {}, {}\n\
                 Camera: {:.1}, {:.1}, {:.1}\n\
+                Environment: {}\n\
                 Loaded chunks: {}\n\
                 Meshed chunks: {}\n\
                 Rendered chunks: {}\n\
                 Culled chunks: {}\n\
+                Rendered vertices: {}\n\
+                Culled vertices: {}\n\
                 Mesh vertices: {}\n\
                 Mesh triangles: {}\n\
                 Voxel capacity: {}\n\
@@ -374,10 +385,17 @@ fn update_dev_stats(
                 camera_position.x,
                 camera_position.y,
                 camera_position.z,
+                if culling_state.as_ref().map_or(false, |s| s.is_player_underground) {
+                    "Underground / Cavern"
+                } else {
+                    "Surface / Open Air"
+                },
                 loaded_chunks,
                 meshed_chunks,
                 culling_state.as_ref().map_or(0, |s| s.rendered_chunks),
                 culling_state.as_ref().map_or(0, |s| s.culled_chunks),
+                culling_state.as_ref().map_or(0, |s| s.rendered_vertices),
+                culling_state.as_ref().map_or(0, |s| s.culled_vertices),
                 mesh_vertices,
                 mesh_triangles,
                 loaded_chunks * CHUNK_VOLUME,

@@ -4,7 +4,7 @@ use std::collections::{HashSet, VecDeque};
 use crate::{
     meshing::pipeline::ChunkMeshRegistry,
     player::PlayerCamera,
-    world::{CHUNK_SIZE, VOXEL_SIZE, VoxelWorld, block::BlockShape},
+    world::{CHUNK_SIZE, Chunk, VOXEL_SIZE, VoxelWorld, block::BlockShape},
 };
 
 /// Component attached to chunk mesh entities storing their grid coordinate.
@@ -18,15 +18,12 @@ pub struct SubterraneanChunkMesh;
 /// State tracker for cave occlusion culling and debug telemetry.
 #[derive(Resource, Debug, Clone)]
 pub struct CaveCullingState {
-    #[allow(dead_code)]
     pub is_player_underground: bool,
     pub last_player_chunk: IVec3,
     pub last_player_block: IVec3,
     pub rendered_chunks: usize,
     pub culled_chunks: usize,
-    #[allow(dead_code)]
     pub rendered_vertices: usize,
-    #[allow(dead_code)]
     pub culled_vertices: usize,
     pub visible_chunks: HashSet<IVec3>,
     pub traversal_queue: VecDeque<(IVec3, usize)>,
@@ -186,12 +183,63 @@ pub fn get_camera_reachable_faces(
     reachable
 }
 
+/// Determines if a 3D world position is underground (beneath solid terrain or inside a subterranean chunk).
+pub fn is_position_underground(cam_pos: Vec3, world: Option<&VoxelWorld>) -> bool {
+    let cam_chunk = IVec3::new(
+        (cam_pos.x / CHUNK_SIZE as f32).floor() as i32,
+        (cam_pos.y / CHUNK_SIZE as f32).floor() as i32,
+        (cam_pos.z / CHUNK_SIZE as f32).floor() as i32,
+    );
+    let cam_block = IVec3::new(
+        (cam_pos.x / VOXEL_SIZE).floor() as i32,
+        (cam_pos.y / VOXEL_SIZE).floor() as i32,
+        (cam_pos.z / VOXEL_SIZE).floor() as i32,
+    );
+
+    let Some(w) = world else {
+        return cam_chunk.y <= 0;
+    };
+
+    if let Some(chunk) = w.get_chunk(cam_chunk) {
+        if chunk.is_subterranean() {
+            return true;
+        }
+    }
+
+    // Cast a vertical ray upwards through the column to detect solid roof/ceiling
+    // Check up to 48 blocks above the camera for solid opaque ground
+    let mut solid_count = 0;
+    for dy in 1..=48 {
+        let check_coord = cam_block + IVec3::new(0, dy, 0);
+        if let Some(voxel) = w.get_voxel(check_coord) {
+            if voxel.is_solid_opaque() {
+                solid_count += 1;
+                if solid_count >= 2 {
+                    return true;
+                }
+            }
+        }
+    }
+
+    false
+}
+
 /// Returns the 36-bit face-permeability mask for a chunk coordinate.
 pub fn get_chunk_permeability(
     coord: IVec3,
     registry: &ChunkMeshRegistry,
     world: Option<&VoxelWorld>,
+    is_player_underground: bool,
 ) -> u64 {
+    let is_subterranean = registry.is_subterranean(&coord)
+        || world.is_some_and(|w| w.get_chunk(coord).is_some_and(Chunk::is_subterranean));
+
+    // When the player is on the surface, subterranean chunks sealed under solid terrain
+    // cannot propagate sight/visibility into other subterranean chambers.
+    if !is_player_underground && is_subterranean {
+        return 0;
+    }
+
     if let Some(mask) = registry.get_visibility_mask_opt(&coord) {
         return mask;
     }
@@ -256,6 +304,9 @@ pub fn update_cave_culling_system(
     culling_state.last_player_block = cam_block;
     culling_state.last_player_chunk = cam_chunk;
 
+    let is_player_underground = is_position_underground(cam_pos, world.as_deref());
+    culling_state.is_player_underground = is_player_underground;
+
     let is_in_solid_rock = world
         .as_ref()
         .and_then(|w| w.get_voxel(cam_block))
@@ -285,7 +336,8 @@ pub fn update_cave_culling_system(
             .map(|s| (s.render_distance + 1).min(MAX_VERTICAL_RADIUS))
             .unwrap_or(MAX_VERTICAL_RADIUS);
 
-        let cam_mask = get_chunk_permeability(cam_chunk, &registry, world.as_deref());
+        let cam_mask =
+            get_chunk_permeability(cam_chunk, &registry, world.as_deref(), is_player_underground);
         let reachable_faces =
             get_camera_reachable_faces(cam_pos, cam_chunk, cam_mask, world.as_deref());
 
@@ -297,6 +349,23 @@ pub fn update_cave_culling_system(
             if (reachable_faces & (1 << out_face)) != 0 {
                 let neighbor = cam_chunk + FACE_OFFSETS[out_face];
                 let in_face = OPPOSITE_FACES[out_face];
+
+                let is_neighbor_subterranean = registry.is_subterranean(&neighbor)
+                    || world
+                        .as_deref()
+                        .is_some_and(|w| w.get_chunk(neighbor).is_some_and(Chunk::is_subterranean));
+
+                // Surface-to-underground occlusion check:
+                // When player is on the surface, subterranean chunks cannot be entered horizontally.
+                // If entered directly from above (PositiveY face = 3), looking down into a shaft,
+                // the floor is visible, but sight cannot branch horizontally.
+                if !is_player_underground && is_neighbor_subterranean {
+                    if in_face == 3 {
+                        culling_state.visible_chunks.insert(neighbor);
+                    }
+                    continue;
+                }
+
                 if culling_state.visible_chunks.insert(neighbor) {
                     culling_state.traversal_queue.push_back((neighbor, in_face));
                 }
@@ -304,7 +373,8 @@ pub fn update_cave_culling_system(
         }
 
         while let Some((curr, in_face)) = culling_state.traversal_queue.pop_front() {
-            let mask = get_chunk_permeability(curr, &registry, world.as_deref());
+            let mask =
+                get_chunk_permeability(curr, &registry, world.as_deref(), is_player_underground);
             if mask == 0 {
                 continue;
             }
@@ -322,7 +392,24 @@ pub fn update_cave_culling_system(
                     continue;
                 }
 
+                let is_neighbor_subterranean = registry.is_subterranean(&neighbor)
+                    || world
+                        .as_deref()
+                        .is_some_and(|w| w.get_chunk(neighbor).is_some_and(Chunk::is_subterranean));
+
                 let in_face_of_neighbor = OPPOSITE_FACES[out_face];
+
+                // Surface-to-underground occlusion check:
+                // When player is on the surface, subterranean chunks cannot be entered horizontally.
+                // If entered directly from above (+Y face), the pit/ravine floor is visible,
+                // but traversal stops so horizontal caves don't illuminate across the world.
+                if !is_player_underground && is_neighbor_subterranean {
+                    if in_face_of_neighbor == 3 {
+                        culling_state.visible_chunks.insert(neighbor);
+                    }
+                    continue;
+                }
+
                 if culling_state.visible_chunks.insert(neighbor) {
                     culling_state
                         .traversal_queue
@@ -334,9 +421,12 @@ pub fn update_cave_culling_system(
 
     let mut rendered_count = 0;
     let mut culled_count = 0;
+    let mut rendered_verts = 0;
+    let mut culled_verts = 0;
 
     for (coord, mut visibility) in &mut chunk_meshes {
-        let target = if culling_state.visible_chunks.contains(&coord.0) {
+        let is_visible = culling_state.visible_chunks.contains(&coord.0);
+        let target = if is_visible {
             rendered_count += 1;
             Visibility::Inherited
         } else {
@@ -347,8 +437,19 @@ pub fn update_cave_culling_system(
         if *visibility != target {
             *visibility = target;
         }
+
+        if let Some(render_data) = registry.get_render_data(&coord.0) {
+            let v = render_data.vertex_count();
+            if is_visible {
+                rendered_verts += v;
+            } else {
+                culled_verts += v;
+            }
+        }
     }
 
     culling_state.rendered_chunks = rendered_count;
     culling_state.culled_chunks = culled_count;
+    culling_state.rendered_vertices = rendered_verts;
+    culling_state.culled_vertices = culled_verts;
 }

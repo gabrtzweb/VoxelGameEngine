@@ -55,10 +55,10 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | Phase | Milestone Title | Status | Focus / Key Deliverables |
 | :---: | :--- | :---: | :--- |
 | **01** | **[Full Block Catalog & Texture System Refactoring](#phase-1-full-block-catalog--texture-system-refactoring-completed)** | **Completed** | 720+ worldbuilding block specs, 120+ active blocks, WGSL stochastic rotation, 3-axis directional placement, natural strata variants |
-| **02** | **[Standardized 9-Slot Interface Architecture & Menu Modernization](#phase-2-standardized-9-slot-interface-architecture--menu-modernization-completed)** | **Completed** | Unified 9-slot standard, 416×256 px windows, 320×44 px hotbar HUD, unified button suite, Dark Iron slot overlays, clean asset layout |
+| **02** | **[Standardized 9-Slot Interface Architecture & Menu Modernization](#phase-2-standardized-9-slot-interface-architecture--menu-modernization-in-progress)** | **In Progress** | Unified 9-slot standard, 416×256 px windows, 320×44 px hotbar HUD, unified button suite, Dark Iron slot overlays, 480×270 integer scaling |
 | **03** | **[Core Engine Upgrade (Bevy 0.19 to Bevy 0.20 Migration)](#phase-3-core-engine-upgrade-bevy-019-to-bevy-020-migration-completed)** | **Completed** | Upgraded to Bevy 0.20, adopted direct `bevy_egui = "0.43"`, eliminated deprecated `Interaction` across all UI, full WESL shader migration, ScreenSpaceTransmission |
-| **04** | **[Architecture, Graphics Modernization & Soundness](#phase-4-architecture-graphics-modernization--soundness-in-progress)** | **In Progress** | Hardware profiles, chunk memory optimization, monolithic decomposition, render scale, 16:9 snap, presets, tests |
-| **05** | **[High-Impact Performance & Graphics Pipeline](#phase-5-high-impact-performance--graphics-pipeline-in-progress)** | **In Progress** | 5-Step Target FPS Limiter (30/60/120/144/Unlocked), Preset Chunk Mesh Upload Budget, FSR 1.0 Upscaling Filter, Subterranean Culling |
+| **04** | **[Architecture, Graphics Modernization & Soundness](#phase-4-architecture-graphics-modernization--soundness-completed)** | **Completed** | Hardware profiles, chunk memory optimization, monolithic decomposition, render scale, 16:9 snap, presets, tests |
+| **05** | **[High-Impact Performance & Graphics Pipeline](#phase-5-high-impact-performance--graphics-pipeline-completed)** | **Completed** | 5-Step Target FPS Limiter (30/60/120/144/Unlocked), Preset Chunk Mesh Upload Budget, FSR 1.0 Upscaling Filter, Subterranean Culling |
 | **06** | **[Flora, Crops & Interactive Mechanical Blocks](#phase-6-flora-crops--interactive-mechanical-blocks-in-progress)** | **In Progress** | Multistage crops, hydration simulation, connected fences/walls/panes bitwise logic, functional doors/gates, containers, and fixtures |
 | **07** | **[World Generation & Biome Overhaul](#phase-7-world-generation--biome-overhaul-planned)** | **Planned** | Geological rock strata, 2D continuous climate noise, 3D subterranean cave biomes, organic boundary dithering, cliff overhangs |
 | **08** | **[System Menus & Cartography Overhaul](#phase-8-system-menus--cartography-overhaul-planned)** | **Planned** | Dark Iron & Parchment menu polish (Pause, Settings, Keybindings), full-screen world map cartography, fog of war, map markers |
@@ -86,7 +86,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 2: Standardized 9-Slot Interface Architecture & Menu Modernization (Completed)
+### Phase 2: Standardized 9-Slot Interface Architecture & Menu Modernization (In Progress)
 
 - [x] **Standardized 9-Horizontal-Slot UI Geometry**:
   - Unified all container windows to exact 416×256 px canvas dimensions with consistent 9-slot row grids matching the in-game HUD hotbar.
@@ -99,6 +99,8 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
   - Purged legacy 8-slot assets and organized UI directories into `containers/`, `containers/slots/`, `containers/outlines/`, `atlases/`, `cursors/`, and `icons/`.
 - [x] **Codebase Integration**:
   - Updated container textures and button geometries across `src/menu/creative_inventory.rs`, `src/menu/pause.rs`, `src/menu/settings.rs`, and `src/player/hotbar.rs`.
+- [ ] **Unified 480×270 Base UI Redesign & Integer Scaling**:
+  - Standardize all container, inventory, and HUD layouts onto a fixed 480×270 px (16:9) base canvas, scaled up to 4× with integer pixel-perfect alignment.
 
 ---
 
@@ -120,7 +122,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 4: Architecture, Graphics Modernization & Soundness (In Progress)
+### Phase 4: Architecture, Graphics Modernization & Soundness (Completed)
 
 - [x] **Multi-Machine Hardware Profiles & Calibrated Presets**:
   - Implemented `LocalConfig` in `src/core/config.rs` with automatic first-boot creation of `local_config.json` (isolated from Git).
@@ -149,12 +151,10 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
   - Implemented dual-mode clouds (`CloudQuality`: `Off`, `Fast2D`, `Fancy3D`), offering flat planar dual-face quads with 70% vertex reduction on lower tiers, and full volumetric 3D blocks on higher tiers.
 - [x] **Dynamic FOV Kick & Motion Accessibility Toggle**:
   - Integrated dynamic sprint FOV kick (+8° FOV expansion during sprint) with an accessibility toggle (`dynamic_fov_enabled`) for motion-sensitive players.
-- [ ] **Unified 480×270 Base UI Redesign & Integer Scaling**:
-  - Standardize all container, inventory, and HUD layouts onto a fixed 480×270 px (16:9) base canvas, scaled up to 4× with integer pixel-perfect alignment.
 
 ---
 
-### Phase 5: High-Impact Performance & Graphics Pipeline (In Progress)
+### Phase 5: High-Impact Performance & Graphics Pipeline (Completed)
 
 - [x] **5-Step Target Frame Rate Limiter (`TargetFpsLimit` / `DynamicFpsSettings`)**:
   - Implemented 5 calibrated display refresh steps: `30 FPS` (battery / entry laptops), `60 FPS` (standard 60Hz), `120 FPS` (high refresh), `144 FPS` (esports standard), and `Unlocked` (unconstrained).
@@ -171,9 +171,12 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
   - Integrated selectable upscaling reconstruction filter options in `LocalConfig` and `RenderScalePlugin`: `Bilinear` (ultra-fast baseline interpolation for potato laptops) vs `FSR 1.0` (Spatial Edge-Adaptive Filtering + RCAS Robust Contrast-Adaptive Sharpening).
   - Pairs with 3D render scales (`0.50x`, `0.66x`, `0.75x`, `0.85x`) to restore sharp geometric voxel edges and contrast without ringing or haloing.
   - Interactive stepper row exposed directly beneath Render Scale in the in-game Settings menu (`SettingsAction::DecUpscalingFilter` / `IncUpscalingFilter`).
-- [ ] **Subterranean Cave Occlusion Face Culling**:
-  - Implement surface-to-underground occlusion mask checks, culling complete chunk meshes and interior cavern faces occluded by solid surface terrain when the player is on the surface.
-  - Significantly slashes drawn vertex counts, triangle counts, and GPU draw calls across worlds with complex underground cave systems.
+- [x] **Subterranean Cave Occlusion Face Culling**:
+  - Implemented surface-to-underground occlusion mask checks, culling complete chunk meshes and interior cavern faces occluded by solid surface terrain when the player is on the surface.
+  - Integrated real-time underground state detection (`is_position_underground`) casting vertical occlusion rays and checking subterranean chunk elevation.
+  - Enhanced chunk graph traversal (Sodium architecture) to halt horizontal propagation into subterranean cave chambers from surface openings, preventing cave networks from illuminating under solid ground.
+  - Added real-time chunk and vertex culling metrics (`rendered_vertices`, `culled_vertices`, `rendered_chunks`, `culled_chunks`) and exposed live culling environment telemetry in the F3 HUD.
+  - Validated with automated unit tests in `tests/suite/culling.rs`.
 
 ---
 

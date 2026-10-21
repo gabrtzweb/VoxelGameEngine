@@ -110,11 +110,11 @@ The player uses a custom AABB collision system that directly queries voxel data.
 
 The engine has concluded foundational development across Version 0.1 (Phases 1 through 20: rendering, atmosphere, fluids, greedy mesher optimizations, SIMD noise, 512-block world generation, and interface modernization).
 
-In Version 0.2 (Modernization, Worldbuilding & Deep Systems), the project has completed:
-- **Phase 1**: Full Block Catalog & Texture System Refactoring (720 block definitions, stochastic rotation, 3-axis directional placement).
-- **Phase 2**: Standardized 9-Slot Interface Architecture & Menu Modernization (Unified 9-slot standard, 416×256 px windows, 320×44 px hotbar HUD, unified button suite).
-- **Phase 3**: Core Engine Upgrade (Bevy 0.20 Migration, direct `bevy_egui = "0.43"`, modern UI picking/hover/press, WESL shader framework, and ScreenSpaceTransmission).
-- **Architecture, Memory & Testing Overhaul**:
+In Version 0.2 (Modernization, Worldbuilding & Deep Systems), the project status:
+- **Phase 1 (Completed)**: Full Block Catalog & Texture System Refactoring (720 block definitions, stochastic rotation, 3-axis directional placement).
+- **Phase 2 (In Progress)**: Standardized 9-Slot Interface Architecture & Menu Modernization (Unified 9-slot standard, 416×256 px windows, 320×44 px hotbar HUD, unified button suite; pending 480×270 px base integer scaling and upcoming interface refactorings).
+- **Phase 3 (Completed)**: Core Engine Upgrade (Bevy 0.20 Migration, direct `bevy_egui = "0.43"`, modern UI picking/hover/press, WESL shader framework, and ScreenSpaceTransmission).
+- **Phase 4 (Completed)**: Architecture, Graphics Modernization & Soundness:
   - **Multi-Machine Hardware Profiles (`src/core/config.rs`)**: Automatic persistence via `local_config.json` with 5-tier presets (`Potato`, `Low`, `Medium`, `High`, `Ultra`), isolating local hardware settings outside Git.
   - **Dynamic Graphics Pipeline & Accessibility**:
     - **Render Scale**: Dynamic 3D off-screen rendering scaled between 50% and 100% (Native), keeping 2D UI razor-sharp at 100%.
@@ -125,9 +125,14 @@ In Version 0.2 (Modernization, Worldbuilding & Deep Systems), the project has co
   - **Chunk Memory Optimization (`src/world/chunk.rs`)**: Reduced per-chunk struct overhead by ~92% (from ~2.1 KB to 144 bytes per chunk instance) by computing variant distributions lazily on-demand.
   - **Block Monolith Modularization (`src/world/block/`)**: Decomposed the monolithic 3,763-line `block.rs` into focused submodules (`catalog.rs`, `connection.rs`, `data.rs`, `props.rs`, `shape.rs`, `voxel.rs`).
   - **Soundness & Zero-`#[cfg(test)]` Policy**: Completely eradicated unsafe `transmute` risks in `Voxel::from_u16` across all 723 variants; moved 100% of unit tests out of `src/` into a dedicated integration test runner in `tests/integration_tests.rs`.
-- **Phase 4 (In Progress — Pure Domain Systems)**:
+- **Phase 5 (Completed)**: High-Impact Performance & Graphics Pipeline:
+  - **5-Step Target Frame Rate Limiter**: 30 / 60 / 120 / 144 / Unlocked frame pacing decoupled from VSync.
+  - **Preset-Calibrated Mesh Upload Budgeting**: Per-frame vertex/index GPU transfer throttling scaling by preset (3 to 64 uploads/frame).
+  - **AMD FidelityFX Super Resolution 1.0 (FSR 1.0)**: Edge-adaptive spatial reconstruction and contrast-adaptive sharpening (RCAS).
+  - **Subterranean Cave Occlusion Face Culling**: Surface-to-underground occlusion mask checks culling complete subterranean chunk meshes when the player is on the surface, preventing deep cave illumination and tracking live culling metrics in F3 HUD.
+- **Phase 6 (In Progress / On Hold)**:
   - **Connected Block Logic (`src/world/block/connection.rs`)**: Bitwise connection masks (`ConnectionMask`) and topology resolvers for fences, walls, glass panes, and iron bars.
-  - **Agricultural Lifecycle (`src/simulation/crops.rs`)**: Pure simulation data models (`CropType`, `CropStage`, `SoilMoisture`, `CropSimulator`) modeling Chebyshev water hydration radiuses, weather moisture, and harvest drop yields.
+  - **Agricultural Lifecycle (`src/simulation/crops.rs`)**: Pure simulation data models (`CropType`, `CropStage`, `SoilMoisture`, `CropSimulator`).
 
 Detailed progress and milestones are tracked in `docs/project_roadmap.md`.
 

@@ -13,6 +13,9 @@ mod connection;
 #[path = "suite/crops.rs"]
 mod crops;
 
+#[path = "suite/culling.rs"]
+mod culling;
+
 #[path = "suite/noise.rs"]
 mod noise;
 
