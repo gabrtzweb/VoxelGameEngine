@@ -4,7 +4,7 @@ use super::{
     greedy::{FaceDirection, MeshBuffers},
     textures::VoxelTextureRegistry,
 };
-use crate::world::{BlockShape, CHUNK_SIZE, Chunk, VOXEL_SIZE, VoxelAccess};
+use crate::world::{BlockShape, CHUNK_SIZE, Chunk, VOXEL_SIZE, Voxel, VoxelAccess};
 
 pub fn mesh_shaped_voxels(
     world: &impl VoxelAccess,
@@ -38,7 +38,11 @@ pub fn mesh_shaped_voxels(
         let (bottom_layer, _) =
             textures.get_face_texture_info(voxel, world_voxel, FaceDirection::NegativeY);
 
-        let rot_mode = voxel.natural_rotation_mode() as u8;
+        let rot_mode = if voxel.has_custom_mesh() || shape != BlockShape::Full {
+            0
+        } else {
+            voxel.natural_rotation_mode() as u8
+        };
         let frame_count_f32 = if voxel.is_light() {
             -(frame_count.max(1) as f32)
         } else if frame_count == 1 && rot_mode > 0 {
@@ -116,16 +120,26 @@ pub fn mesh_shaped_voxels(
             continue;
         }
 
-        if matches!(
-            shape,
-            BlockShape::PebbleOne | BlockShape::PebbleTwo | BlockShape::PebbleThree
-        ) {
+        if voxel.is_pebble()
+            || matches!(
+                shape,
+                BlockShape::Pebble | BlockShape::PebbleCluster
+            )
+        {
+            let pebble_shape = if matches!(
+                shape,
+                BlockShape::Pebble | BlockShape::PebbleCluster
+            ) {
+                shape
+            } else {
+                voxel.default_shape()
+            };
             mesh_pebble(
                 buffers,
                 fx,
                 fy,
                 fz,
-                shape,
+                pebble_shape,
                 orientation,
                 side_layer,
                 frame_count_f32,
@@ -134,9 +148,83 @@ pub fn mesh_shaped_voxels(
             continue;
         }
 
+        if voxel.is_bamboo() || shape == BlockShape::Bamboo {
+            let is_neighbor_bamboo = |offset: IVec3| -> bool {
+                let neighbor_pos = world_voxel + offset;
+                world
+                    .get_voxel(neighbor_pos)
+                    .is_some_and(|v| v.is_bamboo())
+            };
+            let cull_top = is_neighbor_bamboo(IVec3::Y) || is_neighbor_solid(IVec3::Y);
+            let cull_bottom = is_neighbor_bamboo(IVec3::NEG_Y) || is_neighbor_solid(IVec3::NEG_Y);
+
+            if voxel == Voxel::BambooLeaves {
+                // Central 3px stalk inside the leaves block
+                let (stalk_side_layer, _) = textures.get_face_texture_info(
+                    Voxel::BambooStalk,
+                    world_voxel,
+                    FaceDirection::PositiveX,
+                );
+                let (stalk_top_layer, _) = textures.get_face_texture_info(
+                    Voxel::BambooStalk,
+                    world_voxel,
+                    FaceDirection::PositiveY,
+                );
+                let (stalk_bottom_layer, _) = textures.get_face_texture_info(
+                    Voxel::BambooStalk,
+                    world_voxel,
+                    FaceDirection::NegativeY,
+                );
+
+                mesh_bamboo(
+                    buffers,
+                    fx,
+                    fy,
+                    fz,
+                    stalk_side_layer,
+                    stalk_top_layer,
+                    stalk_bottom_layer,
+                    frame_count_f32,
+                    side_tint,
+                    top_tint,
+                    bottom_tint,
+                    cull_top,
+                    cull_bottom,
+                );
+
+                // Foliage leaves cross mesh surrounding the central stalk
+                mesh_cross_billboard(
+                    buffers,
+                    fx,
+                    fy,
+                    fz,
+                    side_layer,
+                    frame_count_f32,
+                    side_tint,
+                );
+            } else {
+                mesh_bamboo(
+                    buffers,
+                    fx,
+                    fy,
+                    fz,
+                    side_layer,
+                    top_layer,
+                    bottom_layer,
+                    frame_count_f32,
+                    side_tint,
+                    top_tint,
+                    bottom_tint,
+                    cull_top,
+                    cull_bottom,
+                );
+            }
+            continue;
+        }
+
         if voxel.is_cross_billboard() || shape == BlockShape::CrossBillboard {
             mesh_cross_billboard(
-                transparent_buffers,
+                buffers,
                 fx,
                 fy,
                 fz,
@@ -152,9 +240,9 @@ pub fn mesh_shaped_voxels(
         match shape {
             BlockShape::Torch
             | BlockShape::Basket
-            | BlockShape::PebbleOne
-            | BlockShape::PebbleTwo
-            | BlockShape::PebbleThree
+            | BlockShape::Pebble
+            | BlockShape::PebbleCluster
+            | BlockShape::Bamboo
             | BlockShape::CrossBillboard => unreachable!(),
             BlockShape::Full | BlockShape::Column => {
                 push_shape_box(
@@ -1155,7 +1243,7 @@ fn mesh_pebble(
     tint_color: [f32; 4],
 ) {
     match shape {
-        BlockShape::PebbleOne => {
+        BlockShape::Pebble => {
             push_pebble_element(
                 buffers,
                 fx,
@@ -1175,28 +1263,8 @@ fn mesh_pebble(
                 tint_color,
             );
         }
-        BlockShape::PebbleTwo => {
-            push_pebble_element(
-                buffers,
-                fx,
-                fy,
-                fz,
-                orientation,
-                [3.0, 0.0, 10.0],
-                [5.0, 1.0, 12.0],
-                [2.0, 0.0, 4.0, 1.0], // north
-                [2.0, 1.0, 4.0, 2.0], // east
-                [2.0, 2.0, 4.0, 3.0], // south
-                [2.0, 3.0, 4.0, 4.0], // west
-                [2.0, 2.0, 0.0, 0.0], // up
-                [2.0, 2.0, 0.0, 4.0], // down
-                texture_layer,
-                frame_count,
-                tint_color,
-            );
-        }
-        BlockShape::PebbleThree => {
-            // Main pebble
+        BlockShape::PebbleCluster => {
+            // Main pebble (size 5 x 2 x 5)
             push_pebble_element(
                 buffers,
                 fx,
@@ -1215,21 +1283,40 @@ fn mesh_pebble(
                 frame_count,
                 tint_color,
             );
-            // Secondary pebble
+            // Secondary pebble (size 3 x 1 x 4)
             push_pebble_element(
                 buffers,
                 fx,
                 fy,
                 fz,
                 orientation,
-                [5.0, 0.0, 6.0],
-                [8.0, 1.0, 10.0],
+                [4.0, 0.0, 5.0],
+                [7.0, 1.0, 9.0],
                 [0.0, 10.0, 3.0, 11.0], // north
                 [8.0, 6.0, 12.0, 7.0],  // east
                 [3.0, 10.0, 6.0, 11.0], // south
                 [8.0, 7.0, 12.0, 8.0],  // west
                 [8.0, 4.0, 5.0, 0.0],   // up
                 [8.0, 4.0, 5.0, 8.0],   // down
+                texture_layer,
+                frame_count,
+                tint_color,
+            );
+            // Third pebble (size 3 x 1 x 3)
+            push_pebble_element(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                [9.0, 0.0, 3.0],
+                [12.0, 1.0, 6.0],
+                [0.0, 10.0, 3.0, 11.0], // north
+                [8.0, 6.0, 11.0, 7.0],  // east
+                [3.0, 10.0, 6.0, 11.0], // south
+                [8.0, 7.0, 11.0, 8.0],  // west
+                [8.0, 3.0, 5.0, 0.0],   // up
+                [8.0, 3.0, 5.0, 6.0],   // down
                 texture_layer,
                 frame_count,
                 tint_color,
@@ -1461,8 +1548,8 @@ fn mesh_cross_billboard(
     );
 
     // Plane 2: from (0,1) to (1,0) diagonal (both front and back faces)
-    let n2 = [0.70710677, 0.0, 0.70710677];
-    let n2_rev = [-0.70710677, 0.0, -0.70710677];
+    let n2 = [-0.70710677, 0.0, -0.70710677];
+    let n2_rev = [0.70710677, 0.0, 0.70710677];
     push_quad_face_with_uvs(
         buffers,
         [q00, q01, q11, q10],
@@ -1482,3 +1569,166 @@ fn mesh_cross_billboard(
         uv_fwd,
     );
 }
+
+#[allow(clippy::too_many_arguments)]
+fn mesh_bamboo(
+    buffers: &mut MeshBuffers,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    side_layer: u16,
+    top_layer: u16,
+    bottom_layer: u16,
+    frame_count: f32,
+    side_tint: [f32; 4],
+    top_tint: [f32; 4],
+    bottom_tint: [f32; 4],
+    cull_top: bool,
+    cull_bottom: bool,
+) {
+    let min_x = fx + 6.5 / 16.0;
+    let max_x = fx + 9.5 / 16.0;
+    let min_y = fy + 0.0;
+    let max_y = fy + 1.0;
+    let min_z = fz + 6.5 / 16.0;
+    let max_z = fz + 9.5 / 16.0;
+
+    let u_side_min = 6.0 / 16.0;
+    let u_side_max = 9.0 / 16.0;
+
+    // +X (East)
+    push_quad_face_with_uvs(
+        buffers,
+        [
+            [max_x, min_y, min_z],
+            [max_x, max_y, min_z],
+            [max_x, max_y, max_z],
+            [max_x, min_y, max_z],
+        ],
+        [1.0, 0.0, 0.0],
+        side_layer,
+        frame_count,
+        side_tint,
+        [
+            [u_side_min, 1.0],
+            [u_side_min, 0.0],
+            [u_side_max, 0.0],
+            [u_side_max, 1.0],
+        ],
+    );
+
+    // -X (West)
+    push_quad_face_with_uvs(
+        buffers,
+        [
+            [min_x, min_y, max_z],
+            [min_x, max_y, max_z],
+            [min_x, max_y, min_z],
+            [min_x, min_y, min_z],
+        ],
+        [-1.0, 0.0, 0.0],
+        side_layer,
+        frame_count,
+        side_tint,
+        [
+            [u_side_min, 1.0],
+            [u_side_min, 0.0],
+            [u_side_max, 0.0],
+            [u_side_max, 1.0],
+        ],
+    );
+
+    // +Z (South)
+    push_quad_face_with_uvs(
+        buffers,
+        [
+            [max_x, min_y, max_z],
+            [max_x, max_y, max_z],
+            [min_x, max_y, max_z],
+            [min_x, min_y, max_z],
+        ],
+        [0.0, 0.0, 1.0],
+        side_layer,
+        frame_count,
+        side_tint,
+        [
+            [u_side_min, 1.0],
+            [u_side_min, 0.0],
+            [u_side_max, 0.0],
+            [u_side_max, 1.0],
+        ],
+    );
+
+    // -Z (North)
+    push_quad_face_with_uvs(
+        buffers,
+        [
+            [min_x, min_y, min_z],
+            [min_x, max_y, min_z],
+            [max_x, max_y, min_z],
+            [max_x, min_y, min_z],
+        ],
+        [0.0, 0.0, -1.0],
+        side_layer,
+        frame_count,
+        side_tint,
+        [
+            [u_side_min, 1.0],
+            [u_side_min, 0.0],
+            [u_side_max, 0.0],
+            [u_side_max, 1.0],
+        ],
+    );
+
+    let u_cap_min = 6.0 / 16.0;
+    let u_cap_max = 9.0 / 16.0;
+    let v_cap_min = 6.0 / 16.0;
+    let v_cap_max = 9.0 / 16.0;
+
+    // +Y (Top)
+    if !cull_top {
+        push_quad_face_with_uvs(
+            buffers,
+            [
+                [min_x, max_y, min_z],
+                [min_x, max_y, max_z],
+                [max_x, max_y, max_z],
+                [max_x, max_y, min_z],
+            ],
+            [0.0, 1.0, 0.0],
+            top_layer,
+            frame_count,
+            top_tint,
+            [
+                [u_cap_min, v_cap_min],
+                [u_cap_min, v_cap_max],
+                [u_cap_max, v_cap_max],
+                [u_cap_max, v_cap_min],
+            ],
+        );
+    }
+
+    // -Y (Bottom)
+    if !cull_bottom {
+        push_quad_face_with_uvs(
+            buffers,
+            [
+                [min_x, min_y, max_z],
+                [min_x, min_y, min_z],
+                [max_x, min_y, min_z],
+                [max_x, min_y, max_z],
+            ],
+            [0.0, -1.0, 0.0],
+            bottom_layer,
+            frame_count,
+            bottom_tint,
+            [
+                [u_cap_min, v_cap_min],
+                [u_cap_min, v_cap_max],
+                [u_cap_max, v_cap_max],
+                [u_cap_max, v_cap_min],
+            ],
+        );
+    }
+}
+

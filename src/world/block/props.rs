@@ -74,13 +74,17 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
     let is_torch = (flags & FLAG_TORCH) != 0;
     let is_occupied = matches!(id, 1 | 2);
 
-    let is_collidable = !is_empty && !is_fluid && !is_torch && !is_occupied;
+    let is_collidable = !is_empty
+        && !is_fluid
+        && !is_torch
+        && (flags & FLAG_CROSS_BILLBOARD) == 0
+        && !is_occupied;
     if is_collidable {
         flags |= FLAG_COLLIDABLE;
     }
 
-    // Rocks (85..=152) and Ores (245..=318)
-    let is_solid_opaque = (matches!(id, 85..=152 | 245..=318) && !v.is_pebble_const())
+    // Rocks (85..=152) and Ores (244..=317)
+    let is_solid_opaque = (matches!(id, 85..=152 | 244..=317) && !v.is_pebble_const())
         || (!is_empty
             && !is_fluid
             && (flags & FLAG_LEAVES) == 0
@@ -89,6 +93,10 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
             && (flags & FLAG_BASKET) == 0
             && (flags & FLAG_CROSS_BILLBOARD) == 0
             && !v.is_pebble_const()
+            && !matches!(
+                v,
+                Voxel::BambooStalk | Voxel::BambooLeaves
+            )
             && !is_occupied);
 
     if is_solid_opaque {
@@ -131,7 +139,7 @@ const fn init_voxel_properties() -> [VoxelProps; MAX_VOXEL_COUNT] {
     }; MAX_VOXEL_COUNT];
 
     let mut idx = 0;
-    while idx <= 614 {
+    while idx <= 613 {
         if let Some(v) = Voxel::from_u16(idx as u16) {
             table[idx] = compute_voxel_props(v);
         }
@@ -166,12 +174,12 @@ impl Voxel {
     pub const fn is_pebble_const(self) -> bool {
         matches!(
             self,
-            Self::PebbleFlintOne
-                | Self::PebbleFlintTwo
-                | Self::PebbleFlintThree
-                | Self::PebbleQuartzOne
-                | Self::PebbleQuartzTwo
-                | Self::PebbleQuartzThree
+            Self::PebbleChert
+                | Self::PebbleChertCluster
+                | Self::PebbleFlint
+                | Self::PebbleFlintCluster
+                | Self::PebbleQuartz
+                | Self::PebbleQuartzCluster
         )
     }
 
@@ -245,8 +253,7 @@ impl Voxel {
                 | Self::AcaciaLeavesDead
                 | Self::AspenLeaves
                 | Self::AspenLeavesDead
-                | Self::BambooLargeLeaves
-                | Self::BambooSmallLeaves
+                | Self::BambooLeaves
                 | Self::BaobabLeaves
                 | Self::BaobabLeavesDead
                 | Self::BirchLeaves
@@ -527,9 +534,81 @@ impl Voxel {
     }
 
     #[inline(always)]
+    pub fn is_pebble(self) -> bool {
+        self.is_pebble_const()
+    }
+
+    #[inline(always)]
+    pub fn is_bamboo(self) -> bool {
+        matches!(self, Self::BambooStalk | Self::BambooLeaves)
+    }
+
+    #[inline(always)]
     pub fn has_custom_mesh(self) -> bool {
         (VOXEL_PROPS[self as usize].flags & (FLAG_TORCH | FLAG_BASKET | FLAG_CROSS_BILLBOARD)) != 0
             || self.is_pebble_const()
+            || self.is_bamboo()
+    }
+
+    #[inline(always)]
+    pub fn is_mushroom(self) -> bool {
+        matches!(
+            self,
+            Self::FungiAmanita
+                | Self::FungiChanterelle
+                | Self::FungiIndigo
+                | Self::FungiMycena
+                | Self::FungiPorcini
+                | Self::FungiRussula
+                | Self::FungiShiitake
+                | Self::FungiVerdigris
+        )
+    }
+
+    #[inline(always)]
+    pub fn is_coral_fan(self) -> bool {
+        matches!(
+            self,
+            Self::BrainCoralFan
+                | Self::BubbleCoralFan
+                | Self::DeadCoralFan
+                | Self::DyingCoralFan
+                | Self::FireCoralFan
+                | Self::HeartCoralFan
+                | Self::HornCoralFan
+                | Self::LeafCoralFan
+                | Self::ReedCoralFan
+                | Self::SpikeCoralFan
+                | Self::StaghornCoralFan
+                | Self::SunCoralFan
+                | Self::ThornCoralFan
+                | Self::TubeCoralFan
+                | Self::WaxCoralFan
+                | Self::ZigzagCoralFan
+        )
+    }
+
+    #[inline(always)]
+    pub fn is_marine_flora(self) -> bool {
+        matches!(
+            self,
+            Self::Seagrass
+                | Self::BullKelp
+                | Self::Delesseria
+                | Self::Kelp
+                | Self::RedAlgae
+                | Self::Sargassum
+                | Self::Seaweed
+                | Self::BoneWorms
+        )
+    }
+
+    #[inline(always)]
+    pub fn requires_floor_support(self) -> bool {
+        self.is_pebble()
+            || self.is_mushroom()
+            || self.is_coral_fan()
+            || self.is_marine_flora()
     }
 
     #[inline(always)]

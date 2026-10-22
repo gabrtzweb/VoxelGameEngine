@@ -9,10 +9,11 @@ This is an attempt to develop an experimental voxel engine and game, built from 
 - **1.0 m Voxel World**: The world is stored using 1.0 m voxels (identical to Minecraft blocks). Sub-voxels are completely eliminated; full 1.0 m³ blocks form the atomic spatial unit.
 - **Chunk Geometry**: Chunks contain 16 × 16 × 16 voxels (16 m × 16 m × 16 m physical sections), with 4,096 voxels per chunk.
 - **Block Shapes & Directional Placement**:
-  - Native 1.0 m block shapes: `Full`, `Slab`, `Stair`, `Column`, `Torch`, `Basket`, `PebbleOne`, `PebbleTwo`, `PebbleThree`, and `CrossBillboard`, with 3D orientations, custom meshes, and passable non-solid collision for torches and pebbles.
-  - 3-axis directional placement (`is_axis_aligned`): all 17 tree species logs (`*Log`) and wood bark (`*Wood`), `BambooStalk`, `BoneBlock`, `CalcinedBone`, `BloodyFlesh`, `FleshBlock`, and bales (`CornBale`, `HayBale`, `RiceBale`, `StrawBale`). Automatically aligns along the X, Y, or Z placement axis based on hit normal, rotating face textures and swapping UVs in greedy meshing.
-- **615-Block Engine Catalog & Geological Systems Foundation**:
-  - 615 active engine voxel variants across 11 thematic categories (`rocks`, `trees`, `soils`, `ores`, `caverns`, `oceans`, `organics`, `decorations`, `mushrooms`, `vegetation`, `fluids`/`systems`).
+  - Native 1.0 m block shapes: `Full`, `Slab`, `Stair`, `Column`, `Torch`, `Basket`, `Pebble`, `PebbleCluster`, `CrossBillboard`, and `Bamboo`, with 3D orientations, custom meshes, and passable non-solid collision for cross-billboards/mushrooms, low stepping for pebbles, and strict 3px column collision for bamboo stalks and bamboo leaves.
+  - 3-axis directional placement (`is_axis_aligned`): all 17 tree species logs (`*Log`) and wood bark (`*Wood`), `BoneBlock`, `CalcinedBone`, `BloodyFlesh`, `FleshBlock`, and bales (`CornBale`, `HayBale`, `RiceBale`, `StrawBale`). Automatically aligns along the X, Y, or Z placement axis based on hit normal, rotating face textures and swapping UVs in greedy meshing.
+  - Automatic floor-support cascading: blocks requiring floor support (`requires_floor_support`, including pebbles, mushrooms, floor torches, vertical bamboo stalks/leaves, aquatic vegetation like seagrass/kelp, and coral fans) automatically break when their support block is broken.
+- **614-Block Engine Catalog & Geological Systems Foundation**:
+  - 614 registered engine voxel definitions (611 active gameplay voxels, discriminants 0..=613) across 11 thematic categories (`rocks`, `trees`, `soils`, `ores`, `caverns`, `oceans`, `organics`, `decorations`, `mushrooms`, `vegetation`, `fluids`/`systems`).
   - Geological rock strata: 10 primary mother rocks (`Dolomite`, `Slate`, `Gabbro`, `Andesite`, `Limestone`, `Argillite`, `Granite`, `Basalt`, `Sandstone`, `Marble`), 54 authentic host-rock ore veins, 6 crystal geode varieties (Amethyst, Aquamarine, Citrine, Fluorite, Pink Salt, Selenite), and indestructible Mantle bedrock at Y = -254.
 - **Strict Grayscale Selective Foliage Tinting**:
   - Biome foliage tinting restricted exclusively to living grayscale canopy species, grass soils, and water.

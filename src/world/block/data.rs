@@ -1,5 +1,5 @@
-/// Static registry metadata table: (ID, Label, Texture name) for all 615 voxel variants.
-pub(crate) static VOXEL_DATA: [(&str, &str, &str); 615] = [
+/// Static registry metadata table: (ID, Label, Texture name) for all 614 voxel variants.
+pub(crate) static VOXEL_DATA: [(&str, &str, &str); 614] = [
     ("air", "Air", ""),
     ("occupied", "Occupied", ""),
     ("water_occupied", "Waterlogged Occupied", ""),
@@ -142,12 +142,12 @@ pub(crate) static VOXEL_DATA: [(&str, &str, &str); 615] = [
     ("mossy_granite", "Mossy Granite", "rock_granite"),
     ("mossy_limestone", "Mossy Limestone", "rock_limestone"),
     ("obsidian", "Obsidian", "rock_obsidian"),
-    ("pebble_flint_one", "Flint Pebble (Single)", "pebble_flint_one"),
-    ("pebble_flint_three", "Flint Pebble (Cluster)", "pebble_flint_three"),
-    ("pebble_flint_two", "Flint Pebble (Pair)", "pebble_flint_two"),
-    ("pebble_quartz_one", "Quartz Pebble (Single)", "pebble_quartz_one"),
-    ("pebble_quartz_three", "Quartz Pebble (Cluster)", "pebble_quartz_three"),
-    ("pebble_quartz_two", "Quartz Pebble (Pair)", "pebble_quartz_two"),
+    ("pebble_chert", "Chert Pebble", "pebble_chert"),
+    ("pebble_chert_cluster", "Chert Pebble Cluster", "pebble_chert_cluster"),
+    ("pebble_flint", "Flint Pebble", "pebble_flint"),
+    ("pebble_flint_cluster", "Flint Pebble Cluster", "pebble_flint_cluster"),
+    ("pebble_quartz", "Quartz Pebble", "pebble_quartz"),
+    ("pebble_quartz_cluster", "Quartz Pebble Cluster", "pebble_quartz_cluster"),
     ("sandstone_common", "Common Sandstone", "rock_sandstone_common"),
     ("sandstone_dune", "Dune Sandstone", "rock_sandstone_dune"),
     ("sandstone_red", "Red Sandstone", "rock_sandstone_red"),
@@ -163,9 +163,8 @@ pub(crate) static VOXEL_DATA: [(&str, &str, &str); 615] = [
     ("aspen_log", "Aspen Log", "tree_aspen_log"),
     ("aspen_planks", "Aspen Planks", "tree_aspen_planks"),
     ("aspen_wood", "Aspen Wood", "tree_aspen_bark"),
-    ("bamboo_large_leaves", "Large Bamboo Leaves", "tree_bamboo_large_leaves"),
+    ("bamboo_leaves", "Bamboo Leaves", "tree_bamboo_leaves"),
     ("bamboo_planks", "Bamboo Planks", "tree_bamboo_planks"),
-    ("bamboo_small_leaves", "Small Bamboo Leaves", "tree_bamboo_small_leaves"),
     ("bamboo_stalk", "Bamboo Stalk", "tree_bamboo_stalk_top"),
     ("baobab_leaves", "Baobab Leaves", "tree_baobab_leaves"),
     ("baobab_leaves_dead", "Dead Baobab Leaves", "tree_baobab_leaves_dead"),

@@ -9,7 +9,7 @@ use bevy::{
 
 use crate::world::Voxel;
 
-pub const ICON_SIZE: u32 = 32;
+pub const ICON_SIZE: u32 = 48;
 
 #[derive(Resource, Clone, Default)]
 pub struct BlockIcons {
@@ -384,49 +384,111 @@ pub fn render_isometric_frame(
     top_tint: [f32; 4],
 ) -> Vec<u8> {
     let mut canvas = vec![0u8; (ICON_SIZE * ICON_SIZE * 4) as usize];
+    const SUB_OFFSETS: [(f32, f32); 4] = [
+        (-0.25, -0.25),
+        (0.25, -0.25),
+        (-0.25, 0.25),
+        (0.25, 0.25),
+    ];
 
     for y in 0..ICON_SIZE {
         for x in 0..ICON_SIZE {
-            let x_f = x as f32;
-            let y_f = y as f32;
+            let mut acc_r = 0.0f32;
+            let mut acc_g = 0.0f32;
+            let mut acc_b = 0.0f32;
+            let mut acc_a = 0.0f32;
+            let mut hits = 0usize;
 
-            // 1. Check Top Face (Rhombus with T=(15, 4), TR=(27, 10), C=(15, 16), TL=(3, 10))
-            let u_top = ((x_f - 15.0) + 2.0 * (y_f - 4.0)) / 24.0;
-            let v_top = (-(x_f - 15.0) + 2.0 * (y_f - 4.0)) / 24.0;
+            for &(dx, dy) in &SUB_OFFSETS {
+                let xf = x as f32 + 0.5 + dx;
+                let yf = y as f32 + 0.5 + dy;
 
-            if (0.0..1.0).contains(&u_top) && (0.0..1.0).contains(&v_top) {
-                let tx = (u_top * 16.0).floor().clamp(0.0, 15.0) as usize;
-                let ty = (v_top * 16.0).floor().clamp(0.0, 15.0) as usize;
-                draw_texel(&mut canvas, x, y, top_16x16, tx, ty, top_tint, 1.00);
-                continue;
-            }
+                // 1. Check Top Face (Rhombus with native 48x48 bounds: T=(24.0, 4.0), R=(44.0, 14.0), L=(4.0, 14.0), C=(24.0, 24.0))
+                let u_top = ((xf - 24.0) + 2.0 * (yf - 4.0)) / 40.0;
+                let v_top = (-(xf - 24.0) + 2.0 * (yf - 4.0)) / 40.0;
 
-            // 2. Check Left Face (Parallelogram with TL=(3, 10), C=(15, 16), B=(15, 28), BL=(3, 22))
-            if (3..15).contains(&x) {
-                let u_left = (x_f - 3.0) / 12.0;
-                let y_top = 10.0 + (x_f - 3.0) * 0.5;
-                let v_left = (y_f - y_top) / 12.0;
-
-                if (0.0..1.0).contains(&u_left) && (0.0..1.0).contains(&v_left) {
-                    let tx = (u_left * 16.0).floor().clamp(0.0, 15.0) as usize;
-                    let ty = (v_left * 16.0).floor().clamp(0.0, 15.0) as usize;
-                    draw_texel(&mut canvas, x, y, side_16x16, tx, ty, side_tint, 0.80);
+                if (0.0..1.0).contains(&u_top) && (0.0..1.0).contains(&v_top) {
+                    let tx = (u_top * 16.0).floor().clamp(0.0, 15.0) as usize;
+                    let ty = (v_top * 16.0).floor().clamp(0.0, 15.0) as usize;
+                    let src_idx = (ty * 16 + tx) * 4;
+                    if src_idx + 3 < top_16x16.len() {
+                        let a = (top_16x16[src_idx + 3] as f32 / 255.0) * top_tint[3];
+                        if a > 0.01 {
+                            acc_r += (top_16x16[src_idx] as f32 / 255.0) * top_tint[0] * 1.00;
+                            acc_g += (top_16x16[src_idx + 1] as f32 / 255.0) * top_tint[1] * 1.00;
+                            acc_b += (top_16x16[src_idx + 2] as f32 / 255.0) * top_tint[2] * 1.00;
+                            acc_a += a;
+                            hits += 1;
+                        }
+                    }
                     continue;
+                }
+
+                // 2. Check Left Face (Parallelogram with native 48x48 bounds: x in 4.0..24.0, y in y_top..y_top+20.0)
+                if (4.0..24.0).contains(&xf) {
+                    let u_left = (xf - 4.0) / 20.0;
+                    let y_top = 14.0 + (xf - 4.0) * 0.5;
+                    let v_left = (yf - y_top) / 20.0;
+
+                    if (0.0..1.0).contains(&u_left) && (0.0..1.0).contains(&v_left) {
+                        let tx = (u_left * 16.0).floor().clamp(0.0, 15.0) as usize;
+                        let ty = (v_left * 16.0).floor().clamp(0.0, 15.0) as usize;
+                        let src_idx = (ty * 16 + tx) * 4;
+                        if src_idx + 3 < side_16x16.len() {
+                            let a = (side_16x16[src_idx + 3] as f32 / 255.0) * side_tint[3];
+                            if a > 0.01 {
+                                acc_r += (side_16x16[src_idx] as f32 / 255.0) * side_tint[0] * 0.88;
+                                acc_g += (side_16x16[src_idx + 1] as f32 / 255.0) * side_tint[1] * 0.88;
+                                acc_b += (side_16x16[src_idx + 2] as f32 / 255.0) * side_tint[2] * 0.88;
+                                acc_a += a;
+                                hits += 1;
+                            }
+                        }
+                        continue;
+                    }
+                }
+
+                // 3. Check Right Face (Parallelogram with native 48x48 bounds: x in 24.0..44.0, y in y_top..y_top+20.0)
+                if (24.0..44.0).contains(&xf) {
+                    let u_right = (xf - 24.0) / 20.0;
+                    let y_top = 24.0 - (xf - 24.0) * 0.5;
+                    let v_right = (yf - y_top) / 20.0;
+
+                    if (0.0..1.0).contains(&u_right) && (0.0..1.0).contains(&v_right) {
+                        let tx = (u_right * 16.0).floor().clamp(0.0, 15.0) as usize;
+                        let ty = (v_right * 16.0).floor().clamp(0.0, 15.0) as usize;
+                        let src_idx = (ty * 16 + tx) * 4;
+                        if src_idx + 3 < side_16x16.len() {
+                            let a = (side_16x16[src_idx + 3] as f32 / 255.0) * side_tint[3];
+                            if a > 0.01 {
+                                acc_r += (side_16x16[src_idx] as f32 / 255.0) * side_tint[0] * 0.75;
+                                acc_g += (side_16x16[src_idx + 1] as f32 / 255.0) * side_tint[1] * 0.75;
+                                acc_b += (side_16x16[src_idx + 2] as f32 / 255.0) * side_tint[2] * 0.75;
+                                acc_a += a;
+                                hits += 1;
+                            }
+                        }
+                        continue;
+                    }
                 }
             }
 
-            // 3. Check Right Face (Parallelogram with C=(15, 16), TR=(27, 10), BR=(27, 22), B=(15, 28))
-            if (15..28).contains(&x) {
-                let u_right = (x_f - 15.0) / 12.0;
-                let y_top = 16.0 - (x_f - 15.0) * 0.5;
-                let v_right = (y_f - y_top) / 12.0;
+            if hits > 0 {
+                let hits_f = hits as f32;
+                let avg_r = (acc_r / hits_f).clamp(0.0, 1.0) * 255.0;
+                let avg_g = (acc_g / hits_f).clamp(0.0, 1.0) * 255.0;
+                let avg_b = (acc_b / hits_f).clamp(0.0, 1.0) * 255.0;
+                let avg_a = if hits >= 2 {
+                    255.0
+                } else {
+                    (acc_a / 4.0).clamp(0.0, 1.0) * 255.0
+                };
 
-                if (0.0..1.0).contains(&u_right) && (0.0..1.0).contains(&v_right) {
-                    let tx = (u_right * 16.0).floor().clamp(0.0, 15.0) as usize;
-                    let ty = (v_right * 16.0).floor().clamp(0.0, 15.0) as usize;
-                    draw_texel(&mut canvas, x, y, side_16x16, tx, ty, side_tint, 0.60);
-                    continue;
-                }
+                let out_idx = ((y * ICON_SIZE + x) * 4) as usize;
+                canvas[out_idx] = avg_r as u8;
+                canvas[out_idx + 1] = avg_g as u8;
+                canvas[out_idx + 2] = avg_b as u8;
+                canvas[out_idx + 3] = avg_a as u8;
             }
         }
     }
@@ -445,9 +507,9 @@ pub fn render_flat_frame(raw_16x16: &[u8], tint: [f32; 4]) -> Vec<u8> {
     let mut canvas = vec![0u8; (ICON_SIZE * ICON_SIZE * 4) as usize];
 
     for y in 0..ICON_SIZE {
-        let ty = (y / 2) as usize;
+        let ty = ((y as f32 / ICON_SIZE as f32) * 16.0).floor().clamp(0.0, 15.0) as usize;
         for x in 0..ICON_SIZE {
-            let tx = (x / 2) as usize;
+            let tx = ((x as f32 / ICON_SIZE as f32) * 16.0).floor().clamp(0.0, 15.0) as usize;
             let src_idx = (ty * 16 + tx) * 4;
             if src_idx + 3 < raw_16x16.len() {
                 let r = raw_16x16[src_idx] as f32 / 255.0;
@@ -485,39 +547,12 @@ fn create_icon_image_from_canvas(canvas: &[u8]) -> Image {
     image
 }
 
-#[inline(always)]
-fn draw_texel(
-    canvas: &mut [u8],
-    cx: u32,
-    cy: u32,
-    tex: &[u8],
-    tx: usize,
-    ty: usize,
-    tint: [f32; 4],
-    shading: f32,
-) {
-    let src_idx = (ty * 16 + tx) * 4;
-    if src_idx + 3 >= tex.len() {
-        return;
-    }
-
-    let r = tex[src_idx] as f32 / 255.0;
-    let g = tex[src_idx + 1] as f32 / 255.0;
-    let b = tex[src_idx + 2] as f32 / 255.0;
-    let a = tex[src_idx + 3] as f32 / 255.0;
-
-    let out_idx = ((cy * ICON_SIZE + cx) * 4) as usize;
-    canvas[out_idx] = ((r * tint[0] * shading).clamp(0.0, 1.0) * 255.0) as u8;
-    canvas[out_idx + 1] = ((g * tint[1] * shading).clamp(0.0, 1.0) * 255.0) as u8;
-    canvas[out_idx + 2] = ((b * tint[2] * shading).clamp(0.0, 1.0) * 255.0) as u8;
-    canvas[out_idx + 3] = ((a * tint[3]).clamp(0.0, 1.0) * 255.0) as u8;
-}
 
 fn apply_silhouette_outline(canvas: &mut [u8]) {
     let original = canvas.to_vec();
 
-    for y in 1..(ICON_SIZE - 1) {
-        for x in 1..(ICON_SIZE - 1) {
+    for y in 0..ICON_SIZE {
+        for x in 0..ICON_SIZE {
             let idx = ((y * ICON_SIZE + x) * 4) as usize;
             if original[idx + 3] > 0 {
                 continue;
@@ -531,6 +566,9 @@ fn apply_silhouette_outline(canvas: &mut [u8]) {
                     }
                     let nx = x as i32 + dx;
                     let ny = y as i32 + dy;
+                    if nx < 0 || nx >= ICON_SIZE as i32 || ny < 0 || ny >= ICON_SIZE as i32 {
+                        continue;
+                    }
                     let n_idx = ((ny as u32 * ICON_SIZE + nx as u32) * 4) as usize;
                     if original[n_idx + 3] > 50 {
                         has_opaque_neighbor = true;
@@ -546,7 +584,7 @@ fn apply_silhouette_outline(canvas: &mut [u8]) {
                 canvas[idx] = 16;
                 canvas[idx + 1] = 16;
                 canvas[idx + 2] = 20;
-                canvas[idx + 3] = 160;
+                canvas[idx + 3] = 220;
             }
         }
     }
@@ -561,12 +599,13 @@ fn voxel_item_texture_path(voxel: Voxel) -> Option<&'static str> {
         Voxel::EmitTorchCold => Some("assets/textures/items/emit_cold_torch_item.png"),
         Voxel::EmitTorchFire => Some("assets/textures/items/emit_torch_item.png"),
         Voxel::BambooStalk => Some("assets/textures/items/tree_bamboo_stalk_item.png"),
-        Voxel::PebbleFlintOne => Some("assets/textures/items/pebble_flint_one_item.png"),
-        Voxel::PebbleFlintTwo => Some("assets/textures/items/pebble_flint_two_item.png"),
-        Voxel::PebbleFlintThree => Some("assets/textures/items/pebble_flint_three_item.png"),
-        Voxel::PebbleQuartzOne => Some("assets/textures/items/pebble_quartz_one_item.png"),
-        Voxel::PebbleQuartzTwo => Some("assets/textures/items/pebble_quartz_two_item.png"),
-        Voxel::PebbleQuartzThree => Some("assets/textures/items/pebble_quartz_three_item.png"),
+        Voxel::BambooLeaves => Some("assets/textures/items/tree_bamboo_leaves_item.png"),
+        Voxel::PebbleChert => Some("assets/textures/items/pebble_chert_item.png"),
+        Voxel::PebbleChertCluster => Some("assets/textures/items/pebble_chert_cluster_item.png"),
+        Voxel::PebbleFlint => Some("assets/textures/items/pebble_flint_item.png"),
+        Voxel::PebbleFlintCluster => Some("assets/textures/items/pebble_flint_cluster_item.png"),
+        Voxel::PebbleQuartz => Some("assets/textures/items/pebble_quartz_item.png"),
+        Voxel::PebbleQuartzCluster => Some("assets/textures/items/pebble_quartz_cluster_item.png"),
         _ => None,
     }
 }

@@ -3,9 +3,9 @@
 This master document centralizes, unifies, and catalogs **all blocks implemented in the Voxel Engine**, organized across the 14 worldbuilding subdomains located in `docs/worldbuilding/blocks/`.
 
 > [!IMPORTANT]
-> **Project Grand Total: 716 Cataloged Unique Blocks**  
+> **Project Grand Total: 715 Cataloged Unique Blocks**  
 > Summing all 14 core domains of the engine's block ecosystem:  
-> **8** (systems) + **18** (fluids) + **56** (soils) + **68** (rocks) + **92** (trees) + **74** (ores) + **30** (caverns) + **50** (oceans) + **36** (organics) + **162** (decorations) + **18** (mushrooms) + **38** (vegetation) + **32** (flowers) + **34** (crops) = **716 Total Blocks**.
+> **8** (systems) + **18** (fluids) + **56** (soils) + **68** (rocks) + **91** (trees) + **74** (ores) + **30** (caverns) + **50** (oceans) + **36** (organics) + **162** (decorations) + **18** (mushrooms) + **38** (vegetation) + **32** (flowers) + **34** (crops) = **715 Total Blocks**.
 
 For each block, the following properties are systematically specified:
 
@@ -30,8 +30,8 @@ For each block, the following properties are systematically specified:
 | **01** | Technical & System Blocks (`systems`) | **8 blocks** | **8 textures** | ✅ **100% Complete** | [systems_design.md](blocks/systems_design.md) | [Go to Section 01](#01-technical--system-blocks-systems--8-blocks--100-complete) |
 | **02** | Hydrosphere & Cryology (`fluids`) | **18 blocks** | **54 textures** | ✅ **100% Complete** | [fluids_design.md](blocks/fluids_design.md) | [Go to Section 02](#02-hydrosphere--cryology-fluids--18-blocks--100-complete) |
 | **03** | Pedology & Soils (`soils`) | **56 blocks** | **178 textures** | ✅ **100% Complete** | [soils_design.md](blocks/soils_design.md) | [Go to Section 03](#03-pedology--soils-soils--56-blocks--100-complete) |
-| **04** | Geology & Rocks (`rocks`) | **68 blocks** | **150 textures** | ✅ **100% Complete** | [rocks_design.md](blocks/rocks_design.md) | [Go to Section 04](#04-geology--rocks-rocks--68-blocks--100-complete) |
-| **05** | Trees, Forestry & Dendrology (`trees`) | **92 blocks** | **242 textures** | ✅ **100% Complete** | [trees_design.md](blocks/trees_design.md) | [Go to Section 05](#05-trees-forestry--dendrology-trees--92-blocks--100-complete) |
+| **04** | Geology & Rocks (`rocks`) | **68 blocks** | **162 textures** | ✅ **100% Complete** | [rocks_design.md](blocks/rocks_design.md) | [Go to Section 04](#04-geology--rocks-rocks--68-blocks--100-complete) |
+| **05** | Trees, Forestry & Dendrology (`trees`) | **91 blocks** | **243 textures** | ✅ **100% Complete** | [trees_design.md](blocks/trees_design.md) | [Go to Section 05](#05-trees-forestry--dendrology-trees--91-blocks--100-complete) |
 | **06** | Ores, Minerals & Gemology (`ores`) | **74 blocks** | **111 textures** | ✅ **100% Complete** | [ores_design.md](blocks/ores_design.md) | [Go to Section 06](#06-ores-minerals--gemology-ores--74-blocks--100-complete) |
 | **07** | Speleology & Crystals (`caverns`) | **30 blocks** | **114 textures** | ✅ **100% Complete** | [caverns_design.md](blocks/caverns_design.md) | [Go to Section 07](#07-speleology--crystals-caverns--30-blocks--100-complete) |
 | **08** | Ocean & Benthic Ecosystems (`oceans`) | **50 blocks** | **140 textures** | ✅ **100% Complete** | [oceans_design.md](blocks/oceans_design.md) | [Go to Section 08](#08-ocean--benthic-ecosystems-oceans--50-blocks--100-complete) |
@@ -41,13 +41,13 @@ For each block, the following properties are systematically specified:
 | **12** | Botany: Groundcover & Herbaceous Flora (`vegetation`) | **38 blocks** | **111 textures** | 🔄 *In Progress* | [vegetation_design.md](blocks/vegetation_design.md) | [Go to Section 12](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks) |
 | **13** | Botany: Flowers & Flowering Flora (`flowers`) | **32 blocks** | **87 textures** | 🔄 *In Progress* | [flowers_design.md](blocks/flowers_design.md) | [Go to Section 13](#13-botany-flowers--flowering-flora-flowers--32-blocks) |
 | **14** | Agriculture & Domestic Crops (`crops`) | **34 blocks** | **171 textures** | 🔄 *In Progress* | [crops_design.md](blocks/crops_design.md) | [Go to Section 14](#14-agriculture--domestic-crops-crops--34-blocks) |
-| **TOTAL** | **Grand Master Sum** | **716 blocks** | **1,610 textures** | — | — | — |
+| **TOTAL** | **Grand Master Sum** | **715 blocks** | **1,623 textures** | — | — | — |
 
 01. [Technical & System Blocks (`systems`) — 8 Blocks [✅ 100% Complete]](#01-technical--system-blocks-systems--8-blocks--100-complete)
 02. [Hydrosphere & Cryology (`fluids`) — 18 Blocks [✅ 100% Complete]](#02-hydrosphere--cryology-fluids--18-blocks--100-complete)
 03. [Pedology & Soils (`soils`) — 56 Blocks [✅ 100% Complete]](#03-pedology--soils-soils--56-blocks--100-complete)
 04. [Geology & Rocks (`rocks`) — 68 Blocks [✅ 100% Complete]](#04-geology--rocks-rocks--68-blocks--100-complete)
-05. [Trees, Forestry & Dendrology (`trees`) — 92 Blocks [✅ 100% Complete]](#05-trees-forestry--dendrology-trees--92-blocks--100-complete)
+05. [Trees, Forestry & Dendrology (`trees`) — 91 Blocks [✅ 100% Complete]](#05-trees-forestry--dendrology-trees--91-blocks--100-complete)
 06. [Ores, Minerals & Gemology (`ores`) — 74 Blocks [✅ 100% Complete]](#06-ores-minerals--gemology-ores--74-blocks--100-complete)
 07. [Speleology & Crystals (`caverns`) — 30 Blocks [✅ 100% Complete]](#07-speleology--crystals-caverns--30-blocks--100-complete)
 08. [Ocean & Benthic Ecosystems (`oceans`) — 50 Blocks [✅ 100% Complete]](#08-ocean--benthic-ecosystems-oceans--50-blocks--100-complete)
@@ -252,12 +252,12 @@ The geological framework comprises **17 mineable rock matrices** across 7 core p
 | **55** | `mossy_granite` | Mossy Granite | **Plutonic** | `rock_granite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
 | **56** | `mossy_limestone` | Mossy Limestone | **Sedimentary** | `rock_limestone.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
 | **57** | `obsidian` | Obsidian | **Volcanic** | `rock_obsidian.png` | 6 uniform faces |
-| **58** | `pebble_flint_one` | Flint Pebble (Single) | **Pebble Cluster (1 Pebble)** | `pebble_flint_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
-| **59** | `pebble_flint_three` | Flint Pebble (Cluster) | **Pebble Cluster (3 Pebbles)** | `pebble_flint_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
-| **60** | `pebble_flint_two` | Flint Pebble (Pair) | **Pebble Cluster (2 Pebbles)** | `pebble_flint_two.png` | Corner micro-box `[3..5, 0..1, 10..12]` |
-| **61** | `pebble_quartz_one` | Quartz Pebble (Single) | **Pebble Cluster (1 Pebble)** | `pebble_quartz_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
-| **62** | `pebble_quartz_three` | Quartz Pebble (Cluster) | **Pebble Cluster (3 Pebbles)** | `pebble_quartz_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
-| **63** | `pebble_quartz_two` | Quartz Pebble (Pair) | **Pebble Cluster (2 Pebbles)** | `pebble_quartz_two.png` | Corner micro-box `[3..5, 0..1, 10..12]` |
+| **58** | `pebble_chert` | Chert Pebble | **Pebble (Single)** | `pebble_chert.png` *(+ `1`, `2`)* | Low sub-voxel ground pebble |
+| **59** | `pebble_chert_cluster` | Chert Pebble Cluster | **Pebble (Cluster)** | `pebble_chert_cluster.png` *(+ `1`, `2`)* | Low sub-voxel cluster pebbles |
+| **60** | `pebble_flint` | Flint Pebble | **Pebble (Single)** | `pebble_flint.png` *(+ `1`, `2`)* | Low sub-voxel ground pebble |
+| **61** | `pebble_flint_cluster` | Flint Pebble Cluster | **Pebble (Cluster)** | `pebble_flint_cluster.png` *(+ `1`, `2`)* | Low sub-voxel cluster pebbles |
+| **62** | `pebble_quartz` | Quartz Pebble | **Pebble (Single)** | `pebble_quartz.png` *(+ `1`, `2`)* | Low sub-voxel ground pebble |
+| **63** | `pebble_quartz_cluster` | Quartz Pebble Cluster | **Pebble (Cluster)** | `pebble_quartz_cluster.png` *(+ `1`, `2`)* | Low sub-voxel cluster pebbles |
 | **64** | `sandstone_common` | Common Sandstone | **Sedimentary** | `rock_sandstone_common.png` | 6 uniform faces |
 | **65** | `sandstone_dune` | Dune Sandstone | **Sedimentary** | `rock_sandstone_dune.png` | 6 uniform faces |
 | **66** | `sandstone_red` | Red Sandstone | **Sedimentary** | `rock_sandstone_red.png` | 6 uniform faces |
@@ -266,12 +266,12 @@ The geological framework comprises **17 mineable rock matrices** across 7 core p
 
 ---
 
-## 05. Trees, Forestry & Dendrology (`trees`) — 92 Blocks [✅ 100% Complete]
+## 05. Trees, Forestry & Dendrology (`trees`) — 91 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/trees`  
 📄 **Comprehensive Specification**: [trees_design.md](blocks/trees_design.md)
 
-Planetary dendrology encompasses **18 living forest tree species** distributed across 5 major bioclimatic zones. Tree blocks are systematically classified into: 35 wood/trunk blocks (34 logs and full bark blocks, plus 1 bamboo stalk), 18 dressed lumber building blocks (planks), 38 canopy foliage blocks (healthy and dead states), and 1 estuarine aerial root block = **92 Total Forestry Blocks**.
+Planetary dendrology encompasses **18 living forest tree species** distributed across 5 major bioclimatic zones. Tree blocks are systematically classified into: 35 wood/trunk blocks (34 logs and full bark blocks, plus 1 bamboo stalk), 18 dressed lumber building blocks (planks), 37 canopy foliage blocks (healthy and dead states), and 1 estuarine aerial root block = **91 Total Forestry Blocks**.
 
 ---
 
@@ -287,88 +287,87 @@ Planetary dendrology encompasses **18 living forest tree species** distributed a
 | **08** | `aspen_log` | Aspen Log | **Wood** | Top/Bottom: `tree_aspen_log.png`<br>Sides: `tree_aspen_bark.png` | Directional (Top/Bottom + 4 sides) |
 | **09** | `aspen_planks` | Aspen Planks | **Planks** | `tree_aspen_planks.png` | 6 uniform faces |
 | **10** | `aspen_wood` | Aspen Wood | **Wood** | `tree_aspen_bark.png` | 6 uniform faces |
-| **11** | `bamboo_large_leaves` | Large Bamboo Leaves | **Foliage** | `tree_bamboo_large_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **11** | `bamboo_leaves` | Bamboo Leaves | **Foliage** | `tree_bamboo_leaves.png` *(+ `1`, `2`)* | Stalk column with cross-billboard leaves |
 | **12** | `bamboo_planks` | Bamboo Planks | **Planks** | `tree_bamboo_planks.png` | 6 uniform faces |
-| **13** | `bamboo_small_leaves` | Small Bamboo Leaves | **Foliage** | `tree_bamboo_small_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **14** | `bamboo_stalk` | Bamboo Stalk | **Wood / Stalk** | Top/Bottom: `tree_bamboo_stalk_top.png`<br>Sides: `tree_bamboo_stalk.png` | Directional column (3×3 top/bottom, 3×16 sides) |
-| **15** | `baobab_leaves` | Baobab Leaves | **Foliage** | `tree_baobab_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **16** | `baobab_leaves_dead` | Dead Baobab Leaves | **Foliage** | `tree_baobab_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **17** | `baobab_log` | Baobab Log | **Wood** | Top/Bottom: `tree_baobab_log.png`<br>Sides: `tree_baobab_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **18** | `baobab_planks` | Baobab Planks | **Planks** | `tree_baobab_planks.png` | 6 uniform faces |
-| **19** | `baobab_wood` | Baobab Wood | **Wood** | `tree_baobab_bark.png` | 6 uniform faces |
-| **20** | `birch_leaves` | Birch Leaves | **Foliage** | `tree_birch_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **21** | `birch_leaves_dead` | Dead Birch Leaves | **Foliage** | `tree_birch_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **22** | `birch_log` | Birch Log | **Wood** | Top/Bottom: `tree_birch_log.png`<br>Sides: `tree_birch_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **23** | `birch_planks` | Birch Planks | **Planks** | `tree_birch_planks.png` | 6 uniform faces |
-| **24** | `birch_wood` | Birch Wood | **Wood** | `tree_birch_bark.png` | 6 uniform faces |
-| **25** | `cherry_leaves` | Cherry Blossom Leaves | **Foliage** | `tree_cherry_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **26** | `cherry_leaves_dead` | Dead Cherry Leaves | **Foliage** | `tree_cherry_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **27** | `cherry_log` | Cherry Log | **Wood** | Top/Bottom: `tree_cherry_log.png`<br>Sides: `tree_cherry_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **28** | `cherry_planks` | Cherry Planks | **Planks** | `tree_cherry_planks.png` | 6 uniform faces |
-| **29** | `cherry_wood` | Cherry Wood | **Wood** | `tree_cherry_bark.png` | 6 uniform faces |
-| **30** | `cypress_leaves` | Cypress Foliage | **Foliage** | `tree_cypress_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **31** | `cypress_leaves_dead` | Dead Cypress Foliage | **Foliage** | `tree_cypress_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **32** | `cypress_log` | Cypress Log | **Wood** | Top/Bottom: `tree_cypress_log.png`<br>Sides: `tree_cypress_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **33** | `cypress_planks` | Cypress Planks | **Planks** | `tree_cypress_planks.png` | 6 uniform faces |
-| **34** | `cypress_wood` | Cypress Wood | **Wood** | `tree_cypress_bark.png` | 6 uniform faces |
-| **35** | `fir_leaves` | Fir Needles | **Foliage** | `tree_fir_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **36** | `fir_leaves_dead` | Dead Fir Needles | **Foliage** | `tree_fir_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **37** | `fir_log` | Fir Log | **Wood** | Top/Bottom: `tree_fir_log.png`<br>Sides: `tree_fir_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **38** | `fir_planks` | Fir Planks | **Planks** | `tree_fir_planks.png` | 6 uniform faces |
-| **39** | `fir_wood` | Fir Wood | **Wood** | `tree_fir_bark.png` | 6 uniform faces |
-| **40** | `kapok_leaves` | Kapok Leaves | **Foliage** | `tree_kapok_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **41** | `kapok_leaves_dead` | Dead Kapok Leaves | **Foliage** | `tree_kapok_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **42** | `kapok_log` | Kapok Log | **Wood** | Top/Bottom: `tree_kapok_log.png`<br>Sides: `tree_kapok_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **43** | `kapok_planks` | Kapok Planks | **Planks** | `tree_kapok_planks.png` | 6 uniform faces |
-| **44** | `kapok_wood` | Kapok Wood | **Wood** | `tree_kapok_bark.png` | 6 uniform faces |
-| **45** | `mahogany_leaves` | Mahogany Leaves | **Foliage** | `tree_mahogany_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **46** | `mahogany_leaves_dead` | Dead Mahogany Leaves | **Foliage** | `tree_mahogany_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **47** | `mahogany_log` | Mahogany Log | **Wood** | Top/Bottom: `tree_mahogany_log.png`<br>Sides: `tree_mahogany_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **48** | `mahogany_planks` | Mahogany Planks | **Planks** | `tree_mahogany_planks.png` | 6 uniform faces |
-| **49** | `mahogany_wood` | Mahogany Wood | **Wood** | `tree_mahogany_bark.png` | 6 uniform faces |
-| **50** | `mangrove_leaves` | Mangrove Leaves | **Foliage** | `tree_mangrove_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **51** | `mangrove_leaves_dead` | Dead Mangrove Leaves | **Foliage** | `tree_mangrove_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **52** | `mangrove_log` | Mangrove Log | **Wood** | Top/Bottom: `tree_mangrove_log.png`<br>Sides: `tree_mangrove_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **53** | `mangrove_planks` | Mangrove Planks | **Planks** | `tree_mangrove_planks.png` | 6 uniform faces |
-| **54** | `mangrove_roots` | Mangrove Aerial Roots | **Root** | Top/Bottom: `tree_mangrove_roots_top.png`<br>Sides: `tree_mangrove_roots.png` | Directional (Top/Bottom + 4 sides, Cutout) |
-| **55** | `mangrove_wood` | Mangrove Wood | **Wood** | `tree_mangrove_bark.png` | 6 uniform faces |
-| **56** | `maple_leaves_dead` | Dead Maple Leaves | **Foliage** | `tree_maple_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **57** | `maple_leaves_orange` | Orange Maple Leaves | **Foliage** | `tree_maple_leaves_orange.png` | 6 uniform faces (Cutout alpha transparency) |
-| **58** | `maple_leaves_red` | Red Maple Leaves | **Foliage** | `tree_maple_leaves_red.png` | 6 uniform faces (Cutout alpha transparency) |
-| **59** | `maple_leaves_yellow` | Yellow Maple Leaves | **Foliage** | `tree_maple_leaves_yellow.png` | 6 uniform faces (Cutout alpha transparency) |
-| **60** | `maple_log` | Maple Log | **Wood** | Top/Bottom: `tree_maple_log.png`<br>Sides: `tree_maple_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **61** | `maple_planks` | Maple Planks | **Planks** | `tree_maple_planks.png` | 6 uniform faces |
-| **62** | `maple_wood` | Maple Wood | **Wood** | `tree_maple_bark.png` | 6 uniform faces |
-| **63** | `oak_leaves` | Oak Leaves | **Foliage** | `tree_oak_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **64** | `oak_leaves_dead` | Dead Oak Leaves | **Foliage** | `tree_oak_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **65** | `oak_log` | Oak Log | **Wood** | Top/Bottom: `tree_oak_log.png`<br>Sides: `tree_oak_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **66** | `oak_planks` | Oak Planks | **Planks** | `tree_oak_planks.png` | 6 uniform faces |
-| **67** | `oak_wood` | Oak Wood | **Wood** | `tree_oak_bark.png` | 6 uniform faces |
-| **68** | `palm_leaves` | Palm Fronds | **Foliage** | `tree_palm_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **69** | `palm_leaves_dead` | Dead Palm Fronds | **Foliage** | `tree_palm_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **70** | `palm_log` | Palm Log | **Wood** | Top/Bottom: `tree_palm_log.png`<br>Sides: `tree_palm_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **71** | `palm_planks` | Palm Planks | **Planks** | `tree_palm_planks.png` | 6 uniform faces |
-| **72** | `palm_wood` | Palm Wood | **Wood** | `tree_palm_bark.png` | 6 uniform faces |
-| **73** | `pine_leaves` | Pine Needles | **Foliage** | `tree_pine_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **74** | `pine_leaves_dead` | Dead Pine Needles | **Foliage** | `tree_pine_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **75** | `pine_log` | Pine Log | **Wood** | Top/Bottom: `tree_pine_log.png`<br>Sides: `tree_pine_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **76** | `pine_planks` | Pine Planks | **Planks** | `tree_pine_planks.png` | 6 uniform faces |
-| **77** | `pine_wood` | Pine Wood | **Wood** | `tree_pine_bark.png` | 6 uniform faces |
-| **78** | `redwood_leaves` | Redwood Foliage | **Foliage** | `tree_redwood_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **79** | `redwood_leaves_dead` | Dead Redwood Foliage | **Foliage** | `tree_redwood_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **80** | `redwood_log` | Redwood Log | **Wood** | Top/Bottom: `tree_redwood_log.png`<br>Sides: `tree_redwood_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **81** | `redwood_planks` | Redwood Planks | **Planks** | `tree_redwood_planks.png` | 6 uniform faces |
-| **82** | `redwood_wood` | Redwood Wood | **Wood** | `tree_redwood_bark.png` | 6 uniform faces |
-| **83** | `willow_leaves` | Weeping Willow Leaves | **Foliage** | `tree_willow_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **84** | `willow_leaves_dead` | Dead Willow Leaves | **Foliage** | `tree_willow_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **85** | `willow_log` | Willow Log | **Wood** | Top/Bottom: `tree_willow_log.png`<br>Sides: `tree_willow_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **86** | `willow_planks` | Willow Planks | **Planks** | `tree_willow_planks.png` | 6 uniform faces |
-| **87** | `willow_wood` | Willow Wood | **Wood** | `tree_willow_bark.png` | 6 uniform faces |
-| **88** | `yew_leaves` | Yew Foliage | **Foliage** | `tree_yew_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **89** | `yew_leaves_dead` | Dead Yew Foliage | **Foliage** | `tree_yew_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **90** | `yew_log` | Yew Log | **Wood** | Top/Bottom: `tree_yew_log.png`<br>Sides: `tree_yew_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **91** | `yew_planks` | Yew Planks | **Planks** | `tree_yew_planks.png` | 6 uniform faces |
-| **92** | `yew_wood` | Yew Wood | **Wood** | `tree_yew_bark.png` | 6 uniform faces |
+| **13** | `bamboo_stalk` | Bamboo Stalk | **Wood / Stalk** | Top/Bottom: `tree_bamboo_stalk_top.png`<br>Sides: `tree_bamboo_stalk.png` | Directional column (3×3 top/bottom, 3×16 sides) |
+| **14** | `baobab_leaves` | Baobab Leaves | **Foliage** | `tree_baobab_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **15** | `baobab_leaves_dead` | Dead Baobab Leaves | **Foliage** | `tree_baobab_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **16** | `baobab_log` | Baobab Log | **Wood** | Top/Bottom: `tree_baobab_log.png`<br>Sides: `tree_baobab_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **17** | `baobab_planks` | Baobab Planks | **Planks** | `tree_baobab_planks.png` | 6 uniform faces |
+| **18** | `baobab_wood` | Baobab Wood | **Wood** | `tree_baobab_bark.png` | 6 uniform faces |
+| **19** | `birch_leaves` | Birch Leaves | **Foliage** | `tree_birch_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **20** | `birch_leaves_dead` | Dead Birch Leaves | **Foliage** | `tree_birch_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **21** | `birch_log` | Birch Log | **Wood** | Top/Bottom: `tree_birch_log.png`<br>Sides: `tree_birch_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **22** | `birch_planks` | Birch Planks | **Planks** | `tree_birch_planks.png` | 6 uniform faces |
+| **23** | `birch_wood` | Birch Wood | **Wood** | `tree_birch_bark.png` | 6 uniform faces |
+| **24** | `cherry_leaves` | Cherry Blossom Leaves | **Foliage** | `tree_cherry_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **25** | `cherry_leaves_dead` | Dead Cherry Leaves | **Foliage** | `tree_cherry_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **26** | `cherry_log` | Cherry Log | **Wood** | Top/Bottom: `tree_cherry_log.png`<br>Sides: `tree_cherry_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **27** | `cherry_planks` | Cherry Planks | **Planks** | `tree_cherry_planks.png` | 6 uniform faces |
+| **28** | `cherry_wood` | Cherry Wood | **Wood** | `tree_cherry_bark.png` | 6 uniform faces |
+| **29** | `cypress_leaves` | Cypress Foliage | **Foliage** | `tree_cypress_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **30** | `cypress_leaves_dead` | Dead Cypress Foliage | **Foliage** | `tree_cypress_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **31** | `cypress_log` | Cypress Log | **Wood** | Top/Bottom: `tree_cypress_log.png`<br>Sides: `tree_cypress_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **32** | `cypress_planks` | Cypress Planks | **Planks** | `tree_cypress_planks.png` | 6 uniform faces |
+| **33** | `cypress_wood` | Cypress Wood | **Wood** | `tree_cypress_bark.png` | 6 uniform faces |
+| **34** | `fir_leaves` | Fir Needles | **Foliage** | `tree_fir_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **35** | `fir_leaves_dead` | Dead Fir Needles | **Foliage** | `tree_fir_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **36** | `fir_log` | Fir Log | **Wood** | Top/Bottom: `tree_fir_log.png`<br>Sides: `tree_fir_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **37** | `fir_planks` | Fir Planks | **Planks** | `tree_fir_planks.png` | 6 uniform faces |
+| **38** | `fir_wood` | Fir Wood | **Wood** | `tree_fir_bark.png` | 6 uniform faces |
+| **39** | `kapok_leaves` | Kapok Leaves | **Foliage** | `tree_kapok_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **40** | `kapok_leaves_dead` | Dead Kapok Leaves | **Foliage** | `tree_kapok_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **41** | `kapok_log` | Kapok Log | **Wood** | Top/Bottom: `tree_kapok_log.png`<br>Sides: `tree_kapok_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **42** | `kapok_planks` | Kapok Planks | **Planks** | `tree_kapok_planks.png` | 6 uniform faces |
+| **43** | `kapok_wood` | Kapok Wood | **Wood** | `tree_kapok_bark.png` | 6 uniform faces |
+| **44** | `mahogany_leaves` | Mahogany Leaves | **Foliage** | `tree_mahogany_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **45** | `mahogany_leaves_dead` | Dead Mahogany Leaves | **Foliage** | `tree_mahogany_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **46** | `mahogany_log` | Mahogany Log | **Wood** | Top/Bottom: `tree_mahogany_log.png`<br>Sides: `tree_mahogany_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **47** | `mahogany_planks` | Mahogany Planks | **Planks** | `tree_mahogany_planks.png` | 6 uniform faces |
+| **48** | `mahogany_wood` | Mahogany Wood | **Wood** | `tree_mahogany_bark.png` | 6 uniform faces |
+| **49** | `mangrove_leaves` | Mangrove Leaves | **Foliage** | `tree_mangrove_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **50** | `mangrove_leaves_dead` | Dead Mangrove Leaves | **Foliage** | `tree_mangrove_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **51** | `mangrove_log` | Mangrove Log | **Wood** | Top/Bottom: `tree_mangrove_log.png`<br>Sides: `tree_mangrove_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **52** | `mangrove_planks` | Mangrove Planks | **Planks** | `tree_mangrove_planks.png` | 6 uniform faces |
+| **53** | `mangrove_roots` | Mangrove Aerial Roots | **Root** | Top/Bottom: `tree_mangrove_roots_top.png`<br>Sides: `tree_mangrove_roots.png` | Directional (Top/Bottom + 4 sides, Cutout) |
+| **54** | `mangrove_wood` | Mangrove Wood | **Wood** | `tree_mangrove_bark.png` | 6 uniform faces |
+| **55** | `maple_leaves_dead` | Dead Maple Leaves | **Foliage** | `tree_maple_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **56** | `maple_leaves_orange` | Orange Maple Leaves | **Foliage** | `tree_maple_leaves_orange.png` | 6 uniform faces (Cutout alpha transparency) |
+| **57** | `maple_leaves_red` | Red Maple Leaves | **Foliage** | `tree_maple_leaves_red.png` | 6 uniform faces (Cutout alpha transparency) |
+| **58** | `maple_leaves_yellow` | Yellow Maple Leaves | **Foliage** | `tree_maple_leaves_yellow.png` | 6 uniform faces (Cutout alpha transparency) |
+| **59** | `maple_log` | Maple Log | **Wood** | Top/Bottom: `tree_maple_log.png`<br>Sides: `tree_maple_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **60** | `maple_planks` | Maple Planks | **Planks** | `tree_maple_planks.png` | 6 uniform faces |
+| **61** | `maple_wood` | Maple Wood | **Wood** | `tree_maple_bark.png` | 6 uniform faces |
+| **62** | `oak_leaves` | Oak Leaves | **Foliage** | `tree_oak_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **63** | `oak_leaves_dead` | Dead Oak Leaves | **Foliage** | `tree_oak_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **64** | `oak_log` | Oak Log | **Wood** | Top/Bottom: `tree_oak_log.png`<br>Sides: `tree_oak_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **65** | `oak_planks` | Oak Planks | **Planks** | `tree_oak_planks.png` | 6 uniform faces |
+| **66** | `oak_wood` | Oak Wood | **Wood** | `tree_oak_bark.png` | 6 uniform faces |
+| **67** | `palm_leaves` | Palm Fronds | **Foliage** | `tree_palm_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **68** | `palm_leaves_dead` | Dead Palm Fronds | **Foliage** | `tree_palm_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **69** | `palm_log` | Palm Log | **Wood** | Top/Bottom: `tree_palm_log.png`<br>Sides: `tree_palm_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **70** | `palm_planks` | Palm Planks | **Planks** | `tree_palm_planks.png` | 6 uniform faces |
+| **71** | `palm_wood` | Palm Wood | **Wood** | `tree_palm_bark.png` | 6 uniform faces |
+| **72** | `pine_leaves` | Pine Needles | **Foliage** | `tree_pine_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **73** | `pine_leaves_dead` | Dead Pine Needles | **Foliage** | `tree_pine_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **74** | `pine_log` | Pine Log | **Wood** | Top/Bottom: `tree_pine_log.png`<br>Sides: `tree_pine_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **75** | `pine_planks` | Pine Planks | **Planks** | `tree_pine_planks.png` | 6 uniform faces |
+| **76** | `pine_wood` | Pine Wood | **Wood** | `tree_pine_bark.png` | 6 uniform faces |
+| **77** | `redwood_leaves` | Redwood Foliage | **Foliage** | `tree_redwood_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **78** | `redwood_leaves_dead` | Dead Redwood Foliage | **Foliage** | `tree_redwood_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **79** | `redwood_log` | Redwood Log | **Wood** | Top/Bottom: `tree_redwood_log.png`<br>Sides: `tree_redwood_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **80** | `redwood_planks` | Redwood Planks | **Planks** | `tree_redwood_planks.png` | 6 uniform faces |
+| **81** | `redwood_wood` | Redwood Wood | **Wood** | `tree_redwood_bark.png` | 6 uniform faces |
+| **82** | `willow_leaves` | Weeping Willow Leaves | **Foliage** | `tree_willow_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **83** | `willow_leaves_dead` | Dead Willow Leaves | **Foliage** | `tree_willow_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **84** | `willow_log` | Willow Log | **Wood** | Top/Bottom: `tree_willow_log.png`<br>Sides: `tree_willow_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **85** | `willow_planks` | Willow Planks | **Planks** | `tree_willow_planks.png` | 6 uniform faces |
+| **86** | `willow_wood` | Willow Wood | **Wood** | `tree_willow_bark.png` | 6 uniform faces |
+| **87** | `yew_leaves` | Yew Foliage | **Foliage** | `tree_yew_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **88** | `yew_leaves_dead` | Dead Yew Foliage | **Foliage** | `tree_yew_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **89** | `yew_log` | Yew Log | **Wood** | Top/Bottom: `tree_yew_log.png`<br>Sides: `tree_yew_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **90** | `yew_planks` | Yew Planks | **Planks** | `tree_yew_planks.png` | 6 uniform faces |
+| **91** | `yew_wood` | Yew Wood | **Wood** | `tree_yew_bark.png` | 6 uniform faces |
 
 ---
 

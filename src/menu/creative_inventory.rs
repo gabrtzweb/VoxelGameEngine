@@ -35,7 +35,7 @@ pub const CATALOG_ROW_Y_COORDS: [f32; 10] = [
     43.0, 61.0, 79.0, 97.0, 115.0, 133.0, 151.0, 169.0, 187.0, 205.0,
 ];
 
-pub const AVAILABLE_BLOCKS: [Voxel; 612] = Voxel::ALL;
+pub const AVAILABLE_BLOCKS: [Voxel; 611] = Voxel::ALL;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CreativeCategory {

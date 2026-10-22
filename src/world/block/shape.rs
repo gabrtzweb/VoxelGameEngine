@@ -10,10 +10,10 @@ pub enum BlockShape {
     Column = 3,
     Torch = 4,
     Basket = 5,
-    PebbleOne = 6,
-    PebbleTwo = 7,
-    PebbleThree = 8,
-    CrossBillboard = 9,
+    Pebble = 6,
+    PebbleCluster = 7,
+    CrossBillboard = 8,
+    Bamboo = 9,
 }
 
 #[repr(u8)]
@@ -57,10 +57,10 @@ impl BlockShape {
             BlockShape::Column,
             BlockShape::Torch,
             BlockShape::Basket,
-            BlockShape::PebbleOne,
-            BlockShape::PebbleTwo,
-            BlockShape::PebbleThree,
+            BlockShape::Pebble,
+            BlockShape::PebbleCluster,
             BlockShape::CrossBillboard,
+            BlockShape::Bamboo,
         ]
     }
 
@@ -82,10 +82,10 @@ impl BlockShape {
             Self::Column => "Column",
             Self::Torch => "Torch",
             Self::Basket => "Basket",
-            Self::PebbleOne => "Pebble (1)",
-            Self::PebbleTwo => "Pebble (2)",
-            Self::PebbleThree => "Pebble (3)",
+            Self::Pebble => "Pebble",
+            Self::PebbleCluster => "Pebble Cluster",
             Self::CrossBillboard => "Cross-Billboard",
+            Self::Bamboo => "Bamboo",
         }
     }
 
@@ -97,22 +97,22 @@ impl BlockShape {
             Self::Column => "COLUMN",
             Self::Torch => "TORCH",
             Self::Basket => "BASKET",
-            Self::PebbleOne => "PEBBLE1",
-            Self::PebbleTwo => "PEBBLE2",
-            Self::PebbleThree => "PEBBLE3",
+            Self::Pebble => "PEBBLE",
+            Self::PebbleCluster => "PEBBLE_CLUSTER",
             Self::CrossBillboard => "CROSS",
+            Self::Bamboo => "BAMBOO",
         }
     }
 
     pub const fn orientation_count(self) -> u8 {
         match self {
             Self::Full => 3,
-            Self::Basket | Self::CrossBillboard => 1,
+            Self::Basket | Self::CrossBillboard | Self::Bamboo => 1,
             Self::Slab => 6,
             Self::Stair => 8,
             Self::Column => 6,
             Self::Torch => 5,
-            Self::PebbleOne | Self::PebbleTwo | Self::PebbleThree => 4,
+            Self::Pebble | Self::PebbleCluster => 4,
         }
     }
 
@@ -124,7 +124,7 @@ impl BlockShape {
                 2 => "Horizontal (Z)",
                 _ => "Standard",
             },
-            Self::Basket | Self::CrossBillboard => "Standard",
+            Self::Basket | Self::CrossBillboard | Self::Bamboo => "Standard",
             Self::Slab => match orientation % 6 {
                 0 => "Bottom (Floor)",
                 1 => "Top (Ceiling)",
@@ -162,7 +162,7 @@ impl BlockShape {
                 4 => "Wall East (+X)",
                 _ => "Unknown",
             },
-            Self::PebbleOne | Self::PebbleTwo | Self::PebbleThree => match orientation % 4 {
+            Self::Pebble | Self::PebbleCluster => match orientation % 4 {
                 0 => "North (0°)",
                 1 => "East (90°)",
                 2 => "South (180°)",
@@ -185,7 +185,14 @@ impl BlockShape {
 
     pub fn local_boxes(self, orientation: u8) -> ([Vec3; 2], Option<[Vec3; 2]>) {
         match self {
-            Self::Full | Self::Basket | Self::CrossBillboard => ([Vec3::ZERO, Vec3::ONE], None),
+            Self::Full | Self::Basket => ([Vec3::ZERO, Vec3::ONE], None),
+            Self::CrossBillboard => (
+                [
+                    Vec3::new(0.125, 0.0, 0.125),
+                    Vec3::new(0.875, 0.8, 0.875),
+                ],
+                None,
+            ),
             Self::Slab => {
                 let bbox = match orientation % 6 {
                     0 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 0.5, 1.0)],
@@ -243,7 +250,7 @@ impl BlockShape {
                 };
                 (bbox, None)
             }
-            Self::PebbleOne => {
+            Self::Pebble => {
                 let b = rotate_aabb_y(
                     Vec3::new(7.0 / 16.0, 0.0, 5.0 / 16.0),
                     Vec3::new(11.0 / 16.0, 2.0 / 16.0, 10.0 / 16.0),
@@ -251,26 +258,23 @@ impl BlockShape {
                 );
                 (b, None)
             }
-            Self::PebbleTwo => {
-                let b = rotate_aabb_y(
-                    Vec3::new(3.0 / 16.0, 0.0, 10.0 / 16.0),
-                    Vec3::new(5.0 / 16.0, 1.0 / 16.0, 12.0 / 16.0),
-                    orientation,
-                );
-                (b, None)
-            }
-            Self::PebbleThree => {
+            Self::PebbleCluster => {
                 let b1 = rotate_aabb_y(
                     Vec3::new(7.0 / 16.0, 0.0, 8.0 / 16.0),
                     Vec3::new(12.0 / 16.0, 2.0 / 16.0, 13.0 / 16.0),
                     orientation,
                 );
                 let b2 = rotate_aabb_y(
-                    Vec3::new(5.0 / 16.0, 0.0, 6.0 / 16.0),
-                    Vec3::new(8.0 / 16.0, 1.0 / 16.0, 10.0 / 16.0),
+                    Vec3::new(4.0 / 16.0, 0.0, 3.0 / 16.0),
+                    Vec3::new(12.0 / 16.0, 1.0 / 16.0, 10.0 / 16.0),
                     orientation,
                 );
                 (b1, Some(b2))
+            }
+            Self::Bamboo => {
+                let min = Vec3::new(6.5 / 16.0, 0.0, 6.5 / 16.0);
+                let max = Vec3::new(9.5 / 16.0, 1.0, 9.5 / 16.0);
+                ([min, max], None)
             }
         }
     }

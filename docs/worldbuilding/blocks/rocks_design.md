@@ -1,7 +1,7 @@
 # Worldbuilding Architecture & Catalog: Rocks & Petrology (rocks)
 
 All active textures for geological matrices, bedrock strata, cobbled stones, and loose ground pebbles are organized in:
-📂 **`docs/worldbuilding/blocks/rocks`** *(150 active PNG textures on disk: 51 solid rock matrices across 17 base types + stochastic variants, 51 mined cobbled stones across 17 types + stochastic variants, 42 outcrop grass/snow shelves across 7 surface rocks, 6 ground pebbles)*
+📂 **`docs/worldbuilding/blocks/rocks`** *(162 active PNG textures on disk: 51 solid rock matrices across 17 base types + stochastic variants, 51 mined cobbled stones across 17 types + stochastic variants, 42 outcrop grass/snow shelves across 7 surface rocks, 18 ground pebbles across 3 materials)*
 
 Shared surface overlays are located in:
 📂 **`docs/worldbuilding/blocks/overlays`**
@@ -12,7 +12,7 @@ Generating **68 unique blocks** in the master catalog: **48 structural blocks** 
 
 ## 1. Geological Classification & Pedological Connections
 
-The planetary geology is structured into **7 Core Petrological Domains (17 Rocks + 2 Hand-Collectable Pebbles)**:
+The planetary geology is structured into **7 Core Petrological Domains (17 Rocks + 3 Hand-Collectable Pebble Materials)**:
 
 ```mermaid
 graph TD
@@ -84,15 +84,15 @@ Exactly **7 surface alpine and cliff rocks** possess lateral turf and snow shelf
 - **Grass Sides (7 base × 3 = 21)**: `rock_dolomite_grass_side.png` *(+ `1`, `2`)*, `rock_granite_grass_side.png` *(+ `1`, `2`)*, `rock_andesite_grass_side.png` *(+ `1`, `2`)*, `rock_basalt_grass_side.png` *(+ `1`, `2`)*, `rock_limestone_grass_side.png` *(+ `1`, `2`)*, `rock_chalk_grass_side.png` *(+ `1`, `2`)*, `rock_argillite_grass_side.png` *(+ `1`, `2`)*.
 - **Snow Sides (7 base × 3 = 21)**: `rock_dolomite_snow_side.png` *(+ `1`, `2`)*, `rock_granite_snow_side.png` *(+ `1`, `2`)*, `rock_andesite_snow_side.png` *(+ `1`, `2`)*, `rock_basalt_snow_side.png` *(+ `1`, `2`)*, `rock_limestone_snow_side.png` *(+ `1`, `2`)*, `rock_chalk_snow_side.png` *(+ `1`, `2`)*, `rock_argillite_snow_side.png` *(+ `1`, `2`)*.
 
-### D. Ground Pebbles & River Shingle (2 Types × 3 Cluster Stages = 6 Files, 16×16 px)
+### D. Ground Pebbles & River Shingle (3 Materials × 2 Forms × 3 Stochastic Variations = 18 Files, 16×16 px)
 
-- **Flint (3)**: `pebble_flint_one.png`, `pebble_flint_two.png`, `pebble_flint_three.png` *(Pyrite/flint fire-striker & primitive arrowheads)*
-
-- **Quartz (3)**: `pebble_quartz_one.png`, `pebble_quartz_two.png`, `pebble_quartz_three.png` *(Smooth crystalline white river pebbles)*
+- **Flint (6)**: `pebble_flint.png` *(Single; + `1`, `2`)*, `pebble_flint_cluster.png` *(Cluster; + `1`, `2`)* *(Dark chert/flint fire-striker & primitive arrowheads)*
+- **Quartz (6)**: `pebble_quartz.png` *(Single; + `1`, `2`)*, `pebble_quartz_cluster.png` *(Cluster; + `1`, `2`)* *(Smooth crystalline milky-white river pebbles)*
+- **Chert (6)**: `pebble_chert.png` *(Single; + `1`, `2`)*, `pebble_chert_cluster.png` *(Cluster; + `1`, `2`)* *(Cryptocrystalline warm caramel, ochre, and amber-tan riverbed shingle)*
 
 ---
 
-## 3. Block Catalog (67 Unique Blocks: 49 Structural Blocks + 6 Ground Pebble Blocks + 12 Humid Mossy Composite Blocks)
+## 3. Block Catalog (68 Unique Blocks: 48 Structural Blocks + 6 Ground Pebble Blocks + 14 Humid Mossy Composite Blocks)
 
 ### 3.1. Aeolian & Marine Arenites (8 Blocks: 4 Solid + 4 Cobbled)
 
@@ -195,12 +195,12 @@ Exactly **7 surface alpine and cliff rocks** possess lateral turf and snow shelf
 
 | # | Block ID | Name | Cluster Stage | Texture File | Model Geometry |
 | :-: | :--- | :--- | :-: | :--- | :--- |
-| **49** | `pebble_flint_one` | Flint Pebble (Single) | 1 Pebble | `pebble_flint_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
-| **50** | `pebble_flint_two` | Flint Pebble (Pair) | 2 Pebbles | `pebble_flint_two.png` | Corner micro-box `[3..5, 0..1, 10..12]` |
-| **51** | `pebble_flint_three` | Flint Pebble (Cluster) | 3 Pebbles | `pebble_flint_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
-| **52** | `pebble_quartz_one` | Quartz Pebble (Single) | 1 Pebble | `pebble_quartz_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
-| **53** | `pebble_quartz_two` | Quartz Pebble (Pair) | 2 Pebbles | `pebble_quartz_two.png` | Corner micro-box `[3..5, 0..1, 10..12]` |
-| **54** | `pebble_quartz_three` | Quartz Pebble (Cluster) | 3 Pebbles | `pebble_quartz_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
+| **49** | `pebble_chert` | Chert Pebble | Single | `pebble_chert.png` *(+ `1`, `2`)* | Low sub-voxel ground pebble |
+| **50** | `pebble_chert_cluster` | Chert Pebble Cluster | Cluster | `pebble_chert_cluster.png` *(+ `1`, `2`)* | Low sub-voxel cluster pebbles |
+| **51** | `pebble_flint` | Flint Pebble | Single | `pebble_flint.png` *(+ `1`, `2`)* | Low sub-voxel ground pebble |
+| **52** | `pebble_flint_cluster` | Flint Pebble Cluster | Cluster | `pebble_flint_cluster.png` *(+ `1`, `2`)* | Low sub-voxel cluster pebbles |
+| **53** | `pebble_quartz` | Quartz Pebble | Single | `pebble_quartz.png` *(+ `1`, `2`)* | Low sub-voxel ground pebble |
+| **54** | `pebble_quartz_cluster` | Quartz Pebble Cluster | Cluster | `pebble_quartz_cluster.png` *(+ `1`, `2`)* | Low sub-voxel cluster pebbles |
 
 ---
 

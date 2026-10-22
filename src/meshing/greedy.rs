@@ -570,6 +570,7 @@ impl ChunkMesher {
                                 continue;
                             }
                         } else if neighbor_shape == BlockShape::Full
+                            && !neighbor.has_custom_mesh()
                             && !should_render_face(voxel, neighbor)
                         {
                             continue;
@@ -684,8 +685,10 @@ pub fn should_render_face(voxel: Voxel, neighbor: Voxel) -> bool {
         return !neighbor.is_solid_opaque();
     }
 
-    // Solid opaque blocks render against air, water, leaves, fluids, or occupied cells
+    // Solid opaque blocks render against air, water, leaves, fluids, occupied cells, or non-solid/custom mesh blocks
     neighbor.is_empty()
+        || !neighbor.is_solid_opaque()
+        || neighbor.has_custom_mesh()
         || neighbor.is_transparent()
         || neighbor.is_leaves()
         || neighbor.is_fluid()

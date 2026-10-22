@@ -286,9 +286,10 @@ pub fn deserialize_chunk(bytes: &[u8]) -> Option<Chunk> {
                 3 => BlockShape::Column,
                 4 => BlockShape::Torch,
                 5 => BlockShape::Basket,
-                6 => BlockShape::PebbleOne,
-                7 => BlockShape::PebbleTwo,
-                8 => BlockShape::PebbleThree,
+                6 => BlockShape::Pebble,
+                7 => BlockShape::PebbleCluster,
+                8 => BlockShape::CrossBillboard,
+                9 => BlockShape::Bamboo,
                 _ => BlockShape::Full,
             };
             chunk.set_shape_raw(idx, shape, orientation);

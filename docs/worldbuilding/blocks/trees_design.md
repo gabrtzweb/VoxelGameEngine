@@ -38,7 +38,7 @@ graph TD
     C --> C4["Yew: Ancient shade yew with deep chocolate-black lumber (Healthy, Dead)"]
 
     D --> D1["Mahogany: Dense jungle timber tree with deep reddish-brown heartwood (Healthy, Dead)"]
-    D --> D2["Bamboo: Woody giant grass with segmented hollow stalks and fan foliage (Large, Small)"]
+    D --> D2["Bamboo: Woody giant grass with segmented hollow stalks and cross-mesh leaves (+ 2 variants)"]
     D --> D3["Mangrove: Estuarine saltwater tree with stilt aerial root network (Healthy, Dead)"]
     D --> D4["Kapok: Colossal tropical emergent rainforest giant with buttress roots (Healthy, Dead)"]
 
@@ -66,7 +66,7 @@ graph TD
 | **09** | **Redwood** | *Sequoia sempervirens* | Coastal Fog Giants & Old-Growth | Thick deeply furrowed fibrous reddish-brown bark | Rich noble brick-red (Sequoia) | Evergreen needles, **Dead** | Colossal ancient trees with wide trunks (2×2 to 4×4 blocks). |
 | **10** | **Yew** | *Taxus baccata* | Dark Woods & Ancient Sanctuaries | Deep near-black purple-tinged bark | Ultra-dark chocolate / Ebony (Dark Oak) | Dark needle canopy, **Snowy Top/Side**, **Dead** | Gothic cathedrals, shadowy dungeons, and luxury furnishings. |
 | **11** | **Mahogany** | *Swietenia macrophylla* | Tropical Jungles & Rainforests | Rugged deep brown rainforest bark | Rich deep reddish-auburn timber | Broad tropical leaves, **Dead** | Lush equatorial canopies, naval shipbuilding, and fine furniture. |
-| **12** | **Bamboo** | *Bambusoideae* | Bamboo Jungles & River Valleys | Hollow green jointed nodal culms (`stalk`) | Woven golden straw matting | Large Leaves (high canopy), Small Leaves (shoots) | Scaffolding, lightweight construction, and oriental mats. |
+| **12** | **Bamboo** | *Bambusoideae* | Bamboo Jungles & River Valleys | Hollow green jointed nodal culms (`stalk`) | Woven golden straw matting | Cross-billboard leaves (+ 2 variants) | Scaffolding, lightweight construction, and oriental mats. |
 | **13** | **Mangrove** | *Rhizophora mangle* | Tidal Estuaries & Salt Marshes | Olive-grey bark with exposed stilt root arches | Earthy coppery-tan wood | Salt-tolerant waxy leaves, **Stilt Roots**, **Dead** | Intertidal mudflats, brackish deltas, and drowned forests. |
 | **14** | **Kapok** | *Ceiba pentandra* | Equatorial Rainforests | Smooth grey bark with buttress roots and thorned nodules | Warm pale tropical clay beige | Broad palmate leaves, **Dead** | Colossal emergent trees piercing the high rainforest canopy. |
 | **15** | **Acacia** | *Acacia sensu lato* | Arid Savannas & Scrublands | Striped grey bark with light fissured furrows | Striking vivid terracotta orange | Sparse umbrella foliage, **Dead** | Distinctive horizontal umbrella silhouettes on savanna horizons. |
@@ -124,7 +124,7 @@ graph TD
 > * **Mangrove Roots (6 files)**: Aerial roots (`tree_mangrove_roots.png`, `1`, `2`) and top waterlogged cap (`tree_mangrove_roots_top.png`, `1`, `2`).
 > * **Log End Caps (17 files)**: Annual growth rings for columnar logs (`tree_<species>_log.png`).
 > * **Living Foliage (57 files)**: All 19 active leaf canopy types feature complete 3-fold variations (`tree_<species>_leaves.png`, `1`, `2`).
-> * **Bamboo Leaves (2 files)**: `tree_bamboo_large_leaves.png` and `tree_bamboo_small_leaves.png`.
+> * **Bamboo Leaves (3 files)**: `tree_bamboo_leaves.png` *(+ `1`, `2`)*.
 > * **Senescent / Dead Foliage (51 files)**: All 17 tree species feature complete 3-fold stochastic variations (`tree_<species>_leaves_dead.png`, `1`, `2`).
 
 ### A. Temperate & Deciduous Forests (77 Files, 16×16 px)
@@ -143,10 +143,10 @@ graph TD
 * **Redwood (13)**: `tree_redwood_bark.png` *(+ 1, 2)*, `tree_redwood_log.png`, `tree_redwood_planks.png` *(+ 1, 2)*, `tree_redwood_leaves.png` *(+ 1, 2)*, `tree_redwood_leaves_dead.png` *(+ 1, 2)*
 * **Yew (13)**: `tree_yew_bark.png` *(+ 1, 2)*, `tree_yew_log.png`, `tree_yew_planks.png` *(+ 1, 2)*, `tree_yew_leaves.png` *(+ 1, 2)*, `tree_yew_leaves_dead.png` *(+ 1, 2)*
 
-### C. Tropical & Rainforest Jungles (54 Files, 16×16 px)
+### C. Tropical & Rainforest Jungles (55 Files, 16×16 px)
 
 * **Mahogany (13)**: `tree_mahogany_bark.png` *(+ 1, 2)*, `tree_mahogany_log.png`, `tree_mahogany_planks.png` *(+ 1, 2)*, `tree_mahogany_leaves.png` *(+ 1, 2)*, `tree_mahogany_leaves_dead.png` *(+ 1, 2)*
-* **Bamboo (9)**: `tree_bamboo_stalk.png` *(+ 1, 2)*, `tree_bamboo_stalk_top.png`, `tree_bamboo_planks.png` *(+ 1, 2)*, `tree_bamboo_large_leaves.png`, `tree_bamboo_small_leaves.png`
+* **Bamboo (10)**: `tree_bamboo_stalk.png` *(+ 1, 2)*, `tree_bamboo_stalk_top.png`, `tree_bamboo_planks.png` *(+ 1, 2)*, `tree_bamboo_leaves.png` *(+ 1, 2)*
 * **Mangrove (19)**: `tree_mangrove_bark.png` *(+ 1, 2)*, `tree_mangrove_log.png`, `tree_mangrove_planks.png` *(+ 1, 2)*, `tree_mangrove_leaves.png` *(+ 1, 2)*, `tree_mangrove_roots.png` *(+ 1, 2)*, `tree_mangrove_roots_top.png` *(+ 1, 2)*, `tree_mangrove_leaves_dead.png` *(+ 1, 2)*
 * **Kapok (13)**: `tree_kapok_bark.png` *(+ 1, 2)*, `tree_kapok_log.png`, `tree_kapok_planks.png` *(+ 1, 2)*, `tree_kapok_leaves.png` *(+ 1, 2)*, `tree_kapok_leaves_dead.png` *(+ 1, 2)*
 
@@ -256,19 +256,18 @@ graph TD
 | **057** | `mahogany_leaves_dead` | Dead Mahogany Leaves | **Foliage** | `tree_mahogany_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
 | **058** | `bamboo_stalk` | Bamboo Stalk | **Wood / Stalk** | Top/Bottom: `tree_bamboo_stalk_top.png`<br>Sides: `tree_bamboo_stalk.png` | Directional column (3×3 top/bottom, 3×16 sides) |
 | **059** | `bamboo_planks` | Bamboo Planks | **Planks** | `tree_bamboo_planks.png` | 6 uniform faces |
-| **060** | `bamboo_large_leaves` | Large Bamboo Leaves | **Foliage** | `tree_bamboo_large_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **061** | `bamboo_small_leaves` | Small Bamboo Leaves | **Foliage** | `tree_bamboo_small_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **062** | `mangrove_log` | Mangrove Log | **Wood** | Top/Bottom: `tree_mangrove_log.png`<br>Sides: `tree_mangrove_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **063** | `mangrove_wood` | Mangrove Wood | **Wood** | `tree_mangrove_bark.png` | 6 uniform faces |
-| **064** | `mangrove_planks` | Mangrove Planks | **Planks** | `tree_mangrove_planks.png` | 6 uniform faces |
-| **065** | `mangrove_leaves` | Mangrove Leaves | **Foliage** | `tree_mangrove_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **066** | `mangrove_roots` | Mangrove Aerial Roots | **Root** | Top/Bottom: `tree_mangrove_roots_top.png`<br>Sides: `tree_mangrove_roots.png` | Directional (Top/Bottom + 4 sides, Cutout) |
-| **067** | `mangrove_leaves_dead` | Dead Mangrove Leaves | **Foliage** | `tree_mangrove_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **068** | `kapok_log` | Kapok Log | **Wood** | Top/Bottom: `tree_kapok_log.png`<br>Sides: `tree_kapok_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **069** | `kapok_wood` | Kapok Wood | **Wood** | `tree_kapok_bark.png` | 6 uniform faces |
-| **070** | `kapok_planks` | Kapok Planks | **Planks** | `tree_kapok_planks.png` | 6 uniform faces |
-| **071** | `kapok_leaves` | Kapok Leaves | **Foliage** | `tree_kapok_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **072** | `kapok_leaves_dead` | Dead Kapok Leaves | **Foliage** | `tree_kapok_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **060** | `bamboo_leaves` | Bamboo Leaves | **Foliage** | `tree_bamboo_leaves.png` *(+ `1`, `2`)* | Stalk column with cross-billboard leaves |
+| **061** | `mangrove_log` | Mangrove Log | **Wood** | Top/Bottom: `tree_mangrove_log.png`<br>Sides: `tree_mangrove_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **062** | `mangrove_wood` | Mangrove Wood | **Wood** | `tree_mangrove_bark.png` | 6 uniform faces |
+| **063** | `mangrove_planks` | Mangrove Planks | **Planks** | `tree_mangrove_planks.png` | 6 uniform faces |
+| **064** | `mangrove_leaves` | Mangrove Leaves | **Foliage** | `tree_mangrove_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **065** | `mangrove_roots` | Mangrove Aerial Roots | **Root** | Top/Bottom: `tree_mangrove_roots_top.png`<br>Sides: `tree_mangrove_roots.png` | Directional (Top/Bottom + 4 sides, Cutout) |
+| **066** | `mangrove_leaves_dead` | Dead Mangrove Leaves | **Foliage** | `tree_mangrove_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **067** | `kapok_log` | Kapok Log | **Wood** | Top/Bottom: `tree_kapok_log.png`<br>Sides: `tree_kapok_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **068** | `kapok_wood` | Kapok Wood | **Wood** | `tree_kapok_bark.png` | 6 uniform faces |
+| **069** | `kapok_planks` | Kapok Planks | **Planks** | `tree_kapok_planks.png` | 6 uniform faces |
+| **070** | `kapok_leaves` | Kapok Leaves | **Foliage** | `tree_kapok_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **071** | `kapok_leaves_dead` | Dead Kapok Leaves | **Foliage** | `tree_kapok_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
 
 ---
 
@@ -276,16 +275,16 @@ graph TD
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **073** | `acacia_log` | Acacia Log | **Wood** | Top/Bottom: `tree_acacia_log.png`<br>Sides: `tree_acacia_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **074** | `acacia_wood` | Acacia Wood | **Wood** | `tree_acacia_bark.png` | 6 uniform faces |
-| **075** | `acacia_planks` | Acacia Planks | **Planks** | `tree_acacia_planks.png` | 6 uniform faces |
-| **076** | `acacia_leaves` | Acacia Leaves | **Foliage** | `tree_acacia_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **077** | `acacia_leaves_dead` | Dead Acacia Leaves | **Foliage** | `tree_acacia_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **078** | `baobab_log` | Baobab Log | **Wood** | Top/Bottom: `tree_baobab_log.png`<br>Sides: `tree_baobab_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **079** | `baobab_wood` | Baobab Wood | **Wood** | `tree_baobab_bark.png` | 6 uniform faces |
-| **080** | `baobab_planks` | Baobab Planks | **Planks** | `tree_baobab_planks.png` | 6 uniform faces |
-| **081** | `baobab_leaves` | Baobab Leaves | **Foliage** | `tree_baobab_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **082** | `baobab_leaves_dead` | Dead Baobab Leaves | **Foliage** | `tree_baobab_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **072** | `acacia_log` | Acacia Log | **Wood** | Top/Bottom: `tree_acacia_log.png`<br>Sides: `tree_acacia_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **073** | `acacia_wood` | Acacia Wood | **Wood** | `tree_acacia_bark.png` | 6 uniform faces |
+| **074** | `acacia_planks` | Acacia Planks | **Planks** | `tree_acacia_planks.png` | 6 uniform faces |
+| **075** | `acacia_leaves` | Acacia Leaves | **Foliage** | `tree_acacia_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **076** | `acacia_leaves_dead` | Dead Acacia Leaves | **Foliage** | `tree_acacia_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **077** | `baobab_log` | Baobab Log | **Wood** | Top/Bottom: `tree_baobab_log.png`<br>Sides: `tree_baobab_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **078** | `baobab_wood` | Baobab Wood | **Wood** | `tree_baobab_bark.png` | 6 uniform faces |
+| **079** | `baobab_planks` | Baobab Planks | **Planks** | `tree_baobab_planks.png` | 6 uniform faces |
+| **080** | `baobab_leaves` | Baobab Leaves | **Foliage** | `tree_baobab_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **081** | `baobab_leaves_dead` | Dead Baobab Leaves | **Foliage** | `tree_baobab_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
 
 ---
 
@@ -293,13 +292,13 @@ graph TD
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **083** | `palm_log` | Palm Log | **Wood** | Top/Bottom: `tree_palm_log.png`<br>Sides: `tree_palm_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **084** | `palm_wood` | Palm Wood | **Wood** | `tree_palm_bark.png` | 6 uniform faces |
-| **085** | `palm_planks` | Palm Planks | **Planks** | `tree_palm_planks.png` | 6 uniform faces |
-| **086** | `palm_leaves` | Palm Fronds | **Foliage** | `tree_palm_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **087** | `palm_leaves_dead` | Dead Palm Fronds | **Foliage** | `tree_palm_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
-| **088** | `cypress_log` | Cypress Log | **Wood** | Top/Bottom: `tree_cypress_log.png`<br>Sides: `tree_cypress_bark.png` | Directional (Top/Bottom + 4 sides) |
-| **089** | `cypress_wood` | Cypress Wood | **Wood** | `tree_cypress_bark.png` | 6 uniform faces |
-| **090** | `cypress_planks` | Cypress Planks | **Planks** | `tree_cypress_planks.png` | 6 uniform faces |
-| **091** | `cypress_leaves` | Cypress Foliage | **Foliage** | `tree_cypress_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **092** | `cypress_leaves_dead` | Dead Cypress Foliage | **Foliage** | `tree_cypress_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **082** | `palm_log` | Palm Log | **Wood** | Top/Bottom: `tree_palm_log.png`<br>Sides: `tree_palm_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **083** | `palm_wood` | Palm Wood | **Wood** | `tree_palm_bark.png` | 6 uniform faces |
+| **084** | `palm_planks` | Palm Planks | **Planks** | `tree_palm_planks.png` | 6 uniform faces |
+| **085** | `palm_leaves` | Palm Fronds | **Foliage** | `tree_palm_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **086** | `palm_leaves_dead` | Dead Palm Fronds | **Foliage** | `tree_palm_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **087** | `cypress_log` | Cypress Log | **Wood** | Top/Bottom: `tree_cypress_log.png`<br>Sides: `tree_cypress_bark.png` | Directional (Top/Bottom + 4 sides) |
+| **088** | `cypress_wood` | Cypress Wood | **Wood** | `tree_cypress_bark.png` | 6 uniform faces |
+| **089** | `cypress_planks` | Cypress Planks | **Planks** | `tree_cypress_planks.png` | 6 uniform faces |
+| **090** | `cypress_leaves` | Cypress Foliage | **Foliage** | `tree_cypress_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **091** | `cypress_leaves_dead` | Dead Cypress Foliage | **Foliage** | `tree_cypress_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |

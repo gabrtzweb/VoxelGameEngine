@@ -287,6 +287,38 @@ fn edit_voxels(
                 modifications.record_shape(place_position, BlockShape::Basket, 0);
             }
             placed
+        } else if place_voxel_type.is_pebble() {
+            if target.face_normal != IVec3::Y {
+                return;
+            }
+            let placed = place_block(
+                &mut world,
+                &mut modifications,
+                place_position,
+                place_voxel_type,
+            );
+            if !placed.is_empty() {
+                let pebble_shape = place_voxel_type.default_shape();
+                let orient = ((place_position.x.wrapping_mul(31) ^ place_position.z.wrapping_mul(17)) & 3).unsigned_abs() as u8;
+                world.set_shape(place_position, pebble_shape, orient);
+                modifications.record_shape(place_position, pebble_shape, orient);
+            }
+            placed
+        } else if place_voxel_type.is_bamboo() {
+            if target.face_normal != IVec3::Y {
+                return;
+            }
+            let placed = place_block(
+                &mut world,
+                &mut modifications,
+                place_position,
+                place_voxel_type,
+            );
+            if !placed.is_empty() {
+                world.set_shape(place_position, BlockShape::Bamboo, 0);
+                modifications.record_shape(place_position, BlockShape::Bamboo, 0);
+            }
+            placed
         } else if place_voxel_type.is_axis_aligned() {
             let placed = place_block(
                 &mut world,
@@ -307,12 +339,20 @@ fn edit_voxels(
             }
             placed
         } else {
-            place_block(
+            let placed = place_block(
                 &mut world,
                 &mut modifications,
                 place_position,
                 place_voxel_type,
-            )
+            );
+            if !placed.is_empty() {
+                let def_shape = place_voxel_type.default_shape();
+                if def_shape != BlockShape::Full {
+                    world.set_shape(place_position, def_shape, 0);
+                    modifications.record_shape(place_position, def_shape, 0);
+                }
+            }
+            placed
         };
         (edited, None)
     } else {
@@ -445,15 +485,31 @@ pub fn remove_block(
 
     let mut removed = vec![block_pos];
 
-    // Check if any attached torches lost their support:
-    // 1. Floor torch sitting on top of this block (block_pos + Y)
-    let top_pos = block_pos + IVec3::Y;
-    if let Some(v) = world.get_voxel(top_pos)
-        && v.is_torch()
-    {
-        let (s, o) = world.get_shape(top_pos);
-        if s == BlockShape::Torch && o == 0 && remove_voxel(world, modifications, top_pos) {
-            removed.push(top_pos);
+    // 1. Blocks resting on top of this block (and cascading upwards for stacks like bamboo)
+    let mut check_pos = block_pos + IVec3::Y;
+    while let Some(v) = world.get_voxel(check_pos) {
+        if v.requires_floor_support() {
+            if remove_voxel(world, modifications, check_pos) {
+                removed.push(check_pos);
+                check_pos += IVec3::Y;
+            } else {
+                break;
+            }
+        } else if v.is_torch() {
+            let (s, o) = world.get_shape(check_pos);
+            if s == BlockShape::Torch && o == 0 && remove_voxel(world, modifications, check_pos) {
+                removed.push(check_pos);
+            }
+            break;
+        } else if v.is_bamboo() {
+            if remove_voxel(world, modifications, check_pos) {
+                removed.push(check_pos);
+                check_pos += IVec3::Y;
+            } else {
+                break;
+            }
+        } else {
+            break;
         }
     }
 

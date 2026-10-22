@@ -230,12 +230,20 @@ impl Chunk {
             ChunkHomogeneity::Mixed
         };
 
+        let mut shapes = HashMap::default();
+        for (i, &v) in voxels.iter().enumerate() {
+            let def_shape = v.default_shape();
+            if def_shape != BlockShape::Full {
+                shapes.insert(i, (def_shape, 0));
+            }
+        }
+
         Self {
             storage,
             non_air_count,
             solid_opaque_count,
             homogeneity,
-            shapes: HashMap::default(),
+            shapes,
             extra_slabs: HashMap::default(),
             fluid_levels: HashMap::default(),
             is_subterranean: false,
@@ -305,18 +313,18 @@ impl Chunk {
             self.extra_slabs.remove(&index);
             self.fluid_levels.remove(&index);
         } else {
-            if voxel.is_torch() {
-                self.shapes.entry(index).or_insert((BlockShape::Torch, 0));
-            } else if voxel.is_basket() {
-                self.shapes.entry(index).or_insert((BlockShape::Basket, 0));
+            let def_shape = voxel.default_shape();
+            if def_shape != BlockShape::Full {
+                self.shapes.entry(index).or_insert((def_shape, 0));
             } else if self.shapes.get(&index).is_some_and(|&(s, _)| {
                 matches!(
                     s,
                     BlockShape::Torch
                         | BlockShape::Basket
-                        | BlockShape::PebbleOne
-                        | BlockShape::PebbleTwo
-                        | BlockShape::PebbleThree
+                        | BlockShape::Pebble
+                        | BlockShape::PebbleCluster
+                        | BlockShape::Bamboo
+                        | BlockShape::CrossBillboard
                 )
             }) {
                 self.shapes.remove(&index);
@@ -354,12 +362,12 @@ impl Chunk {
     #[inline]
     pub fn get_shape(&self, x: usize, y: usize, z: usize) -> (BlockShape, u8) {
         if self.shapes.is_empty() {
-            (BlockShape::Full, 0)
+            (self.get(x, y, z).default_shape(), 0)
         } else {
             self.shapes
                 .get(&Self::index(x, y, z))
                 .copied()
-                .unwrap_or((BlockShape::Full, 0))
+                .unwrap_or_else(|| (self.get(x, y, z).default_shape(), 0))
         }
     }
 

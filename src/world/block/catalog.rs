@@ -387,14 +387,15 @@ impl Voxel {
             BlockShape::Torch
         } else if self.is_basket_const() {
             BlockShape::Basket
-        } else if matches!(self, Self::PebbleFlintOne | Self::PebbleQuartzOne) {
-            BlockShape::PebbleOne
-        } else if matches!(self, Self::PebbleFlintTwo | Self::PebbleQuartzTwo) {
-            BlockShape::PebbleTwo
-        } else if matches!(self, Self::PebbleFlintThree | Self::PebbleQuartzThree) {
-            BlockShape::PebbleThree
-        } else if matches!(self, Self::BambooStalk) {
-            BlockShape::Column
+        } else if matches!(self, Self::PebbleChert | Self::PebbleFlint | Self::PebbleQuartz) {
+            BlockShape::Pebble
+        } else if matches!(
+            self,
+            Self::PebbleChertCluster | Self::PebbleFlintCluster | Self::PebbleQuartzCluster
+        ) {
+            BlockShape::PebbleCluster
+        } else if matches!(self, Self::BambooStalk | Self::BambooLeaves) {
+            BlockShape::Bamboo
         } else {
             BlockShape::Full
         }
@@ -496,7 +497,6 @@ impl Voxel {
                 | Self::RedwoodWood
                 | Self::WillowWood
                 | Self::YewWood
-                | Self::BambooStalk
                 | Self::BoneBlock
                 | Self::CalcinedBone
                 | Self::BloodyFlesh
@@ -521,19 +521,20 @@ impl Voxel {
             || self.is_painted()
             || self.is_light()
             || self.is_axis_aligned()
+            || self.has_custom_mesh()
         {
             return NaturalRotationMode::None;
         }
 
         let id = self as u16;
 
-        // Trees & Wood (logs, planks, wood, bamboo): 153..=244
-        if matches!(id, 153..=244) {
+        // Trees & Wood (logs, planks, wood, bamboo): 151..=241
+        if matches!(id, 151..=241) {
             return NaturalRotationMode::None;
         }
 
-        // Architecture, furniture, utilities, lighting, fibers: 435..=596
-        if matches!(id, 435..=596) {
+        // Architecture, furniture, utilities, lighting, fibers: 432..=593
+        if matches!(id, 432..=593) {
             return NaturalRotationMode::None;
         }
 
@@ -572,13 +573,13 @@ impl Voxel {
             return NaturalRotationMode::Isotropic;
         }
 
-        // Ores, Minerals & Gemology (245..=318)
-        if matches!(id, 245..=318) {
+        // Ores, Minerals & Gemology (244..=317)
+        if matches!(id, 244..=317) {
             return NaturalRotationMode::Isotropic;
         }
 
-        // Crystals, Speleothems, Volcanism, Fossils (319..=348)
-        if matches!(id, 319..=348) {
+        // Crystals, Speleothems, Volcanism, Fossils (318..=347)
+        if matches!(id, 318..=347) {
             return NaturalRotationMode::Isotropic;
         }
 
@@ -612,14 +613,14 @@ impl Voxel {
     pub const fn paint_color(self) -> Option<[f32; 4]> {
         let id = self as u16;
         let color_idx = match id {
-            440..=455 => id - 440, // Brick
-            472..=487 => id - 472, // Fabric
-            489..=504 => id - 489, // Glass
-            507..=522 => id - 507, // Linen
-            528..=543 => id - 528, // Plaster
-            546..=561 => id - 546, // Shingles
-            564..=579 => id - 564, // TintedGlass
-            581..=596 => id - 581, // Wool
+            439..=454 => id - 439, // Brick
+            471..=486 => id - 471, // Fabric
+            488..=503 => id - 488, // Glass
+            506..=521 => id - 506, // Linen
+            527..=542 => id - 527, // Plaster
+            545..=560 => id - 545, // Shingles
+            563..=578 => id - 563, // TintedGlass
+            580..=595 => id - 580, // Wool
             _ => return None,
         };
         Some(Self::PAINT_PALETTE[color_idx as usize])
