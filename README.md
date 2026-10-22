@@ -10,43 +10,44 @@ More information about how the project works and future plans can be found at [p
 
 ## Current Game Controls
 
-    Mouse             Look
+```text
+Mouse             Look
 
-    W                 Forward / Swim forward
-    S                 Backward / Swim backward
-    A                 Left
-    D                 Right
+W                 Forward / Swim forward
+S                 Backward / Swim backward
+A                 Left
+D                 Right
 
-    Shift             Sprint / Fast swim / Fast flight
+Shift             Sprint / Fast swim / Fast flight
 
-    Space             Jump / Swim up / Fly up
-    Double Space      Toggle Creative flight
-    Ctrl              Crouch (with ledge-fall prevention) / Swim down / Fly down
-    C                 Crawl (0.45m prone posture through low openings)
-    Z                 Camera Zoom (Hold Z + Mouse Wheel to adjust magnification)
+Space             Jump / Swim up / Fly up
+Double Space      Toggle Creative flight
+Ctrl              Crouch (with ledge-fall prevention) / Swim down / Fly down
+C                 Crawl (0.45m prone posture through low openings)
+Z                 Camera Zoom (Hold Z + Mouse Wheel to adjust magnification)
 
-    Left Mouse        Break block
-    Right Mouse       Place block (3-axis directional placement for logs, wood bark, and pillars)
-    Middle Mouse      Pick block
+Left Mouse        Break block
+Right Mouse       Place block (3-axis directional placement for logs, wood bark, and pillars)
+Middle Mouse      Pick block
 
-    1 - 9             Hotbar slot selection (9 primary slots)
-    Mouse Wheel       Scroll hotbar slots (when not zooming)
-    Q                 Clear active hotbar slot
-    R                 Block shape (Tap: cycle sequentially / Hold: 4-slice circular radial menu)
-    T                 Rotate block shape 90° clockwise
+1 - 9             Hotbar slot selection (9 primary slots)
+Mouse Wheel       Scroll hotbar slots (when not zooming)
+Q                 Clear active hotbar slot
+R                 Block shape (Tap: cycle sequentially / Hold: 4-slice circular radial menu)
+T                 Rotate block shape 90° clockwise
 
-    ESC               Pause Menu With Settings (unified obsidian/steel buttons)
-    E                 Personal & Creative Inventory (standardized 416x256 px 9-slot interface)
-    M                 World Map (Full-screen interactive map, pan & zoom, player tracking)
+ESC               Pause Menu With Settings (unified obsidian/steel buttons)
+E                 Personal & Creative Inventory (standardized 416x256 px 9-slot interface)
+M                 World Map (Full-screen interactive map, pan & zoom, player tracking)
 
-    F1                Toggle Inspector (bevy_egui)
-    F2                Chunk debug borders
-    F3                Toggle HUD (Minimal / Extended debug)
-    Shift + F3        Toggle HUD visibility (Show / Hide)
-    F4                Creative / Spectator
-    F5                First / Third person (body model, head tracking, overlay layers, animations)
-    F6                Day / Night cycle (Click: step phase / Hold: scrub time)
-
+F1                Toggle Inspector (bevy_egui)
+F2                Chunk debug borders
+F3                Toggle HUD (Minimal / Extended debug)
+Shift + F3        Toggle HUD visibility (Show / Hide)
+F4                Creative / Spectator
+F5                First / Third person (body model, head tracking, overlay layers, animations)
+F6                Day / Night cycle (Click: step phase / Hold: scrub time)
+```
 
 ## Current Project Structure
 
@@ -199,21 +200,29 @@ tests/
 
 Run:
 
-    cargo run
+```bash
+cargo run
+```
 
 Optimized build:
 
-    cargo run --release
+```bash
+cargo run --release
+```
 
 Run automated test suite:
 
-    cargo test
+```bash
+cargo test
+```
 
 Recommended before commits:
 
-    cargo fmt
-    cargo check
-    cargo clippy
+```bash
+cargo fmt
+cargo check
+cargo clippy
+```
 
 ## Artificial Intelligence Usage Disclaimer
 
@@ -228,7 +237,7 @@ At the same time, all creative direction, core design concepts, texture creation
 
 ## Third-Party Assets & Textures Disclaimer
 
-This project is currently an experimental engine and game in active early development. It is not being commercially distributed, sold, or packaged. 
+This project is currently an experimental engine and game in active early development. It is not being commercially distributed, sold, or packaged.
 
 A subset of the block textures currently present in the codebase are used strictly as temporary internal placeholders for prototyping, testing meshing pipelines, and visual debugging. All credit and copyright belong to their respective original creators:
 

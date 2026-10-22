@@ -35,6 +35,7 @@ graph TD
 All 56 textures strictly follow the functional prefix taxonomy (`util_`, `deco_`, and `emit_`):
 
 ### A. Utilitarian Containers & Structural Furniture (`util_`) (17 Base Files)
+
 * `util_barrel_top.png`, `util_barrel_side.png`, `util_barrel_bot.png` (3)
 * `util_crate_top.png`, `util_crate_side.png`, `util_crate_bot.png` (3)
 * `util_basket_top.png`, `util_basket_side.png`, `util_basket_bot.png` (3)
@@ -42,6 +43,7 @@ All 56 textures strictly follow the functional prefix taxonomy (`util_`, `deco_`
 * `util_bag_top.png`, `util_bag_side.png`, `util_bag_side_front.png`, `util_bag_bot.png` (4)
 
 ### B. Basic Traditional Masonry, Glass & Textiles (`deco_`) (8 Base Files)
+
 * `deco_bricks.png` *(Classic red fired clay bricks; + stochastic shader variants `deco_bricks1.png`, `deco_bricks2.png`)*
 * `deco_linen.png` *(+ `1`, `2`)* *(Raw natural linen textile)*
 * `deco_fabric.png` *(+ `1`, `2`)* *(Heavy cross-weave rustic textile)*
@@ -52,6 +54,7 @@ All 56 textures strictly follow the functional prefix taxonomy (`util_`, `deco_`
 * `deco_shingles.png` *(+ `1`, `2`)* *(Curved terracotta fish-scale roof shingles)*
 
 ### C. Master Dyeable Grayscale Textures (`deco_`) (8 Base Files)
+
 * `deco_bricks_painted.png` *(Grayscale bricks for 16-color shader tinting; + stochastic shader variants `deco_bricks_painted1.png`, `deco_bricks_painted2.png`)*
 * `deco_linen_painted.png` *(+ `1`, `2`)* *(Neutral grayscale linen for 16-color shader tinting)*
 * `deco_fabric_painted.png` *(+ `1`, `2`)* *(Neutral grayscale heavy fabric for 16-color shader tinting)*
@@ -62,6 +65,7 @@ All 56 textures strictly follow the functional prefix taxonomy (`util_`, `deco_`
 * `deco_shingles_painted.png` *(+ `1`, `2`)* *(Grayscale curved shingles for 16-color glazed ceramic roofing)*
 
 ### D. Agricultural Fibers & Pathways (`deco_`) (14 Base Files + Stochastic Variations)
+
 * `deco_hay_bale_side.png`, `deco_hay_bale_top.png` *(Orientable animal feed hay bale)* (2)
 * `deco_straw_bale_side.png`, `deco_straw_bale_top.png` *(Orientable dry golden straw bale)* (2)
 * `deco_rice_bale_top.png`, `deco_rice_bale_side.png`, `deco_rice_bale_bottom.png` *(Orientable harvested rice grain & stalk bale)* (3)
@@ -72,6 +76,7 @@ All 56 textures strictly follow the functional prefix taxonomy (`util_`, `deco_`
 * `deco_path_snowy.png` *(Compacted alpine snow trail; + `1`, `2`)* (1)
 
 ### E. Decorative Lighting & Radiant Emitters (`emit_`) (15 Files)
+
 * `emit_lamp.png`, `emit_lamp_top.png`, `emit_lamp_on.png`, `emit_lamp_top_on.png` *(Switchable ceiling lamp Normal / On)* (4)
 * `emit_torch_fire.png` *(Animated traditional fire torch 16x80 px, 5 frames)* (1)
 * `emit_torch_cold.png`, `emit_torch_warm.png` *(Stylized LED torches: Cold 6500K and Warm 2700K)* (2)

@@ -4,6 +4,7 @@ All active textures for animal architecture, nests, living animal tissues, osteo
 📂 **`docs/worldbuilding/blocks/organics`** *(94 active PNG textures on disk)*
 
 Generating **36 unique blocks** in the master catalog divided into 3 biological categories (all strictly even numbers):
+
 * **14 Fauna Architecture & Animal Nests (`nest_`)**: Hives, colonies, half-height nests, oothecae, cocoons, dams, and multi-soil animal burrows.
 * **8 Living Tissues, Organs & Osteology (`bio_`)**: Raw muscle, bloody flesh, adipose blubber, nervous tissue, bloody brain, animal pelt, and axial skeletal bones.
 * **14 Secretions, Waxes, Droppings & Spiderwebs (`organic_`)**: Honey, honeycomb, pure beeswax, colloidal gels, guano, manure, fossils, seashells, and modular vertical spiderwebs.
@@ -38,16 +39,20 @@ graph TD
 ## 2. Rendering Standards & Texture Prefix Taxonomy
 
 All textures adhere to a clean, 3-prefix functional taxonomy:
+
 * **`nest_`**: Animal colonies, excavated mounds, tree-suspended hives, cocoons, dams, and burrows.
 * **`bio_`**: Raw anatomical animal tissues, organs, pelts, and skeletal osseous matter.
 * **`organic_`**: Viscous secretions, insect waxes, colloidal gels, natural droppings, and spider silk webs.
 
 ### 1. Directional Face Mapping Standards
+
 * Standard cubic and slab directional tags: **`_top`** (upper face), **`_side`** (lateral faces), **`_bot`** (bottom/floor face), **`_front`** (entrance face), and **`_front_honey`** (dripping honey variant).
 * **Bone Cylindrical Orientation**: `bio_bone_side.png` wraps the compact cortical bone shaft, while `bio_bone_top.png` represents the porous marrow canal on both axial caps.
 
 ### 2. Multi-Soil Burrow Architecture & Layered Rendering
+
 Animal burrows (rabbits, badgers, marmots) utilize a dual-texture composite top face over soil bedrock:
+
 * **`nest_burrow_top.png` (Grayscale Alpha Cutout)**: Renders the outer grass fringe surrounding the burrow opening, receiving dynamic **Biome Tinting** to seamlessly blend with adjacent terrain turf.
 * **`nest_burrow_top_layer.png` (Full-Color Earth)**: Un-tinted soil threshold and interior depth shadow rendered directly atop the opening.
 * **3 Dedicated Soil Burrows**: To guarantee full runtime simplicity without complex dynamic face replacement, 3 dedicated blocks exist for natural soil habitats:
@@ -56,10 +61,12 @@ Animal burrows (rabbits, badgers, marmots) utilize a dual-texture composite top 
   * **Peat Burrow (`peat_burrow`)**: Top burrow aperture + Bottom `soil_peat_dirt.png` + Sides `soil_peat_grass_side.png`.
 
 ### 3. Half-Height Fauna Nests (Slabs / 8px Height)
+
 * **Bird Nest (`bird_nest`)**: Shallow bowl woven from twigs, moss, and feathers. Features a concave top cavity woven from fine twigs and soft moss (`nest_bird_nest_top.png`), side texture with transparent upper half (`nest_bird_nest_side.png`), and compact twig bottom (`nest_bird_nest_bot.png`).
 * **Hay Nest (`hay_nest`)**: Farm poultry nest woven from dry agricultural hay and straw. Top concave hay bed (`nest_hay_nest_top.png`), side texture with transparent upper half (`nest_hay_nest_side.png`), and dense straw bottom (`nest_hay_nest_bot.png`).
 
 ### 4. Spider Silk Webs: Volumetric 3D vs. Flat Vertical Quad Cutouts
+
 * **Volumetric 3D Cobweb (`organic_cobweb.png`)**: Full-voxel intersecting cross-billboard block slowing movement.
 * **Flat Wall-Mounted Cobwebs**: 2D vertical quad blocks placed flush against walls, archways, and ceilings:
   * **`organic_cobweb_arch.png`**: Corner arch web hugging the upper joint between wall and ceiling.
@@ -71,6 +78,7 @@ Animal burrows (rabbits, badgers, marmots) utilize a dual-texture composite top 
 ## 3. Technical Texture Inventory in `worldbuilding/blocks/organics/` (85 Active Textures)
 
 ### A. Fauna Architecture & Nests (31 Files, 16×16 px)
+
 * **Ant Hill (2)**: `nest_ant_hill.png`, `nest_ant_hill_open.png`
 * **Termite Mound (2)**: `nest_termite_mound.png`, `nest_termite_mound_open.png`
 * **Bee Nest (5)**: `nest_bee_nest_bot.png`, `nest_bee_nest_front.png`, `nest_bee_nest_front_honey.png`, `nest_bee_nest_side.png`, `nest_bee_nest_top.png`
@@ -83,6 +91,7 @@ Animal burrows (rabbits, badgers, marmots) utilize a dual-texture composite top 
 * **Burrow (4)**: `nest_burrow_top.png` *(Grayscale tinted turf)*, `nest_burrow_top_layer.png` *(+ `1`, `2`)* *(Soil entry layer)*
 
 ### B. Living Tissues, Organs & Osteology (21 Files, 16×16 px)
+
 * **Raw Flesh (4)**: `bio_flesh_top.png`, `bio_flesh_side.png` *(+ `1`, `2`)*
 * **Blubber (3)**: `bio_blubber.png` *(+ `1`, `2`)* *(Translucent adipose layer)*
 * **Brain (3)**: `bio_brain.png` *(+ `1`, `2`)* *(Convoluted neural cerebral mass)*
@@ -91,6 +100,7 @@ Animal burrows (rabbits, badgers, marmots) utilize a dual-texture composite top 
 * **Calcined Bone (4)**: `bio_calcined_bone_top.png`, `bio_calcined_bone_side.png` *(+ `1`, `2`)*
 
 ### C. Secretions, Waxes, Gels, Droppings & Spiderwebs (42 Files, 16×16 px)
+
 * **Honey Block (3)**: `organic_honey_block_bot.png`, `organic_honey_block_side.png`, `organic_honey_block_top.png` *(Translucent)*
 * **Honeycomb Block (3)**: `organic_honeycomb_block.png` *(+ `1`, `2`)*
 * **Beeswax Block (3)**: `organic_wax.png` *(+ `1`, `2`)*

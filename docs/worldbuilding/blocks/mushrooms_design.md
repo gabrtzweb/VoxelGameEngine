@@ -37,7 +37,9 @@ graph TD
 All 32 textures strictly follow the unified prefix `fungi_`:
 
 ### A. Wild Understory Ground Mushrooms (24 Files, 16×16 px RGBA)
+
 All 8 understory ground mushrooms strictly adhere to 3 standardized cross-billboard variations (`base`, `1`, `2`):
+
 * `fungi_amanita.png`, `1.png`, `2.png` *(Fly agaric; scarlet pileus with veil dots)* (3)
 * `fungi_porcini.png`, `1.png`, `2.png` *(King bolete; velvety earth-brown cap)* (3)
 * `fungi_shiitake.png`, `1.png`, `2.png` *(Shiitake; warm wood-brown umbrella cap)* (3)
@@ -48,7 +50,9 @@ All 8 understory ground mushrooms strictly adhere to 3 standardized cross-billbo
 * `fungi_indigo.png`, `1.png`, `2.png` *(Indigo milk cap; denim-slate indigo blue)* (3)
 
 ### B. Giant Macrofungal Caps (`_cap`) (24 Files, 16×16 px)
+
 All 8 giant mushroom caps feature complete 3-fold stochastic variants (`1` and `2`) to break repetition across large fungal canopies:
+
 * `fungi_amanita_cap.png` *(+ `1`, `2`)* *(Scarlet pileus dotted with white veil flecks)*
 * `fungi_porcini_cap.png` *(+ `1`, `2`)* *(Deep velvety earth-brown cap)*
 * `fungi_shiitake_cap.png` *(+ `1`, `2`)* *(Warm caramel-brown cap with natural fiber fissures)*
@@ -59,6 +63,7 @@ All 8 giant mushroom caps feature complete 3-fold stochastic variants (`1` and `
 * `fungi_indigo_cap.png` *(+ `1`, `2`)* *(Deep indigo-slate cap with concentric denim rings)*
 
 ### C. Shared Macrofungal Structural Blocks (6 Files, 16×16 px)
+
 * `fungi_stem.png` *(+ `1`, `2`)* *(Fibrous cream-ivory stipe column)*
 * `fungi_inside.png` *(+ `1`, `2`)* *(Porous hymenial interior flesh / underside gills)*
 

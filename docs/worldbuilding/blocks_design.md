@@ -8,6 +8,7 @@ This master document centralizes, unifies, and catalogs **all blocks implemented
 > **8** (systems) + **18** (fluids) + **56** (soils) + **68** (rocks) + **92** (trees) + **74** (ores) + **30** (caverns) + **50** (oceans) + **36** (organics) + **162** (decorations) + **18** (mushrooms) + **38** (vegetation) + **32** (flowers) + **34** (crops) = **716 Total Blocks**.
 
 For each block, the following properties are systematically specified:
+
 1. **Unique Block Identifier (`Block ID`)**.
 2. **Canonical Name and Functional/Ecological Role**.
 3. **Face Texture Mapping** (`top`, `bottom` / `bot`, `sides`, `front`, etc.).
@@ -15,6 +16,7 @@ For each block, the following properties are systematically specified:
 
 > [!NOTE]
 > In accordance with project architectural guidelines:
+>
 > - **Stochastic / procedural variations** (e.g. suffixes `1`, `2`, `3`) are dynamically sampled by shaders to break visual tiling repetition across terrain and are **not** registered as duplicate blocks.
 > - **Procedural texture overlays & decal layers** are centralized in `docs/worldbuilding/blocks/overlays/` and documented in [overlays_design.md](blocks/overlays_design.md). They register **0 standalone blocks** and are composited via multi-pass shaders.
 > - **Integrated compositional variants** (such as the 16 `mossy_rock` / `mossy_cobbled` variants, `bloody_brain` / `bloody_flesh`, `algae_reefstone` / `barnacles_reefstone`, and flowering foliage) generate distinct registered engine blocks cataloged in their respective domain specifications.
@@ -25,33 +27,33 @@ For each block, the following properties are systematically specified:
 
 | Category | Domain / Directory | Block Count | Texture Count | Status | Primary Architectural Specification | Navigation Link |
 | :---: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **01** | Technical & System Blocks (`systems`) | **8 blocks** | **8 textures** | ✅ **100% Complete** | [systems_design.md](blocks/systems_design.md) | [Go to Section 01](#01-technical--system-blocks-systems--8-blocks-100-complete) |
-| **02** | Hydrosphere & Cryology (`fluids`) | **18 blocks** | **54 textures** | ✅ **100% Complete** | [fluids_design.md](blocks/fluids_design.md) | [Go to Section 02](#02-hydrosphere--cryology-fluids--18-blocks-100-complete) |
-| **03** | Pedology & Soils (`soils`) | **56 blocks** | **178 textures** | ✅ **100% Complete** | [soils_design.md](blocks/soils_design.md) | [Go to Section 03](#03-pedology--soils-soils--56-blocks-100-complete) |
-| **04** | Geology & Rocks (`rocks`) | **68 blocks** | **150 textures** | ✅ **100% Complete** | [rocks_design.md](blocks/rocks_design.md) | [Go to Section 04](#04-geology--rocks-rocks--68-blocks-100-complete) |
-| **05** | Trees, Forestry & Dendrology (`trees`) | **92 blocks** | **242 textures** | ✅ **100% Complete** | [trees_design.md](blocks/trees_design.md) | [Go to Section 05](#05-trees-forestry--dendrology-trees--92-blocks-100-complete) |
-| **06** | Ores, Minerals & Gemology (`ores`) | **74 blocks** | **111 textures** | ✅ **100% Complete** | [ores_design.md](blocks/ores_design.md) | [Go to Section 06](#06-ores-minerals--gemology-ores--74-blocks-100-complete) |
-| **07** | Speleology & Crystals (`caverns`) | **30 blocks** | **114 textures** | ✅ **100% Complete** | [caverns_design.md](blocks/caverns_design.md) | [Go to Section 07](#07-speleology--crystals-caverns--30-blocks-100-complete) |
-| **08** | Ocean & Benthic Ecosystems (`oceans`) | **50 blocks** | **140 textures** | ✅ **100% Complete** | [oceans_design.md](blocks/oceans_design.md) | [Go to Section 08](#08-ocean--benthic-ecosystems-oceans--50-blocks-100-complete) |
-| **09** | Biomaterials, Fauna & Organic Matter (`organics`) | **36 blocks** | **94 textures** | ✅ **100% Complete** | [organics_design.md](blocks/organics_design.md) | [Go to Section 09](#09-biomaterials-fauna--organic-matter-organics--36-blocks-100-complete) |
-| **10** | Decorations, Lighting & Architecture (`decorations`) | **162 blocks** | **96 textures** | ✅ **100% Complete** | [decorations_design.md](blocks/decorations_design.md) | [Go to Section 10](#10-decorations-lighting--architecture-decorations--162-blocks-100-complete) |
-| **11** | Mycology: Mushrooms (`mushrooms`) | **18 blocks** | **54 textures** | ✅ **100% Complete** | [mushrooms_design.md](blocks/mushrooms_design.md) | [Go to Section 11](#11-mycology-mushrooms-mushrooms--18-blocks-100-complete) |
+| **01** | Technical & System Blocks (`systems`) | **8 blocks** | **8 textures** | ✅ **100% Complete** | [systems_design.md](blocks/systems_design.md) | [Go to Section 01](#01-technical--system-blocks-systems--8-blocks--100-complete) |
+| **02** | Hydrosphere & Cryology (`fluids`) | **18 blocks** | **54 textures** | ✅ **100% Complete** | [fluids_design.md](blocks/fluids_design.md) | [Go to Section 02](#02-hydrosphere--cryology-fluids--18-blocks--100-complete) |
+| **03** | Pedology & Soils (`soils`) | **56 blocks** | **178 textures** | ✅ **100% Complete** | [soils_design.md](blocks/soils_design.md) | [Go to Section 03](#03-pedology--soils-soils--56-blocks--100-complete) |
+| **04** | Geology & Rocks (`rocks`) | **68 blocks** | **150 textures** | ✅ **100% Complete** | [rocks_design.md](blocks/rocks_design.md) | [Go to Section 04](#04-geology--rocks-rocks--68-blocks--100-complete) |
+| **05** | Trees, Forestry & Dendrology (`trees`) | **92 blocks** | **242 textures** | ✅ **100% Complete** | [trees_design.md](blocks/trees_design.md) | [Go to Section 05](#05-trees-forestry--dendrology-trees--92-blocks--100-complete) |
+| **06** | Ores, Minerals & Gemology (`ores`) | **74 blocks** | **111 textures** | ✅ **100% Complete** | [ores_design.md](blocks/ores_design.md) | [Go to Section 06](#06-ores-minerals--gemology-ores--74-blocks--100-complete) |
+| **07** | Speleology & Crystals (`caverns`) | **30 blocks** | **114 textures** | ✅ **100% Complete** | [caverns_design.md](blocks/caverns_design.md) | [Go to Section 07](#07-speleology--crystals-caverns--30-blocks--100-complete) |
+| **08** | Ocean & Benthic Ecosystems (`oceans`) | **50 blocks** | **140 textures** | ✅ **100% Complete** | [oceans_design.md](blocks/oceans_design.md) | [Go to Section 08](#08-ocean--benthic-ecosystems-oceans--50-blocks--100-complete) |
+| **09** | Biomaterials, Fauna & Organic Matter (`organics`) | **36 blocks** | **94 textures** | ✅ **100% Complete** | [organics_design.md](blocks/organics_design.md) | [Go to Section 09](#09-biomaterials-fauna--organic-matter-organics--36-blocks--100-complete) |
+| **10** | Decorations, Lighting & Architecture (`decorations`) | **162 blocks** | **96 textures** | ✅ **100% Complete** | [decorations_design.md](blocks/decorations_design.md) | [Go to Section 10](#10-decorations-lighting--architecture-decorations--162-blocks--100-complete) |
+| **11** | Mycology: Mushrooms (`mushrooms`) | **18 blocks** | **54 textures** | ✅ **100% Complete** | [mushrooms_design.md](blocks/mushrooms_design.md) | [Go to Section 11](#11-mycology-mushrooms-mushrooms--18-blocks--100-complete) |
 | **12** | Botany: Groundcover & Herbaceous Flora (`vegetation`) | **38 blocks** | **111 textures** | 🔄 *In Progress* | [vegetation_design.md](blocks/vegetation_design.md) | [Go to Section 12](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks) |
 | **13** | Botany: Flowers & Flowering Flora (`flowers`) | **32 blocks** | **87 textures** | 🔄 *In Progress* | [flowers_design.md](blocks/flowers_design.md) | [Go to Section 13](#13-botany-flowers--flowering-flora-flowers--32-blocks) |
 | **14** | Agriculture & Domestic Crops (`crops`) | **34 blocks** | **171 textures** | 🔄 *In Progress* | [crops_design.md](blocks/crops_design.md) | [Go to Section 14](#14-agriculture--domestic-crops-crops--34-blocks) |
 | **TOTAL** | **Grand Master Sum** | **716 blocks** | **1,610 textures** | — | — | — |
 
-01. [Technical & System Blocks (`systems`) — 8 Blocks [✅ 100% Complete]](#01-technical--system-blocks-systems--8-blocks-100-complete)
-02. [Hydrosphere & Cryology (`fluids`) — 18 Blocks [✅ 100% Complete]](#02-hydrosphere--cryology-fluids--18-blocks-100-complete)
-03. [Pedology & Soils (`soils`) — 56 Blocks [✅ 100% Complete]](#03-pedology--soils-soils--56-blocks-100-complete)
-04. [Geology & Rocks (`rocks`) — 68 Blocks [✅ 100% Complete]](#04-geology--rocks-rocks--68-blocks-100-complete)
-05. [Trees, Forestry & Dendrology (`trees`) — 92 Blocks [✅ 100% Complete]](#05-trees-forestry--dendrology-trees--92-blocks-100-complete)
-06. [Ores, Minerals & Gemology (`ores`) — 74 Blocks [✅ 100% Complete]](#06-ores-minerals--gemology-ores--74-blocks-100-complete)
-07. [Speleology & Crystals (`caverns`) — 30 Blocks [✅ 100% Complete]](#07-speleology--crystals-caverns--30-blocks-100-complete)
-08. [Ocean & Benthic Ecosystems (`oceans`) — 50 Blocks [✅ 100% Complete]](#08-ocean--benthic-ecosystems-oceans--50-blocks-100-complete)
-09. [Biomaterials, Fauna & Organic Matter (`organics`) — 36 Blocks [✅ 100% Complete]](#09-biomaterials-fauna--organic-matter-organics--36-blocks-100-complete)
-10. [Decorations, Lighting & Architecture (`decorations`) — 162 Blocks [✅ 100% Complete]](#10-decorations-lighting--architecture-decorations--162-blocks-100-complete)
-11. [Mycology: Mushrooms (`mushrooms`) — 18 Blocks [✅ 100% Complete]](#11-mycology-mushrooms-mushrooms--18-blocks-100-complete)
+01. [Technical & System Blocks (`systems`) — 8 Blocks [✅ 100% Complete]](#01-technical--system-blocks-systems--8-blocks--100-complete)
+02. [Hydrosphere & Cryology (`fluids`) — 18 Blocks [✅ 100% Complete]](#02-hydrosphere--cryology-fluids--18-blocks--100-complete)
+03. [Pedology & Soils (`soils`) — 56 Blocks [✅ 100% Complete]](#03-pedology--soils-soils--56-blocks--100-complete)
+04. [Geology & Rocks (`rocks`) — 68 Blocks [✅ 100% Complete]](#04-geology--rocks-rocks--68-blocks--100-complete)
+05. [Trees, Forestry & Dendrology (`trees`) — 92 Blocks [✅ 100% Complete]](#05-trees-forestry--dendrology-trees--92-blocks--100-complete)
+06. [Ores, Minerals & Gemology (`ores`) — 74 Blocks [✅ 100% Complete]](#06-ores-minerals--gemology-ores--74-blocks--100-complete)
+07. [Speleology & Crystals (`caverns`) — 30 Blocks [✅ 100% Complete]](#07-speleology--crystals-caverns--30-blocks--100-complete)
+08. [Ocean & Benthic Ecosystems (`oceans`) — 50 Blocks [✅ 100% Complete]](#08-ocean--benthic-ecosystems-oceans--50-blocks--100-complete)
+09. [Biomaterials, Fauna & Organic Matter (`organics`) — 36 Blocks [✅ 100% Complete]](#09-biomaterials-fauna--organic-matter-organics--36-blocks--100-complete)
+10. [Decorations, Lighting & Architecture (`decorations`) — 162 Blocks [✅ 100% Complete]](#10-decorations-lighting--architecture-decorations--162-blocks--100-complete)
+11. [Mycology: Mushrooms (`mushrooms`) — 18 Blocks [✅ 100% Complete]](#11-mycology-mushrooms-mushrooms--18-blocks--100-complete)
 12. [Botany: Groundcover & Herbaceous Flora (`vegetation`) — 38 Blocks](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks)
 13. [Botany: Flowers & Flowering Flora (`flowers`) — 32 Blocks](#13-botany-flowers--flowering-flora-flowers--32-blocks)
 14. [Agriculture & Domestic Crops (`crops`) — 34 Blocks](#14-agriculture--domestic-crops-crops--34-blocks)
@@ -369,6 +371,7 @@ Planetary dendrology encompasses **18 living forest tree species** distributed a
 | **92** | `yew_wood` | Yew Wood | **Wood** | `tree_yew_bark.png` | 6 uniform faces |
 
 ---
+
 ## 06. Ores, Minerals & Gemology (`ores`) — 74 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/ores`  
@@ -455,7 +458,7 @@ The metallogenic and mineralogical domain comprises **20 solid unrefined raw/rou
 | **073** | `ore_zinc_raw` | Raw Zinc Block | **Metal** | `ore_zinc_raw.png` | Uniform (6 faces) |
 | **074** | `ore_zinc_slate` | Zinc Ore (Slate) | **Metal** | `rock_slate.png` | `ore_zinc_overlay.png` |
 
-## 07. Speleology & Crystals (`caverns`) — 30 Blocks
+## 07. Speleology & Crystals (`caverns`) — 30 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/caverns`  
 📄 **Comprehensive Specification**: [caverns_design.md](blocks/caverns_design.md)
@@ -563,7 +566,7 @@ The benthic and subaquatic oceanic domain comprises **14 colonial massive coral 
 
 ---
 
-## 09. Biomaterials, Fauna & Organic Matter (`organics`) — 36 Blocks
+## 09. Biomaterials, Fauna & Organic Matter (`organics`) — 36 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/organics`  
 📄 **Comprehensive Specification**: [organics_design.md](blocks/organics_design.md)

@@ -1,5 +1,11 @@
 {
     "files.exclude": {
         "**/target": true
-    }
+    },
+    "files.associations": {
+        "*.wesl": "wgsl"
+    },
+    "editor.codeLens": false,
+    "rust-analyzer.lens.enable": false,
+    "gitlens.codeLens.enabled": false
 }

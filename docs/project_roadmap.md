@@ -27,7 +27,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **08** | **Dynamic Cellular Automata Fluid Simulation** | Built real-time water propagation with stepped sub-voxel fluid heights, boundary physics, submerged fog, and surface mesh offsets. |
 | **09** | **Runtime Developer Diagnostics & Egui World Inspector** | Created the F1 runtime inspector for live noise parameter tuning, entity diagnostics, performance metrics, and instant world reload. |
 | **10** | **Hardware 2D Texture Array & WGSL Voxel Shader** | Engineered custom WGSL material extension with nearest-neighbor 2D texture array sampling and spatial variant randomization. |
-| **11** | **Sub-Voxel Block Shaping Tools & Centered Placement** | Developed the real-time block shaping tool (<kbd>R</kbd>/<kbd>T</kbd> keys) supporting slabs, stairs, corner stairs, and centered vertical column voxels. |
+| **11** | **Sub-Voxel Block Shaping Tools & Centered Placement** | Developed the real-time block shaping tool (`R`/`T` keys) supporting slabs, stairs, corner stairs, and centered vertical column voxels. |
 | **12** | **In-Game Calendar, Seasons & Debug HUD** | Implemented a 4-season astronomical calendar, day tracking, and a comprehensive F3 debug overlay with performance metrics. |
 | **13** | **Player Model Rigging, Skins & Cursor State Management** | Integrated first/third-person player avatar rendering with texture skin mapping and context-sensitive gameplay cursor states. |
 | **14** | **Multi-Biome World Generation & Procedural Caves** | Implemented 11 distinct biomes driven by 2D continuous temperature/moisture noise, 3D cave/ravine density, and procedural trees. |
@@ -176,7 +176,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
   - Overhaul the in-game Pause Menu, Settings Menu, Audio/Video Options, and Keybindings to strictly adhere to the unified Dark Iron design system.
   - Add smooth menu transition animations and responsive input support for gamepad and keyboard navigation.
 - [ ] **Stylized Cartography & World Map Overhaul**:
-  - Overhaul the full-screen World Map (<kbd>M</kbd>) with hand-drawn parchment aesthetics, smooth zoom/pan controls, and customizable player map pins.
+  - Overhaul the full-screen World Map (`M`) with hand-drawn parchment aesthetics, smooth zoom/pan controls, and customizable player map pins.
   - Implement dynamic fog of war revealing terrain as the player explores, along with compass navigation integration.
 
 ---

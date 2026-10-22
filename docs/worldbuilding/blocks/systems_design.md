@@ -37,12 +37,14 @@ graph TD
 All 8 textures are technical assets:
 
 ### A. Engine Fallback Placeholders (4 Files)
+
 * `null_block.png` *(Full solid cubic block fallback with 8×8 px checkerboard, 16×16 px)*
 * `null_liquid.png` *(Dynamic fluid scrolling fallback strip, 16×144 px)*
 * `null_crossmesh.png` *(Alpha-cutout flora/prop silhouette fallback for cross-billboards, 16×16 px)*
 * `null_generic.png` *(High-resolution 4×4 px checkerboard fallback for complex 3D meshes & UV models, 16×16 px)*
 
 ### B. Developer Validation Markers (4 Files)
+
 * `debug_start.png` *(Pipeline initialization anchor marker, 16×16 px)*
 * `debug_instance.png` *(Structure and chunk instance marker, 16×16 px)*
 * `debug_accept.png` *(Visual feedback for successful assertion / OK, 16×16 px)*

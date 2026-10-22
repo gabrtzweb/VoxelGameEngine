@@ -43,7 +43,9 @@ graph TD
 ## 2. Complete Texture Inventory in `worldbuilding/blocks/soils/` (66 Active Textures)
 
 ### A. Primary Biological Soils (10 base files each = 30 textures + stochastic variations)
+
 For each biological soil type (**Loam**, **Silt**, **Peat**):
+
 * `dirt`: Pure foundational soil block (`soil_<type>_dirt.png`) *(+ stochastic shader variants `soil_<type>_dirt1.png`, `soil_<type>_dirt2.png`)*
 * `coarse`: Rugged soil packed with embedded pebbles (`soil_<type>_coarse.png`) *(+ stochastic shader variants `soil_<type>_coarse1.png`, `soil_<type>_coarse2.png`)*
 * `grass_side`: Lateral face with hanging grass vegetation sod (`soil_<type>_grass_side.png`) *(+ stochastic variants `1`, `2` with turf cutout area 100% identical for shader alignment and dirt varying underneath)*
@@ -56,45 +58,58 @@ For each biological soil type (**Loam**, **Silt**, **Peat**):
 * `tilled_side`: Lateral face showing agricultural furrow cutouts (`soil_<type>_tilled_side.png`)
 
 ### B. Climatic Soils (4 variants each = 12 textures + stochastic variations)
+
 All base solid and coarse faces feature complete 3-fold stochastic variants (`1` and `2`):
+
 * **Permafrost**: `soil_permafrost_dirt.png` *(+ `1`, `2`)*, `soil_permafrost_coarse.png` *(+ `1`, `2`)*, `soil_permafrost_grass_side.png` *(+ `1`, `2`)*, `soil_permafrost_icy.png` *(+ `1`, `2`)*
 * **Caliche**: `soil_caliche_dirt.png` *(+ `1`, `2`)*, `soil_caliche_coarse.png` *(+ `1`, `2`)*, `soil_caliche_grass_side.png` *(+ `1`, `2`)*, `soil_caliche_cracked.png` *(+ `1`, `2`)*
 * **Laterite**: `soil_laterite_dirt.png` *(+ `1`, `2`)*, `soil_laterite_coarse.png` *(+ `1`, `2`)*, `soil_laterite_grass_side.png` *(+ `1`, `2`)*, `soil_laterite_hardpan.png` *(+ `1`, `2`)*
 
 ### C. Clays (4 base textures + 8 stochastic variations)
+
 All 4 colors share the canonical alluvial marbling pattern and include stochastic variants `1` and `2`:
+
 * `soil_clay_blue.png`, `soil_clay_blue1.png`, `soil_clay_blue2.png` *(Plastic alluvial blue-gray pottery clay)*
 * `soil_clay_red.png`, `soil_clay_red1.png`, `soil_clay_red2.png` *(Deep terracotta clay rich in iron oxides)*
 * `soil_clay_white.png`, `soil_clay_white1.png`, `soil_clay_white2.png` *(Pure kaolin porcelain clay)*
 * `soil_clay_yellow.png`, `soil_clay_yellow1.png`, `soil_clay_yellow2.png` *(Ochre clay rich in limonite)*
 
 ### D. Sands (4 base textures + 8 stochastic variations)
+
 All 4 sands include stochastic variants `1` and `2` to break desert and beach tiling repetition:
+
 * `soil_sand_common.png`, `soil_sand_common1.png`, `soil_sand_common2.png` *(Standard quartzose beach/river sand)*
 * `soil_sand_red.png`, `soil_sand_red1.png`, `soil_sand_red2.png` *(Desert hematite-coated sand)*
 * `soil_sand_dune.png`, `soil_sand_dune1.png`, `soil_sand_dune2.png` *(Fine golden aeolian dune sand)*
 * `soil_sand_white.png`, `soil_sand_white1.png`, `soil_sand_white2.png` *(Coral/gypsum pure white sand)*
 
 ### E. Matrix Gravels (4 base textures + 8 stochastic variations)
+
 All 4 gravel matrices feature stochastic variants `1` and `2` with jittered pebble boundaries:
+
 * `soil_gravel_dirty.png`, `soil_gravel_dirty1.png`, `soil_gravel_dirty2.png` *(Loam organic soil matrix)*
 * `soil_gravel_sandy.png`, `soil_gravel_sandy1.png`, `soil_gravel_sandy2.png` *(Fluvial sand matrix)*
 * `soil_gravel_ashy.png`, `soil_gravel_ashy1.png`, `soil_gravel_ashy2.png` *(Dark volcanic ash matrix)*
 * `soil_gravel_snowy.png`, `soil_gravel_snowy1.png`, `soil_gravel_snowy2.png` *(Frozen glacial ice/snow matrix)*
 
 ### F. Volcanic Ashes (2 base textures + 4 stochastic variations)
+
 Both ash types feature stochastic variants `1` and `2` for vast tephra fields:
+
 * `soil_ash_vulcanic.png` *(+ `1`, `2`)* *(Dark mafic/basaltic tephra ash)*
 * `soil_ash_pumice.png` *(+ `1`, `2`)* *(Light porous felsic pumice dust)*
 
 ### G. Ground Mosses (4 base textures + 8 stochastic variations)
+
 All 4 moss biomes feature complete 3-fold stochastic variants (`1` and `2`):
+
 * `soil_moss_forest.png` *(+ `1`, `2`)* *(Temperate forest green velvet moss)*
 * `soil_moss_crimson.png` *(+ `1`, `2`)* *(Boreal peatland crimson sphagnum moss)*
 * `soil_moss_amber.png` *(+ `1`, `2`)* *(Fen wetland golden amber moss)*
 * `soil_moss_cave.png` *(+ `1`, `2`)* *(Subterranean luminous goblin gold moss)*
 
 ### H. Snows & Grass Tops (4 base textures + stochastic variations)
+
 * `soil_snow.png`, `soil_snow1.png`, `soil_snow2.png` *(Solid snow block & snow cap top)*
 * `soil_snow_powder.png` *(Aerated fluffy powder snow, + `1`, `2`)*
 * `soil_grass.png`, `soil_grass1.png`, `soil_grass2.png` *(Grayscale top grass face for biome color tinting)*

@@ -14,7 +14,6 @@ Generating **74 unique blocks** in the master catalog:
 
 * **54 Procedural Ore Vein Blocks**: 54 unique ore-in-stone blocks dynamically generated across 13 mineralized host rock matrices (featuring the 3 primary crustal macro-strata: Slate with 8 veins, Dolomite with 6 veins, and Gabbro with 6 veins).
 
-
 ---
 
 ## 1. Mineral Classification & Domains (20 Minerals)
@@ -41,24 +40,28 @@ graph TD
 Each mineral features either an individual procedural **Vein Overlay** or generates via the collective **`gem_vein_overlay`** (Jewelry Ore), alongside a **Solid Massive Block** (`raw` for metals/chemicals, `rough` for gems) across 3 stochastic variants:
 
 ### A. Base & Industrial Metals (24 Files, 16×16 px)
+
 * **Iron (6)**: `ore_iron_overlay.png` (+ `1`, `2`), `ore_iron_raw.png` (+ `1`, `2`)
 * **Copper (6)**: `ore_copper_overlay.png` (+ `1`, `2`), `ore_copper_raw.png` (+ `1`, `2`)
 * **Tin (6)**: `ore_tin_overlay.png` (+ `1`, `2`), `ore_tin_raw.png` (+ `1`, `2`)
 * **Zinc (6)**: `ore_zinc_overlay.png` (+ `1`, `2`), `ore_zinc_raw.png` (+ `1`, `2`)
 
 ### B. Precious & Strategic Metals (24 Files, 16×16 px)
+
 * **Gold (6)**: `ore_gold_overlay.png` (+ `1`, `2`), `ore_gold_raw.png` (+ `1`, `2`)
 * **Silver (6)**: `ore_silver_overlay.png` (+ `1`, `2`), `ore_silver_raw.png` (+ `1`, `2`)
 * **Platinum (6)**: `ore_platinum_overlay.png` (+ `1`, `2`), `ore_platinum_raw.png` (+ `1`, `2`)
 * **Uranium (6)**: `ore_uranium_overlay.png` (+ `1`, `2`), `ore_uranium_raw.png` (+ `1`, `2`)
 
 ### C. Industrial Chemicals & Non-Metals (24 Files, 16×16 px)
+
 * **Coal (6)**: `ore_coal_overlay.png` (+ `1`, `2`), `ore_coal_raw.png` (+ `1`, `2`)
 * **Sulfur (6)**: `ore_sulfur_overlay.png` (+ `1`, `2`), `ore_sulfur_raw.png` (+ `1`, `2`)
 * **Cinnabar (6)**: `ore_cinnabar_overlay.png` (+ `1`, `2`), `ore_cinnabar_raw.png` (+ `1`, `2`)
 * **Lazurite (6)**: `ore_lazurite_overlay.png` (+ `1`, `2`), `ore_lazurite_raw.png` (+ `1`, `2`)
 
 ### D. Precious Gemstones (39 Files, 16×16 px & 16×64 px)
+
 * **Standalone Overlays (12)**:
   * `gem_diamond_overlay.png` (+ `1`, `2`)
   * `gem_emerald_overlay.png` (+ `1`, `2`)
@@ -225,8 +228,6 @@ Two gemstones utilize vertical strips of **16×64 pixels (4 stacked 16×16 frame
 | **074** | `gem_vein_marble` | Gem Vein (Marble) | **Gemstone** | `rock_marble.png` | `gem_vein_overlay.png` | Uniform 6 faces (4-Gem Composite Overlay) |
 
 ---
-
-
 
 ## 5. Mineral Occurrence Matrix (Distribution Across Host Rocks)
 

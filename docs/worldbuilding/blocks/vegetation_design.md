@@ -4,6 +4,7 @@ All active textures for herbaceous flora, meadows, wild cereals, ferns, xerophyt
 📂 **`docs/worldbuilding/blocks/vegetation`** *(109 active PNG textures on disk, representing 38 unique blocks across 6 strictly even categories)*
 
 Generating **38 unique blocks** in the master catalog:
+
 * **12 Grasses & Wild Cereals**: 6 single-block carpet grasses + 6 double-tall prairie grasses and grain stalks.
 * **6 Ferns & Pteridophytes**: 4 understory fronds + 2 double-tall giant and jungle ferns.
 * **8 Shrubs, Bushes & Cacti**: 3 temperate/arid shrubs + 5 xerophytic cacti and succulents.
@@ -47,18 +48,18 @@ graph TD
 ## 2. Rendering Profiles & Architectural Geometry
 
 1. **Simple Cross-Mesh / Billboard Flora (`16×16 px RGBA Cutout`)**:
-   - Rendered using intersecting diagonal planes (X-shape) or offset vertical billboard quads.
-   - Includes procedural variations (`1, 2, 3...`) to break visual tiling repetition across open fields.
+   * Rendered using intersecting diagonal planes (X-shape) or offset vertical billboard quads.
+   * Includes procedural variations (`1, 2, 3...`) to break visual tiling repetition across open fields.
 2. **Double-Tall Composite Flora (Two-Block Plants)**:
-   - **Lower Segment (`vege_*_bottom.png`)**: Dense basal root clusters, clumps, or heavy lower stalks.
-   - **Upper Segment (`vege_*_top.png`)**: Feathered plumes, flowering tassels, grain heads, or broad frond arches.
-   - **Consolidated Composite Sprites (`32×32 px RGBA`)**: Master full-height textures (`vege_tall_wildgrass.png`, `vege_tall_fern.png`) used for entity icons and unified LOD rendering.
+   * **Lower Segment (`vege_*_bottom.png`)**: Dense basal root clusters, clumps, or heavy lower stalks.
+   * **Upper Segment (`vege_*_top.png`)**: Feathered plumes, flowering tassels, grain heads, or broad frond arches.
+   * **Consolidated Composite Sprites (`32×32 px RGBA`)**: Master full-height textures (`vege_tall_wildgrass.png`, `vege_tall_fern.png`) used for entity icons and unified LOD rendering.
 3. **Solid & Columnar 3D Blocks (Cacti & Succulents)**:
-   - **Large Saguaro Cactus (`vege_cactus`)**: Full 3D column cube block with directional `top`, `bottom`, and `side` ribs.
-   - **Small Cactus (`vege_small_cactus`)**: Compact succulent column block (`top`, `bottom`, `side`).
+   * **Large Saguaro Cactus (`vege_cactus`)**: Full 3D column cube block with directional `top`, `bottom`, and `side` ribs.
+   * **Small Cactus (`vege_small_cactus`)**: Compact succulent column block (`top`, `bottom`, `side`).
 4. **Surface Overlays & Floating Pads (Epiphytes & Water Pads)**:
-   - **Floating Pads (`vege_lily_pad`, `vege_helvola_pad`)**: Thin planar geometry floating on the upper water meniscus.
-   - **Wall Climbers & Ceilings (`vege_vines`, `vege_lichen`, `vege_hanging_roots`)**: Oriented planar decals mounted against vertical bark/rock walls or hanging beneath ceiling faces.
+   * **Floating Pads (`vege_lily_pad`, `vege_helvola_pad`)**: Thin planar geometry floating on the upper water meniscus.
+   * **Wall Climbers & Ceilings (`vege_vines`, `vege_lichen`, `vege_hanging_roots`)**: Oriented planar decals mounted against vertical bark/rock walls or hanging beneath ceiling faces.
 
 ---
 

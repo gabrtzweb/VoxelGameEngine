@@ -44,7 +44,9 @@ graph TD
 ## 2. Complete Texture Inventory in `worldbuilding/blocks/caverns/` (114 Active Textures)
 
 ### A. Real Mineral Crystals (54 Files: 18 Solid Blocks, 18 Normal Clusters, 18 Animated Glinted Clusters)
+
 Each of the 6 crystal minerals features a complete set including 3-fold stochastic solid blocks, 3-fold cross-billboard clusters, and 3-fold animated 16×64 glinted emissive clusters (4 frames each):
+
 * **Amethyst (9)**: `crystal_amethyst.png` *(+ `1`, `2`)*, `crystal_amethyst_cluster.png` *(+ `1`, `2`)*, `crystal_amethyst_cluster_glinted.png` *(16×64 + `1`, `2`)*
 * **Aquamarine (9)**: `crystal_aquamarine.png` *(+ `1`, `2`)*, `crystal_aquamarine_cluster.png` *(+ `1`, `2`)*, `crystal_aquamarine_cluster_glinted.png` *(16×64 + `1`, `2`)*
 * **Citrine (9)**: `crystal_citrine.png` *(+ `1`, `2`)*, `crystal_citrine_cluster.png` *(+ `1`, `2`)*, `crystal_citrine_cluster_glinted.png` *(16×64 + `1`, `2`)*
@@ -53,6 +55,7 @@ Each of the 6 crystal minerals features a complete set including 3-fold stochast
 * **Selenite (9)**: `crystal_selenite.png` *(+ `1`, `2`)*, `crystal_selenite_cluster.png` *(+ `1`, `2`)*, `crystal_selenite_cluster_glinted.png` *(16×64 + `1`, `2`)*
 
 ### B. Modular Speleothems & Dripstones (36 Files, 16×16 px)
+
 * **Karst Limestone (10)**:
   * Stalactite (Down): `speleothem_karst_down_base.png`, `_frustum`, `_middle`, `_tip`, `_tip_merge`
   * Stalagmite (Up): `speleothem_karst_up_base.png`, `_frustum`, `_middle`, `_tip`, `_tip_merge`
@@ -67,12 +70,16 @@ Each of the 6 crystal minerals features a complete set including 3-fold stochast
   * Stalagmite (Up): `speleothem_pink_salt_straw_up_bottom.png`, `_middle`, `_top`
 
 ### C. Speleological Cave Strata & Host Rocks (12 Files: 6 Solid + 6 Cobbled, 16×16 px)
+
 Specialized subterranean rocks associated with deep groundwater dissolution caves, speleothem anchors, and carbonate flowstones:
+
 * **Cave Karst Limestone (6)**: `cave_karst.png` *(+ `1`, `2`)*, `cave_karst_cobbled.png` *(+ `1`, `2`)*
 * **Cave Calcite Flowstone Rock (6)**: `cave_calcite.png` *(+ `1`, `2`)*, `cave_calcite_cobbled.png` *(+ `1`, `2`)*
 
 ### D. Paleontological Fossil Blocks (12 Files, 16×16 px)
+
 Sedimentary subterranean strata embedding prehistoric biological remains. All 4 fossil blocks feature complete 3-fold stochastic variants (`_base`, `1`, `2`) to break repetition in fossil quarry walls:
+
 * **Fossil Strata (12)**: `fossil_bones.png` *(+ `1`, `2`)*, `fossil_amber.png` *(+ `1`, `2`)*, `fossil_bitumen.png` *(+ `1`, `2`)*, `fossil_matrix.png` *(+ `1`, `2`)*
 
 ---
@@ -186,7 +193,8 @@ graph TD
     C4 -. "Pillar Merge (_down_tip_merge meets _up_tip_merge)" .- F4
 ```
 
-### Stacking Rules:
+### Stacking Rules
+
 1. **Single-Voxel Spikes (Height = 1)**: Directly place `_down_tip` or `_up_tip`.
 2. **Medium Spikes (Height = 2)**: Place `_down_frustum` + `_down_tip` (or `_up_base` + `_up_tip`).
 3. **Tall Columns (Height $\ge$ 3)**: Anchor with `_base`, transition through `_frustum`, repeat `_middle` as needed, and cap with `_tip`.

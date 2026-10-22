@@ -5,6 +5,7 @@ This master document specifies the marine geology, biogenic coral reef systems, 
 📂 **`docs/worldbuilding/blocks/overlays`** *(Procedural marine overlays: `algae_dead_overlay.png`, `barnacles_overlay.png`)*
 
 Generating **50 unique blocks** in the master catalog divided into 5 ecological categories:
+
 1. **Living Massive Coral Blocks** (14 species)
 2. **Living Coral Fans** (14 species)
 3. **Senescent & Dead Coral Formations** (4 blocks: Dying Coral Block & Fan, Dead Coral Block & Fan)
@@ -60,37 +61,39 @@ graph TD
 ## 2. Rendering Standards & Texture Specifications
 
 All textures adhere to the engine's naming conventions and geometry profiles:
+
 * **`aqua_`**: Solid cubic blocks, poriferans, benthic bedrocks, shell/nacre blocks, anthozoans, and geothermal chimneys.
 * **`vege_`**: Branching cross-billboard fans, single-block benthic plants, and animated vertical flora strips.
 
 1. **Solid Cubic Blocks (`16×16 px RGB / RGBA`)**:
-   - Uniform 6-sided textures for building massive biogenic reefs and ocean floor strata (`aqua_*_coral.png` *(+ `1`, `2`)*, `aqua_dying_coral.png` *(+ `1`, `2`)*, `aqua_dead_coral.png` *(+ `1`, `2`)*, `aqua_sponge.png` *(+ `1`, `2`)*, `aqua_coralstone.png` *(+ `1`, `2`)*, `aqua_reefstone.png` *(+ `1`, `2`)*, `aqua_algae_mat.png` *(+ `1`, `2`)*).
-   - Dynamic multi-texturing / composite blocks: `algae_reefstone` and `barnacles_reefstone` utilize the underlying `aqua_reefstone.png` base combined with decal shader overlays (`algae_dead_overlay.png` and `barnacles_overlay.png`).
+   * Uniform 6-sided textures for building massive biogenic reefs and ocean floor strata (`aqua_*_coral.png` *(+ `1`, `2`)*, `aqua_dying_coral.png` *(+ `1`, `2`)*, `aqua_dead_coral.png` *(+ `1`, `2`)*, `aqua_sponge.png` *(+ `1`, `2`)*, `aqua_coralstone.png` *(+ `1`, `2`)*, `aqua_reefstone.png` *(+ `1`, `2`)*, `aqua_algae_mat.png` *(+ `1`, `2`)*).
+   * Dynamic multi-texturing / composite blocks: `algae_reefstone` and `barnacles_reefstone` utilize the underlying `aqua_reefstone.png` base combined with decal shader overlays (`algae_dead_overlay.png` and `barnacles_overlay.png`).
 2. **Directional Cubic Blocks (`16×16 px RGB / RGBA`)**:
-   - Specialized face mappings for anatomy, shell layering, and geological venting:
-     - **Geothermal Vent**: `aqua_geothermal_vent_top.png` (active hydrothermal mineral orifice), `aqua_geothermal_vent_side.png` (columnar basaltic chimney wall), `aqua_geothermal_vent_bot.png` (dark subterranean feeding conduit).
-     - **Turtle Scute**: `aqua_scute_top.png` (carapace dorsal scutes), `aqua_scute_side.png` (lateral marginal scutes), `aqua_scute_bot.png` (plastron ventral plates).
-     - **Pearl Block**: `aqua_pearl_top.png` (spherical crown specular dome), `aqua_pearl_side.png` (lateral lustrous nacre band), `aqua_pearl_bot.png` (shadowed oyster attachment base).
-     - **Sea Anemone**: `aqua_sea_anemone_top.png` (oral disc with radiating tentacles and central mouth), `aqua_sea_anemone_side.png` (columnar body wall with verrucae and overhanging rim), `aqua_sea_anemone_bot.png` (muscular pedal suction disc).
+   * Specialized face mappings for anatomy, shell layering, and geological venting:
+     * **Geothermal Vent**: `aqua_geothermal_vent_top.png` (active hydrothermal mineral orifice), `aqua_geothermal_vent_side.png` (columnar basaltic chimney wall), `aqua_geothermal_vent_bot.png` (dark subterranean feeding conduit).
+     * **Turtle Scute**: `aqua_scute_top.png` (carapace dorsal scutes), `aqua_scute_side.png` (lateral marginal scutes), `aqua_scute_bot.png` (plastron ventral plates).
+     * **Pearl Block**: `aqua_pearl_top.png` (spherical crown specular dome), `aqua_pearl_side.png` (lateral lustrous nacre band), `aqua_pearl_bot.png` (shadowed oyster attachment base).
+     * **Sea Anemone**: `aqua_sea_anemone_top.png` (oral disc with radiating tentacles and central mouth), `aqua_sea_anemone_side.png` (columnar body wall with verrucae and overhanging rim), `aqua_sea_anemone_bot.png` (muscular pedal suction disc).
 3. **Branching Cross-Billboard Fans (`16×16 px RGBA`)**:
-   - Two intersecting diagonal vertical quads displaying intricate coral fans (`vege_*_coral_fan.png`, `vege_*_coral_fan1.png`, `vege_*_coral_fan2.png`). All 16 coral fans feature complete 3-fold stochastic variants (`base`, `1`, `2`).
+   * Two intersecting diagonal vertical quads displaying intricate coral fans (`vege_*_coral_fan.png`, `vege_*_coral_fan1.png`, `vege_*_coral_fan2.png`). All 16 coral fans feature complete 3-fold stochastic variants (`base`, `1`, `2`).
 4. **Single-Block Benthic Flora (`16×16 px` or `16×Height Strips RGBA`)**:
-   - Low-profile seafloor vegetation spanning exactly 1 block in height, featuring complete 3-fold variants (`base`, `1`, `2`):
-     - `vege_bone_worms.png`, `1`, `2`: 16×16 px deep-sea hydrothermal/bone tube worms.
-     - `vege_seaweed.png`, `1`, `2`: 16×16 px cross-billboard brown seaweed.
-     - `vege_seagrass.png`, `1`, `2`: 16×240 px animated strips (15 frames).
-     - `vege_red_algae.png`, `1`, `2`: 16×320 px animated strips (20 frames).
+   * Low-profile seafloor vegetation spanning exactly 1 block in height, featuring complete 3-fold variants (`base`, `1`, `2`):
+     * `vege_bone_worms.png`, `1`, `2`: 16×16 px deep-sea hydrothermal/bone tube worms.
+     * `vege_seaweed.png`, `1`, `2`: 16×16 px cross-billboard brown seaweed.
+     * `vege_seagrass.png`, `1`, `2`: 16×240 px animated strips (15 frames).
+     * `vege_red_algae.png`, `1`, `2`: 16×320 px animated strips (20 frames).
 5. **Multi-Block Tall Marine Flora (`16×320 px Strips RGBA`)**:
-   - Continuous columnar kelp and macroalgae forest flora that grow vertically across multiple stacked water blocks. Architecturally registered as **1 unique block per species**, utilizing an autonomous 2-texture body/top distribution:
-     - **Corpo (`_plant.png`)**: Textura aplicada a todos os blocos inferiores e intermediários da coluna submersa.
-     - **Topo (`.png`)**: Textura aplicada exclusivamente ao bloco do ápice (fronde terminal superior).
-     - Espécies: `vege_kelp.png` / `vege_kelp_plant.png`, `vege_bull_kelp.png` / `vege_bull_kelp_plant.png`, `vege_delesseria.png` / `vege_delesseria_plant.png`, `vege_sargassum.png` / `vege_sargassum_plant.png`.
+   * Continuous columnar kelp and macroalgae forest flora that grow vertically across multiple stacked water blocks. Architecturally registered as **1 unique block per species**, utilizing an autonomous 2-texture body/top distribution:
+     * **Corpo (`_plant.png`)**: Textura aplicada a todos os blocos inferiores e intermediários da coluna submersa.
+     * **Topo (`.png`)**: Textura aplicada exclusivamente ao bloco do ápice (fronde terminal superior).
+     * Espécies: `vege_kelp.png` / `vege_kelp_plant.png`, `vege_bull_kelp.png` / `vege_bull_kelp_plant.png`, `vege_delesseria.png` / `vege_delesseria_plant.png`, `vege_sargassum.png` / `vege_sargassum_plant.png`.
 
 ---
 
 ## 3. Technical Texture Inventory in `worldbuilding/blocks/oceans/` (140 Active Textures)
 
 ### A. Massive Coral Blocks & Directional Marine Substrates (72 Files, 16×16 px)
+
 * `aqua_tube_coral.png` *(+ `1`, `2`)* *(Cobalt blue)* (3)
 * `aqua_brain_coral.png` *(+ `1`, `2`)* *(Rose pink)* (3)
 * `aqua_bubble_coral.png` *(+ `1`, `2`)* *(Vesicular purple)* (3)
@@ -117,10 +120,12 @@ All textures adhere to the engine's naming conventions and geometry profiles:
 * `aqua_scute_top.png`, `aqua_scute_side.png`, `aqua_scute_bot.png` *(Dorsal carapace, lateral margin, and ventral plastron plates)* (3)
 
 ### B. Procedural Marine Overlays in `worldbuilding/blocks/overlays/` (External Decals)
+
 * `algae_dead_overlay.png` *(Surface/dead reddish-brown marine algal biofilm layer)*
 * `barnacles_overlay.png` *(Cleaned calcified acorn barnacle crust without stone halos)*
 
 ### C. Coral Fans in Cross-Billboard (48 Files, 16×16 px RGBA)
+
 * `vege_tube_coral_fan.png`, `1.png`, `2.png` (3)
 * `vege_brain_coral_fan.png`, `1.png`, `2.png` (3)
 * `vege_bubble_coral_fan.png`, `1.png`, `2.png` (3)
@@ -139,12 +144,14 @@ All textures adhere to the engine's naming conventions and geometry profiles:
 * `vege_dead_coral_fan.png`, `1.png`, `2.png` (3)
 
 ### D. Single-Block Benthic Flora (12 Files)
+
 * `vege_bone_worms.png`, `1.png`, `2.png` *(16×16 px cross-billboard tube worms)* (3)
 * `vege_seaweed.png`, `1.png`, `2.png` *(16×16 px cross-billboard brown seaweed)* (3)
 * `vege_seagrass.png`, `1.png`, `2.png` *(16×240 px animated strips, 15 frames)* (3)
 * `vege_red_algae.png`, `1.png`, `2.png` *(16×320 px animated strips, 20 frames)* (3)
 
 ### E. Multi-Block Tall Pelagic Macroalgae Strips (8 Files, 16×320 px Strips RGBA)
+
 * `vege_kelp.png` *(Top)*, `vege_kelp_plant.png` *(Body)* (2)
 * `vege_bull_kelp.png` *(Top)*, `vege_bull_kelp_plant.png` *(Body)* (2)
 * `vege_delesseria.png` *(Top)*, `vege_delesseria_plant.png` *(Body)* (2)
@@ -241,7 +248,7 @@ Sessile photosynthetic marine vegetation, kelp forests, and deep-sea hydrotherma
 | **43** | `kelp` | Giant Kelp | **Laminar Macroalga** | `vege_kelp.png` *(Top)*<br>`vege_kelp_plant.png` *(Body)* | Multi-block Column | 16×320 px (20 frames) | Giant vertical brown laminar kelp forming dense underwater forest canopies. |
 | **44** | `bull_kelp` | Bull Kelp | **Laminar Macroalga** | `vege_bull_kelp.png` *(Top)*<br>`vege_bull_kelp_plant.png` *(Body)* | Multi-block Column | 16×320 px (20 frames) | Heavy annual kelp with hollow bulbous pneumatocyst bulb supporting long trailing blades. |
 | **45** | `delesseria` | Delesseria | **Rhodophyte** | `vege_delesseria.png` *(Top)*<br>`vege_delesseria_plant.png` *(Body)* | Multi-block Column | 16×320 px (20 frames) | Elegant deep-sea red alga with delicate leaf-like sinuous fronds with midribs. |
-| **46** | `sargassum` | Sargassum | **Pelagic Phaeophyte**| `vege_sargassum.png` *(Top)*<br>`vege_sargassum_plant.png` *(Body)* | Multi-block Column | 16×320 px (20 frames) | Free-floating or anchored bushy brown macroalga with berry-like gas vesicles. |
+| **46** | `sargassum` | Sargassum | **Pelagic Phaeophyte** | `vege_sargassum.png` *(Top)*<br>`vege_sargassum_plant.png` *(Body)* | Multi-block Column | 16×320 px (20 frames) | Free-floating or anchored bushy brown macroalga with berry-like gas vesicles. |
 | **47** | `seagrass` | Seagrass | **Marine Angiosperm** | `vege_seagrass.png` *(+ `1`, `2`)* | Single-block (1 bloco) | 16×240 px (15 frames) | Flowering marine grass meadows stabilizing sandy benthic sediment shelves. |
 | **48** | `bone_worms` | Bone Worms | **Siboglinid Annelid** | `vege_bone_worms.png` *(+ `1`, `2`)* | Single-block (1 bloco) | 16×16 px Cross-billboard | Deep-sea *Osedax* bone-eating tube worms with vibrant scarlet respiratory feather plumes. |
 | **49** | `seaweed` | Seaweed | **Littoral Macroalga** | `vege_seaweed.png` *(+ `1`, `2`)* | Single-block (1 bloco) | 16×16 px Cross-billboard | Intertidal golden-brown wrack anchoring to stones and tide pools. |

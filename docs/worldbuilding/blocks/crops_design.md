@@ -4,6 +4,7 @@ All active textures for domestic agricultural cultivars, cereal grains, root veg
 📂 **`docs/worldbuilding/blocks/crops`** *(171 active PNG textures on disk)*
 
 Generating **34 unique blocks** in the master catalog spanning 3 distinct agricultural divisions:
+
 1. **16 Domestic Farmland & Bush Cultivars**: Beetroots, Bell Peppers, Cabbages, Carrots, Chili Pepper, Coffee, Corn, Garlic, Lettuce, Onions, Parsnips, Potatoes, Rice, Sweet Potato, Tomatoes, Wheat.
 2. **2 Arboreal Fruit & Pod Crops**: Cocoa, Coconut.
 3. **16 Wild Ancestral Harvestable Crops**: Wild Beetroots, Wild Bell Peppers, Wild Cabbages, Wild Carrots, Wild Chili Pepper, Wild Coffee, Wild Corn, Wild Garlic, Wild Lettuce, Wild Onions, Wild Parsnips, Wild Potatoes, Wild Rice, Wild Sweet Potato, Wild Tomatoes, Wild Wheat.
@@ -13,16 +14,17 @@ Generating **34 unique blocks** in the master catalog spanning 3 distinct agricu
 ## 1. Agricultural Cultivation & Growth Lifecycle Mechanics
 
 Domestic crops feature dynamic multi-stage vegetative lifecycles:
+
 * **Farmland & Field Crops** require tilled, hydrated **Farmland** (`soil_loam_farmland_wet` / `soil_loam_farmland_dry`) or flooded paddy substrate.
 * **Arboreal Trunk Pods** (`cocoa`) attach laterally to living jungle trunks (`mahogany_log`, `kapok_log`).
 * **Arboreal Canopy Pods** (`coconut`) hang suspended beneath living palm canopies (`palm_leaves`).
 * **Wild Ancestral Crops** (`wild_*`) spawn naturally across wild biomes (meadows, steppes, savannas, wetlands, and coastal dunes). Single-stage forbs feature **3 stochastic texture variants** (`base`, `1`, `2`) to introduce natural field variation, while double-tall wild flora (`wild_rice`, `wild_corn`, `wild_wheat`) utilize vertical dual-mesh pairing.
 * **Multi-Block & Double-Tall Crop Growth Mechanics**:
-  - `crop_tomatoes`: develops as a lower budding stem (`crops_budding_tomatoes_stage0...3.png`), then grows the upper fruiting trellis vine (`crops_tomatoes_stage0...3.png`).
-  - `crop_rice`: develops as a lower paddy shoot (`crops_rice_stage0...3.png`), transitions to supporting foliage (`crops_rice_supporting.png`), and sprouts the upper panicle (`crops_rice_panicles_stage0...3.png`).
-  - `crop_corn`: develops as a seedling bush (`crops_corn_budding_stage0...3.png`), then extends into a tall stalk (`crops_corn_bottom_stage0...3.png`) and flowering tassel canopy (`crops_corn_top_stage0...3.png`).
-  - `crop_coffee`: develops initially as a young coffee bush (`crops_coffee_budding_stage0...3.png`), then extends into a productive two-tier shrub with lower woody branches (`crops_coffee_bottom_stage0...3.png`) and an upper blossoming/cherry canopy (`crops_coffee_top_stage0...3.png`).
-  - `wild_wheat`: double-tall wild ancestral emmer/einkorn grass with lower grassy culms (`wild_wheat_bottom.png`) and tall swaying golden-olive awn spikes (`wild_wheat_top.png`).
+  * `crop_tomatoes`: develops as a lower budding stem (`crops_budding_tomatoes_stage0...3.png`), then grows the upper fruiting trellis vine (`crops_tomatoes_stage0...3.png`).
+  * `crop_rice`: develops as a lower paddy shoot (`crops_rice_stage0...3.png`), transitions to supporting foliage (`crops_rice_supporting.png`), and sprouts the upper panicle (`crops_rice_panicles_stage0...3.png`).
+  * `crop_corn`: develops as a seedling bush (`crops_corn_budding_stage0...3.png`), then extends into a tall stalk (`crops_corn_bottom_stage0...3.png`) and flowering tassel canopy (`crops_corn_top_stage0...3.png`).
+  * `crop_coffee`: develops initially as a young coffee bush (`crops_coffee_budding_stage0...3.png`), then extends into a productive two-tier shrub with lower woody branches (`crops_coffee_bottom_stage0...3.png`) and an upper blossoming/cherry canopy (`crops_coffee_top_stage0...3.png`).
+  * `wild_wheat`: double-tall wild ancestral emmer/einkorn grass with lower grassy culms (`wild_wheat_bottom.png`) and tall swaying golden-olive awn spikes (`wild_wheat_top.png`).
 
 ```mermaid
 graph TD
@@ -49,20 +51,22 @@ graph TD
 All textures adhere to strict nomenclature conventions: multi-stage growing crops use the `crops_` prefix, while single-stage wild ancestral forbs use the `wild_` prefix:
 
 ### A. Cereal Grains & Field Crops (39 Files)
+
 * **Wheat (6)**: `crops_wheat_stage0.png` through `crops_wheat_stage5.png`
 * **Rice (9)**:
-  - Lower Stems: `crops_rice_stage0.png` through `crops_rice_stage3.png`, `crops_rice_supporting.png`
-  - Upper Panicles: `crops_rice_panicles_stage0.png` through `crops_rice_panicles_stage3.png`
+  * Lower Stems: `crops_rice_stage0.png` through `crops_rice_stage3.png`, `crops_rice_supporting.png`
+  * Upper Panicles: `crops_rice_panicles_stage0.png` through `crops_rice_panicles_stage3.png`
 * **Corn (12)**:
-  - Seedling Budding: `crops_corn_budding_stage0.png` through `crops_corn_budding_stage3.png`
-  - Lower Stalk: `crops_corn_bottom_stage0.png` through `crops_corn_bottom_stage3.png`
-  - Upper Tassel: `crops_corn_top_stage0.png` through `crops_corn_top_stage3.png`
+  * Seedling Budding: `crops_corn_budding_stage0.png` through `crops_corn_budding_stage3.png`
+  * Lower Stalk: `crops_corn_bottom_stage0.png` through `crops_corn_bottom_stage3.png`
+  * Upper Tassel: `crops_corn_top_stage0.png` through `crops_corn_top_stage3.png`
 * **Coffee (12)**:
-  - Young Bush: `crops_coffee_budding_stage0.png` through `crops_coffee_budding_stage3.png`
-  - Lower Canopy: `crops_coffee_bottom_stage0.png` through `crops_coffee_bottom_stage3.png`
-  - Upper Blossoms / Cherries: `crops_coffee_top_stage0.png` through `crops_coffee_top_stage3.png`
+  * Young Bush: `crops_coffee_budding_stage0.png` through `crops_coffee_budding_stage3.png`
+  * Lower Canopy: `crops_coffee_bottom_stage0.png` through `crops_coffee_bottom_stage3.png`
+  * Upper Blossoms / Cherries: `crops_coffee_top_stage0.png` through `crops_coffee_top_stage3.png`
 
 ### B. Root, Tuber & Bulb Crops (36 Files)
+
 * **Carrots (4)**: `crops_carrots_stage0.png` through `crops_carrots_stage3.png`
 * **Potatoes (4)**: `crops_potatoes_stage0.png` through `crops_potatoes_stage3.png`
 * **Onions (4)**: `crops_onions_stage0.png` through `crops_onions_stage3.png`
@@ -72,20 +76,24 @@ All textures adhere to strict nomenclature conventions: multi-stage growing crop
 * **Garlic (8)**: `crops_garlic_stage0.png` through `crops_garlic_stage7.png`
 
 ### C. Brassica & Leafy Greens (13 Files)
+
 * **Cabbages (8)**: `crops_cabbages_stage0.png` through `crops_cabbages_stage7.png`
 * **Lettuce (5)**: `crops_lettuce_stage0.png` through `crops_lettuce_stage4.png`
 
 ### D. Solanaceous & Climbing Vine Crops (24 Files)
+
 * **Chili Pepper (8)**: `crops_chili_pepper_stage0.png` through `crops_chili_pepper_stage7.png`
 * **Bell Peppers (8)**: `crops_bell_peppers_stage0.png` through `crops_bell_peppers_stage7.png`
 * **Tomato Stem / Budding (4)**: `crops_budding_tomatoes_stage0.png` through `crops_budding_tomatoes_stage3.png`
 * **Tomato Upper Fruiting Vine (4)**: `crops_tomatoes_stage0.png` through `crops_tomatoes_stage3.png`
 
 ### E. Arboreal Pods & Canopy Fruits (6 Files)
+
 * **Cocoa (3)**: `crops_cocoa_stage0.png`, `crops_cocoa_stage1.png`, `crops_cocoa_stage2.png`
 * **Coconut (3)**: `crops_coconut_hanging_stage1.png`, `crops_coconut_hanging_stage2.png`, `crops_coconut_hanging_stage3.png`
 
 ### F. Wild Ancestral Harvestable Forbs & Grasses (53 Files)
+
 * **Wild Beetroots (3)**: `wild_beetroots.png`, `wild_beetroots1.png`, `wild_beetroots2.png`
 * **Wild Bell Peppers (3)**: `wild_bell_peppers.png`, `wild_bell_peppers1.png`, `wild_bell_peppers2.png`
 * **Wild Cabbages (3)**: `wild_cabbages.png`, `wild_cabbages1.png`, `wild_cabbages2.png`

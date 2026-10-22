@@ -50,6 +50,7 @@ graph TD
 ```
 
 ### Rendering Modes
+
 1. **Direct Decal Composite (Alpha Blending)**:
    - The shader renders the primary block base (Diffuse Layer 0) and blends the overlay decal (Layer 1) using RGBA alpha channels.
    - Used by `mossy_rock_overlay*`, `mossy_cobbled_overlay*`, `barnacles_overlay*`, `algae_dead_overlay*`, `bloody_overlay*`, and `flower_leaves_*`.
@@ -67,6 +68,7 @@ graph TD
 All 39 files stored in `docs/worldbuilding/blocks/overlays/` are cataloged below by operational classification:
 
 ### 2.1. Bryophyte & Lithic Moss Overlays (6 Active Files)
+
 Applied to geological blocks in [`rocks_design.md`](rocks_design.md) to generate **16 registered mossy rock blocks** (8 solid matrices + 8 fractured cobbled variants):
 
 | Overlay File | Variants | Target Domain | Target Blocks | Shader Application |
@@ -75,6 +77,7 @@ Applied to geological blocks in [`rocks_design.md`](rocks_design.md) to generate
 | `mossy_cobbled_overlay.png` | `base`, `1`, `2` | [`rocks`](rocks_design.md) | `mossy_cobbled_granite`, `mossy_cobbled_basalt`, `mossy_cobbled_diorite`, `mossy_cobbled_andesite`, `mossy_cobbled_limestone`, `mossy_cobbled_sandstone`, `mossy_cobbled_slate`, `mossy_cobbled_schist` | 6 uniform faces; composited over fractured `rock_<type>_cobbled.png`. |
 
 ### 2.2. Marine Benthic & Reef Overlays (9 Active Files: 6 Active, 3 Staged)
+
 Applied to oceanic substrates in [`oceans_design.md`](oceans_design.md):
 
 | Overlay File | Variants | Target Domain | Target Blocks / Usage | Operational Status |
@@ -84,6 +87,7 @@ Applied to oceanic substrates in [`oceans_design.md`](oceans_design.md):
 | `algae_overlay.png` | `base`, `1`, `2` | [`oceans`](oceans_design.md) | Staged for future healthy living algae encrustation on submerged rocks and shallow reef flats. | ⏳ **Staged** (Future Use) |
 
 ### 2.3. Visceral & Biological Overlays (3 Active Files)
+
 Applied to organic and necrotic tissues in [`organics_design.md`](organics_design.md) to generate **2 registered bloody blocks**:
 
 | Overlay File | Variants | Target Domain | Target Blocks | Shader Application |
@@ -92,6 +96,7 @@ Applied to organic and necrotic tissues in [`organics_design.md`](organics_desig
 | `bloody_overlay.png` | `base`, `1`, `2` | [`organics`](organics_design.md) | `bloody_flesh` | Lateral faces only; dripping blood streaks composited over `bio_flesh_side.png` (top/bot remain clean striated `bio_flesh_top.png`). |
 
 ### 2.4. Canopy Floral & Snow Overlays (14 Active Files)
+
 Applied to arboreal foliage in [`trees_design.md`](trees_design.md):
 
 | Overlay File | Variants | Target Domain | Target Blocks / Usage | Operational Status |
@@ -102,6 +107,7 @@ Applied to arboreal foliage in [`trees_design.md`](trees_design.md):
 | `flower_leaves_yellow_overlay.png` | `base`, `1`, `2` | [`trees`](trees_design.md) | Yellow flowering canopy leaves (Golden Wattle, Tabebuia) | **Active** (In Use) |
 
 ### 2.5. Turf Outcrop Biome Tinting Masks (2 Active Files)
+
 Greyscale alpha masks used by the terrain shader to blend biome colormaps along vertical cliff margins:
 
 | Overlay File | Target Domain | Target Blocks | Functional Role |
@@ -110,6 +116,7 @@ Greyscale alpha masks used by the terrain shader to blend biome colormaps along 
 | `soil_grass_side_overlay.png` | [`soils`](soils_design.md) | 6 Soil Grass Sides (`soil_*_grass_side.png`) | Modulates biome grass tint across the upper hanging turf margins of dirt and pedological blocks. |
 
 ### 2.6. Arboreal Epiphytic Overlays (3 Staged Files)
+
 Decals prepared for future dendrological systems:
 
 | Overlay File | Variants | Target Domain | Planned Role | Operational Status |

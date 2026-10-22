@@ -7,6 +7,7 @@ Dynamic canopy overlays for seasonal flowers and snowy side accumulations are lo
 📂 **`docs/worldbuilding/blocks/overlays`** *(12 modular flowering overlays across 4 colors)*
 
 Generating **92 unique blocks** in the master catalog:
+
 * **18 Tree Species**: All true, living trees organized across 5 planetary bioclimatic zones.
 * **92 Unique Blocks**: 35 log/wood/stalk structural blocks, 18 building plank blocks, 38 foliage blocks (healthy and dead), and 1 aerial root block.
 
@@ -78,6 +79,7 @@ graph TD
 ## 3. Botanical Anatomy & Texturing Standards
 
 ### 3.1. Logs vs Wood (Bark Blocks)
+
 * **`tree_<name>_log` (Directional Circular Log)**:
   * **Top / Bottom**: Concentric annual growth rings showing heartwood and sapwood (`tree_<name>_log.png`).
   * **Sides**: Textured outer bark (`tree_<name>_bark.png`).
@@ -87,6 +89,7 @@ graph TD
   * Used for horizontal branches, natural forks, and architectural pillars where cut rings must remain concealed.
 
 ### 3.2. Planks (`planks`): Staggered Board Standard
+
 * Every wood species features a standardized **4-board staggered pattern** (16×16 px wood brick format).
 * Built strictly using a 5-tone ramp:
   1. `Tone A`: Darkest deep seam / saw cut shadow.
@@ -96,6 +99,7 @@ graph TD
   5. `Tone E`: Specular fiber highlight.
 
 ### 3.3. Foliage: Healthy Canopies & Dead Canopies
+
 * **Healthy Canopies (`tree_*_leaves.png`)**: Binary alpha cutout transparency representing vibrant, turgid leaves. Features complete 3-fold stochastic variations (`tree_*_leaves.png`, `tree_*_leaves1.png`, `tree_*_leaves2.png`).
 * **Dead Canopies (`tree_*_leaves_dead.png`)**:
   * Represents withered, drought-parched, or frost-killed canopies.
@@ -113,6 +117,7 @@ graph TD
 
 > [!NOTE]
 > **Stochastic Variations for Dynamic Shader Sampling:**
+>
 > * **Planks (54 files)**: All 18 wood species feature complete 3-fold plank variations (`tree_<species>_planks.png`, `1`, `2`).
 > * **Barks (51 files)**: All 17 bark-bearing tree species feature complete 3-fold bark variations (`tree_<species>_bark.png`, `1`, `2`).
 > * **Bamboo Stalk (4 files)**: Lateral column variations (`tree_bamboo_stalk.png`, `1`, `2`) and top cap (`tree_bamboo_stalk_top.png`).
@@ -123,6 +128,7 @@ graph TD
 > * **Senescent / Dead Foliage (51 files)**: All 17 tree species feature complete 3-fold stochastic variations (`tree_<species>_leaves_dead.png`, `1`, `2`).
 
 ### A. Temperate & Deciduous Forests (77 Files, 16×16 px)
+
 * **Oak (13)**: `tree_oak_bark.png` *(+ 1, 2)*, `tree_oak_log.png`, `tree_oak_planks.png` *(+ 1, 2)*, `tree_oak_leaves.png` *(+ 1, 2)*, `tree_oak_leaves_dead.png` *(+ 1, 2)*
 * **Birch (13)**: `tree_birch_bark.png` *(+ 1, 2)*, `tree_birch_log.png`, `tree_birch_planks.png` *(+ 1, 2)*, `tree_birch_leaves.png` *(+ 1, 2)*, `tree_birch_leaves_dead.png` *(+ 1, 2)*
 * **Maple (19)**: `tree_maple_bark.png` *(+ 1, 2)*, `tree_maple_log.png`, `tree_maple_planks.png` *(+ 1, 2)*, `tree_maple_leaves_orange.png` *(+ 1, 2)*, `tree_maple_leaves_red.png` *(+ 1, 2)*, `tree_maple_leaves_yellow.png` *(+ 1, 2)*, `tree_maple_leaves_dead.png` *(+ 1, 2)*
@@ -131,22 +137,26 @@ graph TD
 * **Willow (13)**: `tree_willow_bark.png` *(+ 1, 2)*, `tree_willow_log.png`, `tree_willow_planks.png` *(+ 1, 2)*, `tree_willow_leaves.png` *(+ 1, 2)*, `tree_willow_leaves_dead.png` *(+ 1, 2)*
 
 ### B. Boreal & Coniferous Taigas (48 Files, 16×16 px)
+
 * **Pine (13)**: `tree_pine_bark.png` *(+ 1, 2)*, `tree_pine_log.png`, `tree_pine_planks.png` *(+ 1, 2)*, `tree_pine_leaves.png` *(+ 1, 2)*, `tree_pine_leaves_dead.png` *(+ 1, 2)*
 * **Fir (13)**: `tree_fir_bark.png` *(+ 1, 2)*, `tree_fir_log.png`, `tree_fir_planks.png` *(+ 1, 2)*, `tree_fir_leaves.png` *(+ 1, 2)*, `tree_fir_leaves_dead.png` *(+ 1, 2)*
 * **Redwood (13)**: `tree_redwood_bark.png` *(+ 1, 2)*, `tree_redwood_log.png`, `tree_redwood_planks.png` *(+ 1, 2)*, `tree_redwood_leaves.png` *(+ 1, 2)*, `tree_redwood_leaves_dead.png` *(+ 1, 2)*
 * **Yew (13)**: `tree_yew_bark.png` *(+ 1, 2)*, `tree_yew_log.png`, `tree_yew_planks.png` *(+ 1, 2)*, `tree_yew_leaves.png` *(+ 1, 2)*, `tree_yew_leaves_dead.png` *(+ 1, 2)*
 
 ### C. Tropical & Rainforest Jungles (54 Files, 16×16 px)
+
 * **Mahogany (13)**: `tree_mahogany_bark.png` *(+ 1, 2)*, `tree_mahogany_log.png`, `tree_mahogany_planks.png` *(+ 1, 2)*, `tree_mahogany_leaves.png` *(+ 1, 2)*, `tree_mahogany_leaves_dead.png` *(+ 1, 2)*
 * **Bamboo (9)**: `tree_bamboo_stalk.png` *(+ 1, 2)*, `tree_bamboo_stalk_top.png`, `tree_bamboo_planks.png` *(+ 1, 2)*, `tree_bamboo_large_leaves.png`, `tree_bamboo_small_leaves.png`
 * **Mangrove (19)**: `tree_mangrove_bark.png` *(+ 1, 2)*, `tree_mangrove_log.png`, `tree_mangrove_planks.png` *(+ 1, 2)*, `tree_mangrove_leaves.png` *(+ 1, 2)*, `tree_mangrove_roots.png` *(+ 1, 2)*, `tree_mangrove_roots_top.png` *(+ 1, 2)*, `tree_mangrove_leaves_dead.png` *(+ 1, 2)*
 * **Kapok (13)**: `tree_kapok_bark.png` *(+ 1, 2)*, `tree_kapok_log.png`, `tree_kapok_planks.png` *(+ 1, 2)*, `tree_kapok_leaves.png` *(+ 1, 2)*, `tree_kapok_leaves_dead.png` *(+ 1, 2)*
 
 ### D. Arid Savannas & Woodlands (26 Files, 16×16 px)
+
 * **Acacia (13)**: `tree_acacia_bark.png` *(+ 1, 2)*, `tree_acacia_log.png`, `tree_acacia_planks.png` *(+ 1, 2)*, `tree_acacia_leaves.png` *(+ 1, 2)*, `tree_acacia_leaves_dead.png` *(+ 1, 2)*
 * **Baobab (13)**: `tree_baobab_bark.png` *(+ 1, 2)*, `tree_baobab_log.png`, `tree_baobab_planks.png` *(+ 1, 2)*, `tree_baobab_leaves.png` *(+ 1, 2)*, `tree_baobab_leaves_dead.png` *(+ 1, 2)*
 
 ### E. Coastal & Wetland Groves (26 Files, 16×16 px)
+
 * **Palm (13)**: `tree_palm_bark.png` *(+ 1, 2)*, `tree_palm_log.png`, `tree_palm_planks.png` *(+ 1, 2)*, `tree_palm_leaves.png` *(+ 1, 2)*, `tree_palm_leaves_dead.png` *(+ 1, 2)*
 * **Cypress (13)**: `tree_cypress_bark.png` *(+ 1, 2)*, `tree_cypress_log.png`, `tree_cypress_planks.png` *(+ 1, 2)*, `tree_cypress_leaves.png` *(+ 1, 2)*, `tree_cypress_leaves_dead.png` *(+ 1, 2)*
 

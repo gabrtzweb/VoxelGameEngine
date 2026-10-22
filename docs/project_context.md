@@ -37,7 +37,7 @@ This is an attempt to develop an experimental voxel engine and game, built from 
   - Calibrated to 0.50 m (50 cm) for smooth future slab stepping, requiring jumping over full 1 m blocks.
 - **Navigation & Mapping**:
   - Square gameplay Minimap HUD (North-up, compact XYZ coordinates, live player heading chevron).
-  - Full-screen interactive World Map (<kbd>M</kbd>) with pan, zoom, and player tracking.
+  - Full-screen interactive World Map (`M`) with pan, zoom, and player tracking.
 - **Atmosphere & Climate**:
   - 24-minute day/night astronomical clock, 28-day lunar calendar (8 moon phases), and 4 seasons.
   - Procedural color noise and climate-driven biome palettes (grass, foliage, water) with smooth 5-point cross-kernel boundary blending.
@@ -86,25 +86,29 @@ This is an attempt to develop an experimental voxel engine and game, built from 
 The engine has a dedicated player system separate from the voxel engine.
 
 Current dimensions & stances:
+
 - Width: 0.60 m
 - Standing: height 1.80 m, eye height 1.62 m
 - Crouching: height 1.30 m, eye height 1.20 m, speed reduced to 55%, edge drop/ledge prevention
 - Crawling: height 0.45 m, eye height 0.40 m, speed reduced to 35%, 1-voxel high openings (0.5 m) with headroom safety checks preventing uncrawling under ceilings
 
 Camera System:
+
 - Default FOV: 90 degrees (configurable 60°..=110° via in-game Settings)
 - Dynamic FOV Kick: smooth +8° expansion when sprinting or flying fast
 - View Bobbing: subtle sinusoidal head bobbing during grounded movement (toggleable in Settings)
-- Camera Zoom: dynamic magnification (<kbd>Z</kbd> + Mouse Wheel up to 20x zoom) with mouse sensitivity dampening
+- Camera Zoom: dynamic magnification (`Z` + Mouse Wheel up to 20x zoom) with mouse sensitivity dampening
 - First-Person Camera: true first-person body view (head hidden to prevent interior clipping, looking down reveals animated chest, arms, and legs)
-- Third-Person Camera (<kbd>F5</kbd>): orbiting camera with dynamic raycast block collision prevention to avoid clipping underground/walls, and independent head pitch/yaw tracking
+- Third-Person Camera (`F5`): orbiting camera with dynamic raycast block collision prevention to avoid clipping underground/walls, and independent head pitch/yaw tracking
 
 Player Model & Procedural Animations:
+
 - Minecraft 64×64 skin compatible humanoid mesh hierarchy (Head, Torso, Left/Right Arm, Left/Right Leg) mapped to `assets/textures/models/player_skin.png`
 - Full support for base skin and 3D outer layers (hat/hair, jacket, sleeves, pants) with alpha masking
 - Procedural locomotion: dynamic walk/sprint leg & arm pendulum swings, idle breathing sway, crouch torso tilt, prone crawling strokes, streamlined flutter-kick swimming, airborne jump poses, and 4-state flight animations (ascent, descent, fast flight, hover)
 
 Game Modes Currently Implemented:
+
 - Creative (currently the main gameplay and development mode)
 - Spectator (noclip flight mode)
 
@@ -117,6 +121,7 @@ The player uses a custom AABB collision system that directly queries voxel data.
 The engine has concluded foundational development across Version 0.1 (Phases 1 through 20: rendering, atmosphere, fluids, greedy mesher optimizations, SIMD noise, 512-block world generation, and interface modernization).
 
 In Version 0.2 (Modernization, Worldbuilding & Deep Systems), the project status:
+
 - **Phase 1 (Completed)**: Full Block Catalog & Geological Systems Foundation (615 active engine voxels, geological strata catalog, 3-axis directional placement, selective foliage tinting, shader de-tiling).
 - **Phase 2 (In Progress)**: Standardized 9-Slot Interface Architecture & Menu Modernization (Unified 9-slot container and HUD geometry, Dark Iron design suite, 480×270 base integer scaling).
 - **Phase 3 (Completed)**: Core Engine Upgrade (Bevy 0.20 Migration, direct `bevy_egui = "0.43"`, modern UI widgets, WESL shader framework, and ScreenSpaceTransmission).

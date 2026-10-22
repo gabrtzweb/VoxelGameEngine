@@ -39,6 +39,7 @@ graph TD
 All textures feature native **16×16 px RGBA** resolution with clean alpha-cutout boundaries and unified `flower_` prefix:
 
 ### A. Wild Meadow & Woodland Flowers (33 Files)
+
 * **Allium (4)**: `flower_allium.png`, `flower_allium1.png`, `flower_allium2.png`, `flower_allium3.png`
 * **Azure Bluet (4)**: `flower_azure_bluet.png`, `flower_azure_bluet1.png`, `flower_azure_bluet2.png`, `flower_azure_bluet3.png`
 * **Blue Orchid (2)**: `flower_blue_orchid.png`, `flower_blue_orchid1.png`
@@ -53,12 +54,14 @@ All textures feature native **16×16 px RGBA** resolution with clean alpha-cutou
 * **Poppy (5)**: `flower_poppy.png`, `flower_poppy1.png`, `flower_poppy2.png`, `flower_poppy3.png`, `flower_poppy4.png`
 
 ### B. Tulip Cultivars (12 Files)
+
 * **Red Tulip (3)**: `flower_red_tulip.png`, `flower_red_tulip1.png`, `flower_red_tulip2.png`
 * **Orange Tulip (3)**: `flower_orange_tulip.png`, `flower_orange_tulip1.png`, `flower_orange_tulip2.png`
 * **White Tulip (3)**: `flower_white_tulip.png`, `flower_white_tulip1.png`, `flower_white_tulip2.png`
 * **Pink Tulip (3)**: `flower_pink_tulip.png`, `flower_pink_tulip1.png`, `flower_pink_tulip2.png`
 
 ### C. Double-Tall Flowers & Flowering Shrubs (31 Files)
+
 * **Sunflower (5)**: `flower_sunflower_bottom.png`, `flower_sunflower_bottom1.png`, `flower_sunflower_top.png`, `flower_sunflower_front.png`, `flower_sunflower_back.png`
 * **Rose Bush (6)**: `flower_rose_bush_bottom.png`, `flower_rose_bush_bottom1.png`, `flower_rose_bush_top.png`, `flower_rose_bush_top1.png`, `flower_rose_bush_top2.png`, `flower_rose_bush_top3.png`
 * **Peony (4)**: `flower_peony_bottom.png`, `flower_peony_bottom1.png`, `flower_peony_top.png`, `flower_peony_top1.png`
@@ -71,12 +74,14 @@ All textures feature native **16×16 px RGBA** resolution with clean alpha-cutou
 * **Foxglove (2)**: `flower_foxglove_bottom.png`, `flower_foxglove_top.png`
 
 ### D. Ground Cover & Petal Carpets (9 Files)
+
 * **Pink Petals (2)**: `flower_pink_petals.png`, `flower_pink_petals_stem.png`
 * **White Petals (2)**: `flower_white_petals.png`, `flower_white_petals_stem.png`
 * **Wildflowers (3)**: `flower_wildflowers.png`, `flower_wildflowers1.png`, `flower_wildflowers_stem.png`
 * **Clover (2)**: `flower_clover.png`, `flower_clover_stem.png`
 
 ### E. Arid Flora & Flowering Succulents (2 Files)
+
 * **Cactus Flower (1)**: `flower_cactus_flower.png`
 * **Imperial Succulent (1)**: `flower_imperial_succulent.png`
 
@@ -164,23 +169,31 @@ Drought-tolerant specialized flora thriving in arid deserts, dry mesas, and rock
 ## 4. Structural Architecture & Rendering Specifications
 
 ### 4.1. Single-Block Cross-Billboard Geometry
+
 Single flowers (`flower_allium` through `flower_poppy`, tulips, and arid succulents) render via two intersecting vertical planes in an **X** pattern:
+
 * Plane A connects corner $[0, y, 0]$ to $[1, y+1, 1]$.
 * Plane B connects corner $[0, y, 1]$ to $[1, y+1, 0]$.
 * Procedural rotation applies an initial yaw offset of $0^\circ, 45^\circ, 90^\circ$, or $135^\circ$ to prevent artificial grid alignment across natural fields.
 
 ### 4.2. Double-Tall Composite Block Mechanics
+
 Double-tall plants (`flower_sunflower`, `flower_rose_bush`, `flower_foxglove`, etc.) occupy two vertical blocks:
+
 * **Lower Voxel (`_bottom`)**: Contains the stem root base and must be placed on solid soil.
 * **Upper Voxel (`_top`)**: Contains the flowering canopy. Breaking either block triggers a neighbor update that breaks the partner block cleanly.
 
 ### 4.3. Heliotropic Orientation (Sunflower)
+
 `flower_sunflower` features directional textures:
+
 * `flower_sunflower_front.png`: The bright yellow floral face, oriented towards the sun.
 * `flower_sunflower_back.png`: The green calyx and drooping leaves on the shaded side.
 * The head tilts slightly toward the planetary daylight cycle vector.
 
 ### 4.4. Petal Carpets & Ground Cover
+
 Petal carpets (`flower_pink_petals`, `flower_white_petals`, `flower_wildflowers`, `flower_clover`) utilize sub-voxel height boxes ($y \in [0.0, 0.0625]$) lying flat on the supporting ground block:
+
 * Stacking additional petals increases visual density (1, 2, 3, or 4 stages).
 * The optional `_stem.png` provides an anchor tuft to ground the petals organically into underlying dirt or grass.

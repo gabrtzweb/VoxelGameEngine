@@ -42,6 +42,7 @@ graph TD
 ### Surface Outcrops vs. Subterranean Isolation Logic
 
 To maintain strict geological realism and prevent visual anomalies (e.g., surface turf generating deep inside pitch-black caverns):
+
 - **Surface Outcrop Rocks (7 Rocks)**: Only rocks that naturally form open-air mountains, alpine ridges, river canyons, or coastal cliffs possess `_grass_side` and `_snow_side` textures (`Dolomite`, `Granite`, `Andesite`, `Basalt`, `Limestone`, `Chalk`, `Argillite`).
 - **Subterranean & Deep Rocks (10 Rocks)**: Caves, deep strata, hydrothermal formations, volcanic pockets, and the mantle do **not** possess grass or snow variants (`Slate`, `Gabbro`, `Marble`, `Magma`, `Obsidian`, `Mantle`, and the 4 `Sandstones` which are exclusively topped by loose sands).
 
@@ -54,32 +55,40 @@ To maintain strict geological realism and prevent visual anomalies (e.g., surfac
 > To break visual repetition across expansive cliff faces, mountain peaks, and deep caverns, key rock matrices possess 3-fold texture variations (`_base`, `1`, `2`) dynamically sampled by terrain shaders. These apply strictly to the solid rock base matrices without registering duplicate blocks.
 
 ### A. Solid Rock Matrix Textures (17 Base Types + Stochastic Variations = 51 Files, 16×16 px)
-* **Sandstones (4 base × 3 = 12)**: `rock_sandstone_common.png` *(+ `1`, `2`)*, `rock_sandstone_red.png` *(+ `1`, `2`)*, `rock_sandstone_dune.png` *(+ `1`, `2`)*, `rock_sandstone_white.png` *(+ `1`, `2`)*
-* **Continental Plutonics (3 base × 3 = 9)**: `rock_granite.png` *(+ `1`, `2`)*, `rock_andesite.png` *(+ `1`, `2`)*, `rock_gabbro.png` *(+ `1`, `2`)*
-* **Sedimentary Strata (4 base × 3 = 12)**: `rock_dolomite.png` *(+ `1`, `2`)*, `rock_limestone.png` *(+ `1`, `2`)*, `rock_chalk.png` *(+ `1`, `2`)*, `rock_argillite.png` *(+ `1`, `2`)*
-* **Volcanics (2 base × 3 = 6)**: `rock_basalt.png` *(+ `1`, `2`)*, `rock_obsidian.png` *(+ `1`, `2`)*
-* **Metamorphic Foundations (2 base × 3 = 6)**: `rock_slate.png` *(+ `1`, `2`)*, `rock_marble.png` *(+ `1`, `2`)*
-* **Geothermal Specials (1 base × 3 = 3)**: `rock_magma.png` *(animated 16×112 px, + `1`, `2`)*
-* **Primordial Mantle (1 base × 3 = 3)**: `rock_mantle.png` *(+ `1`, `2`)*
+
+- **Sandstones (4 base × 3 = 12)**: `rock_sandstone_common.png` *(+ `1`, `2`)*, `rock_sandstone_red.png` *(+ `1`, `2`)*, `rock_sandstone_dune.png` *(+ `1`, `2`)*, `rock_sandstone_white.png` *(+ `1`, `2`)*
+
+- **Continental Plutonics (3 base × 3 = 9)**: `rock_granite.png` *(+ `1`, `2`)*, `rock_andesite.png` *(+ `1`, `2`)*, `rock_gabbro.png` *(+ `1`, `2`)*
+- **Sedimentary Strata (4 base × 3 = 12)**: `rock_dolomite.png` *(+ `1`, `2`)*, `rock_limestone.png` *(+ `1`, `2`)*, `rock_chalk.png` *(+ `1`, `2`)*, `rock_argillite.png` *(+ `1`, `2`)*
+- **Volcanics (2 base × 3 = 6)**: `rock_basalt.png` *(+ `1`, `2`)*, `rock_obsidian.png` *(+ `1`, `2`)*
+- **Metamorphic Foundations (2 base × 3 = 6)**: `rock_slate.png` *(+ `1`, `2`)*, `rock_marble.png` *(+ `1`, `2`)*
+- **Geothermal Specials (1 base × 3 = 3)**: `rock_magma.png` *(animated 16×112 px, + `1`, `2`)*
+- **Primordial Mantle (1 base × 3 = 3)**: `rock_mantle.png` *(+ `1`, `2`)*
 
 ### B. Mined Cobblestone Variants (17 Base Types + Stochastic Variations = 51 Files, 16×16 px)
+
 All mineable solid rocks drop an unrefined fractured cobblestone upon excavation (or generate as fractured bedrock seams in the mantle). All 17 cobbled stone matrices feature complete 3-fold stochastic variants (`_base`, `1`, `2`):
-* **Sandstones (4 base × 3 = 12)**: `rock_sandstone_common_cobbled.png` *(+ `1`, `2`)*, `rock_sandstone_red_cobbled.png` *(+ `1`, `2`)*, `rock_sandstone_dune_cobbled.png` *(+ `1`, `2`)*, `rock_sandstone_white_cobbled.png` *(+ `1`, `2`)*
-* **Continental Plutonics (3 base × 3 = 9)**: `rock_granite_cobbled.png` *(+ `1`, `2`)*, `rock_andesite_cobbled.png` *(+ `1`, `2`)*, `rock_gabbro_cobbled.png` *(+ `1`, `2`)*
-* **Sedimentary Strata (4 base × 3 = 12)**: `rock_dolomite_cobbled.png` *(+ `1`, `2`)*, `rock_limestone_cobbled.png` *(+ `1`, `2`)*, `rock_chalk_cobbled.png` *(+ `1`, `2`)*, `rock_argillite_cobbled.png` *(+ `1`, `2`)*
-* **Volcanics (2 base × 3 = 6)**: `rock_basalt_cobbled.png` *(+ `1`, `2`)*, `rock_obsidian_cobbled.png` *(+ `1`, `2`)*
-* **Metamorphic Foundations (2 base × 3 = 6)**: `rock_slate_cobbled.png` *(+ `1`, `2`)*, `rock_marble_cobbled.png` *(+ `1`, `2`)*
-* **Geothermal Specials (1 base × 3 = 3)**: `rock_magma_cobbled.png` *(animated 16×112 px, + `1`, `2`)*
-* **Primordial Mantle (1 base × 3 = 3)**: `rock_mantle_cobbled.png` *(+ `1`, `2`)*
+
+- **Sandstones (4 base × 3 = 12)**: `rock_sandstone_common_cobbled.png` *(+ `1`, `2`)*, `rock_sandstone_red_cobbled.png` *(+ `1`, `2`)*, `rock_sandstone_dune_cobbled.png` *(+ `1`, `2`)*, `rock_sandstone_white_cobbled.png` *(+ `1`, `2`)*
+- **Continental Plutonics (3 base × 3 = 9)**: `rock_granite_cobbled.png` *(+ `1`, `2`)*, `rock_andesite_cobbled.png` *(+ `1`, `2`)*, `rock_gabbro_cobbled.png` *(+ `1`, `2`)*
+- **Sedimentary Strata (4 base × 3 = 12)**: `rock_dolomite_cobbled.png` *(+ `1`, `2`)*, `rock_limestone_cobbled.png` *(+ `1`, `2`)*, `rock_chalk_cobbled.png` *(+ `1`, `2`)*, `rock_argillite_cobbled.png` *(+ `1`, `2`)*
+- **Volcanics (2 base × 3 = 6)**: `rock_basalt_cobbled.png` *(+ `1`, `2`)*, `rock_obsidian_cobbled.png` *(+ `1`, `2`)*
+- **Metamorphic Foundations (2 base × 3 = 6)**: `rock_slate_cobbled.png` *(+ `1`, `2`)*, `rock_marble_cobbled.png` *(+ `1`, `2`)*
+- **Geothermal Specials (1 base × 3 = 3)**: `rock_magma_cobbled.png` *(animated 16×112 px, + `1`, `2`)*
+- **Primordial Mantle (1 base × 3 = 3)**: `rock_mantle_cobbled.png` *(+ `1`, `2`)*
 
 ### C. Mountain Outcrop Veg/Snow Sides (7 Rocks × 2 Types × 3 Variations = 42 Files, 16×16 px)
+
 Exactly **7 surface alpine and cliff rocks** possess lateral turf and snow shelf cutouts with complete 3-fold stochastic variants (`base`, `1`, `2`):
-* **Grass Sides (7 base × 3 = 21)**: `rock_dolomite_grass_side.png` *(+ `1`, `2`)*, `rock_granite_grass_side.png` *(+ `1`, `2`)*, `rock_andesite_grass_side.png` *(+ `1`, `2`)*, `rock_basalt_grass_side.png` *(+ `1`, `2`)*, `rock_limestone_grass_side.png` *(+ `1`, `2`)*, `rock_chalk_grass_side.png` *(+ `1`, `2`)*, `rock_argillite_grass_side.png` *(+ `1`, `2`)*.
-* **Snow Sides (7 base × 3 = 21)**: `rock_dolomite_snow_side.png` *(+ `1`, `2`)*, `rock_granite_snow_side.png` *(+ `1`, `2`)*, `rock_andesite_snow_side.png` *(+ `1`, `2`)*, `rock_basalt_snow_side.png` *(+ `1`, `2`)*, `rock_limestone_snow_side.png` *(+ `1`, `2`)*, `rock_chalk_snow_side.png` *(+ `1`, `2`)*, `rock_argillite_snow_side.png` *(+ `1`, `2`)*.
+
+- **Grass Sides (7 base × 3 = 21)**: `rock_dolomite_grass_side.png` *(+ `1`, `2`)*, `rock_granite_grass_side.png` *(+ `1`, `2`)*, `rock_andesite_grass_side.png` *(+ `1`, `2`)*, `rock_basalt_grass_side.png` *(+ `1`, `2`)*, `rock_limestone_grass_side.png` *(+ `1`, `2`)*, `rock_chalk_grass_side.png` *(+ `1`, `2`)*, `rock_argillite_grass_side.png` *(+ `1`, `2`)*.
+- **Snow Sides (7 base × 3 = 21)**: `rock_dolomite_snow_side.png` *(+ `1`, `2`)*, `rock_granite_snow_side.png` *(+ `1`, `2`)*, `rock_andesite_snow_side.png` *(+ `1`, `2`)*, `rock_basalt_snow_side.png` *(+ `1`, `2`)*, `rock_limestone_snow_side.png` *(+ `1`, `2`)*, `rock_chalk_snow_side.png` *(+ `1`, `2`)*, `rock_argillite_snow_side.png` *(+ `1`, `2`)*.
 
 ### D. Ground Pebbles & River Shingle (2 Types × 3 Cluster Stages = 6 Files, 16×16 px)
-* **Flint (3)**: `pebble_flint_one.png`, `pebble_flint_two.png`, `pebble_flint_three.png` *(Pyrite/flint fire-striker & primitive arrowheads)*
-* **Quartz (3)**: `pebble_quartz_one.png`, `pebble_quartz_two.png`, `pebble_quartz_three.png` *(Smooth crystalline white river pebbles)*
+
+- **Flint (3)**: `pebble_flint_one.png`, `pebble_flint_two.png`, `pebble_flint_three.png` *(Pyrite/flint fire-striker & primitive arrowheads)*
+
+- **Quartz (3)**: `pebble_quartz_one.png`, `pebble_quartz_two.png`, `pebble_quartz_three.png` *(Smooth crystalline white river pebbles)*
 
 ---
 
@@ -188,10 +197,10 @@ Exactly **7 surface alpine and cliff rocks** possess lateral turf and snow shelf
 | :-: | :--- | :--- | :-: | :--- | :--- |
 | **49** | `pebble_flint_one` | Flint Pebble (Single) | 1 Pebble | `pebble_flint_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
 | **50** | `pebble_flint_two` | Flint Pebble (Pair) | 2 Pebbles | `pebble_flint_two.png` | Corner micro-box `[3..5, 0..1, 10..12]` |
-| **51** | `pebble_flint_three`| Flint Pebble (Cluster)| 3 Pebbles | `pebble_flint_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
+| **51** | `pebble_flint_three` | Flint Pebble (Cluster) | 3 Pebbles | `pebble_flint_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
 | **52** | `pebble_quartz_one` | Quartz Pebble (Single) | 1 Pebble | `pebble_quartz_one.png` | Sub-voxel box `[7..11, 0..2, 5..10]` |
 | **53** | `pebble_quartz_two` | Quartz Pebble (Pair) | 2 Pebbles | `pebble_quartz_two.png` | Corner micro-box `[3..5, 0..1, 10..12]` |
-| **54** | `pebble_quartz_three`| Quartz Pebble (Cluster)| 3 Pebbles | `pebble_quartz_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
+| **54** | `pebble_quartz_three` | Quartz Pebble (Cluster) | 3 Pebbles | `pebble_quartz_three.png` | Dual boxes `[7..12, 0..2, 8..13]` + `[5..8, 0..1, 6..10]` |
 
 ---
 

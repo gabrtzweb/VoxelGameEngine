@@ -12,7 +12,7 @@ This document formally specifies and standardizes the entire **User Interface (U
 
 The engine employs a **strict dual-layer decoupled architecture** to separate geometric logic and interaction mapping from cosmetic pixel-art rendering:
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────────────┐
 │                      ENGINE UI RENDERING PIPELINE                      │
 ├───────────────────────────────────┬────────────────────────────────────┤
@@ -28,12 +28,14 @@ The engine employs a **strict dual-layer decoupled architecture** to separate ge
 ```
 
 ### 1.1 Blueprint Textures (`*_outline.png`)
+
 * Function as the **functional geometry map** and **interaction blueprint** for the engine.
 * During boot initialization or asset pre-baking, the UI layout engine parses the `_outline` texture to extract the precise bounding boxes `(x, y, width, height)` of every clickable slot, button, viewport, text box, and scroll track.
 * Eliminates hardcoded magic pixel coordinates in source code.
 * Unambiguously identifies modular cards with letters (`A`, `B`, `C`, `D`) and internal components with sequential numbers.
 
 ### 1.2 Clean Render Textures (`*.png` without `_outline`)
+
 * The **actual texture rendered on screen** during active gameplay.
 * Completely clean of any colored guide lines, bounding boxes, or purple numbering.
 * Features handcrafted pixel-art visuals: **dark slate/obsidian backgrounds**, **polished brushed steel double-bevels**, recessed inner-shadow slot cavities, and subtle dithered lighting.
@@ -58,7 +60,7 @@ In all `*_outline.png` files, colors are strictly reserved for parsing semantics
 
 The player inventory system is assembled from **independent modular cards** aligned horizontally:
 
-```
+```text
 ┌──────────────┐ ┌──────────────────────────────────────┐ ┌──────────────┐
 │    CARD A    │ │                CARD B                │ │    CARD C    │
 │Player & Armor│ │         Main Inventory & Hotbar      │ │   Crafting   │
@@ -76,6 +78,7 @@ The player inventory system is assembled from **independent modular cards** alig
 ---
 
 ### Card A — Player Character & Equipment (`A`)
+
 Located on the lower-left quadrant (`x=5..92, y=125..252`), measuring 88 × 128 px. Handles live 3D character preview, equipped armor pieces, and accessory management.
 
 > [!NOTE]
@@ -95,10 +98,13 @@ Located on the lower-left quadrant (`x=5..92, y=125..252`), measuring 88 × 128 
 ---
 
 ### Card B — Main Inventory, Hotbar, and Creative Catalog (`B`)
+
 Central card (`x=97..318`). Its internal layout adapts dynamically according to the active game mode and creative toggle state:
 
 #### 1. Variant `inventory_closed` (Standard Survival Inventory — Deferred)
+
 Measures 222 × 128 px (`x=97..318, y=125..252`). Standard survival inventory without the top creative toggle tab.
+
 * **Usage Status**: **Not used currently**. Reserved for future survival mode gameplay when health/resource loops are introduced.
 
 | Field | Coordinates `(x, y)` | Dimensions | Field Type | Description & Engine Function |
@@ -110,12 +116,13 @@ Measures 222 × 128 px (`x=97..318, y=125..252`). Standard survival inventory wi
 | **B5** | `(298, 135)` | 8 × 8 px | Action Button | **Inventory Lock**: locks favored slots to prevent accidental transfer or dumping. |
 | **B6 to B41** | `y=148, 166, 184, 202` | 16 × 16 px | Item Slot | **36 Main Inventory Slots**: arranged in 4 rows of 9 slots (`x=124..276`). |
 | **B42** | `(104, 228)` | 14 × 14 px | Special Slot | **Off-hand / Shield / Torch Slot**: handles secondary equipment. |
-| **B43 to B51**| `(124..276, 227)` | 16 × 16 px | Item Slot | **9 Central Hotbar Slots**: primary quickbar mapped to keyboard keys 1 through 9. |
+| **B43 to B51** | `(124..276, 227)` | 16 × 16 px | Item Slot | **9 Central Hotbar Slots**: primary quickbar mapped to keyboard keys 1 through 9. |
 | **B52** | `(298, 228)` | 14 × 14 px | Special Slot | **Utility / Quiver Slot**: dedicated slot for arrows, throwing knives, or grapple hooks. |
 
 ---
 
 #### 2. Variant `inventory_creative_closed` (Primary Active Player Inventory)
+
 The **primary standard inventory** used during gameplay in the current engine state. Features the player inventory augmented with the top tab **B1** that toggles the creative catalog.
 
 | Field | Coordinates `(x, y)` | Dimensions | Field Type | Description & Engine Function |
@@ -125,12 +132,13 @@ The **primary standard inventory** used during gameplay in the current engine st
 | **B3 to B6** | `(268..298, 135)` | 8 × 8 px | Action Buttons | 4 utility action buttons (sort, trash, preferences, lock). |
 | **B7 to B42** | `y=148, 166, 184, 202` | 16 × 16 px | Item Slot | **36 Main Inventory Slots** (personal player inventory). Fully interactive with hover & clicks. |
 | **B43** | `(104, 228)` | 14 × 14 px | Special Slot | Special left slot (off-hand / shield). |
-| **B44 to B52**| `(124..276, 227)` | 16 × 16 px | Item Slot | **9 Central Hotbar Slots** (mirrored hotbar embedded in inventory, fully interactive with mouse). |
+| **B44 to B52** | `(124..276, 227)` | 16 × 16 px | Item Slot | **9 Central Hotbar Slots** (mirrored hotbar embedded in inventory, fully interactive with mouse). |
 | **B53** | `(298, 228)` | 14 × 14 px | Special Slot | Special right slot (utility / quiver). |
 
 ---
 
 #### 3. Variant `inventory_creative_open` (Expanded Creative Catalog)
+
 Card B expands vertically to the top of the canvas (`x=97..318, y=6..255`), replacing standard storage with a comprehensive categorized catalog.
 
 > [!TIP]
@@ -147,20 +155,21 @@ Card B expands vertically to the top of the canvas (`x=97..318, y=6..255`), repl
 | **B7** | `(202, 8)` | **12 × 12 px** | Category Tab | **Oceans & Marine (`oceans`)**: renders miniature 3D marine icon (e.g., `Coral`). |
 | **B8** | `(216, 8)` | **12 × 12 px** | Category Tab | **Organics & Fauna (`organics`)**: renders miniature 3D bio icon (e.g., `BoneBlock`). |
 | **B9** | `(230, 8)` | **12 × 12 px** | Category Tab | **Decorations & Architecture (`decorations`)**: renders miniature 3D building icon (e.g., `Bricks`). |
-| **B10**| `(244, 8)` | **12 × 12 px** | Category Tab | **Mycology & Fungi (`mushrooms`)**: renders miniature 3D mushroom icon (e.g., `MushroomCap`). |
-| **B11**| `(258, 8)` | **12 × 12 px** | Category Tab | **Vegetation & Flora (`vegetation`)**: renders miniature 3D flora icon (e.g., `Wildflowers`). |
-| **B12**| `(272, 8)` | **12 × 12 px** | Category Tab | **Fluids & Systems (`fluids` / `systems`)**: renders miniature 3D fluid icon (e.g., `Water`). |
-| **B13**| `(121, 27)` | 60 × 8 px | Header | Category title plate displaying the active category name (e.g., "Rocks", "Trees"). |
-| **B14**| `(223, 27)` | 72 × 8 px | Text Input | Search box with instant substring filtering across item localized names and tags. |
-| **B15**| `(298, 40..205)` | 6 × 166 px | Scroll Track | Vertical scroll track navigated by the draggable `inventory_creative_scroller.png`. |
+| **B10** | `(244, 8)` | **12 × 12 px** | Category Tab | **Mycology & Fungi (`mushrooms`)**: renders miniature 3D mushroom icon (e.g., `MushroomCap`). |
+| **B11** | `(258, 8)` | **12 × 12 px** | Category Tab | **Vegetation & Flora (`vegetation`)**: renders miniature 3D flora icon (e.g., `Wildflowers`). |
+| **B12** | `(272, 8)` | **12 × 12 px** | Category Tab | **Fluids & Systems (`fluids` / `systems`)**: renders miniature 3D fluid icon (e.g., `Water`). |
+| **B13** | `(121, 27)` | 60 × 8 px | Header | Category title plate displaying the active category name (e.g., "Rocks", "Trees"). |
+| **B14** | `(223, 27)` | 72 × 8 px | Text Input | Search box with instant substring filtering across item localized names and tags. |
+| **B15** | `(298, 40..205)` | 6 × 166 px | Scroll Track | Vertical scroll track navigated by the draggable `inventory_creative_scroller.png`. |
 | **B16 to B105** | `y=43..205` (10 rows) | 16 × 16 px | Catalog Slot | **90 Creative Catalog Slots**: 10 rows of 9 slots (`x=124..276`). Clicking grants infinite stacks without consuming world resources. |
-| **B106**| `(104, 228)` | 14 × 14 px | Special Slot | Special left hotbar slot (off-hand). |
+| **B106** | `(104, 228)` | 14 × 14 px | Special Slot | Special left hotbar slot (off-hand). |
 | **B107 to B115** | `(124..276, 227)` | 16 × 16 px | Item Slot | **9 Central Hotbar Slots** (fully editable and accessible inside creative catalog). |
-| **B116**| `(298, 228)` | 14 × 14 px | Special Slot | Special right hotbar slot (utility). |
+| **B116** | `(298, 228)` | 14 × 14 px | Special Slot | Special right hotbar slot (utility). |
 
 ---
 
 ### Card C — Crafting Grid & Synthesis (`C`)
+
 Located on the lower-right quadrant (`x=323..410, y=125..252`), measuring 88 × 128 px. Handles recipe synthesis and item crafting.
 
 > [!NOTE]
@@ -176,12 +185,14 @@ Located on the lower-right quadrant (`x=323..410, y=125..252`), measuring 88 × 
 ---
 
 ### Card D — Storage Containers & Chests (`D` — Deferred / Not Used)
+
 Card D occupies the upper portion of the interface (`y=20..121`) whenever the player opens an external storage container.
 
 > [!IMPORTANT]
 > **Implementation Status**: **Deferred / Not used currently**. Chest blocks, double chests, and external container entities do not exist in the engine yet. Neither `inventory_chest_open` nor `inventory_chest_double_open` will be loaded or hooked up until container systems are developed.
 
 #### 1. Variant `inventory_chest_open` (Single Chest)
+
 Measures 210 × 102 px (`x=103..312, y=20..121`), aligned with Card B.
 
 | Field | Coordinates `(x, y)` | Dimensions | Field Type | Description & Engine Function |
@@ -196,6 +207,7 @@ Measures 210 × 102 px (`x=103..312, y=20..121`), aligned with Card B.
 ---
 
 #### 2. Variant `inventory_chest_double_open` (Double Chest)
+
 Measures 372 × 102 px (`x=22..393, y=20..121`), expanding horizontally with side wings over Cards A and C.
 
 | Field | Coordinates `(x, y)` | Dimensions | Field Type | Description & Engine Function |
@@ -210,7 +222,7 @@ Measures 372 × 102 px (`x=22..393, y=20..121`), expanding horizontally with sid
 
 The persistent in-game quickbar HUD rendered at the bottom of the screen measures **320 × 44 px**:
 
-```
+```text
                        ┌────────────────────────────────────────┐
                        │ 1. Experience / Level Progress Bar(XP) │
                        └────────────────────────────────────────┘
@@ -225,6 +237,7 @@ The persistent in-game quickbar HUD rendered at the bottom of the screen measure
 
 > [!IMPORTANT]
 > **Gameplay Hotbar Interaction Rules (No Mouse Hover / No Clicks)**:
+>
 > 1. **Zero Mouse Hover**: During active 3D gameplay, the mouse cursor is captured by the first-person / third-person camera. Because there is no free cursor on screen, **the gameplay hotbar has no mouse hover states and no mouse clicks**.
 > 2. **No Hover Textures on Gameplay Hotbar**: Hover textures like `inventory_slot_hover.png` have no logical purpose on the gameplay hotbar and must **never** be rendered on it.
 > 3. **Active Selection Box Only**: The active slot is visually highlighted solely by drawing `hotbar_selection.png` (20 × 20 px) over one of the 9 primary slots (fields 5..13), operated strictly via keyboard keys `1` through `9` and the mouse scroll wheel.
@@ -258,6 +271,7 @@ System buttons are standardized with 1px pixel-art chamfered corners, brushed-st
 | **Button Large** | [`button_large.png`](interfaces/containers/button_large.png) | [`button_large_hover.png`](interfaces/containers/button_large_hover.png) | **96 × 16 px** | 6:1 | Main menu screens, "Enter World", "Settings", and "Quit Game". |
 
 ### 5.1 Button Construction Rules
+
 * **Outer Rim (Layer 0)**: `#2d2e30` top, `#1e1e20` sides, and `#000000` base with 1px cut corners.
 * **Metallic Bevel (Layer 1)**: Light brushed steel highlight (`#b4b5af` top, lateral gradient from `#9c9c96` to `#28292b`), and deep shadow base (`#18191b` / `#141416`).
 * **Inner Groove (Layer 2)**: 1px dark inset groove (`#38393c` top, `#101012` bottom).
@@ -270,7 +284,7 @@ System buttons are standardized with 1px pixel-art chamfered corners, brushed-st
 
 In addition to full interface backplates, the engine utilizes standalone modular textures for dynamic interaction states:
 
-```
+```text
 ┌──────────────────┐    ┌──────────────┐    ┌──────────────────┐
 │ hotbar_selection │    │ tab_selection│    │ creative_scroller│
 │   (20 × 20 px)   │    │ (16 × 16 px) │    │   (12 × 16 px)   │
@@ -282,6 +296,7 @@ In addition to full interface backplates, the engine utilizes standalone modular
 ```
 
 ### 6.1 Selection & Navigation Overlays
+
 * **`hotbar_selection.png` (20 × 20 px)**:  
   Thick outer highlight frame with polished steel double-bevel (`#ffffff` top, `#b4beca` sides, recessed corners `#1e2026`). Features a hollow center (16×16 px clear) that wraps cleanly around the active hotbar slot, visually indicating the currently held item on the gameplay HUD or in menus.
 * **`inventory_creative_tab_selection.png` (16 × 16 px)**:  
@@ -290,15 +305,16 @@ In addition to full interface backplates, the engine utilizes standalone modular
   Tactile thumb slider for the vertical scrollbar track (B15, 6×166 px). Built with thick slate and chamfered edges, supporting smooth dragging or mouse-wheel scrolling.
 
 ### 6.2 Slot & Button Hover States (Menu-Exclusive)
+>
 > [!IMPORTANT]
 > Hover textures are strictly for **opened inventory and menu windows** where the mouse cursor is active. They are **never** used on the gameplay hotbar HUD.
+
 * **`inventory_slot_hover.png` (16 × 16 px)**:  
   Illuminated hover state for standard 16×16 px slots in opened menus. Retains the 1px recessed cavity with top-left shadow (`#1c2128` / `#202630`), an illuminated slate-blue floor (`#2c333e` / `#343c48`), a bright steel bottom/right inner lip (`#8c96a2` / `#b4beca`), and a specular glint point (`#dae2ec`) at the bottom-right corner.
 * **`inventory_slot_special_hover.png` (14 × 14 px)**:  
   Adapted for compact 14×14 px slots in opened menus (off-hand and utility slots), replicating the exact same illuminated cavity effect.
 * **`button_util_hover.png` (8 × 8 px)**:  
   Illuminated hover state for the 8×8 px utility action buttons inside menu headers (sort, trash, lock).
-
 
 ---
 
@@ -342,21 +358,27 @@ The `interfaces/icons/` directory acts as an **asset library of 16 × 16 px pixe
 > These icons currently **do not have hardcoded gameplay logic bindings in the engine** (they are intentionally pre-staged assets). Because worldbuilding, climates, biomes, and character creation are actively evolving, the collections below are open-ended and will receive additional icons as new systems are formalized.
 
 ### 8.1 Diurnal Phases / Sun Clock (`time_*.png`)
+
 Icons designed for the HUD sun dial / temporal compass:
+
 * [`time_morning.png`](interfaces/icons/time_morning.png): Dawn / Morning (rising sun over dew grass)
 * [`time_noon.png`](interfaces/icons/time_noon.png): Noon / Zenith (bright golden sun at its peak)
 * [`time_evening.png`](interfaces/icons/time_evening.png): Dusk / Evening (orange setting sun at horizon)
 * [`time_night.png`](interfaces/icons/time_night.png): Night / Lunar Zenith (crescent moon against starfield)
 
 ### 8.2 Weather Conditions (`weather_*.png`)
+
 Atmospheric icons for weather forecasts and environmental HUD:
+
 * [`weather_clear.png`](interfaces/icons/weather_clear.png): Clear skies / bright sunny day
 * [`weather_raining.png`](interfaces/icons/weather_raining.png): Moderate rainfall / storm cloud with water droplets
 * [`weather_thunder.png`](interfaces/icons/weather_thunder.png): Thunderstorm / dark tempest cloud with lightning bolt
 * [`weather_snow.png`](interfaces/icons/weather_snow.png): Snowfall / cold blizzard cloud with drifting crystalline snowflakes
 
 ### 8.3 Biome & Terrain Indicators (`biome_*.png`)
+
 Environmental icons representing vegetation, geology, and terrain:
+
 * [`biome_plains.png`](interfaces/icons/biome_plains.png): Open grassy plains
 * [`biome_forest.png`](interfaces/icons/biome_forest.png): Temperate oak/pine forest
 * [`biome_dark_forest.png`](interfaces/icons/biome_dark_forest.png): Dense canopy dark forest
@@ -369,10 +391,13 @@ Environmental icons representing vegetation, geology, and terrain:
 * [`biome_frozen_peaks.png`](interfaces/icons/biome_frozen_peaks.png): Glacial peaks and snowy crags
 
 ### 8.4 Quest Log & Expedition Journal
+
 * [`journal_board.png`](interfaces/icons/journal_board.png): Notice board / Player expedition quest log icon
 
 ### 8.5 Playable Character Races (`race_*.png`)
+
 Blocky, voxel-styled cubic character head portraits (16 × 16 px) designed for the character creation screen:
+
 * [`race_human.png`](interfaces/icons/race_human.png): **Human**: classic adventurer portrait with brown hair, peach skin, expressive eyes, and blue tunic collar.
 * [`race_elf.png`](interfaces/icons/race_elf.png): **Elf**: slender cubic head with elongated pointed ears, golden locks, emerald green eyes, and silver circlet.
 * [`race_dwarf.png`](interfaces/icons/race_dwarf.png): **Dwarf**: iron-banded helmet, resolute dark eyes, and a massive copper-braided beard adorned with gold clasp rings.

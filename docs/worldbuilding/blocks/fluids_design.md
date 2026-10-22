@@ -46,7 +46,9 @@ graph TD
 All 38 textures follow strict taxonomy prefixes (`frost_` for cryology, `liquid_` for fluid triads):
 
 ### A. Cryology and Ice Blocks (`frost_`) (8 Base Files + Stochastic Variations, 16×16 px)
+
 All 8 ice types feature complete 3-fold stochastic variants (`1` and `2`) to break tiling repetition across frozen lakes and glaciers:
+
 * `frost_ice.png` *(Clear crystalline translucent surface ice, alpha=153; + `1`, `2`)*
 * `frost_ice_fragile.png` *(Translucent surface ice with subtle stress hairline cracks, alpha=153; + `1`, `2`)*
 * `frost_ice_packed.png` *(Dense massive firn snow-compressed ice, 100% opaque RGB; + `1`, `2`)*
@@ -57,7 +59,9 @@ All 8 ice types feature complete 3-fold stochastic variants (`1` and `2`) to bre
 * `frost_blue_ice_cracked.png` *(Glacial blue ice with cellular web of frost veins and trapped bubbles, 100% opaque RGB; + `1`, `2`)*
 
 ### B. Static Fluid Block Icons (`liquid_`) (10 Files, 16×16 px)
+
 Used for static block representations, bucket items, inventory icons, and particles:
+
 * `liquid_water.png` *(Neutral grayscale template for biome tinting)*
 * `liquid_spring_water.png` *(Geothermal turquoise mineral water)*
 * `liquid_lava.png` *(Basaltic incandescent surface lava)*
@@ -70,7 +74,9 @@ Used for static block representations, bucket items, inventory icons, and partic
 * `liquid_tar.png` *(Viscous black bitumen hydrocarbon)*
 
 ### C. Still Liquid Surface Animation Strips (`liquid_`) (10 Files, 16×N px)
+
 Animated vertical sprite sheets for calm horizontal reservoir faces:
+
 * `liquid_water_still.png` *(16×576 px, 36 frames)*
 * `liquid_spring_water_still.png` *(16×512 px, 32 frames)*
 * `liquid_lava_still.png` *(16×512 px, 32 frames)*
@@ -83,7 +89,9 @@ Animated vertical sprite sheets for calm horizontal reservoir faces:
 * `liquid_tar_still.png` *(16×480 px, 30 frames)*
 
 ### D. Flowing Waterfall Animation Strips (`liquid_`) (10 Files, 32×M px)
+
 High-definition animated vertical sprite sheets for cascading and falling currents:
+
 * `liquid_water_flow.png` *(32×256 px, 8 frames)*
 * `liquid_spring_water_flow.png` *(32×1024 px, 32 frames)*
 * `liquid_lava_flow.png` *(32×512 px, 16 frames)*
