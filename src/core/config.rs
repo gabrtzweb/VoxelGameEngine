@@ -9,6 +9,7 @@ pub const CONFIG_PATH: &str = "local_config.json";
 /// Performance presets tailored for different hardware profiles.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PerformancePreset {
+    Custom,
     Potato,
     Low,
     Medium,
@@ -19,6 +20,7 @@ pub enum PerformancePreset {
 impl PerformancePreset {
     pub fn name(self) -> &'static str {
         match self {
+            Self::Custom => "Custom",
             Self::Potato => "Potato",
             Self::Low => "Low",
             Self::Medium => "Medium",
@@ -33,6 +35,7 @@ impl PerformancePreset {
 
     pub fn next(self) -> Self {
         match self {
+            Self::Custom => Self::Potato,
             Self::Potato => Self::Low,
             Self::Low => Self::Medium,
             Self::Medium => Self::High,
@@ -43,6 +46,7 @@ impl PerformancePreset {
 
     pub fn prev(self) -> Self {
         match self {
+            Self::Custom => Self::Ultra,
             Self::Potato => Self::Ultra,
             Self::Low => Self::Potato,
             Self::Medium => Self::Low,
@@ -361,6 +365,10 @@ pub struct LocalConfig {
     /// 3D Upscaling reconstruction filter (Bilinear or FSR 1.0).
     #[serde(default = "default_upscaling_filter")]
     pub upscaling_filter: UpscalingFilter,
+
+    /// Whether natural in-game time flow is paused.
+    #[serde(default = "default_is_time_paused", alias = "time_paused")]
+    pub is_time_paused: bool,
 }
 
 fn default_backend() -> String {
@@ -451,6 +459,10 @@ fn default_upscaling_filter() -> UpscalingFilter {
     UpscalingFilter::Bilinear
 }
 
+fn default_is_time_paused() -> bool {
+    false
+}
+
 impl Default for LocalConfig {
     fn default() -> Self {
         Self {
@@ -477,6 +489,7 @@ impl Default for LocalConfig {
             god_rays_enabled: default_god_rays_enabled(),
             render_scale: default_render_scale(),
             upscaling_filter: default_upscaling_filter(),
+            is_time_paused: default_is_time_paused(),
         }
     }
 }
@@ -505,6 +518,7 @@ impl LocalConfig {
     pub fn apply_preset(&mut self, preset: PerformancePreset) {
         self.preset = Some(preset);
         match preset {
+            PerformancePreset::Custom => {}
             PerformancePreset::Potato => {
                 self.render_distance = 2;
                 self.lod_render_distance = 2;

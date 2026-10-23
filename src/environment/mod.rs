@@ -22,7 +22,12 @@ pub struct EnvironmentPlugin;
 
 impl Plugin for EnvironmentPlugin {
     fn build(&self, app: &mut App) {
-        let default_state = EnvironmentState::default();
+        let is_paused = app
+            .world()
+            .get_resource::<crate::core::config::LocalConfig>()
+            .map_or(false, |c| c.is_time_paused);
+        let mut default_state = EnvironmentState::default();
+        default_state.is_time_paused = is_paused;
         let initial_clear = sample_sky_color(default_state.time_of_day);
         let initial_ambient = sample_ambient_color(default_state.time_of_day);
         let initial_brightness = sample_ambient_brightness(default_state.time_of_day);

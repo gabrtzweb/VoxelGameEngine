@@ -147,7 +147,9 @@ fn spawn_settings_menu(
     let sim_dist = chunk_settings.simulation_distance;
     let fov = game_settings.fov_degrees as i32;
     let fog_enabled = game_settings.fog_enabled;
-    let time_paused = env_state.as_ref().is_some_and(|e| e.is_time_paused);
+    let time_paused = env_state
+        .as_ref()
+        .map_or(local_config.is_time_paused, |e| e.is_time_paused);
     let font_handle = app_font.as_ref().map(|f| f.source());
 
     let btn_normal = asset_server.load("textures/interfaces/containers/buttons/button_medium.png");
@@ -851,7 +853,7 @@ fn handle_settings_buttons(
             let mut sync_config = true;
             match action {
                 SettingsAction::DecPreset => {
-                    let current = local_config.preset.unwrap_or(PerformancePreset::Medium);
+                    let current = local_config.preset.unwrap_or(PerformancePreset::Custom);
                     let prev = current.prev();
                     local_config.apply_preset(prev);
                     chunk_settings.render_distance = local_config.render_distance;
@@ -893,7 +895,7 @@ fn handle_settings_buttons(
                     sync_config = false;
                 }
                 SettingsAction::IncPreset => {
-                    let current = local_config.preset.unwrap_or(PerformancePreset::Medium);
+                    let current = local_config.preset.unwrap_or(PerformancePreset::Custom);
                     let next = current.next();
                     local_config.apply_preset(next);
                     chunk_settings.render_distance = local_config.render_distance;
@@ -1082,7 +1084,9 @@ fn handle_settings_buttons(
                 SettingsAction::ToggleTimePause => {
                     if let Some(ref mut env) = env_state {
                         env.is_time_paused = !env.is_time_paused;
+                        local_config.is_time_paused = env.is_time_paused;
                     }
+                    let _ = local_config.save();
                     sync_config = false;
                 }
                 SettingsAction::Back => {
@@ -1092,7 +1096,7 @@ fn handle_settings_buttons(
             }
 
             if sync_config {
-                local_config.preset = None;
+                local_config.preset = Some(PerformancePreset::Custom);
                 local_config.render_distance = chunk_settings.render_distance;
                 local_config.lod_render_distance = chunk_settings.lod_render_distance;
                 local_config.simulation_distance = chunk_settings.simulation_distance;
@@ -1300,8 +1304,10 @@ fn update_settings_labels(
                 text.0 = format!("{} Chunks", chunk_settings.mesh_upload_budget);
             }
         }
-        if env_changed && time_pause.is_some() {
-            let paused = env_state.as_ref().is_some_and(|e| e.is_time_paused);
+        if (env_changed || time_pause.is_some()) && time_pause.is_some() {
+            let paused = env_state
+                .as_ref()
+                .map_or(local_config.is_time_paused, |e| e.is_time_paused);
             text.0 = format!("Time Flow: {}", if paused { "Paused" } else { "Running" });
         }
     }
