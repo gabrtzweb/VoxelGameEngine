@@ -150,10 +150,10 @@ fn spawn_settings_menu(
     let time_paused = env_state.as_ref().is_some_and(|e| e.is_time_paused);
     let font_handle = app_font.as_ref().map(|f| f.source());
 
-    let btn_normal = asset_server.load("textures/interfaces/containers/button_medium.png");
-    let btn_hover = asset_server.load("textures/interfaces/containers/button_medium_hover.png");
-    let small_normal = asset_server.load("textures/interfaces/containers/button_small.png");
-    let small_hover = asset_server.load("textures/interfaces/containers/button_small_hover.png");
+    let btn_normal = asset_server.load("textures/interfaces/containers/buttons/button_medium.png");
+    let btn_hover = asset_server.load("textures/interfaces/containers/buttons/button_medium_hover.png");
+    let small_normal = asset_server.load("textures/interfaces/containers/buttons/button_small.png");
+    let small_hover = asset_server.load("textures/interfaces/containers/buttons/button_small_hover.png");
 
     let mut header_font = TextFont {
         font_size: FontSize::Px(32.0),
@@ -169,7 +169,7 @@ fn spawn_settings_menu(
             Node {
                 position_type: PositionType::Absolute,
                 left: px(0.0),
-                top: px(0.0),
+                top: px(80.0),
                 right: px(0.0),
                 bottom: px(0.0),
                 display: Display::Flex,

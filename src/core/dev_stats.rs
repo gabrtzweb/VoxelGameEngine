@@ -143,6 +143,7 @@ fn update_dev_stats(
     terrain_generator: Option<Res<TerrainGenerator>>,
     dynamic_fps: Option<Res<super::DynamicFpsState>>,
     culling_state: Option<Res<crate::meshing::CaveCullingState>>,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
     text_query: Single<
         (
             &mut Text,
@@ -160,11 +161,15 @@ fn update_dev_stats(
 ) {
     let (mut text, mut visibility, mut bg_color, mut border_color) = text_query.into_inner();
 
+    let is_in_menu = menu_state
+        .as_ref()
+        .is_some_and(|s| *s.get() != crate::menu::MenuState::None);
+
     let mode = hud_settings.mode;
     let mode_changed = *last_mode != Some(mode);
     *last_mode = Some(mode);
 
-    if mode == DebugHudMode::Hidden {
+    if mode == DebugHudMode::Hidden || is_in_menu {
         *visibility = Visibility::Hidden;
         if !text.0.is_empty() {
             text.0.clear();
@@ -231,26 +236,24 @@ fn update_dev_stats(
             let mesh_vertices = chunk_meshes.total_vertices();
             let mesh_triangles = chunk_meshes.total_triangles();
 
-            let culling_info = if let Some(ref cs) = culling_state {
+            let (cull_chunks, cull_verts) = if let Some(ref cs) = culling_state {
                 let status = if cs.is_player_underground {
                     "Cave"
                 } else {
                     "Surface"
                 };
-                format!(
-                    " [Culling ({status}): {}R/{}C | Verts: {}k R / {}k C]",
-                    cs.rendered_chunks,
-                    cs.culled_chunks,
-                    cs.rendered_vertices / 1000,
-                    cs.culled_vertices / 1000,
+                (
+                    format!(" | Culling ({status}): {}R / {}C", cs.rendered_chunks, cs.culled_chunks),
+                    format!(" [Culled: {}k]", cs.culled_vertices / 1000),
                 )
             } else {
-                String::new()
+                (String::new(), String::new())
             };
 
             text.0 = format!(
                 "FPS: {fps:.0} ({frame_time:.2} ms) | 1% Low: {low_1pct:.0} | Min: {min_fps:.0} | Max: {max_fps:.0}\n\
-                Chunks: {loaded_chunks}{culling_info} | Vertices: {mesh_vertices} | Triangles: {mesh_triangles}"
+                Chunks: {loaded_chunks}{cull_chunks}\n\
+                Vertices: {mesh_vertices} | Triangles: {mesh_triangles}{cull_verts}"
             );
         }
         DebugHudMode::Extended => {

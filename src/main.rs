@@ -63,8 +63,12 @@ fn main() {
     };
 
     let screen_mode = match local_config.screen_mode.to_lowercase().as_str() {
-        "borderless" | "borderlessfullscreen" => ScreenMode::BorderlessFullscreen,
-        "fullscreen" | "exclusivefullscreen" => ScreenMode::ExclusiveFullscreen,
+        "borderless" | "borderlessfullscreen" | "borderless fullscreen" => {
+            ScreenMode::BorderlessFullscreen
+        }
+        "fullscreen" | "exclusivefullscreen" | "exclusive fullscreen" => {
+            ScreenMode::ExclusiveFullscreen
+        }
         _ => ScreenMode::Windowed,
     };
     let window_mode = screen_mode.to_window_mode();

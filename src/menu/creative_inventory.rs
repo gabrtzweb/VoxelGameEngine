@@ -15,24 +15,28 @@ use crate::{
 
 use super::{HeldInventoryItem, MenuState};
 
-pub const GUI_SCALE: f32 = 3.0;
+pub const GUI_SCALE: f32 = 4.0;
 
-pub const WINDOW_WIDTH: f32 = 416.0 * GUI_SCALE; // 1248 px
-pub const WINDOW_HEIGHT: f32 = 256.0 * GUI_SCALE; // 768 px
+pub const WINDOW_WIDTH: f32 = 480.0 * GUI_SCALE; // 1920 px
+pub const WINDOW_HEIGHT: f32 = 270.0 * GUI_SCALE; // 1080 px
 
 pub const CATALOG_COLS: usize = 9;
-pub const CATALOG_VISIBLE_ROWS: usize = 10;
-#[allow(dead_code)]
-pub const CATALOG_VISIBLE_SLOTS: usize = CATALOG_COLS * CATALOG_VISIBLE_ROWS; // 90 slots
+pub const CATALOG_VISIBLE_ROWS: usize = 9;
+pub const CATALOG_VISIBLE_SLOTS: usize = CATALOG_COLS * CATALOG_VISIBLE_ROWS; // 81 slots
 
 pub const INVENTORY_SLOT_X_COORDS: [f32; 9] = [
-    124.0, 143.0, 162.0, 181.0, 200.0, 219.0, 238.0, 257.0, 276.0,
+    156.0, 175.0, 194.0, 213.0, 232.0, 251.0, 270.0, 289.0, 308.0,
 ];
-pub const INVENTORY_ROW_Y_COORDS: [f32; 4] = [151.0, 169.0, 187.0, 205.0];
-pub const HOTBAR_ROW_Y: f32 = 227.0;
+pub const INVENTORY_ROW_Y_COORDS: [f32; 3] = [168.0, 186.0, 204.0];
+pub const HOTBAR_ROW_Y: f32 = 228.0;
 
-pub const CATALOG_ROW_Y_COORDS: [f32; 10] = [
-    43.0, 61.0, 79.0, 97.0, 115.0, 133.0, 151.0, 169.0, 187.0, 205.0,
+pub const CATALOG_ROW_Y_COORDS: [f32; 9] = [
+    60.0, 78.0, 96.0, 114.0, 132.0, 150.0, 168.0, 186.0, 204.0,
+];
+
+pub const CREATIVE_TAB_X: f32 = 128.0;
+pub const CREATIVE_TAB_Y_COORDS: [f32; 9] = [
+    65.0, 84.0, 103.0, 122.0, 141.0, 160.0, 179.0, 198.0, 217.0,
 ];
 
 pub const AVAILABLE_BLOCKS: [Voxel; 611] = Voxel::ALL;
@@ -40,47 +44,41 @@ pub const AVAILABLE_BLOCKS: [Voxel; 611] = Voxel::ALL;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CreativeCategory {
     #[default]
-    All, // B2 (136, 7)
-    Rocks,       // B3
-    Soils,       // B4
-    Trees,       // B5
-    Ores,        // B6
-    Oceans,      // B7
-    Vegetation,  // B8
-    Organics,    // B9
-    Decorations, // B10
-    Lighting,    // B11
-    Fluids,      // B12
+    All,
+    Rocks,
+    Trees,
+    Soils,
+    Ores,
+    Vegetation,
+    Organics,
+    Decorations,
+    Lighting,
 }
 
 impl CreativeCategory {
-    pub const ALL: [CreativeCategory; 11] = [
+    pub const ALL: [CreativeCategory; 9] = [
         CreativeCategory::All,
         CreativeCategory::Rocks,
-        CreativeCategory::Soils,
         CreativeCategory::Trees,
+        CreativeCategory::Soils,
         CreativeCategory::Ores,
-        CreativeCategory::Oceans,
         CreativeCategory::Vegetation,
         CreativeCategory::Organics,
         CreativeCategory::Decorations,
         CreativeCategory::Lighting,
-        CreativeCategory::Fluids,
     ];
 
     pub fn title(self) -> &'static str {
         match self {
             Self::All => "All Blocks",
             Self::Rocks => "Rocks & Geology",
-            Self::Soils => "Soils & Terrain",
             Self::Trees => "Trees & Timber",
+            Self::Soils => "Soils & Terrain",
             Self::Ores => "Ores, Gems & Crystals",
-            Self::Oceans => "Oceans & Corals",
-            Self::Vegetation => "Vegetation & Fungi",
+            Self::Vegetation => "Vegetation & Oceans",
             Self::Organics => "Organics & Fauna",
             Self::Decorations => "Decorations",
             Self::Lighting => "Lighting & Utility",
-            Self::Fluids => "Fluids & Ice",
         }
     }
 
@@ -88,15 +86,13 @@ impl CreativeCategory {
         match self {
             Self::All => Voxel::LoamGrass,
             Self::Rocks => Voxel::Dolomite,
-            Self::Soils => Voxel::LoamDirt,
             Self::Trees => Voxel::OakLog,
+            Self::Soils => Voxel::LoamDirt,
             Self::Ores => Voxel::CrystalAmethystCluster,
-            Self::Oceans => Voxel::BrainCoral,
             Self::Vegetation => Voxel::FungiAmanita,
             Self::Organics => Voxel::FleshBlock,
             Self::Decorations => Voxel::Bricks,
             Self::Lighting => Voxel::EmitTorchFire,
-            Self::Fluids => Voxel::LiquidWater,
         }
     }
 
@@ -149,11 +145,16 @@ impl CreativeCategory {
                         || id.starts_with("speleothem_")
                         || id.starts_with("fossil_"))
             }
-            Self::Soils => (tex.starts_with("soil_") && !is_burrow) || is_path || is_rock_outcrop,
             Self::Trees => tex.starts_with("tree_"),
+            Self::Soils => (tex.starts_with("soil_") && !is_burrow) || is_path || is_rock_outcrop,
             Self::Ores => is_ore,
-            Self::Oceans => tex.starts_with("aqua_") || tex.starts_with("vege_"),
-            Self::Vegetation => tex.starts_with("fungi_") || is_moss || is_marine_flora,
+            Self::Vegetation => {
+                tex.starts_with("fungi_")
+                    || is_moss
+                    || is_marine_flora
+                    || tex.starts_with("aqua_")
+                    || tex.starts_with("vege_")
+            }
             Self::Organics => {
                 tex.starts_with("bio_")
                     || tex.starts_with("organic_")
@@ -166,8 +167,9 @@ impl CreativeCategory {
                     || tex.starts_with("util_")
                     || tex.starts_with("debug_")
                     || tex.starts_with("null_")
+                    || tex.starts_with("liquid_")
+                    || tex.starts_with("frost_")
             }
-            Self::Fluids => tex.starts_with("liquid_") || tex.starts_with("frost_"),
         }
     }
 }
@@ -426,21 +428,20 @@ fn build_inventory_ui(
     };
 
     let closed_tex =
-        asset_server.load("textures/interfaces/containers/inventory_creative_closed.png");
-    let open_tex = asset_server.load("textures/interfaces/containers/inventory_creative_open.png");
+        asset_server.load("textures/interfaces/containers/inventory.png");
+    let open_tex =
+        asset_server.load("textures/interfaces/containers/inventory_creative.png");
     let scroller_tex =
         asset_server.load("textures/interfaces/containers/inventory_creative_scroller.png");
     let tab_select_tex =
         asset_server.load("textures/interfaces/containers/inventory_creative_tab_selection.png");
     let slot_hover_tex =
         asset_server.load("textures/interfaces/containers/inventory_slot_hover.png");
-    let special_hover_tex =
-        asset_server.load("textures/interfaces/containers/inventory_slot_special_hover.png");
     let btn_util_hover_tex =
-        asset_server.load("textures/interfaces/containers/button_util_hover.png");
+        asset_server.load("textures/interfaces/containers/buttons/button_util_hover.png");
 
-    let title_font = make_font(4.5 * GUI_SCALE);
-    let num_font = make_font(3.5 * GUI_SCALE);
+    let title_font = make_font(4.0 * GUI_SCALE);
+    let num_font = make_font(3.0 * GUI_SCALE);
 
     commands
         .spawn((
@@ -461,7 +462,7 @@ fn build_inventory_ui(
             ZIndex(300),
         ))
         .with_children(|backdrop| {
-            // Main Central Panel (416 x 256 px scaled to 1248 x 768 px)
+            // Main Central Panel (480 x 270 px scaled to 1920 x 1080 px)
             backdrop
                 .spawn((
                     InventoryMenuEntity,
@@ -477,7 +478,6 @@ fn build_inventory_ui(
                     Node {
                         width: px(WINDOW_WIDTH),
                         height: px(WINDOW_HEIGHT),
-                        position_type: PositionType::Relative,
                         ..default()
                     },
                 ))
@@ -485,10 +485,10 @@ fn build_inventory_ui(
                     match current_tab {
                         InventoryTab::Player => {
                             // ==========================================
-                            // 1. INVENTORY_CREATIVE_CLOSED
+                            // 1. INVENTORY COMPACT (480x270_inventory)
                             // ==========================================
 
-                            // Creative Toggle Tab B1: (118, 117), 10x10 px
+                            // Creative Toggle Button (128, 148), 16x16 px
                             card.spawn((
                                 InventoryMenuEntity,
                                 Button,
@@ -496,23 +496,23 @@ fn build_inventory_ui(
                                 InventoryToggleTabButton,
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    left: px(118.0 * GUI_SCALE),
-                                    top: px(117.0 * GUI_SCALE),
-                                    width: px(10.0 * GUI_SCALE),
-                                    height: px(10.0 * GUI_SCALE),
+                                    left: px(128.0 * GUI_SCALE),
+                                    top: px(148.0 * GUI_SCALE),
+                                    width: px(16.0 * GUI_SCALE),
+                                    height: px(16.0 * GUI_SCALE),
                                     ..default()
                                 },
                                 BackgroundColor(Color::NONE),
                             ));
 
-                            // Title Header Plate B2: (121, 135), 60x8 px
+                            // Title Header Plate (156, 152), 64x8 px
                             card.spawn((
                                 InventoryMenuEntity,
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    left: px(121.0 * GUI_SCALE),
-                                    top: px(135.0 * GUI_SCALE),
-                                    width: px(60.0 * GUI_SCALE),
+                                    left: px(156.0 * GUI_SCALE),
+                                    top: px(152.0 * GUI_SCALE),
+                                    width: px(64.0 * GUI_SCALE),
                                     height: px(8.0 * GUI_SCALE),
                                     display: Display::Flex,
                                     align_items: AlignItems::Center,
@@ -530,17 +530,15 @@ fn build_inventory_ui(
                                 ));
                             });
 
-                            // Action Buttons B3..B6: (251, 263, 275, 287, 135), 8x8 px
-                            // The normal state is cleanly pre-rendered into the background plate.
-                            // Only button_util_hover is displayed on hover.
+                            // Action Buttons (280..316, 151..152), 8x8 px
                             let actions = [
-                                (251.0, InventoryAction::Sort),
-                                (263.0, InventoryAction::Trash),
-                                (275.0, InventoryAction::Options),
-                                (287.0, InventoryAction::Lock),
+                                (280.0, 152.0, InventoryAction::Sort),
+                                (292.0, 151.0, InventoryAction::Trash),
+                                (304.0, 151.0, InventoryAction::Lock),
+                                (316.0, 152.0, InventoryAction::Options),
                             ];
 
-                            for (btn_x, action) in actions {
+                            for (btn_x, btn_y, action) in actions {
                                 card.spawn((
                                     InventoryMenuEntity,
                                     Button,
@@ -549,7 +547,7 @@ fn build_inventory_ui(
                                     Node {
                                         position_type: PositionType::Absolute,
                                         left: px(btn_x * GUI_SCALE),
-                                        top: px(135.0 * GUI_SCALE),
+                                        top: px(btn_y * GUI_SCALE),
                                         width: px(8.0 * GUI_SCALE),
                                         height: px(8.0 * GUI_SCALE),
                                         ..default()
@@ -577,15 +575,14 @@ fn build_inventory_ui(
                                 });
                             }
 
-                            // Card A: Player Character & Armor Slots (Visual Placeholders)
-                            // Armor slots A3..A8 (14x14 px)
+                            // Armor / Equipment slots (16x16 px)
                             let armor_slots = [
-                                (25.0, 210.0, "helmet.png"),
-                                (42.0, 210.0, "chestplate.png"),
-                                (59.0, 210.0, "leggings.png"),
-                                (25.0, 226.0, "boots.png"),
-                                (42.0, 226.0, "gloves.png"),
-                                (59.0, 226.0, "necklace.png"),
+                                (214.0, 49.0, "helmet.png"),
+                                (214.0, 67.0, "chestplate.png"),
+                                (214.0, 85.0, "leggings.png"),
+                                (233.0, 49.0, "boots.png"),
+                                (233.0, 67.0, "gloves.png"),
+                                (233.0, 85.0, "necklace.png"),
                             ];
 
                             for (ax, ay, overlay_name) in armor_slots {
@@ -601,14 +598,146 @@ fn build_inventory_ui(
                                         position_type: PositionType::Absolute,
                                         left: px(ax * GUI_SCALE),
                                         top: px(ay * GUI_SCALE),
-                                        width: px(14.0 * GUI_SCALE),
-                                        height: px(14.0 * GUI_SCALE),
+                                        width: px(16.0 * GUI_SCALE),
+                                        height: px(16.0 * GUI_SCALE),
                                         ..default()
                                     },
                                 ));
                             }
 
-                            // Card B: 36 Main Inventory Slots B7..B42 (4 rows of 9)
+                            // Off-hand Equipment Slot at (214, 109), 16x16 px
+                            let offhand_voxel = player_inv.offhand_slot;
+                            let offhand_img = offhand_voxel
+                                .map(|v| icons.get(v))
+                                .unwrap_or_else(|| icons.get(Voxel::Dolomite));
+                            let offhand_vis = if offhand_voxel.is_some() {
+                                Visibility::Visible
+                            } else {
+                                Visibility::Hidden
+                            };
+
+                            card.spawn((
+                                InventoryMenuEntity,
+                                Button,
+                                Hovered::default(),
+                                InventoryOffhandSlot,
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    left: px(214.0 * GUI_SCALE),
+                                    top: px(109.0 * GUI_SCALE),
+                                    width: px(16.0 * GUI_SCALE),
+                                    height: px(16.0 * GUI_SCALE),
+                                    display: Display::Flex,
+                                    justify_content: JustifyContent::Center,
+                                    align_items: AlignItems::Center,
+                                    ..default()
+                                },
+                                BackgroundColor(Color::NONE),
+                            ))
+                            .with_children(|slot| {
+                                slot.spawn((
+                                    InventoryMenuEntity,
+                                    InventoryOffhandIcon,
+                                    ImageNode {
+                                        image: offhand_img,
+                                        ..default()
+                                    },
+                                    Node {
+                                        width: px(16.0 * GUI_SCALE),
+                                        height: px(16.0 * GUI_SCALE),
+                                        ..default()
+                                    },
+                                    ZIndex(5),
+                                    offhand_vis,
+                                ));
+
+                                slot.spawn((
+                                    InventoryMenuEntity,
+                                    SlotHoverHighlight,
+                                    ImageNode {
+                                        image: slot_hover_tex.clone(),
+                                        ..default()
+                                    },
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        left: px(0.0),
+                                        top: px(0.0),
+                                        width: px(16.0 * GUI_SCALE),
+                                        height: px(16.0 * GUI_SCALE),
+                                        ..default()
+                                    },
+                                    ZIndex(1),
+                                    Visibility::Hidden,
+                                ));
+                            });
+
+                            // Quick Utility Equipment Slot at (233, 109), 16x16 px
+                            let util_voxel = player_inv.utility_slot;
+                            let util_img = util_voxel
+                                .map(|v| icons.get(v))
+                                .unwrap_or_else(|| icons.get(Voxel::Dolomite));
+                            let util_vis = if util_voxel.is_some() {
+                                Visibility::Visible
+                            } else {
+                                Visibility::Hidden
+                            };
+
+                            card.spawn((
+                                InventoryMenuEntity,
+                                Button,
+                                Hovered::default(),
+                                InventoryUtilitySlot,
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    left: px(233.0 * GUI_SCALE),
+                                    top: px(109.0 * GUI_SCALE),
+                                    width: px(16.0 * GUI_SCALE),
+                                    height: px(16.0 * GUI_SCALE),
+                                    display: Display::Flex,
+                                    justify_content: JustifyContent::Center,
+                                    align_items: AlignItems::Center,
+                                    ..default()
+                                },
+                                BackgroundColor(Color::NONE),
+                            ))
+                            .with_children(|slot| {
+                                slot.spawn((
+                                    InventoryMenuEntity,
+                                    InventoryUtilityIcon,
+                                    ImageNode {
+                                        image: util_img,
+                                        ..default()
+                                    },
+                                    Node {
+                                        width: px(16.0 * GUI_SCALE),
+                                        height: px(16.0 * GUI_SCALE),
+                                        ..default()
+                                    },
+                                    ZIndex(5),
+                                    util_vis,
+                                ));
+
+                                slot.spawn((
+                                    InventoryMenuEntity,
+                                    SlotHoverHighlight,
+                                    ImageNode {
+                                        image: slot_hover_tex.clone(),
+                                        ..default()
+                                    },
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        left: px(0.0),
+                                        top: px(0.0),
+                                        width: px(16.0 * GUI_SCALE),
+                                        height: px(16.0 * GUI_SCALE),
+                                        ..default()
+                                    },
+                                    ZIndex(1),
+                                    Visibility::Hidden,
+                                ));
+                            });
+
+                            // 27 Main Storage Slots (3 rows of 9)
                             for (row, &slot_y) in INVENTORY_ROW_Y_COORDS
                                 .iter()
                                 .enumerate()
@@ -652,7 +781,6 @@ fn build_inventory_ui(
                                         BackgroundColor(Color::NONE),
                                     ))
                                     .with_children(|slot| {
-                                        // Item Icon
                                         slot.spawn((
                                             InventoryMenuEntity,
                                             PlayerStorageSlotIcon {
@@ -671,7 +799,6 @@ fn build_inventory_ui(
                                             icon_vis,
                                         ));
 
-                                        // Slot Hover Highlight Overlay (16x16 px)
                                         slot.spawn((
                                             InventoryMenuEntity,
                                             SlotHoverHighlight,
@@ -694,139 +821,7 @@ fn build_inventory_ui(
                                 }
                             }
 
-                            // Card B: Off-hand Slot B43 at (104, 228), 14x14 px
-                            let offhand_voxel = player_inv.offhand_slot;
-                            let offhand_img = offhand_voxel
-                                .map(|v| icons.get(v))
-                                .unwrap_or_else(|| icons.get(Voxel::Dolomite));
-                            let offhand_vis = if offhand_voxel.is_some() {
-                                Visibility::Visible
-                            } else {
-                                Visibility::Hidden
-                            };
-
-                            card.spawn((
-                                InventoryMenuEntity,
-                                Button,
-                                Hovered::default(),
-                                InventoryOffhandSlot,
-                                Node {
-                                    position_type: PositionType::Absolute,
-                                    left: px(104.0 * GUI_SCALE),
-                                    top: px(228.0 * GUI_SCALE),
-                                    width: px(14.0 * GUI_SCALE),
-                                    height: px(14.0 * GUI_SCALE),
-                                    display: Display::Flex,
-                                    justify_content: JustifyContent::Center,
-                                    align_items: AlignItems::Center,
-                                    ..default()
-                                },
-                                BackgroundColor(Color::NONE),
-                            ))
-                            .with_children(|slot| {
-                                slot.spawn((
-                                    InventoryMenuEntity,
-                                    InventoryOffhandIcon,
-                                    ImageNode {
-                                        image: offhand_img,
-                                        ..default()
-                                    },
-                                    Node {
-                                        width: px(14.0 * GUI_SCALE),
-                                        height: px(14.0 * GUI_SCALE),
-                                        ..default()
-                                    },
-                                    ZIndex(5),
-                                    offhand_vis,
-                                ));
-
-                                slot.spawn((
-                                    InventoryMenuEntity,
-                                    SlotHoverHighlight,
-                                    ImageNode {
-                                        image: special_hover_tex.clone(),
-                                        ..default()
-                                    },
-                                    Node {
-                                        position_type: PositionType::Absolute,
-                                        left: px(0.0),
-                                        top: px(0.0),
-                                        width: px(14.0 * GUI_SCALE),
-                                        height: px(14.0 * GUI_SCALE),
-                                        ..default()
-                                    },
-                                    ZIndex(1),
-                                    Visibility::Hidden,
-                                ));
-                            });
-
-                            // Card B: Quick Utility Slot B53 at (298, 228), 14x14 px
-                            let util_voxel = player_inv.utility_slot;
-                            let util_img = util_voxel
-                                .map(|v| icons.get(v))
-                                .unwrap_or_else(|| icons.get(Voxel::Dolomite));
-                            let util_vis = if util_voxel.is_some() {
-                                Visibility::Visible
-                            } else {
-                                Visibility::Hidden
-                            };
-
-                            card.spawn((
-                                InventoryMenuEntity,
-                                Button,
-                                Hovered::default(),
-                                InventoryUtilitySlot,
-                                Node {
-                                    position_type: PositionType::Absolute,
-                                    left: px(298.0 * GUI_SCALE),
-                                    top: px(228.0 * GUI_SCALE),
-                                    width: px(14.0 * GUI_SCALE),
-                                    height: px(14.0 * GUI_SCALE),
-                                    display: Display::Flex,
-                                    justify_content: JustifyContent::Center,
-                                    align_items: AlignItems::Center,
-                                    ..default()
-                                },
-                                BackgroundColor(Color::NONE),
-                            ))
-                            .with_children(|slot| {
-                                slot.spawn((
-                                    InventoryMenuEntity,
-                                    InventoryUtilityIcon,
-                                    ImageNode {
-                                        image: util_img,
-                                        ..default()
-                                    },
-                                    Node {
-                                        width: px(14.0 * GUI_SCALE),
-                                        height: px(14.0 * GUI_SCALE),
-                                        ..default()
-                                    },
-                                    ZIndex(5),
-                                    util_vis,
-                                ));
-
-                                slot.spawn((
-                                    InventoryMenuEntity,
-                                    SlotHoverHighlight,
-                                    ImageNode {
-                                        image: special_hover_tex.clone(),
-                                        ..default()
-                                    },
-                                    Node {
-                                        position_type: PositionType::Absolute,
-                                        left: px(0.0),
-                                        top: px(0.0),
-                                        width: px(14.0 * GUI_SCALE),
-                                        height: px(14.0 * GUI_SCALE),
-                                        ..default()
-                                    },
-                                    ZIndex(1),
-                                    Visibility::Hidden,
-                                ));
-                            });
-
-                            // Card B: Mirrored 9 Hotbar Slots B44..B52 at (124..276, 227), 16x16 px
+                            // Mirrored 9 Hotbar Slots at bottom row
                             for (c, &slot_x) in INVENTORY_SLOT_X_COORDS
                                 .iter()
                                 .enumerate()
@@ -896,7 +891,6 @@ fn build_inventory_ui(
                                         Visibility::Hidden,
                                     ));
 
-                                    // Slot index number (1 through 9)
                                     slot.spawn((
                                         InventoryMenuEntity,
                                         Text::new(format!("{}", c + 1)),
@@ -919,38 +913,7 @@ fn build_inventory_ui(
                             // 2. INVENTORY_CREATIVE_OPEN
                             // ==========================================
 
-                            // Card A: Player Character & Armor Slots (Visual Placeholders)
-                            // Armor slots A3..A8 (14x14 px)
-                            let armor_slots = [
-                                (25.0, 210.0, "helmet.png"),
-                                (42.0, 210.0, "chestplate.png"),
-                                (59.0, 210.0, "leggings.png"),
-                                (25.0, 226.0, "boots.png"),
-                                (42.0, 226.0, "gloves.png"),
-                                (59.0, 226.0, "necklace.png"),
-                            ];
-
-                            for (ax, ay, overlay_name) in armor_slots {
-                                card.spawn((
-                                    InventoryMenuEntity,
-                                    ImageNode {
-                                        image: asset_server.load(format!(
-                                            "textures/interfaces/containers/slots/{overlay_name}"
-                                        )),
-                                        ..default()
-                                    },
-                                    Node {
-                                        position_type: PositionType::Absolute,
-                                        left: px(ax * GUI_SCALE),
-                                        top: px(ay * GUI_SCALE),
-                                        width: px(14.0 * GUI_SCALE),
-                                        height: px(14.0 * GUI_SCALE),
-                                        ..default()
-                                    },
-                                ));
-                            }
-
-                            // Creative Toggle Tab B1: (117, 8), 12x11 px (click to collapse)
+                            // Creative Toggle Button (128, 40), 16x16 px (click to collapse)
                             card.spawn((
                                 InventoryMenuEntity,
                                 Button,
@@ -958,10 +921,10 @@ fn build_inventory_ui(
                                 InventoryToggleTabButton,
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    left: px(117.0 * GUI_SCALE),
-                                    top: px(8.0 * GUI_SCALE),
-                                    width: px(12.0 * GUI_SCALE),
-                                    height: px(11.0 * GUI_SCALE),
+                                    left: px(128.0 * GUI_SCALE),
+                                    top: px(40.0 * GUI_SCALE),
+                                    width: px(16.0 * GUI_SCALE),
+                                    height: px(16.0 * GUI_SCALE),
                                     ..default()
                                 },
                                 BackgroundColor(Color::NONE),
@@ -972,7 +935,7 @@ fn build_inventory_ui(
                                 .iter()
                                 .position(|&c| c == active_cat)
                                 .unwrap_or(0);
-                            let active_tab_x = 136.0 + active_idx as f32 * 15.0;
+                            let active_tab_y = CREATIVE_TAB_Y_COORDS[active_idx];
 
                             card.spawn((
                                 InventoryMenuEntity,
@@ -983,18 +946,18 @@ fn build_inventory_ui(
                                 },
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    left: px((active_tab_x - 2.0) * GUI_SCALE),
-                                    top: px(5.0 * GUI_SCALE),
-                                    width: px(16.0 * GUI_SCALE),
-                                    height: px(16.0 * GUI_SCALE),
+                                    left: px((CREATIVE_TAB_X - 2.0) * GUI_SCALE),
+                                    top: px((active_tab_y - 2.0) * GUI_SCALE),
+                                    width: px(20.0 * GUI_SCALE),
+                                    height: px(20.0 * GUI_SCALE),
                                     ..default()
                                 },
                                 ZIndex(15),
                             ));
 
-                            // 11 Category Tabs B2..B12: (136..286, 7), 12x12 px with 8x8 block icons
+                            // 9 Category Tabs: (128, ty), 16x16 px with 12x12 block icons
                             for (idx, &cat) in CreativeCategory::ALL.iter().enumerate() {
-                                let tab_x = 136.0 + idx as f32 * 15.0;
+                                let tab_y = CREATIVE_TAB_Y_COORDS[idx];
                                 let tab_icon = icons.get(cat.icon_voxel());
 
                                 card.spawn((
@@ -1004,10 +967,10 @@ fn build_inventory_ui(
                                     CategoryTabButton { category: cat },
                                     Node {
                                         position_type: PositionType::Absolute,
-                                        left: px(tab_x * GUI_SCALE),
-                                        top: px(7.0 * GUI_SCALE),
-                                        width: px(12.0 * GUI_SCALE),
-                                        height: px(12.0 * GUI_SCALE),
+                                        left: px(CREATIVE_TAB_X * GUI_SCALE),
+                                        top: px(tab_y * GUI_SCALE),
+                                        width: px(16.0 * GUI_SCALE),
+                                        height: px(16.0 * GUI_SCALE),
                                         display: Display::Flex,
                                         justify_content: JustifyContent::Center,
                                         align_items: AlignItems::Center,
@@ -1024,8 +987,8 @@ fn build_inventory_ui(
                                             ..default()
                                         },
                                         Node {
-                                            width: px(8.0 * GUI_SCALE),
-                                            height: px(8.0 * GUI_SCALE),
+                                            width: px(12.0 * GUI_SCALE),
+                                            height: px(12.0 * GUI_SCALE),
                                             ..default()
                                         },
                                         ZIndex(21),
@@ -1033,14 +996,14 @@ fn build_inventory_ui(
                                 });
                             }
 
-                            // Category Title Header Plate B13: (121, 27), 98x8 px
+                            // Category Title Header Plate: (156, 44), 64x8 px
                             card.spawn((
                                 InventoryMenuEntity,
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    left: px(121.0 * GUI_SCALE),
-                                    top: px(27.0 * GUI_SCALE),
-                                    width: px(98.0 * GUI_SCALE),
+                                    left: px(156.0 * GUI_SCALE),
+                                    top: px(44.0 * GUI_SCALE),
+                                    width: px(64.0 * GUI_SCALE),
                                     height: px(8.0 * GUI_SCALE),
                                     display: Display::Flex,
                                     align_items: AlignItems::Center,
@@ -1060,7 +1023,7 @@ fn build_inventory_ui(
                                 ));
                             });
 
-                            // Live Search Box B14: (223, 27), 72x8 px
+                            // Live Search Box: (260, 44), 64x8 px
                             card.spawn((
                                 InventoryMenuEntity,
                                 Button,
@@ -1068,9 +1031,9 @@ fn build_inventory_ui(
                                 CreativeSearchBar,
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    left: px(223.0 * GUI_SCALE),
-                                    top: px(27.0 * GUI_SCALE),
-                                    width: px(72.0 * GUI_SCALE),
+                                    left: px(260.0 * GUI_SCALE),
+                                    top: px(44.0 * GUI_SCALE),
+                                    width: px(64.0 * GUI_SCALE),
                                     height: px(8.0 * GUI_SCALE),
                                     display: Display::Flex,
                                     align_items: AlignItems::Center,
@@ -1115,7 +1078,7 @@ fn build_inventory_ui(
                                 ));
                             });
 
-                            // 90 Creative Catalog Slots B16..B105: 10 rows of 9 (16x16 px)
+                            // 81 Creative Catalog Slots: 9 rows of 9 (16x16 px)
                             let filtered =
                                 filtered_creative_blocks(active_cat, &search_query.query);
                             let start_row = scroll_state.scroll_row;
@@ -1205,8 +1168,8 @@ fn build_inventory_ui(
                                 }
                             }
 
-                            // Scrollbar Track & Thumb B15: (298, 40..205), 7x166 px
-                            let track_height = 166.0 * GUI_SCALE;
+                            // Scrollbar Track & Thumb: (339, 67), 8x164 px
+                            let track_height = 164.0 * GUI_SCALE;
                             let thumb_height = 16.0 * GUI_SCALE;
                             let max_travel = track_height - thumb_height;
                             let max_scroll = max_filtered_scroll(filtered.len());
@@ -1223,9 +1186,9 @@ fn build_inventory_ui(
                                 InventoryScrollTrack,
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    left: px(298.0 * GUI_SCALE),
-                                    top: px(40.0 * GUI_SCALE),
-                                    width: px(7.0 * GUI_SCALE),
+                                    left: px(339.0 * GUI_SCALE),
+                                    top: px(67.0 * GUI_SCALE),
+                                    width: px(8.0 * GUI_SCALE),
                                     height: px(track_height),
                                     ..default()
                                 },
@@ -1243,7 +1206,7 @@ fn build_inventory_ui(
                                     },
                                     Node {
                                         position_type: PositionType::Absolute,
-                                        left: px(-2.5 * GUI_SCALE),
+                                        left: px(-2.0 * GUI_SCALE),
                                         top: px(thumb_top),
                                         width: px(12.0 * GUI_SCALE),
                                         height: px(thumb_height),
@@ -1253,74 +1216,7 @@ fn build_inventory_ui(
                                 ));
                             });
 
-                            // Bottom Hotbar Row B106..B116 (mirrored hotbar accessible in creative)
-                            // Off-hand at (104, 228), 14x14 px
-                            let offhand_voxel = player_inv.offhand_slot;
-                            let offhand_img = offhand_voxel
-                                .map(|v| icons.get(v))
-                                .unwrap_or_else(|| icons.get(Voxel::Dolomite));
-                            let offhand_vis = if offhand_voxel.is_some() {
-                                Visibility::Visible
-                            } else {
-                                Visibility::Hidden
-                            };
-
-                            card.spawn((
-                                InventoryMenuEntity,
-                                Button,
-                                Hovered::default(),
-                                InventoryOffhandSlot,
-                                Node {
-                                    position_type: PositionType::Absolute,
-                                    left: px(104.0 * GUI_SCALE),
-                                    top: px(228.0 * GUI_SCALE),
-                                    width: px(14.0 * GUI_SCALE),
-                                    height: px(14.0 * GUI_SCALE),
-                                    display: Display::Flex,
-                                    justify_content: JustifyContent::Center,
-                                    align_items: AlignItems::Center,
-                                    ..default()
-                                },
-                                BackgroundColor(Color::NONE),
-                            ))
-                            .with_children(|slot| {
-                                slot.spawn((
-                                    InventoryMenuEntity,
-                                    InventoryOffhandIcon,
-                                    ImageNode {
-                                        image: offhand_img,
-                                        ..default()
-                                    },
-                                    Node {
-                                        width: px(14.0 * GUI_SCALE),
-                                        height: px(14.0 * GUI_SCALE),
-                                        ..default()
-                                    },
-                                    ZIndex(5),
-                                    offhand_vis,
-                                ));
-
-                                slot.spawn((
-                                    InventoryMenuEntity,
-                                    SlotHoverHighlight,
-                                    ImageNode {
-                                        image: special_hover_tex.clone(),
-                                        ..default()
-                                    },
-                                    Node {
-                                        position_type: PositionType::Absolute,
-                                        left: px(0.0),
-                                        top: px(0.0),
-                                        width: px(14.0 * GUI_SCALE),
-                                        height: px(14.0 * GUI_SCALE),
-                                        ..default()
-                                    },
-                                    ZIndex(1),
-                                    Visibility::Hidden,
-                                ));
-                            });
-
-                            // 9 Hotbar slots at (124..276, 227), 16x16 px
+                            // Bottom Hotbar Row (mirrored hotbar accessible in creative): 9 slots at (156..308, 228), 16x16 px
                             for (c, &slot_x) in INVENTORY_SLOT_X_COORDS
                                 .iter()
                                 .enumerate()
@@ -1406,72 +1302,6 @@ fn build_inventory_ui(
                                     ));
                                 });
                             }
-
-                            // Quick Utility Slot at (298, 228), 14x14 px
-                            let util_voxel = player_inv.utility_slot;
-                            let util_img = util_voxel
-                                .map(|v| icons.get(v))
-                                .unwrap_or_else(|| icons.get(Voxel::Dolomite));
-                            let util_vis = if util_voxel.is_some() {
-                                Visibility::Visible
-                            } else {
-                                Visibility::Hidden
-                            };
-
-                            card.spawn((
-                                InventoryMenuEntity,
-                                Button,
-                                Hovered::default(),
-                                InventoryUtilitySlot,
-                                Node {
-                                    position_type: PositionType::Absolute,
-                                    left: px(298.0 * GUI_SCALE),
-                                    top: px(228.0 * GUI_SCALE),
-                                    width: px(14.0 * GUI_SCALE),
-                                    height: px(14.0 * GUI_SCALE),
-                                    display: Display::Flex,
-                                    justify_content: JustifyContent::Center,
-                                    align_items: AlignItems::Center,
-                                    ..default()
-                                },
-                                BackgroundColor(Color::NONE),
-                            ))
-                            .with_children(|slot| {
-                                slot.spawn((
-                                    InventoryMenuEntity,
-                                    InventoryUtilityIcon,
-                                    ImageNode {
-                                        image: util_img,
-                                        ..default()
-                                    },
-                                    Node {
-                                        width: px(14.0 * GUI_SCALE),
-                                        height: px(14.0 * GUI_SCALE),
-                                        ..default()
-                                    },
-                                    ZIndex(5),
-                                    util_vis,
-                                ));
-
-                                slot.spawn((
-                                    InventoryMenuEntity,
-                                    SlotHoverHighlight,
-                                    ImageNode {
-                                        image: special_hover_tex.clone(),
-                                        ..default()
-                                    },
-                                    Node {
-                                        position_type: PositionType::Absolute,
-                                        left: px(0.0),
-                                        top: px(0.0),
-                                        width: px(14.0 * GUI_SCALE),
-                                        height: px(14.0 * GUI_SCALE),
-                                        ..default()
-                                    },
-                                    ZIndex(1),
-                                    Visibility::Hidden,
-                                ));
-                            });
                         }
                     }
                 });
@@ -1846,7 +1676,7 @@ fn handle_inventory_scroll(
     let max_scroll = max_filtered_scroll(filtered.len());
     let mut row_changed = false;
 
-    let track_height_logical = 166.0 * GUI_SCALE;
+    let track_height_logical = 164.0 * GUI_SCALE;
     let thumb_height_logical = 16.0 * GUI_SCALE;
     let max_travel_logical = (track_height_logical - thumb_height_logical).max(1.0);
 
@@ -1891,20 +1721,24 @@ fn handle_inventory_scroll(
         (Vec2::ZERO, WINDOW_WIDTH, WINDOW_HEIGHT)
     };
 
-    let eff_scale_x = card_w / 416.0;
-    let eff_scale_y = card_h / 256.0;
-    let track_screen_x = top_left.x + 298.0 * eff_scale_x;
-    let track_screen_y = top_left.y + 40.0 * eff_scale_y;
-    let track_screen_w = 7.0 * eff_scale_x;
-    let track_screen_h = 166.0 * eff_scale_y;
+    let eff_scale_x = card_w / 480.0;
+    let eff_scale_y = card_h / 270.0;
+    let track_screen_x = top_left.x + 339.0 * eff_scale_x;
+    let track_screen_y = top_left.y + 67.0 * eff_scale_y;
+    let track_screen_w = 8.0 * eff_scale_x;
+    let track_screen_h = 164.0 * eff_scale_y;
     let thumb_screen_h = 16.0 * eff_scale_y;
     let max_travel_screen = (track_screen_h - thumb_screen_h).max(1.0);
 
-    let track_hit_rect = Rect::new(
-        track_screen_x - 12.0 * scale,
-        track_screen_y - 6.0 * scale,
-        track_screen_x + track_screen_w + 12.0 * scale,
-        track_screen_y + track_screen_h + 6.0 * scale,
+    let track_hit_rect = Rect::from_corners(
+        Vec2::new(
+            track_screen_x - 12.0 * scale.max(0.1),
+            track_screen_y - 6.0 * scale.max(0.1),
+        ),
+        Vec2::new(
+            track_screen_x + track_screen_w.max(1.0) + 12.0 * scale.max(0.1),
+            track_screen_y + track_screen_h.max(1.0) + 6.0 * scale.max(0.1),
+        ),
     );
 
     let is_inside_track = cursor_pos.is_some_and(|pos| track_hit_rect.contains(pos));

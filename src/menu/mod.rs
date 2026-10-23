@@ -1,4 +1,5 @@
 pub mod creative_inventory;
+pub mod menu_bar;
 pub mod pause;
 pub mod settings;
 
@@ -25,6 +26,7 @@ pub enum MenuState {
     Settings,
     Inventory,
     WorldMap,
+    Journal,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
@@ -203,6 +205,7 @@ impl Plugin for MenuPlugin {
                 pause::PauseMenuPlugin,
                 settings::SettingsMenuPlugin,
                 creative_inventory::InventoryMenuPlugin,
+                menu_bar::MenuBarPlugin,
             ))
             .add_systems(Startup, setup_custom_cursor)
             .add_systems(
@@ -361,6 +364,9 @@ fn handle_menu_key_inputs(
             MenuState::WorldMap => {
                 next_state.set(MenuState::None);
             }
+            MenuState::Journal => {
+                next_state.set(MenuState::None);
+            }
         }
     }
 
@@ -513,7 +519,7 @@ fn manage_menu_time_pause(
         MenuState::Pause | MenuState::Settings => {
             virtual_time.pause();
         }
-        MenuState::None | MenuState::Inventory | MenuState::WorldMap => {
+        MenuState::None | MenuState::Inventory | MenuState::WorldMap | MenuState::Journal => {
             virtual_time.unpause();
         }
     }

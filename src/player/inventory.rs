@@ -3,8 +3,8 @@ use bevy::prelude::*;
 use crate::world::Voxel;
 
 pub const PLAYER_INVENTORY_COLS: usize = 9;
-pub const PLAYER_INVENTORY_ROWS: usize = 4;
-pub const PLAYER_INVENTORY_SLOTS: usize = PLAYER_INVENTORY_COLS * PLAYER_INVENTORY_ROWS; // 36 slots
+pub const PLAYER_INVENTORY_ROWS: usize = 3;
+pub const PLAYER_INVENTORY_SLOTS: usize = PLAYER_INVENTORY_COLS * PLAYER_INVENTORY_ROWS; // 27 slots
 
 /// Represents the player's personal persistent inventory storage (9 columns x 4 rows)
 /// plus equipment and auxiliary slots.

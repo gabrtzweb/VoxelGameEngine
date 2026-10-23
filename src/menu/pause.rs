@@ -14,16 +14,23 @@ use crate::{
 
 use super::MenuState;
 
+pub const PAUSE_SCALE: f32 = 4.0;
+
 #[derive(Component)]
 struct PauseMenuRoot;
 
-#[derive(Component)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 enum PauseMenuAction {
-    Resume,
-    Settings,
-    Restart,
-    Quit,
+    Resume,    // 01
+    Settings,  // 02
+    Controls,  // 03 (WIP)
+    Stats,     // 04 (WIP)
+    Restart,   // 05
+    Quit,      // 06
 }
+
+#[derive(Component)]
+struct PauseButtonLabel;
 
 pub struct PauseMenuPlugin;
 
@@ -33,7 +40,8 @@ impl Plugin for PauseMenuPlugin {
             .add_systems(OnExit(MenuState::Pause), despawn_pause_menu)
             .add_systems(
                 Update,
-                handle_pause_menu_buttons.run_if(in_state(MenuState::Pause)),
+                (handle_pause_menu_buttons, update_pause_button_hover)
+                    .run_if(in_state(MenuState::Pause)),
             );
     }
 }
@@ -44,16 +52,19 @@ fn spawn_pause_menu(
     asset_server: Res<AssetServer>,
 ) {
     let font_handle = app_font.as_ref().map(|f| f.source());
-    let btn_normal = asset_server.load("textures/interfaces/containers/button_large.png");
-    let btn_hover = asset_server.load("textures/interfaces/containers/button_large_hover.png");
+    let pause_texture =
+        asset_server.load("textures/interfaces/containers/pause.png");
 
-    let mut title_font = TextFont {
-        font_size: FontSize::Px(32.0),
-        ..default()
+    let make_font = |size: f32| {
+        let mut tf = TextFont {
+            font_size: FontSize::Px(size),
+            ..default()
+        };
+        if let Some(ref font) = font_handle {
+            tf.font = font.clone();
+        }
+        tf
     };
-    if let Some(ref font) = font_handle {
-        title_font.font = font.clone();
-    }
 
     commands
         .spawn((
@@ -69,147 +80,64 @@ fn spawn_pause_menu(
                 align_items: AlignItems::Center,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.60)),
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.45)),
             ZIndex(300),
         ))
         .with_children(|backdrop| {
+            // Fullscreen container image (480x270 @ 4x = 1920x1080)
             backdrop
-                .spawn(Node {
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
-                    row_gap: px(20.0),
-                    ..default()
-                })
-                .with_children(|card| {
-                    // Header Title
-                    card.spawn((
-                        Text::new("GAME PAUSED"),
-                        title_font,
-                        TextColor(Color::srgb(0.95, 0.95, 0.98)),
-                        text_shadow_default(),
-                        Node {
-                            margin: UiRect::bottom(px(8.0)),
-                            ..default()
-                        },
-                    ));
-
-                    // 2-Column Buttons Container
-                    card.spawn(Node {
-                        display: Display::Flex,
-                        flex_direction: FlexDirection::Column,
-                        align_items: AlignItems::Center,
-                        row_gap: px(12.0),
+                .spawn((
+                    ImageNode {
+                        image: pause_texture,
                         ..default()
-                    })
-                    .with_children(|rows| {
-                        // Row 1: Resume Game | Settings
-                        rows.spawn(Node {
-                            display: Display::Flex,
-                            flex_direction: FlexDirection::Row,
-                            column_gap: px(16.0),
-                            align_items: AlignItems::Center,
-                            ..default()
-                        })
-                        .with_children(|row| {
-                            spawn_menu_button(
-                                row,
-                                "Resume Game",
-                                PauseMenuAction::Resume,
-                                font_handle.as_ref(),
-                                &btn_normal,
-                                &btn_hover,
-                            );
-                            spawn_menu_button(
-                                row,
-                                "Settings",
-                                PauseMenuAction::Settings,
-                                font_handle.as_ref(),
-                                &btn_normal,
-                                &btn_hover,
-                            );
-                        });
+                    },
+                    Node {
+                        width: px(1920.0),
+                        height: px(1080.0),
+                        ..default()
+                    },
+                ))
+                .with_children(|container| {
+                    // 6 Buttons in column at x = 19 (76 px), w = 128 (512 px), h = 14 (56 px)
+                    let buttons = [
+                        (PauseMenuAction::Resume, "Resume Game", 40.0),
+                        (PauseMenuAction::Settings, "Settings & Options", 58.0),
+                        (PauseMenuAction::Controls, "Controls & Keybinds", 76.0),
+                        (PauseMenuAction::Stats, "Statistics & Feats", 94.0),
+                        (PauseMenuAction::Restart, "Restart Game", 112.0),
+                        (PauseMenuAction::Quit, "Quit to Desktop", 130.0),
+                    ];
 
-                        // Row 2: Restart Game | Quit to Desktop
-                        rows.spawn(Node {
-                            display: Display::Flex,
-                            flex_direction: FlexDirection::Row,
-                            column_gap: px(16.0),
-                            align_items: AlignItems::Center,
-                            ..default()
-                        })
-                        .with_children(|row| {
-                            spawn_menu_button(
-                                row,
-                                "Restart Game",
-                                PauseMenuAction::Restart,
-                                font_handle.as_ref(),
-                                &btn_normal,
-                                &btn_hover,
-                            );
-                            spawn_menu_button(
-                                row,
-                                "Quit to Desktop",
-                                PauseMenuAction::Quit,
-                                font_handle.as_ref(),
-                                &btn_normal,
-                                &btn_hover,
-                            );
-                        });
-                    });
+                    for (action, label, y) in buttons {
+                        container
+                            .spawn((
+                                Button,
+                                Hovered::default(),
+                                action,
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    left: px(19.0 * PAUSE_SCALE),
+                                    top: px(y * PAUSE_SCALE),
+                                    width: px(128.0 * PAUSE_SCALE),
+                                    height: px(14.0 * PAUSE_SCALE),
+                                    display: Display::Flex,
+                                    align_items: AlignItems::Center,
+                                    justify_content: JustifyContent::Center,
+                                    ..default()
+                                },
+                                BackgroundColor(Color::NONE),
+                            ))
+                            .with_children(|btn| {
+                                btn.spawn((
+                                    PauseButtonLabel,
+                                    Text::new(label),
+                                    make_font(18.0),
+                                    TextColor(Color::srgb(0.90, 0.92, 0.96)),
+                                    text_shadow_default(),
+                                ));
+                            });
+                    }
                 });
-        });
-}
-
-fn spawn_menu_button(
-    parent: &mut ChildSpawnerCommands,
-    label: &str,
-    action: PauseMenuAction,
-    font_handle: Option<&crate::core::FontSource>,
-    btn_normal: &Handle<Image>,
-    btn_hover: &Handle<Image>,
-) {
-    let mut btn_font = TextFont {
-        font_size: FontSize::Px(16.0),
-        ..default()
-    };
-    if let Some(font) = font_handle {
-        btn_font.font = font.clone();
-    }
-
-    parent
-        .spawn((
-            Button,
-            Hovered::default(),
-            action,
-            crate::menu::MenuButtonTexture {
-                normal: btn_normal.clone(),
-                hover: btn_hover.clone(),
-            },
-            ImageNode {
-                image: btn_normal.clone(),
-                image_mode: NodeImageMode::Sliced(TextureSlicer {
-                    border: BorderRect::all(4.0),
-                    ..default()
-                }),
-                ..default()
-            },
-            Node {
-                width: px(240.0),
-                height: px(40.0),
-                display: Display::Flex,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..default()
-            },
-        ))
-        .with_children(|btn| {
-            btn.spawn((
-                Text::new(label),
-                btn_font,
-                TextColor(Color::srgb(0.95, 0.95, 0.98)),
-                text_shadow_default(),
-            ));
         });
 }
 
@@ -219,7 +147,25 @@ fn despawn_pause_menu(mut commands: Commands, query: Query<Entity, With<PauseMen
     }
 }
 
-type PauseRestartParams<'w> = (
+fn update_pause_button_hover(
+    buttons_query: Query<(&Hovered, Has<Pressed>, &Children), With<Button>>,
+    mut labels_query: Query<&mut TextColor, With<PauseButtonLabel>>,
+) {
+    for (hovered, is_pressed, children) in &buttons_query {
+        let is_active = hovered.get() || is_pressed;
+        for child in children.iter() {
+            if let Ok(mut text_color) = labels_query.get_mut(child) {
+                *text_color = if is_active {
+                    TextColor(Color::srgb(1.0, 0.90, 0.40)) // Golden glow on hover
+                } else {
+                    TextColor(Color::srgb(0.90, 0.92, 0.96))
+                };
+            }
+        }
+    }
+}
+
+type PauseRestartParams<'w, 's> = (
     Option<ResMut<'w, VoxelWorld>>,
     Option<ResMut<'w, WorldModificationStore>>,
     Option<Res<'w, TerrainGenerator>>,
@@ -229,20 +175,11 @@ type PauseRestartParams<'w> = (
     Option<Res<'w, ChunkMaterial>>,
     Option<ResMut<'w, Hotbar>>,
     Option<ResMut<'w, SelectedVoxel>>,
-    Option<ResMut<'w, crate::map::MapCache>>,
+    Option<ResMut<'w, crate::map::cache::MapCache>>,
 );
 
 fn handle_pause_menu_buttons(
-    mut interaction_query: Query<
-        (
-            &Hovered,
-            Has<Pressed>,
-            &PauseMenuAction,
-            &crate::menu::MenuButtonTexture,
-            &mut ImageNode,
-        ),
-        With<Button>,
-    >,
+    buttons_query: Query<(&Hovered, Has<Pressed>, &PauseMenuAction), With<Button>>,
     mouse: Res<ButtonInput<MouseButton>>,
     mut next_state: ResMut<NextState<MenuState>>,
     mut env_state: Option<ResMut<EnvironmentState>>,
@@ -264,21 +201,20 @@ fn handle_pause_menu_buttons(
 ) {
     let left_clicked = mouse.just_pressed(MouseButton::Left);
 
-    for (hovered, is_pressed, action, btn_tex, mut img) in &mut interaction_query {
-        let is_hovered = hovered.get();
-        if is_hovered || is_pressed {
-            img.image = btn_tex.hover.clone();
-        } else {
-            img.image = btn_tex.normal.clone();
-        }
-
-        if is_hovered && left_clicked {
+    for (hovered, is_pressed, action) in &buttons_query {
+        if hovered.get() && (left_clicked || is_pressed) {
             match action {
                 PauseMenuAction::Resume => {
                     next_state.set(MenuState::None);
                 }
                 PauseMenuAction::Settings => {
                     next_state.set(MenuState::Settings);
+                }
+                PauseMenuAction::Controls => {
+                    info!("Controls & Keybinds configuration coming soon in Phase 2!");
+                }
+                PauseMenuAction::Stats => {
+                    info!("Statistics & Feats tracking coming soon in Phase 2!");
                 }
                 PauseMenuAction::Restart => {
                     // 1. Reset Environment to Day 1 Noon

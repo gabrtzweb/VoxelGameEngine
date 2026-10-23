@@ -21,13 +21,15 @@ use super::{
     color::{apply_relief_shading, unexplored_color},
 };
 
-pub const WORLD_MAP_WIDTH: u32 = 1044;
-pub const WORLD_MAP_HEIGHT: u32 = 756;
-pub const WORLD_MAP_FRAME_WIDTH: f32 = 1152.0;
-pub const WORLD_MAP_FRAME_HEIGHT: f32 = 864.0;
-pub const WORLD_MAP_VIEWPORT_WIDTH: f32 = 1044.0;
-pub const WORLD_MAP_VIEWPORT_HEIGHT: f32 = 756.0;
-pub const WORLD_MARKER_SIZE: f32 = 24.0;
+pub const WORLD_MAP_WIDTH: u32 = 900;
+pub const WORLD_MAP_HEIGHT: u32 = 440;
+pub const WORLD_MAP_FRAME_WIDTH: f32 = 1920.0;
+pub const WORLD_MAP_FRAME_HEIGHT: f32 = 1080.0;
+pub const WORLD_MAP_VIEWPORT_WIDTH: f32 = 1800.0;
+pub const WORLD_MAP_VIEWPORT_HEIGHT: f32 = 880.0;
+pub const WORLD_MAP_VIEWPORT_LEFT: f32 = 60.0;
+pub const WORLD_MAP_VIEWPORT_TOP: f32 = 140.0;
+pub const WORLD_MARKER_SIZE: f32 = 28.0;
 
 #[derive(Component)]
 pub struct WorldMapRoot;
@@ -102,7 +104,7 @@ fn setup_world_map_resources(
     let marker_handle: Handle<Image> =
         asset_server.load("textures/interfaces/atlases/decorations/marker_red.png");
     let bg_handle: Handle<Image> =
-        asset_server.load("textures/interfaces/atlases/map_background_large.png");
+        asset_server.load("textures/interfaces/containers/map.png");
 
     commands.insert_resource(WorldMapState {
         center: Vec2::ZERO,
@@ -112,7 +114,7 @@ fn setup_world_map_resources(
         terrain_image: terrain_handle,
         marker_image: marker_handle,
         background_image: bg_handle,
-        last_drawn_center: Vec2::splat(f32::MAX),
+        last_drawn_center: Vec2::splat(999_999.0),
         last_drawn_zoom: -1.0,
         last_cache_version: u64::MAX,
     });
@@ -131,7 +133,7 @@ fn spawn_world_map_ui(
         let p = player_transform.translation;
         map_state.center = Vec2::new(p.x / VOXEL_SIZE, p.z / VOXEL_SIZE);
     }
-    map_state.last_drawn_center = Vec2::splat(f32::MAX); // Force redraw
+    map_state.last_drawn_center = Vec2::splat(999_999.0); // Force redraw
 
     commands
         .spawn((
@@ -152,40 +154,42 @@ fn spawn_world_map_ui(
             ZIndex(250),
         ))
         .with_children(|root| {
-            // Centered World Map Parchment Frame Container (map_background_large.png)
+            // Fullscreen 16:9 World Map Frame (480x270_map.png @ 4x)
             root.spawn(Node {
-                position_type: PositionType::Relative,
                 width: px(WORLD_MAP_FRAME_WIDTH),
                 height: px(WORLD_MAP_FRAME_HEIGHT),
-                display: Display::Flex,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
+                min_width: px(WORLD_MAP_FRAME_WIDTH),
+                min_height: px(WORLD_MAP_FRAME_HEIGHT),
+                flex_shrink: 0.0,
                 ..default()
             })
             .with_children(|frame| {
-                // Background parchment image filling the frame
+                // Background map plate image filling the 1920x1080 frame
                 frame.spawn((
                     ImageNode {
                         image: map_state.background_image.clone(),
+                        image_mode: NodeImageMode::Stretch,
                         ..default()
                     },
                     Node {
                         position_type: PositionType::Absolute,
                         left: px(0.0),
                         top: px(0.0),
-                        right: px(0.0),
-                        bottom: px(0.0),
+                        width: px(WORLD_MAP_FRAME_WIDTH),
+                        height: px(WORLD_MAP_FRAME_HEIGHT),
                         ..default()
                     },
                     ZIndex(1),
                 ));
 
-                // Interactive World Map Terrain Viewport centered inside parchment frame
+                // Interactive World Map Terrain Viewport inside well (left: 60, top: 140, 1800x880)
                 frame
                     .spawn((
                         WorldMapViewport,
                         Node {
-                            position_type: PositionType::Relative,
+                            position_type: PositionType::Absolute,
+                            left: px(WORLD_MAP_VIEWPORT_LEFT),
+                            top: px(WORLD_MAP_VIEWPORT_TOP),
                             width: px(WORLD_MAP_VIEWPORT_WIDTH),
                             height: px(WORLD_MAP_VIEWPORT_HEIGHT),
                             overflow: Overflow::clip(),
@@ -198,14 +202,15 @@ fn spawn_world_map_ui(
                         viewport.spawn((
                             ImageNode {
                                 image: map_state.terrain_image.clone(),
+                                image_mode: NodeImageMode::Stretch,
                                 ..default()
                             },
                             Node {
                                 position_type: PositionType::Absolute,
                                 left: px(0.0),
                                 top: px(0.0),
-                                right: px(0.0),
-                                bottom: px(0.0),
+                                width: px(WORLD_MAP_VIEWPORT_WIDTH),
+                                height: px(WORLD_MAP_VIEWPORT_HEIGHT),
                                 ..default()
                             },
                             ZIndex(1),
@@ -217,20 +222,18 @@ fn spawn_world_map_ui(
                             WorldMapPlayerMarker,
                             ImageNode {
                                 image: map_state.marker_image.clone(),
+                                image_mode: NodeImageMode::Stretch,
                                 ..default()
                             },
                             Node {
                                 position_type: PositionType::Absolute,
                                 width: px(WORLD_MARKER_SIZE),
                                 height: px(WORLD_MARKER_SIZE),
-                                left: percent(50.0),
-                                top: percent(50.0),
+                                left: px(WORLD_MAP_VIEWPORT_WIDTH / 2.0 - half_m),
+                                top: px(WORLD_MAP_VIEWPORT_HEIGHT / 2.0 - half_m),
                                 ..default()
                             },
-                            UiTransform::from_translation(Val2::new(
-                                px(-half_m),
-                                px(-half_m),
-                            )),
+                            UiTransform::IDENTITY,
                             Visibility::Visible,
                             ZIndex(30),
                         ));
@@ -413,17 +416,30 @@ fn sync_world_map_terrain(
 
     let half_w = (WORLD_MAP_WIDTH as f32) / 2.0;
     let half_h = (WORLD_MAP_HEIGHT as f32) / 2.0;
-    let zoom = map_state.zoom;
-    let center = map_state.center;
+    let zoom = if map_state.zoom.is_finite() && map_state.zoom > 0.05 {
+        map_state.zoom
+    } else {
+        1.0
+    };
+    let center = if map_state.center.is_finite() {
+        map_state.center
+    } else {
+        Vec2::ZERO
+    };
 
     for py in 0..WORLD_MAP_HEIGHT {
-        let wz = (center.y + (py as f32 - half_h) / zoom).floor() as i32;
+        let raw_z = center.y + (py as f32 - half_h) / zoom;
+        let wz = if raw_z.is_finite() {
+            raw_z.clamp(-2_000_000.0, 2_000_000.0).floor() as i32
+        } else {
+            0
+        };
         let row_offset = (py as usize) * (WORLD_MAP_WIDTH as usize) * 4;
 
         let col_z = wz >> 4;
         let lz = (wz & 15) as usize;
 
-        let north_wz = wz - 1;
+        let north_wz = wz.saturating_sub(1);
         let north_col_z = north_wz >> 4;
         let north_lz = (north_wz & 15) as usize;
 
@@ -432,7 +448,12 @@ fn sync_world_map_terrain(
         let mut north_chunk: Option<&crate::map::cache::MapChunk> = None;
 
         for px in 0..WORLD_MAP_WIDTH {
-            let wx = (center.x + (px as f32 - half_w) / zoom).floor() as i32;
+            let raw_x = center.x + (px as f32 - half_w) / zoom;
+            let wx = if raw_x.is_finite() {
+                raw_x.clamp(-2_000_000.0, 2_000_000.0).floor() as i32
+            } else {
+                0
+            };
             let idx = row_offset + (px as usize) * 4;
 
             let col_x = wx >> 4;
@@ -501,8 +522,11 @@ fn update_world_map_ui(
     let player_map_x = half_w + (p.x / VOXEL_SIZE - map_state.center.x) * map_state.zoom;
     let player_map_y = half_h + (p.z / VOXEL_SIZE - map_state.center.y) * map_state.zoom;
 
-    let pct_x = (player_map_x / WORLD_MAP_WIDTH as f32) * 100.0;
-    let pct_y = (player_map_y / WORLD_MAP_HEIGHT as f32) * 100.0;
+    let scale_x = WORLD_MAP_VIEWPORT_WIDTH / (WORLD_MAP_WIDTH as f32);
+    let scale_y = WORLD_MAP_VIEWPORT_HEIGHT / (WORLD_MAP_HEIGHT as f32);
+    let half_m = WORLD_MARKER_SIZE / 2.0;
+    let marker_pos_x = (player_map_x * scale_x - half_m).clamp(-100.0, WORLD_MAP_VIEWPORT_WIDTH + 100.0);
+    let marker_pos_y = (player_map_y * scale_y - half_m).clamp(-100.0, WORLD_MAP_VIEWPORT_HEIGHT + 100.0);
 
     let marker_visible = player_map_x >= 0.0
         && player_map_x <= WORLD_MAP_WIDTH as f32
@@ -511,16 +535,16 @@ fn update_world_map_ui(
 
     let yaw = if let Ok(camera_transform) = camera_query.single() {
         let (y, _, _) = camera_transform.rotation.to_euler(EulerRot::YXZ);
-        y
+        if y.is_finite() { y } else { 0.0 }
     } else {
         0.0
     };
 
-    let half_m = WORLD_MARKER_SIZE / 2.0;
     for (mut node, mut ui_transform, mut vis) in &mut marker_query {
-        node.left = percent(pct_x);
-        node.top = percent(pct_y);
-        ui_transform.translation = Val2::new(px(-half_m), px(-half_m));
+        node.left = px(marker_pos_x);
+        node.top = px(marker_pos_y);
+        ui_transform.translation = Val2::ZERO;
+        ui_transform.scale = Vec2::ONE;
         ui_transform.rotation = Rot2::radians(-yaw);
         *vis = if marker_visible {
             Visibility::Visible
@@ -545,10 +569,19 @@ fn update_world_map_ui(
                     let tex_x = in_vp_x / scale_x;
                     let tex_y = in_vp_y / scale_y;
 
-                    let cursor_world_x =
-                        (map_state.center.x + (tex_x - half_w) / map_state.zoom).floor() as i32;
-                    let cursor_world_z =
-                        (map_state.center.y + (tex_y - half_h) / map_state.zoom).floor() as i32;
+                    let safe_zoom = map_state.zoom.max(0.05);
+                    let raw_cx = map_state.center.x + (tex_x - half_w) / safe_zoom;
+                    let raw_cz = map_state.center.y + (tex_y - half_h) / safe_zoom;
+                    let cursor_world_x = if raw_cx.is_finite() {
+                        raw_cx.clamp(-2_000_000.0, 2_000_000.0).floor() as i32
+                    } else {
+                        0
+                    };
+                    let cursor_world_z = if raw_cz.is_finite() {
+                        raw_cz.clamp(-2_000_000.0, 2_000_000.0).floor() as i32
+                    } else {
+                        0
+                    };
 
                     for mut text in &mut cursor_text_query {
                         **text = format!(

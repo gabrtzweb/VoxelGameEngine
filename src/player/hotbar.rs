@@ -9,9 +9,11 @@ use crate::world::Voxel;
 pub const HOTBAR_SLOT_COUNT: usize = 9;
 
 pub const HOTBAR_SLOT_X_COORDS: [f32; HOTBAR_SLOT_COUNT] =
-    [65.0, 87.0, 109.0, 131.0, 153.0, 175.0, 197.0, 219.0, 241.0];
-pub const HOTBAR_SLOT_Y: f32 = 14.0;
-pub const HOTBAR_SCALE: f32 = 3.0;
+    [144.0, 166.0, 188.0, 210.0, 232.0, 254.0, 276.0, 298.0, 320.0];
+pub const HOTBAR_SLOT_Y: f32 = 228.0;
+pub const HOTBAR_SCALE: f32 = 4.0;
+pub const HOTBAR_FRAME_WIDTH: f32 = 480.0 * HOTBAR_SCALE; // 1920.0 px
+pub const HOTBAR_FRAME_HEIGHT: f32 = 270.0 * HOTBAR_SCALE; // 1080.0 px
 
 #[derive(Resource, Debug, Clone)]
 pub struct Hotbar {
@@ -120,26 +122,25 @@ fn setup_hotbar_ui(
 ) {
     let initial_hotbar = Hotbar::default();
     let font_handle = app_font.as_ref().map(|f| f.source());
-    let hotbar_texture = asset_server.load("textures/interfaces/containers/hotbar.png");
+    let hotbar_texture =
+        asset_server.load("textures/interfaces/containers/hotbar.png");
     let selection_texture =
         asset_server.load("textures/interfaces/containers/hotbar_selection.png");
 
-    let tray_width = 320.0 * HOTBAR_SCALE;
-    let tray_height = 44.0 * HOTBAR_SCALE;
     let slot_size = 16.0 * HOTBAR_SCALE;
     let icon_size = 16.0 * HOTBAR_SCALE;
-    let special_slot_size = 14.0 * HOTBAR_SCALE;
     let selection_size = 20.0 * HOTBAR_SCALE;
 
-    // Centered bottom container spanning screen width
+    // Fullscreen 16:9 gameplay hotbar container
     commands
         .spawn((
             HotbarRoot,
             Node {
                 position_type: PositionType::Absolute,
-                bottom: px(16.0),
                 left: px(0.0),
+                top: px(0.0),
                 right: px(0.0),
+                bottom: px(0.0),
                 display: Display::Flex,
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
@@ -148,41 +149,7 @@ fn setup_hotbar_ui(
             ZIndex(150),
         ))
         .with_children(|parent| {
-            // Held item name tooltip (Minecraft-style centered text floating above hotbar)
-            let mut tooltip_font = TextFont {
-                font_size: FontSize::Px(20.0),
-                ..default()
-            };
-            if let Some(ref font) = font_handle {
-                tooltip_font.font = font.clone();
-            }
-
-            let mut num_font = TextFont {
-                font_size: FontSize::Px(3.5 * HOTBAR_SCALE),
-                ..default()
-            };
-            if let Some(ref font) = font_handle {
-                num_font.font = font.clone();
-            }
-
-            parent.spawn((
-                HotbarTooltipText,
-                Text::new(""),
-                tooltip_font,
-                TextColor(Color::srgba(1.0, 1.0, 1.0, 0.0)),
-                text_shadow_default(),
-                Node {
-                    position_type: PositionType::Absolute,
-                    bottom: px(tray_height + 14.0),
-                    display: Display::Flex,
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    ..default()
-                },
-                Visibility::Hidden,
-            ));
-
-            // Scaled hotbar texture (320x44 px at 3x = 960x132 px)
+            // Scaled hotbar plate texture (480x270 at 4x = 1920x1080 px)
             // NO mouse hover / NO mouse clicks in 3D gameplay
             parent
                 .spawn((
@@ -191,21 +158,58 @@ fn setup_hotbar_ui(
                         ..default()
                     },
                     Node {
-                        width: px(tray_width),
-                        height: px(tray_height),
-                        position_type: PositionType::Relative,
+                        position_type: PositionType::Absolute,
+                        left: px(0.0),
+                        top: px(0.0),
+                        width: px(HOTBAR_FRAME_WIDTH),
+                        height: px(HOTBAR_FRAME_HEIGHT),
                         ..default()
                     },
                 ))
                 .with_children(|tray| {
-                    // Static Visual Progress Bars (Placeholders per specification)
-                    // Field 1: XP Progress Bar at (60, 5), 203x2 px
+                    // Held item name tooltip (Minecraft-style centered text floating above hotbar)
+                    let mut tooltip_font = TextFont {
+                        font_size: FontSize::Px(20.0),
+                        ..default()
+                    };
+                    if let Some(ref font) = font_handle {
+                        tooltip_font.font = font.clone();
+                    }
+
+                    let mut num_font = TextFont {
+                        font_size: FontSize::Px(3.5 * HOTBAR_SCALE),
+                        ..default()
+                    };
+                    if let Some(ref font) = font_handle {
+                        num_font.font = font.clone();
+                    }
+
+                    tray.spawn((
+                        HotbarTooltipText,
+                        Text::new(""),
+                        tooltip_font,
+                        TextColor(Color::srgba(1.0, 1.0, 1.0, 0.0)),
+                        text_shadow_default(),
+                        Node {
+                            position_type: PositionType::Absolute,
+                            left: px(0.0),
+                            right: px(0.0),
+                            top: px(200.0 * HOTBAR_SCALE),
+                            display: Display::Flex,
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            ..default()
+                        },
+                        Visibility::Hidden,
+                    ));
+
+                    // Field 1: XP Progress Bar at (138, 218), 204x4 px
                     tray.spawn(Node {
                         position_type: PositionType::Absolute,
-                        left: px(60.0 * HOTBAR_SCALE),
-                        top: px(5.0 * HOTBAR_SCALE),
-                        width: px(202.0 * HOTBAR_SCALE),
-                        height: px(2.0 * HOTBAR_SCALE),
+                        left: px(138.0 * HOTBAR_SCALE),
+                        top: px(218.0 * HOTBAR_SCALE),
+                        width: px(204.0 * HOTBAR_SCALE),
+                        height: px(4.0 * HOTBAR_SCALE),
                         ..default()
                     })
                     .with_children(|xp_bar| {
@@ -220,13 +224,13 @@ fn setup_hotbar_ui(
                         ));
                     });
 
-                    // Field 4: Off-hand Slot display at (45, 17), 14x14 px (non-clickable visual readout)
+                    // Field 2: Off-hand Slot display at (122, 231), 16x16 px (non-clickable visual readout)
                     tray.spawn(Node {
                         position_type: PositionType::Absolute,
-                        left: px(45.0 * HOTBAR_SCALE),
-                        top: px(17.0 * HOTBAR_SCALE),
-                        width: px(special_slot_size),
-                        height: px(special_slot_size),
+                        left: px(122.0 * HOTBAR_SCALE),
+                        top: px(231.0 * HOTBAR_SCALE),
+                        width: px(slot_size),
+                        height: px(slot_size),
                         display: Display::Flex,
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
@@ -237,21 +241,21 @@ fn setup_hotbar_ui(
                             HotbarOffhandIcon,
                             ImageNode::default(),
                             Node {
-                                width: px(special_slot_size),
-                                height: px(special_slot_size),
+                                width: px(slot_size),
+                                height: px(slot_size),
                                 ..default()
                             },
                             Visibility::Hidden,
                         ));
                     });
 
-                    // Field 14: Quick Utility Slot display at (263, 17), 14x14 px (non-clickable visual readout)
+                    // Field 12: Quick Utility Slot display at (342, 231), 16x16 px (non-clickable visual readout)
                     tray.spawn(Node {
                         position_type: PositionType::Absolute,
-                        left: px(263.0 * HOTBAR_SCALE),
-                        top: px(17.0 * HOTBAR_SCALE),
-                        width: px(special_slot_size),
-                        height: px(special_slot_size),
+                        left: px(342.0 * HOTBAR_SCALE),
+                        top: px(231.0 * HOTBAR_SCALE),
+                        width: px(slot_size),
+                        height: px(slot_size),
                         display: Display::Flex,
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
@@ -262,15 +266,15 @@ fn setup_hotbar_ui(
                             HotbarUtilityIcon,
                             ImageNode::default(),
                             Node {
-                                width: px(special_slot_size),
-                                height: px(special_slot_size),
+                                width: px(slot_size),
+                                height: px(slot_size),
                                 ..default()
                             },
                             Visibility::Hidden,
                         ));
                     });
 
-                    // Fields 5 to 13: 9 Primary Hotbar Item Slots (16x16 px)
+                    // Fields 3 to 11: 9 Primary Hotbar Item Slots (16x16 px)
                     for (index, &slot_x) in HOTBAR_SLOT_X_COORDS
                         .iter()
                         .enumerate()
@@ -434,6 +438,7 @@ fn sync_hotbar_ui(
     if let Ok(mut sel_node) = selection_query.single_mut() {
         let slot_x = HOTBAR_SLOT_X_COORDS[hotbar.active_slot % HOTBAR_SLOT_COUNT];
         sel_node.left = px((slot_x - 2.0) * HOTBAR_SCALE);
+        sel_node.top = px((HOTBAR_SLOT_Y - 2.0) * HOTBAR_SCALE);
     }
 
     if hotbar.is_changed() {

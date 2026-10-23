@@ -408,7 +408,7 @@ fn default_dynamic_fps_enabled() -> bool {
 }
 
 fn default_screen_mode() -> String {
-    "windowed".to_string()
+    "borderless".to_string()
 }
 
 fn default_transmission_enabled() -> bool {
