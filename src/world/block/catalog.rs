@@ -99,6 +99,13 @@ impl Voxel {
             Self::HayBale => Some("deco_hay_bale_side"),
             Self::RiceBale => Some("deco_rice_bale_side"),
             Self::StrawBale => Some("deco_straw_bale_side"),
+            Self::SeaAnemone => Some("aqua_sea_anemone_side"),
+            Self::GeothermalVent => Some("aqua_geothermal_vent_side"),
+            Self::ScuteBlock => Some("aqua_scute_side"),
+            Self::Barrel => Some("util_barrel_side"),
+            Self::PearlBlock => Some("aqua_pearl_side"),
+            Self::Bookshelf | Self::BookshelfEmpty => Some("util_bookshelf_side"),
+            Self::Bag => Some("util_bag_side"),
             _ => None,
         }
     }
@@ -274,6 +281,17 @@ impl Voxel {
             | Self::FungiRussulaCap
             | Self::FungiShiitakeCap
             | Self::FungiVerdigrisCap => Some("fungi_inside"),
+            _ => None,
+        }
+    }
+
+    pub fn front_texture_name(self) -> Option<&'static str> {
+        match self {
+            Self::BeeNest => Some("nest_bee_nest_front"),
+            Self::WaspNest => Some("nest_wasp_nest_front"),
+            Self::Bookshelf => Some("util_bookshelf_front"),
+            Self::BookshelfEmpty => Some("util_bookshelf_front_empty"),
+            Self::Bag => Some("util_bag_side_front"),
             _ => None,
         }
     }

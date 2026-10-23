@@ -71,10 +71,10 @@ The engine internal technical and validation domain comprises **4 engine fallbac
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **01** | `debug_accept` | Debug Accept Marker | **Development** | `debug_accept.png` | 6 uniform faces *(Visual indicator of passing assertion / OK)* |
-| **02** | `debug_fail` | Debug Fail Marker | **Development** | `debug_fail.png` | 6 uniform faces *(Visual indicator of failed assertion / Error)* |
-| **03** | `debug_instance` | Debug Instance Marker | **Development** | `debug_instance.png` | 6 uniform faces *(Chunk / structure instance validation)* |
-| **04** | `debug_start` | Debug Start Marker | **Development** | `debug_start.png` | 6 uniform faces *(Pipeline initialization validation)* |
+| **01** | `debug_accept` | Debug Accept | **Development** | `debug_accept.png` | 6 uniform faces *(Visual indicator of passing assertion / OK)* |
+| **02** | `debug_fail` | Debug Fail | **Development** | `debug_fail.png` | 6 uniform faces *(Visual indicator of failed assertion / Error)* |
+| **03** | `debug_instance` | Debug Instance | **Development** | `debug_instance.png` | 6 uniform faces *(Chunk / structure instance validation)* |
+| **04** | `debug_start` | Debug Start | **Development** | `debug_start.png` | 6 uniform faces *(Pipeline initialization validation)* |
 | **05** | `null_block` | Null Block | **Engine Fallback** | `null_block.png` | 6 uniform faces *(Rendered when full block texture or ID is missing)* |
 | **06** | `null_crossmesh` | Null Crossmesh | **Engine Fallback** | `null_crossmesh.png` | Cross-billboard model *(Rendered when cross-billboard or flora texture is missing)* |
 | **07** | `null_generic` | Null Generic | **Engine Fallback** | `null_generic.png` | UV face mapping *(Rendered when custom 3D model, prop, or entity texture is missing)* |
@@ -95,7 +95,7 @@ The hydrosphere, rheology, and cryosphere domain comprises **8 cryogenic ice blo
 | :-: | :--- | :--- | :--- | :--- | :--- |
 | **01** | `frost_blue_ice` | Blue Ice | **Cryology** | `frost_blue_ice.png` | 6 uniform faces *(100% Opaque deep cobalt glacial)* |
 | **02** | `frost_blue_ice_cracked` | Cracked Blue Ice | **Cryology** | `frost_blue_ice_cracked.png` | 6 uniform faces *(100% Opaque cellular frost veins & bubbles)* |
-| **03** | `frost_ice` | Clear Ice | **Cryology** | `frost_ice.png` | 6 uniform faces *(Translucent, alpha=153)* |
+| **03** | `frost_ice` | Ice | **Cryology** | `frost_ice.png` | 6 uniform faces *(Translucent, alpha=153)* |
 | **04** | `frost_ice_black` | Black Ice | **Cryology** | `frost_ice_black.png` | 6 uniform faces *(Translucent abyssal dark, alpha=160)* |
 | **05** | `frost_ice_black_fragile` | Fragile Black Ice | **Cryology** | `frost_ice_black_fragile.png` | 6 uniform faces *(Translucent dark with bold cleavage fractures)* |
 | **06** | `frost_ice_black_packed` | Packed Black Ice | **Cryology** | `frost_ice_black_packed.png` | 6 uniform faces *(100% Opaque solid dark permafrost)* |
@@ -105,7 +105,7 @@ The hydrosphere, rheology, and cryosphere domain comprises **8 cryogenic ice blo
 | **10** | `liquid_blood` | Blood | **Biological** | Block: `liquid_blood.png`<br>Still: `liquid_blood_still.png`<br>Flow: `liquid_blood_flow.png` | Top: Still animated strip *(Crimson arterial)*<br>Sides/Falling: Flow animated strip<br>Inventory/Particle: Block icon |
 | **11** | `liquid_core_magma` | Core Magma | **Magmatic** | Block: `liquid_core_magma.png`<br>Still: `liquid_core_magma_still.png`<br>Flow: `liquid_core_magma_flow.png` | Top: Still animated strip *(Deep mantle incandescent)*<br>Sides/Falling: Flow animated strip<br>Inventory/Particle: Block icon |
 | **12** | `liquid_lava` | Lava | **Magmatic** | Block: `liquid_lava.png`<br>Still: `liquid_lava_still.png`<br>Flow: `liquid_lava_flow.png` | Top: Still animated strip *(1000°C–1200°C basaltic)*<br>Sides/Falling: Flow animated strip<br>Inventory/Particle: Block icon |
-| **13** | `liquid_molten` | Molten Slag | **Magmatic** | Block: `liquid_molten.png`<br>Still: `liquid_molten_still.png`<br>Flow: `liquid_molten_flow.png` | Top: Still animated strip *(Liquefied metallurgical metal)*<br>Sides/Falling: Flow animated strip<br>Inventory/Particle: Block icon |
+| **13** | `liquid_molten` | Molten | **Magmatic** | Block: `liquid_molten.png`<br>Still: `liquid_molten_still.png`<br>Flow: `liquid_molten_flow.png` | Top: Still animated strip *(Liquefied metallurgical metal)*<br>Sides/Falling: Flow animated strip<br>Inventory/Particle: Block icon |
 | **14** | `liquid_ooze` | Ooze | **Biological** | Block: `liquid_ooze.png`<br>Still: `liquid_ooze_still.png`<br>Flow: `liquid_ooze_flow.png` | Top: Still animated strip *(Olive green bubbling slime)*<br>Sides/Falling: Flow animated strip<br>Inventory/Particle: Block icon |
 | **15** | `liquid_sludge` | Sludge | **Alluvial Mire** | Block: `liquid_sludge.png`<br>Still: `liquid_sludge_still.png`<br>Flow: `liquid_sludge_flow.png` | Top: Still animated strip *(Dark brown muddy mire)*<br>Sides/Falling: Flow animated strip<br>Inventory/Particle: Block icon |
 | **16** | `liquid_spring_water` | Spring Water | **Aquatic** | Block: `liquid_spring_water.png`<br>Still: `liquid_spring_water_still.png`<br>Flow: `liquid_spring_water_flow.png` | Top: Still animated strip *(Turquoise mineral)*<br>Sides/Falling: Flow animated strip<br>Inventory/Particle: Block icon |
@@ -168,7 +168,7 @@ The planetary pedology system classifies soils into **3 core functional division
 | **41** | `permafrost_grass` | Permafrost Grass | **Climatic** | Top: `soil_grass.png`<br>Bottom: `soil_permafrost_dirt.png`<br>Sides: `soil_permafrost_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `blocks/overlays/soil_grass_side_overlay.png`) |
 | **42** | `permafrost_icy` | Permafrost Icy | **Climatic** | `soil_permafrost_icy.png` | 6 uniform faces |
 | **43** | `powder_snow` | Powder Snow | **Cryosphere** | `soil_snow_powder.png` | 6 uniform faces |
-| **44** | `sand_common` | Common Sand | **Sand** | `soil_sand_common.png` | 6 uniform faces |
+| **44** | `sand_common` | Sand | **Sand** | `soil_sand_common.png` | 6 uniform faces |
 | **45** | `sand_dune` | Dune Sand | **Sand** | `soil_sand_dune.png` | 6 uniform faces |
 | **46** | `sand_red` | Red Sand | **Sand** | `soil_sand_red.png` | 6 uniform faces |
 | **47** | `sand_white` | White Sand | **Sand** | `soil_sand_white.png` | 6 uniform faces |
@@ -180,7 +180,7 @@ The planetary pedology system classifies soils into **3 core functional division
 | **53** | `silt_rooted` | Silt Rooted | **Biological** | `soil_silt_rooted.png` | 6 uniform faces |
 | **54** | `silt_snow` | Silt Snow | **Biological** | Top: `soil_snow.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_snow_side.png` | Top + Bottom + 4 sides |
 | **55** | `silt_tilled` | Silt Tilled | **Biological** | Top: `soil_silt_tilled_top.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_tilled_side.png` | Top + Bottom + 4 sides |
-| **56** | `snow_block` | Snow Block | **Cryosphere** | `soil_snow.png` | 6 uniform faces |
+| **56** | `snow_block` | Snow | **Cryosphere** | `soil_snow.png` | 6 uniform faces |
 
 ---
 
@@ -234,8 +234,8 @@ The geological framework comprises **17 mineable rock matrices** across 7 core p
 | **37** | `limestone` | Limestone | **Sedimentary** | `rock_limestone.png` | 6 uniform faces |
 | **38** | `limestone_grass` | Limestone Grass Outcrop | **Sedimentary** | Top: `soil_grass.png`<br>Bot: `rock_limestone.png`<br>Sides: `rock_limestone_grass_side.png` | Top + Bot + 4 sides (overlay `soil_grass_side_overlay.png`) |
 | **39** | `limestone_snow` | Limestone Snow Outcrop | **Sedimentary** | Top: `soil_snow.png`<br>Bot: `rock_limestone.png`<br>Sides: `rock_limestone_snow_side.png` | Top + Bot + 4 sides |
-| **40** | `magma` | Magma Rock | **Geothermal** | `rock_magma.png` *(+ `1`, `2`)* | 6 uniform faces *(Animated incandescent veins, emits light)* |
-| **41** | `mantle` | Primordial Mantle | **Bedrock** | `rock_mantle.png` *(+ `1`, `2`)* | 6 uniform faces *(Unbreakable)* |
+| **40** | `magma` | Magma | **Geothermal** | `rock_magma.png` *(+ `1`, `2`)* | 6 uniform faces *(Animated incandescent veins, emits light)* |
+| **41** | `mantle` | Mantle | **Bedrock** | `rock_mantle.png` *(+ `1`, `2`)* | 6 uniform faces *(Unbreakable)* |
 | **42** | `marble` | Marble | **Metamorphic** | `rock_marble.png` | 6 uniform faces |
 | **43** | `mossy_andesite` | Mossy Andesite | **Continental** | `rock_andesite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
 | **44** | `mossy_argillite` | Mossy Argillite | **Sedimentary** | `rock_argillite.png` *(+ `mossy_rock_overlay.png`)* | 6 faces + Shader Moss Overlay (Stochastic: base, 1, 2) |
@@ -258,7 +258,7 @@ The geological framework comprises **17 mineable rock matrices** across 7 core p
 | **61** | `pebble_flint_cluster` | Flint Pebble Cluster | **Pebble (Cluster)** | `pebble_flint_cluster.png` *(+ `1`, `2`)* | Low sub-voxel cluster pebbles |
 | **62** | `pebble_quartz` | Quartz Pebble | **Pebble (Single)** | `pebble_quartz.png` *(+ `1`, `2`)* | Low sub-voxel ground pebble |
 | **63** | `pebble_quartz_cluster` | Quartz Pebble Cluster | **Pebble (Cluster)** | `pebble_quartz_cluster.png` *(+ `1`, `2`)* | Low sub-voxel cluster pebbles |
-| **64** | `sandstone_common` | Common Sandstone | **Sedimentary** | `rock_sandstone_common.png` | 6 uniform faces |
+| **64** | `sandstone_common` | Sandstone | **Sedimentary** | `rock_sandstone_common.png` | 6 uniform faces |
 | **65** | `sandstone_dune` | Dune Sandstone | **Sedimentary** | `rock_sandstone_dune.png` | 6 uniform faces |
 | **66** | `sandstone_red` | Red Sandstone | **Sedimentary** | `rock_sandstone_red.png` | 6 uniform faces |
 | **67** | `sandstone_white` | White Sandstone | **Sedimentary** | `rock_sandstone_white.png` | 6 uniform faces |
@@ -343,8 +343,8 @@ Planetary dendrology encompasses **18 living forest tree species** distributed a
 | **64** | `oak_log` | Oak Log | **Wood** | Top/Bottom: `tree_oak_log.png`<br>Sides: `tree_oak_bark.png` | Directional (Top/Bottom + 4 sides) |
 | **65** | `oak_planks` | Oak Planks | **Planks** | `tree_oak_planks.png` | 6 uniform faces |
 | **66** | `oak_wood` | Oak Wood | **Wood** | `tree_oak_bark.png` | 6 uniform faces |
-| **67** | `palm_leaves` | Palm Fronds | **Foliage** | `tree_palm_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **68** | `palm_leaves_dead` | Dead Palm Fronds | **Foliage** | `tree_palm_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **67** | `palm_leaves` | Palm Leaves | **Foliage** | `tree_palm_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **68** | `palm_leaves_dead` | Dead Palm Leaves | **Foliage** | `tree_palm_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
 | **69** | `palm_log` | Palm Log | **Wood** | Top/Bottom: `tree_palm_log.png`<br>Sides: `tree_palm_bark.png` | Directional (Top/Bottom + 4 sides) |
 | **70** | `palm_planks` | Palm Planks | **Planks** | `tree_palm_planks.png` | 6 uniform faces |
 | **71** | `palm_wood` | Palm Wood | **Wood** | `tree_palm_bark.png` | 6 uniform faces |
@@ -411,12 +411,12 @@ The metallogenic and mineralogical domain comprises **20 solid unrefined raw/rou
 | **027** | `ore_coal_granite` | Coal Ore (Granite) | **Chemical** | `rock_granite.png` | `ore_coal_overlay.png` |
 | **028** | `ore_coal_limestone` | Coal Ore (Limestone) | **Chemical** | `rock_limestone.png` | `ore_coal_overlay.png` |
 | **029** | `ore_coal_raw` | Raw Coal Block | **Chemical** | `ore_coal_raw.png` | Uniform (6 faces) |
-| **030** | `ore_coal_sandstone_common` | Coal Ore (Common Sandstone) | **Chemical** | `rock_sandstone_common.png` | `ore_coal_overlay.png` |
+| **030** | `ore_coal_sandstone_common` | Coal Ore (Sandstone) | **Chemical** | `rock_sandstone_common.png` | `ore_coal_overlay.png` |
 | **031** | `ore_copper_andesite` | Copper Ore (Andesite) | **Metal** | `rock_andesite.png` | `ore_copper_overlay.png` |
 | **032** | `ore_copper_dolomite` | Copper Ore (Dolomite) | **Metal** | `rock_dolomite.png` | `ore_copper_overlay.png` |
 | **033** | `ore_copper_granite` | Copper Ore (Granite) | **Metal** | `rock_granite.png` | `ore_copper_overlay.png` |
 | **034** | `ore_copper_raw` | Raw Copper Block | **Metal** | `ore_copper_raw.png` | Uniform (6 faces) |
-| **035** | `ore_copper_sandstone_common` | Copper Ore (Common Sandstone) | **Metal** | `rock_sandstone_common.png` | `ore_copper_overlay.png` |
+| **035** | `ore_copper_sandstone_common` | Copper Ore (Sandstone) | **Metal** | `rock_sandstone_common.png` | `ore_copper_overlay.png` |
 | **036** | `ore_copper_sandstone_red` | Copper Ore (Red Sandstone) | **Metal** | `rock_sandstone_red.png` | `ore_copper_overlay.png` |
 | **037** | `ore_copper_sandstone_white` | Copper Ore (White Sandstone) | **Metal** | `rock_sandstone_white.png` | `ore_copper_overlay.png` |
 | **038** | `ore_gold_gabbro` | Gold Ore (Gabbro) | **Metal** | `rock_gabbro.png` | `ore_gold_overlay.png` |
@@ -462,7 +462,7 @@ The metallogenic and mineralogical domain comprises **20 solid unrefined raw/rou
 📂 **Domain Directory**: `docs/worldbuilding/blocks/caverns`  
 📄 **Comprehensive Specification**: [caverns_design.md](blocks/caverns_design.md)
 
-The subterranean speleological domain comprises **6 solid mineral crystal blocks**, **6 crystal clusters**, **6 glinted emissive crystal clusters**, **4 modular speleothem/dripstone systems** (stalactites, stalagmites, columns, and soda straws), **4 speleological cave stone strata** (Cave Karst and Cave Calcite solid and cobbled), and **4 paleontological fossil blocks** = **30 Total Cavern Blocks**.
+The subterranean speleological domain comprises **6 solid mineral crystal blocks**, **6 crystal clusters**, **6 glinted emissive crystal clusters**, **4 modular speleothem/dripstone systems** (stalactites, stalagmites, columns, and Straws), **4 speleological cave stone strata** (Cave Karst and Cave Calcite solid and cobbled), and **4 paleontological fossil blocks** = **30 Total Cavern Blocks**.
 
 ---
 
@@ -497,7 +497,7 @@ The subterranean speleological domain comprises **6 solid mineral crystal blocks
 | **27** | `speleothem_blue_ice` | Blue Ice Icicle | **Speleothem** | `speleothem_blue_ice_*.png` | Modular system (**10** pieces) |
 | **28** | `speleothem_calcite` | Calcite Flowstone | **Speleothem** | `speleothem_calcite_*.png` | Modular system (**10** pieces) |
 | **29** | `speleothem_karst` | Karst Dripstone | **Speleothem** | `speleothem_karst_*.png` | Modular system (**10** pieces) |
-| **30** | `speleothem_salt_straw` | Pink Salt Soda Straw | **Speleothem** | `speleothem_pink_salt_straw_*.png` | Modular system (**6** pieces) |
+| **30** | `speleothem_salt_straw` | Pink Salt Straw | **Speleothem** | `speleothem_pink_salt_straw_*.png` | Modular system (**6** pieces) |
 
 ---
 
@@ -522,10 +522,10 @@ The benthic and subaquatic oceanic domain comprises **14 colonial massive coral 
 | **08** | `bubble_coral_fan` | Bubble Coral Fan | **Coral Fan** | `vege_bubble_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **09** | `bull_kelp` | Bull Kelp | **Laminar Macroalga** | `vege_bull_kelp.png` *(Top)*<br>`vege_bull_kelp_plant.png` *(Body)* | Columnar (Multi-block) |
 | **10** | `coralstone` | Coralstone | **Biogenic Rock** | `aqua_coralstone.png` *(+ `1`, `2`)* | 6 uniform faces |
-| **11** | `dead_coral` | Dead Coral Block | **Dead Coral** | `aqua_dead_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **11** | `dead_coral` | Dead Coral | **Dead Coral** | `aqua_dead_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
 | **12** | `dead_coral_fan` | Dead Coral Fan | **Dead Coral** | `vege_dead_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **13** | `delesseria` | Delesseria | **Rhodophyte** | `vege_delesseria.png` *(Top)*<br>`vege_delesseria_plant.png` *(Body)* | Columnar (Multi-block) |
-| **14** | `dying_coral` | Dying Coral Block | **Senescent Coral** | `aqua_dying_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
+| **14** | `dying_coral` | Dying Coral | **Senescent Coral** | `aqua_dying_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
 | **15** | `dying_coral_fan` | Dying Coral Fan | **Senescent Coral** | `vege_dying_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **16** | `fire_coral` | Fire Coral | **Massive Coral** | `aqua_fire_coral.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
 | **17** | `fire_coral_fan` | Fire Coral Fan | **Coral Fan** | `vege_fire_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
@@ -583,26 +583,26 @@ The biological biomaterials and organic domain comprises **14 insect colony and 
 | **05** | `bird_nest` | Songbird Nest | **Nest** | `nest_bird_nest_bot...top.png` | Half-height Slab |
 | **06** | `bloody_brain` | Bloody Brain Block | **Neural** | `bio_brain.png` *(+ `bloody_overlay.png`, `1`, `2`)* | Uniform (6 faces) + Shader Bloody Overlay |
 | **07** | `bloody_flesh` | Bloody Flesh Block | **Tissue** | Top/Bot: `bio_flesh_top.png`<br>Sides: `bio_flesh_side.png` *(+ `bloody_overlay.png`, `1`, `2`)* | Directional (2 faces) + Lateral Shader Bloody Overlay |
-| **08** | `blubber_block` | Blubber Block | **Adipose** | `bio_blubber.png` *(+ `1`, `2`)* | Translucent (Alpha 204) |
-| **09** | `bone_block` | Bone Block | **Osteology** | `bio_bone_top.png`<br>`bio_bone_side.png` *(+ `1`, `2`)* | Axial Column (2 faces) |
+| **08** | `blubber_block` | Blubber | **Adipose** | `bio_blubber.png` *(+ `1`, `2`)* | Translucent (Alpha 204) |
+| **09** | `bone_block` | Bone | **Osteology** | `bio_bone_top.png`<br>`bio_bone_side.png` *(+ `1`, `2`)* | Axial Column (2 faces) |
 | **10** | `brain_block` | Brain Block | **Neural** | `bio_brain.png` *(+ `1`, `2`)* | Uniform (6 faces) |
 | **11** | `calcined_bone` | Calcined Bone | **Osteology** | `bio_calcined_bone_top.png`<br>`bio_calcined_bone_side.png` *(+ `1`, `2`)* | Axial Column (2 faces) |
-| **12** | `cobweb` | Cobweb Block | **Silk** | `organic_cobweb.png` *(+ `1`, `2`)* | Volumetric 3D Cross |
+| **12** | `cobweb` | Cobweb | **Silk** | `organic_cobweb.png` *(+ `1`, `2`)* | Volumetric 3D Cross |
 | **13** | `cobweb_arch` | Cobweb Arch | **Silk** | `organic_cobweb_arch.png` *(+ `1`, `2`)* | Flat Vertical Quad |
 | **14** | `cobweb_hanging` | Hanging Cobweb | **Silk** | `organic_cobweb_hanging.png` *(+ `1`, `2`)* | Flat Vertical Quad |
 | **15** | `cobweb_stretched` | Stretched Cobweb | **Silk** | `organic_cobweb_stretched.png` *(+ `1`, `2`)* | Flat Vertical Quad |
-| **16** | `coprolite_block` | Coprolite Block | **Fossil** | `organic_coprolite.png` *(+ `1`, `2`)* | Uniform (6 faces) |
-| **17** | `dust_block` | Organic Dust | **Detritus** | `organic_dust.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **16** | `coprolite_block` | Coprolite | **Fossil** | `organic_coprolite.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **17** | `dust_block` | Dust | **Detritus** | `organic_dust.png` *(+ `1`, `2`)* | Uniform (6 faces) |
 | **18** | `flesh_block` | Raw Flesh Block | **Tissue** | `bio_flesh_top.png`<br>`bio_flesh_side.png` *(+ `1`, `2`)* | Directional (2 faces) |
-| **19** | `fur_block` | Animal Fur Block | **Integument** | `bio_fur_top.png`<br>`bio_fur_side.png`<br>`bio_fur_bot.png` | Directional (3 faces) |
-| **20** | `guano_block` | Guano Block | **Dropping** | `organic_guano.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **19** | `fur_block` | Animal Fur | **Integument** | `bio_fur_top.png`<br>`bio_fur_side.png`<br>`bio_fur_bot.png` | Directional (3 faces) |
+| **20** | `guano_block` | Guano | **Dropping** | `organic_guano.png` *(+ `1`, `2`)* | Uniform (6 faces) |
 | **21** | `hay_nest` | Hay Poultry Nest | **Nest** | `nest_hay_nest_bot...top.png` | Half-height Slab |
 | **22** | `honey_block` | Honey Block | **Secretion** | `organic_honey_block_bot...top.png` | Translucent (3 faces) |
-| **23** | `honeycomb_block` | Honeycomb Block | **Wax Matrix** | `organic_honeycomb_block.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **23** | `honeycomb_block` | Honeycomb | **Wax Matrix** | `organic_honeycomb_block.png` *(+ `1`, `2`)* | Uniform (6 faces) |
 | **24** | `jelly_block` | Royal Jelly Block | **Colloid** | `organic_jelly_top.png`<br>`organic_jelly_side.png`<br>`organic_jelly_bot.png` | Translucent (3 faces) |
 | **25** | `loam_burrow` | Loam Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png` *(+ `1`, `2`)*<br>Bot: `soils/soil_loam_dirt.png`<br>Sides: `soils/soil_loam_grass_side.png` | Composite Top + Loam soil |
 | **26** | `peat_burrow` | Peat Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png` *(+ `1`, `2`)*<br>Bot: `soils/soil_peat_dirt.png`<br>Sides: `soils/soil_peat_grass_side.png` | Composite Top + Peat soil |
-| **27** | `poop_block` | Manure Block | **Dropping** | `organic_poop.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **27** | `poop_block` | Poop | **Dropping** | `organic_poop.png` *(+ `1`, `2`)* | Uniform (6 faces) |
 | **28** | `seashell_block` | Seashell Block | **Sediment** | `organic_seashell.png` *(+ `1`, `2`)* | Uniform (6 faces) |
 | **29** | `silk_cocoon` | Wild Silk Cocoon | **Pupa** | `nest_silk_cocoon_bot...top.png` | Directional (3 faces) |
 | **30** | `silt_burrow` | Silt Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png` *(+ `1`, `2`)*<br>Bot: `soils/soil_silt_dirt.png`<br>Sides: `soils/soil_silt_grass_side.png` | Composite Top + Silt soil |
@@ -611,7 +611,7 @@ The biological biomaterials and organic domain comprises **14 insect colony and 
 | **33** | `termite_mound` | Termite Mound (Closed) | **Colony** | `nest_termite_mound.png` | Uniform (6 faces) |
 | **34** | `termite_mound_open` | Termite Mound (Active) | **Colony** | `nest_termite_mound_open.png` | Uniform (6 faces) |
 | **35** | `wasp_nest` | Paper Wasp Nest | **Hive** | `nest_wasp_nest_bot...top.png` | Directional (3 faces) |
-| **36** | `wax_block` | Beeswax Block | **Wax** | `organic_wax.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **36** | `wax_block` | Beeswax | **Wax** | `organic_wax.png` *(+ `1`, `2`)* | Uniform (6 faces) |
 
 ---
 
@@ -685,23 +685,23 @@ The mycological domain encompasses **8 wild understory ground mushrooms** (cross
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **01** | `fungi_amanita` | Amanita (Fly Agaric) | **Ground Mushroom** | `fungi_amanita.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **01** | `fungi_amanita` | Amanita | **Ground Mushroom** | `fungi_amanita.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
 | **02** | `fungi_amanita_cap` | Amanita Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_amanita_cap.png` *(+ `1`, `2`)*<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
-| **03** | `fungi_chanterelle` | Golden Chanterelle | **Ground Mushroom** | `fungi_chanterelle.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **03** | `fungi_chanterelle` | Chanterelle | **Ground Mushroom** | `fungi_chanterelle.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
 | **04** | `fungi_chanterelle_cap` | Chanterelle Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_chanterelle_cap.png` *(+ `1`, `2`)*<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
-| **05** | `fungi_indigo` | Indigo Milk Cap | **Ground Mushroom** | `fungi_indigo.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **05** | `fungi_indigo` | Indigo | **Ground Mushroom** | `fungi_indigo.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
 | **06** | `fungi_indigo_cap` | Indigo Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_indigo_cap.png` *(+ `1`, `2`)*<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
 | **07** | `fungi_inside` | Fungi Inside Flesh | **Macrofungal Structure** | `fungi_inside.png` *(+ `1`, `2`)* | 6 uniform faces |
-| **08** | `fungi_mycena` | Mycena (Bioluminescent) | **Ground Mushroom** | `fungi_mycena.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **08** | `fungi_mycena` | Mycena | **Ground Mushroom** | `fungi_mycena.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
 | **09** | `fungi_mycena_cap` | Mycena Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_mycena_cap.png` *(+ `1`, `2`)*<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
-| **10** | `fungi_porcini` | Porcini (King Bolete) | **Ground Mushroom** | `fungi_porcini.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **10** | `fungi_porcini` | Porcini | **Ground Mushroom** | `fungi_porcini.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
 | **11** | `fungi_porcini_cap` | Porcini Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_porcini_cap.png` *(+ `1`, `2`)*<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
-| **12** | `fungi_russula` | Russula (Sickener) | **Ground Mushroom** | `fungi_russula.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **12** | `fungi_russula` | Russula | **Ground Mushroom** | `fungi_russula.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
 | **13** | `fungi_russula_cap` | Russula Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_russula_cap.png` *(+ `1`, `2`)*<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
 | **14** | `fungi_shiitake` | Shiitake | **Ground Mushroom** | `fungi_shiitake.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
 | **15** | `fungi_shiitake_cap` | Shiitake Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_shiitake_cap.png` *(+ `1`, `2`)*<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
 | **16** | `fungi_stem` | Fungi Stem | **Macrofungal Structure** | `fungi_stem.png` *(+ `1`, `2`)* | 6 uniform faces |
-| **17** | `fungi_verdigris` | Verdigris Agaric | **Ground Mushroom** | `fungi_verdigris.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **17** | `fungi_verdigris` | Verdigris | **Ground Mushroom** | `fungi_verdigris.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
 | **18** | `fungi_verdigris_cap` | Verdigris Cap | **Giant Mushroom Cap** | Top & Sides: `fungi_verdigris_cap.png` *(+ `1`, `2`)*<br>Bottom: `fungi_inside.png` | Top & 4 sides cap + Bottom `fungi_inside.png` |
 
 ---

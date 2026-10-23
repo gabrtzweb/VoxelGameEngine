@@ -25,6 +25,7 @@ pub struct VoxelTextureMapping {
     pub side: FaceTextureInfo,
     pub top: FaceTextureInfo,
     pub bottom: FaceTextureInfo,
+    pub front: FaceTextureInfo,
 }
 
 #[derive(Resource, Clone, Debug)]
@@ -50,9 +51,25 @@ impl VoxelTextureRegistry {
         top: FaceTextureInfo,
         bottom: FaceTextureInfo,
     ) {
+        self.register_multi_face_directional(voxel, side, top, bottom, side);
+    }
+
+    pub fn register_multi_face_directional(
+        &mut self,
+        voxel: Voxel,
+        side: FaceTextureInfo,
+        top: FaceTextureInfo,
+        bottom: FaceTextureInfo,
+        front: FaceTextureInfo,
+    ) {
         let index = voxel as usize;
         if index < MAX_VOXEL_VARIANTS {
-            self.mappings[index] = Some(VoxelTextureMapping { side, top, bottom });
+            self.mappings[index] = Some(VoxelTextureMapping {
+                side,
+                top,
+                bottom,
+                front,
+            });
         }
     }
 
@@ -97,9 +114,17 @@ impl VoxelTextureRegistry {
                 },
             }
         } else {
+            let front_dir = match orientation % 4 {
+                1 => FaceDirection::PositiveX,
+                2 => FaceDirection::NegativeZ,
+                3 => FaceDirection::NegativeX,
+                _ => FaceDirection::PositiveZ,
+            };
+
             match direction {
                 FaceDirection::PositiveY => m.top,
                 FaceDirection::NegativeY => m.bottom,
+                d if d == front_dir && voxel.front_texture_name().is_some() => m.front,
                 _ => {
                     if (voxel.is_tinted() || voxel.side_texture_name().is_some()) && self.full_grass
                     {
@@ -341,7 +366,26 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
             side_info
         };
 
-        registry.register_multi_face(voxel, side_info, top_info, bottom_info);
+        let front_info = if let Some(front_name) = voxel.front_texture_name() {
+            get_or_load_face(
+                front_name,
+                None,
+                None,
+                voxel.fallback_color(),
+                &mut raw_layers,
+                &mut current_layer,
+            )
+        } else {
+            side_info
+        };
+
+        registry.register_multi_face_directional(
+            voxel,
+            side_info,
+            top_info,
+            bottom_info,
+            front_info,
+        );
     }
 
     let total_layers = current_layer.max(1) as u32;

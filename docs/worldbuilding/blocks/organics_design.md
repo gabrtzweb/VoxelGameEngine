@@ -26,11 +26,11 @@ graph TD
     A --> A3["Spider Egg Ootheca, Silk Cocoon"]
     A --> A4["Loam Burrow, Silt Burrow, Peat Burrow (Soil-bound animal burrows)"]
 
-    B --> B1["Raw Flesh Block, Bloody Flesh Block, Blubber Block, Brain Block, Bloody Brain Block, Fur Block"]
-    B --> B2["Bone Block (Axial marrow), Calcined Bone (Pyromineralized fossil)"]
+    B --> B1["Raw Flesh Block, Bloody Flesh Block, Blubber, Brain Block, Bloody Brain Block, Fur Block"]
+    B --> B2["Bone (Axial marrow), Calcined Bone (Pyromineralized fossil)"]
 
-    C --> C1["Honey Block, Honeycomb Block, Beeswax Block, Slime Block, Jelly Block"]
-    C --> C2["Guano Block, Poop/Manure Block, Coprolite Block, Dust Block, Seashell Block"]
+    C --> C1["Honey Block, Honeycomb, Beeswax, Slime Block, Jelly Block"]
+    C --> C2["Guano, Poop/Poop, Coprolite, Dust Block, Seashell Block"]
     C --> C3["Cobweb (3D Volume), Cobweb Arch, Cobweb Hanging, Cobweb Stretched (Flat Wall Webs)"]
 ```
 
@@ -96,19 +96,19 @@ Animal burrows (rabbits, badgers, marmots) utilize a dual-texture composite top 
 * **Blubber (3)**: `bio_blubber.png` *(+ `1`, `2`)* *(Translucent adipose layer)*
 * **Brain (3)**: `bio_brain.png` *(+ `1`, `2`)* *(Convoluted neural cerebral mass)*
 * **Animal Fur (3)**: `bio_fur_top.png`, `bio_fur_side.png`, `bio_fur_bot.png` *(Pelt with tanned suede leather backing)*
-* **Bone Block (4)**: `bio_bone_top.png`, `bio_bone_side.png` *(+ `1`, `2`)*
+* **Bone (4)**: `bio_bone_top.png`, `bio_bone_side.png` *(+ `1`, `2`)*
 * **Calcined Bone (4)**: `bio_calcined_bone_top.png`, `bio_calcined_bone_side.png` *(+ `1`, `2`)*
 
 ### C. Secretions, Waxes, Gels, Droppings & Spiderwebs (42 Files, 16×16 px)
 
 * **Honey Block (3)**: `organic_honey_block_bot.png`, `organic_honey_block_side.png`, `organic_honey_block_top.png` *(Translucent)*
-* **Honeycomb Block (3)**: `organic_honeycomb_block.png` *(+ `1`, `2`)*
-* **Beeswax Block (3)**: `organic_wax.png` *(+ `1`, `2`)*
+* **Honeycomb (3)**: `organic_honeycomb_block.png` *(+ `1`, `2`)*
+* **Beeswax (3)**: `organic_wax.png` *(+ `1`, `2`)*
 * **Slime Block (3)**: `organic_slime_top.png`, `organic_slime_side.png`, `organic_slime_bot.png` *(Translucent green)*
 * **Jelly Block (3)**: `organic_jelly_top.png`, `organic_jelly_side.png`, `organic_jelly_bot.png` *(Translucent purple)*
-* **Guano Block (3)**: `organic_guano.png` *(+ `1`, `2`)*
+* **Guano (3)**: `organic_guano.png` *(+ `1`, `2`)*
 * **Poop Block (3)**: `organic_poop.png` *(+ `1`, `2`)* *(Natural manure with buzzing flies and straw fibers)*
-* **Coprolite Block (3)**: `organic_coprolite.png` *(+ `1`, `2`)* *(Petrified fossil dung with calcified apatite inclusions)*
+* **Coprolite (3)**: `organic_coprolite.png` *(+ `1`, `2`)* *(Petrified fossil dung with calcified apatite inclusions)*
 * **Dust Block (3)**: `organic_dust.png` *(+ `1`, `2`)*
 * **Seashell Block (3)**: `organic_seashell.png` *(+ `1`, `2`)*
 * **Cobweb (12)**: `organic_cobweb.png` *(+ `1`, `2`)*, `organic_cobweb_arch.png` *(+ `1`, `2`)*, `organic_cobweb_hanging.png` *(+ `1`, `2`)*, `organic_cobweb_stretched.png` *(+ `1`, `2`)*
@@ -146,14 +146,14 @@ Biological anatomical materials harvested from animal carcasses or skeletal depo
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **15** | `bone_block` | Bone Block | **Osteology** | `bio_bone_top.png`<br>`bio_bone_side.png` *(+ `1`, `2`)* | Axial Column (2 faces) |
+| **15** | `bone_block` | Bone | **Osteology** | `bio_bone_top.png`<br>`bio_bone_side.png` *(+ `1`, `2`)* | Axial Column (2 faces) |
 | **16** | `calcined_bone` | Calcined Bone | **Osteology** | `bio_calcined_bone_top.png`<br>`bio_calcined_bone_side.png` *(+ `1`, `2`)* | Axial Column (2 faces) |
 | **17** | `flesh_block` | Raw Flesh Block | **Tissue** | `bio_flesh_top.png`<br>`bio_flesh_side.png` *(+ `1`, `2`)* | Directional (2 faces) |
 | **18** | `bloody_flesh` | Bloody Flesh Block | **Tissue** | Top/Bot: `bio_flesh_top.png`<br>Sides: `bio_flesh_side.png` *(+ `bloody_overlay.png`, `1`, `2`)* | Directional (2 faces) + Lateral Shader Bloody Overlay |
-| **19** | `blubber_block` | Blubber Block | **Adipose** | `bio_blubber.png` *(+ `1`, `2`)* | Translucent (Alpha 204) |
+| **19** | `blubber_block` | Blubber | **Adipose** | `bio_blubber.png` *(+ `1`, `2`)* | Translucent (Alpha 204) |
 | **20** | `brain_block` | Brain Block | **Neural** | `bio_brain.png` *(+ `1`, `2`)* | Uniform (6 faces) |
 | **21** | `bloody_brain` | Bloody Brain Block | **Neural** | `bio_brain.png` *(+ `bloody_overlay.png`, `1`, `2`)* | Uniform (6 faces) + Shader Bloody Overlay |
-| **22** | `fur_block` | Animal Fur Block | **Integument** | `bio_fur_top.png`<br>`bio_fur_side.png`<br>`bio_fur_bot.png` | Directional (3 faces) |
+| **22** | `fur_block` | Animal Fur | **Integument** | `bio_fur_top.png`<br>`bio_fur_side.png`<br>`bio_fur_bot.png` | Directional (3 faces) |
 
 ---
 
@@ -164,16 +164,16 @@ Physiological secretions, insect products, biological wastes, and structural spi
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
 | **23** | `honey_block` | Honey Block | **Secretion** | `organic_honey_block_bot...top.png` | Translucent (3 faces) |
-| **24** | `honeycomb_block` | Honeycomb Block | **Wax Matrix** | `organic_honeycomb_block.png` *(+ `1`, `2`)* | Uniform (6 faces) |
-| **25** | `wax_block` | Beeswax Block | **Wax** | `organic_wax.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **24** | `honeycomb_block` | Honeycomb | **Wax Matrix** | `organic_honeycomb_block.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **25** | `wax_block` | Beeswax | **Wax** | `organic_wax.png` *(+ `1`, `2`)* | Uniform (6 faces) |
 | **26** | `slime_block` | Slime Block | **Colloid** | `organic_slime_top.png`<br>`organic_slime_side.png`<br>`organic_slime_bot.png` | Translucent (3 faces) |
 | **27** | `jelly_block` | Royal Jelly Block | **Colloid** | `organic_jelly_top.png`<br>`organic_jelly_side.png`<br>`organic_jelly_bot.png` | Translucent (3 faces) |
-| **28** | `guano_block` | Guano Block | **Dropping** | `organic_guano.png` *(+ `1`, `2`)* | Uniform (6 faces) |
-| **29** | `poop_block` | Manure Block | **Dropping** | `organic_poop.png` *(+ `1`, `2`)* | Uniform (6 faces) |
-| **30** | `coprolite_block` | Coprolite Block | **Fossil** | `organic_coprolite.png` *(+ `1`, `2`)* | Uniform (6 faces) |
-| **31** | `dust_block` | Organic Dust | **Detritus** | `organic_dust.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **28** | `guano_block` | Guano | **Dropping** | `organic_guano.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **29** | `poop_block` | Poop | **Dropping** | `organic_poop.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **30** | `coprolite_block` | Coprolite | **Fossil** | `organic_coprolite.png` *(+ `1`, `2`)* | Uniform (6 faces) |
+| **31** | `dust_block` | Dust | **Detritus** | `organic_dust.png` *(+ `1`, `2`)* | Uniform (6 faces) |
 | **32** | `seashell_block` | Seashell Block | **Sediment** | `organic_seashell.png` *(+ `1`, `2`)* | Uniform (6 faces) |
-| **33** | `cobweb` | Cobweb Block | **Silk** | `organic_cobweb.png` *(+ `1`, `2`)* | Volumetric 3D Cross |
+| **33** | `cobweb` | Cobweb | **Silk** | `organic_cobweb.png` *(+ `1`, `2`)* | Volumetric 3D Cross |
 | **34** | `cobweb_arch` | Cobweb Arch | **Silk** | `organic_cobweb_arch.png` *(+ `1`, `2`)* | Flat Vertical Quad |
 | **35** | `cobweb_hanging` | Hanging Cobweb | **Silk** | `organic_cobweb_hanging.png` *(+ `1`, `2`)* | Flat Vertical Quad |
 | **36** | `cobweb_stretched` | Stretched Cobweb | **Silk** | `organic_cobweb_stretched.png` *(+ `1`, `2`)* | Flat Vertical Quad |

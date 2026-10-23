@@ -28,7 +28,7 @@ graph TD
     B2 --> S1["Karst: Classic calcium-carbonate dissolution dripstones (10 pieces)"]
     B2 --> S2["Calcite: High-purity pearlescent flowstone formations (10 pieces)"]
     B2 --> S3["Blue Ice: Compact azure glacial icicles in cryosphere caves (10 pieces)"]
-    B2 --> S4["Pink Salt Straw: Delicate hollow tubular soda straws (6 pieces)"]
+    B2 --> S4["Pink Salt Straw: Delicate hollow tubular Straws (6 pieces)"]
 
     B3 --> R1["Cave Karst: Porous dissolution cave rock & cobbled rubble"]
     B3 --> R2["Cave Calcite: Pearlescent crystalline flowstone host rock & cobbled rubble"]
@@ -65,7 +65,7 @@ Each of the 6 crystal minerals features a complete set including 3-fold stochast
 * **Blue Ice Icicle (10)**:
   * Stalactite (Down): `speleothem_blue_ice_down_base.png`, `_frustum`, `_middle`, `_tip`, `_tip_merge`
   * Stalagmite (Up): `speleothem_blue_ice_up_base.png`, `_frustum`, `_middle`, `_tip`, `_tip_merge`
-* **Pink Salt Soda Straw (6)**:
+* **Pink Salt Straw (6)**:
   * Stalactite (Down): `speleothem_pink_salt_straw_down_top.png`, `_middle`, `_bottom`
   * Stalagmite (Up): `speleothem_pink_salt_straw_up_bottom.png`, `_middle`, `_top`
 
@@ -140,7 +140,7 @@ Dynamic, multi-stage subterranean dripstones. Each material supports procedural 
 | **19** | `speleothem_karst` | Karst Dripstone | `cave_karst.png` | **10** | Rugged dark-grey weathered limestone | Classic dissolution caves formed by slow calcium bicarbonate seepage. |
 | **20** | `speleothem_calcite` | Calcite Flowstone | `cave_calcite.png` | **10** | Smooth, pearlescent milk-white flowstone | Pure carbonate precipitation in pristine mineral-rich groundwater caverns. |
 | **21** | `speleothem_blue_ice` | Blue Ice Icicle | `frost_blue_ice.png` | **10** | Vibrant crystalline azure ice needles | Compact blue glacial ice dripping and refreezing inside deep cryosphere caverns. |
-| **22** | `speleothem_salt_straw` | Pink Salt Soda Straw | `crystal_pink_salt.png` | **6** | Ultra-thin hollow coral-pink salt tubes | Fragile tubular soda straws precipitating from the outer rims of saline droplets. |
+| **22** | `speleothem_salt_straw` | Pink Salt Straw | `crystal_pink_salt.png` | **6** | Ultra-thin hollow coral-pink salt tubes | Fragile tubular Straws precipitating from the outer rims of saline droplets. |
 
 ---
 
@@ -199,4 +199,4 @@ graph TD
 2. **Medium Spikes (Height = 2)**: Place `_down_frustum` + `_down_tip` (or `_up_base` + `_up_tip`).
 3. **Tall Columns (Height $\ge$ 3)**: Anchor with `_base`, transition through `_frustum`, repeat `_middle` as needed, and cap with `_tip`.
 4. **Complete Cave Pillars**: When a stalactite meets a stalagmite, both terminate with `_tip_merge`, joining flush into a unified continuous stone column.
-5. **Soda Straws**: Stack `_down_top` $\to$ `_down_middle` $\to$ `_down_bottom` (or `_up_bottom` $\to$ `_up_middle` $\to$ `_up_top`) for delicate 3-pixel-wide hollow formations.
+5. **Straws**: Stack `_down_top` $\to$ `_down_middle` $\to$ `_down_bottom` (or `_up_bottom` $\to$ `_up_middle` $\to$ `_up_top`) for delicate 3-pixel-wide hollow formations.

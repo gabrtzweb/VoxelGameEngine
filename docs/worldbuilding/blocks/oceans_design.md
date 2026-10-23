@@ -8,7 +8,7 @@ Generating **50 unique blocks** in the master catalog divided into 5 ecological 
 
 1. **Living Massive Coral Blocks** (14 species)
 2. **Living Coral Fans** (14 species)
-3. **Senescent & Dead Coral Formations** (4 blocks: Dying Coral Block & Fan, Dead Coral Block & Fan)
+3. **Senescent & Dead Coral Formations** (4 blocks: Dying Coral & Fan, Dead Coral & Fan)
 4. **Benthic Structures & Substrates** (10 blocks: Sponge, Algae Mat, Geothermal Vent, Sea Anemone, Coralstone, Reefstone, Algae Reefstone, Barnacles Reefstone, Turtle Scute Block, Pearl Block)
 5. **Subaquatic Pelagic Flora** (8 blocks: Kelp, Bull Kelp, Delesseria, Sargassum, Seagrass, Bone Worms, Seaweed, Red Algae)
 
@@ -36,9 +36,9 @@ graph TD
     B --> B2["Heart, Leaf, Reed, Spike, Thorn, Wax Fan (3 variations each)"]
     B --> B3["Sun Coral Fan, Zigzag Coral Fan (3 variations each)"]
 
-    C --> C1["Dying Coral Block: Moribund necrotic brownish-tan colony (3 variations)"]
+    C --> C1["Dying Coral: Moribund necrotic brownish-tan colony (3 variations)"]
     C --> C2["Dying Coral Fan: Decaying brownish-ochre gorgonian fan (3 variations)"]
-    C --> C3["Dead Coral Block: Massive skeletal calcium carbonate block (3 variations)"]
+    C --> C3["Dead Coral: Massive skeletal calcium carbonate block (3 variations)"]
     C --> C4["Dead Coral Fan: Bleached branching skeletal fan (3 variations)"]
 
     D --> D1["Natural Sponge: Porous tubular marine poriferan filter feeder (3 variations)"]
@@ -213,9 +213,9 @@ Bleached, damaged, or moribund remnants of coral reefs that have lost their livi
 
 | # | Block ID | Name | Category | Texture File(s) | Variations | Occurrence | Geological / Biological Description |
 | :-: | :--- | :--- | :--- | :--- | :-: | :--- | :--- |
-| **29** | `dying_coral` | Dying Coral Block | **Senescent Coral** | `aqua_dying_coral.png` *(+ `1`, `2`)* | 3 | Stressed Reef Margins, Warming Shallows | Moribund, decaying coral colony displaying dull necrotic brownish-tan tones with fading bleached rims. |
+| **29** | `dying_coral` | Dying Coral | **Senescent Coral** | `aqua_dying_coral.png` *(+ `1`, `2`)* | 3 | Stressed Reef Margins, Warming Shallows | Moribund, decaying coral colony displaying dull necrotic brownish-tan tones with fading bleached rims. |
 | **30** | `dying_coral_fan` | Dying Coral Fan | **Senescent Coral** | `vege_dying_coral_fan.png` *(+ `1`, `2`)* | 3 | Top of Stressed Reefs | Fading brownish-ochre gorgonian fan with decaying petal lobes and withered tips. |
-| **31** | `dead_coral` | Dead Coral Block | **Dead Coral** | `aqua_dead_coral.png` *(+ `1`, `2`)* | 3 | Bleached Reefs, Sunken Atolls | Porous, chalky mineralized calcium carbonate block in ghostly grey. |
+| **31** | `dead_coral` | Dead Coral | **Dead Coral** | `aqua_dead_coral.png` *(+ `1`, `2`)* | 3 | Bleached Reefs, Sunken Atolls | Porous, chalky mineralized calcium carbonate block in ghostly grey. |
 | **32** | `dead_coral_fan` | Dead Coral Fan | **Dead Coral** | `vege_dead_coral_fan.png` *(+ `1`, `2`)* | 3 | Top of Dead Reefs | Brittle, desaturated skeletal fan with chalky grey limestone texture. |
 
 ---

@@ -342,6 +342,7 @@ impl Voxel {
                 | Self::FungiRussula
                 | Self::FungiShiitake
                 | Self::FungiVerdigris
+                | Self::BeaverDam
         )
     }
 
@@ -456,6 +457,7 @@ impl Voxel {
                     | Self::FungiRussula
                     | Self::FungiShiitake
                     | Self::FungiVerdigris
+                    | Self::BeaverDam
             )
     }
 

@@ -22,7 +22,7 @@ graph TD
     R --> D4["4. Volcanics (2 Rocks)"]
     R --> D5["5. Metamorphic Foundations (2 Rocks)"]
     R --> D6["6. Subterranean Geothermal Specials (1 Rock)"]
-    R --> D7["7. Primordial Mantle / Bedrock (2 Blocks: Solid & Cobbled)"]
+    R --> D7["7. Mantle / Bedrock (2 Blocks: Solid & Cobbled)"]
 
     D1 --> D1a["Common, Red, Dune, White Sandstone (Direct bedrock for the 4 Sands)"]
     D2 --> D2a["Granite (Loam bedrock), Andesite (Cavern/Cordillera), Gabbro (Deep mafic)"]
@@ -63,7 +63,7 @@ To maintain strict geological realism and prevent visual anomalies (e.g., surfac
 - **Volcanics (2 base × 3 = 6)**: `rock_basalt.png` *(+ `1`, `2`)*, `rock_obsidian.png` *(+ `1`, `2`)*
 - **Metamorphic Foundations (2 base × 3 = 6)**: `rock_slate.png` *(+ `1`, `2`)*, `rock_marble.png` *(+ `1`, `2`)*
 - **Geothermal Specials (1 base × 3 = 3)**: `rock_magma.png` *(animated 16×112 px, + `1`, `2`)*
-- **Primordial Mantle (1 base × 3 = 3)**: `rock_mantle.png` *(+ `1`, `2`)*
+- **Mantle (1 base × 3 = 3)**: `rock_mantle.png` *(+ `1`, `2`)*
 
 ### B. Mined Cobblestone Variants (17 Base Types + Stochastic Variations = 51 Files, 16×16 px)
 
@@ -75,7 +75,7 @@ All mineable solid rocks drop an unrefined fractured cobblestone upon excavation
 - **Volcanics (2 base × 3 = 6)**: `rock_basalt_cobbled.png` *(+ `1`, `2`)*, `rock_obsidian_cobbled.png` *(+ `1`, `2`)*
 - **Metamorphic Foundations (2 base × 3 = 6)**: `rock_slate_cobbled.png` *(+ `1`, `2`)*, `rock_marble_cobbled.png` *(+ `1`, `2`)*
 - **Geothermal Specials (1 base × 3 = 3)**: `rock_magma_cobbled.png` *(animated 16×112 px, + `1`, `2`)*
-- **Primordial Mantle (1 base × 3 = 3)**: `rock_mantle_cobbled.png` *(+ `1`, `2`)*
+- **Mantle (1 base × 3 = 3)**: `rock_mantle_cobbled.png` *(+ `1`, `2`)*
 
 ### C. Mountain Outcrop Veg/Snow Sides (7 Rocks × 2 Types × 3 Variations = 42 Files, 16×16 px)
 
@@ -98,7 +98,7 @@ Exactly **7 surface alpine and cliff rocks** possess lateral turf and snow shelf
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **01** | `sandstone_common` | Common Sandstone | **Sedimentary** | `rock_sandstone_common.png` | 6 uniform faces |
+| **01** | `sandstone_common` | Sandstone | **Sedimentary** | `rock_sandstone_common.png` | 6 uniform faces |
 | **02** | `cobbled_sandstone_common` | Cobbled Sandstone | **Sedimentary** | `rock_sandstone_common_cobbled.png` | 6 uniform faces |
 | **03** | `sandstone_red` | Red Sandstone | **Sedimentary** | `rock_sandstone_red.png` | 6 uniform faces |
 | **04** | `cobbled_sandstone_red` | Cobbled Red Sandstone | **Sedimentary** | `rock_sandstone_red_cobbled.png` | 6 uniform faces |
@@ -177,16 +177,16 @@ Exactly **7 surface alpine and cliff rocks** possess lateral turf and snow shelf
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **45** | `magma` | Magma Rock | **Geothermal** | `rock_magma.png` *(+ `1`, `2`)* | 6 uniform faces *(Animated incandescent veins, emits light)* |
+| **45** | `magma` | Magma | **Geothermal** | `rock_magma.png` *(+ `1`, `2`)* | 6 uniform faces *(Animated incandescent veins, emits light)* |
 | **46** | `cobbled_magma` | Cobbled Magma | **Geothermal** | `rock_magma_cobbled.png` *(+ `1`, `2`)* | 6 uniform faces *(Animated incandescent veins)* |
 
 ---
 
-### 3.7. Primordial Mantle (2 Bedrock Blocks: Solid & Cobbled)
+### 3.7. Mantle (2 Bedrock Blocks: Solid & Cobbled)
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **47** | `mantle` | Primordial Mantle | **Bedrock** | `rock_mantle.png` *(+ `1`, `2`)* | 6 uniform faces *(Cold high-pressure world floor, unbreakable)* |
+| **47** | `mantle` | Mantle | **Bedrock** | `rock_mantle.png` *(+ `1`, `2`)* | 6 uniform faces *(Cold high-pressure world floor, unbreakable)* |
 | **48** | `cobbled_mantle` | Cobbled Mantle | **Bedrock** | `rock_mantle_cobbled.png` *(+ `1`, `2`)* | 6 uniform faces *(Fractured primordial bedrock pocket seams, unbreakable)* |
 
 ---

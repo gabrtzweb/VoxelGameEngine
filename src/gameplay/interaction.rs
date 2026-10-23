@@ -338,6 +338,27 @@ fn edit_voxels(
                 modifications.record_shape(place_position, BlockShape::Full, orientation);
             }
             placed
+        } else if place_voxel_type.front_texture_name().is_some() {
+            let placed = place_block(
+                &mut world,
+                &mut modifications,
+                place_position,
+                place_voxel_type,
+            );
+            if !placed.is_empty() {
+                let orientation = if target.face_normal.x > 0 {
+                    1
+                } else if target.face_normal.x < 0 {
+                    3
+                } else if target.face_normal.z < 0 {
+                    2
+                } else {
+                    0
+                };
+                world.set_shape(place_position, BlockShape::Full, orientation);
+                modifications.record_shape(place_position, BlockShape::Full, orientation);
+            }
+            placed
         } else {
             let placed = place_block(
                 &mut world,

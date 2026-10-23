@@ -55,7 +55,7 @@ In all blueprint textures in `docs/worldbuilding/interfaces/containers/480x270/`
 
 ```text
 (0,0)┌─────────────────────────────────────────────────────────────────────────────────┐
-     │ [1:Q] [2:INVENTORY] [3:JOURNAL] [4:WORLD MAP] [5:SETTINGS] [6:E]  [7][8]  [9][10]│
+     │ [1:Q] [2:INVENTORY] [3:JOURNAL] [4:WORLD MAP] [5:SYSTEM] [6:E]  [7][8]  [9][10]  │
      └─────────────────────────────────────────────────────────────────────────────────┘(480,20)
 ```
 
@@ -65,7 +65,7 @@ In all blueprint textures in `docs/worldbuilding/interfaces/containers/480x270/`
 | **02** | `(27, 5)` | 48 × 10 px | Navigation Tab | **Inventory Tab**: Opens active inventory dialog (personal inventory, creative catalog, or opened chest). |
 | **03** | `(87, 5)` | 48 × 10 px | Navigation Tab | **Journal Tab**: Quest log, bestiary, and expedition notes (reserved, empty placeholder). |
 | **04** | `(147, 5)` | 48 × 10 px | Navigation Tab | **World Map Tab**: Opens full-screen interactive World Map. |
-| **05** | `(207, 5)` | 48 × 10 px | Navigation Tab | **Settings Tab**: Opens game options, graphics, audio, and controls menu. |
+| **05** | `(207, 5)` | 48 × 10 px | Navigation Tab | **System Tab (`[SYSTEM]`)**: Opens Pause menu (`MenuState::Pause`) with system options, graphics presets, and resume/quit. |
 | **06** | `(263, 6)` | 8 × 8 px | Navigation Button | **Next Tab Button (`[E]`)**: Navigates to the next tab on the right (hotkey shortcut `[E]` or mouse click). |
 | **07** | `(399, 6)` | 8 × 8 px | Display Icon | **Currency 1 Icon**: Player money / gold coin currency icon. |
 | **08** | `(411, 5)` | 20 × 10 px | Text Readout | **Currency 1 Value**: Dynamic numeric field displaying player balance for Currency 1. |
@@ -74,27 +74,27 @@ In all blueprint textures in `docs/worldbuilding/interfaces/containers/480x270/`
 
 ---
 
-## 3. In-Game Hotbar HUD (`480x270_hotbar`)
+## 3. In-Game Hotbar HUD (`hotbar`)
 
-📂 **Blueprint**: [`480x270_hotbar_outline.png`](interfaces/containers/480x270/480x270_hotbar_outline.png)  
-🎨 **Clean Render**: [`480x270_hotbar.png`](interfaces/containers/480x270/480x270_hotbar.png)  
-📏 **Dimensions**: 480 × 270 px (centered HUD cluster at `x: 114..366, y: 218..255`)  
-🎯 **Role**: Active 3D gameplay heads-up display. Displays quick-access inventory slots, offhand, utility accessory, and horizontal meter.
+📂 **Blueprint**: [`outlines/hotbar_outline.png`](interfaces/containers/outlines/hotbar_outline.png)  
+🎨 **Clean Render**: [`hotbar.png`](interfaces/containers/hotbar.png)  
+📏 **Dimensions**: 480 × 270 px (centered HUD cluster at `x: 127..353, y: 226..255`)  
+🎯 **Role**: Active 3D gameplay heads-up display. Displays quick-access inventory slots with standardized 3px gutters (19px pitch, perfectly matching the open inventory grid), offhand, utility accessory, and internal horizontal meter bar.
 
 | Field | Coordinates `(x, y)` | Dimensions | Field Type | Description & Engine Function |
 | :---: | :---: | :---: | :---: | :--- |
-| **01** | `(138, 218)` | 204 × 4 px | Progress Bar | **Top Progress Meter**: Horizontal gauge across the top of the hotbar (Health or Experience / Level meter - to be finalized). |
-| **02** | `(122, 231)` | 16 × 16 px | Special Slot | **Offhand Slot (Left Wing)**: Auxiliary offhand slot for shields, torches, or maps. |
-| **03** | `(144, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 1** (Hotkey `[1]`). |
-| **04** | `(166, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 2** (Hotkey `[2]`). |
-| **05** | `(188, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 3** (Hotkey `[3]`). |
-| **06** | `(210, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 4** (Hotkey `[4]`). |
-| **07** | `(232, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 5** (Hotkey `[5]`). |
-| **08** | `(254, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 6** (Hotkey `[6]`). |
-| **09** | `(276, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 7** (Hotkey `[7]`). |
-| **10** | `(298, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 8** (Hotkey `[8]`). |
-| **11** | `(320, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 9** (Hotkey `[9]`). |
-| **12** | `(342, 231)` | 16 × 16 px | Special Slot | **Utility / Accessory Slot (Right Wing)**: Auxiliary utility slot for tools, quivers, or trinkets. |
+| **01** | `(156, 247)` | 168 × 3 px | Progress Bar | **Bottom Progress Meter**: Horizontal gauge across the bottom of the hotbar slots (Health or Experience / Level meter). |
+| **02** | `(134, 231)` | 16 × 16 px | Special Slot | **Offhand Slot (Left Wing)**: Auxiliary offhand slot for shields, torches, or maps. |
+| **03** | `(156, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 1** (Hotkey `[1]`). |
+| **04** | `(175, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 2** (Hotkey `[2]`). |
+| **05** | `(194, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 3** (Hotkey `[3]`). |
+| **06** | `(213, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 4** (Hotkey `[4]`). |
+| **07** | `(232, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 5** (Hotkey `[5]`, screen center `x=240`). |
+| **08** | `(251, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 6** (Hotkey `[6]`). |
+| **09** | `(270, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 7** (Hotkey `[7]`). |
+| **10** | `(289, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 8** (Hotkey `[8]`). |
+| **11** | `(308, 228)` | 16 × 16 px | Hotbar Slot | **Hotbar Slot 9** (Hotkey `[9]`). |
+| **12** | `(330, 231)` | 16 × 16 px | Special Slot | **Utility / Accessory Slot (Right Wing)**: Auxiliary utility slot for tools, quivers, or trinkets. |
 
 ---
 

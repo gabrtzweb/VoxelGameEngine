@@ -69,7 +69,7 @@ All 8 textures are technical assets:
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **05** | `debug_start` | Debug Start Marker | **Development** | `debug_start.png` | 6 uniform faces *(Pipeline initialization validation)* |
-| **06** | `debug_instance` | Debug Instance Marker | **Development** | `debug_instance.png` | 6 uniform faces *(Chunk / structure instance validation)* |
-| **07** | `debug_accept` | Debug Accept Marker | **Development** | `debug_accept.png` | 6 uniform faces *(Visual indicator of passing assertion / OK)* |
-| **08** | `debug_fail` | Debug Fail Marker | **Development** | `debug_fail.png` | 6 uniform faces *(Visual indicator of failed assertion / Error)* |
+| **05** | `debug_start` | Debug Start | **Development** | `debug_start.png` | 6 uniform faces *(Pipeline initialization validation)* |
+| **06** | `debug_instance` | Debug Instance | **Development** | `debug_instance.png` | 6 uniform faces *(Chunk / structure instance validation)* |
+| **07** | `debug_accept` | Debug Accept | **Development** | `debug_accept.png` | 6 uniform faces *(Visual indicator of passing assertion / OK)* |
+| **08** | `debug_fail` | Debug Fail | **Development** | `debug_fail.png` | 6 uniform faces *(Visual indicator of failed assertion / Error)* |

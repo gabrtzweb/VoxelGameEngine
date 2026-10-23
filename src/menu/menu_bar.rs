@@ -147,7 +147,7 @@ fn spawn_menu_bar(
                 (MenuBarAction::TabInventory, "INVENTORY", 27.0, 5.0, 48.0, 10.0),
                 (MenuBarAction::TabJournal, "JOURNAL", 87.0, 5.0, 48.0, 10.0),
                 (MenuBarAction::TabWorldMap, "WORLD MAP", 147.0, 5.0, 48.0, 10.0),
-                (MenuBarAction::TabSettings, "SETTINGS", 207.0, 5.0, 48.0, 10.0),
+                (MenuBarAction::TabSettings, "SYSTEM", 207.0, 5.0, 48.0, 10.0),
             ];
 
             for (action, label, x, y, w, h) in tabs {
@@ -285,7 +285,7 @@ fn handle_menu_bar_buttons(
                 }
                 MenuBarAction::TabSettings => {
                     if left_clicked {
-                        next_state.set(MenuState::Settings);
+                        next_state.set(MenuState::Pause);
                     }
                 }
             }
@@ -324,11 +324,17 @@ fn cycle_tab(
         MenuState::Inventory,
         MenuState::Journal,
         MenuState::WorldMap,
-        MenuState::Settings,
+        MenuState::Pause,
     ];
 
     let current = *menu_state.get();
-    let cur_idx = tabs.iter().position(|&s| s == current).unwrap_or(0);
+    let cur_idx = match current {
+        MenuState::Inventory => 0,
+        MenuState::Journal => 1,
+        MenuState::WorldMap => 2,
+        MenuState::Pause | MenuState::Settings => 3,
+        _ => 0,
+    };
 
     let next_idx = if forward {
         (cur_idx + 1) % tabs.len()
@@ -353,7 +359,9 @@ fn update_menu_bar_tab_highlights(
             MenuBarAction::TabInventory => current == MenuState::Inventory,
             MenuBarAction::TabJournal => current == MenuState::Journal,
             MenuBarAction::TabWorldMap => current == MenuState::WorldMap,
-            MenuBarAction::TabSettings => current == MenuState::Settings,
+            MenuBarAction::TabSettings => {
+                current == MenuState::Pause || current == MenuState::Settings
+            }
             _ => false,
         };
 

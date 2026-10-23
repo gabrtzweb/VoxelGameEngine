@@ -275,11 +275,17 @@ pub fn setup_block_icons(
             voxel.tint_color()
         };
 
+        let raw_front = if let Some(front_name) = voxel.front_texture_name() {
+            load_raw_16x16_by_name(front_name, voxel.fallback_color())
+        } else {
+            raw_side.clone()
+        };
+
         let all_frames = load_voxel_all_frames_16x16(voxel);
         if let Some(frames_16x16) = all_frames.filter(|f| f.len() > 1) {
             let mut icon_frames = Vec::with_capacity(frames_16x16.len());
             for f_data in &frames_16x16 {
-                let canvas = render_isometric_frame(f_data, f_data, side_tint, top_tint);
+                let canvas = render_isometric_frame(f_data, f_data, f_data, side_tint, top_tint);
                 icon_frames.push(canvas);
             }
             let first_img = create_icon_image_from_canvas(&icon_frames[0]);
@@ -297,7 +303,7 @@ pub fn setup_block_icons(
             });
         } else {
             let icon_image =
-                render_isometric_block_icon_multi(&raw_side, &raw_top, side_tint, top_tint);
+                render_isometric_block_icon_multi(&raw_side, &raw_top, &raw_front, side_tint, top_tint);
             let handle = images.add(icon_image);
 
             if fallback_image.is_none() {
@@ -370,16 +376,18 @@ fn solid_raw_16x16(color: [u8; 4]) -> Vec<u8> {
 pub fn render_isometric_block_icon_multi(
     side_16x16: &[u8],
     top_16x16: &[u8],
+    front_16x16: &[u8],
     side_tint: [f32; 4],
     top_tint: [f32; 4],
 ) -> Image {
-    let canvas = render_isometric_frame(side_16x16, top_16x16, side_tint, top_tint);
+    let canvas = render_isometric_frame(side_16x16, top_16x16, front_16x16, side_tint, top_tint);
     create_icon_image_from_canvas(&canvas)
 }
 
 pub fn render_isometric_frame(
     side_16x16: &[u8],
     top_16x16: &[u8],
+    front_16x16: &[u8],
     side_tint: [f32; 4],
     top_tint: [f32; 4],
 ) -> Vec<u8> {
@@ -458,12 +466,12 @@ pub fn render_isometric_frame(
                         let tx = (u_right * 16.0).floor().clamp(0.0, 15.0) as usize;
                         let ty = (v_right * 16.0).floor().clamp(0.0, 15.0) as usize;
                         let src_idx = (ty * 16 + tx) * 4;
-                        if src_idx + 3 < side_16x16.len() {
-                            let a = (side_16x16[src_idx + 3] as f32 / 255.0) * side_tint[3];
+                        if src_idx + 3 < front_16x16.len() {
+                            let a = (front_16x16[src_idx + 3] as f32 / 255.0) * side_tint[3];
                             if a > 0.01 {
-                                acc_r += (side_16x16[src_idx] as f32 / 255.0) * side_tint[0] * 0.75;
-                                acc_g += (side_16x16[src_idx + 1] as f32 / 255.0) * side_tint[1] * 0.75;
-                                acc_b += (side_16x16[src_idx + 2] as f32 / 255.0) * side_tint[2] * 0.75;
+                                acc_r += (front_16x16[src_idx] as f32 / 255.0) * side_tint[0] * 0.75;
+                                acc_g += (front_16x16[src_idx + 1] as f32 / 255.0) * side_tint[1] * 0.75;
+                                acc_b += (front_16x16[src_idx + 2] as f32 / 255.0) * side_tint[2] * 0.75;
                                 acc_a += a;
                                 hits += 1;
                             }
@@ -606,6 +614,11 @@ fn voxel_item_texture_path(voxel: Voxel) -> Option<&'static str> {
         Voxel::PebbleFlintCluster => Some("assets/textures/items/pebble_flint_cluster_item.png"),
         Voxel::PebbleQuartz => Some("assets/textures/items/pebble_quartz_item.png"),
         Voxel::PebbleQuartzCluster => Some("assets/textures/items/pebble_quartz_cluster_item.png"),
+        Voxel::Kelp => Some("assets/textures/blocks/vege_kelp_plant.png"),
+        Voxel::SpeleothemBlueIce => Some("assets/textures/blocks/speleothem_blue_ice_up_tip.png"),
+        Voxel::SpeleothemCalcite => Some("assets/textures/blocks/speleothem_calcite_up_tip.png"),
+        Voxel::SpeleothemKarst => Some("assets/textures/blocks/speleothem_karst_up_tip.png"),
+        Voxel::SpeleothemSaltStraw => Some("assets/textures/blocks/speleothem_pink_salt_straw_up_top.png"),
         _ => None,
     }
 }

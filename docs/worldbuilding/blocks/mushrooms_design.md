@@ -44,10 +44,10 @@ All 8 understory ground mushrooms strictly adhere to 3 standardized cross-billbo
 * `fungi_porcini.png`, `1.png`, `2.png` *(King bolete; velvety earth-brown cap)* (3)
 * `fungi_shiitake.png`, `1.png`, `2.png` *(Shiitake; warm wood-brown umbrella cap)* (3)
 * `fungi_russula.png`, `1.png`, `2.png` *(Sickener; ruby-crimson brittlegill)* (3)
-* `fungi_verdigris.png`, `1.png`, `2.png` *(Verdigris agaric; petrol-teal cap with golden scales)* (3)
-* `fungi_chanterelle.png`, `1.png`, `2.png` *(Golden chanterelle; apricot fluted trumpet)* (3)
+* `fungi_verdigris.png`, `1.png`, `2.png` *(Verdigris; petrol-teal cap with golden scales)* (3)
+* `fungi_chanterelle.png`, `1.png`, `2.png` *(Chanterelle; apricot fluted trumpet)* (3)
 * `fungi_mycena.png`, `1.png`, `2.png` *(Mycena; bioluminescent green fairy bonnets)* (3)
-* `fungi_indigo.png`, `1.png`, `2.png` *(Indigo milk cap; denim-slate indigo blue)* (3)
+* `fungi_indigo.png`, `1.png`, `2.png` *(Indigo; denim-slate indigo blue)* (3)
 
 ### B. Giant Macrofungal Caps (`_cap`) (24 Files, 16×16 px)
 
@@ -75,14 +75,14 @@ All 8 giant mushroom caps feature complete 3-fold stochastic variants (`1` and `
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **01** | `fungi_amanita` | Amanita (Fly Agaric) | **Ground Mushroom** | `fungi_amanita.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
-| **02** | `fungi_porcini` | Porcini (King Bolete) | **Ground Mushroom** | `fungi_porcini.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **01** | `fungi_amanita` | Amanita | **Ground Mushroom** | `fungi_amanita.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **02** | `fungi_porcini` | Porcini | **Ground Mushroom** | `fungi_porcini.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
 | **03** | `fungi_shiitake` | Shiitake | **Ground Mushroom** | `fungi_shiitake.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
-| **04** | `fungi_russula` | Russula (Sickener) | **Ground Mushroom** | `fungi_russula.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
-| **05** | `fungi_verdigris` | Verdigris Agaric | **Ground Mushroom** | `fungi_verdigris.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
-| **06** | `fungi_chanterelle` | Golden Chanterelle | **Ground Mushroom** | `fungi_chanterelle.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
-| **07** | `fungi_mycena` | Mycena (Bioluminescent) | **Ground Mushroom** | `fungi_mycena.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
-| **08** | `fungi_indigo` | Indigo Milk Cap | **Ground Mushroom** | `fungi_indigo.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **04** | `fungi_russula` | Russula | **Ground Mushroom** | `fungi_russula.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **05** | `fungi_verdigris` | Verdigris | **Ground Mushroom** | `fungi_verdigris.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **06** | `fungi_chanterelle` | Chanterelle | **Ground Mushroom** | `fungi_chanterelle.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **07** | `fungi_mycena` | Mycena | **Ground Mushroom** | `fungi_mycena.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
+| **08** | `fungi_indigo` | Indigo | **Ground Mushroom** | `fungi_indigo.png` *(+ `1`, `2`)* | 3 (Cross-billboard model: 2 intersecting planes) |
 
 ---
 

@@ -69,6 +69,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **13** | **[Physics Engine, Fluid Dynamics & Item Drops](#phase-13-physics-engine-fluid-dynamics--item-drops-planned)** | **Planned** | Overhauled fluid propagation, gravity blocks (sand, gravel), 3D floating item drops with magnetism, projectile trajectories |
 | **14** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-14-visual-aesthetics-shaders--atmospheric-fx-overhaul-planned)** | **Planned** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, weather particles |
 | **15** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-15-performance-engineering-chunk-streaming--lod-enhancements-planned)** | **Planned** | Worker thread scaling, GPU frustum/occlusion culling, smooth LOD horizon transitions, runtime voxel memory compression |
+| **16** | **[Localization & Multi-Language Support](#phase-16-localization--multi-language-support-planned)** | **Planned** | `lang/` translation files (`en_us`, `pt_br`), translation-key lookup for all UI/block/item strings, in-game language selector in Settings |
 
 ---
 
@@ -89,14 +90,18 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 2: Standardized 9-Slot Interface Architecture & Menu Modernization (In Progress)
+### Phase 2: Standardized 9-Slot Interface Architecture & Menu Modernization (Completed)
 
 - [x] **Standardized 9-Slot Container & HUD Geometry**:
-  - Unified 9-slot row grid architecture across all container windows and gameplay hotbar HUD, standardizing inventory navigation and equipment readouts.
+  - Unified 9-slot row grid architecture across all container windows and gameplay hotbar HUD, standardizing inventory navigation and equipment readouts with 3px slot spacing.
 - [x] **Unified Dark Iron Interface Component Suite**:
-  - Standardized multi-tier interactive button suite and contextual equipment slot overlays (armor, offhand, accessories, crafting) across all menus.
-- [ ] **Unified 480×270 Base UI & Integer Scaling**:
-  - Standardize all container, inventory, and HUD layouts onto a fixed 480×270 px (16:9) base canvas, supporting integer pixel-perfect scaling up to 4× across display resolutions.
+  - Standardized multi-tier interactive button suite (`button_large.png`, `button_medium.png`, `button_small.png`, `button_util.png`) and contextual equipment slot overlays across all menus.
+- [x] **Unified 480×270 Base UI & Integer Scaling**:
+  - Standardized all container, inventory, and HUD layouts onto a fixed 480×270 px (16:9) base canvas, supporting integer pixel-perfect scaling up to 4× across display resolutions (`GUI_SCALE = 4.0`).
+  - Integrated Dark Iron Pause Menu Bar architecture with centralized 4-tab navigation: Map, Journal, Inventory, and System.
+  - Organized container assets and outlines into structured subdirectories (`interfaces/containers/`, `buttons/`, `outlines/`).
+  - Consolidated Hotbar HUD with health bar integration, exact 12px numeric slot font parity, and centered selection tooltips.
+  - Procedural 2D/3D icon rendering pipeline with directional front-face projection (bookshelves, hives, nests, bags), planar cross-mesh billboards (plants, beaver dams, corals), and animated texture strips.
 
 ---
 
@@ -261,3 +266,18 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 - [ ] **Voxel Memory Footprint & Disk Streaming**:
   - Compress runtime voxel storage structures to maximize cache locality and reduce memory consumption per loaded chunk.
   - Accelerate binary region-based world serialization for seamless disk save and load streaming.
+
+---
+
+### Phase 16: Localization & Multi-Language Support (Planned)
+
+- [ ] **Language File Architecture (`lang/`)**:
+  - Create a dedicated `assets/lang/` directory holding one translation file per locale, starting with `en_us` (default / fallback) and `pt_br`.
+  - Use flat, namespaced translation keys (e.g. `menu.tab.system`, `block.sand_common`, `hud.tooltip.empty`) so new locales can be added without code changes.
+- [ ] **Translation Key Lookup & String Migration**:
+  - Introduce a `Localization` resource that loads the active locale on startup and resolves keys at runtime, falling back to `en_us` for missing entries.
+  - Migrate all hardcoded UI strings (menu bar tabs, pause menu, settings, inventory titles, tooltips) and block/item display names (`Voxel::label()`) to translation keys.
+  - Keep all source code, identifiers, and default content authored in English.
+- [ ] **In-Game Language Selector**:
+  - Add a language option inside the Settings menu, persisted in the user config file, with live UI refresh on change (no restart required).
+  - Validate font glyph coverage for accented characters (e.g. `ã`, `ç`, `é`) across all supported locales.

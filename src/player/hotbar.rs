@@ -9,7 +9,7 @@ use crate::world::Voxel;
 pub const HOTBAR_SLOT_COUNT: usize = 9;
 
 pub const HOTBAR_SLOT_X_COORDS: [f32; HOTBAR_SLOT_COUNT] =
-    [144.0, 166.0, 188.0, 210.0, 232.0, 254.0, 276.0, 298.0, 320.0];
+    [156.0, 175.0, 194.0, 213.0, 232.0, 251.0, 270.0, 289.0, 308.0];
 pub const HOTBAR_SLOT_Y: f32 = 228.0;
 pub const HOTBAR_SCALE: f32 = 4.0;
 pub const HOTBAR_FRAME_WIDTH: f32 = 480.0 * HOTBAR_SCALE; // 1920.0 px
@@ -158,9 +158,6 @@ fn setup_hotbar_ui(
                         ..default()
                     },
                     Node {
-                        position_type: PositionType::Absolute,
-                        left: px(0.0),
-                        top: px(0.0),
                         width: px(HOTBAR_FRAME_WIDTH),
                         height: px(HOTBAR_FRAME_HEIGHT),
                         ..default()
@@ -177,57 +174,63 @@ fn setup_hotbar_ui(
                     }
 
                     let mut num_font = TextFont {
-                        font_size: FontSize::Px(3.5 * HOTBAR_SCALE),
+                        font_size: FontSize::Px(3.0 * HOTBAR_SCALE),
                         ..default()
                     };
                     if let Some(ref font) = font_handle {
                         num_font.font = font.clone();
                     }
 
-                    tray.spawn((
-                        HotbarTooltipText,
-                        Text::new(""),
-                        tooltip_font,
-                        TextColor(Color::srgba(1.0, 1.0, 1.0, 0.0)),
-                        text_shadow_default(),
-                        Node {
-                            position_type: PositionType::Absolute,
-                            left: px(0.0),
-                            right: px(0.0),
-                            top: px(200.0 * HOTBAR_SCALE),
-                            display: Display::Flex,
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },
-                        Visibility::Hidden,
-                    ));
-
-                    // Field 1: XP Progress Bar at (138, 218), 204x4 px
                     tray.spawn(Node {
                         position_type: PositionType::Absolute,
-                        left: px(138.0 * HOTBAR_SCALE),
-                        top: px(218.0 * HOTBAR_SCALE),
-                        width: px(204.0 * HOTBAR_SCALE),
-                        height: px(4.0 * HOTBAR_SCALE),
+                        left: px(0.0),
+                        right: px(0.0),
+                        top: px(200.0 * HOTBAR_SCALE),
+                        width: px(HOTBAR_FRAME_WIDTH),
+                        display: Display::Flex,
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    })
+                    .with_children(|wrapper| {
+                        wrapper.spawn((
+                            HotbarTooltipText,
+                            Text::new(""),
+                            TextLayout::justify(Justify::Center),
+                            tooltip_font,
+                            TextColor(Color::srgba(1.0, 1.0, 1.0, 0.0)),
+                            text_shadow_default(),
+                            Visibility::Hidden,
+                        ));
+                    });
+
+                    // Field 1: XP Progress Bar at (156, 247), 168x3 px (inside hotbar chassis)
+                    tray.spawn(Node {
+                        position_type: PositionType::Absolute,
+                        left: px(156.0 * HOTBAR_SCALE),
+                        top: px(247.0 * HOTBAR_SCALE),
+                        width: px(168.0 * HOTBAR_SCALE),
+                        height: px(3.0 * HOTBAR_SCALE),
                         ..default()
                     })
                     .with_children(|xp_bar| {
-                        // Static 45% level fill in ambient green
+                        // Static 45% level fill in ambient green inside inner channel (y=248)
                         xp_bar.spawn((
                             Node {
+                                top: px(1.0 * HOTBAR_SCALE),
+                                left: px(1.0 * HOTBAR_SCALE),
                                 width: Val::Percent(45.0),
-                                height: Val::Percent(100.0),
+                                height: px(1.0 * HOTBAR_SCALE),
                                 ..default()
                             },
                             BackgroundColor(Color::srgba(0.22, 0.78, 0.32, 0.75)),
                         ));
                     });
 
-                    // Field 2: Off-hand Slot display at (122, 231), 16x16 px (non-clickable visual readout)
+                    // Field 2: Off-hand Slot display at (134, 231), 16x16 px (non-clickable visual readout)
                     tray.spawn(Node {
                         position_type: PositionType::Absolute,
-                        left: px(122.0 * HOTBAR_SCALE),
+                        left: px(134.0 * HOTBAR_SCALE),
                         top: px(231.0 * HOTBAR_SCALE),
                         width: px(slot_size),
                         height: px(slot_size),
@@ -249,10 +252,10 @@ fn setup_hotbar_ui(
                         ));
                     });
 
-                    // Field 12: Quick Utility Slot display at (342, 231), 16x16 px (non-clickable visual readout)
+                    // Field 12: Quick Utility Slot display at (330, 231), 16x16 px (non-clickable visual readout)
                     tray.spawn(Node {
                         position_type: PositionType::Absolute,
-                        left: px(342.0 * HOTBAR_SCALE),
+                        left: px(330.0 * HOTBAR_SCALE),
                         top: px(231.0 * HOTBAR_SCALE),
                         width: px(slot_size),
                         height: px(slot_size),

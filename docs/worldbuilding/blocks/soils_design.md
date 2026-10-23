@@ -34,7 +34,7 @@ graph TD
     D --> D3["Gravels (Matrix System): Fluvial, loamy, volcanic, and glacial gravels"]
 
     E --> E1["Volcanic Ashes: Tephra deposits (Dark basaltic, Light pumice)"]
-    E --> E2["Snows & Cryosphere: Consolidated snow block and soft powder snow"]
+    E --> E2["Snows & Cryosphere: Consolidated Snow and soft powder snow"]
     E --> E3["Ground Mosses (4 Biomes): Forest, Crimson (Tundra), Amber (Swamp), Cave (Bioluminescent)"]
 ```
 
@@ -110,7 +110,7 @@ All 4 moss biomes feature complete 3-fold stochastic variants (`1` and `2`):
 
 ### H. Snows & Grass Tops (4 base textures + stochastic variations)
 
-* `soil_snow.png`, `soil_snow1.png`, `soil_snow2.png` *(Solid snow block & snow cap top)*
+* `soil_snow.png`, `soil_snow1.png`, `soil_snow2.png` *(Solid Snow & snow cap top)*
 * `soil_snow_powder.png` *(Aerated fluffy powder snow, + `1`, `2`)*
 * `soil_grass.png`, `soil_grass1.png`, `soil_grass2.png` *(Grayscale top grass face for biome color tinting)*
 * `soil_grass_colored.png` *(Pre-colored standalone grass top)*
@@ -195,7 +195,7 @@ All 4 moss biomes feature complete 3-fold stochastic variants (`1` and `2`):
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **45** | `sand_common` | Common Sand | **Sand** | `soil_sand_common.png` | 6 uniform faces |
+| **45** | `sand_common` | Sand | **Sand** | `soil_sand_common.png` | 6 uniform faces |
 | **46** | `sand_red` | Red Sand | **Sand** | `soil_sand_red.png` | 6 uniform faces |
 | **47** | `sand_dune` | Dune Sand | **Sand** | `soil_sand_dune.png` | 6 uniform faces |
 | **48** | `sand_white` | White Sand | **Sand** | `soil_sand_white.png` | 6 uniform faces |
@@ -226,5 +226,5 @@ All 4 moss biomes feature complete 3-fold stochastic variants (`1` and `2`):
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **55** | `snow_block` | Snow Block | **Cryosphere** | `soil_snow.png` | 6 uniform faces |
+| **55** | `snow_block` | Snow | **Cryosphere** | `soil_snow.png` | 6 uniform faces |
 | **56** | `powder_snow` | Powder Snow | **Cryosphere** | `soil_snow_powder.png` | 6 uniform faces |

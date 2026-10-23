@@ -51,11 +51,14 @@ This is an attempt to develop an experimental voxel engine and game, built from 
   - Enforced in `src/core/window_aspect.rs` (`WindowAspectPlugin`) maintaining 16:9 aspect ratio in windowed mode with minimum constraints (640×360 px) and auto-disable in fullscreen.
 - **Custom Typography**:
   - Universal font asset management (`CutePixel.ttf`) applied across all in-game HUDs, menus, and interfaces with drop shadow contrast styling.
-- **Standardized 9-Horizontal-Slot UI Architecture**:
-  - **In-Game Hotbar HUD (320 × 44 px)**: 9 primary item slots (hotkeys `1`–`9` and mouse scroll wheel), 2 special readout slots (offhand and utility with Dark Iron backdrops), 4 non-clickable wing badges (`[M]`, `[J]`, `[C]`, `[T]`), static visual meters (XP, HP, Mana), and centered 20×20 px `hotbar_selection.png`. Zero mouse hover/clicks during active 3D gameplay.
-  - **Active Player Inventory (`inventory_creative_closed.png`, 416 × 256 px)**: 36 Card B storage slots (4 rows of 9), mirrored hotbar and offhand/utility slots with `inventory_slot_hover.png` feedback, action utility buttons (Sort, Trash, Options, Lock), non-clickable Card A armor placeholders (with Dark Iron overlays) and Card C crafting placeholders, and **B1** toggle tab at `(118, 116)`.
-  - **Creative Catalog (`inventory_creative_open.png`, 416 × 256 px)**: 11 category tabs rendering scaled 3D isometric block icons (`BlockIcons`), docking selection frame (`inventory_creative_tab_selection.png`), live search filter with cursor, vertical scroll track with draggable thumb (`inventory_creative_scroller.png`), 90-slot grid (10 rows of 9), and mirrored bottom hotbar.
-  - **Unified Button Suite**: Pause and Settings menus powered by unified dark obsidian / brushed steel buttons (`button_large.png` 96×16 px, `button_medium.png` 64×16 px, `button_small.png` 16×16 px) with frosted slate-blue metallic hover highlights (`#3c4552`).
+- **Standardized 480×270 Base Canvas & 9-Horizontal-Slot UI Architecture**:
+  - **Unified 480×270 (16:9) Base Canvas**: All container, HUD, and menu interfaces are mapped to a fixed 480×270 px native pixel-art canvas, scaling cleanly with integer pixel-perfect alignment up to 4× (`GUI_SCALE = 4.0`, 1920×1080) and seamless borderless / letterbox support.
+  - **In-Game Hotbar HUD (320 × 44 px)**: 9 primary item slots with 3px slot spacing, integrated health meter, exact 12px numeric font scale consistent with open inventory, 2 special readout slots (offhand and utility with Dark Iron backdrops), 4 non-clickable wing badges (`[M]`, `[J]`, `[C]`, `[T]`), and centered selection tooltips with smooth fade-out.
+  - **Dark Iron Pause Menu Bar**: Centralized top navigation bar with 4 tabs (`Map`, `Journal`, `Inventory`, `System`), allowing seamless mouse navigation between menus while automatically hiding sub-HUDs (like the minimap) on background screens.
+  - **Active Player Inventory (`inventory.png`, 480 × 270 px)**: 36 Card B storage slots (4 rows of 9), mirrored hotbar and offhand/utility slots with `inventory_slot_hover.png` feedback, action utility buttons (Sort, Trash, Options, Lock), non-clickable Card A armor placeholders and Card C crafting placeholders.
+  - **Creative Catalog (`inventory_creative.png`, 480 × 270 px)**: 11 category tabs rendering scaled 3D isometric block icons (`BlockIcons`), docking selection frame (`inventory_creative_tab_selection.png`), live search filter with cursor, vertical scroll track with draggable thumb (`inventory_creative_scroller.png`), 90-slot grid (10 rows of 9), and mirrored bottom hotbar.
+  - **Unified Dark Iron Button Suite**: Menus powered by unified dark obsidian / brushed steel buttons (`button_large.png` 96×16 px, `button_medium.png` 64×16 px, `button_small.png` 16×16 px, `button_util.png` 12×12 px) with frosted slate-blue metallic hover highlights (`#3c4552`).
+  - **Procedural 2D/3D Icon Pipeline**: Real-time generation of 3D isometric block icons with directional front-face projection (bookshelves, hives, nests, bags), 2D planar cross-mesh billboards (plants, beaver dams, corals, mushrooms), and multi-frame animated strips.
 - **Item Tooltips**:
   - Centered item name readout above hotbar upon slot selection with smooth fade-out.
   - Responsive floating hover tooltips across all inventory and catalog slots.
@@ -124,7 +127,7 @@ The engine has concluded foundational development across Version 0.1 (Phases 1 t
 In Version 0.2 (Modernization, Worldbuilding & Deep Systems), the project status:
 
 - **Phase 1 (Completed)**: Full Block Catalog & Geological Systems Foundation (615 active engine voxels, geological strata catalog, 3-axis directional placement, selective foliage tinting, shader de-tiling).
-- **Phase 2 (In Progress)**: Standardized 9-Slot Interface Architecture & Menu Modernization (Unified 9-slot container and HUD geometry, Dark Iron design suite, 480×270 base integer scaling).
+- **Phase 2 (Completed)**: Standardized 9-Slot Interface Architecture & Menu Modernization (Unified 9-slot container and HUD geometry, Dark Iron design suite, 480×270 base integer scaling, pause menu bar navigation, and procedural icon rendering).
 - **Phase 3 (Completed)**: Core Engine Upgrade (Bevy 0.20 Migration, direct `bevy_egui = "0.43"`, modern UI widgets, WESL shader framework, and ScreenSpaceTransmission).
 - **Phase 4 (Completed)**: Architecture, Graphics Modernization & Soundness (Multi-tier hardware profiles, chunk memory optimization, modular domain crates, dynamic 3D render scaling, 16:9 window snapping, test isolation).
 - **Phase 5 (Completed)**: High-Impact Performance & Graphics Pipeline (Dynamic frame rate limiter, hardware GPU upload budgets, AMD FSR 1.0 upscaling, subterranean occlusion culling).

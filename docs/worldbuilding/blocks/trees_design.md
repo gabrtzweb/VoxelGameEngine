@@ -295,8 +295,8 @@ graph TD
 | **082** | `palm_log` | Palm Log | **Wood** | Top/Bottom: `tree_palm_log.png`<br>Sides: `tree_palm_bark.png` | Directional (Top/Bottom + 4 sides) |
 | **083** | `palm_wood` | Palm Wood | **Wood** | `tree_palm_bark.png` | 6 uniform faces |
 | **084** | `palm_planks` | Palm Planks | **Planks** | `tree_palm_planks.png` | 6 uniform faces |
-| **085** | `palm_leaves` | Palm Fronds | **Foliage** | `tree_palm_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
-| **086** | `palm_leaves_dead` | Dead Palm Fronds | **Foliage** | `tree_palm_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
+| **085** | `palm_leaves` | Palm Leaves | **Foliage** | `tree_palm_leaves.png` | 6 uniform faces (Cutout alpha transparency) |
+| **086** | `palm_leaves_dead` | Dead Palm Leaves | **Foliage** | `tree_palm_leaves_dead.png` | 6 uniform faces (Cutout alpha transparency) |
 | **087** | `cypress_log` | Cypress Log | **Wood** | Top/Bottom: `tree_cypress_log.png`<br>Sides: `tree_cypress_bark.png` | Directional (Top/Bottom + 4 sides) |
 | **088** | `cypress_wood` | Cypress Wood | **Wood** | `tree_cypress_bark.png` | 6 uniform faces |
 | **089** | `cypress_planks` | Cypress Planks | **Planks** | `tree_cypress_planks.png` | 6 uniform faces |

@@ -500,10 +500,7 @@ fn manage_minimap_visibility(
         return;
     };
 
-    let hide = matches!(
-        *menu_state.get(),
-        MenuState::WorldMap | MenuState::Pause | MenuState::Settings | MenuState::Inventory
-    );
+    let hide = *menu_state.get() != MenuState::None;
 
     let target_vis = if hide {
         Visibility::Hidden

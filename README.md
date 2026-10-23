@@ -36,8 +36,8 @@ Q                 Clear active hotbar slot
 R                 Block shape (Tap: cycle sequentially / Hold: 4-slice circular radial menu)
 T                 Rotate block shape 90° clockwise
 
-ESC               Pause Menu With Settings (unified obsidian/steel buttons)
-E                 Personal & Creative Inventory (standardized 416x256 px 9-slot interface)
+ESC               Pause Menu & Menu Bar (Tabs: Map, Journal, Inventory, System)
+E                 Personal & Creative Inventory (unified 480x270 px base canvas with integer scaling)
 M                 World Map (Full-screen interactive map, pan & zoom, player tracking)
 
 F1                Toggle Inspector (bevy_egui)
@@ -55,6 +55,9 @@ F6                Day / Night cycle (Click: step phase / Hold: scrub time)
 assets/
 ├── fonts/
 │   └── CutePixel.ttf
+├── lang/
+│   ├── en_us.json
+│   └── pt_br.json
 ├── shaders/
 │   ├── post_process.wesl
 │   ├── voxel_opaque.wesl
@@ -131,6 +134,7 @@ src/
 │   └── world_map.rs
 ├── menu/
 │   ├── creative_inventory.rs
+│   ├── menu_bar.rs
 │   ├── mod.rs
 │   ├── pause.rs
 │   └── settings.rs

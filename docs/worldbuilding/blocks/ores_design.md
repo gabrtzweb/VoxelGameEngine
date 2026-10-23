@@ -142,8 +142,8 @@ Two gemstones utilize vertical strips of **16×64 pixels (4 stacked 16×16 frame
 
 | # | Block ID | Name | Category | Host Rock | Overlay Texture | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **021** | `ore_coal_sandstone_common` | Coal Ore (Common Sandstone) | **Chemical** | `rock_sandstone_common.png` | `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
-| **022** | `ore_copper_sandstone_common` | Copper Ore (Common Sandstone) | **Metal** | `rock_sandstone_common.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **021** | `ore_coal_sandstone_common` | Coal Ore (Sandstone) | **Chemical** | `rock_sandstone_common.png` | `ore_coal_overlay.png` | Uniform 6 faces (Shader Overlay) |
+| **022** | `ore_copper_sandstone_common` | Copper Ore (Sandstone) | **Metal** | `rock_sandstone_common.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
 | **023** | `ore_copper_sandstone_red` | Copper Ore (Red Sandstone) | **Metal** | `rock_sandstone_red.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
 | **024** | `ore_gold_sandstone_red` | Gold Ore (Red Sandstone) | **Metal** | `rock_sandstone_red.png` | `ore_gold_overlay.png` | Uniform 6 faces (Shader Overlay) |
 | **025** | `ore_copper_sandstone_white` | Copper Ore (White Sandstone) | **Metal** | `rock_sandstone_white.png` | `ore_copper_overlay.png` | Uniform 6 faces (Shader Overlay) |
@@ -262,7 +262,7 @@ Breakdown of all **17 planetary rock matrices**, showing exactly which mineral v
 
 | # | Rock ID | Name | Stratum Level | Hosted Veins Count | Hosted Mineral Veins | Vein Blocks Generated |
 | :-: | :--- | :--- | :--- | :-: | :--- | :-: |
-| **01** | `sandstone_common` | Common Sandstone | Surface Sediment | **2** | Coal, Copper | **2** |
+| **01** | `sandstone_common` | Sandstone | Surface Sediment | **2** | Coal, Copper | **2** |
 | **02** | `sandstone_red` | Red Sandstone | Surface Sediment | **2** | Copper, Gold | **2** |
 | **03** | `sandstone_dune` | Dune Sandstone | Surface Sediment | **0** | *(Sterile)* | **0** |
 | **04** | `sandstone_white` | White Sandstone | Surface Sediment | **1** | Opal *(Exclusive)* | **1** |
@@ -278,5 +278,5 @@ Breakdown of all **17 planetary rock matrices**, showing exactly which mineral v
 | **14** | `marble` | Marble | Metamorphic Pocket | **4** | Silver, Lazurite, Emerald, Gem Vein | **4** |
 | **15** | `obsidian` | Obsidian | Volcanic Glass Pocket | **0** | *(Sterile)* | **0** |
 | **16** | `magma` | Magma | Geothermal Pocket | **0** | *(Sterile)* | **0** |
-| **17** | `mantle` | Primordial Mantle | World Floor Bedrock | **0** | *(Sterile)* | **0** |
+| **17** | `mantle` | Mantle | World Floor Bedrock | **0** | *(Sterile)* | **0** |
 | **Total** | — | — | — | **54** | **54 Unique Mineral Associations** | **54 Vein Blocks** |
