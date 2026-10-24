@@ -6,7 +6,7 @@ use super::{
 };
 use crate::{
     menu::MenuState,
-    player::{GameMode, InspectorInteraction, hotbar::Hotbar},
+    player::{GameMode, InspectorInteraction, PlayerCamera, hotbar::Hotbar},
     simulation::{
         fluid::FluidUpdateQueue,
         lighting::{VoxelLightRegistry, sync_voxel_light},
@@ -151,6 +151,7 @@ fn edit_voxels(
     (mouse, time, current_target): (Res<ButtonInput<MouseButton>>, Res<Time>, Res<CurrentTarget>),
     (mut world, mut modifications, mut light_registry, mut queues): WorldEditResources,
     (fluid_queue, menu_state, inspector, mut map_cache): OptionalInteractionParams,
+    camera_query: Query<&Transform, With<PlayerCamera>>,
     mut interaction_state: Local<InteractionState>,
 ) {
     if menu_state.is_some_and(|s| *s.get() != MenuState::None)
@@ -346,7 +347,21 @@ fn edit_voxels(
                 place_voxel_type,
             );
             if !placed.is_empty() {
-                let orientation = if target.face_normal.x > 0 {
+                let orientation = if let Ok(cam_tf) = camera_query.single() {
+                    let fwd = cam_tf.forward();
+                    // Block front face points towards the player (opposite to camera horizontal forward)
+                    if fwd.z.abs() >= fwd.x.abs() {
+                        if fwd.z < 0.0 {
+                            0 // Player looks North (-Z) -> block front faces South (+Z, towards player)
+                        } else {
+                            2 // Player looks South (+Z) -> block front faces North (-Z, towards player)
+                        }
+                    } else if fwd.x > 0.0 {
+                        3 // Player looks East (+X) -> block front faces West (-X, towards player)
+                    } else {
+                        1 // Player looks West (-X) -> block front faces East (+X, towards player)
+                    }
+                } else if target.face_normal.x > 0 {
                     1
                 } else if target.face_normal.x < 0 {
                     3

@@ -67,9 +67,10 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **11** | **[Custom Voxel Player Character & Modular Character Creator](#phase-11-custom-voxel-player-character--modular-character-creator-planned)** | **Planned** | Modular voxel character rig, Character Creator interface, fantasy races, custom hair, skin, eye, and cosmetic customization |
 | **12** | **[First-Person Item Rendering & Creative Utility Tools](#phase-12-first-person-item-rendering--creative-utility-tools-planned)** | **Planned** | 3D held items/blocks in player hand, paint roller, lumberjack tree-felling saw, multi-block sledgehammer, measurement tools |
 | **13** | **[Physics Engine, Fluid Dynamics & Item Drops](#phase-13-physics-engine-fluid-dynamics--item-drops-planned)** | **Planned** | Overhauled fluid propagation, gravity blocks (sand, gravel), 3D floating item drops with magnetism, projectile trajectories |
-| **14** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-14-visual-aesthetics-shaders--atmospheric-fx-overhaul-planned)** | **Planned** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, weather particles |
-| **15** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-15-performance-engineering-chunk-streaming--lod-enhancements-planned)** | **Planned** | Worker thread scaling, GPU frustum/occlusion culling, smooth LOD horizon transitions, runtime voxel memory compression |
-| **16** | **[Localization & Multi-Language Support](#phase-16-localization--multi-language-support-planned)** | **Planned** | `lang/` translation files (`en_us`, `pt_br`), translation-key lookup for all UI/block/item strings, in-game language selector in Settings |
+| **14** | **[Dynamic Weather System & Meteorological Phenomena](#phase-14-dynamic-weather-system--meteorological-phenomena-planned)** | **Planned** | Multi-state weather simulation (rain, snow, fog, storms), precipitation particles, surface wetness, dynamic snow accumulation |
+| **15** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-15-visual-aesthetics-shaders--atmospheric-fx-overhaul-planned)** | **Planned** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, biome color grading |
+| **16** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-16-performance-engineering-chunk-streaming--lod-enhancements-planned)** | **Planned** | Worker thread scaling, GPU frustum/occlusion culling, smooth LOD horizon transitions, runtime voxel memory compression |
+| **17** | **[Localization & Multi-Language Support](#phase-17-localization--multi-language-support-planned)** | **Planned** | `lang/` translation files (`en_us`, `pt_br`), translation-key lookup for all UI/block/item strings, in-game language selector in Settings |
 
 ---
 
@@ -87,6 +88,12 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
   - Real-time procedural 2D icon generation for cubic blocks, planar cross-billboards, animated fluid frames, and handheld items across container interfaces.
 - [x] **Stochastic WESL Texture Rotation & De-tiling**:
   - Fragment-level coordinate hashing in the opaque voxel shader, breaking repetitive grid patterns on cliffs, cavern walls, and terrain surfaces with zero CPU meshing overhead.
+- [x] **Extended Block Shapes, Cavity Meshing & Shape Locking**:
+  - Expanded native engine block shapes to 11 variants, introducing `BlockShape::Cocoon` ($0.75\text{ m} \times 0.875\text{ m}$) for Spider Eggs and Silk Cocoons.
+  - Runtime shape-locking protection (`is_shape_locked()`) preventing illegal deformation or rotation on decorative nests, eggs, cocoons, and custom-meshed blocks.
+  - Basket interior cavity meshing with precise 2px rims, interior floor quad, and 4 inward-facing side walls.
+  - Consolidated Crate as a 100% solid, fully textured opaque wooden container block.
+  - Player-facing front orientation for contextual blocks (Bookshelves, Bee Nests, Wasp Nests) and natural horizontal-only rotation constraints for surface pebbles/rocks.
 
 ---
 
@@ -124,6 +131,10 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
   - Lazy chunk variant distribution reducing memory footprint by ~92%, safe discriminant validation, and decomposition into modular domain crates with pure integration test isolation.
 - [x] **Dynamic 3D Render Scaling & Window Presentation**:
   - Decoupled 3D resolution scaling with native 2D interface crispness, and debounced 16:9 window snapping eliminating swapchain resize collisions.
+- [x] **Display Initialization & Multi-Monitor Window Management**:
+  - Anchored window creation to `WindowPosition::Centered(MonitorSelection::Primary)` and updated Borderless/Exclusive Fullscreen resolution to target the Primary display, eliminating multi-monitor winit detection warnings on Windows startup.
+  - Preserved custom preset persistence (`preset: "Custom"`) and calendar time-flow state (`is_time_paused`) in local configuration.
+  - Corrected placement pop feedback animation to respect non-full block geometries (slabs/nests) and fixed painted block tint latency during placement bounce.
 
 ---
 
@@ -240,7 +251,33 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 14: Visual Aesthetics, Shaders & Atmospheric FX Overhaul (Planned)
+### Phase 14: Dynamic Weather System & Meteorological Phenomena (Planned)
+
+- [ ] **Multi-State Meteorological Simulation Engine**:
+  - Build a deterministic atmospheric weather state machine supporting dynamic transitions across distinct weather states: `Clear`, `Partially Cloudy`, `Overcast`, `Light Rain`, `Heavy Downpour`, `Thunderstorm`, `Light Snow`, `Blizzard`, `Morning Mist`, `Dense Fog`, `Arid Sandstorm`, and `Heat Shimmer`.
+  - Implement altitude and temperature-sensitive precipitation: dynamic freezing line elevation checks where rainfall seamlessly shifts into snowfall at high mountain altitudes and sub-zero biomes.
+  - Smooth temporal transitions over configurable game minutes, fully coordinated with the in-game calendar, seasons, and day/night cycle.
+- [ ] **Precipitation Particle Systems & Occlusion**:
+  - Implement high-performance GPU particle emitters for directional rain streaks, drifting snowflakes, swirling blizzard gusts, and desert sandstorms.
+  - Add surface impact splashes and water ripples on exposed horizontal water and terrain blocks.
+  - Vertical raycast occlusion preventing rain and snow particles from appearing inside sheltered interiors, under tree canopies, or beneath cave overhangs.
+  - Dynamic sub-voxel snow accumulation on top of upward-facing exposed blocks during winter blizzards, with progressive melting in warmer seasons.
+- [ ] **Volumetric & Atmospheric Weather Fog**:
+  - Weather-dependent horizon fog densities and low-lying ground mist pooling in humid river basins, swamps, and mountain valleys at dawn.
+  - Storm sky darkening: dynamic overcast cloud ceiling lowering and ambient sunlight attenuation during severe storms.
+  - Directional lightning flash illumination with volumetric terrain casting and realistic distance-delayed rolling thunder.
+- [ ] **Surface Wetness & Environmental Gameplay Interactions**:
+  - Fragment shader surface wetness sheen: dynamic PBR roughness reduction and specular highlights on blocks exposed to rainfall.
+  - Rainwater pooling and puddle reflections on non-permeable rock and compressed surfaces.
+  - Gameplay weather feedback: natural hydration of farmland and agricultural crops during rain, smoke puff steam when rain hits hot lava or lit campfires.
+- [ ] **Dynamic Spatial Weather Audio**:
+  - Multi-layered 3D soundscapes: gentle outdoor rainfall, heavy downpours, wind gusts whipping through trees, and howling blizzard gales.
+  - Acoustic muffling: low-pass filtering and volume dampening for indoor shelters, basements, and deep cave systems.
+  - Directional thunder claps with distance attenuation and speed-of-sound physical delay after lightning flashes.
+
+---
+
+### Phase 15: Visual Aesthetics, Shaders & Atmospheric FX Overhaul (Planned)
 
 - [ ] **Voxel Ambient Occlusion (Smooth Lighting)**:
   - Implement per-vertex ambient occlusion calculating corner and edge block occlusion, adding deep geometric contrast to all surfaces.
@@ -250,13 +287,12 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
   - Integrate HDR bloom post-processing for light-emitting blocks (torches, lanterns, glowing crystals, lava, fireflies, and enchanted ores).
 - [ ] **Volumetric Fog & Crepuscular Rays (God Rays)**:
   - Add screen-space or volumetric light shafts piercing through forest foliage, mountain ridges, and cavern ceilings.
-- [ ] **Atmospheric Weather Particles & Biome Color Grading**:
-  - Implement particle weather effects (rain with block surface splashing, snow flurries, falling autumn leaves, embers near lava).
+- [ ] **Biome Color Grading & Atmospheric Tonemapping**:
   - Implement biome-specific tonemapping and color grading LUTs for tailored environmental atmospheres (e.g. moody caverns vs vibrant sunlit plains).
 
 ---
 
-### Phase 15: Performance Engineering, Chunk Streaming & LOD Enhancements (Planned)
+### Phase 16: Performance Engineering, Chunk Streaming & LOD Enhancements (Planned)
 
 - [ ] **Streaming Throughput & Worker Scaling**:
   - Optimize asynchronous compute worker pools for chunk generation and greedy meshing with dynamic per-frame upload budgets.
@@ -269,7 +305,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 16: Localization & Multi-Language Support (Planned)
+### Phase 17: Localization & Multi-Language Support (Planned)
 
 - [ ] **Language File Architecture (`lang/`)**:
   - Create a dedicated `assets/lang/` directory holding one translation file per locale, starting with `en_us` (default / fallback) and `pt_br`.

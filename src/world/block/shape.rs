@@ -14,6 +14,7 @@ pub enum BlockShape {
     PebbleCluster = 7,
     CrossBillboard = 8,
     Bamboo = 9,
+    Cocoon = 10,
 }
 
 #[repr(u8)]
@@ -48,8 +49,8 @@ impl PillarAxis {
 }
 
 impl BlockShape {
-    /// All 10 registered block shapes in the engine.
-    pub const fn all() -> [BlockShape; 10] {
+    /// All 11 registered block shapes in the engine.
+    pub const fn all() -> [BlockShape; 11] {
         [
             BlockShape::Full,
             BlockShape::Slab,
@@ -61,6 +62,7 @@ impl BlockShape {
             BlockShape::PebbleCluster,
             BlockShape::CrossBillboard,
             BlockShape::Bamboo,
+            BlockShape::Cocoon,
         ]
     }
 
@@ -86,6 +88,7 @@ impl BlockShape {
             Self::PebbleCluster => "Pebble Cluster",
             Self::CrossBillboard => "Cross-Billboard",
             Self::Bamboo => "Bamboo",
+            Self::Cocoon => "Cocoon",
         }
     }
 
@@ -101,13 +104,14 @@ impl BlockShape {
             Self::PebbleCluster => "PEBBLE_CLUSTER",
             Self::CrossBillboard => "CROSS",
             Self::Bamboo => "BAMBOO",
+            Self::Cocoon => "COCOON",
         }
     }
 
     pub const fn orientation_count(self) -> u8 {
         match self {
             Self::Full => 3,
-            Self::Basket | Self::CrossBillboard | Self::Bamboo => 1,
+            Self::Basket | Self::CrossBillboard | Self::Bamboo | Self::Cocoon => 1,
             Self::Slab => 6,
             Self::Stair => 8,
             Self::Column => 6,
@@ -124,7 +128,7 @@ impl BlockShape {
                 2 => "Horizontal (Z)",
                 _ => "Standard",
             },
-            Self::Basket | Self::CrossBillboard | Self::Bamboo => "Standard",
+            Self::Basket | Self::CrossBillboard | Self::Bamboo | Self::Cocoon => "Standard",
             Self::Slab => match orientation % 6 {
                 0 => "Bottom (Floor)",
                 1 => "Top (Ceiling)",
@@ -274,6 +278,11 @@ impl BlockShape {
             Self::Bamboo => {
                 let min = Vec3::new(6.5 / 16.0, 0.0, 6.5 / 16.0);
                 let max = Vec3::new(9.5 / 16.0, 1.0, 9.5 / 16.0);
+                ([min, max], None)
+            }
+            Self::Cocoon => {
+                let min = Vec3::new(2.0 / 16.0, 0.0, 2.0 / 16.0);
+                let max = Vec3::new(14.0 / 16.0, 14.0 / 16.0, 14.0 / 16.0);
                 ([min, max], None)
             }
         }

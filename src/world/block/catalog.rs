@@ -106,6 +106,11 @@ impl Voxel {
             Self::PearlBlock => Some("aqua_pearl_side"),
             Self::Bookshelf | Self::BookshelfEmpty => Some("util_bookshelf_side"),
             Self::Bag => Some("util_bag_side"),
+            Self::FurBlock => Some("bio_fur_side"),
+            Self::Crate => Some("util_crate_side"),
+            Self::Basket => Some("util_basket_side"),
+            Self::SpiderEgg => Some("nest_spider_egg_side"),
+            Self::SilkCocoon => Some("nest_silk_cocoon_side"),
             _ => None,
         }
     }
@@ -412,11 +417,28 @@ impl Voxel {
             Self::PebbleChertCluster | Self::PebbleFlintCluster | Self::PebbleQuartzCluster
         ) {
             BlockShape::PebbleCluster
+        } else if matches!(self, Self::BirdNest | Self::HayNest) {
+            BlockShape::Slab
         } else if matches!(self, Self::BambooStalk | Self::BambooLeaves) {
             BlockShape::Bamboo
+        } else if matches!(self, Self::SpiderEgg | Self::SilkCocoon) {
+            BlockShape::Cocoon
         } else {
             BlockShape::Full
         }
+    }
+
+    pub fn is_shape_locked(self) -> bool {
+        self.has_custom_mesh()
+            || matches!(
+                self,
+                Self::BirdNest
+                    | Self::HayNest
+                    | Self::BeeNest
+                    | Self::WaspNest
+                    | Self::SpiderEgg
+                    | Self::SilkCocoon
+            )
     }
 
     #[inline]

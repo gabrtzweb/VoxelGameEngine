@@ -7,7 +7,7 @@ use bevy::{
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
 
-use crate::world::Voxel;
+use crate::world::{BlockShape, Voxel};
 
 pub const ICON_SIZE: u32 = 48;
 
@@ -302,8 +302,11 @@ pub fn setup_block_icons(
                 current_frame: 0,
             });
         } else {
-            let icon_image =
-                render_isometric_block_icon_multi(&raw_side, &raw_top, &raw_front, side_tint, top_tint);
+            let icon_image = if voxel.default_shape() == BlockShape::Slab {
+                render_isometric_slab_icon_multi(&raw_side, &raw_top, &raw_front, side_tint, top_tint)
+            } else {
+                render_isometric_block_icon_multi(&raw_side, &raw_top, &raw_front, side_tint, top_tint)
+            };
             let handle = images.add(icon_image);
 
             if fallback_image.is_none() {
@@ -370,6 +373,139 @@ fn solid_raw_16x16(color: [u8; 4]) -> Vec<u8> {
         frame.extend_from_slice(&color);
     }
     frame
+}
+
+/// Renders an authentic 2:1 pixel-art isometric slab (half-height block) with distinct Top and Side textures and tints.
+pub fn render_isometric_slab_icon_multi(
+    side_16x16: &[u8],
+    top_16x16: &[u8],
+    front_16x16: &[u8],
+    side_tint: [f32; 4],
+    top_tint: [f32; 4],
+) -> Image {
+    let canvas = render_isometric_slab_frame(side_16x16, top_16x16, front_16x16, side_tint, top_tint);
+    create_icon_image_from_canvas(&canvas)
+}
+
+pub fn render_isometric_slab_frame(
+    side_16x16: &[u8],
+    top_16x16: &[u8],
+    front_16x16: &[u8],
+    side_tint: [f32; 4],
+    top_tint: [f32; 4],
+) -> Vec<u8> {
+    let mut canvas = vec![0u8; (ICON_SIZE * ICON_SIZE * 4) as usize];
+    const SUB_OFFSETS: [(f32, f32); 4] = [
+        (-0.25, -0.25),
+        (0.25, -0.25),
+        (-0.25, 0.25),
+        (0.25, 0.25),
+    ];
+
+    for y in 0..ICON_SIZE {
+        for x in 0..ICON_SIZE {
+            let mut acc_r = 0.0f32;
+            let mut acc_g = 0.0f32;
+            let mut acc_b = 0.0f32;
+            let mut acc_a = 0.0f32;
+            let mut hits = 0usize;
+
+            for &(dx, dy) in &SUB_OFFSETS {
+                let xf = x as f32 + 0.5 + dx;
+                let yf = y as f32 + 0.5 + dy;
+
+                // 1. Check Top Face (Rhombus with slab native bounds: peak at (24.0, 14.0), bottom center at (24.0, 34.0))
+                let u_top = ((xf - 24.0) + 2.0 * (yf - 14.0)) / 40.0;
+                let v_top = (-(xf - 24.0) + 2.0 * (yf - 14.0)) / 40.0;
+
+                if (0.0..1.0).contains(&u_top) && (0.0..1.0).contains(&v_top) {
+                    let tx = (u_top * 16.0).floor().clamp(0.0, 15.0) as usize;
+                    let ty = (v_top * 16.0).floor().clamp(0.0, 15.0) as usize;
+                    let src_idx = (ty * 16 + tx) * 4;
+                    if src_idx + 3 < top_16x16.len() {
+                        let a = (top_16x16[src_idx + 3] as f32 / 255.0) * top_tint[3];
+                        if a > 0.01 {
+                            acc_r += (top_16x16[src_idx] as f32 / 255.0) * top_tint[0] * 1.00;
+                            acc_g += (top_16x16[src_idx + 1] as f32 / 255.0) * top_tint[1] * 1.00;
+                            acc_b += (top_16x16[src_idx + 2] as f32 / 255.0) * top_tint[2] * 1.00;
+                            acc_a += a;
+                            hits += 1;
+                        }
+                    }
+                    continue;
+                }
+
+                // 2. Check Left Face (x in 4.0..24.0, y in y_top..y_top+10.0)
+                if (4.0..24.0).contains(&xf) {
+                    let u_left = (xf - 4.0) / 20.0;
+                    let y_top = 24.0 + (xf - 4.0) * 0.5;
+                    let v_rel = (yf - y_top) / 10.0;
+
+                    if (0.0..1.0).contains(&u_left) && (0.0..1.0).contains(&v_rel) {
+                        let tx = (u_left * 16.0).floor().clamp(0.0, 15.0) as usize;
+                        let ty = ((0.5 + 0.5 * v_rel) * 16.0).floor().clamp(8.0, 15.0) as usize;
+                        let src_idx = (ty * 16 + tx) * 4;
+                        if src_idx + 3 < side_16x16.len() {
+                            let a = (side_16x16[src_idx + 3] as f32 / 255.0) * side_tint[3];
+                            if a > 0.01 {
+                                acc_r += (side_16x16[src_idx] as f32 / 255.0) * side_tint[0] * 0.88;
+                                acc_g += (side_16x16[src_idx + 1] as f32 / 255.0) * side_tint[1] * 0.88;
+                                acc_b += (side_16x16[src_idx + 2] as f32 / 255.0) * side_tint[2] * 0.88;
+                                acc_a += a;
+                                hits += 1;
+                            }
+                        }
+                        continue;
+                    }
+                }
+
+                // 3. Check Right Face (x in 24.0..44.0, y in y_top..y_top+10.0)
+                if (24.0..44.0).contains(&xf) {
+                    let u_right = (xf - 24.0) / 20.0;
+                    let y_top = 34.0 - (xf - 24.0) * 0.5;
+                    let v_rel = (yf - y_top) / 10.0;
+
+                    if (0.0..1.0).contains(&u_right) && (0.0..1.0).contains(&v_rel) {
+                        let tx = (u_right * 16.0).floor().clamp(0.0, 15.0) as usize;
+                        let ty = ((0.5 + 0.5 * v_rel) * 16.0).floor().clamp(8.0, 15.0) as usize;
+                        let src_idx = (ty * 16 + tx) * 4;
+                        if src_idx + 3 < front_16x16.len() {
+                            let a = (front_16x16[src_idx + 3] as f32 / 255.0) * side_tint[3];
+                            if a > 0.01 {
+                                acc_r += (front_16x16[src_idx] as f32 / 255.0) * side_tint[0] * 0.75;
+                                acc_g += (front_16x16[src_idx + 1] as f32 / 255.0) * side_tint[1] * 0.75;
+                                acc_b += (front_16x16[src_idx + 2] as f32 / 255.0) * side_tint[2] * 0.75;
+                                acc_a += a;
+                                hits += 1;
+                            }
+                        }
+                        continue;
+                    }
+                }
+            }
+
+            if hits > 0 {
+                let hits_f = hits as f32;
+                let avg_r = (acc_r / hits_f).clamp(0.0, 1.0) * 255.0;
+                let avg_g = (acc_g / hits_f).clamp(0.0, 1.0) * 255.0;
+                let avg_b = (acc_b / hits_f).clamp(0.0, 1.0) * 255.0;
+                let avg_a = if hits >= 2 {
+                    255.0
+                } else {
+                    (acc_a / 4.0).clamp(0.0, 1.0) * 255.0
+                };
+
+                let out_idx = ((y * ICON_SIZE + x) * 4) as usize;
+                canvas[out_idx] = avg_r as u8;
+                canvas[out_idx + 1] = avg_g as u8;
+                canvas[out_idx + 2] = avg_b as u8;
+                canvas[out_idx + 3] = avg_a as u8;
+            }
+        }
+    }
+
+    apply_silhouette_outline(&mut canvas);
+    canvas
 }
 
 /// Renders an authentic 2:1 pixel-art isometric cube with distinct Top and Side textures and tints.

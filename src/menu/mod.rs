@@ -50,11 +50,11 @@ impl ScreenMode {
         match self {
             Self::Windowed => bevy::window::WindowMode::Windowed,
             Self::ExclusiveFullscreen => bevy::window::WindowMode::Fullscreen(
-                bevy::window::MonitorSelection::Current,
+                bevy::window::MonitorSelection::Primary,
                 bevy::window::VideoModeSelection::Current,
             ),
             Self::BorderlessFullscreen => bevy::window::WindowMode::BorderlessFullscreen(
-                bevy::window::MonitorSelection::Current,
+                bevy::window::MonitorSelection::Primary,
             ),
         }
     }

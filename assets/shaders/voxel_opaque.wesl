@@ -106,27 +106,11 @@ fn fragment(
             }
             uv = clamp(rot_uv, vec2<f32>(0.0), vec2<f32>(0.99999));
         } else {
-            // Vertical side faces (Walls)
-            if (rot_mode == 1) {
-                // Natural isotropic stone, rock, sand, gravel: 4-way 90° step rotation + flip
-                let rot = hash & 3u;
-                var rot_uv: vec2<f32>;
-                switch (rot) {
-                    case 1u: { rot_uv = vec2<f32>(1.0 - uv.y, uv.x); }
-                    case 2u: { rot_uv = vec2<f32>(1.0 - uv.x, 1.0 - uv.y); }
-                    case 3u: { rot_uv = vec2<f32>(uv.y, 1.0 - uv.x); }
-                    default: { rot_uv = uv; }
-                }
-                if ((hash & 4u) != 0u) {
-                    rot_uv.x = 1.0 - rot_uv.x;
-                }
-                uv = clamp(rot_uv, vec2<f32>(0.0), vec2<f32>(0.99999));
-            } else {
-                // Soils with grass/snow or directional side features:
-                // Only horizontal flipping (mirror U) so textures don't appear upside-down or sideways
-                if ((hash & 1u) != 0u) {
-                    uv.x = clamp(1.0 - uv.x, 0.0, 0.99999);
-                }
+            // Vertical side faces (Walls):
+            // Never rotate by 90° or 270° so stratified rocks and geology blocks never appear sideways.
+            // Only allow horizontal mirroring (flip U) to break tiling while preserving horizontal orientation.
+            if ((hash & 1u) != 0u) {
+                uv.x = clamp(1.0 - uv.x, 0.0, 0.99999);
             }
         }
     }

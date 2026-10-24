@@ -128,8 +128,17 @@ fn test_voxel_discriminants_continuity() {
 
 #[test]
 fn test_block_shapes_all() {
-    assert_eq!(BlockShape::all().len(), 10);
+    assert_eq!(BlockShape::all().len(), 11);
     assert_eq!(BlockShape::shapable().len(), 4);
+    assert_eq!(Voxel::SpiderEgg.default_shape(), BlockShape::Cocoon);
+    assert_eq!(Voxel::SilkCocoon.default_shape(), BlockShape::Cocoon);
+    assert!(Voxel::SpiderEgg.is_shape_locked());
+    assert!(Voxel::SilkCocoon.is_shape_locked());
+    assert!(Voxel::BirdNest.is_shape_locked());
+    assert!(Voxel::HayNest.is_shape_locked());
+    assert_eq!(Voxel::Crate.default_shape(), BlockShape::Full);
+    assert!(Voxel::Crate.is_solid_opaque());
+    assert_eq!(Voxel::Basket.default_shape(), BlockShape::Basket);
 }
 
 #[test]

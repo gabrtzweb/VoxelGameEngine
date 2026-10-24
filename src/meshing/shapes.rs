@@ -244,7 +244,7 @@ pub fn mesh_shaped_voxels(
             | BlockShape::PebbleCluster
             | BlockShape::Bamboo
             | BlockShape::CrossBillboard => unreachable!(),
-            BlockShape::Full | BlockShape::Column => {
+            BlockShape::Full | BlockShape::Column | BlockShape::Cocoon => {
                 push_shape_box(
                     buffers,
                     fx,
@@ -466,9 +466,13 @@ fn push_shape_box(
         cull[5] = true;
     }
 
+    let v_top = (1.0 - local_max.y).clamp(0.0, 1.0);
+    let v_bot = (1.0 - local_min.y).clamp(0.0, 1.0);
+    let side_uvs = [[0.0, v_bot], [0.0, v_top], [1.0, v_top], [1.0, v_bot]];
+
     // +X (East, idx 0)
     if !cull[0] {
-        push_quad_face(
+        push_quad_face_uvs(
             buffers,
             [
                 [max_x, min_y, min_z],
@@ -480,12 +484,13 @@ fn push_shape_box(
             side_layer,
             frame_count,
             side_tint,
+            side_uvs,
         );
     }
 
     // -X (West, idx 1)
     if !cull[1] {
-        push_quad_face(
+        push_quad_face_uvs(
             buffers,
             [
                 [min_x, min_y, max_z],
@@ -497,6 +502,7 @@ fn push_shape_box(
             side_layer,
             frame_count,
             side_tint,
+            side_uvs,
         );
     }
 
@@ -536,7 +542,7 @@ fn push_shape_box(
 
     // +Z (South, idx 4)
     if !cull[4] {
-        push_quad_face(
+        push_quad_face_uvs(
             buffers,
             [
                 [max_x, min_y, max_z],
@@ -548,12 +554,13 @@ fn push_shape_box(
             side_layer,
             frame_count,
             side_tint,
+            side_uvs,
         );
     }
 
     // -Z (North, idx 5)
     if !cull[5] {
-        push_quad_face(
+        push_quad_face_uvs(
             buffers,
             [
                 [min_x, min_y, min_z],
@@ -565,6 +572,7 @@ fn push_shape_box(
             side_layer,
             frame_count,
             side_tint,
+            side_uvs,
         );
     }
 }
@@ -577,6 +585,23 @@ fn push_quad_face(
     frame_count: f32,
     tint_color: [f32; 4],
 ) {
+    let uvs = if normal[1].abs() > 0.5 {
+        [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]]
+    } else {
+        [[0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]
+    };
+    push_quad_face_uvs(buffers, vertices, normal, texture_layer, frame_count, tint_color, uvs);
+}
+
+fn push_quad_face_uvs(
+    buffers: &mut MeshBuffers,
+    vertices: [[f32; 3]; 4],
+    normal: [f32; 3],
+    texture_layer: u16,
+    frame_count: f32,
+    tint_color: [f32; 4],
+    uvs: [[f32; 2]; 4],
+) {
     let base_index = buffers.positions.len() as u32;
 
     for v in &vertices {
@@ -587,12 +612,6 @@ fn push_quad_face(
         buffers.colors.push(tint_color);
         buffers.uv_bs.push([texture_layer as f32, frame_count]);
     }
-
-    let uvs = if normal[1].abs() > 0.5 {
-        [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]]
-    } else {
-        [[0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]
-    };
 
     buffers.uvs.extend_from_slice(&uvs);
 
@@ -673,15 +692,15 @@ fn mesh_basket(
 
     // 2. Interior cavity (rendered if the top is open, so looking inside reveals the walls and floor)
     if !is_neighbor_solid(IVec3::Y) {
-        let x0 = fx + 3.0 / 16.0;
-        let x1 = fx + 13.0 / 16.0;
-        let z0 = fz + 3.0 / 16.0;
-        let z1 = fz + 13.0 / 16.0;
-        let y_floor = fy + 1.0 / 16.0;
+        let x0 = fx + 2.0 / 16.0;
+        let x1 = fx + 14.0 / 16.0;
+        let z0 = fz + 2.0 / 16.0;
+        let z1 = fz + 14.0 / 16.0;
+        let y_floor = fy + 2.0 / 16.0;
         let y_top = fy + 1.0;
 
-        let uv_min = 3.0 / 16.0;
-        let uv_max = 13.0 / 16.0;
+        let uv_min = 2.0 / 16.0;
+        let uv_max = 14.0 / 16.0;
 
         // Interior floor (+Y, facing up inside cavity)
         push_quad_face_with_uvs(

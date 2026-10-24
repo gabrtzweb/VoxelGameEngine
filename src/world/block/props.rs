@@ -167,7 +167,7 @@ impl Voxel {
 
     #[inline(always)]
     pub const fn is_basket_const(self) -> bool {
-        matches!(self, Self::Basket | Self::BirdNest | Self::HayNest)
+        matches!(self, Self::Basket)
     }
 
     #[inline(always)]

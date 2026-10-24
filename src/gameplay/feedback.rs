@@ -7,7 +7,7 @@ use bevy::{
 
 use crate::{
     meshing::{ChunkMaterial, greedy::FaceDirection},
-    world::{Voxel, VoxelWorld},
+    world::{BlockShape, Voxel, VoxelWorld},
 };
 
 #[derive(Event, Debug, Clone, Copy)]
@@ -139,14 +139,8 @@ fn create_cube_mesh(
             frames as f32
         };
 
-        let color = if is_pop {
-            if voxel.is_grass_soil() {
-                if *face_dir == FaceDirection::PositiveY {
-                    voxel.tint_color()
-                } else {
-                    [1.0, 1.0, 1.0, 1.0]
-                }
-            } else if voxel.is_leaves() {
+        let color = if voxel.is_grass_soil() {
+            if *face_dir == FaceDirection::PositiveY {
                 voxel.tint_color()
             } else {
                 [1.0, 1.0, 1.0, 1.0]
@@ -296,7 +290,11 @@ fn handle_block_place_feedback(
         return;
     };
 
-    if event.voxel.is_empty() || event.voxel.is_water() || event.voxel.has_custom_mesh() {
+    if event.voxel.is_empty()
+        || event.voxel.is_water()
+        || event.voxel.has_custom_mesh()
+        || event.voxel.default_shape() != BlockShape::Full
+    {
         return;
     }
 

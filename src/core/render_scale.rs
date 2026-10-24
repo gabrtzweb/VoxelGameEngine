@@ -65,57 +65,62 @@ fn setup_render_scale(
     state.last_window_size = UVec2::ZERO;
 
     let is_scaling = initial_scale < 0.999;
-    if is_scaling {
-        let w = ((1280.0 * initial_scale).round() as u32).max(1);
-        let h = ((720.0 * initial_scale).round() as u32).max(1);
+    let w = ((1280.0 * initial_scale).round() as u32).max(1);
+    let h = ((720.0 * initial_scale).round() as u32).max(1);
 
-        let mut image = Image::new_fill(
-            Extent3d {
-                width: w,
-                height: h,
-                depth_or_array_layers: 1,
-            },
-            TextureDimension::D2,
-            &[0, 0, 0, 255],
-            TextureFormat::Rgba8UnormSrgb,
-            RenderAssetUsages::default(),
-        );
-        image.texture_descriptor.usage =
-            TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING;
-        image.sampler = ImageSampler::linear();
+    let mut image = Image::new_fill(
+        Extent3d {
+            width: w,
+            height: h,
+            depth_or_array_layers: 1,
+        },
+        TextureDimension::D2,
+        &[0, 0, 0, 255],
+        TextureFormat::Rgba8UnormSrgb,
+        RenderAssetUsages::default(),
+    );
+    image.texture_descriptor.usage =
+        TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING;
+    image.sampler = ImageSampler::linear();
 
-        let image_handle = images.add(image);
-        state.target_image = Some(image_handle.clone());
+    let image_handle = images.add(image);
+    state.target_image = Some(image_handle.clone());
 
-        commands.spawn((
-            Camera2d,
-            Camera {
-                order: 1,
-                clear_color: ClearColorConfig::None,
-                ..default()
-            },
-            RenderScaleUiCamera,
-        ));
+    // Persistent 2D UI camera: permanently owns UI rendering at native window resolution.
+    commands.spawn((
+        Camera2d,
+        Camera {
+            order: 10,
+            clear_color: ClearColorConfig::None,
+            ..default()
+        },
+        bevy::ui::IsDefaultUiCamera,
+        RenderScaleUiCamera,
+    ));
 
-        commands.spawn((
-            Node {
-                position_type: PositionType::Absolute,
-                left: Val::Px(0.0),
-                top: Val::Px(0.0),
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                display: Display::Flex,
-                ..default()
+    // Persistent background node: displays upscaled 3D image when scaling, hidden at 100%.
+    commands.spawn((
+        Node {
+            position_type: PositionType::Absolute,
+            left: Val::Px(0.0),
+            top: Val::Px(0.0),
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            display: if is_scaling {
+                Display::Flex
+            } else {
+                Display::None
             },
-            ImageNode {
-                image: image_handle,
-                ..default()
-            },
-            ZIndex(-100),
-            bevy::picking::Pickable::IGNORE,
-            RenderScaleBackgroundNode,
-        ));
-    }
+            ..default()
+        },
+        ImageNode {
+            image: image_handle,
+            ..default()
+        },
+        ZIndex(-100),
+        bevy::picking::Pickable::IGNORE,
+        RenderScaleBackgroundNode,
+    ));
 }
 
 fn sync_render_scale(
@@ -125,8 +130,7 @@ fn sync_render_scale(
     mut commands: Commands,
     primary_window: Query<&Window, With<PrimaryWindow>>,
     camera_3d_query: Query<Entity, (With<Camera3d>, With<PlayerCamera>)>,
-    ui_cam_query: Query<Entity, (With<Camera2d>, With<RenderScaleUiCamera>)>,
-    bg_node_query: Query<Entity, With<RenderScaleBackgroundNode>>,
+    mut bg_node_query: Query<&mut Node, With<RenderScaleBackgroundNode>>,
 ) {
     let Ok(window) = primary_window.single() else {
         return;
@@ -205,37 +209,8 @@ fn sync_render_scale(
             .entity(camera_entity)
             .insert(RenderTarget::Image(image_handle.clone().into()));
 
-        if ui_cam_query.is_empty() {
-            commands.spawn((
-                Camera2d,
-                Camera {
-                    order: 1,
-                    clear_color: ClearColorConfig::None,
-                    ..default()
-                },
-                RenderScaleUiCamera,
-            ));
-        }
-
-        if bg_node_query.is_empty() {
-            commands.spawn((
-                Node {
-                    position_type: PositionType::Absolute,
-                    left: Val::Px(0.0),
-                    top: Val::Px(0.0),
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    display: Display::Flex,
-                    ..default()
-                },
-                ImageNode {
-                    image: image_handle,
-                    ..default()
-                },
-                ZIndex(-100),
-                bevy::picking::Pickable::IGNORE,
-                RenderScaleBackgroundNode,
-            ));
+        for mut node in &mut bg_node_query {
+            node.display = Display::Flex;
         }
     } else {
         // 100% Native: Render 3D world directly to primary window
@@ -243,12 +218,9 @@ fn sync_render_scale(
             .entity(camera_entity)
             .insert(RenderTarget::Window(WindowRef::Primary));
 
-        // Despawn 2D UI camera and background node so Camera3d has sole ownership of UI & window
-        for entity in &ui_cam_query {
-            commands.entity(entity).despawn();
-        }
-        for entity in &bg_node_query {
-            commands.entity(entity).despawn();
+        // Hide upscaled background node; Camera2d remains active to cleanly render UI over Camera3d
+        for mut node in &mut bg_node_query {
+            node.display = Display::None;
         }
     }
 }

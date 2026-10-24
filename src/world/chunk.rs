@@ -325,6 +325,7 @@ impl Chunk {
                         | BlockShape::PebbleCluster
                         | BlockShape::Bamboo
                         | BlockShape::CrossBillboard
+                        | BlockShape::Cocoon
                 )
             }) {
                 self.shapes.remove(&index);

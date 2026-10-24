@@ -1,7 +1,7 @@
 use bevy::{
     diagnostic::FrameTimeDiagnosticsPlugin,
     prelude::*,
-    window::{PresentMode, PrimaryWindow},
+    window::{MonitorSelection, PresentMode, PrimaryWindow, WindowPosition},
     winit::WinitWindows,
 };
 
@@ -111,6 +111,7 @@ fn main() {
                     primary_window: Some(Window {
                         title: "Voxel Game".to_string(),
                         resolution: (1280, 720).into(),
+                        position: WindowPosition::Centered(MonitorSelection::Primary),
                         present_mode,
                         mode: window_mode,
                         resize_constraints: bevy::window::WindowResizeConstraints {

@@ -33,8 +33,8 @@ Middle Mouse      Pick block
 1 - 9             Hotbar slot selection (9 primary slots)
 Mouse Wheel       Scroll hotbar slots (when not zooming)
 Q                 Clear active hotbar slot
-R                 Block shape (Tap: cycle sequentially / Hold: 4-slice circular radial menu)
-T                 Rotate block shape 90° clockwise
+R                 Block shape (Tap: cycle / Hold: 4-slice radial menu; locked on decorative/custom blocks)
+T                 Rotate block shape 90° clockwise (locked on non-rotatable blocks)
 
 ESC               Pause Menu & Menu Bar (Tabs: Map, Journal, Inventory, System)
 E                 Personal & Creative Inventory (unified 480x270 px base canvas with integer scaling)
