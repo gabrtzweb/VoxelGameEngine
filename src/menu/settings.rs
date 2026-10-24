@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use bevy::{picking::hover::Hovered, ui::Pressed, ui_widgets::Button};
 
 use crate::{
+    audio::AudioSettings,
     core::{AppFont, DynamicFpsSettings, LocalConfig, PerformancePreset, text_shadow_default},
     environment::EnvironmentState,
     meshing::{ChunkMaterial, VoxelTextureRegistry},
@@ -10,11 +11,38 @@ use crate::{
 
 use super::{GameSettings, MenuState};
 
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SettingsTab {
+    #[default]
+    Video,
+    Audio,
+}
+
 #[derive(Component)]
 struct SettingsMenuRoot;
 
 #[derive(Component)]
+struct VideoSettingsSection;
+
+#[derive(Component)]
+struct AudioSettingsSection;
+
+#[derive(Component)]
+struct TabButton(SettingsTab);
+
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 enum SettingsAction {
+    SwitchTab(SettingsTab),
+    DecMasterVol,
+    IncMasterVol,
+    DecMusicVol,
+    IncMusicVol,
+    DecWeatherVol,
+    IncWeatherVol,
+    DecSfxVol,
+    IncSfxVol,
+    DecAmbientVol,
+    IncAmbientVol,
     DecPreset,
     IncPreset,
     DecRenderScale,
@@ -119,15 +147,36 @@ struct DynamicFpsLabel;
 #[derive(Component)]
 struct TimePauseLabel;
 
+#[derive(Component)]
+struct MasterVolLabel;
+
+#[derive(Component)]
+struct MusicVolLabel;
+
+#[derive(Component)]
+struct WeatherVolLabel;
+
+#[derive(Component)]
+struct SfxVolLabel;
+
+#[derive(Component)]
+struct AmbientVolLabel;
+
 pub struct SettingsMenuPlugin;
 
 impl Plugin for SettingsMenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(MenuState::Settings), spawn_settings_menu)
+        app.init_resource::<SettingsTab>()
+            .add_systems(OnEnter(MenuState::Settings), spawn_settings_menu)
             .add_systems(OnExit(MenuState::Settings), despawn_settings_menu)
             .add_systems(
                 Update,
-                (handle_settings_buttons, update_settings_labels)
+                (
+                    handle_settings_buttons,
+                    update_settings_labels,
+                    update_audio_settings_labels,
+                    update_settings_tab_view,
+                )
                     .run_if(in_state(MenuState::Settings)),
             );
     }
@@ -138,6 +187,8 @@ fn spawn_settings_menu(
     chunk_settings: Res<ChunkStreamingSettings>,
     game_settings: Res<GameSettings>,
     local_config: Res<LocalConfig>,
+    audio_settings: Res<AudioSettings>,
+    settings_tab: Res<SettingsTab>,
     env_state: Option<Res<EnvironmentState>>,
     app_font: Option<Res<AppFont>>,
     asset_server: Res<AssetServer>,
@@ -204,14 +255,50 @@ fn spawn_settings_menu(
                         },
                     ));
 
-                    // 2-Column Settings Container
+                    // Tab Navigation Bar
                     card.spawn(Node {
                         display: Display::Flex,
                         flex_direction: FlexDirection::Row,
-                        column_gap: px(24.0),
-                        align_items: AlignItems::FlexStart,
+                        column_gap: px(12.0),
+                        margin: UiRect::bottom(px(6.0)),
                         ..default()
                     })
+                    .with_children(|tab_bar| {
+                        spawn_tab_button(
+                            tab_bar,
+                            "Video & Graphics",
+                            SettingsTab::Video,
+                            *settings_tab == SettingsTab::Video,
+                            font_handle.as_ref(),
+                            &btn_normal,
+                            &btn_hover,
+                        );
+                        spawn_tab_button(
+                            tab_bar,
+                            "Audio & Sounds",
+                            SettingsTab::Audio,
+                            *settings_tab == SettingsTab::Audio,
+                            font_handle.as_ref(),
+                            &btn_normal,
+                            &btn_hover,
+                        );
+                    });
+
+                    // 2-Column Video Settings Container
+                    card.spawn((
+                        VideoSettingsSection,
+                        Node {
+                            display: if *settings_tab == SettingsTab::Video {
+                                Display::Flex
+                            } else {
+                                Display::None
+                            },
+                            flex_direction: FlexDirection::Row,
+                            column_gap: px(24.0),
+                            align_items: AlignItems::FlexStart,
+                            ..default()
+                        },
+                    ))
                     .with_children(|columns| {
                         // Left Column: Display & World Settings
                         columns
@@ -568,6 +655,85 @@ fn spawn_settings_menu(
                             });
                     });
 
+                    // Audio Settings Container
+                    card.spawn((
+                        AudioSettingsSection,
+                        Node {
+                            display: if *settings_tab == SettingsTab::Audio {
+                                Display::Flex
+                            } else {
+                                Display::None
+                            },
+                            flex_direction: FlexDirection::Column,
+                            align_items: AlignItems::Center,
+                            row_gap: px(12.0),
+                            width: px(380.0),
+                            margin: UiRect::vertical(px(20.0)),
+                            ..default()
+                        },
+                    ))
+                    .with_children(|col_audio| {
+                        spawn_stepper_row(
+                            col_audio,
+                            "Master Volume",
+                            crate::core::config::format_volume(audio_settings.master_volume),
+                            SettingsAction::DecMasterVol,
+                            SettingsAction::IncMasterVol,
+                            MasterVolLabel,
+                            font_handle.as_ref(),
+                            &small_normal,
+                            &small_hover,
+                        );
+
+                        spawn_stepper_row(
+                            col_audio,
+                            "Music Volume",
+                            crate::core::config::format_volume(audio_settings.music_volume),
+                            SettingsAction::DecMusicVol,
+                            SettingsAction::IncMusicVol,
+                            MusicVolLabel,
+                            font_handle.as_ref(),
+                            &small_normal,
+                            &small_hover,
+                        );
+
+                        spawn_stepper_row(
+                            col_audio,
+                            "Weather Volume",
+                            crate::core::config::format_volume(audio_settings.weather_volume),
+                            SettingsAction::DecWeatherVol,
+                            SettingsAction::IncWeatherVol,
+                            WeatherVolLabel,
+                            font_handle.as_ref(),
+                            &small_normal,
+                            &small_hover,
+                        );
+
+                        spawn_stepper_row(
+                            col_audio,
+                            "SFX Volume",
+                            crate::core::config::format_volume(audio_settings.sfx_volume),
+                            SettingsAction::DecSfxVol,
+                            SettingsAction::IncSfxVol,
+                            SfxVolLabel,
+                            font_handle.as_ref(),
+                            &small_normal,
+                            &small_hover,
+                        );
+
+                        spawn_stepper_row(
+                            col_audio,
+                            "Ambient Volume",
+                            crate::core::config::format_volume(audio_settings.ambient_volume),
+                            SettingsAction::DecAmbientVol,
+                            SettingsAction::IncAmbientVol,
+                            AmbientVolLabel,
+                            font_handle.as_ref(),
+                            &small_normal,
+                            &small_hover,
+                        );
+                    });
+
                     // Centered Back Button
                     let mut back_font = TextFont {
                         font_size: FontSize::Px(16.0),
@@ -809,6 +975,66 @@ fn spawn_toggle_button<T: Component>(
         });
 }
 
+fn spawn_tab_button(
+    parent: &mut ChildSpawnerCommands,
+    title: &str,
+    tab: SettingsTab,
+    is_active: bool,
+    font_handle: Option<&crate::core::FontSource>,
+    btn_normal: &Handle<Image>,
+    btn_hover: &Handle<Image>,
+) {
+    let mut btn_font = TextFont {
+        font_size: FontSize::Px(15.0),
+        ..default()
+    };
+    if let Some(font) = font_handle {
+        btn_font.font = font.clone();
+    }
+
+    let text_color = if is_active {
+        Color::srgb(1.0, 0.88, 0.45)
+    } else {
+        Color::srgb(0.78, 0.78, 0.82)
+    };
+
+    parent
+        .spawn((
+            Button,
+            Hovered::default(),
+            SettingsAction::SwitchTab(tab),
+            TabButton(tab),
+            crate::menu::MenuButtonTexture {
+                normal: btn_normal.clone(),
+                hover: btn_hover.clone(),
+            },
+            ImageNode {
+                image: btn_normal.clone(),
+                image_mode: NodeImageMode::Sliced(TextureSlicer {
+                    border: BorderRect::all(4.0),
+                    ..default()
+                }),
+                ..default()
+            },
+            Node {
+                width: px(170.0),
+                height: px(34.0),
+                display: Display::Flex,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+        ))
+        .with_children(|btn| {
+            btn.spawn((
+                Text::new(title),
+                btn_font,
+                TextColor(text_color),
+                text_shadow_default(),
+            ));
+        });
+}
+
 fn despawn_settings_menu(mut commands: Commands, query: Query<Entity, With<SettingsMenuRoot>>) {
     for entity in &query {
         commands.entity(entity).despawn();
@@ -830,6 +1056,8 @@ fn handle_settings_buttons(
     mut chunk_settings: ResMut<ChunkStreamingSettings>,
     mut game_settings: ResMut<GameSettings>,
     mut local_config: ResMut<LocalConfig>,
+    mut audio_settings: ResMut<AudioSettings>,
+    mut settings_tab: ResMut<SettingsTab>,
     mut env_state: Option<ResMut<EnvironmentState>>,
     mut dynamic_fps_settings: Option<ResMut<DynamicFpsSettings>>,
     mut next_state: ResMut<NextState<MenuState>>,
@@ -852,6 +1080,60 @@ fn handle_settings_buttons(
         if is_hovered && left_clicked {
             let mut sync_config = true;
             match action {
+                SettingsAction::SwitchTab(tab) => {
+                    *settings_tab = *tab;
+                    sync_config = false;
+                }
+                SettingsAction::DecMasterVol => {
+                    local_config.master_volume =
+                        crate::core::config::step_volume_down(local_config.master_volume);
+                    audio_settings.master_volume = local_config.master_volume;
+                }
+                SettingsAction::IncMasterVol => {
+                    local_config.master_volume =
+                        crate::core::config::step_volume_up(local_config.master_volume);
+                    audio_settings.master_volume = local_config.master_volume;
+                }
+                SettingsAction::DecMusicVol => {
+                    local_config.music_volume =
+                        crate::core::config::step_volume_down(local_config.music_volume);
+                    audio_settings.music_volume = local_config.music_volume;
+                }
+                SettingsAction::IncMusicVol => {
+                    local_config.music_volume =
+                        crate::core::config::step_volume_up(local_config.music_volume);
+                    audio_settings.music_volume = local_config.music_volume;
+                }
+                SettingsAction::DecWeatherVol => {
+                    local_config.weather_volume =
+                        crate::core::config::step_volume_down(local_config.weather_volume);
+                    audio_settings.weather_volume = local_config.weather_volume;
+                }
+                SettingsAction::IncWeatherVol => {
+                    local_config.weather_volume =
+                        crate::core::config::step_volume_up(local_config.weather_volume);
+                    audio_settings.weather_volume = local_config.weather_volume;
+                }
+                SettingsAction::DecSfxVol => {
+                    local_config.sfx_volume =
+                        crate::core::config::step_volume_down(local_config.sfx_volume);
+                    audio_settings.sfx_volume = local_config.sfx_volume;
+                }
+                SettingsAction::IncSfxVol => {
+                    local_config.sfx_volume =
+                        crate::core::config::step_volume_up(local_config.sfx_volume);
+                    audio_settings.sfx_volume = local_config.sfx_volume;
+                }
+                SettingsAction::DecAmbientVol => {
+                    local_config.ambient_volume =
+                        crate::core::config::step_volume_down(local_config.ambient_volume);
+                    audio_settings.ambient_volume = local_config.ambient_volume;
+                }
+                SettingsAction::IncAmbientVol => {
+                    local_config.ambient_volume =
+                        crate::core::config::step_volume_up(local_config.ambient_volume);
+                    audio_settings.ambient_volume = local_config.ambient_volume;
+                }
                 SettingsAction::DecPreset => {
                     let current = local_config.preset.unwrap_or(PerformancePreset::Custom);
                     let prev = current.prev();
@@ -1309,6 +1591,85 @@ fn update_settings_labels(
                 .as_ref()
                 .map_or(local_config.is_time_paused, |e| e.is_time_paused);
             text.0 = format!("Time Flow: {}", if paused { "Paused" } else { "Running" });
+        }
+    }
+}
+
+fn update_audio_settings_labels(
+    audio_settings: Res<AudioSettings>,
+    local_config: Res<LocalConfig>,
+    mut volume_query: Query<(
+        &mut Text,
+        Option<&MasterVolLabel>,
+        Option<&MusicVolLabel>,
+        Option<&WeatherVolLabel>,
+        Option<&SfxVolLabel>,
+        Option<&AmbientVolLabel>,
+    )>,
+) {
+    if !audio_settings.is_changed() && !local_config.is_changed() {
+        return;
+    }
+
+    for (mut text, master, music, weather, sfx, ambient) in &mut volume_query {
+        if master.is_some() {
+            text.0 = crate::core::config::format_volume(audio_settings.master_volume);
+        } else if music.is_some() {
+            text.0 = crate::core::config::format_volume(audio_settings.music_volume);
+        } else if weather.is_some() {
+            text.0 = crate::core::config::format_volume(audio_settings.weather_volume);
+        } else if sfx.is_some() {
+            text.0 = crate::core::config::format_volume(audio_settings.sfx_volume);
+        } else if ambient.is_some() {
+            text.0 = crate::core::config::format_volume(audio_settings.ambient_volume);
+        }
+    }
+}
+
+fn update_settings_tab_view(
+    settings_tab: Res<SettingsTab>,
+    tab_buttons_query: Query<(&TabButton, &Children)>,
+    mut text_color_query: Query<&mut TextColor>,
+    mut video_section_query: Query<
+        &mut Node,
+        (With<VideoSettingsSection>, Without<AudioSettingsSection>),
+    >,
+    mut audio_section_query: Query<
+        &mut Node,
+        (With<AudioSettingsSection>, Without<VideoSettingsSection>),
+    >,
+) {
+    if !settings_tab.is_changed() {
+        return;
+    }
+
+    for mut node in &mut video_section_query {
+        node.display = if *settings_tab == SettingsTab::Video {
+            Display::Flex
+        } else {
+            Display::None
+        };
+    }
+
+    for mut node in &mut audio_section_query {
+        node.display = if *settings_tab == SettingsTab::Audio {
+            Display::Flex
+        } else {
+            Display::None
+        };
+    }
+
+    for (tab_btn, children) in &tab_buttons_query {
+        let is_active = tab_btn.0 == *settings_tab;
+        let color = if is_active {
+            Color::srgb(1.0, 0.88, 0.45)
+        } else {
+            Color::srgb(0.78, 0.78, 0.82)
+        };
+        for child in children.iter() {
+            if let Ok(mut text_color) = text_color_query.get_mut(child) {
+                text_color.0 = color;
+            }
         }
     }
 }

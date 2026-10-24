@@ -34,6 +34,9 @@ pub struct MinimapCoordsText;
 pub struct MinimapBiomeText;
 
 #[derive(Component)]
+pub struct MinimapWeatherText;
+
+#[derive(Component)]
 pub struct MinimapDateText;
 
 #[derive(Component)]
@@ -301,6 +304,17 @@ fn setup_minimap(
                     TextColor(Color::srgb(0.95, 0.95, 0.98)),
                     crate::core::text_shadow_default(),
                 ));
+                pill.spawn((
+                    MinimapWeatherText,
+                    Text::new("Weather: Clear Sky"),
+                    TextFont {
+                        font: font_handle.clone(),
+                        font_size: FontSize::Px(16.0),
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.95, 0.95, 0.98)),
+                    crate::core::text_shadow_default(),
+                ));
             });
         });
 }
@@ -429,6 +443,7 @@ fn update_minimap_ui(
         (
             With<MinimapCoordsText>,
             Without<MinimapBiomeText>,
+            Without<MinimapWeatherText>,
             Without<MinimapDateText>,
         ),
     >,
@@ -437,6 +452,16 @@ fn update_minimap_ui(
         (
             With<MinimapBiomeText>,
             Without<MinimapCoordsText>,
+            Without<MinimapWeatherText>,
+            Without<MinimapDateText>,
+        ),
+    >,
+    mut weather_query: Query<
+        &mut Text,
+        (
+            With<MinimapWeatherText>,
+            Without<MinimapCoordsText>,
+            Without<MinimapBiomeText>,
             Without<MinimapDateText>,
         ),
     >,
@@ -446,10 +471,12 @@ fn update_minimap_ui(
             With<MinimapDateText>,
             Without<MinimapCoordsText>,
             Without<MinimapBiomeText>,
+            Without<MinimapWeatherText>,
         ),
     >,
     terrain_generator: Option<Res<TerrainGenerator>>,
     environment: Option<Res<crate::environment::EnvironmentState>>,
+    weather: Option<Res<crate::environment::weather::WeatherManager>>,
 ) {
     let Ok(player_transform) = player_query.single() else {
         return;
@@ -472,6 +499,16 @@ fn update_minimap_ui(
 
     for mut text in &mut biome_query {
         **text = format!("Biome: {}", biome_name);
+    }
+
+    let weather_name = if let Some(ref w) = weather {
+        w.target.name()
+    } else {
+        "Clear Sky"
+    };
+
+    for mut text in &mut weather_query {
+        **text = format!("Weather: {}", weather_name);
     }
 
     let (day, time_str, season_name) = if let Some(ref env) = environment {

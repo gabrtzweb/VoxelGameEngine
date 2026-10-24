@@ -32,6 +32,8 @@ pub fn update_atmosphere(
     camera: CameraAtmosphereQuery,
     env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
     atmo_state: Option<Res<BiomeAtmosphereState>>,
+    weather: Option<Res<super::weather::WeatherManager>>,
+    lightning: Option<Res<super::weather::LightningState>>,
 ) {
     let t = state.time_of_day;
     let (mut fog, mut exposure) = camera.into_inner();
@@ -65,14 +67,91 @@ pub fn update_atmosphere(
             ))
         };
 
-        clear_color.0 = blend_linear(base_sky, biome_atmo.fog_color_filter);
-        ambient.color = blend_linear(base_ambient, biome_atmo.ambient_color_filter);
-        ambient.brightness = sample_ambient_brightness(t);
+        let mut computed_sky = blend_linear(base_sky, biome_atmo.fog_color_filter);
+        let mut computed_ambient = blend_linear(base_ambient, biome_atmo.ambient_color_filter);
+        let mut computed_fog = blend_linear(base_fog, biome_atmo.fog_color_filter);
+        let mut computed_brightness = sample_ambient_brightness(t);
+        let mut computed_exposure = sample_exposure(t) + biome_atmo.exposure_offset;
 
-        fog.color = blend_linear(base_fog, biome_atmo.fog_color_filter);
+        // Apply weather modulations if active
+        if let Some(w) = weather {
+            let rain = w.rain_intensity;
+            let thunder = w.thunder_intensity;
+            let snow = w.snow_intensity;
+            let dust = w.dust_intensity;
+
+            // 1. Modulate ambient light and exposure
+            let dim_factor = (1.0 - rain * 0.42 - thunder * 0.38 - dust * 0.30).clamp(0.20, 1.0);
+            computed_brightness *= dim_factor;
+            computed_exposure -= rain * 0.65 + thunder * 0.85 + dust * 0.50;
+
+            // 2. Weather sky and fog color targets
+            let storm_sky = LinearRgba::new(0.24, 0.28, 0.35, 1.0);
+            let snow_sky = LinearRgba::new(0.60, 0.64, 0.70, 1.0);
+            let dust_sky = LinearRgba::new(0.68, 0.52, 0.32, 1.0);
+
+            let storm_weight = (rain * 0.75 + thunder * 0.25).clamp(0.0, 1.0);
+            let snow_weight = snow.clamp(0.0, 1.0);
+            let dust_weight = dust.clamp(0.0, 1.0);
+
+            let lerp_rgba = |a: LinearRgba, b: LinearRgba, factor: f32| -> LinearRgba {
+                LinearRgba::new(
+                    a.red + (b.red - a.red) * factor,
+                    a.green + (b.green - a.green) * factor,
+                    a.blue + (b.blue - a.blue) * factor,
+                    a.alpha + (b.alpha - a.alpha) * factor,
+                )
+            };
+
+            let sky_lin = computed_sky.to_linear();
+            let mut final_sky = sky_lin;
+            if storm_weight > 0.0 {
+                final_sky = lerp_rgba(final_sky, storm_sky, storm_weight * 0.85);
+            }
+            if snow_weight > 0.0 {
+                final_sky = lerp_rgba(final_sky, snow_sky, snow_weight * 0.75);
+            }
+            if dust_weight > 0.0 {
+                final_sky = lerp_rgba(final_sky, dust_sky, dust_weight * 0.90);
+            }
+            computed_sky = Color::LinearRgba(final_sky);
+
+            let fog_lin = computed_fog.to_linear();
+            let mut final_fog = fog_lin;
+            if storm_weight > 0.0 {
+                final_fog = lerp_rgba(final_fog, storm_sky, storm_weight * 0.80);
+            }
+            if snow_weight > 0.0 {
+                final_fog = lerp_rgba(final_fog, snow_sky, snow_weight * 0.70);
+            }
+            if dust_weight > 0.0 {
+                final_fog = lerp_rgba(final_fog, dust_sky, dust_weight * 0.85);
+            }
+            computed_fog = Color::LinearRgba(final_fog);
+
+            // Slightly shift ambient toward sky hue
+            computed_ambient = Color::LinearRgba(lerp_rgba(computed_ambient.to_linear(), final_sky, 0.20));
+        }
+
+        // Full-scene instantaneous flash during lightning strikes
+        if let Some(ref l) = lightning {
+            if l.flash_intensity > 0.01 {
+                let flash_col = Color::srgb(0.92, 0.95, 1.0);
+                computed_sky = flash_col;
+                computed_ambient = flash_col;
+                computed_brightness += l.flash_intensity * 8000.0;
+                computed_exposure += l.flash_intensity * 3.0;
+            }
+        }
+
+        clear_color.0 = computed_sky;
+        ambient.color = computed_ambient;
+        ambient.brightness = computed_brightness;
+
+        fog.color = computed_fog;
         fog.directional_light_color = sample_fog_light_color(t);
         fog.directional_light_exponent = sample_fog_light_exponent(t);
-        exposure.ev100 = sample_exposure(t) + biome_atmo.exposure_offset;
+        exposure.ev100 = computed_exposure;
     }
 }
 
@@ -82,6 +161,7 @@ pub fn sync_fog_distance(
     camera: Single<&mut DistanceFog, (With<Camera3d>, With<PlayerCamera>)>,
     env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
     atmo_state: Option<Res<BiomeAtmosphereState>>,
+    weather: Option<Res<super::weather::WeatherManager>>,
 ) {
     let mut fog = camera.into_inner();
 
@@ -108,12 +188,21 @@ pub fn sync_fog_distance(
             .map(|s| s.current.fog_distance_multiplier)
             .unwrap_or(1.0);
 
+        let weather_mult = weather.as_ref().map_or(1.0, |w| {
+            let intensity = (w.rain_intensity * 0.35
+                + w.thunder_intensity * 0.25
+                + w.snow_intensity * 0.45
+                + w.dust_intensity * 0.55)
+                .min(0.68);
+            1.0 - intensity
+        });
+
         let chunk_world_size = CHUNK_SIZE as f32 * VOXEL_SIZE;
         let total_chunks = (settings.render_distance + settings.lod_render_distance.max(0)).max(1);
         let render_radius = total_chunks as f32 * chunk_world_size;
         fog.falloff = FogFalloff::Linear {
-            start: render_radius * FOG_START_FACTOR * biome_mult,
-            end: render_radius * FOG_END_FACTOR * biome_mult,
+            start: render_radius * FOG_START_FACTOR * biome_mult * weather_mult,
+            end: render_radius * FOG_END_FACTOR * biome_mult * weather_mult,
         };
     }
 }

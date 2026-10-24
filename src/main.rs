@@ -8,6 +8,7 @@ use bevy::{
 use bevy_egui::EguiPlugin;
 
 use voxel_game_engine::{
+    audio::EngineAudioPlugin,
     core::{
         AdaptiveUiPlugin, DevStatsPlugin, DynamicFpsPlugin, DynamicFpsSettings, FontPlugin,
         LocalConfig, RenderScalePlugin, WindowAspectPlugin,
@@ -153,6 +154,7 @@ fn main() {
         .add_plugins(GameplayPlugin)
         .add_plugins(DevStatsPlugin)
         .add_plugins(DynamicFpsPlugin)
+        .add_plugins(EngineAudioPlugin)
         .add_plugins(MapPlugin)
         .add_plugins(MenuPlugin)
         .add_systems(Update, set_window_icons.run_if(run_once))

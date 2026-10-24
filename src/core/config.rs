@@ -369,6 +369,26 @@ pub struct LocalConfig {
     /// Whether natural in-game time flow is paused.
     #[serde(default = "default_is_time_paused", alias = "time_paused")]
     pub is_time_paused: bool,
+
+    /// Master volume level (0.0 ..= 1.0).
+    #[serde(default = "default_master_volume")]
+    pub master_volume: f32,
+
+    /// Weather audio volume level (0.0 ..= 1.0).
+    #[serde(default = "default_weather_volume")]
+    pub weather_volume: f32,
+
+    /// SFX audio volume level (0.0 ..= 1.0).
+    #[serde(default = "default_sfx_volume")]
+    pub sfx_volume: f32,
+
+    /// Gameplay and soundtrack music volume level (0.0 ..= 1.0).
+    #[serde(default = "default_music_volume")]
+    pub music_volume: f32,
+
+    /// Ambient nature murmurs volume level (0.0 ..= 1.0).
+    #[serde(default = "default_ambient_volume")]
+    pub ambient_volume: f32,
 }
 
 fn default_backend() -> String {
@@ -463,6 +483,40 @@ fn default_is_time_paused() -> bool {
     false
 }
 
+fn default_master_volume() -> f32 {
+    0.85
+}
+
+fn default_weather_volume() -> f32 {
+    0.75
+}
+
+fn default_sfx_volume() -> f32 {
+    0.85
+}
+
+fn default_music_volume() -> f32 {
+    0.50
+}
+
+fn default_ambient_volume() -> f32 {
+    0.65
+}
+
+pub fn format_volume(volume: f32) -> String {
+    format!("{:.0}%", (volume.clamp(0.0, 1.0) * 100.0).round())
+}
+
+pub fn step_volume_up(volume: f32) -> f32 {
+    let steps = (volume * 20.0).round() + 1.0;
+    (steps / 20.0).clamp(0.0, 1.0)
+}
+
+pub fn step_volume_down(volume: f32) -> f32 {
+    let steps = (volume * 20.0).round() - 1.0;
+    (steps / 20.0).clamp(0.0, 1.0)
+}
+
 impl Default for LocalConfig {
     fn default() -> Self {
         Self {
@@ -490,6 +544,11 @@ impl Default for LocalConfig {
             render_scale: default_render_scale(),
             upscaling_filter: default_upscaling_filter(),
             is_time_paused: default_is_time_paused(),
+            master_volume: default_master_volume(),
+            weather_volume: default_weather_volume(),
+            sfx_volume: default_sfx_volume(),
+            music_volume: default_music_volume(),
+            ambient_volume: default_ambient_volume(),
         }
     }
 }

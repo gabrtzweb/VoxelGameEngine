@@ -253,27 +253,39 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ### Phase 14: Dynamic Weather System & Meteorological Phenomena (Planned)
 
-- [ ] **Multi-State Meteorological Simulation Engine**:
-  - Build a deterministic atmospheric weather state machine supporting dynamic transitions across distinct weather states: `Clear`, `Partially Cloudy`, `Overcast`, `Light Rain`, `Heavy Downpour`, `Thunderstorm`, `Light Snow`, `Blizzard`, `Morning Mist`, `Dense Fog`, `Arid Sandstorm`, and `Heat Shimmer`.
-  - Implement altitude and temperature-sensitive precipitation: dynamic freezing line elevation checks where rainfall seamlessly shifts into snowfall at high mountain altitudes and sub-zero biomes.
-  - Smooth temporal transitions over configurable game minutes, fully coordinated with the in-game calendar, seasons, and day/night cycle.
-- [ ] **Precipitation Particle Systems & Occlusion**:
-  - Implement high-performance GPU particle emitters for directional rain streaks, drifting snowflakes, swirling blizzard gusts, and desert sandstorms.
-  - Add surface impact splashes and water ripples on exposed horizontal water and terrain blocks.
-  - Vertical raycast occlusion preventing rain and snow particles from appearing inside sheltered interiors, under tree canopies, or beneath cave overhangs.
-  - Dynamic sub-voxel snow accumulation on top of upward-facing exposed blocks during winter blizzards, with progressive melting in warmer seasons.
-- [ ] **Volumetric & Atmospheric Weather Fog**:
-  - Weather-dependent horizon fog densities and low-lying ground mist pooling in humid river basins, swamps, and mountain valleys at dawn.
-  - Storm sky darkening: dynamic overcast cloud ceiling lowering and ambient sunlight attenuation during severe storms.
-  - Directional lightning flash illumination with volumetric terrain casting and realistic distance-delayed rolling thunder.
-- [ ] **Surface Wetness & Environmental Gameplay Interactions**:
-  - Fragment shader surface wetness sheen: dynamic PBR roughness reduction and specular highlights on blocks exposed to rainfall.
-  - Rainwater pooling and puddle reflections on non-permeable rock and compressed surfaces.
-  - Gameplay weather feedback: natural hydration of farmland and agricultural crops during rain, smoke puff steam when rain hits hot lava or lit campfires.
-- [ ] **Dynamic Spatial Weather Audio**:
-  - Multi-layered 3D soundscapes: gentle outdoor rainfall, heavy downpours, wind gusts whipping through trees, and howling blizzard gales.
-  - Acoustic muffling: low-pass filtering and volume dampening for indoor shelters, basements, and deep cave systems.
-  - Directional thunder claps with distance attenuation and speed-of-sound physical delay after lightning flashes.
+Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dynamics from the *Particle Rain* mod, Phase 14 establishes a high-performance, modular weather simulation and particle rendering system fully integrated with the 1.0m voxel world, Bevy 0.20, and WESL shaders.
+
+- [x] **Phase 14.1: Meteorological State Machine & Atmosphere Transitions**:
+  - Implement `WeatherManager` resource with cyclic and procedural weather states: `Clear`, `Rain`, `HeavyRain`, `Thunderstorm`, `Snow`, `Blizzard`, and `DustStorm`.
+  - Continuous weather interpolation weights ($W_{\text{rain}}, W_{\text{thunder}} \in [0.0, 1.0]$) driving smooth cross-fading of ambient illumination, directional sun/moon intensity, exposure, and sky/fog color palette.
+  - Climate-aware weather routing: map weather types dynamically based on biome temperature ($T_{\text{biome}}$), elevation lapse rate ($T(y) = T_{\text{biome}} - (y - y_{\text{sea}}) \times 0.0016$), and humidity ($H_{\text{biome}}$).
+  - Atmospheric fog contraction: dynamically contract `DistanceFog` start and end boundaries during rainstorms, thick fog, and snowstorms.
+- [x] **Phase 14.2: Dynamic 3D Wind Simulation Field**:
+  - Implement `WindManager` generating continuous, multi-octave 3D wind velocity vectors $\vec{W}(x, y, z, t)$ adapted from Particle Rain's harmonic gust formulation (`oneWindPlease`).
+  - Altitude-based wind scaling: calibrate wind speed by elevation ($y$-level scaling factor from $Y=50$ to $Y=90$), creating calmer valley breezes and howling mountain gusts.
+  - Unify wind integration across the engine: expose global `WindState` driving weather particles, cloud drift acceleration, and future vegetation leaf/grass vertex sway.
+- [x] **Phase 14.3: High-Performance GPU/Batched Weather Particle Engine**:
+  - High-throughput instanced quad particle renderer (or compact flat DOD particle buffer) avoiding per-particle ECS entity overhead (capable of simulating 10,000+ active precipitation quads at 144+ FPS).
+  - Velocity-aligned billboarding (`RELATIVE_VELOCITY`): tilt falling rain streaks and heavy drops dynamically along the composite velocity vector $(\vec{v}_{\text{gravity}} + \vec{W})$.
+  - Screen-aligned and axis-locked quad rendering (`COPY_CAMERA`, `HORIZONTAL`, `VERTICAL`) for snowflakes, ground mist, dust clouds, and water ripples.
+  - Particle lifetime curves with alpha fade envelopes (`FadeType::In`, `FadeType::Out`, `FadeType::InOut`).
+- [x] **Phase 14.4: Precipitation & Ambient Surface Phenomena (Particle Rain Reverse-Engineering)**:
+  - **Sky FX Spawning**: 3D cylindrical volume particle emitter centered around the player camera, with spawn rate scaled by storm intensity and player velocity.
+  - **Surface FX & Fast Heightmap Sampling**: Sample ground positions using triangular distribution (`RandomSource::triangle`); query cached column surface heights for:
+    - Water ripples (`ripple`): animated 8-frame flat horizontal quads on water surfaces with water tint.
+    - Ground splatters (`splatter`): tiny bounce droplets on solid terrain blocks.
+    - Thermal steam/smoke (`smoke`): vaporization particles when rain strikes hot or flaming blocks.
+    - Post-storm & ambient ground fog (`fog_after_rain`, `fog`): soft, low-lying ground mist quads rising over moist soils after rain stops.
+    - Arid dust & skittering sand (`dust`, `skittering_dust`, `dust_haze`): windblown dust swirls and tumbling shrubs (`dead_bush`) across desert and dry soils.
+  - **Vertical Block Side Streaks (`streak`)**: Raycast-verified water trails sliding down exterior vertical faces of glass and impermeable blocks, culminating in dripping droplets at overhangs.
+- [x] **Phase 14.5: Thunder, Lightning & Audio-Visual Spectacle**:
+  - Procedural lightning bolt generation during `Thunderstorm` events: striking high-elevation terrain with instantaneous full-scene emissive flash and localized point light.
+  - Physical distance-based audio delay: speed-of-sound calculated interval between visual flash and rumble impact.
+  - Spatial weather audio pipeline: integration of multi-track ambient loops (rain intensity, ground vs. altitude snow murmur, whistling desert sandstorms using assets from mod references).
+- [ ] **Phase 14.6: World Interaction & Physical Accumulation**:
+  - Snow layer accumulation: gradual placement of thin snow slabs on upward-facing solid blocks with direct sky exposure during snowy conditions.
+  - Surface water freezing into ice in sub-zero elevations ($T(y) \le 0.15$).
+  - Rain-induced fire extinguishing and soil/farmland hydration hooks.
 
 ---
 

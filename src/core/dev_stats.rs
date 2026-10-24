@@ -141,9 +141,15 @@ fn update_dev_stats(
     camera: Single<&Transform, (With<Camera3d>, With<PlayerCamera>, Without<Player>)>,
     current_target: Res<CurrentTarget>,
     terrain_generator: Option<Res<TerrainGenerator>>,
-    dynamic_fps: Option<Res<super::DynamicFpsState>>,
-    culling_state: Option<Res<crate::meshing::CaveCullingState>>,
-    menu_state: Option<Res<State<crate::menu::MenuState>>>,
+    (dynamic_fps, culling_state, menu_state): (
+        Option<Res<super::DynamicFpsState>>,
+        Option<Res<crate::meshing::CaveCullingState>>,
+        Option<Res<State<crate::menu::MenuState>>>,
+    ),
+    (weather, wind): (
+        Option<Res<crate::environment::weather::WeatherManager>>,
+        Option<Res<crate::environment::weather::WindState>>,
+    ),
     text_query: Single<
         (
             &mut Text,
@@ -343,6 +349,22 @@ fn update_dev_stats(
                 "Unknown".to_string()
             };
 
+            let weather_text = if let Some(ref w) = weather {
+                let mode_str = if w.is_manual_override {
+                    " [Manual F7]"
+                } else {
+                    " [Dynamic]"
+                };
+                let wind_str = if let Some(ref wind_st) = wind {
+                    format!(" | Wind: {:.1} m/s", wind_st.current_speed)
+                } else {
+                    String::new()
+                };
+                format!("{}{mode_str}{wind_str}", w.target.name())
+            } else {
+                "Clear Sky".to_string()
+            };
+
             let power_text = if let Some(ref dyn_fps) = dynamic_fps {
                 let kind = dyn_fps.state_kind.label();
                 if let Some(target) = dyn_fps.target_fps {
@@ -362,6 +384,7 @@ fn update_dev_stats(
                 Flight: {}\n\
                 Direction: {direction_text}\n\
                 Time: {env_text}\n\
+                Weather: {weather_text}\n\
                 Biome: {biome_text}\n\
                 Position: {}, {}, {}\n\
                 Player chunk: {}, {}, {}\n\

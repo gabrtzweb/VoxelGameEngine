@@ -123,14 +123,14 @@ Structures engineered by colonial insects, avian species, mammals, and arachnids
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **01** | `ant_hill` | Ant Hill (Closed) | **Colony** | `nest_ant_hill.png` | Uniform (6 faces) |
-| **02** | `ant_hill_open` | Ant Hill (Active) | **Colony** | `nest_ant_hill_open.png` | Uniform (6 faces) |
-| **03** | `termite_mound` | Termite Mound (Closed) | **Colony** | `nest_termite_mound.png` | Uniform (6 faces) |
-| **04** | `termite_mound_open` | Termite Mound (Active) | **Colony** | `nest_termite_mound_open.png` | Uniform (6 faces) |
+| **01** | `ant_hill` | Ant Hill | **Colony** | `nest_ant_hill.png` | Uniform (6 faces) |
+| **02** | `ant_hill_open` | Ant Hill Open | **Colony** | `nest_ant_hill_open.png` | Uniform (6 faces) |
+| **03** | `termite_mound` | Termite Mound | **Colony** | `nest_termite_mound.png` | Uniform (6 faces) |
+| **04** | `termite_mound_open` | Termite Mound Open | **Colony** | `nest_termite_mound_open.png` | Uniform (6 faces) |
 | **05** | `bee_nest` | Wild Bee Nest | **Hive** | `nest_bee_nest_bot...top.png`<br>`nest_bee_nest_front_honey.png` | Directional (5 faces) |
-| **06** | `wasp_nest` | Paper Wasp Nest | **Hive** | `nest_wasp_nest_bot...top.png` | Directional (3 faces) |
-| **07** | `bird_nest` | Songbird Nest | **Nest** | `nest_bird_nest_bot...top.png` | Half-height Slab |
-| **08** | `hay_nest` | Hay Poultry Nest | **Nest** | `nest_hay_nest_bot...top.png` | Half-height Slab |
+| **06** | `wasp_nest` | Wild Wasp Nest | **Hive** | `nest_wasp_nest_bot...top.png` | Directional (3 faces) |
+| **07** | `bird_nest` | Bird Nest | **Nest** | `nest_bird_nest_bot...top.png` | Half-height Slab |
+| **08** | `hay_nest` | Hay Nest | **Nest** | `nest_hay_nest_bot...top.png` | Half-height Slab |
 | **09** | `beaver_dam` | Beaver Dam | **Architecture** | `nest_beaver_dam.png` *(+ `1`, `2`)* | Uniform (6 faces) |
 | **10** | `spider_egg` | Spider Egg Sac | **Ootheca** | `nest_spider_egg_bot...top.png` | Directional (3 faces) |
 | **11** | `silk_cocoon` | Wild Silk Cocoon | **Pupa** | `nest_silk_cocoon_bot...top.png` | Directional (3 faces) |

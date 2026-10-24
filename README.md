@@ -47,6 +47,7 @@ Shift + F3        Toggle HUD visibility (Show / Hide)
 F4                Creative / Spectator
 F5                First / Third person (body model, head tracking, overlay layers, animations)
 F6                Day / Night cycle (Click: step phase / Hold: scrub time)
+F7                Weather cycle (Click: step weather / Shift+F7 or Hold: dynamic simulation)
 ```
 
 ## Current Project Structure

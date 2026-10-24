@@ -187,6 +187,7 @@ pub fn sync_clouds(
     time_of_day: f32,
     is_underwater: bool,
     cloud_quality: crate::core::CloudQuality,
+    storm_darkening: f32,
 ) {
     let camera_translation = camera.0.translation;
 
@@ -272,7 +273,19 @@ pub fn sync_clouds(
     }
 
     // Dynamic atmospheric cloud tinting across the day-night cycle.
-    let target_color = sample_cloud_color(time_of_day);
+    let mut target_color = sample_cloud_color(time_of_day);
+    if storm_darkening > 0.0 {
+        let lin = target_color.to_linear();
+        let dark_factor = (1.0 - storm_darkening * 0.65).clamp(0.20, 1.0);
+        let storm_rgb = LinearRgba::new(
+            lin.red * dark_factor * 0.90,
+            lin.green * dark_factor * 0.92,
+            lin.blue * dark_factor,
+            (lin.alpha + storm_darkening * 0.15).min(1.0),
+        );
+        target_color = Color::LinearRgba(storm_rgb);
+    }
+
     if let Some(mat) = materials.get(&material_handle.0)
         && mat.base_color != target_color
         && let Some(mut mat_mut) = materials.get_mut(&material_handle.0)

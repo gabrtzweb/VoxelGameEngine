@@ -4,6 +4,7 @@ pub mod clouds;
 pub mod post_process;
 pub mod stars;
 pub mod time;
+pub mod weather;
 
 use bevy::prelude::*;
 
@@ -15,6 +16,7 @@ use atmosphere::{
 use time::{advance_environment_clock, handle_environment_input};
 
 pub use time::{DayPhase, EnvironmentState};
+pub use weather::{WeatherManager, WeatherPlugin, WeatherType, WindState};
 
 use crate::player::PlayerCamera;
 
@@ -35,6 +37,7 @@ impl Plugin for EnvironmentPlugin {
         app.insert_resource(default_state)
             .init_resource::<BiomeAtmosphereState>()
             .register_type::<BiomeAtmosphereState>()
+            .add_plugins(weather::WeatherPlugin)
             .add_plugins(post_process::PostProcessPlugin)
             .insert_resource(GlobalAmbientLight {
                 color: initial_ambient,
@@ -125,11 +128,18 @@ fn sync_celestial_system(
     moon_textures: Res<celestial::MoonPhaseTextures>,
     materials: ResMut<Assets<StandardMaterial>>,
     local_config: Option<Res<crate::core::config::LocalConfig>>,
+    weather: Option<Res<weather::WeatherManager>>,
 ) {
     let shadows_enabled = local_config
         .as_ref()
         .map(|c| c.shadow_quality != crate::core::ShadowQuality::Off)
         .unwrap_or(true);
+
+    let weather_dim = weather.as_ref().map_or(1.0, |w| {
+        (1.0 - w.rain_intensity * 0.70 - w.thunder_intensity * 0.25 - w.dust_intensity * 0.60)
+            .clamp(0.05, 1.0)
+    });
+
     celestial::sync_celestial_transforms(
         camera,
         sun_visual,
@@ -143,9 +153,9 @@ fn sync_celestial_system(
         state.time_of_day,
         state.moon_texture_index(),
         state.moon_phase().illuminance_factor(),
-        DAY_SUN_ILLUMINANCE,
-        DAY_FILL_ILLUMINANCE,
-        NIGHT_MOON_ILLUMINANCE,
+        DAY_SUN_ILLUMINANCE * weather_dim,
+        DAY_FILL_ILLUMINANCE * weather_dim,
+        NIGHT_MOON_ILLUMINANCE * weather_dim,
         shadows_enabled,
     );
 }
@@ -177,12 +187,17 @@ fn sync_cloud_system(
     mut layers_res: ResMut<clouds::CloudLayersResource>,
     env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
     local_config: Option<Res<crate::core::config::LocalConfig>>,
+    weather: Option<Res<weather::WeatherManager>>,
 ) {
     let is_underwater = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
     let cloud_quality = local_config
         .as_ref()
         .map(|c| c.cloud_quality)
         .unwrap_or(crate::core::CloudQuality::Fancy3D);
+
+    let storm_darkening = weather.as_ref().map_or(0.0, |w| {
+        (w.rain_intensity * 0.70 + w.thunder_intensity * 0.30 + w.dust_intensity * 0.50).min(1.0)
+    });
 
     clouds::sync_clouds(
         state.total_in_game_seconds(),
@@ -196,5 +211,6 @@ fn sync_cloud_system(
         state.time_of_day,
         is_underwater,
         cloud_quality,
+        storm_darkening,
     );
 }

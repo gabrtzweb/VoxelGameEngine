@@ -576,11 +576,11 @@ The biological biomaterials and organic domain comprises **14 insect colony and 
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **01** | `ant_hill` | Ant Hill (Closed) | **Colony** | `nest_ant_hill.png` | Uniform (6 faces) |
-| **02** | `ant_hill_open` | Ant Hill (Active) | **Colony** | `nest_ant_hill_open.png` | Uniform (6 faces) |
+| **01** | `ant_hill` | Ant Hill | **Colony** | `nest_ant_hill.png` | Uniform (6 faces) |
+| **02** | `ant_hill_open` | Ant Hill Open | **Colony** | `nest_ant_hill_open.png` | Uniform (6 faces) |
 | **03** | `beaver_dam` | Beaver Dam | **Architecture** | `nest_beaver_dam.png` *(+ `1`, `2`)* | Uniform (6 faces) |
 | **04** | `bee_nest` | Wild Bee Nest | **Hive** | `nest_bee_nest_bot...top.png`<br>`nest_bee_nest_front_honey.png` | Directional (5 faces) |
-| **05** | `bird_nest` | Songbird Nest | **Nest** | `nest_bird_nest_bot...top.png` | Half-height Slab |
+| **05** | `bird_nest` | Bird Nest | **Nest** | `nest_bird_nest_bot...top.png` | Half-height Slab |
 | **06** | `bloody_brain` | Bloody Brain Block | **Neural** | `bio_brain.png` *(+ `bloody_overlay.png`, `1`, `2`)* | Uniform (6 faces) + Shader Bloody Overlay |
 | **07** | `bloody_flesh` | Bloody Flesh Block | **Tissue** | Top/Bot: `bio_flesh_top.png`<br>Sides: `bio_flesh_side.png` *(+ `bloody_overlay.png`, `1`, `2`)* | Directional (2 faces) + Lateral Shader Bloody Overlay |
 | **08** | `blubber_block` | Blubber | **Adipose** | `bio_blubber.png` *(+ `1`, `2`)* | Translucent (Alpha 204) |
@@ -596,7 +596,7 @@ The biological biomaterials and organic domain comprises **14 insect colony and 
 | **18** | `flesh_block` | Raw Flesh Block | **Tissue** | `bio_flesh_top.png`<br>`bio_flesh_side.png` *(+ `1`, `2`)* | Directional (2 faces) |
 | **19** | `fur_block` | Animal Fur | **Integument** | `bio_fur_top.png`<br>`bio_fur_side.png`<br>`bio_fur_bot.png` | Directional (3 faces) |
 | **20** | `guano_block` | Guano | **Dropping** | `organic_guano.png` *(+ `1`, `2`)* | Uniform (6 faces) |
-| **21** | `hay_nest` | Hay Poultry Nest | **Nest** | `nest_hay_nest_bot...top.png` | Half-height Slab |
+| **21** | `hay_nest` | Hay Nest | **Nest** | `nest_hay_nest_bot...top.png` | Half-height Slab |
 | **22** | `honey_block` | Honey Block | **Secretion** | `organic_honey_block_bot...top.png` | Translucent (3 faces) |
 | **23** | `honeycomb_block` | Honeycomb | **Wax Matrix** | `organic_honeycomb_block.png` *(+ `1`, `2`)* | Uniform (6 faces) |
 | **24** | `jelly_block` | Royal Jelly Block | **Colloid** | `organic_jelly_top.png`<br>`organic_jelly_side.png`<br>`organic_jelly_bot.png` | Translucent (3 faces) |
@@ -608,9 +608,9 @@ The biological biomaterials and organic domain comprises **14 insect colony and 
 | **30** | `silt_burrow` | Silt Animal Burrow | **Burrow** | Top: `nest_burrow_top.png` + `layer.png` *(+ `1`, `2`)*<br>Bot: `soils/soil_silt_dirt.png`<br>Sides: `soils/soil_silt_grass_side.png` | Composite Top + Silt soil |
 | **31** | `slime_block` | Slime Block | **Colloid** | `organic_slime_top.png`<br>`organic_slime_side.png`<br>`organic_slime_bot.png` | Translucent (3 faces) |
 | **32** | `spider_egg` | Spider Egg Sac | **Ootheca** | `nest_spider_egg_bot...top.png` | Directional (3 faces) |
-| **33** | `termite_mound` | Termite Mound (Closed) | **Colony** | `nest_termite_mound.png` | Uniform (6 faces) |
-| **34** | `termite_mound_open` | Termite Mound (Active) | **Colony** | `nest_termite_mound_open.png` | Uniform (6 faces) |
-| **35** | `wasp_nest` | Paper Wasp Nest | **Hive** | `nest_wasp_nest_bot...top.png` | Directional (3 faces) |
+| **33** | `termite_mound` | Termite Mound | **Colony** | `nest_termite_mound.png` | Uniform (6 faces) |
+| **34** | `termite_mound_open` | Termite Mound Open | **Colony** | `nest_termite_mound_open.png` | Uniform (6 faces) |
+| **35** | `wasp_nest` | Wild Wasp Nest | **Hive** | `nest_wasp_nest_bot...top.png` | Directional (3 faces) |
 | **36** | `wax_block` | Beeswax | **Wax** | `organic_wax.png` *(+ `1`, `2`)* | Uniform (6 faces) |
 
 ---
@@ -629,7 +629,7 @@ The architectural, utilitarian, and illumination domain comprises **6 utilitaria
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **001** | `bag` | Burlap Bag | **Utility** | `util_bag_top.png`<br>`util_bag_side.png`<br>`util_bag_side_front.png`<br>`util_bag_bot.png` | Top top + Bottom bot + 3 sides side + 1 front `util_bag_side_front.png` |
+| **001** | `bag` | Fabric Bag | **Utility** | `util_bag_top.png`<br>`util_bag_side.png`<br>`util_bag_side_front.png`<br>`util_bag_bot.png` | Top top + Bottom bot + 3 sides side + 1 front `util_bag_side_front.png` |
 | **002** | `barrel` | Barrel | **Utility** | `util_barrel_top.png`<br>`util_barrel_side.png`<br>`util_barrel_bot.png` | Top top + Bottom bot + 4 sides side |
 | **003** | `basket` | Basket | **Utility** | `util_basket_top.png`<br>`util_basket_side.png`<br>`util_basket_bot.png` | Top top + Bottom bot + 4 sides side |
 | **004** | `bookshelf` | Bookshelf | **Utility** | `util_bookshelf_top.png`<br>`util_bookshelf_side.png`<br>`util_bookshelf_front.png` | Top & Bottom top + 3 sides side + 1 front `util_bookshelf_front.png` |
@@ -637,7 +637,7 @@ The architectural, utilitarian, and illumination domain comprises **6 utilitaria
 | **006–021** | `brick_<color>` | (Color) Bricks *(16 colors)* | **Masonry** | `deco_bricks_painted.png` | 6 uniform faces (Shader Tint: colors 01–16) |
 | **022** | `bricks` | Bricks | **Masonry** | `deco_bricks.png` | 6 uniform faces |
 | **023** | `corn_bale` | Corn Bale | **Fibers** | `deco_corn_bale_top.png`<br>`deco_corn_bale_side.png`<br>`deco_corn_bale_bottom.png` | Top top + Bottom bottom + 4 sides side *(Orientable)* |
-| **024** | `crate` | Crate | **Utility** | `util_crate_top.png`<br>`util_crate_side.png`<br>`util_crate_bot.png` | Top top + Bottom bot + 4 sides side |
+| **024** | `crate` | Empty Crate | **Utility** | `util_crate_top.png`<br>`util_crate_side.png`<br>`util_crate_bot.png` | Top top + Bottom bot + 4 sides side |
 | **025** | `emit_lamp` | Lamp | **Lighting** | `emit_lamp.png`<br>`emit_lamp_top.png`<br>`emit_lamp_on.png`<br>`emit_lamp_top_on.png` | Top top + 4 sides + Bottom (`emit_lamp.png`) *(2 states: Normal / On)* |
 | **026** | `emit_light_blue` | Blue Light | **Radiant Emitter** | `emit_light_blue.png` | 6 uniform faces |
 | **027** | `emit_light_cold` | Cold Light | **Radiant Emitter** | `emit_light_cold.png` | 6 uniform faces |
