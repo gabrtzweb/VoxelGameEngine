@@ -33,3 +33,6 @@ mod texture;
 
 #[path = "suite/weather.rs"]
 mod weather;
+
+#[path = "suite/foliage.rs"]
+mod foliage;

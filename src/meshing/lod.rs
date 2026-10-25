@@ -479,6 +479,7 @@ pub fn build_lod_mesh(
     ChunkMeshes {
         opaque: opaque_buffers.into_mesh(),
         transparent: transparent_buffers.into_mesh(),
+        grass: None,
         visibility_mask: (1u64 << 36) - 1,
     }
 }

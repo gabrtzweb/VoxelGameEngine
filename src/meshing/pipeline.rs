@@ -13,6 +13,7 @@ use super::{
     greedy::{ChunkMesher, ChunkMeshes},
     textures::{VoxelTextureRegistry, build_voxel_texture_array},
 };
+use crate::environment::foliage::GrassChunkMaterial;
 use crate::world::{Chunk, VoxelWorld};
 
 pub const OPAQUE_VOXEL_SHADER_PATH: &str = "shaders/voxel_opaque.wesl";
@@ -88,13 +89,14 @@ pub struct ChunkRenderPart {
 pub struct ChunkRenderData {
     pub opaque: Option<ChunkRenderPart>,
     pub transparent: Option<ChunkRenderPart>,
+    pub grass: Option<ChunkRenderPart>,
     pub visibility_mask: u64,
     pub is_subterranean: bool,
 }
 
 impl ChunkRenderData {
     pub fn is_empty(&self) -> bool {
-        self.opaque.is_none() && self.transparent.is_none()
+        self.opaque.is_none() && self.transparent.is_none() && self.grass.is_none()
     }
 
     pub fn vertex_count(&self) -> usize {
@@ -103,6 +105,7 @@ impl ChunkRenderData {
                 .transparent
                 .as_ref()
                 .map_or(0, |part| part.vertex_count)
+            + self.grass.as_ref().map_or(0, |part| part.vertex_count)
     }
 
     pub fn triangle_count(&self) -> usize {
@@ -111,6 +114,7 @@ impl ChunkRenderData {
                 .transparent
                 .as_ref()
                 .map_or(0, |part| part.triangle_count)
+            + self.grass.as_ref().map_or(0, |part| part.triangle_count)
     }
 }
 
@@ -229,6 +233,7 @@ impl LodMeshRegistry {
 pub struct ChunkMaterial {
     pub opaque: Handle<OpaqueChunkMaterial>,
     pub transparent: Handle<TransparentChunkMaterial>,
+    pub grass: Option<Handle<GrassChunkMaterial>>,
     pub texture_registry: VoxelTextureRegistry,
 }
 
@@ -237,8 +242,15 @@ pub fn setup_chunk_material(
     mut images: ResMut<Assets<Image>>,
     mut opaque_materials: ResMut<Assets<OpaqueChunkMaterial>>,
     mut transparent_materials: ResMut<Assets<TransparentChunkMaterial>>,
+    grass_material_handle: Option<Res<crate::environment::foliage::GrassMaterialHandle>>,
+    local_config: Option<Res<crate::core::config::LocalConfig>>,
 ) {
-    let (texture_array_image, texture_registry) = build_voxel_texture_array();
+    let (texture_array_image, mut texture_registry) = build_voxel_texture_array();
+    if let Some(cfg) = &local_config {
+        texture_registry.full_grass = cfg.full_grass;
+        texture_registry.grass_enabled = cfg.grass_enabled;
+        texture_registry.grass_density = cfg.grass_density;
+    }
     let texture_array = images.add(texture_array_image);
 
     let opaque = opaque_materials.add(ExtendedMaterial {
@@ -266,10 +278,13 @@ pub fn setup_chunk_material(
         extension: TransparentVoxelMaterial { texture_array },
     });
 
+    let grass = grass_material_handle.as_ref().map(|h| h.material.clone());
+
     commands.insert_resource(texture_registry.clone());
     commands.insert_resource(ChunkMaterial {
         opaque,
         transparent,
+        grass,
         texture_registry,
     });
 }
@@ -357,6 +372,23 @@ pub fn apply_chunk_mesh(
             is_subterranean,
             initial_visibility,
         );
+
+        if let Some(grass_material) = &material.grass {
+            sync_render_part(
+                commands,
+                meshes,
+                &mut entry.grass,
+                rebuilt.grass,
+                grass_material,
+                translation,
+                chunk_aabb,
+                Some(coordinate),
+                is_subterranean,
+                initial_visibility,
+            );
+        } else {
+            remove_render_part(commands, meshes, &mut entry.grass);
+        }
 
         entry.is_empty()
     };
@@ -499,6 +531,7 @@ pub fn remove_chunk_render(
 
     remove_render_part(commands, meshes, &mut render_data.opaque);
     remove_render_part(commands, meshes, &mut render_data.transparent);
+    remove_render_part(commands, meshes, &mut render_data.grass);
 }
 
 pub fn apply_lod_mesh(

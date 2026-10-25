@@ -1,6 +1,7 @@
 pub mod atmosphere;
 pub mod celestial;
 pub mod clouds;
+pub mod foliage;
 pub mod post_process;
 pub mod stars;
 pub mod time;
@@ -15,6 +16,7 @@ use atmosphere::{
 };
 use time::{advance_environment_clock, handle_environment_input};
 
+pub use foliage::{FoliagePlugin, GrassConfig, GrassStyle};
 pub use time::{DayPhase, EnvironmentState};
 pub use weather::{WeatherManager, WeatherPlugin, WeatherType, WindState};
 
@@ -38,6 +40,7 @@ impl Plugin for EnvironmentPlugin {
             .init_resource::<BiomeAtmosphereState>()
             .register_type::<BiomeAtmosphereState>()
             .add_plugins(weather::WeatherPlugin)
+            .add_plugins(foliage::FoliagePlugin)
             .add_plugins(post_process::PostProcessPlugin)
             .insert_resource(GlobalAmbientLight {
                 color: initial_ambient,

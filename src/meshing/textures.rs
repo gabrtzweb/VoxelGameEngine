@@ -32,6 +32,8 @@ pub struct VoxelTextureMapping {
 pub struct VoxelTextureRegistry {
     mappings: [Option<VoxelTextureMapping>; MAX_VOXEL_VARIANTS],
     pub full_grass: bool,
+    pub grass_enabled: bool,
+    pub grass_density: u32,
 }
 
 impl Default for VoxelTextureRegistry {
@@ -39,6 +41,8 @@ impl Default for VoxelTextureRegistry {
         Self {
             mappings: [None; MAX_VOXEL_VARIANTS],
             full_grass: false,
+            grass_enabled: true,
+            grass_density: 32,
         }
     }
 }

@@ -519,6 +519,63 @@ pub struct LocalConfig {
     /// Custom keybindings overrides map: action_name -> "Key:KeyCode" / "Mouse:MouseButton".
     #[serde(default)]
     pub custom_keybindings: std::collections::BTreeMap<String, String>,
+
+    /// Whether procedural foliage / grass blades are enabled.
+    #[serde(default = "default_grass_enabled")]
+    pub grass_enabled: bool,
+
+    /// Procedural grass visual style: "tapered" or "segmented".
+    #[serde(default = "default_grass_style")]
+    pub grass_style: String,
+
+    /// Procedural grass density (blades per block: 16, 32, 48, 64).
+    #[serde(default = "default_grass_density")]
+    pub grass_density: u32,
+
+    /// Dynamic wind-blown loose grass blade particles.
+    #[serde(default = "default_grass_particles")]
+    pub grass_particles: bool,
+}
+
+fn default_grass_enabled() -> bool {
+    true
+}
+
+fn default_grass_style() -> String {
+    "tapered".to_string()
+}
+
+fn default_grass_density() -> u32 {
+    32
+}
+
+fn default_grass_particles() -> bool {
+    true
+}
+
+pub fn next_grass_density(density: u32) -> u32 {
+    match density {
+        0..=16 => 32,
+        17..=32 => 48,
+        33..=48 => 64,
+        _ => 16,
+    }
+}
+
+pub fn prev_grass_density(density: u32) -> u32 {
+    match density {
+        0..=16 => 64,
+        17..=32 => 16,
+        33..=48 => 32,
+        _ => 48,
+    }
+}
+
+pub fn cycle_grass_style(style: &str) -> String {
+    match style {
+        "segmented" | "Segmented" => "tapered".to_string(),
+        _ => "segmented".to_string(),
+    }
 }
 
 fn default_mouse_sensitivity() -> f32 {
@@ -710,6 +767,10 @@ impl Default for LocalConfig {
             mouse_sensitivity: default_mouse_sensitivity(),
             invert_mouse_y: default_invert_mouse_y(),
             custom_keybindings: std::collections::BTreeMap::new(),
+            grass_enabled: default_grass_enabled(),
+            grass_style: default_grass_style(),
+            grass_density: default_grass_density(),
+            grass_particles: default_grass_particles(),
         }
     }
 }
@@ -795,6 +856,9 @@ impl LocalConfig {
                 self.god_rays_enabled = false;
                 self.render_scale = 0.50;
                 self.upscaling_filter = UpscalingFilter::Bilinear;
+                self.grass_enabled = false;
+                self.grass_density = 16;
+                self.grass_particles = false;
             }
             PerformancePreset::Low => {
                 self.render_distance = 4;
@@ -815,6 +879,9 @@ impl LocalConfig {
                 self.god_rays_enabled = false;
                 self.render_scale = 0.75;
                 self.upscaling_filter = UpscalingFilter::Bilinear;
+                self.grass_enabled = false;
+                self.grass_density = 16;
+                self.grass_particles = false;
             }
             PerformancePreset::Medium => {
                 self.render_distance = 8;
@@ -835,6 +902,9 @@ impl LocalConfig {
                 self.god_rays_enabled = true;
                 self.render_scale = 1.00;
                 self.upscaling_filter = UpscalingFilter::Fsr1;
+                self.grass_enabled = true;
+                self.grass_density = 32;
+                self.grass_particles = true;
             }
             PerformancePreset::High => {
                 self.render_distance = 8;
@@ -855,6 +925,9 @@ impl LocalConfig {
                 self.god_rays_enabled = true;
                 self.render_scale = 1.00;
                 self.upscaling_filter = UpscalingFilter::Fsr1;
+                self.grass_enabled = true;
+                self.grass_density = 48;
+                self.grass_particles = true;
             }
             PerformancePreset::Ultra => {
                 self.render_distance = 16;
@@ -875,6 +948,9 @@ impl LocalConfig {
                 self.god_rays_enabled = true;
                 self.render_scale = 1.00;
                 self.upscaling_filter = UpscalingFilter::Fsr1;
+                self.grass_enabled = true;
+                self.grass_density = 64;
+                self.grass_particles = true;
             }
         }
     }

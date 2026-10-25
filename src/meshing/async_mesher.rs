@@ -155,13 +155,20 @@ pub fn collect_meshing_tasks(
     mut commands: Commands,
     mut tasks: Query<(Entity, &mut ChunkMeshingTask)>,
     world: Res<VoxelWorld>,
-    material: Res<ChunkMaterial>,
+    mut material: ResMut<ChunkMaterial>,
+    grass_handle: Option<Res<crate::environment::foliage::GrassMaterialHandle>>,
     culling_state: Option<Res<CaveCullingState>>,
     mut registry: ResMut<ChunkMeshRegistry>,
     mut lod_registry: ResMut<LodMeshRegistry>,
     mut meshes: ResMut<Assets<Mesh>>,
     streaming_settings: Option<Res<ChunkStreamingSettings>>,
 ) {
+    if material.grass.is_none()
+        && let Some(ref grass_h) = grass_handle
+    {
+        material.grass = Some(grass_h.material.clone());
+    }
+
     let upload_budget = streaming_settings
         .as_ref()
         .map(|s| s.mesh_upload_budget)
@@ -190,7 +197,9 @@ pub fn collect_meshing_tasks(
             continue;
         }
 
-        let has_mesh = completed.meshes.opaque.is_some() || completed.meshes.transparent.is_some();
+        let has_mesh = completed.meshes.opaque.is_some()
+            || completed.meshes.transparent.is_some()
+            || completed.meshes.grass.is_some();
 
         apply_chunk_mesh(
             &mut commands,

@@ -72,6 +72,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **16** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-16-performance-engineering-chunk-streaming--lod-enhancements-planned)** | **Planned** | Worker thread scaling, GPU frustum/occlusion culling, smooth LOD horizon transitions, runtime voxel memory compression |
 | **17** | **[Localization & Multi-Language Support](#phase-17-localization--multi-language-support-completed)** | **Completed** | `lang/` translation files (`en_us`, `pt_br`), comprehensive UI/block/item localization, natural Portuguese grammar, in-game language selector |
 | **18** | **[Controls & Keybinding System](#phase-18-controls--keybinding-system-completed)** | **Completed** | Configurable keybindings for all actions, mouse sensitivity & invert Y options, input conflict detection, Main Menu & Pause integration |
+| **19** | **[Dynamic Foliage & Procedural Grass System](#phase-19-dynamic-foliage--procedural-grass-system-completed)** | **Completed** | Procedural 3D grass blades on surface blocks, cubic Bezier wind deformation, Voronoi clumping, entity footprint trails, dynamic LOD |
 
 ---
 
@@ -357,3 +358,30 @@ Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dyna
 - [x] **Input Configuration Persistence**:
   - Save all custom key assignments, mouse settings, and control flags into `local_config.json`.
   - Automatic migration and fallback to default input bindings on format updates or corrupt configurations.
+
+---
+
+### Phase 19: Dynamic Foliage & Procedural Grass System (Completed)
+
+- [x] **Procedural Grass Blade Generation & Packing (Grassier Grass Integration)**:
+  - Generate dense 3D grass blades on surface grass blocks and slabs (up to 64 blades/block) with deterministic PRNG seeded by block coordinate hash.
+  - Apply slight 8% overhang beyond block edges to seamlessly blend block boundaries into a continuous natural carpet.
+  - Compact blade metadata into vertex attributes (`Color.a` packing side, height class, and 32 quantised angle bins; `Normal.xy` packing world noise coords; `Normal.z` packing height fraction).
+  - Multi-tier distance LOD: 4 quads/blade ($\le 32\text{m}$), 2 quads/blade ($32\dots 80\text{m}$), and 1 quad/blade ($> 80\text{m}$).
+- [x] **Cubic Bezier Wind Deformation & WESL Shader Pipeline**:
+  - Implement `shaders/grass_blades.wesl` reconstructing blade centerlines and bending spines along 3D Cubic Bezier splines.
+  - Multi-layered wind simulation driven by `WindState`: continuous travelling wind gusts, medium-wind bow curve, high-frequency tip flutter, and calm resting curves.
+  - Voronoi tuft clumping: sample packed `noise.png` for regional height swells, inward tuft curl, and coherent tuft lean/width.
+  - GPU decimation: snap quad heights on shortened blades to collapse unused geometry into zero-area triangles, cutting rasterizer overdraw.
+  - Camera-facing width alignment: subtly rotate edge-on blades towards the camera to preserve perceived fullness.
+- [x] **Interactive Entity Footprint Trails (`GrassTrailField`)**:
+  - Dynamic 48×48 block footprint texture centered on camera/player tracking entity positions and movement velocities.
+  - Physically bend grass blades away from walking player/mobs in the shader, with smooth exponential spring-back recovery after entities pass.
+- [x] **Vegetation Balanço & Dense Flower Patches**:
+  - Implement `shaders/grass_plant.wesl` providing gentle base-locked head lean and bob to existing flowers, crops, and tall plants.
+  - Sprout companion flowers next to adjacent flower blocks to create rich, dense flower patches.
+- [x] **Styles, Weather Integration, Partículas & Configurações**:
+  - Dual visual styles: *Tapered* (smooth organic gradient using `grass_tapered.png`) and *Segmented* (pixelated retro bands using `grass_bands.png`).
+  - Wind-borne loose blade particles (`wind_blade.png`) during howling winds ($\ge 20\text{ m/s}$) and storms.
+  - Weather integration: darken blades during rain and blend white snow tint during snowstorms or snow accumulation.
+  - In-game Settings menu integration with full Brazilian Portuguese (`pt_br.json`) and English (`en_us.json`) localization, persisted in `local_config.json`.

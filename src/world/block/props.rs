@@ -290,6 +290,29 @@ impl Voxel {
     }
 
     #[inline(always)]
+    pub const fn has_grass_turf(self) -> bool {
+        matches!(
+            self,
+            Self::CalicheGrass
+                | Self::LateriteGrass
+                | Self::LoamGrass
+                | Self::LoamBurrow
+                | Self::PeatGrass
+                | Self::PeatBurrow
+                | Self::PermafrostGrass
+                | Self::SiltGrass
+                | Self::SiltBurrow
+                | Self::AndesiteGrass
+                | Self::ArgilliteGrass
+                | Self::BasaltGrass
+                | Self::ChalkGrass
+                | Self::DolomiteGrass
+                | Self::GraniteGrass
+                | Self::LimestoneGrass
+        )
+    }
+
+    #[inline(always)]
     pub const fn is_cross_billboard_const(self) -> bool {
         matches!(
             self,

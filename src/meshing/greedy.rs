@@ -89,6 +89,7 @@ impl FaceKey {
 pub struct ChunkMeshes {
     pub opaque: Option<Mesh>,
     pub transparent: Option<Mesh>,
+    pub grass: Option<Mesh>,
     pub visibility_mask: u64,
 }
 
@@ -393,6 +394,7 @@ impl ChunkMesher {
             return ChunkMeshes {
                 opaque: None,
                 transparent: None,
+                grass: None,
                 visibility_mask: (1u64 << 36) - 1,
             };
         };
@@ -402,6 +404,7 @@ impl ChunkMesher {
             return ChunkMeshes {
                 opaque: None,
                 transparent: None,
+                grass: None,
                 visibility_mask: (1u64 << 36) - 1,
             };
         }
@@ -421,6 +424,7 @@ impl ChunkMesher {
                 return ChunkMeshes {
                     opaque: None,
                     transparent: None,
+                    grass: None,
                     visibility_mask: 0,
                 };
             }
@@ -653,11 +657,53 @@ impl ChunkMesher {
             );
         }
 
+        let mut grass_buffers = MeshBuffers::with_capacity(128);
+        if textures.grass_enabled && !chunk.is_subterranean() {
+            let blade_count = textures.grass_density.clamp(16, 64);
+            for z in 0..CHUNK_SIZE {
+                for x in 0..CHUNK_SIZE {
+                    for y in 0..CHUNK_SIZE {
+                        let voxel = chunk.get(x, y, z);
+                        if voxel.has_grass_turf() {
+                            let above = if y + 1 < CHUNK_SIZE {
+                                chunk.get(x, y + 1, z)
+                            } else {
+                                let above_chunk_coord = chunk_coordinate + IVec3::Y;
+                                world
+                                    .get_chunk(above_chunk_coord)
+                                    .map(|c| c.get(x, 0, z))
+                                    .unwrap_or(Voxel::Air)
+                            };
+
+                            if !above.is_solid_opaque() && !above.is_fluid() {
+                                let block_local = IVec3::new(x as i32, y as i32, z as i32);
+                                let world_pos = chunk_voxel_origin + block_local;
+                                let tint = voxel.tint_color_at(world_pos);
+                                let (shape, orientation) = chunk.get_shape(x, y, z);
+                                crate::environment::foliage::generator::emit_block_grass_blades(
+                                    &mut grass_buffers,
+                                    block_local,
+                                    chunk_voxel_origin,
+                                    blade_count,
+                                    4,
+                                    [tint[0], tint[1], tint[2]],
+                                    0.0,
+                                    shape,
+                                    orientation,
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         let visibility_mask = compute_chunk_visibility_mask(chunk);
 
         ChunkMeshes {
             opaque: opaque_buffers.into_mesh(),
             transparent: transparent_buffers.into_mesh(),
+            grass: grass_buffers.into_mesh(),
             visibility_mask,
         }
     }
