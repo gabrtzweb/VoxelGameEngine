@@ -429,9 +429,14 @@ fn handle_journal_overlay_visibility(
             |l| l.t("menu.journal.empty"),
         );
 
+        let dimming_alpha = game_settings
+            .as_ref()
+            .map_or(0.75, |s| s.background_dimming.alpha());
+
         commands
             .spawn((
                 MenuBarJournalOverlay,
+                crate::menu::MenuBackdrop,
                 Node {
                     position_type: PositionType::Absolute,
                     left: px(0.0),
@@ -445,7 +450,7 @@ fn handle_journal_overlay_visibility(
                     row_gap: px(12.0),
                     ..default()
                 },
-                BackgroundColor(Color::srgba(0.06, 0.07, 0.09, 0.85)),
+                BackgroundColor(Color::srgba(0.0, 0.0, 0.0, dimming_alpha)),
                 ZIndex(300),
             ))
             .with_children(|parent| {

@@ -70,7 +70,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **14** | **[Dynamic Weather System & Meteorological Phenomena](#phase-14-dynamic-weather-system--meteorological-phenomena-completed)** | **Completed** | Multi-state weather simulation (rain, snow, fog, storms), precipitation particles, surface wetness, dynamic snow accumulation |
 | **15** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-15-visual-aesthetics-shaders--atmospheric-fx-overhaul-planned)** | **Planned** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, biome color grading |
 | **16** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-16-performance-engineering-chunk-streaming--lod-enhancements-planned)** | **Planned** | Worker thread scaling, GPU frustum/occlusion culling, smooth LOD horizon transitions, runtime voxel memory compression |
-| **17** | **[Localization & Multi-Language Support](#phase-17-localization--multi-language-support-in-progress)** | **In Progress** | `lang/` translation files (`en_us`, `pt_br`), comprehensive UI/block/item localization, natural Portuguese grammar, in-game language selector |
+| **17** | **[Localization & Multi-Language Support](#phase-17-localization--multi-language-support-completed)** | **Completed** | `lang/` translation files (`en_us`, `pt_br`), comprehensive UI/block/item localization, natural Portuguese grammar, in-game language selector |
 | **18** | **[Controls & Keybinding System](#phase-18-controls--keybinding-system-planned)** | **Planned** | Configurable keybindings for all actions, mouse sensitivity & invert Y options, input conflict detection, Main Menu & Pause integration |
 
 ---
@@ -110,6 +110,9 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
   - Organized container assets and outlines into structured subdirectories (`interfaces/containers/`, `buttons/`, `outlines/`).
   - Consolidated Hotbar HUD with health bar integration, exact 12px numeric slot font parity, and centered selection tooltips.
   - Procedural 2D/3D icon rendering pipeline with directional front-face projection (bookshelves, hives, nests, bags), planar cross-mesh billboards (plants, beaver dams, corals), and animated texture strips.
+- [x] **Configurable GUI Scaling & Interface Polish**:
+  - Interactive GUI Scale selector (2×, 3×, 4×) in Settings, resizing container inventories, world map, journal, and system menus dynamically while preserving unscaled top menu bar navigation.
+  - Multi-tier Menu Depth-of-Field blur intensity (`Off`, `Low`, `Medium`, `High`, `Ultra`) and dynamic background dimming (`Off`, `Light`, `Medium`, `Dark`, `Heavy`) across all open UI views.
 
 ---
 
@@ -290,6 +293,8 @@ Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dyna
   - Procedural lightning bolt generation during `Thunderstorm` events: striking high-elevation terrain with instantaneous full-scene emissive flash and localized point light.
   - Physical distance-based audio delay: speed-of-sound calculated interval between visual flash and rumble impact.
   - Spatial weather audio pipeline: integration of multi-track ambient loops (rain intensity, ground vs. altitude snow murmur, whistling desert sandstorms using assets from mod references).
+- [x] **Phase 14.6: Clean Simulation Reset Integration**:
+  - Full synchronization with Pause Menu *Restart Game* action: resets active weather state to Clear Sky, flushes particle ring buffers, clears pending acoustic thunder queues, and despawns active lightning entities.
 
 ---
 
@@ -321,12 +326,12 @@ Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dyna
 
 ---
 
-### Phase 17: Localization & Multi-Language Support (In Progress)
+### Phase 17: Localization & Multi-Language Support (Completed)
 
 - [x] **Language File Architecture (`lang/`)**:
   - Create a dedicated `assets/lang/` directory holding one translation file per locale (`en_us.json` default / fallback, and `pt_br.json`).
   - Use flat, namespaced translation keys (e.g. `menu.tab.system`, `block.sand_common`, `hud.tooltip.empty`) so new locales can be added without code changes.
-- [ ] **Comprehensive Translation Key Lookup & String Migration**:
+- [x] **Comprehensive Translation Key Lookup & String Migration**:
   - Introduce a `Localization` resource that loads the active locale on startup and resolves keys at runtime, falling back to `en_us` for missing entries.
   - Migrate all UI strings (Settings options, Audio controls, Menu Bar tabs, Journal provisional view, Target HUD block names, Creative Inventory tabs/search) to translation keys.
   - Ensure all Portuguese translations adhere to natural phrasing, proper grammar, and standard gaming terminology (adjective-noun order, correct prepositions).

@@ -3,7 +3,7 @@ use bevy::{picking::hover::Hovered, ui::Pressed, ui_widgets::Button};
 
 use crate::{
     core::{AppFont, Localization, text_shadow_default},
-    environment::{DayPhase, EnvironmentState},
+    environment::EnvironmentState,
     gameplay::SelectedVoxel,
     generation::TerrainGenerator,
     meshing::{ChunkMaterial, ChunkMeshRegistry, sync_chunk_render},
@@ -70,9 +70,14 @@ fn spawn_pause_menu(
         tf
     };
 
+    let dimming_alpha = game_settings
+        .as_ref()
+        .map_or(0.75, |s| s.background_dimming.alpha());
+
     commands
         .spawn((
             PauseMenuRoot,
+            crate::menu::MenuBackdrop,
             Node {
                 position_type: PositionType::Absolute,
                 left: px(0.0),
@@ -84,7 +89,7 @@ fn spawn_pause_menu(
                 align_items: AlignItems::Center,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.45)),
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, dimming_alpha)),
             ZIndex(300),
         ))
         .with_children(|backdrop| {
@@ -193,6 +198,15 @@ type PauseRestartParams<'w, 's> = (
     Option<ResMut<'w, crate::map::cache::MapCache>>,
 );
 
+type PauseWeatherRestartParams<'w> = (
+    Option<ResMut<'w, crate::environment::weather::WeatherManager>>,
+    Option<ResMut<'w, crate::environment::weather::LightningState>>,
+    Option<ResMut<'w, crate::environment::weather::WindState>>,
+    Option<ResMut<'w, crate::environment::weather::WeatherParticlePool>>,
+    Option<ResMut<'w, crate::audio::weather_audio::PendingThunderQueue>>,
+    Option<ResMut<'w, crate::player::PlayerInventory>>,
+);
+
 fn handle_pause_menu_buttons(
     buttons_query: Query<(&Hovered, Has<Pressed>, &PauseMenuAction), With<Button>>,
     mouse: Res<ButtonInput<MouseButton>>,
@@ -212,6 +226,21 @@ fn handle_pause_menu_buttons(
         mut selected_voxel_query,
         mut map_cache_query,
     ): PauseRestartParams,
+    (
+        mut weather_query,
+        mut lightning_query,
+        mut wind_query,
+        mut particle_pool_query,
+        mut pending_thunder_query,
+        mut player_inv_query,
+    ): PauseWeatherRestartParams,
+    lightning_entities_query: Query<
+        Entity,
+        Or<(
+            With<crate::environment::weather::lightning::LightningBoltEntity>,
+            With<crate::environment::weather::lightning::LightningImpactLight>,
+        )>,
+    >,
     mut commands: Commands,
 ) {
     let left_clicked = mouse.just_pressed(MouseButton::Left);
@@ -232,16 +261,32 @@ fn handle_pause_menu_buttons(
                     info!("Statistics & Feats tracking coming soon in Phase 2!");
                 }
                 PauseMenuAction::Restart => {
-                    // 1. Reset Environment to Day 1 Noon
+                    // 1. Reset Environment to default Day 1 Noon
                     if let Some(ref mut env) = env_state {
-                        env.day_count = 1;
-                        env.time_of_day = 0.20;
-                        env.phase = DayPhase::Noon;
-                        env.is_time_paused = false;
-                        env.f6_hold_duration = 0.0;
+                        **env = EnvironmentState::default();
                     }
 
-                    // 2. Teleport player and camera to spawn
+                    // 2. Reset Weather, Lightning, Wind, and clear active particles / pending thunder
+                    if let Some(ref mut weather) = weather_query {
+                        **weather = crate::environment::weather::WeatherManager::default();
+                    }
+                    if let Some(ref mut lightning) = lightning_query {
+                        **lightning = crate::environment::weather::LightningState::default();
+                    }
+                    if let Some(ref mut wind) = wind_query {
+                        **wind = crate::environment::weather::WindState::default();
+                    }
+                    if let Some(ref mut particle_pool) = particle_pool_query {
+                        particle_pool.clear();
+                    }
+                    if let Some(ref mut pending_thunder) = pending_thunder_query {
+                        pending_thunder.0.clear();
+                    }
+                    for entity in &lightning_entities_query {
+                        commands.entity(entity).despawn();
+                    }
+
+                    // 3. Teleport player and camera to spawn
                     let spawn_pos = Vec3::new(-10.0, 10.38, 14.0);
                     for (mut transform, mut motion) in &mut player_query {
                         transform.translation = spawn_pos;
@@ -257,7 +302,7 @@ fn handle_pause_menu_buttons(
                         *camera = new_pc;
                     }
 
-                    // 3. Reverse world modifications
+                    // 4. Reverse world modifications
                     if let (
                         Some(ref mut world),
                         Some(ref mut modifications),
@@ -293,9 +338,12 @@ fn handle_pause_menu_buttons(
                         }
                     }
 
-                    // 4. Reset hotbar and selected voxel
+                    // 5. Reset hotbar, player inventory, and selected voxel
                     if let Some(ref mut hotbar) = hotbar_query {
                         **hotbar = Hotbar::default();
+                    }
+                    if let Some(ref mut player_inv) = player_inv_query {
+                        **player_inv = crate::player::PlayerInventory::default();
                     }
                     if let Some(ref mut selected) = selected_voxel_query {
                         selected.0 = Some(Voxel::LoamGrass);
@@ -305,7 +353,7 @@ fn handle_pause_menu_buttons(
                     }
 
                     info!(
-                        "Game restarted: player teleported to spawn, world modifications reversed, day reset to 1"
+                        "Game restarted: player teleported to spawn, world modifications reversed, day reset to 1, weather reset to Clear Sky"
                     );
                     next_state.set(MenuState::None);
                 }

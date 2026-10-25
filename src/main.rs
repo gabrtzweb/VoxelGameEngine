@@ -94,6 +94,8 @@ fn main() {
         vsync_enabled: local_config.vsync_enabled,
         dynamic_fps_enabled: local_config.dynamic_fps_enabled,
         gui_scale: local_config.gui_scale.clamp(2, 4),
+        menu_blur_intensity: local_config.menu_blur_intensity,
+        background_dimming: local_config.background_dimming,
     };
 
     let dynamic_fps_settings = DynamicFpsSettings {

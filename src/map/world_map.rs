@@ -143,9 +143,12 @@ fn spawn_world_map_ui(
     }
     map_state.last_drawn_center = Vec2::splat(999_999.0); // Force redraw
 
+    let dimming_alpha = game_settings.as_ref().map_or(0.75, |s| s.background_dimming.alpha());
+
     commands
         .spawn((
             WorldMapRoot,
+            crate::menu::MenuBackdrop,
             Node {
                 position_type: PositionType::Absolute,
                 left: px(0.0),
@@ -158,7 +161,7 @@ fn spawn_world_map_ui(
                 align_items: AlignItems::Center,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.04, 0.05, 0.07, 0.88)),
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, dimming_alpha)),
             ZIndex(250),
         ))
         .with_children(|root| {

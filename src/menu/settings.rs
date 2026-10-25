@@ -13,7 +13,7 @@ use crate::{
     world::{ChunkStreamingQueues, ChunkStreamingSettings, VoxelWorld},
 };
 
-use super::{GameSettings, MenuState, ScreenMode};
+use super::{BackgroundDimming, GameSettings, MenuBlurIntensity, MenuState, ScreenMode};
 
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SettingsTab {
@@ -89,11 +89,21 @@ enum SettingsAction {
     ToggleTimePause,
     DecGuiScale,
     IncGuiScale,
+    DecMenuBlur,
+    IncMenuBlur,
+    DecBackgroundDimming,
+    IncBackgroundDimming,
     Back,
 }
 
 #[derive(Component)]
 struct GuiScaleLabel;
+
+#[derive(Component)]
+struct MenuBlurLabel;
+
+#[derive(Component)]
+struct BackgroundDimmingLabel;
 
 #[derive(Component)]
 struct PresetLabel;
@@ -232,6 +242,26 @@ fn format_anti_aliasing(aa: AntiAliasingMode, loc: &Localization) -> String {
     }
 }
 
+fn format_blur(blur: MenuBlurIntensity, loc: &Localization) -> String {
+    match blur {
+        MenuBlurIntensity::Off => loc.t("blur.off").to_string(),
+        MenuBlurIntensity::Low => loc.t("blur.low").to_string(),
+        MenuBlurIntensity::Medium => loc.t("blur.medium").to_string(),
+        MenuBlurIntensity::High => loc.t("blur.high").to_string(),
+        MenuBlurIntensity::Ultra => loc.t("blur.ultra").to_string(),
+    }
+}
+
+fn format_dimming(dimming: BackgroundDimming, loc: &Localization) -> String {
+    match dimming {
+        BackgroundDimming::Off => loc.t("dimming.off").to_string(),
+        BackgroundDimming::Light => loc.t("dimming.light").to_string(),
+        BackgroundDimming::Medium => loc.t("dimming.medium").to_string(),
+        BackgroundDimming::Dark => loc.t("dimming.dark").to_string(),
+        BackgroundDimming::Heavy => loc.t("dimming.heavy").to_string(),
+    }
+}
+
 pub struct SettingsMenuPlugin;
 
 impl Plugin for SettingsMenuPlugin {
@@ -290,9 +320,12 @@ fn spawn_settings_menu(
         header_font.font = font.clone();
     }
 
+    let dimming_alpha = game_settings.background_dimming.alpha();
+
     commands
         .spawn((
             SettingsMenuRoot,
+            crate::menu::MenuBackdrop,
             Node {
                 position_type: PositionType::Absolute,
                 left: px(0.0),
@@ -304,7 +337,7 @@ fn spawn_settings_menu(
                 align_items: AlignItems::Center,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.65)),
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, dimming_alpha)),
             ZIndex(300),
         ))
         .with_children(|backdrop| {
@@ -774,6 +807,32 @@ fn spawn_settings_menu(
                                     font_handle.as_ref(),
                                     &btn_normal,
                                     &btn_hover,
+                                );
+
+                                // 11. Menu Blur Intensity Stepper
+                                spawn_stepper_row(
+                                    col_right,
+                                    loc.t("menu.settings.menu_blur"),
+                                    format_blur(game_settings.menu_blur_intensity, &loc),
+                                    SettingsAction::DecMenuBlur,
+                                    SettingsAction::IncMenuBlur,
+                                    MenuBlurLabel,
+                                    font_handle.as_ref(),
+                                    &small_normal,
+                                    &small_hover,
+                                );
+
+                                // 12. Background Dimming Stepper
+                                spawn_stepper_row(
+                                    col_right,
+                                    loc.t("menu.settings.background_dimming"),
+                                    format_dimming(game_settings.background_dimming, &loc),
+                                    SettingsAction::DecBackgroundDimming,
+                                    SettingsAction::IncBackgroundDimming,
+                                    BackgroundDimmingLabel,
+                                    font_handle.as_ref(),
+                                    &small_normal,
+                                    &small_hover,
                                 );
                             });
                     });
@@ -1439,6 +1498,22 @@ fn handle_settings_buttons(
                     game_settings.gui_scale = (game_settings.gui_scale + 1).min(4);
                     local_config.gui_scale = game_settings.gui_scale;
                 }
+                SettingsAction::DecMenuBlur => {
+                    game_settings.menu_blur_intensity = game_settings.menu_blur_intensity.prev();
+                    local_config.menu_blur_intensity = game_settings.menu_blur_intensity;
+                }
+                SettingsAction::IncMenuBlur => {
+                    game_settings.menu_blur_intensity = game_settings.menu_blur_intensity.next();
+                    local_config.menu_blur_intensity = game_settings.menu_blur_intensity;
+                }
+                SettingsAction::DecBackgroundDimming => {
+                    game_settings.background_dimming = game_settings.background_dimming.prev();
+                    local_config.background_dimming = game_settings.background_dimming;
+                }
+                SettingsAction::IncBackgroundDimming => {
+                    game_settings.background_dimming = game_settings.background_dimming.next();
+                    local_config.background_dimming = game_settings.background_dimming;
+                }
                 SettingsAction::DecRenderDistance => {
                     chunk_settings.render_distance = (chunk_settings.render_distance - 1).max(2);
                 }
@@ -1533,6 +1608,8 @@ fn handle_settings_buttons(
                 local_config.dynamic_fps_enabled = game_settings.dynamic_fps_enabled;
                 local_config.dynamic_fov_enabled = game_settings.dynamic_fov_enabled;
                 local_config.gui_scale = game_settings.gui_scale;
+                local_config.menu_blur_intensity = game_settings.menu_blur_intensity;
+                local_config.background_dimming = game_settings.background_dimming;
                 local_config.screen_mode = game_settings.screen_mode.label().to_lowercase();
                 let _ = local_config.save();
             }
@@ -1607,7 +1684,11 @@ fn update_settings_labels(
             Option<&FullGrassLabel>,
             Option<&TimePauseLabel>,
         ),
-        Option<&GuiScaleLabel>,
+        (
+            Option<&GuiScaleLabel>,
+            Option<&MenuBlurLabel>,
+            Option<&BackgroundDimmingLabel>,
+        ),
     )>,
 ) {
     let chunk_changed = chunk_settings.is_changed();
@@ -1647,7 +1728,7 @@ fn update_settings_labels(
             grass,
             time_pause,
         ),
-        gui_scale,
+        (gui_scale, menu_blur, background_dimming),
     ) in &mut labels_query
     {
         if config_changed {
@@ -1692,6 +1773,10 @@ fn update_settings_labels(
         if game_changed {
             if gui_scale.is_some() {
                 text.0 = format!("{}x", game_settings.gui_scale);
+            } else if menu_blur.is_some() {
+                text.0 = format_blur(game_settings.menu_blur_intensity, &loc);
+            } else if background_dimming.is_some() {
+                text.0 = format_dimming(game_settings.background_dimming, &loc);
             } else if screen_mode.is_some() {
                 text.0 = format_screen_mode(game_settings.screen_mode, &loc);
             } else if fov.is_some() {

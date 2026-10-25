@@ -127,6 +127,15 @@ impl Default for WeatherParticlePool {
 }
 
 impl WeatherParticlePool {
+    /// Clears and disables all active particles in the pool immediately.
+    pub fn clear(&mut self) {
+        for p in self.particles.iter_mut() {
+            p.alive = false;
+        }
+        self.cursor = 0;
+        self.active_count = 0;
+    }
+
     /// Spawns a new weather particle into the ring buffer, overwriting the oldest slot.
     #[inline]
     pub fn spawn(

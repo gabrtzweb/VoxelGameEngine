@@ -384,7 +384,9 @@ fn spawn_inventory_menu(
     loc: Option<Res<crate::core::Localization>>,
     game_settings: Option<Res<crate::menu::GameSettings>>,
 ) {
-    let gui_scale = game_settings.map_or(4, |s| s.gui_scale);
+    let (gui_scale, dimming_alpha) = game_settings
+        .as_ref()
+        .map_or((4, 0.75), |s| (s.gui_scale, s.background_dimming.alpha()));
     build_inventory_ui(
         &mut commands,
         &asset_server,
@@ -398,6 +400,7 @@ fn spawn_inventory_menu(
         app_font.as_ref().map(|f| f.source()),
         loc.as_deref(),
         gui_scale,
+        dimming_alpha,
     );
 }
 
@@ -436,6 +439,7 @@ fn build_inventory_ui(
     font_source: Option<FontSource>,
     loc: Option<&crate::core::Localization>,
     gui_scale: u32,
+    dimming_alpha: f32,
 ) {
     let scale_factor = (gui_scale as f32 / 4.0).clamp(0.5, 1.0);
     let make_font = |size: f32| -> TextFont {
@@ -469,6 +473,7 @@ fn build_inventory_ui(
         .spawn((
             InventoryMenuEntity,
             InventoryMenuRoot,
+            crate::menu::MenuBackdrop,
             Node {
                 position_type: PositionType::Absolute,
                 left: px(0.0),
@@ -480,7 +485,7 @@ fn build_inventory_ui(
                 align_items: AlignItems::Center,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.60)),
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, dimming_alpha)),
             ZIndex(300),
         ))
         .with_children(|backdrop| {
@@ -1390,7 +1395,9 @@ fn handle_inventory_tab_key(
     game_settings: Option<Res<crate::menu::GameSettings>>,
 ) {
     if keyboard.just_pressed(KeyCode::Tab) {
-        let gui_scale = game_settings.map_or(4, |s| s.gui_scale);
+        let (gui_scale, dimming_alpha) = game_settings
+            .as_ref()
+            .map_or((4, 0.75), |s| (s.gui_scale, s.background_dimming.alpha()));
         *tab_state = match *tab_state {
             InventoryTab::Creative => InventoryTab::Player,
             InventoryTab::Player => InventoryTab::Creative,
@@ -1414,6 +1421,7 @@ fn handle_inventory_tab_key(
             app_font.as_ref().map(|f| f.source()),
             loc.as_deref(),
             gui_scale,
+            dimming_alpha,
         );
     }
 }
@@ -1435,7 +1443,9 @@ fn handle_creative_toggle_interaction(
     game_settings: Option<Res<crate::menu::GameSettings>>,
     toggle_query: Query<(&Hovered, Has<Pressed>), With<InventoryToggleTabButton>>,
 ) {
-    let gui_scale = game_settings.map_or(4, |s| s.gui_scale);
+    let (gui_scale, dimming_alpha) = game_settings
+        .as_ref()
+        .map_or((4, 0.75), |s| (s.gui_scale, s.background_dimming.alpha()));
     for (hovered, is_pressed) in &toggle_query {
         if is_pressed || (mouse.just_pressed(MouseButton::Left) && hovered.get()) {
             *tab_state = match *tab_state {
@@ -1461,6 +1471,7 @@ fn handle_creative_toggle_interaction(
                 app_font.as_ref().map(|f| f.source()),
                 loc.as_deref(),
                 gui_scale,
+                dimming_alpha,
             );
             break;
         }
@@ -1488,7 +1499,9 @@ fn handle_category_tab_interaction(
         return;
     }
 
-    let gui_scale = game_settings.map_or(4, |s| s.gui_scale);
+    let (gui_scale, dimming_alpha) = game_settings
+        .as_ref()
+        .map_or((4, 0.75), |s| (s.gui_scale, s.background_dimming.alpha()));
     for (hovered, cat_btn) in &cat_query {
         if hovered.get() && active_cat.0 != cat_btn.category {
             active_cat.0 = cat_btn.category;
@@ -1509,6 +1522,7 @@ fn handle_category_tab_interaction(
                 app_font.as_ref().map(|f| f.source()),
                 loc.as_deref(),
                 gui_scale,
+                dimming_alpha,
             );
             break;
         }
@@ -1688,6 +1702,7 @@ fn handle_creative_search_input(
             ui.commands.entity(entity).despawn();
         }
         let gui_scale = ui.game_settings.as_ref().map_or(4, |s| s.gui_scale);
+        let dimming_alpha = ui.game_settings.as_ref().map_or(0.75, |s| s.background_dimming.alpha());
         build_inventory_ui(
             &mut ui.commands,
             &ui.asset_server,
@@ -1701,6 +1716,7 @@ fn handle_creative_search_input(
             ui.app_font.as_ref().map(|f| f.source()),
             ui.loc.as_deref(),
             gui_scale,
+            dimming_alpha,
         );
     }
 }

@@ -267,6 +267,108 @@ impl UpscalingFilter {
     }
 }
 
+/// Menu background blur depth of field intensity.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum MenuBlurIntensity {
+    Off,
+    Low,
+    Medium,
+    #[default]
+    High,
+    Ultra,
+}
+
+impl MenuBlurIntensity {
+    pub const ALL: [Self; 5] = [
+        Self::Off,
+        Self::Low,
+        Self::Medium,
+        Self::High,
+        Self::Ultra,
+    ];
+
+    pub fn next(self) -> Self {
+        match self {
+            Self::Off => Self::Low,
+            Self::Low => Self::Medium,
+            Self::Medium => Self::High,
+            Self::High => Self::Ultra,
+            Self::Ultra => Self::Off,
+        }
+    }
+
+    pub fn prev(self) -> Self {
+        match self {
+            Self::Off => Self::Ultra,
+            Self::Low => Self::Off,
+            Self::Medium => Self::Low,
+            Self::High => Self::Medium,
+            Self::Ultra => Self::High,
+        }
+    }
+
+    pub fn params(self) -> (f32, f32) {
+        match self {
+            Self::Off => (0.0, 32.0),
+            Self::Low => (16.0, 1.4),
+            Self::Medium => (32.0, 1.0),
+            Self::High => (48.0, 0.7),
+            Self::Ultra => (64.0, 0.5),
+        }
+    }
+}
+
+/// Menu background dimming (darkening opacity).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum BackgroundDimming {
+    Off,
+    Light,
+    Medium,
+    #[default]
+    Dark,
+    Heavy,
+}
+
+impl BackgroundDimming {
+    pub const ALL: [Self; 5] = [
+        Self::Off,
+        Self::Light,
+        Self::Medium,
+        Self::Dark,
+        Self::Heavy,
+    ];
+
+    pub fn next(self) -> Self {
+        match self {
+            Self::Off => Self::Light,
+            Self::Light => Self::Medium,
+            Self::Medium => Self::Dark,
+            Self::Dark => Self::Heavy,
+            Self::Heavy => Self::Off,
+        }
+    }
+
+    pub fn prev(self) -> Self {
+        match self {
+            Self::Off => Self::Heavy,
+            Self::Light => Self::Off,
+            Self::Medium => Self::Light,
+            Self::Dark => Self::Medium,
+            Self::Heavy => Self::Dark,
+        }
+    }
+
+    pub fn alpha(self) -> f32 {
+        match self {
+            Self::Off => 0.0,
+            Self::Light => 0.35,
+            Self::Medium => 0.55,
+            Self::Dark => 0.75,
+            Self::Heavy => 0.90,
+        }
+    }
+}
+
 #[derive(Resource, Debug, Clone, Serialize, Deserialize)]
 pub struct LocalConfig {
     /// Preferred graphics backend: "auto" (default, uses PRIMARY/Vulkan), "dx12", "vulkan", "gl"
@@ -397,6 +499,22 @@ pub struct LocalConfig {
     /// GUI Scale factor for game interfaces (2x, 3x, 4x).
     #[serde(default = "default_gui_scale")]
     pub gui_scale: u32,
+
+    /// Background blur intensity applied while in menus.
+    #[serde(default = "default_menu_blur_intensity")]
+    pub menu_blur_intensity: MenuBlurIntensity,
+
+    /// Background darkness/dimming opacity applied while in menus.
+    #[serde(default = "default_background_dimming")]
+    pub background_dimming: BackgroundDimming,
+}
+
+fn default_menu_blur_intensity() -> MenuBlurIntensity {
+    MenuBlurIntensity::High
+}
+
+fn default_background_dimming() -> BackgroundDimming {
+    BackgroundDimming::Dark
 }
 
 fn default_gui_scale() -> u32 {
@@ -567,6 +685,8 @@ impl Default for LocalConfig {
             ambient_volume: default_ambient_volume(),
             language: default_language(),
             gui_scale: default_gui_scale(),
+            menu_blur_intensity: default_menu_blur_intensity(),
+            background_dimming: default_background_dimming(),
         }
     }
 }

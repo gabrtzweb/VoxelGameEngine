@@ -76,6 +76,11 @@ impl ScreenMode {
     }
 }
 
+pub use crate::core::config::{BackgroundDimming, MenuBlurIntensity};
+
+#[derive(Component)]
+pub struct MenuBackdrop;
+
 #[derive(Resource, Debug, Clone)]
 pub struct GameSettings {
     pub fov_degrees: f32,
@@ -87,6 +92,8 @@ pub struct GameSettings {
     pub vsync_enabled: bool,
     pub dynamic_fps_enabled: bool,
     pub gui_scale: u32,
+    pub menu_blur_intensity: MenuBlurIntensity,
+    pub background_dimming: BackgroundDimming,
 }
 
 impl Default for GameSettings {
@@ -101,6 +108,8 @@ impl Default for GameSettings {
             vsync_enabled: false,
             dynamic_fps_enabled: true,
             gui_scale: 4,
+            menu_blur_intensity: MenuBlurIntensity::High,
+            background_dimming: BackgroundDimming::Dark,
         }
     }
 }
@@ -221,6 +230,7 @@ impl Plugin for MenuPlugin {
                     sync_camera_fov,
                     manage_menu_blur,
                     manage_menu_time_pause,
+                    update_menu_backdrop_color,
                 ),
             );
     }
@@ -372,7 +382,7 @@ fn handle_menu_key_inputs(
         }
     }
 
-    if keyboard.just_pressed(KeyCode::KeyE) {
+    if keyboard.just_pressed(KeyCode::KeyI) {
         if search_query.as_ref().is_some_and(|s| s.is_focused) {
             return;
         }
@@ -482,30 +492,46 @@ fn update_custom_cursor(
 fn manage_menu_blur(
     mut commands: Commands,
     menu_state: Res<State<MenuState>>,
+    game_settings: Option<Res<GameSettings>>,
     camera_query: Query<Entity, (With<Camera3d>, With<PlayerCamera>)>,
 ) {
-    if !menu_state.is_changed() {
+    let settings_changed = game_settings.as_ref().is_some_and(|s| s.is_changed());
+    if !menu_state.is_changed() && !settings_changed {
         return;
     }
 
-    let should_blur = matches!(
-        *menu_state.get(),
-        MenuState::Pause | MenuState::Settings | MenuState::Inventory
-    );
+    let is_menu_open = *menu_state.get() != MenuState::None;
+    let blur_intensity = game_settings
+        .as_ref()
+        .map_or(MenuBlurIntensity::High, |s| s.menu_blur_intensity);
 
     for camera_entity in &camera_query {
-        if should_blur {
+        if is_menu_open && blur_intensity != MenuBlurIntensity::Off {
+            let (coc, f_stops) = blur_intensity.params();
             commands.entity(camera_entity).insert(DepthOfField {
                 mode: DepthOfFieldMode::Gaussian,
                 focal_distance: 0.1,
-                aperture_f_stops: 2.0,
-                max_circle_of_confusion_diameter: 8.0,
+                aperture_f_stops: f_stops,
+                max_circle_of_confusion_diameter: coc,
                 max_depth: 2000.0,
                 ..default()
             });
         } else {
             commands.entity(camera_entity).remove::<DepthOfField>();
         }
+    }
+}
+
+fn update_menu_backdrop_color(
+    game_settings: Res<GameSettings>,
+    mut backdrop_query: Query<&mut BackgroundColor, With<MenuBackdrop>>,
+) {
+    if !game_settings.is_changed() {
+        return;
+    }
+    let alpha = game_settings.background_dimming.alpha();
+    for mut bg in &mut backdrop_query {
+        bg.0 = Color::srgba(0.0, 0.0, 0.0, alpha);
     }
 }
 
