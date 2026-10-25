@@ -401,11 +401,14 @@ fn handle_journal_overlay_visibility(
     overlay_query: Query<Entity, With<MenuBarJournalOverlay>>,
     app_font: Option<Res<AppFont>>,
     loc: Option<Res<crate::core::Localization>>,
+    game_settings: Option<Res<crate::menu::GameSettings>>,
 ) {
     let is_journal = *menu_state.get() == MenuState::Journal;
     let existing = overlay_query.iter().next();
 
     if is_journal && existing.is_none() {
+        let gui_scale = game_settings.as_ref().map_or(4, |s| s.gui_scale).clamp(2, 4);
+        let scale_factor = (gui_scale as f32 / 4.0).clamp(0.5, 1.0);
         let font_handle = app_font.as_ref().map(|f| f.source());
         let mut title_font = TextFont {
             font_size: FontSize::Px(24.0),
@@ -446,18 +449,35 @@ fn handle_journal_overlay_visibility(
                 ZIndex(300),
             ))
             .with_children(|parent| {
-                parent.spawn((
-                    Text::new(title_text),
-                    title_font,
-                    TextColor(Color::srgb(0.95, 0.92, 0.80)),
-                    text_shadow_default(),
-                ));
-                parent.spawn((
-                    Text::new(empty_text),
-                    subtitle_font,
-                    TextColor(Color::srgb(0.65, 0.68, 0.72)),
-                    text_shadow_default(),
-                ));
+                parent
+                    .spawn((
+                        UiTransform {
+                            scale: Vec2::splat(scale_factor),
+                            ..UiTransform::IDENTITY
+                        },
+                        Node {
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Column,
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+                            row_gap: px(12.0),
+                            ..default()
+                        },
+                    ))
+                    .with_children(|card| {
+                        card.spawn((
+                            Text::new(title_text),
+                            title_font,
+                            TextColor(Color::srgb(0.95, 0.92, 0.80)),
+                            text_shadow_default(),
+                        ));
+                        card.spawn((
+                            Text::new(empty_text),
+                            subtitle_font,
+                            TextColor(Color::srgb(0.65, 0.68, 0.72)),
+                            text_shadow_default(),
+                        ));
+                    });
             });
     } else if !is_journal && let Some(entity) = existing {
         commands.entity(entity).despawn();

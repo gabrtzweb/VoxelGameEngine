@@ -26,6 +26,9 @@ pub enum SettingsTab {
 struct SettingsMenuRoot;
 
 #[derive(Component)]
+pub struct SettingsMenuCard;
+
+#[derive(Component)]
 struct VideoSettingsSection;
 
 #[derive(Component)]
@@ -84,8 +87,13 @@ enum SettingsAction {
     ToggleVsync,
     ToggleDynamicFps,
     ToggleTimePause,
+    DecGuiScale,
+    IncGuiScale,
     Back,
 }
+
+#[derive(Component)]
+struct GuiScaleLabel;
 
 #[derive(Component)]
 struct PresetLabel;
@@ -240,6 +248,7 @@ impl Plugin for SettingsMenuPlugin {
                     update_audio_settings_labels,
                     update_language_label,
                     update_settings_tab_view,
+                    update_settings_card_scale,
                 )
                     .run_if(in_state(MenuState::Settings)),
             );
@@ -299,14 +308,22 @@ fn spawn_settings_menu(
             ZIndex(300),
         ))
         .with_children(|backdrop| {
+            let scale_factor = (game_settings.gui_scale as f32 / 4.0).clamp(0.5, 1.0);
             backdrop
-                .spawn(Node {
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
-                    row_gap: px(16.0),
-                    ..default()
-                })
+                .spawn((
+                    SettingsMenuCard,
+                    UiTransform {
+                        scale: Vec2::splat(scale_factor),
+                        ..UiTransform::IDENTITY
+                    },
+                    Node {
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
+                        row_gap: px(16.0),
+                        ..default()
+                    },
+                ))
                 .with_children(|card| {
                     // Header Title
                     card.spawn((
@@ -383,6 +400,19 @@ fn spawn_settings_menu(
                                     SettingsAction::DecScreenMode,
                                     SettingsAction::IncScreenMode,
                                     ScreenModeLabel,
+                                    font_handle.as_ref(),
+                                    &small_normal,
+                                    &small_hover,
+                                );
+
+                                // 0.5. GUI Scale Stepper
+                                spawn_stepper_row(
+                                    col_left,
+                                    loc.t("menu.settings.gui_scale"),
+                                    format!("{}x", game_settings.gui_scale),
+                                    SettingsAction::DecGuiScale,
+                                    SettingsAction::IncGuiScale,
+                                    GuiScaleLabel,
                                     font_handle.as_ref(),
                                     &small_normal,
                                     &small_hover,
@@ -1401,6 +1431,14 @@ fn handle_settings_buttons(
                         window.mode = game_settings.screen_mode.to_window_mode();
                     }
                 }
+                SettingsAction::DecGuiScale => {
+                    game_settings.gui_scale = (game_settings.gui_scale.saturating_sub(1)).max(2);
+                    local_config.gui_scale = game_settings.gui_scale;
+                }
+                SettingsAction::IncGuiScale => {
+                    game_settings.gui_scale = (game_settings.gui_scale + 1).min(4);
+                    local_config.gui_scale = game_settings.gui_scale;
+                }
                 SettingsAction::DecRenderDistance => {
                     chunk_settings.render_distance = (chunk_settings.render_distance - 1).max(2);
                 }
@@ -1494,6 +1532,7 @@ fn handle_settings_buttons(
                 local_config.vsync_enabled = game_settings.vsync_enabled;
                 local_config.dynamic_fps_enabled = game_settings.dynamic_fps_enabled;
                 local_config.dynamic_fov_enabled = game_settings.dynamic_fov_enabled;
+                local_config.gui_scale = game_settings.gui_scale;
                 local_config.screen_mode = game_settings.screen_mode.label().to_lowercase();
                 let _ = local_config.save();
             }
@@ -1568,6 +1607,7 @@ fn update_settings_labels(
             Option<&FullGrassLabel>,
             Option<&TimePauseLabel>,
         ),
+        Option<&GuiScaleLabel>,
     )>,
 ) {
     let chunk_changed = chunk_settings.is_changed();
@@ -1607,6 +1647,7 @@ fn update_settings_labels(
             grass,
             time_pause,
         ),
+        gui_scale,
     ) in &mut labels_query
     {
         if config_changed {
@@ -1649,7 +1690,9 @@ fn update_settings_labels(
             }
         }
         if game_changed {
-            if screen_mode.is_some() {
+            if gui_scale.is_some() {
+                text.0 = format!("{}x", game_settings.gui_scale);
+            } else if screen_mode.is_some() {
                 text.0 = format_screen_mode(game_settings.screen_mode, &loc);
             } else if fov.is_some() {
                 text.0 = format!("{}°", game_settings.fov_degrees as i32);
@@ -1837,3 +1880,17 @@ fn update_settings_tab_view(
         }
     }
 }
+
+fn update_settings_card_scale(
+    game_settings: Res<GameSettings>,
+    mut card_query: Query<&mut UiTransform, With<SettingsMenuCard>>,
+) {
+    if !game_settings.is_changed() {
+        return;
+    }
+    let factor = (game_settings.gui_scale as f32 / 4.0).clamp(0.5, 1.0);
+    for mut card_tf in &mut card_query {
+        card_tf.scale = Vec2::splat(factor);
+    }
+}
+

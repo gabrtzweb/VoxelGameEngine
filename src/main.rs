@@ -11,7 +11,7 @@ use voxel_game_engine::{
     audio::EngineAudioPlugin,
     core::{
         AdaptiveUiPlugin, DevStatsPlugin, DynamicFpsPlugin, DynamicFpsSettings, FontPlugin,
-        LocalConfig, LocalizationPlugin, RenderScalePlugin, WindowAspectPlugin,
+        LocalConfig, LocalizationPlugin, RenderScalePlugin, WindowAspectPlugin, WindowClipPlugin,
     },
     environment::EnvironmentPlugin,
     gameplay::GameplayPlugin,
@@ -93,6 +93,7 @@ fn main() {
         screen_mode,
         vsync_enabled: local_config.vsync_enabled,
         dynamic_fps_enabled: local_config.dynamic_fps_enabled,
+        gui_scale: local_config.gui_scale.clamp(2, 4),
     };
 
     let dynamic_fps_settings = DynamicFpsSettings {
@@ -143,6 +144,7 @@ fn main() {
         .add_plugins(LocalizationPlugin)
         .add_plugins(AdaptiveUiPlugin)
         .add_plugins(WindowAspectPlugin)
+        .add_plugins(WindowClipPlugin)
         .add_plugins(RenderScalePlugin)
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(EguiPlugin::default())

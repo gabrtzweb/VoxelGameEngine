@@ -91,6 +91,9 @@ pub struct HotbarTooltipText;
 #[derive(Component)]
 pub struct HotbarRoot;
 
+#[derive(Component)]
+pub struct HotbarTray;
+
 pub struct HotbarPlugin;
 
 impl Plugin for HotbarPlugin {
@@ -106,6 +109,7 @@ impl Plugin for HotbarPlugin {
                 (
                     handle_hotbar_input,
                     sync_hotbar_ui,
+                    sync_hotbar_scale,
                     update_hotbar_tooltip,
                     manage_hotbar_visibility,
                 )
@@ -153,6 +157,8 @@ fn setup_hotbar_ui(
             // NO mouse hover / NO mouse clicks in 3D gameplay
             parent
                 .spawn((
+                    HotbarTray,
+                    UiTransform::IDENTITY,
                     ImageNode {
                         image: hotbar_texture,
                         ..default()
@@ -605,5 +611,26 @@ fn manage_hotbar_visibility(
         if node.display != target_display {
             node.display = target_display;
         }
+    }
+}
+
+fn sync_hotbar_scale(
+    game_settings: Option<Res<crate::menu::GameSettings>>,
+    mut query: Query<&mut UiTransform, With<HotbarTray>>,
+) {
+    let Some(settings) = game_settings else {
+        return;
+    };
+    if !settings.is_changed() {
+        return;
+    }
+    let factor = (settings.gui_scale as f32 / 4.0).clamp(0.5, 1.0);
+    let y_offset = 540.0 * (1.0 - factor);
+    for mut transform in &mut query {
+        transform.scale = Vec2::splat(factor);
+        transform.translation = Val2 {
+            x: Val::Px(0.0),
+            y: Val::Px(y_offset),
+        };
     }
 }

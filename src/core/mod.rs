@@ -8,6 +8,7 @@ pub mod noise;
 pub mod render_scale;
 pub mod ui_scale;
 pub mod window_aspect;
+pub mod window_clip;
 
 pub use config::{
     AntiAliasingMode, CloudQuality, LocalConfig, PerformancePreset, ShadowQuality, TargetFpsLimit,
@@ -20,3 +21,4 @@ pub use localization::{Locale, Localization, LocalizationPlugin};
 pub use render_scale::{RenderScalePlugin, RenderScaleState, RenderScaleUiCamera};
 pub use ui_scale::AdaptiveUiPlugin;
 pub use window_aspect::{WindowAspectPlugin, WindowAspectState};
+pub use window_clip::WindowClipPlugin;

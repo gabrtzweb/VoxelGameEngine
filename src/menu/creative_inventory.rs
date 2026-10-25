@@ -382,7 +382,9 @@ fn spawn_inventory_menu(
     search_query: Res<CreativeSearchQuery>,
     app_font: Option<Res<AppFont>>,
     loc: Option<Res<crate::core::Localization>>,
+    game_settings: Option<Res<crate::menu::GameSettings>>,
 ) {
+    let gui_scale = game_settings.map_or(4, |s| s.gui_scale);
     build_inventory_ui(
         &mut commands,
         &asset_server,
@@ -395,6 +397,7 @@ fn spawn_inventory_menu(
         &search_query,
         app_font.as_ref().map(|f| f.source()),
         loc.as_deref(),
+        gui_scale,
     );
 }
 
@@ -432,7 +435,9 @@ fn build_inventory_ui(
     search_query: &CreativeSearchQuery,
     font_source: Option<FontSource>,
     loc: Option<&crate::core::Localization>,
+    gui_scale: u32,
 ) {
+    let scale_factor = (gui_scale as f32 / 4.0).clamp(0.5, 1.0);
     let make_font = |size: f32| -> TextFont {
         let mut tf = TextFont {
             font_size: FontSize::Px(size),
@@ -479,11 +484,15 @@ fn build_inventory_ui(
             ZIndex(300),
         ))
         .with_children(|backdrop| {
-            // Main Central Panel (480 x 270 px scaled to 1920 x 1080 px)
+            // Main Central Panel (480 x 270 px scaled to 1920 x 1080 px, modulated by gui_scale)
             backdrop
                 .spawn((
                     InventoryMenuEntity,
                     InventoryCard,
+                    UiTransform {
+                        scale: Vec2::splat(scale_factor),
+                        ..UiTransform::IDENTITY
+                    },
                     ImageNode {
                         image: if current_tab == InventoryTab::Creative {
                             open_tex.clone()
@@ -1378,8 +1387,10 @@ fn handle_inventory_tab_key(
     mut search_query: ResMut<CreativeSearchQuery>,
     app_font: Option<Res<AppFont>>,
     loc: Option<Res<crate::core::Localization>>,
+    game_settings: Option<Res<crate::menu::GameSettings>>,
 ) {
     if keyboard.just_pressed(KeyCode::Tab) {
+        let gui_scale = game_settings.map_or(4, |s| s.gui_scale);
         *tab_state = match *tab_state {
             InventoryTab::Creative => InventoryTab::Player,
             InventoryTab::Player => InventoryTab::Creative,
@@ -1402,6 +1413,7 @@ fn handle_inventory_tab_key(
             &search_query,
             app_font.as_ref().map(|f| f.source()),
             loc.as_deref(),
+            gui_scale,
         );
     }
 }
@@ -1420,8 +1432,10 @@ fn handle_creative_toggle_interaction(
     mut search_query: ResMut<CreativeSearchQuery>,
     app_font: Option<Res<AppFont>>,
     loc: Option<Res<crate::core::Localization>>,
+    game_settings: Option<Res<crate::menu::GameSettings>>,
     toggle_query: Query<(&Hovered, Has<Pressed>), With<InventoryToggleTabButton>>,
 ) {
+    let gui_scale = game_settings.map_or(4, |s| s.gui_scale);
     for (hovered, is_pressed) in &toggle_query {
         if is_pressed || (mouse.just_pressed(MouseButton::Left) && hovered.get()) {
             *tab_state = match *tab_state {
@@ -1446,6 +1460,7 @@ fn handle_creative_toggle_interaction(
                 &search_query,
                 app_font.as_ref().map(|f| f.source()),
                 loc.as_deref(),
+                gui_scale,
             );
             break;
         }
@@ -1466,12 +1481,14 @@ fn handle_category_tab_interaction(
     search_query: Res<CreativeSearchQuery>,
     app_font: Option<Res<AppFont>>,
     loc: Option<Res<crate::core::Localization>>,
+    game_settings: Option<Res<crate::menu::GameSettings>>,
     cat_query: Query<(&Hovered, &CategoryTabButton)>,
 ) {
     if !mouse.just_pressed(MouseButton::Left) {
         return;
     }
 
+    let gui_scale = game_settings.map_or(4, |s| s.gui_scale);
     for (hovered, cat_btn) in &cat_query {
         if hovered.get() && active_cat.0 != cat_btn.category {
             active_cat.0 = cat_btn.category;
@@ -1491,6 +1508,7 @@ fn handle_category_tab_interaction(
                 &search_query,
                 app_font.as_ref().map(|f| f.source()),
                 loc.as_deref(),
+                gui_scale,
             );
             break;
         }
@@ -1554,6 +1572,7 @@ struct RebuildUiParams<'w, 's> {
     icons: Res<'w, BlockIcons>,
     app_font: Option<Res<'w, AppFont>>,
     loc: Option<Res<'w, crate::core::Localization>>,
+    game_settings: Option<Res<'w, crate::menu::GameSettings>>,
 }
 
 fn handle_creative_search_input(
@@ -1668,6 +1687,7 @@ fn handle_creative_search_input(
         for entity in &ui.query {
             ui.commands.entity(entity).despawn();
         }
+        let gui_scale = ui.game_settings.as_ref().map_or(4, |s| s.gui_scale);
         build_inventory_ui(
             &mut ui.commands,
             &ui.asset_server,
@@ -1680,6 +1700,7 @@ fn handle_creative_search_input(
             &search_query,
             ui.app_font.as_ref().map(|f| f.source()),
             ui.loc.as_deref(),
+            gui_scale,
         );
     }
 }
@@ -1731,9 +1752,11 @@ fn handle_inventory_scroll(
 
     let (top_left, card_w, card_h) = if let Some((card_tf, card_node)) = card_query.iter().next() {
         let size = card_node.size();
-        if size.x > 10.0 && size.y > 10.0 {
+        let card_scale = card_tf.to_scale_rotation_translation().0.x;
+        let actual_size = size * card_scale;
+        if actual_size.x > 10.0 && actual_size.y > 10.0 {
             let center = card_tf.translation().truncate();
-            (center - size * 0.5, size.x, size.y)
+            (center - actual_size * 0.5, actual_size.x, actual_size.y)
         } else if let Some(w) = window_query.iter().next() {
             let w_size = Vec2::new(WINDOW_WIDTH * scale, WINDOW_HEIGHT * scale);
             (

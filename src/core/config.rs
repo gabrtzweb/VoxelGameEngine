@@ -393,6 +393,14 @@ pub struct LocalConfig {
     /// Selected UI and gameplay language locale (e.g. "en_us", "pt_br").
     #[serde(default = "default_language")]
     pub language: String,
+
+    /// GUI Scale factor for game interfaces (2x, 3x, 4x).
+    #[serde(default = "default_gui_scale")]
+    pub gui_scale: u32,
+}
+
+fn default_gui_scale() -> u32 {
+    4
 }
 
 fn default_backend() -> String {
@@ -558,6 +566,7 @@ impl Default for LocalConfig {
             music_volume: default_music_volume(),
             ambient_volume: default_ambient_volume(),
             language: default_language(),
+            gui_scale: default_gui_scale(),
         }
     }
 }
@@ -567,8 +576,9 @@ impl LocalConfig {
     pub fn load_or_default() -> Self {
         if Path::new(CONFIG_PATH).exists()
             && let Ok(content) = fs::read_to_string(CONFIG_PATH)
-            && let Ok(config) = serde_json::from_str::<LocalConfig>(&content)
+            && let Ok(mut config) = serde_json::from_str::<LocalConfig>(&content)
         {
+            config.gui_scale = config.gui_scale.clamp(2, 4);
             return config;
         }
         let default_config = Self::default();

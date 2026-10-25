@@ -35,6 +35,9 @@ pub const WORLD_MARKER_SIZE: f32 = 28.0;
 pub struct WorldMapRoot;
 
 #[derive(Component)]
+pub struct WorldMapFrame;
+
+#[derive(Component)]
 pub struct WorldMapViewport;
 
 #[derive(Component)]
@@ -73,6 +76,7 @@ impl Plugin for WorldMapPlugin {
                     handle_world_map_input,
                     sync_world_map_terrain,
                     update_world_map_ui,
+                    update_world_map_frame_scale,
                 )
                     .run_if(in_state(MenuState::WorldMap)),
             );
@@ -126,7 +130,10 @@ fn spawn_world_map_ui(
     player_query: Query<&Transform, With<Player>>,
     app_font: Option<Res<crate::core::AppFont>>,
     loc: Option<Res<crate::core::Localization>>,
+    game_settings: Option<Res<crate::menu::GameSettings>>,
 ) {
+    let gui_scale = game_settings.as_ref().map_or(4, |s| s.gui_scale).clamp(2, 4);
+    let scale_factor = (gui_scale as f32 / 4.0).clamp(0.5, 1.0);
     let font_handle = app_font.as_ref().map(|f| f.source()).unwrap_or_default();
 
     // When opening the world map, center immediately on the player's position
@@ -155,15 +162,22 @@ fn spawn_world_map_ui(
             ZIndex(250),
         ))
         .with_children(|root| {
-            // Fullscreen 16:9 World Map Frame (480x270_map.png @ 4x)
-            root.spawn(Node {
-                width: px(WORLD_MAP_FRAME_WIDTH),
-                height: px(WORLD_MAP_FRAME_HEIGHT),
-                min_width: px(WORLD_MAP_FRAME_WIDTH),
-                min_height: px(WORLD_MAP_FRAME_HEIGHT),
-                flex_shrink: 0.0,
-                ..default()
-            })
+            // Fullscreen 16:9 World Map Frame (480x270_map.png @ 4x, modulated by gui_scale)
+            root.spawn((
+                WorldMapFrame,
+                UiTransform {
+                    scale: Vec2::splat(scale_factor),
+                    ..UiTransform::IDENTITY
+                },
+                Node {
+                    width: px(WORLD_MAP_FRAME_WIDTH),
+                    height: px(WORLD_MAP_FRAME_HEIGHT),
+                    min_width: px(WORLD_MAP_FRAME_WIDTH),
+                    min_height: px(WORLD_MAP_FRAME_HEIGHT),
+                    flex_shrink: 0.0,
+                    ..default()
+                },
+            ))
             .with_children(|frame| {
                 // Background map plate image filling the 1920x1080 frame
                 frame.spawn((
@@ -325,8 +339,8 @@ fn handle_world_map_input(
     window: Option<Single<&Window, With<PrimaryWindow>>>,
     player_query: Query<&Transform, With<Player>>,
     mut map_state: ResMut<WorldMapState>,
-    mut cursor_mode: ResMut<CursorMode>,
-    viewport_query: Query<&ComputedNode, With<WorldMapViewport>>,
+    mut    cursor_mode: ResMut<CursorMode>,
+    viewport_query: Query<(&GlobalTransform, &ComputedNode), With<WorldMapViewport>>,
 ) {
     let Some(window) = window else {
         return;
@@ -372,16 +386,22 @@ fn handle_world_map_input(
     // 4. Mouse Left Click Drag Pan
     if mouse_button.pressed(MouseButton::Left) {
         if let (Some(curr), Some(prev)) = (cursor_pos, map_state.last_cursor_screen_pos) {
-            // Only drag if the cursor is within the map viewport area (below the top menu bar)
-            if curr.y >= WORLD_MAP_VIEWPORT_TOP - 20.0 {
+            let (in_vp, vp_scale) = if let Ok((vp_transform, computed)) = viewport_query.single() {
+                let actual_scale = vp_transform.to_scale_rotation_translation().0.x;
+                let actual_size = computed.size() * actual_scale;
+                let vp_pos = vp_transform.translation().truncate() - actual_size * 0.5;
+                let in_x = curr.x - vp_pos.x;
+                let in_y = curr.y - vp_pos.y;
+                let is_inside = in_x >= 0.0 && in_x <= actual_size.x && in_y >= 0.0 && in_y <= actual_size.y;
+                let s = actual_size.x / (WORLD_MAP_WIDTH as f32);
+                let safe_s = if s.is_finite() && s > 0.01 { s } else { 1.0 };
+                (is_inside, safe_s)
+            } else {
+                (curr.y >= WORLD_MAP_VIEWPORT_TOP - 20.0, 1.0)
+            };
+
+            if in_vp || map_state.is_dragging {
                 let screen_delta = curr - prev;
-                // Get viewport computed size to scale drag accurately
-                let vp_scale = if let Ok(computed) = viewport_query.single() {
-                    let s = computed.size().x / (WORLD_MAP_WIDTH as f32);
-                    if s.is_finite() && s > 0.01 { s } else { 1.0 }
-                } else {
-                    1.0
-                };
                 let current_zoom = if map_state.zoom.is_finite() && map_state.zoom > 0.05 {
                     map_state.zoom
                 } else {
@@ -394,14 +414,14 @@ fn handle_world_map_input(
                         map_state.center -= world_delta;
                     }
                 }
+                map_state.is_dragging = true;
+                *cursor_mode = CursorMode::Grabbing;
             }
         }
         if !map_state.center.x.is_finite() || !map_state.center.y.is_finite() {
             map_state.center = Vec2::ZERO;
         }
-        map_state.is_dragging = true;
         map_state.last_cursor_screen_pos = cursor_pos;
-        *cursor_mode = CursorMode::Grabbing;
     } else {
         map_state.is_dragging = false;
         map_state.last_cursor_screen_pos = cursor_pos;
@@ -605,7 +625,8 @@ fn update_world_map_ui(
 
     // 3. Update Cursor coordinates under mouse pointer
     if let (Some(window), Ok((vp_node, vp_transform))) = (window, viewport_query.single()) {
-        let vp_size = vp_node.size();
+        let actual_scale = vp_transform.to_scale_rotation_translation().0.truncate();
+        let vp_size = vp_node.size() * actual_scale;
         if vp_size.x > 0.0 && vp_size.y > 0.0 {
             let vp_pos = vp_transform.translation().truncate() - vp_size / 2.0;
             if let Some(cursor) = window.cursor_position() {
@@ -664,3 +685,20 @@ fn update_world_map_ui(
         }
     }
 }
+
+fn update_world_map_frame_scale(
+    game_settings: Option<Res<crate::menu::GameSettings>>,
+    mut frame_query: Query<&mut UiTransform, With<WorldMapFrame>>,
+) {
+    let Some(settings) = game_settings else {
+        return;
+    };
+    if !settings.is_changed() {
+        return;
+    }
+    let factor = (settings.gui_scale as f32 / 4.0).clamp(0.5, 1.0);
+    for mut tf in &mut frame_query {
+        tf.scale = Vec2::splat(factor);
+    }
+}
+

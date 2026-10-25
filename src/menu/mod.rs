@@ -86,6 +86,7 @@ pub struct GameSettings {
     pub screen_mode: ScreenMode,
     pub vsync_enabled: bool,
     pub dynamic_fps_enabled: bool,
+    pub gui_scale: u32,
 }
 
 impl Default for GameSettings {
@@ -99,6 +100,7 @@ impl Default for GameSettings {
             screen_mode: ScreenMode::Windowed,
             vsync_enabled: false,
             dynamic_fps_enabled: true,
+            gui_scale: 4,
         }
     }
 }
@@ -407,9 +409,9 @@ fn manage_cursor_grab_mode(
     let mut cursor_options = cursor_options.into_inner();
 
     if *menu_state.get() != MenuState::None {
-        // Unlock mouse and hide OS cursor so custom cursor draws cleanly
+        // Confine mouse to window and hide OS cursor so custom cursor draws cleanly without escaping
         cursor_options.visible = false;
-        cursor_options.grab_mode = CursorGrabMode::None;
+        cursor_options.grab_mode = CursorGrabMode::Confined;
     } else if inspector.active {
         cursor_options.visible = true;
         cursor_options.grab_mode = CursorGrabMode::None;

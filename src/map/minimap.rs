@@ -488,11 +488,14 @@ fn update_minimap_ui(
     let vy = (p.y / VOXEL_SIZE).floor() as i32;
     let vz = (p.z / VOXEL_SIZE).floor() as i32;
 
+    let coords_str = if let Some(ref l) = loc {
+        l.t_fmt("hud.coordinates", &[&vx.to_string(), &vy.to_string(), &vz.to_string()])
+    } else {
+        format!("Coordinates: XYZ: {}, {}, {}", vx, vy, vz)
+    };
     for mut text in &mut coords_query {
-        if let Some(ref l) = loc {
-            **text = l.t_fmt("hud.coordinates", &[&vx.to_string(), &vy.to_string(), &vz.to_string()]);
-        } else {
-            **text = format!("Coordinates: XYZ: {}, {}, {}", vx, vy, vz);
+        if **text != coords_str {
+            **text = coords_str.clone();
         }
     }
 
@@ -503,12 +506,15 @@ fn update_minimap_ui(
         ("Temperate Plains", "biome.temperate_plains")
     };
 
+    let biome_str = if let Some(ref l) = loc {
+        let biome_display = l.t(biome_key);
+        l.t_fmt("hud.biome", &[biome_display])
+    } else {
+        format!("Biome: {}", biome_name)
+    };
     for mut text in &mut biome_query {
-        if let Some(ref l) = loc {
-            let biome_display = l.t(biome_key);
-            **text = l.t_fmt("hud.biome", &[biome_display]);
-        } else {
-            **text = format!("Biome: {}", biome_name);
+        if **text != biome_str {
+            **text = biome_str.clone();
         }
     }
 
@@ -527,12 +533,15 @@ fn update_minimap_ui(
         ("Clear Sky", "weather.clear_sky")
     };
 
+    let weather_str = if let Some(ref l) = loc {
+        let weather_display = l.t(weather_key);
+        l.t_fmt("hud.weather", &[weather_display])
+    } else {
+        format!("Weather: {}", weather_name)
+    };
     for mut text in &mut weather_query {
-        if let Some(ref l) = loc {
-            let weather_display = l.t(weather_key);
-            **text = l.t_fmt("hud.weather", &[weather_display]);
-        } else {
-            **text = format!("Weather: {}", weather_name);
+        if **text != weather_str {
+            **text = weather_str.clone();
         }
     }
 
@@ -556,12 +565,15 @@ fn update_minimap_ui(
         (1, "06:00".to_string(), "season.spring", "spring".to_string())
     };
 
+    let date_str = if let Some(ref l) = loc {
+        let season_display = l.t(season_key);
+        l.t_fmt("hud.date", &[&day.to_string(), &time_str, season_display])
+    } else {
+        format!("Day: {day}, {time_str}, {season_name}")
+    };
     for mut text in &mut date_query {
-        if let Some(ref l) = loc {
-            let season_display = l.t(season_key);
-            **text = l.t_fmt("hud.date", &[&day.to_string(), &time_str, season_display]);
-        } else {
-            **text = format!("Day: {day}, {time_str}, {season_name}");
+        if **text != date_str {
+            **text = date_str.clone();
         }
     }
 }

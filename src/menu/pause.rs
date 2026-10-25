@@ -51,7 +51,10 @@ fn spawn_pause_menu(
     loc: Option<Res<Localization>>,
     app_font: Option<Res<AppFont>>,
     asset_server: Res<AssetServer>,
+    game_settings: Option<Res<crate::menu::GameSettings>>,
 ) {
+    let gui_scale = game_settings.as_ref().map_or(4, |s| s.gui_scale).clamp(2, 4);
+    let scale_factor = (gui_scale as f32 / 4.0).clamp(0.5, 1.0);
     let font_handle = app_font.as_ref().map(|f| f.source());
     let pause_texture =
         asset_server.load("textures/interfaces/containers/pause.png");
@@ -85,12 +88,16 @@ fn spawn_pause_menu(
             ZIndex(300),
         ))
         .with_children(|backdrop| {
-            // Fullscreen container image (480x270 @ 4x = 1920x1080)
+            // Fullscreen container image (480x270 @ 4x = 1920x1080, modulated by gui_scale)
             backdrop
                 .spawn((
                     ImageNode {
                         image: pause_texture,
                         ..default()
+                    },
+                    UiTransform {
+                        scale: Vec2::splat(scale_factor),
+                        ..UiTransform::IDENTITY
                     },
                     Node {
                         width: px(1920.0),

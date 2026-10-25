@@ -198,6 +198,11 @@ pub fn dynamic_fps_state_update(
     }
 }
 
+#[cfg(target_os = "windows")]
+unsafe extern "system" {
+    fn timeBeginPeriod(u_period: u32) -> u32;
+}
+
 /// Precision frame pacer that yields CPU/GPU execution when throttled.
 pub fn dynamic_fps_pacer(mut state: ResMut<DynamicFpsState>) {
     let now = Instant::now();
@@ -206,10 +211,17 @@ pub fn dynamic_fps_pacer(mut state: ResMut<DynamicFpsState>) {
     if let Some(target_fps) = state.target_fps
         && target_fps > 0
     {
+        // Only throttle if in throttled states (unfocused, idle, battery) or active cap
         let target_frame_duration = Duration::from_secs_f64(1.0 / target_fps as f64);
         if elapsed < target_frame_duration {
-            let sleep_duration = target_frame_duration - elapsed;
-            std::thread::sleep(sleep_duration);
+            let remaining = target_frame_duration - elapsed;
+            // Coarse sleep only for the bulk duration, leaving 2ms margin for precision spin-wait
+            if remaining > Duration::from_millis(3) {
+                std::thread::sleep(remaining - Duration::from_millis(2));
+            }
+            while Instant::now().duration_since(state.last_frame_instant) < target_frame_duration {
+                std::hint::spin_loop();
+            }
         }
     }
 
@@ -220,6 +232,11 @@ pub struct DynamicFpsPlugin;
 
 impl Plugin for DynamicFpsPlugin {
     fn build(&self, app: &mut App) {
+        #[cfg(target_os = "windows")]
+        unsafe {
+            timeBeginPeriod(1);
+        }
+
         app.init_resource::<DynamicFpsSettings>()
             .init_resource::<DynamicFpsState>()
             .register_type::<DynamicFpsSettings>()
