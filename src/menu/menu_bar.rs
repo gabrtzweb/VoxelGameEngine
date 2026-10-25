@@ -59,12 +59,13 @@ fn sync_menu_bar_visibility(
     menu_bar_query: Query<Entity, With<MenuBarRoot>>,
     asset_server: Res<AssetServer>,
     app_font: Option<Res<AppFont>>,
+    loc: Option<Res<crate::core::Localization>>,
 ) {
     let is_in_menu = *menu_state.get() != MenuState::None;
     let existing = menu_bar_query.iter().next();
 
     if is_in_menu && existing.is_none() {
-        spawn_menu_bar(&mut commands, &asset_server, app_font.as_ref());
+        spawn_menu_bar(&mut commands, &asset_server, app_font.as_ref(), loc.as_deref());
     } else if !is_in_menu && let Some(entity) = existing {
         commands.entity(entity).despawn();
     }
@@ -74,6 +75,7 @@ fn spawn_menu_bar(
     commands: &mut Commands,
     asset_server: &AssetServer,
     app_font: Option<&Res<AppFont>>,
+    loc: Option<&crate::core::Localization>,
 ) {
     let font_handle = app_font.map(|f| f.source());
     let bar_texture = asset_server.load("textures/interfaces/containers/menu_bar.png");
@@ -143,11 +145,16 @@ fn spawn_menu_bar(
             ));
 
             // Tabs Configuration: (action, label, x, y, w, h)
+            let tab_inv = loc.map_or("INVENTORY", |l| l.t("menu.bar.inventory"));
+            let tab_journal = loc.map_or("JOURNAL", |l| l.t("menu.bar.journal"));
+            let tab_map = loc.map_or("WORLD MAP", |l| l.t("menu.bar.world_map"));
+            let tab_sys = loc.map_or("SYSTEM", |l| l.t("menu.bar.system"));
+
             let tabs = [
-                (MenuBarAction::TabInventory, "INVENTORY", 27.0, 5.0, 48.0, 10.0),
-                (MenuBarAction::TabJournal, "JOURNAL", 87.0, 5.0, 48.0, 10.0),
-                (MenuBarAction::TabWorldMap, "WORLD MAP", 147.0, 5.0, 48.0, 10.0),
-                (MenuBarAction::TabSettings, "SYSTEM", 207.0, 5.0, 48.0, 10.0),
+                (MenuBarAction::TabInventory, tab_inv, 27.0, 5.0, 48.0, 10.0),
+                (MenuBarAction::TabJournal, tab_journal, 87.0, 5.0, 48.0, 10.0),
+                (MenuBarAction::TabWorldMap, tab_map, 147.0, 5.0, 48.0, 10.0),
+                (MenuBarAction::TabSettings, tab_sys, 207.0, 5.0, 48.0, 10.0),
             ];
 
             for (action, label, x, y, w, h) in tabs {
@@ -347,14 +354,16 @@ fn cycle_tab(
 
 fn update_menu_bar_tab_highlights(
     menu_state: Res<State<MenuState>>,
-    mut labels_query: Query<(&MenuBarTabLabel, &mut TextColor)>,
+    loc: Option<Res<crate::core::Localization>>,
+    mut labels_query: Query<(&MenuBarTabLabel, &mut TextColor, &mut Text)>,
 ) {
-    if !menu_state.is_changed() {
+    let loc_changed = loc.as_ref().is_some_and(|l| l.is_changed());
+    if !menu_state.is_changed() && !loc_changed {
         return;
     }
 
     let current = *menu_state.get();
-    for (label, mut color) in &mut labels_query {
+    for (label, mut color, mut text) in &mut labels_query {
         let is_active = match label.action {
             MenuBarAction::TabInventory => current == MenuState::Inventory,
             MenuBarAction::TabJournal => current == MenuState::Journal,
@@ -364,6 +373,19 @@ fn update_menu_bar_tab_highlights(
             }
             _ => false,
         };
+
+        if let Some(ref l) = loc {
+            let localized_str = match label.action {
+                MenuBarAction::TabInventory => l.t("menu.bar.inventory"),
+                MenuBarAction::TabJournal => l.t("menu.bar.journal"),
+                MenuBarAction::TabWorldMap => l.t("menu.bar.world_map"),
+                MenuBarAction::TabSettings => l.t("menu.bar.system"),
+                _ => "",
+            };
+            if !localized_str.is_empty() && **text != localized_str {
+                **text = localized_str.to_string();
+            }
+        }
 
         *color = if is_active {
             TextColor(Color::srgb(1.0, 0.90, 0.40)) // Golden active highlight
@@ -378,6 +400,7 @@ fn handle_journal_overlay_visibility(
     menu_state: Res<State<MenuState>>,
     overlay_query: Query<Entity, With<MenuBarJournalOverlay>>,
     app_font: Option<Res<AppFont>>,
+    loc: Option<Res<crate::core::Localization>>,
 ) {
     let is_journal = *menu_state.get() == MenuState::Journal;
     let existing = overlay_query.iter().next();
@@ -396,6 +419,12 @@ fn handle_journal_overlay_visibility(
             title_font.font = font.clone();
             subtitle_font.font = font;
         }
+
+        let title_text = loc.as_ref().map_or("EXPEDITION JOURNAL", |l| l.t("menu.journal.title"));
+        let empty_text = loc.as_ref().map_or(
+            "No entries recorded yet. Quests and bestiary system coming soon.",
+            |l| l.t("menu.journal.empty"),
+        );
 
         commands
             .spawn((
@@ -418,13 +447,13 @@ fn handle_journal_overlay_visibility(
             ))
             .with_children(|parent| {
                 parent.spawn((
-                    Text::new("EXPEDITION JOURNAL"),
+                    Text::new(title_text),
                     title_font,
                     TextColor(Color::srgb(0.95, 0.92, 0.80)),
                     text_shadow_default(),
                 ));
                 parent.spawn((
-                    Text::new("No entries recorded yet. Quests and bestiary system coming soon."),
+                    Text::new(empty_text),
                     subtitle_font,
                     TextColor(Color::srgb(0.65, 0.68, 0.72)),
                     text_shadow_default(),

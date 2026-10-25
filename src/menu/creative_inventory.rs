@@ -82,6 +82,20 @@ impl CreativeCategory {
         }
     }
 
+    pub fn translation_key(self) -> &'static str {
+        match self {
+            Self::All => "creative.category.all",
+            Self::Rocks => "creative.category.rocks",
+            Self::Trees => "creative.category.trees",
+            Self::Soils => "creative.category.soils",
+            Self::Ores => "creative.category.ores",
+            Self::Vegetation => "creative.category.vegetation",
+            Self::Organics => "creative.category.organics",
+            Self::Decorations => "creative.category.decorations",
+            Self::Lighting => "creative.category.lighting",
+        }
+    }
+
     pub fn icon_voxel(self) -> Voxel {
         match self {
             Self::All => Voxel::LoamGrass,
@@ -367,6 +381,7 @@ fn spawn_inventory_menu(
     scroll_state: Res<InventoryScrollState>,
     search_query: Res<CreativeSearchQuery>,
     app_font: Option<Res<AppFont>>,
+    loc: Option<Res<crate::core::Localization>>,
 ) {
     build_inventory_ui(
         &mut commands,
@@ -379,6 +394,7 @@ fn spawn_inventory_menu(
         &scroll_state,
         &search_query,
         app_font.as_ref().map(|f| f.source()),
+        loc.as_deref(),
     );
 }
 
@@ -415,6 +431,7 @@ fn build_inventory_ui(
     scroll_state: &InventoryScrollState,
     search_query: &CreativeSearchQuery,
     font_source: Option<FontSource>,
+    loc: Option<&crate::core::Localization>,
 ) {
     let make_font = |size: f32| -> TextFont {
         let mut tf = TextFont {
@@ -523,7 +540,7 @@ fn build_inventory_ui(
                             .with_children(|header| {
                                 header.spawn((
                                     InventoryMenuEntity,
-                                    Text::new("Inventory"),
+                                    Text::new(loc.map_or("Inventory", |l| l.t("inventory.title"))),
                                     title_font.clone(),
                                     TextColor(Color::srgb(0.90, 0.90, 0.95)),
                                     text_shadow_default(),
@@ -1015,7 +1032,11 @@ fn build_inventory_ui(
                             .with_children(|header| {
                                 header.spawn((
                                     InventoryMenuEntity,
-                                    Text::new(active_cat.title()),
+                                    Text::new(
+                                        loc.map_or(active_cat.title(), |l| {
+                                            l.t(active_cat.translation_key())
+                                        }),
+                                    ),
                                     make_font(3.8 * GUI_SCALE),
                                     TextLayout::no_wrap(),
                                     TextColor(Color::srgb(0.92, 0.92, 0.96)),
@@ -1046,9 +1067,10 @@ fn build_inventory_ui(
                             .with_children(|sb| {
                                 let search_font = make_font(3.8 * GUI_SCALE);
                                 let is_empty = search_query.query.is_empty();
+                                let placeholder = loc.map_or("Search...", |l| l.t("creative.search_placeholder"));
                                 let display_text = if !search_query.is_focused {
                                     if is_empty {
-                                        "Search...".to_string()
+                                        placeholder.to_string()
                                     } else {
                                         search_query.query.clone()
                                     }
@@ -1355,6 +1377,7 @@ fn handle_inventory_tab_key(
     scroll_state: Res<InventoryScrollState>,
     mut search_query: ResMut<CreativeSearchQuery>,
     app_font: Option<Res<AppFont>>,
+    loc: Option<Res<crate::core::Localization>>,
 ) {
     if keyboard.just_pressed(KeyCode::Tab) {
         *tab_state = match *tab_state {
@@ -1378,6 +1401,7 @@ fn handle_inventory_tab_key(
             &scroll_state,
             &search_query,
             app_font.as_ref().map(|f| f.source()),
+            loc.as_deref(),
         );
     }
 }
@@ -1395,6 +1419,7 @@ fn handle_creative_toggle_interaction(
     scroll_state: Res<InventoryScrollState>,
     mut search_query: ResMut<CreativeSearchQuery>,
     app_font: Option<Res<AppFont>>,
+    loc: Option<Res<crate::core::Localization>>,
     toggle_query: Query<(&Hovered, Has<Pressed>), With<InventoryToggleTabButton>>,
 ) {
     for (hovered, is_pressed) in &toggle_query {
@@ -1420,6 +1445,7 @@ fn handle_creative_toggle_interaction(
                 &scroll_state,
                 &search_query,
                 app_font.as_ref().map(|f| f.source()),
+                loc.as_deref(),
             );
             break;
         }
@@ -1439,6 +1465,7 @@ fn handle_category_tab_interaction(
     tab_state: Res<InventoryTab>,
     search_query: Res<CreativeSearchQuery>,
     app_font: Option<Res<AppFont>>,
+    loc: Option<Res<crate::core::Localization>>,
     cat_query: Query<(&Hovered, &CategoryTabButton)>,
 ) {
     if !mouse.just_pressed(MouseButton::Left) {
@@ -1463,6 +1490,7 @@ fn handle_category_tab_interaction(
                 &scroll_state,
                 &search_query,
                 app_font.as_ref().map(|f| f.source()),
+                loc.as_deref(),
             );
             break;
         }
@@ -1525,6 +1553,7 @@ struct RebuildUiParams<'w, 's> {
     player_inv: Res<'w, PlayerInventory>,
     icons: Res<'w, BlockIcons>,
     app_font: Option<Res<'w, AppFont>>,
+    loc: Option<Res<'w, crate::core::Localization>>,
 }
 
 fn handle_creative_search_input(
@@ -1619,8 +1648,12 @@ fn handle_creative_search_input(
 
     if focus_changed || query_changed {
         for mut text in &mut text_query {
+            let placeholder = ui
+                .loc
+                .as_ref()
+                .map_or("Search...", |l| l.t("creative.search_placeholder"));
             let display_text = if !search_query.is_focused && search_query.query.is_empty() {
-                "Search...".to_string()
+                placeholder.to_string()
             } else if search_query.is_focused && search_query.query.is_empty() {
                 "|".to_string()
             } else {
@@ -1646,6 +1679,7 @@ fn handle_creative_search_input(
             &scroll_state,
             &search_query,
             ui.app_font.as_ref().map(|f| f.source()),
+            ui.loc.as_deref(),
         );
     }
 }
@@ -2275,7 +2309,11 @@ fn update_inventory_tooltip(
     offhand_query: Query<&Hovered, With<InventoryOffhandSlot>>,
     utility_query: Query<&Hovered, With<InventoryUtilitySlot>>,
     action_btn_query: Query<(&Hovered, &InventoryAction)>,
+    cat_tab_query: Query<(&Hovered, &CategoryTabButton)>,
+    toggle_tab_query: Query<&Hovered, With<InventoryToggleTabButton>>,
+    tab_state: Res<InventoryTab>,
     ui_scale: Option<Res<bevy::ui::UiScale>>,
+    loc: Option<Res<crate::core::Localization>>,
     mut tooltip_box: Query<(&mut Node, &mut Visibility), With<InventoryTooltipBox>>,
     mut tooltip_text: Query<&mut Text, With<InventoryTooltipText>>,
 ) {
@@ -2291,10 +2329,18 @@ fn update_inventory_tooltip(
 
     let mut hovered_text: Option<String> = None;
 
+    let get_label = |v: Voxel| {
+        if let Some(ref l) = loc {
+            l.t_block(v).to_string()
+        } else {
+            v.label().to_string()
+        }
+    };
+
     for (hovered, slot) in &storage_query {
         if hovered.get() {
             if let Some(voxel) = player_inv.slots.get(slot.slot_index).copied().flatten() {
-                hovered_text = Some(voxel.label().to_string());
+                hovered_text = Some(get_label(voxel));
             }
             break;
         }
@@ -2304,7 +2350,7 @@ fn update_inventory_tooltip(
         for (hovered, slot) in &hotbar_query {
             if hovered.get() {
                 if let Some(voxel) = hotbar.slots.get(slot.index).copied().flatten() {
-                    hovered_text = Some(voxel.label().to_string());
+                    hovered_text = Some(get_label(voxel));
                 }
                 break;
             }
@@ -2315,7 +2361,7 @@ fn update_inventory_tooltip(
         for (hovered, slot) in &catalog_query {
             if hovered.get() {
                 if let Some(voxel) = slot.voxel {
-                    hovered_text = Some(voxel.label().to_string());
+                    hovered_text = Some(get_label(voxel));
                 }
                 break;
             }
@@ -2326,7 +2372,7 @@ fn update_inventory_tooltip(
         for hovered in &offhand_query {
             if hovered.get() {
                 if let Some(voxel) = player_inv.offhand_slot {
-                    hovered_text = Some(voxel.label().to_string());
+                    hovered_text = Some(get_label(voxel));
                 }
                 break;
             }
@@ -2337,8 +2383,40 @@ fn update_inventory_tooltip(
         for hovered in &utility_query {
             if hovered.get() {
                 if let Some(voxel) = player_inv.utility_slot {
-                    hovered_text = Some(voxel.label().to_string());
+                    hovered_text = Some(get_label(voxel));
                 }
+                break;
+            }
+        }
+    }
+
+    if hovered_text.is_none() {
+        for (hovered, cat_btn) in &cat_tab_query {
+            if hovered.get() {
+                hovered_text = Some(if let Some(ref l) = loc {
+                    l.t(cat_btn.category.translation_key()).to_string()
+                } else {
+                    cat_btn.category.title().to_string()
+                });
+                break;
+            }
+        }
+    }
+
+    if hovered_text.is_none() {
+        for hovered in &toggle_tab_query {
+            if hovered.get() {
+                let key = if *tab_state == InventoryTab::Player {
+                    "inventory.tab.creative"
+                } else {
+                    "inventory.tab.player"
+                };
+                let fallback = if *tab_state == InventoryTab::Player {
+                    "Creative Inventory"
+                } else {
+                    "Survival Inventory"
+                };
+                hovered_text = Some(loc.as_ref().map_or(fallback, |l| l.t(key)).to_string());
                 break;
             }
         }
@@ -2348,10 +2426,10 @@ fn update_inventory_tooltip(
         for (hovered, action) in &action_btn_query {
             if hovered.get() {
                 hovered_text = Some(match action {
-                    InventoryAction::Sort => "Auto-Sort Inventory".to_string(),
-                    InventoryAction::Trash => "Quick Discard Held Item".to_string(),
-                    InventoryAction::Options => "Preferences".to_string(),
-                    InventoryAction::Lock => "Lock Slots".to_string(),
+                    InventoryAction::Sort => loc.as_ref().map_or("Auto-Sort Inventory", |l| l.t("inventory.action.sort")).to_string(),
+                    InventoryAction::Trash => loc.as_ref().map_or("Quick Discard Held Item", |l| l.t("inventory.action.trash")).to_string(),
+                    InventoryAction::Options => loc.as_ref().map_or("Preferences", |l| l.t("inventory.action.options")).to_string(),
+                    InventoryAction::Lock => loc.as_ref().map_or("Lock Slots", |l| l.t("inventory.action.lock")).to_string(),
                 });
                 break;
             }

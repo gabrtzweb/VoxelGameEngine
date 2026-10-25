@@ -125,6 +125,7 @@ fn spawn_world_map_ui(
     mut map_state: ResMut<WorldMapState>,
     player_query: Query<&Transform, With<Player>>,
     app_font: Option<Res<crate::core::AppFont>>,
+    loc: Option<Res<crate::core::Localization>>,
 ) {
     let font_handle = app_font.as_ref().map(|f| f.source()).unwrap_or_default();
 
@@ -255,10 +256,12 @@ fn spawn_world_map_ui(
                             ))
                             .with_children(|overlay| {
                                 // Row 1: Controls Hint
+                                let hint_text = loc.as_ref().map_or(
+                                    "LMB Drag: Pan   |   Scroll: Zoom   |   Space: Center on Player   |   [M / ESC] Close",
+                                    |l| l.t("map.controls_hint"),
+                                );
                                 overlay.spawn((
-                                    Text::new(
-                                        "LMB Drag: Pan   |   Scroll: Zoom   |   Space: Center on Player   |   [M / ESC] Close",
-                                    ),
+                                    Text::new(hint_text),
                                     TextFont {
                                         font: font_handle.clone(),
                                         font_size: FontSize::Px(15.0),
@@ -369,16 +372,32 @@ fn handle_world_map_input(
     // 4. Mouse Left Click Drag Pan
     if mouse_button.pressed(MouseButton::Left) {
         if let (Some(curr), Some(prev)) = (cursor_pos, map_state.last_cursor_screen_pos) {
-            let screen_delta = curr - prev;
-            // Get viewport computed size to scale drag accurately
-            let vp_scale = if let Ok(computed) = viewport_query.single() {
-                computed.size().x / (WORLD_MAP_WIDTH as f32)
-            } else {
-                1.0
-            };
-            let current_zoom = map_state.zoom;
-            let world_delta = screen_delta / (vp_scale * current_zoom);
-            map_state.center -= world_delta;
+            // Only drag if the cursor is within the map viewport area (below the top menu bar)
+            if curr.y >= WORLD_MAP_VIEWPORT_TOP - 20.0 {
+                let screen_delta = curr - prev;
+                // Get viewport computed size to scale drag accurately
+                let vp_scale = if let Ok(computed) = viewport_query.single() {
+                    let s = computed.size().x / (WORLD_MAP_WIDTH as f32);
+                    if s.is_finite() && s > 0.01 { s } else { 1.0 }
+                } else {
+                    1.0
+                };
+                let current_zoom = if map_state.zoom.is_finite() && map_state.zoom > 0.05 {
+                    map_state.zoom
+                } else {
+                    1.0
+                };
+                let denom = vp_scale * current_zoom;
+                if denom.abs() > 0.001 {
+                    let world_delta = screen_delta / denom;
+                    if world_delta.x.is_finite() && world_delta.y.is_finite() {
+                        map_state.center -= world_delta;
+                    }
+                }
+            }
+        }
+        if !map_state.center.x.is_finite() || !map_state.center.y.is_finite() {
+            map_state.center = Vec2::ZERO;
         }
         map_state.is_dragging = true;
         map_state.last_cursor_screen_pos = cursor_pos;
@@ -495,6 +514,7 @@ fn update_world_map_ui(
     window: Option<Single<&Window, With<PrimaryWindow>>>,
     map_state: Res<WorldMapState>,
     viewport_query: Query<(&ComputedNode, &GlobalTransform), With<WorldMapViewport>>,
+    loc: Option<Res<crate::core::Localization>>,
     mut marker_query: Query<
         (&mut Node, &mut UiTransform, &mut Visibility),
         With<WorldMapPlayerMarker>,
@@ -513,20 +533,50 @@ fn update_world_map_ui(
 
     // 1. Update Player position readout
     for mut text in &mut player_text_query {
-        **text = format!("Player: X: {} Y: {} Z: {}", px_block, py_block, pz_block);
+        if let Some(ref l) = loc {
+            **text = l.t_fmt(
+                "map.player_pos",
+                &[&px_block.to_string(), &py_block.to_string(), &pz_block.to_string()],
+            );
+        } else {
+            **text = format!("Player: X: {} Y: {} Z: {}", px_block, py_block, pz_block);
+        }
     }
 
     // 2. Position the Player Marker relative to the interactive viewport
     let half_w = (WORLD_MAP_WIDTH as f32) / 2.0;
     let half_h = (WORLD_MAP_HEIGHT as f32) / 2.0;
-    let player_map_x = half_w + (p.x / VOXEL_SIZE - map_state.center.x) * map_state.zoom;
-    let player_map_y = half_h + (p.z / VOXEL_SIZE - map_state.center.y) * map_state.zoom;
+    let safe_zoom = if map_state.zoom.is_finite() && map_state.zoom > 0.05 {
+        map_state.zoom
+    } else {
+        1.0
+    };
+    let center = if map_state.center.is_finite() {
+        map_state.center
+    } else {
+        Vec2::ZERO
+    };
+
+    let player_map_x = half_w + (p.x / VOXEL_SIZE - center.x) * safe_zoom;
+    let player_map_y = half_h + (p.z / VOXEL_SIZE - center.y) * safe_zoom;
 
     let scale_x = WORLD_MAP_VIEWPORT_WIDTH / (WORLD_MAP_WIDTH as f32);
     let scale_y = WORLD_MAP_VIEWPORT_HEIGHT / (WORLD_MAP_HEIGHT as f32);
     let half_m = WORLD_MARKER_SIZE / 2.0;
-    let marker_pos_x = (player_map_x * scale_x - half_m).clamp(-100.0, WORLD_MAP_VIEWPORT_WIDTH + 100.0);
-    let marker_pos_y = (player_map_y * scale_y - half_m).clamp(-100.0, WORLD_MAP_VIEWPORT_HEIGHT + 100.0);
+
+    let raw_mx = player_map_x * scale_x - half_m;
+    let marker_pos_x = if raw_mx.is_finite() {
+        raw_mx.clamp(-100.0, WORLD_MAP_VIEWPORT_WIDTH + 100.0)
+    } else {
+        WORLD_MAP_VIEWPORT_WIDTH / 2.0 - half_m
+    };
+
+    let raw_my = player_map_y * scale_y - half_m;
+    let marker_pos_y = if raw_my.is_finite() {
+        raw_my.clamp(-100.0, WORLD_MAP_VIEWPORT_HEIGHT + 100.0)
+    } else {
+        WORLD_MAP_VIEWPORT_HEIGHT / 2.0 - half_m
+    };
 
     let marker_visible = player_map_x >= 0.0
         && player_map_x <= WORLD_MAP_WIDTH as f32
@@ -569,9 +619,8 @@ fn update_world_map_ui(
                     let tex_x = in_vp_x / scale_x;
                     let tex_y = in_vp_y / scale_y;
 
-                    let safe_zoom = map_state.zoom.max(0.05);
-                    let raw_cx = map_state.center.x + (tex_x - half_w) / safe_zoom;
-                    let raw_cz = map_state.center.y + (tex_y - half_h) / safe_zoom;
+                    let raw_cx = center.x + (tex_x - half_w) / safe_zoom;
+                    let raw_cz = center.y + (tex_y - half_h) / safe_zoom;
                     let cursor_world_x = if raw_cx.is_finite() {
                         raw_cx.clamp(-2_000_000.0, 2_000_000.0).floor() as i32
                     } else {
@@ -584,10 +633,21 @@ fn update_world_map_ui(
                     };
 
                     for mut text in &mut cursor_text_query {
-                        **text = format!(
-                            "Cursor: X: {} Z: {} | Zoom: {:.2}x",
-                            cursor_world_x, cursor_world_z, map_state.zoom
-                        );
+                        if let Some(ref l) = loc {
+                            **text = l.t_fmt(
+                                "map.cursor_pos",
+                                &[
+                                    &cursor_world_x.to_string(),
+                                    &cursor_world_z.to_string(),
+                                    &format!("{:.2}", safe_zoom),
+                                ],
+                            );
+                        } else {
+                            **text = format!(
+                                "Cursor: X: {} Z: {} | Zoom: {:.2}x",
+                                cursor_world_x, cursor_world_z, safe_zoom
+                            );
+                        }
                     }
                     return;
                 }
@@ -597,6 +657,10 @@ fn update_world_map_ui(
 
     // Default cursor text when outside viewport
     for mut text in &mut cursor_text_query {
-        **text = format!("Zoom: {:.2}x", map_state.zoom);
+        if let Some(ref l) = loc {
+            **text = l.t_fmt("map.zoom", &[&format!("{:.2}", safe_zoom)]);
+        } else {
+            **text = format!("Zoom: {:.2}x", safe_zoom);
+        }
     }
 }

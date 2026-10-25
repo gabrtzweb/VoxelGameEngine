@@ -498,6 +498,7 @@ fn update_hotbar_tooltip(
     >,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
     inspector: Option<Res<InspectorInteraction>>,
+    loc: Option<Res<crate::core::Localization>>,
 ) {
     let Ok((mut text, mut color, mut shadow, mut vis)) = tooltip_query.single_mut() else {
         return;
@@ -542,7 +543,11 @@ fn update_hotbar_tooltip(
         tooltip_state.last_voxel = current_voxel;
 
         if let Some(voxel) = current_voxel {
-            let label = voxel.label();
+            let label = if let Some(ref l) = loc {
+                l.t_block(voxel)
+            } else {
+                voxel.label()
+            };
             tooltip_state.text = label.to_string();
             tooltip_state.timer = TOOLTIP_TOTAL_SECS;
             text.0 = tooltip_state.text.clone();

@@ -11,7 +11,7 @@ use voxel_game_engine::{
     audio::EngineAudioPlugin,
     core::{
         AdaptiveUiPlugin, DevStatsPlugin, DynamicFpsPlugin, DynamicFpsSettings, FontPlugin,
-        LocalConfig, RenderScalePlugin, WindowAspectPlugin,
+        LocalConfig, LocalizationPlugin, RenderScalePlugin, WindowAspectPlugin,
     },
     environment::EnvironmentPlugin,
     gameplay::GameplayPlugin,
@@ -140,6 +140,7 @@ fn main() {
                 }),
         )
         .add_plugins(FontPlugin)
+        .add_plugins(LocalizationPlugin)
         .add_plugins(AdaptiveUiPlugin)
         .add_plugins(WindowAspectPlugin)
         .add_plugins(RenderScalePlugin)

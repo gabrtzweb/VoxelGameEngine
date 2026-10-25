@@ -389,6 +389,10 @@ pub struct LocalConfig {
     /// Ambient nature murmurs volume level (0.0 ..= 1.0).
     #[serde(default = "default_ambient_volume")]
     pub ambient_volume: f32,
+
+    /// Selected UI and gameplay language locale (e.g. "en_us", "pt_br").
+    #[serde(default = "default_language")]
+    pub language: String,
 }
 
 fn default_backend() -> String {
@@ -503,6 +507,10 @@ fn default_ambient_volume() -> f32 {
     0.65
 }
 
+fn default_language() -> String {
+    "en_us".to_string()
+}
+
 pub fn format_volume(volume: f32) -> String {
     format!("{:.0}%", (volume.clamp(0.0, 1.0) * 100.0).round())
 }
@@ -549,6 +557,7 @@ impl Default for LocalConfig {
             sfx_volume: default_sfx_volume(),
             music_volume: default_music_volume(),
             ambient_volume: default_ambient_volume(),
+            language: default_language(),
         }
     }
 }

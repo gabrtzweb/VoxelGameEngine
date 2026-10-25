@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy::{picking::hover::Hovered, ui::Pressed, ui_widgets::Button};
 
 use crate::{
-    core::{AppFont, text_shadow_default},
+    core::{AppFont, Localization, text_shadow_default},
     environment::{DayPhase, EnvironmentState},
     gameplay::SelectedVoxel,
     generation::TerrainGenerator,
@@ -48,6 +48,7 @@ impl Plugin for PauseMenuPlugin {
 
 fn spawn_pause_menu(
     mut commands: Commands,
+    loc: Option<Res<Localization>>,
     app_font: Option<Res<AppFont>>,
     asset_server: Res<AssetServer>,
 ) {
@@ -98,14 +99,21 @@ fn spawn_pause_menu(
                     },
                 ))
                 .with_children(|container| {
+                    let resume_lbl = loc.as_ref().map_or("Resume Game", |l| l.t("menu.pause.resume"));
+                    let settings_lbl = loc.as_ref().map_or("Settings & Options", |l| l.t("menu.pause.settings"));
+                    let controls_lbl = loc.as_ref().map_or("Controls & Keybinds", |l| l.t("menu.pause.controls"));
+                    let stats_lbl = loc.as_ref().map_or("Statistics & Feats", |l| l.t("menu.pause.stats"));
+                    let restart_lbl = loc.as_ref().map_or("Restart Game", |l| l.t("menu.pause.restart"));
+                    let quit_lbl = loc.as_ref().map_or("Quit to Desktop", |l| l.t("menu.pause.quit"));
+
                     // 6 Buttons in column at x = 19 (76 px), w = 128 (512 px), h = 14 (56 px)
                     let buttons = [
-                        (PauseMenuAction::Resume, "Resume Game", 40.0),
-                        (PauseMenuAction::Settings, "Settings & Options", 58.0),
-                        (PauseMenuAction::Controls, "Controls & Keybinds", 76.0),
-                        (PauseMenuAction::Stats, "Statistics & Feats", 94.0),
-                        (PauseMenuAction::Restart, "Restart Game", 112.0),
-                        (PauseMenuAction::Quit, "Quit to Desktop", 130.0),
+                        (PauseMenuAction::Resume, resume_lbl, 40.0),
+                        (PauseMenuAction::Settings, settings_lbl, 58.0),
+                        (PauseMenuAction::Controls, controls_lbl, 76.0),
+                        (PauseMenuAction::Stats, stats_lbl, 94.0),
+                        (PauseMenuAction::Restart, restart_lbl, 112.0),
+                        (PauseMenuAction::Quit, quit_lbl, 130.0),
                     ];
 
                     for (action, label, y) in buttons {

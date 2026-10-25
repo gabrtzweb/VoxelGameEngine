@@ -3,13 +3,17 @@ use bevy::{picking::hover::Hovered, ui::Pressed, ui_widgets::Button};
 
 use crate::{
     audio::AudioSettings,
-    core::{AppFont, DynamicFpsSettings, LocalConfig, PerformancePreset, text_shadow_default},
+    core::{
+        AppFont, DynamicFpsSettings, LocalConfig, Localization, PerformancePreset,
+        config::{AntiAliasingMode, CloudQuality, ShadowQuality, TargetFpsLimit},
+        text_shadow_default,
+    },
     environment::EnvironmentState,
     meshing::{ChunkMaterial, VoxelTextureRegistry},
     world::{ChunkStreamingQueues, ChunkStreamingSettings, VoxelWorld},
 };
 
-use super::{GameSettings, MenuState};
+use super::{GameSettings, MenuState, ScreenMode};
 
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SettingsTab {
@@ -33,6 +37,8 @@ struct TabButton(SettingsTab);
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 enum SettingsAction {
     SwitchTab(SettingsTab),
+    DecLanguage,
+    IncLanguage,
     DecMasterVol,
     IncMasterVol,
     DecMusicVol,
@@ -162,6 +168,62 @@ struct SfxVolLabel;
 #[derive(Component)]
 struct AmbientVolLabel;
 
+#[derive(Component)]
+struct LanguageLabel;
+
+fn format_screen_mode(mode: ScreenMode, loc: &Localization) -> String {
+    match mode {
+        ScreenMode::Windowed => loc.t("screen_mode.windowed").to_string(),
+        ScreenMode::ExclusiveFullscreen => loc.t("screen_mode.exclusive").to_string(),
+        ScreenMode::BorderlessFullscreen => loc.t("screen_mode.borderless").to_string(),
+    }
+}
+
+fn format_target_fps(fps: TargetFpsLimit, loc: &Localization) -> String {
+    match fps {
+        TargetFpsLimit::Unlocked => loc.t("common.unlocked").to_string(),
+        _ => fps.label().to_string(),
+    }
+}
+
+fn format_preset(preset: Option<PerformancePreset>, loc: &Localization) -> String {
+    match preset {
+        Some(PerformancePreset::Potato) => loc.t("preset.potato").to_string(),
+        Some(PerformancePreset::Low) => loc.t("preset.low").to_string(),
+        Some(PerformancePreset::Medium) => loc.t("preset.medium").to_string(),
+        Some(PerformancePreset::High) => loc.t("preset.high").to_string(),
+        Some(PerformancePreset::Ultra) => loc.t("preset.ultra").to_string(),
+        None | Some(PerformancePreset::Custom) => loc.t("preset.custom").to_string(),
+    }
+}
+
+fn format_clouds(clouds: CloudQuality, loc: &Localization) -> String {
+    match clouds {
+        CloudQuality::Off => loc.t("clouds.off").to_string(),
+        CloudQuality::Fast2D => loc.t("clouds.fast").to_string(),
+        CloudQuality::Fancy3D => loc.t("clouds.fancy").to_string(),
+    }
+}
+
+fn format_shadows(shadows: ShadowQuality, loc: &Localization) -> String {
+    match shadows {
+        ShadowQuality::Off => loc.t("shadows.off").to_string(),
+        ShadowQuality::Low => loc.t("shadows.low").to_string(),
+        ShadowQuality::Medium => loc.t("shadows.medium").to_string(),
+        ShadowQuality::High => loc.t("shadows.high").to_string(),
+        ShadowQuality::Ultra => loc.t("shadows.ultra").to_string(),
+    }
+}
+
+fn format_anti_aliasing(aa: AntiAliasingMode, loc: &Localization) -> String {
+    match aa {
+        AntiAliasingMode::Off => loc.t("antialiasing.off").to_string(),
+        AntiAliasingMode::Fxaa => "FXAA".to_string(),
+        AntiAliasingMode::Msaa2x => loc.t("antialiasing.msaa2x").to_string(),
+        AntiAliasingMode::Msaa4x => loc.t("antialiasing.msaa4x").to_string(),
+    }
+}
+
 pub struct SettingsMenuPlugin;
 
 impl Plugin for SettingsMenuPlugin {
@@ -173,8 +235,10 @@ impl Plugin for SettingsMenuPlugin {
                 Update,
                 (
                     handle_settings_buttons,
+                    handle_language_changed,
                     update_settings_labels,
                     update_audio_settings_labels,
+                    update_language_label,
                     update_settings_tab_view,
                 )
                     .run_if(in_state(MenuState::Settings)),
@@ -189,6 +253,7 @@ fn spawn_settings_menu(
     local_config: Res<LocalConfig>,
     audio_settings: Res<AudioSettings>,
     settings_tab: Res<SettingsTab>,
+    loc: Res<Localization>,
     env_state: Option<Res<EnvironmentState>>,
     app_font: Option<Res<AppFont>>,
     asset_server: Res<AssetServer>,
@@ -245,7 +310,7 @@ fn spawn_settings_menu(
                 .with_children(|card| {
                     // Header Title
                     card.spawn((
-                        Text::new("SETTINGS"),
+                        Text::new(loc.t("menu.settings.title")),
                         header_font,
                         TextColor(Color::srgb(0.95, 0.95, 0.98)),
                         text_shadow_default(),
@@ -266,7 +331,7 @@ fn spawn_settings_menu(
                     .with_children(|tab_bar| {
                         spawn_tab_button(
                             tab_bar,
-                            "Video & Graphics",
+                            loc.t("menu.settings.tab_video"),
                             SettingsTab::Video,
                             *settings_tab == SettingsTab::Video,
                             font_handle.as_ref(),
@@ -275,7 +340,7 @@ fn spawn_settings_menu(
                         );
                         spawn_tab_button(
                             tab_bar,
-                            "Audio & Sounds",
+                            loc.t("menu.settings.tab_audio"),
                             SettingsTab::Audio,
                             *settings_tab == SettingsTab::Audio,
                             font_handle.as_ref(),
@@ -313,8 +378,8 @@ fn spawn_settings_menu(
                                 // 0. Screen Mode Stepper
                                 spawn_stepper_row(
                                     col_left,
-                                    "Screen Mode",
-                                    game_settings.screen_mode.label().to_string(),
+                                    loc.t("menu.settings.screen_mode"),
+                                    format_screen_mode(game_settings.screen_mode, &loc),
                                     SettingsAction::DecScreenMode,
                                     SettingsAction::IncScreenMode,
                                     ScreenModeLabel,
@@ -323,11 +388,24 @@ fn spawn_settings_menu(
                                     &small_hover,
                                 );
 
-                                // 1. Target FPS Stepper
+                                // 1. Language Stepper
                                 spawn_stepper_row(
                                     col_left,
-                                    "Target FPS",
-                                    local_config.target_fps.label().to_string(),
+                                    loc.t("menu.settings.language"),
+                                    loc.active_locale.display_name().to_string(),
+                                    SettingsAction::DecLanguage,
+                                    SettingsAction::IncLanguage,
+                                    LanguageLabel,
+                                    font_handle.as_ref(),
+                                    &small_normal,
+                                    &small_hover,
+                                );
+
+                                // 2. Target FPS Stepper
+                                spawn_stepper_row(
+                                    col_left,
+                                    loc.t("menu.settings.target_fps"),
+                                    format_target_fps(local_config.target_fps, &loc),
                                     SettingsAction::DecTargetFps,
                                     SettingsAction::IncTargetFps,
                                     TargetFpsLabel,
@@ -341,11 +419,12 @@ fn spawn_settings_menu(
                                     col_left,
                                     SettingsAction::ToggleVsync,
                                     format!(
-                                        "VSync: {}",
+                                        "{}: {}",
+                                        loc.t("menu.settings.vsync"),
                                         if game_settings.vsync_enabled {
-                                            "Enabled"
+                                            loc.t("common.enabled")
                                         } else {
-                                            "Disabled"
+                                            loc.t("common.disabled")
                                         }
                                     ),
                                     VsyncLabel,
@@ -359,11 +438,12 @@ fn spawn_settings_menu(
                                     col_left,
                                     SettingsAction::ToggleDynamicFps,
                                     format!(
-                                        "Dynamic FPS: {}",
+                                        "{}: {}",
+                                        loc.t("menu.settings.dynamic_fps"),
                                         if game_settings.dynamic_fps_enabled {
-                                            "Enabled"
+                                            loc.t("common.enabled")
                                         } else {
-                                            "Disabled"
+                                            loc.t("common.disabled")
                                         }
                                     ),
                                     DynamicFpsLabel,
@@ -375,8 +455,8 @@ fn spawn_settings_menu(
                                 // 4. Render Distance Stepper
                                 spawn_stepper_row(
                                     col_left,
-                                    "Render Distance",
-                                    format!("{render_dist} Chunks"),
+                                    loc.t("menu.settings.render_distance"),
+                                    loc.t_args("common.chunks", &[&render_dist.to_string()]),
                                     SettingsAction::DecRenderDistance,
                                     SettingsAction::IncRenderDistance,
                                     RenderDistanceLabel,
@@ -388,11 +468,11 @@ fn spawn_settings_menu(
                                 // 5. LOD Distance Stepper
                                 spawn_stepper_row(
                                     col_left,
-                                    "LOD Distance",
+                                    loc.t("menu.settings.lod_distance"),
                                     if lod_dist == 0 {
-                                        "Disabled".to_string()
+                                        loc.t("common.disabled").to_string()
                                     } else {
-                                        format!("{lod_dist} Chunks")
+                                        loc.t_args("common.chunks", &[&lod_dist.to_string()])
                                     },
                                     SettingsAction::DecLodDistance,
                                     SettingsAction::IncLodDistance,
@@ -405,8 +485,8 @@ fn spawn_settings_menu(
                                 // 6. Simulation Distance Stepper
                                 spawn_stepper_row(
                                     col_left,
-                                    "Simulation Distance",
-                                    format!("{sim_dist} Chunks"),
+                                    loc.t("menu.settings.sim_distance"),
+                                    loc.t_args("common.chunks", &[&sim_dist.to_string()]),
                                     SettingsAction::DecSimulationDistance,
                                     SettingsAction::IncSimulationDistance,
                                     SimulationDistanceLabel,
@@ -418,8 +498,8 @@ fn spawn_settings_menu(
                                 // 7. Mesh Upload Budget Stepper
                                 spawn_stepper_row(
                                     col_left,
-                                    "Mesh Uploads",
-                                    format!("{} Chunks", local_config.mesh_upload_budget),
+                                    loc.t("menu.settings.mesh_uploads"),
+                                    loc.t_args("common.chunks", &[&local_config.mesh_upload_budget.to_string()]),
                                     SettingsAction::DecMeshUploadBudget,
                                     SettingsAction::IncMeshUploadBudget,
                                     MeshUploadBudgetLabel,
@@ -431,7 +511,7 @@ fn spawn_settings_menu(
                                 // 8. Field of View Stepper
                                 spawn_stepper_row(
                                     col_left,
-                                    "Field of View",
+                                    loc.t("menu.settings.fov"),
                                     format!("{fov}°"),
                                     SettingsAction::DecFov,
                                     SettingsAction::IncFov,
@@ -446,11 +526,12 @@ fn spawn_settings_menu(
                                     col_left,
                                     SettingsAction::ToggleDynamicFov,
                                     format!(
-                                        "FOV Effects: {}",
+                                        "{}: {}",
+                                        loc.t("menu.settings.fov_effects"),
                                         if game_settings.dynamic_fov_enabled {
-                                            "Normal"
+                                            loc.t("common.normal")
                                         } else {
-                                            "Reduced"
+                                            loc.t("common.reduced")
                                         }
                                     ),
                                     DynamicFovLabel,
@@ -464,11 +545,12 @@ fn spawn_settings_menu(
                                     col_left,
                                     SettingsAction::ToggleViewBobbing,
                                     format!(
-                                        "View Bobbing: {}",
+                                        "{}: {}",
+                                        loc.t("menu.settings.view_bobbing"),
                                         if game_settings.view_bobbing {
-                                            "Enabled"
+                                            loc.t("common.enabled")
                                         } else {
-                                            "Disabled"
+                                            loc.t("common.disabled")
                                         }
                                     ),
                                     ViewBobbingLabel,
@@ -489,12 +571,10 @@ fn spawn_settings_menu(
                             })
                             .with_children(|col_right| {
                                 // 0. Performance Preset Stepper
-                                let preset_label_str = local_config
-                                    .preset
-                                    .map_or("Custom".to_string(), |p| p.short_name().to_string());
+                                let preset_label_str = format_preset(local_config.preset, &loc);
                                 spawn_stepper_row(
                                     col_right,
-                                    "Preset",
+                                    loc.t("menu.settings.preset"),
                                     preset_label_str,
                                     SettingsAction::DecPreset,
                                     SettingsAction::IncPreset,
@@ -507,7 +587,7 @@ fn spawn_settings_menu(
                                 // 1. Render Scale Stepper
                                 spawn_stepper_row(
                                     col_right,
-                                    "Render Scale",
+                                    loc.t("menu.settings.render_scale"),
                                     crate::core::config::format_render_scale(
                                         local_config.render_scale,
                                     ),
@@ -522,7 +602,7 @@ fn spawn_settings_menu(
                                 // 2. Upscaling Filter Stepper
                                 spawn_stepper_row(
                                     col_right,
-                                    "Upscaling Filter",
+                                    loc.t("menu.settings.upscaling_filter"),
                                     local_config.upscaling_filter.label().to_string(),
                                     SettingsAction::DecUpscalingFilter,
                                     SettingsAction::IncUpscalingFilter,
@@ -535,8 +615,8 @@ fn spawn_settings_menu(
                                 // 3. Anti-Aliasing Stepper
                                 spawn_stepper_row(
                                     col_right,
-                                    "Anti-Aliasing",
-                                    local_config.anti_aliasing.label().to_string(),
+                                    loc.t("menu.settings.anti_aliasing"),
+                                    format_anti_aliasing(local_config.anti_aliasing, &loc),
                                     SettingsAction::DecAntiAliasing,
                                     SettingsAction::IncAntiAliasing,
                                     AntiAliasingLabel,
@@ -548,8 +628,8 @@ fn spawn_settings_menu(
                                 // 4. Shadow Quality Stepper
                                 spawn_stepper_row(
                                     col_right,
-                                    "Shadows",
-                                    local_config.shadow_quality.label().to_string(),
+                                    loc.t("menu.settings.shadows"),
+                                    format_shadows(local_config.shadow_quality, &loc),
                                     SettingsAction::DecShadowQuality,
                                     SettingsAction::IncShadowQuality,
                                     ShadowQualityLabel,
@@ -561,8 +641,8 @@ fn spawn_settings_menu(
                                 // 5. Cloud Quality Stepper
                                 spawn_stepper_row(
                                     col_right,
-                                    "Clouds",
-                                    local_config.cloud_quality.label().to_string(),
+                                    loc.t("menu.settings.clouds"),
+                                    format_clouds(local_config.cloud_quality, &loc),
                                     SettingsAction::DecCloudQuality,
                                     SettingsAction::IncCloudQuality,
                                     CloudQualityLabel,
@@ -576,11 +656,12 @@ fn spawn_settings_menu(
                                     col_right,
                                     SettingsAction::ToggleGodRays,
                                     format!(
-                                        "God Rays: {}",
+                                        "{}: {}",
+                                        loc.t("menu.settings.god_rays"),
                                         if local_config.god_rays_enabled {
-                                            "Enabled"
+                                            loc.t("common.enabled")
                                         } else {
-                                            "Disabled"
+                                            loc.t("common.disabled")
                                         }
                                     ),
                                     GodRaysLabel,
@@ -594,8 +675,13 @@ fn spawn_settings_menu(
                                     col_right,
                                     SettingsAction::ToggleFog,
                                     format!(
-                                        "Fog: {}",
-                                        if fog_enabled { "Enabled" } else { "Disabled" }
+                                        "{}: {}",
+                                        loc.t("menu.settings.fog"),
+                                        if fog_enabled {
+                                            loc.t("common.enabled")
+                                        } else {
+                                            loc.t("common.disabled")
+                                        }
                                     ),
                                     FogLabel,
                                     font_handle.as_ref(),
@@ -608,11 +694,12 @@ fn spawn_settings_menu(
                                     col_right,
                                     SettingsAction::ToggleTransmission,
                                     format!(
-                                        "Transmission: {}",
+                                        "{}: {}",
+                                        loc.t("menu.settings.transmission"),
                                         if local_config.transmission_enabled {
-                                            "Enabled"
+                                            loc.t("common.enabled")
                                         } else {
-                                            "Disabled"
+                                            loc.t("common.disabled")
                                         }
                                     ),
                                     TransmissionLabel,
@@ -626,11 +713,12 @@ fn spawn_settings_menu(
                                     col_right,
                                     SettingsAction::ToggleFullGrass,
                                     format!(
-                                        "Full Surface Sides: {}",
+                                        "{}: {}",
+                                        loc.t("menu.settings.full_grass"),
                                         if game_settings.full_grass {
-                                            "Enabled"
+                                            loc.t("common.enabled")
                                         } else {
-                                            "Disabled"
+                                            loc.t("common.disabled")
                                         }
                                     ),
                                     FullGrassLabel,
@@ -644,8 +732,13 @@ fn spawn_settings_menu(
                                     col_right,
                                     SettingsAction::ToggleTimePause,
                                     format!(
-                                        "Time Flow: {}",
-                                        if time_paused { "Paused" } else { "Running" }
+                                        "{}: {}",
+                                        loc.t("menu.settings.time_flow"),
+                                        if time_paused {
+                                            loc.t("common.paused")
+                                        } else {
+                                            loc.t("common.running")
+                                        }
                                     ),
                                     TimePauseLabel,
                                     font_handle.as_ref(),
@@ -675,7 +768,7 @@ fn spawn_settings_menu(
                     .with_children(|col_audio| {
                         spawn_stepper_row(
                             col_audio,
-                            "Master Volume",
+                            loc.t("menu.settings.master_vol"),
                             crate::core::config::format_volume(audio_settings.master_volume),
                             SettingsAction::DecMasterVol,
                             SettingsAction::IncMasterVol,
@@ -687,7 +780,7 @@ fn spawn_settings_menu(
 
                         spawn_stepper_row(
                             col_audio,
-                            "Music Volume",
+                            loc.t("menu.settings.music_vol"),
                             crate::core::config::format_volume(audio_settings.music_volume),
                             SettingsAction::DecMusicVol,
                             SettingsAction::IncMusicVol,
@@ -699,7 +792,7 @@ fn spawn_settings_menu(
 
                         spawn_stepper_row(
                             col_audio,
-                            "Weather Volume",
+                            loc.t("menu.settings.weather_vol"),
                             crate::core::config::format_volume(audio_settings.weather_volume),
                             SettingsAction::DecWeatherVol,
                             SettingsAction::IncWeatherVol,
@@ -711,7 +804,7 @@ fn spawn_settings_menu(
 
                         spawn_stepper_row(
                             col_audio,
-                            "SFX Volume",
+                            loc.t("menu.settings.sfx_vol"),
                             crate::core::config::format_volume(audio_settings.sfx_volume),
                             SettingsAction::DecSfxVol,
                             SettingsAction::IncSfxVol,
@@ -723,7 +816,7 @@ fn spawn_settings_menu(
 
                         spawn_stepper_row(
                             col_audio,
-                            "Ambient Volume",
+                            loc.t("menu.settings.ambient_vol"),
                             crate::core::config::format_volume(audio_settings.ambient_volume),
                             SettingsAction::DecAmbientVol,
                             SettingsAction::IncAmbientVol,
@@ -771,7 +864,7 @@ fn spawn_settings_menu(
                     ))
                     .with_children(|btn| {
                         btn.spawn((
-                            Text::new("Back"),
+                            Text::new(loc.t("menu.settings.back")),
                             back_font,
                             TextColor(Color::srgb(0.95, 0.95, 0.98)),
                             text_shadow_default(),
@@ -1058,6 +1151,7 @@ fn handle_settings_buttons(
     mut local_config: ResMut<LocalConfig>,
     mut audio_settings: ResMut<AudioSettings>,
     mut settings_tab: ResMut<SettingsTab>,
+    mut loc: ResMut<Localization>,
     mut env_state: Option<ResMut<EnvironmentState>>,
     mut dynamic_fps_settings: Option<ResMut<DynamicFpsSettings>>,
     mut next_state: ResMut<NextState<MenuState>>,
@@ -1083,6 +1177,16 @@ fn handle_settings_buttons(
                 SettingsAction::SwitchTab(tab) => {
                     *settings_tab = *tab;
                     sync_config = false;
+                }
+                SettingsAction::DecLanguage => {
+                    let next = loc.active_locale.prev();
+                    loc.set_locale(next);
+                    local_config.language = next.code().to_string();
+                }
+                SettingsAction::IncLanguage => {
+                    let next = loc.active_locale.next();
+                    loc.set_locale(next);
+                    local_config.language = next.code().to_string();
                 }
                 SettingsAction::DecMasterVol => {
                     local_config.master_volume =
@@ -1397,10 +1501,44 @@ fn handle_settings_buttons(
     }
 }
 
+fn handle_language_changed(
+    loc: Res<Localization>,
+    mut commands: Commands,
+    query: Query<Entity, With<SettingsMenuRoot>>,
+    chunk_settings: Res<ChunkStreamingSettings>,
+    game_settings: Res<GameSettings>,
+    local_config: Res<LocalConfig>,
+    audio_settings: Res<AudioSettings>,
+    settings_tab: Res<SettingsTab>,
+    env_state: Option<Res<EnvironmentState>>,
+    app_font: Option<Res<AppFont>>,
+    asset_server: Res<AssetServer>,
+) {
+    if !loc.is_changed() || loc.is_added() {
+        return;
+    }
+    for entity in &query {
+        commands.entity(entity).despawn();
+    }
+    spawn_settings_menu(
+        commands,
+        chunk_settings,
+        game_settings,
+        local_config,
+        audio_settings,
+        settings_tab,
+        loc,
+        env_state,
+        app_font,
+        asset_server,
+    );
+}
+
 fn update_settings_labels(
     chunk_settings: Res<ChunkStreamingSettings>,
     game_settings: Res<GameSettings>,
     local_config: Res<LocalConfig>,
+    loc: Res<Localization>,
     env_state: Option<Res<EnvironmentState>>,
     mut labels_query: Query<(
         &mut Text,
@@ -1473,124 +1611,138 @@ fn update_settings_labels(
     {
         if config_changed {
             if preset.is_some() {
-                text.0 = local_config
-                    .preset
-                    .map_or("Custom".to_string(), |p| p.short_name().to_string());
+                text.0 = format_preset(local_config.preset, &loc);
             } else if render_scale.is_some() {
                 text.0 = crate::core::config::format_render_scale(local_config.render_scale);
             } else if upscaling_filter.is_some() {
                 text.0 = local_config.upscaling_filter.label().to_string();
             } else if target_fps.is_some() {
-                text.0 = local_config.target_fps.label().to_string();
+                text.0 = format_target_fps(local_config.target_fps, &loc);
             } else if anti_aliasing.is_some() {
-                text.0 = local_config.anti_aliasing.label().to_string();
+                text.0 = format_anti_aliasing(local_config.anti_aliasing, &loc);
             } else if shadow_quality.is_some() {
-                text.0 = local_config.shadow_quality.label().to_string();
+                text.0 = format_shadows(local_config.shadow_quality, &loc);
             } else if cloud_quality.is_some() {
-                text.0 = local_config.cloud_quality.label().to_string();
+                text.0 = format_clouds(local_config.cloud_quality, &loc);
             } else if god_rays.is_some() {
                 text.0 = format!(
-                    "God Rays: {}",
+                    "{}: {}",
+                    loc.t("menu.settings.god_rays"),
                     if local_config.god_rays_enabled {
-                        "Enabled"
+                        loc.t("common.enabled")
                     } else {
-                        "Disabled"
+                        loc.t("common.disabled")
                     }
                 );
             } else if transmission.is_some() {
                 text.0 = format!(
-                    "Transmission: {}",
+                    "{}: {}",
+                    loc.t("menu.settings.transmission"),
                     if local_config.transmission_enabled {
-                        "Enabled"
+                        loc.t("common.enabled")
                     } else {
-                        "Disabled"
+                        loc.t("common.disabled")
                     }
                 );
             } else if mesh_uploads.is_some() {
-                text.0 = format!("{} Chunks", local_config.mesh_upload_budget);
+                text.0 = loc.t_args("common.chunks", &[&local_config.mesh_upload_budget.to_string()]);
             }
         }
         if game_changed {
             if screen_mode.is_some() {
-                text.0 = game_settings.screen_mode.label().to_string();
+                text.0 = format_screen_mode(game_settings.screen_mode, &loc);
             } else if fov.is_some() {
                 text.0 = format!("{}°", game_settings.fov_degrees as i32);
             } else if dynamic_fov.is_some() {
                 text.0 = format!(
-                    "FOV Effects: {}",
+                    "{}: {}",
+                    loc.t("menu.settings.fov_effects"),
                     if game_settings.dynamic_fov_enabled {
-                        "Normal"
+                        loc.t("common.normal")
                     } else {
-                        "Reduced"
+                        loc.t("common.reduced")
                     }
                 );
             } else if fog.is_some() {
                 text.0 = format!(
-                    "Fog: {}",
+                    "{}: {}",
+                    loc.t("menu.settings.fog"),
                     if game_settings.fog_enabled {
-                        "Enabled"
+                        loc.t("common.enabled")
                     } else {
-                        "Disabled"
+                        loc.t("common.disabled")
                     }
                 );
             } else if bobbing.is_some() {
                 text.0 = format!(
-                    "View Bobbing: {}",
+                    "{}: {}",
+                    loc.t("menu.settings.view_bobbing"),
                     if game_settings.view_bobbing {
-                        "Enabled"
+                        loc.t("common.enabled")
                     } else {
-                        "Disabled"
+                        loc.t("common.disabled")
                     }
                 );
             } else if grass.is_some() {
                 text.0 = format!(
-                    "Full Surface Sides: {}",
+                    "{}: {}",
+                    loc.t("menu.settings.full_grass"),
                     if game_settings.full_grass {
-                        "Enabled"
+                        loc.t("common.enabled")
                     } else {
-                        "Disabled"
+                        loc.t("common.disabled")
                     }
                 );
             } else if vsync.is_some() {
                 text.0 = format!(
-                    "VSync: {}",
+                    "{}: {}",
+                    loc.t("menu.settings.vsync"),
                     if game_settings.vsync_enabled {
-                        "Enabled"
+                        loc.t("common.enabled")
                     } else {
-                        "Disabled"
+                        loc.t("common.disabled")
                     }
                 );
             } else if dyn_fps.is_some() {
                 text.0 = format!(
-                    "Dynamic FPS: {}",
+                    "{}: {}",
+                    loc.t("menu.settings.dynamic_fps"),
                     if game_settings.dynamic_fps_enabled {
-                        "Enabled"
+                        loc.t("common.enabled")
                     } else {
-                        "Disabled"
+                        loc.t("common.disabled")
                     }
                 );
             }
         }
         if chunk_changed {
             if render_dist.is_some() {
-                text.0 = format!("{} Chunks", chunk_settings.render_distance);
+                text.0 = loc.t_args("common.chunks", &[&chunk_settings.render_distance.to_string()]);
             } else if lod_dist.is_some() {
                 text.0 = if chunk_settings.lod_render_distance == 0 {
-                    "Disabled".to_string()
+                    loc.t("common.disabled").to_string()
                 } else {
-                    format!("{} Chunks", chunk_settings.lod_render_distance)
+                    loc.t_args("common.chunks", &[&chunk_settings.lod_render_distance.to_string()])
                 };
             } else if sim_dist.is_some() {
-                text.0 = format!("{} Chunks", chunk_settings.simulation_distance);
+                text.0 = loc.t_args("common.chunks", &[&chunk_settings.simulation_distance.to_string()]);
             } else if mesh_uploads.is_some() {
-                text.0 = format!("{} Chunks", chunk_settings.mesh_upload_budget);
+                text.0 = loc.t_args("common.chunks", &[&chunk_settings.mesh_upload_budget.to_string()]);
             }
         }
         if (env_changed || time_pause.is_some()) && time_pause.is_some() {
             let paused = env_state
                 .as_ref()
                 .map_or(local_config.is_time_paused, |e| e.is_time_paused);
-            text.0 = format!("Time Flow: {}", if paused { "Paused" } else { "Running" });
+            text.0 = format!(
+                "{}: {}",
+                loc.t("menu.settings.time_flow"),
+                if paused {
+                    loc.t("common.paused")
+                } else {
+                    loc.t("common.running")
+                }
+            );
         }
     }
 }
@@ -1623,6 +1775,18 @@ fn update_audio_settings_labels(
         } else if ambient.is_some() {
             text.0 = crate::core::config::format_volume(audio_settings.ambient_volume);
         }
+    }
+}
+
+fn update_language_label(
+    loc: Res<Localization>,
+    mut query: Query<&mut Text, With<LanguageLabel>>,
+) {
+    if !loc.is_changed() {
+        return;
+    }
+    for mut text in &mut query {
+        text.0 = loc.active_locale.display_name().to_string();
     }
 }
 

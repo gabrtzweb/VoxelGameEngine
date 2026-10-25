@@ -477,6 +477,7 @@ fn update_minimap_ui(
     terrain_generator: Option<Res<TerrainGenerator>>,
     environment: Option<Res<crate::environment::EnvironmentState>>,
     weather: Option<Res<crate::environment::weather::WeatherManager>>,
+    loc: Option<Res<crate::core::Localization>>,
 ) {
     let Ok(player_transform) = player_query.single() else {
         return;
@@ -488,7 +489,11 @@ fn update_minimap_ui(
     let vz = (p.z / VOXEL_SIZE).floor() as i32;
 
     for mut text in &mut coords_query {
-        **text = format!("Coordinates: XYZ: {}, {}, {}", vx, vy, vz);
+        if let Some(ref l) = loc {
+            **text = l.t_fmt("hud.coordinates", &[&vx.to_string(), &vy.to_string(), &vz.to_string()]);
+        } else {
+            **text = format!("Coordinates: XYZ: {}, {}, {}", vx, vy, vz);
+        }
     }
 
     let biome_name = if let Some(ref generator) = terrain_generator {
@@ -498,34 +503,66 @@ fn update_minimap_ui(
     };
 
     for mut text in &mut biome_query {
-        **text = format!("Biome: {}", biome_name);
+        if let Some(ref l) = loc {
+            let biome_key = format!("biome.{}", biome_name.to_lowercase().replace(' ', "_"));
+            let biome_display = l.t(&biome_key);
+            **text = l.t_fmt("hud.biome", &[biome_display]);
+        } else {
+            **text = format!("Biome: {}", biome_name);
+        }
     }
 
-    let weather_name = if let Some(ref w) = weather {
-        w.target.name()
+    let (weather_name, weather_key) = if let Some(ref w) = weather {
+        let key = match w.target {
+            crate::environment::weather::WeatherType::Clear => "weather.clear_sky",
+            crate::environment::weather::WeatherType::Rain => "weather.rain",
+            crate::environment::weather::WeatherType::HeavyRain => "weather.heavy_rain",
+            crate::environment::weather::WeatherType::Thunderstorm => "weather.thunderstorm",
+            crate::environment::weather::WeatherType::Snow => "weather.snow",
+            crate::environment::weather::WeatherType::Blizzard => "weather.blizzard",
+            crate::environment::weather::WeatherType::DustStorm => "weather.dust_storm",
+        };
+        (w.target.name(), key)
     } else {
-        "Clear Sky"
+        ("Clear Sky", "weather.clear_sky")
     };
 
     for mut text in &mut weather_query {
-        **text = format!("Weather: {}", weather_name);
+        if let Some(ref l) = loc {
+            let weather_display = l.t(weather_key);
+            **text = l.t_fmt("hud.weather", &[weather_display]);
+        } else {
+            **text = format!("Weather: {}", weather_name);
+        }
     }
 
-    let (day, time_str, season_name) = if let Some(ref env) = environment {
+    let (day, time_str, season_key, season_name) = if let Some(ref env) = environment {
         let hours = (env.time_of_day * 24.0 + 6.0).rem_euclid(24.0);
         let h = hours.floor() as u32;
         let m = ((hours - hours.floor()) * 60.0).floor() as u32;
+        let key = match env.season() {
+            crate::environment::time::Season::Spring => "season.spring",
+            crate::environment::time::Season::Summer => "season.summer",
+            crate::environment::time::Season::Autumn => "season.autumn",
+            crate::environment::time::Season::Winter => "season.winter",
+        };
         (
             env.day_of_season(),
             format!("{h:02}:{m:02}"),
+            key,
             env.season().name().to_lowercase(),
         )
     } else {
-        (1, "06:00".to_string(), "spring".to_string())
+        (1, "06:00".to_string(), "season.spring", "spring".to_string())
     };
 
     for mut text in &mut date_query {
-        **text = format!("Day: {day}, {time_str}, {season_name}");
+        if let Some(ref l) = loc {
+            let season_display = l.t(season_key);
+            **text = l.t_fmt("hud.date", &[&day.to_string(), &time_str, season_display]);
+        } else {
+            **text = format!("Day: {day}, {time_str}, {season_name}");
+        }
     }
 }
 

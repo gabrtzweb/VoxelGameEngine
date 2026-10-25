@@ -62,15 +62,16 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **06** | **[Flora, Crops & Interactive Mechanical Blocks](#phase-6-flora-crops--interactive-mechanical-blocks-in-progress)** | **In Progress** | Agricultural lifecycle simulation, in-world crop growth, connected block topology masks, wild flora, interactive doors and containers |
 | **07** | **[Subterranean Strata, Caverns & Geological Generation](#phase-7-subterranean-strata-caverns--geological-generation-in-progress)** | **In Progress** | Multi-tier geological strata, Mantle bedrock at Y = -254, 54 authentic ore vein pairings, crystal geodes, subterranean cave biomes |
 | **08** | **[Biome Refactoring, Climate Modeling & Tree/Flora Distribution](#phase-8-biome-refactoring-climate-modeling--treeflora-distribution-planned)** | **Planned** | Multi-noise climate fields (continentalness/temperature/moisture), organic biome dithering, ecological tree dispersion, canopy models |
-| **09** | **[System Menus & Cartography Overhaul](#phase-9-system-menus--cartography-overhaul-planned)** | **Planned** | Unified Dark Iron system menus (Pause, Settings, Keybindings), full-screen world map cartography, fog of war, map markers |
-| **10** | **[Sound Engine & Spatial Audio System](#phase-10-sound-engine--spatial-audio-system-planned)** | **Planned** | 3D spatial audio, material-based block break/place and footsteps, ambient environmental soundscapes, weather audio, dynamic music |
+| **09** | **[Main Menu & World Management](#phase-9-main-menu--world-management-planned)** | **Planned** | Boot to Main Menu title screen, New World creation (seed & name), saved world browser, persistence & save triggers, quit |
+| **10** | **[Sound Engine & Spatial Audio System](#phase-10-sound-engine--spatial-audio-system-in-progress)** | **In Progress** | 3D spatial audio, material-based block break/place and footsteps, ambient environmental soundscapes, weather audio, dynamic music |
 | **11** | **[Custom Voxel Player Character & Modular Character Creator](#phase-11-custom-voxel-player-character--modular-character-creator-planned)** | **Planned** | Modular voxel character rig, Character Creator interface, fantasy races, custom hair, skin, eye, and cosmetic customization |
 | **12** | **[First-Person Item Rendering & Creative Utility Tools](#phase-12-first-person-item-rendering--creative-utility-tools-planned)** | **Planned** | 3D held items/blocks in player hand, paint roller, lumberjack tree-felling saw, multi-block sledgehammer, measurement tools |
 | **13** | **[Physics Engine, Fluid Dynamics & Item Drops](#phase-13-physics-engine-fluid-dynamics--item-drops-planned)** | **Planned** | Overhauled fluid propagation, gravity blocks (sand, gravel), 3D floating item drops with magnetism, projectile trajectories |
-| **14** | **[Dynamic Weather System & Meteorological Phenomena](#phase-14-dynamic-weather-system--meteorological-phenomena-planned)** | **Planned** | Multi-state weather simulation (rain, snow, fog, storms), precipitation particles, surface wetness, dynamic snow accumulation |
+| **14** | **[Dynamic Weather System & Meteorological Phenomena](#phase-14-dynamic-weather-system--meteorological-phenomena-completed)** | **Completed** | Multi-state weather simulation (rain, snow, fog, storms), precipitation particles, surface wetness, dynamic snow accumulation |
 | **15** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-15-visual-aesthetics-shaders--atmospheric-fx-overhaul-planned)** | **Planned** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, biome color grading |
 | **16** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-16-performance-engineering-chunk-streaming--lod-enhancements-planned)** | **Planned** | Worker thread scaling, GPU frustum/occlusion culling, smooth LOD horizon transitions, runtime voxel memory compression |
-| **17** | **[Localization & Multi-Language Support](#phase-17-localization--multi-language-support-planned)** | **Planned** | `lang/` translation files (`en_us`, `pt_br`), translation-key lookup for all UI/block/item strings, in-game language selector in Settings |
+| **17** | **[Localization & Multi-Language Support](#phase-17-localization--multi-language-support-in-progress)** | **In Progress** | `lang/` translation files (`en_us`, `pt_br`), comprehensive UI/block/item localization, natural Portuguese grammar, in-game language selector |
+| **18** | **[Controls & Keybinding System](#phase-18-controls--keybinding-system-planned)** | **Planned** | Configurable keybindings for all actions, mouse sensitivity & invert Y options, input conflict detection, Main Menu & Pause integration |
 
 ---
 
@@ -186,27 +187,34 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 9: System Menus & Cartography Overhaul (Planned)
+### Phase 9: Main Menu & World Management (Planned)
 
-- [ ] **Unified Dark Iron & Parchment System Menus**:
-  - Overhaul the in-game Pause Menu, Settings Menu, Audio/Video Options, and Keybindings to strictly adhere to the unified Dark Iron design system.
-  - Add smooth menu transition animations and responsive input support for gamepad and keyboard navigation.
-- [ ] **Stylized Cartography & World Map Overhaul**:
-  - Overhaul the full-screen World Map (`M`) with hand-drawn parchment aesthetics, smooth zoom/pan controls, and customizable player map pins.
-  - Implement dynamic fog of war revealing terrain as the player explores, along with compass navigation integration.
+- [ ] **Boot Flow Transition & Title Screen Interface**:
+  - Re-architect engine startup flow to boot into a dedicated Main Menu / Title Screen instead of spawning directly into active gameplay.
+  - Implement Dark Iron visual design suite for the title screen with animated background panorama, logo banner, version indicator, and navigation buttons (*Play*, *Settings*, *Controls*, *Credits*, *Quit*).
+- [ ] **New World Creation Interface**:
+  - Build a world creation modal allowing players to define World Name, custom World Seed (with seed randomizer), and initial game mode (Survival / Creative).
+  - Add procedural generation seed validation and world folder initialization.
+- [ ] **Saved Worlds Selection & Loading Architecture**:
+  - Implement saved world list UI that queries local save directories (`saves/`).
+  - Display rich save metadata: world name, seed, last played timestamp, game mode, and file size.
+  - Enable loading, duplicating, and deleting world saves safely with confirmation prompts.
+- [ ] **World Persistence & Session Lifecycle**:
+  - Connect in-game Pause Menu (*Save and Return to Title Screen*, *Quit to Desktop*) to world state serialization routines.
+  - Graceful world unload releasing voxel chunks, simulation threads, and audio channels before returning to the main menu.
 
 ---
 
-### Phase 10: Sound Engine & Spatial Audio System (Planned)
+### Phase 10: Sound Engine & Spatial Audio System (In Progress)
 
-- [ ] **Audio Pipeline & Channel Architecture**:
-  - Multi-channel audio engine with independent volume buses for master, ambience, blocks, footsteps, sound effects, and music.
+- [x] **Audio Pipeline & Channel Architecture**:
+  - Multi-channel audio engine (`AudioSettings`, `EngineAudioPlugin`) with independent volume channels for master, weather, sound effects (SFX), music, and ambient murmurs, integrated with in-game Settings UI and persistent `local_config.json`.
 - [ ] **Block Interaction & Footstep Audio**:
   - Implement material-specific block break, place, and impact audio cues (stone, wood, dirt, sand, gravel, glass, foliage).
   - Implement dynamic 3D spatial footstep sounds based on surface block material, movement stance (walking, sprinting, sneaking), and submersion.
-- [ ] **Dynamic Environment, Weather & Background Music**:
-  - Add ambient environmental soundscapes (forest wind, cave echoes, shoreline surf, running streams).
-  - Implement 3D spatial weather audio (rain intensity, thunderstorm claps, blizzards) and dynamic daytime/nighttime background music playlists.
+- [x] **Dynamic Environment, Weather & Background Music**:
+  - Add ambient environmental soundscapes and multi-channel weather audio (rain intensity, wind gusts, snow murmur, sandstorms, physical speed-of-sound thunderclaps).
+  - Implement dynamic gameplay background music soundtrack player (`GameplayMusicPlugin`) with seamless cross-fading and organic pauses across all 39 game music tracks.
 
 ---
 
@@ -251,7 +259,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 14: Dynamic Weather System & Meteorological Phenomena (Planned)
+### Phase 14: Dynamic Weather System & Meteorological Phenomena (Completed)
 
 Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dynamics from the *Particle Rain* mod, Phase 14 establishes a high-performance, modular weather simulation and particle rendering system fully integrated with the 1.0m voxel world, Bevy 0.20, and WESL shaders.
 
@@ -282,10 +290,6 @@ Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dyna
   - Procedural lightning bolt generation during `Thunderstorm` events: striking high-elevation terrain with instantaneous full-scene emissive flash and localized point light.
   - Physical distance-based audio delay: speed-of-sound calculated interval between visual flash and rumble impact.
   - Spatial weather audio pipeline: integration of multi-track ambient loops (rain intensity, ground vs. altitude snow murmur, whistling desert sandstorms using assets from mod references).
-- [ ] **Phase 14.6: World Interaction & Physical Accumulation**:
-  - Snow layer accumulation: gradual placement of thin snow slabs on upward-facing solid blocks with direct sky exposure during snowy conditions.
-  - Surface water freezing into ice in sub-zero elevations ($T(y) \le 0.15$).
-  - Rain-induced fire extinguishing and soil/farmland hydration hooks.
 
 ---
 
@@ -317,15 +321,34 @@ Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dyna
 
 ---
 
-### Phase 17: Localization & Multi-Language Support (Planned)
+### Phase 17: Localization & Multi-Language Support (In Progress)
 
-- [ ] **Language File Architecture (`lang/`)**:
-  - Create a dedicated `assets/lang/` directory holding one translation file per locale, starting with `en_us` (default / fallback) and `pt_br`.
+- [x] **Language File Architecture (`lang/`)**:
+  - Create a dedicated `assets/lang/` directory holding one translation file per locale (`en_us.json` default / fallback, and `pt_br.json`).
   - Use flat, namespaced translation keys (e.g. `menu.tab.system`, `block.sand_common`, `hud.tooltip.empty`) so new locales can be added without code changes.
-- [ ] **Translation Key Lookup & String Migration**:
+- [ ] **Comprehensive Translation Key Lookup & String Migration**:
   - Introduce a `Localization` resource that loads the active locale on startup and resolves keys at runtime, falling back to `en_us` for missing entries.
-  - Migrate all hardcoded UI strings (menu bar tabs, pause menu, settings, inventory titles, tooltips) and block/item display names (`Voxel::label()`) to translation keys.
-  - Keep all source code, identifiers, and default content authored in English.
-- [ ] **In-Game Language Selector**:
-  - Add a language option inside the Settings menu, persisted in the user config file, with live UI refresh on change (no restart required).
-  - Validate font glyph coverage for accented characters (e.g. `ã`, `ç`, `é`) across all supported locales.
+  - Migrate all UI strings (Settings options, Audio controls, Menu Bar tabs, Journal provisional view, Target HUD block names, Creative Inventory tabs/search) to translation keys.
+  - Ensure all Portuguese translations adhere to natural phrasing, proper grammar, and standard gaming terminology (adjective-noun order, correct prepositions).
+- [x] **In-Game Language Selector**:
+  - Add a language option inside the Settings menu, persisted in `local_config.json`, with live reactive UI refresh on change (no restart required).
+  - Validate font glyph coverage for accented Latin characters (e.g. `ã`, `ç`, `é`, `í`, `õ`) across all supported interfaces.
+
+---
+
+### Phase 18: Controls & Keybinding System (Planned)
+
+- [ ] **Unified Controls & Input Customization UI**:
+  - Activate the existing `Controls` button across both the in-game Pause Menu and the Main Menu Settings.
+  - Provide an intuitive categorization: *Movement*, *Gameplay & Interaction*, *Interface & Menus*, and *Mouse / Camera*.
+- [ ] **Rebindable Keybindings & Conflict Resolution**:
+  - Full keyboard keybinding remapping for all engine actions: movement (`WASD`), jumping/flight (`Space`), crouching/sneaking (`LCtrl`), sprinting (`LShift`), inventory (`E`), world map (`M`), journal (`J`), shaping tool (`R`/`T`), and hotbar quick-slots (`1`-`9`).
+  - Support multi-button mouse binding (Left, Right, Middle, Extra mouse buttons).
+  - Real-time conflict detection highlighting overlapping keybinds in amber/red with one-click *Reset to Defaults* button.
+- [ ] **Mouse & Camera Configuration**:
+  - Configurable mouse sensitivity sliders (independent horizontal and vertical axes).
+  - Invert Mouse Y-axis toggle for flight and first-person camera control.
+  - Optional mouse smoothing and raw input toggles for precise cursor and crosshair handling.
+- [ ] **Input Configuration Persistence**:
+  - Save all custom key assignments, mouse settings, and control flags into `local_config.json`.
+  - Automatic migration and fallback to default input bindings on format updates or corrupt configurations.

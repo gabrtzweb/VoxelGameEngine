@@ -64,32 +64,38 @@ pub fn format_target_hud_title(
     voxel: Voxel,
     shape: Option<(BlockShape, u8)>,
     extra_voxel: Option<Voxel>,
+    loc: Option<&crate::core::Localization>,
 ) -> String {
+    let voxel_name = loc.map_or_else(|| voxel.label().to_string(), |l| l.t_block(voxel).to_string());
     if let Some(extra) = extra_voxel {
-        return format!("{} / {} Slab", voxel.label(), extra.label());
+        let extra_name = loc.map_or_else(|| extra.label().to_string(), |l| l.t_block(extra).to_string());
+        if let Some(l) = loc {
+            return l.t_args("hud.double_slab", &[&voxel_name, &extra_name]);
+        }
+        return format!("{} / {} Slab", voxel_name, extra_name);
     }
 
     if voxel.is_basket() {
-        return voxel.label().to_string();
+        return voxel_name;
     }
 
     if voxel.is_torch() {
         if let Some((s, orientation)) = shape {
-            return format!("{} ({})", voxel.label(), s.orientation_name(orientation));
+            return format!("{} ({})", voxel_name, s.orientation_name(orientation));
         }
-        return voxel.label().to_string();
+        return voxel_name;
     }
 
     match shape {
         Some((s, orientation)) if s != BlockShape::Full && !voxel.is_fluid() => {
             format!(
                 "{} ({} - {})",
-                voxel.label(),
+                voxel_name,
                 s.name(),
                 s.orientation_name(orientation)
             )
         }
-        _ => voxel.label().to_string(),
+        _ => voxel_name,
     }
 }
 
@@ -97,6 +103,7 @@ fn setup_target_hud(
     mut commands: Commands,
     icons: Res<BlockIcons>,
     app_font: Option<Res<crate::core::AppFont>>,
+    loc: Option<Res<crate::core::Localization>>,
 ) {
     let font_handle = app_font.as_ref().map(|f| f.source());
 
@@ -180,7 +187,10 @@ fn setup_target_hud(
 
                             col.spawn((
                                 TargetHudSubtitle,
-                                Text::new("Voxel Engine"),
+                                Text::new(
+                                    loc.as_ref()
+                                        .map_or("Voxel Engine", |l| l.t("hud.subtitle")),
+                                ),
                                 subtitle_font,
                                 TextColor(Color::srgb(0.42, 0.65, 0.96)),
                                 crate::core::text_shadow_default(),
@@ -194,6 +204,7 @@ fn update_target_hud(
     current_target: Res<CurrentTarget>,
     world: Res<VoxelWorld>,
     icons: Res<BlockIcons>,
+    loc: Option<Res<crate::core::Localization>>,
     menu_state: Option<Res<State<MenuState>>>,
     mut root_query: Query<&mut Visibility, With<TargetHudRoot>>,
     mut icon_query: Query<&mut ImageNode, With<TargetHudIcon>>,
@@ -245,7 +256,7 @@ fn update_target_hud(
     }
 
     // Update title text
-    let new_title = format_target_hud_title(voxel, shape, extra_voxel);
+    let new_title = format_target_hud_title(voxel, shape, extra_voxel, loc.as_deref());
     for mut text in &mut title_query {
         if text.0 != new_title {
             text.0 = new_title.clone();
