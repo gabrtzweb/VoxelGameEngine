@@ -42,6 +42,22 @@ impl BiomeType {
         }
     }
 
+    pub fn translation_key(self) -> &'static str {
+        match self {
+            Self::Plains => "biome.temperate_plains",
+            Self::Forest => "biome.dense_temperate_forest",
+            Self::Desert => "biome.arid_desert_badlands",
+            Self::Taiga => "biome.snowy_coniferous_taiga",
+            Self::Highlands => "biome.rocky_highlands_mountain_tundra",
+            Self::Savanna => "biome.tropical_savanna",
+            Self::CoastalBeachReef => "biome.shallow_coastal_beach_reef",
+            Self::OpenOcean => "biome.open_temperate_ocean",
+            Self::AbyssalTrench => "biome.abyssal_ocean_trench",
+            Self::RiversLakes => "biome.inland_rivers_lakes",
+            Self::MangroveWetland => "biome.mangrove_swamp_wetland",
+        }
+    }
+
     pub fn config(self) -> BiomeConfig {
         match self {
             Self::Plains => BiomeConfig {

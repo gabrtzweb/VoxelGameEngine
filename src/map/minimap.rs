@@ -496,16 +496,16 @@ fn update_minimap_ui(
         }
     }
 
-    let biome_name = if let Some(ref generator) = terrain_generator {
-        generator.sample_column(vx, vz).biome.name()
+    let (biome_name, biome_key) = if let Some(ref generator) = terrain_generator {
+        let b = generator.sample_column(vx, vz).biome;
+        (b.name(), b.translation_key())
     } else {
-        "Plains"
+        ("Temperate Plains", "biome.temperate_plains")
     };
 
     for mut text in &mut biome_query {
         if let Some(ref l) = loc {
-            let biome_key = format!("biome.{}", biome_name.to_lowercase().replace(' ', "_"));
-            let biome_display = l.t(&biome_key);
+            let biome_display = l.t(biome_key);
             **text = l.t_fmt("hud.biome", &[biome_display]);
         } else {
             **text = format!("Biome: {}", biome_name);
