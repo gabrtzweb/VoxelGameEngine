@@ -302,6 +302,8 @@ fn handle_menu_bar_buttons(
 
 fn handle_menu_bar_shortcuts(
     keyboard: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
+    control_settings: Option<Res<crate::core::ControlSettings>>,
     menu_state: Res<State<MenuState>>,
     mut next_state: ResMut<NextState<MenuState>>,
     search_query: Option<Res<CreativeSearchQuery>>,
@@ -315,9 +317,21 @@ fn handle_menu_bar_shortcuts(
         return;
     }
 
-    if keyboard.just_pressed(KeyCode::KeyQ) {
+    let prev_pressed = control_settings
+        .as_ref()
+        .map_or(keyboard.just_pressed(KeyCode::KeyQ), |c| {
+            c.is_action_just_pressed(crate::core::InputAction::MenuTabPrev, &keyboard, &mouse)
+        });
+
+    let next_pressed = control_settings
+        .as_ref()
+        .map_or(keyboard.just_pressed(KeyCode::KeyE), |c| {
+            c.is_action_just_pressed(crate::core::InputAction::MenuTabNext, &keyboard, &mouse)
+        });
+
+    if prev_pressed {
         cycle_tab(&menu_state, &mut next_state, false);
-    } else if keyboard.just_pressed(KeyCode::KeyE) {
+    } else if next_pressed {
         cycle_tab(&menu_state, &mut next_state, true);
     }
 }
@@ -339,7 +353,7 @@ fn cycle_tab(
         MenuState::Inventory => 0,
         MenuState::Journal => 1,
         MenuState::WorldMap => 2,
-        MenuState::Pause | MenuState::Settings => 3,
+        MenuState::Pause | MenuState::Settings | MenuState::Controls => 3,
         _ => 0,
     };
 
@@ -369,7 +383,7 @@ fn update_menu_bar_tab_highlights(
             MenuBarAction::TabJournal => current == MenuState::Journal,
             MenuBarAction::TabWorldMap => current == MenuState::WorldMap,
             MenuBarAction::TabSettings => {
-                current == MenuState::Pause || current == MenuState::Settings
+                current == MenuState::Pause || current == MenuState::Settings || current == MenuState::Controls
             }
             _ => false,
         };

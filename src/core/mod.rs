@@ -1,4 +1,5 @@
 pub mod config;
+pub mod controls;
 pub mod dev_stats;
 pub mod dynamic_fps;
 pub mod font;
@@ -14,6 +15,7 @@ pub use config::{
     AntiAliasingMode, CloudQuality, LocalConfig, PerformancePreset, ShadowQuality, TargetFpsLimit,
     UpscalingFilter,
 };
+pub use controls::{ActionCategory, ControlSettings, InputAction, InputBinding};
 pub use dev_stats::DevStatsPlugin;
 pub use dynamic_fps::{DynamicFpsPlugin, DynamicFpsSettings, DynamicFpsState};
 pub use font::{AppFont, FontPlugin, FontSource, text_shadow_default};

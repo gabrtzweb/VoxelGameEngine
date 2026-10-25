@@ -104,11 +104,14 @@ fn main() {
         ..default()
     };
 
+    let control_settings = local_config.to_control_settings();
+
     App::new()
         .insert_resource(local_config)
         .insert_resource(chunk_settings)
         .insert_resource(game_settings)
         .insert_resource(dynamic_fps_settings)
+        .insert_resource(control_settings)
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {

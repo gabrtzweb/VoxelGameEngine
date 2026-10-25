@@ -372,6 +372,8 @@ fn setup_hotbar_ui(
 
 fn handle_hotbar_input(
     keyboard: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
+    control_settings: Option<Res<crate::core::ControlSettings>>,
     mouse_scroll: Res<AccumulatedMouseScroll>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
     inspector: Option<Res<InspectorInteraction>>,
@@ -383,26 +385,51 @@ fn handle_hotbar_input(
     {
         return;
     }
-    let digit_keys = [
-        KeyCode::Digit1,
-        KeyCode::Digit2,
-        KeyCode::Digit3,
-        KeyCode::Digit4,
-        KeyCode::Digit5,
-        KeyCode::Digit6,
-        KeyCode::Digit7,
-        KeyCode::Digit8,
-        KeyCode::Digit9,
+
+    let hotbar_actions = [
+        crate::core::InputAction::Hotbar1,
+        crate::core::InputAction::Hotbar2,
+        crate::core::InputAction::Hotbar3,
+        crate::core::InputAction::Hotbar4,
+        crate::core::InputAction::Hotbar5,
+        crate::core::InputAction::Hotbar6,
+        crate::core::InputAction::Hotbar7,
+        crate::core::InputAction::Hotbar8,
+        crate::core::InputAction::Hotbar9,
     ];
 
-    for (idx, key) in digit_keys.iter().enumerate() {
-        if keyboard.just_pressed(*key) {
-            hotbar.active_slot = idx;
+    if let Some(ref c) = control_settings {
+        for (idx, action) in hotbar_actions.iter().enumerate() {
+            if c.is_action_just_pressed(*action, &keyboard, &mouse) {
+                hotbar.active_slot = idx;
+            }
+        }
+    } else {
+        let digit_keys = [
+            KeyCode::Digit1,
+            KeyCode::Digit2,
+            KeyCode::Digit3,
+            KeyCode::Digit4,
+            KeyCode::Digit5,
+            KeyCode::Digit6,
+            KeyCode::Digit7,
+            KeyCode::Digit8,
+            KeyCode::Digit9,
+        ];
+        for (idx, key) in digit_keys.iter().enumerate() {
+            if keyboard.just_pressed(*key) {
+                hotbar.active_slot = idx;
+            }
         }
     }
 
-    // When holding Z (camera zoom), mouse wheel scroll adjusts zoom level instead of cycling hotbar
-    if !keyboard.pressed(KeyCode::KeyZ) {
+    // When holding Zoom, mouse wheel scroll adjusts zoom level instead of cycling hotbar
+    let is_zooming = control_settings.as_ref().map_or(
+        keyboard.pressed(KeyCode::KeyZ),
+        |c| c.is_action_pressed(crate::core::InputAction::Zoom, &keyboard, &mouse),
+    );
+
+    if !is_zooming {
         let scroll = mouse_scroll.delta.y;
         if scroll > 0.05 {
             // Scroll up = previous slot
@@ -413,8 +440,12 @@ fn handle_hotbar_input(
         }
     }
 
-    // Q key clears the active hotbar slot (giving the player an empty hand)
-    if keyboard.just_pressed(KeyCode::KeyQ) {
+    // Drop item key clears the active hotbar slot (giving the player an empty hand)
+    let is_drop = control_settings.as_ref().map_or(
+        keyboard.just_pressed(KeyCode::KeyQ),
+        |c| c.is_action_just_pressed(crate::core::InputAction::DropItem, &keyboard, &mouse),
+    );
+    if is_drop {
         let active = hotbar.active_slot;
         hotbar.slots[active] = None;
     }

@@ -71,7 +71,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **15** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-15-visual-aesthetics-shaders--atmospheric-fx-overhaul-planned)** | **Planned** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, biome color grading |
 | **16** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-16-performance-engineering-chunk-streaming--lod-enhancements-planned)** | **Planned** | Worker thread scaling, GPU frustum/occlusion culling, smooth LOD horizon transitions, runtime voxel memory compression |
 | **17** | **[Localization & Multi-Language Support](#phase-17-localization--multi-language-support-completed)** | **Completed** | `lang/` translation files (`en_us`, `pt_br`), comprehensive UI/block/item localization, natural Portuguese grammar, in-game language selector |
-| **18** | **[Controls & Keybinding System](#phase-18-controls--keybinding-system-planned)** | **Planned** | Configurable keybindings for all actions, mouse sensitivity & invert Y options, input conflict detection, Main Menu & Pause integration |
+| **18** | **[Controls & Keybinding System](#phase-18-controls--keybinding-system-completed)** | **Completed** | Configurable keybindings for all actions, mouse sensitivity & invert Y options, input conflict detection, Main Menu & Pause integration |
 
 ---
 
@@ -341,19 +341,19 @@ Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dyna
 
 ---
 
-### Phase 18: Controls & Keybinding System (Planned)
+### Phase 18: Controls & Keybinding System (Completed)
 
-- [ ] **Unified Controls & Input Customization UI**:
+- [x] **Unified Controls & Input Customization UI**:
   - Activate the existing `Controls` button across both the in-game Pause Menu and the Main Menu Settings.
   - Provide an intuitive categorization: *Movement*, *Gameplay & Interaction*, *Interface & Menus*, and *Mouse / Camera*.
-- [ ] **Rebindable Keybindings & Conflict Resolution**:
-  - Full keyboard keybinding remapping for all engine actions: movement (`WASD`), jumping/flight (`Space`), crouching/sneaking (`LCtrl`), sprinting (`LShift`), inventory (`E`), world map (`M`), journal (`J`), shaping tool (`R`/`T`), and hotbar quick-slots (`1`-`9`).
+- [x] **Rebindable Keybindings & Conflict Resolution**:
+  - Full keyboard keybinding remapping for all engine actions: movement (`WASD`), jumping/flight (`Space`), crouching/sneaking (`LCtrl`), sprinting (`LShift`), inventory (`E`/`I`), world map (`M`), journal (`J`), shaping tool (`R`/`T`), and hotbar quick-slots (`1`-`9`).
   - Support multi-button mouse binding (Left, Right, Middle, Extra mouse buttons).
   - Real-time conflict detection highlighting overlapping keybinds in amber/red with one-click *Reset to Defaults* button.
-- [ ] **Mouse & Camera Configuration**:
-  - Configurable mouse sensitivity sliders (independent horizontal and vertical axes).
+- [x] **Mouse & Camera Configuration**:
+  - Configurable mouse sensitivity sliders (stepper from 0.2x to 3.0x in 0.1 increments).
   - Invert Mouse Y-axis toggle for flight and first-person camera control.
   - Optional mouse smoothing and raw input toggles for precise cursor and crosshair handling.
-- [ ] **Input Configuration Persistence**:
+- [x] **Input Configuration Persistence**:
   - Save all custom key assignments, mouse settings, and control flags into `local_config.json`.
   - Automatic migration and fallback to default input bindings on format updates or corrupt configurations.

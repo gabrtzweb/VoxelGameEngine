@@ -640,7 +640,7 @@ impl Voxel {
 
     #[inline(always)]
     pub fn is_unbreakable(self) -> bool {
-        matches!(self, Self::Mantle)
+        matches!(self, Self::Mantle | Self::CobbledMantle)
     }
 
     #[inline(always)]

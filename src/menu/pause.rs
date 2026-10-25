@@ -255,7 +255,7 @@ fn handle_pause_menu_buttons(
                     next_state.set(MenuState::Settings);
                 }
                 PauseMenuAction::Controls => {
-                    info!("Controls & Keybinds configuration coming soon in Phase 2!");
+                    next_state.set(MenuState::Controls);
                 }
                 PauseMenuAction::Stats => {
                     info!("Statistics & Feats tracking coming soon in Phase 2!");

@@ -507,6 +507,26 @@ pub struct LocalConfig {
     /// Background darkness/dimming opacity applied while in menus.
     #[serde(default = "default_background_dimming")]
     pub background_dimming: BackgroundDimming,
+
+    /// Mouse sensitivity multiplier (0.2 ..= 3.0, default: 1.0).
+    #[serde(default = "default_mouse_sensitivity")]
+    pub mouse_sensitivity: f32,
+
+    /// Invert mouse look Y-axis (default: false).
+    #[serde(default = "default_invert_mouse_y")]
+    pub invert_mouse_y: bool,
+
+    /// Custom keybindings overrides map: action_name -> "Key:KeyCode" / "Mouse:MouseButton".
+    #[serde(default)]
+    pub custom_keybindings: std::collections::BTreeMap<String, String>,
+}
+
+fn default_mouse_sensitivity() -> f32 {
+    1.0
+}
+
+fn default_invert_mouse_y() -> bool {
+    false
 }
 
 fn default_menu_blur_intensity() -> MenuBlurIntensity {
@@ -687,11 +707,50 @@ impl Default for LocalConfig {
             gui_scale: default_gui_scale(),
             menu_blur_intensity: default_menu_blur_intensity(),
             background_dimming: default_background_dimming(),
+            mouse_sensitivity: default_mouse_sensitivity(),
+            invert_mouse_y: default_invert_mouse_y(),
+            custom_keybindings: std::collections::BTreeMap::new(),
         }
     }
 }
 
 impl LocalConfig {
+    /// Constructs a `ControlSettings` resource reflecting persisted bindings and mouse options.
+    pub fn to_control_settings(&self) -> crate::core::ControlSettings {
+        let mut controls = crate::core::ControlSettings::default();
+        controls.mouse_sensitivity = self.mouse_sensitivity;
+        controls.invert_mouse_y = self.invert_mouse_y;
+
+        for (action_key, binding_str) in &self.custom_keybindings {
+            if let Some(action) = crate::core::InputAction::from_config_key(action_key) {
+                if let Some(binding) = crate::core::InputBinding::from_config_str(binding_str) {
+                    controls.set_binding(action, binding);
+                }
+            }
+        }
+        controls
+    }
+
+    /// Updates internal config properties from active `ControlSettings`.
+    pub fn update_from_control_settings(&mut self, controls: &crate::core::ControlSettings) {
+        self.mouse_sensitivity = controls.mouse_sensitivity;
+        self.invert_mouse_y = controls.invert_mouse_y;
+
+        let defaults = crate::core::ControlSettings::default();
+        self.custom_keybindings.clear();
+
+        for &action in crate::core::InputAction::ALL {
+            let current_binding = controls.get_binding(action);
+            let default_binding = defaults.get_binding(action);
+            if current_binding != default_binding {
+                self.custom_keybindings.insert(
+                    action.config_key().to_string(),
+                    current_binding.to_config_str(),
+                );
+            }
+        }
+    }
+
     /// Loads `local_config.json` if it exists, otherwise creates and saves default settings.
     pub fn load_or_default() -> Self {
         if Path::new(CONFIG_PATH).exists()

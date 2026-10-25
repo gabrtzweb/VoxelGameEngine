@@ -124,6 +124,8 @@ pub struct JumpTapState {
 
 pub fn creative_movement(
     keyboard: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
+    control_settings: Option<Res<crate::core::ControlSettings>>,
     mouse_scroll: Res<AccumulatedMouseScroll>,
     time: Res<Time>,
     game_mode: Res<GameMode>,
@@ -140,7 +142,9 @@ pub fn creative_movement(
     mut jump_tap: Local<JumpTapState>,
 ) {
     let is_paused = menu_state.as_ref().is_some_and(|s| {
-        *s.get() == crate::menu::MenuState::Pause || *s.get() == crate::menu::MenuState::Settings
+        *s.get() == crate::menu::MenuState::Pause
+            || *s.get() == crate::menu::MenuState::Settings
+            || *s.get() == crate::menu::MenuState::Controls
     });
 
     if inspector_interaction.active || is_paused {
@@ -178,13 +182,17 @@ pub fn creative_movement(
     let in_water = water_submersion > WATER_SUBMERSION_THRESHOLD;
 
     // Stance resolution with headroom safety (disabled while in inventory UI)
+    // Stance resolution with headroom safety (disabled while in inventory UI)
     if motion.flying {
         motion.stance = PlayerStance::Standing;
     } else if !is_in_inventory {
+        let is_crouch = control_settings.as_ref().map_or(
+            keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight),
+            |c| c.is_action_pressed(crate::core::InputAction::Crouch, &keyboard, &mouse),
+        );
         let requested_stance = if keyboard.pressed(KeyCode::KeyC) {
             PlayerStance::Crawling
-        } else if keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight)
-        {
+        } else if is_crouch {
             PlayerStance::Crouching
         } else {
             PlayerStance::Standing
@@ -219,7 +227,12 @@ pub fn creative_movement(
     let eye_smoothing = 1.0 - (-14.0 * delta_seconds).exp();
     motion.current_eye_height += (target_eye_height - motion.current_eye_height) * eye_smoothing;
 
-    if !is_in_inventory && keyboard.just_pressed(KeyCode::Space) {
+    let jump_pressed = control_settings.as_ref().map_or(
+        keyboard.just_pressed(KeyCode::Space),
+        |c| c.is_action_just_pressed(crate::core::InputAction::Jump, &keyboard, &mouse),
+    );
+
+    if !is_in_inventory && jump_pressed {
         let double_tap = jump_tap
             .since_last_press
             .is_some_and(|elapsed| elapsed <= DOUBLE_JUMP_WINDOW);
@@ -256,17 +269,39 @@ pub fn creative_movement(
     motion.facing_yaw = yaw;
 
     let is_fast = !is_in_inventory
-        && (keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight));
+        && control_settings.as_ref().map_or(
+            keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight),
+            |c| c.is_action_pressed(crate::core::InputAction::Sprint, &keyboard, &mouse),
+        );
 
-    let movement_keyboard = if is_in_inventory {
+    let input_dirs = if is_in_inventory {
         None
     } else {
-        Some(&*keyboard)
+        let fwd = control_settings.as_ref().map_or(keyboard.pressed(KeyCode::KeyW), |c| {
+            c.is_action_pressed(crate::core::InputAction::MoveForward, &keyboard, &mouse)
+        });
+        let back = control_settings.as_ref().map_or(keyboard.pressed(KeyCode::KeyS), |c| {
+            c.is_action_pressed(crate::core::InputAction::MoveBackward, &keyboard, &mouse)
+        });
+        let left = control_settings.as_ref().map_or(keyboard.pressed(KeyCode::KeyA), |c| {
+            c.is_action_pressed(crate::core::InputAction::MoveLeft, &keyboard, &mouse)
+        });
+        let right = control_settings.as_ref().map_or(keyboard.pressed(KeyCode::KeyD), |c| {
+            c.is_action_pressed(crate::core::InputAction::MoveRight, &keyboard, &mouse)
+        });
+        let up = control_settings.as_ref().map_or(keyboard.pressed(KeyCode::Space), |c| {
+            c.is_action_pressed(crate::core::InputAction::Jump, &keyboard, &mouse)
+        });
+        let down = control_settings.as_ref().map_or(
+            keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight),
+            |c| c.is_action_pressed(crate::core::InputAction::Crouch, &keyboard, &mouse),
+        );
+        Some((fwd, back, left, right, up, down))
     };
 
     if motion.flying {
         fly_movement(
-            movement_keyboard,
+            input_dirs,
             delta_seconds,
             &world,
             &mut player_transform,
@@ -277,7 +312,7 @@ pub fn creative_movement(
         );
     } else {
         grounded_or_water_movement(
-            movement_keyboard,
+            input_dirs,
             delta_seconds,
             &world,
             &mut player_transform,
@@ -389,7 +424,7 @@ pub fn creative_movement(
 }
 
 fn fly_movement(
-    keyboard: Option<&ButtonInput<KeyCode>>,
+    input_dirs: Option<(bool, bool, bool, bool, bool, bool)>,
     delta_seconds: f32,
     world: &VoxelWorld,
     player_transform: &mut Transform,
@@ -399,31 +434,28 @@ fn fly_movement(
     is_fast: bool,
 ) {
     let mut direction = Vec3::ZERO;
+    let mut moving_vertically = false;
 
-    if let Some(keyboard) = keyboard {
-        if keyboard.pressed(KeyCode::KeyW) {
+    if let Some((fwd, back, left, right, up, down)) = input_dirs {
+        if fwd {
             direction += camera_forward;
         }
-
-        if keyboard.pressed(KeyCode::KeyS) {
+        if back {
             direction -= camera_forward;
         }
-
-        if keyboard.pressed(KeyCode::KeyD) {
+        if right {
             direction += camera_right;
         }
-
-        if keyboard.pressed(KeyCode::KeyA) {
+        if left {
             direction -= camera_right;
         }
-
-        if keyboard.pressed(KeyCode::Space) {
+        if up {
             direction += Vec3::Y;
         }
-
-        if keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight) {
+        if down {
             direction -= Vec3::Y;
         }
+        moving_vertically = up || down;
     }
 
     let speed = if is_fast { FAST_FLY_SPEED } else { FLY_SPEED };
@@ -433,12 +465,6 @@ fn fly_movement(
     } else {
         direction.normalize() * speed * delta_seconds
     };
-
-    let moving_vertically = keyboard.is_some_and(|k| {
-        k.pressed(KeyCode::Space)
-            || k.pressed(KeyCode::ControlLeft)
-            || k.pressed(KeyCode::ControlRight)
-    });
 
     let allow_step = !moving_vertically;
 
@@ -462,7 +488,7 @@ fn fly_movement(
 }
 
 fn grounded_or_water_movement(
-    keyboard: Option<&ButtonInput<KeyCode>>,
+    input_dirs: Option<(bool, bool, bool, bool, bool, bool)>,
     delta_seconds: f32,
     world: &VoxelWorld,
     player_transform: &mut Transform,
@@ -487,20 +513,17 @@ fn grounded_or_water_movement(
 
     let mut direction = Vec3::ZERO;
 
-    if let Some(keyboard) = keyboard {
-        if keyboard.pressed(KeyCode::KeyW) {
+    if let Some((fwd, back, left, right_dir, _, _)) = input_dirs {
+        if fwd {
             direction += forward;
         }
-
-        if keyboard.pressed(KeyCode::KeyS) {
+        if back {
             direction -= forward;
         }
-
-        if keyboard.pressed(KeyCode::KeyD) {
+        if right_dir {
             direction += right;
         }
-
-        if keyboard.pressed(KeyCode::KeyA) {
+        if left {
             direction -= right;
         }
     }
@@ -540,7 +563,9 @@ fn grounded_or_water_movement(
     motion.velocity.z = direction.z * speed;
 
     if in_water {
-        update_water_vertical_velocity(keyboard, delta_seconds, motion, water_submersion);
+        let (swim_up, swim_down) =
+            input_dirs.map_or((false, false), |(_, _, _, _, up, down)| (up, down));
+        update_water_vertical_velocity(swim_up, swim_down, delta_seconds, motion, water_submersion);
     } else {
         motion.velocity.y -= GRAVITY * delta_seconds;
 
@@ -619,7 +644,8 @@ fn grounded_or_water_movement(
 }
 
 fn update_water_vertical_velocity(
-    keyboard: Option<&ButtonInput<KeyCode>>,
+    swim_up: bool,
+    swim_down: bool,
     delta_seconds: f32,
     motion: &mut PlayerMotion,
     water_submersion: f32,
@@ -632,14 +658,12 @@ fn update_water_vertical_velocity(
 
     motion.velocity.y *= drag;
 
-    if let Some(keyboard) = keyboard {
-        if keyboard.pressed(KeyCode::Space) {
-            motion.velocity.y += WATER_SWIM_ACCELERATION * delta_seconds;
-        }
+    if swim_up {
+        motion.velocity.y += WATER_SWIM_ACCELERATION * delta_seconds;
+    }
 
-        if keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight) {
-            motion.velocity.y -= WATER_SWIM_ACCELERATION * delta_seconds;
-        }
+    if swim_down {
+        motion.velocity.y -= WATER_SWIM_ACCELERATION * delta_seconds;
     }
 
     motion.velocity.y = motion

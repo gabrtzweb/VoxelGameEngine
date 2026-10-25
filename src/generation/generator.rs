@@ -320,7 +320,7 @@ impl TerrainGenerator {
 
                         let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
                         let voxel = voxels[idx];
-                        if !voxel.is_collidable() || voxel == Voxel::Mantle {
+                        if !voxel.is_collidable() || voxel.is_unbreakable() {
                             continue;
                         }
 

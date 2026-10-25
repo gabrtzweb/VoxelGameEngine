@@ -187,10 +187,11 @@ impl StrataGenerator {
             }
 
             // D. Argillite Sedimentary Lenses (dense claystone: depth -15 to -80)
+            // Smaller, discreet pockets with lower spawn frequency
             if (-80..=-15).contains(&block_y) {
                 let argillite_noise =
-                    gradient_noise_3d(bx * 0.035, by * 0.050, bz * 0.035, seed.wrapping_add(141_421));
-                if argillite_noise > 0.63 {
+                    gradient_noise_3d(bx * 0.055, by * 0.075, bz * 0.055, seed.wrapping_add(141_421));
+                if argillite_noise > 0.72 {
                     return Voxel::Argillite;
                 }
             }
@@ -203,7 +204,7 @@ impl StrataGenerator {
         let eff_y = block_y as f32 + wave;
 
         // Macro-Estrato 1: Upper & Middle Crust (down to ~-110)
-        // Dominated by Dolomite (the classic continental stone baseline), with stratified bands of Andesite, Limestone, Argillite
+        // Dominated by Dolomite (the classic continental stone baseline), with stratified bands of Andesite and Limestone
         if eff_y > self.mid_crust_y as f32 {
             let band_noise =
                 gradient_noise_3d(bx * 0.020, by * 0.045, bz * 0.020, seed.wrapping_add(55_667));
@@ -211,8 +212,6 @@ impl StrataGenerator {
                 Voxel::Andesite
             } else if band_noise < -0.38 {
                 Voxel::Limestone
-            } else if band_noise.abs() < 0.12 {
-                Voxel::Argillite
             } else {
                 Voxel::Dolomite
             }

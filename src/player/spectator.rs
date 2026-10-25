@@ -4,6 +4,8 @@ use super::{GameMode, InspectorInteraction, PlayerCamera};
 
 pub(super) fn spectator_movement(
     keyboard: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
+    control_settings: Option<Res<crate::core::ControlSettings>>,
     time: Res<Time>,
     game_mode: Res<GameMode>,
     inspector: Option<Res<InspectorInteraction>>,
@@ -23,32 +25,58 @@ pub(super) fn spectator_movement(
     let (mut transform, camera) = camera.into_inner();
 
     let forward = *transform.forward();
-
     let right = *transform.right();
 
     let mut direction = Vec3::ZERO;
 
-    if keyboard.pressed(KeyCode::KeyW) {
+    let fwd_pressed = control_settings
+        .as_ref()
+        .map_or(keyboard.pressed(KeyCode::KeyW), |c| {
+            c.is_action_pressed(crate::core::InputAction::MoveForward, &keyboard, &mouse)
+        });
+    let back_pressed = control_settings
+        .as_ref()
+        .map_or(keyboard.pressed(KeyCode::KeyS), |c| {
+            c.is_action_pressed(crate::core::InputAction::MoveBackward, &keyboard, &mouse)
+        });
+    let right_pressed = control_settings
+        .as_ref()
+        .map_or(keyboard.pressed(KeyCode::KeyD), |c| {
+            c.is_action_pressed(crate::core::InputAction::MoveRight, &keyboard, &mouse)
+        });
+    let left_pressed = control_settings
+        .as_ref()
+        .map_or(keyboard.pressed(KeyCode::KeyA), |c| {
+            c.is_action_pressed(crate::core::InputAction::MoveLeft, &keyboard, &mouse)
+        });
+    let up_pressed = control_settings
+        .as_ref()
+        .map_or(keyboard.pressed(KeyCode::Space), |c| {
+            c.is_action_pressed(crate::core::InputAction::Jump, &keyboard, &mouse)
+        });
+    let down_pressed = control_settings
+        .as_ref()
+        .map_or(
+            keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight),
+            |c| c.is_action_pressed(crate::core::InputAction::Crouch, &keyboard, &mouse),
+        );
+
+    if fwd_pressed {
         direction += forward;
     }
-
-    if keyboard.pressed(KeyCode::KeyS) {
+    if back_pressed {
         direction -= forward;
     }
-
-    if keyboard.pressed(KeyCode::KeyD) {
+    if right_pressed {
         direction += right;
     }
-
-    if keyboard.pressed(KeyCode::KeyA) {
+    if left_pressed {
         direction -= right;
     }
-
-    if keyboard.pressed(KeyCode::Space) {
+    if up_pressed {
         direction += Vec3::Y;
     }
-
-    if keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight) {
+    if down_pressed {
         direction -= Vec3::Y;
     }
 
@@ -56,7 +84,12 @@ pub(super) fn spectator_movement(
         return;
     }
 
-    let is_fast = keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight);
+    let is_fast = control_settings
+        .as_ref()
+        .map_or(
+            keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight),
+            |c| c.is_action_pressed(crate::core::InputAction::Sprint, &keyboard, &mouse),
+        );
 
     let speed = if is_fast {
         camera.spectator_fast_speed

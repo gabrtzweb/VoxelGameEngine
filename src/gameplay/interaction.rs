@@ -101,7 +101,9 @@ impl Plugin for VoxelInteractionPlugin {
 
 fn pick_targeted_voxel(
     (game_mode, current_target): (Res<GameMode>, Res<CurrentTarget>),
+    keyboard: Res<ButtonInput<KeyCode>>,
     mouse: Res<ButtonInput<MouseButton>>,
+    control_settings: Option<Res<crate::core::ControlSettings>>,
     (menu_state, inspector): (
         Option<Res<State<MenuState>>>,
         Option<Res<InspectorInteraction>>,
@@ -120,7 +122,12 @@ fn pick_targeted_voxel(
         return;
     }
 
-    if !mouse.just_pressed(MouseButton::Middle) {
+    let is_pick = control_settings.as_ref().map_or(
+        mouse.just_pressed(MouseButton::Middle),
+        |c| c.is_action_just_pressed(crate::core::InputAction::PickBlock, &keyboard, &mouse),
+    );
+
+    if !is_pick {
         return;
     }
 
@@ -148,7 +155,13 @@ fn pick_targeted_voxel(
 fn edit_voxels(
     (game_mode, selected): (Res<GameMode>, Res<SelectedVoxel>),
     mut commands: Commands,
-    (mouse, time, current_target): (Res<ButtonInput<MouseButton>>, Res<Time>, Res<CurrentTarget>),
+    (keyboard, mouse, time, current_target): (
+        Res<ButtonInput<KeyCode>>,
+        Res<ButtonInput<MouseButton>>,
+        Res<Time>,
+        Res<CurrentTarget>,
+    ),
+    control_settings: Option<Res<crate::core::ControlSettings>>,
     (mut world, mut modifications, mut light_registry, mut queues): WorldEditResources,
     (fluid_queue, menu_state, inspector, mut map_cache): OptionalInteractionParams,
     camera_query: Query<&Transform, With<PlayerCamera>>,
@@ -166,15 +179,33 @@ fn edit_voxels(
 
     let delta_seconds = time.delta_secs();
 
-    let break_action = interaction_state.break_action.update(
+    let break_pressed = control_settings.as_ref().map_or(
         mouse.pressed(MouseButton::Left),
+        |c| c.is_action_pressed(crate::core::InputAction::PrimaryAction, &keyboard, &mouse),
+    );
+    let break_just_pressed = control_settings.as_ref().map_or(
         mouse.just_pressed(MouseButton::Left),
+        |c| c.is_action_just_pressed(crate::core::InputAction::PrimaryAction, &keyboard, &mouse),
+    );
+
+    let place_pressed = control_settings.as_ref().map_or(
+        mouse.pressed(MouseButton::Right),
+        |c| c.is_action_pressed(crate::core::InputAction::SecondaryAction, &keyboard, &mouse),
+    );
+    let place_just_pressed = control_settings.as_ref().map_or(
+        mouse.just_pressed(MouseButton::Right),
+        |c| c.is_action_just_pressed(crate::core::InputAction::SecondaryAction, &keyboard, &mouse),
+    );
+
+    let break_action = interaction_state.break_action.update(
+        break_pressed,
+        break_just_pressed,
         delta_seconds,
     );
 
     let place_action = interaction_state.place_action.update(
-        mouse.pressed(MouseButton::Right),
-        mouse.just_pressed(MouseButton::Right),
+        place_pressed,
+        place_just_pressed,
         delta_seconds,
     );
 

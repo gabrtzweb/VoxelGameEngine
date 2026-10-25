@@ -129,6 +129,7 @@ pub fn camera_look(
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
     radial_menu_state: Option<Res<RadialMenuState>>,
     game_settings: Res<GameSettings>,
+    control_settings: Option<Res<crate::core::ControlSettings>>,
     camera: Single<(&mut Transform, &mut PlayerCamera), With<Camera3d>>,
 ) {
     if inspector_interaction.active
@@ -146,12 +147,17 @@ pub fn camera_look(
 
     let (mut transform, mut camera) = camera.into_inner();
 
+    let (sensitivity_mult, invert_y) = control_settings
+        .as_ref()
+        .map_or((1.0, false), |c| (c.mouse_sensitivity, c.invert_mouse_y));
+
     let zoom_factor = (camera.current_fov_degrees / game_settings.fov_degrees).clamp(0.05, 1.2);
-    let effective_sensitivity = camera.sensitivity * zoom_factor;
+    let effective_sensitivity = camera.sensitivity * sensitivity_mult * zoom_factor;
 
     camera.yaw -= delta.x * effective_sensitivity;
 
-    camera.pitch -= delta.y * effective_sensitivity;
+    let y_mult = if invert_y { -1.0 } else { 1.0 };
+    camera.pitch -= delta.y * effective_sensitivity * y_mult;
 
     camera.pitch = camera.pitch.clamp(-FRAC_PI_2 + 0.001, FRAC_PI_2 - 0.001);
 

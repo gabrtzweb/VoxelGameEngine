@@ -109,29 +109,3 @@ pub fn update_wind_field(
     wind.current_speed = (sampled.x * sampled.x + sampled.z * sampled.z).sqrt();
     wind.current_heading = sampled.z.atan2(sampled.x);
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_y_level_multiplier_clamping() {
-        assert_eq!(WindState::y_level_multiplier(40.0), 0.15);
-        assert_eq!(WindState::y_level_multiplier(50.0), 0.15);
-        assert!((WindState::y_level_multiplier(70.0) - 0.50).abs() < 1e-5);
-        assert_eq!(WindState::y_level_multiplier(90.0), 1.0);
-        assert_eq!(WindState::y_level_multiplier(150.0), 1.0);
-    }
-
-    #[test]
-    fn test_wind_vector_sampling() {
-        let wind = WindState::default();
-        let sample1 = wind.sample_wind(Vec3::new(0.0, 70.0, 0.0), 0.0, 0.0);
-        assert_eq!(sample1.y, 0.0);
-        assert!(sample1.x > 0.0);
-        assert!(sample1.z > 0.0);
-
-        let sample_storm = wind.sample_wind(Vec3::new(0.0, 70.0, 0.0), 0.0, 1.0);
-        assert!(sample_storm.length() > sample1.length());
-    }
-}

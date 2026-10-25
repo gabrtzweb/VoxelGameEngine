@@ -354,7 +354,6 @@ impl Plugin for InventoryMenuPlugin {
             .add_systems(
                 Update,
                 (
-                    handle_inventory_tab_key,
                     handle_creative_toggle_interaction,
                     handle_category_tab_interaction,
                     handle_creative_search_input,
@@ -1378,53 +1377,6 @@ fn build_inventory_ui(
         });
 }
 
-fn handle_inventory_tab_key(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut tab_state: ResMut<InventoryTab>,
-    mut commands: Commands,
-    query: Query<Entity, With<InventoryMenuRoot>>,
-    asset_server: Res<AssetServer>,
-    hotbar: Res<Hotbar>,
-    player_inv: Res<PlayerInventory>,
-    icons: Res<BlockIcons>,
-    active_cat: Res<ActiveCreativeCategory>,
-    scroll_state: Res<InventoryScrollState>,
-    mut search_query: ResMut<CreativeSearchQuery>,
-    app_font: Option<Res<AppFont>>,
-    loc: Option<Res<crate::core::Localization>>,
-    game_settings: Option<Res<crate::menu::GameSettings>>,
-) {
-    if keyboard.just_pressed(KeyCode::Tab) {
-        let (gui_scale, dimming_alpha) = game_settings
-            .as_ref()
-            .map_or((4, 0.75), |s| (s.gui_scale, s.background_dimming.alpha()));
-        *tab_state = match *tab_state {
-            InventoryTab::Creative => InventoryTab::Player,
-            InventoryTab::Player => InventoryTab::Creative,
-        };
-        search_query.is_focused = false;
-        search_query.cursor = 0;
-        search_query.selection = None;
-        for entity in &query {
-            commands.entity(entity).despawn();
-        }
-        build_inventory_ui(
-            &mut commands,
-            &asset_server,
-            &hotbar,
-            &player_inv,
-            &icons,
-            *tab_state,
-            active_cat.0,
-            &scroll_state,
-            &search_query,
-            app_font.as_ref().map(|f| f.source()),
-            loc.as_deref(),
-            gui_scale,
-            dimming_alpha,
-        );
-    }
-}
 
 fn handle_creative_toggle_interaction(
     mouse: Res<ButtonInput<MouseButton>>,

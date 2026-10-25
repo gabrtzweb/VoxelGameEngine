@@ -1,3 +1,4 @@
+pub mod controls;
 pub mod creative_inventory;
 pub mod menu_bar;
 pub mod pause;
@@ -24,6 +25,7 @@ pub enum MenuState {
     None,
     Pause,
     Settings,
+    Controls,
     Inventory,
     WorldMap,
     Journal,
@@ -215,6 +217,7 @@ impl Plugin for MenuPlugin {
             .add_plugins((
                 pause::PauseMenuPlugin,
                 settings::SettingsMenuPlugin,
+                controls::ControlsMenuPlugin,
                 creative_inventory::InventoryMenuPlugin,
                 menu_bar::MenuBarPlugin,
             ))
@@ -359,6 +362,8 @@ fn manage_cursor_mode(
 
 fn handle_menu_key_inputs(
     keyboard: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
+    control_settings: Option<Res<crate::core::ControlSettings>>,
     menu_state: Res<State<MenuState>>,
     mut next_state: ResMut<NextState<MenuState>>,
     search_query: Option<Res<crate::menu::creative_inventory::CreativeSearchQuery>>,
@@ -370,6 +375,7 @@ fn handle_menu_key_inputs(
             MenuState::None => next_state.set(MenuState::Pause),
             MenuState::Pause => next_state.set(MenuState::None),
             MenuState::Settings => next_state.set(MenuState::Pause),
+            MenuState::Controls => next_state.set(MenuState::Pause),
             MenuState::Inventory => {
                 next_state.set(MenuState::None);
             }
@@ -382,7 +388,11 @@ fn handle_menu_key_inputs(
         }
     }
 
-    if keyboard.just_pressed(KeyCode::KeyI) {
+    let is_inv = control_settings.as_ref().map_or(
+        keyboard.just_pressed(KeyCode::KeyI),
+        |c| c.is_action_just_pressed(crate::core::InputAction::Inventory, &keyboard, &mouse),
+    );
+    if is_inv {
         if search_query.as_ref().is_some_and(|s| s.is_focused) {
             return;
         }
@@ -395,10 +405,26 @@ fn handle_menu_key_inputs(
         }
     }
 
-    if keyboard.just_pressed(KeyCode::KeyM) {
+    let is_map = control_settings.as_ref().map_or(
+        keyboard.just_pressed(KeyCode::KeyM),
+        |c| c.is_action_just_pressed(crate::core::InputAction::WorldMap, &keyboard, &mouse),
+    );
+    if is_map {
         match current {
             MenuState::None => next_state.set(MenuState::WorldMap),
             MenuState::WorldMap => next_state.set(MenuState::None),
+            _ => {}
+        }
+    }
+
+    let is_journal = control_settings.as_ref().map_or(
+        keyboard.just_pressed(KeyCode::KeyJ),
+        |c| c.is_action_just_pressed(crate::core::InputAction::Journal, &keyboard, &mouse),
+    );
+    if is_journal {
+        match current {
+            MenuState::None => next_state.set(MenuState::Journal),
+            MenuState::Journal => next_state.set(MenuState::None),
             _ => {}
         }
     }
@@ -418,16 +444,20 @@ fn manage_cursor_grab_mode(
     };
     let mut cursor_options = cursor_options.into_inner();
 
-    if *menu_state.get() != MenuState::None {
+    let (target_visible, target_grab) = if *menu_state.get() != MenuState::None {
         // Confine mouse to window and hide OS cursor so custom cursor draws cleanly without escaping
-        cursor_options.visible = false;
-        cursor_options.grab_mode = CursorGrabMode::Confined;
+        (false, CursorGrabMode::Confined)
     } else if inspector.active {
-        cursor_options.visible = true;
-        cursor_options.grab_mode = CursorGrabMode::None;
+        (true, CursorGrabMode::None)
     } else {
-        cursor_options.visible = false;
-        cursor_options.grab_mode = CursorGrabMode::Locked;
+        (false, CursorGrabMode::Locked)
+    };
+
+    if cursor_options.visible != target_visible {
+        cursor_options.visible = target_visible;
+    }
+    if cursor_options.grab_mode != target_grab {
+        cursor_options.grab_mode = target_grab;
     }
 }
 
@@ -544,7 +574,7 @@ fn manage_menu_time_pause(
     }
 
     match *menu_state.get() {
-        MenuState::Pause | MenuState::Settings => {
+        MenuState::Pause | MenuState::Settings | MenuState::Controls => {
             virtual_time.pause();
         }
         MenuState::None | MenuState::Inventory | MenuState::WorldMap | MenuState::Journal => {

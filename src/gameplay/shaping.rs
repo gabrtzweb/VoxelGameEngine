@@ -35,6 +35,8 @@ impl Plugin for ShapingPlugin {
 fn handle_block_shaping(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
+    control_settings: Option<Res<crate::core::ControlSettings>>,
     mouse_motion: Res<AccumulatedMouseMotion>,
     game_mode: Res<GameMode>,
     current_target: Res<CurrentTarget>,
@@ -72,8 +74,13 @@ fn handle_block_shaping(
         return;
     }
 
-    // Press 'R' to initiate shaping
-    if keyboard.just_pressed(KeyCode::KeyR)
+    let cycle_just_pressed = control_settings.as_ref().map_or(
+        keyboard.just_pressed(KeyCode::KeyR),
+        |c| c.is_action_just_pressed(crate::core::InputAction::ShapeCycle, &keyboard, &mouse),
+    );
+
+    // Press key to initiate shaping
+    if cycle_just_pressed
         && let Some(target) = current_target.hit
     {
         let origin = target.block_origin;
@@ -95,8 +102,13 @@ fn handle_block_shaping(
         }
     }
 
-    // Hold 'R' to open Radial Menu
-    if keyboard.pressed(KeyCode::KeyR) && radial_state.pressing {
+    let cycle_pressed = control_settings.as_ref().map_or(
+        keyboard.pressed(KeyCode::KeyR),
+        |c| c.is_action_pressed(crate::core::InputAction::ShapeCycle, &keyboard, &mouse),
+    );
+
+    // Hold key to open Radial Menu
+    if cycle_pressed && radial_state.pressing {
         radial_state.hold_timer += time.delta_secs();
 
         if radial_state.hold_timer >= 0.20 && !radial_state.is_open {
@@ -132,8 +144,13 @@ fn handle_block_shaping(
         }
     }
 
-    // Release 'R' to apply selection
-    if keyboard.just_released(KeyCode::KeyR) && radial_state.pressing {
+    let cycle_just_released = control_settings.as_ref().map_or(
+        keyboard.just_released(KeyCode::KeyR),
+        |c| c.is_action_just_released(crate::core::InputAction::ShapeCycle, &keyboard, &mouse),
+    );
+
+    // Release key to apply selection
+    if cycle_just_released && radial_state.pressing {
         if radial_state.is_open {
             for entity in &radial_root_query {
                 commands.entity(entity).despawn();
@@ -177,6 +194,8 @@ fn handle_block_shaping(
 
 fn handle_block_rotation(
     keyboard: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
+    control_settings: Option<Res<crate::core::ControlSettings>>,
     game_mode: Res<GameMode>,
     current_target: Res<CurrentTarget>,
     mut commands: Commands,
@@ -192,7 +211,12 @@ fn handle_block_rotation(
         return;
     }
 
-    if !keyboard.just_pressed(KeyCode::KeyT) {
+    let invert_just_pressed = control_settings.as_ref().map_or(
+        keyboard.just_pressed(KeyCode::KeyT),
+        |c| c.is_action_just_pressed(crate::core::InputAction::ShapeInvert, &keyboard, &mouse),
+    );
+
+    if !invert_just_pressed {
         return;
     }
 
