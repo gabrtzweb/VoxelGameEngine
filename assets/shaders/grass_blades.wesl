@@ -475,9 +475,27 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
     return out;
 }
 
-fn blade_gradient(h: f32, bottom_mult: f32) -> f32 {
-    let shaped = pow(clamp(h, 0.0, 1.0), max(grass_info.gradient_params.z, 0.001));
-    return mix(grass_info.gradient_params.x * bottom_mult, grass_info.gradient_params.y, shaped);
+fn hash2_noise(p: vec2<f32>) -> f32 {
+    let p3 = fract(vec3<f32>(p.xyx) * 0.1031);
+    let p4 = p3 + dot(p3, p3.yzx + 33.33);
+    return fract((p4.x + p4.y) * p4.z);
+}
+
+fn smooth_noise2(p: vec2<f32>) -> f32 {
+    let i = floor(p);
+    let f = fract(p);
+    let u = f * f * (3.0 - 2.0 * f);
+
+    let a = hash2_noise(i + vec2<f32>(0.0, 0.0));
+    let b = hash2_noise(i + vec2<f32>(1.0, 0.0));
+    let c = hash2_noise(i + vec2<f32>(0.0, 1.0));
+    let d = hash2_noise(i + vec2<f32>(1.0, 1.0));
+
+    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+fn ambient_environment_noise(pos_xz: vec2<f32>) -> f32 {
+    return smooth_noise2(pos_xz * 0.04);
 }
 
 @fragment
@@ -495,21 +513,32 @@ fn fragment(
         discard;
     }
 
-    let gradient_base = select(0.75, 1.0, grass_info.style_params.x > 0.5);
-    let gradient = blade_gradient(height, gradient_base);
-    let wave_mult = mix(0.85, 1.0, color_wave);
+    // Match the grass block surface texture baseline (soil_grass.png mean luminance ~0.5395)
+    // grass_bands.png has mean ~0.745; grass_tapered.png has mean 1.0
+    let shape_texture_factor = select(0.5395, 0.5395 / 0.745, grass_info.style_params.x > 0.5);
+    let shape_tex = shape.rgb * shape_texture_factor;
 
-    var blade_rgb = vertex_output.color.rgb;
-    let decorative = shape.rgb * gradient * wave_mult;
-    blade_rgb = blade_rgb * mix(decorative, vec3<f32>(1.0), snow_amount);
+    // Ambient environment noise matching voxel_opaque.wesl exactly
+    let ambient_noise = ambient_environment_noise(vertex_output.world_position.xz);
+    let ambient_factor = 0.92 + ambient_noise * 0.16;
+
+    // Subtle blade gradient: grounding slightly at the base, gentle catching of light at the tip
+    let gradient = mix(0.96, 1.04, pow(height, 1.5));
+    let wave_mult = mix(0.96, 1.04, color_wave);
+
+    // Voxel opaque shader squares the tint color: pbr_input.base_color (which has vertex_color) * tint_color.rgb
+    let block_tint = vertex_output.color.rgb * vertex_output.color.rgb;
+
+    var blade_rgb = block_tint * ambient_factor * shape_tex * gradient * wave_mult;
+    blade_rgb = mix(blade_rgb, vec3<f32>(1.0), snow_amount);
     blade_rgb = clamp(blade_rgb * grass_info.style_params.w, vec3<f32>(0.0), vec3<f32>(1.0));
 
     var pbr_input: pbr_types::PbrInput = pbr_input_from_standard_material(vertex_output, is_front);
     pbr_input.N = vec3<f32>(0.0, 1.0, 0.0);
     pbr_input.world_normal = vec3<f32>(0.0, 1.0, 0.0);
     pbr_input.material.base_color = vec4<f32>(blade_rgb, shape.a);
-    pbr_input.material.perceptual_roughness = 0.95;
-    pbr_input.material.reflectance = vec3<f32>(0.02);
+    pbr_input.material.perceptual_roughness = 0.90;
+    pbr_input.material.reflectance = vec3<f32>(0.5);
 
     var out: FragmentOutput;
     out.color = apply_pbr_lighting(pbr_input);

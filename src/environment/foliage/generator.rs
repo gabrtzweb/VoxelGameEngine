@@ -116,8 +116,8 @@ pub fn emit_block_grass_blades(
         let norm_x = ((world_x % 32.0 + 32.0) % 32.0) / 32.0 * 2.0 - 1.0;
         let norm_z = ((world_z % 32.0 + 32.0) % 32.0) / 32.0 * 2.0 - 1.0;
 
-        // Hue jitter based on angle bucket
-        let jitter = (angle_bucket as f32 / 31.0 - 0.5) * 0.06;
+        // Subtle hue jitter based on angle bucket (±0.75%)
+        let jitter = (angle_bucket as f32 / 31.0 - 0.5) * 0.015;
         let blade_color_rgb = [
             (base_tint[0] + jitter).clamp(0.0, 1.0),
             (base_tint[1] + jitter * 0.5).clamp(0.0, 1.0),
