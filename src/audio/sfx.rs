@@ -11,6 +11,22 @@ use crate::player::PlayerCamera;
 pub struct PlaySfxEvent {
     pub sound: Handle<AudioSource>,
     pub volume: f32,
+    pub speed: f32,
+}
+
+impl PlaySfxEvent {
+    pub fn new(sound: Handle<AudioSource>, volume: f32) -> Self {
+        Self {
+            sound,
+            volume,
+            speed: 1.0,
+        }
+    }
+
+    pub fn with_speed(mut self, speed: f32) -> Self {
+        self.speed = speed;
+        self
+    }
 }
 
 /// Event to trigger a 3D spatially attenuated sound effect.
@@ -20,6 +36,29 @@ pub struct PlaySpatialSfxEvent {
     pub position: Vec3,
     pub volume: f32,
     pub max_distance: f32,
+    pub speed: f32,
+}
+
+impl PlaySpatialSfxEvent {
+    pub fn new(
+        sound: Handle<AudioSource>,
+        position: Vec3,
+        volume: f32,
+        max_distance: f32,
+    ) -> Self {
+        Self {
+            sound,
+            position,
+            volume,
+            max_distance,
+            speed: 1.0,
+        }
+    }
+
+    pub fn with_speed(mut self, speed: f32) -> Self {
+        self.speed = speed;
+        self
+    }
 }
 
 pub struct SfxPlugin;
@@ -31,20 +70,26 @@ impl Plugin for SfxPlugin {
     }
 }
 
+/// Engine-level master output attenuation multiplier for comfortable listening volume.
+pub const SFX_MASTER_ATTENUATION: f32 = 0.50;
+
 fn handle_play_sfx(
     trigger: On<PlaySfxEvent>,
     settings: Res<AudioSettings>,
     mut commands: Commands,
 ) {
     let ev = trigger.event();
-    let final_vol = (ev.volume * settings.master_volume * settings.sfx_volume).clamp(0.0, 1.0);
+    let final_vol = (ev.volume * settings.master_volume * settings.sfx_volume * SFX_MASTER_ATTENUATION)
+        .clamp(0.0, 1.0);
     if final_vol <= 0.001 {
         return;
     }
 
     commands.spawn((
         AudioPlayer(ev.sound.clone()),
-        PlaybackSettings::DESPAWN.with_volume(Volume::Linear(final_vol)),
+        PlaybackSettings::DESPAWN
+            .with_volume(Volume::Linear(final_vol))
+            .with_speed(ev.speed.clamp(0.2, 4.0)),
     ));
 }
 
@@ -66,15 +111,19 @@ fn handle_play_spatial_sfx(
     }
 
     let dist_factor = (1.0 - (dist / ev.max_distance)).clamp(0.0, 1.0);
-    let final_vol = (ev.volume * dist_factor * settings.master_volume * settings.sfx_volume)
+    let final_vol = (ev.volume * dist_factor * settings.master_volume * settings.sfx_volume * SFX_MASTER_ATTENUATION)
         .clamp(0.0, 1.0);
 
     if final_vol <= 0.001 {
         return;
     }
 
+
     commands.spawn((
         AudioPlayer(ev.sound.clone()),
-        PlaybackSettings::DESPAWN.with_volume(Volume::Linear(final_vol)),
+        PlaybackSettings::DESPAWN
+            .with_volume(Volume::Linear(final_vol))
+            .with_speed(ev.speed.clamp(0.2, 4.0)),
     ));
 }
+

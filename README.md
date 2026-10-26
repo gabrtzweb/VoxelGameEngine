@@ -60,6 +60,7 @@ assets/
 │   ├── en_us.json
 │   └── pt_br.json
 ├── shaders/
+│   ├── grass_blades.wesl
 │   ├── post_process.wesl
 │   ├── voxel_opaque.wesl
 │   ├── voxel_prepass.wesl
@@ -70,6 +71,7 @@ assets/
 │   ├── footsteps/
 │   ├── liquids/
 │   ├── music/
+│   ├── ui/
 │   └── weather/
 ├── textures/
 │   ├── blocks/
@@ -89,6 +91,17 @@ docs/
 └── project_roadmap.md
 
 src/
+├── audio/
+│   ├── ambience.rs
+│   ├── block_audio.rs
+│   ├── footsteps.rs
+│   ├── material.rs
+│   ├── mod.rs
+│   ├── music.rs
+│   ├── settings.rs
+│   ├── sfx.rs
+│   ├── ui.rs
+│   └── weather_audio.rs
 ├── core/
 │   ├── config.rs
 │   ├── dev_stats.rs
@@ -104,10 +117,12 @@ src/
 │   ├── atmosphere.rs
 │   ├── celestial.rs
 │   ├── clouds.rs
+│   ├── foliage.rs
 │   ├── mod.rs
 │   ├── post_process.rs
 │   ├── stars.rs
 │   └── time.rs
+
 ├── gameplay/
 │   ├── debug.rs
 │   ├── feedback.rs
@@ -134,6 +149,7 @@ src/
 │   ├── mod.rs
 │   └── world_map.rs
 ├── menu/
+│   ├── controls.rs
 │   ├── creative_inventory.rs
 │   ├── menu_bar.rs
 │   ├── mod.rs
@@ -189,15 +205,20 @@ src/
 
 tests/
 ├── suite/
+│   ├── audio.rs
 │   ├── block.rs
 │   ├── chunk.rs
 │   ├── config.rs
 │   ├── connection.rs
+│   ├── controls.rs
 │   ├── crops.rs
 │   ├── culling.rs
+│   ├── foliage.rs
+│   ├── localization.rs
 │   ├── noise.rs
 │   ├── ores.rs
-│   └── texture.rs
+│   ├── texture.rs
+│   └── weather.rs
 └── integration_tests.rs
 ```
 

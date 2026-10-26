@@ -209,18 +209,25 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 10: Sound Engine & Spatial Audio System (In Progress)
+### Phase 10: Sound Engine & Spatial Audio System (Completed)
 
 - [x] **Audio Pipeline & Channel Architecture**:
   - Multi-channel audio engine (`AudioSettings`, `EngineAudioPlugin`) with independent volume channels for master, weather, sound effects (SFX), music, and ambient murmurs, integrated with in-game Settings UI and persistent `local_config.json`.
-- [ ] **Block Interaction & Footstep Audio**:
-  - Implement material-specific block break, place, and impact audio cues (stone, wood, dirt, sand, gravel, glass, foliage).
-  - Implement dynamic 3D spatial footstep sounds based on surface block material, movement stance (walking, sprinting, sneaking), and submersion.
+  - Calibrated master output attenuation (~50% base scale) for comfortable default sound levels across speakers and headphones.
+- [x] **Block Interaction & Footstep Audio**:
+  - Material-specific acoustic classification system (`SoundMaterial`) covering all 614 voxels across 11 material profiles (`Grass`, `Dirt`, `Stone`, `Wood`, `Sand`, `Gravel`, `Snow`, `Leaves`, `Mud`, `Slate`, `Glass`, `Water`).
+  - Spatialized 3D block break and placement audio triggers (`PlaySpatialSfxEvent`) with distance falloff and dynamic pitch variation (0.94x..1.06x) to avoid repetitiveness.
+  - Realistic footstep audio system (`FootstepAudioPlugin`) detecting solid floor blocks, walking vs. sprinting vs. crouching cadences, landing impact cues scaled by fall velocity, shallow water wading, and deep water swimming.
+- [x] **Tactile UI Audio Feedback**:
+  - Clean tactile feedback on button clicks (`click1.ogg`, `mouseclick1.ogg`) and hotbar slot switching (`switch1.ogg`), while keeping inventory slot hovering silent and unobtrusive.
 - [x] **Dynamic Environment, Weather & Background Music**:
-  - Add ambient environmental soundscapes and multi-channel weather audio (rain intensity, wind gusts, snow murmur, sandstorms, physical speed-of-sound thunderclaps).
-  - Implement dynamic gameplay background music soundtrack player (`GameplayMusicPlugin`) with seamless cross-fading and organic pauses across all 39 game music tracks.
+  - Ambient environmental soundscapes (`AmbientAudioPlugin`) featuring continuous submerged underwater audio with periodic air bubbles, deep subterranean cave drones and rock rattles, and day/night biome nature sounds (birds, evening insects, ocean waves, desert winds, alpine rumbles).
+  - Multi-channel weather audio (`WeatherAudioPlugin`) dynamically scaled to live weather conditions (rain, wind gusts, snow, sandstorms, and physically delayed speed-of-sound lightning thunderclaps).
+  - Dynamic gameplay background music soundtrack player (`GameplayMusicPlugin`) with seamless cross-fading and organic pauses across all 39 game music tracks.
+  - Comprehensive automated test suite (`tests/suite/audio.rs`) validating sound material mappings and disk asset integrity.
 
 ---
+
 
 ### Phase 11: Custom Voxel Player Character & Modular Character Creator (Planned)
 

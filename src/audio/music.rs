@@ -97,7 +97,7 @@ fn update_gameplay_music(
     mut commands: Commands,
 ) {
     let dt = time.delta_secs();
-    let target_volume = settings.master_volume * settings.music_volume;
+    let target_volume = settings.master_volume * settings.music_volume * 0.50;
 
     if music_state.is_playing {
         music_state.play_timer += dt;

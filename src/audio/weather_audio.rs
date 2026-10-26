@@ -131,7 +131,7 @@ fn update_weather_audio_loops(
     mut snow_query: Query<&mut AudioSink, (With<SnowAudioLoop>, Without<RainAudioLoop>, Without<WindAudioLoop>, Without<SandstormAudioLoop>)>,
     mut sand_query: Query<&mut AudioSink, (With<SandstormAudioLoop>, Without<RainAudioLoop>, Without<WindAudioLoop>, Without<SnowAudioLoop>)>,
 ) {
-    let master = settings.master_volume * settings.weather_volume;
+    let master = settings.master_volume * settings.weather_volume * 0.50;
 
     let rain_target = weather
         .as_ref()
@@ -197,7 +197,7 @@ fn tick_thunder_queue(
     };
 
     let dt = time.delta_secs();
-    let master = settings.master_volume * settings.weather_volume;
+    let master = settings.master_volume * settings.weather_volume * 0.50;
 
     queue.0.retain_mut(|thunder| {
         thunder.delay -= dt;

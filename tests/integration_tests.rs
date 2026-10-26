@@ -36,3 +36,7 @@ mod weather;
 
 #[path = "suite/foliage.rs"]
 mod foliage;
+
+#[path = "suite/audio.rs"]
+mod audio;
+

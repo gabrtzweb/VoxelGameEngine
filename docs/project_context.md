@@ -60,10 +60,19 @@ This is an attempt to develop an experimental voxel engine and game, built from 
   - **Active Player Inventory (`inventory.png`, 480 × 270 px)**: 36 Card B storage slots (4 rows of 9), mirrored hotbar and offhand/utility slots with `inventory_slot_hover.png` feedback, action utility buttons (Sort, Trash, Options, Lock), non-clickable Card A armor placeholders and Card C crafting placeholders.
   - **Creative Catalog (`inventory_creative.png`, 480 × 270 px)**: 11 category tabs rendering scaled 3D isometric block icons (`BlockIcons`), docking selection frame (`inventory_creative_tab_selection.png`), live search filter with cursor, vertical scroll track with draggable thumb (`inventory_creative_scroller.png`), 90-slot grid (10 rows of 9), and mirrored bottom hotbar.
   - **Unified Dark Iron Button Suite**: Menus powered by unified dark obsidian / brushed steel buttons (`button_large.png` 96×16 px, `button_medium.png` 64×16 px, `button_small.png` 16×16 px, `button_util.png` 12×12 px) with frosted slate-blue metallic hover highlights (`#3c4552`).
-  - **Procedural 2D/3D Icon Pipeline**: Real-time generation of 3D isometric block icons with directional front-face projection (bookshelves, hives, nests, bags), 2D planar cross-mesh billboards (plants, beaver dams, corals, mushrooms), and multi-frame animated strips.
-- **Item Tooltips**:
+  - **Item Tooltips**:
   - Centered item name readout above hotbar upon slot selection with smooth fade-out.
   - Responsive floating hover tooltips across all inventory and catalog slots.
+- **Procedural Foliage & Grass Blade System**:
+  - GPU-accelerated procedural grass blades emitted on top of grass turf blocks, slabs, and stairs (`FoliagePlugin`).
+  - Rendered with custom WESL PBR shader (`assets/shaders/grass_blades.wesl`) featuring dynamic wind displacement, player trail trampling and recovery, and exact color matching with the underlying voxel terrain.
+- **Multi-Channel Sound Engine & Spatial Audio**:
+  - Comprehensive audio engine (`EngineAudioPlugin`) built on Bevy audio with independent volume mixing for Master, Weather, SFX, Music, and Ambience.
+  - Material-driven block acoustics (`SoundMaterial`) covering all 614 voxels across 11 material profiles.
+  - Spatialized 3D block interaction audio with distance attenuation and dynamic pitch variation.
+  - Footstep system (`FootstepAudioPlugin`) with stance cadences, landing impact velocity scaling, water wading, and swimming strokes.
+  - Submerged underwater loop with bubble effects, subterranean cave drones, day/night biome nature soundscapes, and multi-channel weather audio.
+  - 39-track gameplay soundtrack player (`GameplayMusicPlugin`) with seamless cross-fading and natural Minecraft-style intervals.
 
 ---
 
@@ -136,8 +145,12 @@ In Version 0.2 (Modernization, Worldbuilding & Deep Systems), the project status
 - **Phase 6 (In Progress)**: Flora, Crops & Interactive Mechanical Blocks (Agricultural lifecycle simulation, in-world crop growth, connected block topology masks, wild flora, interactive doors and containers).
 - **Phase 7 (In Progress)**: Subterranean Strata, Caverns & Geological Generation (Multi-tier geological strata, Mantle bedrock at Y = -254, 54 authentic ore vein pairings, crystal geodes, subterranean cave biomes).
 - **Phase 8 (Planned)**: Biome Refactoring, Climate Modeling & Tree/Flora Distribution (Multi-noise climate fields, organic biome dithering, ecological tree dispersion, canopy density models).
+- **Phase 9 (Planned)**: Main Menu, World Save/Load Management & Player Persistence.
+- **Phase 10 (Completed)**: Sound Engine & Spatial Audio System (Multi-channel volume mixer, 11-material acoustic profiles, spatial 3D block interaction audio, realistic footstep cadences, water wading and swimming strokes, ambient biomes, weather audio, and 39-track soundtrack).
+- **Procedural Foliage Engine**: Real-time GPU grass blade rendering with wind swaying, player trampling, and terrain color matching.
 
 Detailed progress and milestones are tracked in `docs/project_roadmap.md`.
+
 
 ---
 
