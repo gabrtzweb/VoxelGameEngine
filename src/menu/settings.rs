@@ -13,7 +13,9 @@ use crate::{
     world::{ChunkStreamingQueues, ChunkStreamingSettings, VoxelWorld},
 };
 
-use super::{BackgroundDimming, GameSettings, MenuBlurIntensity, MenuState, ScreenMode};
+use super::{
+    BackgroundDimming, GameSettings, MenuBlurIntensity, MenuReturnTarget, MenuState, ScreenMode,
+};
 
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SettingsTab {
@@ -333,6 +335,7 @@ fn spawn_settings_menu(
     env_state: Option<Res<EnvironmentState>>,
     app_font: Option<Res<AppFont>>,
     asset_server: Res<AssetServer>,
+    menu_return_target: Res<MenuReturnTarget>,
 ) {
     let render_dist = chunk_settings.render_distance;
     let lod_dist = chunk_settings.lod_render_distance;
@@ -357,7 +360,13 @@ fn spawn_settings_menu(
         header_font.font = font.clone();
     }
 
-    let dimming_alpha = game_settings.background_dimming.alpha();
+    let is_from_main_menu = menu_return_target.0 == MenuState::MainMenu;
+    let top_offset = if is_from_main_menu { 0.0 } else { 80.0 };
+    let bg_color = if is_from_main_menu {
+        Color::NONE
+    } else {
+        Color::srgba(0.0, 0.0, 0.0, game_settings.background_dimming.alpha())
+    };
 
     commands
         .spawn((
@@ -366,7 +375,7 @@ fn spawn_settings_menu(
             Node {
                 position_type: PositionType::Absolute,
                 left: px(0.0),
-                top: px(80.0),
+                top: px(top_offset),
                 right: px(0.0),
                 bottom: px(0.0),
                 display: Display::Flex,
@@ -374,14 +383,47 @@ fn spawn_settings_menu(
                 align_items: AlignItems::Center,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, dimming_alpha)),
+            BackgroundColor(bg_color),
             ZIndex(300),
         ))
         .with_children(|backdrop| {
+            if is_from_main_menu {
+                let bg_texture = asset_server.load("textures/interfaces/main_menu_bg.png");
+                backdrop.spawn((
+                    ImageNode {
+                        image: bg_texture,
+                        image_mode: NodeImageMode::Stretch,
+                        ..default()
+                    },
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: px(0.0),
+                        top: px(0.0),
+                        width: percent(100.0),
+                        height: percent(100.0),
+                        ..default()
+                    },
+                    ZIndex(0),
+                ));
+                backdrop.spawn((
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: px(0.0),
+                        top: px(0.0),
+                        width: percent(100.0),
+                        height: percent(100.0),
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.35)),
+                    ZIndex(1),
+                ));
+            }
+
             let scale_factor = (game_settings.gui_scale as f32 / 4.0).clamp(0.5, 1.0);
             backdrop
                 .spawn((
                     SettingsMenuCard,
+                    ZIndex(10),
                     UiTransform {
                         scale: Vec2::splat(scale_factor),
                         ..UiTransform::IDENTITY
@@ -1423,11 +1465,14 @@ fn handle_settings_buttons(
     mut loc: ResMut<Localization>,
     mut env_state: Option<ResMut<EnvironmentState>>,
     mut dynamic_fps_settings: Option<ResMut<DynamicFpsSettings>>,
+    menu_return_target: Res<MenuReturnTarget>,
     mut next_state: ResMut<NextState<MenuState>>,
-    mut chunk_material: Option<ResMut<ChunkMaterial>>,
-    mut texture_registry: Option<ResMut<VoxelTextureRegistry>>,
-    mut streaming_queues: Option<ResMut<ChunkStreamingQueues>>,
-    world: Option<Res<VoxelWorld>>,
+    (mut chunk_material, mut texture_registry, mut streaming_queues, world): (
+        Option<ResMut<ChunkMaterial>>,
+        Option<ResMut<VoxelTextureRegistry>>,
+        Option<ResMut<ChunkStreamingQueues>>,
+        Option<Res<VoxelWorld>>,
+    ),
     mut window_query: Query<&mut Window, With<bevy::window::PrimaryWindow>>,
 ) {
     let left_clicked = mouse.just_pressed(MouseButton::Left);
@@ -1823,7 +1868,7 @@ fn handle_settings_buttons(
                     sync_config = false;
                 }
                 SettingsAction::Back => {
-                    next_state.set(MenuState::Pause);
+                    next_state.set(menu_return_target.0);
                     sync_config = false;
                 }
             }
@@ -1863,6 +1908,7 @@ fn handle_language_changed(
     env_state: Option<Res<EnvironmentState>>,
     app_font: Option<Res<AppFont>>,
     asset_server: Res<AssetServer>,
+    menu_return_target: Res<MenuReturnTarget>,
 ) {
     if !loc.is_changed() || loc.is_added() {
         return;
@@ -1881,6 +1927,7 @@ fn handle_language_changed(
         env_state,
         app_font,
         asset_server,
+        menu_return_target,
     );
 }
 

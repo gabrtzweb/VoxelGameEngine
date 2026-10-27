@@ -237,10 +237,16 @@ fn sync_camera_anti_aliasing(
     }
 }
 
-fn lock_cursor(mut cursor_options: Single<&mut CursorOptions>) {
+fn lock_cursor(
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
+    mut cursor_options: Single<&mut CursorOptions>,
+) {
     cursor_options.visible = false;
-
-    cursor_options.grab_mode = CursorGrabMode::Locked;
+    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None) {
+        cursor_options.grab_mode = CursorGrabMode::Confined;
+    } else {
+        cursor_options.grab_mode = CursorGrabMode::Locked;
+    }
 }
 
 #[derive(Component)]

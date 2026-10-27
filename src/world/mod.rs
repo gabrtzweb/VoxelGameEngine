@@ -18,11 +18,17 @@ pub use streaming::{
 
 use bevy::prelude::*;
 
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct WorldSession {
+    pub is_active: bool,
+}
+
 pub struct WorldPlugin;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<ChunkCache>()
+        app.init_resource::<WorldSession>()
+            .init_resource::<ChunkCache>()
             .add_plugins(ChunkStreamingPlugin);
     }
 }

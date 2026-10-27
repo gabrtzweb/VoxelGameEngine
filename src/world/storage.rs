@@ -17,6 +17,10 @@ impl VoxelWorld {
         Self::default()
     }
 
+    pub fn clear(&mut self) {
+        self.chunks.clear();
+    }
+
     pub fn insert_chunk(&mut self, coordinate: IVec3, chunk: Chunk) {
         self.chunks.insert(coordinate, Arc::new(chunk));
     }
@@ -163,10 +167,6 @@ impl VoxelWorld {
 
     pub fn remove_chunk(&mut self, coordinate: IVec3) -> Option<Arc<Chunk>> {
         self.chunks.remove(&coordinate)
-    }
-
-    pub fn clear(&mut self) {
-        self.chunks.clear();
     }
 }
 

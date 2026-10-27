@@ -1,5 +1,6 @@
 pub mod controls;
 pub mod creative_inventory;
+pub mod main_menu;
 pub mod menu_bar;
 pub mod pause;
 pub mod settings;
@@ -22,6 +23,7 @@ use crate::{
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum MenuState {
     #[default]
+    MainMenu,
     None,
     Pause,
     Settings,
@@ -29,6 +31,15 @@ pub enum MenuState {
     Inventory,
     WorldMap,
     Journal,
+}
+
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MenuReturnTarget(pub MenuState);
+
+impl Default for MenuReturnTarget {
+    fn default() -> Self {
+        Self(MenuState::Pause)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
@@ -210,11 +221,13 @@ pub struct MenuPlugin;
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<MenuState>()
+            .init_resource::<MenuReturnTarget>()
             .init_resource::<GameSettings>()
             .init_resource::<HeldInventoryItem>()
             .init_resource::<CursorMode>()
             .init_resource::<BusyCursorAnimation>()
             .add_plugins((
+                main_menu::MainMenuPlugin,
                 pause::PauseMenuPlugin,
                 settings::SettingsMenuPlugin,
                 controls::ControlsMenuPlugin,
@@ -365,6 +378,7 @@ fn handle_menu_key_inputs(
     mouse: Res<ButtonInput<MouseButton>>,
     control_settings: Option<Res<crate::core::ControlSettings>>,
     menu_state: Res<State<MenuState>>,
+    menu_return_target: Res<MenuReturnTarget>,
     mut next_state: ResMut<NextState<MenuState>>,
     search_query: Option<Res<crate::menu::creative_inventory::CreativeSearchQuery>>,
 ) {
@@ -374,8 +388,8 @@ fn handle_menu_key_inputs(
         match current {
             MenuState::None => next_state.set(MenuState::Pause),
             MenuState::Pause => next_state.set(MenuState::None),
-            MenuState::Settings => next_state.set(MenuState::Pause),
-            MenuState::Controls => next_state.set(MenuState::Pause),
+            MenuState::Settings => next_state.set(menu_return_target.0),
+            MenuState::Controls => next_state.set(menu_return_target.0),
             MenuState::Inventory => {
                 next_state.set(MenuState::None);
             }
@@ -385,6 +399,7 @@ fn handle_menu_key_inputs(
             MenuState::Journal => {
                 next_state.set(MenuState::None);
             }
+            MenuState::MainMenu => {}
         }
     }
 
@@ -574,7 +589,7 @@ fn manage_menu_time_pause(
     }
 
     match *menu_state.get() {
-        MenuState::Pause | MenuState::Settings | MenuState::Controls => {
+        MenuState::MainMenu | MenuState::Pause | MenuState::Settings | MenuState::Controls => {
             virtual_time.pause();
         }
         MenuState::None | MenuState::Inventory | MenuState::WorldMap | MenuState::Journal => {

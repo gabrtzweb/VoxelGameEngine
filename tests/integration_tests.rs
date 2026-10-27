@@ -40,3 +40,6 @@ mod foliage;
 #[path = "suite/audio.rs"]
 mod audio;
 
+#[path = "suite/menu.rs"]
+mod menu;
+

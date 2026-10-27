@@ -180,6 +180,22 @@ impl ChunkMeshRegistry {
     pub fn iter_coordinates(&self) -> impl Iterator<Item = &IVec3> {
         self.entries.keys()
     }
+
+    pub fn clear(&mut self, commands: &mut Commands) {
+        for (_, data) in self.entries.drain() {
+            if let Some(part) = data.opaque {
+                commands.entity(part.entity).despawn();
+            }
+            if let Some(part) = data.transparent {
+                commands.entity(part.entity).despawn();
+            }
+            if let Some(part) = data.grass {
+                commands.entity(part.entity).despawn();
+            }
+        }
+        self.columns.clear();
+        self.surface_columns.clear();
+    }
 }
 
 /// Registry of distant LOD surface meshes for chunk columns (cx, cz).
@@ -218,6 +234,18 @@ impl LodMeshRegistry {
 
     pub fn get_lod(&self, coordinate: &IVec2) -> Option<super::lod::ChunkLod> {
         self.lods.get(coordinate).copied()
+    }
+
+    pub fn clear(&mut self, commands: &mut Commands) {
+        for (_, data) in self.entries.drain() {
+            if let Some(part) = data.opaque {
+                commands.entity(part.entity).despawn();
+            }
+            if let Some(part) = data.transparent {
+                commands.entity(part.entity).despawn();
+            }
+        }
+        self.lods.clear();
     }
 
     pub fn lod_count(&self, lod: super::lod::ChunkLod) -> usize {

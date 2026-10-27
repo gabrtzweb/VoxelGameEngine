@@ -12,7 +12,7 @@ use crate::{
     world::{Voxel, VoxelWorld, WorldModificationStore},
 };
 
-use super::MenuState;
+use super::{MenuReturnTarget, MenuState};
 
 pub const PAUSE_SCALE: f32 = 4.0;
 
@@ -207,10 +207,19 @@ type PauseWeatherRestartParams<'w> = (
     Option<ResMut<'w, crate::player::PlayerInventory>>,
 );
 
+type PauseSessionParams<'w> = (
+    Option<ResMut<'w, crate::world::WorldSession>>,
+    Option<ResMut<'w, crate::menu::main_menu::MainMenuPhase>>,
+    Option<ResMut<'w, crate::meshing::LodMeshRegistry>>,
+    Option<ResMut<'w, crate::world::streaming::ChunkStreamingState>>,
+    Option<ResMut<'w, crate::world::streaming::ChunkStreamingQueues>>,
+);
+
 fn handle_pause_menu_buttons(
     buttons_query: Query<(&Hovered, Has<Pressed>, &PauseMenuAction), With<Button>>,
     mouse: Res<ButtonInput<MouseButton>>,
     mut next_state: ResMut<NextState<MenuState>>,
+    mut menu_return_target: ResMut<MenuReturnTarget>,
     mut env_state: Option<ResMut<EnvironmentState>>,
     mut player_query: Query<(&mut Transform, &mut PlayerMotion), With<Player>>,
     mut camera_query: Query<(&mut Transform, &mut PlayerCamera), (With<Camera3d>, Without<Player>)>,
@@ -234,6 +243,13 @@ fn handle_pause_menu_buttons(
         mut pending_thunder_query,
         mut player_inv_query,
     ): PauseWeatherRestartParams,
+    (
+        mut world_session,
+        mut main_menu_phase,
+        mut lod_registry_query,
+        mut streaming_state_query,
+        mut streaming_queues_query,
+    ): PauseSessionParams,
     lightning_entities_query: Query<
         Entity,
         Or<(
@@ -252,9 +268,11 @@ fn handle_pause_menu_buttons(
                     next_state.set(MenuState::None);
                 }
                 PauseMenuAction::Settings => {
+                    menu_return_target.0 = MenuState::Pause;
                     next_state.set(MenuState::Settings);
                 }
                 PauseMenuAction::Controls => {
+                    menu_return_target.0 = MenuState::Pause;
                     next_state.set(MenuState::Controls);
                 }
                 PauseMenuAction::Stats => {
@@ -358,7 +376,96 @@ fn handle_pause_menu_buttons(
                     next_state.set(MenuState::None);
                 }
                 PauseMenuAction::Quit => {
-                    commands.write_message(bevy::app::AppExit::Success);
+                    // 1. Deactivate world session
+                    if let Some(ref mut session) = world_session {
+                        session.is_active = false;
+                    }
+
+                    // 2. Clear voxel world
+                    if let Some(ref mut world) = world_query {
+                        world.clear();
+                    }
+
+                    // 3. Clear modifications and map cache
+                    if let Some(ref mut modifications) = modifications_query {
+                        modifications.clear();
+                    }
+                    if let Some(ref mut cache) = map_cache_query {
+                        cache.clear();
+                    }
+
+                    // 4. Despawn chunk meshes & LOD meshes
+                    if let Some(ref mut mesh_reg) = mesh_registry_query {
+                        mesh_reg.clear(&mut commands);
+                    }
+                    if let Some(ref mut lod_reg) = lod_registry_query {
+                        lod_reg.clear(&mut commands);
+                    }
+
+                    // 5. Reset streaming queues and state
+                    if let Some(ref mut st) = streaming_state_query {
+                        **st = crate::world::streaming::ChunkStreamingState::default();
+                    }
+                    if let Some(ref mut q) = streaming_queues_query {
+                        **q = crate::world::streaming::ChunkStreamingQueues::default();
+                    }
+
+                    // 6. Reset player position and camera to spawn
+                    let spawn_pos = Vec3::new(-10.0, 10.38, 14.0);
+                    for (mut transform, mut motion) in &mut player_query {
+                        transform.translation = spawn_pos;
+                        motion.velocity = Vec3::ZERO;
+                        motion.flying = false;
+                    }
+                    for (mut transform, mut camera) in &mut camera_query {
+                        let cam_pos = spawn_pos + Vec3::Y * PLAYER_EYE_HEIGHT;
+                        *transform = Transform::from_translation(cam_pos)
+                            .looking_at(Vec3::new(4.0, 3.0, 4.0), Vec3::Y);
+                        let new_pc = PlayerCamera::from_transform(&transform);
+                        *camera = new_pc;
+                    }
+
+                    // 7. Reset environment & weather
+                    if let Some(ref mut env) = env_state {
+                        **env = EnvironmentState::default();
+                    }
+                    if let Some(ref mut weather) = weather_query {
+                        **weather = crate::environment::weather::WeatherManager::default();
+                    }
+                    if let Some(ref mut lightning) = lightning_query {
+                        **lightning = crate::environment::weather::LightningState::default();
+                    }
+                    if let Some(ref mut wind) = wind_query {
+                        **wind = crate::environment::weather::WindState::default();
+                    }
+                    if let Some(ref mut particle_pool) = particle_pool_query {
+                        particle_pool.clear();
+                    }
+                    if let Some(ref mut pending_thunder) = pending_thunder_query {
+                        pending_thunder.0.clear();
+                    }
+                    for entity in &lightning_entities_query {
+                        commands.entity(entity).despawn();
+                    }
+
+                    // 8. Reset hotbar and inventory
+                    if let Some(ref mut hotbar) = hotbar_query {
+                        **hotbar = Hotbar::default();
+                    }
+                    if let Some(ref mut player_inv) = player_inv_query {
+                        **player_inv = crate::player::PlayerInventory::default();
+                    }
+                    if let Some(ref mut selected) = selected_voxel_query {
+                        selected.0 = Some(Voxel::LoamGrass);
+                    }
+
+                    // 9. Return to Main Menu with action buttons
+                    if let Some(ref mut phase) = main_menu_phase {
+                        **phase = crate::menu::main_menu::MainMenuPhase::ActionMenu;
+                    }
+                    menu_return_target.0 = MenuState::MainMenu;
+                    next_state.set(MenuState::MainMenu);
+                    info!("Exited session to Main Menu: world cleared and session ended");
                 }
             }
         }

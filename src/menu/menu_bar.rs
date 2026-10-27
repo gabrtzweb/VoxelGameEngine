@@ -10,7 +10,7 @@ use crate::{
     menu::creative_inventory::CreativeSearchQuery,
 };
 
-use super::MenuState;
+use super::{MenuReturnTarget, MenuState};
 
 pub const MENU_BAR_HEIGHT: f32 = 80.0; // 20 px @ 4x
 pub const MENU_SCALE: f32 = 4.0;
@@ -56,12 +56,20 @@ impl Plugin for MenuBarPlugin {
 fn sync_menu_bar_visibility(
     mut commands: Commands,
     menu_state: Res<State<MenuState>>,
+    menu_return_target: Res<MenuReturnTarget>,
+    world_session: Option<Res<crate::world::WorldSession>>,
     menu_bar_query: Query<Entity, With<MenuBarRoot>>,
     asset_server: Res<AssetServer>,
     app_font: Option<Res<AppFont>>,
     loc: Option<Res<crate::core::Localization>>,
 ) {
-    let is_in_menu = *menu_state.get() != MenuState::None;
+    let in_active_session = world_session.as_ref().map_or_else(
+        || menu_return_target.0 != MenuState::MainMenu,
+        |s| s.is_active,
+    );
+    let is_in_menu = in_active_session
+        && *menu_state.get() != MenuState::None
+        && *menu_state.get() != MenuState::MainMenu;
     let existing = menu_bar_query.iter().next();
 
     if is_in_menu && existing.is_none() {
@@ -308,7 +316,7 @@ fn handle_menu_bar_shortcuts(
     mut next_state: ResMut<NextState<MenuState>>,
     search_query: Option<Res<CreativeSearchQuery>>,
 ) {
-    if *menu_state.get() == MenuState::None {
+    if *menu_state.get() == MenuState::None || *menu_state.get() == MenuState::MainMenu {
         return;
     }
 

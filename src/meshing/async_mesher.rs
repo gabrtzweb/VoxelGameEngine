@@ -39,10 +39,19 @@ impl Plugin for AsyncMesherPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ChunkMeshRegistry>()
             .add_systems(Startup, setup_chunk_material)
-            .add_systems(Update, collect_meshing_tasks)
+            .add_systems(
+                Update,
+                collect_meshing_tasks.run_if(|session: Option<Res<crate::world::WorldSession>>| {
+                    session.map_or(true, |s| s.is_active)
+                }),
+            )
             .add_systems(
                 PostUpdate,
-                (collect_meshing_tasks, start_meshing_tasks).chain(),
+                (collect_meshing_tasks, start_meshing_tasks)
+                    .chain()
+                    .run_if(|session: Option<Res<crate::world::WorldSession>>| {
+                        session.map_or(true, |s| s.is_active)
+                    }),
             );
     }
 }

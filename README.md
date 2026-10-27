@@ -151,6 +151,7 @@ src/
 ├── menu/
 │   ├── controls.rs
 │   ├── creative_inventory.rs
+│   ├── main_menu.rs
 │   ├── menu_bar.rs
 │   ├── mod.rs
 │   ├── pause.rs
@@ -215,6 +216,7 @@ tests/
 │   ├── culling.rs
 │   ├── foliage.rs
 │   ├── localization.rs
+│   ├── menu.rs
 │   ├── noise.rs
 │   ├── ores.rs
 │   ├── texture.rs

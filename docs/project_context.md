@@ -73,6 +73,12 @@ This is an attempt to develop an experimental voxel engine and game, built from 
   - Footstep system (`FootstepAudioPlugin`) with stance cadences, landing impact velocity scaling, water wading, and swimming strokes.
   - Submerged underwater loop with bubble effects, subterranean cave drones, day/night biome nature soundscapes, and multi-channel weather audio.
   - 39-track gameplay soundtrack player (`GameplayMusicPlugin`) with seamless cross-fading and natural Minecraft-style intervals.
+- **Main Menu & Title Screen**:
+  - Direct engine startup into `MenuState::MainMenu` presenting a full-screen concept art background (`assets/textures/interfaces/main_menu_bg.png`).
+  - Interactive two-phase flow:
+    - **Splash Phase**: Large retro-pixel title banner ("VOXEL ENGINE"), version readout, and pulsing prompt ("Press any key to start") waiting for any key or mouse trigger.
+    - **Action Phase**: Revealing Play, Settings, Controls, and Quit buttons styled with the Dark Iron sliced button suite (`button_large.png` & hover states) with tactile UI audio.
+  - Seamless stack navigation via `MenuReturnTarget`, routing Settings and Controls Back buttons and Escape cleanly back to the Main Menu when opened from there, and back to Pause when in-game.
 
 ---
 
@@ -145,12 +151,11 @@ In Version 0.2 (Modernization, Worldbuilding & Deep Systems), the project status
 - **Phase 6 (In Progress)**: Flora, Crops & Interactive Mechanical Blocks (Agricultural lifecycle simulation, in-world crop growth, connected block topology masks, wild flora, interactive doors and containers).
 - **Phase 7 (In Progress)**: Subterranean Strata, Caverns & Geological Generation (Multi-tier geological strata, Mantle bedrock at Y = -254, 54 authentic ore vein pairings, crystal geodes, subterranean cave biomes).
 - **Phase 8 (Planned)**: Biome Refactoring, Climate Modeling & Tree/Flora Distribution (Multi-noise climate fields, organic biome dithering, ecological tree dispersion, canopy density models).
-- **Phase 9 (Planned)**: Main Menu, World Save/Load Management & Player Persistence.
+- [Phase 9 (In Progress - Simplified Version)](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/docs/project_roadmap.md#phase-9-main-menu-clean-world-session-lifetime--deferred-world-loading-in-progress---simplified-version): Main Menu, Clean World Session Lifetime & Deferred World Loading.
 - **Phase 10 (Completed)**: Sound Engine & Spatial Audio System (Multi-channel volume mixer, 11-material acoustic profiles, spatial 3D block interaction audio, realistic footstep cadences, water wading and swimming strokes, ambient biomes, weather audio, and 39-track soundtrack).
 - **Procedural Foliage Engine**: Real-time GPU grass blade rendering with wind swaying, player trampling, and terrain color matching.
 
 Detailed progress and milestones are tracked in `docs/project_roadmap.md`.
-
 
 ---
 

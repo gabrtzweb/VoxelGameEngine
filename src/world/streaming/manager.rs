@@ -130,7 +130,10 @@ impl Plugin for ChunkStreamingPlugin {
                     collect_lod_meshing_tasks,
                 )
                     .chain()
-                    .after(PlayerSet::Movement),
+                    .after(PlayerSet::Movement)
+                    .run_if(|session: Option<Res<crate::world::WorldSession>>| {
+                        session.map_or(true, |s| s.is_active)
+                    }),
             );
     }
 }

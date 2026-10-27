@@ -62,8 +62,8 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **06** | **[Flora, Crops & Interactive Mechanical Blocks](#phase-6-flora-crops--interactive-mechanical-blocks-in-progress)** | **In Progress** | Agricultural lifecycle simulation, in-world crop growth, connected block topology masks, wild flora, interactive doors and containers |
 | **07** | **[Subterranean Strata, Caverns & Geological Generation](#phase-7-subterranean-strata-caverns--geological-generation-in-progress)** | **In Progress** | Multi-tier geological strata, Mantle bedrock at Y = -254, 54 authentic ore vein pairings, crystal geodes, subterranean cave biomes |
 | **08** | **[Biome Refactoring, Climate Modeling & Tree/Flora Distribution](#phase-8-biome-refactoring-climate-modeling--treeflora-distribution-planned)** | **Planned** | Multi-noise climate fields (continentalness/temperature/moisture), organic biome dithering, ecological tree dispersion, canopy models |
-| **09** | **[Main Menu & World Management](#phase-9-main-menu--world-management-planned)** | **Planned** | Boot to Main Menu title screen, New World creation (seed & name), saved world browser, persistence & save triggers, quit |
-| **10** | **[Sound Engine & Spatial Audio System](#phase-10-sound-engine--spatial-audio-system-in-progress)** | **In Progress** | 3D spatial audio, material-based block break/place and footsteps, ambient environmental soundscapes, weather audio, dynamic music |
+| **09** | **[Main Menu & World Management](#phase-9-main-menu--world-management-in-progress)** | **In Progress** | Boot to Main Menu title screen, splash press-any-key, action menu (Play, Settings, Controls, Quit); world saves and creation planned |
+| **10** | **[Sound Engine & Spatial Audio System](#phase-10-sound-engine--spatial-audio-system-completed)** | **Completed** | 3D spatial audio, material-based block break/place and footsteps, ambient environmental soundscapes, weather audio, dynamic music |
 | **11** | **[Custom Voxel Player Character & Modular Character Creator](#phase-11-custom-voxel-player-character--modular-character-creator-planned)** | **Planned** | Modular voxel character rig, Character Creator interface, fantasy races, custom hair, skin, eye, and cosmetic customization |
 | **12** | **[First-Person Item Rendering & Creative Utility Tools](#phase-12-first-person-item-rendering--creative-utility-tools-planned)** | **Planned** | 3D held items/blocks in player hand, paint roller, lumberjack tree-felling saw, multi-block sledgehammer, measurement tools |
 | **13** | **[Physics Engine, Fluid Dynamics & Item Drops](#phase-13-physics-engine-fluid-dynamics--item-drops-planned)** | **Planned** | Overhauled fluid propagation, gravity blocks (sand, gravel), 3D floating item drops with magnetism, projectile trajectories |
@@ -191,19 +191,23 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 9: Main Menu & World Management (Planned)
+### Phase 9: Main Menu & World Management (In Progress)
 
-- [ ] **Boot Flow Transition & Title Screen Interface**:
-  - Re-architect engine startup flow to boot into a dedicated Main Menu / Title Screen instead of spawning directly into active gameplay.
-  - Implement Dark Iron visual design suite for the title screen with animated background panorama, logo banner, version indicator, and navigation buttons (*Play*, *Settings*, *Controls*, *Credits*, *Quit*).
-- [ ] **New World Creation Interface**:
+- [x] **Boot Flow Transition & Title Screen Interface (Simplified)**:
+  - Re-architected engine startup state to boot directly into `MenuState::MainMenu` with full-screen concept art background artwork (`assets/textures/interfaces/main_menu_bg.png`).
+  - Implemented interactive two-phase title screen:
+    - **Splash Phase**: Prominent warm gold "VOXEL ENGINE" pixel title, version badge, and pulsing center prompt ("Press any key to start" / "Pressione qualquer tecla para começar") listening for any key or mouse press.
+    - **Action Menu Phase**: Revealed on key/mouse press with Dark Iron styled sliced buttons (`button_large.png` & hover states) for *Play* / *Jogar*, *Settings* / *Configurações*, *Controls* / *Controles*, and *Quit* / *Sair do Jogo*, with full tactile UI audio feedback.
+  - Implemented seamless navigation stack (`MenuReturnTarget` resource) routing *Back* / *Escape* from Settings and Controls back to the Main Menu when opened from there, or back to the Pause menu when in-game.
+  - Full multi-language support (`en_us` and `pt_br`) and automated integration test coverage (`tests/suite/menu.rs`).
+- [ ] **New World Creation Interface (Deferred)**:
   - Build a world creation modal allowing players to define World Name, custom World Seed (with seed randomizer), and initial game mode (Survival / Creative).
   - Add procedural generation seed validation and world folder initialization.
-- [ ] **Saved Worlds Selection & Loading Architecture**:
+- [ ] **Saved Worlds Selection & Loading Architecture (Deferred)**:
   - Implement saved world list UI that queries local save directories (`saves/`).
   - Display rich save metadata: world name, seed, last played timestamp, game mode, and file size.
   - Enable loading, duplicating, and deleting world saves safely with confirmation prompts.
-- [ ] **World Persistence & Session Lifecycle**:
+- [ ] **World Persistence & Session Lifecycle (Deferred)**:
   - Connect in-game Pause Menu (*Save and Return to Title Screen*, *Quit to Desktop*) to world state serialization routines.
   - Graceful world unload releasing voxel chunks, simulation threads, and audio channels before returning to the main menu.
 
@@ -227,7 +231,6 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
   - Comprehensive automated test suite (`tests/suite/audio.rs`) validating sound material mappings and disk asset integrity.
 
 ---
-
 
 ### Phase 11: Custom Voxel Player Character & Modular Character Creator (Planned)
 
@@ -392,3 +395,25 @@ Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dyna
   - Wind-borne loose blade particles (`wind_blade.png`) during howling winds ($\ge 20\text{ m/s}$) and storms.
   - Weather integration: darken blades during rain and blend white snow tint during snowstorms or snow accumulation.
   - In-game Settings menu integration with full Brazilian Portuguese (`pt_br.json`) and English (`en_us.json`) localization, persisted in `local_config.json`.
+
+---
+
+### Phase 9: Main Menu, Clean World Session Lifetime & Deferred World Loading (In Progress - Simplified Version)
+
+- [x] **Initial Title & Splash Screen**:
+  - Full-screen pixel-art concept background (`assets/textures/interfaces/main_menu_bg.png`).
+  - Game title ("Voxel Engine") with animated pulsing prompt (*"Pressione qualquer tecla para continuar..."* / *"Press any key or click to continue..."*).
+- [x] **Interactive Action Menu**:
+  - Action buttons: "Jogar / Play", "Configurações / Settings", "Controles / Controls", and "Sair / Quit".
+  - Seamless navigation to Settings and Controls maintaining the concept art backdrop with contrast overlay.
+- [x] **Deferred World Loading & `WorldSession` Lifecycle**:
+  - Introduce `WorldSession { is_active: bool }` resource gating chunk streaming, LOD generation, and async meshing systems.
+  - World generation, terrain streaming, and meshing remain completely idle while in `MenuState::MainMenu`, `Settings`, or `Controls`.
+  - World only loads upon clicking **"Jogar / Play"**.
+- [x] **Pause Menu "Return to Main Menu"**:
+  - Updated Pause Menu quit action to "Sair para o Menu" ("Return to Main Menu").
+  - Clean world unload: despawns all chunk and LOD mesh entities, clears `VoxelWorld` block storage, `WorldModificationStore`, `MapCache`, resets `ChunkStreamingState`, and resets player position and environment state back to spawn.
+- [ ] **Pending Milestones (Future Phase 9 Iteration)**:
+  - World save/load persistence and disk serialization.
+  - World creation screen with custom seeds and world generation presets.
+  - Save slot selection and deletion UI.
