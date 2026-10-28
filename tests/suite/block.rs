@@ -110,7 +110,7 @@ fn test_axis_aligned_pillar_properties() {
 
 #[test]
 fn test_voxel_discriminants_continuity() {
-    for id in 0..=613u16 {
+    for id in 0..=681u16 {
         let maybe_voxel = Voxel::from_u16(id);
         assert!(
             maybe_voxel.is_some(),
@@ -118,12 +118,14 @@ fn test_voxel_discriminants_continuity() {
         );
         assert_eq!(maybe_voxel.unwrap() as u16, id);
     }
-    assert_eq!(Voxel::from_u16(614), None);
+    assert_eq!(Voxel::from_u16(682), None);
     assert_eq!(Voxel::from_u16(1000), None);
 
-    assert_eq!(Voxel::ALL.len(), 611);
+    assert_eq!(Voxel::ALL.len(), 679);
     assert_eq!(Voxel::ALL[0], Voxel::DebugAccept);
     assert_eq!(Voxel::ALL[610], Voxel::FungiVerdigrisCap);
+    assert_eq!(Voxel::ALL[611], Voxel::VegeWildgrass);
+    assert_eq!(Voxel::ALL[678], Voxel::FlowerWildflowers);
 }
 
 #[test]
@@ -167,4 +169,16 @@ fn test_flora_support_and_collision() {
     assert!(!Voxel::FungiPorcini.is_collidable());
     // Regular leaves remain solid blocks
     assert!(Voxel::OakLeaves.is_collidable());
+
+    // Phase 6: Wild Flora & Flowers
+    assert!(Voxel::VegeWildgrass.requires_floor_support());
+    assert!(Voxel::FlowerDandelion.requires_floor_support());
+    assert!(!Voxel::VegeCaveVines.requires_floor_support()); // hanging plant
+    assert!(!Voxel::VegeWildgrass.is_collidable());
+    assert!(!Voxel::FlowerPoppy.is_collidable());
+    assert!(Voxel::VegeCactus.is_collidable()); // Saguaro column is solid!
+    assert!(Voxel::VegeCactus.is_solid_opaque());
+    assert_eq!(Voxel::VegeWildgrass.default_shape(), BlockShape::CrossBillboard);
+    assert_eq!(Voxel::FlowerDandelion.default_shape(), BlockShape::CrossBillboard);
+    assert_eq!(Voxel::VegeCactus.default_shape(), BlockShape::Full);
 }

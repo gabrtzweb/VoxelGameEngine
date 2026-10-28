@@ -108,9 +108,29 @@ fn draw_current_target_highlight(
         return;
     }
 
+    let color = Color::srgba(1.0, 1.0, 1.0, 0.95);
+
+    // If targeting either half of a double-tall plant, render a single unified 1x2x1 bounding box
+    if voxel.is_double_tall_bottom() {
+        if let Some(top_partner) = voxel.double_tall_top_partner() {
+            if world.get_voxel(target.block_origin + IVec3::Y) == Some(top_partner) {
+                let origin = target.block_origin.as_vec3() * VOXEL_SIZE;
+                draw_box_outline(&mut gizmos, origin, Vec3::ZERO, Vec3::new(1.0, 2.0, 1.0), color);
+                return;
+            }
+        }
+    } else if voxel.is_double_tall_top() {
+        if let Some(bottom_partner) = voxel.double_tall_bottom_partner() {
+            if world.get_voxel(target.block_origin - IVec3::Y) == Some(bottom_partner) {
+                let origin = (target.block_origin - IVec3::Y).as_vec3() * VOXEL_SIZE;
+                draw_box_outline(&mut gizmos, origin, Vec3::ZERO, Vec3::new(1.0, 2.0, 1.0), color);
+                return;
+            }
+        }
+    }
+
     let (shape, orientation) = world.get_shape(target.block_origin);
     let origin = target.block_origin.as_vec3() * VOXEL_SIZE;
-    let color = Color::srgba(1.0, 1.0, 1.0, 0.95);
 
     let (box_a, maybe_box_b) = shape.local_boxes(orientation);
     draw_box_outline(&mut gizmos, origin, box_a[0], box_a[1], color);

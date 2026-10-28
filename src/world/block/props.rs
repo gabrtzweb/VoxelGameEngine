@@ -139,7 +139,7 @@ const fn init_voxel_properties() -> [VoxelProps; MAX_VOXEL_COUNT] {
     }; MAX_VOXEL_COUNT];
 
     let mut idx = 0;
-    while idx <= 613 {
+    while idx <= 681 {
         if let Some(v) = Voxel::from_u16(idx as u16) {
             table[idx] = compute_voxel_props(v);
         }
@@ -313,10 +313,17 @@ impl Voxel {
     }
 
     #[inline(always)]
+    pub const fn is_flora_billboard(self) -> bool {
+        let id = self as u16;
+        (id >= 614 && id <= 681) && id != (Self::VegeCactus as u16)
+    }
+
+    #[inline(always)]
     pub const fn is_cross_billboard_const(self) -> bool {
-        matches!(
-            self,
-            Self::NullCrossmesh
+        self.is_flora_billboard()
+            || matches!(
+                self,
+                Self::NullCrossmesh
                 | Self::CrystalAmethystCluster
                 | Self::CrystalAmethystGlinted
                 | Self::CrystalAquamarineCluster
@@ -389,52 +396,12 @@ impl Voxel {
                     | Self::GemSapphireRough
                     | Self::GemTopazRough
                     | Self::CrystalAmethystBlock
-                    | Self::CrystalAmethystCluster
-                    | Self::CrystalAmethystGlinted
                     | Self::CrystalAquamarineBlock
-                    | Self::CrystalAquamarineCluster
-                    | Self::CrystalAquamarineGlinted
                     | Self::CrystalCitrineBlock
-                    | Self::CrystalCitrineCluster
-                    | Self::CrystalCitrineGlinted
                     | Self::CrystalFluoriteBlock
-                    | Self::CrystalFluoriteCluster
-                    | Self::CrystalFluoriteGlinted
                     | Self::CrystalPinkSaltBlock
-                    | Self::CrystalPinkSaltCluster
-                    | Self::CrystalPinkSaltGlinted
                     | Self::CrystalSeleniteBlock
-                    | Self::CrystalSeleniteCluster
-                    | Self::CrystalSeleniteGlinted
-                    | Self::BoneWorms
-                    | Self::BrainCoralFan
-                    | Self::BubbleCoralFan
-                    | Self::BullKelp
-                    | Self::DeadCoralFan
-                    | Self::Delesseria
-                    | Self::DyingCoralFan
-                    | Self::FireCoralFan
-                    | Self::HeartCoralFan
-                    | Self::HornCoralFan
-                    | Self::Kelp
-                    | Self::LeafCoralFan
-                    | Self::RedAlgae
-                    | Self::ReedCoralFan
-                    | Self::Sargassum
-                    | Self::Seagrass
-                    | Self::Seaweed
-                    | Self::SpikeCoralFan
-                    | Self::StaghornCoralFan
-                    | Self::SunCoralFan
-                    | Self::ThornCoralFan
-                    | Self::TubeCoralFan
-                    | Self::WaxCoralFan
-                    | Self::ZigzagCoralFan
                     | Self::BlubberBlock
-                    | Self::Cobweb
-                    | Self::CobwebArch
-                    | Self::CobwebHanging
-                    | Self::CobwebStretched
                     | Self::HoneyBlock
                     | Self::JellyBlock
                     | Self::SlimeBlock
@@ -472,15 +439,6 @@ impl Voxel {
                     | Self::TintedGlassTurquoise
                     | Self::TintedGlassWhite
                     | Self::TintedGlassYellow
-                    | Self::FungiAmanita
-                    | Self::FungiChanterelle
-                    | Self::FungiIndigo
-                    | Self::FungiMycena
-                    | Self::FungiPorcini
-                    | Self::FungiRussula
-                    | Self::FungiShiitake
-                    | Self::FungiVerdigris
-                    | Self::BeaverDam
             )
     }
 
@@ -629,11 +587,24 @@ impl Voxel {
     }
 
     #[inline(always)]
+    pub fn is_hanging_flora(self) -> bool {
+        matches!(
+            self,
+            Self::VegeCaveVines
+                | Self::VegeCaveVinesPlant
+                | Self::VegeHangingMoss
+                | Self::VegeHangingRoots
+                | Self::VegeVines
+        )
+    }
+
+    #[inline(always)]
     pub fn requires_floor_support(self) -> bool {
         self.is_pebble()
             || self.is_mushroom()
             || self.is_coral_fan()
             || self.is_marine_flora()
+            || (self.is_flora_billboard() && !self.is_hanging_flora())
     }
 
     #[inline(always)]

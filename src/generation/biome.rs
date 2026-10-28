@@ -239,7 +239,7 @@ impl BiomeType {
     pub fn voxel_tint(self, voxel: Voxel) -> [f32; 4] {
         if !voxel.is_tinted() {
             [1.0, 1.0, 1.0, 1.0]
-        } else if voxel.is_grass_soil() {
+        } else if voxel.is_grass_soil() || voxel.is_tinted_flora() {
             self.grass_color()
         } else if matches!(voxel, Voxel::LiquidWater | Voxel::WaterOccupied) {
             self.water_color()

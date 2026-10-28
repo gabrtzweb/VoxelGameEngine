@@ -199,6 +199,7 @@ impl Voxel {
             Self::HayBale => Some("deco_hay_bale_top"),
             Self::RiceBale => Some("deco_rice_bale_top"),
             Self::StrawBale => Some("deco_straw_bale_top"),
+            Self::VegeCactus => Some("vege_cactus_top"),
             _ => None,
         }
     }
@@ -228,6 +229,7 @@ impl Voxel {
             Self::GeothermalVent => Some("aqua_geothermal_vent_bot"),
             Self::PearlBlock => Some("aqua_pearl_bot"),
             Self::ScuteBlock => Some("aqua_scute_bot"),
+            Self::VegeCactus => Some("vege_cactus_bottom"),
             Self::SeaAnemone => Some("aqua_sea_anemone_bot"),
             Self::BeeNest => Some("nest_bee_nest_bot"),
             Self::BirdNest => Some("nest_bird_nest_bot"),
@@ -464,39 +466,59 @@ impl Voxel {
         )
     }
 
-    pub fn is_tinted(self) -> bool {
+    #[inline(always)]
+    pub fn is_tinted_flora(self) -> bool {
         matches!(
             self,
-            Self::OakLeaves
-                | Self::BirchLeaves
-                | Self::PalmLeaves
-                | Self::AcaciaLeaves
-                | Self::BaobabLeaves
-                | Self::KapokLeaves
-                | Self::MahoganyLeaves
-                | Self::MangroveLeaves
-                | Self::WillowLeaves
-                | Self::PineLeaves
-                | Self::YewLeaves
-                | Self::WaterOccupied
-                | Self::LiquidWater
-                | Self::CalicheGrass
-                | Self::LateriteGrass
-                | Self::LoamGrass
-                | Self::PeatGrass
-                | Self::PermafrostGrass
-                | Self::SiltGrass
-                | Self::AndesiteGrass
-                | Self::ArgilliteGrass
-                | Self::BasaltGrass
-                | Self::ChalkGrass
-                | Self::DolomiteGrass
-                | Self::GraniteGrass
-                | Self::LimestoneGrass
-                | Self::LoamBurrow
-                | Self::PeatBurrow
-                | Self::SiltBurrow
+            Self::VegeWildgrass
+                | Self::VegeTallWildgrassBottom
+                | Self::VegeTallWildgrassTop
+                | Self::VegeFern
+                | Self::VegeBracken
+                | Self::VegeTallFernBottom
+                | Self::VegeTallFernTop
+                | Self::VegeTallJungleFernBottom
+                | Self::VegeTallJungleFernTop
+                | Self::VegeBush
+                | Self::VegeVines
+                | Self::FlowerClover
         )
+    }
+
+    pub fn is_tinted(self) -> bool {
+        self.is_tinted_flora()
+            || matches!(
+                self,
+                Self::OakLeaves
+                    | Self::BirchLeaves
+                    | Self::PalmLeaves
+                    | Self::AcaciaLeaves
+                    | Self::BaobabLeaves
+                    | Self::KapokLeaves
+                    | Self::MahoganyLeaves
+                    | Self::MangroveLeaves
+                    | Self::WillowLeaves
+                    | Self::PineLeaves
+                    | Self::YewLeaves
+                    | Self::WaterOccupied
+                    | Self::LiquidWater
+                    | Self::CalicheGrass
+                    | Self::LateriteGrass
+                    | Self::LoamGrass
+                    | Self::PeatGrass
+                    | Self::PermafrostGrass
+                    | Self::SiltGrass
+                    | Self::AndesiteGrass
+                    | Self::ArgilliteGrass
+                    | Self::BasaltGrass
+                    | Self::ChalkGrass
+                    | Self::DolomiteGrass
+                    | Self::GraniteGrass
+                    | Self::LimestoneGrass
+                    | Self::LoamBurrow
+                    | Self::PeatBurrow
+                    | Self::SiltBurrow
+            )
     }
 
     #[inline]
@@ -695,6 +717,7 @@ impl Voxel {
             | Self::DolomiteGrass
             | Self::GraniteGrass
             | Self::LimestoneGrass => [0.55, 0.94, 0.42, 1.0],
+            s if s.is_tinted_flora() => [0.55, 0.94, 0.42, 1.0],
             _ => [1.0, 1.0, 1.0, 1.0],
         }
     }

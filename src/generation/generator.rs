@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use super::{
     biome::{BiomeType, ClimateGenerator, ClimateSample},
     caves::{CaveGenerator, CaveNoiseSample},
+    flora,
     ores,
     strata::StrataGenerator,
     trees::{self, TreeSpecies},
@@ -687,6 +688,11 @@ impl TerrainGenerator {
                     }
                 }
             }
+        }
+
+        // Phase 6: Procedural Flora Generation (Wildgrass, Ferns, Bushes, Flowers & Cave Growths)
+        if has_solid_voxels {
+            flora::populate_chunk_flora(&mut voxels, &columns, chunk_origin, self.seed);
         }
 
         if !has_solid_voxels {

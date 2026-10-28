@@ -3,9 +3,9 @@
 This master document centralizes, unifies, and catalogs **all blocks implemented in the Voxel Engine**, organized across the 14 worldbuilding subdomains located in `docs/worldbuilding/blocks/`.
 
 > [!IMPORTANT]
-> **Project Grand Total: 715 Cataloged Unique Blocks**  
+> **Project Grand Total: 709 Cataloged Unique Blocks**  
 > Summing all 14 core domains of the engine's block ecosystem:  
-> **8** (systems) + **18** (fluids) + **56** (soils) + **68** (rocks) + **91** (trees) + **74** (ores) + **30** (caverns) + **50** (oceans) + **36** (organics) + **162** (decorations) + **18** (mushrooms) + **38** (vegetation) + **32** (flowers) + **34** (crops) = **715 Total Blocks**.
+> **8** (systems) + **18** (fluids) + **56** (soils) + **68** (rocks) + **91** (trees) + **74** (ores) + **30** (caverns) + **50** (oceans) + **36** (organics) + **162** (decorations) + **18** (mushrooms) + **26** (vegetation) + **32** (flowers) + **36** (crops) = **709 Total Blocks**.
 
 For each block, the following properties are systematically specified:
 
@@ -38,10 +38,10 @@ For each block, the following properties are systematically specified:
 | **09** | Biomaterials, Fauna & Organic Matter (`organics`) | **36 blocks** | **94 textures** | ✅ **100% Complete** | [organics_design.md](blocks/organics_design.md) | [Go to Section 09](#09-biomaterials-fauna--organic-matter-organics--36-blocks--100-complete) |
 | **10** | Decorations, Lighting & Architecture (`decorations`) | **162 blocks** | **96 textures** | ✅ **100% Complete** | [decorations_design.md](blocks/decorations_design.md) | [Go to Section 10](#10-decorations-lighting--architecture-decorations--162-blocks--100-complete) |
 | **11** | Mycology: Mushrooms (`mushrooms`) | **18 blocks** | **54 textures** | ✅ **100% Complete** | [mushrooms_design.md](blocks/mushrooms_design.md) | [Go to Section 11](#11-mycology-mushrooms-mushrooms--18-blocks--100-complete) |
-| **12** | Botany: Groundcover & Herbaceous Flora (`vegetation`) | **38 blocks** | **111 textures** | 🔄 *In Progress* | [vegetation_design.md](blocks/vegetation_design.md) | [Go to Section 12](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks) |
-| **13** | Botany: Flowers & Flowering Flora (`flowers`) | **32 blocks** | **87 textures** | 🔄 *In Progress* | [flowers_design.md](blocks/flowers_design.md) | [Go to Section 13](#13-botany-flowers--flowering-flora-flowers--32-blocks) |
-| **14** | Agriculture & Domestic Crops (`crops`) | **34 blocks** | **171 textures** | 🔄 *In Progress* | [crops_design.md](blocks/crops_design.md) | [Go to Section 14](#14-agriculture--domestic-crops-crops--34-blocks) |
-| **TOTAL** | **Grand Master Sum** | **715 blocks** | **1,623 textures** | — | — | — |
+| **12** | Botany: Groundcover & Herbaceous Flora (`vegetation`) | **26 blocks** | **102 textures** | ✅ **100% Complete** | [vegetation_design.md](blocks/vegetation_design.md) | [Go to Section 12](#12-botany-groundcover--herbaceous-flora-vegetation--26-blocks--100-complete) |
+| **13** | Botany: Flowers & Flowering Flora (`flowers`) | **28 blocks** | **113 textures** | ✅ **100% Complete** | [flowers_design.md](blocks/flowers_design.md) | [Go to Section 13](#13-botany-flowers--flowering-flora-flowers--28-blocks--100-complete) |
+| **14** | Agriculture & Domestic Crops (`crops`) | **36 blocks** | **183 textures** | 🔄 *In Progress* | [crops_design.md](blocks/crops_design.md) | [Go to Section 14](#14-agriculture--domestic-crops-crops--36-blocks) |
+| **TOTAL** | **Grand Master Sum** | **705 blocks** | **1,652 textures** | — | — | — |
 
 01. [Technical & System Blocks (`systems`) — 8 Blocks [✅ 100% Complete]](#01-technical--system-blocks-systems--8-blocks--100-complete)
 02. [Hydrosphere & Cryology (`fluids`) — 18 Blocks [✅ 100% Complete]](#02-hydrosphere--cryology-fluids--18-blocks--100-complete)
@@ -54,9 +54,9 @@ For each block, the following properties are systematically specified:
 09. [Biomaterials, Fauna & Organic Matter (`organics`) — 36 Blocks [✅ 100% Complete]](#09-biomaterials-fauna--organic-matter-organics--36-blocks--100-complete)
 10. [Decorations, Lighting & Architecture (`decorations`) — 162 Blocks [✅ 100% Complete]](#10-decorations-lighting--architecture-decorations--162-blocks--100-complete)
 11. [Mycology: Mushrooms (`mushrooms`) — 18 Blocks [✅ 100% Complete]](#11-mycology-mushrooms-mushrooms--18-blocks--100-complete)
-12. [Botany: Groundcover & Herbaceous Flora (`vegetation`) — 38 Blocks](#12-botany-groundcover--herbaceous-flora-vegetation--38-blocks)
-13. [Botany: Flowers & Flowering Flora (`flowers`) — 32 Blocks](#13-botany-flowers--flowering-flora-flowers--32-blocks)
-14. [Agriculture & Domestic Crops (`crops`) — 34 Blocks](#14-agriculture--domestic-crops-crops--34-blocks)
+12. [Botany: Groundcover & Herbaceous Flora (`vegetation`) — 26 Blocks [✅ 100% Complete]](#12-botany-groundcover--herbaceous-flora-vegetation--26-blocks--100-complete)
+13. [Botany: Flowers & Flowering Flora (`flowers`) — 28 Blocks [✅ 100% Complete]](#13-botany-flowers--flowering-flora-flowers--28-blocks--100-complete)
+14. [Agriculture & Domestic Crops (`crops`) — 36 Blocks](#14-agriculture--domestic-crops-crops--36-blocks)
 
 ---
 
@@ -706,110 +706,94 @@ The mycological domain encompasses **8 wild understory ground mushrooms** (cross
 
 ---
 
-## 12. Botany: Groundcover & Herbaceous Flora (`vegetation`) — 38 Blocks
+## 12. Botany: Groundcover & Herbaceous Flora (`vegetation`) — 26 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/vegetation`  
 📄 **Comprehensive Specification**: [vegetation_design.md](blocks/vegetation_design.md)
 
-The planetary herbaceous flora and groundcover system encompasses **38 distinct herbaceous and low-shrub taxa** spanning 6 functional ecological divisions: 12 native grassy swards, 6 meadow forbs, 8 shrubs & woody briers, 4 wetland reeds, 4 deep-shade ferns, and 4 subterranean cavern flora = **38 Total Groundcover Blocks**.
+The planetary herbaceous flora and groundcover system encompasses **26 distinct herbaceous, shrub, fern, epiphyte, and cavern taxa** spanning 6 functional ecological divisions (each with strictly 3 procedural variants): 6 native grasses, 4 understory ferns, 6 shrubs & cacti, 2 wetland plants, 4 epiphytes, and 4 subterranean cavern flora = **26 Total Groundcover Blocks**.
 
 ---
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping / Geometry |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **01** | `vege_barley` | Wild Barley | **Wild Cereal** | `vege_barley_bottom.png`<br>`vege_barley_top.png` | Double-Tall (2 Blocks) (1 bottom, 3 tops) |
-| **02** | `vege_barrel_cactus` | Barrel Cactus | **Cactus** | `vege_barrel_cactus.png` | Globular Succulent Mesh (2 (`_`, `1`)) |
-| **03** | `vege_bluff_grass` | Bluff Grass | **Grass** | `vege_bluff_grass.png` | Single Cross-Mesh (3 (`_`, `1`, `2`)) |
-| **04** | `vege_bracken` | Bracken Fern | **Fern** | `vege_bracken.png` | Spreading Frond Mesh |
-| **05** | `vege_bush` | Temperate Bush | **Shrub** | `vege_bush.png` | Dense Rounded Mesh (4 (`_`, `1`, `2`, `3`)) |
-| **06** | `vege_cactus` | Saguaro Cactus | **Cactus** | `vege_cactus_top.png`<br>`vege_cactus_side.png`<br>`vege_cactus_bottom.png` | 3D Full Column Block (Thorns) |
-| **07** | `vege_cactus_bush` | Cactus Bush | **Cactus** | `vege_cactus_bush.png` | Spiny Cross-Mesh (2 (`_`, `1`)) |
-| **08** | `vege_cattail` | Cattail | **Wetland** | `vege_cattail_bottom.png`<br>`vege_cattail_top.png` | Double-Tall Emergent (2 Blocks) (1 pair) |
-| **09** | `vege_cave_growths` | Cave Growths | **Cave Flora** | `vege_cave_growths.png` | Ground Umbrophilic Thallus |
-| **10** | `vege_cave_hyssop` | Cave Hyssop | **Cave Flora** | `vege_cave_hyssop.png` | Subterranean Flowering Herb |
-| **11** | `vege_dead_bush` | Dead Bush | **Shrub** | `vege_dead_bush.png` | Withered Woody Sticks (4 (`_`, `1`, `2`, `3`)) |
-| **12** | `vege_drygrass` | Drygrass | **Grass** | `vege_drygrass.png` | Single Cross-Mesh (4 (`_`, `1`, `2`, `3`)) |
-| **13** | `vege_fern` | Common Fern | **Fern** | `vege_fern.png` | Single Cross-Mesh (4 (`_`, `1`, `2`, `3`)) |
-| **14** | `vege_fern_large` | Large Fern | **Fern** | `vege_fern_large.png` | Robust Cross-Mesh |
-| **15** | `vege_fern_large_snowy` | Snowy Large Fern | **Fern** | `vege_fern_large_snowy.png` | Snowy Cross-Mesh |
-| **16** | `vege_frigid_grass` | Frigid Grass | **Grass** | `vege_frigid_grass.png` | Single Cross-Mesh (2 (`_`, `1`)) |
-| **17** | `vege_grainy_cave_growths` | Grainy Cave Growths | **Cave Flora** | `vege_grainy_cave_growths.png` | Ferruginous Granular Crust |
-| **18** | `vege_hanging_moss` | Hanging Moss | **Epiphyte** | `vege_hanging_moss.png` | Ceiling Hanging Decal |
-| **19** | `vege_hanging_roots` | Hanging Roots | **Epiphyte** | `vege_hanging_roots.png` | Ceiling Root Danglers (2 (`_`, `1`)) |
-| **20** | `vege_helvola_pad` | Pygmy Helvola Pad | **Floating Pad** | `vege_helvola_pad.png` | Miniature Floating Pad |
-| **21** | `vege_lichen` | Tree & Rock Lichen | **Epiphyte** | `vege_lichen.png` | Crustose Surface Patch (3 (`_`, `1`, `2`)) |
-| **22** | `vege_lily_pad` | Water Lily Pad | **Floating Pad** | `vege_lily_pad.png` | Floating Water Surface Mesh (5 (`_` to `4`)) |
-| **23** | `vege_lurid_cave_growths` | Lurid Cave Growths | **Cave Flora** | `vege_lurid_cave_growths.png` | Bioluminescent Spectral Moss |
-| **24** | `vege_mossgrass` | Mossgrass | **Grass** | `vege_mossgrass.png` | Low Dense Tuft (3 (`_`, `1`, `2`)) |
-| **25** | `vege_pampas_grass` | Pampas Grass | **Tall Grass** | `vege_pampas_grass_bottom.png`<br>`vege_pampas_grass_top.png` | Double-Tall Plume (2 Blocks) (2 bottoms, 1 top) |
-| **26** | `vege_prickly_pear_cactus` | Prickly Pear Cactus | **Cactus** | `vege_prickly_pear_cactus.png` | Fleshy Pad Cross-Mesh |
-| **27** | `vege_red_shrub` | Red Shrub | **Shrub** | `vege_red_shrub.png` | Red Pigmented Mesh (2 (`_`, `1`)) |
-| **28** | `vege_sea_oats` | Sea Oats | **Tall Grass** | `vege_sea_oats_bottom.png`<br>`vege_sea_oats_top.png` | Double-Tall (2 Blocks) (1 pair) |
-| **29** | `vege_small_cactus` | Small Column Cactus | **Cactus** | `vege_small_cactus_top.png`<br>`vege_small_cactus_side.png`<br>`vege_small_cactus_bottom.png` | 3D Compact Column Block |
-| **30** | `vege_sugar_cane` | Sugar Cane | **Wetland** | `vege_sugar_cane.png` | Water-Adjacent Reeds (5 (`_` to `4`)) |
-| **31** | `vege_tall_beach_grass` | Tall Beach Grass | **Tall Grass** | `vege_tall_beach_grass_bottom.png`<br>`vege_tall_beach_grass_top.png` | Double-Tall (2 Blocks) (1 pair) |
-| **32** | `vege_tall_bluff_grass` | Tall Bluff Grass | **Tall Grass** | `vege_tall_bluff_grass_bottom.png`<br>`vege_tall_bluff_grass_top.png` | Double-Tall (2 Blocks) (3 pairs) |
-| **33** | `vege_tall_fern` | Tall Fern | **Tall Fern** | `vege_tall_fern_bottom.png`<br>`vege_tall_fern_top.png` | Double-Tall (2 Blocks) (4 pairs) |
-| **34** | `vege_tall_jungle_fern` | Tall Jungle Fern | **Tall Fern** | `vege_tall_jungle_fern_bottom.png`<br>`vege_tall_jungle_fern_top.png` | Double-Tall (2 Blocks) (1 pair) |
-| **35** | `vege_tall_prairie_grass` | Tall Prairie Grass | **Tall Grass** | `vege_tall_prairie_grass_bottom.png`<br>`vege_tall_prairie_grass_top.png` | Double-Tall (2 Blocks) (1 pair) |
-| **36** | `vege_tall_wildgrass` | Tall Wildgrass | **Tall Grass** | `vege_tall_wildgrass_bottom.png`<br>`vege_tall_wildgrass_top.png` | Double-Tall (2 Blocks) (4 pairs) |
-| **37** | `vege_vines` | Vines (Lianas) | **Epiphyte** | `vege_vines.png` | Vertical Wall Climber (3 (`_`, `1`, `2`)) |
-| **38** | `vege_wildgrass` | Wildgrass | **Grass** | `vege_wildgrass.png` | Single Cross-Mesh (4 (`_`, `1`, `2`, `3`)) |
+| **01** | `vege_barrel_cactus` | Barrel Cactus | **Cactus** | `vege_barrel_cactus.png` *(+ `1`, `2`)* | Warm Deserts, Scrub & Chaparrals (Spiny Succulent Mesh) |
+| **02** | `vege_bluff_grass` | Bluff Grass | **Grass** | `vege_bluff_grass.png` *(+ `1`, `2`)* | Single Cross-Mesh (Rocky Crags & Cliffs) |
+| **03** | `vege_bracken` | Bracken Fern | **Fern** | `vege_bracken.png` *(+ `1`, `2`)* | Spreading Frond Mesh (Moorlands & Open Woods) |
+| **04** | `vege_bush` | Temperate Bush | **Shrub** | `vege_bush.png` *(+ `1`, `2`)* | Dense Rounded Mesh (Forest Edges & Meadows) |
+| **05** | `vege_cactus` | Saguaro Cactus | **Cactus** | `vege_cactus_top.png`<br>`vege_cactus_side.png`<br>`vege_cactus_bottom.png` | 3D Full Column Block (3 sides, 3 tops, 1 bottom) |
+| **06** | `vege_cattail` | Cattail | **Wetland** | `vege_cattail_bottom.png`<br>`vege_cattail_top.png` | Double-Tall Emergent (3 pairs) |
+| **07** | `vege_cave_growths` | Cave Growths | **Cave Flora** | `vege_cave_growths.png` *(+ `1`, `2`)* | Ground Umbrophilic Thallus (Subterranean Caverns) |
+| **08** | `vege_cave_hyssop` | Cave Hyssop | **Cave Flora** | `vege_cave_hyssop.png` *(+ `1`, `2`)* | Subterranean Flowering Herb (Geodes & Crystals) |
+| **09** | `vege_cave_vines` | Cave Vines | **Cave Flora** | `vege_cave_vines.png`<br>`vege_cave_vines_plant.png` | Ceiling Hanging Multi-Block Vine (3 tip, 3 plant) |
+| **10** | `vege_dead_bush` | Dead Bush | **Shrub** | `vege_dead_bush.png` *(+ `1`, `2`)* | Withered Woody Sticks (Arid Deserts & Badlands) |
+| **11** | `vege_drygrass` | Drygrass | **Grass** | `vege_drygrass.png` *(+ `1`, `2`)* | Single Cross-Mesh (Savannas & Scrublands) |
+| **12** | `vege_fern` | Common Fern | **Fern** | `vege_fern.png` *(+ `1`, `2`)* | Single Cross-Mesh (Shaded Woodlands & Taigas) |
+| **13** | `vege_grainy_cave_growths` | Grainy Cave Growths | **Cave Flora** | `vege_grainy_cave_growths.png` *(+ `1`, `2`)* | Ferruginous Granular Crust (Subterranean Walls) |
+| **14** | `vege_hanging_moss` | Hanging Moss | **Epiphyte** | `vege_hanging_moss.png` *(+ `1`, `2`)* | Ceiling Hanging Decal (Swamps & Gallery Forests) |
+| **15** | `vege_hanging_roots` | Hanging Roots | **Epiphyte** | `vege_hanging_roots.png` *(+ `1`, `2`)* | Ceiling Root Danglers (Overhangs & Ravines) |
+| **16** | `vege_lichen` | Tree & Rock Lichen | **Epiphyte** | `vege_lichen.png` *(+ `1`, `2`)* | Crustose Surface Patch (Barks, Rocks & Boulders) |
+| **17** | `vege_lily_pad` | Water Lily Pad | **Floating Pad** | `vege_lily_pad.png` *(+ `1`, `2`)* | Floating Water Surface Mesh (Lakes & Swamps) |
+| **18** | `vege_mossgrass` | Mossgrass | **Grass** | `vege_mossgrass.png` *(+ `1`, `2`)* | Low Dense Tuft (Damp Woodlands & River Glades) |
+| **19** | `vege_prickly_pear_cactus` | Prickly Pear Cactus | **Cactus** | `vege_prickly_pear_cactus.png` *(+ `1`, `2`)* | Fleshy Pad Cross-Mesh (Semiarid Slopes & Scrub) |
+| **20** | `vege_red_shrub` | Red Shrub | **Shrub** | `vege_red_shrub.png` *(+ `1`, `2`)* | Red Pigmented Mesh (Autumn Woods & Moors) |
+| **21** | `vege_sea_oats` | Sea Oats | **Tall Grass** | `vege_sea_oats_bottom.png`<br>`vege_sea_oats_top.png` | Double-Tall Dune Grass (3 pairs) |
+| **22** | `vege_tall_fern` | Tall Fern | **Tall Fern** | `vege_tall_fern_bottom.png`<br>`vege_tall_fern_top.png` | Double-Tall Arborescent Fern (3 pairs) |
+| **23** | `vege_tall_jungle_fern` | Tall Jungle Fern | **Tall Fern** | `vege_tall_jungle_fern_bottom.png`<br>`vege_tall_jungle_fern_top.png` | Double-Tall Jungle Fern (3 pairs) |
+| **24** | `vege_tall_wildgrass` | Tall Wildgrass | **Tall Grass** | `vege_tall_wildgrass_bottom.png`<br>`vege_tall_wildgrass_top.png` | Double-Tall Prairie Grass (3 pairs) |
+| **25** | `vege_vines` | Vines (Lianas) | **Epiphyte** | `vege_vines.png` *(+ `1`, `2`)* | Vertical Wall Climber (Canopies & Cliff Walls) |
+| **26** | `vege_wildgrass` | Wildgrass | **Grass** | `vege_wildgrass.png` *(+ `1`, `2`)* | Single Cross-Mesh (Plains, Meadows & Forests) |
 
 ---
 
-## 13. Botany: Flowers & Flowering Flora (`flowers`) — 32 Blocks
+## 13. Botany: Flowers & Flowering Flora (`flowers`) — 28 Blocks [✅ 100% Complete]
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/flowers`  
 📄 **Comprehensive Specification**: [flowers_design.md](blocks/flowers_design.md)
 
-The angiosperm flowering flora domain comprises **32 distinct flowering plant species** distributed across 5 major biomes and micro-environments: 12 temperate meadow flowers, 4 alpine/tundra flowers, 10 wetland/bog flowers, 4 arid desert/badland xerophytes, and 2 subterranean/abyssal cave flowers = **32 Total Flowering Blocks**.
+The angiosperm flowering flora domain comprises **28 distinct flowering plant species** distributed across temperate meadows, alpine glades, wetlands, gardens, arid deserts, and forest groundcovers: 12 wild meadow & woodland flowers, 2 tulip cultivars, 8 double-tall shrubs/flowers, 4 groundcover carpets, and 2 arid desert blooms = **28 Total Flowering Blocks** (113 active textures, 100% standardized with 3 variants per block/part).
 
 ---
 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping / Geometry |
 | :-: | :--- | :--- | :--- | :--- | :--- |
-| **01** | `flower_allium` | Allium | **Wildflower** | `flower_allium.png` to `3` | Cross-billboard (4 variants) |
-| **02** | `flower_azure_bluet` | Azure Bluet | **Wildflower** | `flower_azure_bluet.png` to `3` | Cross-billboard (4 variants) |
-| **03** | `flower_begonia` | Begonia | **Double-Tall** | `flower_begonia_bottom.png`<br>`flower_begonia_top.png` | Double-Tall (2 Blocks) |
-| **04** | `flower_blue_hydrangea` | Blue Hydrangea | **Double-Tall** | `flower_blue_hydrangea_bottom.png`<br>`flower_blue_hydrangea_top.png` | Double-Tall (2 Blocks) |
-| **05** | `flower_blue_orchid` | Blue Orchid | **Wildflower** | `flower_blue_orchid.png`, `1` | Cross-billboard (2 variants) |
-| **06** | `flower_cactus_flower` | Cactus Flower | **Arid Flora** | `flower_cactus_flower.png` | Stem Crest Perch |
-| **07** | `flower_clover` | Clover Carpet | **Carpet** | `flower_clover.png`<br>`flower_clover_stem.png` | Multi-layer Carpet |
-| **08** | `flower_cornflower` | Cornflower | **Wildflower** | `flower_cornflower.png` to `2` | Cross-billboard (3 variants) |
-| **09** | `flower_dandelion` | Dandelion | **Wildflower** | `flower_dandelion.png` to `3` | Cross-billboard (4 variants) |
-| **10** | `flower_foxglove` | Foxglove | **Double-Tall** | `flower_foxglove_bottom.png`<br>`flower_foxglove_top.png` | Double-Tall (2 Blocks) |
-| **11** | `flower_gardenia` | Gardenia | **Double-Tall** | `flower_gardenia_bottom.png`<br>`flower_gardenia_top.png` | Double-Tall (2 Blocks) |
-| **12** | `flower_goldenrod` | Goldenrod | **Double-Tall** | `flower_goldenrod_bottom.png`<br>`flower_goldenrod_top.png` | Double-Tall (2 Blocks) |
-| **13** | `flower_hibiscus` | Hibiscus | **Wildflower** | `flower_hibiscus.png` | Cross-billboard |
-| **14** | `flower_imperial_succulent` | Imperial Succulent | **Arid Flora** | `flower_imperial_succulent.png` | Desert Rosette |
-| **15** | `flower_iris` | Iris | **Wildflower** | `flower_iris.png` | Cross-billboard |
-| **16** | `flower_lavender` | Lavender | **Wildflower** | `flower_lavender.png` | Cross-billboard |
-| **17** | `flower_lilac` | Lilac | **Double-Tall** | `flower_lilac_bottom.png`, `1`<br>`flower_lilac_top.png`, `1` | Double-Tall (2 Blocks) |
-| **18** | `flower_lily_of_the_valley` | Lily of the Valley | **Wildflower** | `flower_lily_of_the_valley.png` to `2` | Cross-billboard (3 variants) |
-| **19** | `flower_marigold` | Marigold | **Wildflower** | `flower_marigold.png`, `1` | Cross-billboard (2 variants) |
-| **20** | `flower_orange_tulip` | Orange Tulip | **Tulip** | `flower_orange_tulip.png` to `2` | Cross-billboard (3 variants) |
-| **21** | `flower_oxeye_daisy` | Oxeye Daisy | **Wildflower** | `flower_oxeye_daisy.png` to `2` | Cross-billboard (3 variants) |
-| **22** | `flower_peony` | Peony | **Double-Tall** | `flower_peony_bottom.png`, `1`<br>`flower_peony_top.png`, `1` | Double-Tall (2 Blocks) |
-| **23** | `flower_pink_petals` | Pink Petals | **Carpet** | `flower_pink_petals.png`<br>`flower_pink_petals_stem.png` | Multi-layer Carpet |
-| **24** | `flower_pink_tulip` | Pink Tulip | **Tulip** | `flower_pink_tulip.png` to `2` | Cross-billboard (3 variants) |
-| **25** | `flower_poppy` | Poppy | **Wildflower** | `flower_poppy.png` to `4` | Cross-billboard (5 variants) |
-| **26** | `flower_red_tulip` | Red Tulip | **Tulip** | `flower_red_tulip.png` to `2` | Cross-billboard (3 variants) |
-| **27** | `flower_rose_bush` | Rose Bush | **Double-Tall** | `flower_rose_bush_bottom.png`, `1`<br>`flower_rose_bush_top.png` to `3` | Double-Tall (2 Blocks) |
-| **28** | `flower_snapdragon` | Snapdragon | **Double-Tall** | `flower_snapdragon_bottom.png`<br>`flower_snapdragon_top.png` | Double-Tall (2 Blocks) |
-| **29** | `flower_sunflower` | Sunflower | **Double-Tall** | `flower_sunflower_bottom.png`, `1`<br>`flower_sunflower_top.png`<br>`flower_sunflower_front.png`, `back.png` | Double-Tall (2 Blocks) |
-| **30** | `flower_white_petals` | White Petals | **Carpet** | `flower_white_petals.png`<br>`flower_white_petals_stem.png` | Multi-layer Carpet |
-| **31** | `flower_white_tulip` | White Tulip | **Tulip** | `flower_white_tulip.png` to `2` | Cross-billboard (3 variants) |
-| **32** | `flower_wildflowers` | Wildflowers Carpet | **Carpet** | `flower_wildflowers.png`, `1`<br>`flower_wildflowers_stem.png` | Multi-layer Carpet |
+| **01** | `flower_allium` | Allium | **Wildflower** | `flower_allium.png` to `2` | Cross-billboard (3 variants) |
+| **02** | `flower_blue_hydrangea` | Blue Hydrangea | **Double-Tall** | `flower_blue_hydrangea_bottom.png` to `2`<br>`flower_blue_hydrangea_top.png` to `2` | Double-Tall (2 Blocks, 3 variants) |
+| **03** | `flower_blue_orchid` | Blue Orchid | **Wildflower** | `flower_blue_orchid.png` to `2` | Cross-billboard (3 variants) |
+| **04** | `flower_cactus_flower` | Cactus Flower | **Arid Flora** | `flower_cactus_flower.png` to `2` | Single Cross / Perch (3 variants) |
+| **05** | `flower_clover` | Clover Carpet | **Carpet** | `flower_clover.png` to `2`<br>`flower_carpet_stem.png` to `2` | Flat Quad + Central Upright Stem |
+| **06** | `flower_cornflower` | Cornflower | **Wildflower** | `flower_cornflower.png` to `2` | Cross-billboard (3 variants) |
+| **07** | `flower_dandelion` | Dandelion | **Wildflower** | `flower_dandelion.png` to `2` | Cross-billboard (3 variants) |
+| **08** | `flower_foxglove` | Foxglove | **Double-Tall** | `flower_foxglove_bottom.png` to `2`<br>`flower_foxglove_top.png` to `2` | Double-Tall (2 Blocks, 3 variants) |
+| **09** | `flower_gardenia` | Gardenia | **Double-Tall** | `flower_gardenia_bottom.png` to `2`<br>`flower_gardenia_top.png` to `2` | Double-Tall (2 Blocks, 3 variants) |
+| **10** | `flower_globe_mallow` | Globe Mallow | **Arid Flora** | `flower_globe_mallow.png` to `2` | Single Cross (3 variants) |
+| **11** | `flower_hibiscus` | Hibiscus | **Wildflower** | `flower_hibiscus.png` to `2` | Cross-billboard (3 variants) |
+| **12** | `flower_iris` | Iris | **Wildflower** | `flower_iris.png` to `2` | Cross-billboard (3 variants) |
+| **13** | `flower_lavender` | Lavender | **Wildflower** | `flower_lavender.png` to `2` | Cross-billboard (3 variants) |
+| **14** | `flower_lilac` | Lilac | **Double-Tall** | `flower_lilac_bottom.png` to `2`<br>`flower_lilac_top.png` to `2` | Double-Tall (2 Blocks, 3 variants) |
+| **15** | `flower_lily_of_the_valley` | Lily of the Valley | **Wildflower** | `flower_lily_of_the_valley.png` to `2` | Cross-billboard (3 variants) |
+| **16** | `flower_marigold` | Marigold | **Wildflower** | `flower_marigold.png` to `2` | Cross-billboard (3 variants) |
+| **17** | `flower_orange_tulip` | Orange Tulip | **Tulip** | `flower_orange_tulip.png` to `2` | Cross-billboard (3 variants) |
+| **18** | `flower_orchid` | Classic Orchid | **Wildflower** | `flower_orchid.png` to `2` | Cross-billboard (3 variants) |
+| **19** | `flower_oxeye_daisy` | Oxeye Daisy | **Wildflower** | `flower_oxeye_daisy.png` to `2` | Cross-billboard (3 variants) |
+| **20** | `flower_peony` | Peony | **Double-Tall** | `flower_peony_bottom.png` to `2`<br>`flower_peony_top.png` to `2` | Double-Tall (2 Blocks, 3 variants) |
+| **21** | `flower_pink_petals` | Pink Petals | **Carpet** | `flower_pink_petals.png` to `2`<br>`flower_carpet_stem.png` to `2` | Flat Quad + Central Upright Stem |
+| **22** | `flower_pink_tulip` | Pink Tulip | **Tulip** | `flower_pink_tulip.png` to `2` | Cross-billboard (3 variants) |
+| **23** | `flower_poppy` | Poppy | **Wildflower** | `flower_poppy.png` to `2` | Cross-billboard (3 variants) |
+| **24** | `flower_rose_bush` | Rose Bush | **Double-Tall** | `flower_rose_bush_bottom.png` to `2`<br>`flower_rose_bush_top.png` to `2` | Double-Tall (2 Blocks, 3 variants) |
+| **25** | `flower_snapdragon` | Snapdragon | **Double-Tall** | `flower_snapdragon_bottom.png` to `2`<br>`flower_snapdragon_top.png` to `2` | Double-Tall (2 Blocks, 3 variants) |
+| **26** | `flower_sunflower` | Sunflower | **Double-Tall** | `flower_sunflower_bottom.png` to `2`<br>`flower_sunflower_top.png` to `2`<br>`flower_sunflower_front.png`, `back.png` | Double-Tall (Heliotropic Head, 3 variants) |
+| **27** | `flower_white_petals` | White Petals | **Carpet** | `flower_white_petals.png` to `2`<br>`flower_carpet_stem.png` to `2` | Flat Quad + Central Upright Stem |
+| **28** | `flower_wildflowers` | Wildflowers Carpet | **Carpet** | `flower_wildflowers.png` to `2`<br>`flower_carpet_stem.png` to `2` | Flat Quad + Central Upright Stem |
 
 ---
 
-## 14. Agriculture & Domestic Crops (`crops`) — 34 Blocks
+## 14. Agriculture & Domestic Crops (`crops`) — 36 Blocks
 
 📂 **Domain Directory**: `docs/worldbuilding/blocks/crops`  
 📄 **Comprehensive Specification**: [crops_design.md](blocks/crops_design.md)
 
-The agricultural crop domain comprises **34 cultivated food crops, arboreal pods, and wild ancestral cultivars** (spanning 16 farmland & bush crops, 2 arboreal canopy/trunk pods, and 16 wild ancestral harvestable crops) featuring multi-stage developmental growth lifecycles = **34 Total Domestic & Wild Crop Blocks**.
+The agricultural crop domain comprises **36 cultivated food crops, arboreal pods, and wild ancestral cultivars** (spanning 16 farmland & bush crops, 2 arboreal canopy/trunk pods, and 18 wild ancestral harvestable crops) featuring multi-stage developmental growth lifecycles = **36 Total Domestic & Wild Crop Blocks**.
 
 ---
 

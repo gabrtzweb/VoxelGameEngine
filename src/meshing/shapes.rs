@@ -24,7 +24,11 @@ pub fn mesh_shaped_voxels(
             continue;
         }
 
-        let buffers = if voxel.is_transparent() || voxel.is_fluid() {
+        let is_transparent_pass = (voxel.is_transparent() || voxel.is_fluid())
+            && !voxel.is_cross_billboard()
+            && shape != BlockShape::CrossBillboard;
+
+        let buffers = if is_transparent_pass {
             &mut *transparent_buffers
         } else {
             &mut *opaque_buffers
@@ -56,7 +60,7 @@ pub fn mesh_shaped_voxels(
             1.0
         } else if voxel.is_fluid() {
             2.0
-        } else if voxel.is_transparent() {
+        } else if is_transparent_pass {
             0.0
         } else if voxel.is_painted() {
             0.5

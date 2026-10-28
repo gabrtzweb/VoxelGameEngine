@@ -413,10 +413,14 @@ fn edit_voxels(
                 place_voxel_type,
             );
             if !placed.is_empty() {
-                let def_shape = place_voxel_type.default_shape();
-                if def_shape != BlockShape::Full {
-                    world.set_shape(place_position, def_shape, 0);
-                    modifications.record_shape(place_position, def_shape, 0);
+                for &p in &placed {
+                    if let Some(v) = world.get_voxel(p) {
+                        let def_shape = v.default_shape();
+                        if def_shape != BlockShape::Full {
+                            world.set_shape(p, def_shape, 0);
+                            modifications.record_shape(p, def_shape, 0);
+                        }
+                    }
                 }
             }
             placed
@@ -546,11 +550,26 @@ pub fn remove_block(
     modifications: &mut WorldModificationStore,
     block_pos: IVec3,
 ) -> Vec<IVec3> {
+    let target_voxel = world.get_voxel(block_pos);
     if !remove_voxel(world, modifications, block_pos) {
         return Vec::new();
     }
 
     let mut removed = vec![block_pos];
+
+    // If breaking the top half of a double-tall plant, also break the bottom partner
+    if let Some(tv) = target_voxel {
+        if tv.is_double_tall_top() {
+            let bottom_pos = block_pos - IVec3::Y;
+            if let Some(bv) = world.get_voxel(bottom_pos) {
+                if tv.double_tall_bottom_partner() == Some(bv) {
+                    if remove_voxel(world, modifications, bottom_pos) {
+                        removed.push(bottom_pos);
+                    }
+                }
+            }
+        }
+    }
 
     // 1. Blocks resting on top of this block (and cascading upwards for stacks like bamboo)
     let mut check_pos = block_pos + IVec3::Y;
@@ -634,6 +653,26 @@ pub fn place_block(
     block_pos: IVec3,
     voxel: Voxel,
 ) -> Vec<IVec3> {
+    if let Some(top_partner) = voxel.double_tall_top_partner() {
+        let top_pos = block_pos + IVec3::Y;
+        let Some(above_voxel) = world.get_voxel(top_pos) else {
+            return Vec::new();
+        };
+        if !above_voxel.is_empty() && !above_voxel.is_fluid() {
+            return Vec::new();
+        }
+
+        if place_voxel(world, modifications, block_pos, voxel) {
+            if place_voxel(world, modifications, top_pos, top_partner) {
+                return vec![block_pos, top_pos];
+            } else {
+                remove_voxel(world, modifications, block_pos);
+                return Vec::new();
+            }
+        }
+        return Vec::new();
+    }
+
     if place_voxel(world, modifications, block_pos, voxel) {
         vec![block_pos]
     } else {

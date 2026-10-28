@@ -620,29 +620,177 @@ pub enum Voxel {
     FungiStem = 611,
     FungiVerdigris = 612,
     FungiVerdigrisCap = 613,
+    VegeWildgrass = 614,
+    VegeDrygrass = 615,
+    VegeBluffGrass = 616,
+    VegeMossgrass = 617,
+    VegeTallWildgrassBottom = 618,
+    VegeTallWildgrassTop = 619,
+    VegeSeaOatsBottom = 620,
+    VegeSeaOatsTop = 621,
+    VegeFern = 622,
+    VegeBracken = 623,
+    VegeTallFernBottom = 624,
+    VegeTallFernTop = 625,
+    VegeTallJungleFernBottom = 626,
+    VegeTallJungleFernTop = 627,
+    VegeBush = 628,
+    VegeRedShrub = 629,
+    VegeDeadBush = 630,
+    VegeBarrelCactus = 631,
+    VegePricklyPearCactus = 632,
+    VegeCactus = 633,
+    VegeCattailBottom = 634,
+    VegeCattailTop = 635,
+    VegeLilyPad = 636,
+    VegeVines = 637,
+    VegeHangingMoss = 638,
+    VegeHangingRoots = 639,
+    VegeLichen = 640,
+    VegeCaveGrowths = 641,
+    VegeGrainyCaveGrowths = 642,
+    VegeCaveHyssop = 643,
+    VegeCaveVines = 644,
+    VegeCaveVinesPlant = 645,
+    FlowerAllium = 646,
+    FlowerBlueHydrangeaBottom = 647,
+    FlowerBlueHydrangeaTop = 648,
+    FlowerBlueOrchid = 649,
+    FlowerCactusFlower = 650,
+    FlowerClover = 651,
+    FlowerCornflower = 652,
+    FlowerDandelion = 653,
+    FlowerFoxgloveBottom = 654,
+    FlowerFoxgloveTop = 655,
+    FlowerGardeniaBottom = 656,
+    FlowerGardeniaTop = 657,
+    FlowerGlobeMallow = 658,
+    FlowerHibiscus = 659,
+    FlowerIris = 660,
+    FlowerLavender = 661,
+    FlowerLilacBottom = 662,
+    FlowerLilacTop = 663,
+    FlowerLilyOfTheValley = 664,
+    FlowerMarigold = 665,
+    FlowerOrangeTulip = 666,
+    FlowerOrchid = 667,
+    FlowerOxeyeDaisy = 668,
+    FlowerPeonyBottom = 669,
+    FlowerPeonyTop = 670,
+    FlowerPinkPetals = 671,
+    FlowerPinkTulip = 672,
+    FlowerPoppy = 673,
+    FlowerRoseBushBottom = 674,
+    FlowerRoseBushTop = 675,
+    FlowerSnapdragonBottom = 676,
+    FlowerSnapdragonTop = 677,
+    FlowerSunflowerBottom = 678,
+    FlowerSunflowerTop = 679,
+    FlowerWhitePetals = 680,
+    FlowerWildflowers = 681,
 }
 
 impl Voxel {
-    /// Array containing all 611 active, non-placeholder gameplay voxels (indices 3..=613).
-    pub const ALL: [Voxel; 611] = generate_all_voxels();
+    /// Array containing all 679 active, non-placeholder gameplay voxels (indices 3..=681).
+    pub const ALL: [Voxel; 679] = generate_all_voxels();
 
     /// Safely convert a `u16` id to a `Voxel` variant.
     #[inline(always)]
     pub const fn from_u16(val: u16) -> Option<Self> {
-        if val <= 613 {
-            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 613.
+        if val <= 681 {
+            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 681.
             Some(unsafe { std::mem::transmute::<u16, Self>(val) })
         } else {
             None
         }
     }
+
+    #[inline(always)]
+    pub const fn is_double_tall_bottom(self) -> bool {
+        matches!(
+            self,
+            Self::VegeTallWildgrassBottom
+                | Self::VegeSeaOatsBottom
+                | Self::VegeTallFernBottom
+                | Self::VegeTallJungleFernBottom
+                | Self::VegeCattailBottom
+                | Self::FlowerBlueHydrangeaBottom
+                | Self::FlowerFoxgloveBottom
+                | Self::FlowerGardeniaBottom
+                | Self::FlowerLilacBottom
+                | Self::FlowerPeonyBottom
+                | Self::FlowerRoseBushBottom
+                | Self::FlowerSnapdragonBottom
+                | Self::FlowerSunflowerBottom
+        )
+    }
+
+    #[inline(always)]
+    pub const fn is_double_tall_top(self) -> bool {
+        matches!(
+            self,
+            Self::VegeTallWildgrassTop
+                | Self::VegeSeaOatsTop
+                | Self::VegeTallFernTop
+                | Self::VegeTallJungleFernTop
+                | Self::VegeCattailTop
+                | Self::FlowerBlueHydrangeaTop
+                | Self::FlowerFoxgloveTop
+                | Self::FlowerGardeniaTop
+                | Self::FlowerLilacTop
+                | Self::FlowerPeonyTop
+                | Self::FlowerRoseBushTop
+                | Self::FlowerSnapdragonTop
+                | Self::FlowerSunflowerTop
+        )
+    }
+
+    #[inline(always)]
+    pub const fn double_tall_top_partner(self) -> Option<Voxel> {
+        match self {
+            Self::VegeTallWildgrassBottom => Some(Self::VegeTallWildgrassTop),
+            Self::VegeSeaOatsBottom => Some(Self::VegeSeaOatsTop),
+            Self::VegeTallFernBottom => Some(Self::VegeTallFernTop),
+            Self::VegeTallJungleFernBottom => Some(Self::VegeTallJungleFernTop),
+            Self::VegeCattailBottom => Some(Self::VegeCattailTop),
+            Self::FlowerBlueHydrangeaBottom => Some(Self::FlowerBlueHydrangeaTop),
+            Self::FlowerFoxgloveBottom => Some(Self::FlowerFoxgloveTop),
+            Self::FlowerGardeniaBottom => Some(Self::FlowerGardeniaTop),
+            Self::FlowerLilacBottom => Some(Self::FlowerLilacTop),
+            Self::FlowerPeonyBottom => Some(Self::FlowerPeonyTop),
+            Self::FlowerRoseBushBottom => Some(Self::FlowerRoseBushTop),
+            Self::FlowerSnapdragonBottom => Some(Self::FlowerSnapdragonTop),
+            Self::FlowerSunflowerBottom => Some(Self::FlowerSunflowerTop),
+            _ => None,
+        }
+    }
+
+    #[inline(always)]
+    pub const fn double_tall_bottom_partner(self) -> Option<Voxel> {
+        match self {
+            Self::VegeTallWildgrassTop => Some(Self::VegeTallWildgrassBottom),
+            Self::VegeSeaOatsTop => Some(Self::VegeSeaOatsBottom),
+            Self::VegeTallFernTop => Some(Self::VegeTallFernBottom),
+            Self::VegeTallJungleFernTop => Some(Self::VegeTallJungleFernBottom),
+            Self::VegeCattailTop => Some(Self::VegeCattailBottom),
+            Self::FlowerBlueHydrangeaTop => Some(Self::FlowerBlueHydrangeaBottom),
+            Self::FlowerFoxgloveTop => Some(Self::FlowerFoxgloveBottom),
+            Self::FlowerGardeniaTop => Some(Self::FlowerGardeniaBottom),
+            Self::FlowerLilacTop => Some(Self::FlowerLilacBottom),
+            Self::FlowerPeonyTop => Some(Self::FlowerPeonyBottom),
+            Self::FlowerRoseBushTop => Some(Self::FlowerRoseBushBottom),
+            Self::FlowerSnapdragonTop => Some(Self::FlowerSnapdragonBottom),
+            Self::FlowerSunflowerTop => Some(Self::FlowerSunflowerBottom),
+            _ => None,
+        }
+    }
 }
 
-const fn generate_all_voxels() -> [Voxel; 611] {
-    let mut arr = [Voxel::Air; 611];
+const fn generate_all_voxels() -> [Voxel; 679] {
+    let mut arr = [Voxel::Air; 679];
     let mut i = 0;
-    while i < 611 {
-        // Active gameplay blocks start at discriminant 3 (indices 3..=613)
+    while i < 679 {
+        // Active gameplay blocks start at discriminant 3 (indices 3..=681)
         let id = (i + 3) as u16;
         arr[i] = unsafe { std::mem::transmute::<u16, Voxel>(id) };
         i += 1;

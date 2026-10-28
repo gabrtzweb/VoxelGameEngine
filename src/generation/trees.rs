@@ -35,7 +35,7 @@ impl TreeSpecies {
             Self::Yew => Voxel::YewLog,
             Self::Charred => Voxel::RedwoodLog,
             Self::Dead => Voxel::BaobabLog,
-            Self::Cactus => Voxel::BambooStalk,
+            Self::Cactus => Voxel::VegeCactus,
         }
     }
 
@@ -54,7 +54,7 @@ impl TreeSpecies {
             Self::Yew => Voxel::YewWood,
             Self::Charred => Voxel::RedwoodWood,
             Self::Dead => Voxel::BaobabWood,
-            Self::Cactus => Voxel::BambooStalk,
+            Self::Cactus => Voxel::VegeCactus,
         }
     }
 
@@ -226,7 +226,10 @@ pub fn generate_tree_voxels<F>(
     if species == TreeSpecies::Cactus {
         let height = 2 + ((hash >> 12) % 3) as i32;
         for dy in 1..=height {
-            emit(tx, ty + dy, tz, Voxel::BambooStalk);
+            emit(tx, ty + dy, tz, Voxel::VegeCactus);
+        }
+        if (hash >> 15) % 3 == 0 {
+            emit(tx, ty + height + 1, tz, Voxel::FlowerCactusFlower);
         }
         return;
     }

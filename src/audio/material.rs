@@ -54,7 +54,10 @@ impl SoundMaterial {
             return Self::Leaves;
         }
 
-        if voxel.has_grass_turf() || matches!(
+        if voxel.has_grass_turf()
+            || voxel.is_flora_billboard()
+            || voxel == Voxel::VegeCactus
+            || matches!(
             voxel,
             Voxel::MossAmber
                 | Voxel::MossCave

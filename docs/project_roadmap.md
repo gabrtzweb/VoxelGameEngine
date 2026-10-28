@@ -59,7 +59,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **03** | **[Core Engine Upgrade (Bevy 0.19 to Bevy 0.20 Migration)](#phase-3-core-engine-upgrade-bevy-019-to-bevy-020-migration-completed)** | **Completed** | Bevy 0.20 migration, direct `bevy_egui = "0.43"`, modernized UI widgets, native WESL shader framework, ScreenSpaceTransmission |
 | **04** | **[Architecture, Graphics Modernization & Soundness](#phase-4-architecture-graphics-modernization--soundness-completed)** | **Completed** | Multi-tier hardware profiles, chunk memory optimization, modular domain crates, dynamic 3D render scaling, 16:9 window snapping |
 | **05** | **[High-Impact Performance & Graphics Pipeline](#phase-5-high-impact-performance--graphics-pipeline-completed)** | **Completed** | Dynamic frame rate limiter, hardware GPU upload budgets, AMD FSR 1.0 upscaling, subterranean occlusion culling |
-| **06** | **[Flora, Crops & Interactive Mechanical Blocks](#phase-6-flora-crops--interactive-mechanical-blocks-in-progress)** | **In Progress** | Agricultural lifecycle simulation, in-world crop growth, connected block topology masks, wild flora, interactive doors and containers |
+| **06** | **[Wild Flora, Herbaceous Vegetation & Botanical Systems](#phase-6-wild-flora-herbaceous-vegetation--botanical-systems-in-progress)** | **In Progress** | 26 vegetation blocks, 28 flower blocks, cross-billboard rendering, double-tall block mechanics, petal carpet mesh, biome scatter generation |
 | **07** | **[Subterranean Strata, Caverns & Geological Generation](#phase-7-subterranean-strata-caverns--geological-generation-in-progress)** | **In Progress** | Multi-tier geological strata, Mantle bedrock at Y = -254, 54 authentic ore vein pairings, crystal geodes, subterranean cave biomes |
 | **08** | **[Biome Refactoring, Climate Modeling & Tree/Flora Distribution](#phase-8-biome-refactoring-climate-modeling--treeflora-distribution-planned)** | **Planned** | Multi-noise climate fields (continentalness/temperature/moisture), organic biome dithering, ecological tree dispersion, canopy models |
 | **09** | **[Main Menu & World Management](#phase-9-main-menu--world-management-in-progress)** | **In Progress** | Boot to Main Menu title screen, splash press-any-key, action menu (Play, Settings, Controls, Quit); world saves and creation planned |
@@ -73,6 +73,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **17** | **[Localization & Multi-Language Support](#phase-17-localization--multi-language-support-completed)** | **Completed** | `lang/` translation files (`en_us`, `pt_br`), comprehensive UI/block/item localization, natural Portuguese grammar, in-game language selector |
 | **18** | **[Controls & Keybinding System](#phase-18-controls--keybinding-system-completed)** | **Completed** | Configurable keybindings for all actions, mouse sensitivity & invert Y options, input conflict detection, Main Menu & Pause integration |
 | **19** | **[Dynamic Foliage & Procedural Grass System](#phase-19-dynamic-foliage--procedural-grass-system-completed)** | **Completed** | Procedural 3D grass blades on surface blocks, cubic Bezier wind deformation, Voronoi clumping, entity footprint trails, dynamic LOD |
+| **20** | **[Agricultural Simulation, Cultivated Crops & Farmland Systems](#phase-20-agricultural-simulation-cultivated-crops--farmland-systems-planned)** | **Planned** | 36 domestic and wild crops, growth lifecycle simulation, soil moisture, irrigation, seasonal yields, arboreal canopy pods |
 
 ---
 
@@ -156,18 +157,29 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 6: Flora, Crops & Interactive Mechanical Blocks (In Progress)
+### Phase 6: Wild Flora, Herbaceous Vegetation & Botanical Systems (In Progress)
 
-- [x] **Agricultural Simulation Engine**:
-  - Simulation model for crop lifecycles, soil moisture propagation, rainfall hydration, and harvest yield evaluation.
-- [ ] **In-World Crop Meshing & Growth Integration**:
-  - Connect crop growth stages to world block ticks, seasonal growth rates, and visual stage models.
+- [ ] **Botanical Voxel Registry & Atlas Integration**:
+  - Register **26 vegetation blocks** (`docs/worldbuilding/blocks/vegetation`) and **28 flower blocks** (`docs/worldbuilding/blocks/flowers`) into the core voxel catalog (`src/world/block/voxel.rs`).
+  - Integrate 215 active 16×16 RGBA textures into the runtime terrain texture atlas.
+  - Standardize 3 procedural visual variants per block (`base`, `1`, `2`) selected via deterministic world-coordinate hashing.
+- [ ] **Cross-Billboard & Hybrid Mesh Geometry**:
+  - **Single Cross-Mesh (`#`)**: Implement intersecting diagonal billboard quad pairs with wind sway vertex displacement (`shaders/grass_plant.wesl`) for wildgrasses, ferns, mushrooms, and single-height flowers.
+  - **Double-Tall Composite Voxel Architecture**: Multi-block vertical chaining for double-tall flora (sunflower, rose bush, peony, lilac, blue hydrangea, snapdragon, gardenia, foxglove, tall wildgrass, tall fern). Implement atomic placement/breaking dependency rules between root base (`_bottom`) and flowering crown (`_top`).
+  - **Petal Carpet & Groundcover Hybrid Mesh**: Implement horizontal sub-voxel quad plane ($y \approx 0.05$) combined with an upright central anchor stem quad using shared `flower_carpet_stem` textures.
+  - **Directional Heliotropic Head (Sunflower)**: Directional front/back head orientation aligned toward the sun vector.
+- [ ] **Flora Placement Rules & Botanical Physics**:
+  - Soil & ground validation: temperate flowers and grasses require soil/grass blocks; arid flora (cacti, cactus flower, globe mallow) require desert sand/arid soil; aquatic plants (reeds, cattails, kelp, seaweed) require water boundaries or submerged seafloor.
+  - Light-level requirements: natural flora drops or withers if exposed to zero light or covered by opaque blocks.
+- [ ] **Biome Distribution & Procedural Flora Scattering**:
+  - Integrate vegetation and flower distribution decorators into world generation:
+    - Temperate plains & meadows: dense flower patches (poppies, cornflowers, daisies, dandelions), wildgrass, and clover carpets.
+    - Forests & glades: allium, peonies, lilacs, rose bushes, ferns, and scattered petal carpets.
+    - Swamps & wetlands: blue orchids, irises, cattails, and reeds along water banks.
+    - Arid deserts & mesas: cactus flowers, globe mallows, barrel cacti, and dry shrubs.
+    - Caverns & underground: cave vines hanging from subterranean ceilings, cave roots, and hanging moss.
 - [x] **Connected Block Topology Logic**:
   - Bitwise connection solver evaluating 4-way and 6-way adjacency for fences, walls, glass panes, and iron bars.
-- [ ] **Wild Botanical Flora & Fungal Colonies**:
-  - Biome-specific wildflowers, harvestable seeds, undergrowth scatter (ferns, shrubs, mosses), and subterranean fungi.
-- [ ] **Interactive Mechanical & Structural Blocks**:
-  - Functional doors, trapdoors, and fence gates with distinct states, container blocks (chests, barrels) with lid animations, and wall-mounted fixtures.
 
 ---
 
@@ -417,3 +429,19 @@ Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dyna
   - World save/load persistence and disk serialization.
   - World creation screen with custom seeds and world generation presets.
   - Save slot selection and deletion UI.
+
+---
+
+### Phase 20: Agricultural Simulation, Cultivated Crops & Farmland Systems (Planned)
+
+- [x] **Agricultural Simulation Engine Foundation**:
+  - Simulation model for crop lifecycles, soil moisture propagation, rainfall hydration, and harvest yield evaluation.
+- [ ] **Complete Crop Catalog & Farmland Architecture**:
+  - Specification and registration of **36 domestic and wild ancestral cultivars** (`docs/worldbuilding/blocks/crops`).
+  - Farmland tilling mechanics with hoe tools, soil saturation tiers (dry, moist, fully hydrated), and hydration transfer from adjacent water sources ($\le 4\text{ blocks}$).
+- [ ] **In-World Multi-Stage Crop Meshing & Growth Ticks**:
+  - Connect multi-stage developmental growth lifecycles (stages 0 to 7) to block tick updates, seasonal temperatures, and fertilization (bonemeal).
+  - Multi-tier visual growth meshes for row crops, trellis climbers, arboreal canopy pods, and ancestral wild cultivars.
+- [ ] **Harvesting, Seed Multiplication & Culinary Integration**:
+  - Mature crop breaking yields edible harvest items and replantable seeds.
+  - Right-click rapid harvesting for persistent multi-harvest crops (berries, bush crops).

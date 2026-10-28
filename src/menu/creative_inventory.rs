@@ -39,7 +39,7 @@ pub const CREATIVE_TAB_Y_COORDS: [f32; 9] = [
     65.0, 84.0, 103.0, 122.0, 141.0, 160.0, 179.0, 198.0, 217.0,
 ];
 
-pub const AVAILABLE_BLOCKS: [Voxel; 611] = Voxel::ALL;
+pub const AVAILABLE_BLOCKS: [Voxel; 679] = Voxel::ALL;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CreativeCategory {
@@ -168,6 +168,7 @@ impl CreativeCategory {
                     || is_marine_flora
                     || tex.starts_with("aqua_")
                     || tex.starts_with("vege_")
+                    || tex.starts_with("flower_")
             }
             Self::Organics => {
                 tex.starts_with("bio_")
