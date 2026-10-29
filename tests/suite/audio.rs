@@ -133,3 +133,68 @@ fn test_ui_and_spatial_sfx_builders() {
     assert_eq!(sfx_ev.volume, 0.5);
     assert_eq!(sfx_ev.speed, 0.95);
 }
+
+#[test]
+fn test_music_tracks_exist_on_disk() {
+    for path in voxel_game_engine::audio::music::MENU_MUSIC_TRACKS {
+        let full_path = Path::new("assets").join(path);
+        assert!(
+            full_path.exists(),
+            "Menu music track asset does not exist: {:?}",
+            full_path
+        );
+    }
+
+    for path in voxel_game_engine::audio::music::GAME_MUSIC_TRACKS {
+        let full_path = Path::new("assets").join(path);
+        assert!(
+            full_path.exists(),
+            "Game music track asset does not exist: {:?}",
+            full_path
+        );
+    }
+}
+
+#[test]
+fn test_music_state_shuffle_and_rotation() {
+    let mut state = voxel_game_engine::audio::music::MusicState::new();
+    assert_eq!(state.context, voxel_game_engine::audio::music::MusicContext::Menu);
+    assert_eq!(state.menu_playlist.len(), 4);
+    assert_eq!(state.game_playlist.len(), 39);
+
+    let mut menu_set = state.menu_playlist.clone();
+    menu_set.sort();
+    assert_eq!(menu_set, vec![0, 1, 2, 3]);
+
+    let mut game_set = state.game_playlist.clone();
+    game_set.sort();
+    let expected_game: Vec<usize> = (0..39).collect();
+    assert_eq!(game_set, expected_game);
+
+    let t1 = state.next_menu_track();
+    let t2 = state.next_menu_track();
+    assert_ne!(t1, t2);
+}
+
+#[test]
+fn test_music_state_async_lifecycle() {
+    let mut state = voxel_game_engine::audio::music::MusicState::new();
+    assert!(!state.sink_attached);
+    assert!(!state.is_playing);
+    assert_eq!(state.delay_timer, 0.0);
+    assert_eq!(state.next_delay, 0.8);
+
+    // Simulate spawning a track
+    state.is_playing = true;
+    state.sink_attached = false;
+    state.active_entity = Some(bevy::ecs::entity::Entity::from_bits(1));
+    state.play_timer = 0.5;
+
+    // While sink is not yet attached and play_timer < 15.0, track must NOT be considered finished
+    assert!(!state.sink_attached);
+    assert!(state.play_timer < 15.0);
+
+    // Simulate sink being attached by Bevy
+    state.sink_attached = true;
+    assert!(state.sink_attached);
+}

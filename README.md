@@ -104,20 +104,37 @@ src/
 │   └── weather_audio.rs
 ├── core/
 │   ├── config.rs
+│   ├── controls.rs
 │   ├── dev_stats.rs
 │   ├── dynamic_fps.rs
 │   ├── font.rs
+│   ├── localization.rs
 │   ├── math.rs
 │   ├── mod.rs
 │   ├── noise.rs
 │   ├── render_scale.rs
 │   ├── ui_scale.rs
-│   └── window_aspect.rs
+│   ├── window_aspect.rs
+│   └── window_clip.rs
 ├── environment/
+│   ├── foliage/
+│   │   ├── config.rs
+│   │   ├── generator.rs
+│   │   ├── material.rs
+│   │   ├── particles.rs
+│   │   ├── trail.rs
+│   │   └── uniforms.rs
+│   ├── weather/
+│   │   ├── particles/
+│   │   │   ├── buffer.rs
+│   │   │   ├── emitters.rs
+│   │   │   └── renderer.rs
+│   │   ├── lightning.rs
+│   │   ├── state.rs
+│   │   └── wind.rs
 │   ├── atmosphere.rs
 │   ├── celestial.rs
 │   ├── clouds.rs
-│   ├── foliage.rs
 │   ├── mod.rs
 │   ├── post_process.rs
 │   ├── stars.rs
@@ -152,6 +169,7 @@ src/
 ├── menu/
 │   ├── controls.rs
 │   ├── creative_inventory.rs
+│   ├── loading.rs
 │   ├── main_menu.rs
 │   ├── menu_bar.rs
 │   ├── mod.rs

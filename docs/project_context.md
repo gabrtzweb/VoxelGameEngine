@@ -73,12 +73,14 @@ This is an attempt to develop an experimental voxel engine and game, built from 
   - Footstep system (`FootstepAudioPlugin`) with stance cadences, landing impact velocity scaling, water wading, and swimming strokes.
   - Submerged underwater loop with bubble effects, subterranean cave drones, day/night biome nature soundscapes, and multi-channel weather audio.
   - 39-track gameplay soundtrack player (`GameplayMusicPlugin`) with seamless cross-fading and natural Minecraft-style intervals.
-- **Main Menu & Title Screen**:
+- **Main Menu, Loading Screen & Title System**:
   - Direct engine startup into `MenuState::MainMenu` presenting a full-screen concept art background (`assets/textures/interfaces/main_menu_bg.png`).
   - Interactive two-phase flow:
     - **Splash Phase**: Large retro-pixel title banner ("VOXEL ENGINE"), version readout, and pulsing prompt ("Press any key to start") waiting for any key or mouse trigger.
     - **Action Phase**: Revealing Play, Settings, Controls, and Quit buttons styled with the Dark Iron sliced button suite (`button_large.png` & hover states) with tactile UI audio.
   - Seamless stack navigation via `MenuReturnTarget`, routing Settings and Controls Back buttons and Escape cleanly back to the Main Menu when opened from there, and back to Pause when in-game.
+  - Smooth loading screen (`MenuState::Loading`) between Main Menu and gameplay, awaiting initial real-chunk generation and meshing with an animated progress bar, real-time chunk counter (`X / Y`), dynamic status messages, and 10 rotating tips.
+  - 4 exclusive menu music tracks (`assets/sounds/music/menu/`) with Fisher-Yates non-repeating shuffle on startup, and immediate cutoff of gameplay tracks upon returning to the menu.
 
 ---
 
@@ -151,9 +153,18 @@ In Version 0.2 (Modernization, Worldbuilding & Deep Systems), the project status
 - **Phase 6 (Completed)**: Wild Flora, Herbaceous Vegetation & Botanical Systems (Full botanical catalog with 26 vegetation blocks, 28 flower blocks, cross-billboard rendering, double-tall mechanics, petal carpets, marine flora with waterlogged envelopes, kelp/cave vine tip mechanics, floor-support cascading, and biome scatter generation).
 - **Phase 7 (In Progress)**: Subterranean Strata, Caverns & Geological Generation (Multi-tier geological strata, Mantle bedrock at Y = -254, 54 authentic ore vein pairings, crystal geodes, subterranean cave biomes).
 - **Phase 8 (Planned)**: Biome Refactoring, Climate Modeling & Tree/Flora Distribution (Multi-noise climate fields, organic biome dithering, ecological tree dispersion, canopy density models).
-- [Phase 9 (In Progress - Simplified Version)](file:///c:/Users/Rodrigo/Documents/BevyProjects/VoxelGameEngine/docs/project_roadmap.md#phase-9-main-menu-clean-world-session-lifetime--deferred-world-loading-in-progress---simplified-version): Main Menu, Clean World Session Lifetime & Deferred World Loading.
+- **Phase 9 (Completed)**: Main Menu, Clean World Session Lifetime & Deferred World Loading (Title splash, action menu, deferred chunk streaming, loading screen with rotating tips, menu soundtrack & shuffle, session cleanup).
 - **Phase 10 (Completed)**: Sound Engine & Spatial Audio System (Multi-channel volume mixer, 11-material acoustic profiles, spatial 3D block interaction audio, realistic footstep cadences, water wading and swimming strokes, ambient biomes, weather audio, and 39-track soundtrack).
-- **Procedural Foliage Engine**: Real-time GPU grass blade rendering with wind swaying, player trampling, and terrain color matching.
+- **Phase 11 (Planned)**: Custom Voxel Player Character & Modular Character Creator (Modular voxel character rig, Character Creator interface, fantasy races, custom hair, skin, eye, and cosmetic customization).
+- **Phase 12 (Planned)**: First-Person Item Rendering & Creative Utility Tools (3D held items/blocks in player hand, paint roller, lumberjack tree-felling saw, multi-block sledgehammer, measurement tools).
+- **Phase 13 (Planned)**: Physics Engine, Fluid Dynamics & Item Drops (Overhauled fluid propagation, gravity blocks, 3D floating item drops with magnetism, projectile trajectories).
+- **Phase 14 (Completed)**: Dynamic Weather System & Meteorological Phenomena (Multi-state weather simulation, precipitation particles, surface wetness, dynamic snow accumulation, lightning and thunder).
+- **Phase 15 (Planned)**: Visual Aesthetics, Shaders & Atmospheric FX Overhaul (Voxel Ambient Occlusion / Smooth Lighting, water caustics & refraction, bloom, volumetric fog/god rays, biome color grading).
+- **Phase 16 (Planned)**: Performance Engineering, Chunk Streaming & LOD Enhancements (Worker thread scaling, GPU frustum/occlusion culling, smooth LOD horizon transitions, runtime voxel memory compression).
+- **Phase 17 (Completed)**: Localization & Multi-Language Support (`lang/` translation files for `en_us` and `pt_br`, comprehensive UI/block/item localization, in-game language selector).
+- **Phase 18 (Completed)**: Controls & Keybinding System (Configurable keybindings for all actions, mouse sensitivity & invert Y options, input conflict detection, Main Menu & Pause integration).
+- **Phase 19 (Completed)**: Dynamic Foliage & Procedural Grass System (GPU-accelerated procedural grass blades on surface blocks, cubic Bezier wind deformation, Voronoi clumping, player footprint trails, dynamic LOD).
+- **Phase 20 (Planned)**: Agricultural Simulation, Cultivated Crops & Farmland Systems (36 domestic and wild crops, growth lifecycle simulation, soil moisture, irrigation, seasonal yields, arboreal canopy pods).
 
 Detailed progress and milestones are tracked in `docs/project_roadmap.md`.
 

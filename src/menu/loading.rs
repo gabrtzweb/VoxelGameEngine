@@ -14,6 +14,23 @@ use crate::{
 
 use super::MenuState;
 
+pub const TOTAL_LOADING_TIPS: usize = 10;
+
+/// Generates a well-distributed random tip index in 1..=TOTAL_LOADING_TIPS.
+/// Uses SplitMix64 to break Windows high-resolution timer quantization (100ns chunks ending in 00).
+pub fn random_loading_tip() -> usize {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos() as u64)
+        .unwrap_or(0xA5A5_5A5A_1234_5678);
+
+    let mut z = nanos.wrapping_add(0x9E37_79B9_7F4A_7C15);
+    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+    z ^= z >> 31;
+    ((z % TOTAL_LOADING_TIPS as u64) as usize) + 1
+}
+
 #[derive(Resource, Debug, Clone)]
 pub struct LoadingState {
     pub display_progress: f32,
@@ -24,6 +41,8 @@ pub struct LoadingState {
     pub min_duration: f32,
     pub max_duration: f32,
     pub is_complete: bool,
+    pub current_tip_idx: usize,
+    pub tip_cycle_timer: f32,
 }
 
 impl Default for LoadingState {
@@ -37,6 +56,8 @@ impl Default for LoadingState {
             min_duration: 0.5,
             max_duration: 8.0,
             is_complete: false,
+            current_tip_idx: random_loading_tip(),
+            tip_cycle_timer: 0.0,
         }
     }
 }
@@ -55,6 +76,9 @@ pub struct LoadingPercentText;
 
 #[derive(Component)]
 pub struct LoadingCounterText;
+
+#[derive(Component)]
+pub struct LoadingTipText;
 
 pub struct LoadingScreenPlugin;
 
@@ -84,6 +108,7 @@ fn spawn_loading_screen(
     mut loading_state: ResMut<LoadingState>,
 ) {
     *loading_state = LoadingState::default();
+    let initial_tip = loading_state.current_tip_idx;
 
     let font_handle = app_font.map(|f| f.source());
     let bg_texture = asset_server.load("textures/interfaces/main_menu_bg.png");
@@ -107,10 +132,13 @@ fn spawn_loading_screen(
     let initial_status_str = loc
         .as_ref()
         .map_or("Generating terrain...", |l| l.t("menu.loading.generating"));
-    let tip_str = loc.as_ref().map_or(
-        "Tip: Press Tab to open the system menu bar and I for inventory.",
-        |l| l.t("menu.loading.tip"),
-    );
+
+    let tip_key = format!("menu.loading.tip_{initial_tip}");
+    let tip_str = loc
+        .as_ref()
+        .map_or("Tip: No voxels were harmed during the procedural generation of this world.", |l| {
+            l.t(&tip_key)
+        });
 
     commands
         .spawn((
@@ -301,6 +329,7 @@ fn spawn_loading_screen(
                     align_items: AlignItems::Center,
                     padding: UiRect::axes(px(24.0), px(10.0)),
                     border_radius: BorderRadius::all(Val::Px(6.0)),
+                    max_width: px(700.0),
                     ..default()
                 },
                 BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.35)),
@@ -308,6 +337,7 @@ fn spawn_loading_screen(
             ))
             .with_children(|tip_box| {
                 tip_box.spawn((
+                    LoadingTipText,
                     Text::new(tip_str),
                     make_font(14.0),
                     TextColor(Color::srgba(0.85, 0.89, 0.95, 0.85)),
@@ -381,7 +411,7 @@ fn update_loading_progress(
 
 fn animate_loading_ui(
     time: Res<Time<Real>>,
-    loading_state: Res<LoadingState>,
+    mut loading_state: ResMut<LoadingState>,
     loc: Option<Res<Localization>>,
     mut fill_query: Query<&mut Node, With<LoadingBarFill>>,
     mut status_query: Query<(&mut Text, &mut TextColor), With<LoadingStatusText>>,
@@ -391,6 +421,7 @@ fn animate_loading_ui(
             With<LoadingPercentText>,
             Without<LoadingStatusText>,
             Without<LoadingCounterText>,
+            Without<LoadingTipText>,
         ),
     >,
     mut counter_query: Query<
@@ -399,9 +430,20 @@ fn animate_loading_ui(
             With<LoadingCounterText>,
             Without<LoadingStatusText>,
             Without<LoadingPercentText>,
+            Without<LoadingTipText>,
+        ),
+    >,
+    mut tip_query: Query<
+        &mut Text,
+        (
+            With<LoadingTipText>,
+            Without<LoadingStatusText>,
+            Without<LoadingPercentText>,
+            Without<LoadingCounterText>,
         ),
     >,
 ) {
+    let dt = time.delta_secs();
     let p = loading_state.display_progress.clamp(0.0, 1.0);
 
     for mut node in &mut fill_query {
@@ -440,6 +482,27 @@ fn animate_loading_ui(
     for (mut text, mut color) in &mut status_query {
         **text = status_str.to_string();
         color.0 = Color::srgba(0.85, 0.90, 0.98, pulse);
+    }
+
+    // Dynamic tip rotation every 3.5 seconds during loading
+    loading_state.tip_cycle_timer += dt;
+    if loading_state.tip_cycle_timer >= 3.5 {
+        loading_state.tip_cycle_timer = 0.0;
+        let current = loading_state.current_tip_idx;
+        let mut next = random_loading_tip();
+        if next == current {
+            next = (current % TOTAL_LOADING_TIPS) + 1;
+        }
+        loading_state.current_tip_idx = next;
+        let tip_key = format!("menu.loading.tip_{}", loading_state.current_tip_idx);
+        for mut tip_text in &mut tip_query {
+            **tip_text = loc
+                .as_ref()
+                .map_or("Tip: No voxels were harmed during the procedural generation of this world.", |l| {
+                    l.t(&tip_key)
+                })
+                .to_string();
+        }
     }
 }
 

@@ -35,7 +35,16 @@ fn test_main_menu_localization() {
         "menu.loading.meshing",
         "menu.loading.finalizing",
         "menu.loading.ready",
-        "menu.loading.tip",
+        "menu.loading.tip_1",
+        "menu.loading.tip_2",
+        "menu.loading.tip_3",
+        "menu.loading.tip_4",
+        "menu.loading.tip_5",
+        "menu.loading.tip_6",
+        "menu.loading.tip_7",
+        "menu.loading.tip_8",
+        "menu.loading.tip_9",
+        "menu.loading.tip_10",
     ];
 
     // English

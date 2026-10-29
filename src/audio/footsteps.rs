@@ -162,7 +162,7 @@ fn update_player_footstep_audio(
         };
         let rand_pitch = 0.94 + state.next_float() * 0.12;
         if let Some(sound) = state.get_sound(category, &asset_server) {
-            commands.trigger(PlaySfxEvent::new(sound, 0.85).with_speed(rand_pitch));
+            commands.trigger(PlaySfxEvent::new(sound, 0.58).with_speed(rand_pitch));
         }
         state.was_in_water = in_water;
     }
@@ -182,7 +182,7 @@ fn update_player_footstep_audio(
 
         if let Some(sound) = state.get_sound(category, &asset_server) {
             commands.trigger(
-                PlaySfxEvent::new(sound, 0.65 * fall_severity).with_speed(rand_pitch),
+                PlaySfxEvent::new(sound, 0.44 * fall_severity).with_speed(rand_pitch),
             );
         }
     }
@@ -203,7 +203,7 @@ fn update_player_footstep_audio(
                 state.swim_timer = 0.0;
                 let rand_pitch = 0.93 + state.next_float() * 0.14;
                 if let Some(sound) = state.get_sound(StepSoundCategory::Swim, &asset_server) {
-                    commands.trigger(PlaySfxEvent::new(sound, 0.65).with_speed(rand_pitch));
+                    commands.trigger(PlaySfxEvent::new(sound, 0.44).with_speed(rand_pitch));
                 }
             }
         } else {
@@ -236,7 +236,7 @@ fn update_player_footstep_audio(
             if in_water && submersion > 0.05 {
                 // Wading in shallow water
                 if let Some(sound) = state.get_sound(StepSoundCategory::WaterWade, &asset_server) {
-                    commands.trigger(PlaySfxEvent::new(sound, 0.70).with_speed(rand_pitch));
+                    commands.trigger(PlaySfxEvent::new(sound, 0.48).with_speed(rand_pitch));
                 }
             } else {
                 let floor_voxel = detect_floor_voxel(&world, transform.translation);
@@ -247,12 +247,13 @@ fn update_player_footstep_audio(
                     StepSoundCategory::Walk(mat)
                 };
 
+                // Attenuated ~32% for comfortable auditory mix
                 let step_volume = if is_crouching || is_crawling {
-                    0.30
+                    0.20
                 } else if is_running {
-                    0.80
+                    0.54
                 } else {
-                    0.65
+                    0.44
                 };
 
                 if let Some(sound) = state.get_sound(category, &asset_server) {
