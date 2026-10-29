@@ -110,7 +110,7 @@ fn test_axis_aligned_pillar_properties() {
 
 #[test]
 fn test_voxel_discriminants_continuity() {
-    for id in 0..=681u16 {
+    for id in 0..=683u16 {
         let maybe_voxel = Voxel::from_u16(id);
         assert!(
             maybe_voxel.is_some(),
@@ -130,7 +130,7 @@ fn test_voxel_discriminants_continuity() {
 
 #[test]
 fn test_block_shapes_all() {
-    assert_eq!(BlockShape::all().len(), 11);
+    assert_eq!(BlockShape::all().len(), 14);
     assert_eq!(BlockShape::shapable().len(), 4);
     assert_eq!(Voxel::SpiderEgg.default_shape(), BlockShape::Cocoon);
     assert_eq!(Voxel::SilkCocoon.default_shape(), BlockShape::Cocoon);
@@ -177,8 +177,13 @@ fn test_flora_support_and_collision() {
     assert!(!Voxel::VegeWildgrass.is_collidable());
     assert!(!Voxel::FlowerPoppy.is_collidable());
     assert!(Voxel::VegeCactus.is_collidable()); // Saguaro column is solid!
-    assert!(Voxel::VegeCactus.is_solid_opaque());
+    assert!(!Voxel::VegeCactus.is_solid_opaque());
     assert_eq!(Voxel::VegeWildgrass.default_shape(), BlockShape::CrossBillboard);
     assert_eq!(Voxel::FlowerDandelion.default_shape(), BlockShape::CrossBillboard);
-    assert_eq!(Voxel::VegeCactus.default_shape(), BlockShape::Full);
+    assert_eq!(Voxel::VegeCactus.default_shape(), BlockShape::Cactus);
+    assert_eq!(Voxel::VegeLilyPad.default_shape(), BlockShape::FlatPad);
+    assert_eq!(Voxel::FlowerWhitePetals.default_shape(), BlockShape::FlatPad);
+    assert_eq!(Voxel::VegeVines.default_shape(), BlockShape::WallDecal);
+    assert!(Voxel::CrystalAmethystCluster.is_collidable());
+    assert!(!Voxel::BrainCoralFan.is_collidable());
 }

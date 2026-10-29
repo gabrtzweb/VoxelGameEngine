@@ -547,6 +547,10 @@ impl ChunkMesher {
                         let (neighbor_shape, _) = world.get_shape(neighbor_coordinate);
                         let mut step_bottom_offset_cm = 0u8;
 
+                        if voxel.is_fluid() && (neighbor.is_marine_flora() || neighbor.is_coral_fan()) {
+                            continue;
+                        }
+
                         if voxel.is_fluid()
                             && direction != FaceDirection::PositiveY
                             && direction != FaceDirection::NegativeY
@@ -711,6 +715,9 @@ impl ChunkMesher {
 
 pub fn should_render_face(voxel: Voxel, neighbor: Voxel) -> bool {
     if voxel.is_fluid() {
+        if neighbor.is_marine_flora() || neighbor.is_coral_fan() {
+            return false;
+        }
         return neighbor.is_empty()
             || neighbor == Voxel::Occupied
             || (neighbor.is_fluid() && neighbor != voxel)

@@ -408,6 +408,12 @@ impl Voxel {
     pub fn default_shape(self) -> BlockShape {
         if self.is_cross_billboard_const() {
             BlockShape::CrossBillboard
+        } else if self.is_flat_pad_const() {
+            BlockShape::FlatPad
+        } else if self.is_wall_decal_const() {
+            BlockShape::WallDecal
+        } else if self == Self::VegeCactus {
+            BlockShape::Cactus
         } else if self.is_torch_const() {
             BlockShape::Torch
         } else if self.is_basket_const() {
@@ -432,6 +438,9 @@ impl Voxel {
 
     pub fn is_shape_locked(self) -> bool {
         self.has_custom_mesh()
+            || self.is_flat_pad_const()
+            || self.is_wall_decal_const()
+            || self == Self::VegeCactus
             || matches!(
                 self,
                 Self::BirdNest

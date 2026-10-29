@@ -303,6 +303,68 @@ pub fn populate_chunk_flora(
                             }
                         }
                     }
+                } else if air_above.is_water() && ground_voxel.is_solid_opaque() {
+                    let water_y = col.water_level.unwrap_or(surface_y);
+                    let water_depth = water_y - surface_y;
+                    // Shallow waters (depth >= 1) can spawn non-tall marine flora (Seagrass, Seaweed, RedAlgae).
+                    // Multi-block tall flora (Kelp, Bull Kelp) requires depth >= 2.
+                    if water_depth >= 1 {
+                        let wx = chunk_origin.x + x as i32;
+                        let wy = surface_y + 1;
+                        let wz = chunk_origin.z + z as i32;
+                        let h = hash_coords(wx, wy, wz, seed, 0x517C_C1B7);
+                        // Sparse & natural density
+                        if h % 100 < 10 {
+                            let underwater_roll = (h / 100) % 100;
+                            let start_ly = ly + 1;
+                            if underwater_roll < 30 && water_depth >= 2 {
+                                let max_h = (3 + ((h / 10000) % 5) as usize).min((water_depth - 1) as usize);
+                                let mut current_ly = start_ly;
+                                let mut placed_count = 0;
+                                while current_ly < CHUNK_SIZE
+                                    && (chunk_min_y + current_ly as i32) < water_y
+                                    && get_v(voxels, x, current_ly, z).is_water()
+                                    && placed_count < max_h
+                                {
+                                    let idx = x + z * CHUNK_SIZE + current_ly * CHUNK_SIZE * CHUNK_SIZE;
+                                    voxels[idx] = Voxel::KelpPlant;
+                                    current_ly += 1;
+                                    placed_count += 1;
+                                }
+                                if placed_count > 0 {
+                                    let top_idx = x + z * CHUNK_SIZE + (start_ly + placed_count - 1) * CHUNK_SIZE * CHUNK_SIZE;
+                                    voxels[top_idx] = Voxel::Kelp;
+                                }
+                            } else if underwater_roll < 50 && water_depth >= 2 {
+                                let max_h = (2 + ((h / 10000) % 4) as usize).min((water_depth - 1) as usize);
+                                let mut current_ly = start_ly;
+                                let mut placed_count = 0;
+                                while current_ly < CHUNK_SIZE
+                                    && (chunk_min_y + current_ly as i32) < water_y
+                                    && get_v(voxels, x, current_ly, z).is_water()
+                                    && placed_count < max_h
+                                {
+                                    let idx = x + z * CHUNK_SIZE + current_ly * CHUNK_SIZE * CHUNK_SIZE;
+                                    voxels[idx] = Voxel::BullKelpPlant;
+                                    current_ly += 1;
+                                    placed_count += 1;
+                                }
+                                if placed_count > 0 {
+                                    let top_idx = x + z * CHUNK_SIZE + (start_ly + placed_count - 1) * CHUNK_SIZE * CHUNK_SIZE;
+                                    voxels[top_idx] = Voxel::BullKelp;
+                                }
+                            } else if underwater_roll < 75 {
+                                let idx = x + z * CHUNK_SIZE + start_ly * CHUNK_SIZE * CHUNK_SIZE;
+                                voxels[idx] = Voxel::Seagrass;
+                            } else if underwater_roll < 85 {
+                                let idx = x + z * CHUNK_SIZE + start_ly * CHUNK_SIZE * CHUNK_SIZE;
+                                voxels[idx] = Voxel::Seaweed;
+                            } else {
+                                let idx = x + z * CHUNK_SIZE + start_ly * CHUNK_SIZE * CHUNK_SIZE;
+                                voxels[idx] = Voxel::RedAlgae;
+                            }
+                        }
+                    }
                 }
             } else if surface_y + 1 == chunk_min_y {
                 // Ground was top of chunk below, so ly = 0 of this chunk is surface air!

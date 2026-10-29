@@ -39,7 +39,7 @@ pub const CREATIVE_TAB_Y_COORDS: [f32; 9] = [
     65.0, 84.0, 103.0, 122.0, 141.0, 160.0, 179.0, 198.0, 217.0,
 ];
 
-pub const AVAILABLE_BLOCKS: [Voxel; 679] = Voxel::ALL;
+pub const AVAILABLE_BLOCKS: [Voxel; 681] = Voxel::ALL;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CreativeCategory {
@@ -195,7 +195,14 @@ pub fn filtered_creative_blocks(category: CreativeCategory, query: &str) -> Vec<
         .iter()
         .copied()
         .filter(|&v| {
-            if v.is_empty() || v == Voxel::Occupied || v == Voxel::WaterOccupied {
+            if v.is_empty()
+                || v == Voxel::Occupied
+                || v == Voxel::WaterOccupied
+                || v.is_double_tall_top()
+                || v == Voxel::VegeCaveVinesPlant
+                || v == Voxel::KelpPlant
+                || v == Voxel::BullKelpPlant
+            {
                 return false;
             }
             if !q.is_empty() {

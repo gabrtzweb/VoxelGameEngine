@@ -688,16 +688,18 @@ pub enum Voxel {
     FlowerSunflowerTop = 679,
     FlowerWhitePetals = 680,
     FlowerWildflowers = 681,
+    KelpPlant = 682,
+    BullKelpPlant = 683,
 }
 
 impl Voxel {
     /// Array containing all 679 active, non-placeholder gameplay voxels (indices 3..=681).
-    pub const ALL: [Voxel; 679] = generate_all_voxels();
+    pub const ALL: [Voxel; 681] = generate_all_voxels();
 
     /// Safely convert a `u16` id to a `Voxel` variant.
     #[inline(always)]
     pub const fn from_u16(val: u16) -> Option<Self> {
-        if val <= 681 {
+        if val <= 683 {
             // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 681.
             Some(unsafe { std::mem::transmute::<u16, Self>(val) })
         } else {
@@ -786,10 +788,10 @@ impl Voxel {
     }
 }
 
-const fn generate_all_voxels() -> [Voxel; 679] {
-    let mut arr = [Voxel::Air; 679];
+const fn generate_all_voxels() -> [Voxel; 681] {
+    let mut arr = [Voxel::Air; 681];
     let mut i = 0;
-    while i < 679 {
+    while i < 681 {
         // Active gameplay blocks start at discriminant 3 (indices 3..=681)
         let id = (i + 3) as u16;
         arr[i] = unsafe { std::mem::transmute::<u16, Voxel>(id) };

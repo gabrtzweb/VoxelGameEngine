@@ -61,7 +61,7 @@ pub(super) fn player_submersion(world: &VoxelWorld, position: Vec3) -> f32 {
             for x in min_voxel.x..=max_voxel.x {
                 let coordinate = IVec3::new(x, y, z);
 
-                if !world.get_voxel(coordinate).is_some_and(Voxel::is_water) {
+                if !world.get_voxel(coordinate).is_some_and(|v| v.is_water() || v.is_marine_flora() || v.is_coral_fan()) {
                     continue;
                 }
 
@@ -85,14 +85,15 @@ pub(crate) fn is_point_in_water(world: &VoxelWorld, position: Vec3) -> bool {
     let Some(voxel) = world.get_voxel(coordinate) else {
         return false;
     };
-    if !voxel.is_water() {
+    let is_water_or_flora = |v: Voxel| v.is_water() || v.is_marine_flora() || v.is_coral_fan();
+    if !is_water_or_flora(voxel) {
         return false;
     }
 
     let above_coordinate = coordinate + IVec3::Y;
     if !world
         .get_voxel(above_coordinate)
-        .is_some_and(Voxel::is_water)
+        .is_some_and(is_water_or_flora)
     {
         let surface_y = coordinate.y as f32 * VOXEL_SIZE + 0.90;
         if position.y >= surface_y {

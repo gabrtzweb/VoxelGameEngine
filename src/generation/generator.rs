@@ -3,8 +3,7 @@ use bevy::prelude::*;
 use super::{
     biome::{BiomeType, ClimateGenerator, ClimateSample},
     caves::{CaveGenerator, CaveNoiseSample},
-    flora,
-    ores,
+    flora, ores,
     strata::StrataGenerator,
     trees::{self, TreeSpecies},
 };
@@ -98,7 +97,7 @@ impl Default for TerrainGenerator {
             base_height: 16.0,
 
             // Broad continental landforms
-            macro_amplitude: 14.0,
+            macro_amplitude: 4.0,
             macro_frequency: 0.0260,
 
             // Local terrain relief
@@ -109,13 +108,13 @@ impl Default for TerrainGenerator {
 
             // Mountain ridges and rolling hills
             mountain_ridge_height: 54.0,
-            rolling_hills_amplitude: 5.0,
+            rolling_hills_amplitude: 10.0,
 
             // Sea level in voxels
             sea_level: 12,
 
-            river_frequency: 0.0035,
-            river_width: 0.040,
+            river_frequency: 0.0048,
+            river_width: 0.064,
 
             climate: ClimateGenerator::default(),
             caves: CaveGenerator::default(),

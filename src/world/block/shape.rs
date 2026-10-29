@@ -15,6 +15,9 @@ pub enum BlockShape {
     CrossBillboard = 8,
     Bamboo = 9,
     Cocoon = 10,
+    FlatPad = 11,
+    WallDecal = 12,
+    Cactus = 13,
 }
 
 #[repr(u8)]
@@ -49,8 +52,8 @@ impl PillarAxis {
 }
 
 impl BlockShape {
-    /// All 11 registered block shapes in the engine.
-    pub const fn all() -> [BlockShape; 11] {
+    /// All 14 registered block shapes in the engine.
+    pub const fn all() -> [BlockShape; 14] {
         [
             BlockShape::Full,
             BlockShape::Slab,
@@ -63,6 +66,9 @@ impl BlockShape {
             BlockShape::CrossBillboard,
             BlockShape::Bamboo,
             BlockShape::Cocoon,
+            BlockShape::FlatPad,
+            BlockShape::WallDecal,
+            BlockShape::Cactus,
         ]
     }
 
@@ -89,6 +95,9 @@ impl BlockShape {
             Self::CrossBillboard => "Cross-Billboard",
             Self::Bamboo => "Bamboo",
             Self::Cocoon => "Cocoon",
+            Self::FlatPad => "Flat Pad",
+            Self::WallDecal => "Wall Decal",
+            Self::Cactus => "Cactus",
         }
     }
 
@@ -105,14 +114,17 @@ impl BlockShape {
             Self::CrossBillboard => "CROSS",
             Self::Bamboo => "BAMBOO",
             Self::Cocoon => "COCOON",
+            Self::FlatPad => "FLAT",
+            Self::WallDecal => "DECAL",
+            Self::Cactus => "CACTUS",
         }
     }
 
     pub const fn orientation_count(self) -> u8 {
         match self {
             Self::Full => 3,
-            Self::Basket | Self::CrossBillboard | Self::Bamboo | Self::Cocoon => 1,
-            Self::Slab => 6,
+            Self::Basket | Self::CrossBillboard | Self::Bamboo | Self::Cocoon | Self::FlatPad | Self::Cactus => 1,
+            Self::Slab | Self::WallDecal => 6,
             Self::Stair => 8,
             Self::Column => 6,
             Self::Torch => 5,
@@ -128,7 +140,15 @@ impl BlockShape {
                 2 => "Horizontal (Z)",
                 _ => "Standard",
             },
-            Self::Basket | Self::CrossBillboard | Self::Bamboo | Self::Cocoon => "Standard",
+            Self::Basket | Self::CrossBillboard | Self::Bamboo | Self::Cocoon | Self::FlatPad | Self::Cactus => "Standard",
+            Self::WallDecal => match orientation % 6 {
+                0 => "Floor (Standing)",
+                1 => "Ceiling (Hanging)",
+                2 => "North Wall (-Z)",
+                3 => "South Wall (+Z)",
+                4 => "West Wall (-X)",
+                _ => "East Wall (+X)",
+            },
             Self::Slab => match orientation % 6 {
                 0 => "Bottom (Floor)",
                 1 => "Top (Ceiling)",
@@ -284,6 +304,29 @@ impl BlockShape {
                 let min = Vec3::new(2.0 / 16.0, 0.0, 2.0 / 16.0);
                 let max = Vec3::new(14.0 / 16.0, 14.0 / 16.0, 14.0 / 16.0);
                 ([min, max], None)
+            }
+            Self::FlatPad => (
+                [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 1.0 / 16.0, 1.0)],
+                None,
+            ),
+            Self::Cactus => (
+                [
+                    Vec3::new(1.0 / 16.0, 0.0, 1.0 / 16.0),
+                    Vec3::new(15.0 / 16.0, 1.0, 15.0 / 16.0),
+                ],
+                None,
+            ),
+            Self::WallDecal => {
+                let t = 1.0 / 16.0;
+                let bbox = match orientation % 6 {
+                    0 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, t, 1.0)],
+                    1 => [Vec3::new(0.0, 1.0 - t, 0.0), Vec3::new(1.0, 1.0, 1.0)],
+                    2 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 1.0, t)],
+                    3 => [Vec3::new(0.0, 0.0, 1.0 - t), Vec3::new(1.0, 1.0, 1.0)],
+                    4 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(t, 1.0, 1.0)],
+                    _ => [Vec3::new(1.0 - t, 0.0, 0.0), Vec3::new(1.0, 1.0, 1.0)],
+                };
+                (bbox, None)
             }
         }
     }

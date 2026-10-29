@@ -1,11 +1,10 @@
+use crate::meshing::textures::FaceTextureInfo;
 use bevy::prelude::*;
-
 use super::{
     greedy::{FaceDirection, MeshBuffers},
     textures::VoxelTextureRegistry,
 };
 use crate::world::{BlockShape, CHUNK_SIZE, Chunk, VOXEL_SIZE, Voxel, VoxelAccess};
-
 pub fn mesh_shaped_voxels(
     world: &impl VoxelAccess,
     chunk: &Chunk,
@@ -15,25 +14,23 @@ pub fn mesh_shaped_voxels(
     transparent_buffers: &mut MeshBuffers,
 ) {
     let chunk_voxel_origin = chunk_coordinate * CHUNK_SIZE as i32;
-
     for (&index, &(shape, orientation)) in chunk.shapes() {
         let (x, y, z) = Chunk::index_to_xyz(index);
-
         let voxel = chunk.get(x, y, z);
         if voxel.is_empty() || shape == BlockShape::Full {
             continue;
         }
-
         let is_transparent_pass = (voxel.is_transparent() || voxel.is_fluid())
             && !voxel.is_cross_billboard()
-            && shape != BlockShape::CrossBillboard;
-
+            && shape != BlockShape::CrossBillboard
+            && shape != BlockShape::FlatPad
+            && shape != BlockShape::WallDecal
+            && shape != BlockShape::Cactus;
         let buffers = if is_transparent_pass {
             &mut *transparent_buffers
         } else {
             &mut *opaque_buffers
         };
-
         let world_voxel = chunk_voxel_origin + IVec3::new(x as i32, y as i32, z as i32);
         let (side_layer, frame_count) =
             textures.get_face_texture_info(voxel, world_voxel, FaceDirection::PositiveX);
@@ -41,7 +38,6 @@ pub fn mesh_shaped_voxels(
             textures.get_face_texture_info(voxel, world_voxel, FaceDirection::PositiveY);
         let (bottom_layer, _) =
             textures.get_face_texture_info(voxel, world_voxel, FaceDirection::NegativeY);
-
         let rot_mode = if voxel.has_custom_mesh() || shape != BlockShape::Full {
             0
         } else {
@@ -54,7 +50,6 @@ pub fn mesh_shaped_voxels(
         } else {
             frame_count as f32
         };
-
         let mut tint = voxel.tint_color_at(world_voxel);
         tint[3] = if voxel.is_water() {
             1.0
@@ -79,7 +74,6 @@ pub fn mesh_shaped_voxels(
         } else {
             tint
         };
-
         let is_neighbor_solid = |offset: IVec3| -> bool {
             let neighbor_pos = world_voxel + offset;
             let (n_shape, _) = world.get_shape(neighbor_pos);
@@ -87,11 +81,9 @@ pub fn mesh_shaped_voxels(
                 .get_voxel(neighbor_pos)
                 .is_some_and(|v| v.is_solid_opaque() && n_shape == BlockShape::Full)
         };
-
         let fx = x as f32;
         let fy = y as f32;
         let fz = z as f32;
-
         if voxel.is_basket() || shape == BlockShape::Basket {
             mesh_basket(
                 buffers,
@@ -109,7 +101,6 @@ pub fn mesh_shaped_voxels(
             );
             continue;
         }
-
         if voxel.is_torch() || shape == BlockShape::Torch {
             mesh_torch(
                 buffers,
@@ -123,7 +114,6 @@ pub fn mesh_shaped_voxels(
             );
             continue;
         }
-
         if voxel.is_pebble()
             || matches!(
                 shape,
@@ -151,7 +141,6 @@ pub fn mesh_shaped_voxels(
             );
             continue;
         }
-
         if voxel.is_bamboo() || shape == BlockShape::Bamboo {
             let is_neighbor_bamboo = |offset: IVec3| -> bool {
                 let neighbor_pos = world_voxel + offset;
@@ -161,7 +150,6 @@ pub fn mesh_shaped_voxels(
             };
             let cull_top = is_neighbor_bamboo(IVec3::Y) || is_neighbor_solid(IVec3::Y);
             let cull_bottom = is_neighbor_bamboo(IVec3::NEG_Y) || is_neighbor_solid(IVec3::NEG_Y);
-
             if voxel == Voxel::BambooLeaves {
                 // Central 3px stalk inside the leaves block
                 let (stalk_side_layer, _) = textures.get_face_texture_info(
@@ -179,7 +167,6 @@ pub fn mesh_shaped_voxels(
                     world_voxel,
                     FaceDirection::NegativeY,
                 );
-
                 mesh_bamboo(
                     buffers,
                     fx,
@@ -195,7 +182,6 @@ pub fn mesh_shaped_voxels(
                     cull_top,
                     cull_bottom,
                 );
-
                 // Foliage leaves cross mesh surrounding the central stalk
                 mesh_cross_billboard(
                     buffers,
@@ -225,7 +211,6 @@ pub fn mesh_shaped_voxels(
             }
             continue;
         }
-
         if voxel.is_cross_billboard() || shape == BlockShape::CrossBillboard {
             mesh_cross_billboard(
                 buffers,
@@ -236,18 +221,80 @@ pub fn mesh_shaped_voxels(
                 frame_count_f32,
                 side_tint,
             );
+            if voxel.is_marine_flora() || voxel.is_coral_fan() {
+                mesh_waterlogged_envelope(
+                    world,
+                    transparent_buffers,
+                    world_voxel,
+                    fx,
+                    fy,
+                    fz,
+                    textures,
+                );
+            }
             continue;
         }
-
+        if shape == BlockShape::FlatPad {
+            mesh_flat_pad(
+                buffers,
+                fx,
+                fy,
+                fz,
+                voxel,
+                side_layer,
+                frame_count_f32,
+                top_tint,
+                textures.flower_carpet_stem,
+            );
+            continue;
+        }
+        if shape == BlockShape::WallDecal {
+            mesh_wall_decal(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                side_layer,
+                frame_count_f32,
+                top_tint,
+            );
+            continue;
+        }
+        if shape == BlockShape::Cactus {
+            let is_neighbor_cactus_or_opaque = |offset: IVec3| -> bool {
+                let neighbor_pos = world_voxel + offset;
+                world
+                    .get_voxel(neighbor_pos)
+                    .is_some_and(|v| v == Voxel::VegeCactus || v.is_solid_opaque())
+            };
+            mesh_cactus(
+                buffers,
+                fx,
+                fy,
+                fz,
+                top_layer,
+                bottom_layer,
+                side_layer,
+                frame_count_f32,
+                top_tint,
+                bottom_tint,
+                side_tint,
+                &is_neighbor_cactus_or_opaque,
+            );
+            continue;
+        }
         let (box_a, maybe_box_b) = shape.local_boxes(orientation);
-
         match shape {
             BlockShape::Torch
             | BlockShape::Basket
             | BlockShape::Pebble
             | BlockShape::PebbleCluster
             | BlockShape::Bamboo
-            | BlockShape::CrossBillboard => unreachable!(),
+            | BlockShape::CrossBillboard
+            | BlockShape::FlatPad
+            | BlockShape::WallDecal
+            | BlockShape::Cactus => unreachable!(),
             BlockShape::Full | BlockShape::Column | BlockShape::Cocoon => {
                 push_shape_box(
                     buffers,
@@ -265,6 +312,7 @@ pub fn mesh_shaped_voxels(
                     bottom_tint,
                     side_tint,
                     &is_neighbor_solid,
+                is_grass,
                 );
             }
             BlockShape::Slab => {
@@ -277,7 +325,6 @@ pub fn mesh_shaped_voxels(
                         base_cull[3] = true; // -Y face touches lower slab
                     }
                 }
-
                 push_shape_box(
                     buffers,
                     fx,
@@ -294,8 +341,8 @@ pub fn mesh_shaped_voxels(
                     bottom_tint,
                     side_tint,
                     &is_neighbor_solid,
+                    is_grass,
                 );
-
                 if let Some((extra_voxel, extra_orient)) = extra {
                     let (extra_side_layer, extra_frame_count) = textures.get_face_texture_info(
                         extra_voxel,
@@ -312,13 +359,11 @@ pub fn mesh_shaped_voxels(
                         world_voxel,
                         FaceDirection::NegativeY,
                     );
-
                     let extra_frame_count_f32 = if extra_voxel.is_light() {
                         -(extra_frame_count.max(1) as f32)
                     } else {
                         extra_frame_count as f32
                     };
-
                     let mut extra_tint = extra_voxel.tint_color_at(world_voxel);
                     extra_tint[3] = if extra_voxel.is_water() {
                         1.0
@@ -343,21 +388,18 @@ pub fn mesh_shaped_voxels(
                     } else {
                         extra_tint
                     };
-
                     let mut extra_cull = [false; 6];
                     if orientation == 0 && extra_orient == 1 {
                         extra_cull[3] = true; // -Y face touches lower slab
                     } else if orientation == 1 && extra_orient == 0 {
                         extra_cull[2] = true; // +Y face touches upper slab
                     }
-
                     let (extra_box_a, _) = BlockShape::Slab.local_boxes(extra_orient);
                     let extra_buffers = if extra_voxel.is_transparent() || extra_voxel.is_fluid() {
                         &mut *transparent_buffers
                     } else {
                         &mut *opaque_buffers
                     };
-
                     push_shape_box(
                         extra_buffers,
                         fx,
@@ -374,6 +416,7 @@ pub fn mesh_shaped_voxels(
                         extra_bottom_tint,
                         extra_side_tint,
                         &is_neighbor_solid,
+                        is_extra_grass,
                     );
                 }
             }
@@ -382,7 +425,6 @@ pub fn mesh_shaped_voxels(
                 let step_internal_cull = if !is_inverted { 3 } else { 2 };
                 let mut step_cull = [false; 6];
                 step_cull[step_internal_cull] = true;
-
                 push_shape_box(
                     buffers,
                     fx,
@@ -399,6 +441,7 @@ pub fn mesh_shaped_voxels(
                     bottom_tint,
                     side_tint,
                     &is_neighbor_solid,
+                    is_grass,
                 );
                 if let Some(box_b) = maybe_box_b {
                     push_shape_box(
@@ -417,13 +460,13 @@ pub fn mesh_shaped_voxels(
                         bottom_tint,
                         side_tint,
                         &is_neighbor_solid,
+                        is_grass,
                     );
                 }
             }
         }
     }
 }
-
 /// Pushes an axis-aligned shape sub-box with unified boundary neighbor culling.
 /// cull order: [+X, -X, +Y, -Y, +Z, -Z]
 fn push_shape_box(
@@ -442,6 +485,7 @@ fn push_shape_box(
     bottom_tint: [f32; 4],
     side_tint: [f32; 4],
     is_neighbor_solid: &impl Fn(IVec3) -> bool,
+    align_side_uv_to_top: bool,
 ) {
     let min_x = fx + local_min.x;
     let min_y = fy + local_min.y;
@@ -449,7 +493,6 @@ fn push_shape_box(
     let max_x = fx + local_max.x;
     let max_y = fy + local_max.y;
     let max_z = fz + local_max.z;
-
     let mut cull = internal_cull;
     if local_max.x >= 0.999 && is_neighbor_solid(IVec3::X) {
         cull[0] = true;
@@ -469,11 +512,15 @@ fn push_shape_box(
     if local_min.z <= 0.001 && is_neighbor_solid(IVec3::NEG_Z) {
         cull[5] = true;
     }
-
-    let v_top = (1.0 - local_max.y).clamp(0.0, 1.0);
-    let v_bot = (1.0 - local_min.y).clamp(0.0, 1.0);
+    let (v_top, v_bot) = if align_side_uv_to_top && local_max.y <= 0.501 {
+        (0.0, (local_max.y - local_min.y).clamp(0.0, 1.0))
+    } else {
+        (
+            (1.0 - local_max.y).clamp(0.0, 1.0),
+            (1.0 - local_min.y).clamp(0.0, 1.0),
+        )
+    };
     let side_uvs = [[0.0, v_bot], [0.0, v_top], [1.0, v_top], [1.0, v_bot]];
-
     // +X (East, idx 0)
     if !cull[0] {
         push_quad_face_uvs(
@@ -491,7 +538,6 @@ fn push_shape_box(
             side_uvs,
         );
     }
-
     // -X (West, idx 1)
     if !cull[1] {
         push_quad_face_uvs(
@@ -509,7 +555,6 @@ fn push_shape_box(
             side_uvs,
         );
     }
-
     // +Y (Top, idx 2)
     if !cull[2] {
         push_quad_face(
@@ -526,7 +571,6 @@ fn push_shape_box(
             top_tint,
         );
     }
-
     // -Y (Bottom, idx 3)
     if !cull[3] {
         push_quad_face(
@@ -543,7 +587,6 @@ fn push_shape_box(
             bottom_tint,
         );
     }
-
     // +Z (South, idx 4)
     if !cull[4] {
         push_quad_face_uvs(
@@ -561,7 +604,6 @@ fn push_shape_box(
             side_uvs,
         );
     }
-
     // -Z (North, idx 5)
     if !cull[5] {
         push_quad_face_uvs(
@@ -580,7 +622,6 @@ fn push_shape_box(
         );
     }
 }
-
 fn push_quad_face(
     buffers: &mut MeshBuffers,
     vertices: [[f32; 3]; 4],
@@ -596,7 +637,6 @@ fn push_quad_face(
     };
     push_quad_face_uvs(buffers, vertices, normal, texture_layer, frame_count, tint_color, uvs);
 }
-
 fn push_quad_face_uvs(
     buffers: &mut MeshBuffers,
     vertices: [[f32; 3]; 4],
@@ -607,7 +647,6 @@ fn push_quad_face_uvs(
     uvs: [[f32; 2]; 4],
 ) {
     let base_index = buffers.positions.len() as u32;
-
     for v in &vertices {
         buffers
             .positions
@@ -616,9 +655,7 @@ fn push_quad_face_uvs(
         buffers.colors.push(tint_color);
         buffers.uv_bs.push([texture_layer as f32, frame_count]);
     }
-
     buffers.uvs.extend_from_slice(&uvs);
-
     buffers.indices.extend_from_slice(&[
         base_index,
         base_index + 1,
@@ -628,7 +665,6 @@ fn push_quad_face_uvs(
         base_index + 3,
     ]);
 }
-
 fn push_quad_face_with_uvs(
     buffers: &mut MeshBuffers,
     vertices: [[f32; 3]; 4],
@@ -639,7 +675,6 @@ fn push_quad_face_with_uvs(
     uvs: [[f32; 2]; 4],
 ) {
     let base_index = buffers.positions.len() as u32;
-
     for v in &vertices {
         buffers
             .positions
@@ -648,9 +683,7 @@ fn push_quad_face_with_uvs(
         buffers.colors.push(tint_color);
         buffers.uv_bs.push([texture_layer as f32, frame_count]);
     }
-
     buffers.uvs.extend_from_slice(&uvs);
-
     buffers.indices.extend_from_slice(&[
         base_index,
         base_index + 1,
@@ -660,7 +693,6 @@ fn push_quad_face_with_uvs(
         base_index + 3,
     ]);
 }
-
 fn mesh_basket(
     buffers: &mut MeshBuffers,
     fx: f32,
@@ -692,8 +724,8 @@ fn mesh_basket(
         bottom_tint,
         side_tint,
         is_neighbor_solid,
+    false,
     );
-
     // 2. Interior cavity (rendered if the top is open, so looking inside reveals the walls and floor)
     if !is_neighbor_solid(IVec3::Y) {
         let x0 = fx + 2.0 / 16.0;
@@ -702,10 +734,8 @@ fn mesh_basket(
         let z1 = fz + 14.0 / 16.0;
         let y_floor = fy + 2.0 / 16.0;
         let y_top = fy + 1.0;
-
         let uv_min = 2.0 / 16.0;
         let uv_max = 14.0 / 16.0;
-
         // Interior floor (+Y, facing up inside cavity)
         push_quad_face_with_uvs(
             buffers,
@@ -726,7 +756,6 @@ fn mesh_basket(
                 [uv_max, uv_min],
             ],
         );
-
         // Interior North wall (at z = z0, facing +Z inside cavity)
         push_quad_face_with_uvs(
             buffers,
@@ -742,7 +771,6 @@ fn mesh_basket(
             side_tint,
             [[uv_max, 1.0], [uv_max, 0.0], [uv_min, 0.0], [uv_min, 1.0]],
         );
-
         // Interior South wall (at z = z1, facing -Z inside cavity)
         push_quad_face_with_uvs(
             buffers,
@@ -758,7 +786,6 @@ fn mesh_basket(
             side_tint,
             [[uv_min, 1.0], [uv_min, 0.0], [uv_max, 0.0], [uv_max, 1.0]],
         );
-
         // Interior West wall (at x = x0, facing +X inside cavity)
         push_quad_face_with_uvs(
             buffers,
@@ -774,7 +801,6 @@ fn mesh_basket(
             side_tint,
             [[uv_min, 1.0], [uv_min, 0.0], [uv_max, 0.0], [uv_max, 1.0]],
         );
-
         // Interior East wall (at x = x1, facing -X inside cavity)
         push_quad_face_with_uvs(
             buffers,
@@ -792,7 +818,6 @@ fn mesh_basket(
         );
     }
 }
-
 fn push_torch_stick_box(
     buffers: &mut MeshBuffers,
     min_x: f32,
@@ -809,7 +834,6 @@ fn push_torch_stick_box(
     let u_max = 2.0 / 16.0;
     let v_min = 0.0;
     let v_max = 14.0 / 16.0;
-
     // +X face
     push_quad_face_with_uvs(
         buffers,
@@ -830,7 +854,6 @@ fn push_torch_stick_box(
             [u_max, v_max],
         ],
     );
-
     // -X face
     push_quad_face_with_uvs(
         buffers,
@@ -851,7 +874,6 @@ fn push_torch_stick_box(
             [u_max, v_max],
         ],
     );
-
     // +Z face
     push_quad_face_with_uvs(
         buffers,
@@ -872,7 +894,6 @@ fn push_torch_stick_box(
             [u_max, v_max],
         ],
     );
-
     // -Z face
     push_quad_face_with_uvs(
         buffers,
@@ -893,7 +914,6 @@ fn push_torch_stick_box(
             [u_max, v_max],
         ],
     );
-
     // +Y face (top flame cap)
     push_quad_face_with_uvs(
         buffers,
@@ -914,7 +934,6 @@ fn push_torch_stick_box(
             [u_max, u_min],
         ],
     );
-
     // -Y face (bottom base)
     push_quad_face_with_uvs(
         buffers,
@@ -936,7 +955,6 @@ fn push_torch_stick_box(
         ],
     );
 }
-
 fn mesh_torch(
     buffers: &mut MeshBuffers,
     fx: f32,
@@ -953,7 +971,6 @@ fn mesh_torch(
     let b_u_max = 6.0 / 16.0;
     let b_v_min = 3.0 / 16.0;
     let b_v_max = 11.0 / 16.0;
-
     match orientation % 5 {
         0 => {
             // Floor torch (standing centered on floor, compact 10-pixel height)
@@ -963,7 +980,6 @@ fn mesh_torch(
             let z1 = fz + 0.5 + half_w;
             let y0 = fy;
             let y1 = fy + 10.0 / 16.0;
-
             push_torch_stick_box(
                 buffers,
                 x0,
@@ -985,7 +1001,6 @@ fn mesh_torch(
             let z1 = fz + 6.0 / 16.0;
             let y0 = fy + 2.0 / 16.0;
             let y1 = fy + 12.0 / 16.0;
-
             push_torch_stick_box(
                 buffers,
                 x0,
@@ -998,12 +1013,10 @@ fn mesh_torch(
                 frame_count,
                 tint_color,
             );
-
             // Wall bracket connecting wall (z = fz) to torch (z = z0)
             let y_b0 = fy + 3.0 / 16.0;
             let y_b1 = fy + 11.0 / 16.0;
             let bx = fx + 0.5;
-
             // +X side of bracket
             push_quad_face_with_uvs(
                 buffers,
@@ -1053,7 +1066,6 @@ fn mesh_torch(
             let z1 = fz + 12.0 / 16.0;
             let y0 = fy + 2.0 / 16.0;
             let y1 = fy + 12.0 / 16.0;
-
             push_torch_stick_box(
                 buffers,
                 x0,
@@ -1066,13 +1078,11 @@ fn mesh_torch(
                 frame_count,
                 tint_color,
             );
-
             // Wall bracket connecting torch (z = z1) to wall (z = fz + 1.0)
             let y_b0 = fy + 3.0 / 16.0;
             let y_b1 = fy + 11.0 / 16.0;
             let bx = fx + 0.5;
             let wall_z = fz + 1.0;
-
             // +X side of bracket
             push_quad_face_with_uvs(
                 buffers,
@@ -1122,7 +1132,6 @@ fn mesh_torch(
             let z1 = fz + 0.5 + half_w;
             let y0 = fy + 2.0 / 16.0;
             let y1 = fy + 12.0 / 16.0;
-
             push_torch_stick_box(
                 buffers,
                 x0,
@@ -1135,12 +1144,10 @@ fn mesh_torch(
                 frame_count,
                 tint_color,
             );
-
             // Wall bracket connecting wall (x = fx) to torch (x = x0)
             let y_b0 = fy + 3.0 / 16.0;
             let y_b1 = fy + 11.0 / 16.0;
             let bz = fz + 0.5;
-
             // +Z side of bracket
             push_quad_face_with_uvs(
                 buffers,
@@ -1190,7 +1197,6 @@ fn mesh_torch(
             let z1 = fz + 0.5 + half_w;
             let y0 = fy + 2.0 / 16.0;
             let y1 = fy + 12.0 / 16.0;
-
             push_torch_stick_box(
                 buffers,
                 x0,
@@ -1203,13 +1209,11 @@ fn mesh_torch(
                 frame_count,
                 tint_color,
             );
-
             // Wall bracket connecting torch (x = x1) to wall (x = fx + 1.0)
             let y_b0 = fy + 3.0 / 16.0;
             let y_b1 = fy + 11.0 / 16.0;
             let bz = fz + 0.5;
             let wall_x = fx + 1.0;
-
             // +Z side of bracket
             push_quad_face_with_uvs(
                 buffers,
@@ -1253,7 +1257,6 @@ fn mesh_torch(
         }
     }
 }
-
 fn mesh_pebble(
     buffers: &mut MeshBuffers,
     fx: f32,
@@ -1348,7 +1351,6 @@ fn mesh_pebble(
         _ => {}
     }
 }
-
 #[allow(clippy::too_many_arguments)]
 fn push_pebble_element(
     buffers: &mut MeshBuffers,
@@ -1374,7 +1376,6 @@ fn push_pebble_element(
     let y1 = to[1] / 16.0;
     let z0 = from[2] / 16.0;
     let z1 = to[2] / 16.0;
-
     let rot_vert = |p: [f32; 3]| -> [f32; 3] {
         let (rx, rz) = match orientation % 4 {
             0 => (p[0], p[2]),
@@ -1384,7 +1385,6 @@ fn push_pebble_element(
         };
         [fx + rx, fy + p[1], fz + rz]
     };
-
     let rot_norm = |n: [f32; 3]| -> [f32; 3] {
         match orientation % 4 {
             0 => n,
@@ -1393,7 +1393,6 @@ fn push_pebble_element(
             _ => [n[2], n[1], -n[0]],
         }
     };
-
     // North face (-Z)
     {
         let u1 = north_uv[0] / 16.0;
@@ -1415,7 +1414,6 @@ fn push_pebble_element(
             [[u1, v2], [u1, v1], [u2, v1], [u2, v2]],
         );
     }
-
     // South face (+Z)
     {
         let u1 = south_uv[0] / 16.0;
@@ -1437,7 +1435,6 @@ fn push_pebble_element(
             [[u1, v2], [u1, v1], [u2, v1], [u2, v2]],
         );
     }
-
     // East face (+X)
     {
         let u1 = east_uv[0] / 16.0;
@@ -1459,7 +1456,6 @@ fn push_pebble_element(
             [[u2, v2], [u2, v1], [u1, v1], [u1, v2]],
         );
     }
-
     // West face (-X)
     {
         let u1 = west_uv[0] / 16.0;
@@ -1481,7 +1477,6 @@ fn push_pebble_element(
             [[u2, v2], [u2, v1], [u1, v1], [u1, v2]],
         );
     }
-
     // Up face (+Y)
     {
         let u1 = up_uv[0] / 16.0;
@@ -1503,7 +1498,6 @@ fn push_pebble_element(
             [[u1, v1], [u1, v2], [u2, v2], [u2, v1]],
         );
     }
-
     // Down face (-Y)
     {
         let u1 = down_uv[0] / 16.0;
@@ -1526,7 +1520,249 @@ fn push_pebble_element(
         );
     }
 }
+fn mesh_flat_pad(
+    buffers: &mut MeshBuffers,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    voxel: Voxel,
+    texture_layer: u16,
+    frame_count: f32,
+    tint_color: [f32; 4],
+    stem_info: Option<FaceTextureInfo>,
+) {
+    let is_petals = voxel.is_petal_carpet();
+    let y = if is_petals { fy + 0.05 } else { fy + 0.02 };
 
+    // If petal carpet, render supporting vertical stem underneath connecting ground to petals
+    if is_petals {
+        if let Some(stem) = stem_info {
+            let stem_tint = [1.0, 1.0, 1.0, 1.0];
+            let stem_layer = stem.start_layer;
+            let stem_frame_count = stem.frame_count as f32;
+            let uv_cross = [[0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0]];
+            // Diagonal quad A (front-left to back-right)
+            let a0 = [fx, fy, fz];
+            let a1 = [fx, fy + 1.0, fz];
+            let a2 = [fx + 1.0, fy + 1.0, fz + 1.0];
+            let a3 = [fx + 1.0, fy, fz + 1.0];
+            push_quad_face_with_uvs(buffers, [a0, a1, a2, a3], [0.707, 0.0, -0.707], stem_layer, stem_frame_count, stem_tint, uv_cross);
+            push_quad_face_with_uvs(buffers, [a3, a2, a1, a0], [-0.707, 0.0, 0.707], stem_layer, stem_frame_count, stem_tint, uv_cross);
+            // Diagonal quad B (front-right to back-left)
+            let b0 = [fx + 1.0, fy, fz];
+            let b1 = [fx + 1.0, fy + 1.0, fz];
+            let b2 = [fx, fy + 1.0, fz + 1.0];
+            let b3 = [fx, fy, fz + 1.0];
+            push_quad_face_with_uvs(buffers, [b0, b1, b2, b3], [0.707, 0.0, 0.707], stem_layer, stem_frame_count, stem_tint, uv_cross);
+            push_quad_face_with_uvs(buffers, [b3, b2, b1, b0], [-0.707, 0.0, -0.707], stem_layer, stem_frame_count, stem_tint, uv_cross);
+        }
+    }
+
+    // Top face
+    let p0 = [fx, y, fz + 1.0];
+    let p1 = [fx + 1.0, y, fz + 1.0];
+    let p2 = [fx + 1.0, y, fz];
+    let p3 = [fx, y, fz];
+    let uv_top = [[0.0, 1.0], [1.0, 1.0], [1.0, 0.0], [0.0, 0.0]];
+    push_quad_face_with_uvs(buffers, [p0, p1, p2, p3], [0.0, 1.0, 0.0], texture_layer, frame_count, tint_color, uv_top);
+    // Bottom face
+    let b0 = [fx, y, fz];
+    let b1 = [fx + 1.0, y, fz];
+    let b2 = [fx + 1.0, y, fz + 1.0];
+    let b3 = [fx, y, fz + 1.0];
+    let uv_bot = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
+    push_quad_face_with_uvs(buffers, [b0, b1, b2, b3], [0.0, -1.0, 0.0], texture_layer, frame_count, tint_color, uv_bot);
+}
+
+fn mesh_wall_decal(
+    buffers: &mut MeshBuffers,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    orientation: u8,
+    texture_layer: u16,
+    frame_count: f32,
+    tint_color: [f32; 4],
+) {
+    let d = 0.015;
+    let uv_std = [[0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0]];
+    match orientation % 6 {
+        0 => {
+            // Floor flat pad
+            let y = fy + d;
+            let uv_top = [[0.0, 1.0], [1.0, 1.0], [1.0, 0.0], [0.0, 0.0]];
+            let uv_bot = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
+            push_quad_face_with_uvs(buffers, [[fx, y, fz + 1.0], [fx + 1.0, y, fz + 1.0], [fx + 1.0, y, fz], [fx, y, fz]], [0.0, 1.0, 0.0], texture_layer, frame_count, tint_color, uv_top);
+            push_quad_face_with_uvs(buffers, [[fx, y, fz], [fx + 1.0, y, fz], [fx + 1.0, y, fz + 1.0], [fx, y, fz + 1.0]], [0.0, -1.0, 0.0], texture_layer, frame_count, tint_color, uv_bot);
+        }
+        1 => {
+            // Ceiling flat pad
+            let y = fy + 1.0 - d;
+            let uv_down = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
+            let uv_up = [[0.0, 1.0], [1.0, 1.0], [1.0, 0.0], [0.0, 0.0]];
+            push_quad_face_with_uvs(buffers, [[fx, y, fz], [fx + 1.0, y, fz], [fx + 1.0, y, fz + 1.0], [fx, y, fz + 1.0]], [0.0, -1.0, 0.0], texture_layer, frame_count, tint_color, uv_down);
+            push_quad_face_with_uvs(buffers, [[fx, y, fz + 1.0], [fx + 1.0, y, fz + 1.0], [fx + 1.0, y, fz], [fx, y, fz]], [0.0, 1.0, 0.0], texture_layer, frame_count, tint_color, uv_up);
+        }
+        2 => {
+            // Attached to North face (+Z normal)
+            let z = fz + d;
+            push_quad_face_with_uvs(buffers, [[fx, fy, z], [fx, fy + 1.0, z], [fx + 1.0, fy + 1.0, z], [fx + 1.0, fy, z]], [0.0, 0.0, 1.0], texture_layer, frame_count, tint_color, uv_std);
+            push_quad_face_with_uvs(buffers, [[fx + 1.0, fy, z], [fx + 1.0, fy + 1.0, z], [fx, fy + 1.0, z], [fx, fy, z]], [0.0, 0.0, -1.0], texture_layer, frame_count, tint_color, uv_std);
+        }
+        3 => {
+            // Attached to South face (-Z normal)
+            let z = fz + 1.0 - d;
+            push_quad_face_with_uvs(buffers, [[fx + 1.0, fy, z], [fx + 1.0, fy + 1.0, z], [fx, fy + 1.0, z], [fx, fy, z]], [0.0, 0.0, -1.0], texture_layer, frame_count, tint_color, uv_std);
+            push_quad_face_with_uvs(buffers, [[fx, fy, z], [fx, fy + 1.0, z], [fx + 1.0, fy + 1.0, z], [fx + 1.0, fy, z]], [0.0, 0.0, 1.0], texture_layer, frame_count, tint_color, uv_std);
+        }
+        4 => {
+            // Attached to West face (+X normal)
+            let x = fx + d;
+            push_quad_face_with_uvs(buffers, [[x, fy, fz + 1.0], [x, fy + 1.0, fz + 1.0], [x, fy + 1.0, fz], [x, fy, fz]], [1.0, 0.0, 0.0], texture_layer, frame_count, tint_color, uv_std);
+            push_quad_face_with_uvs(buffers, [[x, fy, fz], [x, fy + 1.0, fz], [x, fy + 1.0, fz + 1.0], [x, fy, fz + 1.0]], [-1.0, 0.0, 0.0], texture_layer, frame_count, tint_color, uv_std);
+        }
+        _ => {
+            // Attached to East face (-X normal)
+            let x = fx + 1.0 - d;
+            push_quad_face_with_uvs(buffers, [[x, fy, fz], [x, fy + 1.0, fz], [x, fy + 1.0, fz + 1.0], [x, fy, fz + 1.0]], [-1.0, 0.0, 0.0], texture_layer, frame_count, tint_color, uv_std);
+            push_quad_face_with_uvs(buffers, [[x, fy, fz + 1.0], [x, fy + 1.0, fz + 1.0], [x, fy + 1.0, fz], [x, fy, fz]], [1.0, 0.0, 0.0], texture_layer, frame_count, tint_color, uv_std);
+        }
+    }
+}
+
+fn mesh_cactus(
+    buffers: &mut MeshBuffers,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    top_layer: u16,
+    bottom_layer: u16,
+    side_layer: u16,
+    frame_count: f32,
+    top_tint: [f32; 4],
+    bottom_tint: [f32; 4],
+    side_tint: [f32; 4],
+    is_neighbor_solid: &impl Fn(IVec3) -> bool,
+) {
+    let min_x = fx + 1.0 / 16.0;
+    let max_x = fx + 15.0 / 16.0;
+    let min_y = fy;
+    let max_y = fy + 1.0;
+    let min_z = fz + 1.0 / 16.0;
+    let max_z = fz + 15.0 / 16.0;
+    // Top face
+    if !is_neighbor_solid(IVec3::Y) {
+        let top_uvs = [
+            [1.0 / 16.0, 1.0 / 16.0],
+            [1.0 / 16.0, 15.0 / 16.0],
+            [15.0 / 16.0, 15.0 / 16.0],
+            [15.0 / 16.0, 1.0 / 16.0],
+        ];
+        push_quad_face_with_uvs(
+            buffers,
+            [
+                [min_x, max_y, max_z],
+                [max_x, max_y, max_z],
+                [max_x, max_y, min_z],
+                [min_x, max_y, min_z],
+            ],
+            [0.0, 1.0, 0.0],
+            top_layer,
+            frame_count,
+            top_tint,
+            top_uvs,
+        );
+    }
+    // Bottom face
+    if !is_neighbor_solid(IVec3::NEG_Y) {
+        let bot_uvs = [
+            [1.0 / 16.0, 1.0 / 16.0],
+            [1.0 / 16.0, 15.0 / 16.0],
+            [15.0 / 16.0, 15.0 / 16.0],
+            [15.0 / 16.0, 1.0 / 16.0],
+        ];
+        push_quad_face_with_uvs(
+            buffers,
+            [
+                [min_x, min_y, min_z],
+                [max_x, min_y, min_z],
+                [max_x, min_y, max_z],
+                [min_x, min_y, max_z],
+            ],
+            [0.0, -1.0, 0.0],
+            bottom_layer,
+            frame_count,
+            bottom_tint,
+            bot_uvs,
+        );
+    }
+    let side_uvs = [
+        [1.0 / 16.0, 1.0],
+        [1.0 / 16.0, 0.0],
+        [15.0 / 16.0, 0.0],
+        [15.0 / 16.0, 1.0],
+    ];
+    // +X (East)
+    push_quad_face_with_uvs(
+        buffers,
+        [
+            [max_x, min_y, min_z],
+            [max_x, max_y, min_z],
+            [max_x, max_y, max_z],
+            [max_x, min_y, max_z],
+        ],
+        [1.0, 0.0, 0.0],
+        side_layer,
+        frame_count,
+        side_tint,
+        side_uvs,
+    );
+    // -X (West)
+    push_quad_face_with_uvs(
+        buffers,
+        [
+            [min_x, min_y, max_z],
+            [min_x, max_y, max_z],
+            [min_x, max_y, min_z],
+            [min_x, min_y, min_z],
+        ],
+        [-1.0, 0.0, 0.0],
+        side_layer,
+        frame_count,
+        side_tint,
+        side_uvs,
+    );
+    // +Z (South)
+    push_quad_face_with_uvs(
+        buffers,
+        [
+            [max_x, min_y, max_z],
+            [max_x, max_y, max_z],
+            [min_x, max_y, max_z],
+            [min_x, min_y, max_z],
+        ],
+        [0.0, 0.0, 1.0],
+        side_layer,
+        frame_count,
+        side_tint,
+        side_uvs,
+    );
+    // -Z (North)
+    push_quad_face_with_uvs(
+        buffers,
+        [
+            [min_x, min_y, min_z],
+            [min_x, max_y, min_z],
+            [max_x, max_y, min_z],
+            [max_x, min_y, min_z],
+        ],
+        [0.0, 0.0, -1.0],
+        side_layer,
+        frame_count,
+        side_tint,
+        side_uvs,
+    );
+}
 fn mesh_cross_billboard(
     buffers: &mut MeshBuffers,
     fx: f32,
@@ -1536,19 +1772,20 @@ fn mesh_cross_billboard(
     frame_count: f32,
     tint_color: [f32; 4],
 ) {
+    let top_y = fy + 0.998;
     let p00 = [fx, fy, fz];
-    let p01 = [fx, fy + 1.0, fz];
-    let p11 = [fx + 1.0, fy + 1.0, fz + 1.0];
+    let p01 = [fx, top_y, fz];
+    let p11 = [fx + 1.0, top_y, fz + 1.0];
     let p10 = [fx + 1.0, fy, fz + 1.0];
 
     let q00 = [fx, fy, fz + 1.0];
-    let q01 = [fx, fy + 1.0, fz + 1.0];
-    let q11 = [fx + 1.0, fy + 1.0, fz];
+    let q01 = [fx, top_y, fz + 1.0];
+    let q11 = [fx + 1.0, top_y, fz];
     let q10 = [fx + 1.0, fy, fz];
 
-    let uv_fwd = [[0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0]];
+    let eps = 0.005;
+    let uv_fwd = [[eps, 1.0 - eps], [eps, eps], [1.0 - eps, eps], [1.0 - eps, 1.0 - eps]];
 
-    // Plane 1: from (0,0) to (1,1) diagonal (both front and back faces)
     let n1 = [0.70710677, 0.0, -0.70710677];
     let n1_rev = [-0.70710677, 0.0, 0.70710677];
     push_quad_face_with_uvs(
@@ -1570,7 +1807,6 @@ fn mesh_cross_billboard(
         uv_fwd,
     );
 
-    // Plane 2: from (0,1) to (1,0) diagonal (both front and back faces)
     let n2 = [-0.70710677, 0.0, -0.70710677];
     let n2_rev = [0.70710677, 0.0, 0.70710677];
     push_quad_face_with_uvs(
@@ -1593,7 +1829,6 @@ fn mesh_cross_billboard(
     );
 }
 
-#[allow(clippy::too_many_arguments)]
 fn mesh_bamboo(
     buffers: &mut MeshBuffers,
     fx: f32,
@@ -1615,10 +1850,8 @@ fn mesh_bamboo(
     let max_y = fy + 1.0;
     let min_z = fz + 6.5 / 16.0;
     let max_z = fz + 9.5 / 16.0;
-
     let u_side_min = 6.0 / 16.0;
     let u_side_max = 9.0 / 16.0;
-
     // +X (East)
     push_quad_face_with_uvs(
         buffers,
@@ -1639,7 +1872,6 @@ fn mesh_bamboo(
             [u_side_max, 1.0],
         ],
     );
-
     // -X (West)
     push_quad_face_with_uvs(
         buffers,
@@ -1660,7 +1892,6 @@ fn mesh_bamboo(
             [u_side_max, 1.0],
         ],
     );
-
     // +Z (South)
     push_quad_face_with_uvs(
         buffers,
@@ -1681,7 +1912,6 @@ fn mesh_bamboo(
             [u_side_max, 1.0],
         ],
     );
-
     // -Z (North)
     push_quad_face_with_uvs(
         buffers,
@@ -1702,12 +1932,10 @@ fn mesh_bamboo(
             [u_side_max, 1.0],
         ],
     );
-
     let u_cap_min = 6.0 / 16.0;
     let u_cap_max = 9.0 / 16.0;
     let v_cap_min = 6.0 / 16.0;
     let v_cap_max = 9.0 / 16.0;
-
     // +Y (Top)
     if !cull_top {
         push_quad_face_with_uvs(
@@ -1730,7 +1958,6 @@ fn mesh_bamboo(
             ],
         );
     }
-
     // -Y (Bottom)
     if !cull_bottom {
         push_quad_face_with_uvs(
@@ -1755,3 +1982,147 @@ fn mesh_bamboo(
     }
 }
 
+fn mesh_waterlogged_envelope(
+    world: &impl VoxelAccess,
+    transparent_buffers: &mut MeshBuffers,
+    world_voxel: IVec3,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    textures: &VoxelTextureRegistry,
+) {
+    let water_voxel = Voxel::LiquidWater;
+    let (water_layer, water_frames) =
+        textures.get_face_texture_info(water_voxel, world_voxel, FaceDirection::PositiveY);
+    let mut water_tint = water_voxel.tint_color_at(world_voxel);
+    water_tint[3] = 1.0;
+    let frame_count_f32 = water_frames as f32;
+
+    let is_submerged_boundary = |offset: IVec3| -> bool {
+        let n_pos = world_voxel + offset;
+        let n_voxel = world.get_voxel(n_pos).unwrap_or(Voxel::Air);
+        n_voxel.is_water() || n_voxel.is_marine_flora() || n_voxel.is_coral_fan()
+    };
+
+    let is_solid_opaque = |offset: IVec3| -> bool {
+        let n_pos = world_voxel + offset;
+        let n_voxel = world.get_voxel(n_pos).unwrap_or(Voxel::Air);
+        n_voxel.is_solid_opaque()
+    };
+
+    let is_at_surface = !is_submerged_boundary(IVec3::Y);
+    let surface_offset = if is_at_surface { 0.10 } else { 0.0 };
+
+    let min_x = fx;
+    let max_x = fx + 1.0;
+    let min_y = fy;
+    let max_y = fy + 1.0 - surface_offset;
+    let min_z = fz;
+    let max_z = fz + 1.0;
+
+    // +Y (Water surface) - rendered if air or non-submerged block is above
+    if is_at_surface {
+        push_quad_face(
+            transparent_buffers,
+            [
+                [min_x, max_y, min_z],
+                [min_x, max_y, max_z],
+                [max_x, max_y, max_z],
+                [max_x, max_y, min_z],
+            ],
+            [0.0, 1.0, 0.0],
+            water_layer,
+            frame_count_f32,
+            water_tint,
+        );
+    }
+
+    // -Y (Bottom) - only if bordering air below
+    if !is_submerged_boundary(IVec3::NEG_Y) && !is_solid_opaque(IVec3::NEG_Y) {
+        push_quad_face(
+            transparent_buffers,
+            [
+                [min_x, min_y, max_z],
+                [min_x, min_y, min_z],
+                [max_x, min_y, min_z],
+                [max_x, min_y, max_z],
+            ],
+            [0.0, -1.0, 0.0],
+            water_layer,
+            frame_count_f32,
+            water_tint,
+        );
+    }
+
+    let is_exposed_lateral = |offset: IVec3| -> bool {
+        !is_submerged_boundary(offset) && !is_solid_opaque(offset)
+    };
+
+    // +X (East)
+    if is_exposed_lateral(IVec3::X) {
+        push_quad_face(
+            transparent_buffers,
+            [
+                [max_x, min_y, min_z],
+                [max_x, max_y, min_z],
+                [max_x, max_y, max_z],
+                [max_x, min_y, max_z],
+            ],
+            [1.0, 0.0, 0.0],
+            water_layer,
+            frame_count_f32,
+            water_tint,
+        );
+    }
+
+    // -X (West)
+    if is_exposed_lateral(IVec3::NEG_X) {
+        push_quad_face(
+            transparent_buffers,
+            [
+                [min_x, min_y, max_z],
+                [min_x, max_y, max_z],
+                [min_x, max_y, min_z],
+                [min_x, min_y, min_z],
+            ],
+            [-1.0, 0.0, 0.0],
+            water_layer,
+            frame_count_f32,
+            water_tint,
+        );
+    }
+
+    // +Z (South)
+    if is_exposed_lateral(IVec3::Z) {
+        push_quad_face(
+            transparent_buffers,
+            [
+                [max_x, min_y, max_z],
+                [max_x, max_y, max_z],
+                [min_x, max_y, max_z],
+                [min_x, min_y, max_z],
+            ],
+            [0.0, 0.0, 1.0],
+            water_layer,
+            frame_count_f32,
+            water_tint,
+        );
+    }
+
+    // -Z (North)
+    if is_exposed_lateral(IVec3::NEG_Z) {
+        push_quad_face(
+            transparent_buffers,
+            [
+                [min_x, min_y, min_z],
+                [min_x, max_y, min_z],
+                [max_x, max_y, min_z],
+                [max_x, min_y, min_z],
+            ],
+            [0.0, 0.0, -1.0],
+            water_layer,
+            frame_count_f32,
+            water_tint,
+        );
+    }
+}

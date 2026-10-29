@@ -143,13 +143,15 @@ fn pick_targeted_voxel(
         return;
     }
 
-    selected.0 = Some(voxel);
+    let pick_voxel = voxel.double_tall_bottom_partner().unwrap_or(voxel);
+
+    selected.0 = Some(pick_voxel);
     if let Some(mut hotbar) = hotbar {
         let active = hotbar.active_slot;
-        hotbar.slots[active] = Some(voxel);
+        hotbar.slots[active] = Some(pick_voxel);
     }
 
-    info!("Selected voxel: {}", voxel.label());
+    info!("Selected voxel: {}", pick_voxel.label());
 }
 
 fn edit_voxels(
@@ -244,6 +246,15 @@ fn edit_voxels(
         let existing_voxel = world.get_voxel(target.hit_voxel);
         let existing_extra = world.get_extra_slab(target.hit_voxel);
 
+        if place_voxel_type == Voxel::VegeLilyPad {
+            // Lily pads can ONLY be placed on water surface (+Y face of a water voxel)
+            let is_on_water = target.face_normal == IVec3::Y
+                && existing_voxel.is_some_and(Voxel::is_water);
+            if !is_on_water {
+                return;
+            }
+        }
+
         let edited = if existing_voxel.is_some_and(Voxel::is_torch) {
             // Cannot stack or place anything against or on top of a torch
             Vec::new()
@@ -307,6 +318,90 @@ fn edit_voxels(
                 }
                 placed
             }
+        } else if place_voxel_type == Voxel::VegeCaveVines || place_voxel_type == Voxel::VegeCaveVinesPlant {
+            if target.face_normal == IVec3::Y {
+                return; // cannot place hanging vines on floor
+            }
+            let above_v = world.get_voxel(place_position + IVec3::Y);
+            let has_support = above_v.is_some_and(|v| {
+                v.is_solid_opaque() || v == Voxel::VegeCaveVines || v == Voxel::VegeCaveVinesPlant
+            });
+            if !has_support {
+                return;
+            }
+            let mut placed = place_block(
+                &mut world,
+                &mut modifications,
+                place_position,
+                Voxel::VegeCaveVines, // bottom tip
+            );
+            if !placed.is_empty() {
+                world.set_shape(place_position, BlockShape::CrossBillboard, 0);
+                modifications.record_shape(place_position, BlockShape::CrossBillboard, 0);
+                if let Some(Voxel::VegeCaveVines) = above_v {
+                    let above_pos = place_position + IVec3::Y;
+                    world.set_voxel(above_pos, Voxel::VegeCaveVinesPlant);
+                    modifications.record(above_pos, Voxel::VegeCaveVinesPlant);
+                    placed.push(above_pos);
+                }
+            }
+            placed
+        } else if place_voxel_type == Voxel::Kelp || place_voxel_type == Voxel::KelpPlant
+            || place_voxel_type == Voxel::BullKelp || place_voxel_type == Voxel::BullKelpPlant
+        {
+            let below_v = world.get_voxel(place_position - IVec3::Y);
+            let is_kelp = place_voxel_type == Voxel::Kelp || place_voxel_type == Voxel::KelpPlant;
+            let (tip_voxel, plant_voxel) = if is_kelp {
+                (Voxel::Kelp, Voxel::KelpPlant)
+            } else {
+                (Voxel::BullKelp, Voxel::BullKelpPlant)
+            };
+            let has_support = below_v.is_some_and(|v| {
+                v.is_solid_opaque() || v == tip_voxel || v == plant_voxel
+            });
+            if !has_support {
+                return;
+            }
+            let mut placed = place_block(
+                &mut world,
+                &mut modifications,
+                place_position,
+                tip_voxel,
+            );
+            if !placed.is_empty() {
+                world.set_shape(place_position, BlockShape::CrossBillboard, 0);
+                modifications.record_shape(place_position, BlockShape::CrossBillboard, 0);
+                if let Some(bv) = below_v {
+                    if bv == tip_voxel {
+                        let below_pos = place_position - IVec3::Y;
+                        world.set_voxel(below_pos, plant_voxel);
+                        modifications.record(below_pos, plant_voxel);
+                        placed.push(below_pos);
+                    }
+                }
+            }
+            placed
+        } else if place_voxel_type.default_shape() == BlockShape::WallDecal {
+            let orient = match target.face_normal {
+                IVec3::Y => 0,     // Floor
+                IVec3::NEG_Y => 1, // Ceiling
+                IVec3::Z => 2,     // Attached to South face of hit_voxel -> North wall (-Z) of place_position
+                IVec3::NEG_Z => 3, // Attached to North face of hit_voxel -> South wall (+Z) of place_position
+                IVec3::X => 4,     // Attached to East face of hit_voxel -> West wall (-X) of place_position
+                IVec3::NEG_X => 5, // Attached to West face of hit_voxel -> East wall (+X) of place_position
+                _ => 2,
+            };
+            let placed = place_block(
+                &mut world,
+                &mut modifications,
+                place_position,
+                place_voxel_type,
+            );
+            if !placed.is_empty() {
+                world.set_shape(place_position, BlockShape::WallDecal, orient);
+                modifications.record_shape(place_position, BlockShape::WallDecal, orient);
+            }
+            placed
         } else if place_voxel_type.is_basket() {
             let placed = place_block(
                 &mut world,
@@ -597,6 +692,58 @@ pub fn remove_block(
         } else {
             break;
         }
+    }
+
+    // Kelp cascading upwards
+    let mut kelp_up_pos = block_pos + IVec3::Y;
+    while let Some(v) = world.get_voxel(kelp_up_pos) {
+        if v == Voxel::Kelp || v == Voxel::KelpPlant || v == Voxel::BullKelp || v == Voxel::BullKelpPlant {
+            if remove_voxel(world, modifications, kelp_up_pos) {
+                removed.push(kelp_up_pos);
+                kelp_up_pos += IVec3::Y;
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    // If block directly below this was a kelp plant, it is now the top tip
+    let kelp_below_pos = block_pos - IVec3::Y;
+    if let Some(v) = world.get_voxel(kelp_below_pos) {
+        if v == Voxel::KelpPlant {
+            world.set_voxel(kelp_below_pos, Voxel::Kelp);
+            modifications.record(kelp_below_pos, Voxel::Kelp);
+            removed.push(kelp_below_pos);
+        } else if v == Voxel::BullKelpPlant {
+            world.set_voxel(kelp_below_pos, Voxel::BullKelp);
+            modifications.record(kelp_below_pos, Voxel::BullKelp);
+            removed.push(kelp_below_pos);
+        }
+    }
+
+    // Cave vines hanging below this block (cascade downwards)
+    let mut vine_down_pos = block_pos - IVec3::Y;
+    while let Some(v) = world.get_voxel(vine_down_pos) {
+        if v == Voxel::VegeCaveVines || v == Voxel::VegeCaveVinesPlant {
+            if remove_voxel(world, modifications, vine_down_pos) {
+                removed.push(vine_down_pos);
+                vine_down_pos -= IVec3::Y;
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    // If block directly above this was a cave vines plant, it is now the bottom tip
+    let vine_above_pos = block_pos + IVec3::Y;
+    if let Some(Voxel::VegeCaveVinesPlant) = world.get_voxel(vine_above_pos) {
+        world.set_voxel(vine_above_pos, Voxel::VegeCaveVines);
+        modifications.record(vine_above_pos, Voxel::VegeCaveVines);
+        removed.push(vine_above_pos);
     }
 
     // 2. Wall torches attached to this block:

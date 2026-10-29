@@ -326,6 +326,9 @@ impl Chunk {
                         | BlockShape::Bamboo
                         | BlockShape::CrossBillboard
                         | BlockShape::Cocoon
+                        | BlockShape::FlatPad
+                        | BlockShape::WallDecal
+                        | BlockShape::Cactus
                 )
             }) {
                 self.shapes.remove(&index);

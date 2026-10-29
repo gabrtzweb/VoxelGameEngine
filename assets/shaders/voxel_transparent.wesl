@@ -369,10 +369,6 @@ fn fragment(
     }
 
     var tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, layer);
-    if (actual_frame_count > 1.5) {
-        let next_tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, next_layer);
-        tex_color = mix(tex_color, next_tex_color, frame_blend);
-    }
 
     // Biome / Vertex Tint
     var biome_tint = vertex_output.color.rgb;

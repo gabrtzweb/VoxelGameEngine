@@ -285,8 +285,8 @@ pub struct ClimateGenerator {
 impl Default for ClimateGenerator {
     fn default() -> Self {
         Self {
-            continentalness_freq: 0.0012,
-            temperature_freq: 0.0012,
+            continentalness_freq: 0.0028,
+            temperature_freq: 0.0022,
             humidity_freq: 0.0020,
             warp_amplitude: 36.0,
             dither_amplitude: 7.0,

@@ -74,11 +74,15 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
     let is_torch = (flags & FLAG_TORCH) != 0;
     let is_occupied = matches!(id, 1 | 2);
 
-    let is_collidable = !is_empty
+    let is_collidable = (!is_empty
         && !is_fluid
         && !is_torch
         && (flags & FLAG_CROSS_BILLBOARD) == 0
-        && !is_occupied;
+        && !v.is_flat_pad_const()
+        && !v.is_wall_decal_const()
+        && !is_occupied)
+        || v.is_crystal_cluster_const()
+        || matches!(v, Voxel::VegeLilyPad);
     if is_collidable {
         flags |= FLAG_COLLIDABLE;
     }
@@ -93,9 +97,11 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
             && (flags & FLAG_BASKET) == 0
             && (flags & FLAG_CROSS_BILLBOARD) == 0
             && !v.is_pebble_const()
+            && !v.is_flat_pad_const()
+            && !v.is_wall_decal_const()
             && !matches!(
                 v,
-                Voxel::BambooStalk | Voxel::BambooLeaves
+                Voxel::BambooStalk | Voxel::BambooLeaves | Voxel::VegeCactus
             )
             && !is_occupied);
 
@@ -313,9 +319,65 @@ impl Voxel {
     }
 
     #[inline(always)]
+    pub const fn is_flat_pad_const(self) -> bool {
+        matches!(
+            self,
+            Self::VegeLilyPad
+                | Self::FlowerClover
+                | Self::FlowerPinkPetals
+                | Self::FlowerWhitePetals
+                | Self::FlowerWildflowers
+        )
+    }
+
+    #[inline(always)]
+    pub const fn is_wall_decal_const(self) -> bool {
+        matches!(
+            self,
+            Self::VegeVines
+                | Self::VegeLichen
+                | Self::VegeHangingMoss
+                | Self::VegeHangingRoots
+        )
+    }
+
+    #[inline(always)]
+    pub const fn is_petal_carpet(self) -> bool {
+        matches!(
+            self,
+            Self::FlowerPinkPetals
+                | Self::FlowerWhitePetals
+                | Self::FlowerWildflowers
+                | Self::FlowerClover
+        )
+    }
+
+    #[inline(always)]
+    pub const fn is_crystal_cluster_const(self) -> bool {
+        matches!(
+            self,
+            Self::CrystalAmethystCluster
+                | Self::CrystalAmethystGlinted
+                | Self::CrystalAquamarineCluster
+                | Self::CrystalAquamarineGlinted
+                | Self::CrystalCitrineCluster
+                | Self::CrystalCitrineGlinted
+                | Self::CrystalFluoriteCluster
+                | Self::CrystalFluoriteGlinted
+                | Self::CrystalPinkSaltCluster
+                | Self::CrystalPinkSaltGlinted
+                | Self::CrystalSeleniteCluster
+                | Self::CrystalSeleniteGlinted
+        )
+    }
+
+    #[inline(always)]
     pub const fn is_flora_billboard(self) -> bool {
         let id = self as u16;
-        (id >= 614 && id <= 681) && id != (Self::VegeCactus as u16)
+        (id >= 614 && id <= 681)
+            && id != (Self::VegeCactus as u16)
+            && !self.is_flat_pad_const()
+            && !self.is_wall_decal_const()
     }
 
     #[inline(always)]
@@ -348,8 +410,10 @@ impl Voxel {
                 | Self::ReedCoralFan
                 | Self::Seagrass
                 | Self::BullKelp
+                | Self::BullKelpPlant
                 | Self::Delesseria
                 | Self::Kelp
+                | Self::KelpPlant
                 | Self::RedAlgae
                 | Self::Sargassum
                 | Self::Seaweed
@@ -378,8 +442,7 @@ impl Voxel {
 
     #[inline(always)]
     pub const fn is_transparent_const(self) -> bool {
-        self.is_leaves_const()
-            || matches!(
+        matches!(
                 self,
                 Self::WaterOccupied
                     | Self::LiquidSpringWater
@@ -577,8 +640,10 @@ impl Voxel {
             self,
             Self::Seagrass
                 | Self::BullKelp
+                | Self::BullKelpPlant
                 | Self::Delesseria
                 | Self::Kelp
+                | Self::KelpPlant
                 | Self::RedAlgae
                 | Self::Sargassum
                 | Self::Seaweed

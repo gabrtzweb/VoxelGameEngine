@@ -291,6 +291,9 @@ pub fn deserialize_chunk(bytes: &[u8]) -> Option<Chunk> {
                 8 => BlockShape::CrossBillboard,
                 9 => BlockShape::Bamboo,
                 10 => BlockShape::Cocoon,
+                11 => BlockShape::FlatPad,
+                12 => BlockShape::WallDecal,
+                13 => BlockShape::Cactus,
                 _ => BlockShape::Full,
             };
             chunk.set_shape_raw(idx, shape, orientation);
