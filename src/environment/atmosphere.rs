@@ -15,13 +15,27 @@ pub const NIGHT_MOON_ILLUMINANCE: f32 = 800.0;
 pub const NIGHT_AMBIENT_BRIGHTNESS: f32 = 120.0;
 pub const NIGHT_EXPOSURE_EV100: f32 = 9.0;
 
+/// Subterranean ambient lighting constants:
+/// Independent of whether the sun is up or down in the sky.
+/// Provides steady faint cavern visibility (~180 lx) so stone walls, ores,
+/// and paths remain visible without blinding darkness or daytime light leaks.
+pub const SUBTERRANEAN_AMBIENT_BRIGHTNESS: f32 = 180.0;
+pub const SUBTERRANEAN_AMBIENT_COLOR: Color = Color::srgb(0.55, 0.58, 0.65);
+pub const SUBTERRANEAN_CLEAR_COLOR: Color = Color::srgb(0.02, 0.02, 0.035);
+pub const SUBTERRANEAN_FOG_COLOR: Color = Color::srgb(0.035, 0.038, 0.055);
+
 pub const FOG_START_FACTOR: f32 = 0.50;
 pub const FOG_END_FACTOR: f32 = 0.90;
 
 type CameraAtmosphereQuery<'w, 's> = Single<
     'w,
     's,
-    (&'static mut DistanceFog, &'static mut Exposure),
+    (
+        &'static mut DistanceFog,
+        &'static mut Exposure,
+        &'static mut bevy::render::view::ColorGrading,
+        &'static GlobalTransform,
+    ),
     (With<Camera3d>, With<PlayerCamera>),
 >;
 
@@ -36,9 +50,12 @@ pub fn update_atmosphere(
     lightning: Option<Res<super::weather::LightningState>>,
 ) {
     let t = state.time_of_day;
-    let (mut fog, mut exposure) = camera.into_inner();
+    let (mut fog, mut exposure, mut color_grading, camera_transform) = camera.into_inner();
 
     let is_underwater = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
+    let underground_factor = env_status.as_ref().map_or(0.0, |s| s.underground_factor);
+    let cam_y = camera_transform.translation().y;
+    let deep_subterranean_factor = ((-cam_y) / 48.0).clamp(0.0, 1.0);
 
     if is_underwater {
         let water_fog_color = Color::srgb(0.04, 0.20, 0.35);
@@ -50,6 +67,12 @@ pub fn update_atmosphere(
         fog.directional_light_color = water_fog_color;
         fog.directional_light_exponent = 4.0;
         exposure.ev100 = sample_exposure(t);
+
+        // Underwater color grading
+        color_grading.global.temperature = -0.15;
+        color_grading.global.tint = -0.05;
+        color_grading.midtones.saturation = 1.15;
+        color_grading.midtones.contrast = 1.05;
     } else {
         let biome_atmo = atmo_state.as_ref().map(|s| s.current).unwrap_or_default();
 
@@ -144,6 +167,44 @@ pub fn update_atmosphere(
             }
         }
 
+        // Subterranean Lighting & Atmosphere (Milestone 15.8.2):
+        // Decouple caves from surface sun/moon cycle. Regardless of whether it is noon or midnight
+        // on the surface, caves maintain a consistent, moody subterranean ambient level (~180 lx)
+        // so stone and ores are faintly visible without daytime surface light leaks.
+        if underground_factor > 0.001 {
+            let sub_ambient_target = lerp_f32(SUBTERRANEAN_AMBIENT_BRIGHTNESS, 140.0, deep_subterranean_factor);
+            computed_brightness = lerp_f32(computed_brightness, sub_ambient_target, underground_factor);
+
+            let lerp_rgba = |a: LinearRgba, b: LinearRgba, factor: f32| -> LinearRgba {
+                LinearRgba::new(
+                    a.red + (b.red - a.red) * factor,
+                    a.green + (b.green - a.green) * factor,
+                    a.blue + (b.blue - a.blue) * factor,
+                    a.alpha + (b.alpha - a.alpha) * factor,
+                )
+            };
+
+            computed_ambient = Color::LinearRgba(lerp_rgba(
+                computed_ambient.to_linear(),
+                SUBTERRANEAN_AMBIENT_COLOR.to_linear(),
+                underground_factor,
+            ));
+
+            computed_sky = Color::LinearRgba(lerp_rgba(
+                computed_sky.to_linear(),
+                SUBTERRANEAN_CLEAR_COLOR.to_linear(),
+                underground_factor,
+            ));
+
+            computed_fog = Color::LinearRgba(lerp_rgba(
+                computed_fog.to_linear(),
+                SUBTERRANEAN_FOG_COLOR.to_linear(),
+                underground_factor,
+            ));
+
+            computed_exposure = lerp_f32(computed_exposure, 9.8, underground_factor);
+        }
+
         clear_color.0 = computed_sky;
         ambient.color = computed_ambient;
         ambient.brightness = computed_brightness;
@@ -152,6 +213,20 @@ pub fn update_atmosphere(
         fog.directional_light_color = sample_fog_light_color(t);
         fog.directional_light_exponent = sample_fog_light_exponent(t);
         exposure.ev100 = computed_exposure;
+
+        // Biome Color Grading & Subterranean Grading (Milestone 15.8.1 & 15.8.2):
+        let u_blend = (underground_factor * 0.6 + deep_subterranean_factor * 0.4).min(1.0);
+        let target_temp = lerp_f32(biome_atmo.temperature, -0.06, underground_factor);
+        let target_tint = lerp_f32(biome_atmo.tint, 0.0, underground_factor);
+        let target_saturation = lerp_f32(biome_atmo.saturation, 0.86, u_blend);
+        let target_contrast = lerp_f32(biome_atmo.contrast, 1.16, u_blend);
+        let target_shadow_contrast = lerp_f32(1.0, 1.22, u_blend);
+
+        color_grading.global.temperature = target_temp;
+        color_grading.global.tint = target_tint;
+        color_grading.midtones.saturation = target_saturation;
+        color_grading.midtones.contrast = target_contrast;
+        color_grading.shadows.contrast = target_shadow_contrast;
     }
 }
 
@@ -176,6 +251,7 @@ pub fn sync_fog_distance(
     }
 
     let is_underwater = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
+    let underground_factor = env_status.as_ref().map_or(0.0, |s| s.underground_factor);
 
     if is_underwater {
         fog.falloff = FogFalloff::Linear {
@@ -200,9 +276,17 @@ pub fn sync_fog_distance(
         let chunk_world_size = CHUNK_SIZE as f32 * VOXEL_SIZE;
         let total_chunks = (settings.render_distance + settings.lod_render_distance.max(0)).max(1);
         let render_radius = total_chunks as f32 * chunk_world_size;
+
+        let surface_start = render_radius * FOG_START_FACTOR * biome_mult * weather_mult;
+        let surface_end = render_radius * FOG_END_FACTOR * biome_mult * weather_mult;
+
+        // Subterranean Cavern Fog: closes in smoothly to cloak cave extremities in dark mist
+        let cave_start = 18.0;
+        let cave_end = 56.0;
+
         fog.falloff = FogFalloff::Linear {
-            start: render_radius * FOG_START_FACTOR * biome_mult * weather_mult,
-            end: render_radius * FOG_END_FACTOR * biome_mult * weather_mult,
+            start: lerp_f32(surface_start, cave_start, underground_factor),
+            end: lerp_f32(surface_end, cave_end, underground_factor),
         };
     }
 }
@@ -337,6 +421,10 @@ pub struct BiomeAtmosphere {
     pub fog_distance_multiplier: f32,
     pub ambient_color_filter: LinearRgba,
     pub exposure_offset: f32,
+    pub temperature: f32,
+    pub tint: f32,
+    pub saturation: f32,
+    pub contrast: f32,
 }
 
 impl Default for BiomeAtmosphere {
@@ -346,6 +434,10 @@ impl Default for BiomeAtmosphere {
             fog_distance_multiplier: 1.0,
             ambient_color_filter: LinearRgba::new(1.0, 1.0, 1.0, 1.0),
             exposure_offset: 0.0,
+            temperature: 0.02,
+            tint: 0.0,
+            saturation: 1.04,
+            contrast: 1.02,
         }
     }
 }
@@ -376,6 +468,10 @@ impl BiomeAtmosphere {
             ),
             exposure_offset: self.exposure_offset
                 + (target.exposure_offset - self.exposure_offset) * f,
+            temperature: self.temperature + (target.temperature - self.temperature) * f,
+            tint: self.tint + (target.tint - self.tint) * f,
+            saturation: self.saturation + (target.saturation - self.saturation) * f,
+            contrast: self.contrast + (target.contrast - self.contrast) * f,
         }
     }
 }
@@ -424,49 +520,127 @@ pub fn update_biome_atmosphere_transition(
 pub fn sample_biome_atmosphere(biome: crate::generation::BiomeType) -> BiomeAtmosphere {
     use crate::generation::BiomeType;
     match biome {
-        // Wetlands & Swamps: Low-altitude eerie mist and murky green/cyan haze
+        // Wetlands & Swamps: Murky green/cyan haze, moody humid marsh
         BiomeType::MangroveWetland => BiomeAtmosphere {
             fog_color_filter: LinearRgba::new(0.68, 0.85, 0.72, 1.0),
             fog_distance_multiplier: 0.68,
             ambient_color_filter: LinearRgba::new(0.82, 0.95, 0.86, 1.0),
-            exposure_offset: -0.25,
+            exposure_offset: -0.20,
+            temperature: -0.03,
+            tint: -0.05,
+            saturation: 0.92,
+            contrast: 1.04,
         },
 
-        // Alpine & Highlands: Crisp high-exposure distance fog, bright cyan-white
-        BiomeType::Highlands | BiomeType::Taiga => BiomeAtmosphere {
-            fog_color_filter: LinearRgba::new(0.94, 0.97, 1.06, 1.0),
-            fog_distance_multiplier: 1.15,
-            ambient_color_filter: LinearRgba::new(0.96, 0.98, 1.04, 1.0),
+        // Taiga: Cool alpine pine forest, crisp mountain air, icy clarity
+        BiomeType::Taiga => BiomeAtmosphere {
+            fog_color_filter: LinearRgba::new(0.92, 0.96, 1.05, 1.0),
+            fog_distance_multiplier: 1.12,
+            ambient_color_filter: LinearRgba::new(0.94, 0.97, 1.04, 1.0),
+            exposure_offset: 0.20,
+            temperature: -0.08,
+            tint: 0.02,
+            saturation: 0.98,
+            contrast: 1.10,
+        },
+
+        // Highlands: Frosty mountain peaks, sharp contrast, clear high-altitude skies
+        BiomeType::Highlands => BiomeAtmosphere {
+            fog_color_filter: LinearRgba::new(0.95, 0.98, 1.08, 1.0),
+            fog_distance_multiplier: 1.20,
+            ambient_color_filter: LinearRgba::new(0.96, 0.98, 1.05, 1.0),
             exposure_offset: 0.35,
+            temperature: -0.10,
+            tint: 0.03,
+            saturation: 0.96,
+            contrast: 1.14,
         },
 
-        // Arid Desert & Savanna: Warm golden atmospheric haze
-        BiomeType::Desert | BiomeType::Savanna => BiomeAtmosphere {
-            fog_color_filter: LinearRgba::new(1.06, 0.96, 0.84, 1.0),
-            fog_distance_multiplier: 0.90,
-            ambient_color_filter: LinearRgba::new(1.06, 0.97, 0.86, 1.0),
+        // Arid Desert: Warm golden amber heat, sun-baked sandstone warmth
+        BiomeType::Desert => BiomeAtmosphere {
+            fog_color_filter: LinearRgba::new(1.08, 0.96, 0.82, 1.0),
+            fog_distance_multiplier: 0.92,
+            ambient_color_filter: LinearRgba::new(1.08, 0.97, 0.85, 1.0),
             exposure_offset: 0.15,
+            temperature: 0.14,
+            tint: -0.02,
+            saturation: 1.08,
+            contrast: 1.08,
         },
 
-        // Ocean & Coastal: Deep blue horizon haze
-        BiomeType::AbyssalTrench | BiomeType::OpenOcean | BiomeType::CoastalBeachReef => {
-            BiomeAtmosphere {
-                fog_color_filter: LinearRgba::new(0.88, 0.95, 1.04, 1.0),
-                fog_distance_multiplier: 1.05,
-                ambient_color_filter: LinearRgba::new(0.94, 0.97, 1.02, 1.0),
-                exposure_offset: 0.05,
-            }
-        }
-
-        // Rivers & Lakes: Fresh aquamarine haze
-        BiomeType::RiversLakes => BiomeAtmosphere {
-            fog_color_filter: LinearRgba::new(0.82, 0.92, 0.95, 1.0),
+        // Savanna: Dry golden acacia warmth, sun-bleached grass
+        BiomeType::Savanna => BiomeAtmosphere {
+            fog_color_filter: LinearRgba::new(1.05, 0.98, 0.86, 1.0),
             fog_distance_multiplier: 0.95,
-            ambient_color_filter: LinearRgba::new(0.95, 0.98, 1.00, 1.0),
-            exposure_offset: 0.0,
+            ambient_color_filter: LinearRgba::new(1.05, 0.98, 0.88, 1.0),
+            exposure_offset: 0.10,
+            temperature: 0.10,
+            tint: -0.01,
+            saturation: 1.05,
+            contrast: 1.06,
         },
 
-        // Plains & Forests: Soft golden warmth, clear lush atmosphere
-        BiomeType::Plains | BiomeType::Forest => BiomeAtmosphere::default(),
+        // Shallow Coastal Beach & Reef: Luminous tropical turquoise waters, warm golden sands
+        BiomeType::CoastalBeachReef => BiomeAtmosphere {
+            fog_color_filter: LinearRgba::new(0.88, 0.96, 1.04, 1.0),
+            fog_distance_multiplier: 1.05,
+            ambient_color_filter: LinearRgba::new(0.94, 0.97, 1.02, 1.0),
+            exposure_offset: 0.10,
+            temperature: 0.03,
+            tint: -0.01,
+            saturation: 1.12,
+            contrast: 1.05,
+        },
+
+        // Open Temperate Ocean: Deep oceanic sapphire, vast sea horizons
+        BiomeType::OpenOcean => BiomeAtmosphere {
+            fog_color_filter: LinearRgba::new(0.85, 0.94, 1.05, 1.0),
+            fog_distance_multiplier: 1.10,
+            ambient_color_filter: LinearRgba::new(0.92, 0.96, 1.03, 1.0),
+            exposure_offset: 0.05,
+            temperature: -0.04,
+            tint: 0.0,
+            saturation: 1.08,
+            contrast: 1.04,
+        },
+
+        // Abyssal Ocean Trench: Dark twilight ocean depths, moody navy gloom
+        BiomeType::AbyssalTrench => BiomeAtmosphere {
+            fog_color_filter: LinearRgba::new(0.70, 0.82, 0.98, 1.0),
+            fog_distance_multiplier: 0.80,
+            ambient_color_filter: LinearRgba::new(0.80, 0.88, 0.98, 1.0),
+            exposure_offset: -0.30,
+            temperature: -0.08,
+            tint: -0.02,
+            saturation: 0.86,
+            contrast: 1.12,
+        },
+
+        // Inland Rivers & Lakes: Fresh clear aquamarine, tranquil riverbanks
+        BiomeType::RiversLakes => BiomeAtmosphere {
+            fog_color_filter: LinearRgba::new(0.84, 0.94, 0.98, 1.0),
+            fog_distance_multiplier: 0.98,
+            ambient_color_filter: LinearRgba::new(0.94, 0.98, 1.01, 1.0),
+            exposure_offset: 0.0,
+            temperature: 0.0,
+            tint: -0.02,
+            saturation: 1.06,
+            contrast: 1.03,
+        },
+
+        // Temperate Forest: Rich emerald greens, deep canopy shadows
+        BiomeType::Forest => BiomeAtmosphere {
+            fog_color_filter: LinearRgba::new(0.94, 0.98, 0.94, 1.0),
+            fog_distance_multiplier: 0.95,
+            ambient_color_filter: LinearRgba::new(0.95, 0.98, 0.95, 1.0),
+            exposure_offset: -0.05,
+            temperature: 0.0,
+            tint: -0.01,
+            saturation: 1.06,
+            contrast: 1.05,
+        },
+
+        // Temperate Plains: Balanced, lush, vivid green foliage
+        BiomeType::Plains => BiomeAtmosphere::default(),
     }
 }

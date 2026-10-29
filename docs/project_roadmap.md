@@ -68,7 +68,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **12** | **[First-Person Item Rendering & Creative Utility Tools](#phase-12-first-person-item-rendering--creative-utility-tools-planned)** | **Planned** | 3D held items/blocks in player hand, paint roller, lumberjack tree-felling saw, multi-block sledgehammer, measurement tools |
 | **13** | **[Physics Engine, Fluid Dynamics & Item Drops](#phase-13-physics-engine-fluid-dynamics--item-drops-planned)** | **Planned** | Overhauled fluid propagation, gravity blocks (sand, gravel), 3D floating item drops with magnetism, projectile trajectories |
 | **14** | **[Dynamic Weather System & Meteorological Phenomena](#phase-14-dynamic-weather-system--meteorological-phenomena-completed)** | **Completed** | Multi-state weather simulation (rain, snow, fog, storms), precipitation particles, surface wetness, dynamic snow accumulation |
-| **15** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-15-visual-aesthetics-shaders--atmospheric-fx-overhaul-planned)** | **Planned** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, biome color grading |
+| **15** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-15-visual-aesthetics-shaders--atmospheric-fx-overhaul-completed)** | **Completed** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, biome color grading |
 | **16** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-16-performance-engineering-chunk-streaming--lod-enhancements-planned)** | **Planned** | Worker thread scaling, GPU frustum/occlusion culling, smooth LOD horizon transitions, runtime voxel memory compression |
 | **17** | **[Localization & Multi-Language Support](#phase-17-localization--multi-language-support-completed)** | **Completed** | `lang/` translation files (`en_us`, `pt_br`), comprehensive UI/block/item localization, natural Portuguese grammar, in-game language selector |
 | **18** | **[Controls & Keybinding System](#phase-18-controls--keybinding-system-completed)** | **Completed** | Configurable keybindings for all actions, mouse sensitivity & invert Y options, input conflict detection, Main Menu & Pause integration |
@@ -324,18 +324,18 @@ Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dyna
 
 ---
 
-### Phase 15: Visual Aesthetics, Shaders & Atmospheric FX Overhaul (Planned)
+### Phase 15: Visual Aesthetics, Shaders & Atmospheric FX Overhaul (Completed)
 
-- [ ] **Voxel Ambient Occlusion (Smooth Lighting)**:
-  - Implement per-vertex ambient occlusion calculating corner and edge block occlusion, adding deep geometric contrast to all surfaces.
-- [ ] **Advanced Fluid Shaders & Optical Effects**:
-  - Upgrade water and liquid shaders with optical refraction, dynamic water caustics projected onto river/ocean beds, shoreline foam lines, and underwater visual distortion.
-- [ ] **Bloom & Emissive Post-Processing**:
-  - Integrate HDR bloom post-processing for light-emitting blocks (torches, lanterns, glowing crystals, lava, fireflies, and enchanted ores).
-- [ ] **Volumetric Fog & Crepuscular Rays (God Rays)**:
-  - Add screen-space or volumetric light shafts piercing through forest foliage, mountain ridges, and cavern ceilings.
-- [ ] **Biome Color Grading & Atmospheric Tonemapping**:
-  - Implement biome-specific tonemapping and color grading LUTs for tailored environmental atmospheres (e.g. moody caverns vs vibrant sunlit plains).
+- [x] **Voxel Ambient Occlusion (Smooth Lighting)**:
+  - Implemented per-vertex ambient occlusion calculating corner and edge block occlusion, adding deep geometric contrast to all surfaces.
+- [x] **Advanced Fluid Shaders & Optical Effects**:
+  - Upgraded water and liquid shaders with optical refraction, dynamic water caustics projected onto river/ocean beds, shoreline foam lines, and continuous wave normal reflections.
+- [x] **Bloom & Emissive Post-Processing**:
+  - Integrated HDR bloom post-processing for light-emitting blocks (torches, lanterns, glowing crystals, lava, and fireflies) and handheld dynamic lighting.
+- [x] **Volumetric Fog & Crepuscular Rays (God Rays)**:
+  - Added screen-space crepuscular light shafts with Mie forward scattering, chromatic dispersion, and weather coupling.
+- [x] **Biome Color Grading & Atmospheric Tonemapping**:
+  - Implemented biome-specific tonemapping, subterranean darkness grading, and decoupled cave ambient lighting.
 
 ---
 

@@ -132,6 +132,7 @@ fn sync_celestial_system(
     materials: ResMut<Assets<StandardMaterial>>,
     local_config: Option<Res<crate::core::config::LocalConfig>>,
     weather: Option<Res<weather::WeatherManager>>,
+    env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
 ) {
     let shadows_enabled = local_config
         .as_ref()
@@ -142,6 +143,11 @@ fn sync_celestial_system(
         (1.0 - w.rain_intensity * 0.70 - w.thunder_intensity * 0.25 - w.dust_intensity * 0.60)
             .clamp(0.05, 1.0)
     });
+
+    let underground_factor = env_status.as_ref().map_or(0.0, |s| s.underground_factor);
+    // Sky fill light has no shadow mapping, so it must be completely extinguished underground
+    let fill_underground_dim = (1.0 - underground_factor).clamp(0.0, 1.0);
+    let sun_underground_dim = (1.0 - underground_factor * 0.85).clamp(0.15, 1.0);
 
     celestial::sync_celestial_transforms(
         camera,
@@ -156,9 +162,9 @@ fn sync_celestial_system(
         state.time_of_day,
         state.moon_texture_index(),
         state.moon_phase().illuminance_factor(),
-        DAY_SUN_ILLUMINANCE * weather_dim,
-        DAY_FILL_ILLUMINANCE * weather_dim,
-        NIGHT_MOON_ILLUMINANCE * weather_dim,
+        DAY_SUN_ILLUMINANCE * weather_dim * sun_underground_dim,
+        DAY_FILL_ILLUMINANCE * weather_dim * fill_underground_dim,
+        NIGHT_MOON_ILLUMINANCE * weather_dim * sun_underground_dim,
         shadows_enabled,
     );
 }
