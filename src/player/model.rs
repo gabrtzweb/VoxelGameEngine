@@ -245,7 +245,13 @@ pub fn update_player_model(
 
     let is_paused = menu_state
         .as_ref()
-        .is_some_and(|s| *s.get() == MenuState::Pause || *s.get() == MenuState::Settings || *s.get() == MenuState::Controls);
+        .is_some_and(|s| {
+            *s.get() == MenuState::Pause
+                || *s.get() == MenuState::Settings
+                || *s.get() == MenuState::Controls
+                || *s.get() == MenuState::MainMenu
+                || *s.get() == MenuState::Loading
+        });
 
     let delta_seconds = if is_paused { 0.0 } else { time.delta_secs() };
 

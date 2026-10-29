@@ -145,6 +145,8 @@ pub fn creative_movement(
         *s.get() == crate::menu::MenuState::Pause
             || *s.get() == crate::menu::MenuState::Settings
             || *s.get() == crate::menu::MenuState::Controls
+            || *s.get() == crate::menu::MenuState::MainMenu
+            || *s.get() == crate::menu::MenuState::Loading
     });
 
     if inspector_interaction.active || is_paused {

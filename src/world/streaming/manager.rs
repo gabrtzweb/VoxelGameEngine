@@ -518,16 +518,21 @@ pub fn start_generation_tasks(
     active_tasks: Query<&ChunkGenerationTask>,
     mut queues: ResMut<ChunkStreamingQueues>,
     mut chunk_cache: Option<ResMut<crate::world::ChunkCache>>,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
 ) {
+    let is_loading = menu_state.is_some_and(|s| *s.get() == crate::menu::MenuState::Loading);
+    let max_in_flight = if is_loading { 48 } else { MAX_GENERATION_TASKS_IN_FLIGHT };
+    let max_started = if is_loading { 24 } else { MAX_GENERATION_TASKS_STARTED_PER_FRAME };
+
     let active_count = active_tasks.iter().count();
 
-    if active_count >= MAX_GENERATION_TASKS_IN_FLIGHT {
+    if active_count >= max_in_flight {
         return;
     }
 
-    let available_slots = MAX_GENERATION_TASKS_IN_FLIGHT - active_count;
+    let available_slots = max_in_flight - active_count;
 
-    let tasks_to_start = available_slots.min(MAX_GENERATION_TASKS_STARTED_PER_FRAME);
+    let tasks_to_start = available_slots.min(max_started);
 
     let pool = AsyncComputeTaskPool::get();
 

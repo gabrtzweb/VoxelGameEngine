@@ -66,15 +66,25 @@ pub fn start_meshing_tasks(
     mut meshes: ResMut<Assets<Mesh>>,
     streaming_settings: Option<Res<ChunkStreamingSettings>>,
     streaming_state: Option<Res<ChunkStreamingState>>,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
 ) {
-    let max_in_flight = streaming_settings
-        .as_ref()
-        .map(|s| s.max_meshing_tasks_in_flight)
-        .unwrap_or(DEFAULT_MAX_MESHING_TASKS_IN_FLIGHT);
-    let max_started = streaming_settings
-        .as_ref()
-        .map(|s| s.max_meshing_tasks_started_per_frame)
-        .unwrap_or(DEFAULT_MAX_MESHING_TASKS_STARTED_PER_FRAME);
+    let is_loading = menu_state.is_some_and(|s| *s.get() == crate::menu::MenuState::Loading);
+    let max_in_flight = if is_loading {
+        64
+    } else {
+        streaming_settings
+            .as_ref()
+            .map(|s| s.max_meshing_tasks_in_flight)
+            .unwrap_or(DEFAULT_MAX_MESHING_TASKS_IN_FLIGHT)
+    };
+    let max_started = if is_loading {
+        32
+    } else {
+        streaming_settings
+            .as_ref()
+            .map(|s| s.max_meshing_tasks_started_per_frame)
+            .unwrap_or(DEFAULT_MAX_MESHING_TASKS_STARTED_PER_FRAME)
+    };
 
     let active_count = active_tasks.iter().count();
     if active_count >= max_in_flight {
@@ -171,6 +181,7 @@ pub fn collect_meshing_tasks(
     mut lod_registry: ResMut<LodMeshRegistry>,
     mut meshes: ResMut<Assets<Mesh>>,
     streaming_settings: Option<Res<ChunkStreamingSettings>>,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
 ) {
     if material.grass.is_none()
         && let Some(ref grass_h) = grass_handle
@@ -178,10 +189,15 @@ pub fn collect_meshing_tasks(
         material.grass = Some(grass_h.material.clone());
     }
 
-    let upload_budget = streaming_settings
-        .as_ref()
-        .map(|s| s.mesh_upload_budget)
-        .unwrap_or(DEFAULT_CHUNK_MESH_UPLOADS_PER_FRAME);
+    let is_loading = menu_state.is_some_and(|s| *s.get() == crate::menu::MenuState::Loading);
+    let upload_budget = if is_loading {
+        48
+    } else {
+        streaming_settings
+            .as_ref()
+            .map(|s| s.mesh_upload_budget)
+            .unwrap_or(DEFAULT_CHUNK_MESH_UPLOADS_PER_FRAME)
+    };
 
     let mut uploaded = 0;
     for (entity, mut meshing_task) in &mut tasks {

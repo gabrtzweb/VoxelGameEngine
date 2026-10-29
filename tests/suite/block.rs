@@ -118,14 +118,14 @@ fn test_voxel_discriminants_continuity() {
         );
         assert_eq!(maybe_voxel.unwrap() as u16, id);
     }
-    assert_eq!(Voxel::from_u16(682), None);
+    assert_eq!(Voxel::from_u16(684), None);
     assert_eq!(Voxel::from_u16(1000), None);
 
-    assert_eq!(Voxel::ALL.len(), 679);
+    assert_eq!(Voxel::ALL.len(), 681);
     assert_eq!(Voxel::ALL[0], Voxel::DebugAccept);
     assert_eq!(Voxel::ALL[610], Voxel::FungiVerdigrisCap);
     assert_eq!(Voxel::ALL[611], Voxel::VegeWildgrass);
-    assert_eq!(Voxel::ALL[678], Voxel::FlowerWildflowers);
+    assert_eq!(Voxel::ALL[680], Voxel::BullKelpPlant);
 }
 
 #[test]

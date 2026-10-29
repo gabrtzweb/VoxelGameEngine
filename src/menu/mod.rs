@@ -1,5 +1,6 @@
 pub mod controls;
 pub mod creative_inventory;
+pub mod loading;
 pub mod main_menu;
 pub mod menu_bar;
 pub mod pause;
@@ -24,6 +25,7 @@ use crate::{
 pub enum MenuState {
     #[default]
     MainMenu,
+    Loading,
     None,
     Pause,
     Settings,
@@ -228,6 +230,7 @@ impl Plugin for MenuPlugin {
             .init_resource::<BusyCursorAnimation>()
             .add_plugins((
                 main_menu::MainMenuPlugin,
+                loading::LoadingScreenPlugin,
                 pause::PauseMenuPlugin,
                 settings::SettingsMenuPlugin,
                 controls::ControlsMenuPlugin,
@@ -337,6 +340,13 @@ fn manage_cursor_mode(
         return;
     }
 
+    if *menu_state.get() == MenuState::Loading {
+        if *cursor_mode != CursorMode::Busy {
+            *cursor_mode = CursorMode::Busy;
+        }
+        return;
+    }
+
     // Preserve external cursor mode requests (e.g. Busy, resize, not allowed)
     if matches!(
         *cursor_mode,
@@ -399,7 +409,7 @@ fn handle_menu_key_inputs(
             MenuState::Journal => {
                 next_state.set(MenuState::None);
             }
-            MenuState::MainMenu => {}
+            MenuState::MainMenu | MenuState::Loading => {}
         }
     }
 
@@ -545,7 +555,8 @@ fn manage_menu_blur(
         return;
     }
 
-    let is_menu_open = *menu_state.get() != MenuState::None;
+    let is_menu_open =
+        *menu_state.get() != MenuState::None && *menu_state.get() != MenuState::Loading;
     let blur_intensity = game_settings
         .as_ref()
         .map_or(MenuBlurIntensity::High, |s| s.menu_blur_intensity);
@@ -589,7 +600,11 @@ fn manage_menu_time_pause(
     }
 
     match *menu_state.get() {
-        MenuState::MainMenu | MenuState::Pause | MenuState::Settings | MenuState::Controls => {
+        MenuState::MainMenu
+        | MenuState::Loading
+        | MenuState::Pause
+        | MenuState::Settings
+        | MenuState::Controls => {
             virtual_time.pause();
         }
         MenuState::None | MenuState::Inventory | MenuState::WorldMap | MenuState::Journal => {

@@ -357,7 +357,7 @@ fn handle_main_menu_action_buttons(
                         session.is_active = true;
                     }
                     menu_return_target.0 = MenuState::Pause;
-                    next_state.set(MenuState::None);
+                    next_state.set(MenuState::Loading);
                 }
                 MainMenuButtonAction::Settings => {
                     menu_return_target.0 = MenuState::MainMenu;

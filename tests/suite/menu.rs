@@ -30,6 +30,12 @@ fn test_main_menu_localization() {
         "menu.main.controls",
         "menu.main.quit",
         "menu.main.version",
+        "menu.loading.title",
+        "menu.loading.generating",
+        "menu.loading.meshing",
+        "menu.loading.finalizing",
+        "menu.loading.ready",
+        "menu.loading.tip",
     ];
 
     // English
@@ -53,20 +59,32 @@ fn test_main_menu_localization() {
 fn test_menu_bar_session_visibility_rules() {
     let check_visibility = |in_session: bool, current: MenuState, target: MenuState| -> bool {
         let in_active_session = if in_session { true } else { target != MenuState::MainMenu };
-        in_active_session && current != MenuState::None && current != MenuState::MainMenu
+        in_active_session && current != MenuState::None && current != MenuState::MainMenu && current != MenuState::Loading
     };
 
     // In MainMenu: never visible
     assert!(!check_visibility(false, MenuState::MainMenu, MenuState::MainMenu));
+    assert!(!check_visibility(false, MenuState::Loading, MenuState::MainMenu));
     assert!(!check_visibility(false, MenuState::Settings, MenuState::MainMenu));
     assert!(!check_visibility(false, MenuState::Controls, MenuState::MainMenu));
 
-    // In Active Game Session: visible during in-game menus, hidden during gameplay (None)
+    // In Active Game Session: visible during in-game menus, hidden during gameplay (None) or loading (Loading)
     assert!(!check_visibility(true, MenuState::None, MenuState::Pause));
+    assert!(!check_visibility(true, MenuState::Loading, MenuState::Pause));
     assert!(check_visibility(true, MenuState::Inventory, MenuState::Pause));
     assert!(check_visibility(true, MenuState::Journal, MenuState::Pause));
     assert!(check_visibility(true, MenuState::WorldMap, MenuState::Pause));
     assert!(check_visibility(true, MenuState::Pause, MenuState::Pause));
     assert!(check_visibility(true, MenuState::Settings, MenuState::Pause));
     assert!(check_visibility(true, MenuState::Controls, MenuState::Pause));
+}
+
+#[test]
+fn test_loading_screen_initial_state() {
+    let state = voxel_game_engine::menu::loading::LoadingState::default();
+    assert_eq!(state.display_progress, 0.0);
+    assert_eq!(state.target_progress, 0.0);
+    assert!(!state.is_complete);
+    assert_eq!(state.total_chunks, 0);
+    assert_eq!(state.loaded_chunks, 0);
 }
