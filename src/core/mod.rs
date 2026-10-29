@@ -12,8 +12,8 @@ pub mod window_aspect;
 pub mod window_clip;
 
 pub use config::{
-    AntiAliasingMode, CloudQuality, LocalConfig, PerformancePreset, ShadowQuality, TargetFpsLimit,
-    UpscalingFilter,
+    AntiAliasingMode, CloudQuality, CoatedTextureMode, LocalConfig, PerformancePreset,
+    ShadowQuality, TargetFpsLimit, UpscalingFilter,
 };
 pub use controls::{ActionCategory, ControlSettings, InputAction, InputBinding};
 pub use dev_stats::DevStatsPlugin;

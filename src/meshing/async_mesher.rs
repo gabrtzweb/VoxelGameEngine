@@ -10,7 +10,7 @@ use super::{
     greedy::{ChunkMesher, ChunkMeshes},
     pipeline::{
         ChunkMaterial, ChunkMeshRegistry, LodMeshRegistry, apply_chunk_mesh, remove_chunk_render,
-        remove_lod_render, setup_chunk_material,
+        remove_lod_render, setup_chunk_material, sync_voxel_shader_settings,
     },
 };
 use crate::world::{
@@ -41,9 +41,12 @@ impl Plugin for AsyncMesherPlugin {
             .add_systems(Startup, setup_chunk_material)
             .add_systems(
                 Update,
-                collect_meshing_tasks.run_if(|session: Option<Res<crate::world::WorldSession>>| {
-                    session.map_or(true, |s| s.is_active)
-                }),
+                (
+                    sync_voxel_shader_settings,
+                    collect_meshing_tasks.run_if(|session: Option<Res<crate::world::WorldSession>>| {
+                        session.map_or(true, |s| s.is_active)
+                    }),
+                ),
             )
             .add_systems(
                 PostUpdate,

@@ -8,6 +8,9 @@ import bevy_pbr::render::{
 
 @group(constants::MATERIAL_BIND_GROUP) @binding(100) var voxel_texture_array: texture_2d_array<f32>;
 @group(constants::MATERIAL_BIND_GROUP) @binding(101) var voxel_sampler: sampler;
+@group(constants::MATERIAL_BIND_GROUP) @binding(102) var noise_texture: texture_2d<f32>;
+@group(constants::MATERIAL_BIND_GROUP) @binding(103) var noise_sampler: sampler;
+@group(constants::MATERIAL_BIND_GROUP) @binding(104) var<uniform> voxel_params: vec4<f32>;
 
 // Fast procedural noise using Dave Hoskins' sine-free hash (ultra-fast on integrated GPUs)
 fn hash2_noise(p: vec2<f32>) -> f32 {
@@ -132,7 +135,47 @@ fn fragment(
         tint_color = vec4<f32>(tint_color.rgb * ambient_factor, tint_color.a);
     }
 
-    pbr_input.material.base_color = tex_color * pbr_input.material.base_color * vec4<f32>(tint_color.rgb, 1.0);
+    // Coated Textures (Complementary Reimagined reverse-engineered style):
+    // Samples authentic noise.png seamlessly across continuous world-space coordinates.
+    // Zero block-edge grid lines; natural organic weathering and patina.
+    let is_solid_terrain = (tex_color.a >= 0.99) && !is_emissive;
+    let coat_strength = voxel_params.x;
+    if (is_solid_terrain && coat_strength > 0.01) {
+        let normal = normalize(vertex_output.world_normal);
+        let abs_n = abs(normal);
+        var planar_coord: vec2<f32>;
+        if (abs_n.y > 0.5) {
+            planar_coord = vertex_output.world_position.xz;
+        } else if (abs_n.x > 0.5) {
+            planar_coord = vertex_output.world_position.zy;
+        } else {
+            planar_coord = vertex_output.world_position.xy;
+        }
+
+        // Snap to 16-texels-per-meter global grid (pixel-perfect with block resolution, seamless across blocks):
+        let texel_world = floor(planar_coord * 16.0) / 16.0;
+        let noise_uv = fract(texel_world * (1.0 / 8.0));
+        let noise_sample = textureSample(noise_texture, noise_sampler, noise_uv);
+        let combined_noise = noise_sample.r * 0.75 + noise_sample.g * 0.25;
+        let coat_factor = mix(1.0, 0.72 + combined_noise * 0.56, coat_strength);
+        tex_color = vec4<f32>(tex_color.rgb * coat_factor, tex_color.a);
+    }
+
+    // Directional shading floor (Minecraft standard: Top 1.0, Bottom 0.55, N/S 0.86, E/W 0.78):
+    // Preserves clear geometric distinction across faces under diffuse ambient light.
+    let norm = normalize(vertex_output.world_normal);
+    var dir_shading = 1.0;
+    if (abs(norm.y) > 0.5) {
+        if (norm.y < 0.0) {
+            dir_shading = 0.55;
+        }
+    } else if (abs(norm.z) > 0.5) {
+        dir_shading = 0.86;
+    } else {
+        dir_shading = 0.78;
+    }
+
+    pbr_input.material.base_color = tex_color * pbr_input.material.base_color * vec4<f32>(tint_color.rgb * dir_shading, 1.0);
 
     var out: FragmentOutput;
     if (is_emissive) {

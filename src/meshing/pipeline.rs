@@ -24,6 +24,11 @@ pub struct OpaqueVoxelMaterial {
     #[texture(100, dimension = "2d_array")]
     #[sampler(101)]
     pub texture_array: Handle<Image>,
+    #[texture(102)]
+    #[sampler(103)]
+    pub noise_texture: Handle<Image>,
+    #[uniform(104)]
+    pub params: Vec4,
 }
 
 impl MaterialExtension for OpaqueVoxelMaterial {
@@ -267,6 +272,7 @@ pub struct ChunkMaterial {
 
 pub fn setup_chunk_material(
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
     mut opaque_materials: ResMut<Assets<OpaqueChunkMaterial>>,
     mut transparent_materials: ResMut<Assets<TransparentChunkMaterial>>,
@@ -280,6 +286,11 @@ pub fn setup_chunk_material(
         texture_registry.grass_density = cfg.grass_density;
     }
     let texture_array = images.add(texture_array_image);
+    let noise_texture = asset_server.load("textures/shaders/noise.png");
+
+    let coat_strength = local_config
+        .as_ref()
+        .map_or(0.28, |cfg| cfg.coated_textures.strength());
 
     let opaque = opaque_materials.add(ExtendedMaterial {
         base: StandardMaterial {
@@ -290,6 +301,8 @@ pub fn setup_chunk_material(
         },
         extension: OpaqueVoxelMaterial {
             texture_array: texture_array.clone(),
+            noise_texture,
+            params: Vec4::new(coat_strength, 0.0, 0.0, 0.0),
         },
     });
 
@@ -636,4 +649,17 @@ pub fn remove_lod_render(
 
     remove_render_part(commands, meshes, &mut render_data.opaque);
     remove_render_part(commands, meshes, &mut render_data.transparent);
+}
+
+pub fn sync_voxel_shader_settings(
+    local_config: Option<Res<crate::core::LocalConfig>>,
+    chunk_material: Option<Res<ChunkMaterial>>,
+    mut opaque_materials: ResMut<Assets<OpaqueChunkMaterial>>,
+) {
+    let Some(local_config) = local_config else { return };
+    if !local_config.is_changed() { return };
+    let Some(chunk_material) = chunk_material else { return };
+    if let Some(mut mat) = opaque_materials.get_mut(&chunk_material.opaque) {
+        mat.extension.params.x = local_config.coated_textures.strength();
+    }
 }

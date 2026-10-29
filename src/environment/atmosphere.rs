@@ -6,13 +6,13 @@ use crate::{
     world::{CHUNK_SIZE, VOXEL_SIZE, streaming::ChunkStreamingSettings},
 };
 
-pub const DAY_SUN_ILLUMINANCE: f32 = 8_500.0;
-pub const DAY_FILL_ILLUMINANCE: f32 = 1_200.0;
-pub const DAY_AMBIENT_BRIGHTNESS: f32 = 1_000.0;
-pub const DAY_EXPOSURE_EV100: f32 = 11.1;
+pub const DAY_SUN_ILLUMINANCE: f32 = 7_000.0;
+pub const DAY_FILL_ILLUMINANCE: f32 = 2_800.0;
+pub const DAY_AMBIENT_BRIGHTNESS: f32 = 2_600.0;
+pub const DAY_EXPOSURE_EV100: f32 = 11.2;
 
-pub const NIGHT_MOON_ILLUMINANCE: f32 = 600.0;
-pub const NIGHT_AMBIENT_BRIGHTNESS: f32 = 50.0;
+pub const NIGHT_MOON_ILLUMINANCE: f32 = 800.0;
+pub const NIGHT_AMBIENT_BRIGHTNESS: f32 = 120.0;
 pub const NIGHT_EXPOSURE_EV100: f32 = 9.0;
 
 pub const FOG_START_FACTOR: f32 = 0.50;
@@ -276,9 +276,9 @@ pub fn sample_ambient_color(time_of_day: f32) -> Color {
 pub fn sample_ambient_brightness(time_of_day: f32) -> f32 {
     sample_4stop(
         time_of_day,
-        800.0,
+        2_000.0,
         DAY_AMBIENT_BRIGHTNESS,
-        800.0,
+        2_000.0,
         NIGHT_AMBIENT_BRIGHTNESS,
         lerp_f32,
     )

@@ -267,6 +267,59 @@ impl UpscalingFilter {
     }
 }
 
+/// Coated texture tactile micro-variation intensity.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum CoatedTextureMode {
+    Off,
+    Low,
+    #[default]
+    Medium,
+    High,
+    Ultra,
+}
+
+impl CoatedTextureMode {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Off => "Off",
+            Self::Low => "Low (15%)",
+            Self::Medium => "Medium (28%)",
+            Self::High => "High (42%)",
+            Self::Ultra => "Ultra (58%)",
+        }
+    }
+
+    pub fn strength(self) -> f32 {
+        match self {
+            Self::Off => 0.0,
+            Self::Low => 0.15,
+            Self::Medium => 0.28,
+            Self::High => 0.42,
+            Self::Ultra => 0.58,
+        }
+    }
+
+    pub fn next(self) -> Self {
+        match self {
+            Self::Off => Self::Low,
+            Self::Low => Self::Medium,
+            Self::Medium => Self::High,
+            Self::High => Self::Ultra,
+            Self::Ultra => Self::Off,
+        }
+    }
+
+    pub fn prev(self) -> Self {
+        match self {
+            Self::Off => Self::Ultra,
+            Self::Low => Self::Off,
+            Self::Medium => Self::Low,
+            Self::High => Self::Medium,
+            Self::Ultra => Self::High,
+        }
+    }
+}
+
 /// Menu background blur depth of field intensity.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum MenuBlurIntensity {
@@ -535,6 +588,38 @@ pub struct LocalConfig {
     /// Dynamic wind-blown loose grass blade particles.
     #[serde(default = "default_grass_particles")]
     pub grass_particles: bool,
+
+    /// Coated texture strength (Off, Low, Medium, High, Ultra).
+    #[serde(default = "default_coated_textures")]
+    pub coated_textures: CoatedTextureMode,
+
+    /// Procedural wind waving on flora, crops, and tree leaves.
+    #[serde(default = "default_waving_foliage")]
+    pub waving_foliage: bool,
+
+    /// Pixelated shadows snapped to block texel grid.
+    #[serde(default = "default_pixelated_shadows")]
+    pub pixelated_shadows: bool,
+
+    /// HDR bloom optical glow for torches, lava, and glowing blocks.
+    #[serde(default = "default_hdr_bloom")]
+    pub hdr_bloom: bool,
+}
+
+fn default_coated_textures() -> CoatedTextureMode {
+    CoatedTextureMode::Medium
+}
+
+fn default_waving_foliage() -> bool {
+    true
+}
+
+fn default_pixelated_shadows() -> bool {
+    true
+}
+
+fn default_hdr_bloom() -> bool {
+    true
 }
 
 fn default_grass_enabled() -> bool {
@@ -771,6 +856,10 @@ impl Default for LocalConfig {
             grass_style: default_grass_style(),
             grass_density: default_grass_density(),
             grass_particles: default_grass_particles(),
+            coated_textures: default_coated_textures(),
+            waving_foliage: default_waving_foliage(),
+            pixelated_shadows: default_pixelated_shadows(),
+            hdr_bloom: default_hdr_bloom(),
         }
     }
 }

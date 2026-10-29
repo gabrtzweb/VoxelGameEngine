@@ -5,7 +5,9 @@ use crate::{
     audio::AudioSettings,
     core::{
         AppFont, DynamicFpsSettings, LocalConfig, Localization, PerformancePreset,
-        config::{AntiAliasingMode, CloudQuality, ShadowQuality, TargetFpsLimit},
+        config::{
+            AntiAliasingMode, CloudQuality, CoatedTextureMode, ShadowQuality, TargetFpsLimit,
+        },
         text_shadow_default,
     },
     environment::EnvironmentState,
@@ -23,6 +25,7 @@ pub enum SettingsTab {
     Video,
     Graphics,
     World,
+    Shaders,
     Audio,
 }
 
@@ -40,6 +43,9 @@ struct GraphicsSettingsSection;
 
 #[derive(Component)]
 struct WorldSettingsSection;
+
+#[derive(Component)]
+struct ShadersSettingsSection;
 
 #[derive(Component)]
 struct AudioSettingsSection;
@@ -107,8 +113,25 @@ enum SettingsAction {
     IncMenuBlur,
     DecBackgroundDimming,
     IncBackgroundDimming,
+    DecCoatedTextures,
+    IncCoatedTextures,
+    ToggleWavingFoliage,
+    TogglePixelatedShadows,
+    ToggleHdrBloom,
     Back,
 }
+
+#[derive(Component)]
+struct CoatedTexturesLabel;
+
+#[derive(Component)]
+struct WavingFoliageLabel;
+
+#[derive(Component)]
+struct PixelatedShadowsLabel;
+
+#[derive(Component)]
+struct HdrBloomLabel;
 
 #[derive(Component)]
 struct ProceduralGrassLabel;
@@ -211,6 +234,16 @@ struct AmbientVolLabel;
 
 #[derive(Component)]
 struct LanguageLabel;
+
+fn format_coated_textures(mode: CoatedTextureMode, loc: &Localization) -> String {
+    match mode {
+        CoatedTextureMode::Off => loc.t("coated_textures.off").to_string(),
+        CoatedTextureMode::Low => loc.t("coated_textures.low").to_string(),
+        CoatedTextureMode::Medium => loc.t("coated_textures.medium").to_string(),
+        CoatedTextureMode::High => loc.t("coated_textures.high").to_string(),
+        CoatedTextureMode::Ultra => loc.t("coated_textures.ultra").to_string(),
+    }
+}
 
 fn format_screen_mode(mode: ScreenMode, loc: &Localization) -> String {
     match mode {
@@ -481,6 +514,15 @@ fn spawn_settings_menu(
                             loc.t("menu.settings.tab_world"),
                             SettingsTab::World,
                             *settings_tab == SettingsTab::World,
+                            font_handle.as_ref(),
+                            &btn_normal,
+                            &btn_hover,
+                        );
+                        spawn_tab_button(
+                            tab_bar,
+                            loc.t("menu.settings.tab_shaders"),
+                            SettingsTab::Shaders,
+                            *settings_tab == SettingsTab::Shaders,
                             font_handle.as_ref(),
                             &btn_normal,
                             &btn_hover,
@@ -1059,6 +1101,115 @@ fn spawn_settings_menu(
                             });
                     });
 
+                    // 2-Column Shaders & Visual FX Settings Container
+                    card.spawn((
+                        ShadersSettingsSection,
+                        Node {
+                            display: if *settings_tab == SettingsTab::Shaders {
+                                Display::Flex
+                            } else {
+                                Display::None
+                            },
+                            flex_direction: FlexDirection::Row,
+                            column_gap: px(24.0),
+                            align_items: AlignItems::FlexStart,
+                            ..default()
+                        },
+                    ))
+                    .with_children(|columns| {
+                        // Left Column: Materials & Lighting
+                        columns
+                            .spawn(Node {
+                                display: Display::Flex,
+                                flex_direction: FlexDirection::Column,
+                                row_gap: px(10.0),
+                                width: px(330.0),
+                                ..default()
+                            })
+                            .with_children(|col_left| {
+                                // Coated Textures Stepper
+                                spawn_stepper_row(
+                                    col_left,
+                                    loc.t("menu.settings.coated_textures"),
+                                    format_coated_textures(local_config.coated_textures, &loc),
+                                    SettingsAction::DecCoatedTextures,
+                                    SettingsAction::IncCoatedTextures,
+                                    CoatedTexturesLabel,
+                                    font_handle.as_ref(),
+                                    &small_normal,
+                                    &small_hover,
+                                );
+
+                                // Pixelated Shadows Toggle
+                                spawn_toggle_button(
+                                    col_left,
+                                    SettingsAction::TogglePixelatedShadows,
+                                    format!(
+                                        "{}: {}",
+                                        loc.t("menu.settings.pixelated_shadows"),
+                                        if local_config.pixelated_shadows {
+                                            loc.t("common.enabled")
+                                        } else {
+                                            loc.t("common.disabled")
+                                        }
+                                    ),
+                                    PixelatedShadowsLabel,
+                                    font_handle.as_ref(),
+                                    &btn_normal,
+                                    &btn_hover,
+                                );
+
+                                // HDR Bloom & Glow Toggle
+                                spawn_toggle_button(
+                                    col_left,
+                                    SettingsAction::ToggleHdrBloom,
+                                    format!(
+                                        "{}: {}",
+                                        loc.t("menu.settings.hdr_bloom"),
+                                        if local_config.hdr_bloom {
+                                            loc.t("common.enabled")
+                                        } else {
+                                            loc.t("common.disabled")
+                                        }
+                                    ),
+                                    HdrBloomLabel,
+                                    font_handle.as_ref(),
+                                    &btn_normal,
+                                    &btn_hover,
+                                );
+                            });
+
+                        // Right Column: Dynamic Motion & Foliage
+                        columns
+                            .spawn(Node {
+                                display: Display::Flex,
+                                flex_direction: FlexDirection::Column,
+                                row_gap: px(10.0),
+                                width: px(330.0),
+                                ..default()
+                            })
+                            .with_children(|col_right| {
+                                // Waving Foliage & Leaves Toggle
+                                spawn_toggle_button(
+                                    col_right,
+                                    SettingsAction::ToggleWavingFoliage,
+                                    format!(
+                                        "{}: {}",
+                                        loc.t("menu.settings.waving_foliage"),
+                                        if local_config.waving_foliage {
+                                            loc.t("common.enabled")
+                                        } else {
+                                            loc.t("common.disabled")
+                                        }
+                                    ),
+                                    WavingFoliageLabel,
+                                    font_handle.as_ref(),
+                                    &btn_normal,
+                                    &btn_hover,
+                                );
+                            });
+                    });
+
                     // Audio Settings Container
                     card.spawn((
                         AudioSettingsSection,
@@ -1421,7 +1572,7 @@ fn spawn_tab_button(
                 ..default()
             },
             Node {
-                width: px(160.0),
+                width: px(126.0),
                 height: px(34.0),
                 display: Display::Flex,
                 justify_content: JustifyContent::Center,
@@ -1867,6 +2018,21 @@ fn handle_settings_buttons(
                     let _ = local_config.save();
                     sync_config = false;
                 }
+                SettingsAction::DecCoatedTextures => {
+                    local_config.coated_textures = local_config.coated_textures.prev();
+                }
+                SettingsAction::IncCoatedTextures => {
+                    local_config.coated_textures = local_config.coated_textures.next();
+                }
+                SettingsAction::ToggleWavingFoliage => {
+                    local_config.waving_foliage = !local_config.waving_foliage;
+                }
+                SettingsAction::TogglePixelatedShadows => {
+                    local_config.pixelated_shadows = !local_config.pixelated_shadows;
+                }
+                SettingsAction::ToggleHdrBloom => {
+                    local_config.hdr_bloom = !local_config.hdr_bloom;
+                }
                 SettingsAction::Back => {
                     next_state.set(menu_return_target.0);
                     sync_config = false;
@@ -1973,6 +2139,12 @@ fn update_settings_labels(
             Option<&GrassStyleLabel>,
             Option<&GrassDensityLabel>,
         ),
+        (
+            Option<&CoatedTexturesLabel>,
+            Option<&WavingFoliageLabel>,
+            Option<&PixelatedShadowsLabel>,
+            Option<&HdrBloomLabel>,
+        ),
     )>,
 ) {
     let chunk_changed = chunk_settings.is_changed();
@@ -2019,6 +2191,12 @@ fn update_settings_labels(
             proc_grass,
             grass_style,
             grass_density,
+        ),
+        (
+            coated_textures,
+            waving_foliage,
+            pixelated_shadows,
+            hdr_bloom,
         ),
     ) in &mut labels_query
     {
@@ -2077,6 +2255,38 @@ fn update_settings_labels(
                 );
             } else if grass_density.is_some() {
                 text.0 = format_grass_density(local_config.grass_density, &loc);
+            } else if coated_textures.is_some() {
+                text.0 = format_coated_textures(local_config.coated_textures, &loc);
+            } else if waving_foliage.is_some() {
+                text.0 = format!(
+                    "{}: {}",
+                    loc.t("menu.settings.waving_foliage"),
+                    if local_config.waving_foliage {
+                        loc.t("common.enabled")
+                    } else {
+                        loc.t("common.disabled")
+                    }
+                );
+            } else if pixelated_shadows.is_some() {
+                text.0 = format!(
+                    "{}: {}",
+                    loc.t("menu.settings.pixelated_shadows"),
+                    if local_config.pixelated_shadows {
+                        loc.t("common.enabled")
+                    } else {
+                        loc.t("common.disabled")
+                    }
+                );
+            } else if hdr_bloom.is_some() {
+                text.0 = format!(
+                    "{}: {}",
+                    loc.t("menu.settings.hdr_bloom"),
+                    if local_config.hdr_bloom {
+                        loc.t("common.enabled")
+                    } else {
+                        loc.t("common.disabled")
+                    }
+                );
             }
         }
         if game_changed {
@@ -2237,6 +2447,7 @@ fn update_settings_tab_view(
             With<VideoSettingsSection>,
             Without<GraphicsSettingsSection>,
             Without<WorldSettingsSection>,
+            Without<ShadersSettingsSection>,
             Without<AudioSettingsSection>,
         ),
     >,
@@ -2246,6 +2457,7 @@ fn update_settings_tab_view(
             With<GraphicsSettingsSection>,
             Without<VideoSettingsSection>,
             Without<WorldSettingsSection>,
+            Without<ShadersSettingsSection>,
             Without<AudioSettingsSection>,
         ),
     >,
@@ -2255,6 +2467,17 @@ fn update_settings_tab_view(
             With<WorldSettingsSection>,
             Without<VideoSettingsSection>,
             Without<GraphicsSettingsSection>,
+            Without<ShadersSettingsSection>,
+            Without<AudioSettingsSection>,
+        ),
+    >,
+    mut shaders_section_query: Query<
+        &mut Node,
+        (
+            With<ShadersSettingsSection>,
+            Without<VideoSettingsSection>,
+            Without<GraphicsSettingsSection>,
+            Without<WorldSettingsSection>,
             Without<AudioSettingsSection>,
         ),
     >,
@@ -2265,6 +2488,7 @@ fn update_settings_tab_view(
             Without<VideoSettingsSection>,
             Without<GraphicsSettingsSection>,
             Without<WorldSettingsSection>,
+            Without<ShadersSettingsSection>,
         ),
     >,
 ) {
@@ -2290,6 +2514,14 @@ fn update_settings_tab_view(
 
     for mut node in &mut world_section_query {
         node.display = if *settings_tab == SettingsTab::World {
+            Display::Flex
+        } else {
+            Display::None
+        };
+    }
+
+    for mut node in &mut shaders_section_query {
+        node.display = if *settings_tab == SettingsTab::Shaders {
             Display::Flex
         } else {
             Display::None

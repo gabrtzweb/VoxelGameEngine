@@ -200,8 +200,8 @@ pub fn setup_celestial(
     commands.spawn((
         SkyFillLight,
         DirectionalLight {
-            color: Color::srgb(0.62, 0.72, 0.90),
-            illuminance: 2_200.0,
+            color: Color::srgb(0.68, 0.78, 0.95),
+            illuminance: 2_800.0,
             shadow_maps_enabled: false,
             ..default()
         },
@@ -373,7 +373,7 @@ pub fn sync_celestial_transforms(
     fill_l.illuminance = sun_elev.powf(0.5) * day_fill_illuminance;
     let fill_dir = Vec3::new(sun_dir.x * 0.6, -0.80, sun_dir.z * 0.6).normalize();
     *fill_lt = Transform::default().looking_to(fill_dir, Vec3::Y);
-    fill_l.color = Color::srgb(0.60, 0.74, 0.96);
+    fill_l.color = Color::srgb(0.68, 0.78, 0.95);
 }
 
 fn load_celestial_images() -> (Image, [Image; 8]) {

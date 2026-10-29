@@ -1786,12 +1786,13 @@ fn mesh_cross_billboard(
     let eps = 0.005;
     let uv_fwd = [[eps, 1.0 - eps], [eps, eps], [1.0 - eps, eps], [1.0 - eps, 1.0 - eps]];
 
-    let n1 = [0.70710677, 0.0, -0.70710677];
-    let n1_rev = [-0.70710677, 0.0, 0.70710677];
+    // Upward-facing normal for cross-billboards ensures uniform sky & sunlight illumination
+    // on both sides, identical to Minecraft's flora lighting model.
+    let n_up = [0.0, 1.0, 0.0];
     push_quad_face_with_uvs(
         buffers,
         [p00, p01, p11, p10],
-        n1,
+        n_up,
         texture_layer,
         frame_count,
         tint_color,
@@ -1800,19 +1801,17 @@ fn mesh_cross_billboard(
     push_quad_face_with_uvs(
         buffers,
         [p10, p11, p01, p00],
-        n1_rev,
+        n_up,
         texture_layer,
         frame_count,
         tint_color,
         uv_fwd,
     );
 
-    let n2 = [-0.70710677, 0.0, -0.70710677];
-    let n2_rev = [0.70710677, 0.0, 0.70710677];
     push_quad_face_with_uvs(
         buffers,
         [q00, q01, q11, q10],
-        n2,
+        n_up,
         texture_layer,
         frame_count,
         tint_color,
@@ -1821,7 +1820,7 @@ fn mesh_cross_billboard(
     push_quad_face_with_uvs(
         buffers,
         [q10, q11, q01, q00],
-        n2_rev,
+        n_up,
         texture_layer,
         frame_count,
         tint_color,

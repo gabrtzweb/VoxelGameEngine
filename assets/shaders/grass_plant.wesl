@@ -126,7 +126,7 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
     out.world_position = vec4<f32>(world_pos, 1.0);
     out.position = position_world_to_clip(world_pos);
     out.uv = vertex_no_morph.uv;
-    out.world_normal = vertex_no_morph.normal;
+    out.world_normal = vec3<f32>(0.0, 1.0, 0.0);
     out.color = vertex_no_morph.color;
 
     return out;
