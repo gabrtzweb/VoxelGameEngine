@@ -136,6 +136,7 @@ src/
 ├── generation/
 │   ├── biome.rs
 │   ├── caves.rs
+│   ├── flora.rs
 │   ├── generator.rs
 │   ├── inspector.rs
 │   ├── mod.rs
