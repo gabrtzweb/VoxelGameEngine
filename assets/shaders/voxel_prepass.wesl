@@ -70,7 +70,7 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
             out.world_position.y -= abs(current) * 0.18 * height;
 
         } else if (anim_type > 2.5 && anim_type < 3.5) {
-            // Type 3: Tree Leaves (Complementary-style ambient canopy rustle)
+            // Type 3: Tree Leaves (ambient canopy rustle)
             // Subtle, continuous spatial wave so voxel edges remain tightly cohesive:
             let leaf_wave = sin(time * 2.5 + pos.x * 0.75 + pos.y * 0.60 + pos.z * 0.75) * 0.020 * wind_intensity;
             let leaf_flutter = cos(time * 4.4 + pos.x * 2.2 - pos.z * 1.9) * 0.009 * wind_intensity;

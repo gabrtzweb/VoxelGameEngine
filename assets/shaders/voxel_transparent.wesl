@@ -6,7 +6,7 @@ import bevy_pbr::{
         pbr_types,
         pbr_fragment::pbr_input_from_standard_material,
         pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
-        mesh_view_bindings::globals,
+        mesh_view_bindings::{globals, view},
     },
     prepass::utils as prepass_utils,
 };
@@ -93,6 +93,19 @@ fn organic_foam_noise(pos: vec2<f32>, time: f32) -> f32 {
     let n3 = simplex_noise2((ROT_FOAM_1 * ROT_FOAM_2) * (p * 4.6) - drift1 * 1.4) * 0.25;
 
     return clamp((n1 + n2 + n3) * 0.35 + 0.5, 0.0, 1.0);
+}
+
+// Multi-layer simplex caustic web projected onto submerged terrain
+fn calculate_caustics(pos_xz: vec2<f32>, time: f32) -> f32 {
+    let p1 = pos_xz * 0.45 + vec2<f32>(time * 0.28, time * 0.18);
+    let p2 = pos_xz * 0.38 - vec2<f32>(time * 0.22, -time * 0.25);
+
+    let n1 = simplex_noise2(p1);
+    let n2 = simplex_noise2(p2);
+    let c1 = 1.0 - abs(n1);
+    let c2 = 1.0 - abs(n2);
+    let caustic = pow(c1 * c2, 1.8) * 2.2;
+    return caustic;
 }
 
 // ==============================================================================
@@ -224,8 +237,20 @@ fn calculate_fluid_wave_data(pos_xz: vec2<f32>, time: f32) -> WaveData {
 }
 
 // ==============================================================================
-// 3. Vertex Shader: Physical 3D Water & Fluid Surface Displacement
+// 3. Vertex Shader: Water Surface Displacement
 // ==============================================================================
+
+// Block-aligned travelling swell: a pure function of WORLD xz + time, so neighbouring quads and
+// chunks always agree on the surface height.
+fn surface_wave_offset(world_xz: vec2<f32>, time: f32) -> f32 {
+    let wave_time = time * 5.5;
+    let p = world_xz * 13.0;
+    var wave = sin(wave_time * 0.72 - p.y * 0.135 + p.x * 0.065);
+    wave += sin(wave_time * 0.48 - p.y * 0.095 + p.x * 0.052);
+    wave *= 0.1;
+    return wave * 0.125 - 0.05;
+}
+
 
 @vertex
 fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
@@ -251,21 +276,20 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
     let time = max(globals.time, 0.0);
     let surface_type = round(vertex_no_morph.color.a);
 
-    // Apply physical Y-axis wave displacement to upward-facing fluid surfaces ONLY
-    if (out.world_normal.y > 0.5) {
-        if (surface_type > 0.5 && surface_type < 1.5) {
-            // Water: full physical waves
-            let wave_h = calculate_wave_height(out.world_position.xz, time);
-            out.world_position.y += wave_h;
-        } else if (surface_type > 1.5) {
-            // Generic Fluid: toned-down, gentle viscous undulation
-            let wave_h = calculate_fluid_wave_height(out.world_position.xz, time);
-            out.world_position.y += wave_h;
+    // Surface wave: applied only to vertices that are not on a block floor line (fract(y) > 0.06).
+    // Because fluid quads are meshed 1x1 every corner samples the same field, so waves are seamless
+    // across blocks and chunk borders.
+    if (surface_type > 0.5 && surface_type < 2.5) {
+        if (fract(out.world_position.y + 0.005) > 0.06) {
+            var wave_scale = 1.0;
+            if (surface_type > 1.5) {
+                wave_scale = 0.4; // viscous non-water fluids ripple less
+            }
+            out.world_position.y += surface_wave_offset(out.world_position.xz, time) * wave_scale;
         }
-        // surface_type < 0.5 (Solid Transparent): strictly ZERO displacement
     }
 
-    // Clip position projected from the physically displaced world coordinates
+    // Clip position projected from the world coordinates
     out.position = position_world_to_clip(out.world_position.xyz);
 }
 
@@ -369,6 +393,10 @@ fn fragment(
     }
 
     var tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, layer);
+    if (frame_blend > 0.001) {
+        let tex_next = textureSample(voxel_texture_array, voxel_sampler, uv, next_layer);
+        tex_color = mix(tex_color, tex_next, frame_blend);
+    }
 
     // Biome / Vertex Tint
     var biome_tint = vertex_output.color.rgb;
@@ -382,51 +410,76 @@ fn fragment(
     var final_alpha = tex_color.a;
 
     if (surface_type > 0.5 && surface_type < 1.5) {
-        // --- 1. Water: Volumetric Depth & Organic Seafoam ---
-        var depth_dist: f32 = 5.0;
+        // --- 1. Water: Visible Pixel-Art Texture, Progressive Depth Darkening & Foam ---
+        var depth_dist: f32 = 16.0;
+        var y_pos_dif: f32 = -16.0;
 @if(DEPTH_PREPASS) {
         let floor_ndc = prepass_utils::prepass_depth(vertex_output.position, 0u);
-        // In reverse-Z depth prepass, floor_ndc <= 0.00001 indicates clear depth / far plane (unrendered background)
         if (floor_ndc <= 0.00001) {
-            depth_dist = 12.0;
+            depth_dist = 24.0;
         } else {
             let floor_view_z = depth_ndc_to_view_z(floor_ndc);
             let water_view_z = position_world_to_view(vertex_output.world_position.xyz).z;
-            depth_dist = clamp(max(0.0, water_view_z - floor_view_z), 0.0, 24.0);
+            depth_dist = clamp(max(0.0, water_view_z - floor_view_z), 0.0, 32.0);
+
+            let cam_pos = view.world_position;
+            let to_frag = vertex_output.world_position.xyz - cam_pos;
+            if (abs(water_view_z) > 0.0001) {
+                let ratio = max(floor_view_z / water_view_z, 1.0);
+                let floor_y = cam_pos.y + to_frag.y * ratio;
+                y_pos_dif = floor_y - vertex_output.world_position.y;
+            }
         }
 }
 
-        let shore_fade = smoothstep(0.0, 1.2, depth_dist);
-        let tex_a = max(tex_color.a, 0.1);
-        let shallow_alpha = mix(0.20, tex_a, shore_fade);
-        let depth_opacity = smoothstep(1.5, 12.0, depth_dist);
-        let base_water_alpha = mix(shallow_alpha, 0.98, depth_opacity);
+        // Texture Preservation:
+        // Boost the animated ripple contrast so the authentic pixel-art water texture is
+        // crisp, vivid and clearly visible on the surface.
+        let luma = dot(base_pixel_color, vec3<f32>(0.299, 0.587, 0.114));
+        let texture_detail = mix(vec3<f32>(luma), base_pixel_color, 1.35) * 1.15;
 
-        let shallow_tint = vec3<f32>(1.00, 1.04, 1.08);
-        let mid_tint     = vec3<f32>(0.45, 0.70, 0.88);
-        let deep_tint    = vec3<f32>(0.06, 0.16, 0.32);
+        // Progressive Depth Absorption:
+        // Shallows (0..2m): alpha ~0.62..0.80, bright clear texture with seabed visible below.
+        // Medium depth (2..5m): alpha ~0.80..0.94, water shifts to richer deep blue.
+        // Deep water (5m+ / open ocean): alpha ~0.98, heavily darkened into oceanic navy abyss,
+        // completely concealing the seabed from the surface.
+        let depth_factor = 1.0 - exp(-depth_dist * 0.45);
+        let water_alpha_base = mix(0.62, 0.98, depth_factor);
+        let depth_darkening = mix(1.0, 0.12, pow(depth_factor, 1.25));
+        let depth_chroma = mix(vec3<f32>(1.0, 1.02, 1.05), vec3<f32>(0.35, 0.65, 1.18), depth_factor);
 
-        let t1 = smoothstep(0.8, 3.8, depth_dist);
-        let t2 = smoothstep(3.8, 11.5, depth_dist);
-        let depth_tint = mix(mix(shallow_tint, mid_tint, t1), deep_color_blend(deep_tint, depth_dist), t2);
-        let water_base = base_pixel_color * depth_tint;
+        var water_base = texture_detail * depth_darkening * depth_chroma;
 
-        var shore_foam: f32 = 0.0;
-@if(DEPTH_PREPASS) {
-        let shore_pulse = 0.5 + 0.5 * sin(time * 2.6 + dot(vertex_output.world_position.xz, vec2<f32>(0.7, 0.4)));
-        let shore_foam_threshold = 0.36 + 0.12 * shore_pulse;
-        let foam_sample = organic_foam_noise(vertex_output.world_position.xz, time);
+        // Fresnel reflection: grazing angles reflect sky and become opaque
+        let cam_pos = view.world_position;
+        let to_frag = vertex_output.world_position.xyz - cam_pos;
+        let view_dir = normalize(to_frag);
+        let fresnel = clamp(1.0 + dot(wave_normal, view_dir), 0.0, 1.0);
+        let fresnel4 = fresnel * fresnel * fresnel * fresnel;
+        var water_alpha = mix(water_alpha_base, 1.0, fresnel4 * 0.65);
 
-        let shore_proximity = 1.0 - smoothstep(0.0, shore_foam_threshold, depth_dist);
-        shore_foam = shore_proximity * smoothstep(0.28, 0.62, foam_sample + 0.22 * shore_pulse);
-}
+        // Shoreline Foam: soft white froth at water-terrain contact
+        var foam: f32 = 0.0;
+        if (orig_normal.y > 0.99 && is_front) {
+            let foam_threshold = 0.16;
+            foam = clamp((foam_threshold + y_pos_dif) / foam_threshold, 0.0, 1.0);
+            foam = foam * foam * 0.65;
+            foam *= clamp((fract(vertex_output.world_position.y) - 0.7) * 10.0, 0.0, 1.0);
+        }
+        let foam_color = vec3<f32>(0.92, 0.96, 1.02);
+        water_base = mix(water_base, foam_color, foam);
+        water_alpha = mix(water_alpha, 0.92, foam);
 
-        let total_foam = clamp(shore_foam * 1.30, 0.0, 1.0);
-        let foam_color = vec3<f32>(0.94, 0.97, 1.0);
+        if (!is_front) {
+            // Looking up at surface from underwater
+            water_alpha = 0.65;
+            water_base = base_pixel_color * 1.30;
+        }
 
-        final_color = mix(water_base, foam_color, total_foam);
-        final_alpha = clamp(mix(base_water_alpha, 0.98, total_foam), 0.0, 1.0);
-        pbr_input.material.perceptual_roughness = mix(0.04, 0.32, total_foam);
+        final_color = water_base;
+        final_alpha = clamp(water_alpha, 0.0, 0.98);
+        pbr_input.material.perceptual_roughness = mix(0.12, 0.38, foam);
+        pbr_input.material.reflectance = vec3<f32>(0.50);
     } else if (surface_type > 1.5) {
         // --- 2. Generic Fluid ---
         // Pure vibrant liquid colors (no ocean depth tint or foam)

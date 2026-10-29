@@ -116,7 +116,7 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
             out.world_position.y -= abs(current) * 0.18 * height;
 
         } else if (anim_type > 2.5 && anim_type < 3.5) {
-            // Type 3: Tree Leaves (Complementary-style ambient canopy rustle)
+            // Type 3: Tree Leaves (ambient canopy rustle)
             // Subtle, continuous spatial wave so voxel edges remain tightly cohesive:
             let leaf_wave = sin(time * 2.5 + pos.x * 0.75 + pos.y * 0.60 + pos.z * 0.75) * 0.020 * wind_intensity;
             let leaf_flutter = cos(time * 4.4 + pos.x * 2.2 - pos.z * 1.9) * 0.009 * wind_intensity;
@@ -142,7 +142,7 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
     return out;
 }
 
-// Screen-Space Texel Offset & Snapping (Complementary Reimagined reverse-engineered)
+// Screen-Space Texel Offset & Snapping
 // Projects UV derivatives into screen space to compute sub-pixel offset to the nearest
 // 16x16 texel center, snapping world position to eliminate shadow crawling and jitter.
 fn compute_texel_offset(uv: vec2<f32>, texel_size: vec4<f32>) -> vec2<f32> {
@@ -253,7 +253,7 @@ fn fragment(
         tint_color = vec4<f32>(tint_color.rgb * ambient_factor, tint_color.a);
     }
 
-    // Coated Textures (Complementary Reimagined reverse-engineered style):
+    // Coated Textures (custom style):
     // Samples authentic noise.png seamlessly across continuous world-space coordinates.
     // Zero block-edge grid lines; natural organic weathering and patina.
     let is_solid_terrain = (tex_color.a >= 0.99) && !is_emissive;
@@ -295,7 +295,7 @@ fn fragment(
 
     pbr_input.material.base_color = tex_color * pbr_input.material.base_color * vec4<f32>(tint_color.rgb * dir_shading, 1.0);
 
-    // Pixelated Shadows & Shadow Stabilization (Complementary Reimagined reverse-engineered):
+    // Pixelated Shadows & Shadow Stabilization:
     // Snaps world position to 16x16 texel centers along screen derivative tangents.
     // Eliminates sub-pixel shadow shimmering, crawling, and jitter while aligning shadows
     // strictly to the block texel grid.

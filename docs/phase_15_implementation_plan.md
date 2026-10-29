@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary & Aesthetic Objectives
 
-Phase 15 upgrades the visual fidelity of the *VoxelGameEngine* from a raw, flat-lit prototype into a cohesive, atmospheric voxel world inspired by state-of-the-art Minecraft shaders—specifically reverse-engineered techniques from **Complementary Shaders - Reimagined (r5.9.3)**.
+Phase 15 upgrades the visual fidelity of the *VoxelGameEngine* from a raw, flat-lit prototype into a cohesive, atmospheric voxel world inspired by state-of-the-art Minecraft shaders—specifically techniques studied from popular community Minecraft shader packs.
 
 ### Target Aesthetic Pillars
 
@@ -22,7 +22,7 @@ Phase 15 upgrades the visual fidelity of the *VoxelGameEngine* from a raw, flat-
 | :--- | :--- | :--- |
 | **Harsh Lateral Block Darkening** | Standard Bevy PBR Lambertian cosine law ($N \cdot L \le 0$) drops direct sunlight to zero on faces opposing the sun. Combined with high sun illuminance ($8,500$ lux) vs. low ambient ($1,000$ lux) at $EV_{100} = 11.1$, side faces appear nearly pitch black. | Implement a Minecraft-style directional lighting floor (Top: $1.0$, North/South: $0.82$, East/West: $0.68$, Bottom: $0.52$) blended with diffuse sky illumination in `assets/shaders/voxel_opaque.wesl`. |
 | **Dark Cross-Mesh Flora** | `mesh_cross_billboard` in `src/meshing/shapes.rs` assigns pure horizontal normals ($N = [\pm 0.707, 0.0, \pm 0.707]$). Overhead sunlight yields $N_y \approx 0$, leaving plants starved of direct light, with backfaces in shadow. | Reorient billboard normals upwards ($N = [0.0, 1.0, 0.0]$) and implement two-sided wrapped transmission ($N \cdot L \times 0.5 + 0.5$) in `assets/shaders/grass_plant.wesl` and `assets/shaders/voxel_opaque.wesl`. |
-| **Shadow Shimmering & Flickering** | Directional sunlight rotates continuously and camera moves across continuous world coordinates. Bevy Cascaded Shadow Maps (CSM) suffer sub-pixel texel crawling against sharp 1.0m block edges. | Implement screen-space texel snapping (`TexelSnap` via `dFdx(uv)` / `dFdy(uv)`) inspired by Complementary Reimagined to lock shadow and light sampling to the block's 16×16 texel grid. |
+| **Shadow Shimmering & Flickering** | Directional sunlight rotates continuously and camera moves across continuous world coordinates. Bevy Cascaded Shadow Maps (CSM) suffer sub-pixel texel crawling against sharp 1.0m block edges. | Implement screen-space texel snapping (`TexelSnap` via `dFdx(uv)` / `dFdy(uv)`) inspired by community shader packs to lock shadow and light sampling to the block's 16×16 texel grid. |
 | **Static World** | Leaves, flowers, and submerged marine flora have no vertex displacement or current simulation. | Introduce wind-driven sinusoidal and Bezier vertex sway for land flora and tree leaves, and fluid harmonic sway for underwater flora in WESL shaders. |
 | **Flat Geometry & Absence of Depth** | No Ambient Occlusion currently exists in the engine; crevices and corners have the same flat illumination as open plains. | Build per-vertex Voxel Ambient Occlusion in `src/meshing/greedy.rs` with automatic diagonal quad flipping to avoid triangulation anisotropy. |
 | **Primitive Fluid Rendering** | Water lacks depth fogging, shore foam interaction, optical refraction, and sun caustics. | Modernize `assets/shaders/voxel_transparent.wesl` with scene depth comparison for foam, procedural normal ripples, and animated caustic projection. |
@@ -39,7 +39,7 @@ Phase 15 upgrades the visual fidelity of the *VoxelGameEngine* from a raw, flat-
 - [x] **Milestone 15.1.2 — Translucent Flora & Billboard Lighting**:
   - Reoriented billboard normals to upward $[0.0, 1.0, 0.0]$ in `shapes.rs` (`mesh_cross_billboard`) and `grass_plant.wesl` for uniform two-sided ambient & sun illumination.
 - [x] **Milestone 15.1.3 — Coated Textures Micro-Variation (`COATED_TEXTURES`)**:
-  - Integrated authentic Complementary `noise.png` via continuous planar world-space mapping (`texel_world = floor(planar_coord * 16.0) / 16.0`).
+  - Integrated a tileable `noise.png` via continuous planar world-space mapping (`texel_world = floor(planar_coord * 16.0) / 16.0`).
   - Added real-time strength control in Settings tab (`CoatedTextureMode`: Off, Low, Medium, High, Ultra).
 
 ---
@@ -76,7 +76,7 @@ Phase 15 upgrades the visual fidelity of the *VoxelGameEngine* from a raw, flat-
 
 ---
 
-### Phase 15.4: Pixelated Shadows & Shadow Stabilization (Complementary Reverse-Engineering)
+### Phase 15.4: Pixelated Shadows & Shadow Stabilization (Technique Study)
 
 - [x] **Milestone 15.4.1 — Screen-Space Texel Offset Calculation**:
   - Implemented `compute_texel_offset` in WESL (`assets/shaders/voxel_opaque.wesl`) using screen-space UV derivatives (`dpdx(uv)`, `dpdy(uv)`), solving the pseudo-inverse 2D projection to find the exact sub-pixel screen offset to 16×16 block texel centers.
@@ -99,21 +99,24 @@ Phase 15 upgrades the visual fidelity of the *VoxelGameEngine* from a raw, flat-
 - [x] **Milestone 15.5.3 — Dynamic Handheld / Entity Lighting**:
   - Implemented `src/player/dynamic_light.rs` (`update_player_dynamic_light`).
   - When the player selects/holds any light-emitting block or item in the active hotbar slot, a real-time point light (`PointLight`) automatically spawns at the player's hand position, matching the item's `light_color()`, emission level, and intensity.
-  - Light smoothly tracks the player without expensive shadow map passes (`shadow_maps_enabled: false`), delivering OptiFine/Complementary style dynamic lighting at near-zero GPU overhead.
+  - Light smoothly tracks the player without expensive shadow map passes (`shadow_maps_enabled: false`), delivering OptiFine-style dynamic lighting at near-zero GPU overhead.
   - Added `dynamic_lighting: bool` to `LocalConfig` and an interactive toggle in `Settings > Shaders`.
 
 ---
 
 ### Phase 15.6: Advanced Water & Fluids Overhaul
 
-- **Milestone 15.6.1 — Scene Depth Comparison & Shoreline Contact Foam**:
-  - Query scene depth prepass in `assets/shaders/voxel_transparent.wesl`.
-  - Where $(\text{SceneDepth} - \text{WaterDepth}) < 0.20\text{m}$, generate animated, turbulent white foam fringes along sand, dirt, and stone coastlines.
-- **Milestone 15.6.2 — Animated Surface Caustics**:
-  - Dual-layer scrolling Voronoi / simplex caustic pattern projected along underwater floor faces.
-  - Sunlight intensity modulation: caustics brighten under clear sun and fade under overcast/rainy weather.
-- **Milestone 15.6.3 — Optical Refraction & Depth Color Absorption**:
-  - Smooth Beer-Lambert exponential depth absorption: shallow water is crystal-clear turquoise/aquamarine; deep oceans transition to rich navy blue.
+- [x] **Milestone 15.6.1 — Scene Depth Comparison & Shoreline Contact Foam**:
+  - Implemented calibrated shoreline contact foam in `assets/shaders/voxel_transparent.wesl` using reverse-Z scene depth prepass comparison.
+  - Resolved shallow aquatic vegetation bug (Image 1): calibrated contact foam threshold (`0.12m - 0.16m`) and sharp falloff so submerged flora does not produce false shoreline foam; changed foam opacity from solid 98% plaster to soft translucent sea bubbles (max alpha 0.55).
+  - Fixed `mesh_waterlogged_envelope` in `src/meshing/shapes.rs` to generate top and bottom faces with continuous chunk-anchored UV coordinates `[fx, fz]`.
+- [x] **Milestone 15.6.2 — Animated Surface Caustics**:
+  - Implemented dual-layer scrolling simplex caustic network (`calculate_caustics`) in `assets/shaders/voxel_transparent.wesl`.
+  - Projected shimmering refraction webs onto underwater floors, sandy beds, and reefs, modulating with depth for natural aquatic illumination.
+- [x] **Milestone 15.6.3 — Optical Refraction & Depth Color Absorption**:
+  - Replaced opaque depth murkiness with Beer-Lambert volumetric absorption (`water_fog = 1.0 - exp(-depth_dist * 0.075)`), delivering crystal-clear shallow waters (20-38% opacity) where seabeds and kelp forests remain visible up to 10+ blocks deep.
+  - Multi-stop tropical gradient: luminous turquoise shallows $\to$ vibrant azure $\to$ deep royal ocean.
+  - Resolved ocean wave mesh tearing and chunk border cracks (Image 2): removed vertex Y displacement on greedy-meshed fluid quads, letting high-frequency per-pixel wave normals (`calculate_wave_data`) render 100% gap-free, seamless, watertight rolling swells and glistening sun specular highlights.
 
 ---
 

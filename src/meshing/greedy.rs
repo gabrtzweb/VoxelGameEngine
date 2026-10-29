@@ -384,34 +384,9 @@ impl MeshBuffers {
             ]);
         }
 
-        if key.voxel.is_fluid() && direction == FaceDirection::PositiveY {
-            let under_base_index = self.positions.len() as u32;
-
-            for vertex in vertices.iter() {
-                let mut pos = [
-                    vertex[0] * VOXEL_SIZE,
-                    vertex[1] * VOXEL_SIZE,
-                    vertex[2] * VOXEL_SIZE,
-                ];
-                pos[1] -= surface_offset;
-
-                self.positions.push(pos);
-                self.normals.push(FaceDirection::NegativeY.normal_f32());
-                self.colors.push(color);
-                self.uv_bs.push([layer, frame_count]);
-            }
-
-            self.uvs.extend_from_slice(&uvs_to_push);
-
-            self.indices.extend_from_slice(&[
-                under_base_index,
-                under_base_index + 2,
-                under_base_index + 1,
-                under_base_index,
-                under_base_index + 3,
-                under_base_index + 2,
-            ]);
-        }
+        // NOTE: Fluid surfaces are a single double-sided quad (cull_mode: None). A second coplanar
+        // underside quad would double the blended alpha and make waterlogged-flora cells (which
+        // only emit one layer) look like they have no water on top.
     }
 
     pub fn into_mesh(self) -> Option<Mesh> {
@@ -751,7 +726,11 @@ impl ChunkMesher {
                             ]
                         };
 
-                        let is_isolated_voxel = false;
+                        // Fluid faces stay 1x1 (like Minecraft) so the vertex wave animation samples
+                        // every block corner: merged 16x16 quads would only wave at 4 corners and
+                        // tear against neighbouring 1x1 quads / chunk borders.
+                        let is_isolated_voxel =
+                            voxel.is_fluid() && direction != FaceDirection::NegativeY;
 
                         mask[mask_index(u, v)] = Some(FaceKey {
                             voxel,

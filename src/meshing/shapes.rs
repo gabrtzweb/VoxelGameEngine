@@ -2028,7 +2028,7 @@ fn mesh_waterlogged_envelope(
 
     // +Y (Water surface) - rendered if air or non-submerged block is above
     if is_at_surface {
-        push_quad_face(
+        push_quad_face_uvs(
             transparent_buffers,
             [
                 [min_x, max_y, min_z],
@@ -2040,6 +2040,12 @@ fn mesh_waterlogged_envelope(
             water_layer,
             frame_count_f32,
             water_tint,
+            [
+                [fx, fz],
+                [fx, fz + 1.0],
+                [fx + 1.0, fz + 1.0],
+                [fx + 1.0, fz],
+            ],
         );
     }
 

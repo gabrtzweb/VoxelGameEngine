@@ -42,4 +42,3 @@ mod audio;
 
 #[path = "suite/menu.rs"]
 mod menu;
-
