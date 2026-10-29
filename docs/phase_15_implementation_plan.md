@@ -78,15 +78,14 @@ Phase 15 upgrades the visual fidelity of the *VoxelGameEngine* from a raw, flat-
 
 ### Phase 15.4: Pixelated Shadows & Shadow Stabilization (Complementary Reverse-Engineering)
 
-- **Milestone 15.4.1 — Screen-Space Texel Offset Calculation**:
-  - Implement `ComputeTexelOffset` in WESL using screen-space UV derivatives (`dpdx(uv)`, `dpdy(uv)`):
-    $$\Delta UV = (\lfloor UV \times 16.0 \rfloor + 0.5) / 16.0 - UV$$
-- **Milestone 15.4.2 — Texel-Snapped Shadow Sampling (`TexelSnap`)**:
-  - Snap world position or shadow coordinate by projecting along screen gradients:
-    $$\text{Pos}_{\text{snapped}} = \text{Pos} + \text{dpdx}(\text{Pos}) \times \text{offset}_x + \text{dpdy}(\text{Pos}) \times \text{offset}_y$$
-  - Eliminate sub-pixel shadow shimmering; shadow silhouettes align strictly to the 16×16 pixel grid of the target voxel.
-- **Milestone 15.4.3 — Configurable Pixelated Lighting**:
-  - Expose `Pixelated Shadows` and `Pixelated AO` toggles in Settings (`local_config.json`), allowing players to choose between smooth modern shading and Complementary Reimagined retro-pixel styling.
+- [x] **Milestone 15.4.1 — Screen-Space Texel Offset Calculation**:
+  - Implemented `compute_texel_offset` in WESL (`assets/shaders/voxel_opaque.wesl`) using screen-space UV derivatives (`dpdx(uv)`, `dpdy(uv)`), solving the pseudo-inverse 2D projection to find the exact sub-pixel screen offset to 16×16 block texel centers.
+- [x] **Milestone 15.4.2 — Texel-Snapped Shadow Sampling (`TexelSnap`)**:
+  - Implemented `texel_snap_vec3` to project `pbr_input.world_position` along screen position gradients:
+    $$\text{Pos}_{\text{snapped}} = \text{Pos} + \text{clamp}(\text{dpdx}(\text{Pos}) \times \text{offset}_x + \text{dpdy}(\text{Pos}) \times \text{offset}_y, -0.25, 0.25)$$
+  - Snapped sampling coordinates before `apply_pbr_lighting(pbr_input)`, locking cascaded shadow lookups and PCF filtering strictly to the block's 16×16 texel grid, eliminating camera movement shimmering and sub-pixel shadow crawling.
+- [x] **Milestone 15.4.3 — Configurable Pixelated Lighting**:
+  - Wired `pixelated_shadows` into `voxel_params.z` in `src/meshing/pipeline.rs`, dynamically synced with `LocalConfig` and toggleable in the Settings menu under the Shaders tab.
 
 ---
 

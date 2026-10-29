@@ -308,6 +308,9 @@ pub fn setup_chunk_material(
     let waving_foliage_flag = local_config
         .as_ref()
         .map_or(1.0, |cfg| if cfg.waving_foliage { 1.0 } else { 0.0 });
+    let pixelated_shadows_flag = local_config
+        .as_ref()
+        .map_or(1.0, |cfg| if cfg.pixelated_shadows { 1.0 } else { 0.0 });
 
     let opaque = opaque_materials.add(ExtendedMaterial {
         base: StandardMaterial {
@@ -319,7 +322,7 @@ pub fn setup_chunk_material(
         extension: OpaqueVoxelMaterial {
             texture_array: texture_array.clone(),
             noise_texture,
-            params: Vec4::new(coat_strength, waving_foliage_flag, 1.0, 0.44),
+            params: Vec4::new(coat_strength, waving_foliage_flag, pixelated_shadows_flag, 0.0),
             anim_params: Vec4::new(0.0, 1.0, 0.44, 0.0),
         },
     });
@@ -682,6 +685,7 @@ pub fn sync_voxel_shader_settings(
             if cfg.is_changed() {
                 mat.extension.params.x = cfg.coated_textures.strength();
                 mat.extension.params.y = if cfg.waving_foliage { 1.0 } else { 0.0 };
+                mat.extension.params.z = if cfg.pixelated_shadows { 1.0 } else { 0.0 };
             }
         }
         let (wind_intensity, wind_angle) = if let Some(ref wind) = wind_state {
@@ -689,8 +693,6 @@ pub fn sync_voxel_shader_settings(
         } else {
             (1.0, 0.44)
         };
-        mat.extension.params.z = wind_intensity;
-        mat.extension.params.w = wind_angle;
         mat.extension.anim_params = Vec4::new(
             time.elapsed_secs_wrapped(),
             wind_intensity,

@@ -13,6 +13,7 @@ import bevy_pbr::render::{
 @group(constants::MATERIAL_BIND_GROUP) @binding(102) var noise_texture: texture_2d<f32>;
 @group(constants::MATERIAL_BIND_GROUP) @binding(103) var noise_sampler: sampler;
 @group(constants::MATERIAL_BIND_GROUP) @binding(104) var<uniform> voxel_params: vec4<f32>;
+@group(constants::MATERIAL_BIND_GROUP) @binding(105) var<uniform> anim_params: vec4<f32>;
 
 // Fast procedural noise using Dave Hoskins' sine-free hash (ultra-fast on integrated GPUs)
 fn hash2_noise(p: vec2<f32>) -> f32 {
@@ -78,10 +79,10 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
 
     let waving_enabled = voxel_params.y > 0.5;
     if (waving_enabled) {
-        let time = max(globals.time, 0.0);
+        let time = max(anim_params.x, 0.0);
         let anim_type = round(vertex_no_morph.color.a);
-        let wind_intensity = voxel_params.z;
-        let wind_angle = voxel_params.w;
+        let wind_intensity = anim_params.y;
+        let wind_angle = anim_params.z;
         let wind_dir = vec2<f32>(cos(wind_angle), sin(wind_angle));
         let pos = out.world_position.xyz;
 
@@ -139,6 +140,36 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
     out.instance_index = vertex_no_morph.instance_index;
 
     return out;
+}
+
+// Screen-Space Texel Offset & Snapping (Complementary Reimagined reverse-engineered)
+// Projects UV derivatives into screen space to compute sub-pixel offset to the nearest
+// 16x16 texel center, snapping world position to eliminate shadow crawling and jitter.
+fn compute_texel_offset(uv: vec2<f32>, texel_size: vec4<f32>) -> vec2<f32> {
+    let d_uv = (floor(uv * texel_size.zw) + 0.5) * texel_size.xy - uv;
+    let duv_ds = dpdx(uv);
+    let duv_dt = dpdy(uv);
+    let a = dot(duv_ds, duv_ds);
+    let b = dot(duv_ds, duv_dt);
+    let c = dot(duv_dt, duv_dt);
+    let det = a * c - b * b;
+    if (det <= a * c * 0.01) {
+        return vec2<f32>(0.0);
+    }
+    let inv = 1.0 / det;
+    let proj = vec2<f32>(dot(d_uv, duv_ds), dot(d_uv, duv_dt));
+    let offset = vec2<f32>(c * proj.x - b * proj.y, a * proj.y - b * proj.x) * inv;
+    return clamp(offset, vec2<f32>(-8.0), vec2<f32>(8.0));
+}
+
+fn texel_snap_vec3(val: vec3<f32>, texel_offset: vec2<f32>) -> vec3<f32> {
+    if (dot(texel_offset, texel_offset) < 0.000001) {
+        return val;
+    }
+    let dx = dpdx(val);
+    let dy = dpdy(val);
+    let val_offset = dx * texel_offset.x + dy * texel_offset.y;
+    return val + clamp(val_offset, vec3<f32>(-0.25), vec3<f32>(0.25));
 }
 
 @fragment
@@ -263,6 +294,20 @@ fn fragment(
     }
 
     pbr_input.material.base_color = tex_color * pbr_input.material.base_color * vec4<f32>(tint_color.rgb * dir_shading, 1.0);
+
+    // Pixelated Shadows & Shadow Stabilization (Complementary Reimagined reverse-engineered):
+    // Snaps world position to 16x16 texel centers along screen derivative tangents.
+    // Eliminates sub-pixel shadow shimmering, crawling, and jitter while aligning shadows
+    // strictly to the block texel grid.
+    let pixelated_shadows_enabled = voxel_params.z > 0.5;
+    if (pixelated_shadows_enabled) {
+        let texel_size = vec4<f32>(1.0 / 16.0, 1.0 / 16.0, 16.0, 16.0);
+        let texel_offset = compute_texel_offset(vertex_output.uv, texel_size);
+        pbr_input.world_position = vec4<f32>(
+            texel_snap_vec3(pbr_input.world_position.xyz, texel_offset),
+            pbr_input.world_position.w
+        );
+    }
 
     var out: FragmentOutput;
     if (is_emissive) {
