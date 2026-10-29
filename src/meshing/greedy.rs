@@ -50,6 +50,24 @@ impl FaceDirection {
     pub fn normal_f32(self) -> [f32; 3] {
         FACE_NORMALS_F32[self as usize]
     }
+
+    #[inline(always)]
+    pub fn u_axis(self) -> IVec3 {
+        match self {
+            FaceDirection::PositiveX | FaceDirection::NegativeX => IVec3::new(0, 0, 1),
+            FaceDirection::PositiveY | FaceDirection::NegativeY => IVec3::new(1, 0, 0),
+            FaceDirection::PositiveZ | FaceDirection::NegativeZ => IVec3::new(1, 0, 0),
+        }
+    }
+
+    #[inline(always)]
+    pub fn v_axis(self) -> IVec3 {
+        match self {
+            FaceDirection::PositiveX | FaceDirection::NegativeX => IVec3::new(0, 1, 0),
+            FaceDirection::PositiveY | FaceDirection::NegativeY => IVec3::new(0, 0, 1),
+            FaceDirection::PositiveZ | FaceDirection::NegativeZ => IVec3::new(0, 1, 0),
+        }
+    }
 }
 
 pub const FACE_DIRECTIONS: [FaceDirection; 6] = [
@@ -61,6 +79,78 @@ pub const FACE_DIRECTIONS: [FaceDirection; 6] = [
     FaceDirection::NegativeZ,
 ];
 
+/// Calibrated soft Ambient Occlusion multipliers: Level 0 (76%), Level 1 (84%), Level 2 (92%), Level 3 (100%).
+pub const AO_TABLE: [f32; 4] = [0.76, 0.84, 0.92, 1.00];
+
+/// Returns the (su, sv) coordinate offset direction for each vertex of the face.
+#[inline(always)]
+pub fn vertex_uv_sign(direction: FaceDirection, vertex_idx: usize) -> (i32, i32) {
+    match direction {
+        FaceDirection::PositiveX | FaceDirection::PositiveY | FaceDirection::NegativeZ => {
+            match vertex_idx {
+                0 => (-1, -1),
+                1 => (-1, 1),
+                2 => (1, 1),
+                _ => (1, -1),
+            }
+        }
+        FaceDirection::NegativeX | FaceDirection::PositiveZ => {
+            match vertex_idx {
+                0 => (1, -1),
+                1 => (1, 1),
+                2 => (-1, 1),
+                _ => (-1, -1),
+            }
+        }
+        FaceDirection::NegativeY => {
+            match vertex_idx {
+                0 => (-1, 1),
+                1 => (-1, -1),
+                2 => (1, -1),
+                _ => (1, 1),
+            }
+        }
+    }
+}
+
+#[inline(always)]
+fn is_block_occluding(world: &impl VoxelAccess, world_coord: IVec3) -> bool {
+    if let Some(v) = world.get_voxel(world_coord) {
+        if v.is_solid_opaque() {
+            let (shape, _) = world.get_shape(world_coord);
+            return shape == BlockShape::Full;
+        }
+    }
+    false
+}
+
+/// Evaluates per-vertex voxel ambient occlusion by sampling the 3 neighboring blocks (Side 1, Side 2, Corner).
+#[inline]
+pub fn compute_vertex_ao(
+    world: &impl VoxelAccess,
+    world_voxel: IVec3,
+    direction: FaceDirection,
+    vertex_idx: usize,
+) -> u8 {
+    let (su, sv) = vertex_uv_sign(direction, vertex_idx);
+    let n = direction.normal();
+    let u_axis = direction.u_axis();
+    let v_axis = direction.v_axis();
+
+    let t1 = u_axis * su;
+    let t2 = v_axis * sv;
+
+    let s1 = is_block_occluding(world, world_voxel + n + t1);
+    let s2 = is_block_occluding(world, world_voxel + n + t2);
+    let c = is_block_occluding(world, world_voxel + n + t1 + t2);
+
+    if s1 && s2 {
+        0
+    } else {
+        3 - (s1 as u8 + s2 as u8 + c as u8)
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct FaceKey {
     pub voxel: Voxel,
@@ -71,6 +161,7 @@ pub struct FaceKey {
     pub step_bottom_offset_cm: u8,
     pub is_isolated_voxel: bool,
     pub orientation: u8,
+    pub ao: [u8; 4],
 }
 
 impl FaceKey {
@@ -83,6 +174,7 @@ impl FaceKey {
             && self.step_bottom_offset_cm == other.step_bottom_offset_cm
             && self.is_isolated_voxel == other.is_isolated_voxel
             && self.orientation == other.orientation
+            && self.ao == other.ao
     }
 }
 
@@ -156,6 +248,8 @@ impl MeshBuffers {
             1.0
         } else if key.voxel.is_fluid() {
             2.0
+        } else if key.voxel.is_leaves() {
+            3.0
         } else if key.voxel.is_transparent() {
             0.0
         } else if key.voxel.is_painted() {
@@ -202,9 +296,17 @@ impl MeshBuffers {
                 }
             }
 
+            let ao_mult = AO_TABLE[key.ao[i] as usize];
+            let vertex_color = [
+                color[0] * ao_mult,
+                color[1] * ao_mult,
+                color[2] * ao_mult,
+                color[3],
+            ];
+
             self.positions.push(pos);
             self.normals.push(direction.normal_f32());
-            self.colors.push(color);
+            self.colors.push(vertex_color);
             self.uv_bs.push([layer, frame_count]);
         }
 
@@ -260,14 +362,27 @@ impl MeshBuffers {
 
         self.uvs.extend_from_slice(&uvs_to_push);
 
-        self.indices.extend_from_slice(&[
-            base_index,
-            base_index + 1,
-            base_index + 2,
-            base_index,
-            base_index + 2,
-            base_index + 3,
-        ]);
+        let flip_diagonal = (key.ao[1] as u16 + key.ao[3] as u16) > (key.ao[0] as u16 + key.ao[2] as u16);
+
+        if flip_diagonal {
+            self.indices.extend_from_slice(&[
+                base_index + 1,
+                base_index + 2,
+                base_index + 3,
+                base_index + 1,
+                base_index + 3,
+                base_index,
+            ]);
+        } else {
+            self.indices.extend_from_slice(&[
+                base_index,
+                base_index + 1,
+                base_index + 2,
+                base_index,
+                base_index + 2,
+                base_index + 3,
+            ]);
+        }
 
         if key.voxel.is_fluid() && direction == FaceDirection::PositiveY {
             let under_base_index = self.positions.len() as u32;
@@ -625,6 +740,17 @@ impl ChunkMesher {
                             0
                         };
 
+                        let ao = if voxel.is_fluid() || voxel.is_light() {
+                            [3, 3, 3, 3]
+                        } else {
+                            [
+                                compute_vertex_ao(world, world_voxel, direction, 0),
+                                compute_vertex_ao(world, world_voxel, direction, 1),
+                                compute_vertex_ao(world, world_voxel, direction, 2),
+                                compute_vertex_ao(world, world_voxel, direction, 3),
+                            ]
+                        };
+
                         let is_isolated_voxel = false;
 
                         mask[mask_index(u, v)] = Some(FaceKey {
@@ -636,6 +762,7 @@ impl ChunkMesher {
                             step_bottom_offset_cm,
                             is_isolated_voxel,
                             orientation,
+                            ao,
                         });
                     }
                 }

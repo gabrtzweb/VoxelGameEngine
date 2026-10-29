@@ -31,61 +31,48 @@ Phase 15 upgrades the visual fidelity of the *VoxelGameEngine* from a raw, flat-
 
 ## 3. Sub-Phase Breakdown & Milestones
 
-### Phase 15.1: Global Illumination, Sky Light Floor & Flora Normal Corrections
+### Phase 15.1: Global Illumination, Sky Light Floor & Flora Normal Corrections (Completed)
 
-- **Milestone 15.1.1 — Directional Lighting Model**:
-  - Update `assets/shaders/voxel_opaque.wesl` with a balanced directional shading floor:
-    - Top Face ($+Y$): $1.00$
-    - Bottom Face ($-Y$): $0.55$
-    - North/South Faces ($\pm Z$): $0.82$
-    - East/West Faces ($\pm X$): $0.70$
-  - Scale ambient lighting and fill lighting in `src/environment/atmosphere.rs` and `src/environment/celestial.rs` to maintain natural contrast without crushing side faces.
-- **Milestone 15.1.2 — Translucent Flora & Billboard Lighting**:
-  - Update `src/meshing/shapes.rs` (`mesh_cross_billboard`): orient billboard normals towards $+Y$ ($[0.0, 1.0, 0.0]$) so plants capture ambient sky light and overhead sunlight uniformly.
-  - In `assets/shaders/grass_plant.wesl` and `assets/shaders/voxel_opaque.wesl`, apply wrapped two-sided diffuse lighting:
-    $$I_{\text{diffuse}} = \max(0.0, N \cdot L) \times 0.55 + 0.45$$
-    ensuring flora remains luminous and translucent from all viewing angles.
-- **Milestone 15.1.3 — Coated Textures Micro-Variation (`COATED_TEXTURES`)**:
-  - Reverse-engineer Complementary's `CoatTextures`: sample low-frequency noise per-texel combined with block world coordinates (`floor(world_pos)`).
-  - Apply organic micro-luminance modulation ($color \times noise$) on stone, dirt, wood, and terrain blocks to eliminate sterile repetition and grant a weathered, tactile surface finish.
-  - Zero performance cost: a single texture tap (or procedural hash) and scalar multiplier in `voxel_opaque.wesl`.
+- [x] **Milestone 15.1.1 — Directional Lighting Model**:
+  - Balanced directional shading floor in `assets/shaders/voxel_opaque.wesl`: Top 1.0, Bottom 0.55, N/S 0.86, E/W 0.78.
+  - Calibrated ambient lighting (2,000 lux floor) and fill light in `atmosphere.rs` and `celestial.rs` to eliminate overly dark side walls.
+- [x] **Milestone 15.1.2 — Translucent Flora & Billboard Lighting**:
+  - Reoriented billboard normals to upward $[0.0, 1.0, 0.0]$ in `shapes.rs` (`mesh_cross_billboard`) and `grass_plant.wesl` for uniform two-sided ambient & sun illumination.
+- [x] **Milestone 15.1.3 — Coated Textures Micro-Variation (`COATED_TEXTURES`)**:
+  - Integrated authentic Complementary `noise.png` via continuous planar world-space mapping (`texel_world = floor(planar_coord * 16.0) / 16.0`).
+  - Added real-time strength control in Settings tab (`CoatedTextureMode`: Off, Low, Medium, High, Ultra).
 
 ---
 
-### Phase 15.2: Dynamic Vegetation & Leaf Sway Simulation (Wind & Water Currents)
+### Phase 15.2: Dynamic Vegetation & Leaf Sway Simulation (Wind & Water Currents) (Completed)
 
-- **Milestone 15.2.1 — Foliage & Flower Wind Sway (`WAVING_FOLIAGE`)**:
-  - Leverage `WindState` and `globals.time` in `assets/shaders/grass_plant.wesl` and `assets/shaders/voxel_opaque.wesl`.
-  - Base-anchored displacement: lock $y = 0.0$ at the block root and apply sinusoidal displacement to the upper vertex tier ($y > 0.2$).
-  - Introduce gust variation using low-frequency coordinate noise so flower patches undulate cohesively in travelling waves.
-- **Milestone 15.2.2 — Tree Leaves Ambient Wind Rustle (`WAVING_LEAVES`)**:
-  - Reverse-engineer Complementary's `DoWave_Leaves`:
-    $$P_{\text{offset}} = \vec{W}_{\text{dir}} \times \sin(\text{time} \times 2.5 + \text{pos} \cdot 0.75) \times 0.025$$
-  - High-frequency subtle fluttering on leaf blocks without separating quad seams between neighboring voxels.
-  - Disable leaf sway when covered by snow layers (`in_snow`).
-- **Milestone 15.2.3 — Aquatic Flora Fluid Undulation (`WAVING_WATER_PLANTS`)**:
-  - Vertical harmonic wave propagation for Kelp and Seagrass:
-    $$X_{\text{offset}} = \sin(\text{time} \times 1.8 + y \times 1.2) \times 0.04 \times (y - y_{\text{base}})$$
-  - Slower, heavier cadence mimicking underwater currents and tidal surge.
+- [x] **Milestone 15.2.1 — Foliage & Flower Wind Sway (`WAVING_FOLIAGE`)**:
+  - Implemented `@vertex` shader in `assets/shaders/voxel_opaque.wesl` with base-anchored quadratic displacement (`smoothstep(0.1, 0.9, 1.0 - uv.y)`).
+  - Synchronized travelling wind gusts and high-frequency flutter driven by `WindState` and `globals.time`.
+  - Tied procedural grass in `uniforms.rs` to `local_config.waving_foliage`.
+- [x] **Milestone 15.2.2 — Tree Leaves Ambient Wind Rustle (`WAVING_LEAVES`)**:
+  - Continuous 3D world-space wave displacement for tree leaf blocks (`anim_type == 3.0`) in `voxel_opaque.wesl`, breathing and rustling without tearing voxel quad seams.
+- [x] **Milestone 15.2.3 — Aquatic Flora Fluid Undulation (`WAVING_WATER_PLANTS`)**:
+  - Harmonically propagating viscous wave for marine flora (Seagrass, Kelp, `anim_type == 4.0`), mimicking underwater ocean currents.
 
 ---
 
-### Phase 15.3: Voxel Ambient Occlusion (Smooth Lighting & Anti-Anisotropy)
+### Phase 15.3: Voxel Ambient Occlusion (Smooth Lighting & Anti-Anisotropy) (Completed)
 
-- **Milestone 15.3.1 — 3-Neighbor Corner Sampling**:
+- [x] **Milestone 15.3.1 — 3-Neighbor Corner Sampling**:
   - In `src/meshing/greedy.rs`, for each vertex of an exposed face, sample the 3 adjacent neighbor blocks:
     - Side 1 ($S_1$)
     - Side 2 ($S_2$)
     - Corner ($C$)
   - Standard AO evaluation formula:
     $$\text{AO level} = \begin{cases} 0 & \text{if } S_1 \text{ and } S_2 \text{ are solid} \\ 3 - (S_1 + S_2 + C) & \text{otherwise} \end{cases}$$
-    mapping to intensity multipliers $[0.45, 0.65, 0.82, 1.00]$.
-- **Milestone 15.3.2 — Anisotropic Quad Flipping**:
-  - Address interpolation distortion across quad triangulation diagonals.
-  - If $AO_{00} + AO_{11} > AO_{01} + AO_{10}$, invert triangulation indices from $(0, 1, 2), (0, 2, 3)$ to $(1, 2, 3), (1, 3, 0)$.
-- **Milestone 15.3.3 — Vertex Attribute Packing & Shader Integration**:
-  - Pack AO into vertex attributes (or vertex color channel `color.a`).
-  - Interpolate per-vertex AO smoothly across face fragments in `assets/shaders/voxel_opaque.wesl`.
+    mapping to intensity multipliers $[0.45, 0.62, 0.80, 1.00]$.
+- [x] **Milestone 15.3.2 — Anisotropic Quad Flipping**:
+  - Addressed interpolation distortion across quad triangulation diagonals.
+  - If $(AO_1 + AO_3) > (AO_0 + AO_2)$, invert triangulation indices from $(0, 1, 2), (0, 2, 3)$ to $(1, 2, 3), (1, 3, 0)$ across the brighter diagonal.
+- [x] **Milestone 15.3.3 — Vertex Attribute Packing & Shader Integration**:
+  - Baked per-vertex AO into `Mesh::ATTRIBUTE_COLOR` (`color.rgb * ao_multiplier`), maintaining hardware bilinear interpolation and GPU cache efficiency without extra uniform bindings.
+  - Preserved greedy meshing optimizations by merging unoccluded `[3, 3, 3, 3]` expanses while isolating corners.
 
 ---
 

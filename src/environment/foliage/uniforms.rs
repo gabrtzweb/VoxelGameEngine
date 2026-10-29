@@ -41,6 +41,7 @@ pub fn update_foliage_uniforms(
     time: Res<Time>,
     wind: Option<Res<WindState>>,
     config: Option<Res<GrassConfig>>,
+    local_config: Option<Res<crate::core::LocalConfig>>,
     mut anim_state: ResMut<FoliageAnimationState>,
 ) {
     let dt = time.delta_secs();
@@ -93,7 +94,12 @@ pub fn update_foliage_uniforms(
         0.0
     };
 
-    let wind_intensity = (wind_speed / 4.0).clamp(0.0, 5.0);
+    let waving_enabled = local_config.as_ref().map_or(true, |c| c.waving_foliage);
+    let wind_intensity = if waving_enabled {
+        (wind_speed / 4.0).clamp(0.0, 5.0)
+    } else {
+        0.0
+    };
 
     let gpu = GrassShaderUniformsGpu {
         wind_params: Vec4::new(

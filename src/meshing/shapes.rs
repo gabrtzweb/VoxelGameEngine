@@ -55,6 +55,13 @@ pub fn mesh_shaped_voxels(
             1.0
         } else if voxel.is_fluid() {
             2.0
+        } else if voxel.is_marine_flora() {
+            4.0
+        } else if voxel.is_cross_billboard()
+            || shape == BlockShape::CrossBillboard
+            || voxel == Voxel::BambooLeaves
+        {
+            5.0
         } else if is_transparent_pass {
             0.0
         } else if voxel.is_painted() {

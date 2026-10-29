@@ -29,15 +29,29 @@ pub struct OpaqueVoxelMaterial {
     pub noise_texture: Handle<Image>,
     #[uniform(104)]
     pub params: Vec4,
+    #[uniform(105)]
+    pub anim_params: Vec4,
 }
 
 impl MaterialExtension for OpaqueVoxelMaterial {
+    fn vertex_shader() -> ShaderRef {
+        OPAQUE_VOXEL_SHADER_PATH.into()
+    }
+
+    fn deferred_vertex_shader() -> ShaderRef {
+        OPAQUE_VOXEL_SHADER_PATH.into()
+    }
+
     fn fragment_shader() -> ShaderRef {
         OPAQUE_VOXEL_SHADER_PATH.into()
     }
 
     fn deferred_fragment_shader() -> ShaderRef {
         OPAQUE_VOXEL_SHADER_PATH.into()
+    }
+
+    fn prepass_vertex_shader() -> ShaderRef {
+        "shaders/voxel_prepass.wesl".into()
     }
 
     fn prepass_fragment_shader() -> ShaderRef {
@@ -291,6 +305,9 @@ pub fn setup_chunk_material(
     let coat_strength = local_config
         .as_ref()
         .map_or(0.28, |cfg| cfg.coated_textures.strength());
+    let waving_foliage_flag = local_config
+        .as_ref()
+        .map_or(1.0, |cfg| if cfg.waving_foliage { 1.0 } else { 0.0 });
 
     let opaque = opaque_materials.add(ExtendedMaterial {
         base: StandardMaterial {
@@ -302,7 +319,8 @@ pub fn setup_chunk_material(
         extension: OpaqueVoxelMaterial {
             texture_array: texture_array.clone(),
             noise_texture,
-            params: Vec4::new(coat_strength, 0.0, 0.0, 0.0),
+            params: Vec4::new(coat_strength, waving_foliage_flag, 1.0, 0.44),
+            anim_params: Vec4::new(0.0, 1.0, 0.44, 0.0),
         },
     });
 
@@ -652,14 +670,32 @@ pub fn remove_lod_render(
 }
 
 pub fn sync_voxel_shader_settings(
+    time: Res<Time>,
     local_config: Option<Res<crate::core::LocalConfig>>,
+    wind_state: Option<Res<crate::environment::WindState>>,
     chunk_material: Option<Res<ChunkMaterial>>,
     mut opaque_materials: ResMut<Assets<OpaqueChunkMaterial>>,
 ) {
-    let Some(local_config) = local_config else { return };
-    if !local_config.is_changed() { return };
     let Some(chunk_material) = chunk_material else { return };
     if let Some(mut mat) = opaque_materials.get_mut(&chunk_material.opaque) {
-        mat.extension.params.x = local_config.coated_textures.strength();
+        if let Some(ref cfg) = local_config {
+            if cfg.is_changed() {
+                mat.extension.params.x = cfg.coated_textures.strength();
+                mat.extension.params.y = if cfg.waving_foliage { 1.0 } else { 0.0 };
+            }
+        }
+        let (wind_intensity, wind_angle) = if let Some(ref wind) = wind_state {
+            ((wind.current_speed / 4.0).clamp(0.4, 2.5), wind.current_heading)
+        } else {
+            (1.0, 0.44)
+        };
+        mat.extension.params.z = wind_intensity;
+        mat.extension.params.w = wind_angle;
+        mat.extension.anim_params = Vec4::new(
+            time.elapsed_secs_wrapped(),
+            wind_intensity,
+            wind_angle,
+            0.0,
+        );
     }
 }
