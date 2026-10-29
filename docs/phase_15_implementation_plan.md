@@ -89,13 +89,18 @@ Phase 15 upgrades the visual fidelity of the *VoxelGameEngine* from a raw, flat-
 
 ---
 
-### Phase 15.5: HDR Bloom & Emissive Blocks Pipeline
+### Phase 15.5: HDR Bloom, Emissive Blocks & Dynamic Handheld Lighting
 
-- **Milestone 15.5.1 — Bevy Bloom Integration**:
-  - Attach `BloomSettings` to `PlayerCamera` in `src/player/camera.rs` with calibrated thresholds (threshold $\ge 1.0$, soft knee $0.5$).
-- **Milestone 15.5.2 — Emissive Block Catalog & HDR Boosting**:
-  - Register emission values for torches, lanterns, lava, redstone, glowing geodes, and fireflies.
-  - In `assets/shaders/voxel_opaque.wesl`, write emission color values $> 1.0$ into fragment output to trigger bloom thresholding naturally.
+- [x] **Milestone 15.5.1 — Bevy Bloom Integration**:
+  - Attached calibrated `Bloom` (`Bloom::NATURAL`, `intensity: 0.20`, `prefilter.threshold: 1.0`, `threshold_softness: 0.5`) to `PlayerCamera` in `src/player/mod.rs` operating over `Camera3d` with `bevy::camera::Hdr`.
+  - Added runtime synchronization system `sync_camera_bloom` hooked into `LocalConfig::hdr_bloom` and toggleable in Settings.
+- [x] **Milestone 15.5.2 — Emissive Block Catalog & HDR Boosting**:
+  - Boosted self-illuminating output values for light-emitting blocks (torches, lamps, glowing crystals, redstone, lava, magma) into HDR space ($> 1.0$) in both `assets/shaders/voxel_opaque.wesl` ($2.5\times$) and `assets/shaders/voxel_transparent.wesl` ($2.2\times$), triggering the bloom threshold naturally with vibrant halos.
+- [x] **Milestone 15.5.3 — Dynamic Handheld / Entity Lighting**:
+  - Implemented `src/player/dynamic_light.rs` (`update_player_dynamic_light`).
+  - When the player selects/holds any light-emitting block or item in the active hotbar slot, a real-time point light (`PointLight`) automatically spawns at the player's hand position, matching the item's `light_color()`, emission level, and intensity.
+  - Light smoothly tracks the player without expensive shadow map passes (`shadow_maps_enabled: false`), delivering OptiFine/Complementary style dynamic lighting at near-zero GPU overhead.
+  - Added `dynamic_lighting: bool` to `LocalConfig` and an interactive toggle in `Settings > Shaders`.
 
 ---
 

@@ -311,8 +311,8 @@ fn fragment(
 
     var out: FragmentOutput;
     if (is_emissive) {
-        // Light-emitting blocks are self-illuminated:
-        out.color = vec4<f32>(tex_color.rgb * vertex_output.color.rgb * 1.15, 1.0);
+        // Light-emitting blocks are self-illuminated into HDR bloom range (> 1.0):
+        out.color = vec4<f32>(tex_color.rgb * vertex_output.color.rgb * 2.5, 1.0);
     } else {
         out.color = apply_pbr_lighting(pbr_input);
     }

@@ -118,8 +118,12 @@ enum SettingsAction {
     ToggleWavingFoliage,
     TogglePixelatedShadows,
     ToggleHdrBloom,
+    ToggleDynamicLighting,
     Back,
 }
+
+#[derive(Component)]
+struct DynamicLightingLabel;
 
 #[derive(Component)]
 struct CoatedTexturesLabel;
@@ -1207,6 +1211,25 @@ fn spawn_settings_menu(
                                     &btn_normal,
                                     &btn_hover,
                                 );
+
+                                // Dynamic Handheld Lighting Toggle
+                                spawn_toggle_button(
+                                    col_right,
+                                    SettingsAction::ToggleDynamicLighting,
+                                    format!(
+                                        "{}: {}",
+                                        loc.t("menu.settings.dynamic_lighting"),
+                                        if local_config.dynamic_lighting {
+                                            loc.t("common.enabled")
+                                        } else {
+                                            loc.t("common.disabled")
+                                        }
+                                    ),
+                                    DynamicLightingLabel,
+                                    font_handle.as_ref(),
+                                    &btn_normal,
+                                    &btn_hover,
+                                );
                             });
                     });
 
@@ -2033,6 +2056,9 @@ fn handle_settings_buttons(
                 SettingsAction::ToggleHdrBloom => {
                     local_config.hdr_bloom = !local_config.hdr_bloom;
                 }
+                SettingsAction::ToggleDynamicLighting => {
+                    local_config.dynamic_lighting = !local_config.dynamic_lighting;
+                }
                 SettingsAction::Back => {
                     next_state.set(menu_return_target.0);
                     sync_config = false;
@@ -2144,6 +2170,7 @@ fn update_settings_labels(
             Option<&WavingFoliageLabel>,
             Option<&PixelatedShadowsLabel>,
             Option<&HdrBloomLabel>,
+            Option<&DynamicLightingLabel>,
         ),
     )>,
 ) {
@@ -2197,6 +2224,7 @@ fn update_settings_labels(
             waving_foliage,
             pixelated_shadows,
             hdr_bloom,
+            dynamic_lighting,
         ),
     ) in &mut labels_query
     {
@@ -2282,6 +2310,16 @@ fn update_settings_labels(
                     "{}: {}",
                     loc.t("menu.settings.hdr_bloom"),
                     if local_config.hdr_bloom {
+                        loc.t("common.enabled")
+                    } else {
+                        loc.t("common.disabled")
+                    }
+                );
+            } else if dynamic_lighting.is_some() {
+                text.0 = format!(
+                    "{}: {}",
+                    loc.t("menu.settings.dynamic_lighting"),
+                    if local_config.dynamic_lighting {
                         loc.t("common.enabled")
                     } else {
                         loc.t("common.disabled")

@@ -444,8 +444,8 @@ fn fragment(
     // 5. Final Lighting Evaluation
     var out: FragmentOutput;
     if (is_emissive) {
-        // Emissive light-emitting fluids (Lava, Molten)
-        out.color = vec4<f32>(final_color * 1.25, final_alpha);
+        // Emissive light-emitting fluids (Lava, Molten) boosted into HDR bloom range (> 1.0)
+        out.color = vec4<f32>(final_color * 2.2, final_alpha);
     } else {
         out.color = apply_pbr_lighting(pbr_input);
     }

@@ -604,6 +604,10 @@ pub struct LocalConfig {
     /// HDR bloom optical glow for torches, lava, and glowing blocks.
     #[serde(default = "default_hdr_bloom")]
     pub hdr_bloom: bool,
+
+    /// Dynamic handheld lighting from torches, lanterns, and light sources.
+    #[serde(default = "default_dynamic_lighting")]
+    pub dynamic_lighting: bool,
 }
 
 fn default_coated_textures() -> CoatedTextureMode {
@@ -619,6 +623,10 @@ fn default_pixelated_shadows() -> bool {
 }
 
 fn default_hdr_bloom() -> bool {
+    true
+}
+
+fn default_dynamic_lighting() -> bool {
     true
 }
 
@@ -860,6 +868,7 @@ impl Default for LocalConfig {
             waving_foliage: default_waving_foliage(),
             pixelated_shadows: default_pixelated_shadows(),
             hdr_bloom: default_hdr_bloom(),
+            dynamic_lighting: default_dynamic_lighting(),
         }
     }
 }

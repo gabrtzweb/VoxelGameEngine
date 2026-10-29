@@ -23,6 +23,9 @@ fn test_default_config() {
     assert_eq!(config.target_fps, TargetFpsLimit::Fps60);
     assert_eq!(config.mesh_upload_budget, 12);
     assert_eq!(config.upscaling_filter, UpscalingFilter::Bilinear);
+    assert!(config.pixelated_shadows);
+    assert!(config.hdr_bloom);
+    assert!(config.dynamic_lighting);
 }
 
 #[test]

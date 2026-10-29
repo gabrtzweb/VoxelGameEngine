@@ -1,6 +1,7 @@
 pub mod camera;
 pub mod collision;
 pub mod controller;
+pub mod dynamic_light;
 pub mod game_mode;
 pub mod hotbar;
 pub mod inventory;
@@ -13,6 +14,7 @@ pub mod water;
 use bevy::{
     camera::Exposure,
     core_pipeline::prepass::DepthPrepass,
+    post_process::bloom::Bloom,
     prelude::*,
     render::view::Tonemapping,
     window::{CursorGrabMode, CursorOptions},
@@ -72,6 +74,8 @@ impl Plugin for PlayerPlugin {
                     update_crosshair_visibility,
                     sync_camera_transmission,
                     sync_camera_anti_aliasing,
+                    sync_camera_bloom,
+                    dynamic_light::update_player_dynamic_light,
                 )
                     .chain()
                     .in_set(PlayerSet::Movement),
@@ -146,6 +150,15 @@ fn spawn_player_and_camera(
         camera_builder.insert(bevy::pbr::ScreenSpaceTransmission::default());
     }
 
+    let hdr_bloom_active = local_config
+        .as_ref()
+        .map(|c| c.hdr_bloom)
+        .unwrap_or(true);
+
+    if hdr_bloom_active {
+        camera_builder.insert(default_bloom_settings());
+    }
+
     let aa_mode = local_config
         .as_ref()
         .map(|c| c.anti_aliasing)
@@ -192,6 +205,36 @@ fn sync_camera_transmission(
             commands
                 .entity(camera_entity)
                 .remove::<bevy::pbr::ScreenSpaceTransmission>();
+        }
+    }
+}
+
+pub fn default_bloom_settings() -> Bloom {
+    let mut bloom = Bloom::NATURAL;
+    bloom.intensity = 0.20;
+    bloom.prefilter.threshold = 1.0;
+    bloom.prefilter.threshold_softness = 0.5;
+    bloom
+}
+
+fn sync_camera_bloom(
+    local_config: Option<Res<crate::core::config::LocalConfig>>,
+    camera_query: Query<Entity, With<PlayerCamera>>,
+    bloom_query: Query<&Bloom, With<PlayerCamera>>,
+    mut commands: Commands,
+) {
+    let Some(local_config) = local_config else {
+        return;
+    };
+    if !local_config.is_changed() {
+        return;
+    }
+    if let Ok(camera_entity) = camera_query.single() {
+        let has_bloom = bloom_query.get(camera_entity).is_ok();
+        if local_config.hdr_bloom && !has_bloom {
+            commands.entity(camera_entity).insert(default_bloom_settings());
+        } else if !local_config.hdr_bloom && has_bloom {
+            commands.entity(camera_entity).remove::<Bloom>();
         }
     }
 }
