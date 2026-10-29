@@ -122,11 +122,13 @@ Phase 15 upgrades the visual fidelity of the *VoxelGameEngine* from a raw, flat-
 
 ### Phase 15.7: Volumetric Fog & Crepuscular Rays (God Rays)
 
-- **Milestone 15.7.1 — Screen-Space Sun/Moon Light Shafts**:
-  - In `assets/shaders/post_process.wesl`, implement radial occlusion blur radiating outward from sun/moon screen coordinates.
-  - Shafts cast natural dark volumetric shadows when occluded by tree trunks, canopies, and terrain peaks.
-- **Milestone 15.7.2 — Meteorological Fog Coupling**:
-  - Connect ray intensity with Phase 14 weather states: dense sunbursts during clear mornings and damp post-rain ground mists; diffused gloom during blizzards and thunderstorms.
+- [x] **Milestone 15.7.1 — Screen-Space Sun/Moon Light Shafts & Sky Flickering Fix**:
+  - **Sky/Sun Illumination Strobe Bug Fix**: Diagnosed and resolved the post-process race condition in `src/environment/post_process.rs`. Previously, `post_process_system` had no ordering dependency against Bevy's internal `bloom` system; both ran in `Core3dSystems::PostProcess.before(tonemapping)`. As Bevy's parallel scheduler swapped buffer write targets, frames alternated between bloom-applied and discarded targets, creating rapid 60–120Hz screen-wide illumination strobing when facing the celestial body. Added explicit `.after(bevy::post_process::bloom::bloom)` ordering constraint.
+  - **Threshold Smoothing**: Eliminated hard step cutoff `max(0.0, luma - threshold)` in `assets/shaders/post_process.wesl` by introducing a $C^1$-continuous quadratic soft knee (`knee = 0.35`) and calibrated threshold values (`1.30` for daytime sun, `0.85` for night moon), completely removing edge sample pop.
+  - **Forward Mie Aerosol Phase Function**: Integrated Henyey-Greenstein forward phase function approximation ($g = 0.60$) to concentrate volumetric scatter along the solar view axis, rendering naturally denser illumination towards the light source.
+  - **Atmospheric Chromatic Dispersion & 4-Tap Tent Filter**: Added subtle RGB wavelength separation along the ray marching vector for realistic atmospheric dispersion, and upgraded composite Pass 2 with a 4-tap tent bilinear upsample filter to dissolve sample dither into smooth, silky crepuscular shafts.
+- [x] **Milestone 15.7.2 — Meteorological Fog Coupling**:
+  - Connected `update_post_process_light_position` to `WeatherManager`: clear skies and sunny dawns/afternoons cast vivid golden beams (`exposure = 0.45`); precipitation (rain, thunder, snow) dynamically attenuates shafts down to gloomy diffusion (dimmed by 65–85%); desert dust storms shift tint to warm sepia haze.
 
 ---
 

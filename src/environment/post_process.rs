@@ -93,6 +93,7 @@ impl Plugin for PostProcessPlugin {
                 Core3d,
                 post_process_system
                     .in_set(Core3dSystems::PostProcess)
+                    .after(bevy::post_process::bloom::bloom)
                     .before(tonemapping),
             );
     }
@@ -232,8 +233,8 @@ fn post_process_system(
 
     let (view_target, extracted_view, settings, settings_index) = view.into_inner();
 
-    // Early exit if rays are faded to near-zero (night without moon, looking away, or offscreen)
-    if settings.light_visible < 0.05 || settings.exposure <= 0.001 {
+    // Early exit only if rays are completely outside view or disabled
+    if settings.light_visible <= 0.0 || settings.exposure <= 0.0001 {
         return;
     }
 
@@ -356,12 +357,13 @@ fn post_process_system(
     }
 }
 
-/// Computes the celestial light (Sun or Moon) 2D screen/NDC projection every frame, with aspect ratio and radial edge fade.
+/// Computes the celestial light (Sun or Moon) 2D screen/NDC projection every frame, with aspect ratio, weather coupling, and radial edge fade.
 pub fn update_post_process_light_position(
     state: Res<EnvironmentState>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
     inspector: Option<Res<InspectorInteraction>>,
     local_config: Option<Res<crate::core::config::LocalConfig>>,
+    weather: Option<Res<crate::environment::weather::WeatherManager>>,
     camera_query: Query<(&Camera, &GlobalTransform), (With<Camera3d>, With<PlayerCamera>)>,
     mut settings_query: Query<&mut PostProcessSettings, (With<Camera3d>, With<PlayerCamera>)>,
 ) {
@@ -393,34 +395,65 @@ pub fn update_post_process_light_position(
         .unwrap_or(16.0 / 9.0);
     settings.aspect_ratio = aspect_ratio;
 
+    // 2. Weather coupling (Milestone 15.7.2): modulate exposure and tint by atmospheric conditions
+    let (weather_exposure_mult, weather_tint_mod) = if let Some(w) = weather {
+        let rain = w.rain_intensity;
+        let thunder = w.thunder_intensity;
+        let snow = w.snow_intensity;
+        let dust = w.dust_intensity;
+
+        // Attenuate crepuscular shafts during precipitation; clear skies produce vivid shafts
+        let storm_attenuation = (1.0 - rain * 0.65 - thunder * 0.85 - snow * 0.50).clamp(0.05, 1.0);
+        let dust_attenuation = (1.0 - dust * 0.35).clamp(0.25, 1.0);
+        let exposure_mult = storm_attenuation * dust_attenuation;
+
+        let tint_mod = if dust > 0.1 {
+            Vec3::new(1.15, 0.95, 0.70) // Warm desert dust haze
+        } else if snow > 0.1 {
+            Vec3::new(0.92, 0.96, 1.05) // Cool winter silver
+        } else if rain > 0.1 || thunder > 0.1 {
+            Vec3::new(0.85, 0.88, 0.95) // Overcast gloom
+        } else {
+            Vec3::ONE
+        };
+
+        (exposure_mult, tint_mod)
+    } else {
+        (1.0, Vec3::ONE)
+    };
+
     let camera_translation = camera_global_transform.translation();
     let sun_dir = calculate_sun_direction(state.time_of_day);
     let moon_dir = -sun_dir;
 
-    // 2. Dual celestial body targeting: Sun during day/twilight, Moon at night
+    // 3. Dual celestial body targeting: Sun during day/twilight, Moon at night
     let (target_dir, base_exposure, target_tint, target_threshold, target_max_radius) =
         if sun_dir.y > -0.05 {
-            // Sun is active (HDR value ~2.2; threshold 1.95 filters out specular water reflections; radius 0.22 isolates celestial disc)
+            // Sun is active (HDR value ~2.2; threshold 1.30 smoothly passes celestial disc & corona; radius 0.25)
             let day_factor = (sun_dir.y / 0.15).clamp(0.0, 1.0);
+            let sun_warmth = (sun_dir.y / 0.35).clamp(0.0, 1.0);
+            let dawn_tint = Vec3::new(1.25, 0.82, 0.55); // Rich amber/gold at dawn and dusk
+            let noon_tint = Vec3::new(1.04, 0.96, 0.88); // Crisp warm daylight at noon
+            let base_tint = dawn_tint.lerp(noon_tint, sun_warmth);
+
             (
                 sun_dir,
-                0.45 * day_factor,
-                Vec3::new(1.04, 0.92, 0.76),
-                1.95,
-                0.22,
+                0.45 * day_factor * weather_exposure_mult,
+                base_tint * weather_tint_mod,
+                1.30,
+                0.25,
             )
         } else if moon_dir.y > 0.0 {
-            // Sun has set and Moon is active (HDR value ~1.35; threshold 1.20 filters out night terrain; radius 0.18 isolates moon disc)
+            // Sun has set and Moon is active (HDR value ~1.35; threshold 0.85; radius 0.20 isolates moon disc)
             let moon_elevation_factor = (moon_dir.y / 0.15).clamp(0.0, 1.0);
             let phase_factor = state.moon_phase().illuminance_factor();
-            // Subtle, ethereal moonlight rays
-            let moon_exposure = 0.10 * moon_elevation_factor * phase_factor;
+            let moon_exposure = 0.12 * moon_elevation_factor * phase_factor * weather_exposure_mult;
             (
                 moon_dir,
                 moon_exposure,
-                Vec3::new(0.45, 0.55, 0.85),
-                1.20,
-                0.18,
+                Vec3::new(0.48, 0.60, 0.92) * weather_tint_mod,
+                0.85,
+                0.20,
             )
         } else {
             settings.light_visible = 0.0;
@@ -432,7 +465,7 @@ pub fn update_post_process_light_position(
     settings.threshold = target_threshold;
     settings.max_radius = target_max_radius;
 
-    // 3. Frustum and projection check
+    // 4. Frustum and projection check
     let forward = camera_global_transform.forward();
     let to_light = target_dir.normalize();
     let dot_forward = forward.dot(to_light);
@@ -447,17 +480,18 @@ pub fn update_post_process_light_position(
             // Bevy NDC has -1 at bottom and +1 at top; UV has 0 at top and 1 at bottom.
             settings.light_screen_uv = Vec2::new(ndc.x * 0.5 + 0.5, -ndc.y * 0.5 + 0.5);
 
-            // 4. Smooth radial fade from screen center:
-            // Calculate distance from dead center (0.0, 0.0) in NDC space.
-            // Tightened radial fade: starts fading when ndc_dist > 0.8 and reaches 0.0 at ndc_dist >= 1.2,
-            // completely masking peripheral projection warping.
+            // 5. Smooth radial fade across wider margin [0.90..1.45]
             let ndc_dist = ndc_2d.length();
-            let radial_fade = (1.0 - ((ndc_dist - 0.8) / 0.4)).clamp(0.0, 1.0);
+            let radial_fade = (1.0 - ((ndc_dist - 0.90) / 0.55)).clamp(0.0, 1.0);
             let smooth_radial_fade = radial_fade * radial_fade * (3.0 - 2.0 * radial_fade);
 
             let final_exposure = base_exposure * smooth_radial_fade;
             settings.exposure = final_exposure;
-            settings.light_visible = if final_exposure > 0.002 { 1.0 } else { 0.0 };
+            settings.light_visible = if dot_forward > 0.0 && ndc_dist < 1.45 && final_exposure > 0.0001 {
+                1.0
+            } else {
+                0.0
+            };
         } else {
             settings.light_visible = 0.0;
             settings.exposure = 0.0;
