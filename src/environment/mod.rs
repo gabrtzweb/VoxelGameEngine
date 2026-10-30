@@ -54,6 +54,7 @@ impl Plugin for EnvironmentPlugin {
                     celestial::setup_celestial,
                     stars::setup_starfield,
                     clouds::setup_clouds,
+                    configure_gpu_cluster_capacity,
                 ),
             )
             .add_systems(
@@ -145,9 +146,11 @@ fn sync_celestial_system(
     });
 
     let underground_factor = env_status.as_ref().map_or(0.0, |s| s.underground_factor);
-    // Sky fill light has no shadow mapping, so it must be completely extinguished underground
-    let fill_underground_dim = (1.0 - underground_factor).clamp(0.0, 1.0);
-    let sun_underground_dim = (1.0 - underground_factor * 0.85).clamp(0.15, 1.0);
+    // Sky fill light has no shadow mapping, so it gently dims only as player goes deep underground
+    let fill_underground_dim = (1.0 - (underground_factor - 0.40).max(0.0) * 1.5).clamp(0.10, 1.0);
+    // Keep directional sunlight shining at 100% through cave entrances and near-surface openings.
+    // Shadows cast by terrain geometry block the sun naturally; dimming only occurs in deepest depths.
+    let sun_underground_dim = (1.0 - (underground_factor - 0.70).max(0.0) * 1.5).clamp(0.40, 1.0);
 
     celestial::sync_celestial_transforms(
         camera,
@@ -166,7 +169,21 @@ fn sync_celestial_system(
         DAY_FILL_ILLUMINANCE * weather_dim * fill_underground_dim,
         NIGHT_MOON_ILLUMINANCE * weather_dim * sun_underground_dim,
         shadows_enabled,
+        underground_factor,
     );
+}
+
+/// Pre-allocates GPU view clustering Z slice and index capacities to 8192
+/// to completely prevent terminal resize warnings during deep cavern exploration.
+fn configure_gpu_cluster_capacity(
+    mut cluster_settings: Option<ResMut<bevy::light::cluster::GlobalClusterSettings>>,
+) {
+    if let Some(ref mut settings) = cluster_settings {
+        if let Some(ref mut gpu) = settings.gpu_clustering {
+            gpu.initial_z_slice_list_capacity = 8192;
+            gpu.initial_index_list_capacity = 8192;
+        }
+    }
 }
 
 fn sync_starfield_system(

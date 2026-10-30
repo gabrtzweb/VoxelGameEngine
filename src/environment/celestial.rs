@@ -306,6 +306,7 @@ pub fn sync_celestial_transforms(
     day_fill_illuminance: f32,
     night_moon_illuminance: f32,
     shadows_enabled: bool,
+    underground_factor: f32,
 ) {
     let camera_translation = camera.translation;
     let sun_dir = calculate_sun_direction(time_of_day);
@@ -318,9 +319,10 @@ pub fn sync_celestial_transforms(
     let (mut fill_l, mut fill_lt) = sky_fill.into_inner();
 
     // Position sun billboard quad on the celestial sphere, facing the camera.
+    // Hide billboard when underground to ensure no celestial discs bleed through cave ceilings.
     sun_trans.translation = camera_translation + sun_dir * CELESTIAL_DISTANCE;
     *sun_trans = sun_trans.looking_to(sun_dir, Vec3::Y);
-    *sun_vis = if sun_dir.y > -0.20 {
+    *sun_vis = if sun_dir.y > -0.20 && underground_factor < 0.50 {
         Visibility::Visible
     } else {
         Visibility::Hidden
@@ -329,7 +331,7 @@ pub fn sync_celestial_transforms(
     // Position moon billboard quad opposite to the sun, facing the camera.
     moon_trans.translation = camera_translation + moon_dir * CELESTIAL_DISTANCE;
     *moon_trans = moon_trans.looking_to(moon_dir, Vec3::Y);
-    *moon_vis = if moon_dir.y > -0.20 {
+    *moon_vis = if moon_dir.y > -0.20 && underground_factor < 0.50 {
         Visibility::Visible
     } else {
         Visibility::Hidden

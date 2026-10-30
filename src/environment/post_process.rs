@@ -364,6 +364,7 @@ pub fn update_post_process_light_position(
     inspector: Option<Res<InspectorInteraction>>,
     local_config: Option<Res<crate::core::config::LocalConfig>>,
     weather: Option<Res<crate::environment::weather::WeatherManager>>,
+    env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
     camera_query: Query<(&Camera, &GlobalTransform), (With<Camera3d>, With<PlayerCamera>)>,
     mut settings_query: Query<&mut PostProcessSettings, (With<Camera3d>, With<PlayerCamera>)>,
 ) {
@@ -379,10 +380,12 @@ pub fn update_post_process_light_position(
         .map(|c| c.god_rays_enabled)
         .unwrap_or(true);
 
-    // If game is in a menu, the inspector is open, or god rays are disabled, disable post-process rays
+    let underground_factor = env_status.as_ref().map_or(0.0, |s| s.underground_factor);
+
+    // If game is in a menu, the inspector is open, god rays are disabled, or player is underground, disable post-process rays
     let in_menu = menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None);
     let inspector_active = inspector.is_some_and(|i| i.active);
-    if in_menu || inspector_active || !god_rays_enabled {
+    if in_menu || inspector_active || !god_rays_enabled || underground_factor >= 0.40 {
         settings.light_visible = 0.0;
         settings.exposure = 0.0;
         return;
@@ -485,7 +488,7 @@ pub fn update_post_process_light_position(
             let radial_fade = (1.0 - ((ndc_dist - 0.90) / 0.55)).clamp(0.0, 1.0);
             let smooth_radial_fade = radial_fade * radial_fade * (3.0 - 2.0 * radial_fade);
 
-            let final_exposure = base_exposure * smooth_radial_fade;
+            let final_exposure = base_exposure * smooth_radial_fade * (1.0 - underground_factor * 2.5).max(0.0);
             settings.exposure = final_exposure;
             settings.light_visible = if dot_forward > 0.0 && ndc_dist < 1.45 && final_exposure > 0.0001 {
                 1.0

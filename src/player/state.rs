@@ -61,27 +61,68 @@ pub fn update_player_environment_status(
         let col = terrain_gen.sample_column(block_x, block_z);
         let depth = (col.terrain_height as f32 - pos.y).max(0.0);
 
-        // Detect solid roof overhead (cave ceiling, tunnel, or mine roof)
-        let block_pos = IVec3::new(block_x, block_y, block_z);
+        // Detect solid opaque roof overhead (cave ceiling, tunnel, or mine roof)
+        // Tree leaves are excluded so being under a forest canopy does not trigger cave status.
+        let eye_pos = IVec3::new(block_x, block_y + 1, block_z);
         let mut roof = false;
-        for dy in 1..=14 {
-            let check_pos = block_pos + IVec3::new(0, dy, 0);
+        for dy in 1..=20 {
+            let check_pos = eye_pos + IVec3::new(0, dy, 0);
             if let Some(vox) = world.get_voxel(check_pos) {
-                if vox.is_solid_opaque() || vox.is_leaves() {
+                if vox.is_solid_opaque() {
                     roof = true;
                     break;
                 }
             }
         }
 
-        let underground = pos.y < (col.terrain_height as f32 - 0.5) || (roof && depth > 0.0);
+        // Distance to outside openings / sky:
+        // Raymarch horizontally in cardinal directions to detect if player is near a cave entrance.
+        let mut min_dist_to_outside: f32 = if roof { 28.0 } else { 0.0 };
+
+        if roof {
+            let cardinal_dirs = [
+                IVec3::new(1, 0, 0),
+                IVec3::new(-1, 0, 0),
+                IVec3::new(0, 0, 1),
+                IVec3::new(0, 0, -1),
+            ];
+
+            for dir in cardinal_dirs {
+                for step in 1..=24 {
+                    let p = eye_pos + dir * step;
+                    let col_here = terrain_gen.sample_column(p.x, p.z);
+                    // Check if outside terrain envelope or open to sky
+                    if p.y >= col_here.terrain_height {
+                        min_dist_to_outside = min_dist_to_outside.min(step as f32);
+                        break;
+                    }
+                    if let Some(vox) = world.get_voxel(p) {
+                        if vox.is_solid_opaque() {
+                            // Wall reached in this direction
+                            break;
+                        }
+                    } else if p.y >= col_here.terrain_height {
+                        min_dist_to_outside = min_dist_to_outside.min(step as f32);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Only transition to subterranean when deep underground and well away from outside openings.
+        // Near cave entrances (min_dist_to_outside <= 10.0), players receive full surface sunlight and daylight.
         let target_factor = if roof {
-            (0.70 + (depth / 10.0) * 0.30).clamp(0.70, 1.0)
-        } else if pos.y < col.terrain_height as f32 {
-            (depth / 6.0).clamp(0.0, 1.0)
+            let horizontal_depth_factor = ((min_dist_to_outside - 10.0) / 14.0).clamp(0.0, 1.0);
+            let vertical_depth_factor = ((depth - 8.0) / 16.0).clamp(0.0, 1.0);
+            horizontal_depth_factor * vertical_depth_factor
+        } else if pos.y < (col.terrain_height as f32 - 14.0) {
+            // Open vertical chasm/sinkhole without roof
+            ((depth - 14.0) / 24.0).clamp(0.0, 0.30)
         } else {
             0.0
         };
+
+        let underground = target_factor > 0.40;
 
         (col.biome, underground, depth, roof, target_factor)
     } else {
@@ -89,8 +130,13 @@ pub fn update_player_environment_status(
     };
 
     let dt = time.as_ref().map(|t| t.delta_secs()).unwrap_or(0.016);
-    // Smooth eye adaptation transition into and out of caverns
-    status.underground_factor += (target_underground_factor - status.underground_factor) * (3.5 * dt).min(1.0);
+    // Smooth eye adaptation transition into and out of caverns (gentle pupil adjustment)
+    let adapt_rate = if target_underground_factor > status.underground_factor {
+        0.9
+    } else {
+        1.6
+    };
+    status.underground_factor += (target_underground_factor - status.underground_factor) * (adapt_rate * dt).min(1.0);
     status.is_camera_in_water = is_camera_in_water;
     status.submersion = submersion;
     status.current_biome = current_biome;
