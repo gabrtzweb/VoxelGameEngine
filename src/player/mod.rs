@@ -130,7 +130,6 @@ fn spawn_player_and_camera(
         },
         Exposure { ev100: 11.0 },
         Tonemapping::AcesFitted,
-        bevy::render::view::ColorGrading::default(),
         crate::environment::post_process::PostProcessSettings::default(),
         Projection::Perspective(PerspectiveProjection {
             fov: CAMERA_FOV_DEGREES.to_radians(),

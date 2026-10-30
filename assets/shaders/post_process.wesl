@@ -113,7 +113,12 @@ fn fragment_scatter(in: FullscreenVertexOutput) -> @location(0) vec4<f32> {
     let phase_factor = clamp(mie_phase * 0.40, 0.60, 2.20);
 
     // Subtle Lens Flare & Celestial Corona Halo (perfectly circular isotropic glow)
-    let flare_halo = exp(-dist_to_light * 4.2) * 0.20;
+    // Physically occluded if the celestial disc center is blocked by geometry in the scene buffer
+    let clamped_uv = clamp(light_uv, vec2<f32>(0.001), vec2<f32>(0.999));
+    let center_sample = textureSample(scatter_input_texture, scatter_input_sampler, clamped_uv);
+    let center_luma = dot(center_sample.rgb, vec3<f32>(0.2126, 0.7152, 0.0722));
+    let flare_visibility = smoothstep(scatter_settings.threshold * 0.75, scatter_settings.threshold, center_luma);
+    let flare_halo = exp(-dist_to_light * 4.2) * 0.20 * flare_visibility;
 
     // Atmospheric distance attenuation: smoothly dissolves rays as they travel away from the light source
     let dist_attenuation = smoothstep(1.6, 0.0, dist_to_light);

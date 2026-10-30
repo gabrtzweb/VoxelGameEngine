@@ -20,7 +20,6 @@ pub fn terrain_inspector_ui(
     mut generator: ResMut<TerrainGenerator>,
     player_query: Query<&Transform, With<crate::player::Player>>,
     env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
-    mut atmo_state: Option<ResMut<crate::environment::atmosphere::BiomeAtmosphereState>>,
     mut streaming_settings: Option<
         ResMut<crate::world::streaming::manager::ChunkStreamingSettings>,
     >,
@@ -75,30 +74,6 @@ pub fn terrain_inspector_ui(
                         ui.label(format!(
                             "Camera Underwater: {} (submersion: {:.2})",
                             status.is_camera_in_water, status.submersion
-                        ));
-                    }
-                });
-
-            egui::CollapsingHeader::new("Atmospheric Grading & Fog")
-                .default_open(true)
-                .show(ui, |ui| {
-                    if let Some(ref mut atmo) = atmo_state {
-                        ui.add(
-                            egui::Slider::new(&mut atmo.transition_speed, 0.2..=5.0)
-                                .text("Transition Speed"),
-                        );
-                        ui.label(format!(
-                            "Blended Fog Dist: {:.2}x",
-                            atmo.current.fog_distance_multiplier
-                        ));
-                        ui.label(format!(
-                            "Blended Exposure: {:+.2} EV",
-                            atmo.current.exposure_offset
-                        ));
-                        let fc = atmo.current.fog_color_filter;
-                        ui.label(format!(
-                            "Fog Filter (RGB): ({:.2}, {:.2}, {:.2})",
-                            fc.red, fc.green, fc.blue
                         ));
                     }
                 });
@@ -225,9 +200,6 @@ pub fn terrain_inspector_ui(
                 let v = generator.version.wrapping_add(1);
                 *generator = TerrainGenerator::default();
                 generator.version = v;
-                if let Some(ref mut atmo) = atmo_state {
-                    atmo.transition_speed = 1.5;
-                }
                 if let Some(ref mut settings) = streaming_settings {
                     **settings =
                         crate::world::streaming::manager::ChunkStreamingSettings::default();

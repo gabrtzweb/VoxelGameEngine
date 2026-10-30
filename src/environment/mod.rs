@@ -10,9 +10,9 @@ pub mod weather;
 use bevy::prelude::*;
 
 use atmosphere::{
-    BiomeAtmosphereState, DAY_FILL_ILLUMINANCE, DAY_SUN_ILLUMINANCE, NIGHT_MOON_ILLUMINANCE,
+    DAY_FILL_ILLUMINANCE, DAY_SUN_ILLUMINANCE, NIGHT_MOON_ILLUMINANCE,
     sample_ambient_brightness, sample_ambient_color, sample_sky_color, sync_fog_distance,
-    update_atmosphere, update_biome_atmosphere_transition,
+    update_atmosphere,
 };
 use time::{advance_environment_clock, handle_environment_input};
 
@@ -37,8 +37,6 @@ impl Plugin for EnvironmentPlugin {
         let initial_brightness = sample_ambient_brightness(default_state.time_of_day);
 
         app.insert_resource(default_state)
-            .init_resource::<BiomeAtmosphereState>()
-            .register_type::<BiomeAtmosphereState>()
             .add_plugins(weather::WeatherPlugin)
             .add_plugins(foliage::FoliagePlugin)
             .add_plugins(post_process::PostProcessPlugin)
@@ -62,7 +60,6 @@ impl Plugin for EnvironmentPlugin {
                 (
                     handle_environment_input,
                     advance_environment_clock,
-                    update_biome_atmosphere_transition,
                     update_atmosphere,
                     sync_fog_distance,
                     sync_celestial_system,
@@ -134,6 +131,7 @@ fn sync_celestial_system(
     local_config: Option<Res<crate::core::config::LocalConfig>>,
     weather: Option<Res<weather::WeatherManager>>,
     env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
+    world: Option<Res<crate::world::VoxelWorld>>,
 ) {
     let shadows_enabled = local_config
         .as_ref()
@@ -151,6 +149,17 @@ fn sync_celestial_system(
     // Keep directional sunlight shining at 100% through cave entrances and near-surface openings.
     // Shadows cast by terrain geometry block the sun naturally; dimming only occurs in deepest depths.
     let sun_underground_dim = (1.0 - (underground_factor - 0.70).max(0.0) * 1.5).clamp(0.40, 1.0);
+
+    let sun_dir = celestial::calculate_sun_direction(state.time_of_day);
+    let moon_dir = -sun_dir;
+    let (sun_visibility, moon_visibility) = if let Some(ref w) = world {
+        (
+            post_process::calculate_celestial_visibility(w, camera.translation, sun_dir, 96.0),
+            post_process::calculate_celestial_visibility(w, camera.translation, moon_dir, 96.0),
+        )
+    } else {
+        (1.0, 1.0)
+    };
 
     celestial::sync_celestial_transforms(
         camera,
@@ -170,6 +179,8 @@ fn sync_celestial_system(
         NIGHT_MOON_ILLUMINANCE * weather_dim * sun_underground_dim,
         shadows_enabled,
         underground_factor,
+        sun_visibility,
+        moon_visibility,
     );
 }
 

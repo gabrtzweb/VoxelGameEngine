@@ -29,6 +29,7 @@ use crate::{
         time::EnvironmentState,
     },
     player::{InspectorInteraction, PlayerCamera},
+    world::{ChunkHomogeneity, VOXEL_SIZE, VoxelWorld},
 };
 
 pub const POST_PROCESS_SHADER_PATH: &str = "shaders/post_process.wesl";
@@ -359,12 +360,14 @@ fn post_process_system(
 
 /// Computes the celestial light (Sun or Moon) 2D screen/NDC projection every frame, with aspect ratio, weather coupling, and radial edge fade.
 pub fn update_post_process_light_position(
+    time: Option<Res<Time>>,
     state: Res<EnvironmentState>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
     inspector: Option<Res<InspectorInteraction>>,
     local_config: Option<Res<crate::core::config::LocalConfig>>,
     weather: Option<Res<crate::environment::weather::WeatherManager>>,
     env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
+    world: Option<Res<VoxelWorld>>,
     camera_query: Query<(&Camera, &GlobalTransform), (With<Camera3d>, With<PlayerCamera>)>,
     mut settings_query: Query<&mut PostProcessSettings, (With<Camera3d>, With<PlayerCamera>)>,
 ) {
@@ -488,9 +491,34 @@ pub fn update_post_process_light_position(
             let radial_fade = (1.0 - ((ndc_dist - 0.90) / 0.55)).clamp(0.0, 1.0);
             let smooth_radial_fade = radial_fade * radial_fade * (3.0 - 2.0 * radial_fade);
 
-            let final_exposure = base_exposure * smooth_radial_fade * (1.0 - underground_factor * 2.5).max(0.0);
-            settings.exposure = final_exposure;
-            settings.light_visible = if dot_forward > 0.0 && ndc_dist < 1.45 && final_exposure > 0.0001 {
+            // Physical line-of-sight test through VoxelWorld:
+            // Checks if any solid opaque blocks (such as cave ceilings, roofs, or closed boxes)
+            // occlude the celestial body from the camera position.
+            let celestial_visibility = if let Some(ref w) = world {
+                calculate_celestial_visibility(w, camera_translation, target_dir, 96.0)
+            } else {
+                1.0
+            };
+
+            let dt = time.as_ref().map(|t| t.delta_secs()).unwrap_or(0.016);
+            let target_exposure = base_exposure
+                * smooth_radial_fade
+                * celestial_visibility
+                * (1.0 - underground_factor * 2.5).max(0.0);
+
+            // Fast, smooth eye adaptation when stepping behind occluders
+            let adapt_rate = if target_exposure < settings.exposure { 20.0 } else { 12.0 };
+            settings.exposure += (target_exposure - settings.exposure) * (adapt_rate * dt).min(1.0);
+
+            if target_exposure <= 0.0001 && settings.exposure <= 0.001 {
+                settings.exposure = 0.0;
+            }
+
+            settings.light_visible = if dot_forward > 0.0
+                && ndc_dist < 1.45
+                && settings.exposure > 0.0001
+                && celestial_visibility > 0.001
+            {
                 1.0
             } else {
                 0.0
@@ -503,4 +531,118 @@ pub fn update_post_process_light_position(
         settings.light_visible = 0.0;
         settings.exposure = 0.0;
     }
+}
+
+/// Traces multiple rays from the camera towards the celestial body through the voxel world.
+/// Returns 1.0 if completely unoccluded (open sky), 0.0 if fully occluded by solid blocks
+/// (such as inside a cave, behind a wall, or inside a ceiling/cube), with smooth multi-ray fractional values at edges.
+pub fn calculate_celestial_visibility(
+    world: &VoxelWorld,
+    origin: Vec3,
+    direction: Vec3,
+    max_distance: f32,
+) -> f32 {
+    let dir = direction.normalize();
+    let up_hint = if dir.y.abs() > 0.95 { Vec3::Z } else { Vec3::Y };
+    let right = dir.cross(up_hint).normalize();
+    let up = right.cross(dir).normalize();
+
+    // 5-tap angular cone matching the celestial disc's physical footprint
+    let ray_dirs = [
+        dir,
+        (dir + up * 0.045).normalize(),
+        (dir - up * 0.045).normalize(),
+        (dir + right * 0.045).normalize(),
+        (dir - right * 0.045).normalize(),
+    ];
+
+    let mut clear_count = 0;
+    for &r_dir in &ray_dirs {
+        if !is_ray_occluded(world, origin, r_dir, max_distance) {
+            clear_count += 1;
+        }
+    }
+
+    clear_count as f32 / ray_dirs.len() as f32
+}
+
+fn is_ray_occluded(world: &VoxelWorld, origin: Vec3, direction: Vec3, max_distance: f32) -> bool {
+    let grid_origin = origin / VOXEL_SIZE;
+    let mut voxel = IVec3::new(
+        grid_origin.x.floor() as i32,
+        grid_origin.y.floor() as i32,
+        grid_origin.z.floor() as i32,
+    );
+
+    let step = IVec3::new(
+        direction.x.signum() as i32,
+        direction.y.signum() as i32,
+        direction.z.signum() as i32,
+    );
+
+    let delta_distance = Vec3::new(
+        if direction.x.abs() < f32::EPSILON { f32::INFINITY } else { 1.0 / direction.x.abs() },
+        if direction.y.abs() < f32::EPSILON { f32::INFINITY } else { 1.0 / direction.y.abs() },
+        if direction.z.abs() < f32::EPSILON { f32::INFINITY } else { 1.0 / direction.z.abs() },
+    );
+
+    let mut side_distance = Vec3::new(
+        if step.x > 0 { (voxel.x as f32 + 1.0 - grid_origin.x) * delta_distance.x } else if step.x < 0 { (grid_origin.x - voxel.x as f32) * delta_distance.x } else { f32::INFINITY },
+        if step.y > 0 { (voxel.y as f32 + 1.0 - grid_origin.y) * delta_distance.y } else if step.y < 0 { (grid_origin.y - voxel.y as f32) * delta_distance.y } else { f32::INFINITY },
+        if step.z > 0 { (voxel.z as f32 + 1.0 - grid_origin.z) * delta_distance.z } else if step.z < 0 { (grid_origin.z - voxel.z as f32) * delta_distance.z } else { f32::INFINITY },
+    );
+
+    let max_grid_distance = max_distance / VOXEL_SIZE;
+    let mut traveled_distance = 0.0;
+    let mut cached_chunk_coord = IVec3::new(i32::MIN, i32::MIN, i32::MIN);
+    let mut cached_chunk_homogeneity = ChunkHomogeneity::Mixed;
+
+    // Check starting voxel in case camera origin is slightly embedded
+    if let Some(start_v) = world.get_voxel(voxel) {
+        if start_v.is_solid_opaque() {
+            return true;
+        }
+    }
+
+    while traveled_distance <= max_grid_distance {
+        if side_distance.x <= side_distance.y && side_distance.x <= side_distance.z {
+            voxel.x += step.x;
+            traveled_distance = side_distance.x;
+            side_distance.x += delta_distance.x;
+        } else if side_distance.y <= side_distance.z {
+            voxel.y += step.y;
+            traveled_distance = side_distance.y;
+            side_distance.y += delta_distance.y;
+        } else {
+            voxel.z += step.z;
+            traveled_distance = side_distance.z;
+            side_distance.z += delta_distance.z;
+        }
+
+        let (chunk_coord, _) = VoxelWorld::world_voxel_to_chunk(voxel);
+        if chunk_coord != cached_chunk_coord {
+            cached_chunk_coord = chunk_coord;
+            cached_chunk_homogeneity = world
+                .get_chunk(chunk_coord)
+                .map_or(ChunkHomogeneity::Empty, |c| c.homogeneity());
+        }
+
+        match cached_chunk_homogeneity {
+            ChunkHomogeneity::Empty => {}
+            ChunkHomogeneity::Solid(solid_mat) => {
+                if solid_mat.is_solid_opaque() {
+                    return true;
+                }
+            }
+            ChunkHomogeneity::Mixed => {
+                if let Some(vox) = world.get_voxel(voxel) {
+                    if vox.is_solid_opaque() {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    false
 }
