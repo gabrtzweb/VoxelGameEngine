@@ -245,6 +245,17 @@ fn fragment(
         discard;
     }
 
+    // Cross-billboard / fixture cutout model detection:
+    // 1) Explicit vertex anim/model tag: 5.0 (flora) or 6.0 (rigid cross/speleothem/crystal)
+    // 2) Geometric normal vs vertex normal: cross billboards are vertical planes (geo normal Y ~ 0)
+    //    with an upward lighting normal (vertex normal Y = 1).
+    let dp_x = dpdx(vertex_output.world_position.xyz);
+    let dp_y = dpdy(vertex_output.world_position.xyz);
+    let geo_norm = cross(dp_x, dp_y);
+    let geo_len_sq = dot(geo_norm, geo_norm);
+    let is_diagonal_plane = geo_len_sq > 0.00001 && (abs(geo_norm.x) * abs(geo_norm.z) > 0.05 * geo_len_sq);
+    let is_cross_mesh = (vertex_output.color.a > 3.5 && vertex_output.color.a < 6.5) || is_diagonal_plane;
+
     // Ambient Environment modulation: breaks up monotonous large expanses of grass and leaves (foliage has alpha > 0.75)
     var tint_color = vertex_output.color;
     let is_painted_block = (vertex_output.color.a > 0.52) && (vertex_output.color.a < 0.72);
@@ -308,9 +319,8 @@ fn fragment(
     }
 
     // Pixelated Shadows & Shadow Stabilization:
-    // Snaps world position to 16x16 texel centers along screen derivative tangents.
-    // Eliminates sub-pixel shadow shimmering, crawling, and jitter while aligning shadows
-    // strictly to the block texel grid.
+    // Snaps world position to 16x16 texel centers along screen derivative tangents on solid block faces.
+    // Cross meshes are exempted so non-orthogonal screen derivatives don't flicker surface lighting.
     let pixelated_shadows_enabled = voxel_params.z > 0.5;
     if (pixelated_shadows_enabled) {
         let texel_size = vec4<f32>(1.0 / 16.0, 1.0 / 16.0, 16.0, 16.0);
@@ -319,6 +329,11 @@ fn fragment(
             texel_snap_vec3(pbr_input.world_position.xyz, texel_offset),
             pbr_input.world_position.w
         );
+    }
+
+    if (is_cross_mesh) {
+        pbr_input.world_normal = vec3<f32>(0.0, 1.0, 0.0);
+        pbr_input.N = vec3<f32>(0.0, 1.0, 0.0);
     }
 
     var out: FragmentOutput;

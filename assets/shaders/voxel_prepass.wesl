@@ -122,4 +122,22 @@ fn fragment(in: VertexOutput) {
     if (tex_color.a < 0.5) {
         discard;
     }
+
+    // Cross billboards (flora, speleothems, crystals, corals) are paper-thin 2D planes.
+    // Casting directional cascaded shadow map depth causes self-shadow acne (sawtooth striped bands)
+    // that pulse and crawl as the sun moves or wind sways vertices.
+    var is_cross_mesh = false;
+@if(VERTEX_COLORS) {
+    let anim_type = in.color.a;
+    is_cross_mesh = (anim_type > 3.5 && anim_type < 6.5);
+}
+
+    let dp_x = dpdx(in.world_position.xyz);
+    let dp_y = dpdy(in.world_position.xyz);
+    let geo_norm = cross(dp_x, dp_y);
+    let geo_len_sq = dot(geo_norm, geo_norm);
+    let is_diagonal_plane = geo_len_sq > 0.00001 && (abs(geo_norm.x) * abs(geo_norm.z) > 0.05 * geo_len_sq);
+    if (is_cross_mesh || is_diagonal_plane) {
+        discard;
+    }
 }
