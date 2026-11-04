@@ -46,9 +46,6 @@ fn sync_local_config_to_grass_config(
         grass_config.enabled = local_config.grass_enabled;
         grass_config.blades_per_block = local_config.grass_density;
         grass_config.blade_particles = local_config.grass_particles;
-        grass_config.grass_style = match local_config.grass_style.as_str() {
-            "segmented" | "Segmented" => GrassStyle::Segmented,
-            _ => GrassStyle::Tapered,
-        };
+        grass_config.grass_style = GrassStyle::Segmented;
     }
 }

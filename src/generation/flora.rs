@@ -254,12 +254,15 @@ pub fn select_surface_flora(
 
 /// Populates procedural flora (wildgrass, ferns, bushes, flowers, succulents, cave flora)
 /// for a single chunk's voxel grid.
-pub fn populate_chunk_flora(
+pub fn populate_chunk_flora<F>(
     voxels: &mut [Voxel],
     columns: &[TerrainColumn],
     chunk_origin: IVec3,
     seed: u32,
-) {
+    mut sample_voxel: F,
+) where
+    F: FnMut(i32, i32, i32, TerrainColumn) -> Voxel,
+{
     let chunk_min_y = chunk_origin.y;
     let chunk_max_y = chunk_min_y + CHUNK_SIZE as i32 - 1;
 
@@ -370,27 +373,26 @@ pub fn populate_chunk_flora(
                 // Ground was top of chunk below, so ly = 0 of this chunk is surface air!
                 let air_above = get_v(voxels, x, 0, z);
                 if air_above == Voxel::Air {
-                    let ground_voxel = if col.biome == BiomeType::Desert {
-                        Voxel::SandDune
-                    } else if col.is_beach {
-                        Voxel::SandCommon
-                    } else {
-                        Voxel::LoamGrass
-                    };
                     let wx = chunk_origin.x + x as i32;
                     let wy = chunk_min_y;
                     let wz = chunk_origin.z + z as i32;
-                    let h = hash_coords(wx, wy, wz, seed, 0x9E37_79B9);
 
-                    let can_place_tall = CHUNK_SIZE >= 2 && get_v(voxels, x, 1, z) == Voxel::Air;
-                    if let Some(placed) = select_surface_flora(col.biome, ground_voxel, col.is_beach, h, can_place_tall) {
-                        let idx = x + z * CHUNK_SIZE;
-                        voxels[idx] = placed.bottom;
+                    // Sample the actual voxel at surface_y in the chunk below to verify it is really
+                    // solid grass/viable ground, and not hollowed out by a cave entrance or ravine!
+                    let ground_voxel = sample_voxel(wx, surface_y, wz, col);
+                    if ground_voxel.is_solid_opaque() {
+                        let h = hash_coords(wx, wy, wz, seed, 0x9E37_79B9);
 
-                        if let Some(top) = placed.top {
-                            if can_place_tall {
-                                let top_idx = x + z * CHUNK_SIZE + CHUNK_SIZE * CHUNK_SIZE;
-                                voxels[top_idx] = top;
+                        let can_place_tall = CHUNK_SIZE >= 2 && get_v(voxels, x, 1, z) == Voxel::Air;
+                        if let Some(placed) = select_surface_flora(col.biome, ground_voxel, col.is_beach, h, can_place_tall) {
+                            let idx = x + z * CHUNK_SIZE;
+                            voxels[idx] = placed.bottom;
+
+                            if let Some(top) = placed.top {
+                                if can_place_tall {
+                                    let top_idx = x + z * CHUNK_SIZE + CHUNK_SIZE * CHUNK_SIZE;
+                                    voxels[top_idx] = top;
+                                }
                             }
                         }
                     }

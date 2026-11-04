@@ -358,6 +358,27 @@ fn post_process_system(
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct CelestialVisibilityCache {
+    pub last_pos: Vec3,
+    pub last_dir: Vec3,
+    pub frame_counter: u32,
+    pub cached_visibility: f32,
+    pub smoothed_visibility: f32,
+}
+
+impl Default for CelestialVisibilityCache {
+    fn default() -> Self {
+        Self {
+            last_pos: Vec3::splat(f32::NAN),
+            last_dir: Vec3::splat(f32::NAN),
+            frame_counter: 0,
+            cached_visibility: 1.0,
+            smoothed_visibility: 1.0,
+        }
+    }
+}
+
 /// Computes the celestial light (Sun or Moon) 2D screen/NDC projection every frame, with aspect ratio, weather coupling, and radial edge fade.
 pub fn update_post_process_light_position(
     time: Option<Res<Time>>,
@@ -370,6 +391,7 @@ pub fn update_post_process_light_position(
     world: Option<Res<VoxelWorld>>,
     camera_query: Query<(&Camera, &GlobalTransform), (With<Camera3d>, With<PlayerCamera>)>,
     mut settings_query: Query<&mut PostProcessSettings, (With<Camera3d>, With<PlayerCamera>)>,
+    mut vis_cache: Local<CelestialVisibilityCache>,
 ) {
     let Ok((camera, camera_global_transform)) = camera_query.single() else {
         return;
@@ -491,16 +513,34 @@ pub fn update_post_process_light_position(
             let radial_fade = (1.0 - ((ndc_dist - 0.90) / 0.55)).clamp(0.0, 1.0);
             let smooth_radial_fade = radial_fade * radial_fade * (3.0 - 2.0 * radial_fade);
 
+            let dt = time.as_ref().map(|t| t.delta_secs()).unwrap_or(0.016);
+
             // Physical line-of-sight test through VoxelWorld:
             // Checks if any solid opaque blocks (such as cave ceilings, roofs, or closed boxes)
             // occlude the celestial body from the camera position.
-            let celestial_visibility = if let Some(ref w) = world {
-                calculate_celestial_visibility(w, camera_translation, target_dir, 96.0)
-            } else {
-                1.0
-            };
+            // Amortized over 4 frames or when camera moves >0.25m or celestial direction shifts.
+            vis_cache.frame_counter = vis_cache.frame_counter.wrapping_add(1);
+            let pos_moved = vis_cache.last_pos.is_nan()
+                || camera_translation.distance_squared(vis_cache.last_pos) > 0.0625; // > 0.25m
+            let dir_changed = vis_cache.last_dir.is_nan()
+                || target_dir.dot(vis_cache.last_dir) < 0.9998;
+            let should_recalculate = vis_cache.frame_counter % 4 == 0 || pos_moved || dir_changed;
 
-            let dt = time.as_ref().map(|t| t.delta_secs()).unwrap_or(0.016);
+            if should_recalculate {
+                vis_cache.last_pos = camera_translation;
+                vis_cache.last_dir = target_dir;
+                vis_cache.cached_visibility = if let Some(ref w) = world {
+                    calculate_celestial_visibility(w, camera_translation, target_dir, 96.0)
+                } else {
+                    1.0
+                };
+            }
+
+            let lerp_factor = (15.0 * dt).min(1.0);
+            vis_cache.smoothed_visibility +=
+                (vis_cache.cached_visibility - vis_cache.smoothed_visibility) * lerp_factor;
+            let celestial_visibility = vis_cache.smoothed_visibility;
+
             let target_exposure = base_exposure
                 * smooth_radial_fade
                 * celestial_visibility

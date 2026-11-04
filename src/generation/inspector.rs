@@ -153,7 +153,7 @@ pub fn terrain_inspector_ui(
                                 .text("Real Render Distance (LOD 0)"),
                         );
                         ui.add(
-                            egui::Slider::new(&mut settings.lod_render_distance, 0..=32)
+                            egui::Slider::new(&mut settings.lod_render_distance, 0..=64)
                                 .text("LOD Render Distance (Far Horizon)"),
                         );
                         if settings.lod_render_distance == 0 {

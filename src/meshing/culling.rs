@@ -26,7 +26,8 @@ pub struct CaveCullingState {
     pub rendered_vertices: usize,
     pub culled_vertices: usize,
     pub visible_chunks: HashSet<IVec3>,
-    pub traversal_queue: VecDeque<(IVec3, usize)>,
+    pub previously_visible_chunks: HashSet<IVec3>,
+    pub traversal_queue: VecDeque<(IVec3, usize, u8)>,
 }
 
 impl Default for CaveCullingState {
@@ -40,6 +41,7 @@ impl Default for CaveCullingState {
             rendered_vertices: 0,
             culled_vertices: 0,
             visible_chunks: HashSet::with_capacity(512),
+            previously_visible_chunks: HashSet::with_capacity(512),
             traversal_queue: VecDeque::with_capacity(256),
         }
     }
@@ -55,8 +57,8 @@ pub const FACE_OFFSETS: [IVec3; 6] = [
     IVec3::new(0, 0, 1),  // PositiveZ (5)
 ];
 
-const MAX_HORIZONTAL_RADIUS: i32 = 14;
-const MAX_VERTICAL_RADIUS: i32 = 12;
+const MAX_HORIZONTAL_RADIUS: i32 = 32;
+const MAX_VERTICAL_RADIUS: i32 = 16;
 
 /// Determines which boundary faces of the camera chunk are reachable from the camera's voxel.
 pub fn get_camera_reachable_faces(
@@ -207,9 +209,9 @@ pub fn is_position_underground(cam_pos: Vec3, world: Option<&VoxelWorld>) -> boo
     }
 
     // Cast a vertical ray upwards through the column to detect solid roof/ceiling
-    // Check up to 48 blocks above the camera for solid opaque ground
+    // Check up to 96 blocks above the camera for solid opaque ground
     let mut solid_count = 0;
-    for dy in 1..=48 {
+    for dy in 1..=96 {
         let check_coord = cam_block + IVec3::new(0, dy, 0);
         if let Some(voxel) = w.get_voxel(check_coord) {
             if voxel.is_solid_opaque() {
@@ -234,9 +236,7 @@ pub fn get_chunk_permeability(
     let is_subterranean = registry.is_subterranean(&coord)
         || world.is_some_and(|w| w.get_chunk(coord).is_some_and(Chunk::is_subterranean));
 
-    // When the player is on the surface, subterranean chunks sealed under solid terrain
-    // cannot propagate sight/visibility into other subterranean chambers.
-    if !is_player_underground && is_subterranean {
+    if !is_player_underground && is_subterranean && !registry.contains(&coord) {
         return 0;
     }
 
@@ -246,13 +246,13 @@ pub fn get_chunk_permeability(
 
     if let Some(w) = world {
         if let Some(chunk) = w.get_chunk(coord) {
+            if !is_player_underground && chunk.is_subterranean() {
+                return 0;
+            }
             if chunk.is_empty() {
                 return (1u64 << 36) - 1;
             }
             if chunk.is_fully_solid_opaque() {
-                return 0;
-            }
-            if chunk.is_subterranean() {
                 return 0;
             }
         } else {
@@ -263,7 +263,7 @@ pub fn get_chunk_permeability(
                 return 0;
             }
         }
-    } else if coord.y <= 0 {
+    } else if coord.y <= 0 || (!is_player_underground && is_subterranean) {
         return 0;
     } else {
         return (1u64 << 36) - 1;
@@ -344,35 +344,20 @@ pub fn update_cave_culling_system(
         culling_state.visible_chunks.insert(cam_chunk);
         culling_state.traversal_queue.clear();
 
-        // Queue only neighbor chunks in directions the camera can actually see through open air
         for out_face in 0..6 {
             if (reachable_faces & (1 << out_face)) != 0 {
                 let neighbor = cam_chunk + FACE_OFFSETS[out_face];
                 let in_face = OPPOSITE_FACES[out_face];
 
-                let is_neighbor_subterranean = registry.is_subterranean(&neighbor)
-                    || world
-                        .as_deref()
-                        .is_some_and(|w| w.get_chunk(neighbor).is_some_and(Chunk::is_subterranean));
-
-                // Surface-to-underground occlusion check:
-                // When player is on the surface, subterranean chunks cannot be entered horizontally.
-                // If entered directly from above (PositiveY face = 3), looking down into a shaft,
-                // the floor is visible, but sight cannot branch horizontally.
-                if !is_player_underground && is_neighbor_subterranean {
-                    if in_face == 3 {
-                        culling_state.visible_chunks.insert(neighbor);
-                    }
-                    continue;
-                }
-
                 if culling_state.visible_chunks.insert(neighbor) {
-                    culling_state.traversal_queue.push_back((neighbor, in_face));
+                    culling_state
+                        .traversal_queue
+                        .push_back((neighbor, in_face, 0));
                 }
             }
         }
 
-        while let Some((curr, in_face)) = culling_state.traversal_queue.pop_front() {
+        while let Some((curr, in_face, _)) = culling_state.traversal_queue.pop_front() {
             let mask =
                 get_chunk_permeability(curr, &registry, world.as_deref(), is_player_underground);
             if mask == 0 {
@@ -392,64 +377,112 @@ pub fn update_cave_culling_system(
                     continue;
                 }
 
-                let is_neighbor_subterranean = registry.is_subterranean(&neighbor)
-                    || world
-                        .as_deref()
-                        .is_some_and(|w| w.get_chunk(neighbor).is_some_and(Chunk::is_subterranean));
-
                 let in_face_of_neighbor = OPPOSITE_FACES[out_face];
-
-                // Surface-to-underground occlusion check:
-                // When player is on the surface, subterranean chunks cannot be entered horizontally.
-                // If entered directly from above (+Y face), the pit/ravine floor is visible,
-                // but traversal stops so horizontal caves don't illuminate across the world.
-                if !is_player_underground && is_neighbor_subterranean {
-                    if in_face_of_neighbor == 3 {
-                        culling_state.visible_chunks.insert(neighbor);
-                    }
-                    continue;
-                }
 
                 if culling_state.visible_chunks.insert(neighbor) {
                     culling_state
                         .traversal_queue
-                        .push_back((neighbor, in_face_of_neighbor));
+                        .push_back((neighbor, in_face_of_neighbor, 0));
                 }
             }
         }
     }
 
-    let mut rendered_count = 0;
-    let mut culled_count = 0;
-    let mut rendered_verts = 0;
-    let mut culled_verts = 0;
+    // Direct indexed entity visibility updates (avoiding full iteration across all entities)
+    let chunks_to_hide: Vec<IVec3> = culling_state
+        .previously_visible_chunks
+        .difference(&culling_state.visible_chunks)
+        .copied()
+        .collect();
 
-    for (coord, mut visibility) in &mut chunk_meshes {
-        let is_visible = culling_state.visible_chunks.contains(&coord.0);
-        let target = if is_visible {
-            rendered_count += 1;
-            Visibility::Inherited
-        } else {
-            culled_count += 1;
-            Visibility::Hidden
-        };
+    let chunks_to_show: Vec<IVec3> = culling_state
+        .visible_chunks
+        .difference(&culling_state.previously_visible_chunks)
+        .copied()
+        .collect();
 
-        if *visibility != target {
-            *visibility = target;
-        }
-
-        if let Some(render_data) = registry.get_render_data(&coord.0) {
-            let v = render_data.vertex_count();
-            if is_visible {
-                rendered_verts += v;
+    let apply_chunk_visibility = |coord: &IVec3,
+                                  is_visible_in_culling: bool,
+                                  reg: &ChunkMeshRegistry,
+                                  meshes_query: &mut Query<(&ChunkCoordinate, &mut Visibility)>| {
+        if let Some(render_data) = reg.get_render_data(coord) {
+            let target = if render_data.is_subterranean {
+                if is_visible_in_culling {
+                    Visibility::Inherited
+                } else {
+                    Visibility::Hidden
+                }
             } else {
-                culled_verts += v;
+                // Surface terrain is always visible to open air unless deep underground with no opening
+                if !is_player_underground || is_visible_in_culling {
+                    Visibility::Inherited
+                } else {
+                    Visibility::Hidden
+                }
+            };
+
+            // Procedural grass foliage distance culling: only render expensive blade quads within 5 chunks (80m)
+            let is_near_grass = (coord.x - cam_chunk.x).abs() <= 5 && (coord.z - cam_chunk.z).abs() <= 5;
+            let grass_target = if target == Visibility::Inherited && is_near_grass {
+                Visibility::Inherited
+            } else {
+                Visibility::Hidden
+            };
+
+            let mut apply = |part_opt: &Option<crate::meshing::pipeline::ChunkRenderPart>, vis: Visibility| {
+                if let Some(part) = part_opt {
+                    if let Ok((_, mut cur_vis)) = meshes_query.get_mut(part.entity) {
+                        if *cur_vis != vis {
+                            *cur_vis = vis;
+                        }
+                    }
+                }
+            };
+            apply(&render_data.opaque, target);
+            apply(&render_data.transparent, target);
+            apply(&render_data.grass, grass_target);
+        }
+    };
+
+    let moved_chunk = cam_chunk != culling_state.last_player_chunk;
+
+    if culling_state.previously_visible_chunks.is_empty() {
+        for coord in &culling_state.visible_chunks {
+            apply_chunk_visibility(coord, true, &registry, &mut chunk_meshes);
+        }
+    } else {
+        for coord in &chunks_to_hide {
+            apply_chunk_visibility(coord, false, &registry, &mut chunk_meshes);
+        }
+        for coord in &chunks_to_show {
+            apply_chunk_visibility(coord, true, &registry, &mut chunk_meshes);
+        }
+        if moved_chunk || registry.is_changed() {
+            for coord in &culling_state.visible_chunks {
+                apply_chunk_visibility(coord, true, &registry, &mut chunk_meshes);
             }
         }
     }
 
+    culling_state.previously_visible_chunks = culling_state.visible_chunks.clone();
+
+    // Fast O(visible_chunks) telemetry metrics calculation
+    let mut rendered_count = 0;
+    let mut rendered_verts = 0;
+    for coord in &culling_state.visible_chunks {
+        if let Some(render_data) = registry.get_render_data(coord) {
+            rendered_count += 1;
+            let is_near_grass = (coord.x - cam_chunk.x).abs() <= 5 && (coord.z - cam_chunk.z).abs() <= 5;
+            let mut v = 0;
+            if let Some(ref p) = render_data.opaque { v += p.vertex_count; }
+            if let Some(ref p) = render_data.transparent { v += p.vertex_count; }
+            if is_near_grass && let Some(ref p) = render_data.grass { v += p.vertex_count; }
+            rendered_verts += v;
+        }
+    }
+
     culling_state.rendered_chunks = rendered_count;
-    culling_state.culled_chunks = culled_count;
+    culling_state.culled_chunks = registry.len().saturating_sub(rendered_count);
     culling_state.rendered_vertices = rendered_verts;
-    culling_state.culled_vertices = culled_verts;
+    culling_state.culled_vertices = registry.total_vertices().saturating_sub(rendered_verts);
 }

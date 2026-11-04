@@ -275,6 +275,22 @@ impl Chunk {
         self.solid_opaque_count == CHUNK_VOLUME && !self.has_shapes() && !self.has_extra_slabs()
     }
 
+    /// Fast test to determine if the chunk contains any voxels that sprout grass turf.
+    #[inline]
+    pub fn has_any_grass_turf(&self) -> bool {
+        match &self.storage {
+            ChunkStorage::Uniform(v) => v.has_grass_turf(),
+            ChunkStorage::Paletted {
+                palette,
+                palette_len,
+                ..
+            } => palette[..(*palette_len as usize)]
+                .iter()
+                .any(|v| v.has_grass_turf()),
+            ChunkStorage::Dense(voxels) => voxels.iter().any(|v| v.has_grass_turf()),
+        }
+    }
+
     #[inline(always)]
     pub fn get(&self, x: usize, y: usize, z: usize) -> Voxel {
         match self.homogeneity {

@@ -176,13 +176,13 @@ fn test_grass_trail_field_stamping_and_decay() {
 fn test_grass_config_presets_and_style() {
     let default_cfg = GrassConfig::default();
     assert!(default_cfg.enabled);
-    assert_eq!(default_cfg.grass_style, GrassStyle::Tapered);
+    assert_eq!(default_cfg.grass_style, GrassStyle::Segmented);
     assert_eq!(default_cfg.blades_per_block, 64);
 
     let mut local_cfg = voxel_game_engine::core::config::LocalConfig::default();
     assert!(local_cfg.grass_enabled);
     assert_eq!(local_cfg.grass_density, 32);
-    assert_eq!(local_cfg.grass_style, "tapered");
+    assert_eq!(local_cfg.grass_style, "segmented");
 
     local_cfg.apply_preset(voxel_game_engine::core::config::PerformancePreset::Potato);
     assert!(!local_cfg.grass_enabled);

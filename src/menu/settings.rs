@@ -54,6 +54,7 @@ struct AudioSettingsSection;
 struct TabButton(SettingsTab);
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 enum SettingsAction {
     SwitchTab(SettingsTab),
     DecLanguage,
@@ -723,20 +724,6 @@ fn spawn_settings_menu(
                                 ..default()
                             })
                             .with_children(|col_left| {
-                                // Performance Preset Stepper
-                                let preset_label_str = format_preset(local_config.preset, &loc);
-                                spawn_stepper_row(
-                                    col_left,
-                                    loc.t("menu.settings.preset"),
-                                    preset_label_str,
-                                    SettingsAction::DecPreset,
-                                    SettingsAction::IncPreset,
-                                    PresetLabel,
-                                    font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
-                                );
-
                                 // Render Scale Stepper
                                 spawn_stepper_row(
                                     col_left,
@@ -905,21 +892,6 @@ fn spawn_settings_menu(
                                         }
                                     ),
                                     ProceduralGrassLabel,
-                                    font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
-                                );
-
-                                // Grass Style Toggle Button
-                                spawn_toggle_button(
-                                    col_right,
-                                    SettingsAction::CycleGrassStyle,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.grass_style"),
-                                        format_grass_style(&local_config.grass_style, &loc)
-                                    ),
-                                    GrassStyleLabel,
                                     font_handle.as_ref(),
                                     &btn_normal,
                                     &btn_hover,
@@ -1925,7 +1897,7 @@ fn handle_settings_buttons(
                 }
                 SettingsAction::IncLodDistance => {
                     chunk_settings.lod_render_distance =
-                        (chunk_settings.lod_render_distance + 2).min(32);
+                        (chunk_settings.lod_render_distance + 2).min(64);
                 }
                 SettingsAction::DecSimulationDistance => {
                     chunk_settings.simulation_distance =

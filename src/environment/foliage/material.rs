@@ -6,7 +6,7 @@ use bevy::{
 };
 
 use super::{
-    config::{GrassConfig, GrassStyle},
+    config::GrassConfig,
     trail::GrassTrailField,
     uniforms::{FoliageAnimationState, GrassShaderUniformsGpu},
 };
@@ -62,7 +62,6 @@ pub type GrassChunkMaterial = ExtendedMaterial<StandardMaterial, GrassVoxelMater
 #[derive(Resource, Clone)]
 pub struct GrassMaterialHandle {
     pub material: Handle<GrassChunkMaterial>,
-    pub tapered_shape_texture: Handle<Image>,
     pub segmented_shape_texture: Handle<Image>,
     pub noise_texture: Handle<Image>,
     pub grainy_texture: Handle<Image>,
@@ -73,9 +72,8 @@ pub fn setup_grass_materials(
     asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
     mut materials: ResMut<Assets<GrassChunkMaterial>>,
-    config: Option<Res<GrassConfig>>,
+    _config: Option<Res<GrassConfig>>,
 ) {
-    let tapered_shape_texture = asset_server.load("textures/foliage/grass_tapered.png");
     let segmented_shape_texture = asset_server.load("textures/foliage/grass_bands.png");
     let noise_texture = asset_server.load("textures/foliage/noise.png");
     let grainy_texture = asset_server.load("textures/foliage/grainy.png");
@@ -84,14 +82,7 @@ pub fn setup_grass_materials(
     let trail_handle = trail.image_handle.clone();
     commands.insert_resource(trail);
 
-    let default_cfg = GrassConfig::default();
-    let cfg = config.as_ref().map(|c| &**c).unwrap_or(&default_cfg);
-
-    let active_shape = if cfg.grass_style == GrassStyle::Segmented {
-        segmented_shape_texture.clone()
-    } else {
-        tapered_shape_texture.clone()
-    };
+    let active_shape = segmented_shape_texture.clone();
 
     let material_handle = materials.add(ExtendedMaterial {
         base: StandardMaterial {
@@ -112,7 +103,6 @@ pub fn setup_grass_materials(
 
     commands.insert_resource(GrassMaterialHandle {
         material: material_handle,
-        tapered_shape_texture,
         segmented_shape_texture,
         noise_texture,
         grainy_texture,
@@ -123,22 +113,12 @@ pub fn sync_grass_material_uniforms(
     anim_state: Res<FoliageAnimationState>,
     grass_mat_handle: Option<Res<GrassMaterialHandle>>,
     mut materials: ResMut<Assets<GrassChunkMaterial>>,
-    config: Option<Res<GrassConfig>>,
+    _config: Option<Res<GrassConfig>>,
 ) {
-    let (Some(handle), Some(cfg)) = (grass_mat_handle, config) else {
+    let Some(handle) = grass_mat_handle else {
         return;
     };
     if let Some(mut mat) = materials.get_mut(&handle.material) {
         mat.extension.uniforms = anim_state.gpu_uniforms;
-
-        let target_shape = if cfg.grass_style == GrassStyle::Segmented {
-            &handle.segmented_shape_texture
-        } else {
-            &handle.tapered_shape_texture
-        };
-
-        if &mat.extension.shape_texture != target_shape {
-            mat.extension.shape_texture = target_shape.clone();
-        }
     }
 }

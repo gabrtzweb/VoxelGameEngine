@@ -69,7 +69,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **13** | **[Physics Engine, Fluid Dynamics & Item Drops](#phase-13-physics-engine-fluid-dynamics--item-drops-planned)** | **Planned** | Overhauled fluid propagation, gravity blocks (sand, gravel), 3D floating item drops with magnetism, projectile trajectories |
 | **14** | **[Dynamic Weather System & Meteorological Phenomena](#phase-14-dynamic-weather-system--meteorological-phenomena-completed)** | **Completed** | Multi-state weather simulation (rain, snow, fog, storms), precipitation particles, surface wetness, dynamic snow accumulation |
 | **15** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-15-visual-aesthetics-shaders--atmospheric-fx-overhaul-completed)** | **Completed** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, subterranean lighting stabilization |
-| **16** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-16-performance-engineering-chunk-streaming--lod-enhancements-planned)** | **Planned** | Worker thread scaling, GPU frustum/occlusion culling, smooth LOD horizon transitions, runtime voxel memory compression |
+| **16** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-16-performance-engineering-chunk-streaming--lod-enhancements-in-progress)** | **In Progress** | Streaming modularization, shapes decomposition, cave occlusion & visibility fix, boundary flora verification, ongoing frametime optimization |
 | **17** | **[Localization & Multi-Language Support](#phase-17-localization--multi-language-support-completed)** | **Completed** | `lang/` translation files (`en_us`, `pt_br`), comprehensive UI/block/item localization, natural Portuguese grammar, in-game language selector |
 | **18** | **[Controls & Keybinding System](#phase-18-controls--keybinding-system-completed)** | **Completed** | Configurable keybindings for all actions, mouse sensitivity & invert Y options, input conflict detection, Main Menu & Pause integration |
 | **19** | **[Dynamic Foliage & Procedural Grass System](#phase-19-dynamic-foliage--procedural-grass-system-completed)** | **Completed** | Procedural 3D grass blades on surface blocks, cubic Bezier wind deformation, Voronoi clumping, entity footprint trails, dynamic LOD |
@@ -339,16 +339,25 @@ Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dyna
 
 ---
 
-### Phase 16: Performance Engineering, Chunk Streaming & LOD Enhancements (Planned)
+### Phase 16: Performance Engineering, Chunk Streaming & LOD Enhancements (In Progress)
 
-- [ ] **Streaming Throughput & Worker Scaling**:
-  - Optimize asynchronous compute worker pools for chunk generation and greedy meshing with dynamic per-frame upload budgets.
-- [ ] **Advanced Level-of-Detail (LOD) & Occlusion**:
-  - Refine multi-tier chunk mesh LOD transitions to eliminate visible terrain pop-in at high render distances (32+ chunks).
-  - Implement GPU-driven frustum culling and occlusion queries to avoid rendering occluded subterranean geometry.
-- [ ] **Voxel Memory Footprint & Disk Streaming**:
-  - Compress runtime voxel storage structures to maximize cache locality and reduce memory consumption per loaded chunk.
-  - Accelerate binary region-based world serialization for seamless disk save and load streaming.
+- [x] **Streaming Architecture & Worker Scaling**:
+  - Modularize chunk streaming pipeline into focused submodules (`planner.rs`, `loader.rs`, `unloader.rs`, `lod_scheduler.rs`).
+  - Set default base render distance to 12 chunks.
+  - Asynchronous compute worker pools with dynamic per-frame upload budgets.
+- [x] **Cave Occlusion Culling & Robust Chunk Visibility**:
+  - Sodium-style 36-bit visibility mask graph traversal through open air openings.
+  - Seamless full-depth cavern and ravine traversal without artificial depth truncation (eliminating void cutoffs when looking into open caves).
+  - Robust visibility synchronization in `sync_render_part` and `apply_chunk_mesh` preventing subterranean and edited chunks from getting permanently stuck in `Visibility::Hidden`.
+- [x] **Flora Generation Cave Verification**:
+  - Sample real 3D terrain and cave noise at boundary layers in `populate_chunk_flora`, ensuring flowers, wildgrass, and shrubs never spawn suspended in air over open cave openings.
+- [x] **Modular Meshing Geometry Architecture**:
+  - Decompose monolithic `shapes.rs` into modular `src/meshing/shapes/` (`slabs_stairs.rs`, `pillars_walls.rs`, `fixtures.rs`, `mod.rs`).
+  - Reusable thread-local meshing buffers and bit-packed vertex structures.
+- [ ] **Frametime Optimization & High-Distance Frame Rate Recovery (Active)**:
+  - Deep profiling and optimization of render distance 12 frametimes (addressing severe frame drops down to 30-50 FPS).
+  - CPU/GPU bottleneck diagnosis across dense geometry, entity draw calls, and shadow cascades.
+  - Further tuning of LOD transition hysteresis and memory footprint.
 
 ---
 

@@ -152,9 +152,11 @@ pub fn start_meshing_tasks(
         let is_subterranean = chunk.is_subterranean();
         let neighborhood = ChunkNeighborhood::new(&world, coordinate);
         let textures = material.texture_registry.clone();
+        let p_chunk = streaming_state.as_ref().and_then(|s| s.last_player_chunk);
 
         let task = pool.spawn(async move {
-            let meshes = ChunkMesher::build_meshes(&neighborhood, coordinate, &textures);
+            let meshes =
+                ChunkMesher::build_meshes_with_lod(&neighborhood, coordinate, &textures, p_chunk);
             CompletedChunkMesh {
                 coordinate,
                 meshes,
@@ -185,6 +187,7 @@ pub fn collect_meshing_tasks(
     mut meshes: ResMut<Assets<Mesh>>,
     streaming_settings: Option<Res<ChunkStreamingSettings>>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
+    time: Option<Res<Time>>,
 ) {
     if material.grass.is_none()
         && let Some(ref grass_h) = grass_handle
@@ -193,13 +196,22 @@ pub fn collect_meshing_tasks(
     }
 
     let is_loading = menu_state.is_some_and(|s| *s.get() == crate::menu::MenuState::Loading);
-    let upload_budget = if is_loading {
+    let base_budget = if is_loading {
         48
     } else {
         streaming_settings
             .as_ref()
             .map(|s| s.mesh_upload_budget)
             .unwrap_or(DEFAULT_CHUNK_MESH_UPLOADS_PER_FRAME)
+    };
+
+    let upload_budget = if is_loading {
+        base_budget
+    } else {
+        let dt = time.as_ref().map(|t| t.delta_secs()).unwrap_or(0.016);
+        let target_frame_time = 1.0 / 140.0; // Target high-framerate baseline
+        let fps_multiplier = (target_frame_time / dt.max(0.001)).clamp(0.4, 2.0);
+        ((base_budget as f32 * fps_multiplier).round() as usize).clamp(2, 64)
     };
 
     let mut uploaded = 0;

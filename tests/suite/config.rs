@@ -7,7 +7,7 @@ use voxel_game_engine::core::{
 fn test_default_config() {
     let config = LocalConfig::default();
     assert_eq!(config.backend, "auto");
-    assert_eq!(config.render_distance, 8);
+    assert_eq!(config.render_distance, 12);
     assert_eq!(config.lod_render_distance, 8);
     assert_eq!(config.simulation_distance, 8);
     assert!(config.fog_enabled);

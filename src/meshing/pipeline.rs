@@ -2,6 +2,7 @@ use bevy::platform::collections::HashMap;
 
 use bevy::{
     camera::primitives::{Aabb, MeshAabb},
+    light::NotShadowCaster,
     pbr::{ExtendedMaterial, MaterialExtension},
     prelude::*,
     render::render_resource::*,
@@ -385,7 +386,7 @@ pub fn apply_chunk_mesh(
     coordinate: IVec3,
     rebuilt: ChunkMeshes,
     is_subterranean: bool,
-    _culling_state: Option<&CaveCullingState>,
+    culling_state: Option<&CaveCullingState>,
     registry: &mut ChunkMeshRegistry,
     meshes: &mut Assets<Mesh>,
     material: &ChunkMaterial,
@@ -395,7 +396,13 @@ pub fn apply_chunk_mesh(
     let was_empty;
 
     let initial_visibility = if is_subterranean {
-        Visibility::Hidden
+        if culling_state.is_none()
+            || culling_state.is_some_and(|cs| cs.visible_chunks.contains(&coordinate))
+        {
+            Visibility::Inherited
+        } else {
+            Visibility::Hidden
+        }
     } else {
         Visibility::Inherited
     };
@@ -420,6 +427,7 @@ pub fn apply_chunk_mesh(
             Some(coordinate),
             is_subterranean,
             initial_visibility,
+            false,
         );
 
         sync_render_part(
@@ -433,6 +441,7 @@ pub fn apply_chunk_mesh(
             Some(coordinate),
             is_subterranean,
             initial_visibility,
+            false,
         );
 
         if let Some(grass_material) = &material.grass {
@@ -447,6 +456,7 @@ pub fn apply_chunk_mesh(
                 Some(coordinate),
                 is_subterranean,
                 initial_visibility,
+                true,
             );
         } else {
             remove_render_part(commands, meshes, &mut entry.grass);
@@ -492,6 +502,7 @@ fn sync_render_part<M: Material>(
     coordinate: Option<IVec3>,
     is_subterranean: bool,
     initial_visibility: Visibility,
+    is_grass: bool,
 ) {
     let Some(rebuilt_mesh) = rebuilt_mesh else {
         remove_render_part(commands, meshes, part);
@@ -514,6 +525,12 @@ fn sync_render_part<M: Material>(
         existing.triangle_count = triangle_count;
         if let Ok(mut entity_cmds) = commands.get_entity(existing.entity) {
             entity_cmds.insert(tight_aabb);
+            if is_grass {
+                entity_cmds.insert(NotShadowCaster);
+            }
+            if !is_subterranean || initial_visibility == Visibility::Inherited {
+                entity_cmds.insert(Visibility::Inherited);
+            }
         }
         return;
     }
@@ -536,6 +553,10 @@ fn sync_render_part<M: Material>(
 
     if is_subterranean {
         entity_cmds.insert(SubterraneanChunkMesh);
+    }
+
+    if is_grass {
+        entity_cmds.insert(NotShadowCaster);
     }
 
     let entity = entity_cmds.id();
@@ -631,6 +652,7 @@ pub fn apply_lod_mesh(
             None,
             false,
             Visibility::Inherited,
+            false,
         );
 
         sync_render_part(
@@ -644,6 +666,7 @@ pub fn apply_lod_mesh(
             None,
             false,
             Visibility::Inherited,
+            false,
         );
 
         entry.is_empty()

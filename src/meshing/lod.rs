@@ -149,8 +149,19 @@ fn push_lod_wall(
         );
 
         // Subsurface remaining drop: stone strata
+        // Samples realistic geological stone strata based on depth
+        let sub_voxel = if world_pos.y > 60 {
+            Voxel::Dolomite
+        } else if world_pos.y > 20 {
+            Voxel::Andesite
+        } else if world_pos.y > -20 {
+            Voxel::Limestone
+        } else {
+            Voxel::Slate
+        };
+
         let sub_layer = textures
-            .get_face_texture_info(Voxel::Granite, world_pos - IVec3::Y, direction)
+            .get_face_texture_info(sub_voxel, world_pos - IVec3::Y, direction)
             .0 as f32;
 
         push_lod_quad(
@@ -236,6 +247,12 @@ pub fn build_lod_mesh(
                 .get_face_texture_info(voxel, world_pos, FaceDirection::PositiveY)
                 .0 as f32;
             let mut tint = voxel.tint_color_at(world_pos);
+            if h_curr >= 110 {
+                let snow_blend = ((h_curr - 110) as f32 / 16.0).clamp(0.0, 1.0);
+                tint[0] = tint[0] * (1.0 - snow_blend) + 0.95 * snow_blend;
+                tint[1] = tint[1] * (1.0 - snow_blend) + 0.98 * snow_blend;
+                tint[2] = tint[2] * (1.0 - snow_blend) + 1.00 * snow_blend;
+            }
             tint[3] = 1.0;
 
             let p0 = [local_x0, top_y, local_z0];
@@ -256,11 +273,11 @@ pub fn build_lod_mesh(
                 tint,
             );
 
-            // --- B. Vertical Side Walls (Stepped Cuboid Faces) ---
+            // --- B. Vertical Side Walls (Stepped Cuboid Faces with Horizon Skirts) ---
             // West neighbor (i - 1, j)
             let h_west = heights[idx(i - 1, j)];
             let bot_west = if i == 0 {
-                ((h_west + 1) as f32).min(top_y - 2.0)
+                ((h_west + 1) as f32).min(top_y - 12.0)
             } else {
                 (h_west + 1) as f32
             };
@@ -288,7 +305,7 @@ pub fn build_lod_mesh(
             // East neighbor (i + 1, j)
             let h_east = heights[idx(i + 1, j)];
             let bot_east = if i == num_cells - 1 {
-                ((h_east + 1) as f32).min(top_y - 2.0)
+                ((h_east + 1) as f32).min(top_y - 12.0)
             } else {
                 (h_east + 1) as f32
             };
@@ -316,7 +333,7 @@ pub fn build_lod_mesh(
             // North neighbor (i, j - 1)
             let h_north = heights[idx(i, j - 1)];
             let bot_north = if j == 0 {
-                ((h_north + 1) as f32).min(top_y - 2.0)
+                ((h_north + 1) as f32).min(top_y - 12.0)
             } else {
                 (h_north + 1) as f32
             };
@@ -344,7 +361,7 @@ pub fn build_lod_mesh(
             // South neighbor (i, j + 1)
             let h_south = heights[idx(i, j + 1)];
             let bot_south = if j == num_cells - 1 {
-                ((h_south + 1) as f32).min(top_y - 2.0)
+                ((h_south + 1) as f32).min(top_y - 12.0)
             } else {
                 (h_south + 1) as f32
             };

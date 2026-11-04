@@ -635,7 +635,7 @@ fn default_grass_enabled() -> bool {
 }
 
 fn default_grass_style() -> String {
-    "tapered".to_string()
+    "segmented".to_string()
 }
 
 fn default_grass_density() -> u32 {
@@ -664,11 +664,8 @@ pub fn prev_grass_density(density: u32) -> u32 {
     }
 }
 
-pub fn cycle_grass_style(style: &str) -> String {
-    match style {
-        "segmented" | "Segmented" => "tapered".to_string(),
-        _ => "segmented".to_string(),
-    }
+pub fn cycle_grass_style(_style: &str) -> String {
+    "segmented".to_string()
 }
 
 fn default_mouse_sensitivity() -> f32 {
@@ -696,7 +693,7 @@ fn default_backend() -> String {
 }
 
 fn default_render_distance() -> i32 {
-    8
+    12
 }
 
 fn default_lod_render_distance() -> i32 {

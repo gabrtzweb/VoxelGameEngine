@@ -176,13 +176,17 @@ src/
 │   ├── pause.rs
 │   └── settings.rs
 ├── meshing/
+│   ├── shapes/
+│   │   ├── fixtures.rs
+│   │   ├── mod.rs
+│   │   ├── pillars_walls.rs
+│   │   └── slabs_stairs.rs
 │   ├── async_mesher.rs
 │   ├── culling.rs
 │   ├── greedy.rs
 │   ├── lod.rs
 │   ├── mod.rs
 │   ├── pipeline.rs
-│   ├── shapes.rs
 │   └── textures.rs
 ├── player/
 │   ├── camera.rs
@@ -212,9 +216,13 @@ src/
 │   │   ├── shape.rs
 │   │   └── voxel.rs
 │   ├── streaming/
+│   │   ├── loader.rs
+│   │   ├── lod_scheduler.rs
 │   │   ├── manager.rs
 │   │   ├── mod.rs
-│   │   └── queues.rs
+│   │   ├── planner.rs
+│   │   ├── queues.rs
+│   │   └── unloader.rs
 │   ├── cache.rs
 │   ├── chunk.rs
 │   ├── mod.rs

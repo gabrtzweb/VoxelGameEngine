@@ -4,16 +4,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default, Reflect)]
 pub enum GrassStyle {
     #[default]
-    Tapered,
+    #[serde(alias = "tapered", alias = "Tapered")]
     Segmented,
 }
 
 impl GrassStyle {
     pub const fn name(&self) -> &'static str {
-        match self {
-            Self::Tapered => "Tapered",
-            Self::Segmented => "Segmented",
-        }
+        "Segmented"
     }
 }
 
@@ -47,7 +44,7 @@ impl Default for GrassConfig {
         Self {
             enabled: true,
             blades_per_block: 64,
-            grass_style: GrassStyle::Tapered,
+            grass_style: GrassStyle::Segmented,
             blade_height: 0.30,
             height_variation: 1.35,
             blade_width: 0.95,
