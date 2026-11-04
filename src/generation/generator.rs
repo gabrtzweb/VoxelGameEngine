@@ -1343,8 +1343,6 @@ impl TerrainGenerator {
                     | Voxel::PeatMud
                     | Voxel::SiltMud
                     | Voxel::SnowBlock
-                    | Voxel::PowderSnow
-                    | Voxel::AshPumice
                     | Voxel::FrostIce
                     | Voxel::FrostIcePacked
                     | Voxel::FrostIceBlack

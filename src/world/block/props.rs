@@ -34,7 +34,6 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
     if matches!(
         v,
         Voxel::WaterOccupied
-            | Voxel::NullLiquid
             | Voxel::LiquidAcid
             | Voxel::LiquidBlood
             | Voxel::LiquidCoreMagma
@@ -82,13 +81,18 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
         && !v.is_wall_decal_const()
         && !is_occupied)
         || v.is_crystal_cluster_const()
+        || v.is_rubble_const()
         || matches!(v, Voxel::VegeLilyPad);
     if is_collidable {
         flags |= FLAG_COLLIDABLE;
     }
 
-    // Rocks (85..=152) and Ores (244..=317)
-    let is_solid_opaque = (matches!(id, 85..=152 | 244..=317) && !v.is_pebble_const())
+    const ROCKS_START: u16 = Voxel::Andesite as u16;
+    const ROCKS_END: u16 = Voxel::Slate as u16;
+    const ORES_START: u16 = Voxel::GemDiamondRough as u16;
+    const ORES_END: u16 = Voxel::OreUraniumRaw as u16;
+    let is_solid_opaque =
+        (matches!(id, ROCKS_START..=ROCKS_END | ORES_START..=ORES_END) && !v.is_pebble_const() && !v.is_rubble_const())
         || (!is_empty
             && !is_fluid
             && (flags & FLAG_LEAVES) == 0
@@ -97,6 +101,8 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
             && (flags & FLAG_BASKET) == 0
             && (flags & FLAG_CROSS_BILLBOARD) == 0
             && !v.is_pebble_const()
+            && !v.is_rubble_const()
+            && !v.is_speleothem_const()
             && !v.is_flat_pad_const()
             && !v.is_wall_decal_const()
             && !matches!(
@@ -120,7 +126,7 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
     let max_fluid_spread = match v {
         Voxel::WaterOccupied | Voxel::LiquidWater | Voxel::LiquidSpringWater => 8,
         Voxel::LiquidAcid => 5,
-        Voxel::NullLiquid | Voxel::LiquidBlood => 4,
+        Voxel::LiquidBlood => 4,
         Voxel::LiquidCoreMagma
         | Voxel::LiquidLava
         | Voxel::LiquidMolten
@@ -144,8 +150,9 @@ const fn init_voxel_properties() -> [VoxelProps; MAX_VOXEL_COUNT] {
         max_fluid_spread: 0,
     }; MAX_VOXEL_COUNT];
 
+    const MAX_ID: usize = Voxel::ALL[Voxel::ALL.len() - 1] as usize;
     let mut idx = 0;
-    while idx <= 681 {
+    while idx <= MAX_ID {
         if let Some(v) = Voxel::from_u16(idx as u16) {
             table[idx] = compute_voxel_props(v);
         }
@@ -163,7 +170,6 @@ impl Voxel {
         matches!(
             self,
             Self::EmitTorchBlue
-                | Self::EmitTorchCold
                 | Self::EmitTorchFire
                 | Self::EmitTorchGreen
                 | Self::EmitTorchRed
@@ -190,55 +196,78 @@ impl Voxel {
     }
 
     #[inline(always)]
+    pub const fn is_speleothem_const(self) -> bool {
+        matches!(
+            self,
+            Self::SpeleothemBlueIce
+                | Self::SpeleothemCalcite
+                | Self::SpeleothemKarst
+                | Self::SpeleothemSaltStraw
+                | Self::ObsidianSpike
+        )
+    }
+
+    pub const fn is_rubble_const(self) -> bool {
+        matches!(
+            self,
+            Self::AndesiteRubble
+                | Self::ArgilliteRubble
+                | Self::BasaltRubble
+                | Self::ChalkRubble
+                | Self::DolomiteRubble
+                | Self::GabbroRubble
+                | Self::GraniteRubble
+                | Self::LimestoneRubble
+                | Self::MarbleRubble
+                | Self::SandstoneRubble
+                | Self::SandstoneDuneRubble
+                | Self::SandstoneRedRubble
+                | Self::SandstoneWhiteRubble
+                | Self::SlateRubble
+        )
+    }
+
+    #[inline(always)]
     pub const fn is_point_light_const(self) -> bool {
         matches!(
             self,
-            Self::CrystalCitrineGlinted
+            Self::Magma
+                | Self::CrystalCitrineGlinted
                 | Self::CrystalFluoriteGlinted
                 | Self::CrystalPinkSaltGlinted
                 | Self::CrystalSeleniteGlinted
                 | Self::GeothermalVent
-                | Self::EmitLamp
-                | Self::EmitLightBlue
-                | Self::EmitLightCold
-                | Self::EmitLightGreen
-                | Self::EmitLightRed
-                | Self::EmitLightWarm
+                | Self::EmitLampWarm
+                | Self::EmitLampBlue
+                | Self::EmitLampGreen
+                | Self::EmitLampRed
                 | Self::EmitTorchBlue
-                | Self::EmitTorchCold
                 | Self::EmitTorchFire
                 | Self::EmitTorchGreen
                 | Self::EmitTorchRed
                 | Self::EmitTorchWarm
-                | Self::FungiMycena
-                | Self::FungiMycenaCap
         )
     }
 
     #[inline(always)]
     pub const fn emission_level(self) -> u8 {
         match self {
-            Self::EmitLightBlue
-            | Self::EmitLightCold
-            | Self::EmitLightGreen
-            | Self::EmitLightRed
-            | Self::EmitLightWarm
+            Self::EmitLampWarm
+            | Self::EmitLampBlue
+            | Self::EmitLampGreen
+            | Self::EmitLampRed
             | Self::LiquidLava
             | Self::LiquidCoreMagma
             | Self::LiquidMolten
             | Self::Magma => 15,
 
-            Self::EmitLamp
-            | Self::EmitTorchBlue
-            | Self::EmitTorchCold
+            Self::EmitTorchBlue
             | Self::EmitTorchFire
             | Self::EmitTorchGreen
             | Self::EmitTorchRed
             | Self::EmitTorchWarm => 14,
 
             Self::GeothermalVent => 12,
-
-            Self::FungiMycena | Self::FungiMycenaCap => 9,
 
             Self::CrystalCitrineGlinted
             | Self::CrystalFluoriteGlinted
@@ -257,21 +286,11 @@ impl Voxel {
             self,
             Self::AcaciaLeaves
                 | Self::AcaciaLeavesDead
-                | Self::AspenLeaves
-                | Self::AspenLeavesDead
                 | Self::BambooLeaves
-                | Self::BaobabLeaves
-                | Self::BaobabLeavesDead
                 | Self::BirchLeaves
                 | Self::BirchLeavesDead
                 | Self::CherryLeaves
                 | Self::CherryLeavesDead
-                | Self::CypressLeaves
-                | Self::CypressLeavesDead
-                | Self::FirLeaves
-                | Self::FirLeavesDead
-                | Self::KapokLeaves
-                | Self::KapokLeavesDead
                 | Self::MahoganyLeaves
                 | Self::MahoganyLeavesDead
                 | Self::MangroveLeaves
@@ -302,12 +321,9 @@ impl Voxel {
             Self::CalicheGrass
                 | Self::LateriteGrass
                 | Self::LoamGrass
-                | Self::LoamBurrow
                 | Self::PeatGrass
-                | Self::PeatBurrow
                 | Self::PermafrostGrass
                 | Self::SiltGrass
-                | Self::SiltBurrow
                 | Self::AndesiteGrass
                 | Self::ArgilliteGrass
                 | Self::BasaltGrass
@@ -373,8 +389,10 @@ impl Voxel {
 
     #[inline(always)]
     pub const fn is_flora_billboard(self) -> bool {
+        const FLORA_START: u16 = Voxel::VegeWildgrass as u16;
+        const FLORA_END: u16 = Voxel::FlowerWildflowers as u16;
         let id = self as u16;
-        (id >= 614 && id <= 681)
+        (id >= FLORA_START && id <= FLORA_END)
             && id != (Self::VegeCactus as u16)
             && !self.is_flat_pad_const()
             && !self.is_wall_decal_const()
@@ -385,8 +403,7 @@ impl Voxel {
         self.is_flora_billboard()
             || matches!(
                 self,
-                Self::NullCrossmesh
-                | Self::CrystalAmethystCluster
+                Self::CrystalAmethystCluster
                 | Self::CrystalAmethystGlinted
                 | Self::CrystalAquamarineCluster
                 | Self::CrystalAquamarineGlinted
@@ -429,14 +446,10 @@ impl Voxel {
                 | Self::CobwebHanging
                 | Self::CobwebStretched
                 | Self::FungiAmanita
-                | Self::FungiChanterelle
-                | Self::FungiIndigo
-                | Self::FungiMycena
                 | Self::FungiPorcini
                 | Self::FungiRussula
                 | Self::FungiShiitake
                 | Self::FungiVerdigris
-                | Self::BeaverDam
         )
     }
 
@@ -464,44 +477,8 @@ impl Voxel {
                     | Self::CrystalFluoriteBlock
                     | Self::CrystalPinkSaltBlock
                     | Self::CrystalSeleniteBlock
-                    | Self::BlubberBlock
-                    | Self::HoneyBlock
                     | Self::JellyBlock
                     | Self::SlimeBlock
-                    | Self::Glass
-                    | Self::GlassBlack
-                    | Self::GlassBlue
-                    | Self::GlassBrown
-                    | Self::GlassDarkBlue
-                    | Self::GlassDarkGrey
-                    | Self::GlassGreen
-                    | Self::GlassLightGrey
-                    | Self::GlassLightPink
-                    | Self::GlassLime
-                    | Self::GlassOrange
-                    | Self::GlassPink
-                    | Self::GlassPurple
-                    | Self::GlassRed
-                    | Self::GlassTurquoise
-                    | Self::GlassWhite
-                    | Self::GlassYellow
-                    | Self::TintedGlass
-                    | Self::TintedGlassBlack
-                    | Self::TintedGlassBlue
-                    | Self::TintedGlassBrown
-                    | Self::TintedGlassDarkBlue
-                    | Self::TintedGlassDarkGrey
-                    | Self::TintedGlassGreen
-                    | Self::TintedGlassLightGrey
-                    | Self::TintedGlassLightPink
-                    | Self::TintedGlassLime
-                    | Self::TintedGlassOrange
-                    | Self::TintedGlassPink
-                    | Self::TintedGlassPurple
-                    | Self::TintedGlassRed
-                    | Self::TintedGlassTurquoise
-                    | Self::TintedGlassWhite
-                    | Self::TintedGlassYellow
             )
     }
 
@@ -520,20 +497,15 @@ impl Voxel {
                 | Self::CrystalPinkSaltGlinted
                 | Self::CrystalSeleniteGlinted
                 | Self::GeothermalVent
-                | Self::EmitLamp
-                | Self::EmitLightBlue
-                | Self::EmitLightCold
-                | Self::EmitLightGreen
-                | Self::EmitLightRed
-                | Self::EmitLightWarm
+                | Self::EmitLampWarm
+                | Self::EmitLampBlue
+                | Self::EmitLampGreen
+                | Self::EmitLampRed
                 | Self::EmitTorchBlue
-                | Self::EmitTorchCold
                 | Self::EmitTorchFire
                 | Self::EmitTorchGreen
                 | Self::EmitTorchRed
                 | Self::EmitTorchWarm
-                | Self::FungiMycena
-                | Self::FungiMycenaCap
         )
     }
 }
@@ -590,9 +562,21 @@ impl Voxel {
     }
 
     #[inline(always)]
+    pub fn is_rubble(self) -> bool {
+        self.is_rubble_const()
+    }
+
+    #[inline(always)]
+    pub fn is_speleothem(self) -> bool {
+        self.is_speleothem_const()
+    }
+
+    #[inline(always)]
     pub fn has_custom_mesh(self) -> bool {
         (VOXEL_PROPS[self as usize].flags & (FLAG_TORCH | FLAG_BASKET | FLAG_CROSS_BILLBOARD)) != 0
             || self.is_pebble_const()
+            || self.is_rubble_const()
+            || self.is_speleothem_const()
             || self.is_bamboo()
     }
 
@@ -601,9 +585,6 @@ impl Voxel {
         matches!(
             self,
             Self::FungiAmanita
-                | Self::FungiChanterelle
-                | Self::FungiIndigo
-                | Self::FungiMycena
                 | Self::FungiPorcini
                 | Self::FungiRussula
                 | Self::FungiShiitake
@@ -666,6 +647,7 @@ impl Voxel {
     #[inline(always)]
     pub fn requires_floor_support(self) -> bool {
         self.is_pebble()
+            || self.is_rubble()
             || self.is_mushroom()
             || self.is_coral_fan()
             || self.is_marine_flora()

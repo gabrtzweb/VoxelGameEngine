@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     meshing::{greedy::MeshBuffers, textures::FaceTextureInfo},
-    world::{BlockShape, Voxel},
+    world::{BlockShape, Voxel, VoxelAccess},
 };
 use super::{push_quad_face_with_uvs, push_shape_box};
 
@@ -1292,4 +1292,235 @@ pub fn mesh_bamboo(
             ],
         );
     }
+}
+
+pub fn mesh_rubble(
+    buffers: &mut MeshBuffers,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    orientation: u8,
+    texture_layer: u16,
+    frame_count: f32,
+    tint_color: [f32; 4],
+) {
+    // 1. Main slab-like central boulder (size 9 x 6 x 8, from [3.0, 0.0, 3.0] to [12.0, 6.0, 11.0])
+    push_pebble_element(
+        buffers,
+        fx,
+        fy,
+        fz,
+        orientation,
+        [3.0, 0.0, 3.0],
+        [12.0, 6.0, 11.0],
+        [0.0, 0.0, 9.0, 6.0],   // north (-Z)
+        [0.0, 0.0, 8.0, 6.0],   // east (+X)
+        [0.0, 0.0, 9.0, 6.0],   // south (+Z)
+        [0.0, 0.0, 8.0, 6.0],   // west (-X)
+        [0.0, 0.0, 9.0, 8.0],   // up (+Y)
+        [0.0, 0.0, 9.0, 8.0],   // down (-Y)
+        texture_layer,
+        frame_count,
+        tint_color,
+    );
+
+    // 2. Secondary side chunk (size 5 x 4 x 6, from [11.0, 0.0, 5.0] to [16.0, 4.0, 11.0])
+    push_pebble_element(
+        buffers,
+        fx,
+        fy,
+        fz,
+        orientation,
+        [11.0, 0.0, 5.0],
+        [16.0, 4.0, 11.0],
+        [4.0, 2.0, 9.0, 6.0],
+        [2.0, 2.0, 8.0, 6.0],
+        [4.0, 2.0, 9.0, 6.0],
+        [2.0, 2.0, 8.0, 6.0],
+        [4.0, 2.0, 9.0, 8.0],
+        [4.0, 2.0, 9.0, 8.0],
+        texture_layer,
+        frame_count,
+        tint_color,
+    );
+
+    // 3. Front smaller rock (size 6 x 3 x 5, from [4.0, 0.0, 11.0] to [10.0, 3.0, 16.0])
+    push_pebble_element(
+        buffers,
+        fx,
+        fy,
+        fz,
+        orientation,
+        [4.0, 0.0, 11.0],
+        [10.0, 3.0, 16.0],
+        [6.0, 4.0, 12.0, 7.0],
+        [5.0, 4.0, 10.0, 7.0],
+        [6.0, 4.0, 12.0, 7.0],
+        [5.0, 4.0, 10.0, 7.0],
+        [6.0, 4.0, 12.0, 9.0],
+        [6.0, 4.0, 12.0, 9.0],
+        texture_layer,
+        frame_count,
+        tint_color,
+    );
+
+    // 4. Corner splinter rock (size 4 x 2 x 4, from [0.0, 0.0, 2.0] to [4.0, 2.0, 6.0])
+    push_pebble_element(
+        buffers,
+        fx,
+        fy,
+        fz,
+        orientation,
+        [0.0, 0.0, 2.0],
+        [4.0, 2.0, 6.0],
+        [8.0, 8.0, 12.0, 10.0],
+        [8.0, 8.0, 12.0, 10.0],
+        [8.0, 8.0, 12.0, 10.0],
+        [8.0, 8.0, 12.0, 10.0],
+        [8.0, 8.0, 12.0, 12.0],
+        [8.0, 8.0, 12.0, 12.0],
+        texture_layer,
+        frame_count,
+        tint_color,
+    );
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SpeleothemDirection {
+    Down,
+    Up,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SpeleothemPiece {
+    Base,
+    Frustum,
+    Middle,
+    Tip,
+    TipMerge,
+}
+
+pub fn determine_speleothem_part(
+    world: &impl VoxelAccess,
+    world_voxel: IVec3,
+    voxel: Voxel,
+) -> (SpeleothemDirection, SpeleothemPiece) {
+    let mut count_above = 0;
+    let mut curr = world_voxel + IVec3::Y;
+    while count_above < 24 {
+        if let Some(v) = world.get_voxel(curr) {
+            if v == voxel {
+                count_above += 1;
+                curr += IVec3::Y;
+                continue;
+            }
+        }
+        break;
+    }
+    let ceil_is_solid = world.get_voxel(curr).is_some_and(|v| v.is_solid_opaque());
+
+    let mut count_below = 0;
+    let mut curr = world_voxel - IVec3::Y;
+    while count_below < 24 {
+        if let Some(v) = world.get_voxel(curr) {
+            if v == voxel {
+                count_below += 1;
+                curr -= IVec3::Y;
+                continue;
+            }
+        }
+        break;
+    }
+    let floor_is_solid = world.get_voxel(curr).is_some_and(|v| v.is_solid_opaque());
+
+    let total_length = count_above + 1 + count_below;
+    let dist_from_ceil = count_above;
+    let dist_from_floor = count_below;
+
+    if ceil_is_solid && !floor_is_solid {
+        // Stalactite hanging from ceiling
+        let dist_from_tip = count_below;
+        let piece = match dist_from_tip {
+            0 => SpeleothemPiece::Tip,
+            1 => SpeleothemPiece::Frustum,
+            _ => {
+                if dist_from_ceil == 0 {
+                    SpeleothemPiece::Base
+                } else {
+                    SpeleothemPiece::Middle
+                }
+            }
+        };
+        (SpeleothemDirection::Down, piece)
+    } else if !ceil_is_solid && floor_is_solid {
+        // Stalagmite standing on floor
+        let dist_from_tip = count_above;
+        let piece = match dist_from_tip {
+            0 => SpeleothemPiece::Tip,
+            1 => SpeleothemPiece::Frustum,
+            _ => {
+                if dist_from_floor == 0 {
+                    SpeleothemPiece::Base
+                } else {
+                    SpeleothemPiece::Middle
+                }
+            }
+        };
+        (SpeleothemDirection::Up, piece)
+    } else if ceil_is_solid && floor_is_solid {
+        // Merged column between ceiling and floor
+        if total_length == 1 {
+            (SpeleothemDirection::Down, SpeleothemPiece::TipMerge)
+        } else {
+            let split = total_length / 2;
+            if dist_from_ceil < split {
+                let piece = if dist_from_ceil == split - 1 {
+                    SpeleothemPiece::TipMerge
+                } else if dist_from_ceil == 0 {
+                    SpeleothemPiece::Base
+                } else {
+                    SpeleothemPiece::Middle
+                };
+                (SpeleothemDirection::Down, piece)
+            } else {
+                let piece = if dist_from_floor == total_length - split - 1 {
+                    SpeleothemPiece::TipMerge
+                } else if dist_from_floor == 0 {
+                    SpeleothemPiece::Base
+                } else {
+                    SpeleothemPiece::Middle
+                };
+                (SpeleothemDirection::Up, piece)
+            }
+        }
+    } else {
+        // Floating / unsupported fallback (hangs downwards)
+        let dist_from_tip = count_below;
+        let piece = match dist_from_tip {
+            0 => SpeleothemPiece::Tip,
+            1 => SpeleothemPiece::Frustum,
+            _ => SpeleothemPiece::Middle,
+        };
+        (SpeleothemDirection::Down, piece)
+    }
+}
+
+pub fn mesh_speleothem(
+    buffers: &mut MeshBuffers,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    texture_layer: u16,
+    frame_count: f32,
+    tint_color: [f32; 4],
+) {
+    mesh_cross_billboard(
+        buffers,
+        fx,
+        fy,
+        fz,
+        texture_layer,
+        frame_count,
+        tint_color,
+    );
 }

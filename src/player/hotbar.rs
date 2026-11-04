@@ -30,7 +30,7 @@ impl Default for Hotbar {
                 Some(Voxel::Dolomite),
                 Some(Voxel::SandCommon),
                 Some(Voxel::LiquidWater),
-                Some(Voxel::EmitLightWarm),
+                Some(Voxel::EmitLampWarm),
                 Some(Voxel::OakLog),
                 Some(Voxel::OakPlanks),
                 None,

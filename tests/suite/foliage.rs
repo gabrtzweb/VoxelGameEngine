@@ -15,12 +15,9 @@ fn test_grass_turf_voxels() {
         Voxel::CalicheGrass,
         Voxel::LateriteGrass,
         Voxel::LoamGrass,
-        Voxel::LoamBurrow,
         Voxel::PeatGrass,
-        Voxel::PeatBurrow,
         Voxel::PermafrostGrass,
         Voxel::SiltGrass,
-        Voxel::SiltBurrow,
         Voxel::AndesiteGrass,
         Voxel::ArgilliteGrass,
         Voxel::BasaltGrass,
@@ -38,7 +35,6 @@ fn test_grass_turf_voxels() {
         );
     }
 
-    assert!(!Voxel::AshPumice.has_grass_turf());
     assert!(!Voxel::LoamDirt.has_grass_turf());
     assert!(!Voxel::Air.has_grass_turf());
     assert!(!Voxel::LiquidWater.has_grass_turf());

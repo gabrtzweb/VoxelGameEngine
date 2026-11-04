@@ -177,7 +177,9 @@ fn fragment(
     vertex_output: VertexOutput,
     @builtin(front_facing) is_front: bool,
 ) -> FragmentOutput {
-    var pbr_input: pbr_types::PbrInput = pbr_input_from_standard_material(vertex_output, is_front);
+    var pbr_vertex = vertex_output;
+    pbr_vertex.color = vec4<f32>(1.0);
+    var pbr_input: pbr_types::PbrInput = pbr_input_from_standard_material(pbr_vertex, is_front);
 
     let base_layer = vertex_output.uv_b.x;
     let raw_frame_param = vertex_output.uv_b.y;
@@ -245,12 +247,13 @@ fn fragment(
 
     // Ambient Environment modulation: breaks up monotonous large expanses of grass and leaves (foliage has alpha > 0.75)
     var tint_color = vertex_output.color;
+    let is_painted_block = (vertex_output.color.a > 0.52) && (vertex_output.color.a < 0.72);
     let is_foliage_tinted = (vertex_output.color.a > 0.75) && (tint_color.r < 0.99 || tint_color.g < 0.99 || tint_color.b < 0.99);
     if (is_foliage_tinted) {
         let noise = ambient_environment_noise(vertex_output.world_position.xz);
         // Subtle organic variation: ±8% darker and lighter natural patches
         let ambient_factor = 0.92 + noise * 0.16;
-        tint_color = vec4<f32>(tint_color.rgb * ambient_factor, tint_color.a);
+        tint_color = vec4<f32>(tint_color.rgb * vertex_output.color.rgb * ambient_factor, tint_color.a);
     }
 
     // Coated Textures (custom style):
@@ -293,7 +296,16 @@ fn fragment(
         dir_shading = 0.78;
     }
 
-    pbr_input.material.base_color = tex_color * pbr_input.material.base_color * vec4<f32>(tint_color.rgb * dir_shading, 1.0);
+    if (is_painted_block) {
+        // Match the 2D inventory icon sRGB dye blend 1:1 before converting back to linear PBR space:
+        let tex_srgb = pow(max(tex_color.rgb, vec3<f32>(0.0)), vec3<f32>(1.0 / 2.2));
+        let highlight = clamp((tex_srgb - vec3<f32>(0.78)) / 0.22, vec3<f32>(0.0), vec3<f32>(1.0));
+        let painted_srgb = tex_srgb * tint_color.rgb + highlight * 0.08 * max(vec3<f32>(1.0) - tint_color.rgb, vec3<f32>(0.0));
+        let painted_linear = pow(clamp(painted_srgb, vec3<f32>(0.0), vec3<f32>(1.0)), vec3<f32>(2.2));
+        pbr_input.material.base_color = vec4<f32>(painted_linear * dir_shading, 1.0);
+    } else {
+        pbr_input.material.base_color = tex_color * vec4<f32>(tint_color.rgb * dir_shading, 1.0);
+    }
 
     // Pixelated Shadows & Shadow Stabilization:
     // Snaps world position to 16x16 texel centers along screen derivative tangents.

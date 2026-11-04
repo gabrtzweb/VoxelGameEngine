@@ -18,6 +18,8 @@ pub enum BlockShape {
     FlatPad = 11,
     WallDecal = 12,
     Cactus = 13,
+    Rubble = 14,
+    Speleothem = 15,
 }
 
 #[repr(u8)]
@@ -52,8 +54,8 @@ impl PillarAxis {
 }
 
 impl BlockShape {
-    /// All 14 registered block shapes in the engine.
-    pub const fn all() -> [BlockShape; 14] {
+    /// All 15 registered block shapes in the engine.
+    pub const fn all() -> [BlockShape; 16] {
         [
             BlockShape::Full,
             BlockShape::Slab,
@@ -69,6 +71,8 @@ impl BlockShape {
             BlockShape::FlatPad,
             BlockShape::WallDecal,
             BlockShape::Cactus,
+            BlockShape::Rubble,
+            BlockShape::Speleothem,
         ]
     }
 
@@ -98,6 +102,8 @@ impl BlockShape {
             Self::FlatPad => "Flat Pad",
             Self::WallDecal => "Wall Decal",
             Self::Cactus => "Cactus",
+            Self::Rubble => "Rubble",
+            Self::Speleothem => "Speleothem",
         }
     }
 
@@ -117,18 +123,20 @@ impl BlockShape {
             Self::FlatPad => "FLAT",
             Self::WallDecal => "DECAL",
             Self::Cactus => "CACTUS",
+            Self::Rubble => "RUBBLE",
+            Self::Speleothem => "SPELEO",
         }
     }
 
     pub const fn orientation_count(self) -> u8 {
         match self {
             Self::Full => 3,
-            Self::Basket | Self::CrossBillboard | Self::Bamboo | Self::Cocoon | Self::FlatPad | Self::Cactus => 1,
+            Self::Basket | Self::CrossBillboard | Self::Bamboo | Self::Cocoon | Self::FlatPad | Self::Cactus | Self::Speleothem => 1,
             Self::Slab | Self::WallDecal => 6,
             Self::Stair => 8,
             Self::Column => 6,
             Self::Torch => 5,
-            Self::Pebble | Self::PebbleCluster => 4,
+            Self::Pebble | Self::PebbleCluster | Self::Rubble => 4,
         }
     }
 
@@ -140,7 +148,7 @@ impl BlockShape {
                 2 => "Horizontal (Z)",
                 _ => "Standard",
             },
-            Self::Basket | Self::CrossBillboard | Self::Bamboo | Self::Cocoon | Self::FlatPad | Self::Cactus => "Standard",
+            Self::Basket | Self::CrossBillboard | Self::Bamboo | Self::Cocoon | Self::FlatPad | Self::Cactus | Self::Speleothem => "Standard",
             Self::WallDecal => match orientation % 6 {
                 0 => "Floor (Standing)",
                 1 => "Ceiling (Hanging)",
@@ -186,7 +194,7 @@ impl BlockShape {
                 4 => "Wall East (+X)",
                 _ => "Unknown",
             },
-            Self::Pebble | Self::PebbleCluster => match orientation % 4 {
+            Self::Pebble | Self::PebbleCluster | Self::Rubble => match orientation % 4 {
                 0 => "North (0°)",
                 1 => "East (90°)",
                 2 => "South (180°)",
@@ -307,6 +315,21 @@ impl BlockShape {
             }
             Self::FlatPad => (
                 [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 1.0 / 16.0, 1.0)],
+                None,
+            ),
+            Self::Rubble => {
+                let b = rotate_aabb_y(
+                    Vec3::new(1.0 / 16.0, 0.0, 1.0 / 16.0),
+                    Vec3::new(15.0 / 16.0, 6.0 / 16.0, 15.0 / 16.0),
+                    orientation,
+                );
+                (b, None)
+            },
+            Self::Speleothem => (
+                [
+                    Vec3::new(5.0 / 16.0, 0.0, 5.0 / 16.0),
+                    Vec3::new(11.0 / 16.0, 1.0, 11.0 / 16.0),
+                ],
                 None,
             ),
             Self::Cactus => (

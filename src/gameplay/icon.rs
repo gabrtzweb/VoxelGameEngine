@@ -71,7 +71,15 @@ pub fn setup_block_icons(
     mut block_icons: ResMut<BlockIcons>,
     mut animated_icons: ResMut<AnimatedBlockIcons>,
 ) {
-    let mut fallback_image = None;
+    let null_raw = load_raw_16x16_by_name("null_block", "null_block", [255, 0, 255, 255]);
+    let null_icon = render_isometric_block_icon_multi(
+        &null_raw,
+        &null_raw,
+        &null_raw,
+        [1.0, 1.0, 1.0, 1.0],
+        [1.0, 1.0, 1.0, 1.0],
+    );
+    let mut fallback_image = Some(images.add(null_icon));
     for &voxel in &Voxel::ALL {
         if voxel.is_empty() || voxel == Voxel::Occupied || voxel == Voxel::WaterOccupied {
             continue;
@@ -115,7 +123,7 @@ pub fn setup_block_icons(
             }
         }
         let mut raw_side = if let Some(side_name) = voxel.side_texture_name() {
-            load_raw_16x16_by_name(side_name, voxel.fallback_color())
+            load_raw_16x16_by_name(side_name, voxel.backup_texture_name(), voxel.fallback_color())
         } else {
             load_voxel_raw_16x16(voxel)
         };
@@ -187,7 +195,7 @@ pub fn setup_block_icons(
             continue;
         }
         let raw_top = if let Some(top_name) = voxel.top_texture_name() {
-            let mut top_bytes = load_raw_16x16_by_name(top_name, voxel.fallback_color());
+            let mut top_bytes = load_raw_16x16_by_name(top_name, voxel.backup_texture_name(), voxel.fallback_color());
             if let Some(overlay_name) = voxel
                 .overlay_texture_name()
                 .filter(|&o| o != "soil_grass_side_overlay")
@@ -234,13 +242,9 @@ pub fn setup_block_icons(
         } else {
             voxel.tint_color()
         };
-        let top_tint = if matches!(voxel, Voxel::LoamBurrow | Voxel::PeatBurrow | Voxel::SiltBurrow) {
-            [1.0, 1.0, 1.0, 1.0]
-        } else {
-            voxel.tint_color()
-        };
+        let top_tint = voxel.tint_color();
         let raw_front = if let Some(front_name) = voxel.front_texture_name() {
-            load_raw_16x16_by_name(front_name, voxel.fallback_color())
+            load_raw_16x16_by_name(front_name, voxel.backup_texture_name(), voxel.fallback_color())
         } else {
             raw_side.clone()
         };
@@ -286,13 +290,14 @@ pub fn setup_block_icons(
     );
 }
 fn load_voxel_raw_16x16(voxel: Voxel) -> Vec<u8> {
+    let backup = voxel.backup_texture_name();
     if let Some(name) = voxel.texture_name() {
-        load_raw_16x16_by_name(name, voxel.fallback_color())
+        load_raw_16x16_by_name(name, backup, voxel.fallback_color())
     } else {
-        solid_raw_16x16(voxel.fallback_color())
+        load_raw_16x16_by_name(backup, "null_block", voxel.fallback_color())
     }
 }
-fn load_raw_16x16_by_name(name: &str, fallback_color: [u8; 4]) -> Vec<u8> {
+fn load_raw_16x16_by_name(name: &str, backup_name: &str, fallback_color: [u8; 4]) -> Vec<u8> {
     let candidate_paths = [
         format!("assets/textures/blocks/{name}.png"),
         format!("assets/textures/blocks/{name}0.png"),
@@ -300,6 +305,8 @@ fn load_raw_16x16_by_name(name: &str, fallback_color: [u8; 4]) -> Vec<u8> {
         format!("assets/textures/blocks/{name}_1.png"),
         format!("assets/textures/blocks/{name}1.png"),
         format!("assets/textures/blocks/block_{name}.png"),
+        format!("assets/textures/blocks/{backup_name}.png"),
+        "assets/textures/blocks/null_block.png".to_string(),
     ];
     for path in &candidate_paths {
         if Path::new(path).exists()
@@ -459,6 +466,16 @@ pub fn render_isometric_block_icon_multi(
     let canvas = render_isometric_frame(side_16x16, top_16x16, front_16x16, side_tint, top_tint);
     create_icon_image_from_canvas(&canvas)
 }
+#[inline]
+fn apply_icon_tint(tex_byte: u8, tint_c: f32) -> f32 {
+    let val = tex_byte as f32 / 255.0;
+    if (tint_c - 1.0).abs() < 0.001 {
+        return val;
+    }
+    let highlight = ((val - 0.78) / 0.22).clamp(0.0, 1.0);
+    val * tint_c + highlight * 0.08 * (1.0 - tint_c).max(0.0)
+}
+
 pub fn render_isometric_frame(
     side_16x16: &[u8],
     top_16x16: &[u8],
@@ -493,9 +510,9 @@ pub fn render_isometric_frame(
                     if src_idx + 3 < top_16x16.len() {
                         let a = (top_16x16[src_idx + 3] as f32 / 255.0) * top_tint[3];
                         if a > 0.01 {
-                            acc_r += (top_16x16[src_idx] as f32 / 255.0) * top_tint[0] * 1.00;
-                            acc_g += (top_16x16[src_idx + 1] as f32 / 255.0) * top_tint[1] * 1.00;
-                            acc_b += (top_16x16[src_idx + 2] as f32 / 255.0) * top_tint[2] * 1.00;
+                            acc_r += apply_icon_tint(top_16x16[src_idx], top_tint[0]) * 1.00;
+                            acc_g += apply_icon_tint(top_16x16[src_idx + 1], top_tint[1]) * 1.00;
+                            acc_b += apply_icon_tint(top_16x16[src_idx + 2], top_tint[2]) * 1.00;
                             acc_a += a;
                             hits += 1;
                         }
@@ -514,9 +531,9 @@ pub fn render_isometric_frame(
                         if src_idx + 3 < side_16x16.len() {
                             let a = (side_16x16[src_idx + 3] as f32 / 255.0) * side_tint[3];
                             if a > 0.01 {
-                                acc_r += (side_16x16[src_idx] as f32 / 255.0) * side_tint[0] * 0.88;
-                                acc_g += (side_16x16[src_idx + 1] as f32 / 255.0) * side_tint[1] * 0.88;
-                                acc_b += (side_16x16[src_idx + 2] as f32 / 255.0) * side_tint[2] * 0.88;
+                                acc_r += apply_icon_tint(side_16x16[src_idx], side_tint[0]) * 0.90;
+                                acc_g += apply_icon_tint(side_16x16[src_idx + 1], side_tint[1]) * 0.90;
+                                acc_b += apply_icon_tint(side_16x16[src_idx + 2], side_tint[2]) * 0.90;
                                 acc_a += a;
                                 hits += 1;
                             }
@@ -536,9 +553,9 @@ pub fn render_isometric_frame(
                         if src_idx + 3 < front_16x16.len() {
                             let a = (front_16x16[src_idx + 3] as f32 / 255.0) * side_tint[3];
                             if a > 0.01 {
-                                acc_r += (front_16x16[src_idx] as f32 / 255.0) * side_tint[0] * 0.75;
-                                acc_g += (front_16x16[src_idx + 1] as f32 / 255.0) * side_tint[1] * 0.75;
-                                acc_b += (front_16x16[src_idx + 2] as f32 / 255.0) * side_tint[2] * 0.75;
+                                acc_r += apply_icon_tint(front_16x16[src_idx], side_tint[0]) * 0.80;
+                                acc_g += apply_icon_tint(front_16x16[src_idx + 1], side_tint[1]) * 0.80;
+                                acc_b += apply_icon_tint(front_16x16[src_idx + 2], side_tint[2]) * 0.80;
                                 acc_a += a;
                                 hits += 1;
                             }
@@ -655,7 +672,6 @@ fn voxel_item_texture_path(voxel: Voxel) -> Option<&'static str> {
         Voxel::EmitTorchGreen => Some("assets/textures/items/emit_green_torch_item.png"),
         Voxel::EmitTorchRed => Some("assets/textures/items/emit_red_torch_item.png"),
         Voxel::EmitTorchWarm => Some("assets/textures/items/emit_warm_torch_item.png"),
-        Voxel::EmitTorchCold => Some("assets/textures/items/emit_cold_torch_item.png"),
         Voxel::EmitTorchFire => Some("assets/textures/items/emit_torch_item.png"),
         Voxel::BambooStalk => Some("assets/textures/items/tree_bamboo_stalk_item.png"),
         Voxel::BambooLeaves => Some("assets/textures/items/tree_bamboo_leaves_item.png"),
@@ -665,11 +681,26 @@ fn voxel_item_texture_path(voxel: Voxel) -> Option<&'static str> {
         Voxel::PebbleFlintCluster => Some("assets/textures/items/pebble_flint_cluster_item.png"),
         Voxel::PebbleQuartz => Some("assets/textures/items/pebble_quartz_item.png"),
         Voxel::PebbleQuartzCluster => Some("assets/textures/items/pebble_quartz_cluster_item.png"),
+        Voxel::AndesiteRubble => Some("assets/textures/items/andesite_rubble_item.png"),
+        Voxel::ArgilliteRubble => Some("assets/textures/items/argillite_rubble_item.png"),
+        Voxel::BasaltRubble => Some("assets/textures/items/basalt_rubble_item.png"),
+        Voxel::ChalkRubble => Some("assets/textures/items/chalk_rubble_item.png"),
+        Voxel::DolomiteRubble => Some("assets/textures/items/dolomite_rubble_item.png"),
+        Voxel::GabbroRubble => Some("assets/textures/items/gabbro_rubble_item.png"),
+        Voxel::GraniteRubble => Some("assets/textures/items/granite_rubble_item.png"),
+        Voxel::LimestoneRubble => Some("assets/textures/items/limestone_rubble_item.png"),
+        Voxel::MarbleRubble => Some("assets/textures/items/marble_rubble_item.png"),
+        Voxel::SandstoneRubble => Some("assets/textures/items/sandstone_rubble_item.png"),
+        Voxel::SandstoneDuneRubble => Some("assets/textures/items/sandstone_dune_rubble_item.png"),
+        Voxel::SandstoneRedRubble => Some("assets/textures/items/sandstone_red_rubble_item.png"),
+        Voxel::SandstoneWhiteRubble => Some("assets/textures/items/sandstone_white_rubble_item.png"),
+        Voxel::SlateRubble => Some("assets/textures/items/slate_rubble_item.png"),
         Voxel::Kelp => Some("assets/textures/blocks/vege_kelp_plant.png"),
         Voxel::SpeleothemBlueIce => Some("assets/textures/blocks/speleothem_blue_ice_up_tip.png"),
         Voxel::SpeleothemCalcite => Some("assets/textures/blocks/speleothem_calcite_up_tip.png"),
         Voxel::SpeleothemKarst => Some("assets/textures/blocks/speleothem_karst_up_tip.png"),
         Voxel::SpeleothemSaltStraw => Some("assets/textures/blocks/speleothem_pink_salt_straw_up_top.png"),
+        Voxel::ObsidianSpike => Some("assets/textures/blocks/speleothem_obsidian_spike_up_top.png"),
         _ => None,
     }
 }
@@ -717,7 +748,7 @@ fn load_voxel_all_frames_16x16(voxel: Voxel) -> Option<Vec<Vec<u8>>> {
             if ov_w == 16 && ov_h > 16 && ov_h % 16 == 0 {
                 let frame_count = (ov_h / 16) as usize;
                 let base_side = if let Some(side_name) = voxel.side_texture_name() {
-                    load_raw_16x16_by_name(side_name, voxel.fallback_color())
+                    load_raw_16x16_by_name(side_name, voxel.backup_texture_name(), voxel.fallback_color())
                 } else {
                     load_voxel_raw_16x16(voxel)
                 };
@@ -754,9 +785,11 @@ fn load_voxel_all_frames_16x16(voxel: Voxel) -> Option<Vec<Vec<u8>>> {
     }
     // 2. Base texture multi-frame animations (all fluids using _still or base strip)
     let name = voxel.texture_name()?;
+    let backup = voxel.backup_texture_name();
     let candidate_paths = [
         format!("assets/textures/blocks/{name}_still.png"),
         format!("assets/textures/blocks/{name}.png"),
+        format!("assets/textures/blocks/{backup}.png"),
     ];
     let path = candidate_paths.into_iter().find(|p| Path::new(p).exists())?;
     let img = image::open(&path).ok()?;

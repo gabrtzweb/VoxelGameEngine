@@ -58,11 +58,26 @@ pub struct VoxelTextureMapping {
 
 
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SpeleothemTextureLayers {
+    pub down_base: u16,
+    pub down_frustum: u16,
+    pub down_middle: u16,
+    pub down_tip: u16,
+    pub down_tip_merge: u16,
+    pub up_base: u16,
+    pub up_frustum: u16,
+    pub up_middle: u16,
+    pub up_tip: u16,
+    pub up_tip_merge: u16,
+}
+
 #[derive(Resource, Clone, Debug)]
 
 pub struct VoxelTextureRegistry {
 
     mappings: [Option<VoxelTextureMapping>; MAX_VOXEL_VARIANTS],
+    speleothems: [Option<SpeleothemTextureLayers>; MAX_VOXEL_VARIANTS],
 
     pub flower_carpet_stem: Option<FaceTextureInfo>,
 
@@ -83,6 +98,7 @@ impl Default for VoxelTextureRegistry {
         Self {
 
             mappings: [None; MAX_VOXEL_VARIANTS],
+            speleothems: [None; MAX_VOXEL_VARIANTS],
 
             flower_carpet_stem: None,
 
@@ -121,6 +137,17 @@ impl VoxelTextureRegistry {
     }
 
 
+
+    pub fn register_speleothem(&mut self, voxel: Voxel, layers: SpeleothemTextureLayers) {
+        let index = voxel as usize;
+        if index < MAX_VOXEL_VARIANTS {
+            self.speleothems[index] = Some(layers);
+        }
+    }
+
+    pub fn get_speleothem_layers(&self, voxel: Voxel) -> Option<&SpeleothemTextureLayers> {
+        self.speleothems.get(voxel as usize).and_then(|opt| opt.as_ref())
+    }
 
     pub fn register_multi_face_directional(
 
@@ -362,6 +389,7 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
                                 tint: Option<[f32; 4]>,
 
+                                backup_name: &str,
                                 fallback: [u8; 4],
 
                                 layers: &mut Vec<u8>,
@@ -404,7 +432,7 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
 
 
-        let mut variants = load_all_variants_for(tex_name, fallback);
+        let mut variants = load_all_variants_for(tex_name, backup_name, fallback);
 
 
 
@@ -564,7 +592,19 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
 
 
+    // Layer 0 is reserved for the engine fallback texture (null_block.png)
+    let _ = get_or_load_face(
+        "null_block",
+        None,
+        None,
+        "null_block",
+        [255, 0, 255, 255],
+        &mut raw_layers,
+        &mut current_layer,
+    );
+
     for &voxel in &Voxel::ALL {
+        let backup_tex = voxel.backup_texture_name();
 
         let Some(base_name) = voxel.texture_name() else {
 
@@ -596,6 +636,7 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
             side_tint,
 
+            backup_tex,
             voxel.fallback_color(),
 
             &mut raw_layers,
@@ -622,7 +663,8 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
                 None,
 
-                voxel.fallback_color(),
+                backup_tex,
+            voxel.fallback_color(),
 
                 &mut raw_layers,
 
@@ -650,7 +692,8 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
                 None,
 
-                voxel.fallback_color(),
+                backup_tex,
+            voxel.fallback_color(),
 
                 &mut raw_layers,
 
@@ -696,7 +739,8 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
                     None,
 
-                    voxel.fallback_color(),
+                    backup_tex,
+            voxel.fallback_color(),
 
                     &mut raw_layers,
 
@@ -728,7 +772,8 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
                     None,
 
-                    voxel.fallback_color(),
+                    backup_tex,
+            voxel.fallback_color(),
 
                     &mut raw_layers,
 
@@ -756,7 +801,8 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
                 None,
 
-                voxel.fallback_color(),
+                backup_tex,
+            voxel.fallback_color(),
 
                 &mut raw_layers,
 
@@ -798,6 +844,7 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
         None,
 
+        "null_crossmesh",
         [34, 139, 34, 255],
 
         &mut raw_layers,
@@ -807,6 +854,65 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
     );
 
     registry.flower_carpet_stem = Some(stem_info);
+
+    // Register modular Speleothem texture layers
+    for (voxel, prefix) in [
+        (Voxel::SpeleothemKarst, "speleothem_karst"),
+        (Voxel::SpeleothemCalcite, "speleothem_calcite"),
+        (Voxel::SpeleothemBlueIce, "speleothem_blue_ice"),
+    ] {
+        let down_base = get_or_load_face(&format!("{}_down_base", prefix), None, None, "null_crossmesh", [128, 128, 128, 255], &mut raw_layers, &mut current_layer).start_layer;
+        let down_frustum = get_or_load_face(&format!("{}_down_frustum", prefix), None, None, "null_crossmesh", [128, 128, 128, 255], &mut raw_layers, &mut current_layer).start_layer;
+        let down_middle = get_or_load_face(&format!("{}_down_middle", prefix), None, None, "null_crossmesh", [128, 128, 128, 255], &mut raw_layers, &mut current_layer).start_layer;
+        let down_tip = get_or_load_face(&format!("{}_down_tip", prefix), None, None, "null_crossmesh", [128, 128, 128, 255], &mut raw_layers, &mut current_layer).start_layer;
+        let down_tip_merge = get_or_load_face(&format!("{}_down_tip_merge", prefix), None, None, "null_crossmesh", [128, 128, 128, 255], &mut raw_layers, &mut current_layer).start_layer;
+
+        let up_base = get_or_load_face(&format!("{}_up_base", prefix), None, None, "null_crossmesh", [128, 128, 128, 255], &mut raw_layers, &mut current_layer).start_layer;
+        let up_frustum = get_or_load_face(&format!("{}_up_frustum", prefix), None, None, "null_crossmesh", [128, 128, 128, 255], &mut raw_layers, &mut current_layer).start_layer;
+        let up_middle = get_or_load_face(&format!("{}_up_middle", prefix), None, None, "null_crossmesh", [128, 128, 128, 255], &mut raw_layers, &mut current_layer).start_layer;
+        let up_tip = get_or_load_face(&format!("{}_up_tip", prefix), None, None, "null_crossmesh", [128, 128, 128, 255], &mut raw_layers, &mut current_layer).start_layer;
+        let up_tip_merge = get_or_load_face(&format!("{}_up_tip_merge", prefix), None, None, "null_crossmesh", [128, 128, 128, 255], &mut raw_layers, &mut current_layer).start_layer;
+
+        registry.register_speleothem(voxel, SpeleothemTextureLayers {
+            down_base,
+            down_frustum,
+            down_middle,
+            down_tip,
+            down_tip_merge,
+            up_base,
+            up_frustum,
+            up_middle,
+            up_tip,
+            up_tip_merge,
+        });
+    }
+
+    for (voxel, prefix) in [
+        (Voxel::SpeleothemSaltStraw, "speleothem_pink_salt_straw"),
+        (Voxel::ObsidianSpike, "speleothem_obsidian_spike"),
+    ] {
+        let down_bottom = get_or_load_face(&format!("{}_down_bottom", prefix), None, None, "null_crossmesh", [128, 128, 128, 255], &mut raw_layers, &mut current_layer).start_layer;
+        let down_middle = get_or_load_face(&format!("{}_down_middle", prefix), None, None, "null_crossmesh", [128, 128, 128, 255], &mut raw_layers, &mut current_layer).start_layer;
+        let down_top = get_or_load_face(&format!("{}_down_top", prefix), None, None, "null_crossmesh", [128, 128, 128, 255], &mut raw_layers, &mut current_layer).start_layer;
+
+        let up_bottom = get_or_load_face(&format!("{}_up_bottom", prefix), None, None, "null_crossmesh", [128, 128, 128, 255], &mut raw_layers, &mut current_layer).start_layer;
+        let up_middle = get_or_load_face(&format!("{}_up_middle", prefix), None, None, "null_crossmesh", [128, 128, 128, 255], &mut raw_layers, &mut current_layer).start_layer;
+        let up_top = get_or_load_face(&format!("{}_up_top", prefix), None, None, "null_crossmesh", [128, 128, 128, 255], &mut raw_layers, &mut current_layer).start_layer;
+
+        registry.register_speleothem(voxel, SpeleothemTextureLayers {
+            down_base: down_bottom,
+            down_frustum: down_middle,
+            down_middle,
+            down_tip: down_top,
+            down_tip_merge: down_middle,
+            up_base: up_bottom,
+            up_frustum: up_middle,
+            up_middle,
+            up_tip: up_top,
+            up_tip_merge: up_middle,
+        });
+    }
+
 
 
 
@@ -926,7 +1032,7 @@ fn composite_overlay(variants: &mut [LoadedTexture], overlay_frame: &[u8]) {
 
 
 
-fn load_all_variants_for(base_name: &str, fallback_color: [u8; 4]) -> Vec<LoadedTexture> {
+fn load_all_variants_for(base_name: &str, backup_name: &str, fallback_color: [u8; 4]) -> Vec<LoadedTexture> {
 
     let mut variants = Vec::new();
 
@@ -1075,9 +1181,19 @@ fn load_all_variants_for(base_name: &str, fallback_color: [u8; 4]) -> Vec<Loaded
 
 
     if variants.is_empty() {
-
-        variants.push(solid_color_texture(fallback_color));
-
+        let backup_paths = [
+            format!("assets/textures/blocks/{backup_name}.png"),
+            "assets/textures/blocks/null_block.png".to_string(),
+        ];
+        for path in &backup_paths {
+            if let Some(data) = try_load_image(path) {
+                variants.push(data);
+                break;
+            }
+        }
+        if variants.is_empty() {
+            variants.push(solid_color_texture(fallback_color));
+        }
     }
 
 

@@ -92,7 +92,7 @@ pub fn mesh_slab(
         } else if extra_voxel.is_transparent() {
             0.0
         } else if extra_voxel.is_painted() {
-            0.5
+            0.6
         } else {
             1.0
         };

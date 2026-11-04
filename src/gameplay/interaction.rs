@@ -414,7 +414,7 @@ fn edit_voxels(
                 modifications.record_shape(place_position, BlockShape::Basket, 0);
             }
             placed
-        } else if place_voxel_type.is_pebble() {
+        } else if place_voxel_type.is_pebble() || place_voxel_type.is_rubble() {
             if target.face_normal != IVec3::Y {
                 return;
             }
@@ -444,6 +444,29 @@ fn edit_voxels(
             if !placed.is_empty() {
                 world.set_shape(place_position, BlockShape::Bamboo, 0);
                 modifications.record_shape(place_position, BlockShape::Bamboo, 0);
+            }
+            placed
+        } else if place_voxel_type.is_speleothem() {
+            let above_pos = place_position + IVec3::Y;
+            let below_pos = place_position - IVec3::Y;
+            let above_ok = world
+                .get_voxel(above_pos)
+                .is_some_and(|v| v.is_solid_opaque() || v.is_speleothem());
+            let below_ok = world
+                .get_voxel(below_pos)
+                .is_some_and(|v| v.is_solid_opaque() || v.is_speleothem());
+            if !above_ok && !below_ok {
+                return;
+            }
+            let placed = place_block(
+                &mut world,
+                &mut modifications,
+                place_position,
+                place_voxel_type,
+            );
+            if !placed.is_empty() {
+                world.set_shape(place_position, BlockShape::Speleothem, 0);
+                modifications.record_shape(place_position, BlockShape::Speleothem, 0);
             }
             placed
         } else if place_voxel_type.is_axis_aligned() {
@@ -730,6 +753,62 @@ pub fn remove_block(
             if remove_voxel(world, modifications, vine_down_pos) {
                 removed.push(vine_down_pos);
                 vine_down_pos -= IVec3::Y;
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    // Speleothems cascading downwards (hanging stalactites losing support)
+    let mut speleo_down_pos = block_pos - IVec3::Y;
+    while let Some(v) = world.get_voxel(speleo_down_pos) {
+        if v.is_speleothem() {
+            let has_floor_support = {
+                let mut check = speleo_down_pos - IVec3::Y;
+                let mut supported = false;
+                while let Some(nv) = world.get_voxel(check) {
+                    if nv == v {
+                        check -= IVec3::Y;
+                    } else {
+                        supported = nv.is_solid_opaque();
+                        break;
+                    }
+                }
+                supported
+            };
+            if !has_floor_support && remove_voxel(world, modifications, speleo_down_pos) {
+                removed.push(speleo_down_pos);
+                speleo_down_pos -= IVec3::Y;
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    // Speleothems cascading upwards (standing stalagmites losing support)
+    let mut speleo_up_pos = block_pos + IVec3::Y;
+    while let Some(v) = world.get_voxel(speleo_up_pos) {
+        if v.is_speleothem() {
+            let has_ceil_support = {
+                let mut check = speleo_up_pos + IVec3::Y;
+                let mut supported = false;
+                while let Some(nv) = world.get_voxel(check) {
+                    if nv == v {
+                        check += IVec3::Y;
+                    } else {
+                        supported = nv.is_solid_opaque();
+                        break;
+                    }
+                }
+                supported
+            };
+            if !has_ceil_support && remove_voxel(world, modifications, speleo_up_pos) {
+                removed.push(speleo_up_pos);
+                speleo_up_pos += IVec3::Y;
             } else {
                 break;
             }

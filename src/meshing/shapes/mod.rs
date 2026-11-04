@@ -34,7 +34,9 @@ pub fn mesh_shaped_voxels(
             && shape != BlockShape::CrossBillboard
             && shape != BlockShape::FlatPad
             && shape != BlockShape::WallDecal
-            && shape != BlockShape::Cactus;
+            && shape != BlockShape::Cactus
+            && shape != BlockShape::Speleothem
+            && !voxel.is_speleothem();
         let buffers = if is_transparent_pass {
             &mut *transparent_buffers
         } else {
@@ -74,7 +76,7 @@ pub fn mesh_shaped_voxels(
         } else if is_transparent_pass {
             0.0
         } else if voxel.is_painted() {
-            0.5
+            0.6
         } else {
             1.0
         };
@@ -154,6 +156,48 @@ pub fn mesh_shaped_voxels(
                 side_layer,
                 frame_count_f32,
                 side_tint,
+            );
+            continue;
+        }
+        if voxel.is_rubble() || shape == BlockShape::Rubble {
+            mesh_rubble(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                side_layer,
+                frame_count_f32,
+                side_tint,
+            );
+            continue;
+        }
+        if voxel.is_speleothem() || shape == BlockShape::Speleothem {
+            let (dir, piece) = determine_speleothem_part(world, world_voxel, voxel);
+            let layer = if let Some(layers) = textures.get_speleothem_layers(voxel) {
+                match (dir, piece) {
+                    (SpeleothemDirection::Down, SpeleothemPiece::Base) => layers.down_base,
+                    (SpeleothemDirection::Down, SpeleothemPiece::Frustum) => layers.down_frustum,
+                    (SpeleothemDirection::Down, SpeleothemPiece::Middle) => layers.down_middle,
+                    (SpeleothemDirection::Down, SpeleothemPiece::Tip) => layers.down_tip,
+                    (SpeleothemDirection::Down, SpeleothemPiece::TipMerge) => layers.down_tip_merge,
+                    (SpeleothemDirection::Up, SpeleothemPiece::Base) => layers.up_base,
+                    (SpeleothemDirection::Up, SpeleothemPiece::Frustum) => layers.up_frustum,
+                    (SpeleothemDirection::Up, SpeleothemPiece::Middle) => layers.up_middle,
+                    (SpeleothemDirection::Up, SpeleothemPiece::Tip) => layers.up_tip,
+                    (SpeleothemDirection::Up, SpeleothemPiece::TipMerge) => layers.up_tip_merge,
+                }
+            } else {
+                side_layer
+            };
+            mesh_speleothem(
+                buffers,
+                fx,
+                fy,
+                fz,
+                layer,
+                frame_count_f32,
+                [1.0, 1.0, 1.0, 1.0],
             );
             continue;
         }
@@ -310,7 +354,9 @@ pub fn mesh_shaped_voxels(
             | BlockShape::CrossBillboard
             | BlockShape::FlatPad
             | BlockShape::WallDecal
-            | BlockShape::Cactus => unreachable!(),
+            | BlockShape::Cactus
+            | BlockShape::Rubble
+            | BlockShape::Speleothem => unreachable!(),
             BlockShape::Full | BlockShape::Column | BlockShape::Cocoon => {
                 mesh_column_cocoon(
                     buffers,

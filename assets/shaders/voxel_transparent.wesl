@@ -320,7 +320,9 @@ fn fragment(
     vertex_output: VertexOutput,
     @builtin(front_facing) is_front: bool,
 ) -> FragmentOutput {
-    var pbr_input: pbr_types::PbrInput = pbr_input_from_standard_material(vertex_output, is_front);
+    var pbr_vertex = vertex_output;
+    pbr_vertex.color = vec4<f32>(1.0);
+    var pbr_input: pbr_types::PbrInput = pbr_input_from_standard_material(pbr_vertex, is_front);
     let time = max(globals.time, 0.0);
     let surface_type = round(vertex_output.color.a);
 
@@ -400,11 +402,17 @@ fn fragment(
 
     // Biome / Vertex Tint
     var biome_tint = vertex_output.color.rgb;
+    var base_pixel_color: vec3<f32>;
     if (length(biome_tint) < 0.001) {
-        biome_tint = vec3<f32>(1.0);
+        base_pixel_color = tex_color.rgb;
+    } else if (surface_type < 0.5 && (biome_tint.r < 0.99 || biome_tint.g < 0.99 || biome_tint.b < 0.99)) {
+        let tex_srgb = pow(max(tex_color.rgb, vec3<f32>(0.0)), vec3<f32>(1.0 / 2.2));
+        let highlight = clamp((tex_srgb - vec3<f32>(0.78)) / 0.22, vec3<f32>(0.0), vec3<f32>(1.0));
+        let painted_srgb = tex_srgb * biome_tint + highlight * 0.08 * max(vec3<f32>(1.0) - biome_tint, vec3<f32>(0.0));
+        base_pixel_color = pow(clamp(painted_srgb, vec3<f32>(0.0), vec3<f32>(1.0)), vec3<f32>(2.2));
+    } else {
+        base_pixel_color = tex_color.rgb * biome_tint;
     }
-
-    let base_pixel_color = tex_color.rgb * biome_tint;
 
     var final_color = base_pixel_color;
     var final_alpha = tex_color.a;

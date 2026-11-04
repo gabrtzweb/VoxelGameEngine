@@ -34,7 +34,7 @@ impl TreeSpecies {
             Self::Willow => Voxel::WillowLog,
             Self::Yew => Voxel::YewLog,
             Self::Charred => Voxel::RedwoodLog,
-            Self::Dead => Voxel::BaobabLog,
+            Self::Dead => Voxel::OakLog,
             Self::Cactus => Voxel::VegeCactus,
         }
     }
@@ -53,7 +53,7 @@ impl TreeSpecies {
             Self::Willow => Voxel::WillowWood,
             Self::Yew => Voxel::YewWood,
             Self::Charred => Voxel::RedwoodWood,
-            Self::Dead => Voxel::BaobabWood,
+            Self::Dead => Voxel::OakWood,
             Self::Cactus => Voxel::VegeCactus,
         }
     }
@@ -122,11 +122,7 @@ pub fn is_soil_valid_for_species(species: TreeSpecies, surface_voxel: Voxel) -> 
         ),
         TreeSpecies::Dead | TreeSpecies::Charred => matches!(
             surface_voxel,
-            Voxel::AshPumice
-                | Voxel::AshVolcanic
-                | Voxel::LoamDirt
-                | Voxel::LoamMulch
-                | Voxel::PeatMulch
+            Voxel::LoamDirt | Voxel::LoamMulch | Voxel::PeatMulch
         ),
         TreeSpecies::Mangrove | TreeSpecies::Willow => matches!(
             surface_voxel,
@@ -199,7 +195,6 @@ pub fn is_trunk(voxel: Voxel) -> bool {
             | Voxel::WillowLog
             | Voxel::YewLog
             | Voxel::RedwoodLog
-            | Voxel::BaobabLog
             | Voxel::BambooStalk
             | Voxel::MangroveRoots
     )

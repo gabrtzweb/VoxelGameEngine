@@ -59,19 +59,10 @@ impl SoundMaterial {
             || voxel == Voxel::VegeCactus
             || matches!(
             voxel,
-            Voxel::MossAmber
-                | Voxel::MossCave
-                | Voxel::MossCrimson
-                | Voxel::MossForest
+            Voxel::MossForest
                 | Voxel::FungiAmanita
                 | Voxel::FungiAmanitaCap
-                | Voxel::FungiChanterelle
-                | Voxel::FungiChanterelleCap
-                | Voxel::FungiIndigo
-                | Voxel::FungiIndigoCap
                 | Voxel::FungiInside
-                | Voxel::FungiMycena
-                | Voxel::FungiMycenaCap
                 | Voxel::FungiPorcini
                 | Voxel::FungiPorciniCap
                 | Voxel::FungiRussula
@@ -96,7 +87,11 @@ impl SoundMaterial {
             return Self::Wood;
         }
 
-        if name.contains("Glass") || name.contains("Crystal") {
+        if name.contains("Glass")
+            || name.contains("Crystal")
+            || name.contains("Lamp")
+            || voxel.id().starts_with("crystal_")
+        {
             return Self::Glass;
         }
 

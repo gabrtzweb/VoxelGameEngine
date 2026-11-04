@@ -144,8 +144,6 @@ fn test_pillar_and_leaves_textures_and_tinting() {
     assert_eq!(Voxel::BoneBlock.top_texture_name(), Some("bio_bone_top"));
     assert_eq!(Voxel::FleshBlock.side_texture_name(), Some("bio_flesh_side"));
     assert_eq!(Voxel::FleshBlock.top_texture_name(), Some("bio_flesh_top"));
-    assert_eq!(Voxel::CornBale.side_texture_name(), Some("deco_corn_bale_side"));
-    assert_eq!(Voxel::CornBale.top_texture_name(), Some("deco_corn_bale_top"));
     assert_eq!(Voxel::BambooStalk.side_texture_name(), Some("tree_bamboo_stalk"));
     assert_eq!(Voxel::BambooStalk.top_texture_name(), Some("tree_bamboo_stalk_top"));
 
@@ -158,9 +156,6 @@ fn test_pillar_and_leaves_textures_and_tinting() {
     assert!(!Voxel::MapleLeavesYellow.is_tinted());
     assert!(!Voxel::MapleLeavesDead.is_tinted());
     assert!(!Voxel::CherryLeaves.is_tinted());
-    assert!(!Voxel::AspenLeaves.is_tinted());
-    assert!(!Voxel::FirLeaves.is_tinted());
-    assert!(!Voxel::CypressLeaves.is_tinted());
     assert!(!Voxel::RedwoodLeaves.is_tinted());
 
     // 3. Living grayscale canopy species MUST be tinted
@@ -170,6 +165,9 @@ fn test_pillar_and_leaves_textures_and_tinting() {
     assert!(Voxel::AcaciaLeaves.is_tinted());
 
     // 4. Bloody blocks must have the bloody overlay
+    assert_eq!(Voxel::BloodyBone.overlay_texture_name(), Some("bloody_overlay"));
+    assert_eq!(Voxel::BloodyBone.side_texture_name(), Some("bio_bone_side"));
+    assert_eq!(Voxel::BloodyBone.top_texture_name(), Some("bio_bone_top"));
     assert_eq!(Voxel::BloodyBrain.overlay_texture_name(), Some("bloody_overlay"));
     assert_eq!(Voxel::BloodyFlesh.overlay_texture_name(), Some("bloody_overlay"));
 }

@@ -5,25 +5,18 @@ use crate::{
     world::{CHUNK_SIZE, Voxel},
 };
 
-/// The 17 procedural mineral vein types that embed inside planetary rock matrices.
+/// The 10 procedural mineral vein types that spawn inside planetary rock matrices.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MineralType {
     Coal,
     Copper,
-    Tin,
     Iron,
-    Zinc,
     Gold,
     Silver,
-    Platinum,
     Uranium,
     Sulfur,
-    Cinnabar,
-    Lazurite,
     Diamond,
     Emerald,
-    Opal,
-    Onyx,
     GemVein,
 }
 
@@ -36,137 +29,91 @@ pub struct OreVeinProfile {
     pub vein_radius: f32,
 }
 
-pub const ORE_PROFILES: [OreVeinProfile; 17] = [
-    // Base & Industrial Metals (reduced by 55-60%)
+pub const ORE_PROFILES: [OreVeinProfile; 10] = [
+    // Base & Industrial Metals
     OreVeinProfile { mineral: MineralType::Iron, min_y: -210, max_y: 90, veins_per_chunk: 5, vein_radius: 1.6 },
     OreVeinProfile { mineral: MineralType::Copper, min_y: -90, max_y: 80, veins_per_chunk: 4, vein_radius: 1.5 },
-    OreVeinProfile { mineral: MineralType::Tin, min_y: -100, max_y: 70, veins_per_chunk: 3, vein_radius: 1.4 },
-    OreVeinProfile { mineral: MineralType::Zinc, min_y: -150, max_y: 40, veins_per_chunk: 3, vein_radius: 1.4 },
-    // Carbon & Chemicals (Coal reduced from 16 to 6, others to 2)
+    // Carbon & Chemicals
     OreVeinProfile { mineral: MineralType::Coal, min_y: -70, max_y: 110, veins_per_chunk: 6, vein_radius: 1.7 },
     OreVeinProfile { mineral: MineralType::Sulfur, min_y: -245, max_y: -150, veins_per_chunk: 2, vein_radius: 1.3 },
-    OreVeinProfile { mineral: MineralType::Cinnabar, min_y: -245, max_y: -160, veins_per_chunk: 2, vein_radius: 1.3 },
-    OreVeinProfile { mineral: MineralType::Lazurite, min_y: -130, max_y: 30, veins_per_chunk: 2, vein_radius: 1.3 },
     // Precious & Strategic Metals
     OreVeinProfile { mineral: MineralType::Gold, min_y: -220, max_y: -20, veins_per_chunk: 2, vein_radius: 1.3 },
     OreVeinProfile { mineral: MineralType::Silver, min_y: -180, max_y: -10, veins_per_chunk: 2, vein_radius: 1.4 },
-    OreVeinProfile { mineral: MineralType::Platinum, min_y: -245, max_y: -140, veins_per_chunk: 1, vein_radius: 1.2 },
     OreVeinProfile { mineral: MineralType::Uranium, min_y: -245, max_y: -110, veins_per_chunk: 1, vein_radius: 1.2 },
     // Precious Gemstones
     OreVeinProfile { mineral: MineralType::Diamond, min_y: -245, max_y: -130, veins_per_chunk: 1, vein_radius: 1.2 },
     OreVeinProfile { mineral: MineralType::Emerald, min_y: -190, max_y: -40, veins_per_chunk: 1, vein_radius: 1.2 },
-    OreVeinProfile { mineral: MineralType::Opal, min_y: -60, max_y: 40, veins_per_chunk: 2, vein_radius: 1.3 },
-    OreVeinProfile { mineral: MineralType::Onyx, min_y: -210, max_y: -100, veins_per_chunk: 2, vein_radius: 1.3 },
     OreVeinProfile { mineral: MineralType::GemVein, min_y: -210, max_y: 20, veins_per_chunk: 2, vein_radius: 1.4 },
 ];
 
-/// Maps a mineral vein type and host rock to the exact procedural ore-in-stone voxel block.
+/// Maps a mineral vein type and host rock to its raw ore or rough gemstone voxel block.
 #[inline]
 pub fn host_to_ore_vein(mineral: MineralType, host: Voxel) -> Option<Voxel> {
     match mineral {
         MineralType::Coal => match host {
-            Voxel::SandstoneCommon => Some(Voxel::OreCoalSandstoneCommon),
-            Voxel::Granite => Some(Voxel::OreCoalGranite),
-            Voxel::Dolomite => Some(Voxel::OreCoalDolomite),
-            Voxel::Limestone => Some(Voxel::OreCoalLimestone),
-            Voxel::Chalk => Some(Voxel::OreCoalChalk),
-            Voxel::Argillite => Some(Voxel::OreCoalArgillite),
+            Voxel::SandstoneCommon
+            | Voxel::Granite
+            | Voxel::Dolomite
+            | Voxel::Limestone
+            | Voxel::Chalk
+            | Voxel::Argillite => Some(Voxel::OreCoalRaw),
             _ => None,
         },
         MineralType::Copper => match host {
-            Voxel::SandstoneCommon => Some(Voxel::OreCopperSandstoneCommon),
-            Voxel::SandstoneRed => Some(Voxel::OreCopperSandstoneRed),
-            Voxel::SandstoneWhite => Some(Voxel::OreCopperSandstoneWhite),
-            Voxel::Granite => Some(Voxel::OreCopperGranite),
-            Voxel::Andesite => Some(Voxel::OreCopperAndesite),
-            Voxel::Dolomite => Some(Voxel::OreCopperDolomite),
-            _ => None,
-        },
-        MineralType::Tin => match host {
-            Voxel::Granite => Some(Voxel::OreTinGranite),
-            Voxel::Andesite => Some(Voxel::OreTinAndesite),
-            Voxel::Dolomite => Some(Voxel::OreTinDolomite),
-            Voxel::Chalk => Some(Voxel::OreTinChalk),
+            Voxel::SandstoneCommon
+            | Voxel::SandstoneRed
+            | Voxel::SandstoneWhite
+            | Voxel::Granite
+            | Voxel::Andesite
+            | Voxel::Dolomite => Some(Voxel::OreCopperRaw),
             _ => None,
         },
         MineralType::Iron => match host {
-            Voxel::Granite => Some(Voxel::OreIronGranite),
-            Voxel::Andesite => Some(Voxel::OreIronAndesite),
-            Voxel::Dolomite => Some(Voxel::OreIronDolomite),
-            Voxel::Slate => Some(Voxel::OreIronSlate),
-            Voxel::Gabbro => Some(Voxel::OreIronGabbro),
-            Voxel::Basalt => Some(Voxel::OreIronBasalt),
-            _ => None,
-        },
-        MineralType::Zinc => match host {
-            Voxel::Andesite => Some(Voxel::OreZincAndesite),
-            Voxel::Dolomite => Some(Voxel::OreZincDolomite),
-            Voxel::Argillite => Some(Voxel::OreZincArgillite),
-            Voxel::Slate => Some(Voxel::OreZincSlate),
+            Voxel::Granite
+            | Voxel::Andesite
+            | Voxel::Dolomite
+            | Voxel::Slate
+            | Voxel::Gabbro
+            | Voxel::Basalt => Some(Voxel::OreIronRaw),
             _ => None,
         },
         MineralType::Gold => match host {
-            Voxel::SandstoneRed => Some(Voxel::OreGoldSandstoneRed),
-            Voxel::Granite => Some(Voxel::OreGoldGranite),
-            Voxel::Slate => Some(Voxel::OreGoldSlate),
-            Voxel::Gabbro => Some(Voxel::OreGoldGabbro),
+            Voxel::SandstoneRed
+            | Voxel::Granite
+            | Voxel::Slate
+            | Voxel::Gabbro => Some(Voxel::OreGoldRaw),
             _ => None,
         },
         MineralType::Silver => match host {
-            Voxel::Andesite => Some(Voxel::OreSilverAndesite),
-            Voxel::Slate => Some(Voxel::OreSilverSlate),
-            Voxel::Marble => Some(Voxel::OreSilverMarble),
-            _ => None,
-        },
-        MineralType::Platinum => match host {
-            Voxel::Gabbro => Some(Voxel::OrePlatinumGabbro),
-            Voxel::Basalt => Some(Voxel::OrePlatinumBasalt),
+            Voxel::Andesite
+            | Voxel::Slate
+            | Voxel::Marble => Some(Voxel::OreSilverRaw),
             _ => None,
         },
         MineralType::Uranium => match host {
-            Voxel::Slate => Some(Voxel::OreUraniumSlate),
-            Voxel::Gabbro => Some(Voxel::OreUraniumGabbro),
-            _ => None,
-        },
-        MineralType::Lazurite => match host {
-            Voxel::Limestone => Some(Voxel::OreLazuriteLimestone),
-            Voxel::Marble => Some(Voxel::OreLazuriteMarble),
+            Voxel::Slate
+            | Voxel::Gabbro => Some(Voxel::OreUraniumRaw),
             _ => None,
         },
         MineralType::Diamond => match host {
-            Voxel::Gabbro => Some(Voxel::GemDiamondGabbro),
-            Voxel::Basalt => Some(Voxel::GemDiamondBasalt),
+            Voxel::Gabbro
+            | Voxel::Basalt => Some(Voxel::GemDiamondRough),
             _ => None,
         },
         MineralType::Emerald => match host {
-            Voxel::Slate => Some(Voxel::GemEmeraldSlate),
-            Voxel::Marble => Some(Voxel::GemEmeraldMarble),
+            Voxel::Slate
+            | Voxel::Marble => Some(Voxel::GemEmeraldRough),
             _ => None,
         },
         MineralType::Sulfur => match host {
-            Voxel::Basalt => Some(Voxel::OreSulfurBasalt),
-            _ => None,
-        },
-        MineralType::Cinnabar => match host {
-            Voxel::Basalt => Some(Voxel::OreCinnabarBasalt),
-            _ => None,
-        },
-        MineralType::Opal => match host {
-            Voxel::SandstoneWhite => Some(Voxel::GemOpalSandstoneWhite),
-            _ => None,
-        },
-        MineralType::Onyx => match host {
-            Voxel::Slate => Some(Voxel::GemOnyxSlate),
+            Voxel::Basalt => Some(Voxel::OreSulfurRaw),
             _ => None,
         },
         MineralType::GemVein => match host {
-            Voxel::Dolomite => Some(Voxel::GemVeinDolomite),
-            Voxel::Granite => Some(Voxel::GemVeinGranite),
-            Voxel::Andesite => Some(Voxel::GemVeinAndesite),
-            Voxel::Slate => Some(Voxel::GemVeinSlate),
-            Voxel::Gabbro => Some(Voxel::GemVeinGabbro),
-            Voxel::Basalt => Some(Voxel::GemVeinBasalt),
-            Voxel::Marble => Some(Voxel::GemVeinMarble),
+            Voxel::Dolomite | Voxel::Granite => Some(Voxel::GemTopazRough),
+            Voxel::Andesite | Voxel::Slate => Some(Voxel::GemJadeRough),
+            Voxel::Gabbro | Voxel::Basalt => Some(Voxel::GemSapphireRough),
+            Voxel::Marble => Some(Voxel::GemRubyRough),
             _ => None,
         },
     }

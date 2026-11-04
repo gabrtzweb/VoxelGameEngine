@@ -25,14 +25,13 @@ fn test_sound_material_mapping() {
     assert_eq!(SoundMaterial::from_voxel(Voxel::GravelDirty), SoundMaterial::Gravel);
 
     assert_eq!(SoundMaterial::from_voxel(Voxel::SnowBlock), SoundMaterial::Snow);
-    assert_eq!(SoundMaterial::from_voxel(Voxel::PowderSnow), SoundMaterial::Snow);
     assert_eq!(SoundMaterial::from_voxel(Voxel::FrostIce), SoundMaterial::Snow);
 
     assert_eq!(SoundMaterial::from_voxel(Voxel::OakLeaves), SoundMaterial::Leaves);
     assert_eq!(SoundMaterial::from_voxel(Voxel::PineLeaves), SoundMaterial::Leaves);
 
-    assert_eq!(SoundMaterial::from_voxel(Voxel::GlassWhite), SoundMaterial::Glass);
-    assert_eq!(SoundMaterial::from_voxel(Voxel::TintedGlass), SoundMaterial::Glass);
+    assert_eq!(SoundMaterial::from_voxel(Voxel::CrystalAmethystBlock), SoundMaterial::Glass);
+    assert_eq!(SoundMaterial::from_voxel(Voxel::CrystalSeleniteBlock), SoundMaterial::Glass);
 
     assert_eq!(SoundMaterial::from_voxel(Voxel::LiquidWater), SoundMaterial::Water);
     assert_eq!(SoundMaterial::from_voxel(Voxel::WaterOccupied), SoundMaterial::Water);

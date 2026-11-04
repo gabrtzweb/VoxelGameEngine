@@ -8,94 +8,65 @@ use voxel_game_engine::{
 };
 
 #[test]
-fn test_all_54_ore_vein_mappings() {
+fn test_all_ore_vein_mappings() {
     // 1. Coal (6 host rocks)
-    assert_eq!(ores::host_to_ore_vein(MineralType::Coal, Voxel::SandstoneCommon), Some(Voxel::OreCoalSandstoneCommon));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Coal, Voxel::Granite), Some(Voxel::OreCoalGranite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Coal, Voxel::Dolomite), Some(Voxel::OreCoalDolomite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Coal, Voxel::Limestone), Some(Voxel::OreCoalLimestone));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Coal, Voxel::Chalk), Some(Voxel::OreCoalChalk));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Coal, Voxel::Argillite), Some(Voxel::OreCoalArgillite));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Coal, Voxel::SandstoneCommon), Some(Voxel::OreCoalRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Coal, Voxel::Granite), Some(Voxel::OreCoalRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Coal, Voxel::Dolomite), Some(Voxel::OreCoalRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Coal, Voxel::Limestone), Some(Voxel::OreCoalRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Coal, Voxel::Chalk), Some(Voxel::OreCoalRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Coal, Voxel::Argillite), Some(Voxel::OreCoalRaw));
 
     // 2. Copper (6 host rocks)
-    assert_eq!(ores::host_to_ore_vein(MineralType::Copper, Voxel::SandstoneCommon), Some(Voxel::OreCopperSandstoneCommon));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Copper, Voxel::SandstoneRed), Some(Voxel::OreCopperSandstoneRed));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Copper, Voxel::SandstoneWhite), Some(Voxel::OreCopperSandstoneWhite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Copper, Voxel::Granite), Some(Voxel::OreCopperGranite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Copper, Voxel::Andesite), Some(Voxel::OreCopperAndesite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Copper, Voxel::Dolomite), Some(Voxel::OreCopperDolomite));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Copper, Voxel::SandstoneCommon), Some(Voxel::OreCopperRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Copper, Voxel::SandstoneRed), Some(Voxel::OreCopperRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Copper, Voxel::SandstoneWhite), Some(Voxel::OreCopperRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Copper, Voxel::Granite), Some(Voxel::OreCopperRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Copper, Voxel::Andesite), Some(Voxel::OreCopperRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Copper, Voxel::Dolomite), Some(Voxel::OreCopperRaw));
 
-    // 3. Tin (4 host rocks)
-    assert_eq!(ores::host_to_ore_vein(MineralType::Tin, Voxel::Granite), Some(Voxel::OreTinGranite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Tin, Voxel::Andesite), Some(Voxel::OreTinAndesite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Tin, Voxel::Dolomite), Some(Voxel::OreTinDolomite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Tin, Voxel::Chalk), Some(Voxel::OreTinChalk));
+    // 3. Iron (6 host rocks)
+    assert_eq!(ores::host_to_ore_vein(MineralType::Iron, Voxel::Granite), Some(Voxel::OreIronRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Iron, Voxel::Andesite), Some(Voxel::OreIronRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Iron, Voxel::Dolomite), Some(Voxel::OreIronRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Iron, Voxel::Slate), Some(Voxel::OreIronRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Iron, Voxel::Gabbro), Some(Voxel::OreIronRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Iron, Voxel::Basalt), Some(Voxel::OreIronRaw));
 
-    // 4. Iron (6 host rocks)
-    assert_eq!(ores::host_to_ore_vein(MineralType::Iron, Voxel::Granite), Some(Voxel::OreIronGranite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Iron, Voxel::Andesite), Some(Voxel::OreIronAndesite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Iron, Voxel::Dolomite), Some(Voxel::OreIronDolomite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Iron, Voxel::Slate), Some(Voxel::OreIronSlate));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Iron, Voxel::Gabbro), Some(Voxel::OreIronGabbro));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Iron, Voxel::Basalt), Some(Voxel::OreIronBasalt));
+    // 4. Gold (4 host rocks)
+    assert_eq!(ores::host_to_ore_vein(MineralType::Gold, Voxel::SandstoneRed), Some(Voxel::OreGoldRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Gold, Voxel::Granite), Some(Voxel::OreGoldRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Gold, Voxel::Slate), Some(Voxel::OreGoldRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Gold, Voxel::Gabbro), Some(Voxel::OreGoldRaw));
 
-    // 5. Zinc (4 host rocks)
-    assert_eq!(ores::host_to_ore_vein(MineralType::Zinc, Voxel::Andesite), Some(Voxel::OreZincAndesite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Zinc, Voxel::Dolomite), Some(Voxel::OreZincDolomite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Zinc, Voxel::Argillite), Some(Voxel::OreZincArgillite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Zinc, Voxel::Slate), Some(Voxel::OreZincSlate));
+    // 5. Silver (3 host rocks)
+    assert_eq!(ores::host_to_ore_vein(MineralType::Silver, Voxel::Andesite), Some(Voxel::OreSilverRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Silver, Voxel::Slate), Some(Voxel::OreSilverRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Silver, Voxel::Marble), Some(Voxel::OreSilverRaw));
 
-    // 6. Gold (4 host rocks)
-    assert_eq!(ores::host_to_ore_vein(MineralType::Gold, Voxel::SandstoneRed), Some(Voxel::OreGoldSandstoneRed));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Gold, Voxel::Granite), Some(Voxel::OreGoldGranite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Gold, Voxel::Slate), Some(Voxel::OreGoldSlate));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Gold, Voxel::Gabbro), Some(Voxel::OreGoldGabbro));
+    // 6. Uranium (2 host rocks)
+    assert_eq!(ores::host_to_ore_vein(MineralType::Uranium, Voxel::Slate), Some(Voxel::OreUraniumRaw));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Uranium, Voxel::Gabbro), Some(Voxel::OreUraniumRaw));
 
-    // 7. Silver (3 host rocks)
-    assert_eq!(ores::host_to_ore_vein(MineralType::Silver, Voxel::Andesite), Some(Voxel::OreSilverAndesite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Silver, Voxel::Slate), Some(Voxel::OreSilverSlate));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Silver, Voxel::Marble), Some(Voxel::OreSilverMarble));
+    // 7. Diamond (2 host rocks)
+    assert_eq!(ores::host_to_ore_vein(MineralType::Diamond, Voxel::Gabbro), Some(Voxel::GemDiamondRough));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Diamond, Voxel::Basalt), Some(Voxel::GemDiamondRough));
 
-    // 8. Platinum (2 host rocks)
-    assert_eq!(ores::host_to_ore_vein(MineralType::Platinum, Voxel::Gabbro), Some(Voxel::OrePlatinumGabbro));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Platinum, Voxel::Basalt), Some(Voxel::OrePlatinumBasalt));
+    // 8. Emerald (2 host rocks)
+    assert_eq!(ores::host_to_ore_vein(MineralType::Emerald, Voxel::Slate), Some(Voxel::GemEmeraldRough));
+    assert_eq!(ores::host_to_ore_vein(MineralType::Emerald, Voxel::Marble), Some(Voxel::GemEmeraldRough));
 
-    // 9. Uranium (2 host rocks)
-    assert_eq!(ores::host_to_ore_vein(MineralType::Uranium, Voxel::Slate), Some(Voxel::OreUraniumSlate));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Uranium, Voxel::Gabbro), Some(Voxel::OreUraniumGabbro));
+    // 9. Sulfur (1 host rock)
+    assert_eq!(ores::host_to_ore_vein(MineralType::Sulfur, Voxel::Basalt), Some(Voxel::OreSulfurRaw));
 
-    // 10. Lazurite (2 host rocks)
-    assert_eq!(ores::host_to_ore_vein(MineralType::Lazurite, Voxel::Limestone), Some(Voxel::OreLazuriteLimestone));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Lazurite, Voxel::Marble), Some(Voxel::OreLazuriteMarble));
-
-    // 11. Diamond (2 host rocks)
-    assert_eq!(ores::host_to_ore_vein(MineralType::Diamond, Voxel::Gabbro), Some(Voxel::GemDiamondGabbro));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Diamond, Voxel::Basalt), Some(Voxel::GemDiamondBasalt));
-
-    // 12. Emerald (2 host rocks)
-    assert_eq!(ores::host_to_ore_vein(MineralType::Emerald, Voxel::Slate), Some(Voxel::GemEmeraldSlate));
-    assert_eq!(ores::host_to_ore_vein(MineralType::Emerald, Voxel::Marble), Some(Voxel::GemEmeraldMarble));
-
-    // 13. Sulfur (1 host rock)
-    assert_eq!(ores::host_to_ore_vein(MineralType::Sulfur, Voxel::Basalt), Some(Voxel::OreSulfurBasalt));
-
-    // 14. Cinnabar (1 host rock)
-    assert_eq!(ores::host_to_ore_vein(MineralType::Cinnabar, Voxel::Basalt), Some(Voxel::OreCinnabarBasalt));
-
-    // 15. Opal (1 host rock, exclusive)
-    assert_eq!(ores::host_to_ore_vein(MineralType::Opal, Voxel::SandstoneWhite), Some(Voxel::GemOpalSandstoneWhite));
-
-    // 16. Onyx (1 host rock, exclusive)
-    assert_eq!(ores::host_to_ore_vein(MineralType::Onyx, Voxel::Slate), Some(Voxel::GemOnyxSlate));
-
-    // 17. Gem Vein (7 host rocks)
-    assert_eq!(ores::host_to_ore_vein(MineralType::GemVein, Voxel::Dolomite), Some(Voxel::GemVeinDolomite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::GemVein, Voxel::Granite), Some(Voxel::GemVeinGranite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::GemVein, Voxel::Andesite), Some(Voxel::GemVeinAndesite));
-    assert_eq!(ores::host_to_ore_vein(MineralType::GemVein, Voxel::Slate), Some(Voxel::GemVeinSlate));
-    assert_eq!(ores::host_to_ore_vein(MineralType::GemVein, Voxel::Gabbro), Some(Voxel::GemVeinGabbro));
-    assert_eq!(ores::host_to_ore_vein(MineralType::GemVein, Voxel::Basalt), Some(Voxel::GemVeinBasalt));
-    assert_eq!(ores::host_to_ore_vein(MineralType::GemVein, Voxel::Marble), Some(Voxel::GemVeinMarble));
+    // 10. Gem Vein (7 host rocks -> Rough Gems)
+    assert_eq!(ores::host_to_ore_vein(MineralType::GemVein, Voxel::Dolomite), Some(Voxel::GemTopazRough));
+    assert_eq!(ores::host_to_ore_vein(MineralType::GemVein, Voxel::Granite), Some(Voxel::GemTopazRough));
+    assert_eq!(ores::host_to_ore_vein(MineralType::GemVein, Voxel::Andesite), Some(Voxel::GemJadeRough));
+    assert_eq!(ores::host_to_ore_vein(MineralType::GemVein, Voxel::Slate), Some(Voxel::GemJadeRough));
+    assert_eq!(ores::host_to_ore_vein(MineralType::GemVein, Voxel::Gabbro), Some(Voxel::GemSapphireRough));
+    assert_eq!(ores::host_to_ore_vein(MineralType::GemVein, Voxel::Basalt), Some(Voxel::GemSapphireRough));
+    assert_eq!(ores::host_to_ore_vein(MineralType::GemVein, Voxel::Marble), Some(Voxel::GemRubyRough));
 }
 
 #[test]

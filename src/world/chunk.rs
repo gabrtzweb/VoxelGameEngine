@@ -345,6 +345,8 @@ impl Chunk {
                         | BlockShape::FlatPad
                         | BlockShape::WallDecal
                         | BlockShape::Cactus
+                        | BlockShape::Rubble
+                        | BlockShape::Speleothem
                 )
             }) {
                 self.shapes.remove(&index);
