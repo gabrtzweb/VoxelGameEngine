@@ -13,5 +13,3 @@ pub use flora::populate_chunk_flora;
 pub use generator::TerrainGenerator;
 pub use inspector::TerrainInspectorPlugin;
 pub use strata::StrataGenerator;
-#[allow(unused_imports)]
-pub use trees::TreeSpecies;

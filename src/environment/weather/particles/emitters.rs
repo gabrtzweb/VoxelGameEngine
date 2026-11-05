@@ -120,7 +120,7 @@ pub fn emit_weather_particles(
         let sample = generator.sample_column(lead_pos.x.floor() as i32, lead_pos.z.floor() as i32);
         (sample.biome, sample.biome.water_color())
     } else {
-        (BiomeType::Plains, [0.80, 0.90, 1.0, 0.65])
+        (BiomeType::default(), [0.80, 0.90, 1.0, 0.65])
     };
 
     // User requirement: Weather is universal across biomes (Rain is rain, Snow is snow anywhere)
@@ -260,7 +260,17 @@ pub fn emit_weather_particles(
     // -------------------------------------------------------------
     // 4. Sky FX: Dust Storm / Arid Haze
     // -------------------------------------------------------------
-    let is_arid = matches!(biome_type, BiomeType::Desert | BiomeType::Savanna);
+    let is_arid = matches!(
+        biome_type,
+        BiomeType::DesertSpires
+            | BiomeType::AncientSands
+            | BiomeType::DesertOasis
+            | BiomeType::FracturedSavanna
+            | BiomeType::SavannaBadlands
+            | BiomeType::AshenSavanna
+            | BiomeType::DuneSea
+            | BiomeType::BryceCanyon
+    );
     let effective_dust = if is_arid && current_wind.length() > 5.0 {
         w.dust_intensity.max(0.40)
     } else {

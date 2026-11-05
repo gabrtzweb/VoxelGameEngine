@@ -61,7 +61,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **05** | **[High-Impact Performance & Graphics Pipeline](#phase-5-high-impact-performance--graphics-pipeline-completed)** | **Completed** | Dynamic frame rate limiter, hardware GPU upload budgets, AMD FSR 1.0 upscaling, subterranean occlusion culling |
 | **06** | **[Wild Flora, Herbaceous Vegetation & Botanical Systems](#phase-6-wild-flora-herbaceous-vegetation--botanical-systems-completed)** | **Completed** | 26 vegetation blocks, 28 flower blocks, cross-billboard rendering, double-tall block mechanics, petal carpet mesh, marine flora & waterlogged envelope, biome scatter generation |
 | **07** | **[Subterranean Strata, Caverns & Geological Generation](#phase-7-subterranean-strata-caverns--geological-generation-in-progress)** | **In Progress** | Multi-tier geological strata, Mantle bedrock at Y = -254, 54 authentic ore vein pairings, crystal geodes, subterranean cave biomes |
-| **08** | **[Biome Refactoring, Climate Modeling & Tree/Flora Distribution](#phase-8-biome-refactoring-climate-modeling--treeflora-distribution-planned)** | **Planned** | Multi-noise climate fields (continentalness/temperature/moisture), organic biome dithering, ecological tree dispersion, canopy models |
+| **08** | **[Next-Gen 3D World Generation and 6D Multi-Noise Climate](#phase-8-next-gen-3d-world-generation-and-6d-multi-noise-climate-in-progress)** | **In Progress** | 6D continuous climate noise, 44 distinct biomes, subterranean microbiomes, hydrological stepping, cubic landform splines |
 | **09** | **[Main Menu, Clean World Session Lifetime & Deferred World Loading](#phase-9-main-menu-clean-world-session-lifetime--deferred-world-loading-completed)** | **Completed** | Title splash & action menu, deferred chunk streaming, loading screen with rotating tips, menu soundtrack & shuffle, clean session lifecycle |
 | **10** | **[Sound Engine & Spatial Audio System](#phase-10-sound-engine--spatial-audio-system-completed)** | **Completed** | 3D spatial audio, material-based block break/place and footsteps, ambient environmental soundscapes, weather audio, dynamic music |
 | **11** | **[Custom Voxel Player Character & Modular Character Creator](#phase-11-custom-voxel-player-character--modular-character-creator-planned)** | **Planned** | Modular voxel character rig, Character Creator interface, fantasy races, custom hair, skin, eye, and cosmetic customization |
@@ -194,12 +194,30 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 8: Biome Refactoring, Climate Modeling & Tree/Flora Distribution (Planned)
+### Phase 8: Next-Gen 3D World Generation and 6D Multi-Noise Climate (In Progress)
 
-- [ ] **Continuous Multi-Noise Climate Modeling**:
-  - Multi-noise climate fields (continentalness, temperature, moisture) generating coherent macro-biomes with organic edge dithering and transitional micro-climates.
-- [ ] **Ecological Tree & Flora Distribution**:
-  - Climate-driven procedural tree generation and canopy density modeling across tropical, temperate, boreal, and montane environments, accompanied by fallen logs and natural undergrowth scatter.
+- [x] **6D Multi-Noise Climate Sampling & Voronoi Matching**:
+  - 6 orthogonal continuous climate noise dimensions: `Continentalness`, `Erosion`, `Ridges` (Weirdness / Peaks & Valleys), `Temperature`, `Humidity`, and `Depth`.
+  - Continuous weighted Euclidean distance Voronoi matching in [`src/generation/biome.rs`](src/generation/biome.rs), eliminating linear piecewise boundaries.
+  - 4-wide SIMD vectorization via [`Simd4f`](src/core/noise.rs) for parallel climate sampling.
+- [x] **44-Biome Catalog & Native Block Integration**:
+  - Comprehensive 44-biome catalog (even count) covering extreme alpine peaks, deep canyon systems, layered badlands, enchanted groves, subarctic tundra, volcanic craters, cold and tropical aquatic environments, and subterranean cavern biomes.
+  - Subterranean microbiomes: Karst Caverns, Calcite Grottos, Pink Salt Caverns, and Geode Chambers embedded dynamically in deep geological strata.
+  - Full native block palette mapping across 500+ voxels: surface materials, subsoil depth, primary bedrock, and cliff materials.
+  - Multi-language localization support across [`assets/lang/en_us.json`](assets/lang/en_us.json) and [`assets/lang/pt_br.json`](assets/lang/pt_br.json).
+- [x] **Hydrological Stepping, Elevated Rivers & Water Bodies**:
+  - Elevated river beds following terrain elevation and continental gradient, descending in natural steps toward the sea with cascades and waterfalls.
+  - Organic width modulation and loop-breaking cutoffs preventing closed circular moats.
+  - Alpine and meadow ponds forming natural depressions with localized water surfaces.
+- [ ] **3D Density Router & Spline Landforms**:
+  - Volumetric 3D density evaluation pipeline in [`src/generation/generator.rs`](src/generation/generator.rs) replacing 2D height summation.
+  - Parameterized cubic splines modeling alpine mountain ridges, layered canyon bluffs, desert sand dunes, and steep rock overhangs.
+  - Sparse 4×4×4 density grid evaluation with SIMD-accelerated trilinear interpolation for high-throughput chunk generation.
+- [ ] **Slope-Aware Surface & Strata Rules**:
+  - Dynamic surface angle detection applying cliff stone materials to steep vertical rock faces (> 50° incline).
+  - Sedimentary layering for canyon walls and badlands (alternating sandstone and clay bands).
+- [x] **Live Worldgen Inspector Overhaul**:
+  - Real-time 6D telemetry diagnostics overlay and frequency tuning sliders in [`src/generation/inspector.rs`](src/generation/inspector.rs) with live hot-reloading.
 
 ---
 

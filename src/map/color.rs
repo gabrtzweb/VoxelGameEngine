@@ -65,6 +65,13 @@ pub fn voxel_map_color_at(voxel: Voxel, water_depth: u8, world_x: i32, world_z: 
                 | Voxel::CalicheGrass
                 | Voxel::LateriteGrass
                 | Voxel::PermafrostGrass
+                | Voxel::AndesiteGrass
+                | Voxel::ArgilliteGrass
+                | Voxel::BasaltGrass
+                | Voxel::ChalkGrass
+                | Voxel::DolomiteGrass
+                | Voxel::GraniteGrass
+                | Voxel::LimestoneGrass
         ) {
             return [
                 (tint[0] * 175.0).clamp(0.0, 255.0) as u8,

@@ -948,11 +948,347 @@ impl Voxel {
             // Moss
             Self::MossForest => [60, 120, 45, 255],
 
-            s if s.is_water() => [60, 140, 220, 255],
-            s if s.is_leaves() => [80, 150, 50, 255],
-            s if s.is_transparent() => [200, 225, 235, 160],
-            s if s.is_light() => [255, 220, 100, 255],
-            _ => [128, 128, 128, 255],
+            // Rock families (Raw, Cobbled, Bricks, Rubble, and Mossy)
+            Self::Andesite | Self::CobbledAndesite | Self::AndesiteBricks | Self::AndesiteRubble => [135, 138, 142, 255],
+            Self::MossyAndesite | Self::MossyCobbledAndesite => [118, 135, 110, 255],
+            Self::Argillite | Self::CobbledArgillite | Self::ArgilliteBricks | Self::ArgilliteRubble => [125, 78, 68, 255],
+            Self::MossyArgillite | Self::MossyCobbledArgillite => [110, 85, 70, 255],
+            Self::Basalt | Self::CobbledBasalt | Self::BasaltBricks | Self::BasaltRubble => [50, 48, 52, 255],
+            Self::MossyBasalt | Self::MossyCobbledBasalt => [48, 58, 48, 255],
+            Self::Chalk | Self::CobbledChalk | Self::ChalkBricks | Self::ChalkRubble => [230, 230, 224, 255],
+            Self::MossyChalk | Self::MossyCobbledChalk => [195, 205, 180, 255],
+            Self::Dolomite | Self::CobbledDolomite | Self::DolomiteBricks | Self::DolomiteRubble => [195, 182, 172, 255],
+            Self::MossyDolomite | Self::MossyCobbledDolomite => [165, 170, 145, 255],
+            Self::Gabbro | Self::CobbledGabbro | Self::GabbroBricks | Self::GabbroRubble => [45, 52, 50, 255],
+            Self::Granite | Self::CobbledGranite | Self::GraniteBricks | Self::GraniteRubble => [175, 138, 130, 255],
+            Self::MossyGranite | Self::MossyCobbledGranite => [145, 135, 110, 255],
+            Self::Limestone | Self::CobbledLimestone | Self::LimestoneBricks | Self::LimestoneRubble => [205, 195, 165, 255],
+            Self::MossyLimestone | Self::MossyCobbledLimestone => [170, 175, 135, 255],
+            Self::Marble | Self::CobbledMarble | Self::MarbleBricks | Self::MarbleRubble => [225, 228, 232, 255],
+            Self::Slate | Self::CobbledSlate | Self::SlateBricks | Self::SlateRubble => [75, 82, 92, 255],
+            Self::Mantle | Self::CobbledMantle => [22, 18, 28, 255],
+            Self::Obsidian | Self::ObsidianSpike | Self::FracturedCaveObsidian => [28, 22, 36, 255],
+
+            // Cave speleothems & karst
+            Self::CaveCalcite | Self::FracturedCaveCalcite | Self::SpeleothemCalcite => [210, 215, 220, 255],
+            Self::CaveKarst | Self::FracturedCaveKarst | Self::SpeleothemKarst => [130, 125, 120, 255],
+            Self::SpeleothemSaltStraw => [235, 230, 225, 255],
+            Self::SpeleothemBlueIce => [140, 190, 245, 255],
+
+            // Sandstone Rubble & Bricks
+            Self::SandstoneRubble | Self::SandstoneCommonBricks => [212, 190, 138, 255],
+            Self::SandstoneDuneRubble | Self::SandstoneDuneBricks => [218, 178, 112, 255],
+            Self::SandstoneRedRubble | Self::SandstoneRedBricks => [184, 92, 54, 255],
+            Self::SandstoneWhiteRubble | Self::SandstoneWhiteBricks => [232, 228, 212, 255],
+
+            // Outcrop grasses & soils fallback
+            Self::AndesiteGrass
+            | Self::ArgilliteGrass
+            | Self::BasaltGrass
+            | Self::ChalkGrass
+            | Self::DolomiteGrass
+            | Self::GraniteGrass
+            | Self::LimestoneGrass
+            | Self::CalicheGrass
+            | Self::LateriteGrass
+            | Self::LoamGrass
+            | Self::PeatGrass
+            | Self::PermafrostGrass
+            | Self::SiltGrass => [110, 160, 65, 255],
+
+            // Wood logs and planks
+            Self::AcaciaLog | Self::AcaciaWood => [105, 95, 90, 255],
+            Self::AcaciaPlanks => [175, 90, 45, 255],
+            Self::BambooStalk => [125, 165, 55, 255],
+            Self::BambooPlanks => [190, 175, 105, 255],
+            Self::BirchLog | Self::BirchWood => [215, 215, 210, 255],
+            Self::BirchPlanks => [200, 185, 140, 255],
+            Self::CherryLog | Self::CherryWood => [70, 50, 50, 255],
+            Self::CherryPlanks => [215, 160, 170, 255],
+            Self::MahoganyLog | Self::MahoganyWood => [95, 55, 45, 255],
+            Self::MahoganyPlanks => [140, 75, 60, 255],
+            Self::MangroveLog | Self::MangroveWood | Self::MangroveRoots => [80, 50, 40, 255],
+            Self::MangrovePlanks => [125, 60, 50, 255],
+            Self::MapleLog | Self::MapleWood => [110, 70, 50, 255],
+            Self::MaplePlanks => [165, 105, 75, 255],
+            Self::OakLog | Self::OakWood => [105, 80, 50, 255],
+            Self::OakPlanks => [160, 130, 85, 255],
+            Self::PalmLog | Self::PalmWood => [100, 80, 55, 255],
+            Self::PalmPlanks => [175, 140, 95, 255],
+            Self::PineLog | Self::PineWood => [65, 45, 30, 255],
+            Self::PinePlanks => [115, 85, 55, 255],
+            Self::RedwoodLog | Self::RedwoodWood => [90, 40, 30, 255],
+            Self::RedwoodPlanks => [145, 65, 50, 255],
+            Self::WillowLog | Self::WillowWood => [75, 70, 55, 255],
+            Self::WillowPlanks => [120, 110, 75, 255],
+            Self::YewLog | Self::YewWood => [85, 50, 40, 255],
+            Self::YewPlanks => [150, 90, 60, 255],
+            Self::TreeCharredLog | Self::TreeCharredBark => [35, 35, 35, 255],
+            Self::TreeCharredPlanks => [55, 55, 55, 255],
+
+            // Raw Ores & Minerals
+            Self::OreCoalRaw => [35, 35, 38, 255],
+            Self::OreCopperRaw => [185, 105, 70, 255],
+            Self::OreIronRaw => [165, 135, 115, 255],
+            Self::OreGoldRaw => [230, 185, 40, 255],
+            Self::OreSilverRaw => [200, 210, 220, 255],
+            Self::OreSulfurRaw => [220, 215, 60, 255],
+            Self::OreUraniumRaw => [90, 210, 50, 255],
+            Self::GemDiamondRough => [90, 220, 225, 255],
+            Self::GemEmeraldRough => [40, 190, 80, 255],
+            Self::GemJadeRough => [70, 160, 110, 255],
+            Self::GemRubyRough => [200, 30, 50, 255],
+            Self::GemSapphireRough => [40, 70, 200, 255],
+            Self::GemTopazRough => [220, 140, 40, 255],
+
+            // Crystal Geodes
+            Self::CrystalAmethystBlock | Self::CrystalAmethystCluster | Self::CrystalAmethystGlinted => [160, 80, 210, 255],
+            Self::CrystalAquamarineBlock | Self::CrystalAquamarineCluster | Self::CrystalAquamarineGlinted => [110, 205, 215, 255],
+            Self::CrystalCitrineBlock | Self::CrystalCitrineCluster | Self::CrystalCitrineGlinted => [225, 175, 35, 255],
+            Self::CrystalFluoriteBlock | Self::CrystalFluoriteCluster | Self::CrystalFluoriteGlinted => [170, 90, 220, 255],
+            Self::CrystalPinkSaltBlock | Self::CrystalPinkSaltCluster | Self::CrystalPinkSaltGlinted => [225, 140, 160, 255],
+            Self::CrystalSeleniteBlock | Self::CrystalSeleniteCluster | Self::CrystalSeleniteGlinted => [210, 225, 235, 255],
+
+            // Fossils
+            Self::FossilAmber => [215, 145, 30, 255],
+            Self::FossilBitumen => [40, 38, 42, 255],
+            Self::FossilBones | Self::FossilMatrix => [215, 205, 185, 255],
+
+            // Pebbles & Boulders
+            Self::PebbleChert | Self::PebbleChertCluster | Self::BoulderChert => [160, 145, 130, 255],
+            Self::PebbleFlint | Self::PebbleFlintCluster | Self::BoulderFlint => [65, 70, 75, 255],
+            Self::PebbleQuartz | Self::PebbleQuartzCluster | Self::BoulderQuartz => [220, 225, 230, 255],
+
+            // Containers & Storage
+            Self::Barrel | Self::Crate | Self::Basket | Self::Bookshelf | Self::BookshelfEmpty => [135, 95, 55, 255],
+            Self::Bag | Self::BagRice | Self::BagSugar => [195, 175, 140, 255],
+
+            // Leaves
+            Self::AcaciaLeavesDead
+            | Self::BirchLeavesDead
+            | Self::CherryLeavesDead
+            | Self::MahoganyLeavesDead
+            | Self::MangroveLeavesDead
+            | Self::MapleLeavesDead
+            | Self::OakLeavesDead
+            | Self::PalmLeavesDead
+            | Self::PineLeavesDead
+            | Self::RedwoodLeavesDead
+            | Self::WillowLeavesDead
+            | Self::YewLeavesDead => [125, 95, 65, 255],
+            Self::MapleLeavesOrange => [215, 105, 30, 255],
+            Self::MapleLeavesRed => [195, 45, 35, 255],
+            Self::MapleLeavesYellow => [220, 185, 40, 255],
+            Self::CherryLeaves => [235, 165, 185, 255],
+            Self::AcaciaLeaves
+            | Self::BambooLeaves
+            | Self::BirchLeaves
+            | Self::MahoganyLeaves
+            | Self::MangroveLeaves
+            | Self::OakLeaves
+            | Self::PalmLeaves
+            | Self::PineLeaves
+            | Self::RedwoodLeaves
+            | Self::WillowLeaves
+            | Self::YewLeaves => [75, 140, 45, 255],
+
+            // Corals & Marine Flora
+            Self::Coralstone | Self::Reefstone => [165, 130, 120, 255],
+            Self::DeadCoral | Self::DeadCoralFan | Self::DyingCoral | Self::DyingCoralFan => [135, 130, 125, 255],
+            Self::BrainCoral
+            | Self::BrainCoralFan
+            | Self::HornCoral
+            | Self::HornCoralFan
+            | Self::StaghornCoral
+            | Self::StaghornCoralFan => [215, 130, 160, 255],
+            Self::BubbleCoral | Self::BubbleCoralFan | Self::SunCoral | Self::SunCoralFan => [225, 190, 55, 255],
+            Self::FireCoral | Self::FireCoralFan | Self::RedAlgae | Self::Delesseria => [185, 45, 55, 255],
+            Self::HeartCoral
+            | Self::HeartCoralFan
+            | Self::LeafCoral
+            | Self::LeafCoralFan
+            | Self::ReedCoral
+            | Self::ReedCoralFan
+            | Self::SpikeCoral
+            | Self::SpikeCoralFan
+            | Self::ThornCoral
+            | Self::ThornCoralFan
+            | Self::TubeCoral
+            | Self::TubeCoralFan
+            | Self::WaxCoral
+            | Self::WaxCoralFan
+            | Self::ZigzagCoral
+            | Self::ZigzagCoralFan => [195, 115, 155, 255],
+            Self::BullKelp
+            | Self::BullKelpPlant
+            | Self::Kelp
+            | Self::KelpPlant
+            | Self::Seagrass
+            | Self::Seaweed
+            | Self::Sargassum
+            | Self::BoneWorms => [55, 105, 45, 255],
+
+            // Organic, Biological & Nests
+            Self::BoneBlock | Self::BloodyBone => [215, 210, 195, 255],
+            Self::BrainBlock | Self::BloodyBrain => [200, 120, 140, 255],
+            Self::FleshBlock | Self::BloodyFlesh => [165, 55, 55, 255],
+            Self::HoneycombBlock | Self::BeeNest | Self::WaspNest => [225, 160, 45, 255],
+            Self::SlimeBlock | Self::JellyBlock => [115, 195, 75, 255],
+            Self::AntHill | Self::AntHillOpen | Self::TermiteMound | Self::TermiteMoundOpen => [155, 105, 70, 255],
+            Self::BirdNest | Self::HayNest => [180, 150, 85, 255],
+            Self::SpiderEgg => [210, 205, 190, 255],
+            Self::SilkCocoon => [230, 225, 215, 255],
+            Self::Cobweb | Self::CobwebArch | Self::CobwebHanging | Self::CobwebStretched => [225, 230, 235, 200],
+            Self::PoopBlock => [85, 55, 30, 255],
+            Self::DustBlock => [160, 155, 145, 255],
+
+            // Bricks (Colored & Standard)
+            Self::CobbledMagma => [140, 50, 25, 255],
+            Self::Bricks | Self::BrickRed => [165, 65, 50, 255],
+            Self::BrickBlack => [35, 35, 38, 255],
+            Self::BrickBlue => [45, 95, 185, 255],
+            Self::BrickBrown => [100, 65, 45, 255],
+            Self::BrickDarkBlue => [25, 45, 115, 255],
+            Self::BrickDarkGrey => [75, 75, 80, 255],
+            Self::BrickGreen => [45, 115, 50, 255],
+            Self::BrickLightGrey => [170, 175, 180, 255],
+            Self::BrickLightPink => [235, 175, 190, 255],
+            Self::BrickLime => [115, 190, 45, 255],
+            Self::BrickOrange => [220, 115, 35, 255],
+            Self::BrickPink => [215, 115, 155, 255],
+            Self::BrickPurple => [135, 65, 175, 255],
+            Self::BrickTurquoise => [45, 165, 170, 255],
+            Self::BrickWhite => [235, 238, 240, 255],
+            Self::BrickYellow => [230, 195, 45, 255],
+
+            // Plaster
+            Self::Plaster | Self::PlasterWhite => [235, 235, 230, 255],
+            Self::PlasterBlack => [30, 30, 32, 255],
+            Self::PlasterBlue => [55, 105, 195, 255],
+            Self::PlasterBrown => [105, 70, 50, 255],
+            Self::PlasterDarkBlue => [30, 50, 125, 255],
+            Self::PlasterDarkGrey => [80, 80, 85, 255],
+            Self::PlasterGreen => [55, 125, 60, 255],
+            Self::PlasterLightGrey => [175, 180, 185, 255],
+            Self::PlasterLightPink => [240, 185, 200, 255],
+            Self::PlasterLime => [125, 200, 55, 255],
+            Self::PlasterOrange => [230, 125, 45, 255],
+            Self::PlasterPink => [225, 125, 165, 255],
+            Self::PlasterPurple => [145, 75, 185, 255],
+            Self::PlasterRed => [185, 55, 45, 255],
+            Self::PlasterTurquoise => [55, 175, 180, 255],
+            Self::PlasterYellow => [240, 205, 55, 255],
+
+            // Fabric & Wool
+            Self::Fabric | Self::Wool | Self::FabricWhite | Self::WoolWhite => [230, 230, 230, 255],
+            Self::FabricBlack | Self::WoolBlack => [28, 28, 30, 255],
+            Self::FabricBlue | Self::WoolBlue => [50, 90, 180, 255],
+            Self::FabricBrown | Self::WoolBrown => [95, 60, 40, 255],
+            Self::FabricDarkBlue | Self::WoolDarkBlue => [25, 40, 110, 255],
+            Self::FabricDarkGrey | Self::WoolDarkGrey => [70, 70, 75, 255],
+            Self::FabricGreen | Self::WoolGreen => [50, 110, 50, 255],
+            Self::FabricLightGrey | Self::WoolLightGrey => [165, 170, 175, 255],
+            Self::FabricLightPink | Self::WoolLightPink => [235, 170, 185, 255],
+            Self::FabricLime | Self::WoolLime => [110, 185, 40, 255],
+            Self::FabricOrange | Self::WoolOrange => [215, 110, 30, 255],
+            Self::FabricPink | Self::WoolPink => [210, 110, 150, 255],
+            Self::FabricPurple | Self::WoolPurple => [130, 60, 170, 255],
+            Self::FabricRed | Self::WoolRed => [175, 45, 40, 255],
+            Self::FabricTurquoise | Self::WoolTurquoise => [45, 160, 165, 255],
+            Self::FabricYellow | Self::WoolYellow => [225, 190, 40, 255],
+
+            // Shingles
+            Self::Shingles | Self::ShinglesBlack => [40, 40, 45, 255],
+            Self::ShinglesBlue => [50, 85, 160, 255],
+            Self::ShinglesBrown => [110, 75, 55, 255],
+            Self::ShinglesDarkBlue => [30, 45, 95, 255],
+            Self::ShinglesDarkGrey => [65, 65, 70, 255],
+            Self::ShinglesGreen => [55, 100, 60, 255],
+            Self::ShinglesLightGrey => [150, 155, 160, 255],
+            Self::ShinglesLightPink => [215, 165, 175, 255],
+            Self::ShinglesLime => [115, 165, 55, 255],
+            Self::ShinglesOrange => [195, 100, 40, 255],
+            Self::ShinglesPink => [190, 105, 140, 255],
+            Self::ShinglesPurple => [120, 65, 145, 255],
+            Self::ShinglesRed => [160, 55, 45, 255],
+            Self::ShinglesTurquoise => [50, 145, 150, 255],
+            Self::ShinglesWhite => [220, 220, 220, 255],
+            Self::ShinglesYellow => [210, 175, 50, 255],
+
+            // Lighting & Fire
+            Self::ElementFire => [245, 125, 25, 255],
+            Self::EmitLampWarm | Self::EmitTorchWarm | Self::EmitTorchFire => [255, 205, 80, 255],
+            Self::EmitLampBlue | Self::EmitTorchBlue => [75, 145, 255, 255],
+            Self::EmitLampGreen | Self::EmitTorchGreen => [75, 235, 75, 255],
+            Self::EmitLampRed | Self::EmitTorchRed => [245, 60, 60, 255],
+            Self::GeothermalVent => [85, 70, 65, 255],
+
+            // Fungi & Mushrooms
+            Self::FungiAmanita | Self::FungiAmanitaCap => [200, 40, 40, 255],
+            Self::FungiPorcini | Self::FungiPorciniCap => [140, 95, 60, 255],
+            Self::FungiRussula | Self::FungiRussulaCap => [185, 65, 80, 255],
+            Self::FungiShiitake | Self::FungiShiitakeCap => [120, 80, 55, 255],
+            Self::FungiVerdigris | Self::FungiVerdigrisCap => [65, 160, 150, 255],
+            Self::FungiStem | Self::FungiInside => [225, 220, 205, 255],
+
+            // Wild Vegetation & Grasses
+            Self::VegeWildgrass
+            | Self::VegeTallWildgrassBottom
+            | Self::VegeTallWildgrassTop
+            | Self::VegeBluffGrass
+            | Self::VegeMossgrass
+            | Self::VegeFern
+            | Self::VegeBracken
+            | Self::VegeTallFernBottom
+            | Self::VegeTallFernTop
+            | Self::VegeTallJungleFernBottom
+            | Self::VegeTallJungleFernTop
+            | Self::VegeBush
+            | Self::FlowerClover => [95, 170, 55, 255],
+            Self::VegeDrygrass
+            | Self::VegeSeaOatsBottom
+            | Self::VegeSeaOatsTop
+            | Self::VegeDeadBush => [185, 165, 110, 255],
+            Self::VegeBarrelCactus
+            | Self::VegePricklyPearCactus
+            | Self::VegeCactus
+            | Self::FlowerCactusFlower => [90, 145, 60, 255],
+            Self::VegeRedShrub => [175, 60, 45, 255],
+            Self::VegeLilyPad => [55, 130, 45, 255],
+            Self::VegeCattailBottom | Self::VegeCattailTop => [120, 85, 50, 255],
+            Self::VegeVines | Self::VegeHangingMoss | Self::VegeHangingRoots | Self::VegeLichen => [80, 135, 55, 255],
+            Self::VegeCaveGrowths
+            | Self::VegeGrainyCaveGrowths
+            | Self::VegeCaveHyssop
+            | Self::VegeCaveVines
+            | Self::VegeCaveVinesPlant => [90, 160, 140, 255],
+
+            // Flowers
+            Self::FlowerAllium | Self::FlowerLavender => [165, 110, 215, 255],
+            Self::FlowerBlueHydrangeaBottom
+            | Self::FlowerBlueHydrangeaTop
+            | Self::FlowerBlueOrchid
+            | Self::FlowerCornflower
+            | Self::FlowerIris => [65, 125, 225, 255],
+            Self::FlowerDandelion | Self::FlowerWildflowers => [235, 205, 50, 255],
+            Self::FlowerFoxgloveBottom
+            | Self::FlowerFoxgloveTop
+            | Self::FlowerLilacBottom
+            | Self::FlowerLilacTop
+            | Self::FlowerPeonyBottom
+            | Self::FlowerPeonyTop => [210, 115, 185, 255],
+            Self::FlowerGardeniaBottom
+            | Self::FlowerGardeniaTop
+            | Self::FlowerLilyOfTheValley
+            | Self::FlowerOxeyeDaisy
+            | Self::FlowerWhitePetals => [240, 245, 250, 255],
+            Self::FlowerGlobeMallow | Self::FlowerMarigold | Self::FlowerOrangeTulip => [230, 125, 40, 255],
+            Self::FlowerHibiscus
+            | Self::FlowerPoppy
+            | Self::FlowerRoseBushBottom
+            | Self::FlowerRoseBushTop => [220, 45, 50, 255],
+            Self::FlowerOrchid | Self::FlowerPinkPetals | Self::FlowerPinkTulip => [235, 135, 175, 255],
+            Self::FlowerSnapdragonBottom | Self::FlowerSnapdragonTop => [225, 165, 60, 255],
         }
     }
 

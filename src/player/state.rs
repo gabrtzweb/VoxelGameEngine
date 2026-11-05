@@ -126,7 +126,7 @@ pub fn update_player_environment_status(
 
         (col.biome, underground, depth, roof, target_factor)
     } else {
-        (BiomeType::Plains, false, 0.0, false, 0.0)
+        (BiomeType::default(), false, 0.0, false, 0.0)
     };
 
     let dt = time.as_ref().map(|t| t.delta_secs()).unwrap_or(0.016);

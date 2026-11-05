@@ -923,13 +923,7 @@ impl ChunkMesher {
                             match direction {
                                 FaceDirection::PositiveY => voxel.tint_color_at(world_voxel),
                                 FaceDirection::NegativeY => [1.0, 1.0, 1.0, 1.0],
-                                _ => {
-                                    if textures.full_grass {
-                                        voxel.tint_color_at(world_voxel)
-                                    } else {
-                                        [1.0, 1.0, 1.0, 1.0]
-                                    }
-                                }
+                                _ => voxel.tint_color_at(world_voxel),
                             }
                         } else {
                             voxel.tint_color_at(world_voxel)
@@ -1636,6 +1630,11 @@ pub fn transition_priority_rank(voxel: Voxel) -> u32 {
     if p == 0 {
         return 0;
     }
+    if p == 8 {
+        // All grass turf blocks share identical priority so grass never spills onto grass
+        return 8 << 24;
+    }
+
     let sub_tier: u32 = if p == 2 {
         if matches!(
             voxel,
@@ -1811,6 +1810,16 @@ pub fn compute_block_transition(
             _ => 8,
         };
 
+        // Grass never overlays onto grass
+        if raw_voxel.is_grass_soil() && highest_neighbor.is_grass_soil() {
+            return (0, 0, 0);
+        }
+
+        // Grass never overlays onto grass
+        if raw_voxel.is_grass_soil() && highest_neighbor.is_grass_soil() {
+            return (0, 0, 0);
+        }
+
         let category = TransitionCategory::from_voxel(highest_neighbor);
         let mask_index = (category.base_layer() + mask_file_id + 1) as u8;
 
@@ -1871,6 +1880,11 @@ pub fn compute_block_transition(
         } else {
             (2, down_left_vox, down_left_pos)
         };
+
+        // Grass never overlays onto grass
+        if raw_voxel.is_grass_soil() && highest_neighbor.is_grass_soil() {
+            return (0, 0, 0);
+        }
 
         let category = TransitionCategory::from_voxel(highest_neighbor);
         let mask_index = (category.base_layer() + mask_file_id + 1) as u8;

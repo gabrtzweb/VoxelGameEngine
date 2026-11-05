@@ -120,11 +120,7 @@ pub fn mesh_slab(
         } else {
             extra_tint
         };
-        let extra_side_tint = if is_extra_turf && !textures.full_grass {
-            [1.0, 1.0, 1.0, extra_tint[3]]
-        } else {
-            extra_tint
-        };
+        let extra_side_tint = extra_tint;
         let mut extra_cull = [false; 6];
         if orientation == 0 && extra_orient == 1 {
             extra_cull[3] = true; // -Y face touches lower slab

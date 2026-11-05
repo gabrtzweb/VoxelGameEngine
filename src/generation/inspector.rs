@@ -57,18 +57,14 @@ pub fn terrain_inspector_ui(
                         let sample = generator.climate.sample_dithered(pos.x, pos.z, generator.seed);
                         ui.label(format!("Current Biome: {}", sample.biome.name()));
                         ui.label(format!(
-                            "Climate: C: {:+.3} | T: {:+.3} | H: {:+.3}",
-                            sample.continentalness, sample.temperature, sample.humidity
+                            "6D Noise: C: {:+.3} | E: {:+.3} | R: {:+.3}",
+                            sample.continentalness, sample.erosion, sample.ridges
                         ));
-                        if let Some((species, prob)) = crate::generation::trees::biome_tree_profile(sample.biome) {
-                            ui.label(format!(
-                                "Flora: {:?} (density: {:.0}%)",
-                                species,
-                                (prob * generator.tree_density * 100.0).min(100.0)
-                            ));
-                        } else {
-                            ui.label("Flora: None (open terrain)");
-                        }
+                        ui.label(format!(
+                            "Climate:  T: {:+.3} | H: {:+.3} | D: {:+.3}",
+                            sample.temperature, sample.humidity, sample.depth
+                        ));
+                        ui.label("Vegetation: Bypassed during terrain overhaul");
                     }
                     if let Some(ref status) = env_status {
                         ui.label(format!(
@@ -129,6 +125,8 @@ pub fn terrain_inspector_ui(
                 .default_open(true)
                 .show(ui, |ui| {
                     ui.add(egui::Slider::new(&mut generator.climate.continentalness_freq, 0.0005..=0.008).text("Continentalness Freq"));
+                    ui.add(egui::Slider::new(&mut generator.climate.erosion_freq, 0.0005..=0.008).text("Erosion Freq"));
+                    ui.add(egui::Slider::new(&mut generator.climate.ridges_freq, 0.0005..=0.008).text("Ridges Freq"));
                     ui.add(egui::Slider::new(&mut generator.climate.temperature_freq, 0.0005..=0.008).text("Temperature Freq"));
                     ui.add(egui::Slider::new(&mut generator.climate.humidity_freq, 0.0005..=0.008).text("Humidity Freq"));
                     ui.add(egui::Slider::new(&mut generator.climate.warp_amplitude, 0.0..=80.0).text("Domain Warp Amp"));

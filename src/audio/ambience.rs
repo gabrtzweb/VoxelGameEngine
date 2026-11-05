@@ -193,7 +193,7 @@ fn update_ambient_audio(
 
     let is_underground = env_status.as_ref().map_or(false, |s| s.is_underground);
     let is_camera_water = env_status.as_ref().map_or(false, |s| s.is_camera_in_water);
-    let biome = env_status.as_ref().map_or(BiomeType::Plains, |s| s.current_biome);
+    let biome = env_status.as_ref().map_or(BiomeType::default(), |s| s.current_biome);
     let day_phase = env_state
         .as_ref()
         .map_or(DayPhase::Noon, |s| DayPhase::from_time(s.time_of_day));
@@ -248,17 +248,36 @@ fn update_ambient_audio(
         state.surface_timer = 12.0 + state.next_float() * 16.0;
 
         let sound_pool = match biome {
-            BiomeType::CoastalBeachReef | BiomeType::OpenOcean | BiomeType::AbyssalTrench | BiomeType::RiversLakes => {
-                &assets.waves
-            }
-            BiomeType::Desert | BiomeType::Savanna => &assets.desert_wind,
-            BiomeType::Taiga | BiomeType::Highlands => &assets.cold_wind,
-            BiomeType::Forest | BiomeType::Plains | BiomeType::MangroveWetland => {
-                match day_phase {
-                    DayPhase::Morning | DayPhase::Noon => &assets.birds,
-                    DayPhase::Evening | DayPhase::Night => &assets.insects,
-                }
-            }
+            BiomeType::GravelBeach
+            | BiomeType::MirageIsles
+            | BiomeType::DeepWarmOcean
+            | BiomeType::ColdOcean
+            | BiomeType::CoralReef
+            | BiomeType::OceanTrench
+            | BiomeType::Caldera => &assets.waves,
+
+            BiomeType::DesertSpires
+            | BiomeType::AncientSands
+            | BiomeType::DesertOasis
+            | BiomeType::FracturedSavanna
+            | BiomeType::SavannaBadlands
+            | BiomeType::AshenSavanna
+            | BiomeType::DuneSea
+            | BiomeType::BryceCanyon => &assets.desert_wind,
+
+            BiomeType::AlpineHighlands
+            | BiomeType::RockyMountains
+            | BiomeType::GlacialChasm
+            | BiomeType::SiberianTaiga
+            | BiomeType::FrozenCliffs
+            | BiomeType::WintryForest
+            | BiomeType::PineHighlands
+            | BiomeType::ColdShrubland => &assets.cold_wind,
+
+            _ => match day_phase {
+                DayPhase::Morning | DayPhase::Noon => &assets.birds,
+                DayPhase::Evening | DayPhase::Night => &assets.insects,
+            },
         };
 
         let chosen_sound = if !sound_pool.is_empty() {

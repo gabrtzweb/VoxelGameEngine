@@ -28,30 +28,30 @@ pub struct CloudLayerConfig {
 }
 
 pub const CLOUD_LAYER_CONFIGS: &[CloudLayerConfig] = &[
-    // Layer 0: Lower cumulus layer (slightly faster, closer to terrain)
+    // Layer 0: Lower cumulus layer (majestic, voluminous voxel cumulus)
     CloudLayerConfig {
-        altitude: 108.0,
-        thickness: 2.0,
+        altitude: 168.0,
+        thickness: 6.0,
         cell_size: 12.0,
         grid_radius: 24,
         base_alpha: 0.85,
         wind_speed: Vec2::new(3.2, 1.0),
         texture_offset: IVec2::new(0, 0),
     },
-    // Layer 1: Mid-altitude altocumulus layer (slower drift, larger cell scale, higher up)
+    // Layer 1: Mid-altitude altocumulus layer (thicker billowy cloud blanket)
     CloudLayerConfig {
-        altitude: 156.0,
-        thickness: 2.0,
+        altitude: 215.0,
+        thickness: 8.0,
         cell_size: 16.0,
         grid_radius: 22,
         base_alpha: 0.70,
         wind_speed: Vec2::new(2.1, 0.6),
         texture_offset: IVec2::new(128, 64),
     },
-    // Layer 2: High cirrus layer (very high, faint, gentle drift)
+    // Layer 2: High cirrus layer (very high, deep atmospheric layer)
     CloudLayerConfig {
-        altitude: 204.0,
-        thickness: 2.5,
+        altitude: 275.0,
+        thickness: 7.0,
         cell_size: 20.0,
         grid_radius: 20,
         base_alpha: 0.50,

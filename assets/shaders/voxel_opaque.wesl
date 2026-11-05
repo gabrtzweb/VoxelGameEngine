@@ -41,6 +41,19 @@ fn ambient_environment_noise(pos_xz: vec2<f32>) -> f32 {
     return smooth_noise2(pos_xz * 0.04);
 }
 
+fn ambient_environment_variation(pos_xz: vec2<f32>, base_tint: vec3<f32>) -> vec3<f32> {
+    let n_macro = smooth_noise2(pos_xz * 0.025);
+    let n_detail = smooth_noise2(pos_xz * 0.10);
+    let combined = n_macro * 0.7 + n_detail * 0.3;
+    let brightness = 0.88 + combined * 0.24;
+    let warm_factor = clamp((0.48 - combined) * 2.2, -0.35, 0.45);
+    var shifted = base_tint * brightness;
+    shifted.r += warm_factor * 0.12;
+    shifted.g += warm_factor * 0.03;
+    shifted.b -= warm_factor * 0.08;
+    return clamp(shifted, vec3<f32>(0.02), vec3<f32>(1.0));
+}
+
 // Fast deterministic integer block face hash (Murmur3 style bit avalanche)
 fn hash_block_face(p: vec3<i32>, normal: vec3<f32>) -> u32 {
     var face_id = 0u;
@@ -350,7 +363,8 @@ fn fragment(
     let is_diagonal_plane = geo_len_sq > 0.00001 && (abs(geo_norm.x) * abs(geo_norm.z) > 0.05 * geo_len_sq);
     let is_cross_mesh = (vertex_output.color.a > 3.5 && vertex_output.color.a < 6.5) || is_diagonal_plane;
 
-    // Ambient Environment modulation: breaks up monotonous large expanses of grass and leaves (foliage has alpha > 0.75)
+    // Ambient Environment modulation (Minecraft mod style):
+    // Breaks up monotonous large expanses of grass and leaves with multi-scale noise and natural hue shifts
     var tint_color = vertex_output.color;
     if (is_mask_face) {
         tint_color = vec4<f32>(1.0);
@@ -358,10 +372,22 @@ fn fragment(
     let is_painted_block = (vertex_output.color.a > 0.52) && (vertex_output.color.a < 0.72);
     let is_foliage_tinted = !is_mask_face && (vertex_output.color.a > 0.75) && (tint_color.r < 0.99 || tint_color.g < 0.99 || tint_color.b < 0.99);
     if (is_foliage_tinted) {
-        let noise = ambient_environment_noise(vertex_output.world_position.xz);
-        // Subtle organic variation: ±8% darker and lighter natural patches
-        let ambient_factor = 0.92 + noise * 0.16;
-        tint_color = vec4<f32>(tint_color.rgb * vertex_output.color.rgb * ambient_factor, tint_color.a);
+        let varied_tint = ambient_environment_variation(vertex_output.world_position.xz, tint_color.rgb * vertex_output.color.rgb);
+        tint_color = vec4<f32>(varied_tint, tint_color.a);
+    }
+
+    // Dynamic grass side fringe tinting:
+    // On vertical side faces, only tint the green grass fringe hanging down so it matches the top face,
+    // leaving natural dirt and stone underneath completely untouched.
+    var final_tint = tint_color.rgb;
+    if (!is_mask_face && !is_horizontal) {
+        let is_grass_fringe = (uv.y < 0.55) && (tex_color.g > tex_color.r * 1.02) && (tex_color.g > tex_color.b * 1.15);
+        if (is_grass_fringe && is_foliage_tinted) {
+            let fringe_lum = dot(tex_color.rgb, vec3<f32>(0.299, 0.587, 0.114));
+            let tinted_fringe = fringe_lum * 1.45 * tint_color.rgb;
+            tex_color = vec4<f32>(tinted_fringe, tex_color.a);
+        }
+        final_tint = vec3<f32>(1.0);
     }
 
     // Coated Textures (custom style):
@@ -412,7 +438,7 @@ fn fragment(
         let painted_linear = pow(clamp(painted_srgb, vec3<f32>(0.0), vec3<f32>(1.0)), vec3<f32>(2.2));
         pbr_input.material.base_color = vec4<f32>(painted_linear * dir_shading, 1.0);
     } else {
-        pbr_input.material.base_color = tex_color * vec4<f32>(tint_color.rgb * dir_shading, 1.0);
+        pbr_input.material.base_color = tex_color * vec4<f32>(final_tint * dir_shading, 1.0);
     }
 
     // Pixelated Shadows & Shadow Stabilization:

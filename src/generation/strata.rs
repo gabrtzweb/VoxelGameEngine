@@ -81,6 +81,17 @@ impl StrataGenerator {
             return biome.surface_material;
         }
 
+        // 2b. Canyon & Badlands Geological Strata Rules (Bryce Canyon, Painted Mountains, Savanna Badlands)
+        if matches!(
+            biome.biome_type,
+            crate::generation::biome::BiomeType::BryceCanyon
+                | crate::generation::biome::BiomeType::PaintedMountains
+                | crate::generation::biome::BiomeType::SavannaBadlands
+                | crate::generation::biome::BiomeType::DesertSpires
+        ) {
+            return canyon_strata_voxel(world_y, world_x, world_z, seed);
+        }
+
         // 3. Subsoil layer with natural dithered transition to stone
         let transition_noise =
             gradient_noise_3d(bx * 0.22, by * 0.22, bz * 0.22, seed.wrapping_add(99_111));
@@ -195,6 +206,101 @@ impl StrataGenerator {
                     return Voxel::Argillite;
                 }
             }
+
+            // E. Karst Caverns (Limestone & Dolomite karst pockets with speleothems: depth -15 to -150)
+            if (-150..=-15).contains(&block_y) {
+                let karst_noise =
+                    gradient_noise_3d(bx * 0.038, by * 0.038, bz * 0.038, seed.wrapping_add(654_321));
+                if karst_noise > 0.65 {
+                    let dither = gradient_noise_3d(bx * 0.15, by * 0.15, bz * 0.15, seed.wrapping_add(654_322));
+                    return if dither > 0.40 {
+                        Voxel::SpeleothemCalcite
+                    } else if dither > 0.0 {
+                        Voxel::Limestone
+                    } else if dither > -0.40 {
+                        Voxel::Dolomite
+                    } else {
+                        Voxel::CobbledLimestone
+                    };
+                }
+            }
+
+            // F. Calcite Grottos (Radiant white crystalline caverns: depth -25 to -160)
+            if (-160..=-25).contains(&block_y) {
+                let calcite_noise =
+                    gradient_noise_3d(bx * 0.046, by * 0.046, bz * 0.046, seed.wrapping_add(883_211));
+                if calcite_noise > 0.68 {
+                    let dither = gradient_noise_3d(bx * 0.18, by * 0.18, bz * 0.18, seed.wrapping_add(883_212));
+                    return if dither > 0.35 {
+                        Voxel::FracturedCaveCalcite
+                    } else if dither > -0.35 {
+                        Voxel::CaveCalcite
+                    } else {
+                        Voxel::SpeleothemCalcite
+                    };
+                }
+            }
+
+            // G. Pink Salt Caverns (Ancient Halite & evaporite deposits: depth -35 to -180)
+            if (-180..=-35).contains(&block_y) {
+                let salt_noise =
+                    gradient_noise_3d(bx * 0.042, by * 0.042, bz * 0.042, seed.wrapping_add(441_992));
+                if salt_noise > 0.70 {
+                    let dither = gradient_noise_3d(bx * 0.16, by * 0.16, bz * 0.16, seed.wrapping_add(441_993));
+                    return if dither > 0.50 {
+                        Voxel::CrystalPinkSaltGlinted
+                    } else if dither > 0.15 {
+                        Voxel::CrystalPinkSaltCluster
+                    } else if dither > -0.30 {
+                        Voxel::CrystalPinkSaltBlock
+                    } else {
+                        Voxel::SpeleothemSaltStraw
+                    };
+                }
+            }
+
+            // H. Amethyst Geode Chambers (Luminous purple crystal caverns: depth -45 to -210)
+            if (-210..=-45).contains(&block_y) {
+                let geode_noise =
+                    gradient_noise_3d(bx * 0.048, by * 0.048, bz * 0.048, seed.wrapping_add(772_135));
+                if geode_noise > 0.72 {
+                    let dither = gradient_noise_3d(bx * 0.20, by * 0.20, bz * 0.20, seed.wrapping_add(772_136));
+                    return if dither > 0.45 {
+                        Voxel::CrystalAmethystGlinted
+                    } else if dither > 0.10 {
+                        Voxel::CrystalAmethystCluster
+                    } else {
+                        Voxel::CrystalAmethystBlock
+                    };
+                }
+            }
+        }
+
+        // Subterranean Biome Overrides (Ice Caves & Mushroom Caves)
+        if biome.biome_type == crate::generation::biome::BiomeType::IceCaves && logical_depth > 1 {
+            let ice_noise = gradient_noise_3d(bx * 0.12, by * 0.12, bz * 0.12, seed.wrapping_add(555_999));
+            if ice_noise > 0.10 {
+                return Voxel::FrostIcePacked;
+            } else if ice_noise > -0.40 {
+                return Voxel::FrostBlueIce;
+            } else {
+                return Voxel::FrostIce;
+            }
+        }
+
+        if biome.biome_type == crate::generation::biome::BiomeType::MushroomCaves && logical_depth > 1 {
+            let mush_noise = gradient_noise_3d(bx * 0.14, by * 0.14, bz * 0.14, seed.wrapping_add(777_888));
+            if mush_noise > 0.55 {
+                return Voxel::FungiAmanitaCap;
+            } else if mush_noise > 0.35 {
+                return Voxel::FungiPorciniCap;
+            } else if mush_noise > 0.15 {
+                return Voxel::FungiStem;
+            } else if mush_noise > -0.30 {
+                return Voxel::PeatMud;
+            } else {
+                return Voxel::LoamRooted;
+            }
         }
 
         // 6. Geological Depth Stratification (Macro-Estratos)
@@ -250,4 +356,25 @@ impl StrataGenerator {
 #[inline]
 fn ly_coord(world_y: i32) -> f32 {
     world_y as f32 + 0.5
+}
+
+/// Determines canyon strata layering (terracotta / colored clay and sandstone bands)
+/// for canyon, badlands, and painted mountain biomes.
+pub fn canyon_strata_voxel(world_y: i32, world_x: i32, world_z: i32, seed: u32) -> Voxel {
+    let bx = world_x as f32 + 0.5;
+    let bz = world_z as f32 + 0.5;
+    let warp_noise = gradient_noise_3d(bx * 0.04, 0.0, bz * 0.04, seed.wrapping_add(77_123)) * 3.5;
+    let layer_coord = ((world_y as f32 + warp_noise) * 0.35).floor() as i32;
+    match layer_coord.rem_euclid(14) {
+        0 | 1 => Voxel::ClayRed,
+        2 => Voxel::ClayYellow,
+        3 | 4 => Voxel::CobbledSandstoneRed,
+        5 => Voxel::ClayWhite,
+        6 | 7 => Voxel::ClayRed,
+        8 => Voxel::SandCommon,
+        9 => Voxel::ClayYellow,
+        10 => Voxel::ClayWhite,
+        11 | 12 => Voxel::ClayRed,
+        _ => Voxel::ClayYellow,
+    }
 }

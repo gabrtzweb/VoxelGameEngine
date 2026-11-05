@@ -498,6 +498,19 @@ fn ambient_environment_noise(pos_xz: vec2<f32>) -> f32 {
     return smooth_noise2(pos_xz * 0.04);
 }
 
+fn ambient_environment_variation(pos_xz: vec2<f32>, base_tint: vec3<f32>) -> vec3<f32> {
+    let n_macro = smooth_noise2(pos_xz * 0.025);
+    let n_detail = smooth_noise2(pos_xz * 0.10);
+    let combined = n_macro * 0.7 + n_detail * 0.3;
+    let brightness = 0.88 + combined * 0.24;
+    let warm_factor = clamp((0.48 - combined) * 2.2, -0.35, 0.45);
+    var shifted = base_tint * brightness;
+    shifted.r += warm_factor * 0.12;
+    shifted.g += warm_factor * 0.03;
+    shifted.b -= warm_factor * 0.08;
+    return clamp(shifted, vec3<f32>(0.02), vec3<f32>(1.0));
+}
+
 @fragment
 fn fragment(
     vertex_output: VertexOutput,
@@ -518,18 +531,15 @@ fn fragment(
     let shape_texture_factor = select(0.5395, 0.5395 / 0.745, grass_info.style_params.x > 0.5);
     let shape_tex = shape.rgb * shape_texture_factor;
 
-    // Ambient environment noise matching voxel_opaque.wesl exactly
-    let ambient_noise = ambient_environment_noise(vertex_output.world_position.xz);
-    let ambient_factor = 0.92 + ambient_noise * 0.16;
-
     // Subtle blade gradient: grounding slightly at the base, gentle catching of light at the tip
     let gradient = mix(0.96, 1.04, pow(height, 1.5));
     let wave_mult = mix(0.96, 1.04, color_wave);
 
     // Voxel opaque shader squares the tint color: pbr_input.base_color (which has vertex_color) * tint_color.rgb
     let block_tint = vertex_output.color.rgb * vertex_output.color.rgb;
+    let varied_tint = ambient_environment_variation(vertex_output.world_position.xz, block_tint);
 
-    var blade_rgb = block_tint * ambient_factor * shape_tex * gradient * wave_mult;
+    var blade_rgb = varied_tint * shape_tex * gradient * wave_mult;
     blade_rgb = mix(blade_rgb, vec3<f32>(1.0), snow_amount);
     blade_rgb = clamp(blade_rgb * grass_info.style_params.w, vec3<f32>(0.0), vec3<f32>(1.0));
 
