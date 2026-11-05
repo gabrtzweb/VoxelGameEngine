@@ -351,7 +351,7 @@ impl TerrainGenerator {
                             {
                                 let rubble_roll = (world_x ^ world_y ^ world_z) & 7;
                                 voxels[idx] = if rubble_roll == 0 {
-                                    Voxel::CobbledCaveKarst
+                                    Voxel::FracturedCaveKarst
                                 } else {
                                     Voxel::CaveKarst
                                 };
@@ -370,7 +370,7 @@ impl TerrainGenerator {
                                 {
                                     let rubble_roll = (world_x ^ world_y ^ world_z) & 7;
                                     voxels[idx] = if rubble_roll == 0 {
-                                        Voxel::CobbledCaveCalcite
+                                        Voxel::FracturedCaveCalcite
                                     } else {
                                         Voxel::CaveCalcite
                                     };

@@ -99,8 +99,19 @@ fn fragment(
     in: VertexOutput,
     @builtin(front_facing) is_front: bool,
 ) -> FragmentOutput {
-    let uv = fract(in.uv);
-    let layer = i32(round(in.uv_b.x));
+    let uv = clamp(fract(in.uv), vec2<f32>(0.0005), vec2<f32>(0.9995));
+    let base_layer = i32(round(in.uv_b.x)) % 2048;
+    var layer = base_layer;
+
+    let raw_frame_param = in.uv_b.y;
+    let actual_frame_count = floor(abs(raw_frame_param) + 0.1);
+    if (actual_frame_count > 1.5) {
+        let fps = 8.0;
+        let count = max(1, i32(round(actual_frame_count)));
+        let t = max(anim_params.x, 0.0) * fps;
+        let frame_cur = (i32(floor(t)) % count + count) % count;
+        layer = layer + frame_cur;
+    }
 
     let tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, layer);
     if (tex_color.a < 0.5) {
@@ -115,29 +126,22 @@ fn fragment(
 @else
 @fragment
 fn fragment(in: VertexOutput) {
-    let uv = fract(in.uv);
-    let layer = i32(round(in.uv_b.x));
+    let uv = clamp(fract(in.uv), vec2<f32>(0.0005), vec2<f32>(0.9995));
+    let base_layer = i32(round(in.uv_b.x)) % 2048;
+    var layer = base_layer;
+
+    let raw_frame_param = in.uv_b.y;
+    let actual_frame_count = floor(abs(raw_frame_param) + 0.1);
+    if (actual_frame_count > 1.5) {
+        let fps = 8.0;
+        let count = max(1, i32(round(actual_frame_count)));
+        let t = max(anim_params.x, 0.0) * fps;
+        let frame_cur = (i32(floor(t)) % count + count) % count;
+        layer = layer + frame_cur;
+    }
 
     let tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, layer);
     if (tex_color.a < 0.5) {
-        discard;
-    }
-
-    // Cross billboards (flora, speleothems, crystals, corals) are paper-thin 2D planes.
-    // Casting directional cascaded shadow map depth causes self-shadow acne (sawtooth striped bands)
-    // that pulse and crawl as the sun moves or wind sways vertices.
-    var is_cross_mesh = false;
-@if(VERTEX_COLORS) {
-    let anim_type = in.color.a;
-    is_cross_mesh = (anim_type > 3.5 && anim_type < 6.5);
-}
-
-    let dp_x = dpdx(in.world_position.xyz);
-    let dp_y = dpdy(in.world_position.xyz);
-    let geo_norm = cross(dp_x, dp_y);
-    let geo_len_sq = dot(geo_norm, geo_norm);
-    let is_diagonal_plane = geo_len_sq > 0.00001 && (abs(geo_norm.x) * abs(geo_norm.z) > 0.05 * geo_len_sq);
-    if (is_cross_mesh || is_diagonal_plane) {
         discard;
     }
 }

@@ -126,8 +126,8 @@ pub fn select_surface_flora(
                 94 => FloraPlacement::single(Voxel::FlowerPinkTulip),
                 95 => FloraPlacement::single(Voxel::FlowerWildflowers),
                 96..=97 if can_place_tall => FloraPlacement::tall(
-                    Voxel::FlowerSunflowerBottom,
-                    Voxel::FlowerSunflowerTop,
+                    Voxel::FlowerLilacBottom,
+                    Voxel::FlowerLilacTop,
                 ),
                 98..=99 if can_place_tall => FloraPlacement::tall(
                     Voxel::FlowerPeonyBottom,

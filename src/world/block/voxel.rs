@@ -227,8 +227,8 @@ pub enum Voxel {
     CaveCalcite = 216,
     CaveKarst = 217,
     Obsidian = 218,
-    CobbledCaveCalcite = 219,
-    CobbledCaveKarst = 220,
+    FracturedCaveCalcite = 219,
+    FracturedCaveKarst = 220,
     CrystalAmethystBlock = 221,
     CrystalAmethystCluster = 222,
     CrystalAmethystGlinted = 223,
@@ -282,12 +282,12 @@ pub enum Voxel {
     ReedCoralFan = 271,
     Reefstone = 272,
     Sargassum = 273,
-    SeaAnemone = 274,
+    KelpPlant = 274,
     Seagrass = 275,
     Seaweed = 276,
     SpikeCoral = 277,
     SpikeCoralFan = 278,
-    Sponge = 279,
+    BullKelpPlant = 279,
     StaghornCoral = 280,
     StaghornCoralFan = 281,
     SunCoral = 282,
@@ -519,12 +519,12 @@ pub enum Voxel {
     FlowerRoseBushTop = 508,
     FlowerSnapdragonBottom = 509,
     FlowerSnapdragonTop = 510,
-    FlowerSunflowerBottom = 511,
-    FlowerSunflowerTop = 512,
-    FlowerWhitePetals = 513,
-    FlowerWildflowers = 514,
-    KelpPlant = 515,
-    BullKelpPlant = 516,
+    FlowerWhitePetals = 511,
+    FlowerWildflowers = 512,
+    TreeCharredLog = 513,
+    TreeCharredBark = 514,
+    TreeCharredPlanks = 515,
+    ElementFire = 516,
     AndesiteRubble = 517,
     ArgilliteRubble = 518,
     BasaltRubble = 519,
@@ -540,15 +540,21 @@ pub enum Voxel {
     SandstoneWhiteRubble = 529,
     SlateRubble = 530,
     ObsidianSpike = 531,
+    FracturedCaveObsidian = 532,
+    BoulderChert = 533,
+    BoulderFlint = 534,
+    BoulderQuartz = 535,
+    BagRice = 536,
+    BagSugar = 537,
 }
 impl Voxel {
     /// Array containing all 528 active, non-placeholder gameplay voxels (indices 3..=530).
-    pub const ALL: [Voxel; 529] = generate_all_voxels();
+    pub const ALL: [Voxel; 535] = generate_all_voxels();
 
     /// Safely convert a `u16` id to a `Voxel` variant.
     #[inline(always)]
     pub const fn from_u16(val: u16) -> Option<Self> {
-        if val <= 531 {
+        if val <= 537 {
             // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 516.
             Some(unsafe { std::mem::transmute::<u16, Self>(val) })
         } else {
@@ -572,7 +578,6 @@ impl Voxel {
                 | Self::FlowerPeonyBottom
                 | Self::FlowerRoseBushBottom
                 | Self::FlowerSnapdragonBottom
-                | Self::FlowerSunflowerBottom
         )
     }
 
@@ -592,7 +597,6 @@ impl Voxel {
                 | Self::FlowerPeonyTop
                 | Self::FlowerRoseBushTop
                 | Self::FlowerSnapdragonTop
-                | Self::FlowerSunflowerTop
         )
     }
 
@@ -611,7 +615,6 @@ impl Voxel {
             Self::FlowerPeonyBottom => Some(Self::FlowerPeonyTop),
             Self::FlowerRoseBushBottom => Some(Self::FlowerRoseBushTop),
             Self::FlowerSnapdragonBottom => Some(Self::FlowerSnapdragonTop),
-            Self::FlowerSunflowerBottom => Some(Self::FlowerSunflowerTop),
             _ => None,
         }
     }
@@ -631,16 +634,15 @@ impl Voxel {
             Self::FlowerPeonyTop => Some(Self::FlowerPeonyBottom),
             Self::FlowerRoseBushTop => Some(Self::FlowerRoseBushBottom),
             Self::FlowerSnapdragonTop => Some(Self::FlowerSnapdragonBottom),
-            Self::FlowerSunflowerTop => Some(Self::FlowerSunflowerBottom),
             _ => None,
         }
     }
 }
 
-const fn generate_all_voxels() -> [Voxel; 529] {
-    let mut arr = [Voxel::Air; 529];
+const fn generate_all_voxels() -> [Voxel; 535] {
+    let mut arr = [Voxel::Air; 535];
     let mut i = 0;
-    while i < 529 {
+    while i < 535 {
         // Active gameplay blocks start at discriminant 3 (indices 3..=530)
         let id = (i + 3) as u16;
         arr[i] = unsafe { std::mem::transmute::<u16, Voxel>(id) };

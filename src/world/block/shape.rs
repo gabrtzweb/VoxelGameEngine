@@ -209,7 +209,7 @@ impl BlockShape {
             Self::Full => Self::Slab,
             Self::Slab => Self::Stair,
             Self::Stair => Self::Column,
-            Self::Column => Self::CrossBillboard,
+            Self::Column => Self::Full,
             Self::CrossBillboard => Self::Full,
             other => other,
         }

@@ -108,7 +108,7 @@ fn test_axis_aligned_pillar_properties() {
 
 #[test]
 fn test_voxel_discriminants_continuity() {
-    for id in 0..=531u16 {
+    for id in 0..=537u16 {
         let maybe_voxel = Voxel::from_u16(id);
         assert!(
             maybe_voxel.is_some(),
@@ -116,16 +116,22 @@ fn test_voxel_discriminants_continuity() {
         );
         assert_eq!(maybe_voxel.unwrap() as u16, id);
     }
-    assert_eq!(Voxel::from_u16(532), None);
+    assert_eq!(Voxel::from_u16(538), None);
     assert_eq!(Voxel::from_u16(1000), None);
 
-    assert_eq!(Voxel::ALL.len(), 529);
+    assert_eq!(Voxel::ALL.len(), 535);
     assert_eq!(Voxel::ALL[0], Voxel::FrostBlueIce);
     assert_eq!(Voxel::ALL[443], Voxel::FungiVerdigrisCap);
     assert_eq!(Voxel::ALL[444], Voxel::VegeWildgrass);
-    assert_eq!(Voxel::ALL[513], Voxel::BullKelpPlant);
+    assert_eq!(Voxel::ALL[513], Voxel::ElementFire);
     assert_eq!(Voxel::ALL[527], Voxel::SlateRubble);
     assert_eq!(Voxel::ALL[528], Voxel::ObsidianSpike);
+    assert_eq!(Voxel::ALL[529], Voxel::FracturedCaveObsidian);
+    assert_eq!(Voxel::ALL[530], Voxel::BoulderChert);
+    assert_eq!(Voxel::ALL[531], Voxel::BoulderFlint);
+    assert_eq!(Voxel::ALL[532], Voxel::BoulderQuartz);
+    assert_eq!(Voxel::ALL[533], Voxel::BagRice);
+    assert_eq!(Voxel::ALL[534], Voxel::BagSugar);
 }
 
 #[test]

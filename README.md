@@ -292,14 +292,14 @@ At the same time, all creative direction, core design concepts, texture creation
 
 ## Third-Party Assets & Textures Disclaimer
 
-This project is currently an experimental engine and game in active early development. It is not being commercially distributed, sold, or packaged.
+This project is an experimental, independent voxel game engine in active early development. It is not being commercially distributed, monetized, or sold.
 
-A subset of the block textures currently present in the codebase are used strictly as temporary internal placeholders for prototyping, testing meshing pipelines, and visual debugging. All credit and copyright belong to their respective original creators:
+The texturing aesthetic and art direction of the game are heavily inspired by the visual style and rustic low-fantasy design found in classic 16x16 resource packs, primarily:
 
-* **Ashen** by [Aim_Boot](https://modrinth.com/resourcepack/ashen) (All Rights Reserved)
-* **Excalibur** by [Maffhew](https://modrinth.com/resourcepack/excal) (Licensed under CC BY-NC-ND 3.0)
+* **Ashen** by [Aim_Boot](https://modrinth.com/resourcepack/ashen) (Visual Style & Art Inspiration)
+* **Excalibur** by [Maffhew](https://modrinth.com/resourcepack/excal) (Aesthetic Inspiration & Reference)
 
-These assets will be replaced with original artwork or permissively licensed open assets (e.g., CC0) prior to any public demo, distribution, or release.
+While the project adopts this distinctive visual language, the textures are not direct or identical 1:1 copies. Virtually all textures in the engine have been custom-crafted, repainted, recolored, expanded with animation frames, or tailored specifically for this engine's. Both creators are credited here as a matter of creative inspiration, artistic acknowledgement, and legal safety.
 
 ## License
 

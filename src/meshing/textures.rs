@@ -80,6 +80,7 @@ pub struct VoxelTextureRegistry {
     speleothems: [Option<SpeleothemTextureLayers>; MAX_VOXEL_VARIANTS],
 
     pub flower_carpet_stem: Option<FaceTextureInfo>,
+    pub grass_overlay_layer: u16,
 
     pub full_grass: bool,
 
@@ -101,6 +102,7 @@ impl Default for VoxelTextureRegistry {
             speleothems: [None; MAX_VOXEL_VARIANTS],
 
             flower_carpet_stem: None,
+            grass_overlay_layer: 0,
 
             full_grass: false,
 
@@ -323,7 +325,11 @@ impl VoxelTextureRegistry {
 
         let bx = world_voxel.x;
 
-        let by = world_voxel.y;
+        let by = if voxel.is_double_tall_top() {
+            world_voxel.y - 1
+        } else {
+            world_voxel.y
+        };
 
         let bz = world_voxel.z;
 
@@ -916,6 +922,17 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
 
 
+    let grass_ov = get_or_load_face(
+        "colored_grass",
+        None,
+        None,
+        "soil_grass",
+        [90, 140, 50, 255],
+        &mut raw_layers,
+        &mut current_layer,
+    );
+    registry.grass_overlay_layer = grass_ov.start_layer;
+
     let total_layers = current_layer.max(1) as u32;
 
 
@@ -1350,3 +1367,39 @@ fn solid_color_texture(color: [u8; 4]) -> LoadedTexture {
 
 }
 
+
+
+pub const MASK_VARIANTS_PER_CATEGORY: usize = 17;
+pub const MASK_CATEGORIES: [&str; 5] = ["grass", "sand", "rocks", "snow", "moss"];
+pub const TOTAL_MASK_COUNT: usize = MASK_CATEGORIES.len() * MASK_VARIANTS_PER_CATEGORY; // 85
+
+pub fn build_mask_texture_array() -> Image {
+    let mut raw_data = Vec::with_capacity(TOTAL_MASK_COUNT * (TEXTURE_RESOLUTION * TEXTURE_RESOLUTION * 4) as usize);
+
+    for cat in MASK_CATEGORIES {
+        for i in 0..MASK_VARIANTS_PER_CATEGORY {
+            let path = format!("assets/textures/masks/{}{}.png", cat, i);
+            if let Some(loaded) = try_load_image(&path) {
+                if let Some(frame) = loaded.frames.first() {
+                    raw_data.extend_from_slice(frame);
+                    continue;
+                }
+            }
+            raw_data.extend_from_slice(&[0u8; (TEXTURE_RESOLUTION * TEXTURE_RESOLUTION * 4) as usize]);
+        }
+    }
+
+    let mut image = Image::new(
+        Extent3d {
+            width: TEXTURE_RESOLUTION,
+            height: TEXTURE_RESOLUTION,
+            depth_or_array_layers: TOTAL_MASK_COUNT as u32,
+        },
+        TextureDimension::D2,
+        raw_data,
+        TextureFormat::Rgba8Unorm,
+        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+    );
+    image.sampler = ImageSampler::nearest();
+    image
+}

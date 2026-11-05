@@ -12,7 +12,7 @@ use bevy::{
 use super::{
     culling::{CaveCullingState, ChunkCoordinate, SubterraneanChunkMesh},
     greedy::{ChunkMesher, ChunkMeshes},
-    textures::{VoxelTextureRegistry, build_voxel_texture_array},
+    textures::{VoxelTextureRegistry, build_voxel_texture_array, build_mask_texture_array},
 };
 use crate::environment::foliage::GrassChunkMaterial;
 use crate::world::{Chunk, VoxelWorld};
@@ -32,6 +32,9 @@ pub struct OpaqueVoxelMaterial {
     pub params: Vec4,
     #[uniform(105)]
     pub anim_params: Vec4,
+    #[texture(106, dimension = "2d_array")]
+    #[sampler(107)]
+    pub mask_texture_array: Handle<Image>,
 }
 
 impl MaterialExtension for OpaqueVoxelMaterial {
@@ -301,6 +304,8 @@ pub fn setup_chunk_material(
         texture_registry.grass_density = cfg.grass_density;
     }
     let texture_array = images.add(texture_array_image);
+    let mask_texture_array_image = build_mask_texture_array();
+    let mask_texture_array = images.add(mask_texture_array_image);
     let noise_texture = asset_server.load("textures/shaders/noise.png");
 
     let coat_strength = local_config
@@ -325,6 +330,7 @@ pub fn setup_chunk_material(
             noise_texture,
             params: Vec4::new(coat_strength, waving_foliage_flag, pixelated_shadows_flag, 0.0),
             anim_params: Vec4::new(0.0, 1.0, 0.44, 0.0),
+            mask_texture_array,
         },
     });
 

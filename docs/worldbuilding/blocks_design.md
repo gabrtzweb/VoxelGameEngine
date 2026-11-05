@@ -239,6 +239,9 @@ The geological framework comprises **17 mineable rock matrices** across 7 core p
 | **61** | `pebble_flint_cluster` | Flint Pebble Cluster | **Pebble (Cluster)** | `pebble_flint_cluster.png` *(+ `1`, `2`)* | Low sub-voxel cluster pebbles |
 | **62** | `pebble_quartz` | Quartz Pebble | **Pebble (Single)** | `pebble_quartz.png` *(+ `1`, `2`)* | Low sub-voxel ground pebble |
 | **63** | `pebble_quartz_cluster` | Quartz Pebble Cluster | **Pebble (Cluster)** | `pebble_quartz_cluster.png` *(+ `1`, `2`)* | Low sub-voxel cluster pebbles |
+| **63a** | `rock_chert_boulder` | Chert Boulder | **Nodule (Solid)** | `rock_chert_boulder.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **63b** | `rock_flint_boulder` | Flint Boulder | **Nodule (Solid)** | `rock_flint_boulder.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **63c** | `rock_quartz_boulder` | Quartz Boulder | **Nodule (Solid)** | `rock_quartz_boulder.png` *(+ `1`, `2`)* | 6 uniform faces |
 | **64** | `sandstone_common` | Sandstone | **Sedimentary** | `rock_sandstone_common.png` | 6 uniform faces |
 | **65** | `sandstone_dune` | Dune Sandstone | **Sedimentary** | `rock_sandstone_dune.png` | 6 uniform faces |
 | **66** | `sandstone_red` | Red Sandstone | **Sedimentary** | `rock_sandstone_red.png` | 6 uniform faces |
@@ -411,49 +414,49 @@ The benthic and subaquatic oceanic domain comprises **14 colonial massive coral 
 | :-: | :--- | :--- | :--- | :--- | :--- |
 | **04** | `bone_worms` | Bone Worms | **Siboglinid Annelid** | `vege_bone_worms.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **05** | `brain_coral` | Brain Coral | **Massive Coral** | `aqua_coral_brain.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
-| **06** | `brain_coral_fan` | Brain Coral Fan | **Coral Fan** | `vege_brain_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **06** | `brain_coral_fan` | Brain Coral Fan | **Coral Fan** | `aqua_brain_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **07** | `bubble_coral` | Bubble Coral | **Massive Coral** | `aqua_coral_bubble.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
-| **08** | `bubble_coral_fan` | Bubble Coral Fan | **Coral Fan** | `vege_bubble_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **08** | `bubble_coral_fan` | Bubble Coral Fan | **Coral Fan** | `aqua_bubble_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **09** | `bull_kelp` | Bull Kelp | **Laminar Macroalga** | `vege_bull_kelp.png` *(Top)*<br>`vege_bull_kelp_plant.png` *(Body)* | Columnar (Multi-block) |
 | **10** | `coralstone` | Coralstone | **Biogenic Rock** | `aqua_coralstone.png` *(+ `1`, `2`)* | 6 uniform faces |
 | **11** | `dead_coral` | Dead Coral | **Dead Coral** | `aqua_coral_dead.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
-| **12** | `dead_coral_fan` | Dead Coral Fan | **Dead Coral** | `vege_dead_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **12** | `dead_coral_fan` | Dead Coral Fan | **Dead Coral** | `aqua_dead_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **13** | `delesseria` | Delesseria | **Rhodophyte** | `vege_delesseria.png` *(Top)*<br>`vege_delesseria_plant.png` *(Body)* | Columnar (Multi-block) |
 | **14** | `dying_coral` | Dying Coral | **Senescent Coral** | `aqua_coral_dying.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
-| **15** | `dying_coral_fan` | Dying Coral Fan | **Senescent Coral** | `vege_dying_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **15** | `dying_coral_fan` | Dying Coral Fan | **Senescent Coral** | `aqua_dying_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **16** | `fire_coral` | Fire Coral | **Massive Coral** | `aqua_coral_fire.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
-| **17** | `fire_coral_fan` | Fire Coral Fan | **Coral Fan** | `vege_fire_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **17** | `fire_coral_fan` | Fire Coral Fan | **Coral Fan** | `aqua_fire_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **18** | `geothermal_vent` | Geothermal Vent | **Hydrothermal** | `aqua_geothermal_vent_top.png`<br>`aqua_geothermal_vent_side.png`<br>`aqua_geothermal_vent_bot.png` | Directional (Top / Sides / Bottom) |
 | **19** | `heart_coral` | Heart Coral | **Massive Coral** | `aqua_coral_heart.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
-| **20** | `heart_coral_fan` | Heart Coral Fan | **Coral Fan** | `vege_heart_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **20** | `heart_coral_fan` | Heart Coral Fan | **Coral Fan** | `aqua_heart_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **21** | `horn_coral` | Horn Coral | **Massive Coral** | `aqua_coral_horn.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
-| **22** | `horn_coral_fan` | Horn Coral Fan | **Coral Fan** | `vege_horn_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **22** | `horn_coral_fan` | Horn Coral Fan | **Coral Fan** | `aqua_horn_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **23** | `kelp` | Giant Kelp | **Laminar Macroalga** | `vege_kelp.png` *(Top)*<br>`vege_kelp_plant.png` *(Body)* | Columnar (Multi-block) |
 | **24** | `leaf_coral` | Leaf Coral | **Massive Coral** | `aqua_coral_leaf.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
-| **25** | `leaf_coral_fan` | Leaf Coral Fan | **Coral Fan** | `vege_leaf_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **25** | `leaf_coral_fan` | Leaf Coral Fan | **Coral Fan** | `aqua_leaf_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **27** | `red_algae` | Red Algae | **Rhodophyte** | `vege_red_algae.png` *(+ `1`, `2`)* | Animated strip (3 variants) |
 | **28** | `reed_coral` | Reed Coral | **Massive Coral** | `aqua_coral_reed.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
-| **29** | `reed_coral_fan` | Reed Coral Fan | **Coral Fan** | `vege_reed_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **29** | `reed_coral_fan` | Reed Coral Fan | **Coral Fan** | `aqua_reed_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **30** | `reefstone` | Reefstone | **Volcanic Rock** | `aqua_reefstone.png` *(+ `1`, `2`)* | 6 uniform faces |
 | **31** | `sargassum` | Sargassum | **Pelagic Phaeophyte** | `vege_sargassum.png` *(Top)*<br>`vege_sargassum_plant.png` *(Body)* | Columnar (Multi-block) |
 | **33** | `sea_anemone` | Sea Anemone | **Anthozoan** | `aqua_sea_anemone_top.png`<br>`aqua_sea_anemone_side.png`<br>`aqua_sea_anemone_bot.png` | Directional (Top / Sides / Bottom) |
 | **34** | `seagrass` | Seagrass | **Marine Angiosperm** | `vege_seagrass.png` *(+ `1`, `2`)* | Animated strip (3 variants) |
 | **35** | `seaweed` | Seaweed | **Littoral Macroalga** | `vege_seaweed.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **36** | `spike_coral` | Spike Coral | **Massive Coral** | `aqua_coral_spike.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
-| **37** | `spike_coral_fan` | Spike Coral Fan | **Coral Fan** | `vege_spike_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **37** | `spike_coral_fan` | Spike Coral Fan | **Coral Fan** | `aqua_spike_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **38** | `sponge` | Natural Sponge | **Poriferan** | `aqua_sponge.png` *(+ `1`, `2`)* | 6 uniform faces |
 | **39** | `staghorn_coral` | Staghorn Coral | **Massive Coral** | `aqua_coral_staghorn.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
-| **40** | `staghorn_coral_fan` | Staghorn Coral Fan | **Coral Fan** | `vege_staghorn_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **40** | `staghorn_coral_fan` | Staghorn Coral Fan | **Coral Fan** | `aqua_staghorn_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **41** | `sun_coral` | Sun Coral | **Massive Coral** | `aqua_coral_sun.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
-| **42** | `sun_coral_fan` | Sun Coral Fan | **Coral Fan** | `vege_sun_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **42** | `sun_coral_fan` | Sun Coral Fan | **Coral Fan** | `aqua_sun_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **43** | `thorn_coral` | Thorn Coral | **Massive Coral** | `aqua_coral_thorn.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
-| **44** | `thorn_coral_fan` | Thorn Coral Fan | **Coral Fan** | `vege_thorn_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **44** | `thorn_coral_fan` | Thorn Coral Fan | **Coral Fan** | `aqua_thorn_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **45** | `tube_coral` | Tube Coral | **Massive Coral** | `aqua_coral_tube.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
-| **46** | `tube_coral_fan` | Tube Coral Fan | **Coral Fan** | `vege_tube_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **46** | `tube_coral_fan` | Tube Coral Fan | **Coral Fan** | `aqua_tube_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **47** | `wax_coral` | Wax Coral | **Massive Coral** | `aqua_coral_wax.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
-| **48** | `wax_coral_fan` | Wax Coral Fan | **Coral Fan** | `vege_wax_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **48** | `wax_coral_fan` | Wax Coral Fan | **Coral Fan** | `aqua_wax_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 | **49** | `zigzag_coral` | Zigzag Coral | **Massive Coral** | `aqua_coral_zigzag.png` *(+ `1`, `2`)* | 6 uniform faces (3 variants) |
-| **50** | `zigzag_coral_fan` | Zigzag Coral Fan | **Coral Fan** | `vege_zigzag_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
+| **50** | `zigzag_coral_fan` | Zigzag Coral Fan | **Coral Fan** | `aqua_zigzag_coral_fan.png` *(+ `1`, `2`)* | Cross-billboard (3 variants) |
 
 ---
 
@@ -470,7 +473,7 @@ The biological biomaterials and organic domain comprises **14 insect colony and 
 | :-: | :--- | :--- | :--- | :--- | :--- |
 | **01** | `ant_hill` | Ant Hill | **Colony** | `nest_ant_hill.png` | Uniform (6 faces) |
 | **02** | `ant_hill_open` | Ant Hill Open | **Colony** | `nest_ant_hill_open.png` | Uniform (6 faces) |
-| **04** | `bee_nest` | Wild Bee Nest | **Hive** | `nest_bee_nest_bot...top.png`<br>`nest_bee_nest_front_honey.png` | Directional (5 faces) |
+| **04** | `bee_nest` | Wild Bee Nest | **Hive** | `nest_bee_nest_bot...top.png`<br>`nest_bee_nest_front.png` | Directional (4 faces) |
 | **05** | `bird_nest` | Bird Nest | **Nest** | `nest_bird_nest_bot...top.png` | Half-height Slab |
 | **06** | `bloody_bone` | Bloody Bone | **Osteology** | Top/Bot: `bio_bone_top.png`<br>Sides: `bio_bone_side.png` *(+ `bloody_overlay.png`, `1`, `2`)* | Axial Column (2 faces) + Shader Bloody Overlay |
 | **06** | `bloody_brain` | Bloody Brain Block | **Neural** | `bio_brain.png` *(+ `bloody_overlay.png`, `1`, `2`)* | Uniform (6 faces) + Shader Bloody Overlay |
@@ -509,6 +512,8 @@ The biological biomaterials and organic domain comprises **14 insect colony and 
 | # | Block ID | Name | Category | Texture File(s) | Face Mapping |
 | :-: | :--- | :--- | :--- | :--- | :--- |
 | **001** | `bag` | Fabric Bag | **Utility** | `util_bag_top.png`<br>`util_bag_side.png`<br>`util_bag_side_front.png`<br>`util_bag_bot.png` | Top top + Bottom bot + 3 sides side + 1 front `util_bag_side_front.png` |
+| **001b** | `bag_rice` | Rice Bag | **Utility** | `util_bag_top_rice.png`<br>`util_bag_side.png`<br>`util_bag_side_front.png`<br>`util_bag_bot.png` | Top top (rice) + Bottom bot + 3 sides side + 1 front `util_bag_side_front.png` |
+| **001c** | `bag_sugar` | Sugar Bag | **Utility** | `util_bag_top_suggar.png`<br>`util_bag_side.png`<br>`util_bag_side_front.png`<br>`util_bag_bot.png` | Top top (sugar) + Bottom bot + 3 sides side + 1 front `util_bag_side_front.png` |
 | **002** | `barrel` | Barrel | **Utility** | `util_barrel_top.png`<br>`util_barrel_side.png`<br>`util_barrel_bot.png` | Top top + Bottom bot + 4 sides side |
 | **003** | `basket` | Basket | **Utility** | `util_basket_top.png`<br>`util_basket_side.png`<br>`util_basket_bot.png` | Top top + Bottom bot + 4 sides side |
 | **004** | `bookshelf` | Bookshelf | **Utility** | `util_bookshelf_top.png`<br>`util_bookshelf_side.png`<br>`util_bookshelf_front.png` | Top & Bottom top + 3 sides side + 1 front `util_bookshelf_front.png` |

@@ -1098,6 +1098,10 @@ pub fn mesh_cross_billboard(
 
     let eps = 0.005;
     let uv_fwd = [[eps, 1.0 - eps], [eps, eps], [1.0 - eps, eps], [1.0 - eps, 1.0 - eps]];
+    // Back faces must mirror U coordinates so both sides share identical world-space texture orientation
+    // (like a physical card in 3D space, identical to Minecraft flora), preventing flora billboards from
+    // unnaturally tracking camera rotation.
+    let uv_rev = [[1.0 - eps, 1.0 - eps], [1.0 - eps, eps], [eps, eps], [eps, 1.0 - eps]];
 
     // Upward-facing normal for cross-billboards ensures uniform sky & sunlight illumination
     // on both sides, identical to Minecraft's flora lighting model.
@@ -1118,7 +1122,7 @@ pub fn mesh_cross_billboard(
         texture_layer,
         frame_count,
         tint_color,
-        uv_fwd,
+        uv_rev,
     );
 
     push_quad_face_with_uvs(
@@ -1137,7 +1141,7 @@ pub fn mesh_cross_billboard(
         texture_layer,
         frame_count,
         tint_color,
-        uv_fwd,
+        uv_rev,
     );
 }
 

@@ -162,6 +162,10 @@ pub struct FaceKey {
     pub is_isolated_voxel: bool,
     pub orientation: u8,
     pub ao: [u8; 4],
+    pub overlay_layer: u16,
+    pub mask_index: u8,
+    /// 21-bit packed (7 bits per channel) biome tint of the overlay block (0 = untinted overlay).
+    pub packed_tint: u32,
 }
 
 impl FaceKey {
@@ -175,6 +179,9 @@ impl FaceKey {
             && self.is_isolated_voxel == other.is_isolated_voxel
             && self.orientation == other.orientation
             && self.ao == other.ao
+            && self.overlay_layer == other.overlay_layer
+            && self.mask_index == other.mask_index
+            && self.packed_tint == other.packed_tint
     }
 }
 
@@ -399,6 +406,46 @@ impl MeshBuffers {
         let surface_offset = key.surface_offset_cm as f32 / 100.0;
         let step_bottom_offset = key.step_bottom_offset_cm as f32 / 100.0;
 
+        let should_swap_uv = if key.voxel.is_axis_aligned() {
+            match key.orientation % 3 {
+                1 => matches!(
+                    direction,
+                    FaceDirection::PositiveY
+                        | FaceDirection::NegativeY
+                        | FaceDirection::PositiveZ
+                        | FaceDirection::NegativeZ
+                ),
+                2 => matches!(
+                    direction,
+                    FaceDirection::PositiveX | FaceDirection::NegativeX
+                ),
+                _ => false,
+            }
+        } else {
+            false
+        };
+
+        // Connected-texture (mask overlay) faces: the shader tints base and overlay layers
+        // separately, so the vertex color only carries AO and the alpha channel carries a
+        // negative flag + packed data:
+        //   alpha = -(1 + tint21 | base_is_tinted << 21 | uv_swapped << 22)
+        // Only one of base/overlay can be biome-tinted (grass), since grass never spills on grass.
+        let mask_face_alpha = if key.mask_index > 0 {
+            let (tint, base_tinted) = if key.packed_tint != 0 {
+                (key.packed_tint, 0u32)
+            } else if key.voxel.is_grass_soil() {
+                (pack_tint7(key.tint_color), 1u32)
+            } else {
+                (0u32, 0u32)
+            };
+            let packed = (tint & 0x1F_FFFF) | (base_tinted << 21) | ((should_swap_uv as u32) << 22);
+            Some(-(1.0 + packed as f32))
+        } else {
+            None
+        };
+
+
+
         for (i, vertex) in vertices.iter().enumerate() {
             let mut pos = [
                 vertex[0] * VOXEL_SIZE,
@@ -425,57 +472,76 @@ impl MeshBuffers {
                 }
             }
 
+
+
             let ao_mult = AO_TABLE[key.ao[i] as usize];
-            let vertex_color = [
-                color[0] * ao_mult,
-                color[1] * ao_mult,
-                color[2] * ao_mult,
-                color[3],
-            ];
+            let vertex_color = if let Some(alpha) = mask_face_alpha {
+                [ao_mult, ao_mult, ao_mult, alpha]
+            } else {
+                [
+                    color[0] * ao_mult,
+                    color[1] * ao_mult,
+                    color[2] * ao_mult,
+                    color[3],
+                ]
+            };
 
             self.positions.push(pos);
             self.normals.push(direction.normal_f32());
             self.colors.push(vertex_color);
-            self.uv_bs.push([layer, frame_count]);
+            let uv_b_x = layer + (key.overlay_layer as f32) * 2048.0;
+            let uv_b_y = if key.mask_index > 0 {
+                (key.mask_index as f32) * 16.0 + frame_count
+            } else {
+                frame_count
+            };
+            self.uv_bs.push([uv_b_x, uv_b_y]);
         }
 
-        let u_min = u as f32;
-        let u_max = (u + width) as f32;
-        let v_min = v as f32;
-        let v_max = (v + height) as f32;
+        let eps = 0.0005;
 
-        let uvs_to_push = match direction {
-            FaceDirection::PositiveY | FaceDirection::NegativeY => [
-                [u_min, v_min],
-                [u_min, v_max],
-                [u_max, v_max],
-                [u_max, v_min],
-            ],
-            _ => [
-                [u_min, v_max],
-                [u_min, v_min],
-                [u_max, v_min],
-                [u_max, v_max],
-            ],
-        };
-
-        let should_swap_uv = if key.voxel.is_axis_aligned() {
-            match key.orientation % 3 {
-                1 => matches!(
-                    direction,
-                    FaceDirection::PositiveY
-                        | FaceDirection::NegativeY
-                        | FaceDirection::PositiveZ
-                        | FaceDirection::NegativeZ
-                ),
-                2 => matches!(
-                    direction,
-                    FaceDirection::PositiveX | FaceDirection::NegativeX
-                ),
-                _ => false,
+        let uvs_to_push = if key.mask_index > 0 {
+            // Connected texture faces are strictly 1x1 quads.
+            // Push exact normalized [eps, 1.0 - eps] coordinates without chunk u/v offset
+            // so mask_uv and local_uv in the shader never wrap across edges.
+            match direction {
+                FaceDirection::PositiveY | FaceDirection::NegativeY => [
+                    [eps, eps],
+                    [eps, 1.0 - eps],
+                    [1.0 - eps, 1.0 - eps],
+                    [1.0 - eps, eps],
+                ],
+                _ => [
+                    [eps, 1.0 - eps],
+                    [eps, eps],
+                    [1.0 - eps, eps],
+                    [1.0 - eps, 1.0 - eps],
+                ],
             }
         } else {
-            false
+            let u_min = u as f32 + eps;
+            let u_max = (u + width) as f32 - eps;
+            let v_min = v as f32 + eps;
+            let v_max = (v + height) as f32 - eps;
+
+            match direction {
+                FaceDirection::PositiveY | FaceDirection::NegativeY => [
+                    [u_min, v_min],
+                    [u_min, v_max],
+                    [u_max, v_max],
+                    [u_max, v_min],
+                ],
+                _ => {
+                    let side_v_min = eps;
+                    let side_v_max = height as f32 - eps;
+                    [
+                        [u_min, side_v_max],
+                        [u_min, side_v_min],
+                        [u_max, side_v_min],
+                        [u_max, side_v_max],
+                    ]
+                }
+            }
         };
 
         let uvs_to_push = if should_swap_uv {
@@ -898,11 +964,22 @@ impl ChunkMesher {
                             ]
                         };
 
-                        // Fluid faces stay 1x1 (like Minecraft) so the vertex wave animation samples
-                        // every block corner: merged 16x16 quads would only wave at 4 corners and
-                        // tear against neighbouring 1x1 quads / chunk borders.
+                        let (overlay_layer, mask_index_val, packed_tint) = match direction {
+                            FaceDirection::PositiveY
+                            | FaceDirection::PositiveX
+                            | FaceDirection::NegativeX
+                            | FaceDirection::PositiveZ
+                            | FaceDirection::NegativeZ => {
+                                compute_block_transition(world, world_voxel, voxel, direction, textures)
+                            }
+                            _ => (0, 0, 0),
+                        };
+
+                        // Fluid faces and faces with transition overlays stay 1x1 so shader masks
+                        // align perfectly per-block, while uniform faces merge greedily.
                         let is_isolated_voxel =
-                            voxel.is_fluid() && direction != FaceDirection::NegativeY;
+                            (voxel.is_fluid() && direction != FaceDirection::NegativeY)
+                            || mask_index_val > 0;
 
                         mask[mask_index(u, v)] = Some(FaceKey {
                             voxel,
@@ -914,6 +991,9 @@ impl ChunkMesher {
                             is_isolated_voxel,
                             orientation,
                             ao,
+                            overlay_layer,
+                            mask_index: mask_index_val,
+                            packed_tint,
                         });
                     }
                 }
@@ -1384,4 +1464,435 @@ mod tests {
         assert!(scratch.opaque.positions.is_empty());
         assert!(scratch.opaque.positions.capacity() > 0);
     }
+}
+
+
+
+
+/// Packs an RGB tint into 21 bits (7 bits per channel). Always non-zero for a valid tint
+/// (bit 0 of red is forced when the color is pure black) so 0 can mean "untinted".
+pub fn pack_tint7(t: [f32; 4]) -> u32 {
+    let r = (t[0] * 127.0).round().clamp(0.0, 127.0) as u32;
+    let g = (t[1] * 127.0).round().clamp(0.0, 127.0) as u32;
+    let b = (t[2] * 127.0).round().clamp(0.0, 127.0) as u32;
+    let packed = (r << 14) | (g << 7) | b;
+    if packed == 0 { 1 << 14 } else { packed }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TransitionCategory {
+    Grass = 0,
+    Sand = 1,
+    Rocks = 2,
+    Snow = 3,
+    Moss = 4,
+}
+
+impl TransitionCategory {
+    pub const fn base_layer(self) -> usize {
+        (self as usize) * 17
+    }
+
+    pub fn from_voxel(voxel: Voxel) -> Self {
+        if matches!(
+            voxel,
+            Voxel::SnowBlock
+                | Voxel::LoamSnow
+                | Voxel::PeatSnow
+                | Voxel::SiltSnow
+                | Voxel::AndesiteSnow
+                | Voxel::ArgilliteSnow
+                | Voxel::BasaltSnow
+                | Voxel::ChalkSnow
+                | Voxel::DolomiteSnow
+                | Voxel::GraniteSnow
+                | Voxel::LimestoneSnow
+        ) {
+            Self::Snow
+        } else if voxel == Voxel::MossForest {
+            // Moss mask is strictly for the MossForest block; mossy rocks use Rocks mask!
+            Self::Moss
+        } else if voxel.is_grass_soil() {
+            Self::Grass
+        } else if matches!(
+            voxel,
+            Voxel::SandCommon
+                | Voxel::SandDune
+                | Voxel::SandRed
+                | Voxel::SandWhite
+                | Voxel::GravelAshy
+                | Voxel::GravelDirty
+                | Voxel::GravelSandy
+                | Voxel::GravelSnowy
+                | Voxel::ClayBlue
+                | Voxel::ClayRed
+                | Voxel::ClayWhite
+                | Voxel::ClayYellow
+                | Voxel::LoamMud
+                | Voxel::PeatMud
+                | Voxel::SiltMud
+                | Voxel::CalicheDirt
+                | Voxel::LateriteDirt
+                | Voxel::LoamDirt
+                | Voxel::PeatDirt
+                | Voxel::SiltDirt
+                | Voxel::PermafrostDirt
+        ) {
+            Self::Sand
+        } else {
+            Self::Rocks
+        }
+    }
+}
+
+/// Returns the (orthogonal [up, right, down, left], diagonal [up_right, up_left, down_right, down_left])
+/// coordinate offsets in the 2D plane of the face for a given face direction.
+pub fn face_in_plane_offsets(direction: FaceDirection) -> ([IVec3; 4], [IVec3; 4]) {
+    match direction {
+        FaceDirection::PositiveY => (
+            [
+                IVec3::new(0, 0, -1), // Up (North, -Z)
+                IVec3::new(1, 0, 0),  // Right (East, +X)
+                IVec3::new(0, 0, 1),  // Down (South, +Z)
+                IVec3::new(-1, 0, 0), // Left (West, -X)
+            ],
+            [
+                IVec3::new(1, 0, -1),  // Up-Right (NE)
+                IVec3::new(-1, 0, -1), // Up-Left (NW)
+                IVec3::new(1, 0, 1),   // Down-Right (SE)
+                IVec3::new(-1, 0, 1),  // Down-Left (SW)
+            ],
+        ),
+        FaceDirection::PositiveX => (
+            [
+                IVec3::new(0, 1, 0),  // Up (+Y)
+                IVec3::new(0, 0, 1),  // Right (+Z)
+                IVec3::new(0, -1, 0), // Down (-Y)
+                IVec3::new(0, 0, -1), // Left (-Z)
+            ],
+            [
+                IVec3::new(0, 1, 1),   // Up-Right (+Y, +Z)
+                IVec3::new(0, 1, -1),  // Up-Left (+Y, -Z)
+                IVec3::new(0, -1, 1),  // Down-Right (-Y, +Z)
+                IVec3::new(0, -1, -1), // Down-Left (-Y, -Z)
+            ],
+        ),
+        FaceDirection::NegativeX => (
+            [
+                IVec3::new(0, 1, 0),  // Up (+Y)
+                IVec3::new(0, 0, -1), // Right (-Z)
+                IVec3::new(0, -1, 0), // Down (-Y)
+                IVec3::new(0, 0, 1),  // Left (+Z)
+            ],
+            [
+                IVec3::new(0, 1, -1),  // Up-Right (+Y, -Z)
+                IVec3::new(0, 1, 1),   // Up-Left (+Y, +Z)
+                IVec3::new(0, -1, -1), // Down-Right (-Y, -Z)
+                IVec3::new(0, -1, 1),  // Down-Left (-Y, +Z)
+            ],
+        ),
+        FaceDirection::PositiveZ => (
+            [
+                IVec3::new(0, 1, 0),  // Up (+Y)
+                IVec3::new(-1, 0, 0), // Right (-X)
+                IVec3::new(0, -1, 0), // Down (-Y)
+                IVec3::new(1, 0, 0),  // Left (+X)
+            ],
+            [
+                IVec3::new(-1, 1, 0),  // Up-Right (+Y, -X)
+                IVec3::new(1, 1, 0),   // Up-Left (+Y, +X)
+                IVec3::new(-1, -1, 0), // Down-Right (-Y, -X)
+                IVec3::new(1, -1, 0),  // Down-Left (-Y, +X)
+            ],
+        ),
+        FaceDirection::NegativeZ => (
+            [
+                IVec3::new(0, 1, 0),  // Up (+Y)
+                IVec3::new(1, 0, 0),  // Right (+X)
+                IVec3::new(0, -1, 0), // Down (-Y)
+                IVec3::new(-1, 0, 0), // Left (-X)
+            ],
+            [
+                IVec3::new(1, 1, 0),   // Up-Right (+Y, +X)
+                IVec3::new(-1, 1, 0),  // Up-Left (+Y, -X)
+                IVec3::new(1, -1, 0),  // Down-Right (-Y, +X)
+                IVec3::new(-1, -1, 0), // Down-Left (-Y, -X)
+            ],
+        ),
+        FaceDirection::NegativeY => (
+            [IVec3::ZERO; 4],
+            [IVec3::ZERO; 4],
+        ),
+    }
+}
+
+/// Computes an unambiguous priority rank for block transitions:
+/// - Snow (9) > Grass Turf (8) > Dirts/Moss (7) > Gravel (6) > SandCommon (5) > Other Sands (4) > Clay (3) > Rocks (2) > Wood (1) > None (0)
+/// - For Rocks: Mossy rocks > Cobbled rocks > Raw rocks > Sandstones, with voxel ID tie-breaker so adjacent rocks in caves transition organically.
+/// - For Soils: MossForest has sub-priority over ordinary dirt.
+#[inline]
+pub fn transition_priority_rank(voxel: Voxel) -> u32 {
+    let p = voxel.transition_priority() as u32;
+    if p == 0 {
+        return 0;
+    }
+    let sub_tier: u32 = if p == 2 {
+        if matches!(
+            voxel,
+            Voxel::MossyAndesite
+                | Voxel::MossyArgillite
+                | Voxel::MossyBasalt
+                | Voxel::MossyChalk
+                | Voxel::MossyCobbledAndesite
+                | Voxel::MossyCobbledArgillite
+                | Voxel::MossyCobbledBasalt
+                | Voxel::MossyCobbledChalk
+                | Voxel::MossyCobbledDolomite
+                | Voxel::MossyCobbledGranite
+                | Voxel::MossyCobbledLimestone
+                | Voxel::MossyDolomite
+                | Voxel::MossyGranite
+                | Voxel::MossyLimestone
+        ) {
+            4
+        } else if matches!(
+            voxel,
+            Voxel::CobbledAndesite
+                | Voxel::CobbledArgillite
+                | Voxel::CobbledBasalt
+                | Voxel::CobbledChalk
+                | Voxel::CobbledDolomite
+                | Voxel::CobbledGabbro
+                | Voxel::CobbledGranite
+                | Voxel::CobbledLimestone
+                | Voxel::CobbledMagma
+                | Voxel::CobbledMantle
+                | Voxel::CobbledMarble
+                | Voxel::CobbledSandstoneCommon
+                | Voxel::CobbledSandstoneDune
+                | Voxel::CobbledSandstoneRed
+                | Voxel::CobbledSandstoneWhite
+                | Voxel::CobbledSlate
+                | Voxel::FracturedCaveCalcite
+                | Voxel::FracturedCaveKarst
+                | Voxel::FracturedCaveObsidian
+        ) {
+            3
+        } else if matches!(
+            voxel,
+            Voxel::SandstoneCommon
+                | Voxel::SandstoneDune
+                | Voxel::SandstoneRed
+                | Voxel::SandstoneWhite
+        ) {
+            1
+        } else {
+            2
+        }
+    } else if p == 7 && voxel == Voxel::MossForest {
+        2
+    } else {
+        1
+    };
+    (p << 24) | (sub_tier << 16) | (voxel as u32)
+}
+
+/// Computes organic connected textures transition overlay layer, mask index (1..85), and packed tint.
+/// Returns (overlay_layer, mask_index, packed_tint), or (0, 0, 0) if no transition applies.
+pub fn compute_block_transition(
+    world: &impl VoxelAccess,
+    world_voxel: IVec3,
+    raw_voxel: Voxel,
+    direction: FaceDirection,
+    textures: &VoxelTextureRegistry,
+) -> (u16, u8, u32) {
+    if direction == FaceDirection::NegativeY {
+        return (0, 0, 0);
+    }
+
+    // On vertical walls, outcrop blocks with surface turf (grass/snow) act as their underlying block
+    // (internal dirt or rock) so grass and snow don't spill down vertical cliff faces.
+    let voxel = if direction != FaceDirection::PositiveY && raw_voxel.has_surface_turf() {
+        raw_voxel.underlying_block()
+    } else {
+        raw_voxel
+    };
+
+    let my_rank = transition_priority_rank(voxel);
+    if my_rank == 0 || voxel.transition_priority() >= 9 {
+        return (0, 0, 0);
+    }
+
+    let (ortho_offsets, diag_offsets) = face_in_plane_offsets(direction);
+
+    let up_pos = world_voxel + ortho_offsets[0];
+    let right_pos = world_voxel + ortho_offsets[1];
+    let down_pos = world_voxel + ortho_offsets[2];
+    let left_pos = world_voxel + ortho_offsets[3];
+
+    let raw_up_vox = world.get_voxel(up_pos).unwrap_or(Voxel::Air);
+    let raw_right_vox = world.get_voxel(right_pos).unwrap_or(Voxel::Air);
+    let raw_down_vox = world.get_voxel(down_pos).unwrap_or(Voxel::Air);
+    let raw_left_vox = world.get_voxel(left_pos).unwrap_or(Voxel::Air);
+
+    // On vertical walls, neighbors also use their underlying base material if they have surface turf
+    let (up_vox, right_vox, down_vox, left_vox) = if direction != FaceDirection::PositiveY {
+        (
+            if raw_up_vox.has_surface_turf() { raw_up_vox.underlying_block() } else { raw_up_vox },
+            if raw_right_vox.has_surface_turf() { raw_right_vox.underlying_block() } else { raw_right_vox },
+            if raw_down_vox.has_surface_turf() { raw_down_vox.underlying_block() } else { raw_down_vox },
+            if raw_left_vox.has_surface_turf() { raw_left_vox.underlying_block() } else { raw_left_vox },
+        )
+    } else {
+        (raw_up_vox, raw_right_vox, raw_down_vox, raw_left_vox)
+    };
+
+    let up_r = transition_priority_rank(up_vox);
+    let right_r = transition_priority_rank(right_vox);
+    let down_r = transition_priority_rank(down_vox);
+    let left_r = transition_priority_rank(left_vox);
+
+    let max_p = up_r.max(right_r).max(down_r).max(left_r);
+
+    if max_p > my_rank {
+        let mut bitmask = 0u8;
+        let mut highest_neighbor = Voxel::Air;
+        let mut highest_pos = world_voxel;
+
+        if up_r == max_p {
+            bitmask |= 1;
+            highest_neighbor = up_vox;
+            highest_pos = up_pos;
+        }
+        if right_r == max_p {
+            bitmask |= 2;
+            highest_neighbor = right_vox;
+            highest_pos = right_pos;
+        }
+        if down_r == max_p {
+            bitmask |= 4;
+            highest_neighbor = down_vox;
+            highest_pos = down_pos;
+        }
+        if left_r == max_p {
+            bitmask |= 8;
+            highest_neighbor = left_vox;
+            highest_pos = left_pos;
+        }
+
+        // On vertical walls: if the bottom edge has a floor transition (e.g. Sand floor),
+        // check whether the left or right neighbor is a different solid block.
+        // If so, curve the floor transition up into the corner (Mask 4 for left, Mask 3 for right, Mask 5 for both).
+        if direction != FaceDirection::PositiveY && (bitmask & 4) != 0 {
+            if left_vox != voxel && left_vox.is_solid_opaque() {
+                bitmask |= 8;
+            }
+            if right_vox != voxel && right_vox.is_solid_opaque() {
+                bitmask |= 2;
+            }
+        }
+
+        let mask_file_id = match bitmask {
+            1 => 15,
+            2 => 7,
+            3 => 10,
+            4 => 1,
+            5 => 6,
+            6 => 3,
+            7 => 12,
+            8 => 9,
+            9 => 11,
+            10 => 13,
+            11 => 13,
+            12 => 4,
+            13 => 6,
+            14 => 5,
+            15 => 8,
+            _ => 8,
+        };
+
+        let category = TransitionCategory::from_voxel(highest_neighbor);
+        let mask_index = (category.base_layer() + mask_file_id + 1) as u8;
+
+        let (overlay_layer, packed_tint) = match category {
+            TransitionCategory::Grass => (
+                textures.get_face_texture_info(highest_neighbor, highest_pos, direction).0,
+                if direction == FaceDirection::PositiveY || textures.full_grass {
+                    pack_tint7(highest_neighbor.tint_color_at(highest_pos))
+                } else {
+                    0
+                },
+            ),
+            TransitionCategory::Sand | TransitionCategory::Rocks => (
+                textures.get_face_texture_info(highest_neighbor, highest_pos, direction).0,
+                0,
+            ),
+            TransitionCategory::Snow | TransitionCategory::Moss => (0, 0),
+        };
+
+        return (overlay_layer, mask_index, packed_tint);
+    }
+
+    let up_right_pos = world_voxel + diag_offsets[0];
+    let up_left_pos = world_voxel + diag_offsets[1];
+    let down_right_pos = world_voxel + diag_offsets[2];
+    let down_left_pos = world_voxel + diag_offsets[3];
+
+    let raw_up_right_vox = world.get_voxel(up_right_pos).unwrap_or(Voxel::Air);
+    let raw_up_left_vox = world.get_voxel(up_left_pos).unwrap_or(Voxel::Air);
+    let raw_down_right_vox = world.get_voxel(down_right_pos).unwrap_or(Voxel::Air);
+    let raw_down_left_vox = world.get_voxel(down_left_pos).unwrap_or(Voxel::Air);
+
+    let (up_right_vox, up_left_vox, down_right_vox, down_left_vox) = if direction != FaceDirection::PositiveY {
+        (
+            if raw_up_right_vox.has_surface_turf() { raw_up_right_vox.underlying_block() } else { raw_up_right_vox },
+            if raw_up_left_vox.has_surface_turf() { raw_up_left_vox.underlying_block() } else { raw_up_left_vox },
+            if raw_down_right_vox.has_surface_turf() { raw_down_right_vox.underlying_block() } else { raw_down_right_vox },
+            if raw_down_left_vox.has_surface_turf() { raw_down_left_vox.underlying_block() } else { raw_down_left_vox },
+        )
+    } else {
+        (raw_up_right_vox, raw_up_left_vox, raw_down_right_vox, raw_down_left_vox)
+    };
+
+    let up_right_r = transition_priority_rank(up_right_vox);
+    let up_left_r = transition_priority_rank(up_left_vox);
+    let down_right_r = transition_priority_rank(down_right_vox);
+    let down_left_r = transition_priority_rank(down_left_vox);
+
+    let max_diag = up_right_r.max(up_left_r).max(down_right_r).max(down_left_r);
+
+    if max_diag > my_rank {
+        let (mask_file_id, highest_neighbor, highest_pos) = if up_right_r == max_diag {
+            (14, up_right_vox, up_right_pos)
+        } else if up_left_r == max_diag {
+            (16, up_left_vox, up_left_pos)
+        } else if down_right_r == max_diag {
+            (0, down_right_vox, down_right_pos)
+        } else {
+            (2, down_left_vox, down_left_pos)
+        };
+
+        let category = TransitionCategory::from_voxel(highest_neighbor);
+        let mask_index = (category.base_layer() + mask_file_id + 1) as u8;
+
+        let (overlay_layer, packed_tint) = match category {
+            TransitionCategory::Grass => (
+                textures.get_face_texture_info(highest_neighbor, highest_pos, direction).0,
+                if direction == FaceDirection::PositiveY || textures.full_grass {
+                    pack_tint7(highest_neighbor.tint_color_at(highest_pos))
+                } else {
+                    0
+                },
+            ),
+            TransitionCategory::Sand | TransitionCategory::Rocks => (
+                textures.get_face_texture_info(highest_neighbor, highest_pos, direction).0,
+                0,
+            ),
+            TransitionCategory::Snow | TransitionCategory::Moss => (0, 0),
+        };
+
+        return (overlay_layer, mask_index, packed_tint);
+    }
+
+    (0, 0, 0)
 }

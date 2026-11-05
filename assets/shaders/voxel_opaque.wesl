@@ -5,7 +5,7 @@ import bevy_pbr::render::{
     pbr_types,
     pbr_fragment::pbr_input_from_standard_material,
     pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
-    mesh_view_bindings::globals,
+    mesh_view_bindings::{globals, lights},
 };
 
 @group(constants::MATERIAL_BIND_GROUP) @binding(100) var voxel_texture_array: texture_2d_array<f32>;
@@ -14,6 +14,8 @@ import bevy_pbr::render::{
 @group(constants::MATERIAL_BIND_GROUP) @binding(103) var noise_sampler: sampler;
 @group(constants::MATERIAL_BIND_GROUP) @binding(104) var<uniform> voxel_params: vec4<f32>;
 @group(constants::MATERIAL_BIND_GROUP) @binding(105) var<uniform> anim_params: vec4<f32>;
+@group(constants::MATERIAL_BIND_GROUP) @binding(106) var mask_texture_array: texture_2d_array<f32>;
+@group(constants::MATERIAL_BIND_GROUP) @binding(107) var mask_sampler: sampler;
 
 // Fast procedural noise using Dave Hoskins' sine-free hash (ultra-fast on integrated GPUs)
 fn hash2_noise(p: vec2<f32>) -> f32 {
@@ -55,6 +57,23 @@ fn hash_block_face(p: vec3<i32>, normal: vec3<f32>) -> u32 {
     h = h * 0x45d9f3bu;
     h = h ^ (h >> 16u);
     return h;
+}
+
+// Safe tile UV calculation:
+// Tiles raw UVs repeating [0.0005, 0.9995] per block without ever wrapping
+// across integer boundaries. When raw_uv reaches an integer boundary (>= 1.0),
+// it is clamped to 0.9995 (texel 15, the dirt bottom or block edge), preventing
+// row 0 (snow/grass) from bleeding into the bottom of vertical faces.
+fn safe_tile_uv(raw_uv: vec2<f32>) -> vec2<f32> {
+    let cell = floor(raw_uv);
+    var frac = raw_uv - cell;
+    if (frac.x < 0.001 && raw_uv.x > 0.5) {
+        frac.x = 0.9995;
+    }
+    if (frac.y < 0.001 && raw_uv.y > 0.5) {
+        frac.y = 0.9995;
+    }
+    return clamp(frac, vec2<f32>(0.0005), vec2<f32>(0.9995));
 }
 
 @vertex
@@ -169,7 +188,7 @@ fn texel_snap_vec3(val: vec3<f32>, texel_offset: vec2<f32>) -> vec3<f32> {
     let dx = dpdx(val);
     let dy = dpdy(val);
     let val_offset = dx * texel_offset.x + dy * texel_offset.y;
-    return val + clamp(val_offset, vec3<f32>(-0.25), vec3<f32>(0.25));
+    return val + clamp(val_offset, vec3<f32>(-0.0625), vec3<f32>(0.0625));
 }
 
 @fragment
@@ -181,10 +200,31 @@ fn fragment(
     pbr_vertex.color = vec4<f32>(1.0);
     var pbr_input: pbr_types::PbrInput = pbr_input_from_standard_material(pbr_vertex, is_front);
 
-    let base_layer = vertex_output.uv_b.x;
-    let raw_frame_param = vertex_output.uv_b.y;
+    let abs_frame_full = abs(vertex_output.uv_b.y);
+    let mask_index = i32(floor(abs_frame_full / 16.0 + 0.01));
+    let raw_frame_param = sign(vertex_output.uv_b.y) * (abs_frame_full - f32(mask_index) * 16.0);
 
-    var layer = i32(round(base_layer));
+    // Connected-texture faces: vertex color rgb = AO only, alpha = -(1 + packed) where
+    // packed = tint(7:7:7) | base_is_tinted << 21 | uv_swapped << 22 (see greedy.rs push_quad).
+    let is_mask_face = mask_index > 0 && vertex_output.color.a < -0.5;
+    var ct_packed = 0u;
+    if (is_mask_face) {
+        ct_packed = u32(round(-vertex_output.color.a - 1.0));
+    }
+    let ct_tint_bits = ct_packed & 0x1FFFFFu;
+    let ct_base_tinted = ((ct_packed >> 21u) & 1u) == 1u;
+    let ct_uv_swapped = ((ct_packed >> 22u) & 1u) == 1u;
+    let ct_tint = vec3<f32>(
+        f32((ct_tint_bits >> 14u) & 127u),
+        f32((ct_tint_bits >> 7u) & 127u),
+        f32(ct_tint_bits & 127u)
+    ) / 127.0;
+
+    let raw_base = round(vertex_output.uv_b.x);
+    let base_layer = i32(raw_base) % 2048;
+    let overlay_layer = i32(raw_base) / 2048;
+
+    var layer = base_layer;
     var next_layer = layer;
     var frame_blend = 0.0;
     let is_emissive = raw_frame_param < -0.5;
@@ -193,25 +233,34 @@ fn fragment(
     let rot_mode = i32(round((abs_frame_param - actual_frame_count) * 4.0));
 
     if (actual_frame_count > 1.5) {
-        let fps = 1.25;
+        let fps = 8.0;
         let count = max(1, i32(round(actual_frame_count)));
         let t = max(globals.time, 0.0) * fps;
         let frame_cur = (i32(floor(t)) % count + count) % count;
         let frame_next = (frame_cur + 1) % count;
         frame_blend = fract(t);
         layer = layer + frame_cur;
-        next_layer = i32(round(base_layer)) + frame_next;
+        next_layer = base_layer + frame_next;
     }
 
-    var uv = fract(vertex_output.uv);
+    let normal = vertex_output.world_normal;
+    let is_horizontal = abs(normal.y) > 0.5;
+    let block_pos = vec3<i32>(floor(vertex_output.world_position.xyz - normal * 0.1));
+
+    var uv: vec2<f32>;
+    var mask_uv: vec2<f32>;
+    if (is_mask_face) {
+        // Connected texture faces are strictly 1x1 quads with normalized [eps, 1-eps] coordinates.
+        // No fract or modulo wrapping: mask_uv and uv are guaranteed within [0.0005, 0.9995].
+        uv = clamp(vertex_output.uv, vec2<f32>(0.0005), vec2<f32>(0.9995));
+        mask_uv = uv;
+    } else {
+        uv = safe_tile_uv(vertex_output.uv);
+        mask_uv = uv;
+    }
 
     // Natural blocks pseudo-random rotation and flipping (OptiFine style)
-    if (rot_mode > 0) {
-        let normal = vertex_output.world_normal;
-        let is_horizontal = abs(normal.y) > 0.5;
-
-        // Deterministic integer voxel coordinates (offset inward against normal to stay strictly inside the voxel)
-        let block_pos = vec3<i32>(floor(vertex_output.world_position.xyz - normal * 0.1));
+    if (rot_mode > 0 && !is_mask_face) {
         let hash = hash_block_face(block_pos, normal);
 
         if (is_horizontal) {
@@ -240,6 +289,51 @@ fn fragment(
 
     var tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, layer);
 
+    // Organic Connected Textures: Mask-Overlay blending.
+    // Base and overlay are tinted independently with exactly the same formula the regular
+    // (non-transition) path applies to that block, so spilled grass matches the grass block and
+    // snow spilled over grass stays white. Vertex color rgb holds only AO on these faces.
+    if (is_mask_face) {
+        let mask_layer = mask_index - 1;
+        let mask_sample = textureSample(mask_texture_array, mask_sampler, mask_uv, mask_layer);
+
+        let ao = vertex_output.color.r;
+        let ambient_factor = 0.92 + ambient_environment_noise(vertex_output.world_position.xz) * 0.16;
+        // Regular path: tinted (foliage) colors get vc * vc * ambient with vc = tint * ao;
+        // untinted colors get ao * ao * ambient only when AO darkens the vertex, else 1.0.
+        let tinted_mul = ct_tint * ct_tint * ao * ao * ambient_factor;
+        var white_mul = vec3<f32>(1.0);
+        if (ao < 0.99) {
+            white_mul = vec3<f32>(ao * ao * ambient_factor);
+        }
+        let has_tint = ct_tint_bits != 0u;
+        var base_mul = white_mul;
+        var overlay_mul = white_mul;
+        if (has_tint && ct_base_tinted) {
+            base_mul = tinted_mul;
+        } else if (has_tint) {
+            overlay_mul = tinted_mul;
+        }
+
+        // Overlay color source:
+        // Mask layers:
+        //   0..=16:  Grass (pure white mask -> sample voxel_texture_array with overlay_layer + biome tint)
+        //  17..=33:  Sand  (pure white mask -> sample voxel_texture_array with overlay_layer)
+        //  34..=50:  Rocks (pure white mask -> sample voxel_texture_array with overlay_layer)
+        //  51..=67:  Snow  (pre-colored mask -> mask_sample.rgb already contains snow colors)
+        //  68..=84:  Moss  (pre-colored mask -> mask_sample.rgb already contains moss colors)
+        var overlay_rgb: vec3<f32>;
+        if (mask_layer >= 51) {
+            overlay_rgb = mask_sample.rgb * overlay_mul;
+        } else {
+            let sampled_overlay = textureSample(voxel_texture_array, voxel_sampler, mask_uv, overlay_layer);
+            overlay_rgb = sampled_overlay.rgb * overlay_mul;
+        }
+
+        let blended = mix(tex_color.rgb * base_mul, overlay_rgb, mask_sample.a);
+        tex_color = vec4<f32>(blended, tex_color.a);
+    }
+
     // Alpha Cutout: Discard see-through pixels (e.g. foliage leaves, alpha-cutout quads)
     if (tex_color.a < 0.5) {
         discard;
@@ -258,8 +352,11 @@ fn fragment(
 
     // Ambient Environment modulation: breaks up monotonous large expanses of grass and leaves (foliage has alpha > 0.75)
     var tint_color = vertex_output.color;
+    if (is_mask_face) {
+        tint_color = vec4<f32>(1.0);
+    }
     let is_painted_block = (vertex_output.color.a > 0.52) && (vertex_output.color.a < 0.72);
-    let is_foliage_tinted = (vertex_output.color.a > 0.75) && (tint_color.r < 0.99 || tint_color.g < 0.99 || tint_color.b < 0.99);
+    let is_foliage_tinted = !is_mask_face && (vertex_output.color.a > 0.75) && (tint_color.r < 0.99 || tint_color.g < 0.99 || tint_color.b < 0.99);
     if (is_foliage_tinted) {
         let noise = ambient_environment_noise(vertex_output.world_position.xz);
         // Subtle organic variation: ±8% darker and lighter natural patches
@@ -322,9 +419,19 @@ fn fragment(
     // Snaps world position to 16x16 texel centers along screen derivative tangents on solid block faces.
     // Cross meshes are exempted so non-orthogonal screen derivatives don't flicker surface lighting.
     let pixelated_shadows_enabled = voxel_params.z > 0.5;
-    if (pixelated_shadows_enabled) {
+    if (pixelated_shadows_enabled && !is_cross_mesh) {
+        let normal = normalize(vertex_output.world_normal);
+        let abs_n = abs(normal);
+        var planar_coord: vec2<f32>;
+        if (abs_n.y > 0.5) {
+            planar_coord = vertex_output.world_position.xz;
+        } else if (abs_n.x > 0.5) {
+            planar_coord = vertex_output.world_position.zy;
+        } else {
+            planar_coord = vertex_output.world_position.xy;
+        }
         let texel_size = vec4<f32>(1.0 / 16.0, 1.0 / 16.0, 16.0, 16.0);
-        let texel_offset = compute_texel_offset(vertex_output.uv, texel_size);
+        let texel_offset = compute_texel_offset(planar_coord, texel_size);
         pbr_input.world_position = vec4<f32>(
             texel_snap_vec3(pbr_input.world_position.xyz, texel_offset),
             pbr_input.world_position.w
@@ -334,6 +441,12 @@ fn fragment(
     if (is_cross_mesh) {
         pbr_input.world_normal = vec3<f32>(0.0, 1.0, 0.0);
         pbr_input.N = vec3<f32>(0.0, 1.0, 0.0);
+        // Disable shadow receiving on crossmesh billboard fragments:
+        // Paper-thin 2D diagonal quads cannot physically self-shadow. Clearing MESH_FLAGS_SHADOW_RECEIVER_BIT
+        // (1u << 29u) ensures crossmeshes never evaluate shadow map depth on themselves, completely eliminating
+        // shadow acne, pulsing vertical stripes, and top-edge 'X' artifacts. Meanwhile, voxel_prepass still writes
+        // crossmesh geometry into the shadow map so they cast full, sharp shadows onto the ground and solid terrain.
+        pbr_input.flags = pbr_input.flags & ~(1u << 29u);
     }
 
     var out: FragmentOutput;

@@ -34,7 +34,7 @@ impl Voxel {
         } else if self.is_cross_billboard() {
             "null_crossmesh"
         } else if self.has_custom_mesh() || self.is_flat_pad_const() || self.is_wall_decal_const() {
-            "null_generic"
+            "null_block"
         } else {
             "null_block"
         }
@@ -99,11 +99,11 @@ impl Voxel {
             Self::BambooStalk => Some("tree_bamboo_stalk"),
             Self::BloodyBone | Self::BoneBlock => Some("bio_bone_side"),
             Self::BloodyFlesh | Self::FleshBlock => Some("bio_flesh_side"),
-            Self::SeaAnemone => Some("aqua_sea_anemone_side"),
+            Self::TreeCharredLog => Some("tree_charred_bark_lit"),
             Self::GeothermalVent => Some("aqua_geothermal_vent_side"),
             Self::Barrel => Some("util_barrel_side"),
             Self::Bookshelf | Self::BookshelfEmpty => Some("util_bookshelf_side"),
-            Self::Bag => Some("util_bag_side"),
+            Self::Bag | Self::BagRice | Self::BagSugar => Some("util_bag_side"),
             Self::Crate => Some("util_crate_side"),
             Self::EmitLampWarm => Some("emit_lamp_warm_side"),
             Self::EmitLampBlue => Some("emit_lamp_blue_side"),
@@ -166,7 +166,7 @@ impl Voxel {
             Self::YewLog => Some("tree_yew_log"),
 
             Self::GeothermalVent => Some("aqua_geothermal_vent_top"),
-            Self::SeaAnemone => Some("aqua_sea_anemone_top"),
+            Self::TreeCharredLog => Some("tree_charred_log_lit"),
             Self::BeeNest => Some("nest_bee_nest_top"),
             Self::BirdNest => Some("nest_bird_nest_top"),
             Self::BloodyFlesh | Self::FleshBlock => Some("bio_flesh_top"),
@@ -178,6 +178,8 @@ impl Voxel {
             Self::SpiderEgg => Some("nest_spider_egg_top"),
             Self::WaspNest => Some("nest_wasp_nest_top"),
             Self::Bag => Some("util_bag_top"),
+            Self::BagRice => Some("util_bag_top_rice"),
+            Self::BagSugar => Some("util_bag_top_suggar"),
             Self::Barrel => Some("util_barrel_top"),
             Self::Basket => Some("util_basket_top"),
             Self::Bookshelf | Self::BookshelfEmpty => Some("util_bookshelf_top"),
@@ -210,8 +212,8 @@ impl Voxel {
 
             Self::GeothermalVent => Some("aqua_geothermal_vent_bot"),
             Self::VegeCactus => Some("vege_cactus_bottom"),
-            Self::SeaAnemone => Some("aqua_sea_anemone_bot"),
-            Self::BeeNest => Some("nest_bee_nest_bot"),
+            Self::TreeCharredLog => Some("tree_charred_log_lit"),
+            Self::BeeNest => Some("nest_bee_nest_top"),
             Self::BirdNest => Some("nest_bird_nest_bot"),
             Self::BloodyFlesh | Self::FleshBlock => Some("bio_flesh_top"),
             Self::BloodyBone | Self::BoneBlock => Some("bio_bone_top"),
@@ -220,8 +222,8 @@ impl Voxel {
             Self::SilkCocoon => Some("nest_silk_cocoon_bot"),
             Self::SlimeBlock => Some("organic_slime_bot"),
             Self::SpiderEgg => Some("nest_spider_egg_bot"),
-            Self::WaspNest => Some("nest_wasp_nest_bot"),
-            Self::Bag => Some("util_bag_bot"),
+            Self::WaspNest => Some("nest_wasp_nest_top"),
+            Self::Bag | Self::BagRice | Self::BagSugar => Some("util_bag_bot"),
             Self::Barrel => Some("util_barrel_bot"),
             Self::Basket => Some("util_basket_bot"),
             Self::Bookshelf | Self::BookshelfEmpty => Some("util_bookshelf_top"),
@@ -270,7 +272,7 @@ impl Voxel {
             Self::WaspNest => Some("nest_wasp_nest_front"),
             Self::Bookshelf => Some("util_bookshelf_front"),
             Self::BookshelfEmpty => Some("util_bookshelf_front_empty"),
-            Self::Bag => Some("util_bag_side_front"),
+            Self::Bag | Self::BagRice | Self::BagSugar => Some("util_bag_side_front"),
             _ => None,
         }
     }
@@ -384,6 +386,45 @@ impl Voxel {
         )
     }
 
+    #[inline]
+    pub const fn has_surface_turf(self) -> bool {
+        self.is_grass_soil()
+            || matches!(
+                self,
+                Self::LoamSnow
+                    | Self::PeatSnow
+                    | Self::SiltSnow
+                    | Self::AndesiteSnow
+                    | Self::ArgilliteSnow
+                    | Self::BasaltSnow
+                    | Self::ChalkSnow
+                    | Self::DolomiteSnow
+                    | Self::GraniteSnow
+                    | Self::LimestoneSnow
+            )
+    }
+
+    /// Returns the underlying internal base material (dirt or rock) for surface turf outcrop blocks.
+    #[inline]
+    pub const fn underlying_block(self) -> Self {
+        match self {
+            Self::CalicheGrass => Self::CalicheDirt,
+            Self::LateriteGrass => Self::LateriteDirt,
+            Self::LoamGrass | Self::LoamSnow | Self::LoamMulch | Self::LoamTilled => Self::LoamDirt,
+            Self::PeatGrass | Self::PeatSnow | Self::PeatMulch | Self::PeatTilled => Self::PeatDirt,
+            Self::PermafrostGrass => Self::PermafrostDirt,
+            Self::SiltGrass | Self::SiltSnow | Self::SiltMulch | Self::SiltTilled => Self::SiltDirt,
+            Self::AndesiteGrass | Self::AndesiteSnow => Self::Andesite,
+            Self::ArgilliteGrass | Self::ArgilliteSnow => Self::Argillite,
+            Self::BasaltGrass | Self::BasaltSnow => Self::Basalt,
+            Self::ChalkGrass | Self::ChalkSnow => Self::Chalk,
+            Self::DolomiteGrass | Self::DolomiteSnow => Self::Dolomite,
+            Self::GraniteGrass | Self::GraniteSnow => Self::Granite,
+            Self::LimestoneGrass | Self::LimestoneSnow => Self::Limestone,
+            _ => self,
+        }
+    }
+
     #[inline(always)]
     pub fn is_tinted_flora(self) -> bool {
         matches!(
@@ -466,7 +507,183 @@ impl Voxel {
                 | Self::BoneBlock
                 | Self::BloodyFlesh
                 | Self::FleshBlock
+                | Self::TreeCharredLog
+                | Self::TreeCharredBark
         )
+    }
+
+    #[inline]
+    pub const fn is_wood_block(self) -> bool {
+        let id = self as u16;
+        matches!(id, 139..=202) || matches!(self, Self::TreeCharredLog | Self::TreeCharredBark | Self::TreeCharredPlanks)
+    }
+
+    #[inline]
+    pub fn transition_priority(self) -> u8 {
+        if self.is_empty()
+            || self.is_fluid()
+            || self.is_transparent()
+            || self.is_leaves()
+            || self.is_painted()
+            || self.is_light()
+            || self.has_custom_mesh()
+        {
+            return 0;
+        }
+        // Priority 9: Snow Turf & Snow Block (Snow spills over Grass, Dirt, Sand, Stone, Wood)
+        if matches!(
+            self,
+            Self::SnowBlock
+                | Self::LoamSnow
+                | Self::PeatSnow
+                | Self::SiltSnow
+                | Self::AndesiteSnow
+                | Self::ArgilliteSnow
+                | Self::BasaltSnow
+                | Self::ChalkSnow
+                | Self::DolomiteSnow
+                | Self::GraniteSnow
+                | Self::LimestoneSnow
+        ) {
+            return 9;
+        }
+        // Priority 8: Grass Turf & Mulch (Grass spills over Dirt, Sand, Stone, Wood)
+        if self.has_surface_turf() {
+            return 8;
+        }
+        // Priority 7: Dirts / Soils / Mud / Moss (spills over Gravel, Sand, Clay, Rocks, Wood)
+        if matches!(
+            self,
+            Self::CalicheCoarse
+                | Self::CalicheCracked
+                | Self::CalicheDirt
+                | Self::LateriteCoarse
+                | Self::LateriteDirt
+                | Self::LateriteHardpan
+                | Self::LoamCoarse
+                | Self::LoamDirt
+                | Self::LoamMud
+                | Self::LoamMulch
+                | Self::LoamRooted
+                | Self::LoamTilled
+                | Self::MossForest
+                | Self::PeatCoarse
+                | Self::PeatDirt
+                | Self::PeatMud
+                | Self::PeatMulch
+                | Self::PeatRooted
+                | Self::PeatTilled
+                | Self::PermafrostCoarse
+                | Self::PermafrostDirt
+                | Self::PermafrostIcy
+                | Self::SiltCoarse
+                | Self::SiltDirt
+                | Self::SiltMud
+                | Self::SiltMulch
+                | Self::SiltRooted
+                | Self::SiltTilled
+        ) {
+            return 7;
+        }
+        // Priority 6: Gravels (Gravel spills over all Sands, Clay, Rocks, Wood)
+        if matches!(
+            self,
+            Self::GravelAshy
+                | Self::GravelDirty
+                | Self::GravelSandy
+                | Self::GravelSnowy
+        ) {
+            return 6;
+        }
+        // Priority 5: SandCommon (SandCommon spills over other sands, Clay, Rocks, Wood)
+        if self == Self::SandCommon {
+            return 5;
+        }
+        // Priority 4: Other sands (spills over Clay, Rocks, Wood)
+        if matches!(
+            self,
+            Self::SandDune
+                | Self::SandRed
+                | Self::SandWhite
+        ) {
+            return 4;
+        }
+        // Priority 3: Clays (spills over Rocks, Wood)
+        if matches!(
+            self,
+            Self::ClayBlue
+                | Self::ClayRed
+                | Self::ClayWhite
+                | Self::ClayYellow
+        ) {
+            return 3;
+        }
+        // Priority 2: Rocks / Stone
+        if matches!(
+            self,
+            Self::Andesite
+                | Self::Argillite
+                | Self::Basalt
+                | Self::Chalk
+                | Self::CobbledAndesite
+                | Self::CobbledArgillite
+                | Self::CobbledBasalt
+                | Self::CobbledChalk
+                | Self::CobbledDolomite
+                | Self::CobbledGabbro
+                | Self::CobbledGranite
+                | Self::CobbledLimestone
+                | Self::CobbledMagma
+                | Self::CobbledMantle
+                | Self::CobbledMarble
+                | Self::CobbledSandstoneCommon
+                | Self::CobbledSandstoneDune
+                | Self::CobbledSandstoneRed
+                | Self::CobbledSandstoneWhite
+                | Self::CobbledSlate
+                | Self::Dolomite
+                | Self::Gabbro
+                | Self::Granite
+                | Self::Limestone
+                | Self::Magma
+                | Self::Mantle
+                | Self::Marble
+                | Self::MossyAndesite
+                | Self::MossyArgillite
+                | Self::MossyBasalt
+                | Self::MossyChalk
+                | Self::MossyCobbledAndesite
+                | Self::MossyCobbledArgillite
+                | Self::MossyCobbledBasalt
+                | Self::MossyCobbledChalk
+                | Self::MossyCobbledDolomite
+                | Self::MossyCobbledGranite
+                | Self::MossyCobbledLimestone
+                | Self::MossyDolomite
+                | Self::MossyGranite
+                | Self::MossyLimestone
+                | Self::SandstoneCommon
+                | Self::SandstoneDune
+                | Self::SandstoneRed
+                | Self::SandstoneWhite
+                | Self::Slate
+                | Self::Obsidian
+                | Self::CaveCalcite
+                | Self::CaveKarst
+                | Self::FracturedCaveCalcite
+                | Self::FracturedCaveKarst
+                | Self::FracturedCaveObsidian
+                | Self::BoulderChert
+                | Self::BoulderFlint
+                | Self::BoulderQuartz
+        ) {
+            return 2;
+        }
+        // Priority 1: Wood (Logs, Planks, Woods - Sand, Grass, Snow, Stone all spill over Wood)
+        if self.is_wood_block() {
+            return 1;
+        }
+        0
     }
 
     #[inline]

@@ -85,6 +85,7 @@ pub fn mesh_shaped_voxels(
         };
         let top_tint = tint;
         let is_grass = voxel.is_grass_soil();
+        let is_turf = voxel.has_surface_turf();
         let bottom_tint = if is_grass {
             [1.0, 1.0, 1.0, tint[3]]
         } else {
@@ -380,6 +381,8 @@ pub fn mesh_shaped_voxels(
             }
             BlockShape::Slab => {
                 mesh_slab(
+                    world,
+                    voxel,
                     is_transparent_pass,
                     transparent_buffers,
                     opaque_buffers,
@@ -400,13 +403,17 @@ pub fn mesh_shaped_voxels(
                     bottom_tint,
                     side_tint,
                     &is_neighbor_solid,
-                    is_grass,
+                    is_turf,
                     textures,
                     world_voxel,
                 );
             }
             BlockShape::Stair => {
                 mesh_stair(
+                    world,
+                    world_voxel,
+                    voxel,
+                    textures,
                     buffers,
                     fx,
                     fy,
@@ -422,7 +429,7 @@ pub fn mesh_shaped_voxels(
                     bottom_tint,
                     side_tint,
                     &is_neighbor_solid,
-                    is_grass,
+                    is_turf,
                 );
             }
         }
@@ -449,6 +456,48 @@ pub fn push_shape_box(
     is_neighbor_solid: &impl Fn(IVec3) -> bool,
     align_side_uv_to_top: bool,
 ) {
+    push_shape_box_with_transition(
+        buffers,
+        fx,
+        fy,
+        fz,
+        local_min,
+        local_max,
+        internal_cull,
+        top_layer,
+        bottom_layer,
+        side_layer,
+        frame_count,
+        top_tint,
+        bottom_tint,
+        side_tint,
+        is_neighbor_solid,
+        align_side_uv_to_top,
+        None,
+        Voxel::Air,
+    );
+}
+
+pub fn push_shape_box_with_transition(
+    buffers: &mut MeshBuffers,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    local_min: Vec3,
+    local_max: Vec3,
+    internal_cull: [bool; 6],
+    top_layer: u16,
+    bottom_layer: u16,
+    side_layer: u16,
+    frame_count: f32,
+    top_tint: [f32; 4],
+    bottom_tint: [f32; 4],
+    side_tint: [f32; 4],
+    is_neighbor_solid: &impl Fn(IVec3) -> bool,
+    align_side_uv_to_top: bool,
+    top_transition: Option<(u16, u8, u32)>,
+    voxel: Voxel,
+) {
     let min_x = fx + local_min.x;
     let min_y = fy + local_min.y;
     let min_z = fz + local_min.z;
@@ -474,15 +523,16 @@ pub fn push_shape_box(
     if local_min.z <= 0.001 && is_neighbor_solid(IVec3::NEG_Z) {
         cull[5] = true;
     }
+    let eps = 0.0005;
     let (v_top, v_bot) = if align_side_uv_to_top && local_max.y <= 0.501 {
-        (0.0, (local_max.y - local_min.y).clamp(0.0, 1.0))
+        (eps, ((local_max.y - local_min.y).clamp(0.0, 1.0) - eps).max(eps))
     } else {
         (
-            (1.0 - local_max.y).clamp(0.0, 1.0),
-            (1.0 - local_min.y).clamp(0.0, 1.0),
+            ((1.0 - local_max.y).clamp(0.0, 1.0) + eps).min(1.0 - eps),
+            ((1.0 - local_min.y).clamp(0.0, 1.0) - eps).max(eps),
         )
     };
-    let side_uvs = [[0.0, v_bot], [0.0, v_top], [1.0, v_top], [1.0, v_bot]];
+    let side_uvs = [[eps, v_bot], [eps, v_top], [1.0 - eps, v_top], [1.0 - eps, v_bot]];
     // +X (East, idx 0)
     if !cull[0] {
         push_quad_face_uvs(
@@ -519,19 +569,55 @@ pub fn push_shape_box(
     }
     // +Y (Top, idx 2)
     if !cull[2] {
-        push_quad_face(
-            buffers,
-            [
-                [min_x, max_y, min_z],
-                [min_x, max_y, max_z],
-                [max_x, max_y, max_z],
-                [max_x, max_y, min_z],
-            ],
-            [0.0, 1.0, 0.0],
-            top_layer,
-            frame_count,
-            top_tint,
-        );
+        if let Some((overlay_layer, mask_index, packed_tint)) = top_transition {
+            if mask_index > 0 {
+                push_quad_face_mask(
+                    buffers,
+                    [
+                        [min_x, max_y, min_z],
+                        [min_x, max_y, max_z],
+                        [max_x, max_y, max_z],
+                        [max_x, max_y, min_z],
+                    ],
+                    [0.0, 1.0, 0.0],
+                    top_layer,
+                    frame_count,
+                    top_tint,
+                    overlay_layer,
+                    mask_index,
+                    packed_tint,
+                    voxel,
+                );
+            } else {
+                push_quad_face(
+                    buffers,
+                    [
+                        [min_x, max_y, min_z],
+                        [min_x, max_y, max_z],
+                        [max_x, max_y, max_z],
+                        [max_x, max_y, min_z],
+                    ],
+                    [0.0, 1.0, 0.0],
+                    top_layer,
+                    frame_count,
+                    top_tint,
+                );
+            }
+        } else {
+            push_quad_face(
+                buffers,
+                [
+                    [min_x, max_y, min_z],
+                    [min_x, max_y, max_z],
+                    [max_x, max_y, max_z],
+                    [max_x, max_y, min_z],
+                ],
+                [0.0, 1.0, 0.0],
+                top_layer,
+                frame_count,
+                top_tint,
+            );
+        }
     }
     // -Y (Bottom, idx 3)
     if !cull[3] {
@@ -585,6 +671,61 @@ pub fn push_shape_box(
     }
 }
 
+pub fn push_quad_face_mask(
+    buffers: &mut MeshBuffers,
+    vertices: [[f32; 3]; 4],
+    normal: [f32; 3],
+    texture_layer: u16,
+    frame_count: f32,
+    tint_color: [f32; 4],
+    overlay_layer: u16,
+    mask_index: u8,
+    packed_tint: u32,
+    voxel: Voxel,
+) {
+    let eps = 0.0005;
+    let uvs = if normal[1].abs() > 0.5 {
+        [[eps, eps], [eps, 1.0 - eps], [1.0 - eps, 1.0 - eps], [1.0 - eps, eps]]
+    } else {
+        [[eps, 1.0 - eps], [eps, eps], [1.0 - eps, eps], [1.0 - eps, 1.0 - eps]]
+    };
+
+    let (tint, base_tinted) = if packed_tint != 0 {
+        (packed_tint, 0u32)
+    } else if voxel.is_grass_soil() {
+        (crate::meshing::greedy::pack_tint7(tint_color), 1u32)
+    } else {
+        (0u32, 0u32)
+    };
+    let packed = (tint & 0x1F_FFFF) | (base_tinted << 21);
+    let mask_alpha = -(1.0 + packed as f32);
+
+    let base_index = buffers.positions.len() as u32;
+    for v in &vertices {
+        buffers
+            .positions
+            .push([v[0] * VOXEL_SIZE, v[1] * VOXEL_SIZE, v[2] * VOXEL_SIZE]);
+        buffers.normals.push(normal);
+        buffers.colors.push([1.0, 1.0, 1.0, mask_alpha]);
+        let uv_b_x = texture_layer as f32 + (overlay_layer as f32) * 2048.0;
+        let uv_b_y = if mask_index > 0 {
+            (mask_index as f32) * 16.0 + frame_count
+        } else {
+            frame_count
+        };
+        buffers.uv_bs.push([uv_b_x, uv_b_y]);
+    }
+    buffers.uvs.extend_from_slice(&uvs);
+    buffers.indices.extend_from_slice(&[
+        base_index,
+        base_index + 1,
+        base_index + 2,
+        base_index,
+        base_index + 2,
+        base_index + 3,
+    ]);
+}
+
 pub fn push_quad_face(
     buffers: &mut MeshBuffers,
     vertices: [[f32; 3]; 4],
@@ -593,10 +734,11 @@ pub fn push_quad_face(
     frame_count: f32,
     tint_color: [f32; 4],
 ) {
+    let eps = 0.0005;
     let uvs = if normal[1].abs() > 0.5 {
-        [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0], [1.0, 0.0]]
+        [[eps, eps], [eps, 1.0 - eps], [1.0 - eps, 1.0 - eps], [1.0 - eps, eps]]
     } else {
-        [[0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0]]
+        [[eps, 1.0 - eps], [eps, eps], [1.0 - eps, eps], [1.0 - eps, 1.0 - eps]]
     };
     push_quad_face_uvs(buffers, vertices, normal, texture_layer, frame_count, tint_color, uvs);
 }

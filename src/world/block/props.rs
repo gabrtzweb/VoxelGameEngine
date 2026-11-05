@@ -252,6 +252,11 @@ impl Voxel {
     #[inline(always)]
     pub const fn emission_level(self) -> u8 {
         match self {
+            Self::ElementFire => 15,
+            Self::TreeCharredLog
+            | Self::TreeCharredBark
+            | Self::TreeCharredPlanks => 6,
+
             Self::EmitLampWarm
             | Self::EmitLampBlue
             | Self::EmitLampGreen
@@ -403,7 +408,8 @@ impl Voxel {
         self.is_flora_billboard()
             || matches!(
                 self,
-                Self::CrystalAmethystCluster
+                Self::ElementFire
+                |                Self::CrystalAmethystCluster
                 | Self::CrystalAmethystGlinted
                 | Self::CrystalAquamarineCluster
                 | Self::CrystalAquamarineGlinted
@@ -486,7 +492,11 @@ impl Voxel {
     pub const fn is_light_const(self) -> bool {
         matches!(
             self,
-            Self::LiquidLava
+            Self::ElementFire
+                | Self::TreeCharredLog
+                | Self::TreeCharredBark
+                | Self::TreeCharredPlanks
+                |             Self::LiquidLava
                 | Self::LiquidCoreMagma
                 | Self::LiquidMolten
                 | Self::Magma
