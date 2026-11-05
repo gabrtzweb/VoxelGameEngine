@@ -655,10 +655,15 @@ pub fn place_voxel(
         voxel
     };
 
+    let def_shape = final_voxel.default_shape();
     world.set_voxel(world_voxel, final_voxel);
     world.set_fluid_level(world_voxel, 0);
+    world.set_shape(world_voxel, def_shape, 0);
+    world.set_extra_slab(world_voxel, None);
     modifications.record(world_voxel, final_voxel);
     modifications.record_fluid_level(world_voxel, 0);
+    modifications.record_shape(world_voxel, def_shape, 0);
+    modifications.record_extra_slab(world_voxel, None);
 
     true
 }

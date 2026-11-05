@@ -462,30 +462,19 @@ impl Voxel {
     #[inline(always)]
     pub const fn is_transparent_const(self) -> bool {
         matches!(
-                self,
-                Self::WaterOccupied
-                    | Self::LiquidSpringWater
-                    | Self::LiquidWater
-                    | Self::FrostBlueIce
-                    | Self::FrostBlueIceCracked
-                    | Self::FrostIce
-                    | Self::FrostIceBlack
-                    | Self::FrostIceBlackFragile
-                    | Self::FrostIceFragile
-                    | Self::GemDiamondRough
-                    | Self::GemEmeraldRough
-                    | Self::GemRubyRough
-                    | Self::GemSapphireRough
-                    | Self::GemTopazRough
-                    | Self::CrystalAmethystBlock
-                    | Self::CrystalAquamarineBlock
-                    | Self::CrystalCitrineBlock
-                    | Self::CrystalFluoriteBlock
-                    | Self::CrystalPinkSaltBlock
-                    | Self::CrystalSeleniteBlock
-                    | Self::JellyBlock
-                    | Self::SlimeBlock
-            )
+            self,
+            Self::WaterOccupied
+                | Self::LiquidSpringWater
+                | Self::LiquidWater
+                | Self::FrostBlueIce
+                | Self::FrostBlueIceCracked
+                | Self::FrostIce
+                | Self::FrostIceBlack
+                | Self::FrostIceBlackFragile
+                | Self::FrostIceFragile
+                | Self::JellyBlock
+                | Self::SlimeBlock
+        )
     }
 
     #[inline(always)]
