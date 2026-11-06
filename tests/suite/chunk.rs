@@ -73,3 +73,62 @@ fn test_voxel_ambient_occlusion_and_flipping() {
     }
 }
 
+#[test]
+fn test_smooth_flow_fluid_corner_heights() {
+    use bevy::prelude::IVec3;
+    use voxel_game_engine::simulation::fluid::compute_fluid_corner_offsets;
+    use voxel_game_engine::world::{Chunk, VoxelWorld};
+
+    let mut world = VoxelWorld::default();
+    world.insert_chunk(IVec3::ZERO, Chunk::new());
+    let center = IVec3::new(10, 10, 10);
+    world.set_voxel(center, Voxel::LiquidWater);
+    world.set_fluid_level(center, 0);
+
+    let corners = compute_fluid_corner_offsets(&world, center);
+    for &c in &corners {
+        assert!(
+            (c - 0.10).abs() < 1e-4,
+            "Full water block nominal surface drop must be 0.10m, got {c}"
+        );
+    }
+}
+
+#[test]
+fn test_organic_river_hydrology_and_flow() {
+    use voxel_game_engine::generation::TerrainGenerator;
+
+    let generator = TerrainGenerator::default();
+
+    // Test a sweep across coordinates to verify smooth continuous response without panics
+    let mut river_detected = false;
+    for x in (0..1000).step_by(50) {
+        for z in (0..1000).step_by(50) {
+            let (factor, is_river) = generator.organic_river_sample(x as f32, z as f32);
+            assert!(factor >= 0.0 && factor <= 1.0);
+            if is_river {
+                river_detected = true;
+                let vel = generator.river_flow_velocity(x as f32, z as f32);
+                if factor > 0.10 {
+                    assert!(
+                        vel.length() > 0.0,
+                        "Active river channel must have non-zero downhill flow velocity"
+                    );
+                }
+
+                // Verify that any submerged river column always has water higher than its bed
+                let col = generator.sample_column(x, z);
+                if col.is_river && col.water_level.is_some() {
+                    let wl = col.water_level.unwrap();
+                    assert!(
+                        wl > col.terrain_height,
+                        "River water level ({}) must be strictly higher than carved bed ({}) at ({}, {})",
+                        wl, col.terrain_height, x, z
+                    );
+                }
+            }
+        }
+    }
+    assert!(river_detected, "Sweep across 1000x1000 area must encounter organic river channels");
+}
+

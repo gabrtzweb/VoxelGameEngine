@@ -424,7 +424,8 @@ fn fragment(
 @if(DEPTH_PREPASS) {
         let floor_ndc = prepass_utils::prepass_depth(vertex_output.position, 0u);
         if (floor_ndc <= 0.00001) {
-            depth_dist = 24.0;
+            depth_dist = 1.2;
+            y_pos_dif = -1.0;
         } else {
             let floor_view_z = depth_ndc_to_view_z(floor_ndc);
             let water_view_z = position_world_to_view(vertex_output.world_position.xyz).z;

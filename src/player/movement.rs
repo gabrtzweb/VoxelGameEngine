@@ -324,6 +324,7 @@ pub fn creative_movement(
             is_fast,
             water_submersion,
             in_water,
+            env_status.water_flow_velocity,
         );
     }
 
@@ -500,6 +501,7 @@ fn grounded_or_water_movement(
     is_fast: bool,
     water_submersion: f32,
     in_water: bool,
+    water_flow_velocity: Vec3,
 ) {
     let mut forward = Vec3::new(camera_forward.x, 0.0, camera_forward.z);
 
@@ -568,6 +570,17 @@ fn grounded_or_water_movement(
         let (swim_up, swim_down) =
             input_dirs.map_or((false, false), |(_, _, _, _, up, down)| (up, down));
         update_water_vertical_velocity(swim_up, swim_down, delta_seconds, motion, water_submersion);
+        if water_flow_velocity.length_squared() > 0.001 {
+            if direction.length_squared() < 0.001 {
+                // Standing still in water: stream current carries player with full velocity
+                motion.velocity.x = water_flow_velocity.x;
+                motion.velocity.z = water_flow_velocity.z;
+            } else {
+                // Swimming in water: current adds to player swimming direction
+                motion.velocity.x += water_flow_velocity.x * 0.85;
+                motion.velocity.z += water_flow_velocity.z * 0.85;
+            }
+        }
     } else {
         motion.velocity.y -= GRAVITY * delta_seconds;
 

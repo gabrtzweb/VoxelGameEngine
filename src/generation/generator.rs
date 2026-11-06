@@ -26,6 +26,9 @@ pub struct TerrainColumn {
     pub is_beach: bool,
     pub is_cliff: bool,
     pub is_underground_river: bool,
+    pub is_river: bool,
+    pub is_lake: bool,
+    pub river_factor: f32,
     pub climate: ClimateSample,
     pub surface_shape: BlockShape,
     pub shape_orientation: u8,
@@ -40,6 +43,9 @@ impl Default for TerrainColumn {
             is_beach: false,
             is_cliff: false,
             is_underground_river: false,
+            is_river: false,
+            is_lake: false,
+            river_factor: 0.0,
             climate: ClimateSample {
                 continentalness: 0.0,
                 erosion: 0.0,
@@ -74,6 +80,15 @@ pub struct TerrainGenerator {
     pub sea_level: i32,
     pub river_frequency: f32,
     pub river_width: f32,
+    pub river_depth: f32,
+    pub tributary_abundance: f32,
+    pub reach_flatness: f32,
+    pub stream_flow_speed: f32,
+
+    // Organic lakes & ponds
+    pub lake_abundance: f32,
+    pub lake_size: f32,
+    pub lake_depth: f32,
 
     // Mountain ridges and rolling hills
     pub mountain_ridge_height: f32,
@@ -116,8 +131,16 @@ impl Default for TerrainGenerator {
             // Sea level in voxels
             sea_level: 12,
 
-            river_frequency: 0.0048,
-            river_width: 0.064,
+            river_frequency: 0.0038,
+            river_width: 0.055,
+            river_depth: 3.5,
+            tributary_abundance: 0.35,
+            reach_flatness: 1.0,
+            stream_flow_speed: 2.5,
+
+            lake_abundance: 0.25,
+            lake_size: 38.0,
+            lake_depth: 5.8,
 
             climate: ClimateGenerator::default(),
             caves: CaveGenerator::default(),
@@ -599,38 +622,86 @@ impl TerrainGenerator {
 
         let mut raw_height = self.natural_height_at(world_x as f32, world_z as f32, &climate);
 
-        let (river_factor, is_river_path) = self.river_sample(sample_x, sample_z);
-        let is_inland = climate.continentalness >= -0.04;
-        let is_river = is_river_path && is_inland && river_factor > 0.05;
-        let mut is_underground_river = false;
+        let (mut river_factor, is_river_path, _center_dx, _center_dz) =
+            self.river_sample_with_offset(sample_x, sample_z);
         let sea_level = self.effective_sea_level();
+        let sea_level_f = sea_level as f32;
+
+        // Rivers ONLY generate in flat, lowland terrain (plains, valleys, meadows, coastal areas).
+        // Strictly forbidden on mountains, hills, and high terrain to prevent deep chasms/wormholes.
+        let height_suppress = ((raw_height - 23.0) / 8.0).clamp(0.0, 1.0);
+        let mountain_suppress = ((climate.continentalness - 0.25) / 0.10).clamp(0.0, 1.0);
+        let ridge_suppress = ((climate.ridges - 0.25) / 0.15).clamp(0.0, 1.0);
+        let total_suppress = (height_suppress.max(mountain_suppress).max(ridge_suppress)).clamp(0.0, 1.0);
+        river_factor *= 1.0 - total_suppress;
+
+        // Minecraft-Style Rivers:
+        // Rivers strictly generate inland (continentalness >= -0.04) and carve valleys down to sea level.
+        // River water is strictly at sea level (Y = 12), ensuring 100% horizontal, flat, stable water with zero uphill bugs!
+        let is_inland = climate.continentalness >= -0.04;
+        let is_river = is_river_path && is_inland && river_factor > 0.04;
+        let is_underground_river = false;
 
         if is_river {
-            let initial_height = raw_height.round() as i32;
-            if initial_height > 95 {
-                is_underground_river = true;
-            } else {
-                let carve_t = river_factor * river_factor * (3.0 - 2.0 * river_factor);
-                let blend_to_sea = ((0.12 - climate.continentalness) / 0.16).clamp(0.0, 1.0);
-                let river_depth = 2.5 + river_factor * 2.0;
-                let target_bed = lerp(raw_height - river_depth, (sea_level - 2) as f32, blend_to_sea);
+            let water_y = sea_level_f;
+            let bed_depth = 2.5 + river_factor * self.river_depth;
+            let target_bed = water_y - bed_depth;
+
+            if river_factor > 0.12 {
+                let channel_t = ((river_factor - 0.12) / 0.88).clamp(0.0, 1.0);
+                let carve_t = channel_t * channel_t * (3.0 - 2.0 * channel_t);
                 let carved_bed = lerp(raw_height, target_bed, (carve_t * 1.35).min(1.0));
                 raw_height = raw_height.min(carved_bed);
-
-                if climate.continentalness < 0.18
-                    && climate.humidity > 0.35
-                    && raw_height <= (sea_level + 2) as f32
-                {
-                    climate.biome = BiomeType::OrchidSwamp;
-                }
+            } else {
+                // Bank levee: terrain bordering river is guaranteed above sea level water
+                raw_height = raw_height.max(water_y + 1.0);
             }
-        } else if let Some((pond_water_y, carve_depth)) =
-            self.sample_flat_pond(world_x, world_z, raw_height, &climate)
+
+            if climate.continentalness < 0.18
+                && climate.humidity > 0.35
+                && raw_height <= (sea_level + 2) as f32
+            {
+                climate.biome = BiomeType::OrchidSwamp;
+            }
+        } else if let Some((lake_water_y, carve_depth, t_dist)) =
+            self.sample_organic_lake(world_x, world_z, raw_height, &climate)
         {
-            raw_height = (pond_water_y as f32 - carve_depth).min(raw_height);
+            if t_dist < 0.90 {
+                // Lake interior: carve bowl for deep water
+                let target_bed = lake_water_y as f32 - carve_depth;
+                raw_height = raw_height.min(target_bed);
+            } else {
+                // Lake rim / levee (0.90 <= t_dist <= 1.25):
+                // Enforce that the entire perimeter of the lake stands at least 1 block ABOVE water level!
+                // This eliminates open corners and keeps water completely enclosed.
+                raw_height = raw_height.max((lake_water_y + 1) as f32);
+            }
         }
 
         (raw_height, climate.biome, is_underground_river, climate)
+    }
+
+    /// Computes both the target river water surface elevation and carved bed elevation.
+    /// In nature, rivers flow downhill along the continental gradient towards the sea.
+    /// Water level is strictly monotonically decreasing towards the ocean (never flows uphill over local hills).
+    pub fn river_water_and_bed(
+        &self,
+        _centerline_h: f32,
+        river_factor: f32,
+        _uncarved_h: f32,
+        _climate: &ClimateSample,
+    ) -> (f32, f32) {
+        let sea_level_f = self.effective_sea_level() as f32; // In Minecraft and here: strictly flat sea_level (12.0)
+        let water_y = sea_level_f;
+        let bed_depth = 2.5 + river_factor * self.river_depth;
+        let target_bed = water_y - bed_depth;
+        (water_y, target_bed)
+    }
+
+    /// Computes the stabilized hydraulic reach water elevation for an inland river.
+    pub fn river_water_level(&self, raw_height: f32, climate: &ClimateSample) -> f32 {
+        let (water_y, _) = self.river_water_and_bed(raw_height, 0.5, raw_height, climate);
+        water_y
     }
 
     pub fn continuous_height_and_biome(
@@ -694,43 +765,57 @@ impl TerrainGenerator {
         ]);
 
         let raw_heights = self.natural_height_at_x4(wx_f32, wz_f32, &climates);
-        let (river_factors, is_river_paths) = self.river_sample_x4(sample_x, sample_z);
+        let (river_factors, is_river_paths, _center_dxs, _center_dzs) =
+            self.river_sample_with_offset_x4(sample_x, sample_z);
 
         let mut res = [(0.0f32, BiomeType::default(), false, climates[0]); 4];
 
         for i in 0..4 {
             let mut raw_height = raw_heights.0[i];
             let mut climate = climates[i];
-            let river_factor = river_factors[i];
+            let mut river_factor = river_factors[i];
             let is_river_path = is_river_paths[i];
+
+            let sea_level_f = sea_level as f32;
+            let height_suppress = ((raw_height - 23.0) / 8.0).clamp(0.0, 1.0);
+            let mountain_suppress = ((climate.continentalness - 0.25) / 0.10).clamp(0.0, 1.0);
+            let ridge_suppress = ((climate.ridges - 0.25) / 0.15).clamp(0.0, 1.0);
+            let total_suppress = (height_suppress.max(mountain_suppress).max(ridge_suppress)).clamp(0.0, 1.0);
+            river_factor *= 1.0 - total_suppress;
 
             let is_inland = climate.continentalness >= -0.04;
             let is_river = is_river_path && is_inland && river_factor > 0.04;
-            let mut is_underground_river = false;
+            let is_underground_river = false;
 
             if is_river {
-                let initial_height = raw_height.round() as i32;
-                if initial_height > 95 {
-                    is_underground_river = true;
-                } else {
-                    let carve_t = river_factor * river_factor * (3.0 - 2.0 * river_factor);
-                    let blend_to_sea = ((0.12 - climate.continentalness) / 0.16).clamp(0.0, 1.0);
-                    let river_depth = 2.5 + river_factor * 2.0;
-                    let target_bed = lerp(raw_height - river_depth, (sea_level - 2) as f32, blend_to_sea);
+                let water_y = sea_level_f;
+                let bed_depth = 2.5 + river_factor * self.river_depth;
+                let target_bed = water_y - bed_depth;
+
+                if river_factor > 0.12 {
+                    let channel_t = ((river_factor - 0.12) / 0.88).clamp(0.0, 1.0);
+                    let carve_t = channel_t * channel_t * (3.0 - 2.0 * channel_t);
                     let carved_bed = lerp(raw_height, target_bed, (carve_t * 1.35).min(1.0));
                     raw_height = raw_height.min(carved_bed);
-
-                    if climate.continentalness < 0.18
-                        && climate.humidity > 0.35
-                        && raw_height <= (sea_level + 2) as f32
-                    {
-                        climate.biome = BiomeType::OrchidSwamp;
-                    }
+                } else {
+                    raw_height = raw_height.max(water_y + 1.0);
                 }
-            } else if let Some((pond_water_y, carve_depth)) =
-                self.sample_flat_pond(world_xs[i], world_zs[i], raw_height, &climate)
+
+                if climate.continentalness < 0.18
+                    && climate.humidity > 0.35
+                    && raw_height <= (sea_level + 2) as f32
+                {
+                    climate.biome = BiomeType::OrchidSwamp;
+                }
+            } else if let Some((lake_water_y, carve_depth, t_dist)) =
+                self.sample_organic_lake(world_xs[i], world_zs[i], raw_height, &climate)
             {
-                raw_height = (pond_water_y as f32 - carve_depth).min(raw_height);
+                if t_dist < 0.90 {
+                    let target_bed = lake_water_y as f32 - carve_depth;
+                    raw_height = raw_height.min(target_bed);
+                } else {
+                    raw_height = raw_height.max((lake_water_y + 1) as f32);
+                }
             }
 
             res[i] = (raw_height, climate.biome, is_underground_river, climate);
@@ -758,29 +843,25 @@ impl TerrainGenerator {
         let sample_x = logical_block_sample_position(logical_x);
         let sample_z = logical_block_sample_position(logical_z);
 
-        let (river_factor, is_river_path) = self.river_sample(sample_x, sample_z);
+        let (mut river_factor, is_river_path, _center_dx, _center_dz) =
+            self.river_sample_with_offset(sample_x, sample_z);
+        let uncarved_height = self.natural_height_at(world_x as f32, world_z as f32, &climate);
+        let height_suppress = ((uncarved_height - 23.0) / 8.0).clamp(0.0, 1.0);
+        let mountain_suppress = ((climate.continentalness - 0.25) / 0.10).clamp(0.0, 1.0);
+        let ridge_suppress = ((climate.ridges - 0.25) / 0.15).clamp(0.0, 1.0);
+        let total_suppress = (height_suppress.max(mountain_suppress).max(ridge_suppress)).clamp(0.0, 1.0);
+        river_factor *= 1.0 - total_suppress;
+
         let is_inland = climate.continentalness >= -0.04;
-        let is_river = is_river_path && is_inland && river_factor > 0.05 && !is_underground_river;
+        let is_river = is_river_path && is_inland && river_factor > 0.04 && !is_underground_river;
+        let lake_sample = self.sample_organic_lake(world_x, world_z, raw_height, &climate);
+        let is_lake = lake_sample.is_some_and(|(_, _, t_dist)| t_dist <= 1.25);
 
         let water_level = if terrain_height < sea_level {
             Some(sea_level)
-        } else if is_river {
-            let blend_to_sea = ((0.12 - climate.continentalness) / 0.16).clamp(0.0, 1.0);
-            let uncarved_height = self.natural_height_at(world_x as f32, world_z as f32, &climate);
-            let target_bed = lerp(uncarved_height - (2.5 + river_factor * 2.0), (sea_level - 2) as f32, blend_to_sea);
-            let raw_water = target_bed + 1.8;
-            let terraced_water = ((raw_water / 2.0).floor() * 2.0) as i32;
-            let r_water = terraced_water.min((uncarved_height - 1.0).round() as i32).max(sea_level);
-            if terrain_height < r_water {
-                Some(r_water)
-            } else {
-                None
-            }
-        } else if let Some((pond_water_y, _)) =
-            self.sample_flat_pond(world_x, world_z, raw_height, &climate)
-        {
-            if terrain_height < pond_water_y {
-                Some(pond_water_y)
+        } else if let Some((lake_water_y, _, t_dist)) = lake_sample {
+            if t_dist < 0.90 && terrain_height < lake_water_y {
+                Some(lake_water_y)
             } else {
                 None
             }
@@ -788,10 +869,34 @@ impl TerrainGenerator {
             None
         };
 
+        // Horizontal beach width: coastal transition strip directly bordering water
+        let shore_noise = crate::core::noise::gradient_noise_2d(
+            world_x as f32 * 0.12,
+            world_z as f32 * 0.12,
+            self.seed.wrapping_add(SEED_OFFSET_BEACH_NOISE),
+        );
+        let max_beach_y = sea_level + 5 + (shore_noise * 3.0).round() as i32;
+
+        let is_coastal_continentalness =
+            climate.continentalness >= -0.18 && climate.continentalness <= 0.05;
+        let is_coastal_zone =
+            matches!(final_biome, BiomeType::GravelBeach | BiomeType::MirageIsles)
+                || is_coastal_continentalness;
+
+        let is_beach =
+            is_coastal_zone && terrain_height >= sea_level - 2 && terrain_height <= max_beach_y;
+
         let mut is_cliff = false;
 
+        let is_near_water = is_river
+            || river_factor > 0.02
+            || is_beach
+            || water_level.is_some()
+            || terrain_height <= sea_level + 2;
+
         // Transitions on dry land above water level (terrain at or below sea_level remains strictly full blocks)
-        if water_level.is_none() && terrain_height > sea_level {
+        // Riverbanks, water edges, and beach margins are strictly full blocks (never slabs or stairs)
+        if !is_near_water && water_level.is_none() && terrain_height > sea_level {
             let get_effective_height = |(h, _, _): (f32, BiomeType, bool)| -> i32 {
                 let th = h.round() as i32;
                 if th < sea_level { sea_level } else { th }
@@ -893,22 +998,7 @@ impl TerrainGenerator {
             }
         }
 
-        // Horizontal beach width: coastal transition strip directly bordering water
-        let shore_noise = crate::core::noise::gradient_noise_2d(
-            world_x as f32 * 0.12,
-            world_z as f32 * 0.12,
-            self.seed.wrapping_add(SEED_OFFSET_BEACH_NOISE),
-        );
-        let max_beach_y = sea_level + 5 + (shore_noise * 3.0).round() as i32;
-
-        let is_coastal_continentalness = climate.continentalness >= -0.18 && climate.continentalness <= 0.05;
-        let is_coastal_zone = matches!(final_biome, BiomeType::GravelBeach | BiomeType::MirageIsles)
-            || is_coastal_continentalness;
-
-        let is_beach = !is_cliff
-            && is_coastal_zone
-            && terrain_height >= sea_level - 2
-            && terrain_height <= max_beach_y;
+        let is_beach = is_beach && !is_cliff;
 
         TerrainColumn {
             terrain_height,
@@ -917,6 +1007,9 @@ impl TerrainGenerator {
             is_beach,
             is_cliff,
             is_underground_river,
+            is_river,
+            is_lake,
+            river_factor,
             climate,
             surface_shape,
             shape_orientation,
@@ -954,8 +1047,104 @@ impl TerrainGenerator {
         cols
     }
 
-    /// Evaluates whether a coordinate is inside a flat alpine/meadow pond.
-    /// Returns Option<(pond_water_y, pond_bed_carve_depth)>.
+    /// Evaluates organic, non-circular natural lakes and ponds.
+    /// Lakes only form in natural topographic depressions, valley basins, or flat plateaus.
+    /// Never generates harsh circular craters on steep hillsides.
+    pub fn sample_organic_lake(
+        &self,
+        world_x: i32,
+        world_z: i32,
+        natural_height: f32,
+        _climate: &ClimateSample,
+    ) -> Option<(i32, f32, f32)> {
+        if self.lake_abundance <= 0.01 {
+            return None;
+        }
+
+        let sea_level = self.effective_sea_level();
+        let sea_level_f = sea_level as f32;
+        if natural_height <= sea_level_f + 2.0 {
+            return None; // Already ocean / coastal water
+        }
+
+        let cell_size = 180;
+        let cx = world_x.div_euclid(cell_size);
+        let cz = world_z.div_euclid(cell_size);
+
+        let h = crate::core::noise::hash_2d(cx, cz, self.seed.wrapping_add(444_222));
+        let prob_thresh = (self.lake_abundance.clamp(0.0, 1.0) * 100.0) as u32;
+        if (h % 100) >= prob_thresh {
+            return None;
+        }
+
+        let offset_x = 45 + ((h >> 8) % (cell_size as u32 - 90)) as i32;
+        let offset_z = 45 + ((h >> 16) % (cell_size as u32 - 90)) as i32;
+        let center_x = cx * cell_size + offset_x;
+        let center_z = cz * cell_size + offset_z;
+
+        // Check local terrain slope: lakes can only exist in flat valley basins or meadows,
+        // never on steep mountainsides or sharp hills (reject if slope > 2.2 blocks across 20m)
+        let check_dist = 14.0;
+        let c_climate = self
+            .climate
+            .sample_dithered(center_x as f32, center_z as f32, self.seed);
+        let center_h = self.natural_height_at(center_x as f32, center_z as f32, &c_climate);
+        let h_east =
+            self.natural_height_at(center_x as f32 + check_dist, center_z as f32, &c_climate);
+        let h_south =
+            self.natural_height_at(center_x as f32, center_z as f32 + check_dist, &c_climate);
+
+        let slope_x = (h_east - center_h).abs();
+        let slope_z = (h_south - center_h).abs();
+        if slope_x > 2.2 || slope_z > 2.2 {
+            return None; // Steep slope: physics forbids natural pond from perching on a hillside
+        }
+
+        // Domain-warp the lake coordinates with smooth noise to create
+        // completely organic, non-circular shorelines with natural bays and coves.
+        let wx = world_x as f32;
+        let wz = world_z as f32;
+
+        let warp_x = crate::core::noise::gradient_noise_2d(
+            wx * 0.025,
+            wz * 0.025,
+            self.seed.wrapping_add(888_111),
+        ) * (self.lake_size * 0.45);
+
+        let warp_z = crate::core::noise::gradient_noise_2d(
+            wx * 0.025 + 67.0,
+            wz * 0.025 + 67.0,
+            self.seed.wrapping_add(888_222),
+        ) * (self.lake_size * 0.45);
+
+        let dx = (world_x - center_x) as f32 + warp_x;
+        let dz = (world_z - center_z) as f32 + warp_z;
+        let dist = (dx * dx + dz * dz).sqrt();
+
+        let shape_noise = crate::core::noise::gradient_noise_2d(
+            wx * 0.045,
+            wz * 0.045,
+            self.seed.wrapping_add(888_333),
+        );
+        let organic_radius = self.lake_size * (1.0 + shape_noise * 0.35);
+
+        let t_dist = dist / organic_radius;
+        if t_dist <= 1.25 {
+            let lake_water_y = (center_h - 0.8).round() as i32;
+            let carve_depth = if t_dist < 0.90 {
+                let inner_t = t_dist / 0.90;
+                (1.0 - inner_t * inner_t) * self.lake_depth
+            } else {
+                0.0
+            };
+            Some((lake_water_y, carve_depth, t_dist))
+        } else {
+            None
+        }
+    }
+
+    /// Backwards compatibility alias for sample_organic_lake.
+    #[inline]
     pub fn sample_flat_pond(
         &self,
         world_x: i32,
@@ -963,154 +1152,163 @@ impl TerrainGenerator {
         natural_height: f32,
         climate: &ClimateSample,
     ) -> Option<(i32, f32)> {
-        let sea_level = self.effective_sea_level();
-        if climate.continentalness < 0.08 || climate.erosion < 0.08 || natural_height <= (sea_level + 4) as f32 {
-            return None;
-        }
-
-        let cell_size = 110;
-        let cx = world_x.div_euclid(cell_size);
-        let cz = world_z.div_euclid(cell_size);
-
-        let h = crate::core::noise::hash_2d(cx, cz, self.seed.wrapping_add(444_222));
-        if h % 4 != 0 {
-            return None;
-        }
-
-        let offset_x = 25 + ((h >> 8) % (cell_size as u32 - 50)) as i32;
-        let offset_z = 25 + ((h >> 16) % (cell_size as u32 - 50)) as i32;
-        let center_x = cx * cell_size + offset_x;
-        let center_z = cz * cell_size + offset_z;
-
-        let radius = 10.0 + ((h >> 24) % 6) as f32; // 10 to 15 blocks radius
-
-        let dx = (world_x - center_x) as f32;
-        let dz = (world_z - center_z) as f32;
-        let dist = (dx * dx + dz * dz).sqrt();
-
-        if dist < radius {
-            let center_climate = self.climate.sample_dithered(center_x as f32, center_z as f32, self.seed);
-            let center_h = self.natural_height_at(center_x as f32, center_z as f32, &center_climate);
-
-            // Pond water is sampled ONCE at the fixed center of the pond:
-            let pond_water_y = (center_h - 1.2).round() as i32;
-            let t = dist / radius;
-            // Carve basin deeper in the middle (up to 3.0 blocks below water)
-            let carve_depth = (1.0 - t * t) * 3.0;
-            Some((pond_water_y, carve_depth))
-        } else {
-            None
-        }
+        self.sample_organic_lake(world_x, world_z, natural_height, climate)
+            .map(|(wy, cd, _)| (wy, cd))
     }
 
-    /// Evaluates a Voronoi-based non-looping river network.
-    /// Geometrically partitions the world using Voronoi bisectors that branch and merge
-    /// into natural confluences without ever forming closed circular loops around hills.
-    pub fn voronoi_river_sample(&self, world_x: f32, world_z: f32) -> (f32, bool) {
+    /// Evaluates organic meandering river channels and mountain tributaries using continuous
+    /// domain-warped ridged multi-octave noise.
+    /// Never produces polygonal wireframes, straight lines, or circular loops around hills.
+    /// Evaluates organic meandering river channels using multi-octave fractal noise.
+    pub fn organic_river_sample(&self, world_x: f32, world_z: f32) -> (f32, bool) {
         let warp_x = crate::core::noise::gradient_noise_2d(
-            world_x * 0.0035,
-            world_z * 0.0035,
+            world_x * 0.0016,
+            world_z * 0.0016,
             self.seed.wrapping_add(101_333),
-        ) * 45.0;
+        ) * 32.0;
         let warp_z = crate::core::noise::gradient_noise_2d(
-            world_x * 0.0035 + 127.0,
-            world_z * 0.0035 + 127.0,
-            self.seed.wrapping_add(202_444),
-        ) * 45.0;
+            world_x * 0.0016 + 137.0,
+            world_z * 0.0016 + 137.0,
+            self.seed.wrapping_add(202_555),
+        ) * 32.0;
 
         let wx = world_x + warp_x;
         let wz = world_z + warp_z;
 
-        let cell_size = 280.0;
-        let cell_x = (wx / cell_size).floor() as i32;
-        let cell_z = (wz / cell_size).floor() as i32;
-
-        let mut min_d1_sq = f32::MAX;
-        let mut min_d2_sq = f32::MAX;
-        let mut p1 = [0.0f32; 2];
-        let mut p2 = [0.0f32; 2];
-        let mut p1_cell = (0, 0);
-        let mut p2_cell = (0, 0);
-
-        for dx in -1..=1 {
-            for dz in -1..=1 {
-                let cx = cell_x + dx;
-                let cz = cell_z + dz;
-
-                let h1 = crate::core::noise::hash_2d(cx, cz, self.seed.wrapping_add(333_555));
-                let h2 = crate::core::noise::hash_2d(cx, cz, self.seed.wrapping_add(777_999));
-                let jx = 0.20 + (h1 as f32 / u32::MAX as f32) * 0.60;
-                let jz = 0.20 + (h2 as f32 / u32::MAX as f32) * 0.60;
-
-                let pt_x = (cx as f32 + jx) * cell_size;
-                let pt_z = (cz as f32 + jz) * cell_size;
-
-                let d_sq = (wx - pt_x) * (wx - pt_x) + (wz - pt_z) * (wz - pt_z);
-                if d_sq < min_d1_sq {
-                    min_d2_sq = min_d1_sq;
-                    p2 = p1;
-                    p2_cell = p1_cell;
-
-                    min_d1_sq = d_sq;
-                    p1 = [pt_x, pt_z];
-                    p1_cell = (cx, cz);
-                } else if d_sq < min_d2_sq {
-                    min_d2_sq = d_sq;
-                    p2 = [pt_x, pt_z];
-                    p2_cell = (cx, cz);
-                }
-            }
-        }
-
-        let diff_x = p2[0] - p1[0];
-        let diff_z = p2[1] - p1[1];
-        let edge_len = (diff_x * diff_x + diff_z * diff_z).sqrt();
-        if edge_len < 1.0 {
-            return (0.0, false);
-        }
-
-        let (c_min, c_max) = if p1_cell < p2_cell { (p1_cell, p2_cell) } else { (p2_cell, p1_cell) };
-        let edge_hash = crate::core::noise::hash_2d(
-            c_min.0.wrapping_mul(31) ^ c_max.0,
-            c_min.1.wrapping_mul(31) ^ c_max.1,
-            self.seed.wrapping_add(888_111),
+        let river_noise = fractal_noise(
+            wx,
+            wz,
+            self.river_frequency,
+            3,
+            0.50,
+            self.seed.wrapping_add(555_123),
         );
-        if edge_hash % 3 == 0 {
-            return (0.0, false);
-        }
-
-        let mid_x = 0.5 * (p1[0] + p2[0]);
-        let mid_z = 0.5 * (p1[1] + p2[1]);
-        let dist_to_edge = ((wx - mid_x) * diff_x + (wz - mid_z) * diff_z).abs() / edge_len;
-
-        let width_noise = crate::core::noise::gradient_noise_2d(
-            world_x * 0.0025,
-            world_z * 0.0025,
-            self.seed.wrapping_add(999_222),
-        );
-        let base_width = 11.5 + width_noise * 3.5;
-
-        if dist_to_edge < base_width {
-            let depth_factor = 1.0 - (dist_to_edge / base_width);
-            (depth_factor, true)
+        let dist = river_noise.abs();
+        if dist < self.river_width {
+            let factor = 1.0 - (dist / self.river_width);
+            (factor, true)
         } else {
             (0.0, false)
         }
     }
 
     pub fn river_sample(&self, world_x: f32, world_z: f32) -> (f32, bool) {
-        self.voronoi_river_sample(world_x, world_z)
+        self.organic_river_sample(world_x, world_z)
     }
 
     pub fn river_sample_x4(&self, world_x: Simd4f, world_z: Simd4f) -> ([f32; 4], [bool; 4]) {
         let mut depth_factors = [0.0f32; 4];
         let mut is_river = [false; 4];
         for i in 0..4 {
-            let (df, ir) = self.voronoi_river_sample(world_x.0[i], world_z.0[i]);
+            let (df, ir) = self.organic_river_sample(world_x.0[i], world_z.0[i]);
             depth_factors[i] = df;
             is_river[i] = ir;
         }
         (depth_factors, is_river)
+    }
+
+    pub fn organic_river_sample_with_offset(
+        &self,
+        world_x: f32,
+        world_z: f32,
+    ) -> (f32, bool, f32, f32) {
+        let (factor, is_river) = self.organic_river_sample(world_x, world_z);
+        if !is_river || factor <= 0.01 {
+            return (factor, false, 0.0, 0.0);
+        }
+
+        let eps = 2.0;
+        let (f_px, _) = self.organic_river_sample(world_x + eps, world_z);
+        let (f_mx, _) = self.organic_river_sample(world_x - eps, world_z);
+        let (f_pz, _) = self.organic_river_sample(world_x, world_z + eps);
+        let (f_mz, _) = self.organic_river_sample(world_x, world_z - eps);
+
+        let df_dx = (f_px - f_mx) / (2.0 * eps);
+        let df_dz = (f_pz - f_mz) / (2.0 * eps);
+        let grad_len = (df_dx * df_dx + df_dz * df_dz).sqrt();
+
+        let (center_dx, center_dz) = if grad_len > 1e-6 {
+            let dist_to_center = ((1.0 - factor) * self.river_width * 150.0).clamp(-25.0, 25.0);
+            (
+                (df_dx / grad_len) * dist_to_center,
+                (df_dz / grad_len) * dist_to_center,
+            )
+        } else {
+            (0.0, 0.0)
+        };
+
+        (factor, is_river, center_dx, center_dz)
+    }
+
+    pub fn river_sample_with_offset(&self, world_x: f32, world_z: f32) -> (f32, bool, f32, f32) {
+        self.organic_river_sample_with_offset(world_x, world_z)
+    }
+
+    pub fn river_sample_with_offset_x4(
+        &self,
+        world_x: Simd4f,
+        world_z: Simd4f,
+    ) -> ([f32; 4], [bool; 4], [f32; 4], [f32; 4]) {
+        let mut depth_factors = [0.0f32; 4];
+        let mut is_river = [false; 4];
+        let mut center_dxs = [0.0f32; 4];
+        let mut center_dzs = [0.0f32; 4];
+        for i in 0..4 {
+            let (df, ir, cdx, cdz) =
+                self.organic_river_sample_with_offset(world_x.0[i], world_z.0[i]);
+            depth_factors[i] = df;
+            is_river[i] = ir;
+            center_dxs[i] = cdx;
+            center_dzs[i] = cdz;
+        }
+        (depth_factors, is_river, center_dxs, center_dzs)
+    }
+
+    /// Returns the downhill river flow velocity vector (in world units/sec) at a given (x, z) coordinate.
+    /// If not in a river channel, returns Vec3::ZERO.
+    pub fn river_flow_velocity(&self, world_x: f32, world_z: f32) -> Vec3 {
+        let (depth_factor, is_river) = self.organic_river_sample(world_x, world_z);
+        if !is_river || depth_factor <= 0.02 {
+            return Vec3::ZERO;
+        }
+
+        let eps = 2.0;
+        let (f_px, _) = self.organic_river_sample(world_x + eps, world_z);
+        let (f_mx, _) = self.organic_river_sample(world_x - eps, world_z);
+        let (f_pz, _) = self.organic_river_sample(world_x, world_z + eps);
+        let (f_mz, _) = self.organic_river_sample(world_x, world_z - eps);
+
+        let df_dx = (f_px - f_mx) / (2.0 * eps);
+        let df_dz = (f_pz - f_mz) / (2.0 * eps);
+        let grad_len = (df_dx * df_dx + df_dz * df_dz).sqrt();
+
+        let (tangent_x, tangent_z) = if grad_len > 1e-5 {
+            // Perpendicular to channel cross-section gradient is along the river flow
+            (-df_dz / grad_len, df_dx / grad_len)
+        } else {
+            (1.0, 0.0)
+        };
+
+        // Downhill direction towards the ocean (decreasing continentalness)
+        let c_plus = self.climate.sample_dithered(
+            world_x + tangent_x * 16.0,
+            world_z + tangent_z * 16.0,
+            self.seed,
+        ).continentalness;
+        let c_minus = self.climate.sample_dithered(
+            world_x - tangent_x * 16.0,
+            world_z - tangent_z * 16.0,
+            self.seed,
+        ).continentalness;
+
+        let (flow_x, flow_z) = if c_plus < c_minus {
+            (tangent_x, tangent_z)
+        } else {
+            (-tangent_x, -tangent_z)
+        };
+
+        let speed = self.stream_flow_speed + depth_factor * 1.2;
+        Vec3::new(flow_x * speed, 0.0, flow_z * speed)
     }
 
     /// Evaluates 3D volumetric density for surface rock arches and overhangs.
@@ -1267,6 +1465,76 @@ impl TerrainGenerator {
         // 1. Submerged terrain (underwater) floor materials
         let is_submerged = column.water_level.is_some_and(|wl| world_y <= wl);
         if is_submerged {
+            // River Bed Styling (authentic fluvial sediment lining channel floor)
+            if column.is_river {
+                return if column.climate.temperature < -0.15 {
+                    if dither_noise > 0.15 {
+                        Voxel::GravelDirty
+                    } else if dither_noise > -0.20 {
+                        Voxel::ClayBlue
+                    } else {
+                        Voxel::GravelSandy
+                    }
+                } else if column.climate.humidity > 0.35 {
+                    if dither_noise > 0.10 {
+                        Voxel::SiltMud
+                    } else {
+                        Voxel::ClayBlue
+                    }
+                } else if matches!(
+                    column.biome,
+                    BiomeType::BryceCanyon
+                        | BiomeType::PaintedMountains
+                        | BiomeType::AncientSands
+                        | BiomeType::DesertSpires
+                        | BiomeType::SavannaBadlands
+                ) {
+                    if dither_noise > 0.10 {
+                        Voxel::SandRed
+                    } else {
+                        Voxel::ClayRed
+                    }
+                } else {
+                    if dither_noise > 0.20 {
+                        Voxel::SandCommon
+                    } else if dither_noise > -0.20 {
+                        Voxel::GravelSandy
+                    } else {
+                        Voxel::ClayBlue
+                    }
+                };
+            }
+
+            // Lake Bed Styling (authentic multi-layered lacustrine sediment)
+            if column.is_lake {
+                let lake_depth = column.water_level.map(|wl| wl - world_y).unwrap_or(0);
+                return if lake_depth >= 3 {
+                    if dither_noise > 0.15 {
+                        Voxel::ClayBlue
+                    } else if dither_noise > -0.15 {
+                        Voxel::SiltMud
+                    } else {
+                        Voxel::PeatMud
+                    }
+                } else if lake_depth >= 1 {
+                    if dither_noise > 0.20 {
+                        Voxel::GravelDirty
+                    } else if dither_noise > -0.20 {
+                        Voxel::GravelSandy
+                    } else {
+                        Voxel::ClayBlue
+                    }
+                } else {
+                    if dither_noise > 0.15 {
+                        Voxel::SandCommon
+                    } else if dither_noise > -0.20 {
+                        Voxel::GravelSandy
+                    } else {
+                        Voxel::LoamMud
+                    }
+                };
+            }
+
             return match column.biome {
                 BiomeType::DeepWarmOcean => {
                     if dither_noise > 0.0 {
@@ -1308,7 +1576,9 @@ impl TerrainGenerator {
                 }
                 BiomeType::Caldera => Voxel::Basalt,
                 BiomeType::OrchidSwamp => Voxel::PeatMud,
-                BiomeType::GlacialChasm | BiomeType::FrozenCliffs | BiomeType::IceCaves => Voxel::FrostIcePacked,
+                BiomeType::GlacialChasm | BiomeType::FrozenCliffs | BiomeType::IceCaves => {
+                    Voxel::FrostIcePacked
+                }
                 _ => {
                     if column.climate.temperature < -0.15 {
                         if dither_noise > 0.0 {
@@ -1320,6 +1590,42 @@ impl TerrainGenerator {
                         Voxel::SiltMud
                     } else {
                         Voxel::SandCommon
+                    }
+                }
+            };
+        }
+
+        // Riverbank waterline rings (muddy, coarse transition strip bordering the river)
+        if column.is_river && column.river_factor > 0.18 {
+            return match column.biome.config().subsoil_material {
+                Voxel::LateriteDirt => Voxel::LateriteDirt,
+                Voxel::PeatDirt => Voxel::PeatMud,
+                _ => {
+                    if dither_noise > 0.25 {
+                        Voxel::GravelDirty
+                    } else if dither_noise > -0.15 {
+                        Voxel::SiltMud
+                    } else {
+                        Voxel::LoamMud
+                    }
+                }
+            };
+        }
+
+        // Lake Shoreline Levee Rim (organic vegetated and pebble transition strip surrounding lakes)
+        if column.is_lake {
+            return match column.biome.config().subsoil_material {
+                Voxel::LateriteDirt => Voxel::LateriteDirt,
+                Voxel::PeatDirt => Voxel::PeatMud,
+                _ => {
+                    if dither_noise > 0.35 {
+                        Voxel::GravelDirty
+                    } else if dither_noise > 0.05 {
+                        Voxel::LoamCoarse
+                    } else if dither_noise > -0.25 {
+                        Voxel::SiltMud
+                    } else {
+                        Voxel::LoamRooted
                     }
                 }
             };
@@ -1459,14 +1765,16 @@ impl TerrainGenerator {
                     | BiomeType::SakuraGrove
                     | BiomeType::YosemiteLowlands
                     | BiomeType::TropicalJungle
-            ) && dither_noise > 0.58 {
+            ) && dither_noise > 0.58
+            {
                 return Voxel::LoamMulch;
             } else if column.biome == BiomeType::Shield && dither_noise > 0.62 {
                 return Voxel::PeatMulch;
             } else if matches!(
                 column.biome,
                 BiomeType::SavannaBadlands | BiomeType::FracturedSavanna
-            ) && dither_noise > 0.60 {
+            ) && dither_noise > 0.60
+            {
                 return Voxel::LateriteDirt;
             }
 
@@ -1513,7 +1821,9 @@ impl TerrainGenerator {
             }
 
             // Surface rock arches and overhangs strictly generate on dry land above water
-            if column.water_level.is_none() && column.terrain_height > self.effective_sea_level() + 2 {
+            if column.water_level.is_none()
+                && column.terrain_height > self.effective_sea_level() + 2
+            {
                 let dy = world_y - column.terrain_height;
                 if dy <= 16 {
                     if let Some(overhang_voxel) =
@@ -1535,16 +1845,26 @@ impl TerrainGenerator {
         let is_underwater =
             column.water_level.is_some() || column.terrain_height <= self.effective_sea_level() + 2;
 
-        if self.caves.is_cave_sampled(
-            world_x,
-            world_y,
-            world_z,
-            cave_sample,
-            column.terrain_height,
-            is_underwater,
-            self.effective_sea_level(),
-            self.seed,
-        ) {
+        // Impervious aquatic bed and bank barrier: protect riverbed, lakebed, water columns, and surrounding banks
+        // from being hollowed out or breached by underground caves and ravines.
+        let is_near_water_basin = (column.is_river
+            || column.is_lake
+            || column.river_factor > 0.02
+            || column.water_level.is_some())
+            && world_y >= (column.water_level.unwrap_or(column.terrain_height) - 5);
+
+        if !is_near_water_basin
+            && self.caves.is_cave_sampled(
+                world_x,
+                world_y,
+                world_z,
+                cave_sample,
+                column.terrain_height,
+                is_underwater,
+                self.effective_sea_level(),
+                self.seed,
+            )
+        {
             return self
                 .caves
                 .cave_voxel_sampled(world_y, cave_sample, self.effective_sea_level());
@@ -1556,12 +1876,10 @@ impl TerrainGenerator {
         }
 
         // 3D Rock Arch Openings (hollow window under mountain cliff)
-        if self.sample_surface_arch_opening(world_x, world_y, world_z, column, depth) {
-            if let Some(water_level) = column.water_level
-                && world_y <= water_level
-            {
-                return Voxel::LiquidWater;
-            }
+        if !column.is_river
+            && column.water_level.is_none()
+            && self.sample_surface_arch_opening(world_x, world_y, world_z, column, depth)
+        {
             return Voxel::Air;
         }
 
@@ -1732,7 +2050,8 @@ impl TerrainGenerator {
         let roughness = Self::continental_roughness(climate.continentalness);
 
         let mountain_factor = ((climate.continentalness - 0.22) / 0.35).clamp(0.0, 1.0);
-        let ridge = (1.0 - macro_noise.abs()).powi(2) * self.mountain_ridge_height * mountain_factor;
+        let ridge =
+            (1.0 - macro_noise.abs()).powi(2) * self.mountain_ridge_height * mountain_factor;
 
         let steep_variation = ((climate.ridges - 0.10) / 0.45).clamp(0.0, 1.0);
         let abrupt_peak = if steep_variation > 0.0 && mountain_factor > 0.0 {

@@ -18,6 +18,7 @@ pub struct PlayerEnvironmentStatus {
     pub underground_factor: f32,
     pub depth_below_surface: f32,
     pub has_roof_overhead: bool,
+    pub water_flow_velocity: Vec3,
 }
 
 type CameraTransformQuery<'w, 's> =
@@ -137,10 +138,21 @@ pub fn update_player_environment_status(
         1.6
     };
     status.underground_factor += (target_underground_factor - status.underground_factor) * (adapt_rate * dt).min(1.0);
+    let water_flow_velocity = if submersion > 0.05 {
+        if let (Some(terrain_gen), Some(p)) = (generator.as_ref(), player_query.as_ref()) {
+            terrain_gen.river_flow_velocity(p.translation.x, p.translation.z)
+        } else {
+            Vec3::ZERO
+        }
+    } else {
+        Vec3::ZERO
+    };
+
     status.is_camera_in_water = is_camera_in_water;
     status.submersion = submersion;
     status.current_biome = current_biome;
     status.is_underground = is_underground;
     status.depth_below_surface = depth_below_surface;
     status.has_roof_overhead = has_roof;
+    status.water_flow_velocity = water_flow_velocity;
 }

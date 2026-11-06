@@ -340,6 +340,12 @@ fn check_infinite_source(
         pos - IVec3::Z,
     ];
 
+    // Source only when enclosed: infinite fluid sources can only form in basins or enclosed pools.
+    // If any horizontal neighbor is open Air, fluid is spilling or flowing down and must NOT form an infinite source!
+    if horizontals.iter().any(|&n| world.get_voxel(n) == Some(Voxel::Air)) {
+        return edited;
+    }
+
     let source_count = horizontals
         .iter()
         .filter(|&&n| {
@@ -390,25 +396,88 @@ fn is_supported_by_ground(world: &VoxelWorld, pos: IVec3) -> bool {
     false
 }
 
-pub fn water_surface_height_offset(world: &impl VoxelAccess, world_voxel: IVec3) -> f32 {
+pub fn compute_fluid_corner_offsets(world: &impl VoxelAccess, world_voxel: IVec3) -> [f32; 4] {
     let voxel = world.get_voxel(world_voxel).unwrap_or(Voxel::Air);
     if !voxel.is_fluid() {
-        return 0.0;
+        return [0.0; 4];
     }
 
-    // Submerged fluid blocks have no surface drop.
+    // Submerged fluid blocks with fluid above have a completely flat top at Y=1.0.
     let above = world_voxel + IVec3::Y;
-    if world.get_voxel(above).is_some_and(Voxel::is_fluid) {
-        return 0.0;
+    if world.get_voxel(above).is_some_and(|v| is_same_fluid_type(voxel, v)) {
+        return [0.0; 4];
     }
 
-    let level = world.get_fluid_level(world_voxel);
-    if level == 0 {
-        return 0.10;
+    let max_spread = voxel.max_fluid_spread().max(1) as f32;
+    let base_level = world.get_fluid_level(world_voxel);
+    let nominal_offset = |lvl: u8| -> f32 {
+        if lvl == 0 {
+            0.10
+        } else {
+            (0.10 + (lvl as f32 / max_spread) * 0.65).clamp(0.10, 0.85)
+        }
+    };
+    let my_nominal = nominal_offset(base_level);
+
+    // 4 corners:
+    // Corner 0: NW (dx: 0, -1; dz: 0, -1)
+    // Corner 1: SW (dx: 0, -1; dz: 0, +1)
+    // Corner 2: SE (dx: 0, +1; dz: 0, +1)
+    // Corner 3: NE (dx: 0, +1; dz: 0, -1)
+    let corner_sample_dirs = [
+        [(0, 0), (-1, 0), (0, -1), (-1, -1)], // NW
+        [(0, 0), (-1, 0), (0, 1), (-1, 1)],   // SW
+        [(0, 0), (1, 0), (0, 1), (1, 1)],     // SE
+        [(0, 0), (1, 0), (0, -1), (1, -1)],   // NE
+    ];
+
+    let mut result = [my_nominal; 4];
+
+    for (c_idx, samples) in corner_sample_dirs.iter().enumerate() {
+        // 1. If ANY adjacent column has fluid of the same type above (Y+1), this corner is submerged by a flow from above
+        let has_fluid_above = samples.iter().any(|&(dx, dz)| {
+            let col = world_voxel + IVec3::new(dx, 1, dz);
+            world.get_voxel(col).is_some_and(|v| is_same_fluid_type(voxel, v))
+        });
+        if has_fluid_above {
+            result[c_idx] = 0.0;
+            continue;
+        }
+
+        // 2. Average the fluid levels across valid fluid columns meeting at this corner
+        let mut sum = 0.0f32;
+        let mut count = 0usize;
+
+        for &(dx, dz) in samples {
+            let col = world_voxel + IVec3::new(dx, 0, dz);
+            if let Some(v) = world.get_voxel(col) {
+                if is_same_fluid_type(voxel, v) {
+                    let lvl = world.get_fluid_level(col);
+                    sum += nominal_offset(lvl);
+                    count += 1;
+                } else if v.is_solid_opaque() {
+                    // Solid blocks (banks/walls) do not drag the fluid level down
+                    continue;
+                } else if v == Voxel::Air {
+                    // Check if air column is a waterfall drop (fluid exists below at Y-1)
+                    let below_col = col - IVec3::Y;
+                    if world.get_voxel(below_col).is_some_and(|bv| is_same_fluid_type(voxel, bv)) {
+                        sum += 0.85; // waterfall drop pulls edge downward smoothly
+                        count += 1;
+                    }
+                }
+            }
+        }
+
+        if count > 0 {
+            result[c_idx] = (sum / count as f32).clamp(0.05, 0.88);
+        }
     }
 
-    let max_spread = voxel.max_fluid_spread().max(1);
-    let ratio = (level as f32) / (max_spread as f32);
-    let total_offset = 0.10 + ratio * 0.65;
-    total_offset.clamp(0.10, 0.85)
+    result
+}
+
+pub fn water_surface_height_offset(world: &impl VoxelAccess, world_voxel: IVec3) -> f32 {
+    let offsets = compute_fluid_corner_offsets(world, world_voxel);
+    (offsets[0] + offsets[1] + offsets[2] + offsets[3]) * 0.25
 }

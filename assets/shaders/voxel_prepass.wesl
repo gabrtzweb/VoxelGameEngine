@@ -99,23 +99,26 @@ fn fragment(
     in: VertexOutput,
     @builtin(front_facing) is_front: bool,
 ) -> FragmentOutput {
-    let uv = clamp(fract(in.uv), vec2<f32>(0.0005), vec2<f32>(0.9995));
-    let base_layer = i32(round(in.uv_b.x)) % 2048;
-    var layer = base_layer;
+    let is_mask_face = in.color.a < -0.5;
+    if (!is_mask_face) {
+        let uv = clamp(fract(in.uv), vec2<f32>(0.0005), vec2<f32>(0.9995));
+        let base_layer = i32(round(in.uv_b.x)) % 2048;
+        var layer = base_layer;
 
-    let raw_frame_param = in.uv_b.y;
-    let actual_frame_count = floor(abs(raw_frame_param) + 0.1);
-    if (actual_frame_count > 1.5) {
-        let fps = 8.0;
-        let count = max(1, i32(round(actual_frame_count)));
-        let t = max(anim_params.x, 0.0) * fps;
-        let frame_cur = (i32(floor(t)) % count + count) % count;
-        layer = layer + frame_cur;
-    }
+        let raw_frame_param = in.uv_b.y;
+        let actual_frame_count = floor(abs(raw_frame_param) + 0.1);
+        if (actual_frame_count > 1.5) {
+            let fps = 8.0;
+            let count = max(1, i32(round(actual_frame_count)));
+            let t = max(anim_params.x, 0.0) * fps;
+            let frame_cur = (i32(floor(t)) % count + count) % count;
+            layer = layer + frame_cur;
+        }
 
-    let tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, layer);
-    if (tex_color.a < 0.5) {
-        discard;
+        let tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, layer);
+        if (tex_color.a < 0.5) {
+            discard;
+        }
     }
 
     var out: FragmentOutput;
@@ -126,22 +129,25 @@ fn fragment(
 @else
 @fragment
 fn fragment(in: VertexOutput) {
-    let uv = clamp(fract(in.uv), vec2<f32>(0.0005), vec2<f32>(0.9995));
-    let base_layer = i32(round(in.uv_b.x)) % 2048;
-    var layer = base_layer;
+    let is_mask_face = in.color.a < -0.5;
+    if (!is_mask_face) {
+        let uv = clamp(fract(in.uv), vec2<f32>(0.0005), vec2<f32>(0.9995));
+        let base_layer = i32(round(in.uv_b.x)) % 2048;
+        var layer = base_layer;
 
-    let raw_frame_param = in.uv_b.y;
-    let actual_frame_count = floor(abs(raw_frame_param) + 0.1);
-    if (actual_frame_count > 1.5) {
-        let fps = 8.0;
-        let count = max(1, i32(round(actual_frame_count)));
-        let t = max(anim_params.x, 0.0) * fps;
-        let frame_cur = (i32(floor(t)) % count + count) % count;
-        layer = layer + frame_cur;
-    }
+        let raw_frame_param = in.uv_b.y;
+        let actual_frame_count = floor(abs(raw_frame_param) + 0.1);
+        if (actual_frame_count > 1.5) {
+            let fps = 8.0;
+            let count = max(1, i32(round(actual_frame_count)));
+            let t = max(anim_params.x, 0.0) * fps;
+            let frame_cur = (i32(floor(t)) % count + count) % count;
+            layer = layer + frame_cur;
+        }
 
-    let tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, layer);
-    if (tex_color.a < 0.5) {
-        discard;
+        let tex_color = textureSample(voxel_texture_array, voxel_sampler, uv, layer);
+        if (tex_color.a < 0.5) {
+            discard;
+        }
     }
 }

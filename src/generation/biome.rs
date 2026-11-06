@@ -693,7 +693,7 @@ impl BiomeType {
 
             Self::BloomingValley => [0.35, 0.98, 0.45, 1.0],
             Self::CloudForest => [0.20, 0.90, 0.50, 1.0],
-            Self::LavenderValley => [0.55, 0.78, 0.62, 1.0],
+            Self::LavenderValley => [0.56, 0.82, 0.46, 1.0],
             Self::SakuraGrove => [0.60, 0.92, 0.65, 1.0],
             Self::YosemiteLowlands => [0.38, 0.90, 0.36, 1.0],
             Self::Shield => [0.40, 0.75, 0.50, 1.0],

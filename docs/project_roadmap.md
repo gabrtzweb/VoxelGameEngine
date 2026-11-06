@@ -66,7 +66,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **10** | **[Sound Engine & Spatial Audio System](#phase-10-sound-engine--spatial-audio-system-completed)** | **Completed** | 3D spatial audio, material-based block break/place and footsteps, ambient environmental soundscapes, weather audio, dynamic music |
 | **11** | **[Custom Voxel Player Character & Modular Character Creator](#phase-11-custom-voxel-player-character--modular-character-creator-planned)** | **Planned** | Modular voxel character rig, Character Creator interface, fantasy races, custom hair, skin, eye, and cosmetic customization |
 | **12** | **[First-Person Item Rendering & Creative Utility Tools](#phase-12-first-person-item-rendering--creative-utility-tools-planned)** | **Planned** | 3D held items/blocks in player hand, paint roller, lumberjack tree-felling saw, multi-block sledgehammer, measurement tools |
-| **13** | **[Physics Engine, Fluid Dynamics & Item Drops](#phase-13-physics-engine-fluid-dynamics--item-drops-planned)** | **Planned** | Overhauled fluid propagation, gravity blocks (sand, gravel), 3D floating item drops with magnetism, projectile trajectories |
+| **13** | **[Physics Engine, Fluid Dynamics & Item Drops](#phase-13-physics-engine-fluid-dynamics--item-drops-in-progress)** | **In Progress** | Dynamic smooth flow fluid meshing, downhill river hydrology & current vectors, gravity blocks, floating drops |
 | **14** | **[Dynamic Weather System & Meteorological Phenomena](#phase-14-dynamic-weather-system--meteorological-phenomena-completed)** | **Completed** | Multi-state weather simulation (rain, snow, fog, storms), precipitation particles, surface wetness, dynamic snow accumulation |
 | **15** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-15-visual-aesthetics-shaders--atmospheric-fx-overhaul-completed)** | **Completed** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, subterranean lighting stabilization |
 | **16** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-16-performance-engineering-chunk-streaming--lod-enhancements-in-progress)** | **In Progress** | Streaming modularization, shapes decomposition, cave occlusion & visibility fix, boundary flora verification, ongoing frametime optimization |
@@ -290,11 +290,20 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 13: Physics Engine, Fluid Dynamics & Item Drops (Planned)
+### Phase 13: Physics Engine, Fluid Dynamics & Item Drops (In Progress)
 
-- [ ] **Fluid Simulation & Propagation Overhaul**:
-  - Overhaul fluid cellular automata mechanics to deliver realistic volume conservation, natural slope cascading, and viscous lava flow.
-  - Fix fluid boundary clipping and enhance surface flow animations.
+- [x] **Dynamic Smooth Flow Fluid Meshing (Dynamic Tessellation)**:
+  - Runtime 4-column corner height neighborhood averaging across NW, SW, SE, NE quadrants.
+  - Submerged fluid detection and waterfall cascade corner drop calculations.
+  - Trapezoidal side faces and gradient-based diagonal crease selection for seamless, slope-continuous liquid surfaces.
+  - Universal tessellation applied to all 9 fluid variants (`LiquidWater`, `LiquidSpringWater`, `LiquidLava`, `LiquidAcid`, `LiquidBlood`, `LiquidTar`, `LiquidSludge`, `LiquidMolten`, `LiquidOoze`).
+- [x] **Realistic Downhill River Hydrology & Flow Field Physics**:
+  - Continuous downhill river bed grading towards ocean and regional lake sinks.
+  - Monotonically descending water levels strictly constrained by carved channel banks, eliminating floating water or river levee overflows.
+  - Enclosed 4-sided containment rule for infinite fluid source generation, preventing infinite waterfalls and unconstrained duplication.
+  - Vector flow field sampling (`river_flow_velocity`) and current forces pushing swimming player entities downstream.
+- [ ] **Fluid Simulation & Cellular Automata Refinements**:
+  - Viscous fluid flow rates and multi-step lateral spreading dynamics.
 - [ ] **Falling Block & Gravity Mechanics**:
   - Implement dynamic falling physics for unsupported loose blocks (sand, gravel, loose dirt, accumulating snow layers).
   - Add natural slope sliding angles (*angle of repose*) for realistic gravel/sand collapses.

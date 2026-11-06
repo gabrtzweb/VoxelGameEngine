@@ -335,20 +335,24 @@ fn fragment(
         //  34..=50:  Rocks (pure white mask -> sample voxel_texture_array with overlay_layer)
         //  51..=67:  Snow  (pre-colored mask -> mask_sample.rgb already contains snow colors)
         //  68..=84:  Moss  (pre-colored mask -> mask_sample.rgb already contains moss colors)
-        var overlay_rgb: vec3<f32>;
+        var overlay_rgb = tex_color.rgb * base_mul;
         if (mask_layer >= 51) {
             overlay_rgb = mask_sample.rgb * overlay_mul;
-        } else {
+            let blended = mix(tex_color.rgb * base_mul, overlay_rgb, mask_sample.a);
+            tex_color = vec4<f32>(blended, 1.0);
+        } else if (overlay_layer > 0) {
             let sampled_overlay = textureSample(voxel_texture_array, voxel_sampler, mask_uv, overlay_layer);
-            overlay_rgb = sampled_overlay.rgb * overlay_mul;
+            if (sampled_overlay.a > 0.1) {
+                overlay_rgb = sampled_overlay.rgb * overlay_mul;
+                let blended = mix(tex_color.rgb * base_mul, overlay_rgb, mask_sample.a);
+                tex_color = vec4<f32>(blended, 1.0);
+            }
         }
-
-        let blended = mix(tex_color.rgb * base_mul, overlay_rgb, mask_sample.a);
-        tex_color = vec4<f32>(blended, tex_color.a);
     }
 
     // Alpha Cutout: Discard see-through pixels (e.g. foliage leaves, alpha-cutout quads)
-    if (tex_color.a < 0.5) {
+    // NEVER discard solid blocks or connected-texture transition quads
+    if (tex_color.a < 0.5 && !is_mask_face) {
         discard;
     }
 

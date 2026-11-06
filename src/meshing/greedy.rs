@@ -6,7 +6,7 @@ use bevy::{
 
 use super::{shapes::mesh_shaped_voxels, textures::VoxelTextureRegistry};
 use crate::{
-    simulation::fluid::water_surface_height_offset,
+    simulation::fluid::{compute_fluid_corner_offsets, water_surface_height_offset},
     world::{BlockShape, CHUNK_SIZE, CHUNK_VOLUME, Chunk, VOXEL_SIZE, Voxel, VoxelAccess},
 };
 
@@ -158,6 +158,7 @@ pub struct FaceKey {
     pub frame_count: u16,
     pub tint_color: [f32; 4],
     pub surface_offset_cm: u8,
+    pub corner_offsets_cm: [u8; 4],
     pub step_bottom_offset_cm: u8,
     pub is_isolated_voxel: bool,
     pub orientation: u8,
@@ -175,6 +176,7 @@ impl FaceKey {
             && self.frame_count == other.frame_count
             && self.tint_color == other.tint_color
             && self.surface_offset_cm == other.surface_offset_cm
+            && self.corner_offsets_cm == other.corner_offsets_cm
             && self.step_bottom_offset_cm == other.step_bottom_offset_cm
             && self.is_isolated_voxel == other.is_isolated_voxel
             && self.orientation == other.orientation
@@ -403,7 +405,6 @@ impl MeshBuffers {
             key.frame_count as f32
         };
 
-        let surface_offset = key.surface_offset_cm as f32 / 100.0;
         let step_bottom_offset = key.step_bottom_offset_cm as f32 / 100.0;
 
         let should_swap_uv = if key.voxel.is_axis_aligned() {
@@ -455,18 +456,22 @@ impl MeshBuffers {
 
             if key.voxel.is_fluid() {
                 match direction {
+                    FaceDirection::PositiveY => {
+                        // Smooth Flow fluid top face: each vertex drops by its specific corner offset
+                        let corner_offset = key.corner_offsets_cm[i] as f32 / 100.0;
+                        pos[1] -= corner_offset;
+                    }
                     FaceDirection::PositiveX
                     | FaceDirection::NegativeX
                     | FaceDirection::PositiveZ
                     | FaceDirection::NegativeZ => {
                         if i == 1 || i == 2 {
-                            pos[1] -= surface_offset;
+                            // Smooth Flow side trapezoid top edge: exact matching corner offsets
+                            let corner_offset = key.corner_offsets_cm[i] as f32 / 100.0;
+                            pos[1] -= corner_offset;
                         } else if key.step_bottom_offset_cm > 0 {
                             pos[1] += VOXEL_SIZE - step_bottom_offset;
                         }
-                    }
-                    FaceDirection::PositiveY => {
-                        pos[1] -= surface_offset;
                     }
                     FaceDirection::NegativeY => {}
                 }
@@ -557,7 +562,14 @@ impl MeshBuffers {
 
         self.uvs.extend_from_slice(&uvs_to_push);
 
-        let flip_diagonal = (key.ao[1] as u16 + key.ao[3] as u16) > (key.ao[0] as u16 + key.ao[2] as u16);
+        let flip_diagonal = if key.voxel.is_fluid() && direction == FaceDirection::PositiveY {
+            // Smooth Flow: choose triangulation diagonal that produces the smoothest surface gradient
+            let diff_0_2 = (key.corner_offsets_cm[0] as i16 - key.corner_offsets_cm[2] as i16).abs();
+            let diff_1_3 = (key.corner_offsets_cm[1] as i16 - key.corner_offsets_cm[3] as i16).abs();
+            diff_1_3 < diff_0_2
+        } else {
+            (key.ao[1] as u16 + key.ao[3] as u16) > (key.ao[0] as u16 + key.ao[2] as u16)
+        };
 
         if flip_diagonal {
             self.indices.extend_from_slice(&[
@@ -941,10 +953,24 @@ impl ChunkMesher {
                             1.0
                         };
 
-                        let surface_offset_cm = if voxel.is_fluid() {
-                            (water_surface_height_offset(world, world_voxel) * 100.0).round() as u8
+                        let (surface_offset_cm, corner_offsets_cm) = if voxel.is_fluid() {
+                            let raw_corners = compute_fluid_corner_offsets(world, world_voxel);
+                            let c_nw = (raw_corners[0] * 100.0).round() as u8;
+                            let c_sw = (raw_corners[1] * 100.0).round() as u8;
+                            let c_se = (raw_corners[2] * 100.0).round() as u8;
+                            let c_ne = (raw_corners[3] * 100.0).round() as u8;
+                            let avg = ((c_nw as u16 + c_sw as u16 + c_se as u16 + c_ne as u16) / 4) as u8;
+                            let mapped_corners = match direction {
+                                FaceDirection::PositiveY => [c_nw, c_sw, c_se, c_ne],
+                                FaceDirection::PositiveX => [0, c_ne, c_se, 0],
+                                FaceDirection::NegativeX => [0, c_sw, c_nw, 0],
+                                FaceDirection::PositiveZ => [0, c_se, c_sw, 0],
+                                FaceDirection::NegativeZ => [0, c_nw, c_ne, 0],
+                                FaceDirection::NegativeY => [0, 0, 0, 0],
+                            };
+                            (avg, mapped_corners)
                         } else {
-                            0
+                            (0, [0; 4])
                         };
 
                         let ao = if voxel.is_fluid() || voxel.is_light() {
@@ -981,6 +1007,7 @@ impl ChunkMesher {
                             frame_count,
                             tint_color,
                             surface_offset_cm,
+                            corner_offsets_cm,
                             step_bottom_offset_cm,
                             is_isolated_voxel,
                             orientation,
