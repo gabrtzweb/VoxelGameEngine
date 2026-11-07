@@ -127,3 +127,130 @@ pub fn populate_chunk_crystal_clusters(
         chunk_shapes.push((idx, BlockShape::CrossBillboard, orient));
     }
 }
+
+/// Maps a supporting cave ceiling or floor block strictly to its matching speleothem type:
+/// - `CaveCalcite` / `FracturedCaveCalcite` -> `SpeleothemCalcite`
+/// - `CaveKarst` / `FracturedCaveKarst` -> `SpeleothemKarst`
+/// - `FrostBlueIce` / `FrostIcePacked` / `FrostIce` -> `SpeleothemBlueIce`
+/// - `CrystalPinkSaltBlock` -> `SpeleothemSaltStraw`
+/// - `Obsidian` / `FracturedCaveObsidian` -> `ObsidianSpike`
+#[inline]
+pub fn speleothem_for_host_rock(host: Voxel) -> Option<Voxel> {
+    match host {
+        Voxel::CaveCalcite | Voxel::FracturedCaveCalcite => Some(Voxel::SpeleothemCalcite),
+        Voxel::CaveKarst | Voxel::FracturedCaveKarst => Some(Voxel::SpeleothemKarst),
+        Voxel::FrostBlueIce | Voxel::FrostIcePacked | Voxel::FrostIce => {
+            Some(Voxel::SpeleothemBlueIce)
+        }
+        Voxel::CrystalPinkSaltBlock => Some(Voxel::SpeleothemSaltStraw),
+        Voxel::Obsidian | Voxel::FracturedCaveObsidian => Some(Voxel::ObsidianSpike),
+        _ => None,
+    }
+}
+
+/// Populates vertical stalactites (hanging down from matching ceiling rock) and stalagmites
+/// (standing up on matching floor rock) inside caves. Speleothems strictly require their
+/// corresponding host block (e.g. Calcite only on/under Calcite, Karst only on/under Karst).
+pub fn populate_chunk_speleothems(
+    voxels: &mut [Voxel],
+    chunk_shapes: &mut Vec<(usize, BlockShape, u8)>,
+    chunk_origin: IVec3,
+    seed: u32,
+) {
+    let mut placements: Vec<(usize, Voxel)> = Vec::new();
+
+    for z in 1..(CHUNK_SIZE - 1) {
+        for x in 1..(CHUNK_SIZE - 1) {
+            let wx = chunk_origin.x + x as i32;
+            let wz = chunk_origin.z + z as i32;
+
+            // 1. Hanging stalactites (growing downward from ceiling y + 1 into cave air)
+            let mut y = CHUNK_SIZE - 2;
+            while y >= 1 {
+                let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
+                let ceil_idx = x + z * CHUNK_SIZE + (y + 1) * CHUNK_SIZE * CHUNK_SIZE;
+                if voxels[idx] == Voxel::Air
+                    && let Some(speleothem) = speleothem_for_host_rock(voxels[ceil_idx])
+                {
+                    let is_ceil_shaped =
+                        chunk_shapes.iter().any(|&(s_idx, _, _)| s_idx == ceil_idx);
+                    if !is_ceil_shaped {
+                        let wy = chunk_origin.y + y as i32;
+                        let h = crate::core::noise::hash_2d(
+                            wx ^ (wy.wrapping_mul(59)),
+                            wz ^ (wy.wrapping_mul(107)),
+                            seed.wrapping_add(512_987),
+                        );
+                        if (h % 100) < 22 {
+                            let max_len = (((h >> 8) % 3) + 1) as usize;
+                            let mut grown = 0;
+                            while grown < max_len && y >= grown {
+                                let cur_y = y - grown;
+                                let cur_idx = x + z * CHUNK_SIZE + cur_y * CHUNK_SIZE * CHUNK_SIZE;
+                                if voxels[cur_idx] != Voxel::Air {
+                                    break;
+                                }
+                                placements.push((cur_idx, speleothem));
+                                grown += 1;
+                            }
+                            if y >= grown {
+                                y = y.saturating_sub(grown);
+                                continue;
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                }
+                if y == 0 {
+                    break;
+                }
+                y -= 1;
+            }
+
+            // 2. Standing stalagmites (growing upward from floor y - 1 into cave air)
+            let mut y = 1;
+            while y < CHUNK_SIZE - 1 {
+                let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
+                let floor_idx = x + z * CHUNK_SIZE + (y - 1) * CHUNK_SIZE * CHUNK_SIZE;
+                if voxels[idx] == Voxel::Air
+                    && let Some(speleothem) = speleothem_for_host_rock(voxels[floor_idx])
+                {
+                    let is_floor_shaped =
+                        chunk_shapes.iter().any(|&(s_idx, _, _)| s_idx == floor_idx);
+                    if !is_floor_shaped {
+                        let wy = chunk_origin.y + y as i32;
+                        let h = crate::core::noise::hash_2d(
+                            wx ^ (wy.wrapping_mul(83)),
+                            wz ^ (wy.wrapping_mul(139)),
+                            seed.wrapping_add(618_233),
+                        );
+                        if (h % 100) < 18 {
+                            let max_len = (((h >> 8) % 3) + 1) as usize;
+                            let mut grown = 0;
+                            while grown < max_len && (y + grown) < CHUNK_SIZE {
+                                let cur_y = y + grown;
+                                let cur_idx = x + z * CHUNK_SIZE + cur_y * CHUNK_SIZE * CHUNK_SIZE;
+                                if voxels[cur_idx] != Voxel::Air
+                                    || placements.iter().any(|&(p_idx, _)| p_idx == cur_idx)
+                                {
+                                    break;
+                                }
+                                placements.push((cur_idx, speleothem));
+                                grown += 1;
+                            }
+                            y += grown.max(1);
+                            continue;
+                        }
+                    }
+                }
+                y += 1;
+            }
+        }
+    }
+
+    for (idx, speleothem) in placements {
+        voxels[idx] = speleothem;
+        chunk_shapes.push((idx, BlockShape::Speleothem, 0));
+    }
+}

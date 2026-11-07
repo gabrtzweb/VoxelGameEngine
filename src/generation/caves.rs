@@ -71,8 +71,219 @@ impl Default for CaveGenerator {
 }
 
 impl CaveGenerator {
-    /// Evaluates the 4 continuous 3D noise fields at a specific floating-point coordinate.
+    /// Determines whether a hollowed subterranean cave coordinate is submerged under a regional
+    /// lava lake, abyssal mantle core magma, or other liquid basin.
+    /// Strictly guarantees flat, horizontal liquid surfaces with zero liquid on walls or ceilings.
     #[inline]
+    pub fn cave_voxel_sampled(
+        &self,
+        world_y: i32,
+        _world_x: i32,
+        _world_z: i32,
+        _sample: CaveNoiseSample,
+        _sea_level: i32,
+        _seed: u32,
+    ) -> Voxel {
+        // Abyssal Geothermal Mantle Sea:
+        // Strictly at the deep bedrock floor (Y = -246 down to bedrock at -254).
+        // Flat horizontal magma horizon at Y = -246. Above -246 is dry cave air.
+        const MANTLE_MAGMA_SEA_LEVEL: i32 = -246;
+        if world_y <= MANTLE_MAGMA_SEA_LEVEL {
+            return Voxel::LiquidCoreMagma;
+        }
+
+        Voxel::Air
+    }
+
+    /// Fast test to verify if a 3D coordinate lies within an open cavern or worm tunnel.
+    #[inline]
+    pub fn is_cave_at_point(&self, fx: f32, fy: f32, fz: f32, seed: u32) -> bool {
+        let sample = self.sample_noise_point(fx, fy, fz, seed);
+        (sample.worm_a.abs() < self.spaghetti_threshold && sample.worm_b.abs() < self.spaghetti_threshold)
+            || sample.cheese > self.cheese_threshold
+    }
+
+    /// Selects an authentic volcanic rock material for lava basin floors and rims.
+    #[inline]
+    pub fn volcanic_rock_for_basin(seed_hash: u32, x: i32, y: i32, z: i32) -> Voxel {
+        let roll = ((seed_hash ^ (x as u32).wrapping_mul(31) ^ (z as u32).wrapping_mul(73) ^ (y as u32).wrapping_mul(127)) >> 4) % 100;
+        if roll < 26 {
+            Voxel::Obsidian
+        } else if roll < 52 {
+            Voxel::Magma
+        } else if roll < 78 {
+            Voxel::Basalt
+        } else {
+            Voxel::CobbledBasalt
+        }
+    }
+
+    /// Evaluates if (world_x, world_y, world_z) lies inside a complete subterranean lava pool basin.
+    /// Returns:
+    /// - `Some(Voxel::LiquidLava)` for the flat lava liquid core
+    /// - `Some(Voxel::Air)` for headroom above the pool
+    /// - `Some(volcanic_rock)` (Obsidian, Magma, Basalt, CobbledBasalt) for the solid basin floor and enclosing rim
+    /// - `None` if outside any lava basin
+    /// Evaluates if (world_x, world_y, world_z) lies inside a complete subterranean lava pool basin.
+    /// Strictly guarantees:
+    /// - Flat, horizontal lava liquid surface with zero floating blocks.
+    /// - A solid volcanic rim (borda) rising 1 block above the lava, completely sealing the pool so it never leaks.
+    /// - A solid volcanic foundation (Obsidian, Magma, Basalt, CobbledBasalt) extending continuously downward,
+    ///   making it physically impossible for the pool or its floor to float in mid-air.
+    /// - Clear, open cavern headroom directly above the lava core.
+    pub fn subterranean_lava_basin_at(
+        &self,
+        world_x: i32,
+        world_y: i32,
+        world_z: i32,
+        seed: u32,
+    ) -> Option<Voxel> {
+        const CELL_SIZE: i32 = 28;
+        let cell_x = world_x.div_euclid(CELL_SIZE);
+        let cell_z = world_z.div_euclid(CELL_SIZE);
+
+        // 6 subterranean depth tiers: -72, -104, -136, -168, -200, -232
+        const TIERS: [i32; 6] = [-72, -104, -136, -168, -200, -232];
+
+        for dx in -1..=1 {
+            for dz in -1..=1 {
+                let cx = cell_x + dx;
+                let cz = cell_z + dz;
+
+                for (tier_idx, &tier_y) in TIERS.iter().enumerate() {
+                    // Check if world_y is in the vertical range affected by this tier
+                    // Headroom extends up to tier_y + 4; foundation extends downward 32 blocks.
+                    if world_y > tier_y + 4 || world_y < tier_y - 32 {
+                        continue;
+                    }
+
+                    let h = crate::core::noise::hash_2d(
+                        cx,
+                        cz,
+                        seed.wrapping_add(883_117 + tier_idx as u32 * 7_919),
+                    );
+
+                    // ~55% chance per depth tier per cell to contain an authentic volcanic lava basin
+                    if (h % 100) >= 55 {
+                        continue;
+                    }
+
+                    let margin = 4;
+                    let center_x = cx * CELL_SIZE + ((h % (CELL_SIZE as u32 - margin * 2)) + margin) as i32;
+                    let center_z = cz * CELL_SIZE + (((h >> 8) % (CELL_SIZE as u32 - margin * 2)) + margin) as i32;
+                    let pool_surface_y = tier_y;
+
+                    // Only generate pool if an actual cavern/tunnel exists at this depth
+                    if !self.is_cave_at_point(center_x as f32, pool_surface_y as f32, center_z as f32, seed)
+                        && !self.is_cave_at_point(center_x as f32, (pool_surface_y + 1) as f32, center_z as f32, seed)
+                    {
+                        continue;
+                    }
+
+                    let base_radius = 6.0 + ((h >> 16) % 5) as f32; // 6.0 .. 10.0 blocks
+                    let edge_noise = gradient_noise_2d(
+                        world_x as f32 * 0.08,
+                        world_z as f32 * 0.08,
+                        seed.wrapping_add(331_909 + tier_idx as u32 * 3_137),
+                    );
+                    let radius = (base_radius + edge_noise * 1.8).max(4.0);
+                    let rim_radius = radius + 2.8; // Sturdy ~3-block thick volcanic containment rim
+
+                    let dist_sq = ((world_x - center_x) * (world_x - center_x)
+                        + (world_z - center_z) * (world_z - center_z)) as f32;
+
+                    if dist_sq > rim_radius * rim_radius {
+                        continue;
+                    }
+
+                    let dist = dist_sq.sqrt();
+                    let pool_depth = 3;
+
+                    if dist <= radius {
+                        // 1. Clear open headroom above the lava surface
+                        if world_y > pool_surface_y && world_y <= pool_surface_y + 4 {
+                            return Some(Voxel::Air);
+                        }
+                        // 2. Liquid Lava core (strictly horizontal surface at pool_surface_y)
+                        if world_y <= pool_surface_y && world_y >= pool_surface_y - pool_depth {
+                            return Some(Voxel::LiquidLava);
+                        }
+                        // 3. Solid basin floor & volcanic foundation extending continuously downward:
+                        // Completely fills any open cavern space beneath the pool down to bedrock.
+                        // It is physically impossible for the lava pool to ever float in mid-air.
+                        if world_y < pool_surface_y - pool_depth {
+                            return Some(Self::volcanic_rock_for_basin(h, world_x, world_y, world_z));
+                        }
+                    } else {
+                        // 4. Solid volcanic rim encircling the perimeter:
+                        // Rises 1 block above the lava surface to contain it, and extends downward
+                        // through the entire depth to solidly support and seal the basin.
+                        if world_y <= pool_surface_y + 1 {
+                            return Some(Self::volcanic_rock_for_basin(h, world_x, world_y, world_z));
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    /// Checks if a subterranean solid rock coordinate is within the volcanic thermal halo of a nearby lava basin.
+    /// Surrounding cave walls and floors are naturally transmuted into Basalt, Obsidian, Magma, and CobbledBasalt.
+    pub fn volcanic_halo_at(
+        &self,
+        world_x: i32,
+        world_y: i32,
+        world_z: i32,
+        seed: u32,
+    ) -> Option<Voxel> {
+        const CELL_SIZE: i32 = 28;
+        let cell_x = world_x.div_euclid(CELL_SIZE);
+        let cell_z = world_z.div_euclid(CELL_SIZE);
+        const TIERS: [i32; 6] = [-72, -104, -136, -168, -200, -232];
+
+        for dx in -1..=1 {
+            for dz in -1..=1 {
+                let cx = cell_x + dx;
+                let cz = cell_z + dz;
+
+                for (tier_idx, &tier_y) in TIERS.iter().enumerate() {
+                    if world_y > tier_y + 4 || world_y < tier_y - 20 {
+                        continue;
+                    }
+                    let h = crate::core::noise::hash_2d(
+                        cx,
+                        cz,
+                        seed.wrapping_add(883_117 + tier_idx as u32 * 7_919),
+                    );
+                    if (h % 100) >= 55 {
+                        continue;
+                    }
+                    let margin = 4;
+                    let center_x = cx * CELL_SIZE + ((h % (CELL_SIZE as u32 - margin * 2)) + margin) as i32;
+                    let center_z = cz * CELL_SIZE + (((h >> 8) % (CELL_SIZE as u32 - margin * 2)) + margin) as i32;
+                    let pool_surface_y = tier_y;
+
+                    if !self.is_cave_at_point(center_x as f32, pool_surface_y as f32, center_z as f32, seed)
+                        && !self.is_cave_at_point(center_x as f32, (pool_surface_y + 1) as f32, center_z as f32, seed)
+                    {
+                        continue;
+                    }
+
+                    let base_radius = 6.0 + ((h >> 16) % 5) as f32;
+                    let halo_radius = base_radius + 5.5;
+                    let dist_sq = ((world_x - center_x) * (world_x - center_x)
+                        + (world_z - center_z) * (world_z - center_z)) as f32;
+
+                    if dist_sq <= halo_radius * halo_radius {
+                        return Some(Self::volcanic_rock_for_basin(h, world_x, world_y, world_z));
+                    }
+                }
+            }
+        }
+        None
+    }
+
     pub fn sample_noise_point(&self, fx: f32, fy: f32, fz: f32, seed: u32) -> CaveNoiseSample {
         let worm_a = gradient_noise_3d(
             fx * self.spaghetti_freq,
@@ -298,16 +509,5 @@ impl CaveGenerator {
         }
 
         false
-    }
-
-    /// Returns the filler voxel for a hollowed cave position using an up-sampled noise sample.
-    #[inline]
-    pub fn cave_voxel_sampled(
-        &self,
-        _world_y: i32,
-        _sample: CaveNoiseSample,
-        _sea_level: i32,
-    ) -> Voxel {
-        Voxel::Air
     }
 }

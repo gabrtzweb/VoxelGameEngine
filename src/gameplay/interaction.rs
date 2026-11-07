@@ -647,7 +647,16 @@ pub fn remove_voxel(
         return false;
     }
 
-    let replacement = if current_voxel == Voxel::WaterOccupied {
+    let is_submerged_fixture = (current_voxel.is_rubble()
+        || current_voxel.is_pebble()
+        || current_voxel.is_marine_flora()
+        || current_voxel.is_coral_fan())
+        && (world.get_voxel(world_voxel + IVec3::Y).is_some_and(|v| v.is_water() || v.is_marine_flora() || v.is_coral_fan())
+            || [IVec3::X, IVec3::NEG_X, IVec3::Z, IVec3::NEG_Z]
+                .into_iter()
+                .any(|off| world.get_voxel(world_voxel + off).is_some_and(Voxel::is_water)));
+
+    let replacement = if current_voxel == Voxel::WaterOccupied || is_submerged_fixture {
         Voxel::LiquidWater
     } else {
         Voxel::Air

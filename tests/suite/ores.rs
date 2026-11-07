@@ -105,3 +105,36 @@ fn test_rock_outcrops_appear_in_both_categories() {
     assert!(CreativeCategory::Rocks.matches(Voxel::DolomiteSnow));
     assert!(CreativeCategory::Soils.matches(Voxel::DolomiteSnow));
 }
+
+#[test]
+fn test_lava_basin_generation_and_opaque_fluid_properties() {
+    use voxel_game_engine::generation::caves::CaveGenerator;
+    use voxel_game_engine::meshing::greedy::should_render_face;
+
+    // 1. Fluid opacity classification
+    assert!(Voxel::LiquidLava.is_fluid_opaque());
+    assert!(Voxel::LiquidCoreMagma.is_fluid_opaque());
+    assert!(Voxel::LiquidTar.is_fluid_opaque());
+    assert!(!Voxel::LiquidLava.is_fluid_transparent());
+    assert!(Voxel::LiquidWater.is_fluid_transparent());
+    assert!(Voxel::LiquidSpringWater.is_fluid_transparent());
+
+    // 2. Opaque fluid face culling: solid rock behind/beneath opaque lava culls its face
+    assert!(!should_render_face(Voxel::Granite, Voxel::LiquidLava));
+    // But solid rock beneath transparent water renders its face
+    assert!(should_render_face(Voxel::Granite, Voxel::LiquidWater));
+
+    // 3. Volcanic rock selection for basin
+    let rock = CaveGenerator::volcanic_rock_for_basin(12345, 10, -100, 20);
+    assert!(matches!(
+        rock,
+        Voxel::Obsidian | Voxel::Magma | Voxel::Basalt | Voxel::CobbledBasalt
+    ));
+
+    // 4. Submerged rubble / pebble face culling: water does not render an artificial face against rubble
+    assert!(!should_render_face(Voxel::LiquidWater, Voxel::BasaltRubble));
+    assert!(!should_render_face(Voxel::LiquidWater, Voxel::GraniteRubble));
+    assert!(!should_render_face(Voxel::LiquidWater, Voxel::PebbleFlintCluster));
+    assert!(Voxel::BasaltRubble.is_rubble());
+    assert!(Voxel::BasaltRubble.has_custom_mesh());
+}

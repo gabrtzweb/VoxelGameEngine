@@ -60,12 +60,12 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **04** | **[Architecture, Graphics Modernization & Soundness](#phase-4-architecture-graphics-modernization--soundness-completed)** | **Completed** | Multi-tier hardware profiles, chunk memory optimization, modular domain crates, dynamic 3D render scaling, 16:9 window snapping |
 | **05** | **[High-Impact Performance & Graphics Pipeline](#phase-5-high-impact-performance--graphics-pipeline-completed)** | **Completed** | Dynamic frame rate limiter, hardware GPU upload budgets, AMD FSR 1.0 upscaling, subterranean occlusion culling |
 | **06** | **[Wild Flora, Herbaceous Vegetation & Botanical Systems](#phase-6-wild-flora-herbaceous-vegetation--botanical-systems-completed)** | **Completed** | 26 vegetation blocks, 28 flower blocks, cross-billboard rendering, double-tall block mechanics, petal carpet mesh, marine flora & waterlogged envelope, biome scatter generation |
-| **07** | **[Subterranean Strata, Caverns & Geological Generation](#phase-7-subterranean-strata-caverns--geological-generation-in-progress)** | **In Progress** | Multi-tier geological strata, Mantle bedrock at Y = -254, 54 authentic ore vein pairings, crystal geodes, subterranean cave biomes |
-| **08** | **[Next-Gen 3D World Generation and 6D Multi-Noise Climate](#phase-8-next-gen-3d-world-generation-and-6d-multi-noise-climate-in-progress)** | **In Progress** | 6D continuous climate noise, 44 distinct biomes, subterranean microbiomes, hydrological stepping, cubic landform splines |
+| **07** | **[Subterranean Strata, Caverns & Geological Generation](#phase-7-subterranean-strata-caverns--geological-generation-completed)** | **Completed** | Multi-tier geological strata, Mantle bedrock at Y = -254, 54 authentic ore vein pairings, crystal geodes, subterranean cave biomes |
+| **08** | **[Next-Gen 3D World Generation and 6D Multi-Noise Climate](#phase-8-next-gen-3d-world-generation-and-6d-multi-noise-climate-completed)** | **Completed** | 6D continuous climate noise, 44 distinct biomes, subterranean microbiomes, hydrological stepping, cubic landform splines |
 | **09** | **[Main Menu, Clean World Session Lifetime & Deferred World Loading](#phase-9-main-menu-clean-world-session-lifetime--deferred-world-loading-completed)** | **Completed** | Title splash & action menu, deferred chunk streaming, loading screen with rotating tips, menu soundtrack & shuffle, clean session lifecycle |
 | **10** | **[Sound Engine & Spatial Audio System](#phase-10-sound-engine--spatial-audio-system-completed)** | **Completed** | 3D spatial audio, material-based block break/place and footsteps, ambient environmental soundscapes, weather audio, dynamic music |
 | **11** | **[Custom Voxel Player Character, 8-Race Silhouettes & Hand Item Rendering](#phase-11-custom-voxel-player-character-8-race-silhouettes--hand-item-rendering-completed)** | **Completed** | Modular voxel character rig, 8 fantasy races with distinct silhouettes & proportions, 1st/3rd-person 3D held item rendering |
-| **12** | **[Phase 12 (TBD)](#phase-12-tbd)** | **Planned** | Reserved for future systems |
+| **12** | **[Agricultural Simulation, Cultivated Crops & Farmland Systems](#phase-12-agricultural-simulation-cultivated-crops--farmland-systems-planned)** | **Planned** | 36 domestic and wild crops, growth lifecycle simulation, soil moisture, irrigation, seasonal yields, arboreal canopy pods |
 | **13** | **[Physics Engine, Fluid Dynamics & Item Drops](#phase-13-physics-engine-fluid-dynamics--item-drops-completed)** | **Completed** | Dynamic smooth flow fluid meshing, downhill river hydrology & current vectors, floating 3D item drops & suction physics |
 | **14** | **[Dynamic Weather System & Meteorological Phenomena](#phase-14-dynamic-weather-system--meteorological-phenomena-completed)** | **Completed** | Multi-state weather simulation (rain, snow, fog, storms), precipitation particles, surface wetness, dynamic snow accumulation |
 | **15** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-15-visual-aesthetics-shaders--atmospheric-fx-overhaul-completed)** | **Completed** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, subterranean lighting stabilization |
@@ -73,7 +73,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **17** | **[Localization & Multi-Language Support](#phase-17-localization--multi-language-support-completed)** | **Completed** | `lang/` translation files (`en_us`, `pt_br`), comprehensive UI/block/item localization, natural Portuguese grammar, in-game language selector |
 | **18** | **[Controls & Keybinding System](#phase-18-controls--keybinding-system-completed)** | **Completed** | Configurable keybindings for all actions, mouse sensitivity & invert Y options, input conflict detection, Main Menu & Pause integration |
 | **19** | **[Dynamic Foliage & Procedural Grass System](#phase-19-dynamic-foliage--procedural-grass-system-completed)** | **Completed** | Procedural 3D grass blades on surface blocks, cubic Bezier wind deformation, Voronoi clumping, entity footprint trails, dynamic LOD |
-| **20** | **[Agricultural Simulation, Cultivated Crops & Farmland Systems](#phase-20-agricultural-simulation-cultivated-crops--farmland-systems-planned)** | **Planned** | 36 domestic and wild crops, growth lifecycle simulation, soil moisture, irrigation, seasonal yields, arboreal canopy pods |
+| **20** | **[Phase 20 (TBD)](#phase-20-tbd-planned)** | **Planned** | Reserved for future systems |
 
 ---
 
@@ -183,18 +183,20 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 7: Subterranean Strata, Caverns & Geological Generation (In Progress)
+### Phase 7: Subterranean Strata, Caverns & Geological Generation (Completed)
 
 - [x] **Geological Strata Generation Architecture**:
   - Multi-tier vertical strata system replacing uniform filler stone with realistic geological depth layers (Surface, Upper, Middle, and Deep tectonic crusts) bounded by indestructible Mantle bedrock at Y = -254.
 - [x] **Subterranean Mineral & Ore Vein Matrix**:
-  - Procedural distribution of 54 authentic host-rock mineral pairings across 10 mother rocks, alongside subterranean crystal geodes with basalt/calcite protective shells.
-- [ ] **3D Subterranean Cave Biomes & Unique Caverns**:
-  - Distinct subterranean environments including karst caverns, flooded calcite grottoes, dripstone chasms, and volcanic lava tube corridors.
+  - Procedural distribution of 54 authentic host-rock mineral pairings across 10 mother rocks, alongside subterranean crystal geodes with basalt/calcite protective shells and 6-direction crystal clusters.
+- [x] **3D Subterranean Cave Biomes, Natural Fluid Basins & Unique Caverns**:
+  - Distinct subterranean environments including Karst Caverns, Calcite Grottos, Pink Salt Caverns, Crystal Geodes, Thermal Caves, Ice Caves, and Mushroom Caves.
+  - Deep subterranean liquid lava lakes (`LiquidLava`) below Y = -60 to -219, abyssal mantle core magma lakes (`LiquidCoreMagma`) near the bedrock floor (Y = -220 to -254), sulfuric acid pools in thermal caves (`LiquidAcid`), toxic sludge in fungal caves (`LiquidSludge`), pure mineral spring waters in calcite grottos (`LiquidSpringWater`), and fossil tar seepages (`LiquidTar`) in arid subterranean strata.
+  - Directional stalactite and stalagmite speleothems strictly rooted to corresponding host rocks.
 
 ---
 
-### Phase 8: Next-Gen 3D World Generation and 6D Multi-Noise Climate (In Progress)
+### Phase 8: Next-Gen 3D World Generation and 6D Multi-Noise Climate (Completed)
 
 - [x] **6D Multi-Noise Climate Sampling & Voronoi Matching**:
   - 6 orthogonal continuous climate noise dimensions: `Continentalness`, `Erosion`, `Ridges` (Weirdness / Peaks & Valleys), `Temperature`, `Humidity`, and `Depth`.
@@ -209,13 +211,13 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
   - Elevated river beds following terrain elevation and continental gradient, descending in natural steps toward the sea with cascades and waterfalls.
   - Organic width modulation and loop-breaking cutoffs preventing closed circular moats.
   - Alpine and meadow ponds forming natural depressions with localized water surfaces.
-- [ ] **3D Density Router & Spline Landforms**:
-  - Volumetric 3D density evaluation pipeline in [`src/generation/generator.rs`](src/generation/generator.rs) replacing 2D height summation.
-  - Parameterized cubic splines modeling alpine mountain ridges, layered canyon bluffs, desert sand dunes, and steep rock overhangs.
-  - Sparse 4×4×4 density grid evaluation with SIMD-accelerated trilinear interpolation for high-throughput chunk generation.
-- [ ] **Slope-Aware Surface & Strata Rules**:
-  - Dynamic surface angle detection applying cliff stone materials to steep vertical rock faces (> 50° incline).
-  - Sedimentary layering for canyon walls and badlands (alternating sandstone and clay bands).
+- [x] **3D Density Router & Spline Landforms**:
+  - 3D cave hollow router and multi-octave 3D density evaluation pipeline in [`src/generation/generator.rs`](src/generation/generator.rs) paired with continuous spline-driven continental elevations.
+  - Mountain ridges, layered canyon bluffs, desert sand dunes, and natural subterranean cheese cavern chambers.
+  - Sparse lattice sampling with SIMD-accelerated trilinear interpolation (`ChunkCaveSampler`) for high-throughput chunk generation.
+- [x] **Slope-Aware Surface & Strata Rules**:
+  - Dynamic surface gradient detection applying cliff stone materials and exposed rock faces to steep inclines (> 45° incline), eliminating hanging soil on vertical walls.
+  - Sedimentary layering for canyon walls and badlands (alternating sandstone and terracotta clay bands).
 - [x] **Live Worldgen Inspector Overhaul**:
   - Real-time 6D telemetry diagnostics overlay and frequency tuning sliders in [`src/generation/inspector.rs`](src/generation/inspector.rs) with live hot-reloading.
 
@@ -280,7 +282,19 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 12: TBD
+### Phase 12: Agricultural Simulation, Cultivated Crops & Farmland Systems (Planned)
+
+- [x] **Agricultural Simulation Engine Foundation**:
+  - Simulation model for crop lifecycles, soil moisture propagation, rainfall hydration, and harvest yield evaluation.
+- [ ] **Complete Crop Catalog & Farmland Architecture**:
+  - Specification and registration of **36 domestic and wild ancestral cultivars** (`docs/worldbuilding/blocks/crops`).
+  - Farmland tilling mechanics with hoe tools, soil saturation tiers (dry, moist, fully hydrated), and hydration transfer from adjacent water sources ($\le 4\text{ blocks}$).
+- [ ] **In-World Multi-Stage Crop Meshing & Growth Ticks**:
+  - Connect multi-stage developmental growth lifecycles (stages 0 to 7) to block tick updates, seasonal temperatures, and fertilization (bonemeal).
+  - Multi-tier visual growth meshes for row crops, trellis climbers, arboreal canopy pods, and ancestral wild cultivars.
+- [ ] **Harvesting, Seed Multiplication & Culinary Integration**:
+  - Mature crop breaking yields edible harvest items and replantable seeds.
+  - Right-click rapid harvesting for persistent multi-harvest crops (berries, bush crops).
 
 ---
 
@@ -432,16 +446,6 @@ Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dyna
 
 ---
 
-### Phase 20: Agricultural Simulation, Cultivated Crops & Farmland Systems (Planned)
+### Phase 20: TBD (Planned)
 
-- [x] **Agricultural Simulation Engine Foundation**:
-  - Simulation model for crop lifecycles, soil moisture propagation, rainfall hydration, and harvest yield evaluation.
-- [ ] **Complete Crop Catalog & Farmland Architecture**:
-  - Specification and registration of **36 domestic and wild ancestral cultivars** (`docs/worldbuilding/blocks/crops`).
-  - Farmland tilling mechanics with hoe tools, soil saturation tiers (dry, moist, fully hydrated), and hydration transfer from adjacent water sources ($\le 4\text{ blocks}$).
-- [ ] **In-World Multi-Stage Crop Meshing & Growth Ticks**:
-  - Connect multi-stage developmental growth lifecycles (stages 0 to 7) to block tick updates, seasonal temperatures, and fertilization (bonemeal).
-  - Multi-tier visual growth meshes for row crops, trellis climbers, arboreal canopy pods, and ancestral wild cultivars.
-- [ ] **Harvesting, Seed Multiplication & Culinary Integration**:
-  - Mature crop breaking yields edible harvest items and replantable seeds.
-  - Right-click rapid harvesting for persistent multi-harvest crops (berries, bush crops).
+(Reserved for future systems)

@@ -144,11 +144,12 @@ fn sync_celestial_system(
     });
 
     let underground_factor = env_status.as_ref().map_or(0.0, |s| s.underground_factor);
-    // Sky fill light has no shadow mapping, so it gently dims only as player goes deep underground
-    let fill_underground_dim = (1.0 - (underground_factor - 0.40).max(0.0) * 1.5).clamp(0.10, 1.0);
+    // Sky fill light has no shadow mapping, so fade it out as the player enters caves
+    let fill_underground_dim = (1.0 - underground_factor * 1.4).clamp(0.0, 1.0);
     // Keep directional sunlight shining at 100% through cave entrances and near-surface openings.
-    // Shadows cast by terrain geometry block the sun naturally; dimming only occurs in deepest depths.
-    let sun_underground_dim = (1.0 - (underground_factor - 0.70).max(0.0) * 1.5).clamp(0.40, 1.0);
+    // Shadows cast by terrain geometry block the sun naturally; fade out completely in deep caverns
+    // beyond shadow cascade distance so sunlight never leaks through deep roofs.
+    let sun_underground_dim = (1.0 - (underground_factor - 0.35).max(0.0) * 1.54).clamp(0.0, 1.0);
 
     let sun_dir = celestial::calculate_sun_direction(state.time_of_day);
     let moon_dir = -sun_dir;

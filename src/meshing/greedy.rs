@@ -4,7 +4,10 @@ use bevy::{
     prelude::{IVec3, Mesh},
 };
 
-use super::{shapes::mesh_shaped_voxels, textures::VoxelTextureRegistry};
+use super::{
+    shapes::{is_submerged_fixture, mesh_shaped_voxels},
+    textures::VoxelTextureRegistry,
+};
 use crate::{
     simulation::fluid::{compute_fluid_corner_offsets, water_surface_height_offset},
     world::{BlockShape, CHUNK_SIZE, CHUNK_VOLUME, Chunk, VOXEL_SIZE, Voxel, VoxelAccess},
@@ -887,7 +890,11 @@ impl ChunkMesher {
                         let (neighbor_shape, _) = world.get_shape(neighbor_coordinate);
                         let mut step_bottom_offset_cm = 0u8;
 
-                        if voxel.is_fluid() && (neighbor.is_marine_flora() || neighbor.is_coral_fan()) {
+                        if voxel.is_fluid()
+                            && (neighbor.is_marine_flora()
+                                || neighbor.is_coral_fan()
+                                || is_submerged_fixture(world, neighbor_coordinate, neighbor))
+                        {
                             continue;
                         }
 
@@ -1102,7 +1109,11 @@ impl ChunkMesher {
 
 pub fn should_render_face(voxel: Voxel, neighbor: Voxel) -> bool {
     if voxel.is_fluid() {
-        if neighbor.is_marine_flora() || neighbor.is_coral_fan() {
+        if neighbor.is_marine_flora()
+            || neighbor.is_coral_fan()
+            || neighbor.is_rubble()
+            || neighbor.is_pebble()
+        {
             return false;
         }
         return neighbor.is_empty()
@@ -1125,13 +1136,18 @@ pub fn should_render_face(voxel: Voxel, neighbor: Voxel) -> bool {
         return !neighbor.is_solid_opaque();
     }
 
-    // Solid opaque blocks render against air, water, leaves, fluids, occupied cells, or non-solid/custom mesh blocks
+    // Solid opaque blocks render against air, transparent fluids, leaves, transparent blocks, occupied cells, or custom mesh blocks.
+    // They cull against opaque fluids (e.g. stone behind lava or under tar is completely hidden).
+    if neighbor.is_fluid_opaque() {
+        return false;
+    }
+
     neighbor.is_empty()
         || !neighbor.is_solid_opaque()
         || neighbor.has_custom_mesh()
         || neighbor.is_transparent()
         || neighbor.is_leaves()
-        || neighbor.is_fluid()
+        || neighbor.is_fluid_transparent()
         || neighbor == Voxel::Occupied
 }
 
@@ -1209,7 +1225,7 @@ pub fn greedy_merge_mask(
                 }
             }
 
-            let target_buffers = if key.voxel.is_transparent() || key.voxel.is_fluid() {
+            let target_buffers = if key.voxel.is_transparent() || key.voxel.is_fluid_transparent() {
                 &mut *transparent_buffers
             } else {
                 &mut *opaque_buffers
@@ -1732,7 +1748,7 @@ pub fn compute_block_transition(
     direction: FaceDirection,
     textures: &VoxelTextureRegistry,
 ) -> (u16, u8, u32) {
-    if direction == FaceDirection::NegativeY {
+    if direction == FaceDirection::NegativeY || raw_voxel.is_crystal_solid_block() || raw_voxel.is_crystal_cluster() {
         return (0, 0, 0);
     }
 

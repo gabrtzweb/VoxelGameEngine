@@ -527,6 +527,8 @@ impl Voxel {
             || self.is_painted()
             || self.is_light()
             || self.has_custom_mesh()
+            || self.is_crystal_solid_block()
+            || self.is_crystal_cluster()
         {
             return 0;
         }

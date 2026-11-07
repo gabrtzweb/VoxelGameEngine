@@ -129,6 +129,11 @@ fn fragment(
 @else
 @fragment
 fn fragment(in: VertexOutput) {
+    // Exclude cross-mesh billboards and speleothems from writing into the directional shadow map
+    // so intersecting 'X' planes never self-shadow, while still receiving shadows from solid cave roofs and terrain.
+    if (in.color.a > 3.5 && in.color.a < 6.5) {
+        discard;
+    }
     let is_mask_face = in.color.a < -0.5;
     if (!is_mask_face) {
         let uv = clamp(fract(in.uv), vec2<f32>(0.0005), vec2<f32>(0.9995));

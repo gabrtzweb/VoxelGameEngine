@@ -434,7 +434,9 @@ fn fragment(
     // Preserves clear geometric distinction across faces under diffuse ambient light.
     let norm = normalize(vertex_output.world_normal);
     var dir_shading = 1.0;
-    if (abs(norm.y) > 0.5) {
+    if (is_cross_mesh) {
+        dir_shading = 0.82;
+    } else if (abs(norm.y) > 0.5) {
         if (norm.y < 0.0) {
             dir_shading = 0.55;
         }
@@ -479,14 +481,17 @@ fn fragment(
     }
 
     if (is_cross_mesh) {
-        pbr_input.world_normal = vec3<f32>(0.0, 1.0, 0.0);
-        pbr_input.N = vec3<f32>(0.0, 1.0, 0.0);
-        // Disable shadow receiving on crossmesh billboard fragments:
-        // Paper-thin 2D diagonal quads cannot physically self-shadow. Clearing MESH_FLAGS_SHADOW_RECEIVER_BIT
-        // (1u << 29u) ensures crossmeshes never evaluate shadow map depth on themselves, completely eliminating
-        // shadow acne, pulsing vertical stripes, and top-edge 'X' artifacts. Meanwhile, voxel_prepass still writes
-        // crossmesh geometry into the shadow map so they cast full, sharp shadows onto the ground and solid terrain.
-        pbr_input.flags = pbr_input.flags & ~(1u << 29u);
+        if (vertex_output.color.a > 5.5 && vertex_output.color.a < 6.5) {
+            // Rigid fixtures / speleothems / crystals: use a horizontal viewer-facing normal
+            // so both crossed planes share uniform shading AND match the vertical side faces
+            // of the supporting cave ceiling/floor blocks (Calcite, Karst, etc.).
+            let horiz_v = normalize(vec3<f32>(pbr_input.V.x, 0.12, pbr_input.V.z));
+            pbr_input.world_normal = horiz_v;
+            pbr_input.N = horiz_v;
+        } else {
+            pbr_input.world_normal = vec3<f32>(0.0, 1.0, 0.0);
+            pbr_input.N = vec3<f32>(0.0, 1.0, 0.0);
+        }
     }
 
     var out: FragmentOutput;

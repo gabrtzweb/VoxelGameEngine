@@ -346,7 +346,7 @@ impl TerrainGenerator {
 
                         let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
                         let voxel = voxels[idx];
-                        if !voxel.is_collidable() || voxel.is_unbreakable() {
+                        if !voxel.is_collidable() || voxel.is_unbreakable() || voxel.is_crystal_solid_block() {
                             continue;
                         }
 
@@ -577,6 +577,15 @@ impl TerrainGenerator {
             // Populate 6-direction crystal clusters (floor, ceiling, and horizontal on walls)
             // inside crystal geode chambers and pink salt caverns
             ores::populate_chunk_crystal_clusters(
+                &mut voxels,
+                &mut chunk_shapes,
+                chunk_origin,
+                self.seed,
+            );
+
+            // Populate stalactites and stalagmites strictly on/under their matching host rock
+            // (Calcite on Calcite, Karst on Karst, BlueIce on Ice, SaltStraw on PinkSalt, ObsidianSpike on Obsidian)
+            ores::populate_chunk_speleothems(
                 &mut voxels,
                 &mut chunk_shapes,
                 chunk_origin,
@@ -948,10 +957,14 @@ impl TerrainGenerator {
                     | BiomeType::ScarletMountains
             );
 
+            // Slope-Aware Surface Rules:
+            // Calculate steep surface gradient across cardinal neighbors.
+            // When slope is steep (drop >= 2 in cliff/mountain biomes, or >= 3 in general terrain),
+            // mark as cliff face so surface rules strip fragile soil/turf and expose bare rock/strata.
             is_cliff = if is_cliff_biome {
-                max_delta >= 3
+                max_delta >= 2
             } else {
-                max_delta >= 5
+                max_delta >= 3
             };
 
             // Retain solid blocks on sections of higher terrain for blocky cliffs and stepped terraces
@@ -1862,6 +1875,14 @@ impl TerrainGenerator {
             || column.water_level.is_some())
             && world_y >= (column.water_level.unwrap_or(column.terrain_height) - 5);
 
+        // Subterranean volcanic lava basins:
+        // Discrete volcanic pools enclosed by Basalt, Obsidian, and Magma (never floats, never leaks)
+        if !is_near_water_basin && world_y <= self.caves.deep_lava_y && world_y > -246 {
+            if let Some(basin_voxel) = self.caves.subterranean_lava_basin_at(world_x, world_y, world_z, self.seed) {
+                return basin_voxel;
+            }
+        }
+
         if !is_near_water_basin
             && self.caves.is_cave_sampled(
                 world_x,
@@ -1874,9 +1895,48 @@ impl TerrainGenerator {
                 self.seed,
             )
         {
-            return self
-                .caves
-                .cave_voxel_sampled(world_y, cave_sample, self.effective_sea_level());
+            // Subterranean fluid basins tailored to depth and regional cave biomes:
+            // All subterranean pools are strictly flat, horizontal basins (no fluids on walls/ceilings).
+            let biome_type = column.biome;
+            if biome_type == BiomeType::ThermalCaves && world_y <= -30 {
+                if let Some(pool_y) = self.subterranean_pool_level(world_x, world_z, 889_121, 42, 25, -35, 18, 5, 5.0) {
+                    if world_y <= pool_y && world_y >= pool_y - 2 {
+                        return Voxel::LiquidAcid;
+                    }
+                }
+            } else if (biome_type == BiomeType::MushroomCaves || biome_type == BiomeType::OrchidSwamp)
+                && world_y <= -20
+            {
+                if let Some(pool_y) = self.subterranean_pool_level(world_x, world_z, 441_889, 40, 28, -25, 16, 5, 6.0) {
+                    if world_y <= pool_y && world_y >= pool_y - 2 {
+                        return Voxel::LiquidSludge;
+                    }
+                }
+            } else if biome_type == BiomeType::ThermalCaves && (-160..=-40).contains(&world_y) {
+                if let Some(pool_y) = self.subterranean_pool_level(world_x, world_z, 66_331, 40, 30, -50, 16, 6, 6.0) {
+                    if world_y <= pool_y && world_y >= pool_y - 2 {
+                        return Voxel::LiquidSpringWater;
+                    }
+                }
+            } else if matches!(
+                biome_type,
+                BiomeType::AncientSands | BiomeType::SavannaBadlands | BiomeType::DesertSpires
+            ) && (-90..=-15).contains(&world_y) {
+                if let Some(pool_y) = self.subterranean_pool_level(world_x, world_z, 881_204, 44, 28, -20, 14, 5, 5.0) {
+                    if world_y <= pool_y && world_y >= pool_y - 3 {
+                        return Voxel::LiquidTar;
+                    }
+                }
+            }
+
+            return self.caves.cave_voxel_sampled(
+                world_y,
+                world_x,
+                world_z,
+                cave_sample,
+                self.effective_sea_level(),
+                self.seed,
+            );
         }
 
         let depth = column.terrain_height - world_y;
@@ -1961,6 +2021,14 @@ impl TerrainGenerator {
                     | Voxel::FrostIceBlack
             ) {
                 return surface;
+            }
+        }
+
+        // Volcanic thermal halo: rock in the immediate vicinity of subterranean lava basins
+        // is naturally transmuted into authentic volcanic geology (Basalt, Obsidian, Magma, CobbledBasalt).
+        if world_y <= self.caves.deep_lava_y && world_y > -246 {
+            if let Some(volcanic_rock) = self.caves.volcanic_halo_at(world_x, world_y, world_z, self.seed) {
+                return volcanic_rock;
             }
         }
 
@@ -2170,6 +2238,46 @@ impl TerrainGenerator {
         }
 
         Simd4f(res)
+    }
+
+    #[inline]
+    pub fn subterranean_pool_level(
+        &self,
+        world_x: i32,
+        world_z: i32,
+        seed_offset: u32,
+        cell_size: i32,
+        chance_percent: u32,
+        base_y: i32,
+        step_y: i32,
+        num_bands: u32,
+        base_radius: f32,
+    ) -> Option<i32> {
+        let cell_x = world_x.div_euclid(cell_size);
+        let cell_z = world_z.div_euclid(cell_size);
+
+        for dx in -1..=1 {
+            for dz in -1..=1 {
+                let cx = cell_x + dx;
+                let cz = cell_z + dz;
+                let h = crate::core::noise::hash_2d(cx, cz, self.seed.wrapping_add(seed_offset));
+                if (h % 100) >= chance_percent {
+                    continue;
+                }
+                let margin = (cell_size / 4).max(4) as u32;
+                let center_x = cx * cell_size + ((h % (cell_size as u32 - margin * 2)) + margin) as i32;
+                let center_z = cz * cell_size + (((h >> 8) % (cell_size as u32 - margin * 2)) + margin) as i32;
+                let band = ((h >> 16) % num_bands) as i32;
+                let pool_surface_y = base_y - band * step_y;
+                let radius = base_radius + ((h >> 20) % 5) as f32;
+                let dist_sq = ((world_x - center_x) * (world_x - center_x)
+                    + (world_z - center_z) * (world_z - center_z)) as f32;
+                if dist_sq <= radius * radius {
+                    return Some(pool_surface_y);
+                }
+            }
+        }
+        None
     }
 
     pub fn terrain_height_at(&self, world_x: f32, world_z: f32, climate: &ClimateSample) -> i32 {

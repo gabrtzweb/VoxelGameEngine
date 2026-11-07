@@ -128,7 +128,7 @@ pub fn mesh_slab(
             extra_cull[2] = true; // +Y face touches upper slab
         }
         let (extra_box_a, _) = BlockShape::Slab.local_boxes(extra_orient);
-        let extra_buffers = if extra_voxel.is_transparent() || extra_voxel.is_fluid() {
+        let extra_buffers = if extra_voxel.is_transparent() || extra_voxel.is_fluid_transparent() {
             &mut *transparent_buffers
         } else {
             &mut *opaque_buffers

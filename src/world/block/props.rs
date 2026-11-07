@@ -374,6 +374,44 @@ impl Voxel {
     }
 
     #[inline(always)]
+    pub const fn is_crystal_solid_block_const(self) -> bool {
+        matches!(
+            self,
+            Self::CrystalAmethystBlock
+                | Self::CrystalAquamarineBlock
+                | Self::CrystalCitrineBlock
+                | Self::CrystalFluoriteBlock
+                | Self::CrystalPinkSaltBlock
+                | Self::CrystalSeleniteBlock
+        )
+    }
+
+    #[inline(always)]
+    pub const fn is_fluid_opaque_const(self) -> bool {
+        matches!(
+            self,
+            Self::LiquidLava
+                | Self::LiquidCoreMagma
+                | Self::LiquidMolten
+                | Self::LiquidTar
+                | Self::LiquidSludge
+                | Self::LiquidBlood
+                | Self::LiquidOoze
+        )
+    }
+
+    #[inline(always)]
+    pub const fn is_fluid_transparent_const(self) -> bool {
+        matches!(
+            self,
+            Self::LiquidWater
+                | Self::WaterOccupied
+                | Self::LiquidSpringWater
+                | Self::LiquidAcid
+        )
+    }
+
+    #[inline(always)]
     pub const fn is_crystal_cluster_const(self) -> bool {
         matches!(
             self,
@@ -526,6 +564,16 @@ impl Voxel {
     }
 
     #[inline(always)]
+    pub fn is_fluid_opaque(self) -> bool {
+        self.is_fluid_opaque_const()
+    }
+
+    #[inline(always)]
+    pub fn is_fluid_transparent(self) -> bool {
+        self.is_fluid_transparent_const()
+    }
+
+    #[inline(always)]
     pub fn max_fluid_spread(self) -> u8 {
         VOXEL_PROPS[self as usize].max_fluid_spread
     }
@@ -568,6 +616,11 @@ impl Voxel {
     #[inline(always)]
     pub fn is_speleothem(self) -> bool {
         self.is_speleothem_const()
+    }
+
+    #[inline(always)]
+    pub fn is_crystal_solid_block(self) -> bool {
+        self.is_crystal_solid_block_const()
     }
 
     #[inline(always)]

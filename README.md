@@ -145,6 +145,7 @@ src/
 │   ├── feedback.rs
 │   ├── icon.rs
 │   ├── interaction.rs
+│   ├── item_drops.rs
 │   ├── mod.rs
 │   ├── radial_menu.rs
 │   ├── shaping.rs
@@ -174,6 +175,7 @@ src/
 │   ├── menu_bar.rs
 │   ├── mod.rs
 │   ├── pause.rs
+│   ├── race_selection.rs
 │   └── settings.rs
 ├── meshing/
 │   ├── shapes/
@@ -192,12 +194,14 @@ src/
 │   ├── camera.rs
 │   ├── collision.rs
 │   ├── controller.rs
+│   ├── dynamic_light.rs
 │   ├── game_mode.rs
 │   ├── hotbar.rs
 │   ├── inventory.rs
 │   ├── mod.rs
 │   ├── model.rs
 │   ├── movement.rs
+│   ├── race.rs
 │   ├── spectator.rs
 │   ├── state.rs
 │   └── water.rs

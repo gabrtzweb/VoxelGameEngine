@@ -124,11 +124,12 @@ Camera System:
 - First-Person Camera: true first-person body view (head hidden to prevent interior clipping, looking down reveals animated chest, arms, and legs)
 - Third-Person Camera (`F5`): orbiting camera with dynamic raycast block collision prevention to avoid clipping underground/walls, and independent head pitch/yaw tracking
 
-Player Model & Procedural Animations:
+Player Model, 8-Race Silhouettes & Held Items:
 
-- Minecraft 64×64 skin compatible humanoid mesh hierarchy (Head, Torso, Left/Right Arm, Left/Right Leg) mapped to `assets/textures/models/player_skin.png`
-- Full support for base skin and 3D outer layers (hat/hair, jacket, sleeves, pants) with alpha masking
-- Procedural locomotion: dynamic walk/sprint leg & arm pendulum swings, idle breathing sway, crouch torso tilt, prone crawling strokes, streamlined flutter-kick swimming, airborne jump poses, and 4-state flight animations (ascent, descent, fast flight, hover)
+- Modular voxel character rig with reactive PBR materials, replacing legacy Minecraft flat skins.
+- 8 distinct fantasy races with bespoke physical silhouettes and proportions (Elf, Drow, Dwarf, Halfling, Orc, Dragonborn, Tiefling, and Human).
+- 1st-person and 3rd-person held item rendering directly attached to the player's hand with natural resting posture and action swing/recoil animations.
+- Procedural locomotion: dynamic walk/sprint leg & arm pendulum swings, idle breathing sway, crouch torso tilt, prone crawling strokes, streamlined flutter-kick swimming, airborne jump poses, and 4-state flight animations (ascent, descent, fast flight, hover).
 
 Game Modes Currently Implemented:
 
@@ -151,20 +152,20 @@ In Version 0.2 (Modernization, Worldbuilding & Deep Systems), the project status
 - **Phase 4 (Completed)**: Architecture, Graphics Modernization & Soundness (Multi-tier hardware profiles, chunk memory optimization, modular domain crates, dynamic 3D render scaling, 16:9 window snapping, test isolation).
 - **Phase 5 (Completed)**: High-Impact Performance & Graphics Pipeline (Dynamic frame rate limiter, hardware GPU upload budgets, AMD FSR 1.0 upscaling, subterranean occlusion culling).
 - **Phase 6 (Completed)**: Wild Flora, Herbaceous Vegetation & Botanical Systems (Full botanical catalog with 26 vegetation blocks, 28 flower blocks, cross-billboard rendering, double-tall mechanics, petal carpets, marine flora with waterlogged envelopes, kelp/cave vine tip mechanics, floor-support cascading, and biome scatter generation).
-- **Phase 7 (In Progress)**: Subterranean Strata, Caverns & Geological Generation (Multi-tier geological strata, Mantle bedrock at Y = -254, 54 authentic ore vein pairings, crystal geodes, subterranean cave biomes).
-- **Phase 8 (Planned)**: Biome Refactoring, Climate Modeling & Tree/Flora Distribution (Multi-noise climate fields, organic biome dithering, ecological tree dispersion, canopy density models).
+- **Phase 7 (Completed)**: Subterranean Strata, Caverns & Geological Generation (Multi-tier geological strata, Mantle bedrock at Y = -254, 54 authentic ore vein pairings, crystal geodes, subterranean cave biomes, deep lava lakes, abyssal core magma lakes, acid, sludge, mineral spring water, and tar fluid basins).
+- **Phase 8 (Completed)**: Next-Gen 3D World Generation and 6D Multi-Noise Climate (6D continuous climate noise, 44 distinct biomes, subterranean microbiomes, hydrological stepping, cubic landform splines, slope-aware cliff face rock exposure).
 - **Phase 9 (Completed)**: Main Menu, Clean World Session Lifetime & Deferred World Loading (Title splash, action menu, deferred chunk streaming, loading screen with rotating tips, menu soundtrack & shuffle, session cleanup).
 - **Phase 10 (Completed)**: Sound Engine & Spatial Audio System (Multi-channel volume mixer, 11-material acoustic profiles, spatial 3D block interaction audio, realistic footstep cadences, water wading and swimming strokes, ambient biomes, weather audio, and 39-track soundtrack).
-- **Phase 11 (Planned)**: Custom Voxel Player Character & Modular Character Creator (Modular voxel character rig, Character Creator interface, fantasy races, custom hair, skin, eye, and cosmetic customization).
-- **Phase 12 (Planned)**: First-Person Item Rendering & Creative Utility Tools (3D held items/blocks in player hand, paint roller, lumberjack tree-felling saw, multi-block sledgehammer, measurement tools).
-- **Phase 13 (Planned)**: Physics Engine, Fluid Dynamics & Item Drops (Overhauled fluid propagation, gravity blocks, 3D floating item drops with magnetism, projectile trajectories).
+- **Phase 11 (Completed)**: Custom Voxel Player Character, 8-Race Silhouettes & Hand Item Rendering (Modular voxel humanoid character rig, 8 fantasy races with distinct silhouettes, ears, horns, beards, tusks, tails and proportions, character selection screen, 1st and 3rd person 3D held items in hand with animations).
+- **Phase 12 (Planned)**: Agricultural Simulation, Cultivated Crops & Farmland Systems (36 domestic and wild crops, growth lifecycle simulation, soil moisture, irrigation, seasonal yields, arboreal canopy pods).
+- **Phase 13 (Completed)**: Physics Engine, Fluid Dynamics & Item Drops (Dynamic smooth flow fluid meshing, downhill river hydrology & current vectors, floating 3D item drops with magnetism and suction physics).
 - **Phase 14 (Completed)**: Dynamic Weather System & Meteorological Phenomena (Multi-state weather simulation, precipitation particles, surface wetness, dynamic snow accumulation, lightning and thunder).
 - **Phase 15 (Completed)**: Visual Aesthetics, Shaders & Atmospheric FX Overhaul (Per-vertex ambient occlusion, animated fluid waves and caustics, depth absorption, bloom & emissive HDR boosting, handheld dynamic lighting, atmospheric god rays with Mie scattering and weather coupling, and subterranean darkness stabilization).
-- **Phase 16 (In Progress)**: Performance Engineering, Chunk Streaming & LOD Enhancements (Decomposed modular streaming architecture [planner, loader, unloader, lod_scheduler], modular shape builders in `src/meshing/shapes/`, 36-bit Sodium-style cave visibility mask culling, cave entrance void resolution, robust mesh visibility synchronization preventing subterranean invisible chunks, cave boundary sampling preventing floating flora, and default 12-chunk render distance. *Note: Frametime optimization and performance tuning remain actively ongoing; framerates with 12 chunks base render distance are still under investigation and optimization*).
+- **Phase 16 (Completed)**: Performance Engineering, Chunk Streaming & LOD Enhancements (Decomposed modular streaming architecture [planner, loader, unloader, lod_scheduler], modular shape builders in `src/meshing/shapes/`, 36-bit Sodium-style cave visibility mask culling, cave entrance void resolution, robust mesh visibility synchronization preventing subterranean invisible chunks, cave boundary sampling preventing floating flora, and default 12-chunk render distance).
 - **Phase 17 (Completed)**: Localization & Multi-Language Support (`lang/` translation files for `en_us` and `pt_br`, comprehensive UI/block/item localization, in-game language selector).
 - **Phase 18 (Completed)**: Controls & Keybinding System (Configurable keybindings for all actions, mouse sensitivity & invert Y options, input conflict detection, Main Menu & Pause integration).
 - **Phase 19 (Completed)**: Dynamic Foliage & Procedural Grass System (GPU-accelerated procedural grass blades on surface blocks, cubic Bezier wind deformation, Voronoi clumping, player footprint trails, dynamic LOD).
-- **Phase 20 (Planned)**: Agricultural Simulation, Cultivated Crops & Farmland Systems (36 domestic and wild crops, growth lifecycle simulation, soil moisture, irrigation, seasonal yields, arboreal canopy pods).
+- **Phase 20 (Planned)**: Phase 20 (TBD) (Reserved for future systems).
 
 Detailed progress and milestones are tracked in `docs/project_roadmap.md`.
 

@@ -29,7 +29,7 @@ pub fn mesh_shaped_voxels(
         if voxel.is_empty() || shape == BlockShape::Full {
             continue;
         }
-        let is_transparent_pass = (voxel.is_transparent() || voxel.is_fluid())
+        let is_transparent_pass = (voxel.is_transparent() || voxel.is_fluid_transparent())
             && !voxel.is_cross_billboard()
             && shape != BlockShape::CrossBillboard
             && shape != BlockShape::FlatPad
@@ -157,6 +157,17 @@ pub fn mesh_shaped_voxels(
                 frame_count_f32,
                 side_tint,
             );
+            if is_submerged_fixture(world, world_voxel, voxel) {
+                mesh_waterlogged_envelope(
+                    world,
+                    transparent_buffers,
+                    world_voxel,
+                    fx,
+                    fy,
+                    fz,
+                    textures,
+                );
+            }
             continue;
         }
         if voxel.is_rubble() || shape == BlockShape::Rubble {
@@ -170,6 +181,17 @@ pub fn mesh_shaped_voxels(
                 frame_count_f32,
                 side_tint,
             );
+            if is_submerged_fixture(world, world_voxel, voxel) {
+                mesh_waterlogged_envelope(
+                    world,
+                    transparent_buffers,
+                    world_voxel,
+                    fx,
+                    fy,
+                    fz,
+                    textures,
+                );
+            }
             continue;
         }
         if voxel.is_speleothem() || shape == BlockShape::Speleothem {
@@ -197,7 +219,7 @@ pub fn mesh_shaped_voxels(
                 fz,
                 layer,
                 frame_count_f32,
-                [1.0, 1.0, 1.0, 6.0],
+                [0.92, 0.92, 0.92, 6.0],
             );
             continue;
         }
@@ -781,6 +803,35 @@ pub fn push_quad_face_with_uvs(
     push_quad_face_uvs(buffers, vertices, normal, texture_layer, frame_count, tint_color, uvs);
 }
 
+/// Determines if a small rock fixture (rubble, pebble, or pebble cluster) is submerged under or in water.
+#[inline]
+pub fn is_submerged_fixture(world: &impl VoxelAccess, pos: IVec3, voxel: Voxel) -> bool {
+    let (shape, _) = world.get_shape(pos);
+    if !voxel.is_rubble()
+        && !voxel.is_pebble()
+        && shape != BlockShape::Rubble
+        && shape != BlockShape::Pebble
+        && shape != BlockShape::PebbleCluster
+    {
+        return false;
+    }
+    // Submerged if water, marine flora, or coral is directly above it
+    if let Some(above) = world.get_voxel(pos + IVec3::Y)
+        && (above.is_water() || above.is_marine_flora() || above.is_coral_fan())
+    {
+        return true;
+    }
+    // Or if water directly borders it laterally
+    for offset in [IVec3::X, IVec3::NEG_X, IVec3::Z, IVec3::NEG_Z] {
+        if let Some(n) = world.get_voxel(pos + offset)
+            && n.is_water()
+        {
+            return true;
+        }
+    }
+    false
+}
+
 fn mesh_waterlogged_envelope(
     world: &impl VoxelAccess,
     transparent_buffers: &mut MeshBuffers,
@@ -800,7 +851,10 @@ fn mesh_waterlogged_envelope(
     let is_submerged_boundary = |offset: IVec3| -> bool {
         let n_pos = world_voxel + offset;
         let n_voxel = world.get_voxel(n_pos).unwrap_or(Voxel::Air);
-        n_voxel.is_water() || n_voxel.is_marine_flora() || n_voxel.is_coral_fan()
+        n_voxel.is_water()
+            || n_voxel.is_marine_flora()
+            || n_voxel.is_coral_fan()
+            || is_submerged_fixture(world, n_pos, n_voxel)
     };
 
     let is_solid_opaque = |offset: IVec3| -> bool {

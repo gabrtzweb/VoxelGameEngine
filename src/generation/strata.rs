@@ -207,20 +207,16 @@ impl StrataGenerator {
                 }
             }
 
-            // E. Karst Caverns (Limestone & Dolomite karst pockets with speleothems: depth -15 to -150)
+            // E. Karst Caverns (Subterranean karst pockets: depth -15 to -150)
             if (-150..=-15).contains(&block_y) {
                 let karst_noise =
                     gradient_noise_3d(bx * 0.038, by * 0.038, bz * 0.038, seed.wrapping_add(654_321));
                 if karst_noise > 0.65 {
                     let dither = gradient_noise_3d(bx * 0.15, by * 0.15, bz * 0.15, seed.wrapping_add(654_322));
-                    return if dither > 0.40 {
-                        Voxel::SpeleothemCalcite
-                    } else if dither > 0.0 {
-                        Voxel::Limestone
-                    } else if dither > -0.40 {
-                        Voxel::Dolomite
+                    return if dither > 0.35 {
+                        Voxel::FracturedCaveKarst
                     } else {
-                        Voxel::CobbledLimestone
+                        Voxel::CaveKarst
                     };
                 }
             }
@@ -233,10 +229,8 @@ impl StrataGenerator {
                     let dither = gradient_noise_3d(bx * 0.18, by * 0.18, bz * 0.18, seed.wrapping_add(883_212));
                     return if dither > 0.35 {
                         Voxel::FracturedCaveCalcite
-                    } else if dither > -0.35 {
-                        Voxel::CaveCalcite
                     } else {
-                        Voxel::SpeleothemCalcite
+                        Voxel::CaveCalcite
                     };
                 }
             }
