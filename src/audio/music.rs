@@ -220,6 +220,7 @@ fn update_gameplay_music(
     // Menu context is active before entering gameplay or when returning to main menu
     let target_context = if !in_session
         || current_menu == crate::menu::MenuState::MainMenu
+        || current_menu == crate::menu::MenuState::RaceSelection
         || current_menu == crate::menu::MenuState::Loading
     {
         MusicContext::Menu

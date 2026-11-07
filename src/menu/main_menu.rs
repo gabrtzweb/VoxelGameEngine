@@ -333,7 +333,7 @@ fn handle_main_menu_action_buttons(
     mut phase: ResMut<MainMenuPhase>,
     mut next_state: ResMut<NextState<MenuState>>,
     mut menu_return_target: ResMut<MenuReturnTarget>,
-    mut world_session: Option<ResMut<crate::world::WorldSession>>,
+    _world_session: Option<ResMut<crate::world::WorldSession>>,
     mut commands: Commands,
 ) {
     if *phase != MainMenuPhase::ActionMenu {
@@ -353,11 +353,8 @@ fn handle_main_menu_action_buttons(
         if hovered.get() && (left_clicked || is_pressed) {
             match action {
                 MainMenuButtonAction::Play => {
-                    if let Some(ref mut session) = world_session {
-                        session.is_active = true;
-                    }
-                    menu_return_target.0 = MenuState::Pause;
-                    next_state.set(MenuState::Loading);
+                    menu_return_target.0 = MenuState::MainMenu;
+                    next_state.set(MenuState::RaceSelection);
                 }
                 MainMenuButtonAction::Settings => {
                     menu_return_target.0 = MenuState::MainMenu;

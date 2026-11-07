@@ -356,6 +356,11 @@ fn fragment(
         discard;
     }
 
+    // Dynamic item / held-block tag: vertex_output.color.a > 6.5 (7.0 = normal/tinted, 7.6 = painted).
+    // Held blocks and dynamic 3D item drops rotate freely in space, so they must not use world-space
+    // normal orientation checks, world-space coated noise projection, or screen-space texel snapping.
+    let is_item_entity = vertex_output.color.a > 6.5;
+
     // Cross-billboard / fixture cutout model detection:
     // 1) Explicit vertex anim/model tag: 5.0 (flora) or 6.0 (rigid cross/speleothem/crystal)
     // 2) Geometric normal vs vertex normal: cross billboards are vertical planes (geo normal Y ~ 0)
@@ -364,7 +369,7 @@ fn fragment(
     let dp_y = dpdy(vertex_output.world_position.xyz);
     let geo_norm = cross(dp_x, dp_y);
     let geo_len_sq = dot(geo_norm, geo_norm);
-    let is_diagonal_plane = geo_len_sq > 0.00001 && (abs(geo_norm.x) * abs(geo_norm.z) > 0.05 * geo_len_sq);
+    let is_diagonal_plane = !is_item_entity && geo_len_sq > 0.00001 && (abs(geo_norm.x) * abs(geo_norm.z) > 0.05 * geo_len_sq);
     let is_cross_mesh = (vertex_output.color.a > 3.5 && vertex_output.color.a < 6.5) || is_diagonal_plane;
 
     // Ambient Environment modulation (Minecraft mod style):
@@ -373,9 +378,10 @@ fn fragment(
     if (is_mask_face) {
         tint_color = vec4<f32>(1.0);
     }
-    let is_painted_block = (vertex_output.color.a > 0.52) && (vertex_output.color.a < 0.72);
-    let is_foliage_tinted = !is_mask_face && (vertex_output.color.a > 0.75) && (tint_color.r < 0.99 || tint_color.g < 0.99 || tint_color.b < 0.99);
-    if (is_foliage_tinted) {
+    let is_painted_block = ((vertex_output.color.a > 0.52) && (vertex_output.color.a < 0.72))
+        || ((vertex_output.color.a > 7.4) && (vertex_output.color.a < 7.8));
+    let is_foliage_tinted = !is_mask_face && !is_painted_block && (vertex_output.color.a > 0.75) && (tint_color.r < 0.99 || tint_color.g < 0.99 || tint_color.b < 0.99);
+    if (is_foliage_tinted && !is_item_entity) {
         let varied_tint = ambient_environment_variation(vertex_output.world_position.xz, tint_color.rgb * vertex_output.color.rgb);
         tint_color = vec4<f32>(varied_tint, tint_color.a);
     }
@@ -383,8 +389,11 @@ fn fragment(
     // Dynamic grass side fringe tinting:
     // On vertical side faces, only tint the green grass fringe hanging down so it matches the top face,
     // leaving natural dirt and stone underneath completely untouched.
+    // On held items and 3D drops (is_item_entity), per-face vertex colors are already assigned directly
+    // (top face = biome tint, side/bottom faces = white with pre-baked side overlay), so we preserve
+    // final_tint regardless of how the player pitches or rolls the camera!
     var final_tint = tint_color.rgb;
-    if (!is_mask_face && !is_horizontal) {
+    if (!is_mask_face && !is_horizontal && !is_item_entity) {
         let is_grass_fringe = (uv.y < 0.55) && (tex_color.g > tex_color.r * 1.02) && (tex_color.g > tex_color.b * 1.15);
         if (is_grass_fringe && is_foliage_tinted) {
             let fringe_lum = dot(tex_color.rgb, vec3<f32>(0.299, 0.587, 0.114));
@@ -397,7 +406,8 @@ fn fragment(
     // Coated Textures (custom style):
     // Samples authentic noise.png seamlessly across continuous world-space coordinates.
     // Zero block-edge grid lines; natural organic weathering and patina.
-    let is_solid_terrain = (tex_color.a >= 0.99) && !is_emissive;
+    // Disabled on held items / 3D drops so moving the camera doesn't slide a reflection/noise grid across the block.
+    let is_solid_terrain = (tex_color.a >= 0.99) && !is_emissive && !is_item_entity;
     let coat_strength = voxel_params.x;
     if (is_solid_terrain && coat_strength > 0.01) {
         let normal = normalize(vertex_output.world_normal);
@@ -447,9 +457,9 @@ fn fragment(
 
     // Pixelated Shadows & Shadow Stabilization:
     // Snaps world position to 16x16 texel centers along screen derivative tangents on solid block faces.
-    // Cross meshes are exempted so non-orthogonal screen derivatives don't flicker surface lighting.
+    // Cross meshes and dynamic item meshes are exempted so non-orthogonal screen derivatives don't flicker surface lighting.
     let pixelated_shadows_enabled = voxel_params.z > 0.5;
-    if (pixelated_shadows_enabled && !is_cross_mesh) {
+    if (pixelated_shadows_enabled && !is_cross_mesh && !is_item_entity) {
         let normal = normalize(vertex_output.world_normal);
         let abs_n = abs(normal);
         var planar_coord: vec2<f32>;

@@ -131,8 +131,8 @@ impl BlockShape {
     pub const fn orientation_count(self) -> u8 {
         match self {
             Self::Full => 3,
-            Self::Basket | Self::CrossBillboard | Self::Bamboo | Self::Cocoon | Self::FlatPad | Self::Cactus | Self::Speleothem => 1,
-            Self::Slab | Self::WallDecal => 6,
+            Self::Basket | Self::Bamboo | Self::Cocoon | Self::FlatPad | Self::Cactus | Self::Speleothem => 1,
+            Self::Slab | Self::WallDecal | Self::CrossBillboard => 6,
             Self::Stair => 8,
             Self::Column => 6,
             Self::Torch => 5,
@@ -148,8 +148,8 @@ impl BlockShape {
                 2 => "Horizontal (Z)",
                 _ => "Standard",
             },
-            Self::Basket | Self::CrossBillboard | Self::Bamboo | Self::Cocoon | Self::FlatPad | Self::Cactus | Self::Speleothem => "Standard",
-            Self::WallDecal => match orientation % 6 {
+            Self::Basket | Self::Bamboo | Self::Cocoon | Self::FlatPad | Self::Cactus | Self::Speleothem => "Standard",
+            Self::WallDecal | Self::CrossBillboard => match orientation % 6 {
                 0 => "Floor (Standing)",
                 1 => "Ceiling (Hanging)",
                 2 => "North Wall (-Z)",
@@ -218,13 +218,17 @@ impl BlockShape {
     pub fn local_boxes(self, orientation: u8) -> ([Vec3; 2], Option<[Vec3; 2]>) {
         match self {
             Self::Full | Self::Basket => ([Vec3::ZERO, Vec3::ONE], None),
-            Self::CrossBillboard => (
-                [
-                    Vec3::new(0.125, 0.0, 0.125),
-                    Vec3::new(0.875, 0.8, 0.875),
-                ],
-                None,
-            ),
+            Self::CrossBillboard => {
+                let bbox = match orientation % 6 {
+                    0 => [Vec3::new(0.125, 0.0, 0.125), Vec3::new(0.875, 0.8, 0.875)],
+                    1 => [Vec3::new(0.125, 0.2, 0.125), Vec3::new(0.875, 1.0, 0.875)],
+                    2 => [Vec3::new(0.125, 0.125, 0.0), Vec3::new(0.875, 0.875, 0.8)],
+                    3 => [Vec3::new(0.125, 0.125, 0.2), Vec3::new(0.875, 0.875, 1.0)],
+                    4 => [Vec3::new(0.0, 0.125, 0.125), Vec3::new(0.8, 0.875, 0.875)],
+                    _ => [Vec3::new(0.2, 0.125, 0.125), Vec3::new(1.0, 0.875, 0.875)],
+                };
+                (bbox, None)
+            }
             Self::Slab => {
                 let bbox = match orientation % 6 {
                     0 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 0.5, 1.0)],

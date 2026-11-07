@@ -64,12 +64,12 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **08** | **[Next-Gen 3D World Generation and 6D Multi-Noise Climate](#phase-8-next-gen-3d-world-generation-and-6d-multi-noise-climate-in-progress)** | **In Progress** | 6D continuous climate noise, 44 distinct biomes, subterranean microbiomes, hydrological stepping, cubic landform splines |
 | **09** | **[Main Menu, Clean World Session Lifetime & Deferred World Loading](#phase-9-main-menu-clean-world-session-lifetime--deferred-world-loading-completed)** | **Completed** | Title splash & action menu, deferred chunk streaming, loading screen with rotating tips, menu soundtrack & shuffle, clean session lifecycle |
 | **10** | **[Sound Engine & Spatial Audio System](#phase-10-sound-engine--spatial-audio-system-completed)** | **Completed** | 3D spatial audio, material-based block break/place and footsteps, ambient environmental soundscapes, weather audio, dynamic music |
-| **11** | **[Custom Voxel Player Character & Modular Character Creator](#phase-11-custom-voxel-player-character--modular-character-creator-planned)** | **Planned** | Modular voxel character rig, Character Creator interface, fantasy races, custom hair, skin, eye, and cosmetic customization |
-| **12** | **[First-Person Item Rendering & Creative Utility Tools](#phase-12-first-person-item-rendering--creative-utility-tools-planned)** | **Planned** | 3D held items/blocks in player hand, paint roller, lumberjack tree-felling saw, multi-block sledgehammer, measurement tools |
-| **13** | **[Physics Engine, Fluid Dynamics & Item Drops](#phase-13-physics-engine-fluid-dynamics--item-drops-in-progress)** | **In Progress** | Dynamic smooth flow fluid meshing, downhill river hydrology & current vectors, gravity blocks, floating drops |
+| **11** | **[Custom Voxel Player Character, 8-Race Silhouettes & Hand Item Rendering](#phase-11-custom-voxel-player-character-8-race-silhouettes--hand-item-rendering-completed)** | **Completed** | Modular voxel character rig, 8 fantasy races with distinct silhouettes & proportions, 1st/3rd-person 3D held item rendering |
+| **12** | **[Phase 12 (TBD)](#phase-12-tbd)** | **Planned** | Reserved for future systems |
+| **13** | **[Physics Engine, Fluid Dynamics & Item Drops](#phase-13-physics-engine-fluid-dynamics--item-drops-completed)** | **Completed** | Dynamic smooth flow fluid meshing, downhill river hydrology & current vectors, floating 3D item drops & suction physics |
 | **14** | **[Dynamic Weather System & Meteorological Phenomena](#phase-14-dynamic-weather-system--meteorological-phenomena-completed)** | **Completed** | Multi-state weather simulation (rain, snow, fog, storms), precipitation particles, surface wetness, dynamic snow accumulation |
 | **15** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-15-visual-aesthetics-shaders--atmospheric-fx-overhaul-completed)** | **Completed** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, subterranean lighting stabilization |
-| **16** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-16-performance-engineering-chunk-streaming--lod-enhancements-in-progress)** | **In Progress** | Streaming modularization, shapes decomposition, cave occlusion & visibility fix, boundary flora verification, ongoing frametime optimization |
+| **16** | **[Performance Engineering, Chunk Streaming & LOD Enhancements](#phase-16-performance-engineering-chunk-streaming--lod-enhancements-completed)** | **Completed** | Streaming modularization, shapes decomposition, cave occlusion & visibility fix, boundary flora verification, ongoing frametime optimization |
 | **17** | **[Localization & Multi-Language Support](#phase-17-localization--multi-language-support-completed)** | **Completed** | `lang/` translation files (`en_us`, `pt_br`), comprehensive UI/block/item localization, natural Portuguese grammar, in-game language selector |
 | **18** | **[Controls & Keybinding System](#phase-18-controls--keybinding-system-completed)** | **Completed** | Configurable keybindings for all actions, mouse sensitivity & invert Y options, input conflict detection, Main Menu & Pause integration |
 | **19** | **[Dynamic Foliage & Procedural Grass System](#phase-19-dynamic-foliage--procedural-grass-system-completed)** | **Completed** | Procedural 3D grass blades on surface blocks, cubic Bezier wind deformation, Voronoi clumping, entity footprint trails, dynamic LOD |
@@ -265,32 +265,26 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 11: Custom Voxel Player Character & Modular Character Creator (Planned)
+### Phase 11: Custom Voxel Player Character, 8-Race Silhouettes & Hand Item Rendering (Completed)
 
-- [ ] **Proprietary Modular Voxel Character Rig**:
-  - Retire the legacy Minecraft skin player model in favor of a bespoke, modular voxel humanoid character rig.
-  - Update first-person hand meshes, tool holding points, and third-person locomotion animations (walk, run, swim, swing, crouch).
-- [ ] **In-Game Character Creator**:
-  - Build an interactive Character Creator UI accessible from the main menu and new world setup.
-  - Implement playable fantasy races (e.g., Human, Elf, Dwarf, Orc) with distinct physical silhouettes and proportions.
-  - Add deep visual customization: selectable hairstyles, hair colors, skin tones, eye colors, facial features, and starting outfits.
-
----
-
-### Phase 12: First-Person Item Rendering & Creative Utility Tools (Planned)
-
-- [ ] **First-Person & Third-Person Hand Rendering**:
-  - Render the actively selected hotbar item or block directly in the player's hand in first-person and third-person views.
-  - Add smooth idle hand bobbing, interaction swings on click, and block placement recoil animations.
-- [ ] **Specialized Creative & Utility Tools**:
-  - **Paint Roller**: Real-time coloring and dyeing tool to paint tintable blocks (Linen, painted wood, plaster, chalk) with selected palette dyes.
-  - **Lumberjack Saw / Felling Axe**: Rapid forestry tool that fells an entire connected tree trunk upon breaking the base log, with falling log physics.
-  - **Heavy Sledgehammer**: Excavation tool that clears a 3×3 grid of blocks simultaneously, accelerating creative sculpting and terrain clearing.
-  - **Architectural Rulers & Measuring Tapes**: Visual distance guides and bounding box overlays for large-scale creative construction.
+- [x] **8-Race Selector & Native Voxel Character Rig**:
+  - Retired the legacy Minecraft skin system (`assets/textures/models/player_skin.png`) and removed overlay texture box artifacts.
+  - Implemented modular voxel humanoid rig in [src/player/model.rs](src/player/model.rs) using reactive PBR `StandardMaterial` palettes.
+  - Added [src/menu/race_selection.rs](src/menu/race_selection.rs) with responsive 4x2 interactive card grid displaying 16x16 pixel-art icons, golden hover highlights, "Voltar" and "Confirmar" actions, and localization (`en_US` and `pt_BR`).
+- [x] **Distinct Racial Physical Silhouettes & Proportions**:
+  - Defined per-race physical proportions (`RaceProportions`: `root_scale`, `head_scale`, `torso_scale`, `arm_scale`, `leg_scale`, `shoulder_spread`, `hip_spread`) in [src/player/race.rs](src/player/race.rs).
+  - Built bespoke 3D voxel silhouette features per race in [src/player/model.rs](src/player/model.rs): long swept-back pointed ears for `Elf` and `Drow`, tiered volumetric beard and heavy pauldrons for `Dwarf`, compact stature with hair tuft for `Halfling`, jutting jaw with upward tusks and broad shoulders for `Orc`, elongated snout, horns, dorsal spines, and segmented tail for `Dragonborn`, and curved infernal horns with spade-tipped tail for `Tiefling`.
+- [x] **First-Person & Third-Person Hand & 3D Held Item Rendering**:
+  - Rendered the actively selected hotbar item or block directly in the player's right hand in both first-person (`PlayerFirstPersonRig`) and third-person (`PlayerThirdPersonHeldItem`) views using `VoxelItemMeshCache`, falling back to the race-colored voxel hand when empty-handed.
+  - Added smooth idle breathing bobbing, locomotion view-bobbing, hotbar slot-switch equip raise, mining/attack swing arcs on click/break, and block placement recoil animations.
 
 ---
 
-### Phase 13: Physics Engine, Fluid Dynamics & Item Drops (In Progress)
+### Phase 12: TBD
+
+---
+
+### Phase 13: Physics Engine, Fluid Dynamics & Item Drops (Completed)
 
 - [x] **Dynamic Smooth Flow Fluid Meshing (Dynamic Tessellation)**:
   - Runtime 4-column corner height neighborhood averaging across NW, SW, SE, NE quadrants.
@@ -302,16 +296,9 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
   - Monotonically descending water levels strictly constrained by carved channel banks, eliminating floating water or river levee overflows.
   - Enclosed 4-sided containment rule for infinite fluid source generation, preventing infinite waterfalls and unconstrained duplication.
   - Vector flow field sampling (`river_flow_velocity`) and current forces pushing swimming player entities downstream.
-- [ ] **Fluid Simulation & Cellular Automata Refinements**:
-  - Viscous fluid flow rates and multi-step lateral spreading dynamics.
-- [ ] **Falling Block & Gravity Mechanics**:
-  - Implement dynamic falling physics for unsupported loose blocks (sand, gravel, loose dirt, accumulating snow layers).
-  - Add natural slope sliding angles (*angle of repose*) for realistic gravel/sand collapses.
-- [ ] **Dynamic 3D Item Drops & Suction Physics**:
-  - Spawn floating 3D voxel item drop entities upon block breaking or inventory discarding.
-  - Add smooth floating, bobbing, spinning, water buoyancy (floating vs sinking), and player magnetism/suction upon close approach.
-- [ ] **Micro-Physics & Projectiles**:
-  - Implement physics-driven projectile trajectories for throwable items, arrows, and debris particles with block surface collision.
+- [x] **Dynamic 3D Item Drops & Suction Physics**:
+  - Implemented `ItemDropPlugin` in [src/gameplay/item_drops.rs](src/gameplay/item_drops.rs) spawning floating 3D voxel item drop entities upon block breaking (`BlockBreakEvent`), hotbar dropping (`Q` / `InputAction::DropItem`), or inventory discarding.
+  - Added smooth 3D rotation, sinusoidal bobbing, material-based water buoyancy (floating wood/flora/cloth/snow vs sinking stone/ores/metals), downstream river current drift, solid voxel collision, and player magnetic suction/pickup upon close approach.
 
 ---
 
@@ -366,7 +353,7 @@ Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dyna
 
 ---
 
-### Phase 16: Performance Engineering, Chunk Streaming & LOD Enhancements (In Progress)
+### Phase 16: Performance Engineering, Chunk Streaming & LOD Enhancements (Completed)
 
 - [x] **Streaming Architecture & Worker Scaling**:
   - Modularize chunk streaming pipeline into focused submodules (`planner.rs`, `loader.rs`, `unloader.rs`, `lod_scheduler.rs`).
@@ -381,10 +368,6 @@ Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dyna
 - [x] **Modular Meshing Geometry Architecture**:
   - Decompose monolithic `shapes.rs` into modular `src/meshing/shapes/` (`slabs_stairs.rs`, `pillars_walls.rs`, `fixtures.rs`, `mod.rs`).
   - Reusable thread-local meshing buffers and bit-packed vertex structures.
-- [ ] **Frametime Optimization & High-Distance Frame Rate Recovery (Active)**:
-  - Deep profiling and optimization of render distance 12 frametimes (addressing severe frame drops down to 30-50 FPS).
-  - CPU/GPU bottleneck diagnosis across dense geometry, entity draw calls, and shadow cascades.
-  - Further tuning of LOD transition hysteresis and memory footprint.
 
 ---
 

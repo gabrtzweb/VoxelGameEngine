@@ -371,12 +371,15 @@ fn setup_hotbar_ui(
 }
 
 fn handle_hotbar_input(
+    mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse: Res<ButtonInput<MouseButton>>,
     control_settings: Option<Res<crate::core::ControlSettings>>,
     mouse_scroll: Res<AccumulatedMouseScroll>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
     inspector: Option<Res<InspectorInteraction>>,
+    player_query: Query<&Transform, With<crate::player::Player>>,
+    camera_query: Query<&Transform, (With<Camera3d>, Without<crate::player::Player>)>,
     mut hotbar: ResMut<Hotbar>,
     mut selected: ResMut<SelectedVoxel>,
 ) {
@@ -440,14 +443,31 @@ fn handle_hotbar_input(
         }
     }
 
-    // Drop item key clears the active hotbar slot (giving the player an empty hand)
+    // Drop item key clears the active hotbar slot and tosses a 3D item drop into the world
     let is_drop = control_settings.as_ref().map_or(
         keyboard.just_pressed(KeyCode::KeyQ),
         |c| c.is_action_just_pressed(crate::core::InputAction::DropItem, &keyboard, &mouse),
     );
     if is_drop {
         let active = hotbar.active_slot;
-        hotbar.slots[active] = None;
+        if let Some(dropped_voxel) = hotbar.slots[active].take() {
+            let spawn_pos = player_query
+                .iter()
+                .next()
+                .map_or(Vec3::new(0.0, 20.0, 0.0), |t| t.translation + Vec3::Y * 1.38);
+            let forward = camera_query
+                .iter()
+                .next()
+                .map_or(Vec3::NEG_Z, |c| *c.forward());
+            let throw_dir = Vec3::new(forward.x, forward.y.max(-0.15) + 0.22, forward.z)
+                .normalize_or_zero();
+            commands.trigger(crate::gameplay::SpawnItemDropEvent {
+                position: spawn_pos + throw_dir * 0.45,
+                velocity: throw_dir * 5.8 + Vec3::Y * 1.4,
+                voxel: dropped_voxel,
+                pickup_delay: 1.35,
+            });
+        }
     }
 
     let active = hotbar.active_slot;

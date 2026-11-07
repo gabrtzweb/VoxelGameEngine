@@ -272,11 +272,12 @@ pub fn mesh_shaped_voxels(
             continue;
         }
         if voxel.is_cross_billboard() || shape == BlockShape::CrossBillboard {
-            mesh_cross_billboard(
+            mesh_cross_billboard_oriented(
                 buffers,
                 fx,
                 fy,
                 fz,
+                orientation,
                 side_layer,
                 frame_count_f32,
                 side_tint,

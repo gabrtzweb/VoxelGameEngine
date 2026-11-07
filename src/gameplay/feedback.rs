@@ -139,7 +139,7 @@ fn create_cube_mesh(
             frames as f32
         };
 
-        let color = if voxel.is_grass_soil() {
+        let mut color = if voxel.is_grass_soil() {
             if *face_dir == FaceDirection::PositiveY {
                 voxel.tint_color()
             } else {
@@ -148,6 +148,7 @@ fn create_cube_mesh(
         } else {
             voxel.tint_color()
         };
+        color[3] = if voxel.is_painted() { 7.6 } else { 7.0 };
 
         for (i, &pos) in quad_positions.iter().enumerate() {
             positions.push([

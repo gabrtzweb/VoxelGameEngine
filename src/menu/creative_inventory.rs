@@ -1896,6 +1896,7 @@ struct SlotInteractionQueries<'w, 's> {
 }
 
 fn handle_inventory_slot_interaction(
+    mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse: Res<ButtonInput<MouseButton>>,
     mut held_item: ResMut<HeldInventoryItem>,
@@ -1906,6 +1907,7 @@ fn handle_inventory_slot_interaction(
     scroll_state: Res<InventoryScrollState>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     card_query: Query<(&GlobalTransform, &ComputedNode), With<InventoryCard>>,
+    player_query: Query<&Transform, With<crate::player::Player>>,
     mut dragged_slots: Local<std::collections::HashSet<(u8, usize)>>,
     slots: SlotInteractionQueries,
 ) {
@@ -2217,13 +2219,17 @@ fn handle_inventory_slot_interaction(
         let half = computed.size() * 0.5;
         let card_rect = Rect::from_corners(center - half, center + half);
         if !card_rect.contains(cursor_pos) {
-            if *tab_state == InventoryTab::Creative {
-                held_item.voxel = None;
-            } else if let Some(held) = held_item.voxel.take()
-                && !player_inv.add_item(held)
-                && let Some(empty_idx) = hotbar.slots.iter().position(|s| s.is_none())
-            {
-                hotbar.slots[empty_idx] = Some(held);
+            if let Some(discarded) = held_item.voxel.take() {
+                let spawn_pos = player_query
+                    .iter()
+                    .next()
+                    .map_or(Vec3::new(0.0, 20.0, 0.0), |t| t.translation + Vec3::Y * 1.38);
+                commands.trigger(crate::gameplay::SpawnItemDropEvent {
+                    position: spawn_pos + Vec3::NEG_Z * 0.45,
+                    velocity: Vec3::new(0.0, 1.8, -4.5),
+                    voxel: discarded,
+                    pickup_delay: 1.5,
+                });
             }
         }
     }

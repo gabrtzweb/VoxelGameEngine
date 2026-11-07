@@ -70,6 +70,7 @@ fn sync_menu_bar_visibility(
     let is_in_menu = in_active_session
         && *menu_state.get() != MenuState::None
         && *menu_state.get() != MenuState::MainMenu
+        && *menu_state.get() != MenuState::RaceSelection
         && *menu_state.get() != MenuState::Loading;
     let existing = menu_bar_query.iter().next();
 

@@ -571,6 +571,11 @@ impl Voxel {
     }
 
     #[inline(always)]
+    pub fn is_crystal_cluster(self) -> bool {
+        self.is_crystal_cluster_const()
+    }
+
+    #[inline(always)]
     pub fn has_custom_mesh(self) -> bool {
         (VOXEL_PROPS[self as usize].flags & (FLAG_TORCH | FLAG_BASKET | FLAG_CROSS_BILLBOARD)) != 0
             || self.is_pebble_const()

@@ -2,6 +2,7 @@ pub mod debug;
 pub mod feedback;
 pub mod icon;
 pub mod interaction;
+pub mod item_drops;
 pub mod radial_menu;
 pub mod shaping;
 pub mod target_hud;
@@ -9,6 +10,10 @@ pub mod targeting;
 
 pub use icon::{AnimatedBlockIcons, BlockIcons, setup_block_icons};
 pub use interaction::SelectedVoxel;
+pub use item_drops::{
+    ItemDrop, ItemDropPlugin, SpawnItemDropEvent, VoxelItemMeshCache, create_voxel_item_mesh,
+    is_voxel_buoyant,
+};
 pub use radial_menu::RadialMenuState;
 pub use targeting::{CurrentTarget, TargetingSet, VoxelTarget};
 
@@ -29,6 +34,7 @@ impl Plugin for GameplayPlugin {
             TargetingPlugin,
             VoxelInteractionPlugin,
             InteractionFeedbackPlugin,
+            ItemDropPlugin,
             ShapingPlugin,
             BlockIconPlugin,
             VoxelDebugPlugin,

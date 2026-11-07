@@ -573,6 +573,15 @@ impl TerrainGenerator {
                     }
                 }
             }
+
+            // Populate 6-direction crystal clusters (floor, ceiling, and horizontal on walls)
+            // inside crystal geode chambers and pink salt caverns
+            ores::populate_chunk_crystal_clusters(
+                &mut voxels,
+                &mut chunk_shapes,
+                chunk_origin,
+                self.seed,
+            );
         }
 
         // Tree and vegetation generation is bypassed during terrain overhaul.

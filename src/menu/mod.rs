@@ -4,6 +4,7 @@ pub mod loading;
 pub mod main_menu;
 pub mod menu_bar;
 pub mod pause;
+pub mod race_selection;
 pub mod settings;
 
 use bevy::{
@@ -25,6 +26,7 @@ use crate::{
 pub enum MenuState {
     #[default]
     MainMenu,
+    RaceSelection,
     Loading,
     None,
     Pause,
@@ -230,6 +232,7 @@ impl Plugin for MenuPlugin {
             .init_resource::<BusyCursorAnimation>()
             .add_plugins((
                 main_menu::MainMenuPlugin,
+                race_selection::RaceSelectionMenuPlugin,
                 loading::LoadingScreenPlugin,
                 pause::PauseMenuPlugin,
                 settings::SettingsMenuPlugin,
@@ -400,6 +403,7 @@ fn handle_menu_key_inputs(
             MenuState::Pause => next_state.set(MenuState::None),
             MenuState::Settings => next_state.set(menu_return_target.0),
             MenuState::Controls => next_state.set(menu_return_target.0),
+            MenuState::RaceSelection => next_state.set(MenuState::MainMenu),
             MenuState::Inventory => {
                 next_state.set(MenuState::None);
             }
@@ -601,6 +605,7 @@ fn manage_menu_time_pause(
 
     match *menu_state.get() {
         MenuState::MainMenu
+        | MenuState::RaceSelection
         | MenuState::Loading
         | MenuState::Pause
         | MenuState::Settings

@@ -12,6 +12,7 @@ pub enum UiSound {
     MouseRelease,
     Rollover,
     Switch,
+    Pickup,
 }
 
 pub type PlayUiSoundEvent = UiSound;
@@ -25,6 +26,7 @@ struct UiAudioCache {
     rollover: Handle<AudioSource>,
     switch: Handle<AudioSource>,
     last_hotbar_slot: usize,
+    pickup_rng: u64,
 }
 
 impl FromWorld for UiAudioCache {
@@ -37,6 +39,7 @@ impl FromWorld for UiAudioCache {
             rollover: asset_server.load("sounds/ui/rollover1.ogg"),
             switch: asset_server.load("sounds/ui/switch1.ogg"),
             last_hotbar_slot: 0,
+            pickup_rng: 0x9E37_79B9_7F4A_7C15,
         }
     }
 }
@@ -59,16 +62,27 @@ impl Plugin for UiAudioPlugin {
 
 fn handle_play_ui_sound(
     trigger: On<UiSound>,
-    cache: Res<UiAudioCache>,
+    mut cache: ResMut<UiAudioCache>,
     mut commands: Commands,
 ) {
     let sound_type = *trigger.event();
+    if sound_type == UiSound::Pickup {
+        cache.pickup_rng = cache
+            .pickup_rng
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
+        let rand = ((cache.pickup_rng >> 32) as u32 as f32) / 4294967295.0;
+        let speed = 1.65 + rand * 0.35;
+        commands.trigger(PlaySfxEvent::new(cache.rollover.clone(), 0.38).with_speed(speed));
+        return;
+    }
+
     let (sound, volume) = match sound_type {
         UiSound::Click => (cache.click.clone(), 0.85),
         UiSound::MouseClick => (cache.mouseclick.clone(), 0.80),
         UiSound::MouseRelease => (cache.mouserelease.clone(), 0.75),
         UiSound::Rollover => (cache.rollover.clone(), 0.45),
-        UiSound::Switch => (cache.switch.clone(), 0.70),
+        UiSound::Switch | UiSound::Pickup => (cache.switch.clone(), 0.70),
     };
 
     commands.trigger(PlaySfxEvent::new(sound, volume));

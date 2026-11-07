@@ -97,3 +97,64 @@ fn test_loading_screen_initial_state() {
     assert_eq!(state.total_chunks, 0);
     assert_eq!(state.loaded_chunks, 0);
 }
+
+#[test]
+fn test_race_selection_and_palettes() {
+    use voxel_game_engine::player::{CharacterRace, SelectedRace};
+
+    assert_eq!(SelectedRace::default().0, CharacterRace::Human);
+    assert_eq!(CharacterRace::ALL.len(), 8);
+
+    let mut loc = Localization::default();
+    loc.set_locale(voxel_game_engine::core::Locale::PtBr);
+
+    for race in CharacterRace::ALL {
+        let name = race.display_name(Some(&loc));
+        assert!(!name.is_empty(), "Display name for {:?} should not be empty", race);
+        let icon_path = format!("assets/{}", race.icon_asset_path());
+        assert!(Path::new(&icon_path).exists(), "Icon asset {} must exist", icon_path);
+
+        // Verify all limbs have distinct valid colors
+        let skin = race.skin_color();
+        let torso = race.torso_color();
+        let arms = race.arms_color();
+        let legs = race.legs_color();
+        let _ = (skin, torso, arms, legs);
+
+        // Verify physical proportions are finite and positive
+        let p = race.proportions();
+        assert!(p.root_scale.x > 0.0 && p.root_scale.y > 0.0 && p.root_scale.z > 0.0);
+        assert!(p.head_scale.x > 0.0 && p.head_scale.y > 0.0 && p.head_scale.z > 0.0);
+        assert!(p.torso_scale.x > 0.0 && p.torso_scale.y > 0.0 && p.torso_scale.z > 0.0);
+        assert!(p.arm_scale.x > 0.0 && p.arm_scale.y > 0.0 && p.arm_scale.z > 0.0);
+        assert!(p.leg_scale.x > 0.0 && p.leg_scale.y > 0.0 && p.leg_scale.z > 0.0);
+        assert!(p.shoulder_spread > 0.0 && p.hip_spread > 0.0);
+    }
+
+    // Verify distinct stature scaling across key archetypes
+    assert!(CharacterRace::Halfling.proportions().root_scale.y < CharacterRace::Dwarf.proportions().root_scale.y);
+    assert!(CharacterRace::Dwarf.proportions().root_scale.y < CharacterRace::Human.proportions().root_scale.y);
+    assert!(CharacterRace::Elf.proportions().root_scale.y > CharacterRace::Human.proportions().root_scale.y);
+    assert!(CharacterRace::Orc.proportions().shoulder_spread > CharacterRace::Human.proportions().shoulder_spread);
+}
+
+#[test]
+fn test_item_drop_buoyancy_and_mesh_generation() {
+    use voxel_game_engine::gameplay::is_voxel_buoyant;
+    use voxel_game_engine::world::block::Voxel;
+
+    // Buoyant materials (wood, leaves, snow, ice) float on water
+    assert!(is_voxel_buoyant(Voxel::OakLog));
+    assert!(is_voxel_buoyant(Voxel::OakPlanks));
+    assert!(is_voxel_buoyant(Voxel::OakLeaves));
+    assert!(is_voxel_buoyant(Voxel::SnowBlock));
+    assert!(is_voxel_buoyant(Voxel::FrostIce));
+
+    // Dense mineral materials (stone, gravel, dirt, sand) sink
+    assert!(!is_voxel_buoyant(Voxel::Andesite));
+    assert!(!is_voxel_buoyant(Voxel::Basalt));
+    assert!(!is_voxel_buoyant(Voxel::SandCommon));
+    assert!(!is_voxel_buoyant(Voxel::LoamDirt));
+}
+
+

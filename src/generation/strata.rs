@@ -246,31 +246,27 @@ impl StrataGenerator {
                 let salt_noise =
                     gradient_noise_3d(bx * 0.042, by * 0.042, bz * 0.042, seed.wrapping_add(441_992));
                 if salt_noise > 0.70 {
-                    let dither = gradient_noise_3d(bx * 0.16, by * 0.16, bz * 0.16, seed.wrapping_add(441_993));
-                    return if dither > 0.50 {
-                        Voxel::CrystalPinkSaltGlinted
-                    } else if dither > 0.15 {
-                        Voxel::CrystalPinkSaltCluster
-                    } else if dither > -0.30 {
-                        Voxel::CrystalPinkSaltBlock
-                    } else {
-                        Voxel::SpeleothemSaltStraw
-                    };
+                    return Voxel::CrystalPinkSaltBlock;
                 }
             }
 
-            // H. Amethyst Geode Chambers (Luminous purple crystal caverns: depth -45 to -210)
+            // H. Amethyst & Crystal Geode Chambers (Luminous crystal caverns: depth -45 to -210)
             if (-210..=-45).contains(&block_y) {
                 let geode_noise =
                     gradient_noise_3d(bx * 0.048, by * 0.048, bz * 0.048, seed.wrapping_add(772_135));
-                if geode_noise > 0.72 {
-                    let dither = gradient_noise_3d(bx * 0.20, by * 0.20, bz * 0.20, seed.wrapping_add(772_136));
-                    return if dither > 0.45 {
-                        Voxel::CrystalAmethystGlinted
-                    } else if dither > 0.10 {
-                        Voxel::CrystalAmethystCluster
-                    } else {
+                if geode_noise > 0.70 {
+                    let type_noise =
+                        gradient_noise_3d(bx * 0.022, by * 0.022, bz * 0.022, seed.wrapping_add(772_139));
+                    return if type_noise > 0.45 {
                         Voxel::CrystalAmethystBlock
+                    } else if type_noise > 0.15 {
+                        Voxel::CrystalAquamarineBlock
+                    } else if type_noise > -0.15 {
+                        Voxel::CrystalCitrineBlock
+                    } else if type_noise > -0.45 {
+                        Voxel::CrystalFluoriteBlock
+                    } else {
+                        Voxel::CrystalSeleniteBlock
                     };
                 }
             }

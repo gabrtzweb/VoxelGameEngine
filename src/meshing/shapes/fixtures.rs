@@ -1085,16 +1085,121 @@ pub fn mesh_cross_billboard(
     frame_count: f32,
     tint_color: [f32; 4],
 ) {
-    let top_y = fy + 0.998;
-    let p00 = [fx, fy, fz];
-    let p01 = [fx, top_y, fz];
-    let p11 = [fx + 1.0, top_y, fz + 1.0];
-    let p10 = [fx + 1.0, fy, fz + 1.0];
+    mesh_cross_billboard_oriented(
+        buffers,
+        fx,
+        fy,
+        fz,
+        0,
+        texture_layer,
+        frame_count,
+        tint_color,
+    );
+}
 
-    let q00 = [fx, fy, fz + 1.0];
-    let q01 = [fx, top_y, fz + 1.0];
-    let q11 = [fx + 1.0, top_y, fz];
-    let q10 = [fx + 1.0, fy, fz];
+pub fn mesh_cross_billboard_oriented(
+    buffers: &mut MeshBuffers,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    orientation: u8,
+    texture_layer: u16,
+    frame_count: f32,
+    tint_color: [f32; 4],
+) {
+    // Orientations (matching WallDecal / 6-face attachment):
+    // 0: Floor (+Y growth, base at y = fy, tip at y = fy + 0.998)
+    // 1: Ceiling (-Y growth, base at y = fy + 1.0, tip at y = fy + 0.002)
+    // 2: North Wall (-Z support, +Z growth, base at z = fz, tip at z = fz + 0.998)
+    // 3: South Wall (+Z support, -Z growth, base at z = fz + 1.0, tip at z = fz + 0.002)
+    // 4: West Wall (-X support, +X growth, base at x = fx, tip at x = fx + 0.998)
+    // 5: East Wall (+X support, -X growth, base at x = fx + 1.0, tip at x = fx + 0.002)
+    let (p00, p01, p11, p10, q00, q01, q11, q10) = match orientation % 6 {
+        0 => {
+            let base_y = fy;
+            let tip_y = fy + 0.998;
+            (
+                [fx, base_y, fz],
+                [fx, tip_y, fz],
+                [fx + 1.0, tip_y, fz + 1.0],
+                [fx + 1.0, base_y, fz + 1.0],
+                [fx, base_y, fz + 1.0],
+                [fx, tip_y, fz + 1.0],
+                [fx + 1.0, tip_y, fz],
+                [fx + 1.0, base_y, fz],
+            )
+        }
+        1 => {
+            let base_y = fy + 1.0;
+            let tip_y = fy + 0.002;
+            (
+                [fx, base_y, fz + 1.0],
+                [fx, tip_y, fz + 1.0],
+                [fx + 1.0, tip_y, fz],
+                [fx + 1.0, base_y, fz],
+                [fx, base_y, fz],
+                [fx, tip_y, fz],
+                [fx + 1.0, tip_y, fz + 1.0],
+                [fx + 1.0, base_y, fz + 1.0],
+            )
+        }
+        2 => {
+            let base_z = fz;
+            let tip_z = fz + 0.998;
+            (
+                [fx, fy, base_z],
+                [fx, fy, tip_z],
+                [fx + 1.0, fy + 1.0, tip_z],
+                [fx + 1.0, fy + 1.0, base_z],
+                [fx, fy + 1.0, base_z],
+                [fx, fy + 1.0, tip_z],
+                [fx + 1.0, fy, tip_z],
+                [fx + 1.0, fy, base_z],
+            )
+        }
+        3 => {
+            let base_z = fz + 1.0;
+            let tip_z = fz + 0.002;
+            (
+                [fx + 1.0, fy, base_z],
+                [fx + 1.0, fy, tip_z],
+                [fx, fy + 1.0, tip_z],
+                [fx, fy + 1.0, base_z],
+                [fx + 1.0, fy + 1.0, base_z],
+                [fx + 1.0, fy + 1.0, tip_z],
+                [fx, fy, tip_z],
+                [fx, fy, base_z],
+            )
+        }
+        4 => {
+            let base_x = fx;
+            let tip_x = fx + 0.998;
+            (
+                [base_x, fy, fz],
+                [tip_x, fy, fz],
+                [tip_x, fy + 1.0, fz + 1.0],
+                [base_x, fy + 1.0, fz + 1.0],
+                [base_x, fy + 1.0, fz],
+                [tip_x, fy + 1.0, fz],
+                [tip_x, fy, fz + 1.0],
+                [base_x, fy, fz + 1.0],
+            )
+        }
+        _ => {
+            let base_x = fx + 1.0;
+            let tip_x = fx + 0.002;
+            (
+                [base_x, fy, fz + 1.0],
+                [tip_x, fy, fz + 1.0],
+                [tip_x, fy + 1.0, fz],
+                [base_x, fy + 1.0, fz],
+                [base_x, fy + 1.0, fz + 1.0],
+                [tip_x, fy + 1.0, fz + 1.0],
+                [tip_x, fy, fz],
+                [base_x, fy, fz],
+            )
+        }
+    };
 
     let eps = 0.005;
     let uv_fwd = [[eps, 1.0 - eps], [eps, eps], [1.0 - eps, eps], [1.0 - eps, 1.0 - eps]];

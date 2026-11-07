@@ -3,7 +3,8 @@ use bevy::{input::mouse::AccumulatedMouseScroll, prelude::*};
 use crate::{menu::GameSettings, world::VoxelWorld};
 
 use super::{
-    GameMode, PLAYER_EYE_HEIGHT, PLAYER_HEIGHT, Player, PlayerEnvironmentStatus,
+    CharacterRace, GameMode, PLAYER_EYE_HEIGHT, PLAYER_HEIGHT, Player, PlayerEnvironmentStatus,
+    SelectedRace,
     camera::{
         InspectorInteraction, PlayerCamera, THIRD_PERSON_DISTANCE,
         resolve_third_person_camera_distance,
@@ -108,11 +109,27 @@ impl PlayerMotion {
         }
     }
 
+    pub fn stance_height_for_scale(&self, height_scale: f32) -> f32 {
+        match self.stance {
+            PlayerStance::Standing => PLAYER_HEIGHT * height_scale,
+            PlayerStance::Crouching => CROUCH_HEIGHT * height_scale,
+            PlayerStance::Crawling => CRAWL_HEIGHT * height_scale.max(0.85),
+        }
+    }
+
     pub fn target_eye_height(&self) -> f32 {
         match self.stance {
             PlayerStance::Standing => PLAYER_EYE_HEIGHT,
             PlayerStance::Crouching => CROUCH_EYE_HEIGHT,
             PlayerStance::Crawling => CRAWL_EYE_HEIGHT,
+        }
+    }
+
+    pub fn target_eye_height_for_scale(&self, height_scale: f32) -> f32 {
+        match self.stance {
+            PlayerStance::Standing => PLAYER_EYE_HEIGHT * height_scale,
+            PlayerStance::Crouching => CROUCH_EYE_HEIGHT * height_scale,
+            PlayerStance::Crawling => CRAWL_EYE_HEIGHT * height_scale.max(0.85),
         }
     }
 }
@@ -129,6 +146,7 @@ pub fn creative_movement(
     mouse_scroll: Res<AccumulatedMouseScroll>,
     time: Res<Time>,
     game_mode: Res<GameMode>,
+    selected_race: Option<Res<SelectedRace>>,
     inspector_interaction: Res<InspectorInteraction>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
     game_settings: Res<GameSettings>,
@@ -146,6 +164,7 @@ pub fn creative_movement(
             || *s.get() == crate::menu::MenuState::Settings
             || *s.get() == crate::menu::MenuState::Controls
             || *s.get() == crate::menu::MenuState::MainMenu
+            || *s.get() == crate::menu::MenuState::RaceSelection
             || *s.get() == crate::menu::MenuState::Loading
     });
 
@@ -175,15 +194,26 @@ pub fn creative_movement(
 
     let (mut camera_transform, mut camera_controller, camera_projection) = camera.into_inner();
 
+    let race_height_scale = selected_race
+        .map_or(CharacterRace::Human, |r| r.0)
+        .proportions()
+        .root_scale
+        .y;
+    let standing_height = PLAYER_HEIGHT * race_height_scale;
+    let crouching_height = CROUCH_HEIGHT * race_height_scale;
+
     if !motion.flying {
-        motion.grounded = is_grounded(&world, player_transform.translation, motion.stance_height());
+        motion.grounded = is_grounded(
+            &world,
+            player_transform.translation,
+            motion.stance_height_for_scale(race_height_scale),
+        );
     }
 
     let water_submersion = env_status.submersion;
 
     let in_water = water_submersion > WATER_SUBMERSION_THRESHOLD;
 
-    // Stance resolution with headroom safety (disabled while in inventory UI)
     // Stance resolution with headroom safety (disabled while in inventory UI)
     if motion.flying {
         motion.stance = PlayerStance::Standing;
@@ -202,19 +232,19 @@ pub fn creative_movement(
 
         match (motion.stance, requested_stance) {
             (PlayerStance::Crawling, PlayerStance::Standing) => {
-                if has_headroom(&world, player_transform.translation, PLAYER_HEIGHT) {
+                if has_headroom(&world, player_transform.translation, standing_height) {
                     motion.stance = PlayerStance::Standing;
-                } else if has_headroom(&world, player_transform.translation, CROUCH_HEIGHT) {
+                } else if has_headroom(&world, player_transform.translation, crouching_height) {
                     motion.stance = PlayerStance::Crouching;
                 }
             }
             (PlayerStance::Crawling, PlayerStance::Crouching) => {
-                if has_headroom(&world, player_transform.translation, CROUCH_HEIGHT) {
+                if has_headroom(&world, player_transform.translation, crouching_height) {
                     motion.stance = PlayerStance::Crouching;
                 }
             }
             (PlayerStance::Crouching, PlayerStance::Standing) => {
-                if has_headroom(&world, player_transform.translation, PLAYER_HEIGHT) {
+                if has_headroom(&world, player_transform.translation, standing_height) {
                     motion.stance = PlayerStance::Standing;
                 }
             }
@@ -224,8 +254,8 @@ pub fn creative_movement(
         }
     }
 
-    // Smooth eye height interpolation
-    let target_eye_height = motion.target_eye_height();
+    // Smooth eye height interpolation adapted to the selected race stature
+    let target_eye_height = motion.target_eye_height_for_scale(race_height_scale);
     let eye_smoothing = 1.0 - (-14.0 * delta_seconds).exp();
     motion.current_eye_height += (target_eye_height - motion.current_eye_height) * eye_smoothing;
 
@@ -301,6 +331,7 @@ pub fn creative_movement(
         Some((fwd, back, left, right, up, down))
     };
 
+    let stance_h = motion.stance_height_for_scale(race_height_scale);
     if motion.flying {
         fly_movement(
             input_dirs,
@@ -311,6 +342,7 @@ pub fn creative_movement(
             camera_forward,
             camera_right,
             is_fast,
+            stance_h,
         );
     } else {
         grounded_or_water_movement(
@@ -325,6 +357,7 @@ pub fn creative_movement(
             water_submersion,
             in_water,
             env_status.water_flow_velocity,
+            stance_h,
         );
     }
 
@@ -435,6 +468,7 @@ fn fly_movement(
     camera_forward: Vec3,
     camera_right: Vec3,
     is_fast: bool,
+    stance_height: f32,
 ) {
     let mut direction = Vec3::ZERO;
     let mut moving_vertically = false;
@@ -476,7 +510,7 @@ fn fly_movement(
         player_transform.translation,
         movement,
         allow_step,
-        motion.stance_height(),
+        stance_height,
     );
 
     player_transform.translation = new_position;
@@ -502,6 +536,7 @@ fn grounded_or_water_movement(
     water_submersion: f32,
     in_water: bool,
     water_flow_velocity: Vec3,
+    stance_height: f32,
 ) {
     let mut forward = Vec3::new(camera_forward.x, 0.0, camera_forward.z);
 
@@ -591,7 +626,7 @@ fn grounded_or_water_movement(
     if motion.stance == PlayerStance::Crouching && motion.grounded && !in_water {
         let mut move_x = motion.velocity.x * delta_seconds;
         let mut move_z = motion.velocity.z * delta_seconds;
-        let height = motion.stance_height();
+        let height = stance_height;
         let pos = player_transform.translation;
 
         if move_x != 0.0 {
@@ -634,7 +669,7 @@ fn grounded_or_water_movement(
         player_transform.translation,
         movement,
         allow_step,
-        motion.stance_height(),
+        stance_height,
     );
 
     player_transform.translation = new_position;
