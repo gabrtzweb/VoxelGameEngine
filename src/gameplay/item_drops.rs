@@ -172,7 +172,7 @@ pub fn create_voxel_item_mesh(
         BlockShape::Torch | BlockShape::Speleothem => (0.28, 0.85, 0.28),
         BlockShape::Column | BlockShape::Bamboo => (0.45, 1.0, 0.45),
         BlockShape::FlatPad | BlockShape::WallDecal => (1.0, 0.20, 1.0),
-        BlockShape::Pebble | BlockShape::PebbleCluster | BlockShape::Rubble => (0.65, 0.45, 0.65),
+        BlockShape::Pebble | BlockShape::PebbleCluster | BlockShape::Rubble | BlockShape::StickPile => (0.65, 0.45, 0.65),
         BlockShape::Cocoon => (0.75, 0.88, 0.75),
         _ => (1.0, 1.0, 1.0),
     };
@@ -381,32 +381,40 @@ fn handle_block_break_spawn_drop(
         return;
     }
 
-    let drop_voxel = event
-        .voxel
-        .double_tall_bottom_partner()
-        .unwrap_or(event.voxel);
-
     if *rng_seed == 0 {
         *rng_seed = 0x85EB_CA6B_C2B2_AE35;
     }
-    *rng_seed = rng_seed
-        .wrapping_mul(6364136223846793005)
-        .wrapping_add(1442695040888963407);
-    let rx = ((*rng_seed >> 32) as u32 as f32 / 4294967295.0) - 0.5;
-    *rng_seed = rng_seed
-        .wrapping_mul(6364136223846793005)
-        .wrapping_add(1442695040888963407);
-    let rz = ((*rng_seed >> 32) as u32 as f32 / 4294967295.0) - 0.5;
 
-    let position = event.position.as_vec3() + Vec3::new(0.5, 0.45, 0.5);
-    let velocity = Vec3::new(rx * 1.8, 2.8, rz * 1.8);
+    // Non-crop double-tall top plants (e.g. tall grass/flowers) drop their bottom item variant
+    let drop_source_voxel = if event.voxel.is_double_tall_top() && !event.voxel.is_crop_billboard() {
+        event.voxel.double_tall_bottom_partner().unwrap_or(event.voxel)
+    } else {
+        event.voxel
+    };
 
-    commands.trigger(SpawnItemDropEvent {
-        position,
-        velocity,
-        voxel: drop_voxel,
-        pickup_delay: 0.38,
-    });
+    let drops = crate::gameplay::crops::evaluate_crop_break_drops(drop_source_voxel, &mut rng_seed);
+    for (drop_voxel, count) in drops {
+        for _ in 0..count {
+            *rng_seed = rng_seed
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            let rx = ((*rng_seed >> 32) as u32 as f32 / 4294967295.0) - 0.5;
+            *rng_seed = rng_seed
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            let rz = ((*rng_seed >> 32) as u32 as f32 / 4294967295.0) - 0.5;
+
+            let position = event.position.as_vec3() + Vec3::new(0.5, 0.45, 0.5);
+            let velocity = Vec3::new(rx * 1.8, 2.8, rz * 1.8);
+
+            commands.trigger(SpawnItemDropEvent {
+                position,
+                velocity,
+                voxel: drop_voxel,
+                pickup_delay: 0.38,
+            });
+        }
+    }
 }
 
 fn update_item_drops(

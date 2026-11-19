@@ -1060,11 +1060,9 @@ fn load_all_variants_for(base_name: &str, backup_name: &str, fallback_color: [u8
 
 
     let mut primary_paths = vec![
-
         format!("assets/textures/blocks/{base_name}.png"),
-
         format!("assets/textures/blocks/{base_name}0.png"),
-
+        format!("assets/textures/items/{base_name}.png"),
     ];
 
 

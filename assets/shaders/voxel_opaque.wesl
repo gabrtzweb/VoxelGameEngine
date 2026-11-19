@@ -380,22 +380,25 @@ fn fragment(
     }
     let is_painted_block = ((vertex_output.color.a > 0.52) && (vertex_output.color.a < 0.72))
         || ((vertex_output.color.a > 7.4) && (vertex_output.color.a < 7.8));
-    let is_foliage_tinted = !is_mask_face && !is_painted_block && (vertex_output.color.a > 0.75) && (tint_color.r < 0.99 || tint_color.g < 0.99 || tint_color.b < 0.99);
+    // Only treat vertex colors with actual chroma (biome tint) as foliage-tinted;
+    // pure greyscale AO on non-tinted blocks (e.g. melons, moss, stone) must never trigger grass fringe tinting.
+    let has_chroma_tint = (abs(tint_color.r - tint_color.g) > 0.015) || (abs(tint_color.g - tint_color.b) > 0.015);
+    let is_foliage_tinted = !is_mask_face && !is_painted_block && (vertex_output.color.a > 0.75) && has_chroma_tint;
     if (is_foliage_tinted && !is_item_entity) {
         let varied_tint = ambient_environment_variation(vertex_output.world_position.xz, tint_color.rgb * vertex_output.color.rgb);
         tint_color = vec4<f32>(varied_tint, tint_color.a);
     }
 
     // Dynamic grass side fringe tinting:
-    // On vertical side faces, only tint the green grass fringe hanging down so it matches the top face,
-    // leaving natural dirt and stone underneath completely untouched.
+    // On vertical side faces of foliage-tinted blocks (grass/turf), only tint the green grass fringe
+    // hanging down so it matches the top face, leaving natural dirt and stone underneath untouched.
     // On held items and 3D drops (is_item_entity), per-face vertex colors are already assigned directly
     // (top face = biome tint, side/bottom faces = white with pre-baked side overlay), so we preserve
     // final_tint regardless of how the player pitches or rolls the camera!
     var final_tint = tint_color.rgb;
-    if (!is_mask_face && !is_horizontal && !is_item_entity) {
+    if (!is_mask_face && !is_horizontal && !is_item_entity && is_foliage_tinted) {
         let is_grass_fringe = (uv.y < 0.55) && (tex_color.g > tex_color.r * 1.02) && (tex_color.g > tex_color.b * 1.15);
-        if (is_grass_fringe && is_foliage_tinted) {
+        if (is_grass_fringe) {
             let fringe_lum = dot(tex_color.rgb, vec3<f32>(0.299, 0.587, 0.114));
             let tinted_fringe = fringe_lum * 1.45 * tint_color.rgb;
             tex_color = vec4<f32>(tinted_fringe, tex_color.a);

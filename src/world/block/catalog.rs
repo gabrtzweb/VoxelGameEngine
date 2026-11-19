@@ -98,6 +98,8 @@ impl Voxel {
             Self::YewLog => Some("tree_yew_bark"),
             Self::BambooStalk => Some("tree_bamboo_stalk"),
             Self::BloodyBone | Self::BoneBlock => Some("bio_bone_side"),
+            Self::MelonBlock | Self::WildMelon => Some("crops_melon_side"),
+            Self::PumpkinBlock | Self::WildPumpkin => Some("crops_pumpkin_side"),
             Self::BloodyFlesh | Self::FleshBlock => Some("bio_flesh_side"),
             Self::TreeCharredLog => Some("tree_charred_bark_lit"),
             Self::GeothermalVent => Some("aqua_geothermal_vent_side"),
@@ -144,6 +146,8 @@ impl Voxel {
             | Self::LimestoneSnow => Some("soil_snow"),
 
             Self::LoamMulch => Some("soil_loam_mulch"),
+            Self::MelonBlock | Self::WildMelon => Some("crops_melon_top"),
+            Self::PumpkinBlock | Self::WildPumpkin => Some("crops_pumpkin_top"),
             Self::PeatMulch => Some("soil_peat_mulch"),
             Self::SiltMulch => Some("soil_silt_mulch"),
             Self::LoamTilled => Some("soil_loam_tilled_top"),
@@ -213,6 +217,8 @@ impl Voxel {
             Self::GeothermalVent => Some("aqua_geothermal_vent_bot"),
             Self::VegeCactus => Some("vege_cactus_bottom"),
             Self::TreeCharredLog => Some("tree_charred_log_lit"),
+            Self::MelonBlock | Self::WildMelon => Some("crops_melon_bottom"),
+            Self::PumpkinBlock | Self::WildPumpkin => Some("crops_pumpkin_bottom"),
             Self::BeeNest => Some("nest_bee_nest_top"),
             Self::BirdNest => Some("nest_bird_nest_bot"),
             Self::BloodyFlesh | Self::FleshBlock => Some("bio_flesh_top"),
@@ -336,6 +342,8 @@ impl Voxel {
             BlockShape::PebbleCluster
         } else if self.is_rubble_const() {
             BlockShape::Rubble
+        } else if self == Self::StickPile {
+            BlockShape::StickPile
         } else if self.is_speleothem_const() {
             BlockShape::Speleothem
         } else if matches!(self, Self::BirdNest | Self::HayNest) {
@@ -1060,6 +1068,7 @@ impl Voxel {
             Self::PebbleChert | Self::PebbleChertCluster | Self::BoulderChert => [160, 145, 130, 255],
             Self::PebbleFlint | Self::PebbleFlintCluster | Self::BoulderFlint => [65, 70, 75, 255],
             Self::PebbleQuartz | Self::PebbleQuartzCluster | Self::BoulderQuartz => [220, 225, 230, 255],
+            Self::StickPile | Self::ItemStick => [88, 68, 52, 255],
 
             // Containers & Storage
             Self::Barrel | Self::Crate | Self::Basket | Self::Bookshelf | Self::BookshelfEmpty => [135, 95, 55, 255],
@@ -1291,6 +1300,9 @@ impl Voxel {
             | Self::FlowerRoseBushTop => [220, 45, 50, 255],
             Self::FlowerOrchid | Self::FlowerPinkPetals | Self::FlowerPinkTulip => [235, 135, 175, 255],
             Self::FlowerSnapdragonBottom | Self::FlowerSnapdragonTop => [225, 165, 60, 255],
+            Self::MelonBlock | Self::WildMelon => [100, 145, 45, 255],
+            Self::PumpkinBlock | Self::WildPumpkin => [215, 115, 25, 255],
+            _ => [95, 145, 50, 255],
         }
     }
 

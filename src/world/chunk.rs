@@ -347,6 +347,7 @@ impl Chunk {
                         | BlockShape::Cactus
                         | BlockShape::Rubble
                         | BlockShape::Speleothem
+                        | BlockShape::StickPile
                 )
             }) {
                 self.shapes.remove(&index);

@@ -68,7 +68,10 @@ pub fn mesh_shaped_voxels(
             2.0
         } else if voxel.is_marine_flora() {
             4.0
-        } else if voxel.is_flora_billboard() || voxel == Voxel::BambooLeaves {
+        } else if voxel.is_flora_billboard()
+            || voxel.is_crop_billboard()
+            || voxel == Voxel::BambooLeaves
+        {
             5.0
         } else if voxel.is_cross_billboard()
             || shape == BlockShape::CrossBillboard
@@ -194,6 +197,30 @@ pub fn mesh_shaped_voxels(
             }
             continue;
         }
+        if voxel.is_stick_pile() || shape == BlockShape::StickPile {
+            mesh_stick_pile(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                side_layer,
+                frame_count_f32,
+                side_tint,
+            );
+            if is_submerged_fixture(world, world_voxel, voxel) {
+                mesh_waterlogged_envelope(
+                    world,
+                    transparent_buffers,
+                    world_voxel,
+                    fx,
+                    fy,
+                    fz,
+                    textures,
+                );
+            }
+            continue;
+        }
         if voxel.is_speleothem() || shape == BlockShape::Speleothem {
             let (dir, piece) = determine_speleothem_part(world, world_voxel, voxel);
             let layer = if let Some(layers) = textures.get_speleothem_layers(voxel) {
@@ -293,6 +320,38 @@ pub fn mesh_shaped_voxels(
             }
             continue;
         }
+        if matches!(
+            voxel,
+            Voxel::CropMelonStemAttached | Voxel::CropPumpkinStemAttached
+        ) {
+            let target_fruit = if voxel == Voxel::CropMelonStemAttached {
+                Voxel::MelonBlock
+            } else {
+                Voxel::PumpkinBlock
+            };
+            let stem_orient = if world.get_voxel(world_voxel + IVec3::X) == Some(target_fruit) {
+                0
+            } else if world.get_voxel(world_voxel + IVec3::NEG_X) == Some(target_fruit) {
+                1
+            } else if world.get_voxel(world_voxel + IVec3::Z) == Some(target_fruit) {
+                2
+            } else if world.get_voxel(world_voxel + IVec3::NEG_Z) == Some(target_fruit) {
+                3
+            } else {
+                orientation % 4
+            };
+            mesh_attached_stem(
+                buffers,
+                fx,
+                fy,
+                fz,
+                stem_orient,
+                side_layer,
+                frame_count_f32,
+                side_tint,
+            );
+            continue;
+        }
         if voxel.is_cross_billboard() || shape == BlockShape::CrossBillboard {
             mesh_cross_billboard_oriented(
                 buffers,
@@ -379,7 +438,8 @@ pub fn mesh_shaped_voxels(
             | BlockShape::WallDecal
             | BlockShape::Cactus
             | BlockShape::Rubble
-            | BlockShape::Speleothem => unreachable!(),
+            | BlockShape::Speleothem
+            | BlockShape::StickPile => unreachable!(),
             BlockShape::Full | BlockShape::Column | BlockShape::Cocoon => {
                 mesh_column_cocoon(
                     buffers,
@@ -809,9 +869,11 @@ pub fn is_submerged_fixture(world: &impl VoxelAccess, pos: IVec3, voxel: Voxel) 
     let (shape, _) = world.get_shape(pos);
     if !voxel.is_rubble()
         && !voxel.is_pebble()
+        && !voxel.is_stick_pile()
         && shape != BlockShape::Rubble
         && shape != BlockShape::Pebble
         && shape != BlockShape::PebbleCluster
+        && shape != BlockShape::StickPile
     {
         return false;
     }

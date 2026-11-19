@@ -255,7 +255,38 @@ fn edit_voxels(
             }
         }
 
-        let edited = if existing_voxel.is_some_and(Voxel::is_torch) {
+        let edited = if place_voxel_type == Voxel::ItemBoneMeal {
+            if crate::gameplay::crops::advance_crop(&mut world, &mut modifications, target.hit_voxel) {
+                commands.trigger(BlockPlaceEvent {
+                    position: target.hit_voxel,
+                    voxel: Voxel::ItemBoneMeal,
+                });
+                vec![target.hit_voxel, target.hit_voxel + IVec3::Y]
+            } else {
+                Vec::new()
+            }
+        } else if let Some(crop_voxel) = crate::gameplay::crops::seed_to_crop(place_voxel_type) {
+            let can_plant = target.face_normal == IVec3::Y
+                && existing_voxel.is_some_and(crate::gameplay::crops::is_tilled_soil);
+            if !can_plant {
+                return;
+            }
+            let placed = place_block(
+                &mut world,
+                &mut modifications,
+                place_position,
+                crop_voxel,
+            );
+            if !placed.is_empty() {
+                world.set_shape(place_position, BlockShape::CrossBillboard, 0);
+                modifications.record_shape(place_position, BlockShape::CrossBillboard, 0);
+            }
+            placed
+        } else if place_voxel_type.is_inventory_only_item() {
+            // Inventory-only items (sticks, slices, sugar, sugar cane item, etc.)
+            // cannot be placed directly as world blocks.
+            return;
+        } else if existing_voxel.is_some_and(Voxel::is_torch) {
             // Cannot stack or place anything against or on top of a torch
             Vec::new()
         } else if target.face_normal == IVec3::Y
@@ -444,7 +475,10 @@ fn edit_voxels(
                 modifications.record_shape(place_position, BlockShape::Basket, 0);
             }
             placed
-        } else if place_voxel_type.is_pebble() || place_voxel_type.is_rubble() {
+        } else if place_voxel_type.is_pebble()
+            || place_voxel_type.is_rubble()
+            || place_voxel_type.is_stick_pile()
+        {
             if target.face_normal != IVec3::Y {
                 return;
             }
@@ -671,6 +705,8 @@ pub fn remove_voxel(
     modifications.record_shape(world_voxel, BlockShape::Full, 0);
     modifications.record_extra_slab(world_voxel, None);
 
+    crate::gameplay::crops::handle_cucurbit_fruit_harvest(world, modifications, world_voxel);
+
     true
 }
 
@@ -703,6 +739,8 @@ pub fn place_voxel(
     modifications.record_fluid_level(world_voxel, 0);
     modifications.record_shape(world_voxel, def_shape, 0);
     modifications.record_extra_slab(world_voxel, None);
+
+    crate::gameplay::crops::handle_cucurbit_fruit_harvest(world, modifications, world_voxel);
 
     true
 }

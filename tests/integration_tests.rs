@@ -40,5 +40,8 @@ mod foliage;
 #[path = "suite/audio.rs"]
 mod audio;
 
+#[path = "suite/crop_gameplay.rs"]
+mod crop_gameplay;
+
 #[path = "suite/menu.rs"]
 mod menu;

@@ -1250,6 +1250,79 @@ pub fn mesh_cross_billboard_oriented(
     );
 }
 
+/// Meshes an attached cucurbit stem (melon or pumpkin) as a double-sided vertical plane
+/// rising from the farmland center and curving directly toward the adjacent fruit block.
+/// Orientation: 0 = +X (East), 1 = -X (West), 2 = +Z (South), 3 = -Z (North).
+pub fn mesh_attached_stem(
+    buffers: &mut MeshBuffers,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    orientation: u8,
+    texture_layer: u16,
+    frame_count: f32,
+    tint_color: [f32; 4],
+) {
+    let base_y = fy;
+    let tip_y = fy + 0.998;
+    // The attached stem texture curves toward u = 0.0 (left edge), so p00/p01 sit on the fruit-facing edge.
+    let (p00, p01, p11, p10) = match orientation % 4 {
+        0 => (
+            // +X (East)
+            [fx + 1.0, base_y, fz + 0.5],
+            [fx + 1.0, tip_y, fz + 0.5],
+            [fx, tip_y, fz + 0.5],
+            [fx, base_y, fz + 0.5],
+        ),
+        1 => (
+            // -X (West)
+            [fx, base_y, fz + 0.5],
+            [fx, tip_y, fz + 0.5],
+            [fx + 1.0, tip_y, fz + 0.5],
+            [fx + 1.0, base_y, fz + 0.5],
+        ),
+        2 => (
+            // +Z (South)
+            [fx + 0.5, base_y, fz + 1.0],
+            [fx + 0.5, tip_y, fz + 1.0],
+            [fx + 0.5, tip_y, fz],
+            [fx + 0.5, base_y, fz],
+        ),
+        _ => (
+            // -Z (North)
+            [fx + 0.5, base_y, fz],
+            [fx + 0.5, tip_y, fz],
+            [fx + 0.5, tip_y, fz + 1.0],
+            [fx + 0.5, base_y, fz + 1.0],
+        ),
+    };
+
+    let n_up = [0.0, 1.0, 0.0];
+    let uv_fwd = [[0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0]];
+    let uv_rev = [[1.0, 1.0], [1.0, 0.0], [0.0, 0.0], [0.0, 1.0]];
+    // Tag alpha with 5.0 so the opaque shader applies cross-billboard lighting (is_cross_mesh)
+    let stem_tint = [tint_color[0], tint_color[1], tint_color[2], 5.0];
+
+    push_quad_face_with_uvs(
+        buffers,
+        [p00, p01, p11, p10],
+        n_up,
+        texture_layer,
+        frame_count,
+        stem_tint,
+        uv_fwd,
+    );
+    push_quad_face_with_uvs(
+        buffers,
+        [p10, p11, p01, p00],
+        n_up,
+        texture_layer,
+        frame_count,
+        stem_tint,
+        uv_rev,
+    );
+}
+
 pub fn mesh_bamboo(
     buffers: &mut MeshBuffers,
     fx: f32,
@@ -1632,4 +1705,229 @@ pub fn mesh_speleothem(
         frame_count,
         tint_color,
     );
+}
+
+/// Meshes a "Pile of Sticks" (Hytale-inspired ground loot) with 3 distinct geometric layouts
+/// (3 to 4 wooden branch segments each) selected deterministically by voxel position,
+/// combined with 4-way Y rotation (`orientation % 4`) for rich visual variety across the terrain.
+pub fn mesh_stick_pile(
+    buffers: &mut MeshBuffers,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    orientation: u8,
+    texture_layer: u16,
+    frame_count: f32,
+    tint_color: [f32; 4],
+) {
+    let endcap1 = [12.0, 0.0, 16.0, 4.0];
+    let endcap2 = [12.0, 4.0, 16.0, 8.0];
+
+    let hash = (fx as i32)
+        .wrapping_mul(73856093)
+        ^ (fy as i32).wrapping_mul(19349663)
+        ^ (fz as i32).wrapping_mul(83492791);
+    let layout = (hash.unsigned_abs() % 3) as u8;
+
+    match layout {
+        // Layout 0: 3 sticks — open asymmetric cross (2 base + 1 resting on top)
+        0 => {
+            // Stick 1 (base, X-aligned, left-front)
+            push_pebble_element(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                [1.5, 0.0, 8.5],
+                [10.5, 1.8, 10.5],
+                [0.0, 2.0, 9.0, 3.8],
+                endcap1,
+                [0.0, 2.0, 9.0, 3.8],
+                endcap1,
+                [0.0, 0.0, 9.0, 2.0],
+                [0.0, 0.0, 9.0, 2.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+            );
+            // Stick 2 (base, Z-aligned, right-back)
+            push_pebble_element(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                [9.5, 0.0, 2.5],
+                [11.5, 1.8, 12.0],
+                endcap2,
+                [1.0, 4.0, 10.5, 5.8],
+                endcap2,
+                [1.0, 4.0, 10.5, 5.8],
+                [1.0, 0.0, 3.0, 9.5],
+                [1.0, 0.0, 3.0, 9.5],
+                texture_layer,
+                frame_count,
+                tint_color,
+            );
+            // Stick 3 (top, Z-aligned, crossing Stick 1)
+            push_pebble_element(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                [4.5, 1.8, 4.0],
+                [6.5, 3.6, 13.5],
+                endcap1,
+                [0.0, 9.0, 9.5, 10.8],
+                endcap1,
+                [0.0, 9.0, 9.5, 10.8],
+                [0.0, 9.0, 2.0, 16.0],
+                [0.0, 9.0, 2.0, 16.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+            );
+        }
+        // Layout 1: 4 sticks — scattered cluster (3 base + 1 elevated crossing)
+        1 => {
+            // Stick 1 (base, X-aligned, back-left)
+            push_pebble_element(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                [2.0, 0.0, 3.5],
+                [10.0, 1.8, 5.5],
+                [2.0, 6.0, 10.0, 7.8],
+                endcap1,
+                [2.0, 6.0, 10.0, 7.8],
+                endcap1,
+                [2.0, 8.0, 10.0, 10.0],
+                [2.0, 8.0, 10.0, 10.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+            );
+            // Stick 2 (base, Z-aligned, far right)
+            push_pebble_element(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                [11.5, 0.0, 4.0],
+                [13.5, 1.8, 11.5],
+                endcap2,
+                [1.0, 4.0, 8.5, 5.8],
+                endcap2,
+                [1.0, 4.0, 8.5, 5.8],
+                [1.0, 0.0, 3.0, 7.5],
+                [1.0, 0.0, 3.0, 7.5],
+                texture_layer,
+                frame_count,
+                tint_color,
+            );
+            // Stick 3 (base, short foreground twig, X-aligned)
+            push_pebble_element(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                [3.0, 0.0, 11.5],
+                [10.5, 1.8, 13.5],
+                [1.0, 12.0, 8.5, 13.8],
+                endcap2,
+                [1.0, 12.0, 8.5, 13.8],
+                endcap2,
+                [1.0, 12.0, 8.5, 14.0],
+                [1.0, 12.0, 8.5, 14.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+            );
+            // Stick 4 (top, Z-aligned, bridging Stick 1 and Stick 3)
+            push_pebble_element(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                [6.0, 1.8, 3.0],
+                [8.0, 3.6, 13.0],
+                endcap1,
+                [0.0, 9.0, 10.0, 10.8],
+                endcap1,
+                [0.0, 9.0, 10.0, 10.8],
+                [0.0, 9.0, 2.0, 16.0],
+                [0.0, 9.0, 2.0, 16.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+            );
+        }
+        // Layout 2: 3 sticks — loose parallel pair + top cross-branch
+        _ => {
+            // Stick 1 (base, Z-aligned, left)
+            push_pebble_element(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                [3.5, 0.0, 2.5],
+                [5.5, 1.8, 11.0],
+                endcap1,
+                [0.0, 2.0, 8.5, 3.8],
+                endcap1,
+                [0.0, 2.0, 8.5, 3.8],
+                [0.0, 0.0, 2.0, 8.5],
+                [0.0, 0.0, 2.0, 8.5],
+                texture_layer,
+                frame_count,
+                tint_color,
+            );
+            // Stick 2 (base, Z-aligned, right-offset)
+            push_pebble_element(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                [8.5, 0.0, 5.0],
+                [10.5, 1.8, 14.0],
+                endcap2,
+                [1.0, 4.0, 10.0, 5.8],
+                endcap2,
+                [1.0, 4.0, 10.0, 5.8],
+                [1.0, 0.0, 3.0, 9.0],
+                [1.0, 0.0, 3.0, 9.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+            );
+            // Stick 3 (top, X-aligned, crossing both base sticks)
+            push_pebble_element(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                [2.0, 1.8, 6.5],
+                [12.5, 3.6, 8.5],
+                [1.0, 11.0, 11.5, 12.8],
+                endcap1,
+                [1.0, 11.0, 11.5, 12.8],
+                endcap1,
+                [1.0, 11.0, 11.5, 13.0],
+                [1.0, 11.0, 11.5, 13.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+            );
+        }
+    }
 }

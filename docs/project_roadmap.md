@@ -65,7 +65,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **09** | **[Main Menu, Clean World Session Lifetime & Deferred World Loading](#phase-9-main-menu-clean-world-session-lifetime--deferred-world-loading-completed)** | **Completed** | Title splash & action menu, deferred chunk streaming, loading screen with rotating tips, menu soundtrack & shuffle, clean session lifecycle |
 | **10** | **[Sound Engine & Spatial Audio System](#phase-10-sound-engine--spatial-audio-system-completed)** | **Completed** | 3D spatial audio, material-based block break/place and footsteps, ambient environmental soundscapes, weather audio, dynamic music |
 | **11** | **[Custom Voxel Player Character, 8-Race Silhouettes & Hand Item Rendering](#phase-11-custom-voxel-player-character-8-race-silhouettes--hand-item-rendering-completed)** | **Completed** | Modular voxel character rig, 8 fantasy races with distinct silhouettes & proportions, 1st/3rd-person 3D held item rendering |
-| **12** | **[Agricultural Simulation, Cultivated Crops & Farmland Systems](#phase-12-agricultural-simulation-cultivated-crops--farmland-systems-planned)** | **Planned** | 36 domestic and wild crops, growth lifecycle simulation, soil moisture, irrigation, seasonal yields, arboreal canopy pods |
+| **12** | **[Agricultural Simulation, Cultivated Crops & Farmland Systems](#phase-12-agricultural-simulation-cultivated-crops--farmland-systems-completed)** | **Completed** | 16 domestic crop families (4 standardized stages), 18 wild crops, cucurbit vine systems, bone meal fertilizer, Farmland mechanics |
 | **13** | **[Physics Engine, Fluid Dynamics & Item Drops](#phase-13-physics-engine-fluid-dynamics--item-drops-completed)** | **Completed** | Dynamic smooth flow fluid meshing, downhill river hydrology & current vectors, floating 3D item drops & suction physics |
 | **14** | **[Dynamic Weather System & Meteorological Phenomena](#phase-14-dynamic-weather-system--meteorological-phenomena-completed)** | **Completed** | Multi-state weather simulation (rain, snow, fog, storms), precipitation particles, surface wetness, dynamic snow accumulation |
 | **15** | **[Visual Aesthetics, Shaders & Atmospheric FX Overhaul](#phase-15-visual-aesthetics-shaders--atmospheric-fx-overhaul-completed)** | **Completed** | Voxel Ambient Occlusion (Smooth Lighting), water caustics & refraction, bloom, volumetric fog/god rays, subterranean lighting stabilization |
@@ -73,7 +73,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **17** | **[Localization & Multi-Language Support](#phase-17-localization--multi-language-support-completed)** | **Completed** | `lang/` translation files (`en_us`, `pt_br`), comprehensive UI/block/item localization, natural Portuguese grammar, in-game language selector |
 | **18** | **[Controls & Keybinding System](#phase-18-controls--keybinding-system-completed)** | **Completed** | Configurable keybindings for all actions, mouse sensitivity & invert Y options, input conflict detection, Main Menu & Pause integration |
 | **19** | **[Dynamic Foliage & Procedural Grass System](#phase-19-dynamic-foliage--procedural-grass-system-completed)** | **Completed** | Procedural 3D grass blades on surface blocks, cubic Bezier wind deformation, Voronoi clumping, entity footprint trails, dynamic LOD |
-| **20** | **[Phase 20 (TBD)](#phase-20-tbd-planned)** | **Planned** | Reserved for future systems |
+| **20** | **[World Surface & Subterranean Feature Generation](#phase-20-world-surface--subterranean-feature-generation-planned)** | **Planned** | Procedural feature placement across biomes: wild crops, flora, trees, pebbles, rubble, marine scatter |
 
 ---
 
@@ -282,19 +282,22 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 
 ---
 
-### Phase 12: Agricultural Simulation, Cultivated Crops & Farmland Systems (Planned)
+### Phase 12: Agricultural Simulation, Cultivated Crops & Farmland Systems (Completed)
 
 - [x] **Agricultural Simulation Engine Foundation**:
   - Simulation model for crop lifecycles, soil moisture propagation, rainfall hydration, and harvest yield evaluation.
-- [ ] **Complete Crop Catalog & Farmland Architecture**:
-  - Specification and registration of **36 domestic and wild ancestral cultivars** (`docs/worldbuilding/blocks/crops`).
-  - Farmland tilling mechanics with hoe tools, soil saturation tiers (dry, moist, fully hydrated), and hydration transfer from adjacent water sources ($\le 4\text{ blocks}$).
-- [ ] **In-World Multi-Stage Crop Meshing & Growth Ticks**:
-  - Connect multi-stage developmental growth lifecycles (stages 0 to 7) to block tick updates, seasonal temperatures, and fertilization (bonemeal).
-  - Multi-tier visual growth meshes for row crops, trellis climbers, arboreal canopy pods, and ancestral wild cultivars.
-- [ ] **Harvesting, Seed Multiplication & Culinary Integration**:
-  - Mature crop breaking yields edible harvest items and replantable seeds.
-  - Right-click rapid harvesting for persistent multi-harvest crops (berries, bush crops).
+- [x] **Complete Crop Catalog & Farmland Architecture**:
+  - Specification and registration of 16 domestic crop families with standardized 4-stage progression (`stage0` through `stage3`), 18 wild ancestral crop varieties with 3 random visual variants each, and 29 agricultural item drops/seeds.
+  - Dedicated Farmland system supporting all 3 tilled soil substrates (`LoamTilled`, `PeatTilled`, `SiltTilled`). Non-tilled soils prevent seed placement.
+- [x] **In-World Multi-Stage Crop Meshing, Growth Ticks & Bone Meal Fertilization**:
+  - Registered 144 new voxels (`538..=681`) with cross-billboard rendering (`FLAG_CROSS_BILLBOARD`), double-tall multi-block synchronicity (bottom/top partner links), and solid cube cucurbit fruits (`MelonBlock`, `PumpkinBlock`).
+  - Implemented `CropPlugin` with natural periodic growth ticks around active player radius with Farmland substrate validation.
+  - Full Bone Meal (`ItemBoneMeal`) instant fertilization mechanics: right-clicking any growing domestic crop immediately advances it by +1 stage, plays placement sound, and marks chunk mesh dirty.
+  - Cucurbit vine systems: melon and pumpkin stems advance from Stage 0 to 2, then seek adjacent unoccupied farmland/dirt to spawn full fruit blocks (`MelonBlock` / `PumpkinBlock`) while transforming into attached stems (`attached_stem`). Harvesting fruit automatically detaches and reverts stems back to Stage 2.
+- [x] **Harvesting, Seed Multiplication & Creative Inventory Isolation**:
+  - Breaking mature crops drops edible produce items and replantable seeds (`evaluate_crop_break_drops`). Immature crops safely recover the planted seed. Melon blocks yield 3–7 melon slices (`ItemMelonSlice`).
+  - Isolated intermediate growth stages (`stage0..3`) from creative inventory tabs to prevent clutter, keeping only seeds, produce items, wild varieties, and whole melon/pumpkin fruit blocks accessible in the Vegetation tab.
+  - Complete dual-language localization in `assets/lang/en_us.json` and `assets/lang/pt_br.json`.
 
 ---
 
@@ -446,6 +449,19 @@ Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dyna
 
 ---
 
-### Phase 20: TBD (Planned)
+### Phase 20: World Surface & Subterranean Feature Generation (Planned)
 
-(Reserved for future systems)
+- [ ] **Surface Botanical & Wild Crop Distribution**:
+  - Procedural scatter of ancestral wild cultivars across native surface biomes (`wild_carrots`, `wild_potatoes`, `wild_wheat`, `wild_barley`, `wild_rice`, `wild_corn`, `wild_sugar_cane`, `wild_melon`, `wild_pumpkin`, etc.).
+  - Environmental climate compatibility: wetland/riverbank reeds, arid steppe cereals, temperate root vegetables, and subtropical shrubs.
+- [ ] **Herbaceous Flora, Wildgrass & Flower Population**:
+  - Reactivate and integrate surface flora scatter across 44 distinct biomes.
+  - Multi-tiered wildgrass, ferns, single/double-tall companion flower patches, and petal carpets.
+- [ ] **Arboreal Systems & Procedural Tree Generation**:
+  - Procedural tree trunk branching and foliage canopies (Oak, Birch, Spruce, Pine, Jungle/Mahogany, Acacia, Palm, Mangrove, Willow, Cypress).
+  - Arboreal crop attachments: lateral cocoa trunk pods and suspended coconut drupes beneath palm canopies.
+- [ ] **Surface & Subterranean Geological Scatter**:
+  - Natural placement of loose surface rubble, loose pebbles (Chert, Flint, Quartz), clusters, and boulders.
+  - Subterranean cave growths: speleothem stalactites/stalagmites, crystal clusters, bone worms, and subterranean flora.
+- [ ] **Marine & Hydro-Botanical Scatter**:
+  - Coastal and abyssal flora generation: seagrass meadows, bull kelp forests, coral reef fans (Brain, Bubble, Fire, Horn, Heart, Leaf, Reed), and marine debris.

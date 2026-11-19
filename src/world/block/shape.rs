@@ -20,6 +20,7 @@ pub enum BlockShape {
     Cactus = 13,
     Rubble = 14,
     Speleothem = 15,
+    StickPile = 16,
 }
 
 #[repr(u8)]
@@ -55,7 +56,7 @@ impl PillarAxis {
 
 impl BlockShape {
     /// All 15 registered block shapes in the engine.
-    pub const fn all() -> [BlockShape; 16] {
+    pub const fn all() -> [BlockShape; 17] {
         [
             BlockShape::Full,
             BlockShape::Slab,
@@ -73,6 +74,7 @@ impl BlockShape {
             BlockShape::Cactus,
             BlockShape::Rubble,
             BlockShape::Speleothem,
+            BlockShape::StickPile,
         ]
     }
 
@@ -104,6 +106,7 @@ impl BlockShape {
             Self::Cactus => "Cactus",
             Self::Rubble => "Rubble",
             Self::Speleothem => "Speleothem",
+            Self::StickPile => "Stick Pile",
         }
     }
 
@@ -125,6 +128,7 @@ impl BlockShape {
             Self::Cactus => "CACTUS",
             Self::Rubble => "RUBBLE",
             Self::Speleothem => "SPELEO",
+            Self::StickPile => "STICK_PILE",
         }
     }
 
@@ -136,7 +140,7 @@ impl BlockShape {
             Self::Stair => 8,
             Self::Column => 6,
             Self::Torch => 5,
-            Self::Pebble | Self::PebbleCluster | Self::Rubble => 4,
+            Self::Pebble | Self::PebbleCluster | Self::Rubble | Self::StickPile => 4,
         }
     }
 
@@ -194,7 +198,7 @@ impl BlockShape {
                 4 => "Wall East (+X)",
                 _ => "Unknown",
             },
-            Self::Pebble | Self::PebbleCluster | Self::Rubble => match orientation % 4 {
+            Self::Pebble | Self::PebbleCluster | Self::Rubble | Self::StickPile => match orientation % 4 {
                 0 => "North (0°)",
                 1 => "East (90°)",
                 2 => "South (180°)",
@@ -325,6 +329,14 @@ impl BlockShape {
                 let b = rotate_aabb_y(
                     Vec3::new(1.0 / 16.0, 0.0, 1.0 / 16.0),
                     Vec3::new(15.0 / 16.0, 6.0 / 16.0, 15.0 / 16.0),
+                    orientation,
+                );
+                (b, None)
+            },
+            Self::StickPile => {
+                let b = rotate_aabb_y(
+                    Vec3::new(2.0 / 16.0, 0.0, 2.0 / 16.0),
+                    Vec3::new(14.0 / 16.0, 5.0 / 16.0, 14.0 / 16.0),
                     orientation,
                 );
                 (b, None)

@@ -546,20 +546,172 @@ pub enum Voxel {
     BoulderQuartz = 535,
     BagRice = 536,
     BagSugar = 537,
+    // Agricultural Cultivars & Items (Phase 12)
+    CropCarrotsStage0 = 538,
+    CropCarrotsStage1 = 539,
+    CropCarrotsStage2 = 540,
+    CropCarrotsStage3 = 541,
+    CropPotatoesStage0 = 542,
+    CropPotatoesStage1 = 543,
+    CropPotatoesStage2 = 544,
+    CropPotatoesStage3 = 545,
+    CropBeetrootsStage0 = 546,
+    CropBeetrootsStage1 = 547,
+    CropBeetrootsStage2 = 548,
+    CropBeetrootsStage3 = 549,
+    CropOnionsStage0 = 550,
+    CropOnionsStage1 = 551,
+    CropOnionsStage2 = 552,
+    CropOnionsStage3 = 553,
+    CropGarlicStage0 = 554,
+    CropGarlicStage1 = 555,
+    CropGarlicStage2 = 556,
+    CropGarlicStage3 = 557,
+    CropCabbagesStage0 = 558,
+    CropCabbagesStage1 = 559,
+    CropCabbagesStage2 = 560,
+    CropCabbagesStage3 = 561,
+    CropLettuceStage0 = 562,
+    CropLettuceStage1 = 563,
+    CropLettuceStage2 = 564,
+    CropLettuceStage3 = 565,
+    CropPepperStage0 = 566,
+    CropPepperStage1 = 567,
+    CropPepperStage2 = 568,
+    CropPepperStage3 = 569,
+    CropWheatStage0 = 570,
+    CropWheatStage1 = 571,
+    CropWheatStage2 = 572,
+    CropWheatStage3 = 573,
+    CropBarleyStage0 = 574,
+    CropBarleyStage1 = 575,
+    CropBarleyBottomStage2 = 576,
+    CropBarleyTopStage2 = 577,
+    CropBarleyBottomStage3 = 578,
+    CropBarleyTopStage3 = 579,
+    CropCornBuddingStage0 = 580,
+    CropCornBuddingStage1 = 581,
+    CropCornBuddingStage2 = 582,
+    CropCornBuddingStage3 = 583,
+    CropCornBottomStage0 = 584,
+    CropCornTopStage0 = 585,
+    CropCornBottomStage1 = 586,
+    CropCornTopStage1 = 587,
+    CropCornBottomStage2 = 588,
+    CropCornTopStage2 = 589,
+    CropCornBottomStage3 = 590,
+    CropCornTopStage3 = 591,
+    CropCoffeeBuddingStage0 = 592,
+    CropCoffeeBuddingStage1 = 593,
+    CropCoffeeBuddingStage2 = 594,
+    CropCoffeeBuddingStage3 = 595,
+    CropCoffeeBottomStage0 = 596,
+    CropCoffeeTopStage0 = 597,
+    CropCoffeeBottomStage1 = 598,
+    CropCoffeeTopStage1 = 599,
+    CropCoffeeBottomStage2 = 600,
+    CropCoffeeTopStage2 = 601,
+    CropCoffeeBottomStage3 = 602,
+    CropCoffeeTopStage3 = 603,
+    CropTomatoesBuddingStage0 = 604,
+    CropTomatoesBuddingStage1 = 605,
+    CropTomatoesBuddingStage2 = 606,
+    CropTomatoesBuddingStage3 = 607,
+    CropTomatoesVineStage0 = 608,
+    CropTomatoesVineStage1 = 609,
+    CropTomatoesVineStage2 = 610,
+    CropTomatoesVineStage3 = 611,
+    CropRiceStage0 = 612,
+    CropRiceStage1 = 613,
+    CropRiceStage2 = 614,
+    CropRiceStage3 = 615,
+    CropRiceSupporting = 616,
+    CropRicePaniclesStage0 = 617,
+    CropRicePaniclesStage1 = 618,
+    CropRicePaniclesStage2 = 619,
+    CropRicePaniclesStage3 = 620,
+    CropMelonStemStage0 = 621,
+    CropMelonStemStage1 = 622,
+    CropMelonStemStage2 = 623,
+    CropMelonStemAttached = 624,
+    CropPumpkinStemStage0 = 625,
+    CropPumpkinStemStage1 = 626,
+    CropPumpkinStemStage2 = 627,
+    CropPumpkinStemAttached = 628,
+    MelonBlock = 629,
+    PumpkinBlock = 630,
+    WildCarrots = 631,
+    WildPotatoes = 632,
+    WildBeetroots = 633,
+    WildOnions = 634,
+    WildGarlic = 635,
+    WildCabbages = 636,
+    WildLettuce = 637,
+    WildPepper = 638,
+    WildTomatoes = 639,
+    WildCoffee = 640,
+    WildWheatBottom = 641,
+    WildWheatTop = 642,
+    WildBarleyBottom = 643,
+    WildBarleyTop = 644,
+    WildRiceBottom = 645,
+    WildRiceTop = 646,
+    WildCornBottom = 647,
+    WildCornTop = 648,
+    WildSugarCaneBottom = 649,
+    WildSugarCaneTop = 650,
+    WildMelon = 651,
+    WildPumpkin = 652,
+    ItemWheatSeeds = 653,
+    ItemBarleySeeds = 654,
+    ItemBeetrootSeeds = 655,
+    ItemCabbageSeeds = 656,
+    ItemPepperSeeds = 657,
+    ItemTomatoSeeds = 658,
+    ItemCoffeeSeeds = 659,
+    ItemMelonSeeds = 660,
+    ItemPumpkinSeeds = 661,
+    ItemWheat = 662,
+    ItemBarley = 663,
+    ItemRice = 664,
+    ItemCorn = 665,
+    ItemCarrot = 666,
+    ItemPotato = 667,
+    ItemBeetroot = 668,
+    ItemOnion = 669,
+    ItemGarlicBulb = 670,
+    ItemCabbage = 671,
+    ItemLettuce = 672,
+    ItemPepper = 673,
+    ItemTomato = 674,
+    ItemCoffeeBerries = 675,
+    ItemCoffeeBeans = 676,
+    ItemMelonSlice = 677,
+    ItemPumpkinSlice = 678,
+    ItemSugarCane = 679,
+    ItemSugar = 680,
+    ItemBoneMeal = 681,
+    StickPile = 682,
+    ItemStick = 683,
 }
 impl Voxel {
-    /// Array containing all 528 active, non-placeholder gameplay voxels (indices 3..=530).
-    pub const ALL: [Voxel; 535] = generate_all_voxels();
+    /// Array containing all active, non-placeholder gameplay voxels (indices 3..=683).
+    pub const ALL: [Voxel; 681] = generate_all_voxels();
 
     /// Safely convert a `u16` id to a `Voxel` variant.
     #[inline(always)]
     pub const fn from_u16(val: u16) -> Option<Self> {
-        if val <= 537 {
-            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 516.
+        if val <= 683 {
+            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 683.
             Some(unsafe { std::mem::transmute::<u16, Self>(val) })
         } else {
             None
         }
+    }
+
+    #[inline(always)]
+    pub const fn is_stick_pile(self) -> bool {
+        matches!(self, Self::StickPile)
     }
 
     #[inline(always)]
@@ -578,6 +730,23 @@ impl Voxel {
                 | Self::FlowerPeonyBottom
                 | Self::FlowerRoseBushBottom
                 | Self::FlowerSnapdragonBottom
+            | Self::CropBarleyBottomStage2
+            | Self::CropBarleyBottomStage3
+            | Self::CropCornBottomStage0
+            | Self::CropCornBottomStage1
+            | Self::CropCornBottomStage2
+            | Self::CropCornBottomStage3
+            | Self::CropCoffeeBottomStage0
+            | Self::CropCoffeeBottomStage1
+            | Self::CropCoffeeBottomStage2
+            | Self::CropCoffeeBottomStage3
+            | Self::CropTomatoesBuddingStage3
+            | Self::CropRiceSupporting
+            | Self::WildWheatBottom
+            | Self::WildBarleyBottom
+            | Self::WildRiceBottom
+            | Self::WildCornBottom
+            | Self::WildSugarCaneBottom
         )
     }
 
@@ -597,6 +766,29 @@ impl Voxel {
                 | Self::FlowerPeonyTop
                 | Self::FlowerRoseBushTop
                 | Self::FlowerSnapdragonTop
+            | Self::CropBarleyTopStage2
+            | Self::CropBarleyTopStage3
+            | Self::CropCornTopStage0
+            | Self::CropCornTopStage1
+            | Self::CropCornTopStage2
+            | Self::CropCornTopStage3
+            | Self::CropCoffeeTopStage0
+            | Self::CropCoffeeTopStage1
+            | Self::CropCoffeeTopStage2
+            | Self::CropCoffeeTopStage3
+            | Self::CropTomatoesVineStage0
+            | Self::CropTomatoesVineStage1
+            | Self::CropTomatoesVineStage2
+            | Self::CropTomatoesVineStage3
+            | Self::CropRicePaniclesStage0
+            | Self::CropRicePaniclesStage1
+            | Self::CropRicePaniclesStage2
+            | Self::CropRicePaniclesStage3
+            | Self::WildWheatTop
+            | Self::WildBarleyTop
+            | Self::WildRiceTop
+            | Self::WildCornTop
+            | Self::WildSugarCaneTop
         )
     }
 
@@ -615,6 +807,21 @@ impl Voxel {
             Self::FlowerPeonyBottom => Some(Self::FlowerPeonyTop),
             Self::FlowerRoseBushBottom => Some(Self::FlowerRoseBushTop),
             Self::FlowerSnapdragonBottom => Some(Self::FlowerSnapdragonTop),
+            Self::CropBarleyBottomStage2 => Some(Self::CropBarleyTopStage2),
+            Self::CropBarleyBottomStage3 => Some(Self::CropBarleyTopStage3),
+            Self::CropCornBottomStage0 => Some(Self::CropCornTopStage0),
+            Self::CropCornBottomStage1 => Some(Self::CropCornTopStage1),
+            Self::CropCornBottomStage2 => Some(Self::CropCornTopStage2),
+            Self::CropCornBottomStage3 => Some(Self::CropCornTopStage3),
+            Self::CropCoffeeBottomStage0 => Some(Self::CropCoffeeTopStage0),
+            Self::CropCoffeeBottomStage1 => Some(Self::CropCoffeeTopStage1),
+            Self::CropCoffeeBottomStage2 => Some(Self::CropCoffeeTopStage2),
+            Self::CropCoffeeBottomStage3 => Some(Self::CropCoffeeTopStage3),
+            Self::WildWheatBottom => Some(Self::WildWheatTop),
+            Self::WildBarleyBottom => Some(Self::WildBarleyTop),
+            Self::WildRiceBottom => Some(Self::WildRiceTop),
+            Self::WildCornBottom => Some(Self::WildCornTop),
+            Self::WildSugarCaneBottom => Some(Self::WildSugarCaneTop),
             _ => None,
         }
     }
@@ -634,16 +841,39 @@ impl Voxel {
             Self::FlowerPeonyTop => Some(Self::FlowerPeonyBottom),
             Self::FlowerRoseBushTop => Some(Self::FlowerRoseBushBottom),
             Self::FlowerSnapdragonTop => Some(Self::FlowerSnapdragonBottom),
+            Self::CropBarleyTopStage2 => Some(Self::CropBarleyBottomStage2),
+            Self::CropBarleyTopStage3 => Some(Self::CropBarleyBottomStage3),
+            Self::CropCornTopStage0 => Some(Self::CropCornBottomStage0),
+            Self::CropCornTopStage1 => Some(Self::CropCornBottomStage1),
+            Self::CropCornTopStage2 => Some(Self::CropCornBottomStage2),
+            Self::CropCornTopStage3 => Some(Self::CropCornBottomStage3),
+            Self::CropCoffeeTopStage0 => Some(Self::CropCoffeeBottomStage0),
+            Self::CropCoffeeTopStage1 => Some(Self::CropCoffeeBottomStage1),
+            Self::CropCoffeeTopStage2 => Some(Self::CropCoffeeBottomStage2),
+            Self::CropCoffeeTopStage3 => Some(Self::CropCoffeeBottomStage3),
+            Self::CropTomatoesVineStage0
+            | Self::CropTomatoesVineStage1
+            | Self::CropTomatoesVineStage2
+            | Self::CropTomatoesVineStage3 => Some(Self::CropTomatoesBuddingStage3),
+            Self::CropRicePaniclesStage0
+            | Self::CropRicePaniclesStage1
+            | Self::CropRicePaniclesStage2
+            | Self::CropRicePaniclesStage3 => Some(Self::CropRiceSupporting),
+            Self::WildWheatTop => Some(Self::WildWheatBottom),
+            Self::WildBarleyTop => Some(Self::WildBarleyBottom),
+            Self::WildRiceTop => Some(Self::WildRiceBottom),
+            Self::WildCornTop => Some(Self::WildCornBottom),
+            Self::WildSugarCaneTop => Some(Self::WildSugarCaneBottom),
             _ => None,
         }
     }
 }
 
-const fn generate_all_voxels() -> [Voxel; 535] {
-    let mut arr = [Voxel::Air; 535];
+const fn generate_all_voxels() -> [Voxel; 681] {
+    let mut arr = [Voxel::Air; 681];
     let mut i = 0;
-    while i < 535 {
-        // Active gameplay blocks start at discriminant 3 (indices 3..=530)
+    while i < 681 {
+        // Active gameplay blocks start at discriminant 3 (indices 3..=683)
         let id = (i + 3) as u16;
         arr[i] = unsafe { std::mem::transmute::<u16, Voxel>(id) };
         i += 1;

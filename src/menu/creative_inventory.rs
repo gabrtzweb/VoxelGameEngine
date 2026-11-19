@@ -39,7 +39,7 @@ pub const CREATIVE_TAB_Y_COORDS: [f32; 9] = [
     65.0, 84.0, 103.0, 122.0, 141.0, 160.0, 179.0, 198.0, 217.0,
 ];
 
-pub const AVAILABLE_BLOCKS: [Voxel; 535] = Voxel::ALL;
+pub const AVAILABLE_BLOCKS: [Voxel; 681] = Voxel::ALL;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CreativeCategory {
@@ -160,7 +160,7 @@ impl CreativeCategory {
                         || id.starts_with("speleothem_")
                         || id.starts_with("fossil_"))
             }
-            Self::Trees => tex.starts_with("tree_"),
+            Self::Trees => tex.starts_with("tree_") || id == "stick_pile" || id == "item_stick",
             Self::Soils => (tex.starts_with("soil_") && !is_burrow) || is_path || is_rock_outcrop,
             Self::Ores => is_ore,
             Self::Vegetation => {
@@ -170,6 +170,11 @@ impl CreativeCategory {
                     || tex.starts_with("aqua_")
                     || tex.starts_with("vege_")
                     || tex.starts_with("flower_")
+                    || id.starts_with("wild_")
+                    || id.starts_with("item_")
+                    || id.contains("melon")
+                    || id.contains("pumpkin")
+                    || id == "stick_pile"
             }
             Self::Organics => {
                 tex.starts_with("bio_")
@@ -201,6 +206,7 @@ pub fn filtered_creative_blocks(category: CreativeCategory, query: &str) -> Vec<
                 || v == Voxel::VegeCaveVinesPlant
                 || v == Voxel::KelpPlant
                 || v == Voxel::BullKelpPlant
+                || v.is_crop_stage()
             {
                 return false;
             }

@@ -1,3 +1,4 @@
+pub mod crops;
 pub mod debug;
 pub mod feedback;
 pub mod icon;
@@ -18,6 +19,7 @@ pub use radial_menu::RadialMenuState;
 pub use targeting::{CurrentTarget, TargetingSet, VoxelTarget};
 
 use bevy::prelude::*;
+use crops::CropPlugin;
 use debug::VoxelDebugPlugin;
 use feedback::InteractionFeedbackPlugin;
 use icon::BlockIconPlugin;
@@ -39,6 +41,7 @@ impl Plugin for GameplayPlugin {
             BlockIconPlugin,
             VoxelDebugPlugin,
             TargetHudPlugin,
+            CropPlugin,
         ));
     }
 }

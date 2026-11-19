@@ -296,6 +296,7 @@ pub fn deserialize_chunk(bytes: &[u8]) -> Option<Chunk> {
                 13 => BlockShape::Cactus,
                 14 => BlockShape::Rubble,
                 15 => BlockShape::Speleothem,
+                16 => BlockShape::StickPile,
                 _ => BlockShape::Full,
             };
             chunk.set_shape_raw(idx, shape, orientation);

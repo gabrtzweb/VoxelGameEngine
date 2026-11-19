@@ -82,6 +82,7 @@ impl SoundMaterial {
             || name.contains("Planks")
             || name.contains("Wood")
             || name.contains("Bamboo")
+            || name.contains("Stick")
             || name.contains("Dam")
         {
             return Self::Wood;

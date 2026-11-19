@@ -79,6 +79,7 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
         && (flags & FLAG_CROSS_BILLBOARD) == 0
         && !v.is_flat_pad_const()
         && !v.is_wall_decal_const()
+        && !v.is_stick_pile()
         && !is_occupied)
         || v.is_crystal_cluster_const()
         || v.is_rubble_const()
@@ -103,6 +104,7 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
             && !v.is_pebble_const()
             && !v.is_rubble_const()
             && !v.is_speleothem_const()
+            && !v.is_stick_pile()
             && !v.is_flat_pad_const()
             && !v.is_wall_decal_const()
             && !matches!(
@@ -431,6 +433,32 @@ impl Voxel {
     }
 
     #[inline(always)]
+    pub const fn is_crop_billboard(self) -> bool {
+        let id = self as u16;
+        // 538..=628: Domestic crop stages and stems
+        // 631..=650: Wild crops (except melon/pumpkin solid blocks 651, 652)
+        // 653..=681: Agricultural items and seeds
+        (id >= 538 && id <= 628)
+            || (id >= 631 && id <= 650)
+            || (id >= 653 && id <= 681)
+            || id == Voxel::ItemStick as u16
+    }
+
+    #[inline(always)]
+    pub const fn is_crop_stage(self) -> bool {
+        let id = self as u16;
+        id >= 538 && id <= 628
+    }
+
+    /// Returns true for inventory-only items (drops, seeds, food slices, sticks, bone meal, etc.)
+    /// that must never be placed directly as world blocks.
+    #[inline(always)]
+    pub const fn is_inventory_only_item(self) -> bool {
+        let id = self as u16;
+        (id >= 653 && id <= 681) || id == Voxel::ItemStick as u16
+    }
+
+    #[inline(always)]
     pub const fn is_flora_billboard(self) -> bool {
         const FLORA_START: u16 = Voxel::VegeWildgrass as u16;
         const FLORA_END: u16 = Voxel::FlowerWildflowers as u16;
@@ -444,6 +472,7 @@ impl Voxel {
     #[inline(always)]
     pub const fn is_cross_billboard_const(self) -> bool {
         self.is_flora_billboard()
+            || self.is_crop_billboard()
             || matches!(
                 self,
                 Self::ElementFire
@@ -635,6 +664,7 @@ impl Voxel {
             || self.is_rubble_const()
             || self.is_speleothem_const()
             || self.is_bamboo()
+            || self.is_stick_pile()
     }
 
     #[inline(always)]
@@ -705,9 +735,11 @@ impl Voxel {
     pub fn requires_floor_support(self) -> bool {
         self.is_pebble()
             || self.is_rubble()
+            || self.is_stick_pile()
             || self.is_mushroom()
             || self.is_coral_fan()
             || self.is_marine_flora()
+            || self.is_crop_billboard()
             || (self.is_flora_billboard() && !self.is_hanging_flora())
     }
 
