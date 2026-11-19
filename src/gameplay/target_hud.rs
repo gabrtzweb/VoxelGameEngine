@@ -59,7 +59,9 @@ pub fn resolve_target_block_info(
     Some((raw_voxel, shape, extra_voxel))
 }
 
-/// Formats the target block title, appending shape and orientation name if not a standard full block.
+/// Formats the target block title. Only player-shapable block shapes (`Slab`, `Stair`, `Column`)
+/// modify the display name (e.g. "Sand Slab" / "Laje de Areia"); all other blocks display only
+/// their clean localized name.
 pub fn format_target_hud_title(
     voxel: Voxel,
     shape: Option<(BlockShape, u8)>,
@@ -75,26 +77,20 @@ pub fn format_target_hud_title(
         return format!("{} / {} Slab", voxel_name, extra_name);
     }
 
-    if voxel.is_basket() {
-        return voxel_name;
-    }
-
-    if voxel.is_torch() {
-        if let Some((s, orientation)) = shape {
-            return format!("{} ({})", voxel_name, s.orientation_name(orientation));
-        }
+    if voxel.is_fluid() || voxel.default_shape() != BlockShape::Full {
         return voxel_name;
     }
 
     match shape {
-        Some((s, orientation)) if s != BlockShape::Full && !voxel.is_fluid() => {
-            format!(
-                "{} ({} - {})",
-                voxel_name,
-                s.name(),
-                s.orientation_name(orientation)
-            )
-        }
+        Some((BlockShape::Slab, _)) => loc
+            .map(|l| l.t_args("hud.shape.slab", &[&voxel_name]))
+            .unwrap_or_else(|| format!("{} Slab", voxel_name)),
+        Some((BlockShape::Stair, _)) => loc
+            .map(|l| l.t_args("hud.shape.stair", &[&voxel_name]))
+            .unwrap_or_else(|| format!("{} Stairs", voxel_name)),
+        Some((BlockShape::Column, _)) => loc
+            .map(|l| l.t_args("hud.shape.column", &[&voxel_name]))
+            .unwrap_or_else(|| format!("{} Column", voxel_name)),
         _ => voxel_name,
     }
 }
@@ -247,9 +243,14 @@ fn update_target_hud(
         }
     }
 
-    // Update icon image
+    // Update icon image (use bottom partner icon for non-crop double-tall top blocks so both halves match)
+    let icon_voxel = if voxel.is_double_tall_top() && !voxel.is_crop_stage() {
+        voxel.double_tall_bottom_partner().unwrap_or(voxel)
+    } else {
+        voxel
+    };
     for mut icon in &mut icon_query {
-        let handle = icons.get(voxel);
+        let handle = icons.get(icon_voxel);
         if icon.image != handle {
             icon.image = handle;
         }
