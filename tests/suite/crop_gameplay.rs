@@ -252,3 +252,22 @@ fn test_inventory_only_items_cannot_be_placed() {
     assert!(!Voxel::PumpkinBlock.is_inventory_only_item());
     assert!(!Voxel::WildSugarCaneBottom.is_inventory_only_item());
 }
+
+#[test]
+fn test_flora_substrate_placement_rules() {
+    // Woodland / shade-loving flora requires fertile soil (dirt, grass, dirty gravel, clay, moss)
+    assert!(Voxel::VegeFern.can_be_placed_on_ground(Voxel::LoamGrass));
+    assert!(Voxel::VegeFern.can_be_placed_on_ground(Voxel::LoamDirt));
+    assert!(Voxel::VegeFern.can_be_placed_on_ground(Voxel::GravelDirty));
+    assert!(!Voxel::VegeFern.can_be_placed_on_ground(Voxel::SandCommon));
+    assert!(!Voxel::WildPotatoes.can_be_placed_on_ground(Voxel::SandCommon));
+
+    // Hardy grasses, rustic flowers, and adaptable wild crops allowed on both sand and fertile soil
+    assert!(Voxel::VegeWildgrass.can_be_placed_on_ground(Voxel::SandCommon));
+    assert!(Voxel::WildWheatBottom.can_be_placed_on_ground(Voxel::SandCommon));
+    assert!(Voxel::WildWheatBottom.can_be_placed_on_ground(Voxel::LoamGrass));
+    assert!(Voxel::VegeSeaOatsBottom.can_be_placed_on_ground(Voxel::SandCommon));
+    assert!(Voxel::VegeCactus.can_be_placed_on_ground(Voxel::SandDune));
+    assert!(Voxel::VegeDeadBush.can_be_placed_on_ground(Voxel::SandCommon));
+    assert!(Voxel::WildSugarCaneBottom.can_be_placed_on_ground(Voxel::SandCommon));
+}

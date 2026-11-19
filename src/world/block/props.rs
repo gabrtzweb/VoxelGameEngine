@@ -743,6 +743,157 @@ impl Voxel {
             || (self.is_flora_billboard() && !self.is_hanging_flora())
     }
 
+    /// Returns true for sandy, coastal, or arid mineral substrates (sands, sandy gravel, caliche).
+    #[inline(always)]
+    pub fn is_sandy_soil(self) -> bool {
+        matches!(
+            self,
+            Self::SandCommon
+                | Self::SandDune
+                | Self::SandRed
+                | Self::SandWhite
+                | Self::GravelSandy
+                | Self::PathSandy
+                | Self::CalicheCracked
+                | Self::CalicheCoarse
+                | Self::CalicheDirt
+                | Self::LateriteHardpan
+        )
+    }
+
+    /// Returns true for fertile soil substrates capable of supporting lush temperate vegetation,
+    /// flowers, and wild crops (grasses, dirts, mulch, mud, tilled soils, moss).
+    #[inline(always)]
+    pub fn is_fertile_soil(self) -> bool {
+        self.is_grass_soil()
+            || matches!(
+                self,
+                Self::LoamDirt
+                    | Self::LoamCoarse
+                    | Self::LoamMud
+                    | Self::LoamMulch
+                    | Self::LoamRooted
+                    | Self::LoamTilled
+                    | Self::PeatDirt
+                    | Self::PeatCoarse
+                    | Self::PeatMud
+                    | Self::PeatMulch
+                    | Self::PeatRooted
+                    | Self::PeatTilled
+                    | Self::SiltDirt
+                    | Self::SiltCoarse
+                    | Self::SiltMud
+                    | Self::SiltMulch
+                    | Self::SiltRooted
+                    | Self::SiltTilled
+                    | Self::LateriteDirt
+                    | Self::LateriteCoarse
+                    | Self::CalicheDirt
+                    | Self::CalicheCoarse
+                    | Self::PermafrostDirt
+                    | Self::PermafrostCoarse
+                    | Self::PathDirty
+                    | Self::GravelDirty
+                    | Self::GravelAshy
+                    | Self::ClayBlue
+                    | Self::ClayRed
+                    | Self::ClayWhite
+                    | Self::ClayYellow
+                    | Self::MossForest
+                    | Self::MossyAndesite
+                    | Self::MossyArgillite
+                    | Self::MossyBasalt
+                    | Self::MossyChalk
+                    | Self::MossyDolomite
+                    | Self::MossyGranite
+                    | Self::MossyLimestone
+            )
+    }
+
+    /// Validates whether a floor-standing vegetation, flower, or wild crop block can be placed
+    /// on top of `ground`. Non-flora blocks always return true.
+    pub fn can_be_placed_on_ground(self, ground: Voxel) -> bool {
+        // Cave flora & lichen can grow on any solid opaque stone/earth surface
+        if matches!(
+            self,
+            Self::VegeCaveGrowths
+                | Self::VegeGrainyCaveGrowths
+                | Self::VegeCaveHyssop
+                | Self::VegeLichen
+        ) {
+            return ground.is_solid_opaque();
+        }
+
+        // Cacti & desert succulents: sand or arid soils (and cactus stacking)
+        if matches!(
+            self,
+            Self::VegeCactus
+                | Self::VegeBarrelCactus
+                | Self::VegePricklyPearCactus
+                | Self::FlowerCactusFlower
+        ) {
+            return ground.is_sandy_soil() || ground == Self::VegeCactus;
+        }
+
+        // Coastal, arid, hardy grasses, rustic flowers, and adaptable wild crops:
+        // allowed on both sandy/arid soils and fertile soils/dirt/gravel
+        if matches!(
+            self,
+            Self::VegeSeaOatsBottom
+                | Self::VegeDeadBush
+                | Self::VegeDrygrass
+                | Self::VegeRedShrub
+                | Self::VegeBluffGrass
+                | Self::VegeBush
+                | Self::VegeBracken
+                | Self::VegeWildgrass
+                | Self::VegeTallWildgrassBottom
+                | Self::VegeCattailBottom
+                | Self::FlowerGlobeMallow
+                | Self::FlowerDandelion
+                | Self::FlowerPoppy
+                | Self::FlowerMarigold
+                | Self::FlowerWildflowers
+                | Self::FlowerLavender
+                | Self::FlowerOxeyeDaisy
+                | Self::FlowerAllium
+                | Self::WildSugarCaneBottom
+                | Self::WildWheatBottom
+                | Self::WildBarleyBottom
+                | Self::WildCarrots
+                | Self::WildOnions
+                | Self::WildGarlic
+                | Self::WildPepper
+                | Self::WildRiceBottom
+                | Self::WildMelon
+                | Self::WildPumpkin
+        ) {
+            return ground.is_sandy_soil() || ground.is_fertile_soil();
+        }
+
+        // Lush woodland / shade-loving flora, delicate flowers, and rich-soil wild crops
+        // require fertile soil (grass, dirt, dirty gravel, clay, mud, moss, tilled soil)
+        let is_ground_flora = (self.is_flora_billboard() && !self.is_hanging_flora())
+            || matches!(
+                self,
+                Self::FlowerPinkPetals
+                    | Self::FlowerWhitePetals
+                    | Self::WildPotatoes
+                    | Self::WildBeetroots
+                    | Self::WildCabbages
+                    | Self::WildLettuce
+                    | Self::WildTomatoes
+                    | Self::WildCoffee
+                    | Self::WildCornBottom
+            );
+
+        if is_ground_flora {
+            return ground.is_fertile_soil();
+        }
+
+        true
+    }
+
     #[inline(always)]
     pub fn is_transparent(self) -> bool {
         (VOXEL_PROPS[self as usize].flags & FLAG_TRANSPARENT) != 0

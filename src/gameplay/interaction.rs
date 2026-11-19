@@ -255,6 +255,15 @@ fn edit_voxels(
             }
         }
 
+        if !place_voxel_type.is_hanging_flora() && !place_voxel_type.is_inventory_only_item() {
+            let ground_voxel = world
+                .get_voxel(place_position - IVec3::Y)
+                .unwrap_or(Voxel::Air);
+            if !place_voxel_type.can_be_placed_on_ground(ground_voxel) {
+                return;
+            }
+        }
+
         let edited = if place_voxel_type == Voxel::ItemBoneMeal {
             if crate::gameplay::crops::advance_crop(&mut world, &mut modifications, target.hit_voxel) {
                 commands.trigger(BlockPlaceEvent {

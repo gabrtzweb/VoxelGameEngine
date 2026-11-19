@@ -62,6 +62,31 @@ pub fn mesh_shaped_voxels(
             frame_count as f32
         };
         let mut tint = voxel.tint_color_at(world_voxel);
+        // Subtle substrate-aware tint modulation for grayscale flora:
+        // Desaturates/warms biome green slightly on sandy/arid or bare dirt substrates so plants
+        // never look unnaturally neon against beach sand or bare earth.
+        if voxel.is_tinted_flora() {
+            let ground_pos = if voxel.is_double_tall_top() {
+                world_voxel - IVec3::Y * 2
+            } else {
+                world_voxel - IVec3::Y
+            };
+            if let Some(ground) = world.get_voxel(ground_pos) {
+                if ground.is_sandy_soil() {
+                    let dry_olive = [0.74, 0.78, 0.44];
+                    let t = 0.45;
+                    tint[0] = tint[0] * (1.0 - t) + dry_olive[0] * t;
+                    tint[1] = tint[1] * (1.0 - t) + dry_olive[1] * t;
+                    tint[2] = tint[2] * (1.0 - t) + dry_olive[2] * t;
+                } else if !ground.is_grass_soil() && ground.is_fertile_soil() {
+                    let earthy_green = [0.56, 0.76, 0.40];
+                    let t = 0.18;
+                    tint[0] = tint[0] * (1.0 - t) + earthy_green[0] * t;
+                    tint[1] = tint[1] * (1.0 - t) + earthy_green[1] * t;
+                    tint[2] = tint[2] * (1.0 - t) + earthy_green[2] * t;
+                }
+            }
+        }
         tint[3] = if voxel.is_water() {
             1.0
         } else if voxel.is_fluid() {

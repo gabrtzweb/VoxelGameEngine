@@ -484,6 +484,11 @@ fn fragment(
     }
 
     if (is_cross_mesh) {
+        // Lift the shadow-sampling position above double-tall cross-mesh canopies so intersecting 'X'
+        // planes never self-shadow (eliminating animated shadow-acne stripes), while still casting
+        // crisp alpha-cutout shadows onto the ground and receiving shadows from trees, cliffs, and caves.
+        pbr_input.world_position.y += 2.15;
+
         if (vertex_output.color.a > 5.5 && vertex_output.color.a < 6.5) {
             // Rigid fixtures / speleothems / crystals: use a horizontal viewer-facing normal
             // so both crossed planes share uniform shading AND match the vertical side faces
