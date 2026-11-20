@@ -84,10 +84,37 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 
 | Phase | Milestone Title | Status | Focus / Key Deliverables |
 | :---: | :--- | :---: | :--- |
-| **01** | **[Phase 1: TBD](#phase-1-tbd)** | **Planned** | *(To be defined)* |
+| **01** | **[Engine-Wide Performance Optimization & LOD Pipeline](#phase-1-engine-wide-performance-optimization--lod-pipeline-completed)** | **Completed** | Terrain/biome generation caching, LOD meshing overhaul, optional leaf culling, shader/grass/celestial optimizations, streaming & chunk cache improvements |
+| **02** | **[World Terrain Polish & Surface Detail Features](#phase-2-world-terrain-polish--surface-detail-features-in-progress)** | **In Progress** | Universal slab/stair terrain smoothing (beaches, riverbanks, clay/mud), sculpted basalt/rock outcrops, surface cobble/mossy boulder clusters, ground leaf bushes |
 
 ---
 
-### Phase 1: TBD
+### Phase 1: Engine-Wide Performance Optimization & LOD Pipeline (Completed)
 
-To be defined.
+- [x] **Terrain, Biome & Flora Generation Optimization**:
+  - Optimized 6D biome sampling, column terrain evaluation, and flora generation in `src/generation/` to reduce per-chunk CPU work and allocation overhead.
+- [x] **LOD Meshing & Streaming Pipeline Overhaul**:
+  - Improved LOD chunk generation and meshing throughput (`src/meshing/lod.rs`), refined streaming planner/loader/unloader scheduling, and optimized chunk storage and disk cache paths.
+- [x] **Greedy Meshing, Culling & Optional Leaf Culling**:
+  - Streamlined greedy meshing, visibility culling, and texture lookup paths (`src/meshing/`); added an optional `leaf_culling` graphics setting (disabled by default) persisted in `local_config.json`.
+- [x] **Shaders, Procedural Grass & Per-Frame Systems Cleanup**:
+  - Optimized WESL shaders (`grass_blades.wesl`, `voxel_opaque.wesl`, `voxel_prepass.wesl`), grass trail updates, player state queries, celestial/atmosphere updates, and dev stats overhead.
+
+---
+
+### Phase 2: World Terrain Polish & Surface Detail Features (In Progress)
+
+- [x] **Universal Slab & Stair Terrain Smoothing (Dry & Underwater)**:
+  - Extended smooth slab/stair surface transitions across all dry terrain (sandy beaches, riverbanks, clay, mud) and submerged riverbeds, lakebeds, and seafloors.
+- [x] **Waterlogged Slabs & Stairs Meshing**:
+  - Extended `is_submerged_fixture` and `mesh_waterlogged_envelope` to seamlessly waterlog submerged slabs and stairs, rendering the water surface over shallow slabs/stairs and eliminating underwater air pockets and side water walls.
+- [x] **Sculpted Basalt & 3D Rock Outcrops**:
+  - Added a surface overhang shaping pass applying stairs, slabs, and inverted overhang shapes along curves, crests, and edges of 3D rock/basalt mounds seamlessly across chunk borders.
+- [x] **Surface Cobble & Mossy Boulder Clusters**:
+  - Added multi-chunk regional cobble and mossy cobble rock clusters (`Cobbled*` + `MossyCobbled*`) scattered across forests, valleys, plains, and highlands with slope footing.
+- [x] **Ground Leaf Bushes**:
+  - Added multi-chunk woodland and meadow bushes (single central biome log wrapped by top and cardinal leaf blocks) scattered across vegetated biomes.
+- [x] **Ocean Biome Resolution, Varied Seabed & Multi-Block Coral Reefs**:
+  - Resolved open ocean bodies (`terrain_height < sea_level`, non-river/non-lake) to authentic ocean biomes (`DeepWarmOcean`, `ColdOcean`, `CoralReef`, `OceanTrench`) so the minimap HUD and worldgen never misreport terrestrial biomes over open sea.
+  - Enriched ocean floors with multi-scale organic sediment variety (white/common/dune sands, sandy/dirty gravel, blue/yellow/white clay, silt/peat mud, loam dirt, reefstone, and abyssal basalt).
+  - Upgraded coral reefs into clustered multi-block 3D spires, branching trees, and reef mounds, with 6-direction wall/floor/ceiling attachment support for coral fans in both worldgen and player placement.

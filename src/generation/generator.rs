@@ -347,6 +347,7 @@ impl TerrainGenerator {
         let mut chunk_shapes: Vec<(usize, BlockShape, u8)> = Vec::new();
         let mut has_solid_voxels = false;
         let mut has_subterranean_air = false;
+        let mut has_surface_overhang = false;
 
         if chunk_min_y <= maximum_filled_height {
             has_solid_voxels = true;
@@ -368,6 +369,13 @@ impl TerrainGenerator {
                             let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
                             voxels[idx] = voxel;
 
+                            if world_y > column.terrain_height
+                                && voxel.is_collidable()
+                                && !voxel.is_fluid()
+                            {
+                                has_surface_overhang = true;
+                            }
+
                             if world_y == column.terrain_height
                                 && column.surface_shape != BlockShape::Full
                             {
@@ -379,6 +387,124 @@ impl TerrainGenerator {
                             }
                         } else if world_y < column.terrain_height {
                             has_subterranean_air = true;
+                        }
+                    }
+                }
+            }
+
+            // Surface Overhang & Basalt Outcrop Shaping: sculpt 3D surface rock mounds/outcrops
+            // with stairs and slabs along curves, crests, and overhang undersides.
+            if has_surface_overhang {
+                let is_solid_world = |voxels_buf: &[Voxel], wx: i32, wy: i32, wz: i32| -> bool {
+                    let lx = wx - chunk_origin.x;
+                    let ly = wy - chunk_origin.y;
+                    let lz = wz - chunk_origin.z;
+                    if (0..CHUNK_SIZE as i32).contains(&lx)
+                        && (0..CHUNK_SIZE as i32).contains(&ly)
+                        && (0..CHUNK_SIZE as i32).contains(&lz)
+                    {
+                        let v = voxels_buf[lx as usize
+                            + lz as usize * CHUNK_SIZE
+                            + ly as usize * CHUNK_SIZE * CHUNK_SIZE];
+                        v.is_collidable() && !v.is_fluid()
+                    } else {
+                        let col = if (0..CHUNK_SIZE as i32).contains(&lx)
+                            && (0..CHUNK_SIZE as i32).contains(&lz)
+                        {
+                            columns[column_index(lx as usize, lz as usize)]
+                        } else {
+                            self.sample_column_cached(wx, wz)
+                        };
+                        let v = self.voxel_at(col, wx, wy, wz);
+                        v.is_collidable() && !v.is_fluid()
+                    }
+                };
+
+                for z in 0..CHUNK_SIZE {
+                    for x in 0..CHUNK_SIZE {
+                        let column = columns[column_index(x, z)];
+                        let world_x = chunk_origin.x + x as i32;
+                        let world_z = chunk_origin.z + z as i32;
+
+                        for y in 0..CHUNK_SIZE {
+                            let world_y = chunk_origin.y + y as i32;
+                            if world_y <= column.terrain_height {
+                                continue;
+                            }
+                            let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
+                            let voxel = voxels[idx];
+                            if !voxel.is_collidable()
+                                || voxel.is_fluid()
+                                || voxel.is_shape_locked()
+                                || voxel.is_crystal_solid_block()
+                            {
+                                continue;
+                            }
+
+                            let above_solid = is_solid_world(&voxels, world_x, world_y + 1, world_z);
+                            let below_solid = is_solid_world(&voxels, world_x, world_y - 1, world_z);
+                            let air_east = !is_solid_world(&voxels, world_x + 1, world_y, world_z);
+                            let air_west = !is_solid_world(&voxels, world_x - 1, world_y, world_z);
+                            let air_south = !is_solid_world(&voxels, world_x, world_y, world_z + 1);
+                            let air_north = !is_solid_world(&voxels, world_x, world_y, world_z - 1);
+                            let air_count = (air_east as u8)
+                                + (air_west as u8)
+                                + (air_south as u8)
+                                + (air_north as u8);
+
+                            if air_count == 0 {
+                                continue;
+                            }
+
+                            let h = (world_x.wrapping_mul(374_761_393)
+                                ^ world_y.wrapping_mul(265_443_576)
+                                ^ world_z.wrapping_mul(668_265_263)
+                                ^ (self.seed as i32))
+                                .unsigned_abs()
+                                % 100;
+
+                            if !above_solid && below_solid {
+                                if air_count == 1 {
+                                    let stair_orient = if air_east {
+                                        1 // Air at +X, step ascends toward -X
+                                    } else if air_west {
+                                        0 // Air at -X, step ascends toward +X
+                                    } else if air_south {
+                                        3 // Air at +Z, step ascends toward -Z
+                                    } else {
+                                        2 // Air at -Z, step ascends toward +Z
+                                    };
+                                    if h < 45 {
+                                        chunk_shapes.push((idx, BlockShape::Stair, stair_orient));
+                                    } else if h < 80 {
+                                        chunk_shapes.push((idx, BlockShape::Slab, 0));
+                                    }
+                                } else if air_count == 2 {
+                                    // Outer corner (adjacent air faces, not a thin wall)
+                                    let is_opposite =
+                                        (air_east && air_west) || (air_north && air_south);
+                                    if !is_opposite && h < 75 {
+                                        chunk_shapes.push((idx, BlockShape::Slab, 0));
+                                    }
+                                } else if air_count >= 3 && h < 65 {
+                                    chunk_shapes.push((idx, BlockShape::Slab, 0));
+                                }
+                            } else if above_solid && !below_solid && air_count == 1 && h < 40 {
+                                let inv_orient = if air_east {
+                                    5
+                                } else if air_west {
+                                    4
+                                } else if air_south {
+                                    7
+                                } else {
+                                    6
+                                };
+                                if h < 25 {
+                                    chunk_shapes.push((idx, BlockShape::Stair, inv_orient));
+                                } else {
+                                    chunk_shapes.push((idx, BlockShape::Slab, 1));
+                                }
+                            }
                         }
                     }
                 }
@@ -704,6 +830,42 @@ impl TerrainGenerator {
             has_solid_voxels = true;
         }
 
+        // Surface Cobble/Mossy Rock Clusters & Ground Leaf Bushes (after trees so they never
+        // collide with tree trunks, before flora so grass/flowers scatter cleanly around them)
+        let wrote_surface_features = trees::populate_chunk_boulders_and_bushes(
+            &mut voxels,
+            &mut chunk_shapes,
+            chunk_origin,
+            self.seed,
+            |wx, wz| {
+                let lx = wx - chunk_origin.x;
+                let lz = wz - chunk_origin.z;
+                if (0..CHUNK_SIZE as i32).contains(&lx) && (0..CHUNK_SIZE as i32).contains(&lz) {
+                    columns[column_index(lx as usize, lz as usize)]
+                } else {
+                    self.sample_column_cached(wx, wz)
+                }
+            },
+            |wx, wy, wz, col| {
+                if self.caves.is_cave_at_point(wx as f32, wy as f32, wz as f32, self.seed)
+                    || self
+                        .caves
+                        .is_cave_at_point(wx as f32, (wy - 1) as f32, wz as f32, self.seed)
+                {
+                    return None;
+                }
+                let g = self.voxel_at(col, wx, wy, wz);
+                if g.is_solid_opaque() && !g.is_fluid() && !g.is_empty() {
+                    Some(g)
+                } else {
+                    None
+                }
+            },
+        );
+        if wrote_surface_features {
+            has_solid_voxels = true;
+        }
+
         // Phase 20 (Blocks 1..4): Surface Scatter, Flora, Wild Crops, Marine & Cave Features
         let shapes_before_flora = chunk_shapes.len();
         flora::populate_chunk_flora(
@@ -999,6 +1161,41 @@ impl TerrainGenerator {
             None
         };
 
+        // Ensure open ocean/sea bodies always resolve to an authentic ocean biome
+        // (instead of reporting the nearest terrestrial surface biome on the HUD/map).
+        let is_already_aquatic = matches!(
+            final_biome,
+            BiomeType::DeepWarmOcean
+                | BiomeType::ColdOcean
+                | BiomeType::CoralReef
+                | BiomeType::OceanTrench
+                | BiomeType::Caldera
+                | BiomeType::GlacialChasm
+                | BiomeType::OrchidSwamp
+        );
+        let final_biome =
+            if terrain_height < sea_level && !is_river && !is_lake && !is_already_aquatic {
+                let ocean_depth = sea_level - terrain_height;
+                if ocean_depth >= 18 {
+                    BiomeType::OceanTrench
+                } else if climate.temperature < -0.15 {
+                    BiomeType::ColdOcean
+                } else {
+                    let reef_noise = crate::core::noise::gradient_noise_2d(
+                        world_x as f32 * 0.012,
+                        world_z as f32 * 0.012,
+                        self.seed.wrapping_add(0xC07A_1001),
+                    );
+                    if climate.temperature > 0.05 && ocean_depth <= 14 && reef_noise > 0.22 {
+                        BiomeType::CoralReef
+                    } else {
+                        BiomeType::DeepWarmOcean
+                    }
+                }
+            } else {
+                final_biome
+            };
+
         // Horizontal beach width: coastal transition strip directly bordering water
         let shore_noise = crate::core::noise::gradient_noise_2d(
             world_x as f32 * 0.12,
@@ -1018,18 +1215,21 @@ impl TerrainGenerator {
 
         let mut is_cliff = false;
 
-        let is_near_water = is_river
-            || river_factor > 0.02
-            || is_beach
-            || water_level.is_some()
-            || terrain_height <= sea_level + 2;
+        let is_submerged = water_level.is_some()
+            || lake_sample.is_some_and(|(ly, _, td)| td < 0.95 && terrain_height <= ly);
 
-        // Transitions on dry land above water level (terrain at or below sea_level remains strictly full blocks)
-        // Riverbanks, water edges, and beach margins are strictly full blocks (never slabs or stairs)
-        if !is_near_water && water_level.is_none() && terrain_height > sea_level {
+        // Universal smooth transitions across ALL terrain (dry land, beaches, riverbanks,
+        // shallow waterlines, and submerged riverbeds/lakebeds/seafloors). Underwater slabs
+        // and stairs are automatically waterlogged by the mesher so the water surface flows
+        // seamlessly over them without air pockets.
+        {
             let get_effective_height = |(h, _, _): (f32, BiomeType, bool)| -> i32 {
                 let th = h.round() as i32;
-                if th < sea_level { sea_level } else { th }
+                if !is_submerged && terrain_height > sea_level && th < sea_level {
+                    sea_level
+                } else {
+                    th
+                }
             };
 
             let h_east =
@@ -1069,15 +1269,14 @@ impl TerrainGenerator {
                     | BiomeType::ScarletMountains
             );
 
-            // Slope-Aware Surface Rules:
-            // Calculate steep surface gradient across cardinal neighbors.
-            // When slope is steep (drop >= 2 in cliff/mountain biomes, or >= 3 in general terrain),
-            // mark as cliff face so surface rules strip fragile soil/turf and expose bare rock/strata.
-            is_cliff = if is_cliff_biome {
-                max_delta >= 2
-            } else {
-                max_delta >= 3
-            };
+            // Slope-Aware Surface Rules apply on dry land above water level
+            if !is_submerged && terrain_height > sea_level {
+                is_cliff = if is_cliff_biome {
+                    max_delta >= 2
+                } else {
+                    max_delta >= 3
+                };
+            }
 
             // Retain solid blocks on sections of higher terrain for blocky cliffs and stepped terraces
             let edge_noise = crate::core::noise::gradient_noise_2d(
@@ -1086,12 +1285,9 @@ impl TerrainGenerator {
                 self.seed.wrapping_add(88_991),
             );
 
-            let is_high_terrain = terrain_height >= sea_level + 7;
-            let keep_solid = if is_high_terrain {
-                edge_noise > 0.05
-            } else {
-                edge_noise > 0.42
-            };
+            // Balance crisp full-block ledges (~45%) and smooth slab/stair slopes (~55%)
+            // consistently across all elevations (forests, beaches, riverbanks, and ocean floors).
+            let keep_solid = edge_noise > 0.05;
 
             if !is_cliff && !keep_solid {
                 let lower_count = (if d_west == -1 { 1 } else { 0 })
@@ -1735,43 +1931,113 @@ impl TerrainGenerator {
                 };
             }
 
+            let seabed_macro = crate::core::noise::gradient_noise_2d(
+                world_x as f32 * 0.042,
+                world_z as f32 * 0.042,
+                self.seed.wrapping_add(0x5EA8_ED01),
+            );
+            let seabed_pocket = crate::core::noise::gradient_noise_2d(
+                world_x as f32 * 0.11,
+                world_z as f32 * 0.11,
+                self.seed.wrapping_add(0x5EA8_ED02),
+            );
+            let ocean_depth = column.water_level.map(|wl| wl - world_y).unwrap_or(0);
+
             return match column.biome {
                 BiomeType::DeepWarmOcean => {
-                    if dither_noise > 0.0 {
-                        Voxel::SandCommon
+                    if seabed_macro > 0.34 {
+                        if seabed_pocket > 0.15 {
+                            Voxel::SandWhite
+                        } else {
+                            Voxel::SandCommon
+                        }
+                    } else if seabed_macro > 0.06 {
+                        if seabed_pocket > 0.28 {
+                            Voxel::GravelSandy
+                        } else if seabed_pocket < -0.22 {
+                            Voxel::ClayYellow
+                        } else {
+                            Voxel::SandCommon
+                        }
+                    } else if seabed_macro > -0.22 {
+                        if seabed_pocket > 0.20 {
+                            Voxel::ClayBlue
+                        } else if seabed_pocket < -0.20 {
+                            Voxel::GravelDirty
+                        } else if ocean_depth >= 7 {
+                            Voxel::SiltMud
+                        } else {
+                            Voxel::SandDune
+                        }
+                    } else if seabed_pocket > 0.18 {
+                        Voxel::LoamDirt
+                    } else if seabed_pocket < -0.15 {
+                        Voxel::GravelDirty
                     } else {
                         Voxel::ClayBlue
                     }
                 }
                 BiomeType::ColdOcean => {
-                    if dither_noise > 0.35 {
-                        Voxel::GravelSandy
-                    } else if dither_noise > -0.20 {
-                        Voxel::ClayBlue
+                    if seabed_macro > 0.28 {
+                        if seabed_pocket > 0.10 {
+                            Voxel::GravelSandy
+                        } else {
+                            Voxel::SandCommon
+                        }
+                    } else if seabed_macro > -0.05 {
+                        if seabed_pocket > 0.25 {
+                            Voxel::ClayBlue
+                        } else if seabed_pocket < -0.25 {
+                            Voxel::SiltMud
+                        } else {
+                            Voxel::GravelDirty
+                        }
+                    } else if seabed_pocket > 0.22 {
+                        Voxel::LoamDirt
+                    } else if seabed_pocket < -0.20 && ocean_depth >= 8 {
+                        Voxel::CobbledAndesite
                     } else {
-                        Voxel::GravelDirty
+                        Voxel::PeatMud
                     }
                 }
                 BiomeType::CoralReef => {
-                    if dither_noise > 0.40 {
-                        Voxel::BrainCoral
-                    } else if dither_noise > 0.15 {
-                        Voxel::BubbleCoral
-                    } else if dither_noise > -0.15 {
-                        Voxel::FireCoral
-                    } else if dither_noise > -0.40 {
-                        Voxel::HeartCoral
+                    if seabed_macro > 0.25 {
+                        if seabed_pocket > 0.10 {
+                            Voxel::SandWhite
+                        } else {
+                            Voxel::ClayWhite
+                        }
+                    } else if seabed_macro > -0.15 {
+                        if seabed_pocket > 0.22 {
+                            Voxel::Reefstone
+                        } else if seabed_pocket < -0.22 {
+                            Voxel::GravelSandy
+                        } else {
+                            Voxel::SandCommon
+                        }
+                    } else if seabed_pocket > 0.15 {
+                        Voxel::SandDune
                     } else {
                         Voxel::Reefstone
                     }
                 }
                 BiomeType::OceanTrench => {
-                    if dither_noise > 0.20 {
-                        Voxel::Basalt
-                    } else if dither_noise > -0.20 {
-                        Voxel::Gabbro
-                    } else {
+                    if seabed_macro > 0.25 {
+                        if dither_noise > 0.0 {
+                            Voxel::Basalt
+                        } else {
+                            Voxel::CobbledBasalt
+                        }
+                    } else if seabed_macro > -0.15 {
+                        if seabed_pocket > 0.15 {
+                            Voxel::Gabbro
+                        } else {
+                            Voxel::GravelDirty
+                        }
+                    } else if seabed_pocket > 0.0 {
                         Voxel::ClayBlue
+                    } else {
+                        Voxel::SiltMud
                     }
                 }
                 BiomeType::Caldera => Voxel::Basalt,
@@ -1781,15 +2047,27 @@ impl TerrainGenerator {
                 }
                 _ => {
                     if column.climate.temperature < -0.15 {
-                        if dither_noise > 0.0 {
+                        if seabed_macro > 0.15 {
                             Voxel::GravelSandy
+                        } else if seabed_pocket > 0.15 {
+                            Voxel::ClayBlue
                         } else {
                             Voxel::GravelDirty
                         }
-                    } else if column.climate.humidity > 0.40 {
-                        Voxel::SiltMud
-                    } else {
+                    } else if seabed_macro > 0.25 {
                         Voxel::SandCommon
+                    } else if seabed_macro > -0.10 {
+                        if seabed_pocket > 0.20 {
+                            Voxel::GravelSandy
+                        } else if seabed_pocket < -0.20 {
+                            Voxel::ClayBlue
+                        } else {
+                            Voxel::SandDune
+                        }
+                    } else if seabed_pocket > 0.15 {
+                        Voxel::LoamDirt
+                    } else {
+                        Voxel::SiltMud
                     }
                 }
             };

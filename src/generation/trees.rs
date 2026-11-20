@@ -544,6 +544,352 @@ where
     writer.wrote_any
 }
 
+/// Maps a biome's primary host rock to its `(cobble, mossy_cobble)` surface boulder pair.
+fn rock_to_cobble_pair(primary_stone: Voxel) -> (Voxel, Voxel) {
+    match primary_stone {
+        Voxel::Andesite => (Voxel::CobbledAndesite, Voxel::MossyCobbledAndesite),
+        Voxel::Argillite => (Voxel::CobbledArgillite, Voxel::MossyCobbledArgillite),
+        Voxel::Basalt => (Voxel::CobbledBasalt, Voxel::MossyCobbledBasalt),
+        Voxel::Chalk => (Voxel::CobbledChalk, Voxel::MossyCobbledChalk),
+        Voxel::Dolomite => (Voxel::CobbledDolomite, Voxel::MossyCobbledDolomite),
+        Voxel::Granite => (Voxel::CobbledGranite, Voxel::MossyCobbledGranite),
+        Voxel::Limestone => (Voxel::CobbledLimestone, Voxel::MossyCobbledLimestone),
+        Voxel::Gabbro => (Voxel::CobbledGabbro, Voxel::MossyCobbledBasalt),
+        Voxel::Slate => (Voxel::CobbledSlate, Voxel::MossyCobbledArgillite),
+        Voxel::Marble => (Voxel::CobbledMarble, Voxel::MossyCobbledLimestone),
+        _ => (Voxel::CobbledAndesite, Voxel::MossyCobbledAndesite),
+    }
+}
+
+/// Selects a biome-appropriate `(log, leaves)` pair and spawn probability for ground leaf bushes.
+fn select_bush_for_column(col: TerrainColumn, h: u32) -> Option<(f32, Voxel, Voxel)> {
+    if col.is_beach || col.is_cliff || col.is_river {
+        return None;
+    }
+
+    let (chance, log, leaves) = match col.biome {
+        BiomeType::YosemiteLowlands | BiomeType::Shield => {
+            let (l, lf) = match (h >> 8) % 4 {
+                0 | 1 => (Voxel::OakLog, Voxel::OakLeaves),
+                2 => (Voxel::BirchLog, Voxel::BirchLeaves),
+                _ => (Voxel::PineLog, Voxel::PineLeaves),
+            };
+            (0.22, l, lf)
+        }
+        BiomeType::CloudForest => {
+            let (l, lf) = match (h >> 8) % 3 {
+                0 => (Voxel::OakLog, Voxel::OakLeaves),
+                1 => (Voxel::BirchLog, Voxel::BirchLeaves),
+                _ => (Voxel::MapleLog, Voxel::MapleLeavesOrange),
+            };
+            (0.24, l, lf)
+        }
+        BiomeType::BloomingValley | BiomeType::LavenderValley | BiomeType::SakuraGrove => {
+            let (l, lf) = match (h >> 8) % 3 {
+                0 => (Voxel::BirchLog, Voxel::BirchLeaves),
+                1 => (Voxel::OakLog, Voxel::OakLeaves),
+                _ => (Voxel::CherryLog, Voxel::CherryLeaves),
+            };
+            (0.18, l, lf)
+        }
+        BiomeType::TropicalJungle => {
+            let (l, lf) = if ((h >> 8) & 1) == 0 {
+                (Voxel::MahoganyLog, Voxel::MahoganyLeaves)
+            } else {
+                (Voxel::OakLog, Voxel::OakLeaves)
+            };
+            (0.26, l, lf)
+        }
+        BiomeType::SiberianTaiga | BiomeType::WintryForest | BiomeType::ColdShrubland => {
+            let (l, lf) = if ((h >> 8) % 3) == 0 {
+                (Voxel::BirchLog, Voxel::BirchLeaves)
+            } else {
+                (Voxel::PineLog, Voxel::PineLeaves)
+            };
+            (0.20, l, lf)
+        }
+        BiomeType::OrchidSwamp => (0.20, Voxel::WillowLog, Voxel::WillowLeaves),
+        BiomeType::FracturedSavanna | BiomeType::SavannaBadlands | BiomeType::DesertOasis => {
+            (0.12, Voxel::AcaciaLog, Voxel::AcaciaLeaves)
+        }
+        BiomeType::AlpineHighlands | BiomeType::EmeraldPeaks | BiomeType::ScarletMountains => {
+            (0.12, Voxel::PineLog, Voxel::PineLeaves)
+        }
+        _ => return None,
+    };
+
+    Some((chance, log, leaves))
+}
+
+/// Selects spawn probability and mossiness ratio for surface cobble / mossy cobble rock clusters.
+fn boulder_chance_for_biome(col: TerrainColumn) -> Option<(f32, f32)> {
+    if col.is_beach || col.is_cliff || col.is_river {
+        return None;
+    }
+    match col.biome {
+        BiomeType::YosemiteLowlands
+        | BiomeType::Shield
+        | BiomeType::SiberianTaiga
+        | BiomeType::WintryForest
+        | BiomeType::CloudForest => Some((0.18, 0.52)),
+        BiomeType::BloomingValley
+        | BiomeType::LavenderValley
+        | BiomeType::SakuraGrove
+        | BiomeType::ColdShrubland => Some((0.14, 0.42)),
+        BiomeType::TropicalJungle | BiomeType::OrchidSwamp => Some((0.16, 0.65)),
+        BiomeType::FracturedSavanna
+        | BiomeType::SavannaBadlands
+        | BiomeType::AshenSavanna
+        | BiomeType::RockyMountains
+        | BiomeType::AlpineHighlands
+        | BiomeType::EmeraldPeaks
+        | BiomeType::ScarletMountains
+        | BiomeType::BasaltCliffs
+        | BiomeType::GraniteCliffs
+        | BiomeType::YosemiteCliffs => Some((0.12, 0.25)),
+        _ => None,
+    }
+}
+
+/// Populates multi-chunk surface cobble/mossy cobble rock clusters and ground leaf bushes
+/// seamlessly across chunk boundaries. Runs after trees and before flora.
+pub fn populate_chunk_boulders_and_bushes<F, G>(
+    voxels: &mut [Voxel],
+    chunk_shapes: &mut Vec<(usize, BlockShape, u8)>,
+    chunk_origin: IVec3,
+    seed: u32,
+    column_at: F,
+    ground_at: G,
+) -> bool
+where
+    F: Fn(i32, i32) -> TerrainColumn,
+    G: Fn(i32, i32, i32, TerrainColumn) -> Option<Voxel>,
+{
+    let chunk_min_y = chunk_origin.y;
+    let chunk_max_y = chunk_origin.y + CHUNK_SIZE as i32 - 1;
+
+    let mut writer = ChunkWriter {
+        voxels,
+        chunk_shapes,
+        origin: chunk_origin,
+        wrote_any: false,
+    };
+
+    // --- 1. Surface Cobble & Mossy Cobble Rock Clusters ---
+    {
+        const BOULDER_CELL: i32 = 10;
+        const BOULDER_RADIUS: i32 = 2;
+
+        let min_cx = (chunk_origin.x - BOULDER_RADIUS).div_euclid(BOULDER_CELL);
+        let max_cx =
+            (chunk_origin.x + CHUNK_SIZE as i32 - 1 + BOULDER_RADIUS).div_euclid(BOULDER_CELL);
+        let min_cz = (chunk_origin.z - BOULDER_RADIUS).div_euclid(BOULDER_CELL);
+        let max_cz =
+            (chunk_origin.z + CHUNK_SIZE as i32 - 1 + BOULDER_RADIUS).div_euclid(BOULDER_CELL);
+
+        for cz in min_cz..=max_cz {
+            for cx in min_cx..=max_cx {
+                let h = hash_tree_cell(cx, cz, seed ^ 0xB01D_E211);
+                let jx = 2 + ((h & 15) as i32 % (BOULDER_CELL - 4));
+                let jz = 2 + (((h >> 4) & 15) as i32 % (BOULDER_CELL - 4));
+                let rx = cx * BOULDER_CELL + jx;
+                let rz = cz * BOULDER_CELL + jz;
+
+                let col = column_at(rx, rz);
+                let ry = col.terrain_height;
+
+                if chunk_min_y > ry + 4 || chunk_max_y < ry - 1 {
+                    continue;
+                }
+                if col.surface_shape != BlockShape::Full
+                    || col.water_level.is_some_and(|wl| ry <= wl)
+                {
+                    continue;
+                }
+                let Some((chance, moss_prob)) = boulder_chance_for_biome(col) else {
+                    continue;
+                };
+                if hash_f32(hash_tree_cell(cx, cz, seed ^ 0xB01D_9933)) >= chance {
+                    continue;
+                }
+                let Some(ground) = ground_at(rx, ry, rz, col) else {
+                    continue;
+                };
+                if !ground.is_fertile_soil() && !ground.is_grass_soil() {
+                    continue;
+                }
+
+                let (cobble, mossy) = rock_to_cobble_pair(col.biome.config().primary_stone);
+                let pick_mat = |dx: i32, dy: i32, dz: i32| -> Voxel {
+                    let mh = hash_tree_cell(rx + dx * 7 + dy * 13, rz + dz * 11, h ^ 0x44A1);
+                    if hash_f32(mh) < moss_prob {
+                        mossy
+                    } else {
+                        cobble
+                    }
+                };
+
+                // Center core at ry + 1
+                writer.set_leaf(rx, ry + 1, rz, pick_mat(0, 1, 0));
+
+                // Top cap at ry + 2: 55% full block, 45% bottom slab
+                let top_h = hash_f32(hash_tree_cell(rx, rz, h ^ 0x7102));
+                if top_h < 0.55 {
+                    writer.set_leaf(rx, ry + 2, rz, pick_mat(0, 2, 0));
+                } else {
+                    writer.set_leaf_shaped(rx, ry + 2, rz, pick_mat(0, 2, 0), BlockShape::Slab, 0);
+                }
+
+                // Surrounding side stones (2..=4 cardinal + optional diagonal) with slope footing
+                let dirs: [(i32, i32, u8); 4] = [
+                    (1, 0, 1),  // +X: stair ascends toward -X (center)
+                    (-1, 0, 0), // -X: stair ascends toward +X (center)
+                    (0, 1, 3),  // +Z: stair ascends toward -Z (center)
+                    (0, -1, 2), // -Z: stair ascends toward +Z (center)
+                ];
+
+                let mut placed_sides = 0;
+                for (i, &(dx, dz, stair_orient)) in dirs.iter().enumerate() {
+                    let sh = hash_tree_cell(rx + dx * 5, rz + dz * 9, h ^ (0x1234 + i as u32));
+                    let roll = hash_f32(sh);
+                    if roll > 0.68 && placed_sides >= 2 {
+                        continue;
+                    }
+                    let ncol = column_at(rx + dx, rz + dz);
+                    let dy_diff = ncol.terrain_height - ry;
+                    if dy_diff < -1 || dy_diff > 1 || ncol.water_level.is_some() {
+                        continue;
+                    }
+                    // Anchor into 1-block slope dip so side stone never floats
+                    if dy_diff == -1 {
+                        writer.set_leaf(rx + dx, ry, rz + dz, pick_mat(dx, 0, dz));
+                    }
+                    let mat = pick_mat(dx, 1, dz);
+                    let shape_roll = hash_f32(sh.rotate_right(9));
+                    if shape_roll < 0.50 {
+                        writer.set_leaf(rx + dx, ry + 1, rz + dz, mat);
+                    } else if shape_roll < 0.80 {
+                        writer.set_leaf_shaped(rx + dx, ry + 1, rz + dz, mat, BlockShape::Slab, 0);
+                    } else {
+                        writer.set_leaf_shaped(
+                            rx + dx,
+                            ry + 1,
+                            rz + dz,
+                            mat,
+                            BlockShape::Stair,
+                            stair_orient,
+                        );
+                    }
+                    placed_sides += 1;
+                }
+
+                // Occasional diagonal shoulder stone (creates wider 2x2 mossy clusters)
+                if ((h >> 12) & 3) == 0 {
+                    let diag_idx = ((h >> 14) & 3) as usize;
+                    let (dx, dz) = [(1, 1), (1, -1), (-1, 1), (-1, -1)][diag_idx];
+                    let ncol = column_at(rx + dx, rz + dz);
+                    let dy_diff = ncol.terrain_height - ry;
+                    if (-1..=1).contains(&dy_diff) && ncol.water_level.is_none() {
+                        if dy_diff == -1 {
+                            writer.set_leaf(rx + dx, ry, rz + dz, pick_mat(dx, 0, dz));
+                        }
+                        writer.set_leaf_shaped(
+                            rx + dx,
+                            ry + 1,
+                            rz + dz,
+                            pick_mat(dx, 1, dz),
+                            BlockShape::Slab,
+                            0,
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    // --- 2. Ground Leaf Bushes (1 Center Log + Surrounding Leaf Blocks) ---
+    {
+        const BUSH_CELL: i32 = 9;
+        const BUSH_RADIUS: i32 = 2;
+
+        let min_cx = (chunk_origin.x - BUSH_RADIUS).div_euclid(BUSH_CELL);
+        let max_cx =
+            (chunk_origin.x + CHUNK_SIZE as i32 - 1 + BUSH_RADIUS).div_euclid(BUSH_CELL);
+        let min_cz = (chunk_origin.z - BUSH_RADIUS).div_euclid(BUSH_CELL);
+        let max_cz =
+            (chunk_origin.z + CHUNK_SIZE as i32 - 1 + BUSH_RADIUS).div_euclid(BUSH_CELL);
+
+        for cz in min_cz..=max_cz {
+            for cx in min_cx..=max_cx {
+                let h = hash_tree_cell(cx, cz, seed ^ 0xB05B_7721);
+                let jx = 2 + ((h & 15) as i32 % (BUSH_CELL - 4));
+                let jz = 2 + (((h >> 4) & 15) as i32 % (BUSH_CELL - 4));
+                let rx = cx * BUSH_CELL + jx;
+                let rz = cz * BUSH_CELL + jz;
+
+                let col = column_at(rx, rz);
+                let ry = col.terrain_height;
+
+                if chunk_min_y > ry + 4 || chunk_max_y < ry - 1 {
+                    continue;
+                }
+                if col.surface_shape != BlockShape::Full
+                    || col.water_level.is_some_and(|wl| ry <= wl)
+                {
+                    continue;
+                }
+                let Some((chance, log, leaves)) = select_bush_for_column(col, h) else {
+                    continue;
+                };
+                if hash_f32(hash_tree_cell(cx, cz, seed ^ 0xB05B_AA55)) >= chance {
+                    continue;
+                }
+                let Some(ground) = ground_at(rx, ry, rz, col) else {
+                    continue;
+                };
+                if !ground.is_grass_soil() && !ground.is_fertile_soil() {
+                    continue;
+                }
+
+                // Center single log block (only placed into empty air so trees/boulders stay intact)
+                writer.set_leaf(rx, ry + 1, rz, log);
+                // Top leaf cap directly above center log
+                writer.set_leaf(rx, ry + 2, rz, leaves);
+
+                // 4 cardinal leaf blocks wrapping the center log
+                for (dx, dz) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
+                    let ncol = column_at(rx + dx, rz + dz);
+                    let dy_diff = ncol.terrain_height - ry;
+                    if dy_diff < -1 || dy_diff > 1 || ncol.water_level.is_some() {
+                        continue;
+                    }
+                    let leaf_y = if dy_diff == -1 { ry } else { ry + 1 };
+                    writer.set_leaf(rx + dx, leaf_y, rz + dz, leaves);
+                    if dy_diff == -1 {
+                        writer.set_leaf(rx + dx, ry + 1, rz + dz, leaves);
+                    }
+                }
+
+                // Optional 1-2 diagonal corner leaves (~35% chance) for subtle fullness variety
+                if ((h >> 12) % 10) < 4 {
+                    for (i, &(dx, dz)) in [(1, 1), (1, -1), (-1, 1), (-1, -1)].iter().enumerate() {
+                        let ch = hash_tree_cell(rx + dx * 3, rz + dz * 5, h ^ (0x5500 + i as u32));
+                        if hash_f32(ch) < 0.35 {
+                            let ncol = column_at(rx + dx, rz + dz);
+                            let dy_diff = ncol.terrain_height - ry;
+                            if (0..=1).contains(&dy_diff) && ncol.water_level.is_none() {
+                                writer.set_leaf(rx + dx, ry + 1, rz + dz, leaves);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    writer.wrote_any
+}
+
 /// Scatters natural Minecraft-style Leaf Litter (1..=4 quadrants, random facing) beneath deciduous canopies.
 fn stamp_under_canopy_leaf_litter<F, G>(
     w: &mut ChunkWriter,

@@ -747,7 +747,6 @@ impl Voxel {
             || self.is_rubble()
             || self.is_stick_pile()
             || self.is_mushroom()
-            || self.is_coral_fan()
             || self.is_marine_flora()
             || self.is_crop_billboard()
             || self.is_leaf_litter()

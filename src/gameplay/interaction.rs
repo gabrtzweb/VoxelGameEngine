@@ -514,11 +514,14 @@ fn edit_voxels(
                 }
             }
             placed
-        } else if place_voxel_type.is_crystal_cluster() {
-            // Crystal clusters can be placed on floor (+Y), ceiling (-Y), or horizontally on all 4 walls (±Z, ±X)
+        } else if place_voxel_type.is_crystal_cluster() || place_voxel_type.is_coral_fan() {
+            // Crystal clusters and coral fans can be placed on floor (+Y), ceiling (-Y), or horizontally on all 4 walls (±Z, ±X)
             let supporting_solid = existing_voxel.is_some_and(|v| {
                 v.is_solid_opaque()
-                    || (v.is_collidable() && !v.is_crystal_cluster() && !v.is_torch())
+                    || (v.is_collidable()
+                        && !v.is_crystal_cluster()
+                        && !v.is_coral_fan()
+                        && !v.is_torch())
             });
             if !supporting_solid {
                 Vec::new()
@@ -1022,11 +1025,11 @@ pub fn remove_block(
         removed.push(vine_above_pos);
     }
 
-    // 2. Wall torches and directional crystal clusters attached to this block:
-    // Above (+Y): floor-mounted crystal cluster (orientation 0)
+    // 2. Wall torches and directional 6-face crystal clusters / coral fans attached to this block:
+    // Above (+Y): floor-mounted crystal cluster or coral fan (orientation 0)
     let above_pos = block_pos + IVec3::Y;
     if let Some(v) = world.get_voxel(above_pos)
-        && v.is_crystal_cluster()
+        && (v.is_crystal_cluster() || v.is_coral_fan())
     {
         let (s, o) = world.get_shape(above_pos);
         if s == BlockShape::CrossBillboard && o == 0 && remove_voxel(world, modifications, above_pos) {
@@ -1034,10 +1037,10 @@ pub fn remove_block(
         }
     }
 
-    // Below (-Y): ceiling-mounted crystal cluster (orientation 1)
+    // Below (-Y): ceiling-mounted crystal cluster or coral fan (orientation 1)
     let below_pos = block_pos - IVec3::Y;
     if let Some(v) = world.get_voxel(below_pos)
-        && v.is_crystal_cluster()
+        && (v.is_crystal_cluster() || v.is_coral_fan())
     {
         let (s, o) = world.get_shape(below_pos);
         if s == BlockShape::CrossBillboard && o == 1 && remove_voxel(world, modifications, below_pos) {
@@ -1045,48 +1048,56 @@ pub fn remove_block(
         }
     }
 
-    // South neighbor (+Z) has torch (orientation 1) or crystal cluster (orientation 2) attached to North wall of south_pos
+    // South neighbor (+Z) has torch (orientation 1) or crystal cluster/coral fan (orientation 2) attached to North wall of south_pos
     let south_pos = block_pos + IVec3::Z;
     if let Some(v) = world.get_voxel(south_pos) {
         let (s, o) = world.get_shape(south_pos);
         if ((v.is_torch() && s == BlockShape::Torch && o == 1)
-            || (v.is_crystal_cluster() && s == BlockShape::CrossBillboard && o == 2))
+            || ((v.is_crystal_cluster() || v.is_coral_fan())
+                && s == BlockShape::CrossBillboard
+                && o == 2))
             && remove_voxel(world, modifications, south_pos)
         {
             removed.push(south_pos);
         }
     }
 
-    // North neighbor (-Z) has torch (orientation 2) or crystal cluster (orientation 3) attached to South wall of north_pos
+    // North neighbor (-Z) has torch (orientation 2) or crystal cluster/coral fan (orientation 3) attached to South wall of north_pos
     let north_pos = block_pos - IVec3::Z;
     if let Some(v) = world.get_voxel(north_pos) {
         let (s, o) = world.get_shape(north_pos);
         if ((v.is_torch() && s == BlockShape::Torch && o == 2)
-            || (v.is_crystal_cluster() && s == BlockShape::CrossBillboard && o == 3))
+            || ((v.is_crystal_cluster() || v.is_coral_fan())
+                && s == BlockShape::CrossBillboard
+                && o == 3))
             && remove_voxel(world, modifications, north_pos)
         {
             removed.push(north_pos);
         }
     }
 
-    // East neighbor (+X) has torch (orientation 3) or crystal cluster (orientation 4) attached to West wall of east_pos
+    // East neighbor (+X) has torch (orientation 3) or crystal cluster/coral fan (orientation 4) attached to West wall of east_pos
     let east_pos = block_pos + IVec3::X;
     if let Some(v) = world.get_voxel(east_pos) {
         let (s, o) = world.get_shape(east_pos);
         if ((v.is_torch() && s == BlockShape::Torch && o == 3)
-            || (v.is_crystal_cluster() && s == BlockShape::CrossBillboard && o == 4))
+            || ((v.is_crystal_cluster() || v.is_coral_fan())
+                && s == BlockShape::CrossBillboard
+                && o == 4))
             && remove_voxel(world, modifications, east_pos)
         {
             removed.push(east_pos);
         }
     }
 
-    // West neighbor (-X) has torch (orientation 4) or crystal cluster (orientation 5) attached to East wall of west_pos
+    // West neighbor (-X) has torch (orientation 4) or crystal cluster/coral fan (orientation 5) attached to East wall of west_pos
     let west_pos = block_pos - IVec3::X;
     if let Some(v) = world.get_voxel(west_pos) {
         let (s, o) = world.get_shape(west_pos);
         if ((v.is_torch() && s == BlockShape::Torch && o == 4)
-            || (v.is_crystal_cluster() && s == BlockShape::CrossBillboard && o == 5))
+            || ((v.is_crystal_cluster() || v.is_coral_fan())
+                && s == BlockShape::CrossBillboard
+                && o == 5))
             && remove_voxel(world, modifications, west_pos)
         {
             removed.push(west_pos);

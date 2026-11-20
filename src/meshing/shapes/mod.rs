@@ -558,6 +558,17 @@ pub fn mesh_shaped_voxels(
                     textures,
                     world_voxel,
                 );
+                if is_submerged_fixture(world, world_voxel, voxel) {
+                    mesh_waterlogged_envelope(
+                        world,
+                        transparent_buffers,
+                        world_voxel,
+                        fx,
+                        fy,
+                        fz,
+                        textures,
+                    );
+                }
             }
             BlockShape::Stair => {
                 mesh_stair(
@@ -582,6 +593,17 @@ pub fn mesh_shaped_voxels(
                     &is_neighbor_solid,
                     is_turf,
                 );
+                if is_submerged_fixture(world, world_voxel, voxel) {
+                    mesh_waterlogged_envelope(
+                        world,
+                        transparent_buffers,
+                        world_voxel,
+                        fx,
+                        fy,
+                        fz,
+                        textures,
+                    );
+                }
             }
         }
     }
@@ -935,18 +957,24 @@ pub fn push_quad_face_with_uvs(
     push_quad_face_uvs(buffers, vertices, normal, texture_layer, frame_count, tint_color, uvs);
 }
 
-/// Determines if a small rock fixture (rubble, pebble, or pebble cluster) is submerged under or in water.
+/// Determines if a partial/sub-voxel block (rubble, pebble, stick pile, slab, or stair)
+/// is submerged under or laterally bordering water (waterlogged).
 #[inline]
 pub fn is_submerged_fixture(world: &impl VoxelAccess, pos: IVec3, voxel: Voxel) -> bool {
+    if voxel.is_empty() || voxel.is_fluid() {
+        return false;
+    }
     let (shape, _) = world.get_shape(pos);
-    if !voxel.is_rubble()
-        && !voxel.is_pebble()
-        && !voxel.is_stick_pile()
-        && shape != BlockShape::Rubble
-        && shape != BlockShape::Pebble
-        && shape != BlockShape::PebbleCluster
-        && shape != BlockShape::StickPile
-    {
+    let is_waterloggable = match shape {
+        BlockShape::Rubble
+        | BlockShape::Pebble
+        | BlockShape::PebbleCluster
+        | BlockShape::StickPile
+        | BlockShape::Stair => true,
+        BlockShape::Slab => world.get_extra_slab(pos).is_none(),
+        _ => voxel.is_rubble() || voxel.is_pebble() || voxel.is_stick_pile(),
+    };
+    if !is_waterloggable {
         return false;
     }
     // Submerged if water, marine flora, or coral is directly above it
@@ -982,6 +1010,8 @@ fn mesh_waterlogged_envelope(
     water_tint[3] = 1.0;
     let frame_count_f32 = water_frames as f32;
 
+    let (self_shape, self_orient) = world.get_shape(world_voxel);
+
     let is_submerged_boundary = |offset: IVec3| -> bool {
         let n_pos = world_voxel + offset;
         let n_voxel = world.get_voxel(n_pos).unwrap_or(Voxel::Air);
@@ -994,11 +1024,14 @@ fn mesh_waterlogged_envelope(
     let is_solid_opaque = |offset: IVec3| -> bool {
         let n_pos = world_voxel + offset;
         let n_voxel = world.get_voxel(n_pos).unwrap_or(Voxel::Air);
+        let (n_shape, _) = world.get_shape(n_pos);
         n_voxel.is_solid_opaque()
+            && (n_shape == BlockShape::Full || world.get_extra_slab(n_pos).is_some())
     };
 
     let is_at_surface = !is_submerged_boundary(IVec3::Y);
     let surface_offset = if is_at_surface { 0.10 } else { 0.0 };
+    let is_top_slab = self_shape == BlockShape::Slab && self_orient == 1;
 
     let min_x = fx;
     let max_x = fx + 1.0;
@@ -1007,8 +1040,8 @@ fn mesh_waterlogged_envelope(
     let min_z = fz;
     let max_z = fz + 1.0;
 
-    // +Y (Water surface) - rendered if air or non-submerged block is above
-    if is_at_surface {
+    // +Y (Water surface) - rendered if air or non-submerged block is above (skip if covered by a top slab)
+    if is_at_surface && !is_top_slab {
         push_quad_face_uvs(
             transparent_buffers,
             [

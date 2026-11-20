@@ -571,20 +571,27 @@ fn populate_marine_column(
         return;
     }
 
-    // Vibrant Coral Reefs (dense in CoralReef, coastal/warm ocean clusters in temperate/warm waters)
+    // Vibrant Coral Reefs: dense, multi-block branching colonies with 6-face wall/top coral fans
     let is_coral_zone = matches!(col.biome, BiomeType::CoralReef | BiomeType::DeepWarmOcean)
         || (!col.is_river && col.climate.temperature > -0.15);
     if is_coral_zone && depth <= 22 {
-        let reef_patch = patch_noise(wx, wz, 18.0, seed ^ 0xC07A_1FEF);
+        let reef_patch = patch_noise(wx, wz, 20.0, seed ^ 0xC07A_1FEF);
+        let reef_cluster = patch_noise(wx, wz, 7.0, seed ^ 0xC07A_8841);
         let (threshold, chance) = if col.biome == BiomeType::CoralReef {
-            (0.35, 0.24)
+            (0.30, 0.34)
         } else if col.biome == BiomeType::DeepWarmOcean {
-            (0.50, 0.16)
+            (0.44, 0.24)
         } else {
-            (0.58, 0.14)
+            (0.54, 0.18)
         };
-        if reef_patch > threshold && r < chance {
-            let variant = (h >> 8) % 10;
+        if reef_patch > threshold && reef_cluster > 0.36 && r < chance {
+            // Pick a coherent colony species per small 5x5 cell so nearby corals form lush reefs
+            let colony_h = hash2d(wx.div_euclid(5), wz.div_euclid(5), seed ^ 0xC07A_5512);
+            let variant = if ((h >> 6) % 5) == 0 {
+                (h >> 8) % 10
+            } else {
+                (colony_h >> 4) % 10
+            };
             let (coral_block, coral_fan) = match variant {
                 0 => (Voxel::BrainCoral, Voxel::BrainCoralFan),
                 1 => (Voxel::BubbleCoral, Voxel::BubbleCoralFan),
@@ -597,31 +604,228 @@ fn populate_marine_column(
                 8 => (Voxel::SunCoral, Voxel::SunCoralFan),
                 _ => (Voxel::TubeCoral, Voxel::TubeCoralFan),
             };
-            if ((h >> 16) % 3) == 0 && depth >= 3 {
-                // Small coral mound block + fan on top
+
+            let chunk_origin_x = wx - lx as i32;
+            let chunk_origin_z = wz - lz as i32;
+            let try_place_coral = |voxels: &mut [Voxel],
+                                   chunk_shapes: &mut Vec<(usize, BlockShape, u8)>,
+                                   tx: i32,
+                                   ty: i32,
+                                   tz: i32,
+                                   vox: Voxel,
+                                   shape: BlockShape,
+                                   orient: u8| {
+                let nlx = tx - chunk_origin_x;
+                let nlz = tz - chunk_origin_z;
+                if !(0..CHUNK_SIZE as i32).contains(&nlx) || !(0..CHUNK_SIZE as i32).contains(&nlz) {
+                    return;
+                }
+                if ty >= water_level {
+                    return;
+                }
                 set_voxel_in_chunk(
                     voxels,
                     chunk_shapes,
                     chunk_min_y,
-                    lx,
-                    floor_y,
-                    lz,
-                    coral_block,
-                    BlockShape::Full,
-                    0,
+                    nlx as usize,
+                    ty,
+                    nlz as usize,
+                    vox,
+                    shape,
+                    orient,
                 );
-                set_voxel_in_chunk(
-                    voxels,
-                    chunk_shapes,
-                    chunk_min_y,
-                    lx,
-                    floor_y + 1,
-                    lz,
-                    coral_fan,
-                    BlockShape::CrossBillboard,
-                    0,
-                );
+            };
+
+            let decorate_coral_block = |voxels: &mut [Voxel],
+                                        chunk_shapes: &mut Vec<(usize, BlockShape, u8)>,
+                                        bx: i32,
+                                        by: i32,
+                                        bz: i32,
+                                        dh: u32| {
+                // Top fan (orientation 0: floor +Y)
+                if ((dh >> 2) % 3) != 0 {
+                    try_place_coral(
+                        voxels,
+                        chunk_shapes,
+                        bx,
+                        by + 1,
+                        bz,
+                        coral_fan,
+                        BlockShape::CrossBillboard,
+                        0,
+                    );
+                }
+                // Lateral wall coral fans (orientations 2..=5, identical to cave crystal clusters!)
+                // 2: +Z (North wall), 3: -Z (South wall), 4: +X (West wall), 5: -X (East wall)
+                let sides: [(i32, i32, u8); 4] = [
+                    (0, 1, 2),
+                    (0, -1, 3),
+                    (1, 0, 4),
+                    (-1, 0, 5),
+                ];
+                for (si, &(sdx, sdz, sorient)) in sides.iter().enumerate() {
+                    if ((dh >> (6 + si * 3)) % 5) < 2 {
+                        try_place_coral(
+                            voxels,
+                            chunk_shapes,
+                            bx + sdx,
+                            by,
+                            bz + sdz,
+                            coral_fan,
+                            BlockShape::CrossBillboard,
+                            sorient,
+                        );
+                    }
+                }
+            };
+
+            let structure_roll = (h >> 16) % 10;
+            if structure_roll < 6 && depth >= 4 {
+                // Multi-block 3D Coral Structure (Spire, Branching Tree, or Reef Mound)
+                let arch = (h >> 20) % 3;
+                match arch {
+                    0 => {
+                        // Tall Coral Spire / Pillar (2..=4 blocks stacked vertically)
+                        let spire_h = (2 + ((h >> 12) as i32 % 3)).min(depth - 1);
+                        for dy in 0..spire_h {
+                            try_place_coral(
+                                voxels,
+                                chunk_shapes,
+                                wx,
+                                floor_y + dy,
+                                wz,
+                                coral_block,
+                                BlockShape::Full,
+                                0,
+                            );
+                        }
+                        for dy in 0..spire_h {
+                            decorate_coral_block(
+                                voxels,
+                                chunk_shapes,
+                                wx,
+                                floor_y + dy,
+                                wz,
+                                h.wrapping_add(dy as u32 * 97),
+                            );
+                        }
+                    }
+                    1 => {
+                        // Branching Coral Tree (vertical stem + 2..=3 outward/upward arms)
+                        let stem_h = (2 + ((h >> 12) as i32 % 2)).min(depth - 2);
+                        for dy in 0..stem_h {
+                            try_place_coral(
+                                voxels,
+                                chunk_shapes,
+                                wx,
+                                floor_y + dy,
+                                wz,
+                                coral_block,
+                                BlockShape::Full,
+                                0,
+                            );
+                        }
+                        let arm_dirs = [(1, 0), (-1, 0), (0, 1), (0, -1)];
+                        for (ai, &(adx, adz)) in arm_dirs.iter().enumerate() {
+                            if ((h >> (10 + ai * 2)) % 3) != 0 {
+                                let arm_y = floor_y + stem_h - 1;
+                                try_place_coral(
+                                    voxels,
+                                    chunk_shapes,
+                                    wx + adx,
+                                    arm_y,
+                                    wz + adz,
+                                    coral_block,
+                                    BlockShape::Full,
+                                    0,
+                                );
+                                // Tip rises +1 block like staghorn/branching coral
+                                let tip_y = arm_y + 1;
+                                try_place_coral(
+                                    voxels,
+                                    chunk_shapes,
+                                    wx + adx,
+                                    tip_y,
+                                    wz + adz,
+                                    coral_block,
+                                    BlockShape::Full,
+                                    0,
+                                );
+                                decorate_coral_block(
+                                    voxels,
+                                    chunk_shapes,
+                                    wx + adx,
+                                    tip_y,
+                                    wz + adz,
+                                    h.wrapping_add(ai as u32 * 131),
+                                );
+                            }
+                        }
+                        decorate_coral_block(
+                            voxels,
+                            chunk_shapes,
+                            wx,
+                            floor_y + stem_h - 1,
+                            wz,
+                            h ^ 0x3311,
+                        );
+                    }
+                    _ => {
+                        // Compact Coral Reef Mound (2..=3 wide base + stacked center peak)
+                        try_place_coral(
+                            voxels,
+                            chunk_shapes,
+                            wx,
+                            floor_y,
+                            wz,
+                            coral_block,
+                            BlockShape::Full,
+                            0,
+                        );
+                        try_place_coral(
+                            voxels,
+                            chunk_shapes,
+                            wx,
+                            floor_y + 1,
+                            wz,
+                            coral_block,
+                            BlockShape::Full,
+                            0,
+                        );
+                        for (ai, &(adx, adz)) in [(1, 0), (-1, 0), (0, 1), (0, -1)].iter().enumerate() {
+                            if ((h >> (10 + ai * 2)) % 2) == 0 {
+                                try_place_coral(
+                                    voxels,
+                                    chunk_shapes,
+                                    wx + adx,
+                                    floor_y,
+                                    wz + adz,
+                                    coral_block,
+                                    BlockShape::Full,
+                                    0,
+                                );
+                                decorate_coral_block(
+                                    voxels,
+                                    chunk_shapes,
+                                    wx + adx,
+                                    floor_y,
+                                    wz + adz,
+                                    h.wrapping_add(ai as u32 * 53),
+                                );
+                            }
+                        }
+                        decorate_coral_block(
+                            voxels,
+                            chunk_shapes,
+                            wx,
+                            floor_y + 1,
+                            wz,
+                            h ^ 0x7722,
+                        );
+                    }
+                }
             } else {
+                // Standalone floor coral fan around the colony
                 set_voxel_in_chunk(
                     voxels,
                     chunk_shapes,
