@@ -21,6 +21,8 @@ pub enum BlockShape {
     Rubble = 14,
     Speleothem = 15,
     StickPile = 16,
+    CocoaPod = 17,
+    HangingFruit = 18,
 }
 
 #[repr(u8)]
@@ -56,7 +58,7 @@ impl PillarAxis {
 
 impl BlockShape {
     /// All 15 registered block shapes in the engine.
-    pub const fn all() -> [BlockShape; 17] {
+    pub const fn all() -> [BlockShape; 19] {
         [
             BlockShape::Full,
             BlockShape::Slab,
@@ -75,6 +77,8 @@ impl BlockShape {
             BlockShape::Rubble,
             BlockShape::Speleothem,
             BlockShape::StickPile,
+            BlockShape::CocoaPod,
+            BlockShape::HangingFruit,
         ]
     }
 
@@ -107,6 +111,8 @@ impl BlockShape {
             Self::Rubble => "Rubble",
             Self::Speleothem => "Speleothem",
             Self::StickPile => "Stick Pile",
+            Self::CocoaPod => "Cocoa Pod",
+            Self::HangingFruit => "Hanging Fruit",
         }
     }
 
@@ -129,18 +135,26 @@ impl BlockShape {
             Self::Rubble => "RUBBLE",
             Self::Speleothem => "SPELEO",
             Self::StickPile => "STICK_PILE",
+            Self::CocoaPod => "COCOA_POD",
+            Self::HangingFruit => "HANGING_FRUIT",
         }
     }
 
     pub const fn orientation_count(self) -> u8 {
         match self {
             Self::Full => 3,
-            Self::Basket | Self::Bamboo | Self::Cocoon | Self::FlatPad | Self::Cactus | Self::Speleothem => 1,
+            Self::Basket
+            | Self::Bamboo
+            | Self::Cocoon
+            | Self::FlatPad
+            | Self::Cactus
+            | Self::Speleothem
+            | Self::HangingFruit => 1,
             Self::Slab | Self::WallDecal | Self::CrossBillboard => 6,
             Self::Stair => 8,
-            Self::Column => 6,
+            Self::Column => 7,
             Self::Torch => 5,
-            Self::Pebble | Self::PebbleCluster | Self::Rubble | Self::StickPile => 4,
+            Self::Pebble | Self::PebbleCluster | Self::Rubble | Self::StickPile | Self::CocoaPod => 4,
         }
     }
 
@@ -152,7 +166,13 @@ impl BlockShape {
                 2 => "Horizontal (Z)",
                 _ => "Standard",
             },
-            Self::Basket | Self::Bamboo | Self::Cocoon | Self::FlatPad | Self::Cactus | Self::Speleothem => "Standard",
+            Self::Basket
+            | Self::Bamboo
+            | Self::Cocoon
+            | Self::FlatPad
+            | Self::Cactus
+            | Self::Speleothem
+            | Self::HangingFruit => "Standard",
             Self::WallDecal | Self::CrossBillboard => match orientation % 6 {
                 0 => "Floor (Standing)",
                 1 => "Ceiling (Hanging)",
@@ -181,13 +201,14 @@ impl BlockShape {
                 7 => "Inverted (-Z)",
                 _ => "Unknown",
             },
-            Self::Column => match orientation % 6 {
+            Self::Column => match orientation % 7 {
                 0 => "Centered Vertical",
                 1 => "Corner (Min X, Min Z)",
                 2 => "Corner (Max X, Min Z)",
                 3 => "Corner (Min X, Max Z)",
                 4 => "Corner (Max X, Max Z)",
-                5 => "Centered Horizontal",
+                5 => "Centered Horizontal (East-West)",
+                6 => "Centered Horizontal (North-South)",
                 _ => "Unknown",
             },
             Self::Torch => match orientation % 5 {
@@ -198,7 +219,11 @@ impl BlockShape {
                 4 => "Wall East (+X)",
                 _ => "Unknown",
             },
-            Self::Pebble | Self::PebbleCluster | Self::Rubble | Self::StickPile => match orientation % 4 {
+            Self::Pebble
+            | Self::PebbleCluster
+            | Self::Rubble
+            | Self::StickPile
+            | Self::CocoaPod => match orientation % 4 {
                 0 => "North (0°)",
                 1 => "East (90°)",
                 2 => "South (180°)",
@@ -245,13 +270,14 @@ impl BlockShape {
                 (bbox, None)
             }
             Self::Column => {
-                let bbox = match orientation % 6 {
+                let bbox = match orientation % 7 {
                     0 => [Vec3::new(0.25, 0.0, 0.25), Vec3::new(0.75, 1.0, 0.75)],
                     1 => [Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.5, 1.0, 0.5)],
                     2 => [Vec3::new(0.5, 0.0, 0.0), Vec3::new(1.0, 1.0, 0.5)],
                     3 => [Vec3::new(0.0, 0.0, 0.5), Vec3::new(0.5, 1.0, 1.0)],
                     4 => [Vec3::new(0.5, 0.0, 0.5), Vec3::new(1.0, 1.0, 1.0)],
-                    _ => [Vec3::new(0.0, 0.25, 0.25), Vec3::new(1.0, 0.75, 0.75)],
+                    5 => [Vec3::new(0.0, 0.25, 0.25), Vec3::new(1.0, 0.75, 0.75)],
+                    _ => [Vec3::new(0.25, 0.25, 0.0), Vec3::new(0.75, 0.75, 1.0)],
                 };
                 (bbox, None)
             }
@@ -341,6 +367,21 @@ impl BlockShape {
                 );
                 (b, None)
             },
+            Self::CocoaPod => {
+                let b = rotate_aabb_y(
+                    Vec3::new(4.0 / 16.0, 3.0 / 16.0, 1.0 / 16.0),
+                    Vec3::new(12.0 / 16.0, 13.0 / 16.0, 9.0 / 16.0),
+                    orientation,
+                );
+                (b, None)
+            },
+            Self::HangingFruit => (
+                [
+                    Vec3::new(5.0 / 16.0, 5.0 / 16.0, 5.0 / 16.0),
+                    Vec3::new(11.0 / 16.0, 16.0 / 16.0, 11.0 / 16.0),
+                ],
+                None,
+            ),
             Self::Speleothem => (
                 [
                     Vec3::new(5.0 / 16.0, 0.0, 5.0 / 16.0),

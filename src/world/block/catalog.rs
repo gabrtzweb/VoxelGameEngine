@@ -344,6 +344,10 @@ impl Voxel {
             BlockShape::Rubble
         } else if self == Self::StickPile {
             BlockShape::StickPile
+        } else if self.is_cocoa_pod() {
+            BlockShape::CocoaPod
+        } else if self.is_hanging_coconut() {
+            BlockShape::HangingFruit
         } else if self.is_speleothem_const() {
             BlockShape::Speleothem
         } else if matches!(self, Self::BirdNest | Self::HayNest) {
@@ -1069,6 +1073,14 @@ impl Voxel {
             Self::PebbleFlint | Self::PebbleFlintCluster | Self::BoulderFlint => [65, 70, 75, 255],
             Self::PebbleQuartz | Self::PebbleQuartzCluster | Self::BoulderQuartz => [220, 225, 230, 255],
             Self::StickPile | Self::ItemStick => [88, 68, 52, 255],
+            Self::CropCocoaStage0
+            | Self::CropCocoaStage1
+            | Self::CropCocoaStage2
+            | Self::ItemCocoaBeans => [120, 72, 42, 255],
+            Self::CropCoconutStage0
+            | Self::CropCoconutStage1
+            | Self::CropCoconutStage2
+            | Self::ItemCoconut => [102, 72, 46, 255],
 
             // Containers & Storage
             Self::Barrel | Self::Crate | Self::Basket | Self::Bookshelf | Self::BookshelfEmpty => [135, 95, 55, 255],

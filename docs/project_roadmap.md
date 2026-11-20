@@ -73,7 +73,7 @@ This foundational milestone encapsulates the initial 20 engineering phases that 
 | **17** | **[Localization & Multi-Language Support](#phase-17-localization--multi-language-support-completed)** | **Completed** | `lang/` translation files (`en_us`, `pt_br`), comprehensive UI/block/item localization, natural Portuguese grammar, in-game language selector |
 | **18** | **[Controls & Keybinding System](#phase-18-controls--keybinding-system-completed)** | **Completed** | Configurable keybindings for all actions, mouse sensitivity & invert Y options, input conflict detection, Main Menu & Pause integration |
 | **19** | **[Dynamic Foliage & Procedural Grass System](#phase-19-dynamic-foliage--procedural-grass-system-completed)** | **Completed** | Procedural 3D grass blades on surface blocks, cubic Bezier wind deformation, Voronoi clumping, entity footprint trails, dynamic LOD |
-| **20** | **[World Surface & Subterranean Feature Generation](#phase-20-world-surface--subterranean-feature-generation-planned)** | **Planned** | Procedural feature placement across biomes: wild crops, flora, trees, pebbles, rubble, marine scatter |
+| **20** | **[World Surface & Subterranean Feature Generation](#phase-20-world-surface--subterranean-feature-generation-completed)** | **Completed** | Multi-chunk procedural trees (13 archetypes), arboreal cocoa/coconut shapes, wild crops, flora, surface/underwater rubble, pebbles, stick piles, marine reefs & kelp |
 
 ---
 
@@ -449,19 +449,19 @@ Inspired by Minecraft's vanilla atmospheric mechanics and advanced particle dyna
 
 ---
 
-### Phase 20: World Surface & Subterranean Feature Generation (Planned)
+### Phase 20: World Surface & Subterranean Feature Generation (Completed)
 
-- [ ] **Surface Botanical & Wild Crop Distribution**:
-  - Procedural scatter of ancestral wild cultivars across native surface biomes (`wild_carrots`, `wild_potatoes`, `wild_wheat`, `wild_barley`, `wild_rice`, `wild_corn`, `wild_sugar_cane`, `wild_melon`, `wild_pumpkin`, etc.).
+- [x] **Surface Botanical & Wild Crop Distribution**:
+  - Procedural scatter of ancestral wild cultivars clustered in climate-appropriate patches across native surface biomes (`wild_carrots`, `wild_potatoes`, `wild_wheat`, `wild_barley`, `wild_rice`, `wild_corn`, `wild_sugar_cane`, `wild_melon`, `wild_pumpkin`, etc.).
   - Environmental climate compatibility: wetland/riverbank reeds, arid steppe cereals, temperate root vegetables, and subtropical shrubs.
-- [ ] **Herbaceous Flora, Wildgrass & Flower Population**:
-  - Reactivate and integrate surface flora scatter across 44 distinct biomes.
-  - Multi-tiered wildgrass, ferns, single/double-tall companion flower patches, and petal carpets.
-- [ ] **Arboreal Systems & Procedural Tree Generation**:
-  - Procedural tree trunk branching and foliage canopies (Oak, Birch, Spruce, Pine, Jungle/Mahogany, Acacia, Palm, Mangrove, Willow, Cypress).
-  - Arboreal crop attachments: lateral cocoa trunk pods and suspended coconut drupes beneath palm canopies.
-- [ ] **Surface & Subterranean Geological Scatter**:
-  - Natural placement of loose surface rubble, loose pebbles (Chert, Flint, Quartz), clusters, and boulders.
-  - Subterranean cave growths: speleothem stalactites/stalagmites, crystal clusters, bone worms, and subterranean flora.
-- [ ] **Marine & Hydro-Botanical Scatter**:
-  - Coastal and abyssal flora generation: seagrass meadows, bull kelp forests, coral reef fans (Brain, Bubble, Fire, Horn, Heart, Leaf, Reed), and marine debris.
+- [x] **Herbaceous Flora, Wildgrass & Flower Population**:
+  - Reactivated and modernized surface flora scatter across 44 distinct biomes in [src/generation/flora.rs](src/generation/flora.rs) with open, organic value-noise patches.
+  - Multi-tiered wildgrass, ferns, single/double-tall companion flower patches, petal carpets, cacti, bamboo groves, and floating lily pads with seamless vertical chunk transitions.
+- [x] **Arboreal Systems, Procedural Trees & Arboreal Crop Shapes**:
+  - Deterministic multi-chunk cellular grid tree generator in [src/generation/trees.rs](src/generation/trees.rs) supporting 13 tree archetypes (`Oak`, `Birch`, `Maple`, `Cherry`, `Pine`, `Yew`, `Redwood`, `Acacia`, `Palm`, `Mahogany`, `Willow`, `Mangrove`, `Charred`) with zero chunk-border canopy clipping.
+  - Exclusive custom 3D block shapes (`BlockShape::CocoaPod` and `BlockShape::HangingFruit`) with progressive growth stages, Bone Meal fertilization, lateral Mahogany trunk planting, and suspended Palm canopy coconut generation.
+- [x] **Surface & Subterranean Geological Scatter**:
+  - Natural placement of host-strata-matched surface and underwater rubble, loose pebbles (`Chert`, `Flint`, `Quartz`), clusters, and woodland `StickPile` ground loot.
+  - Subterranean cave flora: floor cave growths, mushroom cave fungi, and ceiling-anchored hanging moss, roots, and cave vines alongside existing speleothems and crystal clusters.
+- [x] **Marine & Hydro-Botanical Scatter**:
+  - Coastal and deep-ocean flora generation: lush seagrass and red algae meadows, vertical kelp and bull kelp forests, underwater rubble, and vibrant 10-species coral reefs (`Brain`, `Bubble`, `Fire`, `Heart`, `Horn`, `Leaf`, `Reed`, `Staghorn`, `Sun`, `Tube`).

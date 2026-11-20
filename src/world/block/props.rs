@@ -105,6 +105,8 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
             && !v.is_rubble_const()
             && !v.is_speleothem_const()
             && !v.is_stick_pile()
+            && !v.is_cocoa_pod()
+            && !v.is_hanging_coconut()
             && !v.is_flat_pad_const()
             && !v.is_wall_decal_const()
             && !matches!(
@@ -442,12 +444,14 @@ impl Voxel {
             || (id >= 631 && id <= 650)
             || (id >= 653 && id <= 681)
             || id == Voxel::ItemStick as u16
+            || id == Voxel::ItemCocoaBeans as u16
+            || id == Voxel::ItemCoconut as u16
     }
 
     #[inline(always)]
     pub const fn is_crop_stage(self) -> bool {
         let id = self as u16;
-        id >= 538 && id <= 628
+        (id >= 538 && id <= 628) || (id >= 684 && id <= 689)
     }
 
     /// Returns true for inventory-only items (drops, seeds, food slices, sticks, bone meal, etc.)
@@ -455,7 +459,10 @@ impl Voxel {
     #[inline(always)]
     pub const fn is_inventory_only_item(self) -> bool {
         let id = self as u16;
-        (id >= 653 && id <= 681) || id == Voxel::ItemStick as u16
+        (id >= 653 && id <= 681)
+            || id == Voxel::ItemStick as u16
+            || id == Voxel::ItemCocoaBeans as u16
+            || id == Voxel::ItemCoconut as u16
     }
 
     #[inline(always)]
@@ -665,6 +672,8 @@ impl Voxel {
             || self.is_speleothem_const()
             || self.is_bamboo()
             || self.is_stick_pile()
+            || self.is_cocoa_pod()
+            || self.is_hanging_coconut()
     }
 
     #[inline(always)]
@@ -865,8 +874,6 @@ impl Voxel {
                 | Self::WildGarlic
                 | Self::WildPepper
                 | Self::WildRiceBottom
-                | Self::WildMelon
-                | Self::WildPumpkin
         ) {
             return ground.is_sandy_soil() || ground.is_fertile_soil();
         }
@@ -885,6 +892,8 @@ impl Voxel {
                     | Self::WildTomatoes
                     | Self::WildCoffee
                     | Self::WildCornBottom
+                    | Self::WildMelon
+                    | Self::WildPumpkin
             );
 
         if is_ground_flora {

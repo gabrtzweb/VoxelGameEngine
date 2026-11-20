@@ -963,5 +963,13 @@
   "block.item_stick": "Graveto",
   "hud.shape.slab": "Laje de {0}",
   "hud.shape.stair": "Escada de {0}",
-  "hud.shape.column": "Coluna de {0}"
+  "hud.shape.column": "Coluna de {0}",
+  "block.crop_cocoa_stage0": "Cacau",
+  "block.crop_cocoa_stage1": "Cacau",
+  "block.crop_cocoa_stage2": "Cacau",
+  "block.crop_coconut_stage0": "Coco",
+  "block.crop_coconut_stage1": "Coco",
+  "block.crop_coconut_stage2": "Coco",
+  "block.item_cocoa_beans": "Sementes de Cacau",
+  "block.item_coconut": "Coco"
 }

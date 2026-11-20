@@ -963,5 +963,13 @@
   "block.item_stick": "Stick",
   "hud.shape.slab": "{0} Slab",
   "hud.shape.stair": "{0} Stairs",
-  "hud.shape.column": "{0} Column"
+  "hud.shape.column": "{0} Column",
+  "block.crop_cocoa_stage0": "Cocoa Pod",
+  "block.crop_cocoa_stage1": "Cocoa Pod",
+  "block.crop_cocoa_stage2": "Cocoa Pod",
+  "block.crop_coconut_stage0": "Coconut",
+  "block.crop_coconut_stage1": "Coconut",
+  "block.crop_coconut_stage2": "Coconut",
+  "block.item_cocoa_beans": "Cocoa Beans",
+  "block.item_coconut": "Coconut"
 }

@@ -1931,3 +1931,168 @@ pub fn mesh_stick_pile(
         }
     }
 }
+
+/// Meshes a lateral arboreal Cocoa Pod attached to a vertical tree trunk.
+/// Orientation: 0 = trunk at North (-Z), 1 = East (+X), 2 = South (+Z), 3 = West (-X).
+pub fn mesh_cocoa_pod(
+    buffers: &mut MeshBuffers,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    orientation: u8,
+    stage: u8,
+    texture_layer: u16,
+    frame_count: f32,
+    tint_color: [f32; 4],
+) {
+    let (pod_from, pod_to, stem_from, stem_to, side_uv, top_uv, bot_uv, stem_uv) = match stage {
+        0 => (
+            [6.0, 7.0, 1.0],
+            [10.0, 12.0, 5.0],
+            [7.5, 12.0, 0.0],
+            [8.5, 14.0, 3.0],
+            [11.0, 4.0, 15.0, 9.0],
+            [0.0, 0.0, 4.0, 4.0],
+            [0.0, 4.0, 4.0, 8.0],
+            [12.0, 0.0, 15.0, 4.0],
+        ),
+        1 => (
+            [5.0, 5.0, 1.0],
+            [11.0, 12.0, 7.0],
+            [7.5, 12.0, 0.0],
+            [8.5, 15.0, 4.0],
+            [9.0, 4.0, 15.0, 11.0],
+            [0.0, 0.0, 6.0, 6.0],
+            [0.0, 6.0, 6.0, 12.0],
+            [11.0, 0.0, 15.0, 4.0],
+        ),
+        _ => (
+            [4.0, 3.0, 1.0],
+            [12.0, 12.0, 9.0],
+            [7.5, 12.0, 0.0],
+            [8.5, 15.5, 5.0],
+            [8.0, 4.0, 16.0, 13.0],
+            [0.0, 0.0, 8.0, 8.0],
+            [0.0, 8.0, 8.0, 16.0],
+            [10.0, 0.0, 16.0, 4.0],
+        ),
+    };
+
+    // Main cocoa pod body
+    push_pebble_element(
+        buffers,
+        fx,
+        fy,
+        fz,
+        orientation,
+        pod_from,
+        pod_to,
+        side_uv,
+        side_uv,
+        side_uv,
+        side_uv,
+        top_uv,
+        bot_uv,
+        texture_layer,
+        frame_count,
+        tint_color,
+    );
+
+    // Connecting pedicel / stem into the tree trunk
+    push_pebble_element(
+        buffers,
+        fx,
+        fy,
+        fz,
+        orientation,
+        stem_from,
+        stem_to,
+        stem_uv,
+        stem_uv,
+        stem_uv,
+        stem_uv,
+        stem_uv,
+        stem_uv,
+        texture_layer,
+        frame_count,
+        tint_color,
+    );
+}
+
+/// Meshes a Hanging Coconut suspended underneath a palm canopy or palm trunk.
+pub fn mesh_hanging_coconut(
+    buffers: &mut MeshBuffers,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    stage: u8,
+    texture_layer: u16,
+    frame_count: f32,
+    tint_color: [f32; 4],
+) {
+    let (body_from, body_to, stem_from, stem_to) = match stage {
+        0 => (
+            [6.0, 9.0, 6.0],
+            [10.0, 13.0, 10.0],
+            [7.5, 13.0, 7.5],
+            [8.5, 16.0, 8.5],
+        ),
+        1 => (
+            [5.5, 7.5, 5.5],
+            [10.5, 12.5, 10.5],
+            [7.5, 12.5, 7.5],
+            [8.5, 16.0, 8.5],
+        ),
+        _ => (
+            [5.0, 6.0, 5.0],
+            [11.0, 12.0, 11.0],
+            [7.5, 12.0, 7.5],
+            [8.5, 16.0, 8.5],
+        ),
+    };
+
+    let top_uv = [1.0, 2.0, 7.0, 8.0];
+    let bot_uv = [1.0, 9.0, 7.0, 15.0];
+    let side_uv = [9.0, 6.0, 15.0, 12.0];
+    let stem_uv = [10.0, 1.0, 12.0, 6.0];
+
+    // Coconut fruit body
+    push_pebble_element(
+        buffers,
+        fx,
+        fy,
+        fz,
+        0,
+        body_from,
+        body_to,
+        side_uv,
+        side_uv,
+        side_uv,
+        side_uv,
+        top_uv,
+        bot_uv,
+        texture_layer,
+        frame_count,
+        tint_color,
+    );
+
+    // Vertical hanging stalk attached to canopy above
+    push_pebble_element(
+        buffers,
+        fx,
+        fy,
+        fz,
+        0,
+        stem_from,
+        stem_to,
+        stem_uv,
+        stem_uv,
+        stem_uv,
+        stem_uv,
+        stem_uv,
+        stem_uv,
+        texture_layer,
+        frame_count,
+        tint_color,
+    );
+}

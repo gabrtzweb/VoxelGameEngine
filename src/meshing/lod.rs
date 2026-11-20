@@ -198,6 +198,7 @@ pub fn build_lod_mesh(
     let chunk_origin_z = chunk_coordinate.y * CHUNK_SIZE as i32;
 
     let total_samples = (grid_dim * grid_dim) as usize;
+    let mut cols = vec![generator.sample_column(chunk_origin_x, chunk_origin_z); total_samples];
     let mut heights = vec![0i32; total_samples];
     let mut materials = vec![Voxel::Air; total_samples];
     let mut water_levels = vec![None; total_samples];
@@ -211,6 +212,7 @@ pub fn build_lod_mesh(
             let world_z = chunk_origin_z + j * stride + stride / 2;
             let col = generator.sample_column(world_x, world_z);
             let k = idx(i, j);
+            cols[k] = col;
             heights[k] = col.terrain_height;
             water_levels[k] = col.water_level;
             materials[k] = generator.surface_material_at(world_x, col.terrain_height, world_z, col);
@@ -420,10 +422,222 @@ pub fn build_lod_mesh(
         }
     }
 
+    // --- D. Distant LOD Trees (zero-noise O(1) lookup from sampled grid + opaque Early-Z proxies) ---
+    let min_wx = chunk_origin_x;
+    let min_wz = chunk_origin_z;
+    let max_wx = chunk_origin_x + (num_cells as i32) * stride - 1;
+    let max_wz = chunk_origin_z + (num_cells as i32) * stride - 1;
+
+    let sample_grid_idx = |wx: i32, wz: i32| -> usize {
+        let gi = ((wx - chunk_origin_x) / stride).clamp(0, num_cells - 1);
+        let gj = ((wz - chunk_origin_z) / stride).clamp(0, num_cells - 1);
+        idx(gi, gj)
+    };
+
+    let lod_trees = crate::generation::trees::sample_lod_trees_in_region(
+        min_wx,
+        min_wz,
+        max_wx,
+        max_wz,
+        generator.seed,
+        |wx, wz| cols[sample_grid_idx(wx, wz)],
+        |wx, _wy, wz, _col| {
+            let g = materials[sample_grid_idx(wx, wz)];
+            if g.is_solid_opaque() && !g.is_fluid() && !g.is_empty() {
+                Some(g)
+            } else {
+                None
+            }
+        },
+    );
+
+    let is_lod2 = lod == ChunkLod::Lod2;
+    for tree in lod_trees {
+        // In far Lod2 super-chunks, thin to 50% of trees and slightly widen canopies
+        // to preserve dense horizon silhouettes at less than half the triangle count.
+        if is_lod2 && ((tree.root_x.div_euclid(7) ^ tree.root_z.div_euclid(7)) & 1) != 0 {
+            continue;
+        }
+
+        let lx = (tree.root_x - chunk_origin_x) as f32 + 0.5;
+        let lz = (tree.root_z - chunk_origin_z) as f32 + 0.5;
+        let base_y = (tree.root_y + 1) as f32;
+        let world_pos = IVec3::new(tree.root_x, tree.root_y + 1, tree.root_z);
+
+        // Trunk cuboid (omit top face when a canopy covers it)
+        let trunk_half = if is_lod2 { 0.7 } else { 0.5 };
+        let trunk_layer = textures
+            .get_face_texture_info(tree.log_voxel, world_pos, FaceDirection::PositiveX)
+            .0 as f32;
+        push_lod_box(
+            &mut opaque_buffers,
+            lx - trunk_half,
+            base_y,
+            lz - trunk_half,
+            lx + trunk_half,
+            base_y + tree.trunk_height,
+            lz + trunk_half,
+            trunk_layer,
+            [1.0, 1.0, 1.0, 1.0],
+            tree.leaf_voxel.is_none(),
+        );
+
+        // Canopy cuboid(s) with solid opaque LOD leaf tag (alpha = 2.0: no discard, no wind sway, full 6-face tint)
+        if let Some(leaf_voxel) = tree.leaf_voxel {
+            let leaf_layer = textures
+                .get_face_texture_info(leaf_voxel, world_pos, FaceDirection::PositiveY)
+                .0 as f32;
+            let mut leaf_tint = leaf_voxel.tint_color_at(world_pos);
+            leaf_tint[3] = 2.0;
+
+            let r_scale = if is_lod2 { 1.25 } else { 1.0 };
+
+            if tree.is_conifer && !is_lod2 {
+                // Two-tiered conical silhouette for mid-distance Lod1 pines/redwoods
+                let r1 = tree.canopy_radius;
+                let y0 = base_y + (tree.trunk_height - tree.canopy_height).max(2.5);
+                let y_mid = y0 + tree.canopy_height * 0.55;
+                let y_top = base_y + tree.trunk_height + 1.5;
+                push_lod_box(
+                    &mut opaque_buffers,
+                    lx - r1,
+                    y0,
+                    lz - r1,
+                    lx + r1,
+                    y_mid,
+                    lz + r1,
+                    leaf_layer,
+                    leaf_tint,
+                    true,
+                );
+                let r2 = (r1 * 0.58).max(1.2);
+                push_lod_box(
+                    &mut opaque_buffers,
+                    lx - r2,
+                    y_mid,
+                    lz - r2,
+                    lx + r2,
+                    y_top,
+                    lz + r2,
+                    leaf_layer,
+                    leaf_tint,
+                    true,
+                );
+            } else {
+                let r = tree.canopy_radius * r_scale;
+                let y0 = if tree.is_conifer {
+                    base_y + (tree.trunk_height - tree.canopy_height).max(2.5)
+                } else {
+                    base_y + tree.trunk_height - tree.canopy_height * 0.45
+                };
+                let y1 = y0 + tree.canopy_height;
+                push_lod_box(
+                    &mut opaque_buffers,
+                    lx - r,
+                    y0,
+                    lz - r,
+                    lx + r,
+                    y1,
+                    lz + r,
+                    leaf_layer,
+                    leaf_tint,
+                    true,
+                );
+            }
+        }
+    }
+
     ChunkMeshes {
         opaque: opaque_buffers.into_mesh(),
         transparent: transparent_buffers.into_mesh(),
         grass: None,
         visibility_mask: (1u64 << 36) - 1,
     }
+}
+
+/// Pushes a 4-face or 5-face axis-aligned box into `MeshBuffers` for distant LOD tree proxies.
+#[allow(clippy::too_many_arguments)]
+fn push_lod_box(
+    buffers: &mut MeshBuffers,
+    x0: f32,
+    y0: f32,
+    z0: f32,
+    x1: f32,
+    y1: f32,
+    z1: f32,
+    layer: f32,
+    color: [f32; 4],
+    include_top: bool,
+) {
+    let w = (x1 - x0).max(0.5);
+    let h = (y1 - y0).max(0.5);
+    let d = (z1 - z0).max(0.5);
+
+    if include_top {
+        // Top (+Y)
+        push_lod_quad(
+            buffers,
+            FaceDirection::PositiveY,
+            [x0, y1, z0],
+            [x0, y1, z1],
+            [x1, y1, z1],
+            [x1, y1, z0],
+            w,
+            d,
+            layer,
+            color,
+        );
+    }
+    // North (-Z)
+    push_lod_quad(
+        buffers,
+        FaceDirection::NegativeZ,
+        [x0, y0, z0],
+        [x0, y1, z0],
+        [x1, y1, z0],
+        [x1, y0, z0],
+        w,
+        h,
+        layer,
+        color,
+    );
+    // South (+Z)
+    push_lod_quad(
+        buffers,
+        FaceDirection::PositiveZ,
+        [x1, y0, z1],
+        [x1, y1, z1],
+        [x0, y1, z1],
+        [x0, y0, z1],
+        w,
+        h,
+        layer,
+        color,
+    );
+    // West (-X)
+    push_lod_quad(
+        buffers,
+        FaceDirection::NegativeX,
+        [x0, y0, z1],
+        [x0, y1, z1],
+        [x0, y1, z0],
+        [x0, y0, z0],
+        d,
+        h,
+        layer,
+        color,
+    );
+    // East (+X)
+    push_lod_quad(
+        buffers,
+        FaceDirection::PositiveX,
+        [x1, y0, z0],
+        [x1, y1, z0],
+        [x1, y1, z1],
+        [x1, y0, z1],
+        d,
+        h,
+        layer,
+        color,
+    );
 }

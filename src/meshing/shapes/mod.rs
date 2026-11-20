@@ -91,6 +91,8 @@ pub fn mesh_shaped_voxels(
             1.0
         } else if voxel.is_fluid() {
             2.0
+        } else if voxel.is_leaves() {
+            3.0
         } else if voxel.is_marine_flora() {
             4.0
         } else if voxel.is_flora_billboard()
@@ -244,6 +246,43 @@ pub fn mesh_shaped_voxels(
                     textures,
                 );
             }
+            continue;
+        }
+        if voxel.is_cocoa_pod() || shape == BlockShape::CocoaPod {
+            let stage = match voxel {
+                Voxel::CropCocoaStage0 => 0,
+                Voxel::CropCocoaStage1 => 1,
+                _ => 2,
+            };
+            mesh_cocoa_pod(
+                buffers,
+                fx,
+                fy,
+                fz,
+                orientation,
+                stage,
+                side_layer,
+                frame_count_f32,
+                side_tint,
+            );
+            continue;
+        }
+        if voxel.is_hanging_coconut() || shape == BlockShape::HangingFruit {
+            let stage = match voxel {
+                Voxel::CropCoconutStage0 => 0,
+                Voxel::CropCoconutStage1 => 1,
+                _ => 2,
+            };
+            mesh_hanging_coconut(
+                buffers,
+                fx,
+                fy,
+                fz,
+                stage,
+                side_layer,
+                frame_count_f32,
+                side_tint,
+            );
             continue;
         }
         if voxel.is_speleothem() || shape == BlockShape::Speleothem {
@@ -464,7 +503,9 @@ pub fn mesh_shaped_voxels(
             | BlockShape::Cactus
             | BlockShape::Rubble
             | BlockShape::Speleothem
-            | BlockShape::StickPile => unreachable!(),
+            | BlockShape::StickPile
+            | BlockShape::CocoaPod
+            | BlockShape::HangingFruit => unreachable!(),
             BlockShape::Full | BlockShape::Column | BlockShape::Cocoon => {
                 mesh_column_cocoon(
                     buffers,

@@ -130,42 +130,126 @@ pub fn generate_lod_map_chunk(
     let chunk_origin_x = col.x * chunk_size;
     let chunk_origin_z = col.y * chunk_size;
 
-    for lx in 0..CHUNK_SIZE {
-        for lz in 0..CHUNK_SIZE {
-            let wx = chunk_origin_x + lx as i32;
-            let wz = chunk_origin_z + lz as i32;
+    // 1. Sample terrain at 2x2 stride (64 samples instead of 256 -> 4x faster background LOD generation)
+    let mut grid_cols = Vec::with_capacity(64);
+    let mut grid_mats = [Voxel::Air; 64];
+
+    for gx in 0..8usize {
+        for gz in 0..8usize {
+            let wx = chunk_origin_x + (gx as i32) * 2;
+            let wz = chunk_origin_z + (gz as i32) * 2;
 
             let col_data = generator.sample_column(wx, wz);
             let surface_mat =
                 generator.surface_material_at(wx, col_data.terrain_height, wz, col_data);
+            grid_cols.push(col_data);
+            grid_mats[gx * 8 + gz] = surface_mat;
 
-            if let Some(wl) = col_data.water_level
+            let pixel = if let Some(wl) = col_data.water_level
                 && col_data.terrain_height < wl
             {
                 let depth = (wl - col_data.terrain_height).clamp(1, 255) as u8;
                 let color = super::color::voxel_map_color_at(Voxel::LiquidWater, depth, wx, wz);
-                map_chunk.set(
-                    lx,
-                    lz,
-                    MapPixel {
-                        voxel: Voxel::LiquidWater,
-                        height: wl as i16,
-                        water_depth: depth,
-                        color,
-                    },
-                );
+                MapPixel {
+                    voxel: Voxel::LiquidWater,
+                    height: wl as i16,
+                    water_depth: depth,
+                    color,
+                }
             } else {
                 let color = super::color::voxel_map_color_at(surface_mat, 0, wx, wz);
-                map_chunk.set(
-                    lx,
-                    lz,
-                    MapPixel {
-                        voxel: surface_mat,
-                        height: col_data.terrain_height as i16,
-                        water_depth: 0,
-                        color,
-                    },
-                );
+                MapPixel {
+                    voxel: surface_mat,
+                    height: col_data.terrain_height as i16,
+                    water_depth: 0,
+                    color,
+                }
+            };
+
+            let lx0 = gx * 2;
+            let lz0 = gz * 2;
+            map_chunk.set(lx0, lz0, pixel);
+            map_chunk.set(lx0 + 1, lz0, pixel);
+            map_chunk.set(lx0, lz0 + 1, pixel);
+            map_chunk.set(lx0 + 1, lz0 + 1, pixel);
+        }
+    }
+
+    // 2. Stamp procedural tree canopies onto the LOD map tile (with 4-block overhang margin)
+    const MARGIN: i32 = 4;
+    let lod_trees = crate::generation::trees::sample_lod_trees_in_region(
+        chunk_origin_x - MARGIN,
+        chunk_origin_z - MARGIN,
+        chunk_origin_x + chunk_size - 1 + MARGIN,
+        chunk_origin_z + chunk_size - 1 + MARGIN,
+        generator.seed,
+        |wx, wz| {
+            let lx = wx - chunk_origin_x;
+            let lz = wz - chunk_origin_z;
+            if (0..chunk_size).contains(&lx) && (0..chunk_size).contains(&lz) {
+                grid_cols[(lx as usize / 2) * 8 + (lz as usize / 2)]
+            } else {
+                generator.sample_column(wx, wz)
+            }
+        },
+        |wx, wy, wz, col_data| {
+            let lx = wx - chunk_origin_x;
+            let lz = wz - chunk_origin_z;
+            let g = if (0..chunk_size).contains(&lx) && (0..chunk_size).contains(&lz) {
+                grid_mats[(lx as usize / 2) * 8 + (lz as usize / 2)]
+            } else {
+                generator.surface_material_at(wx, wy, wz, col_data)
+            };
+            if g.is_solid_opaque() && !g.is_fluid() && !g.is_empty() {
+                Some(g)
+            } else {
+                None
+            }
+        },
+    );
+
+    for tree in lod_trees {
+        let canopy_voxel = tree.leaf_voxel.unwrap_or(tree.log_voxel);
+        let radius = if tree.leaf_voxel.is_some() {
+            (tree.canopy_radius * 0.85).round().clamp(1.0, 4.0) as i32
+        } else {
+            0
+        };
+        let r2 = radius * radius;
+        let top_h = (tree.root_y + tree.trunk_height.round() as i32) as i16;
+        let color = super::color::voxel_map_color_at(canopy_voxel, 0, tree.root_x, tree.root_z);
+
+        for dz in -radius..=radius {
+            let lz = tree.root_z + dz - chunk_origin_z;
+            if !(0..chunk_size).contains(&lz) {
+                continue;
+            }
+            for dx in -radius..=radius {
+                let lx = tree.root_x + dx - chunk_origin_x;
+                if !(0..chunk_size).contains(&lx) {
+                    continue;
+                }
+                let dist2 = dx * dx + dz * dz;
+                if dist2 > r2 {
+                    continue;
+                }
+                // Soften outer corners for organic circular canopies on the map
+                if radius >= 2 && dist2 == r2 && ((dx ^ dz ^ tree.root_x) & 1) == 0 {
+                    continue;
+                }
+                let curr = map_chunk.get(lx as usize, lz as usize);
+                if top_h >= curr.height {
+                    map_chunk.set(
+                        lx as usize,
+                        lz as usize,
+                        MapPixel {
+                            voxel: canopy_voxel,
+                            height: top_h,
+                            water_depth: 0,
+                            color,
+                        },
+                    );
+                }
             }
         }
     }

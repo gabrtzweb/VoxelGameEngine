@@ -658,7 +658,7 @@ pub fn apply_lod_mesh(
             None,
             false,
             Visibility::Inherited,
-            false,
+            true,
         );
 
         sync_render_part(
@@ -672,7 +672,7 @@ pub fn apply_lod_mesh(
             None,
             false,
             Visibility::Inherited,
-            false,
+            true,
         );
 
         entry.is_empty()

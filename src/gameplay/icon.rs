@@ -733,6 +733,14 @@ fn voxel_item_texture_path(voxel: Voxel) -> Option<&'static str> {
         Voxel::ItemBoneMeal => Some("assets/textures/items/bone_meal_item.png"),
         Voxel::StickPile => Some("assets/textures/items/stick_pile_item.png"),
         Voxel::ItemStick => Some("assets/textures/items/stick_item.png"),
+        Voxel::ItemCocoaBeans
+        | Voxel::CropCocoaStage0
+        | Voxel::CropCocoaStage1
+        | Voxel::CropCocoaStage2 => Some("assets/textures/items/cocoa_beans_item.png"),
+        Voxel::ItemCoconut
+        | Voxel::CropCoconutStage0
+        | Voxel::CropCoconutStage1
+        | Voxel::CropCoconutStage2 => Some("assets/textures/items/coconut_item.png"),
         _ => None,
     }
 }

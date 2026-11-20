@@ -313,6 +313,24 @@ pub fn advance_crop(
             Voxel::PumpkinBlock,
         ),
 
+        // Arboreal Cocoa Pods (preserve trunk attachment orientation!)
+        Voxel::CropCocoaStage0 => {
+            let orient = world.get_shape(pos).1;
+            set_shaped_block(world, modifications, pos, Voxel::CropCocoaStage1, BlockShape::CocoaPod, orient)
+        }
+        Voxel::CropCocoaStage1 => {
+            let orient = world.get_shape(pos).1;
+            set_shaped_block(world, modifications, pos, Voxel::CropCocoaStage2, BlockShape::CocoaPod, orient)
+        }
+
+        // Arboreal Hanging Coconuts
+        Voxel::CropCoconutStage0 => {
+            set_shaped_block(world, modifications, pos, Voxel::CropCoconutStage1, BlockShape::HangingFruit, 0)
+        }
+        Voxel::CropCoconutStage1 => {
+            set_shaped_block(world, modifications, pos, Voxel::CropCoconutStage2, BlockShape::HangingFruit, 0)
+        }
+
         _ => false,
     }
 }
@@ -506,6 +524,18 @@ pub fn evaluate_crop_break_drops(voxel: Voxel, rng: &mut u64) -> Vec<(Voxel, u32
             vec![(Voxel::ItemStick, count)]
         }
 
+        // Arboreal Crops (Cocoa & Coconut)
+        Voxel::CropCocoaStage2 => {
+            let count = (next_rand() % 2) + 2; // 2..3 cocoa beans
+            vec![(Voxel::ItemCocoaBeans, count)]
+        }
+        Voxel::CropCocoaStage0 | Voxel::CropCocoaStage1 => vec![(Voxel::ItemCocoaBeans, 1)],
+        Voxel::CropCoconutStage2 => {
+            let count = (next_rand() % 2) + 1; // 1..2 coconuts
+            vec![(Voxel::ItemCoconut, count)]
+        }
+        Voxel::CropCoconutStage0 | Voxel::CropCoconutStage1 => vec![(Voxel::ItemCoconut, 1)],
+
         // Default: block drops itself
         _ => vec![(voxel, 1)],
     }
@@ -547,13 +577,24 @@ fn set_block_oriented(
     voxel: Voxel,
     orientation: u8,
 ) -> bool {
+    set_shaped_block(world, modifications, pos, voxel, BlockShape::CrossBillboard, orientation)
+}
+
+fn set_shaped_block(
+    world: &mut VoxelWorld,
+    modifications: &mut WorldModificationStore,
+    pos: IVec3,
+    voxel: Voxel,
+    shape: BlockShape,
+    orientation: u8,
+) -> bool {
     world.set_voxel(pos, voxel);
     world.set_fluid_level(pos, 0);
-    world.set_shape(pos, BlockShape::CrossBillboard, orientation);
+    world.set_shape(pos, shape, orientation);
     world.set_extra_slab(pos, None);
     modifications.record(pos, voxel);
     modifications.record_fluid_level(pos, 0);
-    modifications.record_shape(pos, BlockShape::CrossBillboard, orientation);
+    modifications.record_shape(pos, shape, orientation);
     modifications.record_extra_slab(pos, None);
     true
 }

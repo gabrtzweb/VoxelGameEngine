@@ -271,3 +271,46 @@ fn test_flora_substrate_placement_rules() {
     assert!(Voxel::VegeDeadBush.can_be_placed_on_ground(Voxel::SandCommon));
     assert!(Voxel::WildSugarCaneBottom.can_be_placed_on_ground(Voxel::SandCommon));
 }
+
+#[test]
+fn test_arboreal_cocoa_and_coconut_crops() {
+    use voxel_game_engine::world::BlockShape;
+
+    let mut world = VoxelWorld::new();
+    world.insert_chunk(IVec3::ZERO, Chunk::new());
+    let mut modifications = WorldModificationStore::default();
+    let mut rng = 987654321u64;
+
+    // 1. Cocoa Pod: shape, orientation preservation across Bone Meal / growth, drops
+    let cocoa_pos = IVec3::new(4, 6, 4);
+    world.set_voxel(cocoa_pos, Voxel::CropCocoaStage0);
+    world.set_shape(cocoa_pos, BlockShape::CocoaPod, 2);
+    assert_eq!(Voxel::CropCocoaStage0.default_shape(), BlockShape::CocoaPod);
+
+    assert!(advance_crop(&mut world, &mut modifications, cocoa_pos));
+    assert_eq!(world.get_voxel(cocoa_pos), Some(Voxel::CropCocoaStage1));
+    assert_eq!(world.get_shape(cocoa_pos), (BlockShape::CocoaPod, 2));
+
+    assert!(advance_crop(&mut world, &mut modifications, cocoa_pos));
+    assert_eq!(world.get_voxel(cocoa_pos), Some(Voxel::CropCocoaStage2));
+    assert_eq!(world.get_shape(cocoa_pos), (BlockShape::CocoaPod, 2));
+    assert!(!advance_crop(&mut world, &mut modifications, cocoa_pos));
+
+    let cocoa_drops = evaluate_crop_break_drops(Voxel::CropCocoaStage2, &mut rng);
+    assert!(cocoa_drops.iter().any(|(v, c)| *v == Voxel::ItemCocoaBeans && *c >= 2));
+
+    // 2. Hanging Coconut: shape, growth stages, drops
+    let coco_pos = IVec3::new(6, 6, 6);
+    world.set_voxel(coco_pos, Voxel::CropCoconutStage0);
+    world.set_shape(coco_pos, BlockShape::HangingFruit, 0);
+    assert_eq!(Voxel::CropCoconutStage0.default_shape(), BlockShape::HangingFruit);
+
+    assert!(advance_crop(&mut world, &mut modifications, coco_pos));
+    assert_eq!(world.get_voxel(coco_pos), Some(Voxel::CropCoconutStage1));
+    assert!(advance_crop(&mut world, &mut modifications, coco_pos));
+    assert_eq!(world.get_voxel(coco_pos), Some(Voxel::CropCoconutStage2));
+    assert!(!advance_crop(&mut world, &mut modifications, coco_pos));
+
+    let coconut_drops = evaluate_crop_break_drops(Voxel::CropCoconutStage2, &mut rng);
+    assert!(coconut_drops.iter().any(|(v, c)| *v == Voxel::ItemCoconut && *c >= 1));
+}

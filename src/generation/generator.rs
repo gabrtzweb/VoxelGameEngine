@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use super::{
     biome::{BiomeType, ClimateGenerator, ClimateSample},
     caves::{CaveGenerator, CaveNoiseSample},
-    flora, ores,
+    flora, ores, trees,
     strata::StrataGenerator,
 };
 use crate::core::math::lerp;
@@ -593,17 +593,55 @@ impl TerrainGenerator {
             );
         }
 
-        // Tree and vegetation generation is bypassed during terrain overhaul.
+        // Phase 20.5: Multi-Chunk Procedural Trees & Arboreal Crops (run BEFORE flora so pebbles,
+        // rubble, and wild crops never spawn underneath tree trunks or buttress roots!)
+        let wrote_trees = trees::populate_chunk_trees(
+            &mut voxels,
+            &mut chunk_shapes,
+            chunk_origin,
+            self.seed,
+            |wx, wz| {
+                let lx = wx - chunk_origin.x;
+                let lz = wz - chunk_origin.z;
+                if (0..CHUNK_SIZE as i32).contains(&lx) && (0..CHUNK_SIZE as i32).contains(&lz) {
+                    columns[column_index(lx as usize, lz as usize)]
+                } else {
+                    self.sample_column(wx, wz)
+                }
+            },
+            |wx, wy, wz, col| {
+                // Reject cave entrances / hollow overhangs so trees never float over caves
+                if self.caves.is_cave_at_point(wx as f32, wy as f32, wz as f32, self.seed)
+                    || self
+                        .caves
+                        .is_cave_at_point(wx as f32, (wy - 1) as f32, wz as f32, self.seed)
+                {
+                    return None;
+                }
+                let g = self.voxel_at(col, wx, wy, wz);
+                if g.is_solid_opaque() && !g.is_fluid() && !g.is_empty() {
+                    Some(g)
+                } else {
+                    None
+                }
+            },
+        );
+        if wrote_trees {
+            has_solid_voxels = true;
+        }
 
-        // Phase 6: Procedural Flora Generation (Wildgrass, Ferns, Bushes, Flowers & Cave Growths)
-        if has_solid_voxels {
-            flora::populate_chunk_flora(
-                &mut voxels,
-                &columns,
-                chunk_origin,
-                self.seed,
-                |wx, wy, wz, col| self.voxel_at(col, wx, wy, wz),
-            );
+        // Phase 20 (Blocks 1..4): Surface Scatter, Flora, Wild Crops, Marine & Cave Features
+        let shapes_before_flora = chunk_shapes.len();
+        flora::populate_chunk_flora(
+            &mut voxels,
+            &mut chunk_shapes,
+            &columns,
+            chunk_origin,
+            self.seed,
+            |wx, wy, wz, col| self.voxel_at(col, wx, wy, wz),
+        );
+        if !has_solid_voxels && chunk_shapes.len() > shapes_before_flora {
+            has_solid_voxels = true;
         }
 
         if !has_solid_voxels {
@@ -2042,7 +2080,7 @@ impl TerrainGenerator {
         )
     }
 
-    fn voxel_at(&self, column: TerrainColumn, world_x: i32, world_y: i32, world_z: i32) -> Voxel {
+    pub fn voxel_at(&self, column: TerrainColumn, world_x: i32, world_y: i32, world_z: i32) -> Voxel {
         let sample = self.caves.sample_noise_point(
             world_x as f32,
             world_y as f32,

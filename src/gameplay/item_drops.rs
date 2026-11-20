@@ -172,7 +172,12 @@ pub fn create_voxel_item_mesh(
         BlockShape::Torch | BlockShape::Speleothem => (0.28, 0.85, 0.28),
         BlockShape::Column | BlockShape::Bamboo => (0.45, 1.0, 0.45),
         BlockShape::FlatPad | BlockShape::WallDecal => (1.0, 0.20, 1.0),
-        BlockShape::Pebble | BlockShape::PebbleCluster | BlockShape::Rubble | BlockShape::StickPile => (0.65, 0.45, 0.65),
+        BlockShape::Pebble
+        | BlockShape::PebbleCluster
+        | BlockShape::Rubble
+        | BlockShape::StickPile
+        | BlockShape::CocoaPod
+        | BlockShape::HangingFruit => (0.65, 0.45, 0.65),
         BlockShape::Cocoon => (0.75, 0.88, 0.75),
         _ => (1.0, 1.0, 1.0),
     };

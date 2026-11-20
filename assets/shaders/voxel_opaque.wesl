@@ -350,9 +350,17 @@ fn fragment(
         }
     }
 
+    // Distant LOD tree canopies (color.a ~ 2.0): render as solid opaque foliage
+    // (blending transparent leaf holes into dark interior foliage) so they preserve
+    // GPU Early-Z, avoid distant alpha-cutout shimmer, and skip wind animation.
+    let is_lod_leaves = (vertex_output.color.a > 1.5) && (vertex_output.color.a < 2.5);
+    if (is_lod_leaves && tex_color.a < 0.99) {
+        tex_color = vec4<f32>(mix(vec3<f32>(0.22, 0.26, 0.20), tex_color.rgb, tex_color.a), 1.0);
+    }
+
     // Alpha Cutout: Discard see-through pixels (e.g. foliage leaves, alpha-cutout quads)
-    // NEVER discard solid blocks or connected-texture transition quads
-    if (tex_color.a < 0.5 && !is_mask_face) {
+    // NEVER discard solid blocks, LOD canopies, or connected-texture transition quads
+    if (tex_color.a < 0.5 && !is_mask_face && !is_lod_leaves) {
         discard;
     }
 
@@ -390,13 +398,12 @@ fn fragment(
     }
 
     // Dynamic grass side fringe tinting:
-    // On vertical side faces of foliage-tinted blocks (grass/turf), only tint the green grass fringe
-    // hanging down so it matches the top face, leaving natural dirt and stone underneath untouched.
-    // On held items and 3D drops (is_item_entity), per-face vertex colors are already assigned directly
-    // (top face = biome tint, side/bottom faces = white with pre-baked side overlay), so we preserve
-    // final_tint regardless of how the player pitches or rolls the camera!
+    // On vertical side faces of foliage-tinted terrain blocks (grass/turf, NOT tree leaves),
+    // only tint the green grass fringe hanging down so it matches the top face, leaving natural
+    // dirt and stone underneath untouched. Tree leaves (color.a ~ 2.0 or 3.0) keep full biome tint on all 6 faces.
+    let is_leaves_block = (vertex_output.color.a > 1.5) && (vertex_output.color.a < 3.5);
     var final_tint = tint_color.rgb;
-    if (!is_mask_face && !is_horizontal && !is_item_entity && is_foliage_tinted) {
+    if (!is_mask_face && !is_horizontal && !is_item_entity && is_foliage_tinted && !is_leaves_block) {
         let is_grass_fringe = (uv.y < 0.55) && (tex_color.g > tex_color.r * 1.02) && (tex_color.g > tex_color.b * 1.15);
         if (is_grass_fringe) {
             let fringe_lum = dot(tex_color.rgb, vec3<f32>(0.299, 0.587, 0.114));

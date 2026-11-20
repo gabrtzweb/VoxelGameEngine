@@ -693,16 +693,24 @@ pub enum Voxel {
     ItemBoneMeal = 681,
     StickPile = 682,
     ItemStick = 683,
+    CropCocoaStage0 = 684,
+    CropCocoaStage1 = 685,
+    CropCocoaStage2 = 686,
+    CropCoconutStage0 = 687,
+    CropCoconutStage1 = 688,
+    CropCoconutStage2 = 689,
+    ItemCocoaBeans = 690,
+    ItemCoconut = 691,
 }
 impl Voxel {
-    /// Array containing all active, non-placeholder gameplay voxels (indices 3..=683).
-    pub const ALL: [Voxel; 681] = generate_all_voxels();
+    /// Array containing all active, non-placeholder gameplay voxels (indices 3..=691).
+    pub const ALL: [Voxel; 689] = generate_all_voxels();
 
     /// Safely convert a `u16` id to a `Voxel` variant.
     #[inline(always)]
     pub const fn from_u16(val: u16) -> Option<Self> {
-        if val <= 683 {
-            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 683.
+        if val <= 691 {
+            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 691.
             Some(unsafe { std::mem::transmute::<u16, Self>(val) })
         } else {
             None
@@ -712,6 +720,22 @@ impl Voxel {
     #[inline(always)]
     pub const fn is_stick_pile(self) -> bool {
         matches!(self, Self::StickPile)
+    }
+
+    #[inline(always)]
+    pub const fn is_cocoa_pod(self) -> bool {
+        matches!(
+            self,
+            Self::CropCocoaStage0 | Self::CropCocoaStage1 | Self::CropCocoaStage2
+        )
+    }
+
+    #[inline(always)]
+    pub const fn is_hanging_coconut(self) -> bool {
+        matches!(
+            self,
+            Self::CropCoconutStage0 | Self::CropCoconutStage1 | Self::CropCoconutStage2
+        )
     }
 
     #[inline(always)]
@@ -869,11 +893,11 @@ impl Voxel {
     }
 }
 
-const fn generate_all_voxels() -> [Voxel; 681] {
-    let mut arr = [Voxel::Air; 681];
+const fn generate_all_voxels() -> [Voxel; 689] {
+    let mut arr = [Voxel::Air; 689];
     let mut i = 0;
-    while i < 681 {
-        // Active gameplay blocks start at discriminant 3 (indices 3..=683)
+    while i < 689 {
+        // Active gameplay blocks start at discriminant 3 (indices 3..=691)
         let id = (i + 3) as u16;
         arr[i] = unsafe { std::mem::transmute::<u16, Voxel>(id) };
         i += 1;

@@ -739,7 +739,18 @@ impl BiomeType {
     }
 
     /// Foliage tint color for leaves.
-    pub fn foliage_color(self, _voxel: Voxel) -> [f32; 4] {
+    pub fn foliage_color(self, voxel: Voxel) -> [f32; 4] {
+        // Palms, conifers, acacias, and jungle mahoganies keep their natural species palette
+        // rather than taking on exotic purple/pink valley tints (e.g. LavenderValley beaches).
+        match voxel {
+            Voxel::PalmLeaves => return [0.28, 0.88, 0.34, 1.0],
+            Voxel::PineLeaves | Voxel::YewLeaves | Voxel::RedwoodLeaves => {
+                return [0.30, 0.72, 0.44, 1.0];
+            }
+            Voxel::MahoganyLeaves => return [0.16, 0.90, 0.24, 1.0],
+            Voxel::AcaciaLeaves => return [0.64, 0.76, 0.28, 1.0],
+            _ => {}
+        }
         match self {
             Self::SakuraGrove => [0.95, 0.65, 0.78, 1.0],
             Self::LavenderValley => [0.70, 0.55, 0.85, 1.0],

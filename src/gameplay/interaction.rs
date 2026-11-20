@@ -291,6 +291,51 @@ fn edit_voxels(
                 modifications.record_shape(place_position, BlockShape::CrossBillboard, 0);
             }
             placed
+        } else if place_voxel_type == Voxel::ItemCocoaBeans {
+            // Plant Cocoa Pod laterally on MahoganyLog (or any jungle log)
+            let is_side = target.face_normal.y == 0;
+            if !is_side || existing_voxel != Some(Voxel::MahoganyLog) {
+                return;
+            }
+            // Orientation encodes which face of the pod cell touches the trunk:
+            // 0 = North (-Z), 1 = East (+X), 2 = South (+Z), 3 = West (-X)
+            let orient = match target.face_normal {
+                IVec3::Z => 0,     // clicked +Z face of trunk -> trunk is at -Z of pod
+                IVec3::NEG_X => 1, // clicked -X face of trunk -> trunk is at +X of pod
+                IVec3::NEG_Z => 2, // clicked -Z face of trunk -> trunk is at +Z of pod
+                IVec3::X => 3,     // clicked +X face of trunk -> trunk is at -X of pod
+                _ => return,
+            };
+            let placed = place_block(
+                &mut world,
+                &mut modifications,
+                place_position,
+                Voxel::CropCocoaStage0,
+            );
+            if !placed.is_empty() {
+                world.set_shape(place_position, BlockShape::CocoaPod, orient);
+                modifications.record_shape(place_position, BlockShape::CocoaPod, orient);
+            }
+            placed
+        } else if place_voxel_type == Voxel::ItemCoconut {
+            // Plant Hanging Coconut underneath PalmLeaves or PalmLog
+            let is_under = target.face_normal == IVec3::NEG_Y;
+            if !is_under
+                || !matches!(existing_voxel, Some(Voxel::PalmLeaves | Voxel::PalmLog))
+            {
+                return;
+            }
+            let placed = place_block(
+                &mut world,
+                &mut modifications,
+                place_position,
+                Voxel::CropCoconutStage0,
+            );
+            if !placed.is_empty() {
+                world.set_shape(place_position, BlockShape::HangingFruit, 0);
+                modifications.record_shape(place_position, BlockShape::HangingFruit, 0);
+            }
+            placed
         } else if place_voxel_type.is_inventory_only_item() {
             // Inventory-only items (sticks, slices, sugar, sugar cane item, etc.)
             // cannot be placed directly as world blocks.
