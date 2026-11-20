@@ -24,9 +24,6 @@ pub struct SunLight;
 #[derive(Component)]
 pub struct MoonLight;
 
-#[derive(Component)]
-pub struct SkyFillLight;
-
 #[derive(Resource)]
 pub struct MoonPhaseTextures(pub [Handle<Image>; 8]);
 
@@ -198,17 +195,6 @@ pub fn setup_celestial(
     ));
 
     commands.spawn((
-        SkyFillLight,
-        DirectionalLight {
-            color: Color::srgb(0.68, 0.78, 0.95),
-            illuminance: 2_800.0,
-            shadow_maps_enabled: false,
-            ..default()
-        },
-        Transform::default(),
-    ));
-
-    commands.spawn((
         MoonLight,
         DirectionalLight {
             color: Color::srgb(0.48, 0.56, 0.88),
@@ -217,6 +203,7 @@ pub fn setup_celestial(
             ..default()
         },
         build_moon_cascade_config(shadow_quality),
+        Visibility::Hidden,
         Transform::default(),
     ));
 }
@@ -264,33 +251,20 @@ pub fn sync_celestial_transforms(
         (With<MoonVisual>, Without<SunVisual>, Without<Camera3d>),
     >,
     sun_light: Single<
-        (&mut DirectionalLight, &mut Transform),
+        (&mut DirectionalLight, &mut Transform, &mut Visibility),
         (
             With<SunLight>,
             Without<MoonLight>,
-            Without<SkyFillLight>,
             Without<Camera3d>,
             Without<SunVisual>,
             Without<MoonVisual>,
         ),
     >,
     moon_light: Single<
-        (&mut DirectionalLight, &mut Transform),
+        (&mut DirectionalLight, &mut Transform, &mut Visibility),
         (
             With<MoonLight>,
             Without<SunLight>,
-            Without<SkyFillLight>,
-            Without<Camera3d>,
-            Without<SunVisual>,
-            Without<MoonVisual>,
-        ),
-    >,
-    sky_fill: Single<
-        (&mut DirectionalLight, &mut Transform),
-        (
-            With<SkyFillLight>,
-            Without<SunLight>,
-            Without<MoonLight>,
             Without<Camera3d>,
             Without<SunVisual>,
             Without<MoonVisual>,
@@ -303,7 +277,6 @@ pub fn sync_celestial_transforms(
     moon_texture_index: usize,
     moon_phase_illuminance_factor: f32,
     day_sun_illuminance: f32,
-    day_fill_illuminance: f32,
     night_moon_illuminance: f32,
     shadows_enabled: bool,
     underground_factor: f32,
@@ -316,9 +289,8 @@ pub fn sync_celestial_transforms(
 
     let (mut sun_trans, mut sun_vis) = sun_visual.into_inner();
     let (mut moon_trans, mut moon_vis) = moon_visual.into_inner();
-    let (mut sun_l, mut sun_lt) = sun_light.into_inner();
-    let (mut moon_l, mut moon_lt) = moon_light.into_inner();
-    let (mut fill_l, mut fill_lt) = sky_fill.into_inner();
+    let (mut sun_l, mut sun_lt, mut sun_light_vis) = sun_light.into_inner();
+    let (mut moon_l, mut moon_lt, mut moon_light_vis) = moon_light.into_inner();
 
     // Position sun billboard quad on the celestial sphere, facing the camera.
     // Hide billboard when underground or occluded by solid blocks to ensure no celestial discs bleed through ceilings.
@@ -350,9 +322,15 @@ pub fn sync_celestial_transforms(
 
     // Directional sunlight shining from sun towards the world (-sun_dir).
     let sun_elev = sun_dir.y.max(0.0);
-    sun_l.illuminance = sun_elev.powf(0.6) * day_sun_illuminance;
+    let sun_illum = sun_elev.powf(0.6) * day_sun_illuminance;
+    sun_l.illuminance = sun_illum;
     sun_l.shadow_maps_enabled = shadows_enabled && sun_elev > 0.04;
     *sun_lt = Transform::default().looking_to(-sun_dir, Vec3::Y);
+    *sun_light_vis = if sun_illum <= 0.01 {
+        Visibility::Hidden
+    } else {
+        Visibility::Visible
+    };
 
     // Dynamic sun color: deep golden-orange at dawn/dusk, warm white at noon
     let sun_warmth = (sun_elev / 0.40).clamp(0.0, 1.0);
@@ -367,17 +345,17 @@ pub fn sync_celestial_transforms(
 
     // Directional moonlight shining from moon towards the world (-moon_dir).
     let moon_elev = moon_dir.y.max(0.0);
-    moon_l.illuminance =
+    let moon_illum =
         moon_elev.powf(0.6) * (moon_phase_illuminance_factor * night_moon_illuminance);
+    moon_l.illuminance = moon_illum;
     moon_l.shadow_maps_enabled =
         shadows_enabled && moon_elev > 0.04 && moon_phase_illuminance_factor > 0.20;
     *moon_lt = Transform::default().looking_to(-moon_dir, Vec3::Y);
-
-    // Sky fill light softens shadows during daytime, oriented opposite the sun's horizontal azimuth
-    fill_l.illuminance = sun_elev.powf(0.5) * day_fill_illuminance;
-    let fill_dir = Vec3::new(sun_dir.x * 0.6, -0.80, sun_dir.z * 0.6).normalize();
-    *fill_lt = Transform::default().looking_to(fill_dir, Vec3::Y);
-    fill_l.color = Color::srgb(0.68, 0.78, 0.95);
+    *moon_light_vis = if moon_illum <= 0.01 {
+        Visibility::Hidden
+    } else {
+        Visibility::Visible
+    };
 }
 
 fn load_celestial_images() -> (Image, [Image; 8]) {

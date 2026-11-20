@@ -277,6 +277,7 @@ pub fn get_chunk_permeability(
 
 /// High-performance chunk graph occlusion culling system (Sodium architecture).
 pub fn update_cave_culling_system(
+    mut commands: Commands,
     camera_query: Query<&Transform, With<PlayerCamera>>,
     world: Option<Res<VoxelWorld>>,
     registry: Res<ChunkMeshRegistry>,
@@ -306,10 +307,11 @@ pub fn update_cave_culling_system(
     }
 
     let moved_block = cam_block != culling_state.last_player_block;
-    let moved_chunk = cam_chunk != culling_state.last_player_chunk;
+    let prev_chunk = culling_state.last_player_chunk;
+    let moved_chunk = cam_chunk != prev_chunk;
     let was_underground = culling_state.is_player_underground;
 
-    let is_player_underground = if moved_block || culling_state.last_player_chunk.x == i32::MIN {
+    let is_player_underground = if moved_block || prev_chunk.x == i32::MIN {
         is_position_underground(cam_pos, world.as_deref())
     } else {
         was_underground
@@ -319,6 +321,37 @@ pub fn update_cave_culling_system(
     culling_state.last_player_block = cam_block;
     culling_state.last_player_chunk = cam_chunk;
     culling_state.is_player_underground = is_player_underground;
+
+    if moved_chunk && prev_chunk.x != i32::MIN {
+        let shadow_r = crate::meshing::pipeline::MAX_SHADOW_CASTER_CHUNKS;
+        for coord in registry.iter_coordinates() {
+            let Some(render_data) = registry.get_render_data(coord) else {
+                continue;
+            };
+            if render_data.is_subterranean {
+                continue;
+            }
+            let was_far = (coord.x - prev_chunk.x)
+                .abs()
+                .max((coord.z - prev_chunk.z).abs())
+                > shadow_r;
+            let is_far = (coord.x - cam_chunk.x)
+                .abs()
+                .max((coord.z - cam_chunk.z).abs())
+                > shadow_r;
+            if was_far != is_far {
+                if let Some(ref part) = render_data.opaque
+                    && let Ok(mut e) = commands.get_entity(part.entity)
+                {
+                    if is_far {
+                        e.insert(bevy::light::NotShadowCaster);
+                    } else {
+                        e.remove::<bevy::light::NotShadowCaster>();
+                    }
+                }
+            }
+        }
+    }
 
     let is_in_solid_rock = world
         .as_ref()

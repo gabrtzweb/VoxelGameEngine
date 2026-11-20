@@ -391,25 +391,12 @@ impl TerrainGenerator {
             // Cave interior shaping, crystal clusters, and speleothems only run when
             // subterranean air actually exists in this chunk (skips 100% solid stone chunks).
             if has_subterranean_air {
-                // Cave interior shaping: natural ledges, slabs, and wall transitions
+                // Cave interior shaping: clamp border reads directly to chunk array bounds
                 let get_v = |voxels_buf: &[Voxel], lx: i32, ly: i32, lz: i32| -> Voxel {
-                    if lx >= 0
-                        && lx < CHUNK_SIZE as i32
-                        && ly >= 0
-                        && ly < CHUNK_SIZE as i32
-                        && lz >= 0
-                        && lz < CHUNK_SIZE as i32
-                    {
-                        voxels_buf[lx as usize
-                            + lz as usize * CHUNK_SIZE
-                            + ly as usize * CHUNK_SIZE * CHUNK_SIZE]
-                    } else {
-                        let wx = chunk_origin.x + lx;
-                        let wy = chunk_origin.y + ly;
-                        let wz = chunk_origin.z + lz;
-                        let col = self.sample_column_cached(wx, wz);
-                        self.voxel_at(col, wx, wy, wz)
-                    }
+                    let cx = lx.clamp(0, CHUNK_SIZE as i32 - 1) as usize;
+                    let cy = ly.clamp(0, CHUNK_SIZE as i32 - 1) as usize;
+                    let cz = lz.clamp(0, CHUNK_SIZE as i32 - 1) as usize;
+                    voxels_buf[cx + cz * CHUNK_SIZE + cy * CHUNK_SIZE * CHUNK_SIZE]
                 };
 
                 for z in 0..CHUNK_SIZE {
@@ -444,44 +431,49 @@ impl TerrainGenerator {
                             }
 
                             // Unique Subterranean Cavern Chamber Lining (Cave Karst & Cave Calcite)
-                            let cavern_noise = crate::core::noise::gradient_noise_3d(
-                                world_x as f32 * 0.024,
-                                world_y as f32 * 0.032,
-                                world_z as f32 * 0.024,
-                                self.seed.wrapping_add(88_112),
-                            );
-
-                            if cavern_noise > 0.45
-                                && matches!(
-                                    voxel,
-                                    Voxel::Dolomite | Voxel::Limestone | Voxel::Marble
-                                )
-                            {
-                                let rubble_roll = (world_x ^ world_y ^ world_z) & 7;
-                                voxels[idx] = if rubble_roll == 0 {
-                                    Voxel::FracturedCaveKarst
-                                } else {
-                                    Voxel::CaveKarst
-                                };
-                            } else {
-                                let calcite_noise = crate::core::noise::gradient_noise_3d(
-                                    world_x as f32 * 0.026,
-                                    world_y as f32 * 0.036,
-                                    world_z as f32 * 0.026,
-                                    self.seed.wrapping_add(66_331),
+                            if matches!(
+                                voxel,
+                                Voxel::Dolomite | Voxel::Limestone | Voxel::Marble | Voxel::Andesite
+                            ) {
+                                let cavern_noise = crate::core::noise::gradient_noise_3d(
+                                    world_x as f32 * 0.024,
+                                    world_y as f32 * 0.032,
+                                    world_z as f32 * 0.024,
+                                    self.seed.wrapping_add(88_112),
                                 );
-                                if calcite_noise > 0.52
+
+                                if cavern_noise > 0.45
                                     && matches!(
                                         voxel,
-                                        Voxel::Dolomite | Voxel::Limestone | Voxel::Andesite
+                                        Voxel::Dolomite | Voxel::Limestone | Voxel::Marble
                                     )
                                 {
                                     let rubble_roll = (world_x ^ world_y ^ world_z) & 7;
                                     voxels[idx] = if rubble_roll == 0 {
-                                        Voxel::FracturedCaveCalcite
+                                        Voxel::FracturedCaveKarst
                                     } else {
-                                        Voxel::CaveCalcite
+                                        Voxel::CaveKarst
                                     };
+                                } else {
+                                    let calcite_noise = crate::core::noise::gradient_noise_3d(
+                                        world_x as f32 * 0.026,
+                                        world_y as f32 * 0.036,
+                                        world_z as f32 * 0.026,
+                                        self.seed.wrapping_add(66_331),
+                                    );
+                                    if calcite_noise > 0.52
+                                        && matches!(
+                                            voxel,
+                                            Voxel::Dolomite | Voxel::Limestone | Voxel::Andesite
+                                        )
+                                    {
+                                        let rubble_roll = (world_x ^ world_y ^ world_z) & 7;
+                                        voxels[idx] = if rubble_roll == 0 {
+                                            Voxel::FracturedCaveCalcite
+                                        } else {
+                                            Voxel::CaveCalcite
+                                        };
+                                    }
                                 }
                             }
 

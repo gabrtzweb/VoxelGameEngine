@@ -117,6 +117,7 @@ enum SettingsAction {
     DecCoatedTextures,
     IncCoatedTextures,
     ToggleWavingFoliage,
+    ToggleLeafCulling,
     TogglePixelatedShadows,
     ToggleHdrBloom,
     ToggleDynamicLighting,
@@ -131,6 +132,9 @@ struct CoatedTexturesLabel;
 
 #[derive(Component)]
 struct WavingFoliageLabel;
+
+#[derive(Component)]
+struct LeafCullingLabel;
 
 #[derive(Component)]
 struct PixelatedShadowsLabel;
@@ -1184,6 +1188,25 @@ fn spawn_settings_menu(
                                     &btn_hover,
                                 );
 
+                                // Internal Leaf Culling Toggle (Optional Optimization)
+                                spawn_toggle_button(
+                                    col_right,
+                                    SettingsAction::ToggleLeafCulling,
+                                    format!(
+                                        "{}: {}",
+                                        loc.t("menu.settings.leaf_culling"),
+                                        if local_config.leaf_culling {
+                                            loc.t("common.enabled")
+                                        } else {
+                                            loc.t("common.disabled")
+                                        }
+                                    ),
+                                    LeafCullingLabel,
+                                    font_handle.as_ref(),
+                                    &btn_normal,
+                                    &btn_hover,
+                                );
+
                                 // Dynamic Handheld Lighting Toggle
                                 spawn_toggle_button(
                                     col_right,
@@ -1709,6 +1732,7 @@ fn handle_settings_buttons(
                     game_settings.fog_enabled = local_config.fog_enabled;
                     game_settings.view_bobbing = local_config.view_bobbing;
                     game_settings.full_grass = local_config.full_grass;
+                    game_settings.leaf_culling = local_config.leaf_culling;
                     game_settings.vsync_enabled = local_config.vsync_enabled;
                     game_settings.dynamic_fps_enabled = local_config.dynamic_fps_enabled;
                     game_settings.dynamic_fov_enabled = local_config.dynamic_fov_enabled;
@@ -1726,9 +1750,11 @@ fn handle_settings_buttons(
                     }
                     if let Some(ref mut reg) = texture_registry {
                         reg.full_grass = game_settings.full_grass;
+                        reg.leaf_culling = game_settings.leaf_culling;
                     }
                     if let Some(ref mut mat) = chunk_material {
                         mat.texture_registry.full_grass = game_settings.full_grass;
+                        mat.texture_registry.leaf_culling = game_settings.leaf_culling;
                     }
                     if let Some(ref world) = world
                         && let Some(ref mut queues) = streaming_queues
@@ -1751,6 +1777,7 @@ fn handle_settings_buttons(
                     game_settings.fog_enabled = local_config.fog_enabled;
                     game_settings.view_bobbing = local_config.view_bobbing;
                     game_settings.full_grass = local_config.full_grass;
+                    game_settings.leaf_culling = local_config.leaf_culling;
                     game_settings.vsync_enabled = local_config.vsync_enabled;
                     game_settings.dynamic_fps_enabled = local_config.dynamic_fps_enabled;
                     game_settings.dynamic_fov_enabled = local_config.dynamic_fov_enabled;
@@ -1768,9 +1795,11 @@ fn handle_settings_buttons(
                     }
                     if let Some(ref mut reg) = texture_registry {
                         reg.full_grass = game_settings.full_grass;
+                        reg.leaf_culling = game_settings.leaf_culling;
                     }
                     if let Some(ref mut mat) = chunk_material {
                         mat.texture_registry.full_grass = game_settings.full_grass;
+                        mat.texture_registry.leaf_culling = game_settings.leaf_culling;
                     }
                     if let Some(ref world) = world
                         && let Some(ref mut queues) = streaming_queues
@@ -2022,6 +2051,23 @@ fn handle_settings_buttons(
                 SettingsAction::ToggleWavingFoliage => {
                     local_config.waving_foliage = !local_config.waving_foliage;
                 }
+                SettingsAction::ToggleLeafCulling => {
+                    game_settings.leaf_culling = !game_settings.leaf_culling;
+                    local_config.leaf_culling = game_settings.leaf_culling;
+                    if let Some(ref mut reg) = texture_registry {
+                        reg.leaf_culling = game_settings.leaf_culling;
+                    }
+                    if let Some(ref mut mat) = chunk_material {
+                        mat.texture_registry.leaf_culling = game_settings.leaf_culling;
+                    }
+                    if let Some(ref world) = world
+                        && let Some(ref mut queues) = streaming_queues
+                    {
+                        for (&coord, _) in world.iter_chunks() {
+                            queues.enqueue_remesh(coord);
+                        }
+                    }
+                }
                 SettingsAction::TogglePixelatedShadows => {
                     local_config.pixelated_shadows = !local_config.pixelated_shadows;
                 }
@@ -2047,6 +2093,7 @@ fn handle_settings_buttons(
                 local_config.fog_enabled = game_settings.fog_enabled;
                 local_config.view_bobbing = game_settings.view_bobbing;
                 local_config.full_grass = game_settings.full_grass;
+                local_config.leaf_culling = game_settings.leaf_culling;
                 local_config.vsync_enabled = game_settings.vsync_enabled;
                 local_config.dynamic_fps_enabled = game_settings.dynamic_fps_enabled;
                 local_config.dynamic_fov_enabled = game_settings.dynamic_fov_enabled;
@@ -2140,6 +2187,7 @@ fn update_settings_labels(
         (
             Option<&CoatedTexturesLabel>,
             Option<&WavingFoliageLabel>,
+            Option<&LeafCullingLabel>,
             Option<&PixelatedShadowsLabel>,
             Option<&HdrBloomLabel>,
             Option<&DynamicLightingLabel>,
@@ -2194,6 +2242,7 @@ fn update_settings_labels(
         (
             coated_textures,
             waving_foliage,
+            leaf_culling,
             pixelated_shadows,
             hdr_bloom,
             dynamic_lighting,
@@ -2262,6 +2311,16 @@ fn update_settings_labels(
                     "{}: {}",
                     loc.t("menu.settings.waving_foliage"),
                     if local_config.waving_foliage {
+                        loc.t("common.enabled")
+                    } else {
+                        loc.t("common.disabled")
+                    }
+                );
+            } else if leaf_culling.is_some() {
+                text.0 = format!(
+                    "{}: {}",
+                    loc.t("menu.settings.leaf_culling"),
+                    if local_config.leaf_culling {
                         loc.t("common.enabled")
                     } else {
                         loc.t("common.disabled")

@@ -931,6 +931,24 @@ impl ChunkMesher {
                             continue;
                         }
 
+                        // Optional Smart Interior Core Leaf Culling: only culls internal leaf-to-leaf
+                        // faces for core blocks completely surrounded on all 6 sides, leaving the outer
+                        // canopy shell double-walled so trees never look transparent against the sky.
+                        if textures.leaf_culling
+                            && voxel.is_leaves()
+                            && neighbor.is_leaves()
+                            && neighbor_shape == BlockShape::Full
+                        {
+                            let is_interior_core = FACE_DIRECTIONS.iter().all(|dir| {
+                                world
+                                    .get_voxel(world_voxel + dir.normal())
+                                    .is_some_and(|adj| adj.is_leaves() || adj.is_solid_opaque())
+                            });
+                            if is_interior_core {
+                                continue;
+                            }
+                        }
+
                         let (texture_layer, frame_count) = textures.get_face_texture_info_oriented(
                             voxel,
                             world_voxel,
@@ -947,6 +965,12 @@ impl ChunkMesher {
                         } else {
                             voxel.tint_color_at(world_voxel)
                         };
+
+                        // Quantize smoothly blended RGB biome tints to 1/32 steps so adjacent grass/leaf
+                        // blocks merge cleanly into wide greedy quads.
+                        for c in &mut tint_color[0..3] {
+                            *c = (*c * 32.0).round() / 32.0;
+                        }
 
                         tint_color[3] = if voxel.is_water() {
                             1.0

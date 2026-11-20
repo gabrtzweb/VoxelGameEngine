@@ -7,8 +7,7 @@ use crate::{
 };
 
 pub const DAY_SUN_ILLUMINANCE: f32 = 7_000.0;
-pub const DAY_FILL_ILLUMINANCE: f32 = 2_800.0;
-pub const DAY_AMBIENT_BRIGHTNESS: f32 = 2_600.0;
+pub const DAY_AMBIENT_BRIGHTNESS: f32 = 3_950.0;
 pub const DAY_EXPOSURE_EV100: f32 = 11.2;
 
 pub const NIGHT_MOON_ILLUMINANCE: f32 = 800.0;

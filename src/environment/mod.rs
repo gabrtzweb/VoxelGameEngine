@@ -10,9 +10,8 @@ pub mod weather;
 use bevy::prelude::*;
 
 use atmosphere::{
-    DAY_FILL_ILLUMINANCE, DAY_SUN_ILLUMINANCE, NIGHT_MOON_ILLUMINANCE,
-    sample_ambient_brightness, sample_ambient_color, sample_sky_color, sync_fog_distance,
-    update_atmosphere,
+    DAY_SUN_ILLUMINANCE, NIGHT_MOON_ILLUMINANCE, sample_ambient_brightness, sample_ambient_color,
+    sample_sky_color, sync_fog_distance, update_atmosphere,
 };
 use time::{advance_environment_clock, handle_environment_input};
 
@@ -93,33 +92,20 @@ fn sync_celestial_system(
         ),
     >,
     sun_light: Single<
-        (&mut DirectionalLight, &mut Transform),
+        (&mut DirectionalLight, &mut Transform, &mut Visibility),
         (
             With<celestial::SunLight>,
             Without<celestial::MoonLight>,
-            Without<celestial::SkyFillLight>,
             Without<Camera3d>,
             Without<celestial::SunVisual>,
             Without<celestial::MoonVisual>,
         ),
     >,
     moon_light: Single<
-        (&mut DirectionalLight, &mut Transform),
+        (&mut DirectionalLight, &mut Transform, &mut Visibility),
         (
             With<celestial::MoonLight>,
             Without<celestial::SunLight>,
-            Without<celestial::SkyFillLight>,
-            Without<Camera3d>,
-            Without<celestial::SunVisual>,
-            Without<celestial::MoonVisual>,
-        ),
-    >,
-    sky_fill: Single<
-        (&mut DirectionalLight, &mut Transform),
-        (
-            With<celestial::SkyFillLight>,
-            Without<celestial::SunLight>,
-            Without<celestial::MoonLight>,
             Without<Camera3d>,
             Without<celestial::SunVisual>,
             Without<celestial::MoonVisual>,
@@ -144,8 +130,6 @@ fn sync_celestial_system(
     });
 
     let underground_factor = env_status.as_ref().map_or(0.0, |s| s.underground_factor);
-    // Sky fill light has no shadow mapping, so fade it out as the player enters caves
-    let fill_underground_dim = (1.0 - underground_factor * 1.4).clamp(0.0, 1.0);
     // Keep directional sunlight shining at 100% through cave entrances and near-surface openings.
     // Shadows cast by terrain geometry block the sun naturally; fade out completely in deep caverns
     // beyond shadow cascade distance so sunlight never leaks through deep roofs.
@@ -168,7 +152,6 @@ fn sync_celestial_system(
         moon_visual,
         sun_light,
         moon_light,
-        sky_fill,
         celestial_materials,
         moon_textures,
         materials,
@@ -176,7 +159,6 @@ fn sync_celestial_system(
         state.moon_texture_index(),
         state.moon_phase().illuminance_factor(),
         DAY_SUN_ILLUMINANCE * weather_dim * sun_underground_dim,
-        DAY_FILL_ILLUMINANCE * weather_dim * fill_underground_dim,
         NIGHT_MOON_ILLUMINANCE * weather_dim * sun_underground_dim,
         shadows_enabled,
         underground_factor,

@@ -597,6 +597,10 @@ pub struct LocalConfig {
     #[serde(default = "default_waving_foliage")]
     pub waving_foliage: bool,
 
+    /// Cull hidden interior core faces inside dense leaf canopies.
+    #[serde(default = "default_leaf_culling")]
+    pub leaf_culling: bool,
+
     /// Pixelated shadows snapped to block texel grid.
     #[serde(default = "default_pixelated_shadows")]
     pub pixelated_shadows: bool,
@@ -616,6 +620,10 @@ fn default_coated_textures() -> CoatedTextureMode {
 
 fn default_waving_foliage() -> bool {
     true
+}
+
+fn default_leaf_culling() -> bool {
+    false
 }
 
 fn default_pixelated_shadows() -> bool {
@@ -863,6 +871,7 @@ impl Default for LocalConfig {
             grass_particles: default_grass_particles(),
             coated_textures: default_coated_textures(),
             waving_foliage: default_waving_foliage(),
+            leaf_culling: default_leaf_culling(),
             pixelated_shadows: default_pixelated_shadows(),
             hdr_bloom: default_hdr_bloom(),
             dynamic_lighting: default_dynamic_lighting(),
@@ -954,6 +963,7 @@ impl LocalConfig {
                 self.grass_enabled = false;
                 self.grass_density = 16;
                 self.grass_particles = false;
+                self.leaf_culling = true;
             }
             PerformancePreset::Low => {
                 self.render_distance = 4;
@@ -977,6 +987,7 @@ impl LocalConfig {
                 self.grass_enabled = false;
                 self.grass_density = 16;
                 self.grass_particles = false;
+                self.leaf_culling = true;
             }
             PerformancePreset::Medium => {
                 self.render_distance = 8;
@@ -1000,6 +1011,7 @@ impl LocalConfig {
                 self.grass_enabled = true;
                 self.grass_density = 32;
                 self.grass_particles = true;
+                self.leaf_culling = false;
             }
             PerformancePreset::High => {
                 self.render_distance = 8;
@@ -1023,6 +1035,7 @@ impl LocalConfig {
                 self.grass_enabled = true;
                 self.grass_density = 48;
                 self.grass_particles = true;
+                self.leaf_culling = false;
             }
             PerformancePreset::Ultra => {
                 self.render_distance = 16;
@@ -1046,6 +1059,7 @@ impl LocalConfig {
                 self.grass_enabled = true;
                 self.grass_density = 64;
                 self.grass_particles = true;
+                self.leaf_culling = false;
             }
         }
     }

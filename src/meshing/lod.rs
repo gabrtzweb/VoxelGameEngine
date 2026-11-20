@@ -14,7 +14,7 @@ use crate::{
 pub enum ChunkLod {
     /// Full 1m³ greedy-meshed voxels with custom shapes, caves, and full physics.
     Lod0,
-    /// Near horizon 1m×1m block resolution (16×16 cells per chunk column) with 2D greedy merging.
+    /// Near horizon 1m×1m block resolution (16×16 cells per 16×16m column) with 2D greedy merging.
     Lod1,
     /// Mid-distance 2m×2m cuboid block grid (16×16 cells per 32×32m 2×2 super-chunk).
     Lod2,
@@ -329,7 +329,6 @@ pub fn build_lod_mesh(
         (num_cells * num_cells) as usize
     });
     let mut transparent_buffers = MeshBuffers::with_capacity(64);
-    let cell_w = stride as f32;
 
     let n = num_cells as usize;
     let mut top_layers = vec![0u16; n * n];
@@ -436,119 +435,228 @@ pub fn build_lod_mesh(
         }
     }
 
-    // 2B. Stepped Vertical Side Walls (horizon skirt is shallow on 1x1 Lod1, deeper on outer tiers)
+    // 2B. Greedy-Merged Stepped Vertical Side Walls (merges runs sharing top_y, bot_y, material)
     let skirt_depth = match lod {
         ChunkLod::Lod0 | ChunkLod::Lod1 => 2.0,
         ChunkLod::Lod2 => 5.0,
         ChunkLod::Lod3 => 10.0,
     };
 
+    // Merge West (-X) and East (+X) walls vertically along J for each I column
     for i in 0..num_cells {
         let local_x0 = (i * stride) as f32;
         let local_x1 = ((i + 1) * stride) as f32;
         let world_x = chunk_origin_x + i * stride + sample_offset;
 
-        for j in 0..num_cells {
-            let local_z0 = (j * stride) as f32;
-            let local_z1 = ((j + 1) * stride) as f32;
-            let world_z = chunk_origin_z + j * stride + sample_offset;
-
+        // West (-X) runs
+        let mut j = 0;
+        while j < num_cells {
             let h_curr = heights[idx(i, j)];
-            let voxel = materials[idx(i, j)];
-            let world_pos = IVec3::new(world_x, h_curr, world_z);
             let top_y = (h_curr + 1) as f32;
-
             let h_west = heights[idx(i - 1, j)];
             let bot_west = if i == 0 {
                 ((h_west + 1) as f32).min(top_y - skirt_depth)
             } else {
                 (h_west + 1) as f32
             };
-            if top_y > bot_west {
-                push_lod_wall(
-                    &mut opaque_buffers,
-                    FaceDirection::NegativeX,
-                    [local_x0, bot_west, local_z1],
-                    [local_x0, top_y, local_z1],
-                    [local_x0, top_y, local_z0],
-                    [local_x0, bot_west, local_z0],
-                    cell_w,
-                    top_y,
-                    bot_west,
-                    voxel,
-                    textures,
-                    world_pos,
-                );
+            if top_y <= bot_west {
+                j += 1;
+                continue;
             }
+            let voxel = materials[idx(i, j)];
+            let mut run = 1;
+            while j + run < num_cells {
+                let nh = heights[idx(i, j + run)];
+                let ntop = (nh + 1) as f32;
+                let nwest = heights[idx(i - 1, j + run)];
+                let nbot = if i == 0 {
+                    ((nwest + 1) as f32).min(ntop - skirt_depth)
+                } else {
+                    (nwest + 1) as f32
+                };
+                if ntop != top_y || nbot != bot_west || materials[idx(i, j + run)] != voxel {
+                    break;
+                }
+                run += 1;
+            }
+            let z_a = (j * stride) as f32;
+            let z_b = ((j + run) * stride) as f32;
+            let world_z = chunk_origin_z + j * stride + sample_offset;
+            push_lod_wall(
+                &mut opaque_buffers,
+                FaceDirection::NegativeX,
+                [local_x0, bot_west, z_b],
+                [local_x0, top_y, z_b],
+                [local_x0, top_y, z_a],
+                [local_x0, bot_west, z_a],
+                (run * stride) as f32,
+                top_y,
+                bot_west,
+                voxel,
+                textures,
+                IVec3::new(world_x, h_curr, world_z),
+            );
+            j += run;
+        }
 
+        // East (+X) runs
+        let mut j = 0;
+        while j < num_cells {
+            let h_curr = heights[idx(i, j)];
+            let top_y = (h_curr + 1) as f32;
             let h_east = heights[idx(i + 1, j)];
             let bot_east = if i == num_cells - 1 {
                 ((h_east + 1) as f32).min(top_y - skirt_depth)
             } else {
                 (h_east + 1) as f32
             };
-            if top_y > bot_east {
-                push_lod_wall(
-                    &mut opaque_buffers,
-                    FaceDirection::PositiveX,
-                    [local_x1, bot_east, local_z0],
-                    [local_x1, top_y, local_z0],
-                    [local_x1, top_y, local_z1],
-                    [local_x1, bot_east, local_z1],
-                    cell_w,
-                    top_y,
-                    bot_east,
-                    voxel,
-                    textures,
-                    world_pos,
-                );
+            if top_y <= bot_east {
+                j += 1;
+                continue;
             }
+            let voxel = materials[idx(i, j)];
+            let mut run = 1;
+            while j + run < num_cells {
+                let nh = heights[idx(i, j + run)];
+                let ntop = (nh + 1) as f32;
+                let neast = heights[idx(i + 1, j + run)];
+                let nbot = if i == num_cells - 1 {
+                    ((neast + 1) as f32).min(ntop - skirt_depth)
+                } else {
+                    (neast + 1) as f32
+                };
+                if ntop != top_y || nbot != bot_east || materials[idx(i, j + run)] != voxel {
+                    break;
+                }
+                run += 1;
+            }
+            let z_a = (j * stride) as f32;
+            let z_b = ((j + run) * stride) as f32;
+            let world_z = chunk_origin_z + j * stride + sample_offset;
+            push_lod_wall(
+                &mut opaque_buffers,
+                FaceDirection::PositiveX,
+                [local_x1, bot_east, z_a],
+                [local_x1, top_y, z_a],
+                [local_x1, top_y, z_b],
+                [local_x1, bot_east, z_b],
+                (run * stride) as f32,
+                top_y,
+                bot_east,
+                voxel,
+                textures,
+                IVec3::new(world_x, h_curr, world_z),
+            );
+            j += run;
+        }
+    }
 
+    // Merge North (-Z) and South (+Z) walls horizontally along I for each J row
+    for j in 0..num_cells {
+        let local_z0 = (j * stride) as f32;
+        let local_z1 = ((j + 1) * stride) as f32;
+        let world_z = chunk_origin_z + j * stride + sample_offset;
+
+        // North (-Z) runs
+        let mut i = 0;
+        while i < num_cells {
+            let h_curr = heights[idx(i, j)];
+            let top_y = (h_curr + 1) as f32;
             let h_north = heights[idx(i, j - 1)];
             let bot_north = if j == 0 {
                 ((h_north + 1) as f32).min(top_y - skirt_depth)
             } else {
                 (h_north + 1) as f32
             };
-            if top_y > bot_north {
-                push_lod_wall(
-                    &mut opaque_buffers,
-                    FaceDirection::NegativeZ,
-                    [local_x0, bot_north, local_z0],
-                    [local_x0, top_y, local_z0],
-                    [local_x1, top_y, local_z0],
-                    [local_x1, bot_north, local_z0],
-                    cell_w,
-                    top_y,
-                    bot_north,
-                    voxel,
-                    textures,
-                    world_pos,
-                );
+            if top_y <= bot_north {
+                i += 1;
+                continue;
             }
+            let voxel = materials[idx(i, j)];
+            let mut run = 1;
+            while i + run < num_cells {
+                let nh = heights[idx(i + run, j)];
+                let ntop = (nh + 1) as f32;
+                let nnorth = heights[idx(i + run, j - 1)];
+                let nbot = if j == 0 {
+                    ((nnorth + 1) as f32).min(ntop - skirt_depth)
+                } else {
+                    (nnorth + 1) as f32
+                };
+                if ntop != top_y || nbot != bot_north || materials[idx(i + run, j)] != voxel {
+                    break;
+                }
+                run += 1;
+            }
+            let x_a = (i * stride) as f32;
+            let x_b = ((i + run) * stride) as f32;
+            let world_x = chunk_origin_x + i * stride + sample_offset;
+            push_lod_wall(
+                &mut opaque_buffers,
+                FaceDirection::NegativeZ,
+                [x_a, bot_north, local_z0],
+                [x_a, top_y, local_z0],
+                [x_b, top_y, local_z0],
+                [x_b, bot_north, local_z0],
+                (run * stride) as f32,
+                top_y,
+                bot_north,
+                voxel,
+                textures,
+                IVec3::new(world_x, h_curr, world_z),
+            );
+            i += run;
+        }
 
+        // South (+Z) runs
+        let mut i = 0;
+        while i < num_cells {
+            let h_curr = heights[idx(i, j)];
+            let top_y = (h_curr + 1) as f32;
             let h_south = heights[idx(i, j + 1)];
             let bot_south = if j == num_cells - 1 {
                 ((h_south + 1) as f32).min(top_y - skirt_depth)
             } else {
                 (h_south + 1) as f32
             };
-            if top_y > bot_south {
-                push_lod_wall(
-                    &mut opaque_buffers,
-                    FaceDirection::PositiveZ,
-                    [local_x1, bot_south, local_z1],
-                    [local_x1, top_y, local_z1],
-                    [local_x0, top_y, local_z1],
-                    [local_x0, bot_south, local_z1],
-                    cell_w,
-                    top_y,
-                    bot_south,
-                    voxel,
-                    textures,
-                    world_pos,
-                );
+            if top_y <= bot_south {
+                i += 1;
+                continue;
             }
+            let voxel = materials[idx(i, j)];
+            let mut run = 1;
+            while i + run < num_cells {
+                let nh = heights[idx(i + run, j)];
+                let ntop = (nh + 1) as f32;
+                let nsouth = heights[idx(i + run, j + 1)];
+                let nbot = if j == num_cells - 1 {
+                    ((nsouth + 1) as f32).min(ntop - skirt_depth)
+                } else {
+                    (nsouth + 1) as f32
+                };
+                if ntop != top_y || nbot != bot_south || materials[idx(i + run, j)] != voxel {
+                    break;
+                }
+                run += 1;
+            }
+            let x_a = (i * stride) as f32;
+            let x_b = ((i + run) * stride) as f32;
+            let world_x = chunk_origin_x + i * stride + sample_offset;
+            push_lod_wall(
+                &mut opaque_buffers,
+                FaceDirection::PositiveZ,
+                [x_b, bot_south, local_z1],
+                [x_b, top_y, local_z1],
+                [x_a, top_y, local_z1],
+                [x_a, bot_south, local_z1],
+                (run * stride) as f32,
+                top_y,
+                bot_south,
+                voxel,
+                textures,
+                IVec3::new(world_x, h_curr, world_z),
+            );
+            i += run;
         }
     }
 

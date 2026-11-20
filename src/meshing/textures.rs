@@ -85,6 +85,8 @@ pub struct VoxelTextureRegistry {
 
     pub full_grass: bool,
 
+    pub leaf_culling: bool,
+
     pub grass_enabled: bool,
 
     pub grass_density: u32,
@@ -106,6 +108,8 @@ impl Default for VoxelTextureRegistry {
             grass_overlay_layer: 0,
 
             full_grass: false,
+
+            leaf_culling: false,
 
             grass_enabled: true,
 

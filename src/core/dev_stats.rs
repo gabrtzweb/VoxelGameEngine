@@ -8,7 +8,7 @@ use crate::{
     environment::EnvironmentState,
     gameplay::CurrentTarget,
     generation::TerrainGenerator,
-    meshing::ChunkMeshRegistry,
+    meshing::{ChunkMeshRegistry, LodMeshRegistry},
     player::{GameMode, Player, PlayerCamera, PlayerMotion},
     world::{CHUNK_VOLUME, VOXEL_SIZE, VoxelWorld},
 };
@@ -135,6 +135,7 @@ fn update_dev_stats(
     time: Res<Time<Real>>,
     world: Res<VoxelWorld>,
     chunk_meshes: Res<ChunkMeshRegistry>,
+    lod_meshes: Option<Res<LodMeshRegistry>>,
     game_mode: Res<GameMode>,
     environment: Option<Res<EnvironmentState>>,
     player: Single<(&Transform, &PlayerMotion), With<Player>>,
@@ -241,6 +242,9 @@ fn update_dev_stats(
             let loaded_chunks = world.iter_chunks().count();
             let mesh_vertices = chunk_meshes.total_vertices();
             let mesh_triangles = chunk_meshes.total_triangles();
+            let (lod_chunks, lod_tris) = lod_meshes
+                .as_ref()
+                .map_or((0, 0), |l| (l.len(), l.total_triangles()));
 
             let (cull_chunks, cull_verts) = if let Some(ref cs) = culling_state {
                 let status = if cs.is_player_underground {
@@ -258,8 +262,8 @@ fn update_dev_stats(
 
             text.0 = format!(
                 "FPS: {fps:.0} ({frame_time:.2} ms) | 1% Low: {low_1pct:.0} | Min: {min_fps:.0} | Max: {max_fps:.0}\n\
-                Chunks: {loaded_chunks}{cull_chunks}\n\
-                Vertices: {mesh_vertices} | Triangles: {mesh_triangles}{cull_verts}"
+                Chunks: {loaded_chunks}{cull_chunks} | LODs: {lod_chunks}\n\
+                Vertices: {mesh_vertices} | Triangles: {mesh_triangles} (+{lod_tris} LOD){cull_verts}"
             );
         }
         DebugHudMode::Extended => {
@@ -392,12 +396,13 @@ fn update_dev_stats(
                 Environment: {}\n\
                 Loaded chunks: {}\n\
                 Meshed chunks: {}\n\
+                LOD chunks: {}\n\
                 Rendered chunks: {}\n\
                 Culled chunks: {}\n\
                 Rendered vertices: {}\n\
                 Culled vertices: {}\n\
                 Mesh vertices: {}\n\
-                Mesh triangles: {}\n\
+                Mesh triangles: {} (+{} LOD)\n\
                 Voxel capacity: {}\n\
                 Target voxel: {} [F3: Minimal | Shift+F3: Hide]",
                 game_mode.label(),
@@ -418,12 +423,14 @@ fn update_dev_stats(
                 },
                 loaded_chunks,
                 meshed_chunks,
+                lod_meshes.as_ref().map_or(0, |l| l.len()),
                 culling_state.as_ref().map_or(0, |s| s.rendered_chunks),
                 culling_state.as_ref().map_or(0, |s| s.culled_chunks),
                 culling_state.as_ref().map_or(0, |s| s.rendered_vertices),
                 culling_state.as_ref().map_or(0, |s| s.culled_vertices),
                 mesh_vertices,
                 mesh_triangles,
+                lod_meshes.as_ref().map_or(0, |l| l.total_triangles()),
                 loaded_chunks * CHUNK_VOLUME,
                 target_text,
             );

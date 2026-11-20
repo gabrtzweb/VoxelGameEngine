@@ -182,6 +182,8 @@ fn main() {
 
         full_grass: local_config.full_grass,
 
+        leaf_culling: local_config.leaf_culling,
+
         screen_mode,
 
         vsync_enabled: local_config.vsync_enabled,

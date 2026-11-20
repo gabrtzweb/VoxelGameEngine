@@ -19,6 +19,7 @@ use crate::world::{Chunk, VoxelWorld};
 
 pub const OPAQUE_VOXEL_SHADER_PATH: &str = "shaders/voxel_opaque.wesl";
 pub const TRANSPARENT_VOXEL_SHADER_PATH: &str = "shaders/voxel_transparent.wesl";
+pub const MAX_SHADOW_CASTER_CHUNKS: i32 = 6;
 
 #[derive(Asset, AsBindGroup, Reflect, Debug, Clone)]
 pub struct OpaqueVoxelMaterial {
@@ -300,6 +301,7 @@ pub fn setup_chunk_material(
     let (texture_array_image, mut texture_registry) = build_voxel_texture_array();
     if let Some(cfg) = &local_config {
         texture_registry.full_grass = cfg.full_grass;
+        texture_registry.leaf_culling = cfg.leaf_culling;
         texture_registry.grass_enabled = cfg.grass_enabled;
         texture_registry.grass_density = cfg.grass_density;
     }
@@ -318,6 +320,9 @@ pub fn setup_chunk_material(
         .as_ref()
         .map_or(1.0, |cfg| if cfg.pixelated_shadows { 1.0 } else { 0.0 });
 
+    let params = Vec4::new(coat_strength, waving_foliage_flag, pixelated_shadows_flag, 0.0);
+    let anim_params = Vec4::new(0.0, 1.0, 0.44, 0.0);
+
     let opaque = opaque_materials.add(ExtendedMaterial {
         base: StandardMaterial {
             base_color: Color::WHITE,
@@ -328,8 +333,8 @@ pub fn setup_chunk_material(
         extension: OpaqueVoxelMaterial {
             texture_array: texture_array.clone(),
             noise_texture,
-            params: Vec4::new(coat_strength, waving_foliage_flag, pixelated_shadows_flag, 0.0),
-            anim_params: Vec4::new(0.0, 1.0, 0.44, 0.0),
+            params,
+            anim_params,
             mask_texture_array,
         },
     });
@@ -428,6 +433,12 @@ pub fn apply_chunk_mesh(
 
         let chunk_aabb =
             Aabb::from_min_max(Vec3::ZERO, Vec3::splat(crate::world::CHUNK_SIZE as f32));
+        let no_shadows = is_subterranean
+            || culling_state.is_some_and(|cs| {
+                cs.last_player_chunk.x != i32::MIN
+                    && ((coordinate.x - cs.last_player_chunk.x).abs() > MAX_SHADOW_CASTER_CHUNKS
+                        || (coordinate.z - cs.last_player_chunk.z).abs() > MAX_SHADOW_CASTER_CHUNKS)
+            });
 
         sync_render_part(
             commands,
@@ -440,7 +451,7 @@ pub fn apply_chunk_mesh(
             Some(coordinate),
             is_subterranean,
             initial_visibility,
-            is_subterranean,
+            no_shadows,
         );
 
         sync_render_part(
@@ -454,7 +465,7 @@ pub fn apply_chunk_mesh(
             Some(coordinate),
             is_subterranean,
             initial_visibility,
-            is_subterranean,
+            true,
         );
 
         if let Some(grass_material) = &material.grass {
@@ -561,6 +572,8 @@ fn sync_render_part<M: Material>(
             entity_cmds.insert((Mesh3d(new_handle), tight_aabb));
             if no_shadows {
                 entity_cmds.insert(NotShadowCaster);
+            } else {
+                entity_cmds.remove::<NotShadowCaster>();
             }
             if !is_subterranean || initial_visibility == Visibility::Inherited {
                 entity_cmds.insert(Visibility::Inherited);

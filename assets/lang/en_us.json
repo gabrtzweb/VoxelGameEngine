@@ -55,6 +55,7 @@
   "menu.settings.back": "Back",
   "menu.settings.coated_textures": "Coated Textures",
   "menu.settings.waving_foliage": "Waving Foliage & Leaves",
+  "menu.settings.leaf_culling": "Internal Leaf Culling",
   "menu.settings.pixelated_shadows": "Pixelated Shadows",
   "menu.settings.hdr_bloom": "HDR Bloom & Glow",
   "menu.settings.dynamic_lighting": "Dynamic Handheld Lighting",

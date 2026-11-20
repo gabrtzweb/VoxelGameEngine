@@ -55,6 +55,7 @@
   "menu.settings.back": "Voltar",
   "menu.settings.coated_textures": "Texturas Revestidas (Pátina)",
   "menu.settings.waving_foliage": "Vegetação ao Vento",
+  "menu.settings.leaf_culling": "Culling Interno de Folhas",
   "menu.settings.pixelated_shadows": "Sombras Pixeladas",
   "menu.settings.hdr_bloom": "Brilho Bloom HDR",
   "menu.settings.dynamic_lighting": "Iluminação Dinâmica",
