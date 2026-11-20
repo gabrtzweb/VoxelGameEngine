@@ -142,30 +142,12 @@ The player uses a custom AABB collision system that directly queries voxel data.
 
 ## Roadmap Status & Development Transition
 
-The engine has concluded foundational development across Version 0.1 (Phases 1 through 20: rendering, atmosphere, fluids, greedy mesher optimizations, SIMD noise, 512-block world generation, and interface modernization).
+The engine has concluded two full 20-phase development milestones:
 
-In Version 0.2 (Modernization, Worldbuilding & Deep Systems), the project status:
-
-- **Phase 1 (Completed)**: Full Block Catalog & Geological Systems Foundation (615 active engine voxels, geological strata catalog, 3-axis directional placement, selective foliage tinting, shader de-tiling).
-- **Phase 2 (Completed)**: Standardized 9-Slot Interface Architecture & Menu Modernization (Unified 9-slot container and HUD geometry, Dark Iron design suite, 480×270 base integer scaling, pause menu bar navigation, and procedural icon rendering).
-- **Phase 3 (Completed)**: Core Engine Upgrade (Bevy 0.20 Migration, direct `bevy_egui = "0.43"`, modern UI widgets, WESL shader framework, and ScreenSpaceTransmission).
-- **Phase 4 (Completed)**: Architecture, Graphics Modernization & Soundness (Multi-tier hardware profiles, chunk memory optimization, modular domain crates, dynamic 3D render scaling, 16:9 window snapping, test isolation).
-- **Phase 5 (Completed)**: High-Impact Performance & Graphics Pipeline (Dynamic frame rate limiter, hardware GPU upload budgets, AMD FSR 1.0 upscaling, subterranean occlusion culling).
-- **Phase 6 (Completed)**: Wild Flora, Herbaceous Vegetation & Botanical Systems (Full botanical catalog with 26 vegetation blocks, 28 flower blocks, cross-billboard rendering, double-tall mechanics, petal carpets, marine flora with waterlogged envelopes, kelp/cave vine tip mechanics, floor-support cascading, and biome scatter generation).
-- **Phase 7 (Completed)**: Subterranean Strata, Caverns & Geological Generation (Multi-tier geological strata, Mantle bedrock at Y = -254, 54 authentic ore vein pairings, crystal geodes, subterranean cave biomes, deep lava lakes, abyssal core magma lakes, acid, sludge, mineral spring water, and tar fluid basins).
-- **Phase 8 (Completed)**: Next-Gen 3D World Generation and 6D Multi-Noise Climate (6D continuous climate noise, 44 distinct biomes, subterranean microbiomes, hydrological stepping, cubic landform splines, slope-aware cliff face rock exposure).
-- **Phase 9 (Completed)**: Main Menu, Clean World Session Lifetime & Deferred World Loading (Title splash, action menu, deferred chunk streaming, loading screen with rotating tips, menu soundtrack & shuffle, session cleanup).
-- **Phase 10 (Completed)**: Sound Engine & Spatial Audio System (Multi-channel volume mixer, 11-material acoustic profiles, spatial 3D block interaction audio, realistic footstep cadences, water wading and swimming strokes, ambient biomes, weather audio, and 39-track soundtrack).
-- **Phase 11 (Completed)**: Custom Voxel Player Character, 8-Race Silhouettes & Hand Item Rendering (Modular voxel humanoid character rig, 8 fantasy races with distinct silhouettes, ears, horns, beards, tusks, tails and proportions, character selection screen, 1st and 3rd person 3D held items in hand with animations).
-- **Phase 12 (Planned)**: Agricultural Simulation, Cultivated Crops & Farmland Systems (36 domestic and wild crops, growth lifecycle simulation, soil moisture, irrigation, seasonal yields, arboreal canopy pods).
-- **Phase 13 (Completed)**: Physics Engine, Fluid Dynamics & Item Drops (Dynamic smooth flow fluid meshing, downhill river hydrology & current vectors, floating 3D item drops with magnetism and suction physics).
-- **Phase 14 (Completed)**: Dynamic Weather System & Meteorological Phenomena (Multi-state weather simulation, precipitation particles, surface wetness, dynamic snow accumulation, lightning and thunder).
-- **Phase 15 (Completed)**: Visual Aesthetics, Shaders & Atmospheric FX Overhaul (Per-vertex ambient occlusion, animated fluid waves and caustics, depth absorption, bloom & emissive HDR boosting, handheld dynamic lighting, atmospheric god rays with Mie scattering and weather coupling, and subterranean darkness stabilization).
-- **Phase 16 (Completed)**: Performance Engineering, Chunk Streaming & LOD Enhancements (Decomposed modular streaming architecture [planner, loader, unloader, lod_scheduler], modular shape builders in `src/meshing/shapes/`, 36-bit Sodium-style cave visibility mask culling, cave entrance void resolution, robust mesh visibility synchronization preventing subterranean invisible chunks, cave boundary sampling preventing floating flora, and default 12-chunk render distance).
-- **Phase 17 (Completed)**: Localization & Multi-Language Support (`lang/` translation files for `en_us` and `pt_br`, comprehensive UI/block/item localization, in-game language selector).
-- **Phase 18 (Completed)**: Controls & Keybinding System (Configurable keybindings for all actions, mouse sensitivity & invert Y options, input conflict detection, Main Menu & Pause integration).
-- **Phase 19 (Completed)**: Dynamic Foliage & Procedural Grass System (GPU-accelerated procedural grass blades on surface blocks, cubic Bezier wind deformation, Voronoi clumping, player footprint trails, dynamic LOD).
-- **Phase 20 (Planned)**: Phase 20 (TBD) (Reserved for future systems).
+- **Version 0.1 — Foundation Era (Phases 1–20, Completed)**: Core engine architecture, multi-chunk streaming, greedy meshing, procedural terrain, physics, fluid dynamics, celestial environments, survival interfaces, and SIMD/memory optimizations.
+- **Version 0.2 — Modernization, Worldbuilding & Deep Systems (Phases 1–20, Completed)**: Full voxel catalog and geological strata, 9-slot 480×270 Dark Iron UI, Bevy 0.20 and WESL migration, hardware profiles and FSR 1.0, wild flora and botanical systems, 6D multi-noise 44-biome generation, Main Menu and deferred loading, spatial audio, 8-race custom voxel characters, agricultural crop simulation, smooth fluid dynamics and 3D item drops, dynamic weather, AO/water/bloom/god-ray shaders, streaming and LOD performance engineering, multi-language localization, rebindable controls, GPU procedural grass, and multi-chunk world feature generation.
+- **Version 0.3 (Current)**:
+  - **Phase 1 (Planned)**: *(TBD)*
 
 Detailed progress and milestones are tracked in `docs/project_roadmap.md`.
 

@@ -509,6 +509,8 @@ pub fn mesh_shaped_voxels(
             | BlockShape::HangingFruit => unreachable!(),
             BlockShape::Full | BlockShape::Column | BlockShape::Cocoon => {
                 mesh_column_cocoon(
+                    world,
+                    world_voxel,
                     buffers,
                     voxel,
                     shape,

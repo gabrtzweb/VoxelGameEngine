@@ -750,6 +750,8 @@ impl Voxel {
             || self.is_coral_fan()
             || self.is_marine_flora()
             || self.is_crop_billboard()
+            || self.is_leaf_litter()
+            || self.is_petal_carpet()
             || (self.is_flora_billboard() && !self.is_hanging_flora())
     }
 
