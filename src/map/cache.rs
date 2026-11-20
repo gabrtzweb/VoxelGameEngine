@@ -90,16 +90,24 @@ impl MapCache {
         self.version = self.version.wrapping_add(1);
     }
 
-    /// Updates all dirty columns by scanning top-down through loaded chunks in `VoxelWorld`.
+    /// Updates up to `max_per_frame` dirty columns by scanning top-down through loaded chunks in `VoxelWorld`.
+    /// Budgeted so bulk chunk arrivals never hitch the main thread.
     pub fn update_dirty_columns(&mut self, world: &VoxelWorld) {
         if self.dirty_columns.is_empty() {
             return;
         }
 
-        let dirty_list: Vec<IVec2> = self.dirty_columns.drain().collect();
+        const MAX_DIRTY_COLUMNS_PER_FRAME: usize = 2;
+        let dirty_list: Vec<IVec2> = self
+            .dirty_columns
+            .iter()
+            .take(MAX_DIRTY_COLUMNS_PER_FRAME)
+            .copied()
+            .collect();
         let mut any_changed = false;
 
         for col in dirty_list {
+            self.dirty_columns.remove(&col);
             if let Some(map_chunk) = extract_column_surface(world, col) {
                 self.chunks.insert(col, map_chunk);
                 any_changed = true;

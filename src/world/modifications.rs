@@ -77,6 +77,13 @@ impl WorldModificationStore {
         }
     }
 
+    pub fn has_modifications(&self, chunk_coordinate: IVec3) -> bool {
+        self.chunks.contains_key(&chunk_coordinate)
+            || self.shapes.contains_key(&chunk_coordinate)
+            || self.extra_slabs.contains_key(&chunk_coordinate)
+            || self.fluid_levels.contains_key(&chunk_coordinate)
+    }
+
     pub fn apply_to_chunk(&self, chunk_coordinate: IVec3, chunk: &mut Chunk) {
         if let Some(modifications) = self.chunks.get(&chunk_coordinate) {
             for (&local_coordinate, &voxel) in modifications {

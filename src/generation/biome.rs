@@ -1165,54 +1165,163 @@ impl ClimateGenerator {
     }
 }
 
-/// Smoothly blends biome colors across biome transitions using a 13-point circular Gaussian kernel
-/// and quantizes the result into 64 discrete steps per channel.
-pub fn sample_blended_biome_color(voxel: Voxel, world_x: f32, world_z: f32, seed: u32) -> [f32; 4] {
-    if !voxel.is_tinted() {
-        return [1.0, 1.0, 1.0, 1.0];
-    }
+#[derive(Clone, Copy)]
+struct TintCacheEntry {
+    key_x: i32,
+    key_z: i32,
+    seed: u32,
+    valid: bool,
+    grass: [f32; 4],
+    water: [f32; 4],
+    foliage: [f32; 4],
+}
 
+impl Default for TintCacheEntry {
+    fn default() -> Self {
+        Self {
+            key_x: i32::MIN,
+            key_z: i32::MIN,
+            seed: 0,
+            valid: false,
+            grass: [1.0; 4],
+            water: [1.0; 4],
+            foliage: [1.0; 4],
+        }
+    }
+}
+
+const TINT_CACHE_SIZE: usize = 4096;
+
+std::thread_local! {
+    static BLENDED_TINT_CACHE: std::cell::RefCell<Box<[TintCacheEntry]>> = std::cell::RefCell::new(
+        vec![TintCacheEntry::default(); TINT_CACHE_SIZE].into_boxed_slice()
+    );
+}
+
+#[inline]
+fn compute_blended_tints_cell(cx: f32, cz: f32, seed: u32) -> ([f32; 4], [f32; 4], [f32; 4]) {
     let generator = ClimateGenerator::default();
 
     const R_INNER: f32 = 5.0;
     const R_DIAG: f32 = 3.5355;
     const R_OUTER: f32 = 10.0;
+    const QUANTIZE_STEPS: f32 = 64.0;
 
-    let offsets: [(f32, f32, f32); 13] = [
-        (0.0, 0.0, 0.152),
-        (R_INNER, 0.0, 0.092),
-        (-R_INNER, 0.0, 0.092),
-        (0.0, R_INNER, 0.092),
-        (0.0, -R_INNER, 0.092),
-        (R_DIAG, R_DIAG, 0.092),
-        (-R_DIAG, R_DIAG, 0.092),
-        (R_DIAG, -R_DIAG, 0.092),
-        (-R_DIAG, -R_DIAG, 0.092),
-        (R_OUTER, 0.0, 0.028),
-        (-R_OUTER, 0.0, 0.028),
-        (0.0, R_OUTER, 0.028),
-        (0.0, -R_OUTER, 0.028),
-    ];
+    let mut grass = [0.0f32; 4];
+    let mut water = [0.0f32; 4];
+    let mut foliage = [0.0f32; 4];
 
-    let mut r = 0.0f32;
-    let mut g = 0.0f32;
-    let mut b = 0.0f32;
-    let mut a = 0.0f32;
+    let mut accum = |biome: BiomeType, w: f32| {
+        let g = biome.grass_color();
+        let wa = biome.water_color();
+        let f = biome.foliage_color(Voxel::OakLeaves);
+        for c in 0..4 {
+            grass[c] += g[c] * w;
+            water[c] += wa[c] * w;
+            foliage[c] += f[c] * w;
+        }
+    };
 
-    for (dx, dz, weight) in offsets {
-        let sample = generator.sample(world_x + dx, world_z + dz, seed);
-        let color = sample.biome.voxel_tint(voxel);
-        r += color[0] * weight;
-        g += color[1] * weight;
-        b += color[2] * weight;
-        a += color[3] * weight;
+    // Center point (weight 0.152)
+    let center_sample = generator.sample(cx, cz, seed);
+    accum(center_sample.biome, 0.152);
+
+    // 4 inner cardinal points evaluated in 1 SIMD x4 call
+    let inner_samples = generator.sample_x4(
+        Simd4f([cx + R_INNER, cx - R_INNER, cx, cx]),
+        Simd4f([cz, cz, cz + R_INNER, cz - R_INNER]),
+        seed,
+    );
+    for s in inner_samples {
+        accum(s.biome, 0.092);
     }
 
-    const QUANTIZE_STEPS: f32 = 64.0;
-    [
-        (r * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
-        (g * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
-        (b * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
-        (a * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
-    ]
+    // 4 diagonal points evaluated in 1 SIMD x4 call
+    let diag_samples = generator.sample_x4(
+        Simd4f([cx + R_DIAG, cx - R_DIAG, cx + R_DIAG, cx - R_DIAG]),
+        Simd4f([cz + R_DIAG, cz + R_DIAG, cz - R_DIAG, cz - R_DIAG]),
+        seed,
+    );
+    for s in diag_samples {
+        accum(s.biome, 0.092);
+    }
+
+    // 4 outer cardinal points evaluated in 1 SIMD x4 call
+    let outer_samples = generator.sample_x4(
+        Simd4f([cx + R_OUTER, cx - R_OUTER, cx, cx]),
+        Simd4f([cz, cz, cz + R_OUTER, cz - R_OUTER]),
+        seed,
+    );
+    for s in outer_samples {
+        accum(s.biome, 0.028);
+    }
+
+    let quantize = |arr: [f32; 4]| -> [f32; 4] {
+        [
+            (arr[0] * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
+            (arr[1] * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
+            (arr[2] * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
+            (arr[3] * QUANTIZE_STEPS).round() / QUANTIZE_STEPS,
+        ]
+    };
+
+    (quantize(grass), quantize(water), quantize(foliage))
+}
+
+/// Smoothly blends biome colors across biome transitions using a 13-point circular Gaussian kernel
+/// quantized into 64 discrete steps, accelerated by a thread-local 2x2m spatial SIMD cache.
+pub fn sample_blended_biome_color(voxel: Voxel, world_x: f32, world_z: f32, seed: u32) -> [f32; 4] {
+    if !voxel.is_tinted() {
+        return [1.0, 1.0, 1.0, 1.0];
+    }
+
+    // Early-out for biome-invariant foliage palettes (Palms, Conifers, Mahogany, Acacia)
+    match voxel {
+        Voxel::PalmLeaves => return [0.28, 0.88, 0.34, 1.0],
+        Voxel::PineLeaves | Voxel::YewLeaves | Voxel::RedwoodLeaves => {
+            return [0.30, 0.72, 0.44, 1.0];
+        }
+        Voxel::MahoganyLeaves => return [0.16, 0.90, 0.24, 1.0],
+        Voxel::AcaciaLeaves => return [0.64, 0.76, 0.28, 1.0],
+        _ => {}
+    }
+
+    let key_x = (world_x.floor() as i32) >> 1;
+    let key_z = (world_z.floor() as i32) >> 1;
+    let slot_idx = (((key_x as u32).wrapping_mul(73_856_093)
+        ^ (key_z as u32).wrapping_mul(19_349_663)
+        ^ seed) as usize)
+        & (TINT_CACHE_SIZE - 1);
+
+    let (grass, water, foliage) = BLENDED_TINT_CACHE.with(|cell| {
+        let mut cache = cell.borrow_mut();
+        let entry = &mut cache[slot_idx];
+        if entry.valid && entry.key_x == key_x && entry.key_z == key_z && entry.seed == seed {
+            (entry.grass, entry.water, entry.foliage)
+        } else {
+            let cx = (key_x * 2 + 1) as f32;
+            let cz = (key_z * 2 + 1) as f32;
+            let (g, w, f) = compute_blended_tints_cell(cx, cz, seed);
+            *entry = TintCacheEntry {
+                key_x,
+                key_z,
+                seed,
+                valid: true,
+                grass: g,
+                water: w,
+                foliage: f,
+            };
+            (g, w, f)
+        }
+    });
+
+    if voxel.is_grass_soil() || voxel.is_tinted_flora() {
+        grass
+    } else if matches!(voxel, Voxel::LiquidWater | Voxel::WaterOccupied) {
+        water
+    } else if voxel.is_leaves() {
+        foliage
+    } else {
+        [1.0, 1.0, 1.0, 1.0]
+    }
 }

@@ -9,7 +9,7 @@ use bevy::prelude::*;
 use super::chunk::{BlockShape, CHUNK_VOLUME, Chunk, ChunkStorage, Voxel};
 
 const CHUNK_MAGIC: [u8; 4] = *b"VCHK";
-const CHUNK_FORMAT_VERSION: u8 = 1;
+const CHUNK_FORMAT_VERSION: u8 = 2;
 
 /// High-performance chunk caching layer to eliminate redundant terrain generation
 /// when moving back and forth across chunk boundaries or streaming render distances.
@@ -121,7 +121,7 @@ pub fn serialize_chunk(chunk: &Chunk) -> Vec<u8> {
     match chunk.storage() {
         ChunkStorage::Uniform(v) => {
             buffer.push(0); // Tag 0 = Uniform
-            buffer.push(*v as u8);
+            buffer.extend_from_slice(&(*v as u16).to_le_bytes());
         }
         ChunkStorage::Paletted {
             palette,
@@ -131,14 +131,14 @@ pub fn serialize_chunk(chunk: &Chunk) -> Vec<u8> {
             buffer.push(1); // Tag 1 = Paletted
             buffer.push(*palette_len);
             for &p in palette.iter().take(*palette_len as usize) {
-                buffer.push(p as u8);
+                buffer.extend_from_slice(&(p as u16).to_le_bytes());
             }
             buffer.extend_from_slice(indices.as_slice());
         }
         ChunkStorage::Dense(voxels) => {
             buffer.push(2); // Tag 2 = Dense
             for &v in voxels.iter() {
-                buffer.push(v as u8);
+                buffer.extend_from_slice(&(v as u16).to_le_bytes());
             }
         }
     }
@@ -157,7 +157,7 @@ pub fn serialize_chunk(chunk: &Chunk) -> Vec<u8> {
     buffer.extend_from_slice(&(extra_slabs.len() as u16).to_le_bytes());
     for (&idx, &(voxel, orientation)) in extra_slabs.iter() {
         buffer.extend_from_slice(&(idx as u16).to_le_bytes());
-        buffer.push(voxel as u8);
+        buffer.extend_from_slice(&(voxel as u16).to_le_bytes());
         buffer.push(orientation);
     }
 
@@ -170,6 +170,18 @@ pub fn serialize_chunk(chunk: &Chunk) -> Vec<u8> {
     }
 
     buffer
+}
+
+#[inline]
+fn decode_voxel_u16(id: u16) -> Voxel {
+    if id == 0 {
+        Voxel::Air
+    } else {
+        *Voxel::ALL
+            .iter()
+            .find(|&&v| v as u16 == id)
+            .unwrap_or(&Voxel::Air)
+    }
 }
 
 /// Deserializes a binary payload back into a full `Chunk`.
@@ -190,20 +202,12 @@ pub fn deserialize_chunk(bytes: &[u8]) -> Option<Chunk> {
 
     let mut chunk = match storage_tag {
         0 => {
-            if offset >= bytes.len() {
+            if offset + 2 > bytes.len() {
                 return None;
             }
-            let voxel_id = bytes[offset];
-            offset += 1;
-            let voxel = if voxel_id == 0 {
-                Voxel::Air
-            } else {
-                *Voxel::ALL
-                    .iter()
-                    .find(|&&v| v as u8 == voxel_id)
-                    .unwrap_or(&Voxel::Air)
-            };
-            Chunk::filled(voxel)
+            let voxel_id = u16::from_le_bytes([bytes[offset], bytes[offset + 1]]);
+            offset += 2;
+            Chunk::filled(decode_voxel_u16(voxel_id))
         }
         1 => {
             if offset >= bytes.len() {
@@ -211,22 +215,15 @@ pub fn deserialize_chunk(bytes: &[u8]) -> Option<Chunk> {
             }
             let palette_len = bytes[offset] as usize;
             offset += 1;
-            if palette_len > 16 || offset + palette_len + (CHUNK_VOLUME / 2) > bytes.len() {
+            if palette_len > 16 || offset + palette_len * 2 + (CHUNK_VOLUME / 2) > bytes.len() {
                 return None;
             }
             let mut palette = [Voxel::Air; 16];
             for i in 0..palette_len {
-                let vid = bytes[offset + i];
-                palette[i] = if vid == 0 {
-                    Voxel::Air
-                } else {
-                    *Voxel::ALL
-                        .iter()
-                        .find(|&&v| v as u8 == vid)
-                        .unwrap_or(&Voxel::Air)
-                };
+                let vid = u16::from_le_bytes([bytes[offset + i * 2], bytes[offset + i * 2 + 1]]);
+                palette[i] = decode_voxel_u16(vid);
             }
-            offset += palette_len;
+            offset += palette_len * 2;
             let indices_bytes = &bytes[offset..offset + (CHUNK_VOLUME / 2)];
             offset += CHUNK_VOLUME / 2;
 
@@ -244,23 +241,15 @@ pub fn deserialize_chunk(bytes: &[u8]) -> Option<Chunk> {
             Chunk::from_voxels(voxels)
         }
         2 => {
-            if offset + CHUNK_VOLUME > bytes.len() {
+            if offset + CHUNK_VOLUME * 2 > bytes.len() {
                 return None;
             }
             let mut voxels = Vec::with_capacity(CHUNK_VOLUME);
             for i in 0..CHUNK_VOLUME {
-                let vid = bytes[offset + i];
-                let v = if vid == 0 {
-                    Voxel::Air
-                } else {
-                    *Voxel::ALL
-                        .iter()
-                        .find(|&&vx| vx as u8 == vid)
-                        .unwrap_or(&Voxel::Air)
-                };
-                voxels.push(v);
+                let vid = u16::from_le_bytes([bytes[offset + i * 2], bytes[offset + i * 2 + 1]]);
+                voxels.push(decode_voxel_u16(vid));
             }
-            offset += CHUNK_VOLUME;
+            offset += CHUNK_VOLUME * 2;
             Chunk::from_voxels(voxels)
         }
         _ => return None,
@@ -310,18 +299,14 @@ pub fn deserialize_chunk(bytes: &[u8]) -> Option<Chunk> {
         let count = u16::from_le_bytes([bytes[offset], bytes[offset + 1]]) as usize;
         offset += 2;
         for _ in 0..count {
-            if offset + 4 > bytes.len() {
+            if offset + 5 > bytes.len() {
                 break;
             }
             let idx = u16::from_le_bytes([bytes[offset], bytes[offset + 1]]) as usize;
-            let vid = bytes[offset + 2];
-            let orientation = bytes[offset + 3];
-            offset += 4;
-            let voxel = *Voxel::ALL
-                .iter()
-                .find(|&&vx| vx as u8 == vid)
-                .unwrap_or(&Voxel::Air);
-            chunk.set_extra_slab_raw(idx, (voxel, orientation));
+            let vid = u16::from_le_bytes([bytes[offset + 2], bytes[offset + 3]]);
+            let orientation = bytes[offset + 4];
+            offset += 5;
+            chunk.set_extra_slab_raw(idx, (decode_voxel_u16(vid), orientation));
         }
     }
 

@@ -111,7 +111,7 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
 
     let waving_enabled = voxel_params.y > 0.5;
     if (waving_enabled) {
-        let time = max(anim_params.x, 0.0);
+        let time = max(globals.time, 0.0);
         let anim_type = round(vertex_no_morph.color.a);
         let wind_intensity = anim_params.y;
         let wind_angle = anim_params.z;

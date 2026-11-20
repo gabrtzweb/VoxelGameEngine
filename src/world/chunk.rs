@@ -163,6 +163,9 @@ pub struct Chunk {
     solid_opaque_count: usize,
     homogeneity: ChunkHomogeneity,
     shapes: HashMap<usize, (BlockShape, u8)>,
+    /// Lazy 4,096-bit bitmask allocated only when `shapes` is non-empty,
+    /// keeping `std::mem::size_of::<Chunk>()` tiny while giving O(1) shape lookups.
+    shape_mask: Option<Box<[u64; 64]>>,
     extra_slabs: HashMap<usize, (Voxel, u8)>,
     fluid_levels: HashMap<usize, u8>,
     is_subterranean: bool,
@@ -189,12 +192,24 @@ impl Chunk {
             ChunkHomogeneity::Mixed
         };
 
+        let def_shape = voxel.default_shape();
+        let (shapes, shape_mask) = if !voxel.is_empty() && def_shape != BlockShape::Full {
+            let mut m = HashMap::with_capacity(CHUNK_VOLUME);
+            for i in 0..CHUNK_VOLUME {
+                m.insert(i, (def_shape, 0));
+            }
+            (m, Some(Box::new([u64::MAX; 64])))
+        } else {
+            (HashMap::default(), None)
+        };
+
         Self {
             storage: ChunkStorage::Uniform(voxel),
             non_air_count,
             solid_opaque_count,
             homogeneity,
-            shapes: HashMap::default(),
+            shapes,
+            shape_mask,
             extra_slabs: HashMap::default(),
             fluid_levels: HashMap::default(),
             is_subterranean: false,
@@ -231,10 +246,13 @@ impl Chunk {
         };
 
         let mut shapes = HashMap::default();
+        let mut shape_mask: Option<Box<[u64; 64]>> = None;
         for (i, &v) in voxels.iter().enumerate() {
             let def_shape = v.default_shape();
             if def_shape != BlockShape::Full {
                 shapes.insert(i, (def_shape, 0));
+                let mask = shape_mask.get_or_insert_with(|| Box::new([0u64; 64]));
+                mask[i >> 6] |= 1u64 << (i & 63);
             }
         }
 
@@ -244,6 +262,7 @@ impl Chunk {
             solid_opaque_count,
             homogeneity,
             shapes,
+            shape_mask,
             extra_slabs: HashMap::default(),
             fluid_levels: HashMap::default(),
             is_subterranean: false,
@@ -326,12 +345,17 @@ impl Chunk {
 
         if voxel.is_empty() {
             self.shapes.remove(&index);
+            if let Some(ref mut mask) = self.shape_mask {
+                mask[index >> 6] &= !(1u64 << (index & 63));
+            }
             self.extra_slabs.remove(&index);
             self.fluid_levels.remove(&index);
         } else {
             let def_shape = voxel.default_shape();
             if def_shape != BlockShape::Full {
                 self.shapes.entry(index).or_insert((def_shape, 0));
+                let mask = self.shape_mask.get_or_insert_with(|| Box::new([0u64; 64]));
+                mask[index >> 6] |= 1u64 << (index & 63);
             } else if self.shapes.get(&index).is_some_and(|&(s, _)| {
                 matches!(
                     s,
@@ -353,6 +377,9 @@ impl Chunk {
                 )
             }) {
                 self.shapes.remove(&index);
+                if let Some(ref mut mask) = self.shape_mask {
+                    mask[index >> 6] &= !(1u64 << (index & 63));
+                }
             }
             if !voxel.is_fluid() {
                 self.fluid_levels.remove(&index);
@@ -384,15 +411,19 @@ impl Chunk {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_shape(&self, x: usize, y: usize, z: usize) -> (BlockShape, u8) {
-        if self.shapes.is_empty() {
-            (self.get(x, y, z).default_shape(), 0)
+        let Some(ref mask) = self.shape_mask else {
+            return (BlockShape::Full, 0);
+        };
+        let index = Self::index(x, y, z);
+        if (mask[index >> 6] & (1u64 << (index & 63))) == 0 {
+            (BlockShape::Full, 0)
         } else {
             self.shapes
-                .get(&Self::index(x, y, z))
+                .get(&index)
                 .copied()
-                .unwrap_or_else(|| (self.get(x, y, z).default_shape(), 0))
+                .unwrap_or((BlockShape::Full, 0))
         }
     }
 
@@ -400,8 +431,13 @@ impl Chunk {
         let index = Self::index(x, y, z);
         if shape == BlockShape::Full && orientation == 0 {
             self.shapes.remove(&index);
+            if let Some(ref mut mask) = self.shape_mask {
+                mask[index >> 6] &= !(1u64 << (index & 63));
+            }
         } else {
             self.shapes.insert(index, (shape, orientation));
+            let mask = self.shape_mask.get_or_insert_with(|| Box::new([0u64; 64]));
+            mask[index >> 6] |= 1u64 << (index & 63);
         }
     }
 
@@ -481,6 +517,8 @@ impl Chunk {
     #[allow(dead_code)]
     pub fn set_shape_raw(&mut self, index: usize, shape: BlockShape, orientation: u8) {
         self.shapes.insert(index, (shape, orientation));
+        let mask = self.shape_mask.get_or_insert_with(|| Box::new([0u64; 64]));
+        mask[index >> 6] |= 1u64 << (index & 63);
     }
 
     #[inline]

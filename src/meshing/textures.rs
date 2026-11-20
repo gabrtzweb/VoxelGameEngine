@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::Arc;
 
 
 
@@ -76,8 +77,8 @@ pub struct SpeleothemTextureLayers {
 
 pub struct VoxelTextureRegistry {
 
-    mappings: [Option<VoxelTextureMapping>; MAX_VOXEL_VARIANTS],
-    speleothems: [Option<SpeleothemTextureLayers>; MAX_VOXEL_VARIANTS],
+    mappings: Arc<[Option<VoxelTextureMapping>; MAX_VOXEL_VARIANTS]>,
+    speleothems: Arc<[Option<SpeleothemTextureLayers>; MAX_VOXEL_VARIANTS]>,
 
     pub flower_carpet_stem: Option<FaceTextureInfo>,
     pub grass_overlay_layer: u16,
@@ -98,8 +99,8 @@ impl Default for VoxelTextureRegistry {
 
         Self {
 
-            mappings: [None; MAX_VOXEL_VARIANTS],
-            speleothems: [None; MAX_VOXEL_VARIANTS],
+            mappings: Arc::new([None; MAX_VOXEL_VARIANTS]),
+            speleothems: Arc::new([None; MAX_VOXEL_VARIANTS]),
 
             flower_carpet_stem: None,
             grass_overlay_layer: 0,
@@ -143,7 +144,7 @@ impl VoxelTextureRegistry {
     pub fn register_speleothem(&mut self, voxel: Voxel, layers: SpeleothemTextureLayers) {
         let index = voxel as usize;
         if index < MAX_VOXEL_VARIANTS {
-            self.speleothems[index] = Some(layers);
+            Arc::make_mut(&mut self.speleothems)[index] = Some(layers);
         }
     }
 
@@ -171,7 +172,7 @@ impl VoxelTextureRegistry {
 
         if index < MAX_VOXEL_VARIANTS {
 
-            self.mappings[index] = Some(VoxelTextureMapping {
+            Arc::make_mut(&mut self.mappings)[index] = Some(VoxelTextureMapping {
 
                 side,
 

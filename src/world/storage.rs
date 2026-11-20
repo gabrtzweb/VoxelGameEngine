@@ -25,6 +25,10 @@ impl VoxelWorld {
         self.chunks.insert(coordinate, Arc::new(chunk));
     }
 
+    pub fn insert_chunk_arc(&mut self, coordinate: IVec3, chunk: Arc<Chunk>) {
+        self.chunks.insert(coordinate, chunk);
+    }
+
     pub fn get_chunk(&self, coordinate: IVec3) -> Option<&Chunk> {
         self.chunks.get(&coordinate).map(Arc::as_ref)
     }

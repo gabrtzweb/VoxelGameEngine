@@ -44,9 +44,11 @@ pub fn plan_chunk_streaming(
         current_fwd != Vec2::ZERO && current_fwd.dot(last) < 0.95 // ~18 degrees turn
     });
 
+    // Only replan when settings change, the player crosses a chunk boundary, or the camera turns
+    // while queues still have work. Do NOT trigger on `mesh_registry.is_changed()` — `collect_meshing_tasks`
+    // already removes covered LOD1 columns immediately when surface chunks finish meshing.
     if !settings.is_changed()
         && !moved_chunk
-        && !mesh_registry.is_changed()
         && (!camera_turned || (queues.load.is_empty() && queues.lod_load.is_empty()))
     {
         return;
@@ -55,8 +57,16 @@ pub fn plan_chunk_streaming(
     state.last_player_chunk = Some(player_chunk);
     state.last_camera_fwd = Some(current_fwd);
 
-    state.desired_chunks =
-        desired_chunk_coordinates(player_chunk, settings.render_distance, &terrain_generator);
+    if state.column_height_cache.len() > 8192 {
+        state.column_height_cache.clear();
+    }
+
+    state.desired_chunks = desired_chunk_coordinates_cached(
+        player_chunk,
+        settings.render_distance,
+        &terrain_generator,
+        &mut state.column_height_cache,
+    );
 
     let generating_chunks: HashSet<IVec3> = generation_tasks
         .iter()
@@ -102,88 +112,112 @@ pub fn plan_chunk_streaming(
     queues.unload.clear();
     queues.unload.extend(chunks_to_unload);
 
-    // Dynamic Horizon LOD Column Planning
+    // Dynamic Hierarchical Horizon LOD Column Planning:
+    // - Lod1: 1x1m crisp blocks (1x1 chunk) covering near horizon + unmeshed real columns
+    // - Lod2: 2x2m blocks (2x2 super-chunks) covering mid horizon
+    // - Lod3: 4x4m blocks (4x4 super-chunks) covering far horizon
     let mut desired_lod: HashMap<IVec2, ChunkLod> = HashMap::default();
     let center_2d = IVec2::new(player_chunk.x, player_chunk.z);
 
     if settings.lod_render_distance > 0 {
+        let lod_dist_f = settings.lod_render_distance as f32;
         let total_r = settings.render_distance + settings.lod_render_distance;
         let r_real = settings.render_distance as f32;
-        let r_mid = r_real + settings.lod_render_distance as f32 * 0.5;
+        let lod1_extra = (lod_dist_f * 0.35).clamp(4.0, 12.0).min(lod_dist_f);
+        let r_lod1 = r_real + lod1_extra;
+        let lod2_extra = (lod_dist_f * 0.72).max(lod1_extra + 4.0).min(lod_dist_f);
+        let r_lod2 = r_real + lod2_extra;
 
-        let r_mid_sq = r_mid * r_mid;
         let r_real_sq = r_real * r_real;
+        let r_lod1_sq = r_lod1 * r_lod1;
+        let r_lod2_sq = r_lod2 * r_lod2;
         let total_r_sq = (total_r * total_r) as f32;
 
-        let mid_r = r_mid.ceil() as i32;
-        for dz in -mid_r..=mid_r {
-            for dx in -mid_r..=mid_r {
-                let dist_sq = (dx * dx + dz * dz) as f32;
-                if dist_sq > r_mid_sq {
+        let min_macro_x = (center_2d.x - total_r) & !3;
+        let max_macro_x = (center_2d.x + total_r) & !3;
+        let min_macro_z = (center_2d.y - total_r) & !3;
+        let max_macro_z = (center_2d.y + total_r) & !3;
+
+        let mut mz = min_macro_z;
+        while mz <= max_macro_z {
+            let mut mx = min_macro_x;
+            while mx <= max_macro_x {
+                let mut any_in_total = false;
+                let mut any_inside_lod2 = false;
+
+                for oz in 0..4 {
+                    for ox in 0..4 {
+                        let delta = IVec2::new(mx + ox, mz + oz) - center_2d;
+                        let dist_sq = (delta.x * delta.x + delta.y * delta.y) as f32;
+                        if dist_sq <= total_r_sq {
+                            any_in_total = true;
+                        }
+                        if dist_sq <= r_lod2_sq {
+                            any_inside_lod2 = true;
+                        }
+                    }
+                }
+
+                if !any_in_total {
+                    mx += 4;
                     continue;
                 }
 
-                let col = center_2d + IVec2::new(dx, dz);
-                if dist_sq <= r_real_sq {
-                    if !mesh_registry.has_column_surface_mesh(col) {
-                        desired_lod.insert(col, ChunkLod::Lod1);
-                    }
-                } else {
-                    desired_lod.insert(col, ChunkLod::Lod1);
-                }
-            }
-        }
-
-        let min_super_x = (center_2d.x - total_r) & !1;
-        let max_super_x = (center_2d.x + total_r) & !1;
-        let min_super_z = (center_2d.y - total_r) & !1;
-        let max_super_z = (center_2d.y + total_r) & !1;
-
-        let mut sz = min_super_z;
-        while sz <= max_super_z {
-            let mut sx = min_super_x;
-            while sx <= max_super_x {
-                let super_coord = IVec2::new(sx, sz);
-
-                let mut overlaps_near = false;
-                let mut in_range_count = 0;
-
-                for ox in 0..2 {
-                    for oz in 0..2 {
-                        let sub_col = super_coord + IVec2::new(ox, oz);
-                        let delta = sub_col - center_2d;
-                        let dist_sq = (delta.x * delta.x + delta.y * delta.y) as f32;
-
-                        if desired_lod.contains_key(&sub_col) || dist_sq <= r_mid_sq {
-                            overlaps_near = true;
-                        }
-                        if dist_sq <= total_r_sq {
-                            in_range_count += 1;
-                        }
-                    }
+                if !any_inside_lod2 {
+                    desired_lod.insert(IVec2::new(mx, mz), ChunkLod::Lod3);
+                    mx += 4;
+                    continue;
                 }
 
-                if !overlaps_near && in_range_count > 0 {
-                    desired_lod.insert(super_coord, ChunkLod::Lod2);
-                } else if overlaps_near {
-                    for ox in 0..2 {
+                // Split 4x4 block into 2x2 super-chunks (Lod2 or further split to 1x1 Lod1)
+                for sz_off in [0, 2] {
+                    for sx_off in [0, 2] {
+                        let sx = mx + sx_off;
+                        let sz = mz + sz_off;
+                        let mut sub_in_total = false;
+                        let mut any_inside_lod1 = false;
+
                         for oz in 0..2 {
-                            let sub_col = super_coord + IVec2::new(ox, oz);
-                            let delta = sub_col - center_2d;
-                            let dist_sq = (delta.x * delta.x + delta.y * delta.y) as f32;
-                            if dist_sq > r_mid_sq
-                                && dist_sq <= total_r_sq
-                                && !desired_lod.contains_key(&sub_col)
-                            {
-                                desired_lod.insert(sub_col, ChunkLod::Lod1);
+                            for ox in 0..2 {
+                                let delta = IVec2::new(sx + ox, sz + oz) - center_2d;
+                                let dist_sq = (delta.x * delta.x + delta.y * delta.y) as f32;
+                                if dist_sq <= total_r_sq {
+                                    sub_in_total = true;
+                                }
+                                if dist_sq <= r_lod1_sq {
+                                    any_inside_lod1 = true;
+                                }
+                            }
+                        }
+
+                        if !sub_in_total {
+                            continue;
+                        }
+
+                        if !any_inside_lod1 {
+                            desired_lod.insert(IVec2::new(sx, sz), ChunkLod::Lod2);
+                        } else {
+                            for oz in 0..2 {
+                                for ox in 0..2 {
+                                    let col = IVec2::new(sx + ox, sz + oz);
+                                    let delta = col - center_2d;
+                                    let dist_sq = (delta.x * delta.x + delta.y * delta.y) as f32;
+                                    if dist_sq <= r_real_sq {
+                                        if !mesh_registry.has_column_surface_mesh(col) {
+                                            desired_lod.insert(col, ChunkLod::Lod1);
+                                        }
+                                    } else if dist_sq <= total_r_sq {
+                                        desired_lod.insert(col, ChunkLod::Lod1);
+                                    }
+                                }
                             }
                         }
                     }
                 }
 
-                sx += 2;
+                mx += 4;
             }
-            sz += 2;
+            mz += 4;
         }
     }
 
@@ -215,11 +249,8 @@ pub fn plan_chunk_streaming(
         .collect();
 
     lod_to_load.sort_by_key(|(coord, lod)| {
-        let offset = if *lod == ChunkLod::Lod2 {
-            Vec2::new(0.5, 0.5)
-        } else {
-            Vec2::ZERO
-        };
+        let half_ext = (lod.chunk_extent() as f32 - 1.0) * 0.5;
+        let offset = Vec2::splat(half_ext);
         let col_f = Vec2::new(coord.x as f32 + offset.x, coord.y as f32 + offset.y);
         let center_f = Vec2::new(center_2d.x as f32, center_2d.y as f32);
         let delta = col_f - center_f;
@@ -256,6 +287,16 @@ pub fn desired_chunk_coordinates(
     render_distance: i32,
     generator: &TerrainGenerator,
 ) -> HashSet<IVec3> {
+    let mut cache = HashMap::new();
+    desired_chunk_coordinates_cached(center, render_distance, generator, &mut cache)
+}
+
+pub fn desired_chunk_coordinates_cached(
+    center: IVec3,
+    render_distance: i32,
+    generator: &TerrainGenerator,
+    height_cache: &mut HashMap<IVec2, (i32, i32)>,
+) -> HashSet<IVec3> {
     let radius_squared = render_distance * render_distance;
 
     let diameter = (render_distance * 2 + 1) as usize;
@@ -274,12 +315,16 @@ pub fn desired_chunk_coordinates(
 
             let col_chunk_x = center.x + x;
             let col_chunk_z = center.z + z;
-            let est_max_height = generator.estimate_chunk_max_height(col_chunk_x, col_chunk_z);
-            let est_max_chunk_y = est_max_height.div_euclid(CHUNK_SIZE as i32);
-
-            let est_min_height =
-                generator.estimate_chunk_surface_min_height(col_chunk_x, col_chunk_z);
-            let est_min_chunk_y = est_min_height.div_euclid(CHUNK_SIZE as i32);
+            let (est_min_chunk_y, est_max_chunk_y) = *height_cache
+                .entry(IVec2::new(col_chunk_x, col_chunk_z))
+                .or_insert_with(|| {
+                    let (min_h, max_h) =
+                        generator.estimate_chunk_height_bounds(col_chunk_x, col_chunk_z);
+                    (
+                        min_h.div_euclid(CHUNK_SIZE as i32),
+                        max_h.div_euclid(CHUNK_SIZE as i32),
+                    )
+                });
 
             let (col_min_y, col_max_y) = if horizontal_dist_sq <= 16 {
                 // Near player: load deeper for caves & ravines the player can enter

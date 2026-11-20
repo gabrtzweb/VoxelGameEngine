@@ -14,10 +14,12 @@ use crate::{
 pub enum ChunkLod {
     /// Full 1m³ greedy-meshed voxels with custom shapes, caves, and full physics.
     Lod0,
-    /// Mid-distance 2m cuboid block grid (8x8 cells per chunk column).
+    /// Near horizon 1m×1m block resolution (16×16 cells per chunk column) with 2D greedy merging.
     Lod1,
-    /// Far-distance 4m cuboid block grid (4x4 cells per chunk column).
+    /// Mid-distance 2m×2m cuboid block grid (16×16 cells per 32×32m 2×2 super-chunk).
     Lod2,
+    /// Far-distance 4m×4m cuboid block grid (16×16 cells per 64×64m 4×4 super-chunk).
+    Lod3,
 }
 
 impl ChunkLod {
@@ -25,18 +27,19 @@ impl ChunkLod {
     #[inline]
     pub fn stride(self) -> i32 {
         match self {
-            Self::Lod0 => 1,
-            Self::Lod1 => 2,
-            Self::Lod2 => 4,
+            Self::Lod0 | Self::Lod1 => 1,
+            Self::Lod2 => 2,
+            Self::Lod3 => 4,
         }
     }
 
-    /// Extent of the LOD mesh along X and Z in chunk columns (1 for Lod0/Lod1, 2 for Lod2 2x2 super-chunks).
+    /// Extent of the LOD mesh along X and Z in chunk columns (1 for Lod0/Lod1, 2 for Lod2, 4 for Lod3).
     #[inline]
     pub fn chunk_extent(self) -> i32 {
         match self {
             Self::Lod0 | Self::Lod1 => 1,
             Self::Lod2 => 2,
+            Self::Lod3 => 4,
         }
     }
 
@@ -179,10 +182,10 @@ fn push_lod_wall(
     }
 }
 
-/// Builds cuboid voxel block LOD meshes for a 16x16 chunk column.
+/// Builds 2D greedy-merged cuboid voxel LOD meshes for a column or super-chunk.
 ///
-/// Produces strictly axis-aligned cuboid blocks and vertical stepped walls,
-/// matching the block aesthetic of the near world (identical to Distant Horizons / Voxy).
+/// `Lod1` keeps crisp 1x1m block resolution matching near chunks; `Lod2` (2x2m) and
+/// `Lod3` (4x4m) cover mid/far horizons in `16x16` cell super-chunks with full 2D greedy merging.
 pub fn build_lod_mesh(
     chunk_coordinate: IVec2,
     lod: ChunkLod,
@@ -191,26 +194,31 @@ pub fn build_lod_mesh(
 ) -> ChunkMeshes {
     let stride = lod.stride();
     let region_size = lod.chunk_extent() * CHUNK_SIZE as i32;
-    let num_cells = region_size / stride; // 8 for Lod1 (16m / 2m), 8 for Lod2 (32m / 4m)
+    let num_cells = region_size / stride; // 16x16 cells for Lod1, Lod2, and Lod3
     let grid_dim = num_cells + 2;
 
     let chunk_origin_x = chunk_coordinate.x * CHUNK_SIZE as i32;
     let chunk_origin_z = chunk_coordinate.y * CHUNK_SIZE as i32;
 
     let total_samples = (grid_dim * grid_dim) as usize;
-    let mut cols = vec![generator.sample_column(chunk_origin_x, chunk_origin_z); total_samples];
+    let mut cols = vec![crate::generation::generator::TerrainColumn::default(); total_samples];
     let mut heights = vec![0i32; total_samples];
     let mut materials = vec![Voxel::Air; total_samples];
     let mut water_levels = vec![None; total_samples];
 
     let idx = |i: i32, j: i32| -> usize { ((i + 1) * grid_dim + (j + 1)) as usize };
+    let sample_offset = if stride > 1 { stride / 2 } else { 0 };
 
     // 1. Sample column heights and materials across the grid + 1-cell border
     for i in -1..=num_cells {
-        let world_x = chunk_origin_x + i * stride + stride / 2;
+        let world_x = chunk_origin_x + i * stride + sample_offset;
         for j in -1..=num_cells {
-            let world_z = chunk_origin_z + j * stride + stride / 2;
-            let col = generator.sample_column(world_x, world_z);
+            let world_z = chunk_origin_z + j * stride + sample_offset;
+            let col = if stride == 1 {
+                generator.sample_column_cached(world_x, world_z)
+            } else {
+                generator.sample_column(world_x, world_z)
+            };
             let k = idx(i, j);
             cols[k] = col;
             heights[k] = col.terrain_height;
@@ -219,35 +227,27 @@ pub fn build_lod_mesh(
         }
     }
 
-    let quad_estimate = (num_cells * num_cells * 2) as usize;
-    let mut opaque_buffers = MeshBuffers::with_capacity(quad_estimate);
-    let mut transparent_buffers = MeshBuffers::with_capacity(32);
-
+    let mut opaque_buffers = MeshBuffers::with_capacity((num_cells * num_cells) as usize);
+    let mut transparent_buffers = MeshBuffers::with_capacity(64);
     let cell_w = stride as f32;
 
-    // 2. Build cuboid block tops and vertical stepped walls for each cell in the chunk
+    let n = num_cells as usize;
+    let mut top_layers = vec![0u16; n * n];
+    let mut top_tints = vec![[1.0f32; 4]; n * n];
+    let mut top_tint_q = vec![[0u8; 3]; n * n];
+
     for i in 0..num_cells {
-        let local_x0 = (i * stride) as f32;
-        let local_x1 = ((i + 1) * stride) as f32;
-
+        let world_x = chunk_origin_x + i * stride + sample_offset;
         for j in 0..num_cells {
-            let local_z0 = (j * stride) as f32;
-            let local_z1 = ((j + 1) * stride) as f32;
-
-            let h_curr = heights[idx(i, j)];
-            let voxel = materials[idx(i, j)];
-            let wl = water_levels[idx(i, j)];
-
-            let world_x = chunk_origin_x + i * stride + stride / 2;
-            let world_z = chunk_origin_z + j * stride + stride / 2;
+            let world_z = chunk_origin_z + j * stride + sample_offset;
+            let k = idx(i, j);
+            let h_curr = heights[k];
+            let voxel = materials[k];
             let world_pos = IVec3::new(world_x, h_curr, world_z);
 
-            let top_y = (h_curr + 1) as f32; // Top of the block
-
-            // --- A. Top Face (PositiveY) ---
-            let top_layer = textures
+            let layer = textures
                 .get_face_texture_info(voxel, world_pos, FaceDirection::PositiveY)
-                .0 as f32;
+                .0;
             let mut tint = voxel.tint_color_at(world_pos);
             if h_curr >= 110 {
                 let snow_blend = ((h_curr - 110) as f32 / 16.0).clamp(0.0, 1.0);
@@ -257,44 +257,121 @@ pub fn build_lod_mesh(
             }
             tint[3] = 1.0;
 
-            let p0 = [local_x0, top_y, local_z0];
-            let p1 = [local_x0, top_y, local_z1];
-            let p2 = [local_x1, top_y, local_z1];
-            let p3 = [local_x1, top_y, local_z0];
+            let cell_i = (i as usize) * n + (j as usize);
+            top_layers[cell_i] = layer;
+            top_tints[cell_i] = tint;
+            top_tint_q[cell_i] = [
+                (tint[0] * 64.0).round().clamp(0.0, 255.0) as u8,
+                (tint[1] * 64.0).round().clamp(0.0, 255.0) as u8,
+                (tint[2] * 64.0).round().clamp(0.0, 255.0) as u8,
+            ];
+        }
+    }
+
+    // 2A. 2D Greedy Merge for Top Faces (+Y)
+    let mut visited = vec![false; n * n];
+    for j in 0..num_cells {
+        for i in 0..num_cells {
+            let start_ci = (i as usize) * n + (j as usize);
+            if visited[start_ci] {
+                continue;
+            }
+            let h0 = heights[idx(i, j)];
+            let layer0 = top_layers[start_ci];
+            let tq0 = top_tint_q[start_ci];
+            let tint0 = top_tints[start_ci];
+
+            let mut w = 1i32;
+            while i + w < num_cells {
+                let ci = ((i + w) as usize) * n + (j as usize);
+                if visited[ci]
+                    || heights[idx(i + w, j)] != h0
+                    || top_layers[ci] != layer0
+                    || top_tint_q[ci] != tq0
+                {
+                    break;
+                }
+                w += 1;
+            }
+
+            let mut d = 1i32;
+            'rows: while j + d < num_cells {
+                for di in 0..w {
+                    let ci = ((i + di) as usize) * n + ((j + d) as usize);
+                    if visited[ci]
+                        || heights[idx(i + di, j + d)] != h0
+                        || top_layers[ci] != layer0
+                        || top_tint_q[ci] != tq0
+                    {
+                        break 'rows;
+                    }
+                }
+                d += 1;
+            }
+
+            for di in 0..w {
+                for dj in 0..d {
+                    visited[((i + di) as usize) * n + ((j + dj) as usize)] = true;
+                }
+            }
+
+            let local_x0 = (i * stride) as f32;
+            let local_x1 = ((i + w) * stride) as f32;
+            let local_z0 = (j * stride) as f32;
+            let local_z1 = ((j + d) * stride) as f32;
+            let top_y = (h0 + 1) as f32;
 
             push_lod_quad(
                 &mut opaque_buffers,
                 FaceDirection::PositiveY,
-                p0,
-                p1,
-                p2,
-                p3,
-                cell_w,
-                cell_w,
-                top_layer,
-                tint,
+                [local_x0, top_y, local_z0],
+                [local_x0, top_y, local_z1],
+                [local_x1, top_y, local_z1],
+                [local_x1, top_y, local_z0],
+                (w * stride) as f32,
+                (d * stride) as f32,
+                layer0 as f32,
+                tint0,
             );
+        }
+    }
 
-            // --- B. Vertical Side Walls (Stepped Cuboid Faces with Horizon Skirts) ---
-            // West neighbor (i - 1, j)
+    // 2B. Stepped Vertical Side Walls (horizon skirt is shallow on 1x1 Lod1, deeper on outer tiers)
+    let skirt_depth = match lod {
+        ChunkLod::Lod0 | ChunkLod::Lod1 => 2.0,
+        ChunkLod::Lod2 => 5.0,
+        ChunkLod::Lod3 => 10.0,
+    };
+
+    for i in 0..num_cells {
+        let local_x0 = (i * stride) as f32;
+        let local_x1 = ((i + 1) * stride) as f32;
+        let world_x = chunk_origin_x + i * stride + sample_offset;
+
+        for j in 0..num_cells {
+            let local_z0 = (j * stride) as f32;
+            let local_z1 = ((j + 1) * stride) as f32;
+            let world_z = chunk_origin_z + j * stride + sample_offset;
+
+            let h_curr = heights[idx(i, j)];
+            let voxel = materials[idx(i, j)];
+            let world_pos = IVec3::new(world_x, h_curr, world_z);
+            let top_y = (h_curr + 1) as f32;
+
             let h_west = heights[idx(i - 1, j)];
             let bot_west = if i == 0 {
-                ((h_west + 1) as f32).min(top_y - 12.0)
+                ((h_west + 1) as f32).min(top_y - skirt_depth)
             } else {
                 (h_west + 1) as f32
             };
             if top_y > bot_west {
-                let p_bot_left = [local_x0, bot_west, local_z1];
-                let p_top_left = [local_x0, top_y, local_z1];
-                let p_top_right = [local_x0, top_y, local_z0];
-                let p_bot_right = [local_x0, bot_west, local_z0];
                 push_lod_wall(
                     &mut opaque_buffers,
                     FaceDirection::NegativeX,
-                    p_bot_left,
-                    p_top_left,
-                    p_top_right,
-                    p_bot_right,
+                    [local_x0, bot_west, local_z1],
+                    [local_x0, top_y, local_z1],
+                    [local_x0, top_y, local_z0],
+                    [local_x0, bot_west, local_z0],
                     cell_w,
                     top_y,
                     bot_west,
@@ -304,25 +381,20 @@ pub fn build_lod_mesh(
                 );
             }
 
-            // East neighbor (i + 1, j)
             let h_east = heights[idx(i + 1, j)];
             let bot_east = if i == num_cells - 1 {
-                ((h_east + 1) as f32).min(top_y - 12.0)
+                ((h_east + 1) as f32).min(top_y - skirt_depth)
             } else {
                 (h_east + 1) as f32
             };
             if top_y > bot_east {
-                let p_bot_left = [local_x1, bot_east, local_z0];
-                let p_top_left = [local_x1, top_y, local_z0];
-                let p_top_right = [local_x1, top_y, local_z1];
-                let p_bot_right = [local_x1, bot_east, local_z1];
                 push_lod_wall(
                     &mut opaque_buffers,
                     FaceDirection::PositiveX,
-                    p_bot_left,
-                    p_top_left,
-                    p_top_right,
-                    p_bot_right,
+                    [local_x1, bot_east, local_z0],
+                    [local_x1, top_y, local_z0],
+                    [local_x1, top_y, local_z1],
+                    [local_x1, bot_east, local_z1],
                     cell_w,
                     top_y,
                     bot_east,
@@ -332,25 +404,20 @@ pub fn build_lod_mesh(
                 );
             }
 
-            // North neighbor (i, j - 1)
             let h_north = heights[idx(i, j - 1)];
             let bot_north = if j == 0 {
-                ((h_north + 1) as f32).min(top_y - 12.0)
+                ((h_north + 1) as f32).min(top_y - skirt_depth)
             } else {
                 (h_north + 1) as f32
             };
             if top_y > bot_north {
-                let p_bot_left = [local_x0, bot_north, local_z0];
-                let p_top_left = [local_x0, top_y, local_z0];
-                let p_top_right = [local_x1, top_y, local_z0];
-                let p_bot_right = [local_x1, bot_north, local_z0];
                 push_lod_wall(
                     &mut opaque_buffers,
                     FaceDirection::NegativeZ,
-                    p_bot_left,
-                    p_top_left,
-                    p_top_right,
-                    p_bot_right,
+                    [local_x0, bot_north, local_z0],
+                    [local_x0, top_y, local_z0],
+                    [local_x1, top_y, local_z0],
+                    [local_x1, bot_north, local_z0],
                     cell_w,
                     top_y,
                     bot_north,
@@ -360,25 +427,20 @@ pub fn build_lod_mesh(
                 );
             }
 
-            // South neighbor (i, j + 1)
             let h_south = heights[idx(i, j + 1)];
             let bot_south = if j == num_cells - 1 {
-                ((h_south + 1) as f32).min(top_y - 12.0)
+                ((h_south + 1) as f32).min(top_y - skirt_depth)
             } else {
                 (h_south + 1) as f32
             };
             if top_y > bot_south {
-                let p_bot_left = [local_x1, bot_south, local_z1];
-                let p_top_left = [local_x1, top_y, local_z1];
-                let p_top_right = [local_x0, top_y, local_z1];
-                let p_bot_right = [local_x0, bot_south, local_z1];
                 push_lod_wall(
                     &mut opaque_buffers,
                     FaceDirection::PositiveZ,
-                    p_bot_left,
-                    p_top_left,
-                    p_top_right,
-                    p_bot_right,
+                    [local_x1, bot_south, local_z1],
+                    [local_x1, top_y, local_z1],
+                    [local_x0, top_y, local_z1],
+                    [local_x0, bot_south, local_z1],
                     cell_w,
                     top_y,
                     bot_south,
@@ -387,46 +449,94 @@ pub fn build_lod_mesh(
                     world_pos,
                 );
             }
+        }
+    }
 
-            // --- C. Water Surface Quads ---
-            if let Some(water_level) = wl
-                && h_curr < water_level
-            {
-                let water_y = (water_level + 1) as f32 - 0.05;
-                let water_layer = textures
-                    .get_face_texture_info(
-                        Voxel::LiquidWater,
-                        IVec3::new(world_x, water_level, world_z),
-                        FaceDirection::PositiveY,
-                    )
-                    .0 as f32;
-
-                let wp0 = [local_x0, water_y, local_z0];
-                let wp1 = [local_x0, water_y, local_z1];
-                let wp2 = [local_x1, water_y, local_z1];
-                let wp3 = [local_x1, water_y, local_z0];
-
-                push_lod_quad(
-                    &mut transparent_buffers,
-                    FaceDirection::PositiveY,
-                    wp0,
-                    wp1,
-                    wp2,
-                    wp3,
-                    cell_w,
-                    cell_w,
-                    water_layer,
-                    [0.35, 0.65, 0.92, 1.0],
-                );
+    // 2C. 2D Greedy Merge for Water Surface Quads
+    visited.fill(false);
+    for j in 0..num_cells {
+        for i in 0..num_cells {
+            let start_ci = (i as usize) * n + (j as usize);
+            if visited[start_ci] {
+                continue;
             }
+            let k = idx(i, j);
+            let Some(wl) = water_levels[k] else {
+                visited[start_ci] = true;
+                continue;
+            };
+            if heights[k] >= wl {
+                visited[start_ci] = true;
+                continue;
+            }
+
+            let has_same_water = |ci: i32, cj: i32| -> bool {
+                let ck = idx(ci, cj);
+                water_levels[ck] == Some(wl) && heights[ck] < wl
+            };
+
+            let mut w = 1i32;
+            while i + w < num_cells {
+                let ci = ((i + w) as usize) * n + (j as usize);
+                if visited[ci] || !has_same_water(i + w, j) {
+                    break;
+                }
+                w += 1;
+            }
+
+            let mut d = 1i32;
+            'w_rows: while j + d < num_cells {
+                for di in 0..w {
+                    let ci = ((i + di) as usize) * n + ((j + d) as usize);
+                    if visited[ci] || !has_same_water(i + di, j + d) {
+                        break 'w_rows;
+                    }
+                }
+                d += 1;
+            }
+
+            for di in 0..w {
+                for dj in 0..d {
+                    visited[((i + di) as usize) * n + ((j + dj) as usize)] = true;
+                }
+            }
+
+            let world_x = chunk_origin_x + i * stride + sample_offset;
+            let world_z = chunk_origin_z + j * stride + sample_offset;
+            let water_y = (wl + 1) as f32 - 0.05;
+            let water_layer = textures
+                .get_face_texture_info(
+                    Voxel::LiquidWater,
+                    IVec3::new(world_x, wl, world_z),
+                    FaceDirection::PositiveY,
+                )
+                .0 as f32;
+
+            let local_x0 = (i * stride) as f32;
+            let local_x1 = ((i + w) * stride) as f32;
+            let local_z0 = (j * stride) as f32;
+            let local_z1 = ((j + d) * stride) as f32;
+
+            push_lod_quad(
+                &mut transparent_buffers,
+                FaceDirection::PositiveY,
+                [local_x0, water_y, local_z0],
+                [local_x0, water_y, local_z1],
+                [local_x1, water_y, local_z1],
+                [local_x1, water_y, local_z0],
+                (w * stride) as f32,
+                (d * stride) as f32,
+                water_layer,
+                [0.35, 0.65, 0.92, 1.0],
+            );
         }
     }
 
     // --- D. Distant LOD Trees (zero-noise O(1) lookup from sampled grid + opaque Early-Z proxies) ---
     let min_wx = chunk_origin_x;
     let min_wz = chunk_origin_z;
-    let max_wx = chunk_origin_x + (num_cells as i32) * stride - 1;
-    let max_wz = chunk_origin_z + (num_cells as i32) * stride - 1;
+    let max_wx = chunk_origin_x + region_size - 1;
+    let max_wz = chunk_origin_z + region_size - 1;
 
     let sample_grid_idx = |wx: i32, wz: i32| -> usize {
         let gi = ((wx - chunk_origin_x) / stride).clamp(0, num_cells - 1);
@@ -451,11 +561,13 @@ pub fn build_lod_mesh(
         },
     );
 
-    let is_lod2 = lod == ChunkLod::Lod2;
+    let is_lod1 = lod == ChunkLod::Lod1;
+    let is_lod3 = lod == ChunkLod::Lod3;
+
     for tree in lod_trees {
-        // In far Lod2 super-chunks, thin to 50% of trees and slightly widen canopies
-        // to preserve dense horizon silhouettes at less than half the triangle count.
-        if is_lod2 && ((tree.root_x.div_euclid(7) ^ tree.root_z.div_euclid(7)) & 1) != 0 {
+        // In far Lod3 super-chunks (4x4), thin to 50% of trees with wider canopies
+        // to preserve dense horizon silhouettes at half the triangle count.
+        if is_lod3 && ((tree.root_x.div_euclid(7) ^ tree.root_z.div_euclid(7)) & 1) != 0 {
             continue;
         }
 
@@ -465,7 +577,7 @@ pub fn build_lod_mesh(
         let world_pos = IVec3::new(tree.root_x, tree.root_y + 1, tree.root_z);
 
         // Trunk cuboid (omit top face when a canopy covers it)
-        let trunk_half = if is_lod2 { 0.7 } else { 0.5 };
+        let trunk_half = if is_lod3 { 0.75 } else { 0.5 };
         let trunk_layer = textures
             .get_face_texture_info(tree.log_voxel, world_pos, FaceDirection::PositiveX)
             .0 as f32;
@@ -490,10 +602,10 @@ pub fn build_lod_mesh(
             let mut leaf_tint = leaf_voxel.tint_color_at(world_pos);
             leaf_tint[3] = 2.0;
 
-            let r_scale = if is_lod2 { 1.25 } else { 1.0 };
+            let r_scale = if is_lod3 { 1.3 } else { 1.0 };
 
-            if tree.is_conifer && !is_lod2 {
-                // Two-tiered conical silhouette for mid-distance Lod1 pines/redwoods
+            if tree.is_conifer && !is_lod3 {
+                // Two-tiered conical silhouette for Lod1/Lod2 pines/redwoods
                 let r1 = tree.canopy_radius;
                 let y0 = base_y + (tree.trunk_height - tree.canopy_height).max(2.5);
                 let y_mid = y0 + tree.canopy_height * 0.55;
@@ -518,6 +630,37 @@ pub fn build_lod_mesh(
                     lz - r2,
                     lx + r2,
                     y_top,
+                    lz + r2,
+                    leaf_layer,
+                    leaf_tint,
+                    true,
+                );
+            } else if is_lod1 {
+                // Near 1x1 Lod1 broadleaf/palm trees: crisp 2-layer rounded crown matching LOD0 silhouette
+                let r1 = tree.canopy_radius;
+                let r2 = (r1 * 0.65).max(1.2);
+                let y0 = base_y + tree.trunk_height - tree.canopy_height * 0.45;
+                let y_mid = y0 + tree.canopy_height * 0.72;
+                let y1 = y0 + tree.canopy_height + 0.6;
+                push_lod_box(
+                    &mut opaque_buffers,
+                    lx - r1,
+                    y0,
+                    lz - r1,
+                    lx + r1,
+                    y_mid,
+                    lz + r1,
+                    leaf_layer,
+                    leaf_tint,
+                    true,
+                );
+                push_lod_box(
+                    &mut opaque_buffers,
+                    lx - r2,
+                    y_mid,
+                    lz - r2,
+                    lx + r2,
+                    y1,
                     lz + r2,
                     leaf_layer,
                     leaf_tint,

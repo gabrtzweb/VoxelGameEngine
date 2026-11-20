@@ -16,12 +16,14 @@ pub struct GrassTrailField {
     pub origin_world_xz: Vec2,
     pub pixels: Vec<u8>,
     pub last_player_pos: Vec3,
+    pub upload_timer: f32,
+    pub active_pixels: usize,
 }
 
 impl GrassTrailField {
     pub fn new(images: &mut Assets<Image>) -> Self {
         let pixels = vec![0u8; TRAIL_GRID_SIZE * TRAIL_GRID_SIZE * 4];
-        let image = Image::new(
+        let mut image = Image::new(
             Extent3d {
                 width: TRAIL_GRID_SIZE as u32,
                 height: TRAIL_GRID_SIZE as u32,
@@ -32,6 +34,7 @@ impl GrassTrailField {
             TextureFormat::Rgba8Unorm,
             default(),
         );
+        image.sampler = bevy::image::ImageSampler::linear();
         let image_handle = images.add(image);
 
         Self {
@@ -39,12 +42,21 @@ impl GrassTrailField {
             origin_world_xz: Vec2::ZERO,
             pixels,
             last_player_pos: Vec3::ZERO,
+            upload_timer: 0.0,
+            active_pixels: 0,
         }
     }
 
     pub fn decay(&mut self, dt: f32) {
+        if self.active_pixels == 0 {
+            return;
+        }
         let decay_mult = (-dt * 1.5).exp();
+        let mut active = 0usize;
         for pixel in self.pixels.chunks_exact_mut(4) {
+            if pixel[2] == 0 {
+                continue;
+            }
             let strength = pixel[2] as f32 * decay_mult;
             pixel[2] = strength.round() as u8;
             let alpha = pixel[3] as f32 * decay_mult;
@@ -53,8 +65,11 @@ impl GrassTrailField {
                 pixel[0] = 128;
                 pixel[1] = 128;
                 pixel[3] = 0;
+            } else {
+                active += 1;
             }
         }
+        self.active_pixels = active;
     }
 
     pub fn stamp_entity(&mut self, entity_pos: Vec3, move_delta: Vec3, radius_m: f32) {
@@ -80,6 +95,9 @@ impl GrassTrailField {
                     let intensity = ((1.0 - (dist / radius)) * 255.0).clamp(0.0, 255.0) as u8;
                     let idx = (gz * TRAIL_GRID_SIZE + gx) * 4;
                     if intensity > self.pixels[idx + 2] {
+                        if self.pixels[idx + 2] == 0 && intensity > 0 {
+                            self.active_pixels += 1;
+                        }
                         self.pixels[idx] = enc_x;
                         self.pixels[idx + 1] = enc_z;
                         self.pixels[idx + 2] = intensity;
@@ -117,16 +135,27 @@ pub fn update_grass_trail_field(
     let horizontal_speed = (move_delta.x * move_delta.x + move_delta.z * move_delta.z).sqrt() / dt.max(0.001);
     trail.last_player_pos = player_pos;
 
+    let had_active = trail.active_pixels > 0;
     // If player is moving, stamp directional footprint trail; if standing, bend grass under body
     if horizontal_speed > 0.05 {
         trail.stamp_entity(player_pos, move_delta, 1.25);
-    } else {
+    } else if had_active || dt > 0.0 {
         trail.stamp_entity(player_pos, Vec3::new(0.001, 0.0, 0.001), 0.75);
     }
 
-    // Push updated pixel buffer to Bevy GPU Image asset
-    if let Some(mut image) = images.get_mut(&trail.image_handle) {
-        image.data = Some(trail.pixels.clone());
+    // Throttle GPU image upload to ~25 Hz and copy in place without cloning Vec when active
+    trail.upload_timer += dt;
+    if (horizontal_speed > 0.05 || trail.active_pixels > 0 || had_active) && trail.upload_timer >= 0.04 {
+        trail.upload_timer = 0.0;
+        if let Some(mut image) = images.get_mut(&trail.image_handle) {
+            if let Some(ref mut data) = image.data
+                && data.len() == trail.pixels.len()
+            {
+                data.copy_from_slice(&trail.pixels);
+            } else {
+                image.data = Some(trail.pixels.clone());
+            }
+        }
     }
 
     // Update uniform pusher

@@ -47,8 +47,12 @@ pub fn start_generation_tasks(
         if let Some(ref mut cache) = chunk_cache
             && let Some(cached_chunk_arc) = cache.take(&coordinate)
         {
-            let chunk = (*cached_chunk_arc).clone();
-            let task = pool.spawn(async move { GeneratedChunk { coordinate, chunk } });
+            let task = pool.spawn(async move {
+                GeneratedChunk {
+                    coordinate,
+                    chunk: cached_chunk_arc,
+                }
+            });
             commands.spawn(ChunkGenerationTask { coordinate, task });
             continue;
         }
@@ -56,7 +60,7 @@ pub fn start_generation_tasks(
         let generator = terrain_generator.clone();
 
         let task = pool.spawn(async move {
-            let chunk = generator.generate_chunk(coordinate);
+            let chunk = std::sync::Arc::new(generator.generate_chunk(coordinate));
             GeneratedChunk { coordinate, chunk }
         });
 
@@ -73,20 +77,39 @@ pub fn collect_generation_tasks(
     mut queues: ResMut<ChunkStreamingQueues>,
     mut light_registry: ResMut<VoxelLightRegistry>,
     mut map_cache: Option<ResMut<crate::map::MapCache>>,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
 ) {
+    let is_loading = menu_state.is_some_and(|s| *s.get() == crate::menu::MenuState::Loading);
+    let max_collect = if is_loading { 48 } else { 6 };
+    let mut collected = 0;
+
     for (entity, mut generation_task) in &mut tasks {
+        if collected >= max_collect {
+            break;
+        }
         let Some(mut generated) = check_ready(&mut generation_task.task) else {
             continue;
         };
 
+        collected += 1;
         commands.entity(entity).despawn();
 
         if !state.desired_chunks.contains(&generated.coordinate) {
             continue;
         }
 
-        modifications.apply_to_chunk(generated.coordinate, &mut generated.chunk);
-        world.insert_chunk(generated.coordinate, generated.chunk);
+        if modifications.has_modifications(generated.coordinate) {
+            modifications.apply_to_chunk(
+                generated.coordinate,
+                std::sync::Arc::make_mut(&mut generated.chunk),
+            );
+        }
+        let is_empty = generated.chunk.is_empty();
+        world.insert_chunk_arc(generated.coordinate, generated.chunk);
+
+        if is_empty {
+            continue;
+        }
 
         if let Some(ref mut cache) = map_cache
             && generated.coordinate.y >= -8
@@ -105,7 +128,9 @@ pub fn collect_generation_tasks(
         queues.enqueue_remesh(generated.coordinate);
 
         for neighbor in neighbors(generated.coordinate) {
-            if world.get_chunk(neighbor).is_some() {
+            if let Some(neighbor_chunk) = world.get_chunk(neighbor)
+                && !neighbor_chunk.is_empty()
+            {
                 queues.enqueue_remesh(neighbor);
             }
         }

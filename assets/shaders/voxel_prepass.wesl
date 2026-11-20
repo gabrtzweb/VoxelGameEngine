@@ -5,7 +5,10 @@ import bevy_pbr::{
     },
     prepass::io::{Vertex, VertexOutput, FragmentOutput},
 };
+import bevy_render::globals::Globals;
 
+// Prepass view layout (group 0) binds Globals at binding 1 (not binding 11 as in forward pass)
+@group(0) @binding(1) var<uniform> prepass_globals: Globals;
 @group(constants::MATERIAL_BIND_GROUP) @binding(100) var voxel_texture_array: texture_2d_array<f32>;
 @group(constants::MATERIAL_BIND_GROUP) @binding(101) var voxel_sampler: sampler;
 @group(constants::MATERIAL_BIND_GROUP) @binding(104) var<uniform> voxel_params: vec4<f32>;
@@ -33,7 +36,7 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
 
     let waving_enabled = voxel_params.y > 0.5;
     if (waving_enabled) {
-        let time = max(anim_params.x, 0.0);
+        let time = max(prepass_globals.time, 0.0);
         let anim_type = round(vertex_no_morph.color.a);
         let wind_intensity = anim_params.y;
         let wind_angle = anim_params.z;
@@ -110,7 +113,7 @@ fn fragment(
         if (actual_frame_count > 1.5) {
             let fps = 8.0;
             let count = max(1, i32(round(actual_frame_count)));
-            let t = max(anim_params.x, 0.0) * fps;
+            let t = max(prepass_globals.time, 0.0) * fps;
             let frame_cur = (i32(floor(t)) % count + count) % count;
             layer = layer + frame_cur;
         }
@@ -140,7 +143,7 @@ fn fragment(in: VertexOutput) {
         if (actual_frame_count > 1.5) {
             let fps = 8.0;
             let count = max(1, i32(round(actual_frame_count)));
-            let t = max(anim_params.x, 0.0) * fps;
+            let t = max(prepass_globals.time, 0.0) * fps;
             let frame_cur = (i32(floor(t)) % count + count) % count;
             layer = layer + frame_cur;
         }

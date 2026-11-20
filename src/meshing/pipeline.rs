@@ -146,6 +146,8 @@ pub struct ChunkMeshRegistry {
     entries: HashMap<IVec3, ChunkRenderData>,
     columns: HashMap<IVec2, usize>,
     surface_columns: HashMap<IVec2, usize>,
+    total_vertices: usize,
+    total_triangles: usize,
 }
 
 impl ChunkMeshRegistry {
@@ -157,18 +159,14 @@ impl ChunkMeshRegistry {
         self.entries.is_empty()
     }
 
+    #[inline]
     pub fn total_vertices(&self) -> usize {
-        self.entries
-            .values()
-            .map(ChunkRenderData::vertex_count)
-            .sum()
+        self.total_vertices
     }
 
+    #[inline]
     pub fn total_triangles(&self) -> usize {
-        self.entries
-            .values()
-            .map(ChunkRenderData::triangle_count)
-            .sum()
+        self.total_triangles
     }
 
     pub fn contains(&self, coordinate: &IVec3) -> bool {
@@ -218,6 +216,8 @@ impl ChunkMeshRegistry {
         }
         self.columns.clear();
         self.surface_columns.clear();
+        self.total_vertices = 0;
+        self.total_triangles = 0;
     }
 }
 
@@ -226,6 +226,8 @@ impl ChunkMeshRegistry {
 pub struct LodMeshRegistry {
     entries: HashMap<IVec2, ChunkRenderData>,
     lods: HashMap<IVec2, super::lod::ChunkLod>,
+    total_vertices: usize,
+    total_triangles: usize,
 }
 
 impl LodMeshRegistry {
@@ -237,18 +239,14 @@ impl LodMeshRegistry {
         self.entries.is_empty()
     }
 
+    #[inline]
     pub fn total_vertices(&self) -> usize {
-        self.entries
-            .values()
-            .map(ChunkRenderData::vertex_count)
-            .sum()
+        self.total_vertices
     }
 
+    #[inline]
     pub fn total_triangles(&self) -> usize {
-        self.entries
-            .values()
-            .map(ChunkRenderData::triangle_count)
-            .sum()
+        self.total_triangles
     }
 
     pub fn contains(&self, coordinate: &IVec2) -> bool {
@@ -269,6 +267,8 @@ impl LodMeshRegistry {
             }
         }
         self.lods.clear();
+        self.total_vertices = 0;
+        self.total_triangles = 0;
     }
 
     pub fn lod_count(&self, lod: super::lod::ChunkLod) -> usize {
@@ -413,9 +413,16 @@ pub fn apply_chunk_mesh(
         Visibility::Inherited
     };
 
+    let old_verts;
+    let old_tris;
+    let new_verts;
+    let new_tris;
+
     let is_empty = {
         let entry = registry.entries.entry(coordinate).or_default();
         was_empty = entry.is_empty();
+        old_verts = entry.vertex_count();
+        old_tris = entry.triangle_count();
         entry.is_subterranean = is_subterranean;
         entry.visibility_mask = rebuilt.visibility_mask;
 
@@ -433,7 +440,7 @@ pub fn apply_chunk_mesh(
             Some(coordinate),
             is_subterranean,
             initial_visibility,
-            false,
+            is_subterranean,
         );
 
         sync_render_part(
@@ -447,10 +454,20 @@ pub fn apply_chunk_mesh(
             Some(coordinate),
             is_subterranean,
             initial_visibility,
-            false,
+            is_subterranean,
         );
 
         if let Some(grass_material) = &material.grass {
+            let is_near_grass = culling_state.is_none_or(|cs| {
+                cs.last_player_chunk.x == i32::MIN
+                    || ((coordinate.x - cs.last_player_chunk.x).abs() <= 5
+                        && (coordinate.z - cs.last_player_chunk.z).abs() <= 5)
+            });
+            let grass_visibility = if initial_visibility == Visibility::Inherited && is_near_grass {
+                Visibility::Inherited
+            } else {
+                Visibility::Hidden
+            };
             sync_render_part(
                 commands,
                 meshes,
@@ -461,15 +478,26 @@ pub fn apply_chunk_mesh(
                 chunk_aabb,
                 Some(coordinate),
                 is_subterranean,
-                initial_visibility,
+                grass_visibility,
                 true,
             );
         } else {
             remove_render_part(commands, meshes, &mut entry.grass);
         }
 
+        new_verts = entry.vertex_count();
+        new_tris = entry.triangle_count();
         entry.is_empty()
     };
+
+    registry.total_vertices = registry
+        .total_vertices
+        .saturating_sub(old_verts)
+        + new_verts;
+    registry.total_triangles = registry
+        .total_triangles
+        .saturating_sub(old_tris)
+        + new_tris;
 
     if is_empty {
         if !was_empty {
@@ -508,7 +536,7 @@ fn sync_render_part<M: Material>(
     coordinate: Option<IVec3>,
     is_subterranean: bool,
     initial_visibility: Visibility,
-    is_grass: bool,
+    no_shadows: bool,
 ) {
     let Some(rebuilt_mesh) = rebuilt_mesh else {
         remove_render_part(commands, meshes, part);
@@ -523,21 +551,22 @@ fn sync_render_part<M: Material>(
 
     let tight_aabb = rebuilt_mesh.get_aabb().unwrap_or(aabb);
 
-    if let Some(existing) = part.as_mut()
-        && let Some(mut mesh) = meshes.get_mut(&existing.mesh_handle)
-    {
-        *mesh = rebuilt_mesh;
+    if let Some(existing) = part.as_mut() {
+        let new_handle = meshes.add(rebuilt_mesh);
+        let old_id = existing.mesh_handle.id();
+        existing.mesh_handle = new_handle.clone();
         existing.vertex_count = vertex_count;
         existing.triangle_count = triangle_count;
         if let Ok(mut entity_cmds) = commands.get_entity(existing.entity) {
-            entity_cmds.insert(tight_aabb);
-            if is_grass {
+            entity_cmds.insert((Mesh3d(new_handle), tight_aabb));
+            if no_shadows {
                 entity_cmds.insert(NotShadowCaster);
             }
             if !is_subterranean || initial_visibility == Visibility::Inherited {
                 entity_cmds.insert(Visibility::Inherited);
             }
         }
+        meshes.remove(old_id);
         return;
     }
 
@@ -561,7 +590,7 @@ fn sync_render_part<M: Material>(
         entity_cmds.insert(SubterraneanChunkMesh);
     }
 
-    if is_grass {
+    if no_shadows {
         entity_cmds.insert(NotShadowCaster);
     }
 
@@ -599,6 +628,13 @@ pub fn remove_chunk_render(
     let Some(mut render_data) = registry.entries.remove(&coordinate) else {
         return;
     };
+
+    registry.total_vertices = registry
+        .total_vertices
+        .saturating_sub(render_data.vertex_count());
+    registry.total_triangles = registry
+        .total_triangles
+        .saturating_sub(render_data.triangle_count());
 
     let column = IVec2::new(coordinate.x, coordinate.z);
     if !render_data.is_empty() {
@@ -638,8 +674,15 @@ pub fn apply_lod_mesh(
         coordinate.y as f32 * crate::world::CHUNK_SIZE as f32,
     );
 
+    let old_verts;
+    let old_tris;
+    let new_verts;
+    let new_tris;
+
     let is_empty = {
         let entry = registry.entries.entry(coordinate).or_default();
+        old_verts = entry.vertex_count();
+        old_tris = entry.triangle_count();
 
         let region_size = lod.world_size();
         let lod_aabb = Aabb::from_min_max(
@@ -675,8 +718,19 @@ pub fn apply_lod_mesh(
             true,
         );
 
+        new_verts = entry.vertex_count();
+        new_tris = entry.triangle_count();
         entry.is_empty()
     };
+
+    registry.total_vertices = registry
+        .total_vertices
+        .saturating_sub(old_verts)
+        + new_verts;
+    registry.total_triangles = registry
+        .total_triangles
+        .saturating_sub(old_tris)
+        + new_tris;
 
     if is_empty {
         registry.entries.remove(&coordinate);
@@ -697,36 +751,59 @@ pub fn remove_lod_render(
         return;
     };
 
+    registry.total_vertices = registry
+        .total_vertices
+        .saturating_sub(render_data.vertex_count());
+    registry.total_triangles = registry
+        .total_triangles
+        .saturating_sub(render_data.triangle_count());
+
     remove_render_part(commands, meshes, &mut render_data.opaque);
     remove_render_part(commands, meshes, &mut render_data.transparent);
 }
 
 pub fn sync_voxel_shader_settings(
-    time: Res<Time>,
     local_config: Option<Res<crate::core::LocalConfig>>,
     wind_state: Option<Res<crate::environment::WindState>>,
     chunk_material: Option<Res<ChunkMaterial>>,
     mut opaque_materials: ResMut<Assets<OpaqueChunkMaterial>>,
+    mut last_sent: Local<Option<(Vec4, f32, f32)>>,
 ) {
     let Some(chunk_material) = chunk_material else { return };
-    if let Some(mut mat) = opaque_materials.get_mut(&chunk_material.opaque) {
-        if let Some(ref cfg) = local_config {
-            if cfg.is_changed() {
-                mat.extension.params.x = cfg.coated_textures.strength();
-                mat.extension.params.y = if cfg.waving_foliage { 1.0 } else { 0.0 };
-                mat.extension.params.z = if cfg.pixelated_shadows { 1.0 } else { 0.0 };
-            }
-        }
-        let (wind_intensity, wind_angle) = if let Some(ref wind) = wind_state {
-            ((wind.current_speed / 4.0).clamp(0.4, 2.5), wind.current_heading)
-        } else {
-            (1.0, 0.44)
-        };
-        mat.extension.anim_params = Vec4::new(
-            time.elapsed_secs_wrapped(),
-            wind_intensity,
-            wind_angle,
+
+    let target_params = if let Some(ref cfg) = local_config {
+        Vec4::new(
+            cfg.coated_textures.strength(),
+            if cfg.waving_foliage { 1.0 } else { 0.0 },
+            if cfg.pixelated_shadows { 1.0 } else { 0.0 },
             0.0,
-        );
+        )
+    } else {
+        Vec4::new(0.28, 1.0, 1.0, 0.0)
+    };
+
+    let (wind_intensity, wind_angle) = if let Some(ref wind) = wind_state {
+        ((wind.current_speed / 4.0).clamp(0.4, 2.5), wind.current_heading)
+    } else {
+        (1.0, 0.44)
+    };
+
+    let needs_update = match *last_sent {
+        None => true,
+        Some((p, wi, wa)) => {
+            (p - target_params).abs().max_element() > 0.005
+                || (wi - wind_intensity).abs() > 0.005
+                || (wa - wind_angle).abs() > 0.005
+        }
+    };
+
+    if !needs_update {
+        return;
+    }
+
+    if let Some(mut mat) = opaque_materials.get_mut(&chunk_material.opaque) {
+        mat.extension.params = target_params;
+        mat.extension.anim_params = Vec4::new(0.0, wind_intensity, wind_angle, 0.0);
+        *last_sent = Some((target_params, wind_intensity, wind_angle));
     }
 }

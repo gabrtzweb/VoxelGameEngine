@@ -7,7 +7,7 @@ use crate::{
         VoxelWorld,
         streaming::{
             ChunkStreamingQueues,
-            manager::{MAX_CHUNK_UNLOADS_PER_FRAME, MAX_LOD_UNLOADS_PER_FRAME, neighbors},
+            manager::{MAX_CHUNK_UNLOADS_PER_FRAME, MAX_LOD_UNLOADS_PER_FRAME},
         },
     },
 };
@@ -42,12 +42,6 @@ pub fn process_chunk_unloads(
 
         remove_chunk_render(&mut commands, coordinate, &mut registry, &mut meshes);
         queues.remesh_set.remove(&coordinate);
-
-        for neighbor in neighbors(coordinate) {
-            if world.get_chunk(neighbor).is_some() {
-                queues.enqueue_remesh(neighbor);
-            }
-        }
     }
 }
 

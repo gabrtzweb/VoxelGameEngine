@@ -229,11 +229,13 @@ pub fn terrain_inspector_ui(
                     if let Some(ref lod_reg) = lod_registry {
                         let lod1_count = lod_reg.lod_count(crate::meshing::ChunkLod::Lod1);
                         let lod2_count = lod_reg.lod_count(crate::meshing::ChunkLod::Lod2);
+                        let lod3_count = lod_reg.lod_count(crate::meshing::ChunkLod::Lod3);
                         ui.label(format!(
-                            "LOD Meshes: {} (LOD 1: {}, LOD 2 [2x2 Batched]: {}) | {} verts ({} tris)",
+                            "LOD Meshes: {} (1x1: {}, 2x2: {}, 4x4: {}) | {} verts ({} tris)",
                             lod_reg.len(),
                             lod1_count,
                             lod2_count,
+                            lod3_count,
                             lod_reg.total_vertices(),
                             lod_reg.total_triangles()
                         ));

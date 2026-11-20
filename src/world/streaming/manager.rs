@@ -35,10 +35,10 @@ pub const MAX_GENERATION_TASKS_STARTED_PER_FRAME: usize = 8;
 
 pub const MAX_LOD_TASKS_IN_FLIGHT: usize = 8;
 pub const MAX_LOD_TASKS_STARTED_PER_FRAME: usize = 4;
-pub const MAX_LOD_MESH_UPLOADS_PER_FRAME: usize = 16;
+pub const MAX_LOD_MESH_UPLOADS_PER_FRAME: usize = 4;
 
-pub const MAX_CHUNK_UNLOADS_PER_FRAME: usize = 128;
-pub const MAX_LOD_UNLOADS_PER_FRAME: usize = 64;
+pub const MAX_CHUNK_UNLOADS_PER_FRAME: usize = 16;
+pub const MAX_LOD_UNLOADS_PER_FRAME: usize = 16;
 
 pub const NEIGHBOR_DIRECTIONS: [IVec3; 6] = [
     IVec3::new(1, 0, 0),
@@ -78,6 +78,9 @@ pub struct ChunkStreamingState {
     pub last_camera_fwd: Option<Vec2>,
     pub desired_chunks: HashSet<IVec3>,
     pub desired_lod_columns: HashMap<IVec2, ChunkLod>,
+    /// Cached `(min_chunk_y, max_chunk_y)` height bounds per `(chunk_x, chunk_z)` column
+    /// so `plan_chunk_streaming` never re-evaluates noise on already-visited columns.
+    pub column_height_cache: HashMap<IVec2, (i32, i32)>,
 }
 
 #[derive(Component)]
@@ -88,7 +91,7 @@ pub struct ChunkGenerationTask {
 
 pub struct GeneratedChunk {
     pub coordinate: IVec3,
-    pub chunk: Chunk,
+    pub chunk: std::sync::Arc<Chunk>,
 }
 
 #[derive(Component)]

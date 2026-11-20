@@ -112,24 +112,7 @@ fn hash2d(p: vec2<f32>) -> f32 {
 }
 
 fn sample_noise(uv: vec2<f32>) -> f32 {
-    let dims = vec2<f32>(textureDimensions(noise_texture, 0));
-    let pixel = fract(uv) * dims - 0.5;
-    let pixel_floor = floor(pixel);
-    let blend = smoothstep(vec2<f32>(0.0), vec2<f32>(1.0), fract(pixel));
-
-    let u0 = (pixel_floor + 0.5) / dims;
-    let u1 = (pixel_floor + vec2<f32>(1.0, 0.0) + 0.5) / dims;
-    let u2 = (pixel_floor + vec2<f32>(0.0, 1.0) + 0.5) / dims;
-    let u3 = (pixel_floor + vec2<f32>(1.0, 1.0) + 0.5) / dims;
-
-    let bl = textureSampleLevel(noise_texture, noise_sampler, fract(u0), 0.0).r;
-    let br = textureSampleLevel(noise_texture, noise_sampler, fract(u1), 0.0).r;
-    let tl = textureSampleLevel(noise_texture, noise_sampler, fract(u2), 0.0).r;
-    let tr = textureSampleLevel(noise_texture, noise_sampler, fract(u3), 0.0).r;
-
-    let bottom = mix(bl, br, blend.x);
-    let top = mix(tl, tr, blend.x);
-    return mix(bottom, top, blend.y);
+    return textureSampleLevel(noise_texture, noise_sampler, fract(uv), 0.0).r;
 }
 
 fn stationary_height_noise(coord: vec2<f32>) -> f32 {
@@ -146,14 +129,14 @@ fn sample_clump(coord: vec2<f32>) -> vec3<f32> {
     return c.gba; // G: rest cohesion, B: lean cohesion, A: center distance
 }
 
-fn clump_to_center_dir(coord: vec2<f32>) -> vec2<f32> {
+fn clump_to_center_dir(coord: vec2<f32>, center_clump_z: f32) -> vec2<f32> {
     let dims = vec2<f32>(textureDimensions(noise_texture, 0));
+    let pixel = floor(fract(coord) * dims);
+    let base_uv = (pixel + 0.5) / dims;
     let step_uv = 2.0 / dims;
-    let zxp = sample_clump(coord + vec2<f32>(step_uv.x, 0.0)).z;
-    let zxn = sample_clump(coord - vec2<f32>(step_uv.x, 0.0)).z;
-    let zyp = sample_clump(coord + vec2<f32>(0.0, step_uv.y)).z;
-    let zyn = sample_clump(coord - vec2<f32>(0.0, step_uv.y)).z;
-    let grad = vec2<f32>(zxp - zxn, zyp - zyn);
+    let zxp = textureSampleLevel(noise_texture, noise_sampler, fract(base_uv + vec2<f32>(step_uv.x, 0.0)), 0.0).a;
+    let zyp = textureSampleLevel(noise_texture, noise_sampler, fract(base_uv + vec2<f32>(0.0, step_uv.y)), 0.0).a;
+    let grad = vec2<f32>(zxp - center_clump_z, zyp - center_clump_z);
     let len = length(grad);
     if (len > 0.0001) {
         return -grad / len;
@@ -289,7 +272,11 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
     let blade_extra = base_blade_len * (per_blade_height_mult - 1.0);
     let total_extra = (reg_extra + blade_extra) * grass_info.gradient_params.w;
 
-    let blade_len = max(base_blade_len + total_extra, MIN_BLADE_LENGTH);
+    let cam_xz = grass_info.entity_pushers[0].xy + vec2<f32>(24.0, 24.0);
+    let cam_dist = length(cam_xz - world_pos.xz);
+    let dist_height_fade = 1.0 - smoothstep(68.0, 82.0, cam_dist);
+
+    let blade_len = max(base_blade_len + total_extra, MIN_BLADE_LENGTH) * dist_height_fade;
     let effective_extra = blade_len - base_blade_len;
 
     // GPU decimation for short blades
@@ -362,7 +349,7 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
     let trail_rot = trail_effect * MAX_ROTATION_RADIANS;
 
     // Inward tuft curl (Voronoi clump center lean)
-    let to_clump_center = clump_to_center_dir(clump_coord);
+    let to_clump_center = clump_to_center_dir(clump_coord, clump.z);
     let curved_clump_dist = pow(clamp(clump.z, 0.0, 1.0), CLUMP_INWARD_DISTANCE_CURVE);
     let inward_rot = curved_clump_dist * CLUMP_INWARD_ROTATION * (1.0 - wind_amount);
 

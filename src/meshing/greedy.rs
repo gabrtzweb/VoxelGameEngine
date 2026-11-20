@@ -613,7 +613,7 @@ impl MeshBuffers {
         Some(
             Mesh::new(
                 PrimitiveTopology::TriangleList,
-                RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+                RenderAssetUsages::RENDER_WORLD,
             )
             .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, self.positions)
             .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals)
@@ -639,7 +639,7 @@ impl MeshBuffers {
         Some(
             Mesh::new(
                 PrimitiveTopology::TriangleList,
-                RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+                RenderAssetUsages::RENDER_WORLD,
             )
             .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, self.positions.clone())
             .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals.clone())
@@ -723,7 +723,7 @@ impl ChunkMesher {
         world: &impl VoxelAccess,
         chunk_coordinate: IVec3,
         textures: &VoxelTextureRegistry,
-        _player_chunk: Option<IVec3>,
+        player_chunk: Option<IVec3>,
     ) -> ChunkMeshes {
         let Some(chunk) = world.get_chunk(chunk_coordinate) else {
             return ChunkMeshes {
@@ -1052,8 +1052,19 @@ impl ChunkMesher {
             && chunk.has_any_grass_turf();
 
         if should_emit_grass {
-            let blade_count = textures.grass_density.clamp(16, 64);
-            let lod_quads = 2;
+            let base_density = textures.grass_density.clamp(16, 64);
+            let cheb_dist = player_chunk.map_or(0, |p| {
+                (chunk_coordinate.x - p.x)
+                    .abs()
+                    .max((chunk_coordinate.z - p.z).abs())
+            });
+            let (blade_count, lod_quads) = if cheb_dist <= 2 {
+                (base_density, 2usize)
+            } else if cheb_dist == 3 {
+                ((base_density * 5 / 8).max(10), 1usize)
+            } else {
+                ((base_density / 3).max(6), 1usize)
+            };
 
             if blade_count > 0 {
                 for z in 0..CHUNK_SIZE {

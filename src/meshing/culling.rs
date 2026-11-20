@@ -21,6 +21,7 @@ pub struct CaveCullingState {
     pub is_player_underground: bool,
     pub last_player_chunk: IVec3,
     pub last_player_block: IVec3,
+    pub last_registry_len: usize,
     pub rendered_chunks: usize,
     pub culled_chunks: usize,
     pub rendered_vertices: usize,
@@ -36,6 +37,7 @@ impl Default for CaveCullingState {
             is_player_underground: false,
             last_player_chunk: IVec3::splat(i32::MIN),
             last_player_block: IVec3::splat(i32::MIN),
+            last_registry_len: 0,
             rendered_chunks: 0,
             culled_chunks: 0,
             rendered_vertices: 0,
@@ -106,12 +108,13 @@ pub fn get_camera_reachable_faces(
 
     // Flood fill inside camera chunk from (cx, cy, cz)
     let mut visited = [0u64; 64];
+    let has_shapes = chunk.has_shapes();
 
     for y in 0..CHUNK_SIZE {
         for z in 0..CHUNK_SIZE {
             for x in 0..CHUNK_SIZE {
                 let v = chunk.get(x, y, z);
-                if v.is_solid_opaque() && chunk.get_shape(x, y, z).0 == BlockShape::Full {
+                if v.is_solid_opaque() && (!has_shapes || chunk.get_shape(x, y, z).0 == BlockShape::Full) {
                     let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
                     visited[idx / 64] |= 1u64 << (idx % 64);
                 }
@@ -301,10 +304,20 @@ pub fn update_cave_culling_system(
     if cam_block == culling_state.last_player_block && !registry.is_changed() {
         return;
     }
+
+    let moved_block = cam_block != culling_state.last_player_block;
+    let moved_chunk = cam_chunk != culling_state.last_player_chunk;
+    let was_underground = culling_state.is_player_underground;
+
+    let is_player_underground = if moved_block || culling_state.last_player_chunk.x == i32::MIN {
+        is_position_underground(cam_pos, world.as_deref())
+    } else {
+        was_underground
+    };
+    let underground_changed = was_underground != is_player_underground;
+
     culling_state.last_player_block = cam_block;
     culling_state.last_player_chunk = cam_chunk;
-
-    let is_player_underground = is_position_underground(cam_pos, world.as_deref());
     culling_state.is_player_underground = is_player_underground;
 
     let is_in_solid_rock = world
@@ -312,6 +325,18 @@ pub fn update_cave_culling_system(
         .and_then(|w| w.get_voxel(cam_block))
         .is_some_and(|v| v.is_solid_opaque());
 
+    let needs_bfs = moved_chunk
+        || underground_changed
+        || is_player_underground
+        || is_in_solid_rock
+        || culling_state.visible_chunks.is_empty()
+        || registry.is_changed();
+
+    if !needs_bfs {
+        return;
+    }
+
+    culling_state.last_registry_len = registry.len();
     culling_state.visible_chunks.clear();
 
     if is_in_solid_rock {
@@ -388,19 +413,6 @@ pub fn update_cave_culling_system(
         }
     }
 
-    // Direct indexed entity visibility updates (avoiding full iteration across all entities)
-    let chunks_to_hide: Vec<IVec3> = culling_state
-        .previously_visible_chunks
-        .difference(&culling_state.visible_chunks)
-        .copied()
-        .collect();
-
-    let chunks_to_show: Vec<IVec3> = culling_state
-        .visible_chunks
-        .difference(&culling_state.previously_visible_chunks)
-        .copied()
-        .collect();
-
     let apply_chunk_visibility = |coord: &IVec3,
                                   is_visible_in_culling: bool,
                                   reg: &ChunkMeshRegistry,
@@ -444,27 +456,35 @@ pub fn update_cave_culling_system(
         }
     };
 
-    let moved_chunk = cam_chunk != culling_state.last_player_chunk;
-
-    if culling_state.previously_visible_chunks.is_empty() {
+    if culling_state.previously_visible_chunks.is_empty() || moved_chunk || underground_changed {
         for coord in &culling_state.visible_chunks {
             apply_chunk_visibility(coord, true, &registry, &mut chunk_meshes);
         }
-    } else {
-        for coord in &chunks_to_hide {
+        for coord in culling_state
+            .previously_visible_chunks
+            .difference(&culling_state.visible_chunks)
+        {
             apply_chunk_visibility(coord, false, &registry, &mut chunk_meshes);
         }
-        for coord in &chunks_to_show {
-            apply_chunk_visibility(coord, true, &registry, &mut chunk_meshes);
+    } else {
+        for coord in culling_state
+            .previously_visible_chunks
+            .difference(&culling_state.visible_chunks)
+        {
+            apply_chunk_visibility(coord, false, &registry, &mut chunk_meshes);
         }
-        if moved_chunk || registry.is_changed() {
-            for coord in &culling_state.visible_chunks {
-                apply_chunk_visibility(coord, true, &registry, &mut chunk_meshes);
-            }
+        for coord in culling_state
+            .visible_chunks
+            .difference(&culling_state.previously_visible_chunks)
+        {
+            apply_chunk_visibility(coord, true, &registry, &mut chunk_meshes);
         }
     }
 
-    culling_state.previously_visible_chunks = culling_state.visible_chunks.clone();
+    let cs = &mut *culling_state;
+    cs.previously_visible_chunks.clear();
+    cs.previously_visible_chunks
+        .extend(cs.visible_chunks.iter().copied());
 
     // Fast O(visible_chunks) telemetry metrics calculation
     let mut rendered_count = 0;

@@ -31,6 +31,7 @@ pub fn update_player_environment_status(
     player_query: Option<Single<&Transform, With<Player>>>,
     camera_query: CameraTransformQuery,
     mut status: ResMut<PlayerEnvironmentStatus>,
+    mut cached_block: Local<Option<(IVec3, BiomeType, bool, f32, bool, f32)>>,
 ) {
     let Some(world) = world else {
         *status = PlayerEnvironmentStatus::default();
@@ -59,73 +60,81 @@ pub fn update_player_environment_status(
         let block_x = (pos.x / crate::world::VOXEL_SIZE).floor() as i32;
         let block_y = (pos.y / crate::world::VOXEL_SIZE).floor() as i32;
         let block_z = (pos.z / crate::world::VOXEL_SIZE).floor() as i32;
-        let col = terrain_gen.sample_column(block_x, block_z);
-        let depth = (col.terrain_height as f32 - pos.y).max(0.0);
+        let block_coord = IVec3::new(block_x, block_y, block_z);
 
-        // Detect solid opaque roof overhead (cave ceiling, tunnel, or mine roof)
-        // Tree leaves are excluded so being under a forest canopy does not trigger cave status.
-        let eye_pos = IVec3::new(block_x, block_y + 1, block_z);
-        let mut roof = false;
-        for dy in 1..=20 {
-            let check_pos = eye_pos + IVec3::new(0, dy, 0);
-            if let Some(vox) = world.get_voxel(check_pos) {
-                if vox.is_solid_opaque() {
-                    roof = true;
-                    break;
-                }
-            }
-        }
+        if let Some((c_coord, c_biome, c_under, c_depth, c_roof, c_factor)) = *cached_block
+            && c_coord == block_coord
+        {
+            (c_biome, c_under, c_depth, c_roof, c_factor)
+        } else {
+            let col = terrain_gen.sample_column(block_x, block_z);
+            let depth = (col.terrain_height as f32 - pos.y).max(0.0);
 
-        // Distance to outside openings / sky:
-        // Raymarch horizontally in cardinal directions to detect if player is near a cave entrance.
-        let mut min_dist_to_outside: f32 = if roof { 28.0 } else { 0.0 };
-
-        if roof {
-            let cardinal_dirs = [
-                IVec3::new(1, 0, 0),
-                IVec3::new(-1, 0, 0),
-                IVec3::new(0, 0, 1),
-                IVec3::new(0, 0, -1),
-            ];
-
-            for dir in cardinal_dirs {
-                for step in 1..=24 {
-                    let p = eye_pos + dir * step;
-                    let col_here = terrain_gen.sample_column(p.x, p.z);
-                    // Check if outside terrain envelope or open to sky
-                    if p.y >= col_here.terrain_height {
-                        min_dist_to_outside = min_dist_to_outside.min(step as f32);
+            // Detect solid opaque roof overhead (cave ceiling, tunnel, or mine roof)
+            // Tree leaves are excluded so being under a forest canopy does not trigger cave status.
+            let eye_pos = IVec3::new(block_x, block_y + 1, block_z);
+            let mut roof = false;
+            for dy in 1..=20 {
+                let check_pos = eye_pos + IVec3::new(0, dy, 0);
+                if let Some(vox) = world.get_voxel(check_pos) {
+                    if vox.is_solid_opaque() {
+                        roof = true;
                         break;
                     }
-                    if let Some(vox) = world.get_voxel(p) {
-                        if vox.is_solid_opaque() {
-                            // Wall reached in this direction
+                }
+            }
+
+            // Distance to outside openings / sky:
+            // Raymarch horizontally in cardinal directions to detect if player is near a cave entrance.
+            let mut min_dist_to_outside: f32 = if roof { 28.0 } else { 0.0 };
+
+            if roof {
+                let cardinal_dirs = [
+                    IVec3::new(1, 0, 0),
+                    IVec3::new(-1, 0, 0),
+                    IVec3::new(0, 0, 1),
+                    IVec3::new(0, 0, -1),
+                ];
+
+                for dir in cardinal_dirs {
+                    for step in 1..=24 {
+                        let p = eye_pos + dir * step;
+                        let col_here = terrain_gen.sample_column(p.x, p.z);
+                        // Check if outside terrain envelope or open to sky
+                        if p.y >= col_here.terrain_height {
+                            min_dist_to_outside = min_dist_to_outside.min(step as f32);
                             break;
                         }
-                    } else if p.y >= col_here.terrain_height {
-                        min_dist_to_outside = min_dist_to_outside.min(step as f32);
-                        break;
+                        if let Some(vox) = world.get_voxel(p) {
+                            if vox.is_solid_opaque() {
+                                // Wall reached in this direction
+                                break;
+                            }
+                        } else if p.y >= col_here.terrain_height {
+                            min_dist_to_outside = min_dist_to_outside.min(step as f32);
+                            break;
+                        }
                     }
                 }
             }
+
+            // Only transition to subterranean when deep underground and well away from outside openings.
+            // Near cave entrances (min_dist_to_outside <= 10.0), players receive full surface sunlight and daylight.
+            let target_factor = if roof {
+                let horizontal_depth_factor = ((min_dist_to_outside - 10.0) / 14.0).clamp(0.0, 1.0);
+                let vertical_depth_factor = ((depth - 8.0) / 16.0).clamp(0.0, 1.0);
+                horizontal_depth_factor * vertical_depth_factor
+            } else if pos.y < (col.terrain_height as f32 - 14.0) {
+                // Open vertical chasm/sinkhole without roof
+                ((depth - 14.0) / 24.0).clamp(0.0, 0.30)
+            } else {
+                0.0
+            };
+
+            let underground = target_factor > 0.40;
+            *cached_block = Some((block_coord, col.biome, underground, depth, roof, target_factor));
+            (col.biome, underground, depth, roof, target_factor)
         }
-
-        // Only transition to subterranean when deep underground and well away from outside openings.
-        // Near cave entrances (min_dist_to_outside <= 10.0), players receive full surface sunlight and daylight.
-        let target_factor = if roof {
-            let horizontal_depth_factor = ((min_dist_to_outside - 10.0) / 14.0).clamp(0.0, 1.0);
-            let vertical_depth_factor = ((depth - 8.0) / 16.0).clamp(0.0, 1.0);
-            horizontal_depth_factor * vertical_depth_factor
-        } else if pos.y < (col.terrain_height as f32 - 14.0) {
-            // Open vertical chasm/sinkhole without roof
-            ((depth - 14.0) / 24.0).clamp(0.0, 0.30)
-        } else {
-            0.0
-        };
-
-        let underground = target_factor > 0.40;
-
-        (col.biome, underground, depth, roof, target_factor)
     } else {
         (BiomeType::default(), false, 0.0, false, 0.0)
     };
