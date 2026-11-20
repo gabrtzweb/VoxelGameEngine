@@ -326,13 +326,7 @@ pub fn populate_chunk_flora<F>(
 
             // --- 20.1: GEOLOGICAL SCATTER (Rubble, Pebbles, Stick Piles) ---
             // Surface Rubble on cliffs, rocky biomes, bare stone, and light scatter across plains
-            let rubble_chance = if col.is_cliff || is_rocky_biome(col.biome) {
-                0.048
-            } else if !ground.is_fertile_soil() && !ground.is_sandy_soil() {
-                0.030
-            } else {
-                0.009
-            };
+            let rubble_chance = surface_rubble_chance(col, ground);
             if roll < rubble_chance {
                 let rubble = matching_rubble_for(ground);
                 set_air_only_in_chunk(
@@ -350,15 +344,7 @@ pub fn populate_chunk_flora<F>(
             }
 
             // Loose Pebbles & Clusters on beaches, gravel beaches, riverbanks, and sparse plains
-            let pebble_chance = if col.biome == BiomeType::GravelBeach {
-                0.028
-            } else if col.is_beach || col.river_factor > 0.12 {
-                0.012
-            } else if is_rocky_biome(col.biome) {
-                0.008
-            } else {
-                0.002
-            };
+            let pebble_chance = surface_pebble_chance(col);
             let h_peb = hash2d(wx, wz, seed ^ 0x1337_BEEF);
             if hash_f32(h_peb) < pebble_chance {
                 let is_cluster = ((h_peb >> 8) % 4) == 0;
@@ -420,46 +406,33 @@ pub fn populate_chunk_flora<F>(
 
             // --- 20.3: ANCESTRAL WILD CROPS (clustered rare patches) ---
             // Never spawn dryland wild crops (like pumpkins/wheat) in the middle of beaches or gravel beaches!
-            let is_beach_surface = col.is_beach || col.biome == BiomeType::GravelBeach;
-            let crop_patch = patch_noise(wx, wz, 22.0, seed ^ 0xC095_F00D);
-            if crop_patch > 0.78 && (!is_beach_surface || col.river_factor > 0.10) {
-                let h_crop = hash2d(wx, wz, seed ^ 0x7A31_5512);
-                if hash_f32(h_crop) < 0.065 {
-                    let is_wet_bank = col.river_factor > 0.10
-                        || col.is_lake
-                        || matches!(col.biome, BiomeType::OrchidSwamp | BiomeType::DesertOasis);
-                    // Use coarse patch cell so nearby wild crops belong to the same species
-                    let species_id = hash2d(wx.div_euclid(24), wz.div_euclid(24), seed ^ 0xAA11_9922);
-                    let (bot, top_opt) = select_wild_crop(col.biome, is_wet_bank, species_id);
-                    if bot.can_be_placed_on_ground(ground) {
-                        let shape = bot.default_shape();
-                        set_air_only_in_chunk(
-                            voxels,
-                            chunk_shapes,
-                            chunk_min_y,
-                            lx,
-                            place_y,
-                            lz,
-                            bot,
-                            shape,
-                            0,
-                        );
-                        if let Some(top) = top_opt {
-                            set_air_only_in_chunk(
-                                voxels,
-                                chunk_shapes,
-                                chunk_min_y,
-                                lx,
-                                place_y + 1,
-                                lz,
-                                top,
-                                BlockShape::CrossBillboard,
-                                0,
-                            );
-                        }
-                        continue;
-                    }
+            if let Some((bot, top_opt)) = sample_wild_crop_column(wx, wz, ground, col, seed) {
+                let shape = bot.default_shape();
+                set_air_only_in_chunk(
+                    voxels,
+                    chunk_shapes,
+                    chunk_min_y,
+                    lx,
+                    place_y,
+                    lz,
+                    bot,
+                    shape,
+                    0,
+                );
+                if let Some(top) = top_opt {
+                    set_air_only_in_chunk(
+                        voxels,
+                        chunk_shapes,
+                        chunk_min_y,
+                        lx,
+                        place_y + 1,
+                        lz,
+                        top,
+                        BlockShape::CrossBillboard,
+                        0,
+                    );
                 }
+                continue;
             }
 
             // --- 20.2: HERBACEOUS FLORA, FLOWERS, CACTI & BAMBOO (light & open density) ---
@@ -668,26 +641,128 @@ fn populate_marine_column(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
-fn populate_surface_flora_column(
-    voxels: &mut [Voxel],
-    chunk_shapes: &mut Vec<(usize, BlockShape, u8)>,
-    chunk_min_y: i32,
-    lx: usize,
-    lz: usize,
+/// Lightweight surface feature classification for horizon LOD meshes.
+#[derive(Clone, Copy, Debug)]
+pub enum LodFloraKind {
+    RubbleBox(Voxel),
+    TallBox {
+        voxel: Voxel,
+        height: f32,
+        half_width: f32,
+    },
+    CrossPlant {
+        bot: Voxel,
+        top: Option<Voxel>,
+    },
+    FlatCarpet(Voxel),
+}
+
+#[inline(always)]
+fn surface_rubble_chance(col: TerrainColumn, ground: Voxel) -> f32 {
+    if col.is_cliff || is_rocky_biome(col.biome) {
+        0.048
+    } else if !ground.is_fertile_soil() && !ground.is_sandy_soil() {
+        0.030
+    } else {
+        0.009
+    }
+}
+
+#[inline(always)]
+fn surface_pebble_chance(col: TerrainColumn) -> f32 {
+    if col.biome == BiomeType::GravelBeach {
+        0.028
+    } else if col.is_beach || col.river_factor > 0.12 {
+        0.012
+    } else if is_rocky_biome(col.biome) {
+        0.008
+    } else {
+        0.002
+    }
+}
+
+#[inline]
+fn sample_wild_crop_column(
     wx: i32,
     wz: i32,
-    place_y: i32,
     ground: Voxel,
     col: TerrainColumn,
     seed: u32,
-) {
+) -> Option<(Voxel, Option<Voxel>)> {
+    let is_beach_surface = col.is_beach || col.biome == BiomeType::GravelBeach;
+    let crop_patch = patch_noise(wx, wz, 22.0, seed ^ 0xC095_F00D);
+    if crop_patch > 0.78 && (!is_beach_surface || col.river_factor > 0.10) {
+        let h_crop = hash2d(wx, wz, seed ^ 0x7A31_5512);
+        if hash_f32(h_crop) < 0.065 {
+            let is_wet_bank = col.river_factor > 0.10
+                || col.is_lake
+                || matches!(col.biome, BiomeType::OrchidSwamp | BiomeType::DesertOasis);
+            // Use coarse patch cell so nearby wild crops belong to the same species
+            let species_id = hash2d(wx.div_euclid(24), wz.div_euclid(24), seed ^ 0xAA11_9922);
+            let (bot, top_opt) = select_wild_crop(col.biome, is_wet_bank, species_id);
+            if bot.can_be_placed_on_ground(ground) {
+                return Some((bot, top_opt));
+            }
+        }
+    }
+    None
+}
+
+#[derive(Clone, Copy)]
+enum SurfaceFloraDecision {
+    Cactus(i32),
+    Bamboo(i32),
+    FlatPad(Voxel),
+    Cross { bot: Voxel, top: Option<Voxel> },
+}
+
+fn select_surface_flora_column(
+    wx: i32,
+    wz: i32,
+    ground: Voxel,
+    col: TerrainColumn,
+    seed: u32,
+    skip_small_patches: bool,
+) -> Option<(SurfaceFloraDecision, u32)> {
     let h = hash2d(wx, wz, seed ^ 0xF107_A123);
     let roll = hash_f32(h);
+
+    if skip_small_patches {
+        return match col.biome {
+            BiomeType::DuneSea
+            | BiomeType::AncientSands
+            | BiomeType::DesertSpires
+            | BiomeType::DesertOasis
+            | BiomeType::BryceCanyon
+            | BiomeType::AmethystCanyon => {
+                if ground.is_sandy_soil() && roll < 0.0025 {
+                    let height = 1 + ((h >> 8) % 3) as i32;
+                    Some((SurfaceFloraDecision::Cactus(height), h))
+                } else {
+                    None
+                }
+            }
+            BiomeType::TropicalJungle => {
+                if ground.is_fertile_soil() {
+                    let bamboo_patch = patch_noise(wx, wz, 20.0, seed ^ 0xBA3B_0000);
+                    if bamboo_patch > 0.74 && roll < 0.025 {
+                        let height = 3 + ((h >> 8) % 4) as i32;
+                        Some((SurfaceFloraDecision::Bamboo(height), h))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        };
+    }
+
     let flower_patch = patch_noise(wx, wz, 16.0, seed ^ 0xF10E_5555);
     let grass_patch = patch_noise(wx, wz, 18.0, seed ^ 0x67A5_5111);
 
-    // Coastal beaches & GravelBeach: sparse Sea Oats on sand, plus hardy grass patches on dirty gravel!
+    // Coastal beaches & GravelBeach: sparse Sea Oats on sand, plus hardy grass patches on dirty gravel
     if col.is_beach || col.biome == BiomeType::MirageIsles || col.biome == BiomeType::GravelBeach {
         if matches!(ground, Voxel::GravelDirty | Voxel::GravelAshy) && grass_patch > 0.36 && roll < 0.095 {
             let vox = match (h >> 8) % 4 {
@@ -695,42 +770,17 @@ fn populate_surface_flora_column(
                 2 => Voxel::VegeDrygrass,
                 _ => Voxel::VegeBluffGrass,
             };
-            set_air_only_in_chunk(
-                voxels,
-                chunk_shapes,
-                chunk_min_y,
-                lx,
-                place_y,
-                lz,
-                vox,
-                BlockShape::CrossBillboard,
-                0,
-            );
+            return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
         } else if ground.is_sandy_soil() && grass_patch > 0.60 && roll < 0.018 {
-            set_air_only_in_chunk(
-                voxels,
-                chunk_shapes,
-                chunk_min_y,
-                lx,
-                place_y,
-                lz,
-                Voxel::VegeSeaOatsBottom,
-                BlockShape::CrossBillboard,
-                0,
-            );
-            set_air_only_in_chunk(
-                voxels,
-                chunk_shapes,
-                chunk_min_y,
-                lx,
-                place_y + 1,
-                lz,
-                Voxel::VegeSeaOatsTop,
-                BlockShape::CrossBillboard,
-                0,
-            );
+            return Some((
+                SurfaceFloraDecision::Cross {
+                    bot: Voxel::VegeSeaOatsBottom,
+                    top: Some(Voxel::VegeSeaOatsTop),
+                },
+                h,
+            ));
         }
-        return;
+        return None;
     }
 
     // Riverbank / Wetland Cattails
@@ -738,29 +788,13 @@ fn populate_surface_flora_column(
         && roll < 0.024
         && Voxel::VegeCattailBottom.can_be_placed_on_ground(ground)
     {
-        set_air_only_in_chunk(
-            voxels,
-            chunk_shapes,
-            chunk_min_y,
-            lx,
-            place_y,
-            lz,
-            Voxel::VegeCattailBottom,
-            BlockShape::CrossBillboard,
-            0,
-        );
-        set_air_only_in_chunk(
-            voxels,
-            chunk_shapes,
-            chunk_min_y,
-            lx,
-            place_y + 1,
-            lz,
-            Voxel::VegeCattailTop,
-            BlockShape::CrossBillboard,
-            0,
-        );
-        return;
+        return Some((
+            SurfaceFloraDecision::Cross {
+                bot: Voxel::VegeCattailBottom,
+                top: Some(Voxel::VegeCattailTop),
+            },
+            h,
+        ));
     }
 
     match col.biome {
@@ -773,21 +807,8 @@ fn populate_surface_flora_column(
         | BiomeType::AmethystCanyon => {
             if ground.is_sandy_soil() {
                 if roll < 0.0025 {
-                    // Tall Cactus (1..3 blocks)
                     let height = 1 + ((h >> 8) % 3) as i32;
-                    for dy in 0..height {
-                        set_air_only_in_chunk(
-                            voxels,
-                            chunk_shapes,
-                            chunk_min_y,
-                            lx,
-                            place_y + dy,
-                            lz,
-                            Voxel::VegeCactus,
-                            BlockShape::Cactus,
-                            0,
-                        );
-                    }
+                    return Some((SurfaceFloraDecision::Cactus(height), h));
                 } else if roll < 0.012 {
                     let vox = match (h >> 12) % 5 {
                         0 => Voxel::VegeDeadBush,
@@ -796,19 +817,10 @@ fn populate_surface_flora_column(
                         3 => Voxel::FlowerCactusFlower,
                         _ => Voxel::VegeDrygrass,
                     };
-                    set_air_only_in_chunk(
-                        voxels,
-                        chunk_shapes,
-                        chunk_min_y,
-                        lx,
-                        place_y,
-                        lz,
-                        vox,
-                        BlockShape::CrossBillboard,
-                        0,
-                    );
+                    return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
                 }
             }
+            None
         }
 
         // --- SAVANNAS & DRY STEPPES ---
@@ -821,19 +833,10 @@ fn populate_surface_flora_column(
                     _ => Voxel::FlowerGlobeMallow,
                 };
                 if vox.can_be_placed_on_ground(ground) {
-                    set_air_only_in_chunk(
-                        voxels,
-                        chunk_shapes,
-                        chunk_min_y,
-                        lx,
-                        place_y,
-                        lz,
-                        vox,
-                        BlockShape::CrossBillboard,
-                        0,
-                    );
+                    return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
                 }
             }
+            None
         }
 
         // --- BLOOMING VALLEY ---
@@ -855,30 +858,7 @@ fn populate_surface_flora_column(
                     _ => (Voxel::FlowerRoseBushBottom, Some(Voxel::FlowerRoseBushTop)),
                 };
                 if bot.can_be_placed_on_ground(ground) {
-                    set_air_only_in_chunk(
-                        voxels,
-                        chunk_shapes,
-                        chunk_min_y,
-                        lx,
-                        place_y,
-                        lz,
-                        bot,
-                        BlockShape::CrossBillboard,
-                        0,
-                    );
-                    if let Some(top) = top_opt {
-                        set_air_only_in_chunk(
-                            voxels,
-                            chunk_shapes,
-                            chunk_min_y,
-                            lx,
-                            place_y + 1,
-                            lz,
-                            top,
-                            BlockShape::CrossBillboard,
-                            0,
-                        );
-                    }
+                    return Some((SurfaceFloraDecision::Cross { bot, top: top_opt }, h));
                 }
             } else if roll < 0.085 && grass_patch > 0.34 && ground.is_fertile_soil() {
                 let vox = if ((h >> 12) % 4) == 0 {
@@ -886,18 +866,9 @@ fn populate_surface_flora_column(
                 } else {
                     Voxel::VegeWildgrass
                 };
-                set_air_only_in_chunk(
-                    voxels,
-                    chunk_shapes,
-                    chunk_min_y,
-                    lx,
-                    place_y,
-                    lz,
-                    vox,
-                    BlockShape::CrossBillboard,
-                    0,
-                );
+                return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
             }
+            None
         }
 
         // --- LAVENDER VALLEY ---
@@ -908,30 +879,17 @@ fn populate_surface_flora_column(
                     3 => Voxel::FlowerAllium,
                     _ => Voxel::FlowerIris,
                 };
-                set_air_only_in_chunk(
-                    voxels,
-                    chunk_shapes,
-                    chunk_min_y,
-                    lx,
-                    place_y,
-                    lz,
-                    vox,
-                    BlockShape::CrossBillboard,
-                    0,
-                );
+                return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
             } else if roll < 0.075 && grass_patch > 0.34 && ground.is_fertile_soil() {
-                set_air_only_in_chunk(
-                    voxels,
-                    chunk_shapes,
-                    chunk_min_y,
-                    lx,
-                    place_y,
-                    lz,
-                    Voxel::VegeWildgrass,
-                    BlockShape::CrossBillboard,
-                    0,
-                );
+                return Some((
+                    SurfaceFloraDecision::Cross {
+                        bot: Voxel::VegeWildgrass,
+                        top: None,
+                    },
+                    h,
+                ));
             }
+            None
         }
 
         // --- SAKURA GROVE ---
@@ -942,35 +900,16 @@ fn populate_surface_flora_column(
                 } else {
                     Voxel::FlowerPinkPetals
                 };
-                set_air_only_in_chunk(
-                    voxels,
-                    chunk_shapes,
-                    chunk_min_y,
-                    lx,
-                    place_y,
-                    lz,
-                    vox,
-                    BlockShape::FlatPad,
-                    0,
-                );
+                return Some((SurfaceFloraDecision::FlatPad(vox), h));
             } else if roll < 0.070 && grass_patch > 0.34 && ground.is_fertile_soil() {
                 let vox = if ((h >> 12) % 3) == 0 {
                     Voxel::FlowerClover
                 } else {
                     Voxel::VegeWildgrass
                 };
-                set_air_only_in_chunk(
-                    voxels,
-                    chunk_shapes,
-                    chunk_min_y,
-                    lx,
-                    place_y,
-                    lz,
-                    vox,
-                    BlockShape::CrossBillboard,
-                    0,
-                );
+                return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
             }
+            None
         }
 
         // --- TROPICAL JUNGLE ---
@@ -979,97 +918,34 @@ fn populate_surface_flora_column(
                 let bamboo_patch = patch_noise(wx, wz, 20.0, seed ^ 0xBA3B_0000);
                 if bamboo_patch > 0.74 && roll < 0.025 {
                     let height = 3 + ((h >> 8) % 4) as i32;
-                    for dy in 0..height {
-                        let vox = if dy + 1 >= height - 1 {
-                            Voxel::BambooLeaves
-                        } else {
-                            Voxel::BambooStalk
-                        };
-                        set_air_only_in_chunk(
-                            voxels,
-                            chunk_shapes,
-                            chunk_min_y,
-                            lx,
-                            place_y + dy,
-                            lz,
-                            vox,
-                            BlockShape::Bamboo,
-                            0,
-                        );
-                    }
+                    return Some((SurfaceFloraDecision::Bamboo(height), h));
                 } else if roll < 0.11 {
-                    match (h >> 10) % 5 {
-                        0 => {
-                            set_air_only_in_chunk(
-                                voxels,
-                                chunk_shapes,
-                                chunk_min_y,
-                                lx,
-                                place_y,
-                                lz,
-                                Voxel::VegeTallJungleFernBottom,
-                                BlockShape::CrossBillboard,
-                                0,
-                            );
-                            set_air_only_in_chunk(
-                                voxels,
-                                chunk_shapes,
-                                chunk_min_y,
-                                lx,
-                                place_y + 1,
-                                lz,
-                                Voxel::VegeTallJungleFernTop,
-                                BlockShape::CrossBillboard,
-                                0,
-                            );
-                        }
-                        1 => set_air_only_in_chunk(
-                            voxels,
-                            chunk_shapes,
-                            chunk_min_y,
-                            lx,
-                            place_y,
-                            lz,
-                            Voxel::VegeFern,
-                            BlockShape::CrossBillboard,
-                            0,
-                        ),
-                        2 => set_air_only_in_chunk(
-                            voxels,
-                            chunk_shapes,
-                            chunk_min_y,
-                            lx,
-                            place_y,
-                            lz,
-                            Voxel::FlowerHibiscus,
-                            BlockShape::CrossBillboard,
-                            0,
-                        ),
-                        3 => set_air_only_in_chunk(
-                            voxels,
-                            chunk_shapes,
-                            chunk_min_y,
-                            lx,
-                            place_y,
-                            lz,
-                            Voxel::FlowerOrchid,
-                            BlockShape::CrossBillboard,
-                            0,
-                        ),
-                        _ => set_air_only_in_chunk(
-                            voxels,
-                            chunk_shapes,
-                            chunk_min_y,
-                            lx,
-                            place_y,
-                            lz,
-                            Voxel::VegeBush,
-                            BlockShape::CrossBillboard,
-                            0,
-                        ),
-                    }
+                    let decision = match (h >> 10) % 5 {
+                        0 => SurfaceFloraDecision::Cross {
+                            bot: Voxel::VegeTallJungleFernBottom,
+                            top: Some(Voxel::VegeTallJungleFernTop),
+                        },
+                        1 => SurfaceFloraDecision::Cross {
+                            bot: Voxel::VegeFern,
+                            top: None,
+                        },
+                        2 => SurfaceFloraDecision::Cross {
+                            bot: Voxel::FlowerHibiscus,
+                            top: None,
+                        },
+                        3 => SurfaceFloraDecision::Cross {
+                            bot: Voxel::FlowerOrchid,
+                            top: None,
+                        },
+                        _ => SurfaceFloraDecision::Cross {
+                            bot: Voxel::VegeBush,
+                            top: None,
+                        },
+                    };
+                    return Some((decision, h));
                 }
             }
+            None
         }
 
         // --- ORCHID SWAMP ---
@@ -1081,18 +957,9 @@ fn populate_surface_flora_column(
                     3 => Voxel::VegeMossgrass,
                     _ => Voxel::FungiVerdigris,
                 };
-                set_air_only_in_chunk(
-                    voxels,
-                    chunk_shapes,
-                    chunk_min_y,
-                    lx,
-                    place_y,
-                    lz,
-                    vox,
-                    BlockShape::CrossBillboard,
-                    0,
-                );
+                return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
             }
+            None
         }
 
         // --- TAIGA / COLD FORESTS / PINE HIGHLANDS ---
@@ -1108,18 +975,9 @@ fn populate_surface_flora_column(
                     4 => Voxel::FungiAmanita,
                     _ => Voxel::FungiPorcini,
                 };
-                set_air_only_in_chunk(
-                    voxels,
-                    chunk_shapes,
-                    chunk_min_y,
-                    lx,
-                    place_y,
-                    lz,
-                    vox,
-                    BlockShape::CrossBillboard,
-                    0,
-                );
+                return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
             }
+            None
         }
 
         // --- FROZEN / GLACIAL / VOLCANIC (sparse or barren) ---
@@ -1130,12 +988,12 @@ fn populate_surface_flora_column(
         | BiomeType::ColdOcean
         | BiomeType::DeepWarmOcean
         | BiomeType::CoralReef
-        | BiomeType::OceanTrench => {}
+        | BiomeType::OceanTrench => None,
 
         // --- TEMPERATE FORESTS, LOWLANDS, SHIELD & MOUNTAINS (default open scatter) ---
         _ => {
             if !ground.is_fertile_soil() {
-                return;
+                return None;
             }
             if flower_patch > 0.68 && roll < 0.025 {
                 let (bot, top_opt) = match (h >> 8) % 8 {
@@ -1151,114 +1009,219 @@ fn populate_surface_flora_column(
                     ),
                     _ => (Voxel::FlowerSnapdragonBottom, Some(Voxel::FlowerSnapdragonTop)),
                 };
+                return Some((SurfaceFloraDecision::Cross { bot, top: top_opt }, h));
+            } else if grass_patch > 0.32 && roll < 0.095 {
+                let decision = match (h >> 12) % 6 {
+                    0 | 1 => SurfaceFloraDecision::Cross {
+                        bot: Voxel::VegeWildgrass,
+                        top: None,
+                    },
+                    2 => SurfaceFloraDecision::Cross {
+                        bot: Voxel::VegeTallWildgrassBottom,
+                        top: Some(Voxel::VegeTallWildgrassTop),
+                    },
+                    3 => SurfaceFloraDecision::Cross {
+                        bot: Voxel::VegeFern,
+                        top: None,
+                    },
+                    4 => SurfaceFloraDecision::Cross {
+                        bot: Voxel::VegeTallFernBottom,
+                        top: Some(Voxel::VegeTallFernTop),
+                    },
+                    _ => SurfaceFloraDecision::Cross {
+                        bot: Voxel::VegeBush,
+                        top: None,
+                    },
+                };
+                return Some((decision, h));
+            }
+            None
+        }
+    }
+}
+
+/// Evaluates lightweight LOD props (rubble, boulders/crops, cacti, bamboo, bushes, and flowers)
+/// for horizon chunks without generating full 3D chunks.
+pub fn sample_lod_surface_prop(
+    wx: i32,
+    wz: i32,
+    ground: Voxel,
+    col: TerrainColumn,
+    seed: u32,
+    is_lod1: bool,
+) -> Option<LodFloraKind> {
+    if col.surface_shape != BlockShape::Full
+        || col.water_level.is_some_and(|wl| col.terrain_height < wl)
+        || !ground.is_solid_opaque()
+        || ground.is_fluid()
+        || ground.is_empty()
+    {
+        return None;
+    }
+
+    let h = hash2d(wx, wz, seed ^ 0x4F1B_BCDC);
+    let roll = hash_f32(h);
+
+    if roll < surface_rubble_chance(col, ground) {
+        return if is_lod1 {
+            Some(LodFloraKind::RubbleBox(matching_rubble_for(ground)))
+        } else {
+            None
+        };
+    }
+
+    if is_lod1 {
+        let h_peb = hash2d(wx, wz, seed ^ 0x1337_BEEF);
+        if hash_f32(h_peb) < surface_pebble_chance(col) {
+            return None;
+        }
+        if is_woodland_biome(col.biome) && ground.is_fertile_soil() {
+            let h_stick = hash2d(wx, wz, seed ^ 0x571C_C0DE);
+            if hash_f32(h_stick) < 0.0055 {
+                return None;
+            }
+        }
+        if let Some((bot, top_opt)) = sample_wild_crop_column(wx, wz, ground, col, seed) {
+            if matches!(bot, Voxel::WildPumpkin | Voxel::WildMelon) {
+                return Some(LodFloraKind::TallBox {
+                    voxel: bot,
+                    height: 0.75,
+                    half_width: 0.38,
+                });
+            }
+            return Some(LodFloraKind::CrossPlant { bot, top: top_opt });
+        }
+    }
+
+    let (decision, h_flora) = select_surface_flora_column(wx, wz, ground, col, seed, !is_lod1)?;
+
+    match decision {
+        SurfaceFloraDecision::Cactus(height) => Some(LodFloraKind::TallBox {
+            voxel: Voxel::VegeCactus,
+            height: height as f32,
+            half_width: if is_lod1 { 0.38 } else { 0.42 },
+        }),
+        SurfaceFloraDecision::Bamboo(height) => Some(LodFloraKind::TallBox {
+            voxel: Voxel::BambooLeaves,
+            height: height as f32,
+            half_width: if is_lod1 { 0.35 } else { 0.38 },
+        }),
+        SurfaceFloraDecision::FlatPad(voxel) => {
+            is_lod1.then_some(LodFloraKind::FlatCarpet(voxel))
+        }
+        SurfaceFloraDecision::Cross { bot, top } => {
+            if !is_lod1 {
+                return None;
+            }
+            // Thin single-block wildgrass tufts by 50% in Lod1 while keeping 100% of bushes, ferns, and flowers
+            if top.is_none()
+                && matches!(
+                    bot,
+                    Voxel::VegeWildgrass
+                        | Voxel::VegeDrygrass
+                        | Voxel::VegeBluffGrass
+                        | Voxel::VegeMossgrass
+                )
+                && ((h_flora >> 15) & 1) != 0
+            {
+                return None;
+            }
+            Some(LodFloraKind::CrossPlant { bot, top })
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn populate_surface_flora_column(
+    voxels: &mut [Voxel],
+    chunk_shapes: &mut Vec<(usize, BlockShape, u8)>,
+    chunk_min_y: i32,
+    lx: usize,
+    lz: usize,
+    wx: i32,
+    wz: i32,
+    place_y: i32,
+    ground: Voxel,
+    col: TerrainColumn,
+    seed: u32,
+) {
+    let Some((decision, _)) = select_surface_flora_column(wx, wz, ground, col, seed, false) else {
+        return;
+    };
+
+    match decision {
+        SurfaceFloraDecision::Cactus(height) => {
+            for dy in 0..height {
                 set_air_only_in_chunk(
                     voxels,
                     chunk_shapes,
                     chunk_min_y,
                     lx,
-                    place_y,
+                    place_y + dy,
                     lz,
-                    bot,
+                    Voxel::VegeCactus,
+                    BlockShape::Cactus,
+                    0,
+                );
+            }
+        }
+        SurfaceFloraDecision::Bamboo(height) => {
+            for dy in 0..height {
+                let vox = if dy + 1 >= height - 1 {
+                    Voxel::BambooLeaves
+                } else {
+                    Voxel::BambooStalk
+                };
+                set_air_only_in_chunk(
+                    voxels,
+                    chunk_shapes,
+                    chunk_min_y,
+                    lx,
+                    place_y + dy,
+                    lz,
+                    vox,
+                    BlockShape::Bamboo,
+                    0,
+                );
+            }
+        }
+        SurfaceFloraDecision::FlatPad(vox) => {
+            set_air_only_in_chunk(
+                voxels,
+                chunk_shapes,
+                chunk_min_y,
+                lx,
+                place_y,
+                lz,
+                vox,
+                BlockShape::FlatPad,
+                0,
+            );
+        }
+        SurfaceFloraDecision::Cross { bot, top } => {
+            set_air_only_in_chunk(
+                voxels,
+                chunk_shapes,
+                chunk_min_y,
+                lx,
+                place_y,
+                lz,
+                bot,
+                BlockShape::CrossBillboard,
+                0,
+            );
+            if let Some(top_vox) = top {
+                set_air_only_in_chunk(
+                    voxels,
+                    chunk_shapes,
+                    chunk_min_y,
+                    lx,
+                    place_y + 1,
+                    lz,
+                    top_vox,
                     BlockShape::CrossBillboard,
                     0,
                 );
-                if let Some(top) = top_opt {
-                    set_air_only_in_chunk(
-                        voxels,
-                        chunk_shapes,
-                        chunk_min_y,
-                        lx,
-                        place_y + 1,
-                        lz,
-                        top,
-                        BlockShape::CrossBillboard,
-                        0,
-                    );
-                }
-            } else if grass_patch > 0.32 && roll < 0.095 {
-                match (h >> 12) % 6 {
-                    0 | 1 => set_air_only_in_chunk(
-                        voxels,
-                        chunk_shapes,
-                        chunk_min_y,
-                        lx,
-                        place_y,
-                        lz,
-                        Voxel::VegeWildgrass,
-                        BlockShape::CrossBillboard,
-                        0,
-                    ),
-                    2 => {
-                        set_air_only_in_chunk(
-                            voxels,
-                            chunk_shapes,
-                            chunk_min_y,
-                            lx,
-                            place_y,
-                            lz,
-                            Voxel::VegeTallWildgrassBottom,
-                            BlockShape::CrossBillboard,
-                            0,
-                        );
-                        set_air_only_in_chunk(
-                            voxels,
-                            chunk_shapes,
-                            chunk_min_y,
-                            lx,
-                            place_y + 1,
-                            lz,
-                            Voxel::VegeTallWildgrassTop,
-                            BlockShape::CrossBillboard,
-                            0,
-                        );
-                    }
-                    3 => set_air_only_in_chunk(
-                        voxels,
-                        chunk_shapes,
-                        chunk_min_y,
-                        lx,
-                        place_y,
-                        lz,
-                        Voxel::VegeFern,
-                        BlockShape::CrossBillboard,
-                        0,
-                    ),
-                    4 => {
-                        set_air_only_in_chunk(
-                            voxels,
-                            chunk_shapes,
-                            chunk_min_y,
-                            lx,
-                            place_y,
-                            lz,
-                            Voxel::VegeTallFernBottom,
-                            BlockShape::CrossBillboard,
-                            0,
-                        );
-                        set_air_only_in_chunk(
-                            voxels,
-                            chunk_shapes,
-                            chunk_min_y,
-                            lx,
-                            place_y + 1,
-                            lz,
-                            Voxel::VegeTallFernTop,
-                            BlockShape::CrossBillboard,
-                            0,
-                        );
-                    }
-                    _ => set_air_only_in_chunk(
-                        voxels,
-                        chunk_shapes,
-                        chunk_min_y,
-                        lx,
-                        place_y,
-                        lz,
-                        Voxel::VegeBush,
-                        BlockShape::CrossBillboard,
-                        0,
-                    ),
-                }
             }
         }
     }

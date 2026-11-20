@@ -50,6 +50,26 @@ impl ChunkLod {
     }
 }
 
+/// Pushes an arbitrary quad with explicit UVs into `MeshBuffers`.
+fn push_lod_textured_quad(
+    buffers: &mut MeshBuffers,
+    verts: [[f32; 3]; 4],
+    normal: [f32; 3],
+    uvs: [[f32; 2]; 4],
+    layer: f32,
+    color: [f32; 4],
+) {
+    let base = buffers.positions.len() as u32;
+    buffers.positions.extend_from_slice(&verts);
+    buffers.normals.extend_from_slice(&[normal; 4]);
+    buffers.colors.extend_from_slice(&[color; 4]);
+    buffers.uv_bs.extend_from_slice(&[[layer, 0.0]; 4]);
+    buffers.uvs.extend_from_slice(&uvs);
+    buffers
+        .indices
+        .extend_from_slice(&[base, base + 1, base + 2, base, base + 2, base + 3]);
+}
+
 /// Helper to push an axis-aligned rectangular quad into `MeshBuffers`.
 fn push_lod_quad(
     buffers: &mut MeshBuffers,
@@ -63,28 +83,102 @@ fn push_lod_quad(
     layer: f32,
     color: [f32; 4],
 ) {
-    let base = buffers.positions.len() as u32;
-    buffers.positions.extend_from_slice(&[p0, p1, p2, p3]);
-    let norm = direction.normal_f32();
-    buffers.normals.extend_from_slice(&[norm, norm, norm, norm]);
-    buffers
-        .colors
-        .extend_from_slice(&[color, color, color, color]);
-    buffers
-        .uv_bs
-        .extend_from_slice(&[[layer, 0.0], [layer, 0.0], [layer, 0.0], [layer, 0.0]]);
-
     let uvs = match direction {
         FaceDirection::PositiveY | FaceDirection::NegativeY => {
             [[0.0, 0.0], [0.0, v_span], [u_span, v_span], [u_span, 0.0]]
         }
         _ => [[0.0, v_span], [0.0, 0.0], [u_span, 0.0], [u_span, v_span]],
     };
-    buffers.uvs.extend_from_slice(&uvs);
+    push_lod_textured_quad(
+        buffers,
+        [p0, p1, p2, p3],
+        direction.normal_f32(),
+        uvs,
+        layer,
+        color,
+    );
+}
 
-    buffers
-        .indices
-        .extend_from_slice(&[base, base + 1, base + 2, base, base + 2, base + 3]);
+/// Computes substrate-aware foliage tint matching LOD0 (`tint[3] = 6.0` for rigid alpha-cutout flora).
+#[inline]
+fn lod_flora_tint(voxel: Voxel, ground: Voxel, world_pos: IVec3) -> [f32; 4] {
+    let mut tint = voxel.tint_color_at(world_pos);
+    if voxel.is_tinted_flora() {
+        if ground.is_sandy_soil() {
+            let dry_olive = [0.74, 0.78, 0.44];
+            let t = 0.45;
+            tint[0] = tint[0] * (1.0 - t) + dry_olive[0] * t;
+            tint[1] = tint[1] * (1.0 - t) + dry_olive[1] * t;
+            tint[2] = tint[2] * (1.0 - t) + dry_olive[2] * t;
+        } else if !ground.is_grass_soil() && ground.is_fertile_soil() {
+            let earthy_green = [0.56, 0.76, 0.40];
+            let t = 0.18;
+            tint[0] = tint[0] * (1.0 - t) + earthy_green[0] * t;
+            tint[1] = tint[1] * (1.0 - t) + earthy_green[1] * t;
+            tint[2] = tint[2] * (1.0 - t) + earthy_green[2] * t;
+        }
+    }
+    tint[3] = 6.0;
+    tint
+}
+
+/// Emits 2 intersecting double-sided diagonal alpha-cutout quads for LOD1 plants/bushes/flowers.
+fn push_lod_cross_billboard(
+    buffers: &mut MeshBuffers,
+    cx: f32,
+    base_y: f32,
+    cz: f32,
+    height: f32,
+    layer: f32,
+    color: [f32; 4],
+) {
+    let fx = cx - 0.5;
+    let fz = cz - 0.5;
+    let tip_y = base_y + height - 0.002;
+    let eps = 0.005;
+    let uv_fwd = [[eps, 1.0 - eps], [eps, eps], [1.0 - eps, eps], [1.0 - eps, 1.0 - eps]];
+    let uv_rev = [[1.0 - eps, 1.0 - eps], [1.0 - eps, eps], [eps, eps], [eps, 1.0 - eps]];
+    let n_up = [0.0, 1.0, 0.0];
+
+    let a00 = [fx, base_y, fz];
+    let a01 = [fx, tip_y, fz];
+    let a11 = [fx + 1.0, tip_y, fz + 1.0];
+    let a10 = [fx + 1.0, base_y, fz + 1.0];
+    push_lod_textured_quad(buffers, [a00, a01, a11, a10], n_up, uv_fwd, layer, color);
+    push_lod_textured_quad(buffers, [a10, a11, a01, a00], n_up, uv_rev, layer, color);
+
+    let b00 = [fx, base_y, fz + 1.0];
+    let b01 = [fx, tip_y, fz + 1.0];
+    let b11 = [fx + 1.0, tip_y, fz];
+    let b10 = [fx + 1.0, base_y, fz];
+    push_lod_textured_quad(buffers, [b00, b01, b11, b10], n_up, uv_fwd, layer, color);
+    push_lod_textured_quad(buffers, [b10, b11, b01, b00], n_up, uv_rev, layer, color);
+}
+
+/// Emits a lightweight top-facing alpha-cutout carpet quad (e.g., fallen cherry petals).
+fn push_lod_flat_carpet(
+    buffers: &mut MeshBuffers,
+    x0: f32,
+    y: f32,
+    z0: f32,
+    layer: f32,
+    color: [f32; 4],
+) {
+    let py = y + 0.04;
+    let uvs = [[0.0, 1.0], [1.0, 1.0], [1.0, 0.0], [0.0, 0.0]];
+    push_lod_textured_quad(
+        buffers,
+        [
+            [x0, py, z0 + 1.0],
+            [x0 + 1.0, py, z0 + 1.0],
+            [x0 + 1.0, py, z0],
+            [x0, py, z0],
+        ],
+        [0.0, 1.0, 0.0],
+        uvs,
+        layer,
+        color,
+    );
 }
 
 /// Pushes a vertical side wall between `bot_y` and `top_y` with block textures.
@@ -220,14 +314,20 @@ pub fn build_lod_mesh(
                 generator.sample_column(world_x, world_z)
             };
             let k = idx(i, j);
+            let (eff_height, eff_mat) =
+                generator.lod_surface_height_and_material(world_x, world_z, col);
             cols[k] = col;
-            heights[k] = col.terrain_height;
+            heights[k] = eff_height;
             water_levels[k] = col.water_level;
-            materials[k] = generator.surface_material_at(world_x, col.terrain_height, world_z, col);
+            materials[k] = eff_mat;
         }
     }
 
-    let mut opaque_buffers = MeshBuffers::with_capacity((num_cells * num_cells) as usize);
+    let mut opaque_buffers = MeshBuffers::with_capacity(if lod == ChunkLod::Lod1 {
+        (num_cells * num_cells * 2) as usize
+    } else {
+        (num_cells * num_cells) as usize
+    });
     let mut transparent_buffers = MeshBuffers::with_capacity(64);
     let cell_w = stride as f32;
 
@@ -563,6 +663,129 @@ pub fn build_lod_mesh(
 
     let is_lod1 = lod == ChunkLod::Lod1;
     let is_lod3 = lod == ChunkLod::Lod3;
+
+    // --- D1. Lightweight LOD Surface Flora & Rubble (Lod1 full detail, Lod2 macro cacti/bamboo) ---
+    if is_lod1 || lod == ChunkLod::Lod2 {
+        for i in 0..num_cells {
+            let world_x = chunk_origin_x + i * stride + sample_offset;
+            let lx_center = (i * stride) as f32 + (stride as f32 * 0.5);
+            for j in 0..num_cells {
+                let k = idx(i, j);
+                let col = cols[k];
+                let h_curr = heights[k];
+                // Skip columns covered by 3D rock boulders/overhangs (no surface scatter inside overhang solids)
+                if h_curr > col.terrain_height {
+                    continue;
+                }
+                let ground = materials[k];
+                let world_z = chunk_origin_z + j * stride + sample_offset;
+
+                let Some(prop) = crate::generation::flora::sample_lod_surface_prop(
+                    world_x,
+                    world_z,
+                    ground,
+                    col,
+                    generator.seed,
+                    is_lod1,
+                ) else {
+                    continue;
+                };
+
+                let lz_center = (j * stride) as f32 + (stride as f32 * 0.5);
+                let base_y = (h_curr + 1) as f32;
+                let world_pos = IVec3::new(world_x, h_curr + 1, world_z);
+
+                match prop {
+                    crate::generation::flora::LodFloraKind::RubbleBox(voxel) => {
+                        let layer = textures
+                            .get_face_texture_info(voxel, world_pos, FaceDirection::PositiveY)
+                            .0 as f32;
+                        push_lod_box(
+                            &mut opaque_buffers,
+                            lx_center - 0.28,
+                            base_y,
+                            lz_center - 0.28,
+                            lx_center + 0.28,
+                            base_y + 0.26,
+                            lz_center + 0.28,
+                            layer,
+                            [1.0, 1.0, 1.0, 1.0],
+                            true,
+                        );
+                    }
+                    crate::generation::flora::LodFloraKind::TallBox {
+                        voxel,
+                        height,
+                        half_width,
+                    } => {
+                        let layer = textures
+                            .get_face_texture_info(voxel, world_pos, FaceDirection::PositiveX)
+                            .0 as f32;
+                        let mut tint = voxel.tint_color_at(world_pos);
+                        tint[3] = if voxel == Voxel::BambooLeaves { 2.0 } else { 1.0 };
+                        push_lod_box(
+                            &mut opaque_buffers,
+                            lx_center - half_width,
+                            base_y,
+                            lz_center - half_width,
+                            lx_center + half_width,
+                            base_y + height,
+                            lz_center + half_width,
+                            layer,
+                            tint,
+                            true,
+                        );
+                    }
+                    crate::generation::flora::LodFloraKind::CrossPlant { bot, top } => {
+                        let layer = textures
+                            .get_face_texture_info(bot, world_pos, FaceDirection::PositiveX)
+                            .0 as f32;
+                        let tint = lod_flora_tint(bot, ground, world_pos);
+                        push_lod_cross_billboard(
+                            &mut opaque_buffers,
+                            lx_center,
+                            base_y,
+                            lz_center,
+                            1.0,
+                            layer,
+                            tint,
+                        );
+                        if let Some(top_vox) = top {
+                            let top_pos = world_pos + IVec3::Y;
+                            let top_layer = textures
+                                .get_face_texture_info(top_vox, top_pos, FaceDirection::PositiveX)
+                                .0 as f32;
+                            let top_tint = lod_flora_tint(top_vox, ground, top_pos);
+                            push_lod_cross_billboard(
+                                &mut opaque_buffers,
+                                lx_center,
+                                base_y + 1.0,
+                                lz_center,
+                                1.0,
+                                top_layer,
+                                top_tint,
+                            );
+                        }
+                    }
+                    crate::generation::flora::LodFloraKind::FlatCarpet(voxel) => {
+                        let layer = textures
+                            .get_face_texture_info(voxel, world_pos, FaceDirection::PositiveY)
+                            .0 as f32;
+                        let mut tint = voxel.tint_color_at(world_pos);
+                        tint[3] = 6.0;
+                        push_lod_flat_carpet(
+                            &mut opaque_buffers,
+                            lx_center - 0.5,
+                            base_y,
+                            lz_center - 0.5,
+                            layer,
+                            tint,
+                        );
+                    }
+                }
+            }
+        }
+    }
 
     for tree in lod_trees {
         // In far Lod3 super-chunks (4x4), thin to 50% of trees with wider canopies

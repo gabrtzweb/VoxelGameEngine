@@ -148,8 +148,8 @@ pub fn generate_lod_map_chunk(
             let wz = chunk_origin_z + (gz as i32) * 2;
 
             let col_data = generator.sample_column(wx, wz);
-            let surface_mat =
-                generator.surface_material_at(wx, col_data.terrain_height, wz, col_data);
+            let (eff_height, surface_mat) =
+                generator.lod_surface_height_and_material(wx, wz, col_data);
             grid_cols.push(col_data);
             grid_mats[gx * 8 + gz] = surface_mat;
 
@@ -168,7 +168,7 @@ pub fn generate_lod_map_chunk(
                 let color = super::color::voxel_map_color_at(surface_mat, 0, wx, wz);
                 MapPixel {
                     voxel: surface_mat,
-                    height: col_data.terrain_height as i16,
+                    height: eff_height as i16,
                     water_depth: 0,
                     color,
                 }
