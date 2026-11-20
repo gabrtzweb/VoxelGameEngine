@@ -447,6 +447,7 @@ pub fn mesh_shaped_voxels(
                 fy,
                 fz,
                 voxel,
+                orientation,
                 side_layer,
                 frame_count_f32,
                 top_tint,
@@ -509,6 +510,9 @@ pub fn mesh_shaped_voxels(
             BlockShape::Full | BlockShape::Column | BlockShape::Cocoon => {
                 mesh_column_cocoon(
                     buffers,
+                    voxel,
+                    shape,
+                    orientation,
                     fx,
                     fy,
                     fz,

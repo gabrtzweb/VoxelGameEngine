@@ -87,6 +87,8 @@ enum SettingsAction {
     IncShadowQuality,
     DecCloudQuality,
     IncCloudQuality,
+    DecCloudDistance,
+    IncCloudDistance,
     DecScreenMode,
     IncScreenMode,
     DecRenderDistance,
@@ -189,6 +191,9 @@ struct ShadowQualityLabel;
 
 #[derive(Component)]
 struct CloudQualityLabel;
+
+#[derive(Component)]
+struct CloudDistanceLabel;
 
 #[derive(Component)]
 struct ScreenModeLabel;
@@ -790,6 +795,22 @@ fn spawn_settings_menu(
                                     SettingsAction::DecCloudQuality,
                                     SettingsAction::IncCloudQuality,
                                     CloudQualityLabel,
+                                    font_handle.as_ref(),
+                                    &small_normal,
+                                    &small_hover,
+                                );
+
+                                // Cloud Distance Stepper (16..=128 chunks)
+                                spawn_stepper_row(
+                                    col_left,
+                                    loc.t("menu.settings.cloud_distance"),
+                                    loc.t_args(
+                                        "common.chunks",
+                                        &[&local_config.cloud_render_distance.to_string()],
+                                    ),
+                                    SettingsAction::DecCloudDistance,
+                                    SettingsAction::IncCloudDistance,
+                                    CloudDistanceLabel,
                                     font_handle.as_ref(),
                                     &small_normal,
                                     &small_hover,
@@ -1875,6 +1896,14 @@ fn handle_settings_buttons(
                 SettingsAction::IncCloudQuality => {
                     local_config.cloud_quality = local_config.cloud_quality.next();
                 }
+                SettingsAction::DecCloudDistance => {
+                    local_config.cloud_render_distance =
+                        (local_config.cloud_render_distance - 8).max(16);
+                }
+                SettingsAction::IncCloudDistance => {
+                    local_config.cloud_render_distance =
+                        (local_config.cloud_render_distance + 8).min(128);
+                }
                 SettingsAction::ToggleDynamicFov => {
                     game_settings.dynamic_fov_enabled = !game_settings.dynamic_fov_enabled;
                 }
@@ -2170,6 +2199,7 @@ fn update_settings_labels(
             Option<&AntiAliasingLabel>,
             Option<&ShadowQualityLabel>,
             Option<&CloudQualityLabel>,
+            Option<&CloudDistanceLabel>,
             Option<&GodRaysLabel>,
             Option<&FogLabel>,
             Option<&TransmissionLabel>,
@@ -2225,6 +2255,7 @@ fn update_settings_labels(
             anti_aliasing,
             shadow_quality,
             cloud_quality,
+            cloud_distance,
             god_rays,
             fog,
             transmission,
@@ -2264,6 +2295,11 @@ fn update_settings_labels(
                 text.0 = format_shadows(local_config.shadow_quality, &loc);
             } else if cloud_quality.is_some() {
                 text.0 = format_clouds(local_config.cloud_quality, &loc);
+            } else if cloud_distance.is_some() {
+                text.0 = loc.t_args(
+                    "common.chunks",
+                    &[&local_config.cloud_render_distance.to_string()],
+                );
             } else if god_rays.is_some() {
                 text.0 = format!(
                     "{}: {}",

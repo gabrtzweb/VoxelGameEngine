@@ -39,7 +39,7 @@ pub const CREATIVE_TAB_Y_COORDS: [f32; 9] = [
     65.0, 84.0, 103.0, 122.0, 141.0, 160.0, 179.0, 198.0, 217.0,
 ];
 
-pub const AVAILABLE_BLOCKS: [Voxel; 689] = Voxel::ALL;
+pub const AVAILABLE_BLOCKS: [Voxel; 690] = Voxel::ALL;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CreativeCategory {
@@ -234,8 +234,8 @@ pub fn max_filtered_scroll(filtered_count: usize) -> usize {
 /// The active inventory view mode.
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum InventoryTab {
-    Creative,
     #[default]
+    Creative,
     Player,
 }
 
@@ -388,7 +388,8 @@ fn spawn_inventory_menu(
     hotbar: Res<Hotbar>,
     player_inv: Res<PlayerInventory>,
     icons: Res<BlockIcons>,
-    tab_state: Res<InventoryTab>,
+    mut tab_state: ResMut<InventoryTab>,
+    game_mode: Option<Res<crate::player::GameMode>>,
     active_cat: Res<ActiveCreativeCategory>,
     scroll_state: Res<InventoryScrollState>,
     search_query: Res<CreativeSearchQuery>,
@@ -396,6 +397,9 @@ fn spawn_inventory_menu(
     loc: Option<Res<crate::core::Localization>>,
     game_settings: Option<Res<crate::menu::GameSettings>>,
 ) {
+    if game_mode.is_none_or(|m| *m == crate::player::GameMode::Creative) {
+        *tab_state = InventoryTab::Creative;
+    }
     let (gui_scale, dimming_alpha) = game_settings
         .as_ref()
         .map_or((4, 0.75), |s| (s.gui_scale, s.background_dimming.alpha()));

@@ -1085,7 +1085,7 @@ impl ChunkMesher {
             let (blade_count, lod_quads) = if cheb_dist <= 2 {
                 (base_density, 2usize)
             } else if cheb_dist == 3 {
-                ((base_density * 5 / 8).max(10), 1usize)
+                ((base_density * 5 / 8).max(10), 2usize)
             } else {
                 ((base_density / 3).max(6), 1usize)
             };

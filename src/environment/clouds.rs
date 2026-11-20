@@ -21,6 +21,7 @@ pub struct CloudLayerConfig {
     pub altitude: f32,
     pub thickness: f32,
     pub cell_size: f32,
+    #[allow(dead_code)]
     pub grid_radius: i32,
     pub base_alpha: f32,
     pub wind_speed: Vec2,
@@ -89,6 +90,7 @@ pub struct SingleLayerState {
     pub mesh_handle: Handle<Mesh>,
     pub active_task: Option<Task<(IVec2, Mesh)>>,
     pub active_quality: crate::core::CloudQuality,
+    pub active_distance: i32,
 }
 
 #[derive(Resource)]
@@ -106,6 +108,11 @@ pub fn setup_clouds(
         .as_ref()
         .map(|c| c.cloud_quality)
         .unwrap_or(crate::core::CloudQuality::Fancy3D);
+    let cloud_distance = local_config
+        .as_ref()
+        .map(|c| c.cloud_render_distance)
+        .unwrap_or(64)
+        .clamp(16, 128);
     let cloud_map = load_cloud_texture_map();
 
     let material_handle = materials.add(StandardMaterial {
@@ -123,7 +130,8 @@ pub fn setup_clouds(
     let active_configs = &CLOUD_LAYER_CONFIGS[..active_count];
 
     for (index, config) in active_configs.iter().enumerate() {
-        let initial_mesh = generate_cloud_mesh(&cloud_map, config, IVec2::ZERO, cloud_quality);
+        let initial_mesh =
+            generate_cloud_mesh(&cloud_map, config, IVec2::ZERO, cloud_quality, cloud_distance);
         let mesh_handle = meshes.add(initial_mesh);
 
         let initial_visibility = if cloud_quality == crate::core::CloudQuality::Off {
@@ -140,6 +148,7 @@ pub fn setup_clouds(
             initial_visibility,
             NotShadowCaster,
             NotShadowReceiver,
+            bevy::camera::visibility::NoFrustumCulling,
         ));
 
         layer_states.push(SingleLayerState {
@@ -147,6 +156,7 @@ pub fn setup_clouds(
             mesh_handle,
             active_task: None,
             active_quality: cloud_quality,
+            active_distance: cloud_distance,
         });
     }
 
@@ -187,9 +197,11 @@ pub fn sync_clouds(
     time_of_day: f32,
     is_underwater: bool,
     cloud_quality: crate::core::CloudQuality,
+    cloud_render_distance: i32,
     storm_darkening: f32,
 ) {
     let camera_translation = camera.0.translation;
+    let cloud_distance = cloud_render_distance.clamp(16, 128);
 
     for (layer_visual, mut cloud_transform, mut visibility) in &mut cloud_layers {
         if is_underwater || cloud_quality == crate::core::CloudQuality::Off {
@@ -209,8 +221,9 @@ pub fn sync_clouds(
         let config = &CLOUD_LAYER_CONFIGS[index];
         let layer_state = &mut layers_res.layers[index];
 
-        if layer_state.active_quality != cloud_quality {
+        if layer_state.active_quality != cloud_quality || layer_state.active_distance != cloud_distance {
             layer_state.active_quality = cloud_quality;
+            layer_state.active_distance = cloud_distance;
             layer_state.current_cell_center = IVec2::splat(i32::MIN);
         }
 
@@ -255,6 +268,7 @@ pub fn sync_clouds(
                     &config_clone,
                     target_cell_center,
                     cloud_quality,
+                    cloud_distance,
                 );
                 (target_cell_center, mesh)
             }));
@@ -346,12 +360,13 @@ pub fn generate_cloud_mesh(
     config: &CloudLayerConfig,
     center: IVec2,
     quality: crate::core::CloudQuality,
+    cloud_render_distance: i32,
 ) -> Mesh {
     match quality {
         crate::core::CloudQuality::Off => {
             let mut mesh = Mesh::new(
                 PrimitiveTopology::TriangleList,
-                RenderAssetUsages::default(),
+                RenderAssetUsages::RENDER_WORLD,
             );
             mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0.0, 0.0, 0.0]; 4]);
             mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 1.0, 0.0]; 4]);
@@ -360,36 +375,74 @@ pub fn generate_cloud_mesh(
             mesh.insert_indices(bevy::render::mesh::Indices::U32(vec![0, 1, 2, 0, 2, 3]));
             mesh
         }
-        crate::core::CloudQuality::Fast2D => generate_2d_cloud_mesh(cloud_map, config, center),
-        crate::core::CloudQuality::Fancy3D => generate_3d_cloud_mesh(cloud_map, config, center),
+        crate::core::CloudQuality::Fast2D => {
+            generate_cloud_mesh_internal(cloud_map, config, center, cloud_render_distance, false)
+        }
+        crate::core::CloudQuality::Fancy3D => {
+            generate_cloud_mesh_internal(cloud_map, config, center, cloud_render_distance, true)
+        }
     }
 }
 
-pub fn generate_2d_cloud_mesh(
+/// High-performance 2D-greedy cloud mesh builder supporting ultra-distant cloud horizons (up to 128 chunks / 2048m).
+///
+/// - Inside the solid core (`d <= 0.72 * R`): full 2D rectangle greedy merging along X and Z collapses
+///   large cloud sheets into minimal quads.
+/// - Inside the outer horizon fade ring (`0.72 * R .. 0.98 * R`): bounded horizontal runs (`<= 4` cells)
+///   keep smooth radial alpha dissolve into the sky.
+/// - In `Fancy3D` mode: North/South/East/West vertical side walls are greedy-merged into runs and culled
+///   beyond `0.68 * R` where distant clouds are viewed edge-on/underneath.
+fn generate_cloud_mesh_internal(
     cloud_map: &CloudTextureMap,
     config: &CloudLayerConfig,
     center: IVec2,
+    cloud_render_distance: i32,
+    is_3d: bool,
 ) -> Mesh {
     let cell_size = config.cell_size;
-    let grid_radius = config.grid_radius;
+    let world_radius = (cloud_render_distance.clamp(16, 128) as f32) * 16.0;
+    let grid_radius = (world_radius / cell_size).ceil() as i32;
+    let dim = (grid_radius * 2 + 1) as usize;
 
-    let estimated_cells = (grid_radius as usize * 2 + 1) * (grid_radius as usize * 2 + 1) / 2;
-    let estimated_quads = estimated_cells * 2;
-    let estimated_verts = estimated_quads * 4;
-    let estimated_indices = estimated_quads * 6;
-    let mut positions: Vec<[f32; 3]> = Vec::with_capacity(estimated_verts);
-    let mut normals: Vec<[f32; 3]> = Vec::with_capacity(estimated_verts);
-    let mut uvs: Vec<[f32; 2]> = Vec::with_capacity(estimated_verts);
-    let mut colors: Vec<[f32; 4]> = Vec::with_capacity(estimated_verts);
-    let mut indices: Vec<u32> = Vec::with_capacity(estimated_indices);
-    let fade_inner = cell_size * (grid_radius as f32 * 0.58);
-    let fade_outer = cell_size * (grid_radius as f32 * 0.95);
+    let fade_inner = world_radius * 0.72;
+    let fade_outer = world_radius * 0.98;
     let fade_inner_sq = fade_inner * fade_inner;
     let fade_outer_sq = fade_outer * fade_outer;
-    let fade_range = fade_outer - fade_inner;
+    let fade_range = (fade_outer - fade_inner).max(1.0);
+    let wall_max_r = world_radius * 0.68;
+    let wall_max_sq = wall_max_r * wall_max_r;
+
     let y0 = 0.0;
-    let y1 = 0.05;
+    let y1 = if is_3d { config.thickness } else { 0.05 };
     let base_alpha = config.base_alpha;
+
+    // 0 = empty/outside, 1 = solid core cloud cell, 2 = fade-ring cloud cell
+    let mut grid = vec![0u8; dim * dim];
+    for gz in 0..dim {
+        let cz = gz as i32 - grid_radius;
+        let wz = (cz as f32 + 0.5) * cell_size;
+        let sample_z = center.y + cz + config.texture_offset.y;
+        let row_off = gz * dim;
+        for gx in 0..dim {
+            let cx = gx as i32 - grid_radius;
+            let wx = (cx as f32 + 0.5) * cell_size;
+            let dist_sq = wx * wx + wz * wz;
+            if dist_sq > fade_outer_sq {
+                continue;
+            }
+            let sample_x = center.x + cx + config.texture_offset.x;
+            if cloud_map.is_cloud(sample_x, sample_z) {
+                grid[row_off + gx] = if dist_sq <= fade_inner_sq { 1 } else { 2 };
+            }
+        }
+    }
+
+    let est_quads = (dim * dim / 4).max(256);
+    let mut positions: Vec<[f32; 3]> = Vec::with_capacity(est_quads * 4);
+    let mut normals: Vec<[f32; 3]> = Vec::with_capacity(est_quads * 4);
+    let mut uvs: Vec<[f32; 2]> = Vec::with_capacity(est_quads * 4);
+    let mut colors: Vec<[f32; 4]> = Vec::with_capacity(est_quads * 4);
+    let mut indices: Vec<u32> = Vec::with_capacity(est_quads * 6);
 
     let calc_alpha = |x: f32, z: f32| -> f32 {
         let d_sq = x * x + z * z;
@@ -408,6 +461,7 @@ pub fn generate_2d_cloud_mesh(
     let add_quad = |p: [[f32; 3]; 4],
                     norm: [f32; 3],
                     shade: [f32; 3],
+                    const_alpha: Option<f32>,
                     pos_out: &mut Vec<[f32; 3]>,
                     norm_out: &mut Vec<[f32; 3]>,
                     uv_out: &mut Vec<[f32; 2]>,
@@ -416,7 +470,7 @@ pub fn generate_2d_cloud_mesh(
         let start_idx = pos_out.len() as u32;
         let uv_coords = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
         for (i, pt) in p.iter().enumerate() {
-            let a = calc_alpha(pt[0], pt[2]);
+            let a = const_alpha.unwrap_or_else(|| calc_alpha(pt[0], pt[2]));
             pos_out.push(*pt);
             norm_out.push(norm);
             uv_out.push(uv_coords[i]);
@@ -432,233 +486,234 @@ pub fn generate_2d_cloud_mesh(
         ]);
     };
 
-    let bottom_shade = [0.93, 0.94, 0.95];
+    let bottom_shade = if is_3d {
+        [0.91, 0.92, 0.94]
+    } else {
+        [0.93, 0.94, 0.95]
+    };
     let top_shade = [1.00, 1.00, 1.00];
+    let west_east_shade = [0.96, 0.97, 0.98];
+    let north_south_shade = [0.93, 0.94, 0.95];
 
-    for cz in -grid_radius..=grid_radius {
-        let wz = cz as f32 * cell_size;
-        let z0 = wz;
-        let z1 = wz + cell_size;
-
-        let mut cx = -grid_radius;
-        while cx <= grid_radius {
-            let sample_x = center.x + cx + config.texture_offset.x;
-            let sample_z = center.y + cz + config.texture_offset.y;
-            let wx = cx as f32 * cell_size;
-            let dist_sq = wx * wx + wz * wz;
-
-            if dist_sq > fade_outer_sq || !cloud_map.is_cloud(sample_x, sample_z) {
-                cx += 1;
+    // Pass 1: 2D greedy rectangle merge for solid core (1) + bounded runs for fade ring (2)
+    let mut visited = vec![false; dim * dim];
+    for gz in 0..dim {
+        let row_off = gz * dim;
+        for gx in 0..dim {
+            let idx = row_off + gx;
+            let cell_kind = grid[idx];
+            if cell_kind == 0 || visited[idx] {
                 continue;
             }
 
-            let run_start_cx = cx;
-            let mut run_end_cx = cx;
-
-            while run_end_cx < grid_radius {
-                let next_cx = run_end_cx + 1;
-                let next_wx = next_cx as f32 * cell_size;
-                let next_dist_sq = next_wx * next_wx + wz * wz;
-                if next_dist_sq > fade_outer_sq
-                    || !cloud_map.is_cloud(
-                        center.x + next_cx + config.texture_offset.x,
-                        center.y + cz + config.texture_offset.y,
-                    )
-                {
-                    break;
-                }
-                run_end_cx = next_cx;
+            let max_w = if cell_kind == 1 { dim - gx } else { (dim - gx).min(4) };
+            let mut w = 1;
+            while w < max_w && grid[row_off + gx + w] == cell_kind && !visited[row_off + gx + w] {
+                w += 1;
             }
 
-            let x0 = run_start_cx as f32 * cell_size;
-            let x1 = (run_end_cx + 1) as f32 * cell_size;
+            let max_h = if cell_kind == 1 { dim - gz } else { (dim - gz).min(4) };
+            let mut h = 1;
+            'rows: while h < max_h {
+                let next_row = (gz + h) * dim;
+                for dx in 0..w {
+                    let ni = next_row + gx + dx;
+                    if grid[ni] != cell_kind || visited[ni] {
+                        break 'rows;
+                    }
+                }
+                h += 1;
+            }
 
-            // Merged Bottom face (normal [0, -1, 0])
+            for dz in 0..h {
+                let r = (gz + dz) * dim;
+                for dx in 0..w {
+                    visited[r + gx + dx] = true;
+                }
+            }
+
+            let x0 = (gx as i32 - grid_radius) as f32 * cell_size;
+            let x1 = ((gx + w) as i32 - grid_radius) as f32 * cell_size;
+            let z0 = (gz as i32 - grid_radius) as f32 * cell_size;
+            let z1 = ((gz + h) as i32 - grid_radius) as f32 * cell_size;
+            let const_a = if cell_kind == 1 {
+                Some(base_alpha)
+            } else {
+                None
+            };
+
+            // Bottom face (-Y)
             add_quad(
                 [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]],
                 [0.0, -1.0, 0.0],
                 bottom_shade,
+                const_a,
                 &mut positions,
                 &mut normals,
                 &mut uvs,
                 &mut colors,
                 &mut indices,
             );
-
-            // Merged Top face (normal [0, 1, 0])
+            // Top face (+Y)
             add_quad(
                 [[x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0]],
                 [0.0, 1.0, 0.0],
                 top_shade,
+                const_a,
                 &mut positions,
                 &mut normals,
                 &mut uvs,
                 &mut colors,
                 &mut indices,
             );
-
-            cx = run_end_cx + 1;
         }
     }
 
-    let mut mesh = Mesh::new(
-        PrimitiveTopology::TriangleList,
-        RenderAssetUsages::default(),
-    );
-    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
-    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
-    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
-    mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
-    mesh.insert_indices(Indices::U32(indices));
-    mesh
-}
+    // Pass 2 (Fancy3D only): Greedy-merged vertical side walls within 68% horizon radius
+    if is_3d {
+        let has_cloud = |gx: i32, gz: i32| -> bool {
+            let cx = gx - grid_radius;
+            let cz = gz - grid_radius;
+            cloud_map.is_cloud(
+                center.x + cx + config.texture_offset.x,
+                center.y + cz + config.texture_offset.y,
+            )
+        };
 
-pub fn generate_3d_cloud_mesh(
-    cloud_map: &CloudTextureMap,
-    config: &CloudLayerConfig,
-    center: IVec2,
-) -> Mesh {
-    let cell_size = config.cell_size;
-    let grid_radius = config.grid_radius;
-
-    let estimated_cells = (grid_radius as usize * 2 + 1) * (grid_radius as usize * 2 + 1) / 2;
-    let estimated_quads = estimated_cells * 3;
-    let estimated_verts = estimated_quads * 4;
-    let estimated_indices = estimated_quads * 6;
-    let mut positions: Vec<[f32; 3]> = Vec::with_capacity(estimated_verts);
-    let mut normals: Vec<[f32; 3]> = Vec::with_capacity(estimated_verts);
-    let mut uvs: Vec<[f32; 2]> = Vec::with_capacity(estimated_verts);
-    let mut colors: Vec<[f32; 4]> = Vec::with_capacity(estimated_verts);
-    let mut indices: Vec<u32> = Vec::with_capacity(estimated_indices);
-    let fade_inner = cell_size * (grid_radius as f32 * 0.58);
-    let fade_outer = cell_size * (grid_radius as f32 * 0.95);
-    let fade_inner_sq = fade_inner * fade_inner;
-    let fade_outer_sq = fade_outer * fade_outer;
-    let fade_range = fade_outer - fade_inner;
-    let y0 = 0.0;
-    let y1 = config.thickness;
-    let base_alpha = config.base_alpha;
-
-    let calc_alpha = |x: f32, z: f32| -> f32 {
-        let d_sq = x * x + z * z;
-        if d_sq <= fade_inner_sq {
-            base_alpha
-        } else if d_sq >= fade_outer_sq {
-            0.0
-        } else {
-            let d = d_sq.sqrt();
-            let t = (d - fade_inner) / fade_range;
-            let smooth = crate::core::math::smoothstep(t);
-            (1.0 - smooth) * base_alpha
-        }
-    };
-
-    let add_quad = |p: [[f32; 3]; 4],
-                    norm: [f32; 3],
-                    shade: [f32; 3],
-                    pos_out: &mut Vec<[f32; 3]>,
-                    norm_out: &mut Vec<[f32; 3]>,
-                    uv_out: &mut Vec<[f32; 2]>,
-                    col_out: &mut Vec<[f32; 4]>,
-                    idx_out: &mut Vec<u32>| {
-        let start_idx = pos_out.len() as u32;
-        let uv_coords = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
-        for (i, pt) in p.iter().enumerate() {
-            let a = calc_alpha(pt[0], pt[2]);
-            pos_out.push(*pt);
-            norm_out.push(norm);
-            uv_out.push(uv_coords[i]);
-            col_out.push([shade[0], shade[1], shade[2], a]);
-        }
-        idx_out.extend_from_slice(&[
-            start_idx,
-            start_idx + 1,
-            start_idx + 2,
-            start_idx,
-            start_idx + 2,
-            start_idx + 3,
-        ]);
-    };
-
-    // Shading factors tuned for crisp, bright white clouds
-    let bottom_shade = [0.91, 0.92, 0.94]; // Clean bright underside
-    let top_shade = [1.00, 1.00, 1.00]; // Full sunlight top
-    let west_east_shade = [0.96, 0.97, 0.98]; // Bright vertical walls
-    let north_south_shade = [0.93, 0.94, 0.95]; // Crisp side shading
-
-    for cz in -grid_radius..=grid_radius {
-        let wz = cz as f32 * cell_size;
-        let z0 = wz;
-        let z1 = wz + cell_size;
-
-        let mut cx = -grid_radius;
-        while cx <= grid_radius {
-            let sample_x = center.x + cx + config.texture_offset.x;
-            let sample_z = center.y + cz + config.texture_offset.y;
-            let wx = cx as f32 * cell_size;
-            let dist_sq = wx * wx + wz * wz;
-
-            if dist_sq > fade_outer_sq || !cloud_map.is_cloud(sample_x, sample_z) {
-                cx += 1;
+        // North (-Z) and South (+Z) walls merged along X
+        for gz in 0..dim {
+            let cz = gz as i32 - grid_radius;
+            let wz_c = (cz as f32 + 0.5) * cell_size;
+            if wz_c * wz_c > wall_max_sq {
                 continue;
             }
+            let z0 = cz as f32 * cell_size;
+            let z1 = z0 + cell_size;
+            let row_off = gz * dim;
 
-            // Merge contiguous horizontal runs of cloud cells along X
-            let run_start_cx = cx;
-            let mut run_end_cx = cx;
-
-            while run_end_cx < grid_radius {
-                let next_cx = run_end_cx + 1;
-                let next_wx = next_cx as f32 * cell_size;
-                let next_dist_sq = next_wx * next_wx + wz * wz;
-                if next_dist_sq > fade_outer_sq
-                    || !cloud_map.is_cloud(
-                        center.x + next_cx + config.texture_offset.x,
-                        center.y + cz + config.texture_offset.y,
-                    )
+            // North (-Z)
+            let mut gx = 0;
+            while gx < dim {
+                let cx = gx as i32 - grid_radius;
+                let wx_c = (cx as f32 + 0.5) * cell_size;
+                if grid[row_off + gx] == 0
+                    || wx_c * wx_c + wz_c * wz_c > wall_max_sq
+                    || has_cloud(gx as i32, gz as i32 - 1)
                 {
-                    break;
+                    gx += 1;
+                    continue;
                 }
-                run_end_cx = next_cx;
+                let start = gx;
+                gx += 1;
+                while gx < dim && gx - start < 16 {
+                    let ncx = gx as i32 - grid_radius;
+                    let nwx = (ncx as f32 + 0.5) * cell_size;
+                    if grid[row_off + gx] == 0
+                        || nwx * nwx + wz_c * wz_c > wall_max_sq
+                        || has_cloud(gx as i32, gz as i32 - 1)
+                    {
+                        break;
+                    }
+                    gx += 1;
+                }
+                let x0 = (start as i32 - grid_radius) as f32 * cell_size;
+                let x1 = (gx as i32 - grid_radius) as f32 * cell_size;
+                add_quad(
+                    [[x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0]],
+                    [0.0, 0.0, -1.0],
+                    north_south_shade,
+                    Some(base_alpha),
+                    &mut positions,
+                    &mut normals,
+                    &mut uvs,
+                    &mut colors,
+                    &mut indices,
+                );
             }
 
-            let x0 = run_start_cx as f32 * cell_size;
-            let x1 = (run_end_cx + 1) as f32 * cell_size;
+            // South (+Z)
+            let mut gx = 0;
+            while gx < dim {
+                let cx = gx as i32 - grid_radius;
+                let wx_c = (cx as f32 + 0.5) * cell_size;
+                if grid[row_off + gx] == 0
+                    || wx_c * wx_c + wz_c * wz_c > wall_max_sq
+                    || has_cloud(gx as i32, gz as i32 + 1)
+                {
+                    gx += 1;
+                    continue;
+                }
+                let start = gx;
+                gx += 1;
+                while gx < dim && gx - start < 16 {
+                    let ncx = gx as i32 - grid_radius;
+                    let nwx = (ncx as f32 + 0.5) * cell_size;
+                    if grid[row_off + gx] == 0
+                        || nwx * nwx + wz_c * wz_c > wall_max_sq
+                        || has_cloud(gx as i32, gz as i32 + 1)
+                    {
+                        break;
+                    }
+                    gx += 1;
+                }
+                let x0 = (start as i32 - grid_radius) as f32 * cell_size;
+                let x1 = (gx as i32 - grid_radius) as f32 * cell_size;
+                add_quad(
+                    [[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]],
+                    [0.0, 0.0, 1.0],
+                    north_south_shade,
+                    Some(base_alpha),
+                    &mut positions,
+                    &mut normals,
+                    &mut uvs,
+                    &mut colors,
+                    &mut indices,
+                );
+            }
+        }
 
-            // Merged Bottom face (normal [0, -1, 0]) - CCW facing down
-            add_quad(
-                [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]],
-                [0.0, -1.0, 0.0],
-                bottom_shade,
-                &mut positions,
-                &mut normals,
-                &mut uvs,
-                &mut colors,
-                &mut indices,
-            );
+        // West (-X) and East (+X) walls merged along Z
+        for gx in 0..dim {
+            let cx = gx as i32 - grid_radius;
+            let wx_c = (cx as f32 + 0.5) * cell_size;
+            if wx_c * wx_c > wall_max_sq {
+                continue;
+            }
+            let x0 = cx as f32 * cell_size;
+            let x1 = x0 + cell_size;
 
-            // Merged Top face (normal [0, 1, 0]) - CCW facing up
-            add_quad(
-                [[x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0]],
-                [0.0, 1.0, 0.0],
-                top_shade,
-                &mut positions,
-                &mut normals,
-                &mut uvs,
-                &mut colors,
-                &mut indices,
-            );
-
-            // West wall on run start if exposed (-X) - CCW facing -X
-            let has_west = cloud_map.is_cloud(
-                center.x + run_start_cx - 1 + config.texture_offset.x,
-                sample_z,
-            );
-            if !has_west {
+            // West (-X)
+            let mut gz = 0;
+            while gz < dim {
+                let cz = gz as i32 - grid_radius;
+                let wz_c = (cz as f32 + 0.5) * cell_size;
+                if grid[gz * dim + gx] == 0
+                    || wx_c * wx_c + wz_c * wz_c > wall_max_sq
+                    || has_cloud(gx as i32 - 1, gz as i32)
+                {
+                    gz += 1;
+                    continue;
+                }
+                let start = gz;
+                gz += 1;
+                while gz < dim && gz - start < 16 {
+                    let ncz = gz as i32 - grid_radius;
+                    let nwz = (ncz as f32 + 0.5) * cell_size;
+                    if grid[gz * dim + gx] == 0
+                        || wx_c * wx_c + nwz * nwz > wall_max_sq
+                        || has_cloud(gx as i32 - 1, gz as i32)
+                    {
+                        break;
+                    }
+                    gz += 1;
+                }
+                let z0 = (start as i32 - grid_radius) as f32 * cell_size;
+                let z1 = (gz as i32 - grid_radius) as f32 * cell_size;
                 add_quad(
                     [[x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0]],
                     [-1.0, 0.0, 0.0],
                     west_east_shade,
+                    Some(base_alpha),
                     &mut positions,
                     &mut normals,
                     &mut uvs,
@@ -667,16 +722,38 @@ pub fn generate_3d_cloud_mesh(
                 );
             }
 
-            // East wall on run end if exposed (+X) - CCW facing +X
-            let has_east = cloud_map.is_cloud(
-                center.x + run_end_cx + 1 + config.texture_offset.x,
-                sample_z,
-            );
-            if !has_east {
+            // East (+X)
+            let mut gz = 0;
+            while gz < dim {
+                let cz = gz as i32 - grid_radius;
+                let wz_c = (cz as f32 + 0.5) * cell_size;
+                if grid[gz * dim + gx] == 0
+                    || wx_c * wx_c + wz_c * wz_c > wall_max_sq
+                    || has_cloud(gx as i32 + 1, gz as i32)
+                {
+                    gz += 1;
+                    continue;
+                }
+                let start = gz;
+                gz += 1;
+                while gz < dim && gz - start < 16 {
+                    let ncz = gz as i32 - grid_radius;
+                    let nwz = (ncz as f32 + 0.5) * cell_size;
+                    if grid[gz * dim + gx] == 0
+                        || wx_c * wx_c + nwz * nwz > wall_max_sq
+                        || has_cloud(gx as i32 + 1, gz as i32)
+                    {
+                        break;
+                    }
+                    gz += 1;
+                }
+                let z0 = (start as i32 - grid_radius) as f32 * cell_size;
+                let z1 = (gz as i32 - grid_radius) as f32 * cell_size;
                 add_quad(
                     [[x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1]],
                     [1.0, 0.0, 0.0],
                     west_east_shade,
+                    Some(base_alpha),
                     &mut positions,
                     &mut normals,
                     &mut uvs,
@@ -684,61 +761,12 @@ pub fn generate_3d_cloud_mesh(
                     &mut indices,
                 );
             }
-
-            // North and South walls for each individual cell in this run
-            for cell_cx in run_start_cx..=run_end_cx {
-                let cell_x0 = cell_cx as f32 * cell_size;
-                let cell_x1 = cell_x0 + cell_size;
-                let cell_sample_x = center.x + cell_cx + config.texture_offset.x;
-
-                // North wall (-Z) - CCW facing -Z
-                let has_north = cloud_map.is_cloud(cell_sample_x, sample_z - 1);
-                if !has_north {
-                    add_quad(
-                        [
-                            [cell_x1, y0, z0],
-                            [cell_x0, y0, z0],
-                            [cell_x0, y1, z0],
-                            [cell_x1, y1, z0],
-                        ],
-                        [0.0, 0.0, -1.0],
-                        north_south_shade,
-                        &mut positions,
-                        &mut normals,
-                        &mut uvs,
-                        &mut colors,
-                        &mut indices,
-                    );
-                }
-
-                // South wall (+Z) - CCW facing +Z
-                let has_south = cloud_map.is_cloud(cell_sample_x, sample_z + 1);
-                if !has_south {
-                    add_quad(
-                        [
-                            [cell_x0, y0, z1],
-                            [cell_x1, y0, z1],
-                            [cell_x1, y1, z1],
-                            [cell_x0, y1, z1],
-                        ],
-                        [0.0, 0.0, 1.0],
-                        north_south_shade,
-                        &mut positions,
-                        &mut normals,
-                        &mut uvs,
-                        &mut colors,
-                        &mut indices,
-                    );
-                }
-            }
-
-            cx = run_end_cx + 1;
         }
     }
 
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
-        RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+        RenderAssetUsages::RENDER_WORLD,
     );
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);

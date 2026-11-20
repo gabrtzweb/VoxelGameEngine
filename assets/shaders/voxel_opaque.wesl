@@ -353,7 +353,7 @@ fn fragment(
     // Distant LOD tree canopies (color.a ~ 2.0): render as solid opaque foliage
     // (blending transparent leaf holes into dark interior foliage) so they preserve
     // GPU Early-Z, avoid distant alpha-cutout shimmer, and skip wind animation.
-    let is_lod_leaves = (vertex_output.color.a > 1.5) && (vertex_output.color.a < 2.5);
+    let is_lod_leaves = (vertex_output.color.a > 1.8) && (vertex_output.color.a < 2.2);
     if (is_lod_leaves && tex_color.a < 0.99) {
         tex_color = vec4<f32>(mix(vec3<f32>(0.22, 0.26, 0.20), tex_color.rgb, tex_color.a), 1.0);
     }

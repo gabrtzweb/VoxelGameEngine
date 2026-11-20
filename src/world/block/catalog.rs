@@ -460,7 +460,8 @@ impl Voxel {
         self.is_tinted_flora()
             || matches!(
                 self,
-                Self::OakLeaves
+                Self::VegeLeafLitter
+                    | Self::OakLeaves
                     | Self::BirchLeaves
                     | Self::PalmLeaves
                     | Self::AcaciaLeaves
@@ -853,6 +854,7 @@ impl Voxel {
             | Self::DolomiteGrass
             | Self::GraniteGrass
             | Self::LimestoneGrass => [0.55, 0.94, 0.42, 1.0],
+            Self::VegeLeafLitter => [0.74, 0.56, 0.30, 1.0],
             s if s.is_tinted_flora() => [0.55, 0.94, 0.42, 1.0],
             _ => [1.0, 1.0, 1.0, 1.0],
         }
@@ -1272,6 +1274,7 @@ impl Voxel {
             | Self::VegeSeaOatsBottom
             | Self::VegeSeaOatsTop
             | Self::VegeDeadBush => [185, 165, 110, 255],
+            Self::VegeLeafLitter => [156, 118, 66, 255],
             Self::VegeBarrelCactus
             | Self::VegePricklyPearCactus
             | Self::VegeCactus

@@ -214,6 +214,10 @@ fn sync_cloud_system(
         .as_ref()
         .map(|c| c.cloud_quality)
         .unwrap_or(crate::core::CloudQuality::Fancy3D);
+    let cloud_render_distance = local_config
+        .as_ref()
+        .map(|c| c.cloud_render_distance)
+        .unwrap_or(64);
 
     let storm_darkening = weather.as_ref().map_or(0.0, |w| {
         (w.rain_intensity * 0.70 + w.thunder_intensity * 0.30 + w.dust_intensity * 0.50).min(1.0)
@@ -231,6 +235,7 @@ fn sync_cloud_system(
         state.time_of_day,
         is_underwater,
         cloud_quality,
+        cloud_render_distance,
         storm_darkening,
     );
 }

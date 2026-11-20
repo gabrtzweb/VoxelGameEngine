@@ -1315,7 +1315,13 @@ pub fn sample_blended_biome_color(voxel: Voxel, world_x: f32, world_z: f32, seed
         }
     });
 
-    if voxel.is_grass_soil() || voxel.is_tinted_flora() {
+    if voxel == Voxel::VegeLeafLitter {
+        // Dry foliage tint: warm golden-brown / russet / olive-ochre modulated by biome foliage
+        let r = (0.58 + foliage[0] * 0.24).clamp(0.45, 0.86);
+        let g = (0.40 + foliage[1] * 0.20).clamp(0.32, 0.68);
+        let b = (0.20 + foliage[2] * 0.14).clamp(0.16, 0.42);
+        [r, g, b, 1.0]
+    } else if voxel.is_grass_soil() || voxel.is_tinted_flora() {
         grass
     } else if matches!(voxel, Voxel::LiquidWater | Voxel::WaterOccupied) {
         water

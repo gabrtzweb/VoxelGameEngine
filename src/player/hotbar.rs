@@ -24,17 +24,7 @@ pub struct Hotbar {
 impl Default for Hotbar {
     fn default() -> Self {
         Self {
-            slots: [
-                Some(Voxel::LoamGrass),
-                Some(Voxel::LoamDirt),
-                Some(Voxel::Dolomite),
-                Some(Voxel::SandCommon),
-                Some(Voxel::LiquidWater),
-                Some(Voxel::EmitLampWarm),
-                Some(Voxel::OakLog),
-                Some(Voxel::OakPlanks),
-                None,
-            ],
+            slots: [None; HOTBAR_SLOT_COUNT],
             active_slot: 0,
         }
     }

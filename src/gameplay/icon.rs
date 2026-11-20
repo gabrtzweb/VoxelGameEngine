@@ -741,6 +741,7 @@ fn voxel_item_texture_path(voxel: Voxel) -> Option<&'static str> {
         | Voxel::CropCoconutStage0
         | Voxel::CropCoconutStage1
         | Voxel::CropCoconutStage2 => Some("assets/textures/items/coconut_item.png"),
+        Voxel::VegeLeafLitter => Some("assets/textures/items/leaf_litter_item.png"),
         _ => None,
     }
 }

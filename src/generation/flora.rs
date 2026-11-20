@@ -324,6 +324,16 @@ pub fn populate_chunk_flora<F>(
                 continue;
             }
 
+            // Skip if trees, buttress roots, or under-canopy Leaf Litter already occupied `place_y`
+            // (prevents 2-block-tall flora top halves from spawning floating at `place_y + 1`)
+            let place_ly = place_y - chunk_min_y;
+            if place_ly >= 0 && place_ly < CHUNK_SIZE as i32 {
+                let idx = lx + lz * CHUNK_SIZE + place_ly as usize * CHUNK_SIZE * CHUNK_SIZE;
+                if !voxels[idx].is_empty() {
+                    continue;
+                }
+            }
+
             // --- 20.1: GEOLOGICAL SCATTER (Rubble, Pebbles, Stick Piles) ---
             // Surface Rubble on cliffs, rocky biomes, bare stone, and light scatter across plains
             let rubble_chance = surface_rubble_chance(col, ground);
@@ -385,7 +395,7 @@ pub fn populate_chunk_flora<F>(
                 continue;
             }
 
-            // Forest Floor Stick Piles in woodland biomes
+            // Forest Floor Stick Piles & Leaf Litter patches in woodland biomes
             if is_woodland_biome(col.biome) && ground.is_fertile_soil() {
                 let h_stick = hash2d(wx, wz, seed ^ 0x571C_C0DE);
                 if hash_f32(h_stick) < 0.0055 {
@@ -401,6 +411,47 @@ pub fn populate_chunk_flora<F>(
                         orient,
                     );
                     continue;
+                }
+
+                // Clustered Minecraft-style Leaf Litter patches on temperate/deciduous woodland floors
+                if matches!(
+                    col.biome,
+                    BiomeType::YosemiteLowlands
+                        | BiomeType::CloudForest
+                        | BiomeType::BloomingValley
+                        | BiomeType::LavenderValley
+                        | BiomeType::OrchidSwamp
+                        | BiomeType::Shield
+                        | BiomeType::TropicalJungle
+                ) {
+                    let litter_patch = patch_noise(wx, wz, 14.0, seed ^ 0x1EAF_F00D);
+                    if litter_patch > 0.56 {
+                        let h_litter = hash2d(wx, wz, seed ^ 0x1EAF_5EED);
+                        if hash_f32(h_litter) < 0.22 {
+                            let facing = (h_litter & 0x03) as u8;
+                            let seg_idx: u8 = if litter_patch > 0.78 {
+                                3
+                            } else if litter_patch > 0.69 {
+                                2
+                            } else if litter_patch > 0.62 {
+                                1
+                            } else {
+                                0
+                            };
+                            set_air_only_in_chunk(
+                                voxels,
+                                chunk_shapes,
+                                chunk_min_y,
+                                lx,
+                                place_y,
+                                lz,
+                                Voxel::VegeLeafLitter,
+                                BlockShape::FlatPad,
+                                facing | (seg_idx << 2),
+                            );
+                            continue;
+                        }
+                    }
                 }
             }
 

@@ -137,7 +137,7 @@ fn spawn_player_and_camera(
         Projection::Perspective(PerspectiveProjection {
             fov: CAMERA_FOV_DEGREES.to_radians(),
             near: 0.05,
-            far: 2000.0,
+            far: 4000.0,
             ..default()
         }),
         camera_transform,

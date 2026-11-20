@@ -500,6 +500,10 @@ pub struct LocalConfig {
     #[serde(default = "default_cloud_quality")]
     pub cloud_quality: CloudQuality,
 
+    /// Cloud horizontal render radius in chunks (16..=128, default 64).
+    #[serde(default = "default_cloud_render_distance")]
+    pub cloud_render_distance: i32,
+
     /// Anti-aliasing mode (Off, FXAA, MSAA 2x, MSAA 4x).
     #[serde(default = "default_anti_aliasing")]
     pub anti_aliasing: AntiAliasingMode,
@@ -760,6 +764,10 @@ fn default_cloud_quality() -> CloudQuality {
     CloudQuality::Fancy3D
 }
 
+fn default_cloud_render_distance() -> i32 {
+    64
+}
+
 fn default_anti_aliasing() -> AntiAliasingMode {
     AntiAliasingMode::Fxaa
 }
@@ -848,6 +856,7 @@ impl Default for LocalConfig {
             shadow_quality: default_shadow_quality(),
             shadows_enabled: default_shadows_enabled(),
             cloud_quality: default_cloud_quality(),
+            cloud_render_distance: default_cloud_render_distance(),
             anti_aliasing: default_anti_aliasing(),
             god_rays_enabled: default_god_rays_enabled(),
             render_scale: default_render_scale(),
@@ -956,6 +965,7 @@ impl LocalConfig {
                 self.shadow_quality = ShadowQuality::Off;
                 self.shadows_enabled = false;
                 self.cloud_quality = CloudQuality::Off;
+                self.cloud_render_distance = 24;
                 self.anti_aliasing = AntiAliasingMode::Off;
                 self.god_rays_enabled = false;
                 self.render_scale = 0.50;
@@ -980,6 +990,7 @@ impl LocalConfig {
                 self.shadow_quality = ShadowQuality::Off;
                 self.shadows_enabled = false;
                 self.cloud_quality = CloudQuality::Fast2D;
+                self.cloud_render_distance = 32;
                 self.anti_aliasing = AntiAliasingMode::Off;
                 self.god_rays_enabled = false;
                 self.render_scale = 0.75;
@@ -1004,6 +1015,7 @@ impl LocalConfig {
                 self.shadow_quality = ShadowQuality::Medium;
                 self.shadows_enabled = true;
                 self.cloud_quality = CloudQuality::Fancy3D;
+                self.cloud_render_distance = 48;
                 self.anti_aliasing = AntiAliasingMode::Fxaa;
                 self.god_rays_enabled = true;
                 self.render_scale = 1.00;
@@ -1028,6 +1040,7 @@ impl LocalConfig {
                 self.shadow_quality = ShadowQuality::High;
                 self.shadows_enabled = true;
                 self.cloud_quality = CloudQuality::Fancy3D;
+                self.cloud_render_distance = 64;
                 self.anti_aliasing = AntiAliasingMode::Msaa2x;
                 self.god_rays_enabled = true;
                 self.render_scale = 1.00;
@@ -1052,6 +1065,7 @@ impl LocalConfig {
                 self.shadow_quality = ShadowQuality::Ultra;
                 self.shadows_enabled = true;
                 self.cloud_quality = CloudQuality::Fancy3D;
+                self.cloud_render_distance = 96;
                 self.anti_aliasing = AntiAliasingMode::Msaa4x;
                 self.god_rays_enabled = true;
                 self.render_scale = 1.00;

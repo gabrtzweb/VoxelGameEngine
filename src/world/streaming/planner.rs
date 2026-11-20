@@ -39,7 +39,8 @@ pub fn plan_chunk_streaming(
         })
         .unwrap_or(Vec2::ZERO);
 
-    let moved_chunk = state.last_player_chunk != Some(player_chunk);
+    let prev_player_chunk = state.last_player_chunk;
+    let moved_chunk = prev_player_chunk != Some(player_chunk);
     let camera_turned = state.last_camera_fwd.is_some_and(|last| {
         current_fwd != Vec2::ZERO && current_fwd.dot(last) < 0.95 // ~18 degrees turn
     });
@@ -67,6 +68,32 @@ pub fn plan_chunk_streaming(
         &terrain_generator,
         &mut state.column_height_cache,
     );
+
+    // Upgrade/downgrade 3-tier procedural grass LOD on loaded surface grass chunks as the player moves
+    // so chunks generated at far distance automatically upgrade to full 2-quad hero grass before arrival.
+    if moved_chunk && let Some(prev) = prev_player_chunk {
+        let grass_lod_tier = |coord: IVec3, center: IVec3| -> u8 {
+            let d = (coord.x - center.x).abs().max((coord.z - center.z).abs());
+            if d <= 2 {
+                0
+            } else if d == 3 {
+                1
+            } else {
+                2
+            }
+        };
+        for (&coord, chunk) in world.iter_chunks() {
+            if chunk.is_subterranean() || !chunk.has_any_grass_turf() {
+                continue;
+            }
+            if !state.desired_chunks.contains(&coord) {
+                continue;
+            }
+            if grass_lod_tier(coord, prev) != grass_lod_tier(coord, player_chunk) {
+                queues.enqueue_remesh(coord);
+            }
+        }
+    }
 
     let generating_chunks: HashSet<IVec3> = generation_tasks
         .iter()

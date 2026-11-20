@@ -77,6 +77,7 @@
   "menu.settings.anti_aliasing": "Anti-Aliasing",
   "menu.settings.shadows": "Shadows",
   "menu.settings.clouds": "Clouds",
+  "menu.settings.cloud_distance": "Cloud Distance",
   "menu.settings.god_rays": "God Rays",
   "menu.settings.fog": "Fog",
   "menu.settings.transmission": "Transmission",
@@ -972,5 +973,6 @@
   "block.crop_coconut_stage1": "Coconut",
   "block.crop_coconut_stage2": "Coconut",
   "block.item_cocoa_beans": "Cocoa Beans",
-  "block.item_coconut": "Coconut"
+  "block.item_coconut": "Coconut",
+  "block.vege_leaf_litter": "Leaf Litter"
 }

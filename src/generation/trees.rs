@@ -520,10 +520,86 @@ where
             let root_bark = archetype_bark(archetype);
             stamp_anchored_root_collar(&mut writer, root_x, root_y, root_z, root_bark, ground, h);
             stamp_tree(&mut writer, root_x, root_y + 1, root_z, archetype, h);
+
+            if matches!(
+                archetype,
+                TreeArchetype::Oak
+                    | TreeArchetype::Birch
+                    | TreeArchetype::Maple(_)
+                    | TreeArchetype::Willow
+                    | TreeArchetype::Mahogany
+            ) {
+                stamp_under_canopy_leaf_litter(
+                    &mut writer,
+                    root_x,
+                    root_z,
+                    seed,
+                    &column_at,
+                    &ground_at,
+                );
+            }
         }
     }
 
     writer.wrote_any
+}
+
+/// Scatters natural Minecraft-style Leaf Litter (1..=4 quadrants, random facing) beneath deciduous canopies.
+fn stamp_under_canopy_leaf_litter<F, G>(
+    w: &mut ChunkWriter,
+    root_x: i32,
+    root_z: i32,
+    seed: u32,
+    column_at: &F,
+    ground_at: &G,
+) where
+    F: Fn(i32, i32) -> TerrainColumn,
+    G: Fn(i32, i32, i32, TerrainColumn) -> Option<Voxel>,
+{
+    for dz in -3..=3 {
+        for dx in -3..=3 {
+            let d2 = dx * dx + dz * dz;
+            if d2 == 0 || d2 > 10 {
+                continue;
+            }
+            let wx = root_x + dx;
+            let wz = root_z + dz;
+            let lh = hash_tree_cell(wx, wz, seed ^ 0x1EAF_1177);
+            let prob = if d2 <= 4 { 0.40 } else { 0.20 };
+            if hash_f32(lh) >= prob {
+                continue;
+            }
+            let lcol = column_at(wx, wz);
+            if lcol.is_cliff
+                || lcol.is_river
+                || lcol.surface_shape != BlockShape::Full
+                || lcol.water_level.is_some_and(|wl| lcol.terrain_height <= wl)
+            {
+                continue;
+            }
+            let Some(ground) = ground_at(wx, lcol.terrain_height, wz, lcol) else {
+                continue;
+            };
+            if !ground.is_fertile_soil() {
+                continue;
+            }
+            let facing = (lh & 0x03) as u8;
+            let seg_idx = if d2 <= 2 {
+                1 + (((lh >> 2) % 3) as u8) // 2..=4 quadrants right under trunk
+            } else {
+                ((lh >> 2) % 3) as u8 // 1..=3 quadrants near canopy edge
+            };
+            let orient = facing | (seg_idx << 2);
+            w.set_leaf_shaped(
+                wx,
+                lcol.terrain_height + 1,
+                wz,
+                Voxel::VegeLeafLitter,
+                BlockShape::FlatPad,
+                orient,
+            );
+        }
+    }
 }
 
 fn archetype_bark(archetype: TreeArchetype) -> Voxel {
@@ -552,7 +628,7 @@ fn stamp_tree(
     archetype: TreeArchetype,
     h: u32,
 ) {
-    // ~35% of eligible trees spawn as slender young variants using Centered Vertical Column bark trunks
+    // ~35% of eligible trees spawn as slender young variants using Centered Vertical Column log trunks
     let is_slender = ((h >> 28) % 3) == 0;
 
     match archetype {
@@ -560,10 +636,10 @@ fn stamp_tree(
             if is_slender {
                 let height = 6 + ((h >> 16) % 2) as i32;
                 for dy in 0..height {
-                    w.set_log_shaped(rx, ry + dy, rz, Voxel::OakWood, BlockShape::Column, 0);
+                    w.set_log_shaped(rx, ry + dy, rz, Voxel::OakLog, BlockShape::Column, 0);
                 }
                 let bx = if ((h >> 10) & 1) == 0 { 1 } else { -1 };
-                stamp_horizontal_branch(w, rx, ry + height - 2, rz, bx, 0, 1, Voxel::OakWood);
+                stamp_horizontal_branch(w, rx, ry + height - 2, rz, bx, 0, 1, Voxel::OakLog);
                 stamp_leaf_cloud(w, rx, ry + height, rz, 2.5, 2.2, 2.5, Voxel::OakLeaves, h);
                 stamp_leaf_cloud(
                     w,
@@ -582,11 +658,11 @@ fn stamp_tree(
                 for dy in 0..height {
                     w.set_log(rx, ry + dy, rz, Voxel::OakLog);
                 }
-                // Horizontal centered-column branches (both X and Z axes!) using all-bark OakWood
+                // Horizontal centered-column branches (both X and Z axes) using OakLog
                 let bx = if ((h >> 10) & 1) == 0 { 1 } else { -1 };
                 let bz = if ((h >> 11) & 1) == 0 { 1 } else { -1 };
-                stamp_horizontal_branch(w, rx, ry + height - 2, rz, bx, 0, 2, Voxel::OakWood);
-                stamp_horizontal_branch(w, rx, ry + height - 3, rz, 0, bz, 2, Voxel::OakWood);
+                stamp_horizontal_branch(w, rx, ry + height - 2, rz, bx, 0, 2, Voxel::OakLog);
+                stamp_horizontal_branch(w, rx, ry + height - 3, rz, 0, bz, 2, Voxel::OakLog);
                 stamp_leaf_cloud(w, rx, ry + height + 1, rz, 3.2, 2.3, 3.2, Voxel::OakLeaves, h);
                 stamp_leaf_cloud(
                     w,
@@ -614,16 +690,16 @@ fn stamp_tree(
         }
         TreeArchetype::Birch => {
             let height = 7 + ((h >> 16) % 4) as i32;
-            let (vox, trunk_shape) = if is_slender {
-                (Voxel::BirchWood, BlockShape::Column)
+            let trunk_shape = if is_slender {
+                BlockShape::Column
             } else {
-                (Voxel::BirchLog, BlockShape::Full)
+                BlockShape::Full
             };
             for dy in 0..height {
-                w.set_log_shaped(rx, ry + dy, rz, vox, trunk_shape, 0);
+                w.set_log_shaped(rx, ry + dy, rz, Voxel::BirchLog, trunk_shape, 0);
             }
             let bz = if ((h >> 11) & 1) == 0 { 1 } else { -1 };
-            stamp_horizontal_branch(w, rx, ry + height - 2, rz, 0, bz, 1, Voxel::BirchWood);
+            stamp_horizontal_branch(w, rx, ry + height - 2, rz, 0, bz, 1, Voxel::BirchLog);
             stamp_leaf_cloud(w, rx, ry + height - 1, rz, 2.6, 2.4, 2.6, Voxel::BirchLeaves, h);
             stamp_leaf_cloud(
                 w,
@@ -642,18 +718,18 @@ fn stamp_tree(
             if !is_slender {
                 stamp_buttress_roots(w, rx, ry, rz, Voxel::MapleWood, h);
             }
-            let (vox, trunk_shape) = if is_slender {
-                (Voxel::MapleWood, BlockShape::Column)
+            let trunk_shape = if is_slender {
+                BlockShape::Column
             } else {
-                (Voxel::MapleLog, BlockShape::Full)
+                BlockShape::Full
             };
             for dy in 0..height {
-                w.set_log_shaped(rx, ry + dy, rz, vox, trunk_shape, 0);
+                w.set_log_shaped(rx, ry + dy, rz, Voxel::MapleLog, trunk_shape, 0);
             }
             let dx = if ((h >> 10) & 1) == 0 { 1 } else { -1 };
             let dz = if ((h >> 11) & 1) == 0 { 1 } else { -1 };
-            stamp_horizontal_branch(w, rx, ry + height - 2, rz, dx, 0, 2, Voxel::MapleWood);
-            stamp_horizontal_branch(w, rx, ry + height - 3, rz, 0, -dz, 2, Voxel::MapleWood);
+            stamp_horizontal_branch(w, rx, ry + height - 2, rz, dx, 0, 2, Voxel::MapleLog);
+            stamp_horizontal_branch(w, rx, ry + height - 3, rz, 0, -dz, 2, Voxel::MapleLog);
             stamp_leaf_cloud(w, rx, ry + height + 1, rz, 3.0, 2.2, 3.0, leaves, h);
             stamp_leaf_cloud(w, rx + dx * 2, ry + height - 1, rz + dz, 2.5, 1.7, 2.5, leaves, h ^ 0x222);
             stamp_leaf_cloud(w, rx - dx, ry + height - 1, rz - dz * 2, 2.4, 1.7, 2.4, leaves, h ^ 0x555);
@@ -678,8 +754,8 @@ fn stamp_tree(
                 }
             }
             // Horizontal spreading cherry boughs
-            stamp_horizontal_branch(w, tx, ry + height - 1, rz, -lean_x, 0, 2, Voxel::CherryWood);
-            stamp_horizontal_branch(w, tx, ry + height - 2, rz, 0, lean_z, 2, Voxel::CherryWood);
+            stamp_horizontal_branch(w, tx, ry + height - 1, rz, -lean_x, 0, 2, Voxel::CherryLog);
+            stamp_horizontal_branch(w, tx, ry + height - 2, rz, 0, lean_z, 2, Voxel::CherryLog);
             stamp_leaf_cloud(w, tx + lean_x, ry + height + 1, rz, 3.4, 1.9, 3.2, Voxel::CherryLeaves, h);
             stamp_leaf_cloud(
                 w,
@@ -695,22 +771,22 @@ fn stamp_tree(
         }
         TreeArchetype::Pine => {
             let height = 10 + ((h >> 16) % 5) as i32;
-            let (vox, trunk_shape) = if is_slender {
-                (Voxel::PineWood, BlockShape::Column)
+            let trunk_shape = if is_slender {
+                BlockShape::Column
             } else {
                 stamp_buttress_roots(w, rx, ry, rz, Voxel::PineWood, h);
-                (Voxel::PineLog, BlockShape::Full)
+                BlockShape::Full
             };
-            stamp_conifer(w, rx, ry, rz, height, 3, trunk_shape, vox, Voxel::PineLeaves, h);
+            stamp_conifer(w, rx, ry, rz, height, 3, trunk_shape, Voxel::PineLog, Voxel::PineLeaves, h);
         }
         TreeArchetype::Yew => {
             let height = 8 + ((h >> 16) % 4) as i32;
-            let (vox, trunk_shape) = if is_slender {
-                (Voxel::YewWood, BlockShape::Column)
+            let trunk_shape = if is_slender {
+                BlockShape::Column
             } else {
-                (Voxel::YewLog, BlockShape::Full)
+                BlockShape::Full
             };
-            stamp_conifer(w, rx, ry, rz, height, 3, trunk_shape, vox, Voxel::YewLeaves, h);
+            stamp_conifer(w, rx, ry, rz, height, 3, trunk_shape, Voxel::YewLog, Voxel::YewLeaves, h);
         }
         TreeArchetype::Redwood => {
             let height = 15 + ((h >> 16) % 5) as i32;
@@ -753,7 +829,7 @@ fn stamp_tree(
             let cy = ry + height;
             stamp_acacia_umbrella(w, tx, cy, tz, 3.6, Voxel::AcaciaLeaves, h);
             // Horizontal fork branch using centered Column
-            stamp_horizontal_branch(w, rx, ry + height - 2, rz, -lean_x, -lean_z, 2, Voxel::AcaciaWood);
+            stamp_horizontal_branch(w, rx, ry + height - 2, rz, -lean_x, -lean_z, 2, Voxel::AcaciaLog);
             stamp_acacia_umbrella(
                 w,
                 rx - lean_x * 2,
@@ -797,9 +873,9 @@ fn stamp_tree(
                     tz += lean_z;
                     w.set_log_shaped(tx, ry + dy, tz, Voxel::PalmWood, BlockShape::Stair, inv_st);
                 } else if palm_style == 0 {
-                    w.set_log_shaped(tx, ry + dy, tz, Voxel::PalmWood, BlockShape::Column, 0);
+                    w.set_log_shaped(tx, ry + dy, tz, Voxel::PalmLog, BlockShape::Column, 0);
                 } else {
-                    w.set_log(tx, ry + dy, tz, Voxel::PalmWood);
+                    w.set_log(tx, ry + dy, tz, Voxel::PalmLog);
                 }
             }
 
@@ -879,8 +955,8 @@ fn stamp_tree(
             }
             let bx = if ((h >> 10) & 1) == 0 { 1 } else { -1 };
             let bz = if ((h >> 11) & 1) == 0 { 1 } else { -1 };
-            stamp_horizontal_branch(w, rx, ry + height - 2, rz, bx, 0, 2, Voxel::MahoganyWood);
-            stamp_horizontal_branch(w, rx, ry + height - 3, rz, 0, bz, 2, Voxel::MahoganyWood);
+            stamp_horizontal_branch(w, rx, ry + height - 2, rz, bx, 0, 2, Voxel::MahoganyLog);
+            stamp_horizontal_branch(w, rx, ry + height - 3, rz, 0, bz, 2, Voxel::MahoganyLog);
             stamp_leaf_cloud(w, rx, ry + height + 1, rz, 3.8, 2.2, 3.8, Voxel::MahoganyLeaves, h);
             stamp_leaf_cloud(w, rx + bx * 2, ry + height - 1, rz, 2.8, 1.8, 2.8, Voxel::MahoganyLeaves, h ^ 0x101);
             stamp_leaf_cloud(w, rx, ry + height - 1, rz + bz * 2, 2.8, 1.8, 2.8, Voxel::MahoganyLeaves, h ^ 0x202);
@@ -913,8 +989,8 @@ fn stamp_tree(
             }
             let bx = if ((h >> 10) & 1) == 0 { 1 } else { -1 };
             let bz = if ((h >> 11) & 1) == 0 { 1 } else { -1 };
-            stamp_horizontal_branch(w, rx, ry + height - 2, rz, bx, 0, 2, Voxel::WillowWood);
-            stamp_horizontal_branch(w, rx, ry + height - 2, rz, 0, bz, 2, Voxel::WillowWood);
+            stamp_horizontal_branch(w, rx, ry + height - 2, rz, bx, 0, 2, Voxel::WillowLog);
+            stamp_horizontal_branch(w, rx, ry + height - 2, rz, 0, bz, 2, Voxel::WillowLog);
             let cy = ry + height;
             stamp_leaf_cloud(w, rx, cy + 1, rz, 3.6, 2.2, 3.6, Voxel::WillowLeaves, h);
             for dz in -4..=4 {
@@ -932,8 +1008,8 @@ fn stamp_tree(
         TreeArchetype::Mangrove => {
             let height = 7 + ((h >> 16) % 3) as i32;
             for &(dx, dz, orient) in &[(-1, 0, 0u8), (1, 0, 1), (0, -1, 2), (0, 1, 3)] {
-                w.set_log_shaped(rx + dx, ry, rz + dz, Voxel::MangroveWood, BlockShape::Column, 0);
-                w.set_log_shaped(rx + dx, ry + 1, rz + dz, Voxel::MangroveWood, BlockShape::Column, 0);
+                w.set_log_shaped(rx + dx, ry, rz + dz, Voxel::MangroveLog, BlockShape::Column, 0);
+                w.set_log_shaped(rx + dx, ry + 1, rz + dz, Voxel::MangroveLog, BlockShape::Column, 0);
                 w.set_log_shaped(rx + dx, ry + 2, rz + dz, Voxel::MangroveWood, BlockShape::Stair, orient);
             }
             for dy in 2..height {
@@ -943,17 +1019,17 @@ fn stamp_tree(
         }
         TreeArchetype::Charred => {
             let height = 4 + ((h >> 16) % 4) as i32;
-            let (vox, trunk_shape) = if is_slender {
-                (Voxel::TreeCharredBark, BlockShape::Column)
+            let trunk_shape = if is_slender {
+                BlockShape::Column
             } else {
-                (Voxel::TreeCharredLog, BlockShape::Full)
+                BlockShape::Full
             };
             for dy in 0..height {
-                w.set_log_shaped(rx, ry + dy, rz, vox, trunk_shape, 0);
+                w.set_log_shaped(rx, ry + dy, rz, Voxel::TreeCharredLog, trunk_shape, 0);
             }
             if height >= 5 {
                 let bx = if ((h >> 10) & 1) == 0 { 1 } else { -1 };
-                stamp_horizontal_branch(w, rx, ry + height - 2, rz, bx, 0, 1, Voxel::TreeCharredBark);
+                stamp_horizontal_branch(w, rx, ry + height - 2, rz, bx, 0, 1, Voxel::TreeCharredLog);
             }
         }
     }

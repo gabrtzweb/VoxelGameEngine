@@ -9,7 +9,7 @@ use crate::{
     meshing::{ChunkMaterial, ChunkMeshRegistry, sync_chunk_render},
     player::{PLAYER_EYE_HEIGHT, Player, PlayerCamera, PlayerMotion, hotbar::Hotbar},
     simulation::{VoxelLightRegistry, sync_chunk_lights},
-    world::{Voxel, VoxelWorld, WorldModificationStore},
+    world::{VoxelWorld, WorldModificationStore},
 };
 
 use super::{MenuReturnTarget, MenuState};
@@ -364,7 +364,7 @@ fn handle_pause_menu_buttons(
                         **player_inv = crate::player::PlayerInventory::default();
                     }
                     if let Some(ref mut selected) = selected_voxel_query {
-                        selected.0 = Some(Voxel::LoamGrass);
+                        selected.0 = None;
                     }
                     if let Some(ref mut cache) = map_cache_query {
                         cache.clear();
@@ -456,7 +456,7 @@ fn handle_pause_menu_buttons(
                         **player_inv = crate::player::PlayerInventory::default();
                     }
                     if let Some(ref mut selected) = selected_voxel_query {
-                        selected.0 = Some(Voxel::LoamGrass);
+                        selected.0 = None;
                     }
 
                     // 9. Return to Main Menu with action buttons

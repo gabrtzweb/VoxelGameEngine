@@ -839,11 +839,116 @@ pub fn mesh_flat_pad(
     fy: f32,
     fz: f32,
     voxel: Voxel,
+    orientation: u8,
     texture_layer: u16,
     frame_count: f32,
     tint_color: [f32; 4],
     stem_info: Option<FaceTextureInfo>,
 ) {
+    if voxel == Voxel::VegeLeafLitter {
+        // Minecraft-style segmented Leaf Litter with slight 3D leaf-bed thickness:
+        // bits 0..1 = horizontal facing (0..=3), bits 2..3 = segments - 1 (1..=4 quadrants).
+        // Tag color.a = 2.4 so voxel_opaque.wesl keeps alpha-cutout discard, skips wind sway,
+        // and applies full biome tint to BOTH horizontal and vertical side rim faces.
+        let mut litter_tint = tint_color;
+        litter_tint[3] = 2.4;
+        let facing = (orientation & 0x03) as usize;
+        let segments = (((orientation >> 2) & 0x03) + 1) as usize;
+        // Quadrants in clockwise order: NW, NE, SE, SW
+        const QUADS: [(f32, f32); 4] = [(0.0, 0.0), (0.5, 0.0), (0.5, 0.5), (0.0, 0.5)];
+        const EDGE_STRIP: f32 = 1.0 / 16.0;
+
+        for s in 0..segments {
+            let q_idx = (s + facing) & 3;
+            let (qx, qz) = QUADS[q_idx];
+            let (u0, v0) = QUADS[s];
+            let u1 = u0 + 0.5;
+            let v1 = v0 + 0.5;
+
+            let x0 = fx + qx;
+            let x1 = x0 + 0.5;
+            let z0 = fz + qz;
+            let z1 = z0 + 0.5;
+            let y_bot = fy + 0.002;
+            let y_top = fy + 0.056 + s as f32 * 0.007;
+
+            let base_uv = [[u0, v1], [u1, v1], [u1, v0], [u0, v0]];
+            let uv_top = [
+                base_uv[facing & 3],
+                base_uv[(facing + 1) & 3],
+                base_uv[(facing + 2) & 3],
+                base_uv[(facing + 3) & 3],
+            ];
+            let uv_bot = [uv_top[3], uv_top[2], uv_top[1], uv_top[0]];
+
+            // Top face (+Y)
+            push_quad_face_with_uvs(
+                buffers,
+                [[x0, y_top, z1], [x1, y_top, z1], [x1, y_top, z0], [x0, y_top, z0]],
+                [0.0, 1.0, 0.0],
+                texture_layer,
+                frame_count,
+                litter_tint,
+                uv_top,
+            );
+            // Bottom face (-Y)
+            push_quad_face_with_uvs(
+                buffers,
+                [[x0, y_bot, z0], [x1, y_bot, z0], [x1, y_bot, z1], [x0, y_bot, z1]],
+                [0.0, -1.0, 0.0],
+                texture_layer,
+                frame_count,
+                litter_tint,
+                uv_bot,
+            );
+
+            // 4 thin side rims (1-texel UV strips) for crisp 3D thickness from low angles
+            let uv_side_z = [[u0, v1], [u1, v1], [u1, (v1 - EDGE_STRIP).max(v0)], [u0, (v1 - EDGE_STRIP).max(v0)]];
+            let uv_side_x = [[u0, v0 + EDGE_STRIP], [u0 + EDGE_STRIP, v0 + EDGE_STRIP], [u0 + EDGE_STRIP, v1], [u0, v1]];
+            // South (+Z)
+            push_quad_face_with_uvs(
+                buffers,
+                [[x0, y_bot, z1], [x1, y_bot, z1], [x1, y_top, z1], [x0, y_top, z1]],
+                [0.0, 0.0, 1.0],
+                texture_layer,
+                frame_count,
+                litter_tint,
+                uv_side_z,
+            );
+            // North (-Z)
+            push_quad_face_with_uvs(
+                buffers,
+                [[x1, y_bot, z0], [x0, y_bot, z0], [x0, y_top, z0], [x1, y_top, z0]],
+                [0.0, 0.0, -1.0],
+                texture_layer,
+                frame_count,
+                litter_tint,
+                uv_side_z,
+            );
+            // East (+X)
+            push_quad_face_with_uvs(
+                buffers,
+                [[x1, y_bot, z1], [x1, y_bot, z0], [x1, y_top, z0], [x1, y_top, z1]],
+                [1.0, 0.0, 0.0],
+                texture_layer,
+                frame_count,
+                litter_tint,
+                uv_side_x,
+            );
+            // West (-X)
+            push_quad_face_with_uvs(
+                buffers,
+                [[x0, y_bot, z0], [x0, y_bot, z1], [x0, y_top, z1], [x0, y_top, z0]],
+                [-1.0, 0.0, 0.0],
+                texture_layer,
+                frame_count,
+                litter_tint,
+                uv_side_x,
+            );
+        }
+        return;
+    }
+
     let is_petals = voxel.is_petal_carpet();
     let y = if is_petals { fy + 0.05 } else { fy + 0.02 };
 

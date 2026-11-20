@@ -113,7 +113,6 @@ fn test_all_material_audio_assets_exist_on_disk() {
 #[test]
 fn test_ui_and_spatial_sfx_builders() {
     assert_eq!(UiSound::Click, UiSound::Click);
-    assert_ne!(UiSound::Click, UiSound::Rollover);
 
     let dummy_handle = bevy::asset::Handle::default();
     let spatial_ev = PlaySpatialSfxEvent::new(

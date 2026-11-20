@@ -352,6 +352,7 @@ impl Voxel {
                 | Self::FlowerPinkPetals
                 | Self::FlowerWhitePetals
                 | Self::FlowerWildflowers
+                | Self::VegeLeafLitter
         )
     }
 

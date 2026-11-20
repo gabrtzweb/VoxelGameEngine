@@ -39,7 +39,7 @@ pub struct SelectedVoxel(pub Option<Voxel>);
 
 impl Default for SelectedVoxel {
     fn default() -> Self {
-        Self(Some(Voxel::LoamGrass))
+        Self(None)
     }
 }
 
@@ -219,8 +219,9 @@ fn edit_voxels(
         return;
     };
 
-    let (edited_voxels, broken_voxel) = if break_action {
+    let (edited_voxels, broken_voxel, broken_orientation) = if break_action {
         let prev_voxel = world.get_voxel(target.hit_voxel);
+        let (_, prev_orient) = world.get_shape(target.hit_voxel);
         let has_extra = world.get_extra_slab(target.hit_voxel).is_some();
         let (edited, broken) = if has_extra {
             // Remove the extra slab first, leaving the base slab intact
@@ -232,7 +233,7 @@ fn edit_voxels(
             let edited = remove_block(&mut world, &mut modifications, target.hit_voxel);
             (edited, prev_voxel)
         };
-        (edited, broken)
+        (edited, broken, prev_orient)
     } else if place_action {
         let Some(place_voxel_type) = selected.0 else {
             return;
@@ -246,6 +247,9 @@ fn edit_voxels(
         let existing_voxel = world.get_voxel(target.hit_voxel);
         let existing_extra = world.get_extra_slab(target.hit_voxel);
 
+        let is_stacking_leaf_litter =
+            place_voxel_type == Voxel::VegeLeafLitter && existing_voxel == Some(Voxel::VegeLeafLitter);
+
         if place_voxel_type == Voxel::VegeLilyPad {
             // Lily pads can ONLY be placed on water surface (+Y face of a water voxel)
             let is_on_water = target.face_normal == IVec3::Y
@@ -255,7 +259,10 @@ fn edit_voxels(
             }
         }
 
-        if !place_voxel_type.is_hanging_flora() && !place_voxel_type.is_inventory_only_item() {
+        if !is_stacking_leaf_litter
+            && !place_voxel_type.is_hanging_flora()
+            && !place_voxel_type.is_inventory_only_item()
+        {
             let ground_voxel = world
                 .get_voxel(place_position - IVec3::Y)
                 .unwrap_or(Voxel::Air);
@@ -264,7 +271,48 @@ fn edit_voxels(
             }
         }
 
-        let edited = if place_voxel_type == Voxel::ItemBoneMeal {
+        let edited = if is_stacking_leaf_litter {
+            let facing = hit_orientation & 0x03;
+            let seg_idx = (hit_orientation >> 2) & 0x03;
+            if seg_idx < 3 {
+                let new_orient = facing | ((seg_idx + 1) << 2);
+                world.set_shape(target.hit_voxel, BlockShape::FlatPad, new_orient);
+                modifications.record_shape(target.hit_voxel, BlockShape::FlatPad, new_orient);
+                vec![target.hit_voxel]
+            } else {
+                Vec::new()
+            }
+        } else if place_voxel_type == Voxel::VegeLeafLitter {
+            let ground_voxel = world
+                .get_voxel(place_position - IVec3::Y)
+                .unwrap_or(Voxel::Air);
+            if !ground_voxel.is_solid_opaque() {
+                return;
+            }
+            let placed = place_block(
+                &mut world,
+                &mut modifications,
+                place_position,
+                Voxel::VegeLeafLitter,
+            );
+            if !placed.is_empty() {
+                let facing: u8 = if let Ok(cam_tf) = camera_query.single() {
+                    let fwd = cam_tf.forward();
+                    if fwd.z.abs() >= fwd.x.abs() {
+                        if fwd.z < 0.0 { 0 } else { 2 }
+                    } else if fwd.x > 0.0 {
+                        1
+                    } else {
+                        3
+                    }
+                } else {
+                    0
+                };
+                world.set_shape(place_position, BlockShape::FlatPad, facing);
+                modifications.record_shape(place_position, BlockShape::FlatPad, facing);
+            }
+            placed
+        } else if place_voxel_type == Voxel::ItemBoneMeal {
             if crate::gameplay::crops::advance_crop(&mut world, &mut modifications, target.hit_voxel) {
                 commands.trigger(BlockPlaceEvent {
                     position: target.hit_voxel,
@@ -661,9 +709,9 @@ fn edit_voxels(
             }
             placed
         };
-        (edited, None)
+        (edited, None, 0)
     } else {
-        (Vec::new(), None)
+        (Vec::new(), None, 0)
     };
 
     if edited_voxels.is_empty() {
@@ -676,6 +724,19 @@ fn edit_voxels(
                 position: target.hit_voxel,
                 voxel: v,
             });
+            // Stacked Leaf Litter (1..=4 segments) drops 1 item per segment when broken
+            if v == Voxel::VegeLeafLitter {
+                let extra_drops = (broken_orientation >> 2) & 0x03;
+                for i in 0..extra_drops {
+                    let angle = (i as f32 + 0.5) * 2.1;
+                    commands.trigger(crate::gameplay::item_drops::SpawnItemDropEvent {
+                        position: target.hit_voxel.as_vec3() + Vec3::new(0.5, 0.35, 0.5),
+                        velocity: Vec3::new(angle.cos() * 0.9, 2.4, angle.sin() * 0.9),
+                        voxel: Voxel::VegeLeafLitter,
+                        pickup_delay: 0.38,
+                    });
+                }
+            }
         }
     } else if place_action
         && let (Some(place_voxel_type), Some(place_position)) = (selected.0, target.place_voxel)

@@ -77,6 +77,7 @@
   "menu.settings.anti_aliasing": "Anti-Serrilhado",
   "menu.settings.shadows": "Sombras",
   "menu.settings.clouds": "Nuvens",
+  "menu.settings.cloud_distance": "Distância das Nuvens",
   "menu.settings.god_rays": "Raios Crepusculares",
   "menu.settings.fog": "Neblina",
   "menu.settings.transmission": "Transmissão",
@@ -972,5 +973,6 @@
   "block.crop_coconut_stage1": "Coco",
   "block.crop_coconut_stage2": "Coco",
   "block.item_cocoa_beans": "Sementes de Cacau",
-  "block.item_coconut": "Coco"
+  "block.item_coconut": "Coco",
+  "block.vege_leaf_litter": "Folhas Caídas"
 }

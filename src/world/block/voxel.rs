@@ -701,20 +701,26 @@ pub enum Voxel {
     CropCoconutStage2 = 689,
     ItemCocoaBeans = 690,
     ItemCoconut = 691,
+    VegeLeafLitter = 692,
 }
 impl Voxel {
-    /// Array containing all active, non-placeholder gameplay voxels (indices 3..=691).
-    pub const ALL: [Voxel; 689] = generate_all_voxels();
+    /// Array containing all active, non-placeholder gameplay voxels (indices 3..=692).
+    pub const ALL: [Voxel; 690] = generate_all_voxels();
 
     /// Safely convert a `u16` id to a `Voxel` variant.
     #[inline(always)]
     pub const fn from_u16(val: u16) -> Option<Self> {
-        if val <= 691 {
-            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 691.
+        if val <= 692 {
+            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 692.
             Some(unsafe { std::mem::transmute::<u16, Self>(val) })
         } else {
             None
         }
+    }
+
+    #[inline(always)]
+    pub const fn is_leaf_litter(self) -> bool {
+        matches!(self, Self::VegeLeafLitter)
     }
 
     #[inline(always)]
@@ -893,11 +899,11 @@ impl Voxel {
     }
 }
 
-const fn generate_all_voxels() -> [Voxel; 689] {
-    let mut arr = [Voxel::Air; 689];
+const fn generate_all_voxels() -> [Voxel; 690] {
+    let mut arr = [Voxel::Air; 690];
     let mut i = 0;
-    while i < 689 {
-        // Active gameplay blocks start at discriminant 3 (indices 3..=691)
+    while i < 690 {
+        // Active gameplay blocks start at discriminant 3 (indices 3..=692)
         let id = (i + 3) as u16;
         arr[i] = unsafe { std::mem::transmute::<u16, Voxel>(id) };
         i += 1;
