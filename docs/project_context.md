@@ -146,11 +146,9 @@ The engine has concluded two full 20-phase development milestones:
 
 - **Version 0.1 — Foundation Era (Phases 1–20, Completed)**: Core engine architecture, multi-chunk streaming, greedy meshing, procedural terrain, physics, fluid dynamics, celestial environments, survival interfaces, and SIMD/memory optimizations.
 - **Version 0.2 — Modernization, Worldbuilding & Deep Systems (Phases 1–20, Completed)**: Full voxel catalog and geological strata, 9-slot 480×270 Dark Iron UI, Bevy 0.20 and WESL migration, hardware profiles and FSR 1.0, wild flora and botanical systems, 6D multi-noise 44-biome generation, Main Menu and deferred loading, spatial audio, 8-race custom voxel characters, agricultural crop simulation, smooth fluid dynamics and 3D item drops, dynamic weather, AO/water/bloom/god-ray shaders, streaming and LOD performance engineering, multi-language localization, rebindable controls, GPU procedural grass, and multi-chunk world feature generation.
-- **Version 0.3 (Current)**:
-  - **Phase 1 (Completed)**: Engine-Wide Performance Optimization & LOD Pipeline (terrain/biome/flora generation optimizations, LOD meshing & streaming planner overhaul, chunk cache improvements, optional `leaf_culling` setting, and WESL shader/grass/per-frame CPU-GPU reductions).
-  - **Phase 2 (In Progress)**: World Terrain Polish & Surface Detail Features (universal slab/stair smoothing on dry and underwater terrain, waterlogged slabs/stairs meshing, sculpted basalt/rock outcrops, surface cobble/mossy boulder clusters, ground leaf bushes, accurate ocean biome resolution, varied ocean seabed sediments, and multi-block 3D coral reefs with 6-direction wall coral fans).
+- **Version 0.3 (Current, In Progress)**: Active development milestone focused on engine-wide performance optimization, world terrain polish, surface details, and atmospheric/gameplay systems.
 
-Detailed progress and milestones are tracked in `docs/project_roadmap.md`.
+Individual phases and detailed milestones are tracked exclusively in `docs/project_roadmap.md`.
 
 ---
 

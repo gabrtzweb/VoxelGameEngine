@@ -22,7 +22,13 @@ impl Plugin for FoliagePlugin {
         app.init_resource::<GrassConfig>()
             .init_resource::<FoliageAnimationState>()
             .add_plugins(MaterialPlugin::<GrassChunkMaterial>::default())
-            .add_systems(Startup, setup_grass_materials)
+            .add_systems(
+                Startup,
+                (
+                    setup_grass_materials,
+                    particles::setup_falling_leaf_particles,
+                ),
+            )
             .add_systems(
                 Update,
                 (
@@ -31,6 +37,7 @@ impl Plugin for FoliagePlugin {
                     update_grass_trail_field,
                     particles::spawn_wind_blade_particles,
                     particles::update_wind_blade_particles,
+                    particles::update_falling_leaf_particles,
                 ),
             )
             .add_systems(PostUpdate, sync_grass_material_uniforms);

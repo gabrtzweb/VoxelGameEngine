@@ -1,6 +1,7 @@
 use bevy::{platform::collections::HashMap, prelude::*};
 use crate::{
     audio::{PlaySfxEvent, material::SoundMaterial},
+    environment::WorldParticleBurstQueue,
     player::{Player, PlayerEnvironmentStatus, PlayerMotion, PlayerStance},
     world::{VOXEL_SIZE, Voxel, VoxelWorld},
 };
@@ -128,6 +129,19 @@ fn detect_floor_voxel(world: &VoxelWorld, player_pos: Vec3) -> Voxel {
     Voxel::LoamGrass
 }
 
+#[inline]
+fn dust_color_for_voxel(v: Voxel) -> [f32; 3] {
+    let c = v.fallback_color();
+    let r = c[0] as f32 / 255.0;
+    let g = c[1] as f32 / 255.0;
+    let b = c[2] as f32 / 255.0;
+    [
+        r * 0.65 + 0.86 * 0.35,
+        g * 0.65 + 0.83 * 0.35,
+        b * 0.65 + 0.77 * 0.35,
+    ]
+}
+
 fn update_player_footstep_audio(
     time: Res<Time>,
     world_res: Option<Res<VoxelWorld>>,
@@ -135,6 +149,7 @@ fn update_player_footstep_audio(
     player_query: Query<(&Transform, &PlayerMotion), With<Player>>,
     asset_server: Res<AssetServer>,
     mut state: ResMut<FootstepAudioState>,
+    mut particle_bursts: Option<ResMut<WorldParticleBurstQueue>>,
     mut commands: Commands,
 ) {
     let Ok((transform, motion)) = player_query.single() else {
@@ -151,11 +166,23 @@ fn update_player_footstep_audio(
 
     let submersion = env_status.as_ref().map_or(0.0, |s| s.submersion);
     let is_cam_water = env_status.as_ref().map_or(false, |s| s.is_camera_in_water);
+    let water_tint_raw = env_status
+        .as_ref()
+        .map_or([0.32, 0.62, 0.88, 1.0], |s| s.current_biome.water_color());
+    let water_tint = [water_tint_raw[0], water_tint_raw[1], water_tint_raw[2]];
     let in_water = submersion > 0.08 || is_cam_water;
 
     // 1. Water entry & exit splash detection
     if in_water != state.was_in_water {
         let category = if in_water {
+            if let Some(ref mut bursts) = particle_bursts {
+                let intensity = ((-state.prev_velocity_y).clamp(1.2, 6.0) / 3.0).max(0.6);
+                bursts.push_splash(
+                    transform.translation + Vec3::new(0.0, 0.25, 0.0),
+                    intensity,
+                    water_tint,
+                );
+            }
             StepSoundCategory::SplashEnter
         } else {
             StepSoundCategory::SplashExit
@@ -171,13 +198,28 @@ fn update_player_footstep_audio(
     if !state.was_grounded && motion.grounded && state.prev_velocity_y < -2.2 {
         let floor_voxel = detect_floor_voxel(&world, transform.translation);
         let mat = SoundMaterial::from_voxel(floor_voxel);
+        let fall_severity = ((-state.prev_velocity_y - 2.2) / 8.0).clamp(0.4, 1.0);
         let category = if in_water {
+            if let Some(ref mut bursts) = particle_bursts {
+                bursts.push_splash(
+                    transform.translation + Vec3::new(0.0, 0.20, 0.0),
+                    fall_severity * 1.5,
+                    water_tint,
+                );
+            }
             StepSoundCategory::SplashEnter
         } else {
+            if let Some(ref mut bursts) = particle_bursts {
+                bursts.push_dust(
+                    transform.translation,
+                    (6.0 + fall_severity * 5.0).round() as u8,
+                    dust_color_for_voxel(floor_voxel),
+                    0.42,
+                );
+            }
             StepSoundCategory::Land(mat)
         };
 
-        let fall_severity = ((-state.prev_velocity_y - 2.2) / 8.0).clamp(0.4, 1.0);
         let rand_pitch = 0.92 + state.next_float() * 0.16;
 
         if let Some(sound) = state.get_sound(category, &asset_server) {
@@ -235,11 +277,28 @@ fn update_player_footstep_audio(
 
             if in_water && submersion > 0.05 {
                 // Wading in shallow water
+                if let Some(ref mut bursts) = particle_bursts {
+                    bursts.push_splash(
+                        transform.translation + Vec3::new(0.0, 0.15, 0.0),
+                        0.45,
+                        water_tint,
+                    );
+                }
                 if let Some(sound) = state.get_sound(StepSoundCategory::WaterWade, &asset_server) {
                     commands.trigger(PlaySfxEvent::new(sound, 0.48).with_speed(rand_pitch));
                 }
             } else {
                 let floor_voxel = detect_floor_voxel(&world, transform.translation);
+                if !is_crouching && !is_crawling
+                    && let Some(ref mut bursts) = particle_bursts
+                {
+                    bursts.push_dust(
+                        transform.translation,
+                        if is_running { 4 } else { 2 },
+                        dust_color_for_voxel(floor_voxel),
+                        if is_running { 0.28 } else { 0.16 },
+                    );
+                }
                 let mat = SoundMaterial::from_voxel(floor_voxel);
                 let category = if is_running {
                     StepSoundCategory::Run(mat)

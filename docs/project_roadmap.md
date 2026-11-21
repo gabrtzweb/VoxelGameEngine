@@ -85,7 +85,8 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 | Phase | Milestone Title | Status | Focus / Key Deliverables |
 | :---: | :--- | :---: | :--- |
 | **01** | **[Engine-Wide Performance Optimization & LOD Pipeline](#phase-1-engine-wide-performance-optimization--lod-pipeline-completed)** | **Completed** | Terrain/biome generation caching, LOD meshing overhaul, optional leaf culling, shader/grass/celestial optimizations, streaming & chunk cache improvements |
-| **02** | **[World Terrain Polish & Surface Detail Features](#phase-2-world-terrain-polish--surface-detail-features-in-progress)** | **In Progress** | Universal slab/stair terrain smoothing (beaches, riverbanks, clay/mud), sculpted basalt/rock outcrops, surface cobble/mossy boulder clusters, ground leaf bushes |
+| **02** | **[World Terrain Polish & Surface Detail Features](#phase-2-world-terrain-polish--surface-detail-features-in-progress)** | **In Progress** | Universal slab/stair terrain smoothing (beaches, riverbanks, clay/mud), sculpted basalt/rock outcrops, surface cobble/mossy boulder clusters, ground leaf bushes, ocean biomes & coral reefs, campfire, toggleable lamps, underwater geothermal vents |
+| **03** | **[Atmospheric & Gameplay Particle Engine](#phase-3-atmospheric--gameplay-particle-engine-completed)** | **Completed** | Falling canopy leaves (21 sprites, selective tint), underwater geothermal/magma bubbles + pop, footstep/landing dust, blinking night fireflies, daytime pollen, player/item water splashes, campfire smoke |
 
 ---
 
@@ -118,3 +119,25 @@ This second major milestone expanded the engine across 20 phases into a full-fea
   - Resolved open ocean bodies (`terrain_height < sea_level`, non-river/non-lake) to authentic ocean biomes (`DeepWarmOcean`, `ColdOcean`, `CoralReef`, `OceanTrench`) so the minimap HUD and worldgen never misreport terrestrial biomes over open sea.
   - Enriched ocean floors with multi-scale organic sediment variety (white/common/dune sands, sandy/dirty gravel, blue/yellow/white clay, silt/peat mud, loam dirt, reefstone, and abyssal basalt).
   - Upgraded coral reefs into clustered multi-block 3D spires, branching trees, and reef mounds, with 6-direction wall/floor/ceiling attachment support for coral fans in both worldgen and player placement.
+- [x] **Underwater Geothermal Vents, Campfire & Toggleable Lamps**:
+  - Added natural hydrothermal `GeothermalVent` chimneys and submerged `Magma` clusters in deep oceans and trenches (`src/generation/flora.rs`).
+  - Implemented 3D crossed-log `Campfire` (`Campfire` / `CampfireUnlit`) and off-state `EmitLamp*Off` blocks with empty-hand right-click toggling, alongside authentic Particle Rain fog/dust/streak textures in `weather_atlas.png`.
+
+---
+
+### Phase 3: Atmospheric & Gameplay Particle Engine (Completed)
+
+- [x] **Falling Canopy Leaf Particles (`src/environment/foliage/particles.rs`)**:
+  - Packed all 21 leaf particle sprites into a crisp runtime nearest-neighbor atlas rendered in a single batched draw call (`FallingLeafBatchMesh`), with selective biome/conifer tinting (`common_leaf*`, `conifer_leaf*`), `64×64×24` sampling range, sinusoidal flutter, ground landing, and smooth cubic fade-out.
+- [x] **Unified Batched World Particle Engine (`src/environment/particles.rs`)**:
+  - Packed all 27 atmospheric and gameplay particle sprites into a single `128×64` nearest-neighbor atlas rendered via `WorldParticleBatchMesh` with `WorldParticleBurstQueue`.
+- [x] **Underwater Bubbles & Surface Pop (`bubble*`, `bubble_pop*`)**:
+  - Emitted rising wobble bubbles from submerged `GeothermalVent` and `Magma` blocks, automatically transitioning into 3-frame `bubble_pop` animations at the water surface.
+- [x] **Footstep & Landing Dust (`dust_gust*`)**:
+  - Spawned 6-frame animated dust puffs tinted by the floor block material when walking, sprinting, or landing from falls.
+- [x] **Blinking Night Fireflies & Daytime Pollen (`firefly*`, `pollen*`)**:
+  - Added dusk/night bioluminescent fireflies in forests and `OrchidSwamp` with pulsing HDR emissive blinking tint, plus sunny daytime pollen motes drifting over floral and forested biomes.
+- [x] **Player & 3D Item Drop Water Splashes (`splash*`)**:
+  - Emitted ballistic water-tinted splash droplets whenever the player enters/wades in water or dropped 3D items hit water surfaces (`src/audio/footsteps.rs`, `src/gameplay/item_drops.rs`).
+- [x] **Campfire Smoke Plumes (`smoke*`)**:
+  - Emitted rising, expanding smoke puffs strictly above lit `Campfire` blocks (`Voxel::Campfire`), excluded from torches and unlit campfires.

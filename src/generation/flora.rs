@@ -553,6 +553,89 @@ fn populate_marine_column(
 
     let floor_y = surface_y + 1;
 
+    // Underwater Hydrothermal Vents (`GeothermalVent`) + Volcanic `Magma` pockets on deep seabeds
+    if !col.is_river && !col.is_lake && depth >= 6 && floor_y + 2 < water_level {
+        let vent_patch = patch_noise(wx, wz, 22.0, seed ^ 0x6E07_3A11);
+        let h_vent = hash2d(wx, wz, seed ^ 0x6E07_9944);
+        let r_vent = hash_f32(h_vent);
+        let should_spawn_vent = match col.biome {
+            BiomeType::OceanTrench | BiomeType::Caldera => vent_patch > 0.58 && r_vent < 0.032,
+            BiomeType::DeepWarmOcean | BiomeType::ColdOcean if depth >= 8 => {
+                vent_patch > 0.68 && r_vent < 0.012
+            }
+            _ => false,
+        };
+        if should_spawn_vent {
+            let tall = depth >= 8 && ((h_vent >> 8) & 1) == 0;
+            if tall {
+                set_voxel_in_chunk(
+                    voxels,
+                    chunk_shapes,
+                    chunk_min_y,
+                    lx,
+                    floor_y,
+                    lz,
+                    Voxel::CobbledBasalt,
+                    BlockShape::Full,
+                    0,
+                );
+                set_voxel_in_chunk(
+                    voxels,
+                    chunk_shapes,
+                    chunk_min_y,
+                    lx,
+                    floor_y + 1,
+                    lz,
+                    Voxel::GeothermalVent,
+                    BlockShape::Full,
+                    0,
+                );
+            } else {
+                set_voxel_in_chunk(
+                    voxels,
+                    chunk_shapes,
+                    chunk_min_y,
+                    lx,
+                    floor_y,
+                    lz,
+                    Voxel::GeothermalVent,
+                    BlockShape::Full,
+                    0,
+                );
+            }
+
+            // Surround chimney with 1-2 submerged Magma / Basalt pockets inside chunk bounds
+            for (i, (dx, dz)) in [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)].iter().enumerate() {
+                let nlx = lx as i32 + dx;
+                let nlz = lz as i32 + dz;
+                if !(0..CHUNK_SIZE as i32).contains(&nlx)
+                    || !(0..CHUNK_SIZE as i32).contains(&nlz)
+                {
+                    continue;
+                }
+                if ((h_vent >> (12 + i * 2)) % 3) == 0 {
+                    let accent = if ((h_vent >> (10 + i)) & 1) == 0 {
+                        Voxel::Magma
+                    } else {
+                        Voxel::Basalt
+                    };
+                    set_voxel_in_chunk(
+                        voxels,
+                        chunk_shapes,
+                        chunk_min_y,
+                        nlx as usize,
+                        floor_y - 1,
+                        nlz as usize,
+                        accent,
+                        BlockShape::Full,
+                        0,
+                    );
+                }
+            }
+            return;
+        }
+    }
+
     // Underwater Rubble scattered across ocean floors, riverbeds, and lakebeds
     let h_rub = hash2d(wx, wz, seed ^ 0x50B3_70B1);
     if hash_f32(h_rub) < 0.025 {

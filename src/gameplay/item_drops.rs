@@ -432,6 +432,7 @@ fn update_item_drops(
     player_query: Query<&Transform, (With<Player>, Without<ItemDrop>)>,
     mut hotbar: Option<ResMut<Hotbar>>,
     mut player_inv: Option<ResMut<PlayerInventory>>,
+    mut particle_bursts: Option<ResMut<crate::environment::WorldParticleBurstQueue>>,
     mut drops_query: Query<(Entity, &mut Transform, &mut ItemDrop)>,
 ) {
     let is_paused = menu_state.as_ref().is_some_and(|s| {
@@ -528,7 +529,20 @@ fn update_item_drops(
             transform.translation.z,
         );
         let iv = sample_pos.floor().as_ivec3();
+        let was_in_fluid = drop.in_fluid;
+        let is_water = world.get_voxel(iv).is_some_and(Voxel::is_water);
         let in_fluid = world.get_voxel(iv).is_some_and(|v| v.is_fluid());
+        if !was_in_fluid
+            && is_water
+            && drop.age > 0.04
+            && let Some(ref mut bursts) = particle_bursts
+        {
+            bursts.push_splash(
+                Vec3::new(sample_pos.x, iv.y as f32 + 0.92, sample_pos.z),
+                0.55,
+                [0.70, 0.88, 1.0],
+            );
+        }
         drop.in_fluid = in_fluid;
 
         if in_fluid {

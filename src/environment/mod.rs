@@ -2,6 +2,7 @@ pub mod atmosphere;
 pub mod celestial;
 pub mod clouds;
 pub mod foliage;
+pub mod particles;
 pub mod post_process;
 pub mod stars;
 pub mod time;
@@ -16,6 +17,7 @@ use atmosphere::{
 use time::{advance_environment_clock, handle_environment_input};
 
 pub use foliage::{FoliagePlugin, GrassConfig, GrassStyle};
+pub use particles::{WorldParticleBurst, WorldParticleBurstQueue};
 pub use time::{DayPhase, EnvironmentState};
 pub use weather::{WeatherManager, WeatherPlugin, WeatherType, WindState};
 
@@ -36,6 +38,7 @@ impl Plugin for EnvironmentPlugin {
         let initial_brightness = sample_ambient_brightness(default_state.time_of_day);
 
         app.insert_resource(default_state)
+            .init_resource::<particles::WorldParticleBurstQueue>()
             .add_plugins(weather::WeatherPlugin)
             .add_plugins(foliage::FoliagePlugin)
             .add_plugins(post_process::PostProcessPlugin)
@@ -51,6 +54,7 @@ impl Plugin for EnvironmentPlugin {
                     celestial::setup_celestial,
                     stars::setup_starfield,
                     clouds::setup_clouds,
+                    particles::setup_world_particles,
                     configure_gpu_cluster_capacity,
                 ),
             )
@@ -65,6 +69,7 @@ impl Plugin for EnvironmentPlugin {
                     celestial::sync_celestial_shadow_quality,
                     sync_starfield_system,
                     sync_cloud_system,
+                    particles::update_world_particles,
                 )
                     .chain()
                     .after(crate::player::PlayerSet::Movement),
