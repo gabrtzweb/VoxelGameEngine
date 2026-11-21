@@ -90,6 +90,7 @@ fn test_axis_aligned_pillar_properties() {
     assert!(Voxel::BloodyBone.is_axis_aligned());
     assert!(Voxel::BoneBlock.is_axis_aligned());
     assert!(Voxel::FleshBlock.is_axis_aligned());
+    assert!(Voxel::GeothermalVent.is_axis_aligned());
     assert!(!Voxel::BambooStalk.is_axis_aligned());
     assert_eq!(Voxel::BambooStalk.default_shape(), BlockShape::Bamboo);
     assert_eq!(Voxel::BambooLeaves.default_shape(), BlockShape::Bamboo);

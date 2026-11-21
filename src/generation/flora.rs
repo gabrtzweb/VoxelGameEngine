@@ -566,39 +566,37 @@ fn populate_marine_column(
             _ => false,
         };
         if should_spawn_vent {
-            let tall = depth >= 8 && ((h_vent >> 8) & 1) == 0;
-            if tall {
-                set_voxel_in_chunk(
-                    voxels,
-                    chunk_shapes,
-                    chunk_min_y,
-                    lx,
-                    floor_y,
-                    lz,
-                    Voxel::CobbledBasalt,
-                    BlockShape::Full,
-                    0,
-                );
-                set_voxel_in_chunk(
-                    voxels,
-                    chunk_shapes,
-                    chunk_min_y,
-                    lx,
-                    floor_y + 1,
-                    lz,
-                    Voxel::GeothermalVent,
-                    BlockShape::Full,
-                    0,
-                );
+            let above_height: i32 = if depth >= 8 && ((h_vent >> 8) & 1) == 0 {
+                2
             } else {
+                1
+            };
+            let underground_depth: i32 = 2 + ((h_vent >> 9) & 1) as i32;
+
+            for y in (floor_y - underground_depth)..(floor_y + above_height) {
                 set_voxel_in_chunk(
                     voxels,
                     chunk_shapes,
                     chunk_min_y,
                     lx,
-                    floor_y,
+                    y,
                     lz,
                     Voxel::GeothermalVent,
+                    BlockShape::Full,
+                    0,
+                );
+            }
+
+            let magma_top_y = floor_y - underground_depth - 1;
+            for y in (magma_top_y - 1)..=magma_top_y {
+                set_voxel_in_chunk(
+                    voxels,
+                    chunk_shapes,
+                    chunk_min_y,
+                    lx,
+                    y,
+                    lz,
+                    Voxel::Magma,
                     BlockShape::Full,
                     0,
                 );

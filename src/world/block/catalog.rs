@@ -543,6 +543,7 @@ impl Voxel {
                 | Self::FleshBlock
                 | Self::TreeCharredLog
                 | Self::TreeCharredBark
+                | Self::GeothermalVent
         )
     }
 

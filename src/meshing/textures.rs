@@ -300,9 +300,7 @@ impl VoxelTextureRegistry {
 
                 _ => {
 
-                    if (voxel.is_tinted() || voxel.side_texture_name().is_some()) && self.full_grass
-
-                    {
+                    if voxel.is_grass_soil() && self.full_grass {
 
                         m.top
 
