@@ -702,19 +702,73 @@ pub enum Voxel {
     ItemCocoaBeans = 690,
     ItemCoconut = 691,
     VegeLeafLitter = 692,
+    EmitLampBlueOff = 693,
+    EmitLampGreenOff = 694,
+    EmitLampRedOff = 695,
+    EmitLampWarmOff = 696,
+    Campfire = 697,
+    CampfireUnlit = 698,
 }
 impl Voxel {
-    /// Array containing all active, non-placeholder gameplay voxels (indices 3..=692).
-    pub const ALL: [Voxel; 690] = generate_all_voxels();
+    /// Array containing all active, non-placeholder gameplay voxels (indices 3..=698).
+    pub const ALL: [Voxel; 696] = generate_all_voxels();
 
     /// Safely convert a `u16` id to a `Voxel` variant.
     #[inline(always)]
     pub const fn from_u16(val: u16) -> Option<Self> {
-        if val <= 692 {
-            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 692.
+        if val <= 698 {
+            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 698.
             Some(unsafe { std::mem::transmute::<u16, Self>(val) })
         } else {
             None
+        }
+    }
+
+    #[inline(always)]
+    pub const fn is_campfire(self) -> bool {
+        matches!(self, Self::Campfire | Self::CampfireUnlit)
+    }
+
+    #[inline(always)]
+    pub const fn is_unlit_variant(self) -> bool {
+        matches!(
+            self,
+            Self::EmitLampBlueOff
+                | Self::EmitLampGreenOff
+                | Self::EmitLampRedOff
+                | Self::EmitLampWarmOff
+                | Self::CampfireUnlit
+        )
+    }
+
+    /// Toggles between lit/on and unlit/off states for lamps and campfires (empty-hand right-click).
+    #[inline(always)]
+    pub const fn toggle_light_state(self) -> Option<Self> {
+        match self {
+            Self::EmitLampBlue => Some(Self::EmitLampBlueOff),
+            Self::EmitLampBlueOff => Some(Self::EmitLampBlue),
+            Self::EmitLampGreen => Some(Self::EmitLampGreenOff),
+            Self::EmitLampGreenOff => Some(Self::EmitLampGreen),
+            Self::EmitLampRed => Some(Self::EmitLampRedOff),
+            Self::EmitLampRedOff => Some(Self::EmitLampRed),
+            Self::EmitLampWarm => Some(Self::EmitLampWarmOff),
+            Self::EmitLampWarmOff => Some(Self::EmitLampWarm),
+            Self::Campfire => Some(Self::CampfireUnlit),
+            Self::CampfireUnlit => Some(Self::Campfire),
+            _ => None,
+        }
+    }
+
+    /// Normalizes off/unlit variants back to their canonical lit/on item when picked or dropped.
+    #[inline(always)]
+    pub const fn canonical_item_voxel(self) -> Self {
+        match self {
+            Self::EmitLampBlueOff => Self::EmitLampBlue,
+            Self::EmitLampGreenOff => Self::EmitLampGreen,
+            Self::EmitLampRedOff => Self::EmitLampRed,
+            Self::EmitLampWarmOff => Self::EmitLampWarm,
+            Self::CampfireUnlit => Self::Campfire,
+            _ => self,
         }
     }
 
@@ -899,11 +953,11 @@ impl Voxel {
     }
 }
 
-const fn generate_all_voxels() -> [Voxel; 690] {
-    let mut arr = [Voxel::Air; 690];
+const fn generate_all_voxels() -> [Voxel; 696] {
+    let mut arr = [Voxel::Air; 696];
     let mut i = 0;
-    while i < 690 {
-        // Active gameplay blocks start at discriminant 3 (indices 3..=692)
+    while i < 696 {
+        // Active gameplay blocks start at discriminant 3 (indices 3..=698)
         let id = (i + 3) as u16;
         arr[i] = unsafe { std::mem::transmute::<u16, Voxel>(id) };
         i += 1;

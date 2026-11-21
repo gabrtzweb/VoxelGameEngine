@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 
 pub const MAX_WEATHER_PARTICLES: usize = 12288;
+const FOG_SLOT_COUNT: usize = 512;
+const FAST_SLOT_COUNT: usize = MAX_WEATHER_PARTICLES - FOG_SLOT_COUNT;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect, Default)]
 pub enum ParticleRotationMode {
@@ -52,6 +54,8 @@ pub struct WeatherParticle {
     pub uv_min_max: [f32; 4], // [u_min, v_min, u_max, v_max]
     pub rotation_mode: ParticleRotationMode,
     pub fade_mode: ParticleFadeMode,
+    pub rotation: f32,
+    pub angular_velocity: f32,
     pub lifetime: f32,
     pub max_lifetime: f32,
     /// Absolute world Y elevation below which this particle collides with a roof or ground.
@@ -70,6 +74,8 @@ impl Default for WeatherParticle {
             uv_min_max: [0.0, 0.0, 1.0, 1.0],
             rotation_mode: ParticleRotationMode::RelativeVelocity,
             fade_mode: ParticleFadeMode::Out,
+            rotation: 0.0,
+            angular_velocity: 0.0,
             lifetime: 0.0,
             max_lifetime: 1.0,
             kill_y: -9999.0,
@@ -111,6 +117,8 @@ pub struct WeatherParticlePool {
     #[reflect(ignore)]
     pub particles: Vec<WeatherParticle>,
     pub cursor: usize,
+    pub fog_cursor: usize,
+    pub last_spawned_idx: usize,
     pub active_count: usize,
 }
 
@@ -121,6 +129,8 @@ impl Default for WeatherParticlePool {
         Self {
             particles,
             cursor: 0,
+            fog_cursor: 0,
+            last_spawned_idx: 0,
             active_count: 0,
         }
     }
@@ -133,10 +143,22 @@ impl WeatherParticlePool {
             p.alive = false;
         }
         self.cursor = 0;
+        self.fog_cursor = 0;
+        self.last_spawned_idx = 0;
         self.active_count = 0;
     }
 
-    /// Spawns a new weather particle into the ring buffer, overwriting the oldest slot.
+    /// Sets initial rotation angle (radians) and angular velocity (rad/s) on the most recently spawned particle.
+    #[inline]
+    pub fn set_last_rotation(&mut self, rotation: f32, angular_velocity: f32) {
+        if let Some(p) = self.particles.get_mut(self.last_spawned_idx) {
+            p.rotation = rotation;
+            p.angular_velocity = angular_velocity;
+        }
+    }
+
+    /// Spawns a new weather particle into the ring buffer. Long-lived `GroundFog` particles use a
+    /// dedicated ring slice so high-rate rain/snow spawning can never overwrite active fog banks.
     #[inline]
     pub fn spawn(
         &mut self,
@@ -151,8 +173,16 @@ impl WeatherParticlePool {
         kill_y: f32,
         kind: WeatherParticleKind,
     ) {
-        let idx = self.cursor;
-        self.cursor = (self.cursor + 1) % MAX_WEATHER_PARTICLES;
+        let idx = if kind == WeatherParticleKind::GroundFog {
+            let slot = FAST_SLOT_COUNT + self.fog_cursor;
+            self.fog_cursor = (self.fog_cursor + 1) % FOG_SLOT_COUNT;
+            slot
+        } else {
+            let slot = self.cursor;
+            self.cursor = (self.cursor + 1) % FAST_SLOT_COUNT;
+            slot
+        };
+        self.last_spawned_idx = idx;
 
         self.particles[idx] = WeatherParticle {
             position,
@@ -162,6 +192,8 @@ impl WeatherParticlePool {
             uv_min_max,
             rotation_mode,
             fade_mode,
+            rotation: 0.0,
+            angular_velocity: 0.0,
             lifetime: 0.0,
             max_lifetime,
             kill_y,
@@ -208,17 +240,20 @@ impl WeatherParticlePool {
                     p.position += p.velocity * dt;
                 }
                 WeatherParticleKind::DustHaze => {
-                    // Dust blown aggressively across ground
+                    // Swirling dust haze blown across ground with gradual expansion
                     p.velocity.x = p.velocity.x.lerp(wind.x * 1.3, dt * 3.0);
                     p.velocity.z = p.velocity.z.lerp(wind.z * 1.3, dt * 3.0);
                     p.position += p.velocity * dt;
+                    p.rotation += p.angular_velocity * dt;
+                    p.size += Vec2::splat(dt * 0.45);
                 }
                 WeatherParticleKind::GroundFog => {
-                    // Soft mist rises slowly upwards
-                    p.velocity.y = 0.25;
-                    p.velocity.x = wind.x * 0.20;
-                    p.velocity.z = wind.z * 0.20;
+                    // Low-lying mist hovers gently over terrain (Particle Rain style)
+                    p.velocity.y = 0.03;
+                    p.velocity.x = wind.x * 0.06;
+                    p.velocity.z = wind.z * 0.06;
                     p.position += p.velocity * dt;
+                    p.rotation += p.angular_velocity * dt;
                 }
                 WeatherParticleKind::GroundSplatter => {
                     p.velocity.y -= 9.8 * dt;

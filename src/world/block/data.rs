@@ -1,5 +1,5 @@
 /// Static registry metadata table: (ID, Label, Texture name) for all voxel variants.
-pub(crate) static VOXEL_DATA: [(&str, &str, &str); 693] = [
+pub(crate) static VOXEL_DATA: [(&str, &str, &str); 699] = [
     ("air", "Air", ""),
     ("occupied", "Occupied", ""),
     ("water_occupied", "Waterlogged Occupied", ""),
@@ -345,10 +345,10 @@ pub(crate) static VOXEL_DATA: [(&str, &str, &str); 693] = [
     ("chalk_bricks", "Chalk Bricks", "deco_chalk_bricks"),
     ("crate", "Empty Crate", "util_crate_side"),
     ("dolomite_bricks", "Dolomite Bricks", "deco_dolomite_bricks"),
-    ("emit_lamp_blue", "Blue Lamp", "emit_lamp_blue_side"),
-    ("emit_lamp_green", "Green Lamp", "emit_lamp_green_side"),
-    ("emit_lamp_red", "Red Lamp", "emit_lamp_red_side"),
-    ("emit_lamp_warm", "Warm Lamp", "emit_lamp_warm_side"),
+    ("emit_lamp_blue", "Blue Lamp", "emit_lamp_blue_side_on"),
+    ("emit_lamp_green", "Green Lamp", "emit_lamp_green_side_on"),
+    ("emit_lamp_red", "Red Lamp", "emit_lamp_red_side_on"),
+    ("emit_lamp_warm", "Warm Lamp", "emit_lamp_warm_side_on"),
     ("emit_torch_blue", "Blue Torch", "emit_torch_blue"),
     ("emit_torch_fire", "Fire Torch", "emit_torch_fire"),
     ("emit_torch_green", "Green Torch", "emit_torch_green"),
@@ -694,4 +694,10 @@ pub(crate) static VOXEL_DATA: [(&str, &str, &str); 693] = [
     ("item_cocoa_beans", "Cocoa Beans", "cocoa_beans_item"),
     ("item_coconut", "Coconut", "coconut_item"),
     ("vege_leaf_litter", "Leaf Litter", "vege_leaf_litter"),
+    ("emit_lamp_blue_off", "Blue Lamp", "emit_lamp_blue_side"),
+    ("emit_lamp_green_off", "Green Lamp", "emit_lamp_green_side"),
+    ("emit_lamp_red_off", "Red Lamp", "emit_lamp_red_side"),
+    ("emit_lamp_warm_off", "Warm Lamp", "emit_lamp_warm_side"),
+    ("deco_campfire", "Campfire", "deco_campfire"),
+    ("deco_campfire_unlit", "Campfire", "deco_campfire"),
 ];

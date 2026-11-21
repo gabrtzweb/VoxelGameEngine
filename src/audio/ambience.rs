@@ -23,6 +23,8 @@ pub struct AmbienceSoundAssets {
     pub waves: Vec<Handle<AudioSource>>,
     pub desert_wind: Vec<Handle<AudioSource>>,
     pub cold_wind: Vec<Handle<AudioSource>>,
+    pub swamp_wind: Vec<Handle<AudioSource>>,
+    pub storm_wind: Vec<Handle<AudioSource>>,
     pub surface_breeze: Vec<Handle<AudioSource>>,
 }
 
@@ -77,6 +79,8 @@ fn setup_ambient_audio(mut commands: Commands, asset_server: Res<AssetServer>) {
         asset_server.load("sounds/ambience/underwater/bubbles4.ogg"),
         asset_server.load("sounds/ambience/underwater/bubbles5.ogg"),
         asset_server.load("sounds/ambience/underwater/bubbles6.ogg"),
+        asset_server.load("sounds/ambience/underwater/crackles1.ogg"),
+        asset_server.load("sounds/ambience/underwater/crackles2.ogg"),
     ];
 
     let cave_sounds = vec![
@@ -95,6 +99,8 @@ fn setup_ambient_audio(mut commands: Commands, asset_server: Res<AssetServer>) {
         asset_server.load("sounds/ambience/additions/birds/bird1.ogg"),
         asset_server.load("sounds/ambience/additions/birds/bird2.ogg"),
         asset_server.load("sounds/ambience/additions/birds/bird_flapping1.ogg"),
+        asset_server.load("sounds/ambience/additions/birds/bird_flapping2l.ogg"),
+        asset_server.load("sounds/ambience/additions/birds/bird_flapping2r.ogg"),
     ];
 
     let insects = vec![
@@ -120,11 +126,22 @@ fn setup_ambient_audio(mut commands: Commands, asset_server: Res<AssetServer>) {
         asset_server.load("sounds/ambience/snowy_plains/somber_wind.ogg"),
     ];
 
+    let swamp_wind = vec![
+        asset_server.load("sounds/ambience/forest/normal_wind_swamp.ogg"),
+        asset_server.load("sounds/ambience/additions/insects/insect_long1.ogg"),
+    ];
+
+    let storm_wind = vec![
+        asset_server.load("sounds/ambience/rainy_weather/indoor_wind.ogg"),
+        asset_server.load("sounds/ambience/rainy_weather/rough_wind.ogg"),
+    ];
+
     let surface_breeze = vec![
         asset_server.load("sounds/ambience/forest/normal_wind.ogg"),
         asset_server.load("sounds/ambience/forest/tree_wind.ogg"),
         asset_server.load("sounds/ambience/environment/outside1.ogg"),
         asset_server.load("sounds/ambience/environment/outside2.ogg"),
+        asset_server.load("sounds/ambience/environment/outside_distant.ogg"),
     ];
 
     commands.insert_resource(AmbienceSoundAssets {
@@ -136,6 +153,8 @@ fn setup_ambient_audio(mut commands: Commands, asset_server: Res<AssetServer>) {
         waves,
         desert_wind,
         cold_wind,
+        swamp_wind,
+        storm_wind,
         surface_breeze,
     });
 
@@ -274,10 +293,21 @@ fn update_ambient_audio(
             | BiomeType::PineHighlands
             | BiomeType::ColdShrubland => &assets.cold_wind,
 
-            _ => match day_phase {
-                DayPhase::Morning | DayPhase::Noon => &assets.birds,
-                DayPhase::Evening | DayPhase::Night => &assets.insects,
-            },
+            BiomeType::OrchidSwamp => &assets.swamp_wind,
+
+            _ => {
+                let roll = state.next_float();
+                if roll < 0.25 {
+                    &assets.surface_breeze
+                } else if roll < 0.35 {
+                    &assets.storm_wind
+                } else {
+                    match day_phase {
+                        DayPhase::Morning | DayPhase::Noon => &assets.birds,
+                        DayPhase::Evening | DayPhase::Night => &assets.insects,
+                    }
+                }
+            }
         };
 
         let chosen_sound = if !sound_pool.is_empty() {

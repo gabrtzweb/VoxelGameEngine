@@ -22,9 +22,11 @@ pub const UV_RIPPLE_1: [f32; 4] = [0.125, 0.125, 0.25, 0.25];
 pub const UV_RIPPLE_2: [f32; 4] = [0.25, 0.125, 0.375, 0.25];
 pub const UV_RIPPLE_3: [f32; 4] = [0.375, 0.125, 0.50, 0.25];
 pub const UV_SPLASH: [f32; 4] = [0.50, 0.0, 0.625, 0.125];
-pub const UV_FOG: [f32; 4] = [0.0, 0.25, 0.25, 0.50];
-pub const UV_DUST: [f32; 4] = [0.25, 0.25, 0.50, 0.50];
-pub const UV_STREAK: [f32; 4] = [0.50, 0.125, 0.625, 0.25];
+pub const UV_FOG: [f32; 4] = [0.0, 0.25, 0.25, 0.50]; // fog_translucent.png
+pub const UV_HORIZONTAL_FOG: [f32; 4] = [0.25, 0.25, 0.50, 0.50]; // horizontal_fog.png (vertical fog banks)
+pub const UV_FOG_DITHERED: [f32; 4] = [0.50, 0.50, 1.0, 1.0]; // fog_dithered.png (desert dust haze)
+pub const UV_DUST: [f32; 4] = [0.50, 0.50, 1.0, 1.0];
+pub const UV_STREAK: [f32; 4] = [0.50, 0.125, 0.625, 0.25]; // streak.png
 
 /// Fast linear congruential PRNG state for per-frame particle scattering.
 #[derive(Resource)]
@@ -278,11 +280,11 @@ pub fn emit_weather_particles(
     };
 
     if effective_dust > 0.02 {
-        let spawn_count = (effective_dust * 26.0).round() as usize;
+        let spawn_count = (effective_dust * 6.0).round() as usize;
 
         for _ in 0..spawn_count {
-            let offset_x = rng.next_triangle(22.0);
-            let offset_z = rng.next_triangle(22.0);
+            let offset_x = rng.next_triangle(24.0);
+            let offset_z = rng.next_triangle(24.0);
             let offset_y = rng.next_f32() * 12.0 - 2.0;
 
             let wx = (lead_pos.x + offset_x).floor() as i32;
@@ -299,24 +301,37 @@ pub fn emit_weather_particles(
 
             let pos = Vec3::new(lead_pos.x + offset_x, candidate_y, lead_pos.z + offset_z);
             let vel = Vec3::new(
-                current_wind.x * 1.4,
-                -0.4 + rng.next_triangle(0.3),
-                current_wind.z * 1.4,
+                current_wind.x * (1.1 + rng.next_f32() * 0.6),
+                -0.25 + rng.next_triangle(0.55),
+                current_wind.z * (1.1 + rng.next_f32() * 0.6),
             );
 
-            let s = 0.40 + rng.next_f32() * 0.35;
+            let w_size = 0.70 + rng.next_f32() * 0.85;
+            let h_size = w_size * (0.75 + rng.next_f32() * 0.50);
+            let flip_u = rng.next_f32() < 0.5;
+            let flip_v = rng.next_f32() < 0.5;
+            let uv = [
+                if flip_u { UV_FOG_DITHERED[2] } else { UV_FOG_DITHERED[0] },
+                if flip_v { UV_FOG_DITHERED[3] } else { UV_FOG_DITHERED[1] },
+                if flip_u { UV_FOG_DITHERED[0] } else { UV_FOG_DITHERED[2] },
+                if flip_v { UV_FOG_DITHERED[1] } else { UV_FOG_DITHERED[3] },
+            ];
+            let shade = 0.88 + rng.next_f32() * 0.18;
             pool.spawn(
                 pos,
                 vel,
-                Vec2::splat(s),
-                [0.85, 0.72, 0.45, 0.45],
-                UV_DUST,
+                Vec2::new(w_size, h_size),
+                [0.85 * shade, 0.72 * shade, 0.45 * shade, 0.24 + rng.next_f32() * 0.14],
+                uv,
                 ParticleRotationMode::CopyCamera,
                 ParticleFadeMode::InOut,
-                2.2,
+                1.8 + rng.next_f32() * 1.4,
                 -9999.0,
                 WeatherParticleKind::DustHaze,
             );
+            let init_rot = rng.next_f32() * std::f32::consts::TAU;
+            let spin = (rng.next_f32() - 0.5) * 2.4;
+            pool.set_last_rotation(init_rot, spin);
         }
     }
 
@@ -505,36 +520,98 @@ pub fn emit_weather_particles(
     }
 
     // -------------------------------------------------------------
-    // 8. Surface FX: Post-Rain Rising Mist / Ground Fog
+    // 8. Surface FX: Particle Rain Ground & Vertical Fog
+    //    - `fog_after_rain` + `vertical_fog_after_rain` (post-rain / light rain)
+    //    - `fog` + `vertical_fog` (always active in wet/misty biomes: Swamp, CloudForest, Jungle, Taiga)
     // -------------------------------------------------------------
-    if w.after_weather_timer > 0.0 || (w.current.is_rain() && w.rain_intensity < 0.40) {
-        let fog_factor = (w.after_weather_timer / 45.0).clamp(0.0, 1.0);
-        if rng.next_f32() < fog_factor * 0.25 {
-            let rx = rng.next_triangle(22.0);
-            let rz = rng.next_triangle(22.0);
-            let wx = (lead_pos.x + rx).floor() as i32;
-            let wz = (lead_pos.z + rz).floor() as i32;
-            let start_y = (lead_pos.y + 4.0).floor() as i32;
-            let min_y = (lead_pos.y - 14.0).floor() as i32;
+    let is_misty_biome = matches!(
+        biome_type,
+        BiomeType::OrchidSwamp
+            | BiomeType::CloudForest
+            | BiomeType::TropicalJungle
+            | BiomeType::SiberianTaiga
+    );
+    let is_snowy_weather = w.current.is_snow() || w.snow_intensity > 0.05;
+    let post_rain_factor = if is_snowy_weather {
+        0.0
+    } else if w.after_weather_timer > 0.0 {
+        (w.after_weather_timer / 45.0).clamp(0.0, 1.0)
+    } else if w.current.is_rain() && w.rain_intensity > 0.08 {
+        (w.rain_intensity * 0.70).clamp(0.25, 0.70)
+    } else {
+        0.0
+    };
+    let biome_fog_factor = if is_misty_biome && !is_snowy_weather {
+        0.65
+    } else {
+        0.0
+    };
+    let fog_factor = post_rain_factor.max(biome_fog_factor);
 
-            for y in (min_y..=start_y).rev() {
-                let check_pos = IVec3::new(wx, y, wz);
-                if let Some(voxel) = voxel_world.get_voxel(check_pos) {
-                    if voxel != Voxel::Air {
-                        let fog_pos = Vec3::new(wx as f32 + 0.5, y as f32 + 0.8, wz as f32 + 0.5);
-                        pool.spawn(
-                            fog_pos,
-                            Vec3::new(current_wind.x * 0.2, 0.15, current_wind.z * 0.2),
-                            Vec2::splat(2.5 + rng.next_f32() * 1.5),
-                            [0.90, 0.95, 1.0, 0.35 * fog_factor],
-                            UV_FOG,
-                            ParticleRotationMode::Horizontal,
-                            ParticleFadeMode::InOut,
-                            8.0,
-                            -9999.0,
-                            WeatherParticleKind::GroundFog,
-                        );
-                        break;
+    if fog_factor > 0.02 {
+        let attempts = if fog_factor > 0.5 { 2 } else { 1 };
+        for _ in 0..attempts {
+            if rng.next_f32() < fog_factor * 0.45 {
+                let rx = rng.next_triangle(24.0);
+                let rz = rng.next_triangle(24.0);
+                let wx = (lead_pos.x + rx).floor() as i32;
+                let wz = (lead_pos.z + rz).floor() as i32;
+                let start_y = (lead_pos.y + 6.0).floor() as i32;
+                let min_y = (lead_pos.y - 14.0).floor() as i32;
+
+                for y in (min_y..=start_y).rev() {
+                    let check_pos = IVec3::new(wx, y, wz);
+                    if let Some(voxel) = voxel_world.get_voxel(check_pos) {
+                        if voxel != Voxel::Air {
+                            let spawn_vertical = rng.next_f32() < 0.50;
+                            if spawn_vertical {
+                                // `vertical_fog` / `vertical_fog_after_rain` using `horizontal_fog.png`
+                                let fog_pos = Vec3::new(
+                                    wx as f32 + 0.5,
+                                    y as f32 + 1.2 + rng.next_f32() * 0.6,
+                                    wz as f32 + 0.5,
+                                );
+                                pool.spawn(
+                                    fog_pos,
+                                    Vec3::new(current_wind.x * 0.08, 0.04, current_wind.z * 0.08),
+                                    Vec2::new(
+                                        3.5 + rng.next_f32() * 2.0,
+                                        2.6 + rng.next_f32() * 1.4,
+                                    ),
+                                    [0.92, 0.96, 1.0, 0.42 * fog_factor],
+                                    UV_HORIZONTAL_FOG,
+                                    ParticleRotationMode::Vertical,
+                                    ParticleFadeMode::InOut,
+                                    12.5,
+                                    -9999.0,
+                                    WeatherParticleKind::GroundFog,
+                                );
+                            } else {
+                                // `fog` / `fog_after_rain` using `fog_translucent.png`
+                                let fog_pos = Vec3::new(
+                                    wx as f32 + 0.5,
+                                    y as f32 + 0.45 + rng.next_f32() * 0.5,
+                                    wz as f32 + 0.5,
+                                );
+                                pool.spawn(
+                                    fog_pos,
+                                    Vec3::new(current_wind.x * 0.10, 0.05, current_wind.z * 0.10),
+                                    Vec2::splat(3.2 + rng.next_f32() * 2.0),
+                                    [0.90, 0.95, 1.0, 0.42 * fog_factor],
+                                    UV_FOG,
+                                    ParticleRotationMode::Horizontal,
+                                    ParticleFadeMode::InOut,
+                                    12.5,
+                                    -9999.0,
+                                    WeatherParticleKind::GroundFog,
+                                );
+                                pool.set_last_rotation(
+                                    rng.next_f32() * std::f32::consts::TAU,
+                                    (rng.next_f32() - 0.5) * 0.12,
+                                );
+                            }
+                            break;
+                        }
                     }
                 }
             }

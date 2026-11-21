@@ -453,7 +453,7 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
         {
 
-            if ov_name == "soil_grass_side_overlay" {
+            if ov_name == "soil_grass_side_overlay" || ov_name == "rock_grass_side_overlay" {
 
                 if let Some(overlay_frame) = overlay.frames.first() {
 
@@ -629,7 +629,10 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
         let side_overlay = voxel.overlay_texture_name();
 
-        let side_tint = if side_overlay == Some("soil_grass_side_overlay") {
+        let side_tint = if matches!(
+            side_overlay,
+            Some("soil_grass_side_overlay" | "rock_grass_side_overlay")
+        ) {
 
             Some(voxel.tint_color())
 
@@ -664,7 +667,7 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
                 .overlay_texture_name()
 
-                .filter(|&o| o != "soil_grass_side_overlay");
+                .filter(|&o| !matches!(o, "soil_grass_side_overlay" | "rock_grass_side_overlay"));
 
             get_or_load_face(
 
@@ -693,7 +696,7 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
                 .overlay_texture_name()
 
-                .filter(|&o| o != "soil_grass_side_overlay");
+                .filter(|&o| !matches!(o, "soil_grass_side_overlay" | "rock_grass_side_overlay"));
 
             get_or_load_face(
 
@@ -740,7 +743,7 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
                     .overlay_texture_name()
 
-                    .filter(|&o| o != "soil_grass_side_overlay");
+                    .filter(|&o| !matches!(o, "soil_grass_side_overlay" | "rock_grass_side_overlay"));
 
                 get_or_load_face(
 
@@ -773,7 +776,7 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
 
                     .overlay_texture_name()
 
-                    .filter(|&o| o != "soil_grass_side_overlay");
+                    .filter(|&o| !matches!(o, "soil_grass_side_overlay" | "rock_grass_side_overlay"));
 
                 get_or_load_face(
 

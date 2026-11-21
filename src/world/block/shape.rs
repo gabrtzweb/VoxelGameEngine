@@ -23,6 +23,7 @@ pub enum BlockShape {
     StickPile = 16,
     CocoaPod = 17,
     HangingFruit = 18,
+    Campfire = 19,
 }
 
 #[repr(u8)]
@@ -57,8 +58,8 @@ impl PillarAxis {
 }
 
 impl BlockShape {
-    /// All 15 registered block shapes in the engine.
-    pub const fn all() -> [BlockShape; 19] {
+    /// All 20 registered block shapes in the engine.
+    pub const fn all() -> [BlockShape; 20] {
         [
             BlockShape::Full,
             BlockShape::Slab,
@@ -79,6 +80,7 @@ impl BlockShape {
             BlockShape::StickPile,
             BlockShape::CocoaPod,
             BlockShape::HangingFruit,
+            BlockShape::Campfire,
         ]
     }
 
@@ -113,6 +115,7 @@ impl BlockShape {
             Self::StickPile => "Stick Pile",
             Self::CocoaPod => "Cocoa Pod",
             Self::HangingFruit => "Hanging Fruit",
+            Self::Campfire => "Campfire",
         }
     }
 
@@ -137,6 +140,7 @@ impl BlockShape {
             Self::StickPile => "STICK_PILE",
             Self::CocoaPod => "COCOA_POD",
             Self::HangingFruit => "HANGING_FRUIT",
+            Self::Campfire => "CAMPFIRE",
         }
     }
 
@@ -149,7 +153,8 @@ impl BlockShape {
             | Self::FlatPad
             | Self::Cactus
             | Self::Speleothem
-            | Self::HangingFruit => 1,
+            | Self::HangingFruit
+            | Self::Campfire => 1,
             Self::Slab | Self::WallDecal | Self::CrossBillboard => 6,
             Self::Stair => 8,
             Self::Column => 7,
@@ -172,7 +177,8 @@ impl BlockShape {
             | Self::FlatPad
             | Self::Cactus
             | Self::Speleothem
-            | Self::HangingFruit => "Standard",
+            | Self::HangingFruit
+            | Self::Campfire => "Standard",
             Self::WallDecal | Self::CrossBillboard => match orientation % 6 {
                 0 => "Floor (Standing)",
                 1 => "Ceiling (Hanging)",
@@ -380,6 +386,10 @@ impl BlockShape {
                     Vec3::new(5.0 / 16.0, 5.0 / 16.0, 5.0 / 16.0),
                     Vec3::new(11.0 / 16.0, 16.0 / 16.0, 11.0 / 16.0),
                 ],
+                None,
+            ),
+            Self::Campfire => (
+                [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 7.0 / 16.0, 1.0)],
                 None,
             ),
             Self::Speleothem => (

@@ -285,6 +285,25 @@ pub fn mesh_shaped_voxels(
             );
             continue;
         }
+        if voxel.is_campfire() || shape == BlockShape::Campfire {
+            let (lit_layer, lit_frames) =
+                textures.get_face_texture_info(voxel, world_voxel, FaceDirection::PositiveY);
+            let (fire_layer, fire_frames) =
+                textures.get_face_texture_info(voxel, world_voxel, FaceDirection::NegativeY);
+            fixtures::mesh_campfire(
+                buffers,
+                fx,
+                fy,
+                fz,
+                voxel == Voxel::Campfire,
+                side_layer,
+                lit_layer,
+                lit_frames as f32,
+                fire_layer,
+                fire_frames as f32,
+            );
+            continue;
+        }
         if voxel.is_speleothem() || shape == BlockShape::Speleothem {
             let (dir, piece) = determine_speleothem_part(world, world_voxel, voxel);
             let layer = if let Some(layers) = textures.get_speleothem_layers(voxel) {
@@ -506,7 +525,8 @@ pub fn mesh_shaped_voxels(
             | BlockShape::Speleothem
             | BlockShape::StickPile
             | BlockShape::CocoaPod
-            | BlockShape::HangingFruit => unreachable!(),
+            | BlockShape::HangingFruit
+            | BlockShape::Campfire => unreachable!(),
             BlockShape::Full | BlockShape::Column | BlockShape::Cocoon => {
                 mesh_column_cocoon(
                     world,

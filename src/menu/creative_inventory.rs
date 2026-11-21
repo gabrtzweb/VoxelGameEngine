@@ -39,7 +39,7 @@ pub const CREATIVE_TAB_Y_COORDS: [f32; 9] = [
     65.0, 84.0, 103.0, 122.0, 141.0, 160.0, 179.0, 198.0, 217.0,
 ];
 
-pub const AVAILABLE_BLOCKS: [Voxel; 690] = Voxel::ALL;
+pub const AVAILABLE_BLOCKS: [Voxel; 696] = Voxel::ALL;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CreativeCategory {
@@ -207,6 +207,7 @@ pub fn filtered_creative_blocks(category: CreativeCategory, query: &str) -> Vec<
                 || v == Voxel::KelpPlant
                 || v == Voxel::BullKelpPlant
                 || v.is_crop_stage()
+                || v.is_unlit_variant()
             {
                 return false;
             }

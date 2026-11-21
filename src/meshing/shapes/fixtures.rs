@@ -2201,3 +2201,162 @@ pub fn mesh_hanging_coconut(
         tint_color,
     );
 }
+
+/// Renders a Minecraft-accurate 3D Campfire:
+/// - 2 bottom horizontal logs along X (4x4x16 px)
+/// - 2 upper crossed horizontal logs along Z (4x4x16 px, glowing embers when lit)
+/// - Central ash / glowing animated coal bed (1 px high)
+/// - Animated crossed diagonal fire planes when `is_lit` is true
+pub fn mesh_campfire(
+    buffers: &mut MeshBuffers,
+    fx: f32,
+    fy: f32,
+    fz: f32,
+    is_lit: bool,
+    log_layer: u16,
+    lit_layer: u16,
+    lit_frames: f32,
+    fire_layer: u16,
+    fire_frames: f32,
+) {
+    let neutral_tint = [1.0, 1.0, 1.0, 1.0];
+    let log_side_uv = [0.0, 0.0, 16.0, 4.0];
+    let log_end_uv = [0.0, 4.0, 4.0, 8.0];
+    let ash_uv = [0.0, 8.0, 16.0, 16.0];
+    let lit_log_uv = [0.0, 0.0, 16.0, 4.0];
+
+    // 1. Central ash / glowing animated coal bed (1px high)
+    let (bed_layer, bed_frames) = if is_lit {
+        (lit_layer, lit_frames)
+    } else {
+        (log_layer, 1.0)
+    };
+    push_pebble_element(
+        buffers,
+        fx,
+        fy,
+        fz,
+        0,
+        [1.0, 0.0, 1.0],
+        [15.0, 1.0, 15.0],
+        ash_uv,
+        ash_uv,
+        ash_uv,
+        ash_uv,
+        ash_uv,
+        ash_uv,
+        bed_layer,
+        bed_frames,
+        neutral_tint,
+    );
+
+    // 2. Two bottom logs along X axis (North & South edges)
+    for (z0, z1) in [(1.0, 5.0), (11.0, 15.0)] {
+        push_pebble_element(
+            buffers,
+            fx,
+            fy,
+            fz,
+            0,
+            [0.0, 0.0, z0],
+            [16.0, 4.0, z1],
+            log_side_uv,
+            log_side_uv,
+            log_end_uv,
+            log_end_uv,
+            log_side_uv,
+            log_side_uv,
+            log_layer,
+            1.0,
+            neutral_tint,
+        );
+    }
+
+    // 3. Two upper crossed logs along Z axis (West & East edges)
+    let (upper_layer, upper_frames, upper_side_uv) = if is_lit {
+        (lit_layer, lit_frames, lit_log_uv)
+    } else {
+        (log_layer, 1.0, log_side_uv)
+    };
+    for (x0, x1) in [(1.0, 5.0), (11.0, 15.0)] {
+        push_pebble_element(
+            buffers,
+            fx,
+            fy,
+            fz,
+            0,
+            [x0, 3.0, 0.0],
+            [x1, 7.0, 16.0],
+            log_end_uv,
+            log_end_uv,
+            upper_side_uv,
+            upper_side_uv,
+            upper_side_uv,
+            log_side_uv,
+            upper_layer,
+            upper_frames,
+            neutral_tint,
+        );
+    }
+
+    // 4. Animated crossed diagonal fire flames (only when lit)
+    if is_lit {
+        // Tag alpha with 6.0 so voxel_opaque.wesl treats it as a rigid cutout cross-mesh
+        // without wind sway, bright and vivid day & night.
+        let fire_tint = [1.0, 1.0, 1.0, 6.0];
+        let inset = 1.0 / 16.0;
+        let x0 = fx + inset;
+        let x1 = fx + 1.0 - inset;
+        let y0 = fy + 2.0 / 16.0;
+        let y1 = fy + 1.06;
+        let z0 = fz + inset;
+        let z1 = fz + 1.0 - inset;
+
+        let uvs = [[0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0]];
+        let uvs_rev = [[1.0, 1.0], [1.0, 0.0], [0.0, 0.0], [0.0, 1.0]];
+
+        // Diagonal plane A (front + back)
+        let diag_a = [[x0, y0, z0], [x0, y1, z0], [x1, y1, z1], [x1, y0, z1]];
+        let diag_a_rev = [[x1, y0, z1], [x1, y1, z1], [x0, y1, z0], [x0, y0, z0]];
+        push_quad_face_with_uvs(
+            buffers,
+            diag_a,
+            [0.0, 1.0, 0.0],
+            fire_layer,
+            fire_frames,
+            fire_tint,
+            uvs,
+        );
+        push_quad_face_with_uvs(
+            buffers,
+            diag_a_rev,
+            [0.0, 1.0, 0.0],
+            fire_layer,
+            fire_frames,
+            fire_tint,
+            uvs_rev,
+        );
+
+        // Diagonal plane B (front + back)
+        let diag_b = [[x0, y0, z1], [x0, y1, z1], [x1, y1, z0], [x1, y0, z0]];
+        let diag_b_rev = [[x1, y0, z0], [x1, y1, z0], [x0, y1, z1], [x0, y0, z1]];
+        push_quad_face_with_uvs(
+            buffers,
+            diag_b,
+            [0.0, 1.0, 0.0],
+            fire_layer,
+            fire_frames,
+            fire_tint,
+            uvs,
+        );
+        push_quad_face_with_uvs(
+            buffers,
+            diag_b_rev,
+            [0.0, 1.0, 0.0],
+            fire_layer,
+            fire_frames,
+            fire_tint,
+            uvs_rev,
+        );
+    }
+}

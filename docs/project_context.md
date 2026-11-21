@@ -52,7 +52,7 @@ This is an attempt to develop an experimental voxel engine and game, built from 
 - **16:9 Window Aspect Snapping**:
   - Enforced in `src/core/window_aspect.rs` (`WindowAspectPlugin`) maintaining 16:9 aspect ratio in windowed mode with minimum constraints (640×360 px) and auto-disable in fullscreen.
 - **Custom Typography**:
-  - Universal font asset management (`CutePixel.ttf`) applied across all in-game HUDs, menus, and interfaces with drop shadow contrast styling.
+  - Universal font asset management (`ari-w9500-condensed-display.ttf`) applied across all in-game HUDs, menus, and interfaces with drop shadow contrast styling.
 - **Standardized 480×270 Base Canvas & 9-Horizontal-Slot UI Architecture**:
   - **Unified 480×270 (16:9) Base Canvas**: All container, HUD, and menu interfaces are mapped to a fixed 480×270 px native pixel-art canvas, scaling cleanly with integer pixel-perfect alignment up to 4× (`GUI_SCALE = 4.0`, 1920×1080) and seamless borderless / letterbox support.
   - **In-Game Hotbar HUD (320 × 44 px)**: 9 primary item slots with 3px slot spacing, integrated health meter, exact 12px numeric font scale consistent with open inventory, 2 special readout slots (offhand and utility with Dark Iron backdrops), 4 non-clickable wing badges (`[M]`, `[J]`, `[C]`, `[T]`), and centered selection tooltips with smooth fade-out.

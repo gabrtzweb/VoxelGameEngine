@@ -974,5 +974,11 @@
   "block.crop_coconut_stage2": "Coco",
   "block.item_cocoa_beans": "Sementes de Cacau",
   "block.item_coconut": "Coco",
-  "block.vege_leaf_litter": "Folhas Caídas"
+  "block.vege_leaf_litter": "Folhas Caídas",
+  "block.emit_lamp_blue_off": "Lâmpada Azul (Apagada)",
+  "block.emit_lamp_green_off": "Lâmpada Verde (Apagada)",
+  "block.emit_lamp_red_off": "Lâmpada Vermelha (Apagada)",
+  "block.emit_lamp_warm_off": "Lâmpada Quente (Apagada)",
+  "block.deco_campfire": "Fogueira",
+  "block.deco_campfire_unlit": "Fogueira (Apagada)"
 }

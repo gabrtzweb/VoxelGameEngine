@@ -3,8 +3,8 @@
 This master document catalogs **all blocks and items currently implemented in the Voxel Engine**, synchronized directly with `src/world/block/voxel.rs` and `src/world/block/data.rs`.
 
 > [!IMPORTANT]
-> **Project Grand Total: 693 Registry Entries (3 Internal System Markers + 690 Active Gameplay Blocks & Items in `Voxel::ALL`)**  
-> Backed by **1557** block textures in `assets/textures/blocks/` and **62** item icons in `assets/textures/items/`.
+> **Project Grand Total: 699 Registry Entries (3 Internal System Markers + 696 Active Gameplay Blocks & Items in `Voxel::ALL`)**  
+> Backed by **1560** block textures in `assets/textures/blocks/` and **62** item icons in `assets/textures/items/`.
 
 - **Stochastic variations** (suffixes `1`, `2`, `3`, e.g., `vege_leaf_litter.png`, `vege_leaf_litter1.png`, `vege_leaf_litter2.png`) are sampled per-block by `src/meshing/textures.rs` and are **not** registered as duplicate voxel IDs.
 - **Connected texture overlays** live in `assets/textures/blocks/overlays/` and are composited in the voxel shader without adding extra voxel IDs.
@@ -24,13 +24,13 @@ This master document catalogs **all blocks and items currently implemented in th
 | **07** | Speleology & Crystals (`caverns`) | **33** | [Go to Section 07](#07-speleology--crystals-caverns--33-entries) |
 | **08** | Ocean & Benthic Ecosystems (`oceans`) | **45** | [Go to Section 08](#08-ocean--benthic-ecosystems-oceans--45-entries) |
 | **09** | Biomaterials, Fauna & Organic Matter (`organics`) | **26** | [Go to Section 09](#09-biomaterials-fauna--organic-matter-organics--26-entries) |
-| **10** | Decorations, Lighting & Architecture (`decorations`) | **121** | [Go to Section 10](#10-decorations-lighting--architecture-decorations--121-entries) |
+| **10** | Decorations, Lighting & Architecture (`decorations`) | **127** | [Go to Section 10](#10-decorations-lighting--architecture-decorations--127-entries) |
 | **11** | Mycology: Mushrooms (`mushrooms`) | **12** | [Go to Section 11](#11-mycology-mushrooms-mushrooms--12-entries) |
 | **12** | Botany: Groundcover & Herbaceous Flora (`vegetation`) | **33** | [Go to Section 12](#12-botany-groundcover--herbaceous-flora-vegetation--33-entries) |
 | **13** | Botany: Flowers & Flowering Flora (`flowers`) | **34** | [Go to Section 13](#13-botany-flowers--flowering-flora-flowers--34-entries) |
 | **14** | Agriculture: Cultivated & Wild Crops (`crops`) | **121** | [Go to Section 14](#14-agriculture-cultivated--wild-crops-crops--121-entries) |
 | **15** | Harvested Items, Seeds & Materials (`items`) | **32** | [Go to Section 15](#15-harvested-items-seeds--materials-items--32-entries) |
-| **TOTAL** | **All `VOXEL_DATA` Entries (`0..=692`)** | **693** | — |
+| **TOTAL** | **All `VOXEL_DATA` Entries (`0..=698`)** | **699** | — |
 
 ---
 
@@ -455,7 +455,7 @@ Organic matter, bones, nests, hives, cocoons, cobwebs, bamboo, stick piles, and 
 
 ---
 
-## 10. Decorations, Lighting & Architecture (`decorations`) — 121 Entries
+## 10. Decorations, Lighting & Architecture (`decorations`) — 127 Entries
 
 Stone/sandstone bricks, painted architectural palettes (bricks, fabric, plaster, shingles, wool), containers, torches, and lamps.
 
@@ -489,10 +489,10 @@ Stone/sandstone bricks, painted architectural palettes (bricks, fabric, plaster,
 | **26** | `chalk_bricks` | Chalk Bricks | **Masonry** | `deco_chalk_bricks.png` *(+2 variants)* | 6 uniform faces |
 | **27** | `crate` | Empty Crate | **Utility** | `util_crate_top.png`<br>`util_crate_side.png`<br>`util_crate_bot.png` | Top top + Bottom bot + 4 sides side |
 | **28** | `dolomite_bricks` | Dolomite Bricks | **Masonry** | `deco_dolomite_bricks.png` *(+2 variants)* | 6 uniform faces |
-| **29** | `emit_lamp_blue` | Blue Lamp | **Decoration** | `emit_lamp_blue_side.png` | Architectural / Lighting fixture |
-| **30** | `emit_lamp_green` | Green Lamp | **Decoration** | `emit_lamp_green_side.png` | Architectural / Lighting fixture |
-| **31** | `emit_lamp_red` | Red Lamp | **Decoration** | `emit_lamp_red_side.png` | Architectural / Lighting fixture |
-| **32** | `emit_lamp_warm` | Warm Lamp | **Decoration** | `emit_lamp_warm_side.png` | Architectural / Lighting fixture |
+| **29** | `emit_lamp_blue` | Blue Lamp | **Lighting** | `emit_lamp_blue_top_on.png`<br>`emit_lamp_blue_side_on.png`<br>`emit_lamp_blue_bot_on.png` | Lit lamp *(empty-hand right-click toggles Off)* |
+| **30** | `emit_lamp_green` | Green Lamp | **Lighting** | `emit_lamp_green_top_on.png`<br>`emit_lamp_green_side_on.png`<br>`emit_lamp_green_bot_on.png` | Lit lamp *(empty-hand right-click toggles Off)* |
+| **31** | `emit_lamp_red` | Red Lamp | **Lighting** | `emit_lamp_red_top_on.png`<br>`emit_lamp_red_side_on.png`<br>`emit_lamp_red_bot_on.png` | Lit lamp *(empty-hand right-click toggles Off)* |
+| **32** | `emit_lamp_warm` | Warm Lamp | **Lighting** | `emit_lamp_warm_top_on.png`<br>`emit_lamp_warm_side_on.png`<br>`emit_lamp_warm_bot_on.png` | Lit lamp *(empty-hand right-click toggles Off)* |
 | **33** | `emit_torch_blue` | Blue Torch | **Lighting** | `emit_torch_blue.png` | Vertical stem model *(Sapphire blue diode)* |
 | **34** | `emit_torch_fire` | Fire Torch | **Lighting** | `emit_torch_fire.png` | Vertical stem model *(5 animated fire frames)* |
 | **35** | `emit_torch_green` | Green Torch | **Lighting** | `emit_torch_green.png` | Vertical stem model *(Emerald green diode)* |
@@ -582,6 +582,12 @@ Stone/sandstone bricks, painted architectural palettes (bricks, fabric, plaster,
 | **119** | `element_fire` | Fire | **Decoration** | `element_fire.png` *(+2 variants)* | Architectural / Lighting fixture |
 | **120** | `bag_rice` | Rice Bag | **Decoration** | `util_bag_side.png` | Architectural / Lighting fixture |
 | **121** | `bag_sugar` | Sugar Bag | **Decoration** | `util_bag_side.png` | Architectural / Lighting fixture |
+| **122** | `emit_lamp_blue_off` | Blue Lamp (Off) | **Lighting** | `emit_lamp_blue_top.png`<br>`emit_lamp_blue_side.png`<br>`emit_lamp_blue_bot.png` | Unlit lamp state *(hidden from Creative; empty-hand right-click toggles On)* |
+| **123** | `emit_lamp_green_off` | Green Lamp (Off) | **Lighting** | `emit_lamp_green_top.png`<br>`emit_lamp_green_side.png`<br>`emit_lamp_green_bot.png` | Unlit lamp state *(hidden from Creative; empty-hand right-click toggles On)* |
+| **124** | `emit_lamp_red_off` | Red Lamp (Off) | **Lighting** | `emit_lamp_red_top.png`<br>`emit_lamp_red_side.png`<br>`emit_lamp_red_bot.png` | Unlit lamp state *(hidden from Creative; empty-hand right-click toggles On)* |
+| **125** | `emit_lamp_warm_off` | Warm Lamp (Off) | **Lighting** | `emit_lamp_warm_top.png`<br>`emit_lamp_warm_side.png`<br>`emit_lamp_warm_bot.png` | Unlit lamp state *(hidden from Creative; empty-hand right-click toggles On)* |
+| **126** | `deco_campfire` | Campfire | **Lighting** | `deco_campfire.png`<br>`deco_campfire_lit.png`<br>`deco_campfire_fire.png`<br>*(Icon: `campfire_item.png`)* | 3D crossed logs + animated embers & flames *(empty-hand right-click toggles Unlit)* |
+| **127** | `deco_campfire_unlit` | Campfire (Unlit) | **Decoration** | `deco_campfire.png`<br>*(Icon: `campfire_item.png`)* | Unlit 3D crossed logs + ash bed *(hidden from Creative; empty-hand right-click toggles Lit)* |
 
 ---
 

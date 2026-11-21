@@ -107,6 +107,7 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
             && !v.is_stick_pile()
             && !v.is_cocoa_pod()
             && !v.is_hanging_coconut()
+            && !v.is_campfire()
             && !v.is_flat_pad_const()
             && !v.is_wall_decal_const()
             && !matches!(
@@ -250,6 +251,7 @@ impl Voxel {
                 | Self::EmitTorchGreen
                 | Self::EmitTorchRed
                 | Self::EmitTorchWarm
+                | Self::Campfire
         )
     }
 
@@ -265,6 +267,7 @@ impl Voxel {
             | Self::EmitLampBlue
             | Self::EmitLampGreen
             | Self::EmitLampRed
+            | Self::Campfire
             | Self::LiquidLava
             | Self::LiquidCoreMagma
             | Self::LiquidMolten
@@ -580,6 +583,7 @@ impl Voxel {
                 | Self::EmitTorchGreen
                 | Self::EmitTorchRed
                 | Self::EmitTorchWarm
+                | Self::Campfire
         )
     }
 }
@@ -675,6 +679,7 @@ impl Voxel {
             || self.is_stick_pile()
             || self.is_cocoa_pod()
             || self.is_hanging_coconut()
+            || self.is_campfire()
     }
 
     #[inline(always)]

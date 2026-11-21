@@ -1,14 +1,21 @@
 # VoxelGameEngine
 
-This is an attempt to develop an experimental voxel game engine built from scratch with Rust and Bevy.
+**Current Version:** `Alpha 0.3.0`
+
+This is an attempt to develop an experimental voxel game engine built from scratch with Rust and Bevy (`0.20`).
 
 The project focuses on a fully editable procedural voxel world with 1.0 m³ blocks.
 
-The long-term goal is to build a performant procedural voxel game with large-world streaming, runtime terrain editing, configurable generation, multiple gameplay modes, dynamic fluids and extensive development tooling.
+The long-term goal is to build a performant procedural voxel game with large-world streaming, runtime terrain editing, configurable generation, multiple gameplay modes, dynamic fluids, and extensive development tooling.
 
-More information about how the project works and future plans can be found at [project_context.md](docs/project_context.md) and [project_roadmap.md](docs/project_roadmap.md).
+More information about how the project works and future plans can be found in:
+
+- [project_context.md](docs/project_context.md) — Current engine architecture and implemented systems
+- [project_roadmap.md](docs/project_roadmap.md) — Development milestones and active roadmap
 
 ## Current Game Controls
+
+All primary controls can also be rebound in-game via **Settings / Controls**.
 
 ```text
 Mouse             Look
@@ -27,17 +34,17 @@ C                 Crawl (0.45m prone posture through low openings)
 Z                 Camera Zoom (Hold Z + Mouse Wheel to adjust magnification)
 
 Left Mouse        Break block
-Right Mouse       Place block (3-axis directional placement for logs, wood bark, and pillars)
+Right Mouse       Place block (3-axis directional placement for logs, bark, and pillars; 6-face for crystals & coral fans)
 Middle Mouse      Pick block
 
 1 - 9             Hotbar slot selection (9 primary slots)
 Mouse Wheel       Scroll hotbar slots (when not zooming)
-Q                 Clear active hotbar slot
+Q                 Drop active hotbar item (3D item drop)
 R                 Block shape (Tap: cycle / Hold: 4-slice radial menu; locked on decorative/custom blocks)
 T                 Rotate block shape 90° clockwise (locked on non-rotatable blocks)
 
 ESC               Pause Menu & Menu Bar (Tabs: Map, Journal, Inventory, System)
-E                 Personal & Creative Inventory (unified 480x270 px base canvas with integer scaling)
+E                 Creative Catalog / Personal Inventory (unified 480x270 px base canvas with integer scaling)
 M                 World Map (Full-screen interactive map, pan & zoom, player tracking)
 
 F1                Toggle Inspector (bevy_egui)
@@ -45,7 +52,7 @@ F2                Chunk debug borders
 F3                Toggle HUD (Minimal / Extended debug)
 Shift + F3        Toggle HUD visibility (Show / Hide)
 F4                Creative / Spectator
-F5                First / Third person (body model, head tracking, overlay layers, animations)
+F5                First / Third person (8-race custom voxel character rig, head tracking, 3D held items & animations)
 F6                Day / Night cycle (Click: step phase / Hold: scrub time)
 F7                Weather cycle (Click: step weather / Shift+F7 or Hold: dynamic simulation)
 ```
@@ -55,12 +62,15 @@ F7                Weather cycle (Click: step weather / Shift+F7 or Hold: dynamic
 ```text
 assets/
 ├── fonts/
-│   └── CutePixel.ttf
+│   ├── ari-w9500-condensed-bold.ttf
+│   ├── ari-w9500-condensed-display.ttf
+│   └── ari-w9500-condensed.ttf
 ├── lang/
 │   ├── en_us.json
 │   └── pt_br.json
 ├── shaders/
 │   ├── grass_blades.wesl
+│   ├── grass_plant.wesl
 │   ├── post_process.wesl
 │   ├── voxel_opaque.wesl
 │   ├── voxel_prepass.wesl
@@ -76,17 +86,18 @@ assets/
 ├── textures/
 │   ├── blocks/
 │   ├── environments/
+│   ├── foliage/
 │   ├── interfaces/
 │   ├── items/
+│   ├── masks/
 │   ├── models/
-│   └── particles/
+│   ├── particles/
+│   └── shaders/
 └── icon.ico
 
 docs/
-├── worldbuilding/
-│   ├── blocks/
-│   ├── blocks_design.md
-│   └── interfaces_design.md
+├── blocks_design.md
+├── interfaces_design.md
 ├── project_context.md
 └── project_roadmap.md
 
@@ -121,6 +132,7 @@ src/
 │   │   ├── config.rs
 │   │   ├── generator.rs
 │   │   ├── material.rs
+│   │   ├── mod.rs
 │   │   ├── particles.rs
 │   │   ├── trail.rs
 │   │   └── uniforms.rs
@@ -128,8 +140,10 @@ src/
 │   │   ├── particles/
 │   │   │   ├── buffer.rs
 │   │   │   ├── emitters.rs
+│   │   │   ├── mod.rs
 │   │   │   └── renderer.rs
 │   │   ├── lightning.rs
+│   │   ├── mod.rs
 │   │   ├── state.rs
 │   │   └── wind.rs
 │   ├── atmosphere.rs
@@ -139,8 +153,8 @@ src/
 │   ├── post_process.rs
 │   ├── stars.rs
 │   └── time.rs
-
 ├── gameplay/
+│   ├── crops.rs
 │   ├── debug.rs
 │   ├── feedback.rs
 │   ├── icon.rs
@@ -243,6 +257,7 @@ tests/
 │   ├── config.rs
 │   ├── connection.rs
 │   ├── controls.rs
+│   ├── crop_gameplay.rs
 │   ├── crops.rs
 │   ├── culling.rs
 │   ├── foliage.rs
@@ -263,7 +278,13 @@ Run:
 cargo run
 ```
 
-Optimized build:
+Fast optimized dev build:
+
+```bash
+cargo run --profile dev-fast
+```
+
+Release build:
 
 ```bash
 cargo run --release
@@ -287,10 +308,10 @@ cargo clippy
 
 In the development of this project, I use AI tools as technical assistants. They are utilized across several support workflows, including:
 
-* Code translation and syntax refactoring
-* Bug fixing, debugging assistance, and troubleshooting
-* Brainstorming technical solutions and architectural planning
-* Researching performance optimization strategies and documentation
+- Code translation and syntax refactoring
+- Bug fixing, debugging assistance, and troubleshooting
+- Brainstorming technical solutions and architectural planning
+- Researching performance optimization strategies and documentation
 
 At the same time, all creative direction, core design concepts, texture creation, and artistic vision remain entirely human-driven.
 
@@ -300,10 +321,10 @@ This project is an experimental, independent voxel game engine in active early d
 
 The texturing aesthetic and art direction of the game are heavily inspired by the visual style and rustic low-fantasy design found in classic 16x16 resource packs, primarily:
 
-* **Ashen** by [Aim_Boot](https://modrinth.com/resourcepack/ashen) (Visual Style & Art Inspiration)
-* **Excalibur** by [Maffhew](https://modrinth.com/resourcepack/excal) (Aesthetic Inspiration & Reference)
+- **Ashen** by [Aim_Boot](https://modrinth.com/resourcepack/ashen) (Visual Style & Art Inspiration)
+- **Excalibur** by [Maffhew](https://modrinth.com/resourcepack/excal) (Aesthetic Inspiration & Reference)
 
-While the project adopts this distinctive visual language, the textures are not direct or identical 1:1 copies. Virtually all textures in the engine have been custom-crafted, repainted, recolored, expanded with animation frames, or tailored specifically for this engine's. Both creators are credited here as a matter of creative inspiration, artistic acknowledgement, and legal safety.
+While the project adopts this distinctive visual language, the textures are not direct or identical 1:1 copies. Virtually all textures in the engine have been custom-crafted, repainted, recolored, expanded with animation frames, or tailored specifically for this engine. Both creators are credited here as a matter of creative inspiration, artistic acknowledgement, and legal safety.
 
 ## License
 

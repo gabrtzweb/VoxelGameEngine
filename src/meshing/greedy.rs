@@ -437,7 +437,7 @@ impl MeshBuffers {
         let mask_face_alpha = if key.mask_index > 0 {
             let (tint, base_tinted) = if key.packed_tint != 0 {
                 (key.packed_tint, 0u32)
-            } else if key.voxel.is_grass_soil() {
+            } else if key.voxel.is_grass_soil() && direction == FaceDirection::PositiveY {
                 (pack_tint7(key.tint_color), 1u32)
             } else {
                 (0u32, 0u32)

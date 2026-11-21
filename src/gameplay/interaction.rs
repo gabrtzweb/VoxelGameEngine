@@ -234,6 +234,22 @@ fn edit_voxels(
             (edited, prev_voxel)
         };
         (edited, broken, prev_orient)
+    } else if place_action && selected.0.is_none() {
+        // Empty-hand right-click: toggle lit/unlit state on lamps and campfires
+        if place_just_pressed
+            && let Some(hit_voxel) = world.get_voxel(target.hit_voxel)
+            && let Some(toggled) = hit_voxel.toggle_light_state()
+        {
+            world.set_voxel(target.hit_voxel, toggled);
+            modifications.record(target.hit_voxel, toggled);
+            commands.trigger(BlockPlaceEvent {
+                position: target.hit_voxel,
+                voxel: toggled,
+            });
+            (vec![target.hit_voxel], None, 0)
+        } else {
+            return;
+        }
     } else if place_action {
         let Some(place_voxel_type) = selected.0 else {
             return;
@@ -725,7 +741,7 @@ fn edit_voxels(
         if let Some(v) = broken_voxel {
             commands.trigger(BlockBreakEvent {
                 position: target.hit_voxel,
-                voxel: v,
+                voxel: v.canonical_item_voxel(),
             });
             // Stacked Leaf Litter (1..=4 segments) drops 1 item per segment when broken
             if v == Voxel::VegeLeafLitter {

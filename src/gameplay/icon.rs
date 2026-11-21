@@ -134,7 +134,10 @@ pub fn setup_block_icons(
                 && let Ok(img) = image::open(&overlay_path)
             {
                 let rgba = img.into_rgba8();
-                let tint = if overlay_name == "soil_grass_side_overlay" {
+                let tint = if matches!(
+                    overlay_name,
+                    "soil_grass_side_overlay" | "rock_grass_side_overlay"
+                ) {
                     voxel.tint_color()
                 } else {
                     [1.0, 1.0, 1.0, 1.0]
@@ -198,7 +201,7 @@ pub fn setup_block_icons(
             let mut top_bytes = load_raw_16x16_by_name(top_name, voxel.backup_texture_name(), voxel.fallback_color());
             if let Some(overlay_name) = voxel
                 .overlay_texture_name()
-                .filter(|&o| o != "soil_grass_side_overlay")
+                .filter(|&o| !matches!(o, "soil_grass_side_overlay" | "rock_grass_side_overlay"))
             {
                 let overlay_path = format!("assets/textures/blocks/{overlay_name}.png");
                 if Path::new(&overlay_path).exists()
@@ -742,6 +745,7 @@ fn voxel_item_texture_path(voxel: Voxel) -> Option<&'static str> {
         | Voxel::CropCoconutStage1
         | Voxel::CropCoconutStage2 => Some("assets/textures/items/coconut_item.png"),
         Voxel::VegeLeafLitter => Some("assets/textures/items/leaf_litter_item.png"),
+        Voxel::Campfire | Voxel::CampfireUnlit => Some("assets/textures/items/campfire_item.png"),
         _ => None,
     }
 }

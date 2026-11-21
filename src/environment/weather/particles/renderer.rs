@@ -170,8 +170,11 @@ pub fn sync_weather_particle_mesh(
                 )
             }
             ParticleRotationMode::CopyCamera => {
-                let r_ext = cam_right * half_w;
-                let u_ext = cam_up * half_h;
+                let (sin_r, cos_r) = p.rotation.sin_cos();
+                let rot_right = cam_right * cos_r + cam_up * sin_r;
+                let rot_up = -cam_right * sin_r + cam_up * cos_r;
+                let r_ext = rot_right * half_w;
+                let u_ext = rot_up * half_h;
 
                 (
                     p.position - r_ext - u_ext,
@@ -181,19 +184,32 @@ pub fn sync_weather_particle_mesh(
                 )
             }
             ParticleRotationMode::Horizontal => {
+                let (sin_r, cos_r) = p.rotation.sin_cos();
+                let rx = Vec3::new(cos_r, 0.0, sin_r) * half_w;
+                let rz = Vec3::new(-sin_r, 0.0, cos_r) * half_h;
                 (
-                    p.position + Vec3::new(-half_w, 0.0, -half_h),
-                    p.position + Vec3::new(half_w, 0.0, -half_h),
-                    p.position + Vec3::new(half_w, 0.0, half_h),
-                    p.position + Vec3::new(-half_w, 0.0, half_h),
+                    p.position - rx - rz,
+                    p.position + rx - rz,
+                    p.position + rx + rz,
+                    p.position - rx + rz,
                 )
             }
             ParticleRotationMode::Vertical => {
+                // Y-axis cylindrical billboard (Particle Rain VERTICAL mode):
+                // faces the camera horizontally while staying strictly upright.
+                let mut horiz_right = Vec3::new(cam_right.x, 0.0, cam_right.z);
+                if horiz_right.length_squared() < 0.0001 {
+                    horiz_right = Vec3::X;
+                } else {
+                    horiz_right = horiz_right.normalize();
+                }
+                let r_ext = horiz_right * half_w;
+                let u_ext = Vec3::Y * half_h;
                 (
-                    p.position + Vec3::new(-half_w, -half_h, 0.0),
-                    p.position + Vec3::new(half_w, -half_h, 0.0),
-                    p.position + Vec3::new(half_w, half_h, 0.0),
-                    p.position + Vec3::new(-half_w, half_h, 0.0),
+                    p.position - r_ext - u_ext,
+                    p.position + r_ext - u_ext,
+                    p.position + r_ext + u_ext,
+                    p.position - r_ext + u_ext,
                 )
             }
             ParticleRotationMode::VerticalX => {

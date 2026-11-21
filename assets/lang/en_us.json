@@ -974,5 +974,11 @@
   "block.crop_coconut_stage2": "Coconut",
   "block.item_cocoa_beans": "Cocoa Beans",
   "block.item_coconut": "Coconut",
-  "block.vege_leaf_litter": "Leaf Litter"
+  "block.vege_leaf_litter": "Leaf Litter",
+  "block.emit_lamp_blue_off": "Blue Lamp (Off)",
+  "block.emit_lamp_green_off": "Green Lamp (Off)",
+  "block.emit_lamp_red_off": "Red Lamp (Off)",
+  "block.emit_lamp_warm_off": "Warm Lamp (Off)",
+  "block.deco_campfire": "Campfire",
+  "block.deco_campfire_unlit": "Campfire (Unlit)"
 }

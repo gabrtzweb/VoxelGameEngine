@@ -107,10 +107,16 @@ impl Voxel {
             Self::Bookshelf | Self::BookshelfEmpty => Some("util_bookshelf_side"),
             Self::Bag | Self::BagRice | Self::BagSugar => Some("util_bag_side"),
             Self::Crate => Some("util_crate_side"),
-            Self::EmitLampWarm => Some("emit_lamp_warm_side"),
-            Self::EmitLampBlue => Some("emit_lamp_blue_side"),
-            Self::EmitLampGreen => Some("emit_lamp_green_side"),
-            Self::EmitLampRed => Some("emit_lamp_red_side"),
+            Self::JellyBlock => Some("organic_jelly_side"),
+            Self::SlimeBlock => Some("organic_slime_side"),
+            Self::EmitLampWarm => Some("emit_lamp_warm_side_on"),
+            Self::EmitLampBlue => Some("emit_lamp_blue_side_on"),
+            Self::EmitLampGreen => Some("emit_lamp_green_side_on"),
+            Self::EmitLampRed => Some("emit_lamp_red_side_on"),
+            Self::EmitLampWarmOff => Some("emit_lamp_warm_side"),
+            Self::EmitLampBlueOff => Some("emit_lamp_blue_side"),
+            Self::EmitLampGreenOff => Some("emit_lamp_green_side"),
+            Self::EmitLampRedOff => Some("emit_lamp_red_side"),
             Self::Basket => Some("util_basket_side"),
             Self::SpiderEgg => Some("nest_spider_egg_side"),
             Self::SilkCocoon => Some("nest_silk_cocoon_side"),
@@ -188,10 +194,16 @@ impl Voxel {
             Self::Basket => Some("util_basket_top"),
             Self::Bookshelf | Self::BookshelfEmpty => Some("util_bookshelf_top"),
             Self::Crate => Some("util_crate_top"),
-            Self::EmitLampWarm => Some("emit_lamp_warm_top"),
-            Self::EmitLampBlue => Some("emit_lamp_blue_top"),
-            Self::EmitLampGreen => Some("emit_lamp_green_top"),
-            Self::EmitLampRed => Some("emit_lamp_red_top"),
+            Self::EmitLampWarm => Some("emit_lamp_warm_top_on"),
+            Self::EmitLampBlue => Some("emit_lamp_blue_top_on"),
+            Self::EmitLampGreen => Some("emit_lamp_green_top_on"),
+            Self::EmitLampRed => Some("emit_lamp_red_top_on"),
+            Self::EmitLampWarmOff => Some("emit_lamp_warm_top"),
+            Self::EmitLampBlueOff => Some("emit_lamp_blue_top"),
+            Self::EmitLampGreenOff => Some("emit_lamp_green_top"),
+            Self::EmitLampRedOff => Some("emit_lamp_red_top"),
+            Self::Campfire => Some("deco_campfire_lit"),
+            Self::CampfireUnlit => Some("deco_campfire"),
             Self::VegeCactus => Some("vege_cactus_top"),
             _ => None,
         }
@@ -234,10 +246,16 @@ impl Voxel {
             Self::Basket => Some("util_basket_bot"),
             Self::Bookshelf | Self::BookshelfEmpty => Some("util_bookshelf_top"),
             Self::Crate => Some("util_crate_bot"),
-            Self::EmitLampWarm => Some("emit_lamp_warm_bot"),
-            Self::EmitLampBlue => Some("emit_lamp_blue_bot"),
-            Self::EmitLampGreen => Some("emit_lamp_green_bot"),
-            Self::EmitLampRed => Some("emit_lamp_red_bot"),
+            Self::EmitLampWarm => Some("emit_lamp_warm_bot_on"),
+            Self::EmitLampBlue => Some("emit_lamp_blue_bot_on"),
+            Self::EmitLampGreen => Some("emit_lamp_green_bot_on"),
+            Self::EmitLampRed => Some("emit_lamp_red_bot_on"),
+            Self::EmitLampWarmOff => Some("emit_lamp_warm_bot"),
+            Self::EmitLampBlueOff => Some("emit_lamp_blue_bot"),
+            Self::EmitLampGreenOff => Some("emit_lamp_green_bot"),
+            Self::EmitLampRedOff => Some("emit_lamp_red_bot"),
+            Self::Campfire => Some("deco_campfire_fire"),
+            Self::CampfireUnlit => Some("deco_campfire"),
 
             Self::CalicheGrass => Some("soil_caliche_dirt"),
             Self::LateriteGrass => Some("soil_laterite_dirt"),
@@ -290,14 +308,15 @@ impl Voxel {
             | Self::LoamGrass
             | Self::PeatGrass
             | Self::PermafrostGrass
-            | Self::SiltGrass
-            | Self::AndesiteGrass
+            | Self::SiltGrass => Some("soil_grass_side_overlay"),
+
+            Self::AndesiteGrass
             | Self::ArgilliteGrass
             | Self::BasaltGrass
             | Self::ChalkGrass
             | Self::DolomiteGrass
             | Self::GraniteGrass
-            | Self::LimestoneGrass => Some("soil_grass_side_overlay"),
+            | Self::LimestoneGrass => Some("rock_grass_side_overlay"),
 
             Self::MossyAndesite
             | Self::MossyArgillite
@@ -348,6 +367,8 @@ impl Voxel {
             BlockShape::CocoaPod
         } else if self.is_hanging_coconut() {
             BlockShape::HangingFruit
+        } else if self.is_campfire() {
+            BlockShape::Campfire
         } else if self.is_speleothem_const() {
             BlockShape::Speleothem
         } else if matches!(self, Self::BirdNest | Self::HayNest) {
@@ -1242,10 +1263,17 @@ impl Voxel {
 
             // Lighting & Fire
             Self::ElementFire => [245, 125, 25, 255],
-            Self::EmitLampWarm | Self::EmitTorchWarm | Self::EmitTorchFire => [255, 205, 80, 255],
+            Self::EmitLampWarm | Self::EmitTorchWarm | Self::EmitTorchFire | Self::Campfire => {
+                [255, 205, 80, 255]
+            }
+            Self::CampfireUnlit => [95, 70, 50, 255],
             Self::EmitLampBlue | Self::EmitTorchBlue => [75, 145, 255, 255],
             Self::EmitLampGreen | Self::EmitTorchGreen => [75, 235, 75, 255],
             Self::EmitLampRed | Self::EmitTorchRed => [245, 60, 60, 255],
+            Self::EmitLampWarmOff
+            | Self::EmitLampBlueOff
+            | Self::EmitLampGreenOff
+            | Self::EmitLampRedOff => [58, 62, 68, 255],
             Self::GeothermalVent => [85, 70, 65, 255],
 
             // Fungi & Mushrooms
@@ -1323,7 +1351,7 @@ impl Voxel {
 
     pub fn light_color(self) -> Color {
         match self {
-            Self::EmitLampWarm | Self::EmitTorchWarm => {
+            Self::EmitLampWarm | Self::EmitTorchWarm | Self::Campfire => {
                 Color::srgb(1.0, 0.82, 0.42)
             }
             Self::EmitTorchFire => Color::srgb(1.0, 0.65, 0.25),
