@@ -1793,7 +1793,11 @@ pub fn compute_block_transition(
     direction: FaceDirection,
     textures: &VoxelTextureRegistry,
 ) -> (u16, u8, u32) {
-    if direction == FaceDirection::NegativeY || raw_voxel.is_crystal_solid_block() || raw_voxel.is_crystal_cluster() {
+    if direction == FaceDirection::NegativeY
+        || raw_voxel.is_crystal_solid_block()
+        || raw_voxel.is_crystal_cluster()
+        || (raw_voxel.is_axis_aligned() && world.get_shape(world_voxel).1 != 0)
+    {
         return (0, 0, 0);
     }
 
@@ -1920,11 +1924,11 @@ pub fn compute_block_transition(
                     0
                 },
             ),
-            TransitionCategory::Sand | TransitionCategory::Rocks => (
+            TransitionCategory::Sand | TransitionCategory::Rocks | TransitionCategory::Moss => (
                 textures.get_face_texture_info(highest_neighbor, highest_pos, direction).0,
                 0,
             ),
-            TransitionCategory::Snow | TransitionCategory::Moss => (0, 0),
+            TransitionCategory::Snow => (0, 0),
         };
 
         return (overlay_layer, mask_index, packed_tint);
@@ -1986,11 +1990,11 @@ pub fn compute_block_transition(
                     0
                 },
             ),
-            TransitionCategory::Sand | TransitionCategory::Rocks => (
+            TransitionCategory::Sand | TransitionCategory::Rocks | TransitionCategory::Moss => (
                 textures.get_face_texture_info(highest_neighbor, highest_pos, direction).0,
                 0,
             ),
-            TransitionCategory::Snow | TransitionCategory::Moss => (0, 0),
+            TransitionCategory::Snow => (0, 0),
         };
 
         return (overlay_layer, mask_index, packed_tint);

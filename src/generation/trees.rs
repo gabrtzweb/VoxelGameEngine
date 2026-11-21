@@ -66,7 +66,11 @@ enum TreeArchetype {
 }
 
 /// Determines tree spawn probability and archetype for a given biome/column.
-fn select_tree_for_column(col: TerrainColumn, ground: Voxel, h: u32) -> Option<(f32, TreeArchetype)> {
+fn select_tree_for_column(
+    col: TerrainColumn,
+    ground: Voxel,
+    h: u32,
+) -> Option<(f32, TreeArchetype)> {
     // Gravel Beach: sparse coastal palms only (no pines on beaches!)
     if col.biome == BiomeType::GravelBeach {
         if col.climate.temperature > -0.25 {
@@ -386,7 +390,9 @@ fn soil_collar_variants_for(ground: Voxel) -> Option<(Voxel, Voxel, Voxel)> {
         | Voxel::SiltMulch
         | Voxel::SiltSnow
         | Voxel::SiltRooted => Some((Voxel::SiltRooted, Voxel::SiltCoarse, Voxel::SiltMulch)),
-        _ if ground.is_fertile_soil() => Some((Voxel::LoamRooted, Voxel::LoamCoarse, Voxel::LoamMulch)),
+        _ if ground.is_fertile_soil() => {
+            Some((Voxel::LoamRooted, Voxel::LoamCoarse, Voxel::LoamMulch))
+        }
         _ => None,
     }
 }
@@ -889,12 +895,48 @@ where
                 let Some(ground) = ground_at(rx, ry, rz, col) else {
                     continue;
                 };
-                if !ground.is_fertile_soil() && !ground.is_grass_soil() {
+                // ~24% of surface boulders are mineral Quartz / Flint / Chert boulders
+                let is_mineral_boulder = ((h >> 18) % 25) < 6;
+                if !is_mineral_boulder && !ground.is_fertile_soil() && !ground.is_grass_soil() {
                     continue;
                 }
 
+                let mineral_triple: Option<(Voxel, Voxel, Voxel)> = if is_mineral_boulder {
+                    let kind = if ((h >> 22) % 3) == 0 {
+                        (h >> 24) % 3
+                    } else {
+                        match col.biome.config().primary_stone {
+                            Voxel::Granite | Voxel::Marble | Voxel::Chalk | Voxel::Limestone => 0, // Quartz
+                            Voxel::Basalt | Voxel::Gabbro | Voxel::Slate | Voxel::Argillite => 1,  // Flint
+                            _ => 2, // Chert
+                        }
+                    };
+                    Some(match kind {
+                        0 => (
+                            Voxel::BoulderQuartz,
+                            Voxel::PebbleQuartz,
+                            Voxel::PebbleQuartzCluster,
+                        ),
+                        1 => (
+                            Voxel::BoulderFlint,
+                            Voxel::PebbleFlint,
+                            Voxel::PebbleFlintCluster,
+                        ),
+                        _ => (
+                            Voxel::BoulderChert,
+                            Voxel::PebbleChert,
+                            Voxel::PebbleChertCluster,
+                        ),
+                    })
+                } else {
+                    None
+                };
+
                 let (cobble, mossy) = rock_to_cobble_pair(col.biome.config().primary_stone);
                 let pick_mat = |dx: i32, dy: i32, dz: i32| -> Voxel {
+                    if let Some((boulder_vox, _, _)) = mineral_triple {
+                        return boulder_vox;
+                    }
                     let mh = hash_tree_cell(rx + dx * 7 + dy * 13, rz + dz * 11, h ^ 0x44A1);
                     if hash_f32(mh) < moss_prob {
                         mossy
@@ -910,6 +952,35 @@ where
                 let top_h = hash_f32(hash_tree_cell(rx, rz, h ^ 0x7102));
                 if top_h < 0.55 {
                     writer.set_leaf(rx, ry + 2, rz, pick_mat(0, 2, 0));
+                    if let Some((_, peb_single, peb_cluster)) = mineral_triple {
+                        let ph = hash_tree_cell(rx, rz, h ^ 0x9EB1);
+                        if hash_f32(ph) < 0.65 {
+                            let (pvox, pshape) = if ((ph >> 8) % 3) == 0 {
+                                (peb_cluster, BlockShape::PebbleCluster)
+                            } else {
+                                (peb_single, BlockShape::Pebble)
+                            };
+                            writer.set_shaped(
+                                rx,
+                                ry + 3,
+                                rz,
+                                pvox,
+                                pshape,
+                                ((ph >> 12) & 3) as u8,
+                            );
+                        }
+                    } else if moss_prob >= 0.35
+                        && hash_f32(hash_tree_cell(rx, rz, h ^ 0x4055)) < 0.42
+                    {
+                        writer.set_shaped(
+                            rx,
+                            ry + 3,
+                            rz,
+                            Voxel::MossCarpet,
+                            BlockShape::Carpet,
+                            0,
+                        );
+                    }
                 } else {
                     writer.set_leaf_shaped(rx, ry + 2, rz, pick_mat(0, 2, 0), BlockShape::Slab, 0);
                 }
@@ -942,6 +1013,23 @@ where
                     let shape_roll = hash_f32(sh.rotate_right(9));
                     if shape_roll < 0.50 {
                         writer.set_leaf(rx + dx, ry + 1, rz + dz, mat);
+                        if let Some((_, peb_single, peb_cluster)) = mineral_triple {
+                            if hash_f32(sh.rotate_right(17)) < 0.38 {
+                                let (pvox, pshape) = if ((sh >> 12) % 3) == 0 {
+                                    (peb_cluster, BlockShape::PebbleCluster)
+                                } else {
+                                    (peb_single, BlockShape::Pebble)
+                                };
+                                writer.set_shaped(
+                                    rx + dx,
+                                    ry + 2,
+                                    rz + dz,
+                                    pvox,
+                                    pshape,
+                                    ((sh >> 14) & 3) as u8,
+                                );
+                            }
+                        }
                     } else if shape_roll < 0.80 {
                         writer.set_leaf_shaped(rx + dx, ry + 1, rz + dz, mat, BlockShape::Slab, 0);
                     } else {
@@ -957,7 +1045,7 @@ where
                     placed_sides += 1;
                 }
 
-                // Occasional diagonal shoulder stone (creates wider 2x2 mossy clusters)
+                // Occasional diagonal shoulder stone (creates wider 2x2 mossy/mineral clusters)
                 if ((h >> 12) & 3) == 0 {
                     let diag_idx = ((h >> 14) & 3) as usize;
                     let (dx, dz) = [(1, 1), (1, -1), (-1, 1), (-1, -1)][diag_idx];
@@ -977,6 +1065,39 @@ where
                         );
                     }
                 }
+
+                // Scatter matching mineral pebbles around Quartz / Flint / Chert boulders
+                if let Some((_, peb_single, peb_cluster)) = mineral_triple {
+                    for pdz in -3..=3 {
+                        for pdx in -3..=3 {
+                            let d2 = pdx * pdx + pdz * pdz;
+                            if !(2..=9).contains(&d2) {
+                                continue;
+                            }
+                            let ph = hash_tree_cell(rx + pdx * 11, rz + pdz * 7, h ^ 0x9EB5);
+                            if hash_f32(ph) < 0.24 {
+                                let pcol = column_at(rx + pdx, rz + pdz);
+                                if pcol.surface_shape == BlockShape::Full
+                                    && pcol.water_level.is_none_or(|wl| pcol.terrain_height >= wl)
+                                {
+                                    let (pvox, pshape) = if ((ph >> 8) % 3) == 0 {
+                                        (peb_cluster, BlockShape::PebbleCluster)
+                                    } else {
+                                        (peb_single, BlockShape::Pebble)
+                                    };
+                                    writer.set_shaped(
+                                        rx + pdx,
+                                        pcol.terrain_height + 1,
+                                        rz + pdz,
+                                        pvox,
+                                        pshape,
+                                        ((ph >> 10) & 3) as u8,
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -987,11 +1108,9 @@ where
         const BUSH_RADIUS: i32 = 2;
 
         let min_cx = (chunk_origin.x - BUSH_RADIUS).div_euclid(BUSH_CELL);
-        let max_cx =
-            (chunk_origin.x + CHUNK_SIZE as i32 - 1 + BUSH_RADIUS).div_euclid(BUSH_CELL);
+        let max_cx = (chunk_origin.x + CHUNK_SIZE as i32 - 1 + BUSH_RADIUS).div_euclid(BUSH_CELL);
         let min_cz = (chunk_origin.z - BUSH_RADIUS).div_euclid(BUSH_CELL);
-        let max_cz =
-            (chunk_origin.z + CHUNK_SIZE as i32 - 1 + BUSH_RADIUS).div_euclid(BUSH_CELL);
+        let max_cz = (chunk_origin.z + CHUNK_SIZE as i32 - 1 + BUSH_RADIUS).div_euclid(BUSH_CELL);
 
         for cz in min_cz..=max_cz {
             for cx in min_cx..=max_cx {
@@ -1097,10 +1216,9 @@ where
                 if !(3..=22).contains(&depth) {
                     continue;
                 }
-                let is_coral_zone = matches!(
-                    col.biome,
-                    BiomeType::CoralReef | BiomeType::DeepWarmOcean
-                ) || col.climate.temperature > -0.15;
+                let is_coral_zone =
+                    matches!(col.biome, BiomeType::CoralReef | BiomeType::DeepWarmOcean)
+                        || col.climate.temperature > -0.15;
                 if !is_coral_zone {
                     continue;
                 }
@@ -1139,7 +1257,11 @@ where
                 }
 
                 // Stepped 2..=3 block tall Coralstone core
-                let core_h = if depth >= 5 && ((h >> 8) & 1) == 0 { 3 } else { 2 };
+                let core_h = if depth >= 5 && ((h >> 8) & 1) == 0 {
+                    3
+                } else {
+                    2
+                };
                 for dy in 1..core_h {
                     writer.set_rock(rx, ry + dy, rz, Voxel::Coralstone);
                 }
@@ -1157,12 +1279,7 @@ where
                 }
 
                 // Cardinal shoulder blocks with slope anchoring
-                let dirs: [(i32, i32, u8); 4] = [
-                    (1, 0, 1),
-                    (-1, 0, 0),
-                    (0, 1, 3),
-                    (0, -1, 2),
-                ];
+                let dirs: [(i32, i32, u8); 4] = [(1, 0, 1), (-1, 0, 0), (0, 1, 3), (0, -1, 2)];
                 let mut placed_sides = 0;
                 for (i, &(dx, dz, stair_orient)) in dirs.iter().enumerate() {
                     let sh = hash_tree_cell(rx + dx * 5, rz + dz * 9, h ^ (0x2100 + i as u32));
@@ -1256,9 +1373,7 @@ where
                     || matches!(col.biome, BiomeType::GravelBeach | BiomeType::MirageIsles))
                     && col.water_level.is_none_or(|wl| ry >= wl)
                     && col.surface_shape == BlockShape::Full;
-                let is_coastal_water = col
-                    .water_level
-                    .is_some_and(|wl| ry < wl && (wl - ry) <= 8);
+                let is_coastal_water = col.water_level.is_some_and(|wl| ry < wl && (wl - ry) <= 8);
 
                 if !is_dry_beach && !is_coastal_water {
                     continue;
@@ -1322,12 +1437,7 @@ where
                     }
                 }
 
-                let dirs: [(i32, i32, u8); 4] = [
-                    (1, 0, 1),
-                    (-1, 0, 0),
-                    (0, 1, 3),
-                    (0, -1, 2),
-                ];
+                let dirs: [(i32, i32, u8); 4] = [(1, 0, 1), (-1, 0, 0), (0, 1, 3), (0, -1, 2)];
                 for (i, &(dx, dz, stair_orient)) in dirs.iter().enumerate() {
                     let sh = hash_tree_cell(rx + dx * 5, rz + dz * 7, h ^ (0x3400 + i as u32));
                     if hash_f32(sh) > 0.68 {
@@ -1409,11 +1519,11 @@ where
         const SEA_STACK_RADIUS: i32 = 6;
 
         let min_cx = (chunk_origin.x - SEA_STACK_RADIUS).div_euclid(SEA_STACK_CELL);
-        let max_cx = (chunk_origin.x + CHUNK_SIZE as i32 - 1 + SEA_STACK_RADIUS)
-            .div_euclid(SEA_STACK_CELL);
+        let max_cx =
+            (chunk_origin.x + CHUNK_SIZE as i32 - 1 + SEA_STACK_RADIUS).div_euclid(SEA_STACK_CELL);
         let min_cz = (chunk_origin.z - SEA_STACK_RADIUS).div_euclid(SEA_STACK_CELL);
-        let max_cz = (chunk_origin.z + CHUNK_SIZE as i32 - 1 + SEA_STACK_RADIUS)
-            .div_euclid(SEA_STACK_CELL);
+        let max_cz =
+            (chunk_origin.z + CHUNK_SIZE as i32 - 1 + SEA_STACK_RADIUS).div_euclid(SEA_STACK_CELL);
 
         for cz in min_cz..=max_cz {
             for cx in min_cx..=max_cx {
@@ -1512,10 +1622,9 @@ where
                         let scol = column_at(sx, sz);
                         let sry = scol.terrain_height;
                         if scol.water_level.is_some_and(|wl| sry < wl) && (sry - ry).abs() <= 4 {
-                            let sat_h = (3
-                                + ((sh >> 8) % 5) as i32
-                                + (water_level - sry).max(0) / 2)
-                                .clamp(3, 8);
+                            let sat_h =
+                                (3 + ((sh >> 8) % 5) as i32 + (water_level - sry).max(0) / 2)
+                                    .clamp(3, 8);
                             let sat_r = 1.15 + hash_f32(sh.rotate_right(15)) * 0.65;
                             stamp_reefstone_spire(
                                 &mut writer,
@@ -1586,11 +1695,8 @@ where
                 }
 
                 let along_x = ((h >> 8) & 1) == 0;
-                let (dx, dz, axis_orient): (i32, i32, u8) = if along_x {
-                    (1, 0, 1)
-                } else {
-                    (0, 1, 2)
-                };
+                let (dx, dz, axis_orient): (i32, i32, u8) =
+                    if along_x { (1, 0, 1) } else { (0, 1, 2) };
                 let log_len = 3 + ((h >> 9) % 3) as i32; // 3..=5 blocks
 
                 // Verify flat, dry, full-block ground under every segment so the log never floats
@@ -1630,23 +1736,19 @@ where
                     let sz = rz + dz * i;
                     writer.set_leaf_shaped(sx, ry + 1, sz, log, BlockShape::Full, axis_orient);
 
-                    // Mushrooms sprouting on top of the decaying log (~30% per segment)
+                    // Mushrooms or Moss Carpet sprouting on top of the decaying log
                     let mh = hash_tree_cell(sx * 7, sz * 11, h ^ 0x3058);
-                    if hash_f32(mh) < 0.28 {
+                    let mroll = hash_f32(mh);
+                    if mroll < 0.24 {
                         let mushroom = match (mh >> 8) % 4 {
                             0 => Voxel::FungiAmanita,
                             1 => Voxel::FungiPorcini,
                             2 => Voxel::FungiRussula,
                             _ => Voxel::FungiShiitake,
                         };
-                        writer.set_shaped(
-                            sx,
-                            ry + 2,
-                            sz,
-                            mushroom,
-                            BlockShape::CrossBillboard,
-                            0,
-                        );
+                        writer.set_shaped(sx, ry + 2, sz, mushroom, BlockShape::CrossBillboard, 0);
+                    } else if mroll < 0.54 {
+                        writer.set_shaped(sx, ry + 2, sz, Voxel::MossCarpet, BlockShape::Carpet, 0);
                     }
 
                     // Occasional Forest Moss patch right next to the fallen log
@@ -1724,15 +1826,14 @@ fn stamp_reefstone_spire<F>(
 {
     let cos_a = fin_angle.cos();
     let sin_a = fin_angle.sin();
-    let reach = (base_radius * 1.45 + height as f32 * (lean_x.abs().max(lean_z.abs()))).ceil() as i32
-        + 1;
+    let reach =
+        (base_radius * 1.45 + height as f32 * (lean_x.abs().max(lean_z.abs()))).ceil() as i32 + 1;
 
     for dz in -reach..=reach {
         for dx in -reach..=reach {
             let wx = rx + dx;
             let wz = rz + dz;
-            let col_jitter =
-                (hash_f32(hash_tree_cell(wx * 3, wz * 5, h ^ 0x77AA)) - 0.5) * 0.28;
+            let col_jitter = (hash_f32(hash_tree_cell(wx * 3, wz * 5, h ^ 0x77AA)) - 0.5) * 0.28;
 
             // Find the highest continuous layer `top_dy` this column reaches inside the tapered spire
             let mut top_dy: i32 = -1;
@@ -1846,7 +1947,13 @@ fn stamp_under_palm_beach_grass<F, G>(
             let wx = root_x + dx;
             let wz = root_z + dz;
             let gh = hash_tree_cell(wx, wz, seed ^ 0x9A13_67A5);
-            let prob = if d2 <= 2 { 0.42 } else if d2 <= 5 { 0.24 } else { 0.12 };
+            let prob = if d2 <= 2 {
+                0.42
+            } else if d2 <= 5 {
+                0.24
+            } else {
+                0.12
+            };
             if hash_f32(gh) >= prob {
                 continue;
             }
@@ -1900,7 +2007,7 @@ fn stamp_under_canopy_leaf_litter<F, G>(
             let wx = root_x + dx;
             let wz = root_z + dz;
             let lh = hash_tree_cell(wx, wz, seed ^ 0x1EAF_1177);
-            let prob = if d2 <= 4 { 0.40 } else { 0.20 };
+            let prob = if d2 <= 4 { 0.16 } else { 0.08 };
             if hash_f32(lh) >= prob {
                 continue;
             }
@@ -1956,14 +2063,7 @@ fn archetype_bark(archetype: TreeArchetype) -> Voxel {
     }
 }
 
-fn stamp_tree(
-    w: &mut ChunkWriter,
-    rx: i32,
-    ry: i32,
-    rz: i32,
-    archetype: TreeArchetype,
-    h: u32,
-) {
+fn stamp_tree(w: &mut ChunkWriter, rx: i32, ry: i32, rz: i32, archetype: TreeArchetype, h: u32) {
     // ~35% of eligible trees spawn as slender young variants using Centered Vertical Column log trunks
     let is_slender = ((h >> 28) % 3) == 0;
 
@@ -1999,7 +2099,17 @@ fn stamp_tree(
                 let bz = if ((h >> 11) & 1) == 0 { 1 } else { -1 };
                 stamp_horizontal_branch(w, rx, ry + height - 2, rz, bx, 0, 2, Voxel::OakLog);
                 stamp_horizontal_branch(w, rx, ry + height - 3, rz, 0, bz, 2, Voxel::OakLog);
-                stamp_leaf_cloud(w, rx, ry + height + 1, rz, 3.2, 2.3, 3.2, Voxel::OakLeaves, h);
+                stamp_leaf_cloud(
+                    w,
+                    rx,
+                    ry + height + 1,
+                    rz,
+                    3.2,
+                    2.3,
+                    3.2,
+                    Voxel::OakLeaves,
+                    h,
+                );
                 stamp_leaf_cloud(
                     w,
                     rx + bx * 2,
@@ -2036,7 +2146,17 @@ fn stamp_tree(
             }
             let bz = if ((h >> 11) & 1) == 0 { 1 } else { -1 };
             stamp_horizontal_branch(w, rx, ry + height - 2, rz, 0, bz, 1, Voxel::BirchLog);
-            stamp_leaf_cloud(w, rx, ry + height - 1, rz, 2.6, 2.4, 2.6, Voxel::BirchLeaves, h);
+            stamp_leaf_cloud(
+                w,
+                rx,
+                ry + height - 1,
+                rz,
+                2.6,
+                2.4,
+                2.6,
+                Voxel::BirchLeaves,
+                h,
+            );
             stamp_leaf_cloud(
                 w,
                 rx,
@@ -2067,8 +2187,28 @@ fn stamp_tree(
             stamp_horizontal_branch(w, rx, ry + height - 2, rz, dx, 0, 2, Voxel::MapleLog);
             stamp_horizontal_branch(w, rx, ry + height - 3, rz, 0, -dz, 2, Voxel::MapleLog);
             stamp_leaf_cloud(w, rx, ry + height + 1, rz, 3.0, 2.2, 3.0, leaves, h);
-            stamp_leaf_cloud(w, rx + dx * 2, ry + height - 1, rz + dz, 2.5, 1.7, 2.5, leaves, h ^ 0x222);
-            stamp_leaf_cloud(w, rx - dx, ry + height - 1, rz - dz * 2, 2.4, 1.7, 2.4, leaves, h ^ 0x555);
+            stamp_leaf_cloud(
+                w,
+                rx + dx * 2,
+                ry + height - 1,
+                rz + dz,
+                2.5,
+                1.7,
+                2.5,
+                leaves,
+                h ^ 0x222,
+            );
+            stamp_leaf_cloud(
+                w,
+                rx - dx,
+                ry + height - 1,
+                rz - dz * 2,
+                2.4,
+                1.7,
+                2.4,
+                leaves,
+                h ^ 0x555,
+            );
         }
         TreeArchetype::Cherry => {
             let height = 6 + ((h >> 16) % 3) as i32;
@@ -2084,7 +2224,14 @@ fn stamp_tree(
                     // Slender facing-stair curve using all-bark CherryWood
                     w.set_log_shaped(tx, ry + dy, rz, Voxel::CherryWood, BlockShape::Stair, up_st);
                     tx += lean_x;
-                    w.set_log_shaped(tx, ry + dy, rz, Voxel::CherryWood, BlockShape::Stair, inv_st);
+                    w.set_log_shaped(
+                        tx,
+                        ry + dy,
+                        rz,
+                        Voxel::CherryWood,
+                        BlockShape::Stair,
+                        inv_st,
+                    );
                 } else {
                     w.set_log(tx, ry + dy, rz, Voxel::CherryLog);
                 }
@@ -2092,7 +2239,17 @@ fn stamp_tree(
             // Horizontal spreading cherry boughs
             stamp_horizontal_branch(w, tx, ry + height - 1, rz, -lean_x, 0, 2, Voxel::CherryLog);
             stamp_horizontal_branch(w, tx, ry + height - 2, rz, 0, lean_z, 2, Voxel::CherryLog);
-            stamp_leaf_cloud(w, tx + lean_x, ry + height + 1, rz, 3.4, 1.9, 3.2, Voxel::CherryLeaves, h);
+            stamp_leaf_cloud(
+                w,
+                tx + lean_x,
+                ry + height + 1,
+                rz,
+                3.4,
+                1.9,
+                3.2,
+                Voxel::CherryLeaves,
+                h,
+            );
             stamp_leaf_cloud(
                 w,
                 tx - lean_x * 2,
@@ -2113,7 +2270,18 @@ fn stamp_tree(
                 stamp_buttress_roots(w, rx, ry, rz, Voxel::PineWood, h);
                 BlockShape::Full
             };
-            stamp_conifer(w, rx, ry, rz, height, 3, trunk_shape, Voxel::PineLog, Voxel::PineLeaves, h);
+            stamp_conifer(
+                w,
+                rx,
+                ry,
+                rz,
+                height,
+                3,
+                trunk_shape,
+                Voxel::PineLog,
+                Voxel::PineLeaves,
+                h,
+            );
         }
         TreeArchetype::Yew => {
             let height = 8 + ((h >> 16) % 4) as i32;
@@ -2122,7 +2290,18 @@ fn stamp_tree(
             } else {
                 BlockShape::Full
             };
-            stamp_conifer(w, rx, ry, rz, height, 3, trunk_shape, Voxel::YewLog, Voxel::YewLeaves, h);
+            stamp_conifer(
+                w,
+                rx,
+                ry,
+                rz,
+                height,
+                3,
+                trunk_shape,
+                Voxel::YewLog,
+                Voxel::YewLeaves,
+                h,
+            );
         }
         TreeArchetype::Redwood => {
             let height = 15 + ((h >> 16) % 5) as i32;
@@ -2157,7 +2336,14 @@ fn stamp_tree(
                     w.set_log_shaped(tx, ry + dy, tz, Voxel::AcaciaWood, BlockShape::Stair, up_st);
                     tx += lean_x;
                     tz += lean_z;
-                    w.set_log_shaped(tx, ry + dy, tz, Voxel::AcaciaWood, BlockShape::Stair, inv_st);
+                    w.set_log_shaped(
+                        tx,
+                        ry + dy,
+                        tz,
+                        Voxel::AcaciaWood,
+                        BlockShape::Stair,
+                        inv_st,
+                    );
                 } else {
                     w.set_log(tx, ry + dy, tz, Voxel::AcaciaLog);
                 }
@@ -2165,7 +2351,16 @@ fn stamp_tree(
             let cy = ry + height;
             stamp_acacia_umbrella(w, tx, cy, tz, 3.6, Voxel::AcaciaLeaves, h);
             // Horizontal fork branch attached directly to the upper bent trunk `(tx, tz)`
-            stamp_horizontal_branch(w, tx, ry + height - 1, tz, -lean_x, -lean_z, 2, Voxel::AcaciaLog);
+            stamp_horizontal_branch(
+                w,
+                tx,
+                ry + height - 1,
+                tz,
+                -lean_x,
+                -lean_z,
+                2,
+                Voxel::AcaciaLog,
+            );
             stamp_acacia_umbrella(
                 w,
                 tx - lean_x * 2,
@@ -2321,9 +2516,39 @@ fn stamp_tree(
             let bz = if ((h >> 11) & 1) == 0 { 1 } else { -1 };
             stamp_horizontal_branch(w, rx, ry + height - 2, rz, bx, 0, 2, Voxel::MahoganyLog);
             stamp_horizontal_branch(w, rx, ry + height - 3, rz, 0, bz, 2, Voxel::MahoganyLog);
-            stamp_leaf_cloud(w, rx, ry + height + 1, rz, 3.8, 2.2, 3.8, Voxel::MahoganyLeaves, h);
-            stamp_leaf_cloud(w, rx + bx * 2, ry + height - 1, rz, 2.8, 1.8, 2.8, Voxel::MahoganyLeaves, h ^ 0x101);
-            stamp_leaf_cloud(w, rx, ry + height - 1, rz + bz * 2, 2.8, 1.8, 2.8, Voxel::MahoganyLeaves, h ^ 0x202);
+            stamp_leaf_cloud(
+                w,
+                rx,
+                ry + height + 1,
+                rz,
+                3.8,
+                2.2,
+                3.8,
+                Voxel::MahoganyLeaves,
+                h,
+            );
+            stamp_leaf_cloud(
+                w,
+                rx + bx * 2,
+                ry + height - 1,
+                rz,
+                2.8,
+                1.8,
+                2.8,
+                Voxel::MahoganyLeaves,
+                h ^ 0x101,
+            );
+            stamp_leaf_cloud(
+                w,
+                rx,
+                ry + height - 1,
+                rz + bz * 2,
+                2.8,
+                1.8,
+                2.8,
+                Voxel::MahoganyLeaves,
+                h ^ 0x202,
+            );
 
             // Lateral Cocoa Pods attached directly to the Mahogany trunk
             const SIDES: [(i32, i32, u8); 4] = [(0, 1, 0), (-1, 0, 1), (0, -1, 2), (1, 0, 3)];
@@ -2372,14 +2597,45 @@ fn stamp_tree(
         TreeArchetype::Mangrove => {
             let height = 7 + ((h >> 16) % 3) as i32;
             for &(dx, dz, orient) in &[(-1, 0, 0u8), (1, 0, 1), (0, -1, 2), (0, 1, 3)] {
-                w.set_log_shaped(rx + dx, ry, rz + dz, Voxel::MangroveLog, BlockShape::Column, 0);
-                w.set_log_shaped(rx + dx, ry + 1, rz + dz, Voxel::MangroveLog, BlockShape::Column, 0);
-                w.set_log_shaped(rx + dx, ry + 2, rz + dz, Voxel::MangroveWood, BlockShape::Stair, orient);
+                w.set_log_shaped(
+                    rx + dx,
+                    ry,
+                    rz + dz,
+                    Voxel::MangroveLog,
+                    BlockShape::Column,
+                    0,
+                );
+                w.set_log_shaped(
+                    rx + dx,
+                    ry + 1,
+                    rz + dz,
+                    Voxel::MangroveLog,
+                    BlockShape::Column,
+                    0,
+                );
+                w.set_log_shaped(
+                    rx + dx,
+                    ry + 2,
+                    rz + dz,
+                    Voxel::MangroveWood,
+                    BlockShape::Stair,
+                    orient,
+                );
             }
             for dy in 2..height {
                 w.set_log(rx, ry + dy, rz, Voxel::MangroveLog);
             }
-            stamp_leaf_cloud(w, rx, ry + height + 1, rz, 3.4, 2.2, 3.4, Voxel::MangroveLeaves, h);
+            stamp_leaf_cloud(
+                w,
+                rx,
+                ry + height + 1,
+                rz,
+                3.4,
+                2.2,
+                3.4,
+                Voxel::MangroveLeaves,
+                h,
+            );
         }
         TreeArchetype::Charred => {
             let height = 4 + ((h >> 16) % 4) as i32;
@@ -2393,7 +2649,16 @@ fn stamp_tree(
             }
             if height >= 5 {
                 let bx = if ((h >> 10) & 1) == 0 { 1 } else { -1 };
-                stamp_horizontal_branch(w, rx, ry + height - 2, rz, bx, 0, 1, Voxel::TreeCharredLog);
+                stamp_horizontal_branch(
+                    w,
+                    rx,
+                    ry + height - 2,
+                    rz,
+                    bx,
+                    0,
+                    1,
+                    Voxel::TreeCharredLog,
+                );
             }
         }
         TreeArchetype::GiantMushroom(cap_voxel) => {
@@ -2408,28 +2673,37 @@ fn stamp_giant_mushroom(w: &mut ChunkWriter, rx: i32, ry: i32, rz: i32, cap: Vox
     let is_giant = ((h >> 22) % 10) < 3; // 30% rare giant, 70% small/medium
 
     if !is_giant {
-        // Small sculpted mushroom matching the exact tiered 3x3 silhouette:
-        // 1..=2 block stem (Column or Full), 3x3 Full cap base, 4 cardinal Slab(0) + 1 Full center crown
+        // Small sculpted mushroom matching the plus-shaped silhouette:
+        // 1..=2 block stem (Column or Full), 5-block plus-shaped cap base,
+        // 4 cardinal Slab(0) + 1 Full center crown.
         let stem_h = 1 + ((h >> 16) & 1) as i32; // 1..=2 blocks
         let stem_shape = if ((h >> 17) % 5) < 3 {
             BlockShape::Column
         } else {
             BlockShape::Full
         };
+
         for dy in 0..stem_h {
             w.set_log_shaped(rx, ry + dy, rz, Voxel::FungiStem, stem_shape, 0);
         }
 
         let cap_y = ry + stem_h;
-        for dz in -1..=1 {
-            for dx in -1..=1 {
-                w.set_leaf(rx + dx, cap_y, rz + dz, cap);
-            }
-        }
+
+        // Plus-shaped cap base (5 blocks)
+        w.set_leaf(rx, cap_y, rz, cap);
+        w.set_leaf(rx + 1, cap_y, rz, cap);
+        w.set_leaf(rx - 1, cap_y, rz, cap);
+        w.set_leaf(rx, cap_y, rz + 1, cap);
+        w.set_leaf(rx, cap_y, rz - 1, cap);
+
+        // Upper crown
         w.set_leaf(rx, cap_y + 1, rz, cap);
+
+        // Cardinal slabs
         for &(dx, dz) in &[(1, 0), (-1, 0), (0, 1), (0, -1)] {
             w.set_leaf_shaped(rx + dx, cap_y + 1, rz + dz, cap, BlockShape::Slab, 0);
         }
+
         return;
     }
 
@@ -2573,7 +2847,14 @@ fn stamp_giant_mushroom(w: &mut ChunkWriter, rx: i32, ry: i32, rz: i32, cap: Vox
                     } else {
                         3
                     };
-                    w.set_leaf_shaped(tx + dx, top_y, tz + dz, cap, BlockShape::Stair, inward_orient);
+                    w.set_leaf_shaped(
+                        tx + dx,
+                        top_y,
+                        tz + dz,
+                        cap,
+                        BlockShape::Stair,
+                        inward_orient,
+                    );
                 }
             }
         }
@@ -2719,7 +3000,14 @@ fn stamp_conifer(
     w.set_leaf(rx, ry + height + 1, rz, leaves);
     w.set_leaf_shaped(rx, ry + height + 2, rz, leaves, BlockShape::Slab, 0);
     for &(dx, dz, orient) in &[(1, 0, 1u8), (-1, 0, 0), (0, 1, 3), (0, -1, 2)] {
-        w.set_leaf_shaped(rx + dx, ry + height, rz + dz, leaves, BlockShape::Stair, orient);
+        w.set_leaf_shaped(
+            rx + dx,
+            ry + height,
+            rz + dz,
+            leaves,
+            BlockShape::Stair,
+            orient,
+        );
     }
 
     let canopy_h = (height - canopy_start).max(1);
@@ -2867,18 +3155,83 @@ where
             }
 
             let (trunk_h, canopy_r, canopy_h, log_v, leaf_v, is_conifer) = match archetype {
-                TreeArchetype::Oak => (6.5, 3.0, 4.0, Voxel::OakWood, Some(Voxel::OakLeaves), false),
-                TreeArchetype::Birch => (7.5, 2.5, 4.2, Voxel::BirchWood, Some(Voxel::BirchLeaves), false),
+                TreeArchetype::Oak => {
+                    (6.5, 3.0, 4.0, Voxel::OakWood, Some(Voxel::OakLeaves), false)
+                }
+                TreeArchetype::Birch => (
+                    7.5,
+                    2.5,
+                    4.2,
+                    Voxel::BirchWood,
+                    Some(Voxel::BirchLeaves),
+                    false,
+                ),
                 TreeArchetype::Maple(l) => (7.0, 3.2, 4.0, Voxel::MapleWood, Some(l), false),
-                TreeArchetype::Cherry => (6.5, 3.4, 3.5, Voxel::CherryWood, Some(Voxel::CherryLeaves), false),
-                TreeArchetype::Pine => (11.0, 3.0, 8.0, Voxel::PineWood, Some(Voxel::PineLeaves), true),
+                TreeArchetype::Cherry => (
+                    6.5,
+                    3.4,
+                    3.5,
+                    Voxel::CherryWood,
+                    Some(Voxel::CherryLeaves),
+                    false,
+                ),
+                TreeArchetype::Pine => (
+                    11.0,
+                    3.0,
+                    8.0,
+                    Voxel::PineWood,
+                    Some(Voxel::PineLeaves),
+                    true,
+                ),
                 TreeArchetype::Yew => (9.0, 2.6, 6.0, Voxel::YewWood, Some(Voxel::YewLeaves), true),
-                TreeArchetype::Redwood => (16.0, 3.6, 11.5, Voxel::RedwoodWood, Some(Voxel::RedwoodLeaves), true),
-                TreeArchetype::Acacia => (6.5, 3.6, 2.2, Voxel::AcaciaWood, Some(Voxel::AcaciaLeaves), false),
-                TreeArchetype::Palm => (6.5, 2.8, 2.0, Voxel::PalmWood, Some(Voxel::PalmLeaves), false),
-                TreeArchetype::Mahogany => (10.5, 3.8, 4.5, Voxel::MahoganyWood, Some(Voxel::MahoganyLeaves), false),
-                TreeArchetype::Willow => (7.0, 3.8, 5.0, Voxel::WillowWood, Some(Voxel::WillowLeaves), false),
-                TreeArchetype::Mangrove => (7.0, 3.4, 4.0, Voxel::MangroveWood, Some(Voxel::MangroveLeaves), false),
+                TreeArchetype::Redwood => (
+                    16.0,
+                    3.6,
+                    11.5,
+                    Voxel::RedwoodWood,
+                    Some(Voxel::RedwoodLeaves),
+                    true,
+                ),
+                TreeArchetype::Acacia => (
+                    6.5,
+                    3.6,
+                    2.2,
+                    Voxel::AcaciaWood,
+                    Some(Voxel::AcaciaLeaves),
+                    false,
+                ),
+                TreeArchetype::Palm => (
+                    6.5,
+                    2.8,
+                    2.0,
+                    Voxel::PalmWood,
+                    Some(Voxel::PalmLeaves),
+                    false,
+                ),
+                TreeArchetype::Mahogany => (
+                    10.5,
+                    3.8,
+                    4.5,
+                    Voxel::MahoganyWood,
+                    Some(Voxel::MahoganyLeaves),
+                    false,
+                ),
+                TreeArchetype::Willow => (
+                    7.0,
+                    3.8,
+                    5.0,
+                    Voxel::WillowWood,
+                    Some(Voxel::WillowLeaves),
+                    false,
+                ),
+                TreeArchetype::Mangrove => (
+                    7.0,
+                    3.4,
+                    4.0,
+                    Voxel::MangroveWood,
+                    Some(Voxel::MangroveLeaves),
+                    false,
+                ),
                 TreeArchetype::Charred => (5.0, 0.0, 0.0, Voxel::TreeCharredBark, None, false),
                 TreeArchetype::GiantMushroom(cap) => {
                     if ((h >> 22) % 10) >= 3 {

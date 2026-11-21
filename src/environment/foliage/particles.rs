@@ -149,37 +149,73 @@ pub fn update_wind_blade_particles(
 
 const MAX_FALLING_LEAVES: usize = 768;
 const LEAF_ATLAS_W: usize = 64;
-const LEAF_ATLAS_H: usize = 32;
+const LEAF_ATLAS_H: usize = 48;
 const LEAF_CELL: usize = 8;
 
-const LEAF_PARTICLE_FILES: [&str; 21] = [
-    // 0..3: Cherry (colored pink)
-    "assets/textures/particles/cherry_leaf.png",
-    "assets/textures/particles/cherry_leaf1.png",
-    "assets/textures/particles/cherry_leaf2.png",
-    // 3..9: Common deciduous (grayscale -> biome foliage tinted)
-    "assets/textures/particles/common_leaf.png",
-    "assets/textures/particles/common_leaf1.png",
-    "assets/textures/particles/common_leaf2.png",
-    "assets/textures/particles/common_leaf3.png",
-    "assets/textures/particles/common_leaf4.png",
-    "assets/textures/particles/common_leaf5.png",
-    // 9..12: Conifer (colored evergreen)
-    "assets/textures/particles/conifer_leaf.png",
-    "assets/textures/particles/conifer_leaf1.png",
-    "assets/textures/particles/conifer_leaf2.png",
-    // 12..15: Maple Orange (colored)
-    "assets/textures/particles/maple_leaf_orange.png",
-    "assets/textures/particles/maple_leaf_orange1.png",
-    "assets/textures/particles/maple_leaf_orange2.png",
-    // 15..18: Maple Red (colored)
-    "assets/textures/particles/maple_leaf_red.png",
-    "assets/textures/particles/maple_leaf_red1.png",
-    "assets/textures/particles/maple_leaf_red2.png",
-    // 18..21: Maple Yellow (colored)
-    "assets/textures/particles/maple_leaf_yellow.png",
-    "assets/textures/particles/maple_leaf_yellow1.png",
-    "assets/textures/particles/maple_leaf_yellow2.png",
+const LEAF_PARTICLE_FILES: [&str; 48] = [
+    // 0..3: Cherry (pre-colored pink, no tint)
+    "assets/textures/particles/leaf_cherry.png",
+    "assets/textures/particles/leaf_cherry1.png",
+    "assets/textures/particles/leaf_cherry2.png",
+    // 3..9: Oak (grayscale -> biome tinted)
+    "assets/textures/particles/leaf_oak.png",
+    "assets/textures/particles/leaf_oak1.png",
+    "assets/textures/particles/leaf_oak2.png",
+    "assets/textures/particles/leaf_oak3.png",
+    "assets/textures/particles/leaf_oak4.png",
+    "assets/textures/particles/leaf_oak5.png",
+    // 9..12: Pine (warm grayscale -> biome tinted)
+    "assets/textures/particles/leaf_pine.png",
+    "assets/textures/particles/leaf_pine1.png",
+    "assets/textures/particles/leaf_pine2.png",
+    // 12..15: Maple Orange (pre-colored, no tint)
+    "assets/textures/particles/leaf_maple_orange.png",
+    "assets/textures/particles/leaf_maple_orange1.png",
+    "assets/textures/particles/leaf_maple_orange2.png",
+    // 15..18: Maple Red (pre-colored, no tint)
+    "assets/textures/particles/leaf_maple_red.png",
+    "assets/textures/particles/leaf_maple_red1.png",
+    "assets/textures/particles/leaf_maple_red2.png",
+    // 18..21: Maple Yellow (pre-colored, no tint)
+    "assets/textures/particles/leaf_maple_yellow.png",
+    "assets/textures/particles/leaf_maple_yellow1.png",
+    "assets/textures/particles/leaf_maple_yellow2.png",
+    // 21..24: Acacia (grayscale -> biome tinted)
+    "assets/textures/particles/leaf_acacia.png",
+    "assets/textures/particles/leaf_acacia1.png",
+    "assets/textures/particles/leaf_acacia2.png",
+    // 24..27: Bamboo (pre-colored green, no tint)
+    "assets/textures/particles/leaf_bamboo.png",
+    "assets/textures/particles/leaf_bamboo1.png",
+    "assets/textures/particles/leaf_bamboo2.png",
+    // 27..30: Birch (grayscale -> biome tinted)
+    "assets/textures/particles/leaf_birch.png",
+    "assets/textures/particles/leaf_birch1.png",
+    "assets/textures/particles/leaf_birch2.png",
+    // 30..33: Mahogany (grayscale -> biome tinted)
+    "assets/textures/particles/leaf_mahogany.png",
+    "assets/textures/particles/leaf_mahogany1.png",
+    "assets/textures/particles/leaf_mahogany2.png",
+    // 33..36: Mangrove (grayscale -> biome tinted)
+    "assets/textures/particles/leaf_mangrove.png",
+    "assets/textures/particles/leaf_mangrove1.png",
+    "assets/textures/particles/leaf_mangrove2.png",
+    // 36..39: Palm (grayscale -> biome tinted)
+    "assets/textures/particles/leaf_palm.png",
+    "assets/textures/particles/leaf_palm1.png",
+    "assets/textures/particles/leaf_palm2.png",
+    // 39..42: Redwood (pre-colored evergreen, no tint)
+    "assets/textures/particles/leaf_redwood.png",
+    "assets/textures/particles/leaf_redwood1.png",
+    "assets/textures/particles/leaf_redwood2.png",
+    // 42..45: Willow (grayscale -> biome tinted)
+    "assets/textures/particles/leaf_willow.png",
+    "assets/textures/particles/leaf_willow1.png",
+    "assets/textures/particles/leaf_willow2.png",
+    // 45..48: Yew (dark grayscale -> biome tinted)
+    "assets/textures/particles/leaf_yew.png",
+    "assets/textures/particles/leaf_yew1.png",
+    "assets/textures/particles/leaf_yew2.png",
 ];
 
 #[derive(Component)]
@@ -230,7 +266,7 @@ impl Default for FallingLeaf {
 pub struct FallingLeafPool {
     leaves: Vec<FallingLeaf>,
     cursor: usize,
-    uv_rects: [[f32; 4]; 21],
+    uv_rects: [[f32; 4]; 48],
     mesh_handle: Handle<Mesh>,
     rng: u64,
 }
@@ -260,7 +296,7 @@ pub fn setup_falling_leaf_particles(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let mut atlas_bytes = vec![0u8; LEAF_ATLAS_W * LEAF_ATLAS_H * 4];
-    let mut uv_rects = [[0.0f32; 4]; 21];
+    let mut uv_rects = [[0.0f32; 4]; 48];
 
     for (idx, path) in LEAF_PARTICLE_FILES.iter().enumerate() {
         let col = idx % (LEAF_ATLAS_W / LEAF_CELL);
@@ -349,15 +385,27 @@ pub fn setup_falling_leaf_particles(
 }
 
 /// Maps a canopy leaf voxel to its `(atlas_index_start, count, needs_biome_tint)` tuple.
+/// Pre-colored species (no tint): Cherry, Redwood, Bamboo, MapleOrange, MapleRed, MapleYellow.
+/// All other living tree leaf species are grayscale and receive biome foliage tint.
 #[inline]
 fn leaf_particle_spec(voxel: Voxel) -> (usize, usize, bool) {
     match voxel {
         Voxel::CherryLeaves => (0, 3, false),
-        Voxel::PineLeaves | Voxel::YewLeaves | Voxel::RedwoodLeaves => (9, 3, true),
+        Voxel::OakLeaves => (3, 6, true),
+        Voxel::PineLeaves => (9, 3, true),
         Voxel::MapleLeavesOrange => (12, 3, false),
         Voxel::MapleLeavesRed => (15, 3, false),
         Voxel::MapleLeavesYellow => (18, 3, false),
-        _ => (3, 6, true), // Grayscale common_leaf{,1..5} -> biome foliage tinted
+        Voxel::AcaciaLeaves => (21, 3, true),
+        Voxel::BambooLeaves => (24, 3, false),
+        Voxel::BirchLeaves => (27, 3, true),
+        Voxel::MahoganyLeaves => (30, 3, true),
+        Voxel::MangroveLeaves => (33, 3, true),
+        Voxel::PalmLeaves => (36, 3, true),
+        Voxel::RedwoodLeaves => (39, 3, false),
+        Voxel::WillowLeaves => (42, 3, true),
+        Voxel::YewLeaves => (45, 3, true),
+        _ => (3, 6, true),
     }
 }
 
@@ -408,7 +456,7 @@ pub fn update_falling_leaf_particles(
         let Some(voxel) = voxel_world.get_voxel(pos) else {
             continue;
         };
-        if !voxel.is_leaves() {
+        if !voxel.is_leaves() && voxel != Voxel::BambooLeaves {
             continue;
         }
         // Only shed from exposed undersides (Air directly below)
@@ -433,12 +481,8 @@ pub fn update_falling_leaf_particles(
         let uv_rect = pool.uv_rects[variant];
 
         let color = if needs_tint {
-            if voxel == Voxel::RedwoodLeaves {
-                [0.35, 0.72, 0.42]
-            } else {
-                let t = voxel.tint_color_at(pos);
-                [t[0], t[1], t[2]]
-            }
+            let t = voxel.tint_color_at(pos);
+            [t[0], t[1], t[2]]
         } else {
             [1.0, 1.0, 1.0]
         };

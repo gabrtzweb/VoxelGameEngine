@@ -1,5 +1,5 @@
 /// Static registry metadata table: (ID, Label, Texture name) for all voxel variants.
-pub(crate) static VOXEL_DATA: [(&str, &str, &str); 699] = [
+pub(crate) static VOXEL_DATA: [(&str, &str, &str); 700] = [
     ("air", "Air", ""),
     ("occupied", "Occupied", ""),
     ("water_occupied", "Waterlogged Occupied", ""),
@@ -700,4 +700,5 @@ pub(crate) static VOXEL_DATA: [(&str, &str, &str); 699] = [
     ("emit_lamp_warm_off", "Warm Lamp", "emit_lamp_warm_side"),
     ("deco_campfire", "Campfire", "deco_campfire"),
     ("deco_campfire_unlit", "Campfire", "deco_campfire"),
+    ("moss_carpet", "Moss Carpet", "soil_moss_forest"),
 ];

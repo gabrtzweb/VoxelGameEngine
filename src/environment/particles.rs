@@ -24,7 +24,7 @@ use crate::{
 
 const MAX_WORLD_PARTICLES: usize = 1024;
 const ATLAS_W: usize = 128;
-const ATLAS_H: usize = 64;
+const ATLAS_H: usize = 96;
 const ATLAS_CELL: usize = 16;
 
 const SPRITE_BUBBLE_START: usize = 0;
@@ -34,17 +34,20 @@ const SPRITE_FIREFLY_START: usize = 12;
 const SPRITE_POLLEN_START: usize = 15;
 const SPRITE_SMOKE_START: usize = 18;
 const SPRITE_SPLASH_START: usize = 24;
+const SPRITE_DUST_CLOUD_START: usize = 27;
+const SPRITE_SMOKE_SMALL_START: usize = 33;
+const SPRITE_STEAM_START: usize = 39;
 
-const WORLD_PARTICLE_FILES: [&str; 27] = [
+const WORLD_PARTICLE_FILES: [&str; 42] = [
     // 0..3: Bubble (colored, 8x8)
-    "assets/textures/particles/bubble.png",
-    "assets/textures/particles/bubble1.png",
-    "assets/textures/particles/bubble2.png",
+    "assets/textures/particles/water_bubble.png",
+    "assets/textures/particles/water_bubble1.png",
+    "assets/textures/particles/water_bubble2.png",
     // 3..6: Bubble pop animation (colored, 16x16)
-    "assets/textures/particles/bubble_pop.png",
-    "assets/textures/particles/bubble_pop1.png",
-    "assets/textures/particles/bubble_pop2.png",
-    // 6..12: Footstep & landing dust animation (grayscale, 8x8)
+    "assets/textures/particles/water_bubble_pop.png",
+    "assets/textures/particles/water_bubble_pop1.png",
+    "assets/textures/particles/water_bubble_pop2.png",
+    // 6..12: Footstep & landing dust gust animation (grayscale, 8x8)
     "assets/textures/particles/dust_gust.png",
     "assets/textures/particles/dust_gust1.png",
     "assets/textures/particles/dust_gust2.png",
@@ -52,24 +55,42 @@ const WORLD_PARTICLE_FILES: [&str; 27] = [
     "assets/textures/particles/dust_gust4.png",
     "assets/textures/particles/dust_gust5.png",
     // 12..15: Firefly glow (blinking emissive tint, 8x8)
-    "assets/textures/particles/firefly.png",
-    "assets/textures/particles/firefly1.png",
-    "assets/textures/particles/firefly2.png",
+    "assets/textures/particles/ambience_firefly.png",
+    "assets/textures/particles/ambience_firefly1.png",
+    "assets/textures/particles/ambience_firefly2.png",
     // 15..18: Ambient pollen specks (colored, 8x8)
-    "assets/textures/particles/pollen.png",
-    "assets/textures/particles/pollen1.png",
-    "assets/textures/particles/pollen2.png",
-    // 18..24: Campfire smoke puffs (grayscale, 16x16)
-    "assets/textures/particles/smoke.png",
-    "assets/textures/particles/smoke1.png",
-    "assets/textures/particles/smoke2.png",
-    "assets/textures/particles/smoke3.png",
-    "assets/textures/particles/smoke4.png",
-    "assets/textures/particles/smoke5.png",
+    "assets/textures/particles/ambience_pollen.png",
+    "assets/textures/particles/ambience_pollen1.png",
+    "assets/textures/particles/ambience_pollen2.png",
+    // 18..24: Campfire large smoke puffs (grayscale, 16x16)
+    "assets/textures/particles/smoke_large.png",
+    "assets/textures/particles/smoke_large1.png",
+    "assets/textures/particles/smoke_large2.png",
+    "assets/textures/particles/smoke_large3.png",
+    "assets/textures/particles/smoke_large4.png",
+    "assets/textures/particles/smoke_large5.png",
     // 24..27: Water entry & wading splash droplets (colored, 8x8)
-    "assets/textures/particles/splash.png",
-    "assets/textures/particles/splash1.png",
-    "assets/textures/particles/splash2.png",
+    "assets/textures/particles/water_splash.png",
+    "assets/textures/particles/water_splash1.png",
+    "assets/textures/particles/water_splash2.png",
+    // 27..33: Footstep & landing dust cloud animation (grayscale, 16x16)
+    "assets/textures/particles/dust_cloud.png",
+    "assets/textures/particles/dust_cloud1.png",
+    "assets/textures/particles/dust_cloud2.png",
+    "assets/textures/particles/dust_cloud3.png",
+    "assets/textures/particles/dust_cloud4.png",
+    "assets/textures/particles/dust_cloud5.png",
+    // 33..39: Campfire small smoke wisps (grayscale, 8x8)
+    "assets/textures/particles/smoke_small.png",
+    "assets/textures/particles/smoke_small1.png",
+    "assets/textures/particles/smoke_small2.png",
+    "assets/textures/particles/smoke_small3.png",
+    "assets/textures/particles/smoke_small4.png",
+    "assets/textures/particles/smoke_small5.png",
+    // 39..42: Underwater hydrothermal / magma steam wisps (8x8)
+    "assets/textures/particles/smoke_steam.png",
+    "assets/textures/particles/smoke_steam1.png",
+    "assets/textures/particles/smoke_steam2.png",
 ];
 
 /// Event-like burst requests pushed by gameplay/audio systems and drained each frame.
@@ -174,7 +195,7 @@ impl Default for WorldParticle {
 pub struct WorldParticlePool {
     particles: Vec<WorldParticle>,
     cursor: usize,
-    uv_rects: [[f32; 4]; 27],
+    uv_rects: [[f32; 4]; 42],
     mesh_handle: Handle<Mesh>,
     last_cam_pos: Vec3,
     has_last_cam: bool,
@@ -220,7 +241,7 @@ pub fn setup_world_particles(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let mut atlas_bytes = vec![0u8; ATLAS_W * ATLAS_H * 4];
-    let mut uv_rects = [[0.0f32; 4]; 27];
+    let mut uv_rects = [[0.0f32; 4]; 42];
     let cols = ATLAS_W / ATLAS_CELL;
 
     for (idx, path) in WORLD_PARTICLE_FILES.iter().enumerate() {
@@ -345,6 +366,43 @@ fn spawn_bubble_at(pool: &mut WorldParticlePool, pos: IVec3, speed_mult: f32) {
 }
 
 #[inline]
+fn spawn_steam_at(pool: &mut WorldParticlePool, pos: IVec3) {
+    let variant = SPRITE_STEAM_START + (pool.next_u32() as usize % 3);
+    let spawn_pos = Vec3::new(
+        pos.x as f32 + 0.16 + pool.next_f32() * 0.68,
+        pos.y as f32 + 1.06,
+        pos.z as f32 + 0.16 + pool.next_f32() * 0.68,
+    );
+    let vx = (pool.next_f32() - 0.5) * 0.18;
+    let vz = (pool.next_f32() - 0.5) * 0.18;
+    let vy = 0.72 + pool.next_f32() * 0.45;
+    let size = 0.36 + pool.next_f32() * 0.22;
+    let max_age = 2.6 + pool.next_f32() * 1.8;
+    let rot = pool.next_f32() * TAU;
+    let spin = (pool.next_f32() - 0.5) * 0.7;
+    let phase = pool.next_f32() * TAU;
+    let freq = 1.6 + pool.next_f32() * 0.9;
+
+    pool.spawn(WorldParticle {
+        kind: WorldParticleKind::CampfireSmoke,
+        position: spawn_pos,
+        velocity: Vec3::new(vx, vy, vz),
+        size,
+        grow_rate: 0.18,
+        rotation: rot,
+        spin,
+        color: [0.88, 0.93, 0.96],
+        base_alpha: 0.58,
+        phase,
+        freq,
+        base_sprite_idx: variant,
+        age: 0.0,
+        max_age,
+        alive: true,
+    });
+}
+
+#[inline]
 fn smooth_in_out_alpha(age: f32, max_age: f32, fade_in: f32, fade_out: f32) -> f32 {
     if age < fade_in && fade_in > 0.0 {
         let t = (age / fade_in).clamp(0.0, 1.0);
@@ -423,15 +481,30 @@ pub fn update_world_particles(
                 color,
                 spread,
             } => {
+                let is_landing = count >= 5 || spread >= 0.28;
+                let cloud_prob = if is_landing { 0.75 } else { 0.45 };
                 for _ in 0..count {
+                    let use_cloud = pool.next_f32() < cloud_prob;
                     let jx = (pool.next_f32() - 0.5) * spread * 2.0;
                     let jz = (pool.next_f32() - 0.5) * spread * 2.0;
                     let jy = 0.05 + pool.next_f32() * 0.08;
                     let vx = jx * 1.4 + (pool.next_f32() - 0.5) * 0.45 + wind_vec.x * 0.08;
                     let vz = jz * 1.4 + (pool.next_f32() - 0.5) * 0.45 + wind_vec.z * 0.08;
-                    let vy = 0.35 + pool.next_f32() * 0.55;
-                    let max_age = 0.45 + pool.next_f32() * 0.22;
-                    let size = 0.42 + pool.next_f32() * 0.20;
+                    let vy = if use_cloud {
+                        0.28 + pool.next_f32() * 0.42
+                    } else {
+                        0.35 + pool.next_f32() * 0.55
+                    };
+                    let max_age = if use_cloud {
+                        0.55 + pool.next_f32() * 0.28
+                    } else {
+                        0.45 + pool.next_f32() * 0.22
+                    };
+                    let size = if use_cloud {
+                        0.56 + pool.next_f32() * 0.26
+                    } else {
+                        0.42 + pool.next_f32() * 0.20
+                    };
                     let rot = pool.next_f32() * TAU;
                     let spin = (pool.next_f32() - 0.5) * 2.5;
                     let shade = 0.90 + pool.next_f32() * 0.16;
@@ -441,14 +514,18 @@ pub fn update_world_particles(
                         position: position + Vec3::new(jx, jy, jz),
                         velocity: Vec3::new(vx, vy, vz),
                         size,
-                        grow_rate: 0.35,
+                        grow_rate: if use_cloud { 0.48 } else { 0.35 },
                         rotation: rot,
                         spin,
                         color: [color[0] * shade, color[1] * shade, color[2] * shade],
-                        base_alpha: 0.78,
+                        base_alpha: if use_cloud { 0.74 } else { 0.78 },
                         phase: 0.0,
                         freq: 0.0,
-                        base_sprite_idx: SPRITE_DUST_START,
+                        base_sprite_idx: if use_cloud {
+                            SPRITE_DUST_CLOUD_START
+                        } else {
+                            SPRITE_DUST_START
+                        },
                         age: 0.0,
                         max_age,
                         alive: true,
@@ -518,15 +595,33 @@ pub fn update_world_particles(
             if state.voxel == Voxel::Campfire {
                 let spawn_prob = (4.2 * dt).min(1.0);
                 if pool.next_f32() < spawn_prob {
+                    let use_small = pool.next_f32() < 0.45;
                     let ox = (pool.next_f32() - 0.5) * 0.34;
                     let oz = (pool.next_f32() - 0.5) * 0.34;
                     let vx = wind_vec.x * 0.14 + (pool.next_f32() - 0.5) * 0.14;
                     let vz = wind_vec.z * 0.14 + (pool.next_f32() - 0.5) * 0.14;
-                    let vy = 0.78 + pool.next_f32() * 0.36;
-                    let size = 0.52 + pool.next_f32() * 0.22;
-                    let max_age = 5.8 + pool.next_f32() * 2.6;
+                    let vy = if use_small {
+                        0.92 + pool.next_f32() * 0.40
+                    } else {
+                        0.78 + pool.next_f32() * 0.36
+                    };
+                    let size = if use_small {
+                        0.32 + pool.next_f32() * 0.16
+                    } else {
+                        0.52 + pool.next_f32() * 0.22
+                    };
+                    let max_age = if use_small {
+                        3.4 + pool.next_f32() * 1.6
+                    } else {
+                        5.8 + pool.next_f32() * 2.6
+                    };
                     let shade = 0.88 + pool.next_f32() * 0.12;
                     let variant_offset = pool.next_u32() as usize % 2;
+                    let group_start = if use_small {
+                        SPRITE_SMOKE_SMALL_START
+                    } else {
+                        SPRITE_SMOKE_START
+                    };
 
                     let rot = pool.next_f32() * TAU;
                     let spin = (pool.next_f32() - 0.5) * 0.45;
@@ -537,14 +632,14 @@ pub fn update_world_particles(
                         position: Vec3::new(pos.x as f32 + 0.5 + ox, pos.y as f32 + 0.72, pos.z as f32 + 0.5 + oz),
                         velocity: Vec3::new(vx, vy, vz),
                         size,
-                        grow_rate: 0.14,
+                        grow_rate: if use_small { 0.10 } else { 0.14 },
                         rotation: rot,
                         spin,
                         color: [0.76 * shade, 0.74 * shade, 0.72 * shade],
-                        base_alpha: 0.72,
+                        base_alpha: if use_small { 0.66 } else { 0.72 },
                         phase,
                         freq,
-                        base_sprite_idx: SPRITE_SMOKE_START + variant_offset,
+                        base_sprite_idx: group_start + variant_offset,
                         age: 0.0,
                         max_age,
                         alive: true,
@@ -568,6 +663,9 @@ pub fn update_world_particles(
                         0.95
                     };
                     spawn_bubble_at(pool, pos, speed_mult);
+                    if pool.next_f32() < 0.42 {
+                        spawn_steam_at(pool, pos);
+                    }
                 }
             }
         }
@@ -593,6 +691,9 @@ pub fn update_world_particles(
                 && pool.next_f32() < 0.45
             {
                 spawn_bubble_at(pool, pos, 1.0);
+                if pool.next_f32() < 0.35 {
+                    spawn_steam_at(pool, pos);
+                }
             }
         }
     }
@@ -849,12 +950,21 @@ pub fn update_world_particles(
                 SPRITE_BUBBLE_POP_START + ((progress * 3.0).floor() as usize).min(2)
             }
             WorldParticleKind::FootstepDust => {
-                SPRITE_DUST_START + ((progress * 6.0).floor() as usize).min(5)
+                p.base_sprite_idx + ((progress * 6.0).floor() as usize).min(5)
             }
             WorldParticleKind::CampfireSmoke => {
-                let local = (p.base_sprite_idx - SPRITE_SMOKE_START)
-                    + ((progress * 4.0).floor() as usize);
-                SPRITE_SMOKE_START + local.min(5)
+                if p.base_sprite_idx >= SPRITE_STEAM_START {
+                    p.base_sprite_idx
+                } else {
+                    let group_start = if p.base_sprite_idx >= SPRITE_SMOKE_SMALL_START {
+                        SPRITE_SMOKE_SMALL_START
+                    } else {
+                        SPRITE_SMOKE_START
+                    };
+                    let local =
+                        (p.base_sprite_idx - group_start) + ((progress * 4.0).floor() as usize);
+                    group_start + local.min(5)
+                }
             }
             _ => p.base_sprite_idx,
         };

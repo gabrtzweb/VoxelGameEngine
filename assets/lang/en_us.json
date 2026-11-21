@@ -980,5 +980,6 @@
   "block.emit_lamp_red_off": "Red Lamp (Off)",
   "block.emit_lamp_warm_off": "Warm Lamp (Off)",
   "block.deco_campfire": "Campfire",
-  "block.deco_campfire_unlit": "Campfire (Unlit)"
+  "block.deco_campfire_unlit": "Campfire (Unlit)",
+  "block.moss_carpet": "Moss Carpet"
 }

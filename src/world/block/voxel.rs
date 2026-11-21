@@ -708,20 +708,26 @@ pub enum Voxel {
     EmitLampWarmOff = 696,
     Campfire = 697,
     CampfireUnlit = 698,
+    MossCarpet = 699,
 }
 impl Voxel {
-    /// Array containing all active, non-placeholder gameplay voxels (indices 3..=698).
-    pub const ALL: [Voxel; 696] = generate_all_voxels();
+    /// Array containing all active, non-placeholder gameplay voxels (indices 3..=699).
+    pub const ALL: [Voxel; 697] = generate_all_voxels();
 
     /// Safely convert a `u16` id to a `Voxel` variant.
     #[inline(always)]
     pub const fn from_u16(val: u16) -> Option<Self> {
-        if val <= 698 {
-            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 698.
+        if val <= 699 {
+            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 699.
             Some(unsafe { std::mem::transmute::<u16, Self>(val) })
         } else {
             None
         }
+    }
+
+    #[inline(always)]
+    pub const fn is_carpet(self) -> bool {
+        matches!(self, Self::MossCarpet)
     }
 
     #[inline(always)]
@@ -953,11 +959,11 @@ impl Voxel {
     }
 }
 
-const fn generate_all_voxels() -> [Voxel; 696] {
-    let mut arr = [Voxel::Air; 696];
+const fn generate_all_voxels() -> [Voxel; 697] {
+    let mut arr = [Voxel::Air; 697];
     let mut i = 0;
-    while i < 696 {
-        // Active gameplay blocks start at discriminant 3 (indices 3..=698)
+    while i < 697 {
+        // Active gameplay blocks start at discriminant 3 (indices 3..=699)
         let id = (i + 3) as u16;
         arr[i] = unsafe { std::mem::transmute::<u16, Voxel>(id) };
         i += 1;

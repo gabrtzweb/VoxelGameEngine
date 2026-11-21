@@ -24,6 +24,7 @@ pub enum BlockShape {
     CocoaPod = 17,
     HangingFruit = 18,
     Campfire = 19,
+    Carpet = 20,
 }
 
 #[repr(u8)]
@@ -58,8 +59,8 @@ impl PillarAxis {
 }
 
 impl BlockShape {
-    /// All 20 registered block shapes in the engine.
-    pub const fn all() -> [BlockShape; 20] {
+    /// All 21 registered block shapes in the engine.
+    pub const fn all() -> [BlockShape; 21] {
         [
             BlockShape::Full,
             BlockShape::Slab,
@@ -81,6 +82,7 @@ impl BlockShape {
             BlockShape::CocoaPod,
             BlockShape::HangingFruit,
             BlockShape::Campfire,
+            BlockShape::Carpet,
         ]
     }
 
@@ -116,6 +118,7 @@ impl BlockShape {
             Self::CocoaPod => "Cocoa Pod",
             Self::HangingFruit => "Hanging Fruit",
             Self::Campfire => "Campfire",
+            Self::Carpet => "Carpet",
         }
     }
 
@@ -141,6 +144,7 @@ impl BlockShape {
             Self::CocoaPod => "COCOA_POD",
             Self::HangingFruit => "HANGING_FRUIT",
             Self::Campfire => "CAMPFIRE",
+            Self::Carpet => "CARPET",
         }
     }
 
@@ -154,7 +158,8 @@ impl BlockShape {
             | Self::Cactus
             | Self::Speleothem
             | Self::HangingFruit
-            | Self::Campfire => 1,
+            | Self::Campfire
+            | Self::Carpet => 1,
             Self::Slab | Self::WallDecal | Self::CrossBillboard => 6,
             Self::Stair => 8,
             Self::Column => 7,
@@ -236,6 +241,7 @@ impl BlockShape {
                 3 => "West (270°)",
                 _ => "Unknown",
             },
+            Self::Carpet => "Floor",
         }
     }
 
@@ -390,6 +396,10 @@ impl BlockShape {
             ),
             Self::Campfire => (
                 [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 7.0 / 16.0, 1.0)],
+                None,
+            ),
+            Self::Carpet => (
+                [Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 1.0 / 16.0, 1.0)],
                 None,
             ),
             Self::Speleothem => (

@@ -374,6 +374,8 @@ impl Chunk {
                         | BlockShape::StickPile
                         | BlockShape::CocoaPod
                         | BlockShape::HangingFruit
+                        | BlockShape::Campfire
+                        | BlockShape::Carpet
                 )
             }) {
                 self.shapes.remove(&index);

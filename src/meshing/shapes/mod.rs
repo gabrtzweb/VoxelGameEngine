@@ -530,7 +530,7 @@ pub fn mesh_shaped_voxels(
             | BlockShape::CocoaPod
             | BlockShape::HangingFruit
             | BlockShape::Campfire => unreachable!(),
-            BlockShape::Full | BlockShape::Column | BlockShape::Cocoon => {
+            BlockShape::Full | BlockShape::Column | BlockShape::Cocoon | BlockShape::Carpet => {
                 mesh_column_cocoon(
                     world,
                     world_voxel,

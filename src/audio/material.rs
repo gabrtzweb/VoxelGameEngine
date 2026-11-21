@@ -60,6 +60,7 @@ impl SoundMaterial {
             || matches!(
             voxel,
             Voxel::MossForest
+                | Voxel::MossCarpet
                 | Voxel::FungiAmanita
                 | Voxel::FungiAmanitaCap
                 | Voxel::FungiInside

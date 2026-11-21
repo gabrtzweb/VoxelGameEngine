@@ -470,15 +470,15 @@ pub fn populate_chunk_flora<F>(
                         | BiomeType::TropicalJungle
                 ) {
                     let litter_patch = patch_noise(wx, wz, 14.0, seed ^ 0x1EAF_F00D);
-                    if litter_patch > 0.56 {
+                    if litter_patch > 0.66 {
                         let h_litter = hash2d(wx, wz, seed ^ 0x1EAF_5EED);
-                        if hash_f32(h_litter) < 0.22 {
+                        if hash_f32(h_litter) < 0.09 {
                             let facing = (h_litter & 0x03) as u8;
-                            let seg_idx: u8 = if litter_patch > 0.78 {
+                            let seg_idx: u8 = if litter_patch > 0.84 {
                                 3
-                            } else if litter_patch > 0.69 {
+                            } else if litter_patch > 0.77 {
                                 2
-                            } else if litter_patch > 0.62 {
+                            } else if litter_patch > 0.71 {
                                 1
                             } else {
                                 0
@@ -500,10 +500,24 @@ pub fn populate_chunk_flora<F>(
                 }
             }
 
-            // Spawn Mossgrass naturally on top of Forest Moss patches
+            // Spawn Moss Carpet & Mossgrass naturally on top of Forest Moss patches
             if is_moss_patch || ground == Voxel::MossForest {
                 let h_mg = hash2d(wx, wz, seed ^ 0x4055_67A5);
-                if hash_f32(h_mg) < 0.28 {
+                let mg_roll = hash_f32(h_mg);
+                if mg_roll < 0.16 {
+                    set_air_only_in_chunk(
+                        voxels,
+                        chunk_shapes,
+                        chunk_min_y,
+                        lx,
+                        place_y,
+                        lz,
+                        Voxel::MossCarpet,
+                        BlockShape::Carpet,
+                        0,
+                    );
+                    continue;
+                } else if mg_roll < 0.42 {
                     set_air_only_in_chunk(
                         voxels,
                         chunk_shapes,
@@ -513,6 +527,38 @@ pub fn populate_chunk_flora<F>(
                         lz,
                         Voxel::VegeMossgrass,
                         BlockShape::CrossBillboard,
+                        0,
+                    );
+                    continue;
+                }
+            } else if matches!(
+                ground,
+                Voxel::MossyAndesite
+                    | Voxel::MossyArgillite
+                    | Voxel::MossyBasalt
+                    | Voxel::MossyChalk
+                    | Voxel::MossyDolomite
+                    | Voxel::MossyGranite
+                    | Voxel::MossyLimestone
+                    | Voxel::MossyCobbledAndesite
+                    | Voxel::MossyCobbledArgillite
+                    | Voxel::MossyCobbledBasalt
+                    | Voxel::MossyCobbledChalk
+                    | Voxel::MossyCobbledDolomite
+                    | Voxel::MossyCobbledGranite
+                    | Voxel::MossyCobbledLimestone
+            ) {
+                let h_mc = hash2d(wx, wz, seed ^ 0x4055_CA49);
+                if hash_f32(h_mc) < 0.18 {
+                    set_air_only_in_chunk(
+                        voxels,
+                        chunk_shapes,
+                        chunk_min_y,
+                        lx,
+                        place_y,
+                        lz,
+                        Voxel::MossCarpet,
+                        BlockShape::Carpet,
                         0,
                     );
                     continue;
@@ -1333,12 +1379,16 @@ fn select_surface_flora_column(
                 };
                 return Some((SurfaceFloraDecision::FlatPad(vox), h));
             } else if roll < 0.070 && grass_patch > 0.34 && ground.is_fertile_soil() {
-                let vox = if ((h >> 12) % 3) == 0 {
-                    Voxel::FlowerClover
-                } else {
-                    Voxel::VegeWildgrass
-                };
-                return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
+                if ((h >> 12) % 3) == 0 {
+                    return Some((SurfaceFloraDecision::FlatPad(Voxel::FlowerClover), h));
+                }
+                return Some((
+                    SurfaceFloraDecision::Cross {
+                        bot: Voxel::VegeWildgrass,
+                        top: None,
+                    },
+                    h,
+                ));
             }
             None
         }
@@ -1427,10 +1477,12 @@ fn select_surface_flora_column(
                 return None;
             }
             if flower_patch > 0.68 && roll < 0.025 {
+                if ((h >> 8) % 8) == 2 {
+                    return Some((SurfaceFloraDecision::FlatPad(Voxel::FlowerClover), h));
+                }
                 let (bot, top_opt) = match (h >> 8) % 8 {
                     0 => (Voxel::FlowerDandelion, None),
                     1 => (Voxel::FlowerPoppy, None),
-                    2 => (Voxel::FlowerClover, None),
                     3 => (Voxel::FlowerMarigold, None),
                     4 => (Voxel::FlowerLilyOfTheValley, None),
                     5 => (Voxel::FlowerFoxgloveBottom, Some(Voxel::FlowerFoxgloveTop)),

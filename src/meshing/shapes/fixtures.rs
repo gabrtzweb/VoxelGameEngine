@@ -950,26 +950,33 @@ pub fn mesh_flat_pad(
     }
 
     let is_petals = voxel.is_petal_carpet();
-    let y = if is_petals { fy + 0.05 } else { fy + 0.02 };
+    let y = if voxel == Voxel::FlowerClover {
+        fy + 3.0 / 16.0
+    } else if is_petals {
+        fy + 2.5 / 16.0
+    } else {
+        fy + 0.02
+    };
 
-    // If petal carpet, render supporting vertical stem underneath connecting ground to petals
+    // If petal/clover carpet, render supporting vertical stem underneath connecting ground to pad
     if is_petals {
         if let Some(stem) = stem_info {
             let stem_tint = [1.0, 1.0, 1.0, 1.0];
             let stem_layer = stem.start_layer;
             let stem_frame_count = stem.frame_count as f32;
             let uv_cross = [[0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0]];
+            let stem_top = y - 0.002;
             // Diagonal quad A (front-left to back-right)
             let a0 = [fx, fy, fz];
-            let a1 = [fx, fy + 1.0, fz];
-            let a2 = [fx + 1.0, fy + 1.0, fz + 1.0];
+            let a1 = [fx, stem_top, fz];
+            let a2 = [fx + 1.0, stem_top, fz + 1.0];
             let a3 = [fx + 1.0, fy, fz + 1.0];
             push_quad_face_with_uvs(buffers, [a0, a1, a2, a3], [0.707, 0.0, -0.707], stem_layer, stem_frame_count, stem_tint, uv_cross);
             push_quad_face_with_uvs(buffers, [a3, a2, a1, a0], [-0.707, 0.0, 0.707], stem_layer, stem_frame_count, stem_tint, uv_cross);
             // Diagonal quad B (front-right to back-left)
             let b0 = [fx + 1.0, fy, fz];
-            let b1 = [fx + 1.0, fy + 1.0, fz];
-            let b2 = [fx, fy + 1.0, fz + 1.0];
+            let b1 = [fx + 1.0, stem_top, fz];
+            let b2 = [fx, stem_top, fz + 1.0];
             let b3 = [fx, fy, fz + 1.0];
             push_quad_face_with_uvs(buffers, [b0, b1, b2, b3], [0.707, 0.0, 0.707], stem_layer, stem_frame_count, stem_tint, uv_cross);
             push_quad_face_with_uvs(buffers, [b3, b2, b1, b0], [-0.707, 0.0, -0.707], stem_layer, stem_frame_count, stem_tint, uv_cross);

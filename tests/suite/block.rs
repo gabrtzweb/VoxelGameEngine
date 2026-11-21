@@ -109,7 +109,7 @@ fn test_axis_aligned_pillar_properties() {
 
 #[test]
 fn test_voxel_discriminants_continuity() {
-    for id in 0..=698u16 {
+    for id in 0..=699u16 {
         let maybe_voxel = Voxel::from_u16(id);
         assert!(
             maybe_voxel.is_some(),
@@ -117,10 +117,10 @@ fn test_voxel_discriminants_continuity() {
         );
         assert_eq!(maybe_voxel.unwrap() as u16, id);
     }
-    assert_eq!(Voxel::from_u16(699), None);
+    assert_eq!(Voxel::from_u16(700), None);
     assert_eq!(Voxel::from_u16(1000), None);
 
-    assert_eq!(Voxel::ALL.len(), 696);
+    assert_eq!(Voxel::ALL.len(), 697);
     assert_eq!(Voxel::ALL[0], Voxel::FrostBlueIce);
     assert_eq!(Voxel::ALL[443], Voxel::FungiVerdigrisCap);
     assert_eq!(Voxel::ALL[444], Voxel::VegeWildgrass);
@@ -136,13 +136,17 @@ fn test_voxel_discriminants_continuity() {
     assert_eq!(Voxel::ALL[689], Voxel::VegeLeafLitter);
     assert_eq!(Voxel::ALL[694], Voxel::Campfire);
     assert_eq!(Voxel::ALL[695], Voxel::CampfireUnlit);
+    assert_eq!(Voxel::ALL[696], Voxel::MossCarpet);
 }
 
 #[test]
 fn test_block_shapes_all() {
-    assert_eq!(BlockShape::all().len(), 20);
+    assert_eq!(BlockShape::all().len(), 21);
     assert_eq!(Voxel::Campfire.default_shape(), BlockShape::Campfire);
     assert!(Voxel::Campfire.is_shape_locked());
+    assert_eq!(Voxel::MossCarpet.default_shape(), BlockShape::Carpet);
+    assert!(Voxel::MossCarpet.is_shape_locked());
+    assert!(Voxel::MossCarpet.requires_floor_support());
     assert_eq!(Voxel::AndesiteRubble.default_shape(), BlockShape::Rubble);
     assert!(Voxel::AndesiteRubble.is_shape_locked());
     assert!(Voxel::AndesiteRubble.requires_floor_support());

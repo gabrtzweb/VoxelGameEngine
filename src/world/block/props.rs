@@ -78,6 +78,7 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
         && !is_torch
         && (flags & FLAG_CROSS_BILLBOARD) == 0
         && !v.is_flat_pad_const()
+        && !v.is_carpet()
         && !v.is_wall_decal_const()
         && !v.is_stick_pile()
         && !is_occupied)
@@ -108,6 +109,7 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
             && !v.is_cocoa_pod()
             && !v.is_hanging_coconut()
             && !v.is_campfire()
+            && !v.is_carpet()
             && !v.is_flat_pad_const()
             && !v.is_wall_decal_const()
             && !matches!(
@@ -755,6 +757,7 @@ impl Voxel {
             || self.is_marine_flora()
             || self.is_crop_billboard()
             || self.is_leaf_litter()
+            || self.is_carpet()
             || self.is_petal_carpet()
             || (self.is_flora_billboard() && !self.is_hanging_flora())
     }

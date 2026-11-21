@@ -334,9 +334,9 @@ fn fragment(
         //  17..=33:  Sand  (pure white mask -> sample voxel_texture_array with overlay_layer)
         //  34..=50:  Rocks (pure white mask -> sample voxel_texture_array with overlay_layer)
         //  51..=67:  Snow  (pre-colored mask -> mask_sample.rgb already contains snow colors)
-        //  68..=84:  Moss  (pre-colored mask -> mask_sample.rgb already contains moss colors)
+        //  68..=84:  Moss  (alpha mask -> sample voxel_texture_array with overlay_layer)
         var overlay_rgb = tex_color.rgb * base_mul;
-        if (mask_layer >= 51) {
+        if (mask_layer >= 51 && mask_layer <= 67) {
             overlay_rgb = mask_sample.rgb * overlay_mul;
             let blended = mix(tex_color.rgb * base_mul, overlay_rgb, mask_sample.a);
             tex_color = vec4<f32>(blended, 1.0);

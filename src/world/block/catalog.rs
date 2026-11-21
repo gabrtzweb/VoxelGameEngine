@@ -363,6 +363,8 @@ impl Voxel {
             BlockShape::HangingFruit
         } else if self.is_campfire() {
             BlockShape::Campfire
+        } else if self.is_carpet() {
+            BlockShape::Carpet
         } else if self.is_speleothem_const() {
             BlockShape::Speleothem
         } else if matches!(self, Self::BirdNest | Self::HayNest) {
@@ -381,6 +383,7 @@ impl Voxel {
             || self.is_speleothem_const()
             || self.is_flat_pad_const()
             || self.is_wall_decal_const()
+            || self.is_carpet()
             || self == Self::VegeCactus
             || matches!(
                 self,
@@ -978,7 +981,7 @@ impl Voxel {
             Self::PathStony => [145, 140, 135, 255],
 
             // Moss
-            Self::MossForest => [60, 120, 45, 255],
+            Self::MossForest | Self::MossCarpet => [60, 120, 45, 255],
 
             // Rock families (Raw, Cobbled, Bricks, Rubble, and Mossy)
             Self::Andesite | Self::CobbledAndesite | Self::AndesiteBricks | Self::AndesiteRubble => [135, 138, 142, 255],
