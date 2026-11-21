@@ -394,7 +394,7 @@ pub fn update_falling_leaf_particles(
     });
 
     // 1. Sample random blocks in a wide radius around the player (64x64x24, ±32m horizontal)
-    let probes = ((dt * 950.0).round() as usize).clamp(3, 32);
+    let probes = ((dt * 1250.0).round() as usize).clamp(4, 42);
     for _ in 0..probes {
         let ox = ((pool.next_f32() - 0.5) * 64.0).round() as i32;
         let oz = ((pool.next_f32() - 0.5) * 64.0).round() as i32;
@@ -421,8 +421,8 @@ pub fn update_falling_leaf_particles(
             Voxel::CherryLeaves
             | Voxel::MapleLeavesOrange
             | Voxel::MapleLeavesRed
-            | Voxel::MapleLeavesYellow => 0.36,
-            _ => 0.22,
+            | Voxel::MapleLeavesYellow => 0.46,
+            _ => 0.30,
         };
         if pool.next_f32() >= drop_chance {
             continue;

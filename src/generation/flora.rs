@@ -279,13 +279,58 @@ pub fn populate_chunk_flora<F>(
                 continue;
             }
 
-            // Never place surface features on sculpted terrain slopes (slabs/stairs)
-            if col.surface_shape != BlockShape::Full {
+            let ground = voxel_at(wx, surface_y, wz, col);
+            if ground.is_empty() || ground.is_fluid() || !ground.is_solid_opaque() {
                 continue;
             }
 
-            let ground = voxel_at(wx, surface_y, wz, col);
-            if ground.is_empty() || ground.is_fluid() || !ground.is_solid_opaque() {
+            // Forest Moss ground patches (`MossForest`) across wooded & lush biomes
+            // Evaluated before the `surface_shape != Full` skip so patches flow seamlessly
+            // across sculpted terrain slabs and stairs too.
+            let mut is_moss_patch = false;
+            if !col.is_beach
+                && !col.is_cliff
+                && col.water_level.is_none_or(|wl| surface_y >= wl)
+                && ground.is_grass_soil()
+                && matches!(
+                    col.biome,
+                    BiomeType::YosemiteLowlands
+                        | BiomeType::CloudForest
+                        | BiomeType::SakuraGrove
+                        | BiomeType::BloomingValley
+                        | BiomeType::LavenderValley
+                        | BiomeType::OrchidSwamp
+                        | BiomeType::Shield
+                        | BiomeType::TropicalJungle
+                        | BiomeType::PineHighlands
+                        | BiomeType::SiberianTaiga
+                        | BiomeType::WintryForest
+                )
+            {
+                let moss_macro = patch_noise(wx, wz, 18.0, seed ^ 0x4055_A11C);
+                let moss_detail = patch_noise(wx, wz, 5.5, seed ^ 0x4055_B22D);
+                let macro_thresh = if matches!(
+                    col.biome,
+                    BiomeType::OrchidSwamp | BiomeType::CloudForest | BiomeType::TropicalJungle
+                ) {
+                    0.60
+                } else {
+                    0.70
+                };
+                if moss_macro > macro_thresh && moss_detail > 0.50 {
+                    let surf_ly = surface_y - chunk_min_y;
+                    if (0..CHUNK_SIZE as i32).contains(&surf_ly) {
+                        let sidx = chunk_idx(lx, surf_ly as usize, lz);
+                        if voxels[sidx].is_solid_opaque() {
+                            voxels[sidx] = Voxel::MossForest;
+                            is_moss_patch = true;
+                        }
+                    }
+                }
+            }
+
+            // Never place surface features on sculpted terrain slopes (slabs/stairs)
+            if col.surface_shape != BlockShape::Full {
                 continue;
             }
 
@@ -452,6 +497,25 @@ pub fn populate_chunk_flora<F>(
                             continue;
                         }
                     }
+                }
+            }
+
+            // Spawn Mossgrass naturally on top of Forest Moss patches
+            if is_moss_patch || ground == Voxel::MossForest {
+                let h_mg = hash2d(wx, wz, seed ^ 0x4055_67A5);
+                if hash_f32(h_mg) < 0.28 {
+                    set_air_only_in_chunk(
+                        voxels,
+                        chunk_shapes,
+                        chunk_min_y,
+                        lx,
+                        place_y,
+                        lz,
+                        Voxel::VegeMossgrass,
+                        BlockShape::CrossBillboard,
+                        0,
+                    );
+                    continue;
                 }
             }
 
@@ -665,7 +729,30 @@ fn populate_marine_column(
         } else {
             (0.54, 0.18)
         };
+        // Organic Coralstone seabed patches underneath and around coral reef clusters
+        if reef_patch > threshold - 0.04 && reef_cluster > 0.30 {
+            let cs_patch = patch_noise(wx, wz, 5.5, seed ^ 0xC057_09E1);
+            if cs_patch > 0.44 {
+                let ly = surface_y - chunk_min_y;
+                if (0..CHUNK_SIZE as i32).contains(&ly) {
+                    let idx = chunk_idx(lx, ly as usize, lz);
+                    if voxels[idx].is_solid_opaque() {
+                        voxels[idx] = Voxel::Coralstone;
+                    }
+                }
+            }
+        }
         if reef_patch > threshold && reef_cluster > 0.36 && r < chance {
+            // Ensure seabed directly beneath coral colonies frequently transitions to Coralstone
+            if ((h >> 3) % 4) != 0 {
+                let ly = surface_y - chunk_min_y;
+                if (0..CHUNK_SIZE as i32).contains(&ly) {
+                    let idx = chunk_idx(lx, ly as usize, lz);
+                    if voxels[idx].is_solid_opaque() {
+                        voxels[idx] = Voxel::Coralstone;
+                    }
+                }
+            }
             // Pick a coherent colony species per small 5x5 cell so nearby corals form lush reefs
             let colony_h = hash2d(wx.div_euclid(5), wz.div_euclid(5), seed ^ 0xC07A_5512);
             let variant = if ((h >> 6) % 5) == 0 {
@@ -1098,7 +1185,7 @@ fn select_surface_flora_column(
     let flower_patch = patch_noise(wx, wz, 16.0, seed ^ 0xF10E_5555);
     let grass_patch = patch_noise(wx, wz, 18.0, seed ^ 0x67A5_5111);
 
-    // Coastal beaches & GravelBeach: sparse Sea Oats on sand, plus hardy grass patches on dirty gravel
+    // Coastal beaches & GravelBeach: Dry Wildgrass & sparse Sea Oats on sand, plus hardy grass patches on dirty gravel
     if col.is_beach || col.biome == BiomeType::MirageIsles || col.biome == BiomeType::GravelBeach {
         if matches!(ground, Voxel::GravelDirty | Voxel::GravelAshy) && grass_patch > 0.36 && roll < 0.095 {
             let vox = match (h >> 8) % 4 {
@@ -1107,11 +1194,19 @@ fn select_surface_flora_column(
                 _ => Voxel::VegeBluffGrass,
             };
             return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
-        } else if ground.is_sandy_soil() && grass_patch > 0.60 && roll < 0.018 {
+        } else if ground.is_sandy_soil() && grass_patch > 0.60 && roll < 0.015 {
             return Some((
                 SurfaceFloraDecision::Cross {
                     bot: Voxel::VegeSeaOatsBottom,
                     top: Some(Voxel::VegeSeaOatsTop),
+                },
+                h,
+            ));
+        } else if ground.is_sandy_soil() && grass_patch > 0.30 && roll < 0.075 {
+            return Some((
+                SurfaceFloraDecision::Cross {
+                    bot: Voxel::VegeDrygrass,
+                    top: None,
                 },
                 h,
             ));

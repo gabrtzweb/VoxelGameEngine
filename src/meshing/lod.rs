@@ -211,6 +211,14 @@ fn push_lod_wall(
             Voxel::LoamSnow | Voxel::PeatSnow | Voxel::SiltSnow
         );
 
+    let top_side_color = if surface_voxel.is_grass_soil() && textures.full_grass {
+        let mut c = surface_voxel.tint_color_at(world_pos);
+        c[3] = 1.35;
+        c
+    } else {
+        [1.0, 1.0, 1.0, 1.0]
+    };
+
     if height <= 1.0 || !is_soil {
         push_lod_quad(
             buffers,
@@ -222,7 +230,7 @@ fn push_lod_wall(
             u_span,
             height,
             top_side_layer,
-            [1.0, 1.0, 1.0, 1.0],
+            top_side_color,
         );
     } else {
         // Top 1 block: surface voxel side (e.g. grass side)
@@ -242,7 +250,7 @@ fn push_lod_wall(
             u_span,
             1.0,
             top_side_layer,
-            [1.0, 1.0, 1.0, 1.0],
+            top_side_color,
         );
 
         // Subsurface remaining drop: stone strata

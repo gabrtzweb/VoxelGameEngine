@@ -85,7 +85,7 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 | Phase | Milestone Title | Status | Focus / Key Deliverables |
 | :---: | :--- | :---: | :--- |
 | **01** | **[Engine-Wide Performance Optimization & LOD Pipeline](#phase-1-engine-wide-performance-optimization--lod-pipeline-completed)** | **Completed** | Terrain/biome generation caching, LOD meshing overhaul, optional leaf culling, shader/grass/celestial optimizations, streaming & chunk cache improvements |
-| **02** | **[World Terrain Polish & Surface Detail Features](#phase-2-world-terrain-polish--surface-detail-features-in-progress)** | **In Progress** | Universal slab/stair terrain smoothing (beaches, riverbanks, clay/mud), sculpted basalt/rock outcrops, surface cobble/mossy boulder clusters, ground leaf bushes, ocean biomes & coral reefs, campfire, toggleable lamps, underwater geothermal vents |
+| **02** | **[World Terrain Polish & Surface Detail Features](#phase-2-world-terrain-polish--surface-detail-features-completed)** | **Completed** | Universal slab/stair terrain smoothing, sculpted outcrops & boulders, ground bushes, ocean biomes & coral/reefstone formations, fallen logs & forest moss, sculpted tree canopies, campfire, toggleable lamps, geothermal vents |
 | **03** | **[Atmospheric & Gameplay Particle Engine](#phase-3-atmospheric--gameplay-particle-engine-completed)** | **Completed** | Falling canopy leaves (21 sprites, selective tint), underwater geothermal/magma bubbles + pop, footstep/landing dust, blinking night fireflies, daytime pollen, player/item water splashes, campfire smoke |
 
 ---
@@ -103,7 +103,7 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 
 ---
 
-### Phase 2: World Terrain Polish & Surface Detail Features (In Progress)
+### Phase 2: World Terrain Polish & Surface Detail Features (Completed)
 
 - [x] **Universal Slab & Stair Terrain Smoothing (Dry & Underwater)**:
   - Extended smooth slab/stair surface transitions across all dry terrain (sandy beaches, riverbanks, clay, mud) and submerged riverbeds, lakebeds, and seafloors.
@@ -118,6 +118,15 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 - [x] **Ocean Biome Resolution, Varied Seabed & Multi-Block Coral Reefs**:
   - Resolved open ocean bodies (`terrain_height < sea_level`, non-river/non-lake) to authentic ocean biomes (`DeepWarmOcean`, `ColdOcean`, `CoralReef`, `OceanTrench`) so the minimap HUD and worldgen never misreport terrestrial biomes over open sea.
   - Enriched ocean floors with multi-scale organic sediment variety (white/common/dune sands, sandy/dirty gravel, blue/yellow/white clay, silt/peat mud, loam dirt, reefstone, and abyssal basalt).
+  - Added `Coralstone` seabed patches beneath coral colonies and underwater `Coralstone` boulder clusters around reef formations.
+- [x] **Coastal Reefstone Boulders & Sea-Stack Spires**:
+  - Added multi-chunk sculpted `Reefstone` boulder clusters (concentrated in coastal/submerged waters with sparse dark-rubble-ringed dry beach outcrops) plus column-anchored tapered `Reefstone` sea stacks sculpted with slabs and stairs.
+- [x] **Fallen Forest Logs, Forest Moss Patches & Coastal Beach Grass**:
+  - Added multi-chunk fallen forest trunks (with optional stumps, top mushrooms, and adjacent moss), organic `MossForest` floor patches across woodlands, `VegeDrygrass` across sandy beaches, and green `VegeWildgrass` tufts around coastal palm trees.
+- [x] **Sculpted Tree Canopies (Slabs & Stairs), Giant Mushrooms & LOD `full_grass` Tinting**:
+  - Sculpted the outer silhouette rims of deciduous leaf clouds, acacia umbrellas, palm fronds, and conifer boughs with `Slab` and upright/inverted `Stair` shapes while preserving full interior blocks for greedy-meshing performance.
+  - Added multi-chunk Giant Mushrooms (`FungiStem` stalk, `FungiInside` interior gills, and domed/umbrella `Fungi*Cap` canopies across all 5 species) with sparse regional spawns in swamps, cloud forests, jungles, taigas, and woodlands (including LOD proxies).
+  - Fixed LOD vertical side wall tinting (`push_lod_wall` in `src/meshing/lod.rs`) so `full_grass` renders biome-tinted grass sides on distant LOD chunks instead of grayscale.
   - Upgraded coral reefs into clustered multi-block 3D spires, branching trees, and reef mounds, with 6-direction wall/floor/ceiling attachment support for coral fans in both worldgen and player placement.
 - [x] **Underwater Geothermal Vents, Campfire & Toggleable Lamps**:
   - Added natural hydrothermal `GeothermalVent` chimneys and submerged `Magma` clusters in deep oceans and trenches (`src/generation/flora.rs`).

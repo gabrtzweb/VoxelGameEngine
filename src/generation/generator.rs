@@ -955,6 +955,16 @@ impl TerrainGenerator {
             {
                 climate.biome = BiomeType::OrchidSwamp;
             }
+        } else if let Some((oasis_water_y, carve_depth, t_dist)) =
+            self.sample_desert_oasis(world_x, world_z, raw_height, &climate)
+        {
+            if t_dist < 0.90 {
+                let target_bed = oasis_water_y as f32 - carve_depth;
+                raw_height = raw_height.min(target_bed);
+            } else if t_dist <= 1.25 {
+                raw_height = raw_height.max((oasis_water_y + 1) as f32);
+            }
+            climate.biome = BiomeType::DesertOasis;
         } else if let Some((lake_water_y, carve_depth, t_dist)) =
             self.sample_organic_lake(world_x, world_z, raw_height, &climate)
         {
@@ -1099,6 +1109,16 @@ impl TerrainGenerator {
                 {
                     climate.biome = BiomeType::OrchidSwamp;
                 }
+            } else if let Some((oasis_water_y, carve_depth, t_dist)) =
+                self.sample_desert_oasis(world_xs[i], world_zs[i], raw_height, &climate)
+            {
+                if t_dist < 0.90 {
+                    let target_bed = oasis_water_y as f32 - carve_depth;
+                    raw_height = raw_height.min(target_bed);
+                } else if t_dist <= 1.25 {
+                    raw_height = raw_height.max((oasis_water_y + 1) as f32);
+                }
+                climate.biome = BiomeType::DesertOasis;
             } else if let Some((lake_water_y, carve_depth, t_dist)) =
                 self.sample_organic_lake(world_xs[i], world_zs[i], raw_height, &climate)
             {
@@ -1146,7 +1166,9 @@ impl TerrainGenerator {
 
         let is_inland = climate.continentalness >= -0.04;
         let is_river = is_river_path && is_inland && river_factor > 0.04 && !is_underground_river;
-        let lake_sample = self.sample_organic_lake(world_x, world_z, raw_height, &climate);
+        let oasis_sample = self.sample_desert_oasis(world_x, world_z, raw_height, &climate);
+        let lake_sample = oasis_sample
+            .or_else(|| self.sample_organic_lake(world_x, world_z, raw_height, &climate));
         let is_lake = lake_sample.is_some_and(|(_, _, t_dist)| t_dist <= 1.25);
 
         let water_level = if terrain_height < sea_level {
@@ -1468,6 +1490,112 @@ impl TerrainGenerator {
                 0.0
             };
             Some((lake_water_y, carve_depth, t_dist))
+        } else {
+            None
+        }
+    }
+
+    /// Evaluates small, water-centered Desert Oasis pockets exclusively inside desert biomes
+    /// (`AncientSands`, `DuneSea`, `DesertSpires`). Returns `(water_y, carve_depth, t_dist)`:
+    /// - `t_dist < 0.90`: carved oasis water pool
+    /// - `0.90..=1.55`: lush palm & grass oasis shoreline ring surrounded by desert sand
+    pub fn sample_desert_oasis(
+        &self,
+        world_x: i32,
+        world_z: i32,
+        natural_height: f32,
+        climate: &ClimateSample,
+    ) -> Option<(i32, f32, f32)> {
+        if !matches!(
+            climate.biome,
+            BiomeType::AncientSands
+                | BiomeType::DuneSea
+                | BiomeType::DesertSpires
+                | BiomeType::DesertOasis
+        ) {
+            return None;
+        }
+
+        let sea_level = self.effective_sea_level();
+        if natural_height <= sea_level as f32 + 2.0 {
+            return None;
+        }
+
+        let cell_size = 140;
+        let cx = world_x.div_euclid(cell_size);
+        let cz = world_z.div_euclid(cell_size);
+
+        let h = crate::core::noise::hash_2d(cx, cz, self.seed.wrapping_add(0x0A51_5777));
+        if (h % 100) >= 60 {
+            return None;
+        }
+
+        let offset_x = 34 + ((h >> 8) % (cell_size as u32 - 68)) as i32;
+        let offset_z = 34 + ((h >> 16) % (cell_size as u32 - 68)) as i32;
+        let center_x = cx * cell_size + offset_x;
+        let center_z = cz * cell_size + offset_z;
+
+        // Fast bounding-box reject before sampling center climate/slope
+        if (world_x - center_x).abs() > 36 || (world_z - center_z).abs() > 36 {
+            return None;
+        }
+
+        let c_climate = self
+            .climate
+            .sample_dithered(center_x as f32, center_z as f32, self.seed);
+        if !matches!(
+            c_climate.biome,
+            BiomeType::AncientSands | BiomeType::DuneSea | BiomeType::DesertSpires
+        ) {
+            return None;
+        }
+
+        let check_dist = 12.0;
+        let center_h = self.natural_height_at(center_x as f32, center_z as f32, &c_climate);
+        let h_east =
+            self.natural_height_at(center_x as f32 + check_dist, center_z as f32, &c_climate);
+        let h_south =
+            self.natural_height_at(center_x as f32, center_z as f32 + check_dist, &c_climate);
+        if (h_east - center_h).abs() > 3.5 || (h_south - center_h).abs() > 3.5 {
+            return None;
+        }
+
+        let wx = world_x as f32;
+        let wz = world_z as f32;
+        let pool_radius = 9.0 + (((h >> 24) & 0xFF) as f32 / 255.0) * 5.0; // 9..14 blocks
+
+        let warp_x = crate::core::noise::gradient_noise_2d(
+            wx * 0.04,
+            wz * 0.04,
+            self.seed.wrapping_add(0x0A51_1111),
+        ) * (pool_radius * 0.35);
+        let warp_z = crate::core::noise::gradient_noise_2d(
+            wx * 0.04 + 41.0,
+            wz * 0.04 + 41.0,
+            self.seed.wrapping_add(0x0A51_2222),
+        ) * (pool_radius * 0.35);
+
+        let dx = (world_x - center_x) as f32 + warp_x;
+        let dz = (world_z - center_z) as f32 + warp_z;
+        let dist = (dx * dx + dz * dz).sqrt();
+
+        let shape_noise = crate::core::noise::gradient_noise_2d(
+            wx * 0.06,
+            wz * 0.06,
+            self.seed.wrapping_add(0x0A51_3333),
+        );
+        let organic_radius = pool_radius * (1.0 + shape_noise * 0.28);
+        let t_dist = dist / organic_radius;
+
+        if t_dist <= 1.55 {
+            let oasis_water_y = (center_h - 0.8).round() as i32;
+            let carve_depth = if t_dist < 0.90 {
+                let inner_t = t_dist / 0.90;
+                (1.0 - inner_t * inner_t) * 3.8
+            } else {
+                0.0
+            };
+            Some((oasis_water_y, carve_depth, t_dist))
         } else {
             None
         }
@@ -2235,19 +2363,76 @@ impl TerrainGenerator {
                 cfg.cliff_material
             }
         } else {
-            // Natural complementary surface patches:
-            // Mulch in forests/jungles as accent litter, dry dirt in savannas
+            // Natural complementary forest floor patches:
+            // Medium-scale organic patches of Mulch, Coarse Dirt, and Dirt across woodlands
             if matches!(
+                column.biome,
+                BiomeType::SiberianTaiga | BiomeType::ColdShrubland
+            ) {
+                let icy_patch = crate::core::noise::gradient_noise_2d(
+                    world_x as f32 * 0.068,
+                    world_z as f32 * 0.068,
+                    self.seed.wrapping_add(0x1C3F_1111),
+                ) + dither_noise * 0.22;
+                if icy_patch > 0.54 {
+                    return Voxel::PermafrostIcy;
+                }
+
+                let coarse_patch = crate::core::noise::gradient_noise_2d(
+                    world_x as f32 * 0.072,
+                    world_z as f32 * 0.072,
+                    self.seed.wrapping_add(0xC0A5_3333),
+                ) + dither_noise * 0.20;
+                if coarse_patch > 0.48 {
+                    if coarse_patch > 0.64 || dither_noise > 0.15 {
+                        return Voxel::PermafrostCoarse;
+                    } else {
+                        return Voxel::PermafrostDirt;
+                    }
+                }
+            } else if matches!(
                 column.biome,
                 BiomeType::CloudForest
                     | BiomeType::SakuraGrove
                     | BiomeType::YosemiteLowlands
                     | BiomeType::TropicalJungle
-            ) && dither_noise > 0.58
-            {
-                return Voxel::LoamMulch;
-            } else if column.biome == BiomeType::Shield && dither_noise > 0.62 {
-                return Voxel::PeatMulch;
+                    | BiomeType::BloomingValley
+                    | BiomeType::LavenderValley
+                    | BiomeType::Shield
+                    | BiomeType::PineHighlands
+                    | BiomeType::WintryForest
+            ) {
+                let (dirt, coarse, mulch) = match column.biome {
+                    BiomeType::Shield | BiomeType::WintryForest => {
+                        (Voxel::PeatDirt, Voxel::PeatCoarse, Voxel::PeatMulch)
+                    }
+                    BiomeType::PineHighlands | BiomeType::LavenderValley => {
+                        (Voxel::SiltDirt, Voxel::SiltCoarse, Voxel::SiltMulch)
+                    }
+                    _ => (Voxel::LoamDirt, Voxel::LoamCoarse, Voxel::LoamMulch),
+                };
+
+                let mulch_patch = crate::core::noise::gradient_noise_2d(
+                    world_x as f32 * 0.068,
+                    world_z as f32 * 0.068,
+                    self.seed.wrapping_add(0x401C_1111),
+                ) + dither_noise * 0.22;
+                if mulch_patch > 0.48 {
+                    return mulch;
+                }
+
+                let soil_patch = crate::core::noise::gradient_noise_2d(
+                    world_x as f32 * 0.072,
+                    world_z as f32 * 0.072,
+                    self.seed.wrapping_add(0xC0A5_2222),
+                ) + dither_noise * 0.20;
+                if soil_patch > 0.52 {
+                    if soil_patch > 0.66 || dither_noise > 0.15 {
+                        return coarse;
+                    } else {
+                        return dirt;
+                    }
+                }
             } else if matches!(
                 column.biome,
                 BiomeType::SavannaBadlands | BiomeType::FracturedSavanna

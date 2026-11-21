@@ -511,7 +511,7 @@ impl BiomeType {
             Self::ColdShrubland => BiomeConfig {
                 biome_type: self,
                 name: "Cold Shrubland",
-                surface_material: Voxel::PermafrostCoarse,
+                surface_material: Voxel::PermafrostGrass,
                 subsoil_material: Voxel::PermafrostDirt,
                 subsoil_depth: 3,
                 base_height_offset: 18.0,
@@ -831,10 +831,10 @@ static BIOME_POINTS: &[BiomePoint] = &[
     BiomePoint { biome: BiomeType::YosemiteCliffs, c: 0.30, e: -0.50, r: 0.55, t: 0.15,  h: 0.35,  d: 0.0 },
 
     // Group C: Deserts, Savannas & Arid Badlands (High temperature, low humidity)
+    // Note: DesertOasis is generated exclusively as a small water-centered pocket inside deserts.
     BiomePoint { biome: BiomeType::DesertSpires,    c: 0.30, e: -0.25, r: 0.50, t: 0.75,  h: -0.55, d: 0.0 },
     BiomePoint { biome: BiomeType::AncientSands,    c: 0.22, e: 0.30,  r: -0.20,t: 0.65,  h: -0.55, d: 0.0 },
     BiomePoint { biome: BiomeType::AncientSands,    c: 0.32, e: 0.10,  r: 0.00, t: 0.70,  h: -0.60, d: 0.0 },
-    BiomePoint { biome: BiomeType::DesertOasis,     c: 0.18, e: 0.45,  r: -0.40,t: 0.65,  h: -0.20, d: 0.0 },
     BiomePoint { biome: BiomeType::FracturedSavanna,c: 0.26, e: -0.20, r: 0.35, t: 0.55,  h: -0.30, d: 0.0 },
     BiomePoint { biome: BiomeType::SavannaBadlands, c: 0.24, e: 0.10,  r: 0.10, t: 0.55,  h: -0.45, d: 0.0 },
     BiomePoint { biome: BiomeType::AshenSavanna,    c: 0.35, e: 0.05,  r: 0.15, t: 0.80,  h: -0.35, d: 0.0 },

@@ -280,12 +280,6 @@ impl Voxel {
             Self::DolomiteGrass | Self::DolomiteSnow => Some("rock_dolomite"),
             Self::GraniteGrass | Self::GraniteSnow => Some("rock_granite"),
             Self::LimestoneGrass | Self::LimestoneSnow => Some("rock_limestone"),
-
-            Self::FungiAmanitaCap
-            | Self::FungiPorciniCap
-            | Self::FungiRussulaCap
-            | Self::FungiShiitakeCap
-            | Self::FungiVerdigrisCap => Some("fungi_inside"),
             _ => None,
         }
     }
