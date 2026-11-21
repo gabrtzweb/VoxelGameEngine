@@ -402,8 +402,9 @@ fn fragment(
     // only tint the green grass fringe hanging down so it matches the top face, leaving natural
     // dirt and stone underneath untouched. Tree leaves (color.a ~ 2.0 or 3.0) keep full biome tint on all 6 faces.
     let is_leaves_block = (vertex_output.color.a > 1.5) && (vertex_output.color.a < 3.5);
+    let is_full_grass_side = (vertex_output.color.a > 1.2) && (vertex_output.color.a < 1.5);
     var final_tint = tint_color.rgb;
-    if (!is_mask_face && !is_horizontal && !is_item_entity && is_foliage_tinted && !is_leaves_block) {
+    if (!is_mask_face && !is_horizontal && !is_item_entity && is_foliage_tinted && !is_leaves_block && !is_full_grass_side) {
         let is_grass_fringe = (uv.y < 0.55) && (tex_color.g > tex_color.r * 1.02) && (tex_color.g > tex_color.b * 1.15);
         if (is_grass_fringe) {
             let fringe_lum = dot(tex_color.rgb, vec3<f32>(0.299, 0.587, 0.114));

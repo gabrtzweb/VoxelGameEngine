@@ -121,7 +121,10 @@ pub fn mesh_shaped_voxels(
         } else {
             tint
         };
-        let side_tint = tint;
+        let mut side_tint = tint;
+        if is_grass && textures.full_grass {
+            side_tint[3] = 1.35;
+        }
         let is_neighbor_solid = |offset: IVec3| -> bool {
             let neighbor_pos = world_voxel + offset;
             let (n_shape, _) = world.get_shape(neighbor_pos);

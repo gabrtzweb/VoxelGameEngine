@@ -464,7 +464,7 @@ fn update_item_drops(
     for (entity, mut transform, mut drop) in &mut drops_query {
         drop.age += dt;
 
-        if drop.age >= DROP_MAX_LIFETIME || transform.translation.y < -64.0 {
+        if drop.age >= DROP_MAX_LIFETIME || transform.translation.y < -320.0 {
             commands.entity(entity).despawn();
             continue;
         }

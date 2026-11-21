@@ -549,69 +549,69 @@ pub fn emit_weather_particles(
     let fog_factor = post_rain_factor.max(biome_fog_factor);
 
     if fog_factor > 0.02 {
-        let attempts = if fog_factor > 0.5 { 2 } else { 1 };
-        for _ in 0..attempts {
-            if rng.next_f32() < fog_factor * 0.45 {
-                let rx = rng.next_triangle(24.0);
-                let rz = rng.next_triangle(24.0);
-                let wx = (lead_pos.x + rx).floor() as i32;
-                let wz = (lead_pos.z + rz).floor() as i32;
-                let start_y = (lead_pos.y + 6.0).floor() as i32;
-                let min_y = (lead_pos.y - 14.0).floor() as i32;
+        // Framerate-independent spawn rate (~5-8 mist banks/sec) so the 512 fog slots
+        // never wrap and abruptly overwrite active 12.5s fog banks even at 300+ FPS.
+        let spawn_prob = (fog_factor * 9.0 * dt).min(1.0);
+        if rng.next_f32() < spawn_prob {
+            let rx = rng.next_triangle(24.0);
+            let rz = rng.next_triangle(24.0);
+            let wx = (lead_pos.x + rx).floor() as i32;
+            let wz = (lead_pos.z + rz).floor() as i32;
+            let start_y = (lead_pos.y + 6.0).floor() as i32;
+            let min_y = (lead_pos.y - 14.0).floor() as i32;
 
-                for y in (min_y..=start_y).rev() {
-                    let check_pos = IVec3::new(wx, y, wz);
-                    if let Some(voxel) = voxel_world.get_voxel(check_pos) {
-                        if voxel != Voxel::Air {
-                            let spawn_vertical = rng.next_f32() < 0.50;
-                            if spawn_vertical {
-                                // `vertical_fog` / `vertical_fog_after_rain` using `horizontal_fog.png`
-                                let fog_pos = Vec3::new(
-                                    wx as f32 + 0.5,
-                                    y as f32 + 1.2 + rng.next_f32() * 0.6,
-                                    wz as f32 + 0.5,
-                                );
-                                pool.spawn(
-                                    fog_pos,
-                                    Vec3::new(current_wind.x * 0.08, 0.04, current_wind.z * 0.08),
-                                    Vec2::new(
-                                        3.5 + rng.next_f32() * 2.0,
-                                        2.6 + rng.next_f32() * 1.4,
-                                    ),
-                                    [0.92, 0.96, 1.0, 0.42 * fog_factor],
-                                    UV_HORIZONTAL_FOG,
-                                    ParticleRotationMode::Vertical,
-                                    ParticleFadeMode::InOut,
-                                    12.5,
-                                    -9999.0,
-                                    WeatherParticleKind::GroundFog,
-                                );
-                            } else {
-                                // `fog` / `fog_after_rain` using `fog_translucent.png`
-                                let fog_pos = Vec3::new(
-                                    wx as f32 + 0.5,
-                                    y as f32 + 0.45 + rng.next_f32() * 0.5,
-                                    wz as f32 + 0.5,
-                                );
-                                pool.spawn(
-                                    fog_pos,
-                                    Vec3::new(current_wind.x * 0.10, 0.05, current_wind.z * 0.10),
-                                    Vec2::splat(3.2 + rng.next_f32() * 2.0),
-                                    [0.90, 0.95, 1.0, 0.42 * fog_factor],
-                                    UV_FOG,
-                                    ParticleRotationMode::Horizontal,
-                                    ParticleFadeMode::InOut,
-                                    12.5,
-                                    -9999.0,
-                                    WeatherParticleKind::GroundFog,
-                                );
-                                pool.set_last_rotation(
-                                    rng.next_f32() * std::f32::consts::TAU,
-                                    (rng.next_f32() - 0.5) * 0.12,
-                                );
-                            }
-                            break;
+            for y in (min_y..=start_y).rev() {
+                let check_pos = IVec3::new(wx, y, wz);
+                if let Some(voxel) = voxel_world.get_voxel(check_pos) {
+                    if voxel != Voxel::Air {
+                        let spawn_vertical = rng.next_f32() < 0.50;
+                        if spawn_vertical {
+                            // `vertical_fog` / `vertical_fog_after_rain` using `horizontal_fog.png`
+                            let fog_pos = Vec3::new(
+                                wx as f32 + 0.5,
+                                y as f32 + 1.2 + rng.next_f32() * 0.6,
+                                wz as f32 + 0.5,
+                            );
+                            pool.spawn(
+                                fog_pos,
+                                Vec3::new(current_wind.x * 0.08, 0.04, current_wind.z * 0.08),
+                                Vec2::new(
+                                    3.5 + rng.next_f32() * 2.0,
+                                    2.6 + rng.next_f32() * 1.4,
+                                ),
+                                [0.92, 0.96, 1.0, 0.42 * fog_factor],
+                                UV_HORIZONTAL_FOG,
+                                ParticleRotationMode::Vertical,
+                                ParticleFadeMode::InOut,
+                                12.5,
+                                -9999.0,
+                                WeatherParticleKind::GroundFog,
+                            );
+                        } else {
+                            // `fog` / `fog_after_rain` using `fog_translucent.png`
+                            let fog_pos = Vec3::new(
+                                wx as f32 + 0.5,
+                                y as f32 + 0.45 + rng.next_f32() * 0.5,
+                                wz as f32 + 0.5,
+                            );
+                            pool.spawn(
+                                fog_pos,
+                                Vec3::new(current_wind.x * 0.10, 0.05, current_wind.z * 0.10),
+                                Vec2::splat(3.2 + rng.next_f32() * 2.0),
+                                [0.90, 0.95, 1.0, 0.42 * fog_factor],
+                                UV_FOG,
+                                ParticleRotationMode::Horizontal,
+                                ParticleFadeMode::InOut,
+                                12.5,
+                                -9999.0,
+                                WeatherParticleKind::GroundFog,
+                            );
+                            pool.set_last_rotation(
+                                rng.next_f32() * std::f32::consts::TAU,
+                                (rng.next_f32() - 0.5) * 0.12,
+                            );
                         }
+                        break;
                     }
                 }
             }

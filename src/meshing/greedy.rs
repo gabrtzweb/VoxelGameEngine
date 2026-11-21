@@ -395,6 +395,8 @@ impl MeshBuffers {
             0.0
         } else if key.voxel.is_painted() {
             0.6
+        } else if key.tint_color[3] > 1.2 && key.tint_color[3] < 1.5 {
+            1.35
         } else {
             1.0
         };
@@ -437,7 +439,9 @@ impl MeshBuffers {
         let mask_face_alpha = if key.mask_index > 0 {
             let (tint, base_tinted) = if key.packed_tint != 0 {
                 (key.packed_tint, 0u32)
-            } else if key.voxel.is_grass_soil() && direction == FaceDirection::PositiveY {
+            } else if key.voxel.is_grass_soil()
+                && (direction == FaceDirection::PositiveY || key.tint_color[3] > 1.2)
+            {
                 (pack_tint7(key.tint_color), 1u32)
             } else {
                 (0u32, 0u32)
@@ -980,6 +984,12 @@ impl ChunkMesher {
                             0.0
                         } else if voxel.is_painted() {
                             0.6
+                        } else if is_grass
+                            && textures.full_grass
+                            && direction != FaceDirection::PositiveY
+                            && direction != FaceDirection::NegativeY
+                        {
+                            1.35
                         } else {
                             1.0
                         };

@@ -99,9 +99,11 @@ impl WeatherParticle {
             ParticleFadeMode::In => base_alpha * progress,
             ParticleFadeMode::InOut => {
                 if progress < 0.30 {
-                    base_alpha * (progress / 0.30)
-                } else if progress > 0.70 {
-                    base_alpha * ((1.0 - progress) / 0.30)
+                    let t = progress / 0.30;
+                    base_alpha * (t * t * (3.0 - 2.0 * t))
+                } else if progress > 0.65 {
+                    let t = (1.0 - progress) / 0.35;
+                    base_alpha * (t * t * (3.0 - 2.0 * t))
                 } else {
                     base_alpha
                 }
