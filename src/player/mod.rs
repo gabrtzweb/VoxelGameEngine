@@ -303,6 +303,11 @@ fn lock_cursor(
 #[derive(Component)]
 pub struct CrosshairUi;
 
+#[derive(Component, Clone, Copy)]
+struct CrosshairBar {
+    vertical: bool,
+}
+
 fn spawn_crosshair(mut commands: Commands) {
     commands.spawn((
         CrosshairUi,
@@ -317,43 +322,111 @@ fn spawn_crosshair(mut commands: Commands) {
         ZIndex(100),
         children![
             (
+                CrosshairBar { vertical: true },
                 Node {
                     position_type: PositionType::Absolute,
                     width: px(2.0),
                     height: px(14.0),
+                    border: UiRect::all(px(0.0)),
                     ..default()
                 },
                 BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.9)),
+                BorderColor::all(Color::NONE),
             ),
             (
+                CrosshairBar { vertical: false },
                 Node {
                     position_type: PositionType::Absolute,
                     width: px(14.0),
                     height: px(2.0),
+                    border: UiRect::all(px(0.0)),
                     ..default()
                 },
                 BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.9)),
+                BorderColor::all(Color::NONE),
             ),
         ],
     ));
 }
 
 fn update_crosshair_visibility(
+    time: Res<Time>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
     inspector: Option<Res<InspectorInteraction>>,
+    game_settings: Option<Res<crate::menu::GameSettings>>,
+    current_target: Option<Res<crate::gameplay::CurrentTarget>>,
+    mut fade_alpha: Local<f32>,
     mut crosshair_query: Query<&mut Visibility, With<CrosshairUi>>,
+    mut bars_query: Query<(&CrosshairBar, &mut Node, &mut BackgroundColor, &mut BorderColor)>,
 ) {
     let hide = menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None)
         || inspector.is_some_and(|i| i.active);
 
+    let high_contrast = game_settings
+        .as_ref()
+        .is_some_and(|s| s.high_contrast_crosshair);
+    let dynamic = game_settings.as_ref().is_some_and(|s| s.dynamic_crosshair);
+    let has_target = current_target.as_ref().is_some_and(|t| t.hit.is_some());
+
+    let target_alpha = if hide {
+        0.0
+    } else if dynamic && !has_target {
+        0.0
+    } else {
+        1.0
+    };
+
+    let dt = time.delta_secs();
+    if *fade_alpha == 0.0 && target_alpha == 1.0 && !dynamic {
+        *fade_alpha = 1.0;
+    } else {
+        let smooth = 1.0 - (-14.0 * dt).exp();
+        *fade_alpha += (target_alpha - *fade_alpha) * smooth;
+        if (*fade_alpha - target_alpha).abs() < 0.01 {
+            *fade_alpha = target_alpha;
+        }
+    }
+
+    let show_vis = !hide && *fade_alpha > 0.01;
     for mut vis in crosshair_query.iter_mut() {
-        let target_vis = if hide {
-            Visibility::Hidden
-        } else {
+        let target_vis = if show_vis {
             Visibility::Visible
+        } else {
+            Visibility::Hidden
         };
         if *vis != target_vis {
             *vis = target_vis;
         }
+    }
+
+    let (thickness, length, fill, border_px, border_col) = if high_contrast {
+        (
+            4.0,
+            20.0,
+            Color::srgba(1.0, 0.92, 0.25, *fade_alpha),
+            1.0,
+            Color::srgba(0.0, 0.0, 0.0, *fade_alpha),
+        )
+    } else {
+        (
+            2.0,
+            14.0,
+            Color::srgba(1.0, 1.0, 1.0, 0.90 * *fade_alpha),
+            0.0,
+            Color::NONE,
+        )
+    };
+
+    for (bar, mut node, mut bg, mut border) in &mut bars_query {
+        if bar.vertical {
+            node.width = px(thickness);
+            node.height = px(length);
+        } else {
+            node.width = px(length);
+            node.height = px(thickness);
+        }
+        node.border = UiRect::all(px(border_px));
+        bg.0 = fill;
+        *border = BorderColor::all(border_col);
     }
 }

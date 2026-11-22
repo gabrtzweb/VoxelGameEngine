@@ -170,6 +170,14 @@ fn main() {
 
 
 
+    let map_layers = voxel_game_engine::map::world_map::WorldMapLayers {
+        show_player_marker: local_config.map_show_player_marker,
+        show_waypoints: local_config.map_show_waypoints,
+        show_chunk_grid: local_config.map_show_chunk_grid,
+        follow_day_night: local_config.map_follow_day_night,
+        show_elevation: local_config.map_show_elevation,
+    };
+
     let game_settings = GameSettings {
 
         fov_degrees: local_config.fov_degrees,
@@ -193,6 +201,8 @@ fn main() {
         camera_smoothing: local_config.camera_smoothing,
 
         third_person_distance: local_config.third_person_distance,
+        third_person_over_shoulder: local_config.third_person_over_shoulder,
+        third_person_free_orbit: local_config.third_person_free_orbit,
 
         ui_volume: local_config.ui_volume,
 
@@ -201,6 +211,8 @@ fn main() {
         auto_save_minutes: local_config.auto_save_minutes,
 
         high_contrast_crosshair: local_config.high_contrast_crosshair,
+
+        dynamic_crosshair: local_config.dynamic_crosshair,
 
         subtitles_enabled: local_config.subtitles_enabled,
 
@@ -243,6 +255,7 @@ fn main() {
         .insert_resource(chunk_settings)
 
         .insert_resource(game_settings)
+        .insert_resource(map_layers)
 
         .insert_resource(dynamic_fps_settings)
 

@@ -300,7 +300,11 @@ pub fn creative_movement(
 
     let (yaw, _, _) = camera_transform.rotation.to_euler(EulerRot::YXZ);
 
-    motion.facing_yaw = yaw;
+    let free_orbit_active =
+        camera_controller.is_third_person() && game_settings.third_person_free_orbit;
+    if !free_orbit_active {
+        motion.facing_yaw = yaw;
+    }
 
     let is_fast = !is_in_inventory
         && control_settings.as_ref().map_or(
@@ -439,15 +443,36 @@ pub fn creative_movement(
         + Vec3::Y * (motion.current_eye_height + motion.camera_step_offset)
         + motion.bob_offset;
 
+    if free_orbit_active {
+        let horiz_vel = Vec2::new(motion.velocity.x, motion.velocity.z);
+        if horiz_vel.length_squared() > 0.04 {
+            let target_yaw = (-horiz_vel.x).atan2(-horiz_vel.y);
+            let mut diff = target_yaw - motion.facing_yaw;
+            while diff > std::f32::consts::PI {
+                diff -= std::f32::consts::TAU;
+            }
+            while diff < -std::f32::consts::PI {
+                diff += std::f32::consts::TAU;
+            }
+            let turn_t = 1.0 - (-12.0 * delta_seconds).exp();
+            motion.facing_yaw += diff * turn_t;
+        }
+    }
+
     if camera_controller.is_third_person() {
         let max_dist = game_settings.third_person_distance.clamp(2.5, 8.0);
+        let pivot = if game_settings.third_person_over_shoulder {
+            eye_position + camera_right * 0.55 - Vec3::Y * 0.12
+        } else {
+            eye_position
+        };
         let actual_distance = resolve_third_person_camera_distance(
             &world,
-            eye_position,
+            pivot,
             camera_forward,
             max_dist,
         );
-        let target_pos = eye_position - camera_forward * actual_distance;
+        let target_pos = pivot - camera_forward * actual_distance;
         camera_transform.translation = if game_settings.camera_smoothing > 0 {
             let speed = match game_settings.camera_smoothing {
                 1 => 22.0,

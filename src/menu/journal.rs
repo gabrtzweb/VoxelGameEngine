@@ -506,6 +506,7 @@ fn spawn_journal_menu(
     mut commands: Commands,
     active_tab: Res<JournalTab>,
     progress: Res<JournalProgress>,
+    map_cache: Option<Res<crate::map::cache::MapCache>>,
     env_state: Option<Res<EnvironmentState>>,
     weather: Option<Res<WeatherManager>>,
     loc: Option<Res<Localization>>,
@@ -536,10 +537,11 @@ fn spawn_journal_menu(
     let day_num = env_state.as_ref().map_or(1, |e| e.day_count);
     let season_str = t(season_loc_key(day_num), "Spring").to_uppercase();
     let day_lbl = t("journal.day", "Day");
-    let time_of_day = env_state.as_ref().map_or(0.5, |e| e.time_of_day);
-    let total_mins = (time_of_day * 24.0 * 60.0) as u32 % (24 * 60);
-    let hour = total_mins / 60;
-    let time_str = format!("{:02}:{:02}", hour, total_mins % 60);
+    let time_of_day = env_state.as_ref().map_or(0.25, |e| e.time_of_day);
+    let hours = (time_of_day * 24.0 + 6.0).rem_euclid(24.0);
+    let hour = hours.floor() as u32;
+    let minute = ((hours - hours.floor()) * 60.0).floor() as u32;
+    let time_str = format!("{:02}:{:02}", hour, minute);
     let time_icon = asset_server.load(time_icon_for(hour));
     let weather_debug = weather
         .as_ref()
@@ -1321,6 +1323,16 @@ fn spawn_journal_menu(
                                                 .min_altitude
                                                 .map_or("--".to_string(), |y| format!("{y} m")),
                                         ),
+                                        (
+                                            "chunks_explored",
+                                            t("journal.stats.chunks_explored", "Chunks Explored"),
+                                            format!(
+                                                "{}",
+                                                map_cache
+                                                    .as_ref()
+                                                    .map_or(0, |c| c.explored_chunk_count())
+                                            ),
+                                        ),
                                     ],
                                 ),
                                 (
@@ -1426,6 +1438,18 @@ fn spawn_journal_menu(
                                                 "Skill Points Spent",
                                             ),
                                             "0".to_string(),
+                                        ),
+                                        (
+                                            "compendium_entries",
+                                            t(
+                                                "journal.stats.compendium_entries",
+                                                "Compendium Entries",
+                                            ),
+                                            format!(
+                                                "{}",
+                                                progress.discovered_biomes.len()
+                                                    + progress.discovered_voxels.len()
+                                            ),
                                         ),
                                     ],
                                 ),
@@ -1763,9 +1787,10 @@ fn update_journal_almanac(
             l.t(season_loc_key(day_num)).to_uppercase()
         });
         let day_lbl = loc.as_ref().map_or("Day", |l| l.t("journal.day"));
-        let total_mins = (env.time_of_day * 24.0 * 60.0) as u32 % (24 * 60);
-        let hour = total_mins / 60;
-        let time_str = format!("{:02}:{:02}", hour, total_mins % 60);
+        let hours = (env.time_of_day * 24.0 + 6.0).rem_euclid(24.0);
+        let hour = hours.floor() as u32;
+        let minute = ((hours - hours.floor()) * 60.0).floor() as u32;
+        let time_str = format!("{:02}:{:02}", hour, minute);
         let day_str = format!("{day_lbl} {day_num}");
 
         for mut t in &mut season_q {

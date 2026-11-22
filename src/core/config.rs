@@ -652,6 +652,34 @@ pub struct LocalConfig {
     #[serde(default = "default_third_person_distance")]
     pub third_person_distance: f32,
 
+    /// Third-person camera over-the-shoulder offset (false = centered, true = over right shoulder).
+    #[serde(default)]
+    pub third_person_over_shoulder: bool,
+
+    /// Allow 360-degree free camera orbit in third person without turning the character.
+    #[serde(default)]
+    pub third_person_free_orbit: bool,
+
+    /// World Map layer: show player marker.
+    #[serde(default = "default_true")]
+    pub map_show_player_marker: bool,
+
+    /// World Map layer: show waypoint pins.
+    #[serde(default = "default_true")]
+    pub map_show_waypoints: bool,
+
+    /// World Map layer: show 16x16 chunk grid.
+    #[serde(default)]
+    pub map_show_chunk_grid: bool,
+
+    /// World Map layer: tint terrain according to day/night time.
+    #[serde(default = "default_true")]
+    pub map_follow_day_night: bool,
+
+    /// World Map layer: draw topographic elevation contours.
+    #[serde(default = "default_true")]
+    pub map_show_elevation: bool,
+
     /// UI sound effects volume (0.0 ..= 1.0).
     #[serde(default = "default_ui_volume")]
     pub ui_volume: f32,
@@ -667,6 +695,10 @@ pub struct LocalConfig {
     /// High-contrast crosshair visibility option.
     #[serde(default)]
     pub high_contrast_crosshair: bool,
+
+    /// Dynamic crosshair that fades out when not targeting an interactable block.
+    #[serde(default)]
+    pub dynamic_crosshair: bool,
 
     /// Subtitles / audio cues accessibility option.
     #[serde(default)]
@@ -706,6 +738,10 @@ fn default_connected_textures() -> bool {
 }
 
 fn default_mouse_lock_borderless() -> bool {
+    true
+}
+
+fn default_true() -> bool {
     true
 }
 
@@ -977,10 +1013,18 @@ impl Default for LocalConfig {
             mouse_lock_borderless: default_mouse_lock_borderless(),
             camera_smoothing: 0,
             third_person_distance: default_third_person_distance(),
+            third_person_over_shoulder: false,
+            third_person_free_orbit: false,
+            map_show_player_marker: true,
+            map_show_waypoints: true,
+            map_show_chunk_grid: false,
+            map_follow_day_night: true,
+            map_show_elevation: true,
             ui_volume: default_ui_volume(),
             mute_on_unfocus: false,
             auto_save_minutes: default_auto_save_minutes(),
             high_contrast_crosshair: false,
+            dynamic_crosshair: false,
             subtitles_enabled: false,
             fps_hud_mode: crate::core::DebugHudMode::Minimal,
             pixelated_shadows: default_pixelated_shadows(),

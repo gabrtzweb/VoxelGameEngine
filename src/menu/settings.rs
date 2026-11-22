@@ -132,12 +132,15 @@ enum SettingsAction {
     IncCameraSmoothing,
     DecThirdPersonDist,
     IncThirdPersonDist,
+    ToggleThirdPersonShoulder,
+    ToggleThirdPersonFreeOrbit,
     DecUiVol,
     IncUiVol,
     ToggleMuteUnfocus,
     DecFpsHud,
     IncFpsHud,
     ToggleHighContrastCrosshair,
+    ToggleDynamicCrosshair,
     ToggleSubtitles,
     TogglePixelatedShadows,
     ToggleHdrBloom,
@@ -179,6 +182,12 @@ struct CameraSmoothingLabel;
 struct ThirdPersonDistLabel;
 
 #[derive(Component)]
+struct ThirdPersonShoulderLabel;
+
+#[derive(Component)]
+struct ThirdPersonFreeOrbitLabel;
+
+#[derive(Component)]
 struct UiVolLabel;
 
 #[derive(Component)]
@@ -189,6 +198,9 @@ struct FpsHudLabel;
 
 #[derive(Component)]
 struct HighContrastCrosshairLabel;
+
+#[derive(Component)]
+struct DynamicCrosshairLabel;
 
 #[derive(Component)]
 struct SubtitlesLabel;
@@ -793,6 +805,22 @@ fn spawn_settings_menu(
 
                                 spawn_toggle_button(
                                     col_acc,
+                                    SettingsAction::ToggleDynamicCrosshair,
+                                    format!(
+                                        "{}: {}",
+                                        loc.t("menu.settings.dynamic_crosshair"),
+                                        if game_settings.dynamic_crosshair {
+                                            loc.t("common.enabled")
+                                        } else {
+                                            loc.t("common.disabled")
+                                        }
+                                    ),
+                                    DynamicCrosshairLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                spawn_toggle_button(
+                                    col_acc,
                                     SettingsAction::ToggleSubtitles,
                                     format!(
                                         "{}: {}",
@@ -1084,34 +1112,6 @@ fn spawn_settings_menu(
                                     font_handle.as_ref(),
                                 );
 
-                                // Procedural Grass Toggle Button
-                                spawn_toggle_button(
-                                    col_right,
-                                    SettingsAction::ToggleProceduralGrass,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.procedural_grass"),
-                                        if local_config.grass_enabled {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
-                                        }
-                                    ),
-                                    ProceduralGrassLabel,
-                                    font_handle.as_ref(),
-                                );
-
-                                // Grass Density Stepper
-                                spawn_stepper_row(
-                                    col_right,
-                                    loc.t("menu.settings.grass_density"),
-                                    format_grass_density(local_config.grass_density, &loc),
-                                    SettingsAction::DecGrassDensity,
-                                    SettingsAction::IncGrassDensity,
-                                    GrassDensityLabel,
-                                    font_handle.as_ref(),
-                                );
-
                                 // Connected Textures Toggle
                                 spawn_toggle_button(
                                     col_right,
@@ -1342,6 +1342,40 @@ fn spawn_settings_menu(
                             ThirdPersonDistLabel,
                             font_handle.as_ref(),
                         );
+
+                        // Third-Person Style Toggle (Centered vs Over-the-Shoulder)
+                        spawn_toggle_button(
+                            col_cam,
+                            SettingsAction::ToggleThirdPersonShoulder,
+                            format!(
+                                "{}: {}",
+                                loc.t("menu.settings.third_person_style"),
+                                if game_settings.third_person_over_shoulder {
+                                    loc.t("menu.settings.third_person_shoulder")
+                                } else {
+                                    loc.t("menu.settings.third_person_centered")
+                                }
+                            ),
+                            ThirdPersonShoulderLabel,
+                            font_handle.as_ref(),
+                        );
+
+                        // Third-Person Free 360° Orbit Toggle
+                        spawn_toggle_button(
+                            col_cam,
+                            SettingsAction::ToggleThirdPersonFreeOrbit,
+                            format!(
+                                "{}: {}",
+                                loc.t("menu.settings.third_person_free_orbit"),
+                                if game_settings.third_person_free_orbit {
+                                    loc.t("common.enabled")
+                                } else {
+                                    loc.t("common.disabled")
+                                }
+                            ),
+                            ThirdPersonFreeOrbitLabel,
+                            font_handle.as_ref(),
+                        );
                     });
 
                     // Shaders & Visual FX Settings Container
@@ -1475,6 +1509,34 @@ fn spawn_settings_menu(
                                         }
                                     ),
                                     DynamicLightingLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                // Procedural Grass Toggle Button (moved from Graphics to Shaders & FX)
+                                spawn_toggle_button(
+                                    col_right,
+                                    SettingsAction::ToggleProceduralGrass,
+                                    format!(
+                                        "{}: {}",
+                                        loc.t("menu.settings.procedural_grass"),
+                                        if local_config.grass_enabled {
+                                            loc.t("common.enabled")
+                                        } else {
+                                            loc.t("common.disabled")
+                                        }
+                                    ),
+                                    ProceduralGrassLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                // Grass Density Stepper (moved from Graphics to Shaders & FX)
+                                spawn_stepper_row(
+                                    col_right,
+                                    loc.t("menu.settings.grass_density"),
+                                    format_grass_density(local_config.grass_density, &loc),
+                                    SettingsAction::DecGrassDensity,
+                                    SettingsAction::IncGrassDensity,
+                                    GrassDensityLabel,
                                     font_handle.as_ref(),
                                 );
                             });
@@ -2402,6 +2464,16 @@ fn handle_settings_buttons(
                         (game_settings.third_person_distance + 0.5).clamp(2.5, 8.0);
                     local_config.third_person_distance = game_settings.third_person_distance;
                 }
+                SettingsAction::ToggleThirdPersonShoulder => {
+                    game_settings.third_person_over_shoulder =
+                        !game_settings.third_person_over_shoulder;
+                    local_config.third_person_over_shoulder =
+                        game_settings.third_person_over_shoulder;
+                }
+                SettingsAction::ToggleThirdPersonFreeOrbit => {
+                    game_settings.third_person_free_orbit = !game_settings.third_person_free_orbit;
+                    local_config.third_person_free_orbit = game_settings.third_person_free_orbit;
+                }
                 SettingsAction::DecUiVol => {
                     game_settings.ui_volume = (game_settings.ui_volume - 0.05).clamp(0.0, 1.0);
                     local_config.ui_volume = game_settings.ui_volume;
@@ -2429,6 +2501,10 @@ fn handle_settings_buttons(
                 SettingsAction::ToggleHighContrastCrosshair => {
                     game_settings.high_contrast_crosshair = !game_settings.high_contrast_crosshair;
                     local_config.high_contrast_crosshair = game_settings.high_contrast_crosshair;
+                }
+                SettingsAction::ToggleDynamicCrosshair => {
+                    game_settings.dynamic_crosshair = !game_settings.dynamic_crosshair;
+                    local_config.dynamic_crosshair = game_settings.dynamic_crosshair;
                 }
                 SettingsAction::ToggleSubtitles => {
                     game_settings.subtitles_enabled = !game_settings.subtitles_enabled;
@@ -2969,10 +3045,13 @@ fn update_extended_settings_labels(
             Option<&AutoSaveLabel>,
             Option<&CameraSmoothingLabel>,
             Option<&ThirdPersonDistLabel>,
+            Option<&ThirdPersonShoulderLabel>,
+            Option<&ThirdPersonFreeOrbitLabel>,
             Option<&UiVolLabel>,
             Option<&MuteUnfocusLabel>,
             Option<&FpsHudLabel>,
             Option<&HighContrastCrosshairLabel>,
+            Option<&DynamicCrosshairLabel>,
             Option<&SubtitlesLabel>,
         ),
     )>,
@@ -2997,10 +3076,13 @@ fn update_extended_settings_labels(
             auto_save,
             cam_smooth,
             tp_dist,
+            tp_shoulder,
+            tp_free_orbit,
             ui_vol,
             mute_unfocus,
             fps_hud,
             crosshair,
+            dyn_crosshair,
             subtitles,
         ),
     ) in &mut labels_q
@@ -3021,6 +3103,26 @@ fn update_extended_settings_labels(
             text.0 = format_camera_smoothing(game_settings.camera_smoothing, &loc);
         } else if tp_dist.is_some() {
             text.0 = format!("{:.1}m", game_settings.third_person_distance);
+        } else if tp_shoulder.is_some() {
+            text.0 = format!(
+                "{}: {}",
+                loc.t("menu.settings.third_person_style"),
+                if game_settings.third_person_over_shoulder {
+                    loc.t("menu.settings.third_person_shoulder")
+                } else {
+                    loc.t("menu.settings.third_person_centered")
+                }
+            );
+        } else if tp_free_orbit.is_some() {
+            text.0 = format!(
+                "{}: {}",
+                loc.t("menu.settings.third_person_free_orbit"),
+                if game_settings.third_person_free_orbit {
+                    loc.t("common.enabled")
+                } else {
+                    loc.t("common.disabled")
+                }
+            );
         } else if ui_vol.is_some() {
             text.0 = crate::core::config::format_volume(game_settings.ui_volume);
         } else if mute_unfocus.is_some() {
@@ -3040,6 +3142,16 @@ fn update_extended_settings_labels(
                 "{}: {}",
                 loc.t("menu.settings.high_contrast_crosshair"),
                 if game_settings.high_contrast_crosshair {
+                    loc.t("common.enabled")
+                } else {
+                    loc.t("common.disabled")
+                }
+            );
+        } else if dyn_crosshair.is_some() {
+            text.0 = format!(
+                "{}: {}",
+                loc.t("menu.settings.dynamic_crosshair"),
+                if game_settings.dynamic_crosshair {
                     loc.t("common.enabled")
                 } else {
                     loc.t("common.disabled")

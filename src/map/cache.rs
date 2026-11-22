@@ -83,6 +83,11 @@ impl MapCache {
         self.chunks.get(&chunk_col)
     }
 
+    /// Number of explored 16x16 chunk columns currently stored in the map cache.
+    pub fn explored_chunk_count(&self) -> usize {
+        self.chunks.len()
+    }
+
     /// Clears all cached map data.
     pub fn clear(&mut self) {
         self.chunks.clear();

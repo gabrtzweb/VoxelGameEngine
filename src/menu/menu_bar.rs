@@ -639,9 +639,10 @@ fn update_menu_bar_clock(
     let Some(env) = env_state else {
         return;
     };
-    let total_mins = (env.time_of_day * 24.0 * 60.0) as u32 % (24 * 60);
-    let hour = total_mins / 60;
-    let time_str = format!("{:02}:{:02}", hour, total_mins % 60);
+    let hours = (env.time_of_day * 24.0 + 6.0).rem_euclid(24.0);
+    let hour = hours.floor() as u32;
+    let minute = ((hours - hours.floor()) * 60.0).floor() as u32;
+    let time_str = format!("{:02}:{:02}", hour, minute);
 
     for mut t in &mut clock_text_q {
         if t.0 != time_str {

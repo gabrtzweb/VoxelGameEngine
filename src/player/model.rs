@@ -492,7 +492,10 @@ pub fn update_player_model(
     time: Res<Time>,
     env_status: Res<PlayerEnvironmentStatus>,
     game_mode: Res<GameMode>,
-    selected_race: Option<Res<SelectedRace>>,
+    (selected_race, game_settings): (
+        Option<Res<SelectedRace>>,
+        Option<Res<crate::menu::GameSettings>>,
+    ),
     menu_state: Option<Res<State<MenuState>>>,
     mut hand_anim: ResMut<PlayerHandAnimState>,
     player: Single<(&Transform, &PlayerMotion), With<Player>>,
@@ -657,17 +660,21 @@ pub fn update_player_model(
     let h_vel = Vec2::new(motion.velocity.x, motion.velocity.z);
     let h_speed = h_vel.length();
 
+    let free_orbit_enabled = game_settings
+        .as_ref()
+        .is_some_and(|s| s.third_person_free_orbit);
+
     if !is_third_person {
         // In first person, body faces directly along camera yaw so looking down shows body centered
         anim_state.body_yaw = camera_yaw;
     } else if h_speed > 0.15 {
-        // In third person, body turns smoothly toward movement heading or camera yaw
+        // In third person, body turns smoothly toward movement heading
         let target_yaw = (-motion.velocity.x).atan2(-motion.velocity.z);
         let diff = (target_yaw - anim_state.body_yaw).rem_euclid(2.0 * PI);
         let shortest = if diff > PI { diff - 2.0 * PI } else { diff };
         anim_state.body_yaw += shortest * (1.0 - (-10.0 * delta_seconds).exp());
-    } else {
-        // When stationary, keep body aligned within 65 degrees of camera yaw
+    } else if !free_orbit_enabled {
+        // When stationary (without Free 360° Orbit), keep body aligned within 65 degrees of camera yaw
         let diff = (camera_yaw - anim_state.body_yaw).rem_euclid(2.0 * PI);
         let shortest = if diff > PI { diff - 2.0 * PI } else { diff };
         if shortest.abs() > 1.15 {
