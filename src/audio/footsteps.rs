@@ -146,6 +146,7 @@ fn update_player_footstep_audio(
     time: Res<Time>,
     world_res: Option<Res<VoxelWorld>>,
     env_status: Option<Res<PlayerEnvironmentStatus>>,
+    selected_subrace: Option<Res<crate::player::SelectedSubrace>>,
     player_query: Query<(&Transform, &PlayerMotion), With<Player>>,
     asset_server: Res<AssetServer>,
     mut state: ResMut<FootstepAudioState>,
@@ -163,6 +164,10 @@ fn update_player_footstep_audio(
     if dt <= 0.0 {
         return;
     }
+
+    let noise_mult = selected_subrace
+        .as_ref()
+        .map_or(1.0, |s| s.0.attributes().footstep_noise_multiplier);
 
     let submersion = env_status.as_ref().map_or(0.0, |s| s.submersion);
     let is_cam_water = env_status.as_ref().map_or(false, |s| s.is_camera_in_water);
@@ -224,7 +229,7 @@ fn update_player_footstep_audio(
 
         if let Some(sound) = state.get_sound(category, &asset_server) {
             commands.trigger(
-                PlaySfxEvent::new(sound, 0.44 * fall_severity).with_speed(rand_pitch),
+                PlaySfxEvent::new(sound, 0.44 * fall_severity * noise_mult).with_speed(rand_pitch),
             );
         }
     }
@@ -313,7 +318,7 @@ fn update_player_footstep_audio(
                     0.54
                 } else {
                     0.44
-                };
+                } * noise_mult;
 
                 if let Some(sound) = state.get_sound(category, &asset_server) {
                     commands.trigger(PlaySfxEvent::new(sound, step_volume).with_speed(rand_pitch));

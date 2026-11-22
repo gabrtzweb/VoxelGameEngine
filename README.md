@@ -46,8 +46,8 @@ T                 Rotate block shape 90° clockwise (locked on non-rotatable blo
 ESC               System Menu & 6-Tab Top Bar (Inventory, Skills, Journal, Quests, World Map, System)
 Q / E (in menu)   Cycle between top bar menu tabs
 Tab               Personal Inventory / Creative Catalog
-H                 Skills & Character Sheet
-J                 Journal (Live World Almanac, Bestiary, Compendium, Statistics)
+H                 Skills & Character Sheet (60 skills across 4 general trees + dynamic Racial tree)
+J                 Journal (Live World Almanac, Compendium: 44 Biomes, Bestiary, Flora, Blocks, Items, Statistics)
 K                 Quests & Objectives
 M                 World Map (Full-screen interactive map with right sidebar)
 
@@ -56,7 +56,7 @@ F2                Chunk debug borders
 F3                Toggle HUD (FPS Only / Compact / Full debug)
 Shift + F3        Toggle HUD visibility (Show / Hide)
 F4                Creative / Spectator
-F5                First / Third person (8-race custom voxel character rig, head tracking, 3D held items & animations)
+F5                First / Third person (3-race / 9-subrace custom voxel character rig, head tracking, 3D held items & animations)
 F6                Day / Night cycle (Click: step phase / Hold: scrub time)
 F7                Weather cycle (Click: step weather / Shift+F7 or Hold: dynamic simulation)
 ```

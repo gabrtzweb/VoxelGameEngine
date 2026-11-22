@@ -4,7 +4,7 @@ use crate::{menu::GameSettings, world::VoxelWorld};
 
 use super::{
     CharacterRace, GameMode, PLAYER_EYE_HEIGHT, PLAYER_HEIGHT, Player, PlayerEnvironmentStatus,
-    SelectedRace,
+    SelectedRace, SelectedSubrace,
     camera::{
         InspectorInteraction, PlayerCamera, resolve_third_person_camera_distance,
     },
@@ -145,7 +145,7 @@ pub fn creative_movement(
     mouse_scroll: Res<AccumulatedMouseScroll>,
     time: Res<Time>,
     game_mode: Res<GameMode>,
-    selected_race: Option<Res<SelectedRace>>,
+    (selected_race, selected_subrace): (Option<Res<SelectedRace>>, Option<Res<SelectedSubrace>>),
     inspector_interaction: Res<InspectorInteraction>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
     game_settings: Res<GameSettings>,
@@ -285,7 +285,10 @@ pub fn creative_movement(
             jump_tap.since_last_press = Some(0.0);
 
             if motion.grounded && !motion.flying && motion.stance != PlayerStance::Crawling {
-                motion.velocity.y = JUMP_SPEED;
+                let jump_vel = selected_subrace
+                    .as_ref()
+                    .map_or(JUMP_SPEED, |s| s.0.attributes().jump_speed(GRAVITY));
+                motion.velocity.y = jump_vel;
                 motion.grounded = false;
             }
         }
@@ -331,6 +334,13 @@ pub fn creative_movement(
     };
 
     let stance_h = motion.stance_height_for_scale(race_height_scale);
+    let (move_speed_multiplier, swim_speed_multiplier) = selected_subrace.as_ref().map_or(
+        (1.0, 1.0),
+        |s| {
+            let a = s.0.attributes();
+            (a.move_speed_multiplier, a.swim_speed_multiplier)
+        },
+    );
     if motion.flying {
         fly_movement(
             input_dirs,
@@ -357,6 +367,8 @@ pub fn creative_movement(
             in_water,
             env_status.water_flow_velocity,
             stance_h,
+            move_speed_multiplier,
+            swim_speed_multiplier,
         );
     }
 
@@ -548,6 +560,8 @@ fn grounded_or_water_movement(
     in_water: bool,
     water_flow_velocity: Vec3,
     stance_height: f32,
+    move_speed_multiplier: f32,
+    swim_speed_multiplier: f32,
 ) {
     let mut forward = Vec3::new(camera_forward.x, 0.0, camera_forward.z);
 
@@ -583,13 +597,14 @@ fn grounded_or_water_movement(
     }
 
     let speed = if in_water {
-        if is_fast {
+        let water_base = if is_fast {
             WATER_FAST_MOVE_SPEED
         } else {
             WATER_MOVE_SPEED
-        }
+        };
+        water_base * swim_speed_multiplier
     } else {
-        match motion.stance {
+        let ground_base = match motion.stance {
             PlayerStance::Standing => {
                 if is_fast {
                     SPRINT_SPEED
@@ -605,7 +620,8 @@ fn grounded_or_water_movement(
                 }
             }
             PlayerStance::Crawling => CRAWL_SPEED,
-        }
+        };
+        ground_base * move_speed_multiplier
     };
 
     motion.velocity.x = direction.x * speed;

@@ -98,13 +98,22 @@ fn test_loading_screen_initial_state() {
 
 #[test]
 fn test_race_selection_and_palettes() {
-    use voxel_game_engine::player::{CharacterRace, SelectedRace};
+    use voxel_game_engine::player::{CharacterRace, CharacterSubrace, SelectedRace};
 
     assert_eq!(SelectedRace::default().0, CharacterRace::Human);
-    assert_eq!(CharacterRace::ALL.len(), 8);
+    assert_eq!(CharacterRace::ALL.len(), 6);
+    assert_eq!(CharacterRace::PLAYABLE.len(), 3);
+    assert_eq!(CharacterSubrace::ALL.len(), 9);
 
     let mut loc = Localization::default();
     loc.set_locale(voxel_game_engine::core::Locale::PtBr);
+
+    for subrace in CharacterSubrace::ALL {
+        let name = subrace.display_name(Some(&loc));
+        assert!(!name.is_empty(), "Display name for {:?} should not be empty", subrace);
+        let icon_path = format!("assets/{}", subrace.icon_asset_path());
+        assert!(Path::new(&icon_path).exists(), "Subrace icon asset {} must exist", icon_path);
+    }
 
     for race in CharacterRace::ALL {
         let name = race.display_name(Some(&loc));
@@ -130,7 +139,6 @@ fn test_race_selection_and_palettes() {
     }
 
     // Verify distinct stature scaling across key archetypes
-    assert!(CharacterRace::Halfling.proportions().root_scale.y < CharacterRace::Dwarf.proportions().root_scale.y);
     assert!(CharacterRace::Dwarf.proportions().root_scale.y < CharacterRace::Human.proportions().root_scale.y);
     assert!(CharacterRace::Elf.proportions().root_scale.y > CharacterRace::Human.proportions().root_scale.y);
     assert!(CharacterRace::Orc.proportions().shoulder_spread > CharacterRace::Human.proportions().shoulder_spread);

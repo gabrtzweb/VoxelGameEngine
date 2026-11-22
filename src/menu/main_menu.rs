@@ -1,5 +1,5 @@
 use bevy::{
-    picking::hover::Hovered,
+    picking::{Pickable, hover::Hovered},
     prelude::*,
     ui::Pressed,
     ui_widgets::Button,
@@ -8,6 +8,8 @@ use bevy::{
 use crate::{
     audio::UiSound,
     core::{AppFont, Localization, text_shadow_default},
+    player::{CharacterReady, CharacterSubrace, SelectedRace, SelectedSubrace},
+    world::WorldSession,
 };
 
 use super::{GameSettings, MenuReturnTarget, MenuState, ThemedButton, theme::palette};
@@ -34,6 +36,7 @@ pub struct MainMenuPromptText;
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MainMenuButtonAction {
     Play,
+    SelectCharacter,
     Settings,
     Controls,
     Quit,
@@ -41,6 +44,9 @@ pub enum MainMenuButtonAction {
 
 #[derive(Component)]
 pub struct MainMenuButtonLabel;
+
+#[derive(Component)]
+struct MainMenuDisabledButton;
 
 pub struct MainMenuPlugin;
 
@@ -70,6 +76,8 @@ fn spawn_main_menu(
     loc: Option<Res<Localization>>,
     _game_settings: Option<Res<GameSettings>>,
     phase: Res<MainMenuPhase>,
+    selected_subrace: Option<Res<SelectedSubrace>>,
+    character_ready: Option<Res<CharacterReady>>,
 ) {
     let font_handle = app_font.map(|f| f.source());
     let bg_texture = asset_server.load("textures/interfaces/main_menu_bg.png");
@@ -86,7 +94,7 @@ fn spawn_main_menu(
     };
 
     let title_str = loc.as_ref().map_or("VOXEL ENGINE", |l| l.t("menu.main.title"));
-    let version_str = loc.as_ref().map_or("Alpha 0.1.0", |l| l.t("menu.main.version"));
+    let version_str = loc.as_ref().map_or("Alpha 0.3.0", |l| l.t("menu.main.version"));
     let press_any_str = loc
         .as_ref()
         .map_or("Press any key to start", |l| l.t("menu.main.press_any_key"));
@@ -95,6 +103,29 @@ fn spawn_main_menu(
     let settings_str = loc.as_ref().map_or("Settings", |l| l.t("menu.main.settings"));
     let controls_str = loc.as_ref().map_or("Controls", |l| l.t("menu.main.controls"));
     let quit_str = loc.as_ref().map_or("Quit to Desktop", |l| l.t("menu.main.quit"));
+    let create_hint_str = loc.as_ref().map_or(
+        "Create a character first to play",
+        |l| l.t("menu.main.create_character_hint"),
+    );
+    let no_char_str = loc
+        .as_ref()
+        .map_or("No Character", |l| l.t("menu.main.no_character"));
+    let no_char_sub_str = loc.as_ref().map_or(
+        "Choose your race and subrace to begin",
+        |l| l.t("menu.main.no_character_sub"),
+    );
+    let create_char_btn_str = loc
+        .as_ref()
+        .map_or("Create Character  >", |l| l.t("menu.main.create_character"));
+    let change_char_btn_str = loc
+        .as_ref()
+        .map_or("Change Character  >", |l| l.t("menu.main.change_character"));
+
+    let is_char_ready = character_ready.is_some_and(|r| r.0);
+    let subrace = selected_subrace.map_or(CharacterSubrace::default(), |s| s.0);
+    let player_name = std::env::var("USERNAME")
+        .or_else(|_| std::env::var("USER"))
+        .unwrap_or_else(|_| "Adventurer".to_string());
 
     let current_phase = *phase;
 
@@ -121,6 +152,7 @@ fn spawn_main_menu(
         .with_children(|root| {
             // Fullscreen Background Image
             root.spawn((
+                Pickable::IGNORE,
                 ImageNode {
                     image: bg_texture,
                     image_mode: NodeImageMode::Stretch,
@@ -139,6 +171,7 @@ fn spawn_main_menu(
 
             // Atmospheric Vignette & Contrast Overlay
             root.spawn((
+                Pickable::IGNORE,
                 Node {
                     position_type: PositionType::Absolute,
                     left: px(0.0),
@@ -147,45 +180,11 @@ fn spawn_main_menu(
                     height: percent(100.0),
                     ..default()
                 },
-                BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.22)),
+                BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.30)),
                 ZIndex(1),
             ));
 
-            // Header Container (Title & Subtitle)
-            root.spawn((
-                Node {
-                    position_type: PositionType::Absolute,
-                    top: percent(12.0),
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
-                    row_gap: px(6.0),
-                    ..default()
-                },
-                ZIndex(10),
-            ))
-            .with_children(|header| {
-                // Game Title
-                header.spawn((
-                    Text::new(title_str),
-                    make_font(68.0),
-                    TextColor(Color::srgb(1.0, 0.88, 0.42)),
-                    TextShadow {
-                        offset: Vec2::new(3.0, 3.0),
-                        color: Color::srgba(0.0, 0.0, 0.0, 0.90),
-                    },
-                ));
-
-                // Version Badge / Subtitle
-                header.spawn((
-                    Text::new(version_str),
-                    make_font(18.0),
-                    TextColor(Color::srgba(0.85, 0.89, 0.96, 0.80)),
-                    text_shadow_default(),
-                ));
-            });
-
-            // Splash Screen Prompt Container
+            // Splash Screen Container (Centered Title + Press Any Key)
             let splash_display = if current_phase == MainMenuPhase::Splash {
                 Display::Flex
             } else {
@@ -201,17 +200,47 @@ fn spawn_main_menu(
                 MainMenuSplashContainer,
                 Node {
                     position_type: PositionType::Absolute,
-                    bottom: percent(30.0),
+                    left: px(0.0),
+                    top: px(0.0),
+                    right: px(0.0),
+                    bottom: px(0.0),
                     display: splash_display,
                     flex_direction: FlexDirection::Column,
                     align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
+                    justify_content: JustifyContent::SpaceBetween,
+                    padding: UiRect::vertical(percent(14.0)),
                     ..default()
                 },
                 splash_visibility,
                 ZIndex(10),
             ))
             .with_children(|splash| {
+                splash
+                    .spawn(Node {
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
+                        row_gap: px(6.0),
+                        ..default()
+                    })
+                    .with_children(|hdr| {
+                        hdr.spawn((
+                            Text::new(title_str),
+                            make_font(68.0),
+                            TextColor(Color::srgb(1.0, 0.88, 0.42)),
+                            TextShadow {
+                                offset: Vec2::new(3.0, 3.0),
+                                color: Color::srgba(0.0, 0.0, 0.0, 0.90),
+                            },
+                        ));
+                        hdr.spawn((
+                            Text::new(version_str),
+                            make_font(18.0),
+                            TextColor(Color::srgba(0.85, 0.89, 0.96, 0.80)),
+                            text_shadow_default(),
+                        ));
+                    });
+
                 splash.spawn((
                     MainMenuPromptText,
                     Text::new(press_any_str),
@@ -224,7 +253,7 @@ fn spawn_main_menu(
                 ));
             });
 
-            // Action Menu Buttons Container
+            // Action Menu Container (Enshrouded-inspired 2-side layout: Left = Title & Buttons, Right = Character Panel)
             let action_display = if current_phase == MainMenuPhase::ActionMenu {
                 Display::Flex
             } else {
@@ -240,54 +269,442 @@ fn spawn_main_menu(
                 MainMenuActionContainer,
                 Node {
                     position_type: PositionType::Absolute,
-                    top: percent(38.0),
+                    left: px(0.0),
+                    top: px(0.0),
+                    right: px(0.0),
+                    bottom: px(0.0),
                     display: action_display,
-                    flex_direction: FlexDirection::Column,
+                    flex_direction: FlexDirection::Row,
+                    justify_content: JustifyContent::SpaceBetween,
                     align_items: AlignItems::Center,
-                    row_gap: px(16.0),
+                    padding: UiRect::axes(percent(8.0), percent(8.0)),
                     ..default()
                 },
                 action_visibility,
                 ZIndex(10),
             ))
-            .with_children(|action_container| {
-                let buttons = [
-                    (MainMenuButtonAction::Play, play_str),
-                    (MainMenuButtonAction::Settings, settings_str),
-                    (MainMenuButtonAction::Controls, controls_str),
-                    (MainMenuButtonAction::Quit, quit_str),
-                ];
-
-                for (action, label) in buttons {
-                    action_container
-                        .spawn((
-                            Button,
-                            Hovered::default(),
-                            action,
-                            ThemedButton::default(),
-                            Node {
-                                width: px(384.0),
-                                height: px(56.0),
-                                border: UiRect::all(px(2.0)),
-                                border_radius: BorderRadius::all(px(4.0)),
+            .with_children(|action_root| {
+                // LEFT SIDE: Game Title + Navigation Buttons
+                action_root
+                    .spawn(Node {
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::FlexStart,
+                        justify_content: JustifyContent::Center,
+                        row_gap: px(14.0),
+                        ..default()
+                    })
+                    .with_children(|left_col| {
+                        // Title & Version
+                        left_col
+                            .spawn(Node {
                                 display: Display::Flex,
-                                justify_content: JustifyContent::Center,
-                                align_items: AlignItems::Center,
+                                flex_direction: FlexDirection::Column,
+                                align_items: AlignItems::FlexStart,
+                                row_gap: px(4.0),
+                                margin: UiRect::bottom(px(22.0)),
                                 ..default()
-                            },
-                            BackgroundColor(palette::BTN_NORMAL_BG),
-                            BorderColor::all(palette::BTN_NORMAL_BORDER),
-                        ))
-                        .with_children(|btn| {
-                            btn.spawn((
-                                MainMenuButtonLabel,
-                                Text::new(label),
-                                make_font(22.0),
-                                TextColor(Color::srgb(0.92, 0.94, 0.98)),
-                                text_shadow_default(),
-                            ));
-                        });
-                }
+                            })
+                            .with_children(|hdr| {
+                                hdr.spawn((
+                                    Pickable::IGNORE,
+                                    Text::new(title_str),
+                                    make_font(54.0),
+                                    TextColor(Color::srgb(1.0, 0.88, 0.42)),
+                                    TextShadow {
+                                        offset: Vec2::new(3.0, 3.0),
+                                        color: Color::srgba(0.0, 0.0, 0.0, 0.90),
+                                    },
+                                ));
+                                hdr.spawn((
+                                    Pickable::IGNORE,
+                                    Text::new(version_str),
+                                    make_font(15.0),
+                                    TextColor(palette::TEXT_MUTED),
+                                    text_shadow_default(),
+                                ));
+                            });
+
+                        // Primary PLAY Button (locked until character is created/selected)
+                        if is_char_ready {
+                            left_col
+                                .spawn((
+                                    Button,
+                                    Hovered::default(),
+                                    MainMenuButtonAction::Play,
+                                    ThemedButton::default(),
+                                    Node {
+                                        width: px(320.0),
+                                        height: px(56.0),
+                                        border: UiRect::all(px(2.0)),
+                                        border_radius: BorderRadius::all(px(5.0)),
+                                        display: Display::Flex,
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    BackgroundColor(palette::BTN_NORMAL_BG),
+                                    BorderColor::all(palette::ACCENT_LINE),
+                                ))
+                                .with_children(|btn| {
+                                    btn.spawn((
+                                        Pickable::IGNORE,
+                                        MainMenuButtonLabel,
+                                        Text::new(play_str.to_uppercase()),
+                                        make_font(22.0),
+                                        TextColor(palette::TEXT_ACCENT),
+                                        text_shadow_default(),
+                                    ));
+                                });
+                        } else {
+                            // Locked Play button + hint
+                            left_col
+                                .spawn(Node {
+                                    display: Display::Flex,
+                                    flex_direction: FlexDirection::Column,
+                                    align_items: AlignItems::FlexStart,
+                                    row_gap: px(6.0),
+                                    margin: UiRect::bottom(px(4.0)),
+                                    ..default()
+                                })
+                                .with_children(|locked| {
+                                    locked
+                                        .spawn((
+                                            MainMenuDisabledButton,
+                                            Node {
+                                                width: px(320.0),
+                                                height: px(56.0),
+                                                border: UiRect::all(px(1.5)),
+                                                border_radius: BorderRadius::all(px(5.0)),
+                                                display: Display::Flex,
+                                                justify_content: JustifyContent::Center,
+                                                align_items: AlignItems::Center,
+                                                ..default()
+                                            },
+                                            BackgroundColor(Color::srgba(0.07, 0.08, 0.11, 0.72)),
+                                            BorderColor::all(Color::srgba(0.24, 0.27, 0.34, 0.55)),
+                                        ))
+                                        .with_children(|btn| {
+                                            btn.spawn((
+                                                Pickable::IGNORE,
+                                                Text::new(play_str.to_uppercase()),
+                                                make_font(22.0),
+                                                TextColor(Color::srgba(0.50, 0.54, 0.62, 0.65)),
+                                            ));
+                                        });
+
+                                    locked.spawn((
+                                        Pickable::IGNORE,
+                                        Text::new(create_hint_str),
+                                        make_font(13.0),
+                                        TextColor(palette::TEXT_ACCENT),
+                                        text_shadow_default(),
+                                    ));
+                                });
+                        }
+
+                        // Secondary Buttons
+                        let secondary = [
+                            (MainMenuButtonAction::Settings, settings_str),
+                            (MainMenuButtonAction::Controls, controls_str),
+                            (MainMenuButtonAction::Quit, quit_str),
+                        ];
+
+                        for (action, label) in secondary {
+                            left_col
+                                .spawn((
+                                    Button,
+                                    Hovered::default(),
+                                    action,
+                                    ThemedButton::default(),
+                                    Node {
+                                        width: px(320.0),
+                                        height: px(46.0),
+                                        border: UiRect::all(px(1.5)),
+                                        border_radius: BorderRadius::all(px(5.0)),
+                                        display: Display::Flex,
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    BackgroundColor(palette::BTN_NORMAL_BG),
+                                    BorderColor::all(palette::BTN_NORMAL_BORDER),
+                                ))
+                                .with_children(|btn| {
+                                    btn.spawn((
+                                        Pickable::IGNORE,
+                                        MainMenuButtonLabel,
+                                        Text::new(label),
+                                        make_font(18.0),
+                                        TextColor(palette::TEXT_PRIMARY),
+                                        text_shadow_default(),
+                                    ));
+                                });
+                        }
+                    });
+
+                // RIGHT SIDE: Character Showcase Panel (Enshrouded-style)
+                action_root
+                    .spawn((
+                        Node {
+                            width: px(320.0),
+                            padding: UiRect::all(px(22.0)),
+                            border: UiRect::all(px(1.5)),
+                            border_radius: BorderRadius::all(px(8.0)),
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Column,
+                            align_items: AlignItems::Center,
+                            row_gap: px(16.0),
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgba(0.06, 0.07, 0.10, 0.86)),
+                        BorderColor::all(palette::PANEL_BORDER_SUBTLE),
+                    ))
+                    .with_children(|char_card| {
+                        if is_char_ready {
+                            let sub_icon = asset_server.load(subrace.icon_asset_path());
+                            let sub_name = subrace.display_name(loc.as_deref());
+                            let attrs = subrace.attributes();
+
+                            // Portrait Frame
+                            char_card
+                                .spawn((
+                                    Pickable::IGNORE,
+                                    Node {
+                                        width: px(84.0),
+                                        height: px(84.0),
+                                        padding: UiRect::all(px(4.0)),
+                                        border: UiRect::all(px(2.0)),
+                                        border_radius: BorderRadius::all(px(6.0)),
+                                        display: Display::Flex,
+                                        align_items: AlignItems::Center,
+                                        justify_content: JustifyContent::Center,
+                                        ..default()
+                                    },
+                                    BackgroundColor(palette::PANEL_INNER_BG),
+                                    BorderColor::all(palette::ACCENT_LINE),
+                                ))
+                                .with_children(|frame| {
+                                    frame.spawn((
+                                        Pickable::IGNORE,
+                                        ImageNode {
+                                            image: sub_icon,
+                                            image_mode: NodeImageMode::Stretch,
+                                            ..default()
+                                        },
+                                        Node {
+                                            width: px(72.0),
+                                            height: px(72.0),
+                                            ..default()
+                                        },
+                                    ));
+                                });
+
+                            // Character Identity
+                            char_card
+                                .spawn(Node {
+                                    display: Display::Flex,
+                                    flex_direction: FlexDirection::Column,
+                                    align_items: AlignItems::Center,
+                                    row_gap: px(3.0),
+                                    ..default()
+                                })
+                                .with_children(|id| {
+                                    id.spawn((
+                                        Pickable::IGNORE,
+                                        Text::new(player_name),
+                                        make_font(20.0),
+                                        TextColor(palette::TEXT_PRIMARY),
+                                        text_shadow_default(),
+                                    ));
+                                    id.spawn((
+                                        Pickable::IGNORE,
+                                        Text::new(sub_name),
+                                        make_font(13.0),
+                                        TextColor(palette::TEXT_ACCENT),
+                                    ));
+                                    id.spawn((
+                                        Pickable::IGNORE,
+                                        Text::new("Lv. 1"),
+                                        make_font(12.0),
+                                        TextColor(palette::TEXT_MUTED),
+                                    ));
+                                });
+
+                            // Compact Attribute Summary Row
+                            char_card
+                                .spawn(Node {
+                                    width: percent(100.0),
+                                    display: Display::Flex,
+                                    flex_direction: FlexDirection::Row,
+                                    justify_content: JustifyContent::SpaceBetween,
+                                    column_gap: px(8.0),
+                                    ..default()
+                                })
+                                .with_children(|row| {
+                                    let pills = [
+                                        (
+                                            loc.as_ref().map_or("HP", |l| l.t("attr.health")),
+                                            format!("{}", attrs.max_health),
+                                        ),
+                                        (
+                                            loc.as_ref().map_or("Def", |l| l.t("attr.defense")),
+                                            format!("{}", attrs.defense),
+                                        ),
+                                        (
+                                            loc.as_ref().map_or("Spd", |l| l.t("attr.move_speed")),
+                                            format!(
+                                                "{}%",
+                                                (attrs.move_speed_multiplier * 100.0).round() as i32
+                                            ),
+                                        ),
+                                    ];
+
+                                    for (k, v) in pills {
+                                        row.spawn((
+                                            Pickable::IGNORE,
+                                            Node {
+                                                flex_grow: 1.0,
+                                                padding: UiRect::axes(px(8.0), px(6.0)),
+                                                border_radius: BorderRadius::all(px(4.0)),
+                                                display: Display::Flex,
+                                                flex_direction: FlexDirection::Column,
+                                                align_items: AlignItems::Center,
+                                                row_gap: px(2.0),
+                                                ..default()
+                                            },
+                                            BackgroundColor(palette::PANEL_INNER_BG),
+                                        ))
+                                        .with_children(|pill| {
+                                            pill.spawn((
+                                                Pickable::IGNORE,
+                                                Text::new(k),
+                                                make_font(10.0),
+                                                TextColor(palette::TEXT_MUTED),
+                                            ));
+                                            pill.spawn((
+                                                Pickable::IGNORE,
+                                                Text::new(v),
+                                                make_font(13.0),
+                                                TextColor(palette::TEXT_PRIMARY),
+                                            ));
+                                        });
+                                    }
+                                });
+
+                            // Change Character Button
+                            char_card
+                                .spawn((
+                                    Button,
+                                    Hovered::default(),
+                                    MainMenuButtonAction::SelectCharacter,
+                                    ThemedButton::default(),
+                                    Node {
+                                        width: percent(100.0),
+                                        height: px(42.0),
+                                        border: UiRect::all(px(1.5)),
+                                        border_radius: BorderRadius::all(px(5.0)),
+                                        display: Display::Flex,
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    BackgroundColor(palette::BTN_NORMAL_BG),
+                                    BorderColor::all(palette::BTN_NORMAL_BORDER),
+                                ))
+                                .with_children(|btn| {
+                                    btn.spawn((
+                                        Pickable::IGNORE,
+                                        MainMenuButtonLabel,
+                                        Text::new(change_char_btn_str),
+                                        make_font(15.0),
+                                        TextColor(palette::TEXT_PRIMARY),
+                                        text_shadow_default(),
+                                    ));
+                                });
+                        } else {
+                            // Empty Portrait Slot
+                            char_card
+                                .spawn((
+                                    Pickable::IGNORE,
+                                    Node {
+                                        width: px(84.0),
+                                        height: px(84.0),
+                                        border: UiRect::all(px(1.5)),
+                                        border_radius: BorderRadius::all(px(6.0)),
+                                        display: Display::Flex,
+                                        align_items: AlignItems::Center,
+                                        justify_content: JustifyContent::Center,
+                                        ..default()
+                                    },
+                                    BackgroundColor(palette::PANEL_INNER_BG),
+                                    BorderColor::all(palette::PANEL_BORDER_SUBTLE),
+                                ))
+                                .with_children(|empty| {
+                                    empty.spawn((
+                                        Pickable::IGNORE,
+                                        Text::new("?"),
+                                        make_font(34.0),
+                                        TextColor(palette::TEXT_MUTED),
+                                    ));
+                                });
+
+                            char_card
+                                .spawn(Node {
+                                    display: Display::Flex,
+                                    flex_direction: FlexDirection::Column,
+                                    align_items: AlignItems::Center,
+                                    row_gap: px(4.0),
+                                    ..default()
+                                })
+                                .with_children(|txt| {
+                                    txt.spawn((
+                                        Pickable::IGNORE,
+                                        Text::new(no_char_str),
+                                        make_font(18.0),
+                                        TextColor(palette::TEXT_PRIMARY),
+                                        text_shadow_default(),
+                                    ));
+                                    txt.spawn((
+                                        Pickable::IGNORE,
+                                        Text::new(no_char_sub_str),
+                                        make_font(12.0),
+                                        TextColor(palette::TEXT_MUTED),
+                                    ));
+                                });
+
+                            // Prominent Create Character Button
+                            char_card
+                                .spawn((
+                                    Button,
+                                    Hovered::default(),
+                                    MainMenuButtonAction::SelectCharacter,
+                                    ThemedButton::default(),
+                                    Node {
+                                        width: percent(100.0),
+                                        height: px(46.0),
+                                        border: UiRect::all(px(1.5)),
+                                        border_radius: BorderRadius::all(px(5.0)),
+                                        display: Display::Flex,
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    BackgroundColor(palette::BTN_HOVER_BG),
+                                    BorderColor::all(palette::ACCENT_LINE),
+                                ))
+                                .with_children(|btn| {
+                                    btn.spawn((
+                                        Pickable::IGNORE,
+                                        MainMenuButtonLabel,
+                                        Text::new(create_char_btn_str),
+                                        make_font(16.0),
+                                        TextColor(palette::TEXT_ACCENT),
+                                        text_shadow_default(),
+                                    ));
+                                });
+                        }
+                    });
             });
         });
 }
@@ -324,14 +741,16 @@ fn handle_main_menu_action_buttons(
     mut phase: ResMut<MainMenuPhase>,
     mut next_state: ResMut<NextState<MenuState>>,
     mut menu_return_target: ResMut<MenuReturnTarget>,
-    _world_session: Option<ResMut<crate::world::WorldSession>>,
+    mut world_session: Option<ResMut<WorldSession>>,
+    selected_subrace: Option<Res<SelectedSubrace>>,
+    mut selected_race: Option<ResMut<SelectedRace>>,
+    character_ready: Option<Res<CharacterReady>>,
     mut commands: Commands,
 ) {
     if *phase != MainMenuPhase::ActionMenu {
         return;
     }
 
-    // Escape in ActionMenu returns back to Splash
     if keyboard.just_pressed(KeyCode::Escape) {
         *phase = MainMenuPhase::Splash;
         commands.trigger(UiSound::Click);
@@ -344,6 +763,19 @@ fn handle_main_menu_action_buttons(
         if hovered.get() && (left_clicked || is_pressed) {
             match action {
                 MainMenuButtonAction::Play => {
+                    if !character_ready.as_ref().is_some_and(|r| r.0) {
+                        return;
+                    }
+                    if let (Some(sub), Some(race)) = (&selected_subrace, selected_race.as_mut()) {
+                        race.0 = sub.0.rig_race();
+                    }
+                    if let Some(ref mut session) = world_session {
+                        session.is_active = true;
+                    }
+                    menu_return_target.0 = MenuState::Pause;
+                    next_state.set(MenuState::Loading);
+                }
+                MainMenuButtonAction::SelectCharacter => {
                     menu_return_target.0 = MenuState::MainMenu;
                     next_state.set(MenuState::RaceSelection);
                 }
@@ -359,6 +791,7 @@ fn handle_main_menu_action_buttons(
                     commands.write_message(bevy::app::AppExit::Success);
                 }
             }
+            return;
         }
     }
 }

@@ -25,7 +25,10 @@ pub use controller::{InspectorInteraction, PlayerCamera, PlayerMotion, PlayerSta
 
 pub use game_mode::GameMode;
 pub use inventory::PlayerInventory;
-pub use race::{CharacterRace, RaceProportions, SelectedRace};
+pub use race::{
+    CharacterRace, CharacterReady, CharacterSubrace, RaceAttributes, RaceProportions, SelectedRace,
+    SelectedSubrace,
+};
 pub use state::PlayerEnvironmentStatus;
 
 pub const PLAYER_WIDTH: f32 = 0.6;
@@ -48,6 +51,8 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GameMode>()
             .init_resource::<SelectedRace>()
+            .init_resource::<SelectedSubrace>()
+            .init_resource::<CharacterReady>()
             .init_resource::<InspectorInteraction>()
             .init_resource::<PlayerEnvironmentStatus>()
             .init_resource::<PlayerInventory>()

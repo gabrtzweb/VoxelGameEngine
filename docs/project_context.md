@@ -57,7 +57,7 @@ This is an attempt to develop an experimental voxel engine and game, built from 
   - **Texture-Free Containers & Buttons**: All menus, HUDs, drawers, slots, and buttons are rendered in pure Bevy UI code using a unified Dark Iron / Forged Obsidian palette (`palette`) and `ThemedButton` component (retaining only pixel-art icons in `assets/textures/interfaces/icons/`, cursors, and `main_menu_bg.png`).
   - **Shared 6-Tab Top Menu Bar (`src/menu/menu_bar.rs`)**: Text-only tabs with 16×16 icons and gold active underlines (`Inventory`, `Skills`, `Journal`, `Quests`, `World Map`, `System`), `[Q]`/`[E]` tab cycling, and a live right-side status readout (Level, live Clock with time-of-day icon, Gold Coins, and clickable `[ESC]` close button).
   - **Left-Docked 3-Column Cascading System, Settings & Controls Drawers**: Standardized `310px` full-height left drawers (`src/menu/pause.rs`, `src/menu/settings.rs`, `src/menu/controls.rs`) supporting up to 3 cascading columns (System → Categories → Detail Panel), `World & Session` submenu, direct `Exit Game`, and 6 prioritized Settings categories (`World`, `Graphics` with Display & conditional `Borderless Mouse Lock`, `Shaders & FX`, `Camera`, `Audio`, `Accessibility & UI`), including `Connected Textures`, `Menu Pause` behavior (`System Only` / `All Menus` / `Never`), and 4-tier `FPS / Debug HUD` (`Off` / `FPS Only` / `Compact` / `Full`).
-  - **Dedicated `Skills`, `Journal` & `Quests` Screens**: `Skills` (`src/menu/skills.rs`) pairs a `310px` character & race attribute sheet (with race icon) alongside 5 navigable skill tree tabs; `Journal` (`src/menu/journal.rs`) displays a live Season/Day/Clock/Weather almanac card with all 7 weather icons alongside `Bestiary`, `Compendium`, and `Statistics`; `Quests` (`src/menu/quests.rs`) provides a localized active quests list and objective tracker.
+  - **Dedicated `Skills`, `Journal` & `Quests` Screens**: `Skills` (`src/menu/skills.rs`) pairs a scrollable `310px` character & subrace attribute sheet (15 attributes, subrace portrait icon, racial traits) alongside 5 localized skill tree tabs (`Combat`, `Gathering`, `Crafting`, `Exploration`, and a dynamic `Racial` tree adapting to the active subrace) featuring 60 official skills with 60 bespoke 16×16 pixel-art icons; `Journal` (`src/menu/journal.rs`) is 100% localized with mouse-wheel + draggable scrollbar support, pairing a live Season/Day/Clock/Weather almanac card with a `COMPENDIUM` (`JournalProgress` live discovery for `Biomes & Regions` with 44 unique icons in `icons/biomes/`, `Bestiary`, `Flora & Agriculture`, `Blocks & Minerals`, and `Items & Equipment` via `BlockIcons`) and 4-group `Statistics` (14 live gameplay trackers + 11 survival/progression placeholders); `Quests` (`src/menu/quests.rs`) provides a localized active quests list and objective tracker.
   - **In-Game Hotbar & Inventory (`GUI Scale` 2×–4×, default 3×)**: Pure-code Dark Iron hotbar chassis (9 primary slots, offhand, utility, XP bar, gold selection frame), Player Inventory (equipment/armor placeholders, 27 storage slots, mirrored hotbar, utility buttons), and Creative Catalog (category tabs, live search bar, 81-slot scrollable grid with draggable scrollbar, and mirrored hotbar).
   - **Item Tooltips**:
     - Centered item name readout above hotbar upon slot selection with smooth fade-out.
@@ -76,7 +76,7 @@ This is an attempt to develop an experimental voxel engine and game, built from 
   - Direct engine startup into `MenuState::MainMenu` presenting a full-screen concept art background (`assets/textures/interfaces/main_menu_bg.png`).
   - Interactive two-phase flow:
     - **Splash Phase**: Large retro-pixel title banner ("VOXEL ENGINE"), version readout, and pulsing prompt ("Press any key to start") waiting for any key or mouse trigger.
-    - **Action Phase**: Revealing Play, Settings, Controls, and Quit buttons styled with the pure-code Dark Iron `ThemedButton` suite and tactile UI audio.
+    - **Action Phase**: Enshrouded-inspired 2-side layout — left side holds the game title, `Play` button (gated by `CharacterReady` until a character is chosen, then launches directly into `MenuState::Loading`), `Settings`, `Controls`, and `Quit`; right side presents a Dark Iron Character Panel displaying the selected subrace portrait, player name, stat pills, and a `Create Character >` / `Change Character >` button opening the 3-column Race & Subrace Selector (`src/menu/race_selection.rs`).
   - Seamless stack navigation via `MenuReturnTarget`, routing Settings and Controls Back buttons and Escape cleanly back to the Main Menu when opened from there, and back to Pause when in-game.
   - Smooth loading screen (`MenuState::Loading`) between Main Menu and gameplay, awaiting initial real-chunk generation and meshing with an animated progress bar, real-time chunk counter (`X / Y`), dynamic status messages, and 10 rotating tips.
   - 4 exclusive menu music tracks (`assets/sounds/music/menu/`) with Fisher-Yates non-repeating shuffle on startup, and immediate cutoff of gameplay tracks upon returning to the menu.
@@ -123,10 +123,15 @@ Camera System:
 - First-Person Camera: true first-person body view (head hidden to prevent interior clipping, looking down reveals animated chest, arms, and legs)
 - Third-Person Camera (`F5`): orbiting camera with configurable distance (2.5 m–8.0 m), optional camera smoothing, dynamic raycast block collision prevention to avoid clipping underground/walls, and independent head pitch/yaw tracking
 
-Player Model, 8-Race Silhouettes & Held Items:
+Player Model, 3-Race / 9-Subrace System & Held Items:
 
-- Modular voxel character rig with reactive PBR materials, replacing legacy Minecraft flat skins.
-- 8 distinct fantasy races with bespoke physical silhouettes and proportions (Elf, Drow, Dwarf, Halfling, Orc, Dragonborn, Tiefling, and Human).
+- Modular voxel character rig with reactive PBR materials driven by `SelectedSubrace` palettes and `CharacterRace` silhouettes.
+- **3 classic playable core races × 3 subraces each (9 playable subraces)**:
+  - **Humans**: `Northern Human` (`Nordling`), `Southern Human` (`Sunlander`), `Coastal Human` (`CoastalHuman`)
+  - **Elves**: `Wood Elf` (`WoodElf`), `Dark Elf` (`DarkElf`), `High Elf` (`HighElf`)
+  - **Dwarves**: `Mountain Dwarf` (`MountainDwarf`), `Deep Dwarf` (`DeepDwarf`), `Hill Dwarf` (`HillDwarf`)
+  - Legacy `Orc`, `Dragonborn`, and `Tiefling` rigs are preserved in `CharacterRace` for future NPC/mob reuse.
+- **16-Attribute `RaceAttributes` Profile**: Per-subrace stats covering Health, Stamina, Defense, Move Speed, Swim Speed, Jump Height (2-block elven leap), Footstep Noise (stealth audio scaling), Mining Speed, Mining Reach, Cave Vision, Fall Resistance, Knockback Resistance, Cold/Heat Resistance, XP Gain, and Carry Slots — with movement speed, swim speed, jump height, footstep volume, and block reach actively wired in gameplay.
 - 1st-person and 3rd-person held item rendering directly attached to the player's hand with natural resting posture and action swing/recoil animations.
 - Procedural locomotion: dynamic walk/sprint leg & arm pendulum swings, idle breathing sway, crouch torso tilt, prone crawling strokes, streamlined flutter-kick swimming, airborne jump poses, and 4-state flight animations (ascent, descent, fast flight, hover).
 
@@ -145,7 +150,7 @@ The engine has concluded two full 20-phase development milestones:
 
 - **Version 0.1 — Foundation Era (Phases 1–20, Completed)**: Core engine architecture, multi-chunk streaming, greedy meshing, procedural terrain, physics, fluid dynamics, celestial environments, survival interfaces, and SIMD/memory optimizations.
 - **Version 0.2 — Modernization, Worldbuilding & Deep Systems (Phases 1–20, Completed)**: Full voxel catalog and geological strata, 9-slot 480×270 Dark Iron UI, Bevy 0.20 and WESL migration, hardware profiles and FSR 1.0, wild flora and botanical systems, 6D multi-noise 44-biome generation, Main Menu and deferred loading, spatial audio, 8-race custom voxel characters, agricultural crop simulation, smooth fluid dynamics and 3D item drops, dynamic weather, AO/water/bloom/god-ray shaders, streaming and LOD performance engineering, multi-language localization, rebindable controls, GPU procedural grass, and multi-chunk world feature generation.
-- **Version 0.3 (Current, In Progress)**: Active development milestone focused on engine-wide performance optimization, world terrain polish, atmospheric/gameplay particles, and pure-code UI & RPG menu systems.
+- **Version 0.3 (Current, In Progress)**: Active development milestone focused on engine-wide performance optimization, world terrain polish, atmospheric/gameplay particles, pure-code UI & Journal Compendium, the 3×3 race/subrace attribute & 60-skill system, and Main Menu modernization.
 
 Individual phases and detailed milestones are tracked exclusively in `docs/project_roadmap.md`.
 

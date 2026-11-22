@@ -18,8 +18,8 @@ use crate::{
 };
 
 use super::{
-    CharacterRace, GameMode, InspectorInteraction, PLAYER_HEIGHT, Player, PlayerEnvironmentStatus,
-    PlayerStance, SelectedRace,
+    CharacterRace, CharacterSubrace, GameMode, InspectorInteraction, PLAYER_HEIGHT, Player,
+    PlayerEnvironmentStatus, PlayerStance, SelectedRace, SelectedSubrace,
     controller::{PlayerCamera, PlayerMotion},
     hotbar::Hotbar,
 };
@@ -188,32 +188,34 @@ pub fn setup_player_model(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     selected_race: Option<Res<SelectedRace>>,
+    selected_subrace: Option<Res<SelectedSubrace>>,
 ) {
-    let race = selected_race.map_or(CharacterRace::Human, |r| r.0);
+    let subrace = selected_subrace.map_or(CharacterSubrace::default(), |s| s.0);
+    let rig_race = selected_race.map_or_else(|| subrace.rig_race(), |r| r.0);
 
     let skin_mat = materials.add(StandardMaterial {
-        base_color: race.skin_color(),
+        base_color: subrace.skin_color(),
         perceptual_roughness: 0.85,
         reflectance: 0.2,
         cull_mode: None,
         ..default()
     });
     let torso_mat = materials.add(StandardMaterial {
-        base_color: race.torso_color(),
+        base_color: subrace.torso_color(),
         perceptual_roughness: 0.85,
         reflectance: 0.2,
         cull_mode: None,
         ..default()
     });
     let arms_mat = materials.add(StandardMaterial {
-        base_color: race.arms_color(),
+        base_color: subrace.arms_color(),
         perceptual_roughness: 0.85,
         reflectance: 0.2,
         cull_mode: None,
         ..default()
     });
     let legs_mat = materials.add(StandardMaterial {
-        base_color: race.legs_color(),
+        base_color: subrace.legs_color(),
         perceptual_roughness: 0.85,
         reflectance: 0.2,
         cull_mode: None,
@@ -227,8 +229,8 @@ pub fn setup_player_model(
         legs: legs_mat.clone(),
     });
 
-    let head_mesh = meshes.add(build_head_mesh(race));
-    let torso_mesh = meshes.add(build_torso_mesh(race));
+    let head_mesh = meshes.add(build_head_mesh(rig_race));
+    let torso_mesh = meshes.add(build_torso_mesh(rig_race));
     let left_arm_mesh = meshes.add(build_left_arm_mesh());
     let right_arm_mesh = meshes.add(build_right_arm_mesh());
     let left_leg_mesh = meshes.add(build_left_leg_mesh());
@@ -345,43 +347,64 @@ pub fn setup_player_model(
 
 pub fn sync_player_race_materials(
     selected_race: Option<Res<SelectedRace>>,
+    selected_subrace: Option<Res<SelectedSubrace>>,
     race_mats: Option<Res<PlayerRaceMaterials>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut head_query: Query<&mut Mesh3d, (With<PlayerHead>, Without<PlayerTorso>)>,
     mut torso_query: Query<&mut Mesh3d, (With<PlayerTorso>, Without<PlayerHead>)>,
 ) {
-    let Some(selected_race) = selected_race else {
-        return;
-    };
-    if !selected_race.is_changed() {
+    let race_changed = selected_race.as_ref().is_some_and(|r| r.is_changed());
+    let subrace_changed = selected_subrace.as_ref().is_some_and(|s| s.is_changed());
+    if !race_changed && !subrace_changed {
         return;
     }
     let Some(mats) = race_mats else {
         return;
     };
-    let race = selected_race.0;
+
+    let (rig_race, skin, torso, arms, legs) = if let Some(sub) = selected_subrace {
+        let s = sub.0;
+        let rig = selected_race.map_or_else(|| s.rig_race(), |r| r.0);
+        (
+            rig,
+            s.skin_color(),
+            s.torso_color(),
+            s.arms_color(),
+            s.legs_color(),
+        )
+    } else if let Some(race) = selected_race {
+        let r = race.0;
+        (
+            r,
+            r.skin_color(),
+            r.torso_color(),
+            r.arms_color(),
+            r.legs_color(),
+        )
+    } else {
+        return;
+    };
 
     if let Some(mut mat) = materials.get_mut(&mats.skin) {
-        mat.base_color = race.skin_color();
+        mat.base_color = skin;
     }
     if let Some(mut mat) = materials.get_mut(&mats.torso) {
-        mat.base_color = race.torso_color();
+        mat.base_color = torso;
     }
     if let Some(mut mat) = materials.get_mut(&mats.arms) {
-        mat.base_color = race.arms_color();
+        mat.base_color = arms;
     }
     if let Some(mut mat) = materials.get_mut(&mats.legs) {
-        mat.base_color = race.legs_color();
+        mat.base_color = legs;
     }
 
-    // Rebuild race-specific silhouette meshes (ears, horns, snout, beard, tail, pauldrons)
-    let new_head = meshes.add(build_head_mesh(race));
+    let new_head = meshes.add(build_head_mesh(rig_race));
     for mut mesh3d in &mut head_query {
         mesh3d.0 = new_head.clone();
     }
 
-    let new_torso = meshes.add(build_torso_mesh(race));
+    let new_torso = meshes.add(build_torso_mesh(rig_race));
     for mut mesh3d in &mut torso_query {
         mesh3d.0 = new_torso.clone();
     }
@@ -971,7 +994,7 @@ pub(crate) fn build_head_mesh(race: CharacterRace) -> Mesh {
             // Subtle nose bridge & brow contour
             builder.add_box(Vec3::new(1.5 * s, 2.0 * s, 1.0 * s), Vec3::new(0.0, 3.8 * s, 4.3 * s));
         }
-        CharacterRace::Elf | CharacterRace::Drow => {
+        CharacterRace::Elf => {
             // Long swept-back pointed elven ears on left (+X) and right (-X)
             for sign in [-1.0, 1.0] {
                 builder.add_box(
@@ -998,17 +1021,6 @@ pub(crate) fn build_head_mesh(race: CharacterRace) -> Mesh {
             builder.add_box(Vec3::new(8.4 * s, 3.5 * s, 2.8 * s), Vec3::new(0.0, 0.5 * s, 3.8 * s));
             builder.add_box(Vec3::new(6.8 * s, 3.5 * s, 2.4 * s), Vec3::new(0.0, -2.2 * s, 3.8 * s));
             builder.add_box(Vec3::new(4.6 * s, 2.5 * s, 2.0 * s), Vec3::new(0.0, -4.5 * s, 3.8 * s));
-        }
-        CharacterRace::Halfling => {
-            // Short pointed ears & locks
-            for sign in [-1.0, 1.0] {
-                builder.add_box(
-                    Vec3::new(1.2 * s, 1.6 * s, 1.8 * s),
-                    Vec3::new(sign * 4.4 * s, 4.2 * s, -0.4 * s),
-                );
-            }
-            // Top hair tuft
-            builder.add_box(Vec3::new(6.5 * s, 1.2 * s, 6.5 * s), Vec3::new(0.0, 8.4 * s, 0.2 * s));
         }
         CharacterRace::Orc => {
             // Heavy jutting brow ridge
@@ -1128,13 +1140,6 @@ pub(crate) fn build_torso_mesh(race: CharacterRace) -> Mesh {
             builder.add_box(
                 Vec3::new(2.2 * s, 0.8 * s, 2.2 * s),
                 Vec3::new(0.0, 1.6 * s, -12.4 * s),
-            );
-        }
-        CharacterRace::Drow => {
-            // High underdark mantle collar around neck
-            builder.add_box(
-                Vec3::new(8.6 * s, 2.0 * s, 4.6 * s),
-                Vec3::new(0.0, 11.4 * s, -0.4 * s),
             );
         }
         _ => {}

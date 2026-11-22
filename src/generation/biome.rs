@@ -69,6 +69,157 @@ pub enum BiomeType {
 }
 
 impl BiomeType {
+    pub const ALL: [BiomeType; 44] = [
+        Self::AlpineHighlands,
+        Self::EmeraldPeaks,
+        Self::VolcanicPeaks,
+        Self::PaintedMountains,
+        Self::RockyMountains,
+        Self::ScarletMountains,
+        Self::BryceCanyon,
+        Self::AmethystCanyon,
+        Self::BasaltCliffs,
+        Self::GraniteCliffs,
+        Self::WhiteCliffs,
+        Self::YosemiteCliffs,
+        Self::DesertSpires,
+        Self::AncientSands,
+        Self::DesertOasis,
+        Self::FracturedSavanna,
+        Self::SavannaBadlands,
+        Self::AshenSavanna,
+        Self::DuneSea,
+        Self::BloomingValley,
+        Self::CloudForest,
+        Self::LavenderValley,
+        Self::SakuraGrove,
+        Self::YosemiteLowlands,
+        Self::Shield,
+        Self::TropicalJungle,
+        Self::OrchidSwamp,
+        Self::PineHighlands,
+        Self::GlacialChasm,
+        Self::SiberianTaiga,
+        Self::FrozenCliffs,
+        Self::WintryForest,
+        Self::ColdShrubland,
+        Self::GravelBeach,
+        Self::MirageIsles,
+        Self::Caldera,
+        Self::DeepWarmOcean,
+        Self::ColdOcean,
+        Self::CoralReef,
+        Self::OceanTrench,
+        Self::ThermalCaves,
+        Self::UndergroundJungle,
+        Self::IceCaves,
+        Self::MushroomCaves,
+    ];
+
+    pub fn category_key(self) -> &'static str {
+        match self {
+            Self::AlpineHighlands
+            | Self::EmeraldPeaks
+            | Self::VolcanicPeaks
+            | Self::PaintedMountains
+            | Self::RockyMountains
+            | Self::ScarletMountains => "journal.biome_cat.peaks",
+
+            Self::BryceCanyon
+            | Self::AmethystCanyon
+            | Self::BasaltCliffs
+            | Self::GraniteCliffs
+            | Self::WhiteCliffs
+            | Self::YosemiteCliffs => "journal.biome_cat.canyons",
+
+            Self::DesertSpires
+            | Self::AncientSands
+            | Self::DesertOasis
+            | Self::FracturedSavanna
+            | Self::SavannaBadlands
+            | Self::AshenSavanna
+            | Self::DuneSea => "journal.biome_cat.arid",
+
+            Self::BloomingValley
+            | Self::CloudForest
+            | Self::LavenderValley
+            | Self::SakuraGrove
+            | Self::YosemiteLowlands
+            | Self::Shield
+            | Self::TropicalJungle
+            | Self::OrchidSwamp
+            | Self::PineHighlands => "journal.biome_cat.forests",
+
+            Self::GlacialChasm
+            | Self::SiberianTaiga
+            | Self::FrozenCliffs
+            | Self::WintryForest
+            | Self::ColdShrubland => "journal.biome_cat.glacial",
+
+            Self::GravelBeach
+            | Self::MirageIsles
+            | Self::Caldera
+            | Self::DeepWarmOcean
+            | Self::ColdOcean
+            | Self::CoralReef
+            | Self::OceanTrench => "journal.biome_cat.coastal",
+
+            Self::ThermalCaves
+            | Self::UndergroundJungle
+            | Self::IceCaves
+            | Self::MushroomCaves => "journal.biome_cat.caves",
+        }
+    }
+
+    pub fn icon_asset_path(self) -> &'static str {
+        match self {
+            Self::AlpineHighlands => "textures/interfaces/icons/biomes/biome_alpine_highlands.png",
+            Self::AncientSands => "textures/interfaces/icons/biomes/biome_ancient_sands.png",
+            Self::FracturedSavanna => "textures/interfaces/icons/biomes/biome_fractured_savanna.png",
+            Self::YosemiteLowlands => "textures/interfaces/icons/biomes/biome_yosemite_lowlands.png",
+            Self::CloudForest => "textures/interfaces/icons/biomes/biome_cloud_forest.png",
+            Self::SiberianTaiga => "textures/interfaces/icons/biomes/biome_siberian_taiga.png",
+            Self::GravelBeach => "textures/interfaces/icons/biomes/biome_gravel_beach.png",
+            Self::EmeraldPeaks => "textures/interfaces/icons/biomes/biome_emerald_peaks.png",
+            Self::VolcanicPeaks => "textures/interfaces/icons/biomes/biome_volcanic_peaks.png",
+            Self::PaintedMountains => "textures/interfaces/icons/biomes/biome_painted_mountains.png",
+            Self::RockyMountains => "textures/interfaces/icons/biomes/biome_rocky_mountains.png",
+            Self::ScarletMountains => "textures/interfaces/icons/biomes/biome_scarlet_mountains.png",
+            Self::BryceCanyon => "textures/interfaces/icons/biomes/biome_bryce_canyon.png",
+            Self::AmethystCanyon => "textures/interfaces/icons/biomes/biome_amethyst_canyon.png",
+            Self::BasaltCliffs => "textures/interfaces/icons/biomes/biome_basalt_cliffs.png",
+            Self::GraniteCliffs => "textures/interfaces/icons/biomes/biome_granite_cliffs.png",
+            Self::WhiteCliffs => "textures/interfaces/icons/biomes/biome_white_cliffs.png",
+            Self::YosemiteCliffs => "textures/interfaces/icons/biomes/biome_yosemite_cliffs.png",
+            Self::DesertSpires => "textures/interfaces/icons/biomes/biome_desert_spires.png",
+            Self::DesertOasis => "textures/interfaces/icons/biomes/biome_desert_oasis.png",
+            Self::SavannaBadlands => "textures/interfaces/icons/biomes/biome_savanna_badlands.png",
+            Self::AshenSavanna => "textures/interfaces/icons/biomes/biome_ashen_savanna.png",
+            Self::DuneSea => "textures/interfaces/icons/biomes/biome_dune_sea.png",
+            Self::BloomingValley => "textures/interfaces/icons/biomes/biome_blooming_valley.png",
+            Self::LavenderValley => "textures/interfaces/icons/biomes/biome_lavender_valley.png",
+            Self::SakuraGrove => "textures/interfaces/icons/biomes/biome_sakura_grove.png",
+            Self::Shield => "textures/interfaces/icons/biomes/biome_shield.png",
+            Self::TropicalJungle => "textures/interfaces/icons/biomes/biome_tropical_jungle.png",
+            Self::OrchidSwamp => "textures/interfaces/icons/biomes/biome_orchid_swamp.png",
+            Self::PineHighlands => "textures/interfaces/icons/biomes/biome_pine_highlands.png",
+            Self::GlacialChasm => "textures/interfaces/icons/biomes/biome_glacial_chasm.png",
+            Self::FrozenCliffs => "textures/interfaces/icons/biomes/biome_frozen_cliffs.png",
+            Self::WintryForest => "textures/interfaces/icons/biomes/biome_wintry_forest.png",
+            Self::ColdShrubland => "textures/interfaces/icons/biomes/biome_cold_shrubland.png",
+            Self::MirageIsles => "textures/interfaces/icons/biomes/biome_mirage_isles.png",
+            Self::Caldera => "textures/interfaces/icons/biomes/biome_caldera.png",
+            Self::DeepWarmOcean => "textures/interfaces/icons/biomes/biome_deep_warm_ocean.png",
+            Self::ColdOcean => "textures/interfaces/icons/biomes/biome_cold_ocean.png",
+            Self::CoralReef => "textures/interfaces/icons/biomes/biome_coral_reef.png",
+            Self::OceanTrench => "textures/interfaces/icons/biomes/biome_ocean_trench.png",
+            Self::ThermalCaves => "textures/interfaces/icons/biomes/biome_thermal_caves.png",
+            Self::UndergroundJungle => "textures/interfaces/icons/biomes/biome_underground_jungle.png",
+            Self::IceCaves => "textures/interfaces/icons/biomes/biome_ice_caves.png",
+            Self::MushroomCaves => "textures/interfaces/icons/biomes/biome_mushroom_caves.png",
+        }
+    }
+
     pub fn name(self) -> &'static str {
         match self {
             Self::AlpineHighlands => "Alpine Highlands",

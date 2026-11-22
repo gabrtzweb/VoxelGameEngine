@@ -87,9 +87,13 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 | **01** | **[Engine-Wide Performance Optimization & LOD Pipeline](#phase-1-engine-wide-performance-optimization--lod-pipeline-completed)** | **Completed** | Terrain/biome generation caching, LOD meshing overhaul, optional leaf culling, shader/grass/celestial optimizations, streaming & chunk cache improvements |
 | **02** | **[World Terrain Polish & Surface Detail Features](#phase-2-world-terrain-polish--surface-detail-features-completed)** | **Completed** | Universal slab/stair terrain smoothing, sculpted outcrops & boulders, ground bushes, ocean biomes & coral/reefstone formations, fallen logs & forest moss, sculpted tree canopies, campfire, toggleable lamps, geothermal vents |
 | **03** | **[Atmospheric & Gameplay Particle Engine](#phase-3-atmospheric--gameplay-particle-engine-completed)** | **Completed** | Falling canopy leaves (21 sprites, selective tint), underwater geothermal/magma bubbles + pop, footstep/landing dust, blinking night fireflies, daytime pollen, player/item water splashes, campfire smoke |
-| **04** | **[Pure-Code UI & Menu System Redesign](#phase-4-pure-code-ui--menu-system-redesign-in-progress)** | **In Progress** | Pure Bevy UI Dark Iron theme (`src/menu/theme.rs`), removal of `assets/textures/interfaces/containers/`, 6-tab top bar with icons & live status HUD, 3-column cascading System/Settings/Controls drawers, fullscreen World Map with right sidebar, Skills/Quests/Journal screens, and expanded Settings |
-| **05** | **[Races, Subraces, Attributes & Skills Redesign](#phase-5-races-subraces-attributes--skills-redesign-planned)** | **Planned** | Streamline playable races to 3 classic archetypes (Humans, Elves, Dwarves) with 2 subraces each, define race/subrace attributes (with live movement/gameplay modifiers where applicable), and design racial & core skill trees |
-| **06** | **[Main Menu Redesign](#phase-6-main-menu-redesign-planned)** | **Planned** | Complete visual and UX overhaul of the Main Menu, splash screen, world selection/creation flow, and cohesive pure-code presentation |
+| **04** | **[Pure-Code UI & Menu System Redesign](#phase-4-pure-code-ui--menu-system-redesign-in-progress)** | **In Progress** | Pure Bevy UI Dark Iron theme (`src/menu/theme.rs`), removal of `assets/textures/interfaces/containers/`, 6-tab top bar with icons & live status HUD, 3-column cascading System/Settings/Controls drawers, fullscreen World Map with right sidebar, fully localized Journal Compendium (44 biomes with pixel-art icons), Skills/Quests screens, and expanded Settings |
+| **05** | **[Races, Subraces, Attributes & Skills Redesign](#phase-5-races-subraces-attributes--skills-redesign-completed)** | **Completed** | 3 classic core races × 3 subraces each (9 playable subraces) with face-portrait icons, 16-field `RaceAttributes` (live jump height, move/swim speed, footstep stealth, mining reach), 3-column Race Selection UI, and 60 localized skills (4 general trees + dynamic racial/subracial tree) with 60 bespoke pixel-art icons |
+| **06** | **[Main Menu Redesign](#phase-6-main-menu-redesign-in-progress)** | **In Progress** | Enshrouded-inspired 2-side Main Menu with character-gated `Play` flow (`CharacterReady`), right-side character showcase panel, and future world selection/creation & 3D character preview |
+| **07** | **[Dedicated Character Creator](#phase-7-dedicated-character-creator-planned)** | **Planned** | Interactive character customization (skin tone, hair style/color, beard/features, outfit palette, character naming, and live 3D voxel model preview) |
+| **08** | **[Survival Mode Core Systems](#phase-8-survival-mode-core-systems-planned)** | **Planned** | Health, stamina, hunger/thirst, fall damage, climate temperature (cold/heat resistance), tool durability, resource harvesting, and death/respawn loop |
+| **09** | **[Mobs, Wildlife & Entity AI](#phase-9-mobs-wildlife--entity-ai-planned)** | **Planned** | First creatures and wildlife (passive fauna, hostile mobs, pathfinding, stealth/footstep awareness, combat, taming, and live Bestiary unlocking) |
+| **10** | **[Quests, Objectives & Progression Engine](#phase-10-quests-objectives--progression-engine-planned)** | **Planned** | Functional quest state machine, objective tracking, exploration/gathering/combat triggers, XP/leveling, skill point spending, and rewards |
 
 ---
 
@@ -169,24 +173,57 @@ This second major milestone expanded the engine across 20 phases into a full-fea
   - Reorganized Settings into 6 prioritized categories (`World`, `Graphics` with Display at top + conditional `Borderless Mouse Lock`, `Shaders & FX`, `Camera`, `Audio`, `Accessibility & UI`), adding `Connected Textures`, `Menu Pause` (`System Only` / `All Menus` / `Never`), `Camera Smoothing`, `Third-Person Distance`, `FPS / Debug HUD` (`Off` / `FPS Only` / `Compact` / `Full`), `UI Volume`, `Mute on Unfocus`, `Auto-Save Interval`, `High-Contrast Crosshair`, and `Subtitles`.
 - [x] **Fullscreen World Map, Skills, Journal & Quests Screens**:
   - Rebuilt the World Map (`src/map/world_map.rs`) to fill the full viewport below the top bar with 1:1 aspect-corrected terrain rendering, percentage-locked player marker, and a right-docked `310px` tools/waypoints/layers sidebar.
-  - Built dedicated `Skills` (`src/menu/skills.rs`), `Journal` (`src/menu/journal.rs` with live season/day/clock/weather almanac card + all 7 weather icons, Bestiary, Compendium, and Statistics), and localized `Quests` (`src/menu/quests.rs`) screens.
+  - Built dedicated `Skills` (`src/menu/skills.rs`), fully localized scrollable `Journal` (`src/menu/journal.rs` with live season/day/clock/weather almanac card + all 7 weather icons, `COMPENDIUM` discovery tracking via `JournalProgress` for discovered `Biomes & Regions` across all 44 biomes with 44 unique 16×16 icons in `icons/biomes/`, `Bestiary`, live-unlocked `Flora & Agriculture`, `Blocks & Minerals`, and `Items & Equipment` using `BlockIcons`, plus 25 categorized `Statistics` with 14 live trackers), and localized `Quests` (`src/menu/quests.rs`) screens.
 - [ ] **Remaining UI Polish**:
-  - Inventory & Hotbar visual cohesion polish and final UX pass.
+  - Inventory & Hotbar visual cohesion polish and World Map right-sidebar tools (waypoint creation/editing & layer toggles).
 
 ---
 
-### Phase 5: Races, Subraces, Attributes & Skills Redesign (Planned)
+### Phase 5: Races, Subraces, Attributes & Skills Redesign (Completed)
 
-- [ ] **3 Core Playable Races × 2 Subraces Each**:
-  - Streamline playable character selection to **Humans**, **Elves**, and **Dwarves** (preserving existing Orc, Dragonborn, Tiefling, and Halfling voxel rigs for future NPC/mob reuse), with 2 distinct subraces per race featuring tailored skin tones, aesthetics, and lore.
-- [ ] **Race & Subrace Attributes**:
-  - Define distinct attribute profiles per race and subrace (health, stamina, defense, speed, mining/foraging bonuses), wiring immediately applicable gameplay modifiers (such as movement speed and camera/eye-height feel).
-- [ ] **Skill Trees & Racial Passives**:
-  - Define structured core and racial skill trees integrated into the `Skills` screen layout.
+- [x] **3 Core Playable Races × 3 Subraces Each (9 Playable Subraces)**:
+  - Streamlined playable lineages in `src/player/race.rs` to **Humans** (`Northern Human`, `Southern Human`, `Coastal Human`), **Elves** (`Wood Elf`, `Dark Elf`, `High Elf`), and **Dwarves** (`Mountain Dwarf`, `Deep Dwarf`, `Hill Dwarf`), while retaining `Orc`, `Dragonborn`, and `Tiefling` rigs for future NPCs/mobs and removing `Halfling` and legacy standalone `Drow`.
+  - Created 9 dedicated 16×16 face-portrait subrace icons (`subrace_*.png`) separate from the 3 core race icons (`race_human.png`, `race_elf.png`, `race_dwarf.png`), plus full EN/PT-BR lore descriptions and 2 racial traits per subrace.
+- [x] **16-Attribute `RaceAttributes` & Live Gameplay Modifiers**:
+  - Defined distinct per-subrace profiles covering Health, Stamina, Defense, Move Speed, Swim Speed, Jump Height, Footstep Noise (Stealth), Mining Speed, Mining Reach, Cave Vision, Fall Resistance, Knockback Resistance, Cold Resistance, Heat Resistance, XP Gain, and Carry Slots.
+  - Wired immediately playable modifiers directly into gameplay: movement & swim speed (`src/player/movement.rs`), 2-block elven jump impulse (`RaceAttributes::jump_speed`), footstep/landing audio stealth volume (`src/audio/footsteps.rs`), block targeting reach bonus (`src/gameplay/targeting.rs`), and subrace 3D character palettes (`src/player/model.rs`).
+- [x] **3-Column Race Selection & 60-Skill Official Catalog**:
+  - Redesigned `src/menu/race_selection.rs` into a pure-code Dark Iron 3-column selector (Core Races → Race Lore & 3 Subraces → Subrace Details, 15-stat Attributes Grid & Traits).
+  - Officialized 60 localized skills across 4 general trees (`Combat`, `Gathering`, `Crafting`, `Exploration` — 24 skills) and a dynamic `Racial` tree (3 core race base skills + 3 subrace-exclusive Tier III skills — 36 racial/subracial skills), each paired with a bespoke 16×16 pixel-art icon in `assets/textures/interfaces/icons/skills/`.
 
 ---
 
-### Phase 6: Main Menu Redesign (Planned)
+### Phase 6: Main Menu Redesign (In Progress)
 
-- [ ] **Main Menu & Entry Flow Overhaul**:
-  - Redesign the title splash screen, action menu, world selection/creation flow, and race/subrace selector using the pure-code Dark Iron design language.
+- [x] **Enshrouded-Inspired 2-Side Main Menu & Character-Gated Play Flow**:
+  - Redesigned `src/menu/main_menu.rs` Action Phase into a 2-side layout: Left side displays title, primary `Play` button (locked via `CharacterReady(false)` with localized hint until a character is selected, then launches directly into `MenuState::Loading`), `Settings`, `Controls`, and `Quit`; Right side displays the Dark Iron Character Panel with subrace portrait, player name, subrace title, stat summary pills, and `Create Character >` / `Change Character >` routing to `MenuState::RaceSelection`.
+- [ ] **Future Main Menu Expansions**:
+  - Live 3D voxel character preview render on the Main Menu, multi-character roster slots, and multi-world selection/creation flow.
+
+---
+
+### Phase 7: Dedicated Character Creator (Planned)
+
+- [ ] **Visual Character Customization**:
+  - Dedicated character creation screen allowing players to customize skin tone, hairstyle and hair color, facial hair/racial features, outfit palette, and custom character name with a live rotatable 3D voxel preview.
+
+---
+
+### Phase 8: Survival Mode Core Systems (Planned)
+
+- [ ] **Core Survival Loop**:
+  - Implement playable Survival Mode with Health, Stamina, Hunger/Thirst, Fall Damage (applying racial fall resistance), Climate Temperature (applying cold/heat resistance across seasons and biomes), tool durability, block harvesting rules, and death/respawn flow.
+
+---
+
+### Phase 9: Mobs, Wildlife & Entity AI (Planned)
+
+- [ ] **First Creatures & Autonomous AI**:
+  - Introduce initial passive wildlife and hostile mobs (reusing preserved Orc, Dragonborn, and Tiefling rigs alongside new fauna), voxel pathfinding, perception/stealth noise integration (`footstep_noise_multiplier`), combat, taming, and automatic Bestiary discovery.
+
+---
+
+### Phase 10: Quests, Objectives & Progression Engine (Planned)
+
+- [ ] **Functional Quests & RPG Progression**:
+  - Power the `Quests` screen with real quest definitions, multi-step objectives, world/gathering/combat triggers, XP & leveling progression, spendable Skill Points across the 60-skill catalog, and quest rewards.

@@ -47,6 +47,7 @@ struct RaycastHit {
 fn update_current_target(
     camera: Single<&GlobalTransform, (With<Camera3d>, With<PlayerCamera>)>,
     world: Res<VoxelWorld>,
+    selected_subrace: Option<Res<crate::player::SelectedSubrace>>,
     mut current_target: ResMut<CurrentTarget>,
 ) {
     let ray_origin = camera.translation();
@@ -67,12 +68,16 @@ fn update_current_target(
     }
 
     let is_submerged = world.get_voxel(camera_voxel).is_some_and(Voxel::is_water);
+    let max_reach = MAX_TARGET_DISTANCE
+        + selected_subrace
+            .as_ref()
+            .map_or(0.0, |s| s.0.attributes().reach_bonus_blocks * VOXEL_SIZE);
 
     current_target.hit = raycast_world(
         &world,
         ray_origin,
         ray_direction,
-        MAX_TARGET_DISTANCE,
+        max_reach,
         is_submerged,
     )
     .map(|hit| {
