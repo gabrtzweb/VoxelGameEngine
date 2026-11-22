@@ -16,18 +16,23 @@ use crate::{
 };
 
 use super::{
-    BackgroundDimming, GameSettings, MenuBlurIntensity, MenuReturnTarget, MenuState, ScreenMode,
+    BackgroundDimming, GameSettings, MenuBlurIntensity, MenuPauseMode, MenuReturnTarget, MenuState,
+    ScreenMode,
 };
 
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SettingsTab {
     #[default]
-    Video,
-    Graphics,
     World,
+    Graphics,
     Shaders,
+    Camera,
     Audio,
+    Accessibility,
 }
+
+#[derive(Resource, Default, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SettingsDetailOpen(pub bool);
 
 #[derive(Component)]
 struct SettingsMenuRoot;
@@ -36,19 +41,16 @@ struct SettingsMenuRoot;
 pub struct SettingsMenuCard;
 
 #[derive(Component)]
-struct VideoSettingsSection;
+struct SettingsDetailPanel;
 
 #[derive(Component)]
-struct GraphicsSettingsSection;
+struct TabButtonLabel;
 
 #[derive(Component)]
-struct WorldSettingsSection;
+struct TabButtonAccent;
 
-#[derive(Component)]
-struct ShadersSettingsSection;
-
-#[derive(Component)]
-struct AudioSettingsSection;
+#[derive(Component, Clone, Copy)]
+struct SettingsSection(SettingsTab);
 
 #[derive(Component)]
 struct TabButton(SettingsTab);
@@ -120,6 +122,23 @@ enum SettingsAction {
     IncCoatedTextures,
     ToggleWavingFoliage,
     ToggleLeafCulling,
+    ToggleConnectedTextures,
+    DecMenuPause,
+    IncMenuPause,
+    ToggleMouseLockBorderless,
+    DecAutoSave,
+    IncAutoSave,
+    DecCameraSmoothing,
+    IncCameraSmoothing,
+    DecThirdPersonDist,
+    IncThirdPersonDist,
+    DecUiVol,
+    IncUiVol,
+    ToggleMuteUnfocus,
+    DecFpsHud,
+    IncFpsHud,
+    ToggleHighContrastCrosshair,
+    ToggleSubtitles,
     TogglePixelatedShadows,
     ToggleHdrBloom,
     ToggleDynamicLighting,
@@ -137,6 +156,42 @@ struct WavingFoliageLabel;
 
 #[derive(Component)]
 struct LeafCullingLabel;
+
+#[derive(Component)]
+struct ConnectedTexturesLabel;
+
+#[derive(Component)]
+struct MenuPauseLabel;
+
+#[derive(Component)]
+struct BorderlessMouseLockRow;
+
+#[derive(Component)]
+struct MouseLockBorderlessLabel;
+
+#[derive(Component)]
+struct AutoSaveLabel;
+
+#[derive(Component)]
+struct CameraSmoothingLabel;
+
+#[derive(Component)]
+struct ThirdPersonDistLabel;
+
+#[derive(Component)]
+struct UiVolLabel;
+
+#[derive(Component)]
+struct MuteUnfocusLabel;
+
+#[derive(Component)]
+struct FpsHudLabel;
+
+#[derive(Component)]
+struct HighContrastCrosshairLabel;
+
+#[derive(Component)]
+struct SubtitlesLabel;
 
 #[derive(Component)]
 struct PixelatedShadowsLabel;
@@ -348,11 +403,46 @@ fn format_grass_style(style: &str, loc: &Localization) -> String {
     }
 }
 
+fn format_menu_pause(mode: MenuPauseMode, loc: &Localization) -> String {
+    match mode {
+        MenuPauseMode::SystemOnly => loc.t("menu_pause.system_only").to_string(),
+        MenuPauseMode::AllMenus => loc.t("menu_pause.all_menus").to_string(),
+        MenuPauseMode::Never => loc.t("menu_pause.never").to_string(),
+    }
+}
+
+fn format_fps_hud(mode: crate::core::DebugHudMode, loc: &Localization) -> String {
+    match mode {
+        crate::core::DebugHudMode::Hidden => loc.t("fps_hud.off").to_string(),
+        crate::core::DebugHudMode::FpsOnly => loc.t("fps_hud.fps_only").to_string(),
+        crate::core::DebugHudMode::Minimal => loc.t("fps_hud.compact").to_string(),
+        crate::core::DebugHudMode::Extended => loc.t("fps_hud.full").to_string(),
+    }
+}
+
+fn format_camera_smoothing(level: u32, loc: &Localization) -> String {
+    match level {
+        0 => loc.t("smoothing.off").to_string(),
+        1 => loc.t("smoothing.low").to_string(),
+        2 => loc.t("smoothing.medium").to_string(),
+        _ => loc.t("smoothing.high").to_string(),
+    }
+}
+
+fn format_auto_save(minutes: u32, loc: &Localization) -> String {
+    if minutes == 0 {
+        loc.t("common.disabled").to_string()
+    } else {
+        format!("{minutes} min")
+    }
+}
+
 pub struct SettingsMenuPlugin;
 
 impl Plugin for SettingsMenuPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<SettingsTab>()
+            .init_resource::<SettingsDetailOpen>()
             .add_systems(OnEnter(MenuState::Settings), spawn_settings_menu)
             .add_systems(OnExit(MenuState::Settings), despawn_settings_menu)
             .add_systems(
@@ -361,6 +451,7 @@ impl Plugin for SettingsMenuPlugin {
                     handle_settings_buttons,
                     handle_language_changed,
                     update_settings_labels,
+                    update_extended_settings_labels,
                     update_audio_settings_labels,
                     update_language_label,
                     update_settings_tab_view,
@@ -378,6 +469,7 @@ fn spawn_settings_menu(
     local_config: Res<LocalConfig>,
     audio_settings: Res<AudioSettings>,
     settings_tab: Res<SettingsTab>,
+    detail_open: Res<SettingsDetailOpen>,
     loc: Res<Localization>,
     env_state: Option<Res<EnvironmentState>>,
     app_font: Option<Res<AppFont>>,
@@ -394,13 +486,10 @@ fn spawn_settings_menu(
         .map_or(local_config.is_time_paused, |e| e.is_time_paused);
     let font_handle = app_font.as_ref().map(|f| f.source());
 
-    let btn_normal = asset_server.load("textures/interfaces/containers/buttons/button_medium.png");
-    let btn_hover = asset_server.load("textures/interfaces/containers/buttons/button_medium_hover.png");
-    let small_normal = asset_server.load("textures/interfaces/containers/buttons/button_small.png");
-    let small_hover = asset_server.load("textures/interfaces/containers/buttons/button_small_hover.png");
+    use crate::menu::{menu_bar::MENU_BAR_HEIGHT, theme::palette};
 
     let mut header_font = TextFont {
-        font_size: FontSize::Px(32.0),
+        font_size: FontSize::Px(13.0),
         ..default()
     };
     if let Some(ref font) = font_handle {
@@ -408,29 +497,33 @@ fn spawn_settings_menu(
     }
 
     let is_from_main_menu = menu_return_target.0 == MenuState::MainMenu;
-    let top_offset = if is_from_main_menu { 0.0 } else { 80.0 };
-    let bg_color = if is_from_main_menu {
-        Color::NONE
+    let top_offset = if is_from_main_menu {
+        0.0
     } else {
-        Color::srgba(0.0, 0.0, 0.0, game_settings.background_dimming.alpha())
+        MENU_BAR_HEIGHT
+    };
+    let left_offset = if is_from_main_menu {
+        0.0
+    } else {
+        palette::DRAWER_COL1_WIDTH
     };
 
     commands
         .spawn((
             SettingsMenuRoot,
-            crate::menu::MenuBackdrop,
             Node {
                 position_type: PositionType::Absolute,
-                left: px(0.0),
+                left: px(left_offset),
                 top: px(top_offset),
                 right: px(0.0),
                 bottom: px(0.0),
                 display: Display::Flex,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
+                flex_direction: FlexDirection::Row,
+                justify_content: JustifyContent::FlexStart,
+                align_items: AlignItems::Stretch,
                 ..default()
             },
-            BackgroundColor(bg_color),
+            BackgroundColor(Color::NONE),
             ZIndex(300),
         ))
         .with_children(|backdrop| {
@@ -461,278 +554,386 @@ fn spawn_settings_menu(
                         height: percent(100.0),
                         ..default()
                     },
-                    BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.35)),
+                    BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.45)),
                     ZIndex(1),
                 ));
             }
 
-            let scale_factor = (game_settings.gui_scale as f32 / 4.0).clamp(0.5, 1.0);
             backdrop
                 .spawn((
                     SettingsMenuCard,
                     ZIndex(10),
-                    UiTransform {
-                        scale: Vec2::splat(scale_factor),
-                        ..UiTransform::IDENTITY
-                    },
                     Node {
+                        height: percent(100.0),
                         display: Display::Flex,
-                        flex_direction: FlexDirection::Column,
-                        align_items: AlignItems::Center,
-                        row_gap: px(16.0),
+                        flex_direction: FlexDirection::Row,
+                        align_items: AlignItems::Stretch,
                         ..default()
                     },
                 ))
-                .with_children(|card| {
-                    // Header Title
-                    card.spawn((
-                        Text::new(loc.t("menu.settings.title")),
-                        header_font,
-                        TextColor(Color::srgb(0.95, 0.95, 0.98)),
-                        text_shadow_default(),
-                        Node {
-                            margin: UiRect::bottom(px(4.0)),
-                            ..default()
-                        },
-                    ));
-
-                    // Tab Navigation Bar
-                    card.spawn(Node {
-                        display: Display::Flex,
-                        flex_direction: FlexDirection::Row,
-                        column_gap: px(8.0),
-                        margin: UiRect::bottom(px(6.0)),
-                        ..default()
-                    })
-                    .with_children(|tab_bar| {
-                        spawn_tab_button(
-                            tab_bar,
-                            loc.t("menu.settings.tab_video"),
-                            SettingsTab::Video,
-                            *settings_tab == SettingsTab::Video,
-                            font_handle.as_ref(),
-                            &btn_normal,
-                            &btn_hover,
-                        );
-                        spawn_tab_button(
-                            tab_bar,
-                            loc.t("menu.settings.tab_graphics"),
-                            SettingsTab::Graphics,
-                            *settings_tab == SettingsTab::Graphics,
-                            font_handle.as_ref(),
-                            &btn_normal,
-                            &btn_hover,
-                        );
-                        spawn_tab_button(
-                            tab_bar,
-                            loc.t("menu.settings.tab_world"),
-                            SettingsTab::World,
-                            *settings_tab == SettingsTab::World,
-                            font_handle.as_ref(),
-                            &btn_normal,
-                            &btn_hover,
-                        );
-                        spawn_tab_button(
-                            tab_bar,
-                            loc.t("menu.settings.tab_shaders"),
-                            SettingsTab::Shaders,
-                            *settings_tab == SettingsTab::Shaders,
-                            font_handle.as_ref(),
-                            &btn_normal,
-                            &btn_hover,
-                        );
-                        spawn_tab_button(
-                            tab_bar,
-                            loc.t("menu.settings.tab_audio"),
-                            SettingsTab::Audio,
-                            *settings_tab == SettingsTab::Audio,
-                            font_handle.as_ref(),
-                            &btn_normal,
-                            &btn_hover,
-                        );
-                    });
-
-                    // 2-Column Video Settings Container
-                    card.spawn((
-                        VideoSettingsSection,
-                        Node {
-                            display: if *settings_tab == SettingsTab::Video {
-                                Display::Flex
-                            } else {
-                                Display::None
+                .with_children(|drawers| {
+                    // Column 2: Settings Categories Drawer
+                    drawers
+                        .spawn((
+                            Node {
+                                width: px(palette::DRAWER_COL2_WIDTH),
+                                min_width: px(palette::DRAWER_COL2_WIDTH),
+                                flex_shrink: 0.0,
+                                height: percent(100.0),
+                                border: UiRect::right(px(1.5)),
+                                padding: UiRect::vertical(px(28.0)),
+                                display: Display::Flex,
+                                flex_direction: FlexDirection::Column,
+                                justify_content: JustifyContent::FlexStart,
+                                align_items: AlignItems::Stretch,
+                                row_gap: px(4.0),
+                                ..default()
                             },
-                            flex_direction: FlexDirection::Row,
-                            column_gap: px(24.0),
-                            align_items: AlignItems::FlexStart,
-                            ..default()
-                        },
-                    ))
-                    .with_children(|columns| {
-                        // Left Column: Display Settings
-                        columns
-                            .spawn(Node {
-                                display: Display::Flex,
+                            BackgroundColor(palette::DRAWER_COL2_BG),
+                            BorderColor::all(palette::DRAWER_DIVIDER),
+                        ))
+                        .with_children(|cat_col| {
+                            if is_from_main_menu {
+                                let mut back_font = TextFont {
+                                    font_size: FontSize::Px(15.0),
+                                    ..default()
+                                };
+                                if let Some(ref font) = font_handle {
+                                    back_font.font = font.clone();
+                                }
+
+                                let back_theme = crate::menu::ThemedButton {
+                                    normal_bg: Color::NONE,
+                                    normal_border: Color::NONE,
+                                    hover_bg: palette::NAV_ITEM_HOVER_BG,
+                                    hover_border: Color::NONE,
+                                    pressed_bg: palette::NAV_ITEM_ACTIVE_BG,
+                                };
+                                cat_col
+                                    .spawn((
+                                        Button,
+                                        Hovered::default(),
+                                        SettingsAction::Back,
+                                        back_theme,
+                                        BackgroundColor(Color::NONE),
+                                        BorderColor::all(Color::NONE),
+                                        Node {
+                                            width: percent(100.0),
+                                            height: px(44.0),
+                                            padding: UiRect::new(px(24.0), px(20.0), px(0.0), px(0.0)),
+                                            margin: UiRect::bottom(px(8.0)),
+                                            border: UiRect::bottom(px(1.0)),
+                                            display: Display::Flex,
+                                            flex_direction: FlexDirection::Row,
+                                            align_items: AlignItems::Center,
+                                            column_gap: px(10.0),
+                                            ..default()
+                                        },
+                                    ))
+                                    .with_children(|btn| {
+                                        btn.spawn((
+                                            Text::new(format!("<  {}", loc.t("menu.settings.back"))),
+                                            back_font,
+                                            TextColor(palette::TEXT_MUTED),
+                                            text_shadow_default(),
+                                        ));
+                                    });
+                            }
+
+                            spawn_tab_button(
+                                cat_col,
+                                loc.t("menu.settings.tab_world"),
+                                SettingsTab::World,
+                                false,
+                                font_handle.as_ref(),
+                            );
+                            spawn_tab_button(
+                                cat_col,
+                                loc.t("menu.settings.tab_graphics"),
+                                SettingsTab::Graphics,
+                                false,
+                                font_handle.as_ref(),
+                            );
+                            spawn_tab_button(
+                                cat_col,
+                                loc.t("menu.settings.tab_shaders"),
+                                SettingsTab::Shaders,
+                                false,
+                                font_handle.as_ref(),
+                            );
+                            spawn_tab_button(
+                                cat_col,
+                                loc.t("menu.settings.tab_camera"),
+                                SettingsTab::Camera,
+                                false,
+                                font_handle.as_ref(),
+                            );
+                            spawn_tab_button(
+                                cat_col,
+                                loc.t("menu.settings.tab_audio"),
+                                SettingsTab::Audio,
+                                false,
+                                font_handle.as_ref(),
+                            );
+                            spawn_tab_button(
+                                cat_col,
+                                loc.t("menu.settings.tab_accessibility"),
+                                SettingsTab::Accessibility,
+                                false,
+                                font_handle.as_ref(),
+                            );
+                        });
+
+                    // Column 3: Settings Detail Panel (opens when a category in Column 2 is selected)
+                    drawers
+                        .spawn((
+                            SettingsDetailPanel,
+                            Node {
+                                width: px(palette::DRAWER_COL3_WIDTH),
+                                height: percent(100.0),
+                                border: UiRect::right(px(1.5)),
+                                padding: UiRect::all(px(24.0)),
+                                display: if detail_open.0 {
+                                    Display::Flex
+                                } else {
+                                    Display::None
+                                },
                                 flex_direction: FlexDirection::Column,
-                                row_gap: px(10.0),
-                                width: px(330.0),
+                                align_items: AlignItems::Stretch,
+                                row_gap: px(12.0),
+                                overflow: Overflow::scroll_y(),
                                 ..default()
-                            })
-                            .with_children(|col_left| {
-                                // Screen Mode Stepper
+                            },
+                            BackgroundColor(palette::DRAWER_COL3_BG),
+                            BorderColor::all(palette::DRAWER_DIVIDER),
+                        ))
+                        .with_children(|card| {
+                            // Accessibility & UI Settings Container
+                            card.spawn((
+                                SettingsSection(SettingsTab::Accessibility),
+                                Node {
+                                    width: percent(100.0),
+                                    display: if *settings_tab == SettingsTab::Accessibility {
+                                        Display::Flex
+                                    } else {
+                                        Display::None
+                                    },
+                                    flex_direction: FlexDirection::Column,
+                                    row_gap: px(10.0),
+                                    align_items: AlignItems::Stretch,
+                                    ..default()
+                                },
+                            ))
+                            .with_children(|col_acc| {
                                 spawn_stepper_row(
-                                    col_left,
-                                    loc.t("menu.settings.screen_mode"),
-                                    format_screen_mode(game_settings.screen_mode, &loc),
-                                    SettingsAction::DecScreenMode,
-                                    SettingsAction::IncScreenMode,
-                                    ScreenModeLabel,
-                                    font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
-                                );
-
-                                // Target FPS Stepper
-                                spawn_stepper_row(
-                                    col_left,
-                                    loc.t("menu.settings.target_fps"),
-                                    format_target_fps(local_config.target_fps, &loc),
-                                    SettingsAction::DecTargetFps,
-                                    SettingsAction::IncTargetFps,
-                                    TargetFpsLabel,
-                                    font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
-                                );
-
-                                // VSync Toggle Button
-                                spawn_toggle_button(
-                                    col_left,
-                                    SettingsAction::ToggleVsync,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.vsync"),
-                                        if game_settings.vsync_enabled {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
-                                        }
-                                    ),
-                                    VsyncLabel,
-                                    font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
-                                );
-
-                                // Dynamic FPS Toggle Button
-                                spawn_toggle_button(
-                                    col_left,
-                                    SettingsAction::ToggleDynamicFps,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.dynamic_fps"),
-                                        if game_settings.dynamic_fps_enabled {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
-                                        }
-                                    ),
-                                    DynamicFpsLabel,
-                                    font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
-                                );
-                            });
-
-                        // Right Column: Interface & Window
-                        columns
-                            .spawn(Node {
-                                display: Display::Flex,
-                                flex_direction: FlexDirection::Column,
-                                row_gap: px(10.0),
-                                width: px(330.0),
-                                ..default()
-                            })
-                            .with_children(|col_right| {
-                                // GUI Scale Stepper
-                                spawn_stepper_row(
-                                    col_right,
-                                    loc.t("menu.settings.gui_scale"),
-                                    format!("{}x", game_settings.gui_scale),
-                                    SettingsAction::DecGuiScale,
-                                    SettingsAction::IncGuiScale,
-                                    GuiScaleLabel,
-                                    font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
-                                );
-
-                                // Language Stepper
-                                spawn_stepper_row(
-                                    col_right,
+                                    col_acc,
                                     loc.t("menu.settings.language"),
                                     loc.active_locale.display_name().to_string(),
                                     SettingsAction::DecLanguage,
                                     SettingsAction::IncLanguage,
                                     LanguageLabel,
                                     font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
                                 );
 
-                                // Menu Blur Intensity Stepper
                                 spawn_stepper_row(
-                                    col_right,
+                                    col_acc,
+                                    loc.t("menu.settings.gui_scale"),
+                                    format!("{}x", game_settings.gui_scale),
+                                    SettingsAction::DecGuiScale,
+                                    SettingsAction::IncGuiScale,
+                                    GuiScaleLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                spawn_stepper_row(
+                                    col_acc,
                                     loc.t("menu.settings.menu_blur"),
                                     format_blur(game_settings.menu_blur_intensity, &loc),
                                     SettingsAction::DecMenuBlur,
                                     SettingsAction::IncMenuBlur,
                                     MenuBlurLabel,
                                     font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
                                 );
 
-                                // Background Dimming Stepper
                                 spawn_stepper_row(
-                                    col_right,
+                                    col_acc,
                                     loc.t("menu.settings.background_dimming"),
                                     format_dimming(game_settings.background_dimming, &loc),
                                     SettingsAction::DecBackgroundDimming,
                                     SettingsAction::IncBackgroundDimming,
                                     BackgroundDimmingLabel,
                                     font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
+                                );
+
+                                spawn_stepper_row(
+                                    col_acc,
+                                    loc.t("menu.settings.fps_hud"),
+                                    format_fps_hud(local_config.fps_hud_mode, &loc),
+                                    SettingsAction::DecFpsHud,
+                                    SettingsAction::IncFpsHud,
+                                    FpsHudLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                spawn_toggle_button(
+                                    col_acc,
+                                    SettingsAction::ToggleHighContrastCrosshair,
+                                    format!(
+                                        "{}: {}",
+                                        loc.t("menu.settings.high_contrast_crosshair"),
+                                        if game_settings.high_contrast_crosshair {
+                                            loc.t("common.enabled")
+                                        } else {
+                                            loc.t("common.disabled")
+                                        }
+                                    ),
+                                    HighContrastCrosshairLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                spawn_toggle_button(
+                                    col_acc,
+                                    SettingsAction::ToggleSubtitles,
+                                    format!(
+                                        "{}: {}",
+                                        loc.t("menu.settings.subtitles"),
+                                        if game_settings.subtitles_enabled {
+                                            loc.t("common.enabled")
+                                        } else {
+                                            loc.t("common.disabled")
+                                        }
+                                    ),
+                                    SubtitlesLabel,
+                                    font_handle.as_ref(),
                                 );
                             });
-                    });
 
-                    // 2-Column Graphics Settings Container
-                    card.spawn((
-                        GraphicsSettingsSection,
-                        Node {
-                            display: if *settings_tab == SettingsTab::Graphics {
-                                Display::Flex
-                            } else {
-                                Display::None
-                            },
-                            flex_direction: FlexDirection::Row,
-                            column_gap: px(24.0),
-                            align_items: AlignItems::FlexStart,
-                            ..default()
-                        },
-                    ))
-                    .with_children(|columns| {
-                        // Left Column: Visual Fidelity & Presets
-                        columns
-                            .spawn(Node {
-                                display: Display::Flex,
-                                flex_direction: FlexDirection::Column,
-                                row_gap: px(10.0),
-                                width: px(330.0),
-                                ..default()
-                            })
-                            .with_children(|col_left| {
+                            // Graphics & Display Settings Container (Display options at top)
+                            card.spawn((
+                                SettingsSection(SettingsTab::Graphics),
+                                Node {
+                                    width: percent(100.0),
+                                    display: if *settings_tab == SettingsTab::Graphics {
+                                        Display::Flex
+                                    } else {
+                                        Display::None
+                                    },
+                                    flex_direction: FlexDirection::Column,
+                                    row_gap: px(16.0),
+                                    align_items: AlignItems::Stretch,
+                                    ..default()
+                                },
+                            ))
+                            .with_children(|columns| {
+                                // Top Block: Display Settings
+                                columns
+                                    .spawn(Node {
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Column,
+                                        row_gap: px(10.0),
+                                        width: percent(100.0),
+                                        ..default()
+                                    })
+                                    .with_children(|col_disp| {
+                                        spawn_stepper_row(
+                                            col_disp,
+                                            loc.t("menu.settings.screen_mode"),
+                                            format_screen_mode(game_settings.screen_mode, &loc),
+                                            SettingsAction::DecScreenMode,
+                                            SettingsAction::IncScreenMode,
+                                            ScreenModeLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Conditional Borderless Mouse Lock (shown only in Borderless mode)
+                                        col_disp
+                                            .spawn((
+                                                BorderlessMouseLockRow,
+                                                Node {
+                                                    width: percent(100.0),
+                                                    display: if game_settings.screen_mode
+                                                        == ScreenMode::BorderlessFullscreen
+                                                    {
+                                                        Display::Flex
+                                                    } else {
+                                                        Display::None
+                                                    },
+                                                    ..default()
+                                                },
+                                            ))
+                                            .with_children(|wrap| {
+                                                spawn_toggle_button(
+                                                    wrap,
+                                                    SettingsAction::ToggleMouseLockBorderless,
+                                                    format!(
+                                                        "{}: {}",
+                                                        loc.t(
+                                                            "menu.settings.mouse_lock_borderless"
+                                                        ),
+                                                        if game_settings.mouse_lock_borderless {
+                                                            loc.t("common.enabled")
+                                                        } else {
+                                                            loc.t("common.disabled")
+                                                        }
+                                                    ),
+                                                    MouseLockBorderlessLabel,
+                                                    font_handle.as_ref(),
+                                                );
+                                            });
+
+                                        spawn_stepper_row(
+                                            col_disp,
+                                            loc.t("menu.settings.target_fps"),
+                                            format_target_fps(local_config.target_fps, &loc),
+                                            SettingsAction::DecTargetFps,
+                                            SettingsAction::IncTargetFps,
+                                            TargetFpsLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        spawn_toggle_button(
+                                            col_disp,
+                                            SettingsAction::ToggleVsync,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.vsync"),
+                                                if game_settings.vsync_enabled {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            VsyncLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        spawn_toggle_button(
+                                            col_disp,
+                                            SettingsAction::ToggleDynamicFps,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.dynamic_fps"),
+                                                if game_settings.dynamic_fps_enabled {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            DynamicFpsLabel,
+                                            font_handle.as_ref(),
+                                        );
+                                    });
+
+                                // Graphics Quality & Fidelity
+                                columns
+                                    .spawn(Node {
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Column,
+                                        row_gap: px(10.0),
+                                        width: percent(100.0),
+                                        ..default()
+                                    })
+                                    .with_children(|col_left| {
                                 // Render Scale Stepper
                                 spawn_stepper_row(
                                     col_left,
@@ -744,8 +945,6 @@ fn spawn_settings_menu(
                                     SettingsAction::IncRenderScale,
                                     RenderScaleLabel,
                                     font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
                                 );
 
                                 // Upscaling Filter Stepper
@@ -757,8 +956,6 @@ fn spawn_settings_menu(
                                     SettingsAction::IncUpscalingFilter,
                                     UpscalingFilterLabel,
                                     font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
                                 );
 
                                 // Anti-Aliasing Stepper
@@ -770,8 +967,6 @@ fn spawn_settings_menu(
                                     SettingsAction::IncAntiAliasing,
                                     AntiAliasingLabel,
                                     font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
                                 );
 
                                 // Shadow Quality Stepper
@@ -783,8 +978,6 @@ fn spawn_settings_menu(
                                     SettingsAction::IncShadowQuality,
                                     ShadowQualityLabel,
                                     font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
                                 );
 
                                 // Cloud Quality Stepper
@@ -796,8 +989,6 @@ fn spawn_settings_menu(
                                     SettingsAction::IncCloudQuality,
                                     CloudQualityLabel,
                                     font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
                                 );
 
                                 // Cloud Distance Stepper (16..=128 chunks)
@@ -812,8 +1003,6 @@ fn spawn_settings_menu(
                                     SettingsAction::IncCloudDistance,
                                     CloudDistanceLabel,
                                     font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
                                 );
 
                                 // Full Surface Sides Toggle Button
@@ -831,8 +1020,6 @@ fn spawn_settings_menu(
                                     ),
                                     FullGrassLabel,
                                     font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
                                 );
                             });
 
@@ -842,7 +1029,7 @@ fn spawn_settings_menu(
                                 display: Display::Flex,
                                 flex_direction: FlexDirection::Column,
                                 row_gap: px(10.0),
-                                width: px(330.0),
+                                width: percent(100.0),
                                 ..default()
                             })
                             .with_children(|col_right| {
@@ -861,8 +1048,6 @@ fn spawn_settings_menu(
                                     ),
                                     GodRaysLabel,
                                     font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
                                 );
 
                                 // Fog Toggle Button
@@ -880,8 +1065,6 @@ fn spawn_settings_menu(
                                     ),
                                     FogLabel,
                                     font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
                                 );
 
                                 // Transmission Toggle Button
@@ -899,8 +1082,6 @@ fn spawn_settings_menu(
                                     ),
                                     TransmissionLabel,
                                     font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
                                 );
 
                                 // Procedural Grass Toggle Button
@@ -918,8 +1099,6 @@ fn spawn_settings_menu(
                                     ),
                                     ProceduralGrassLabel,
                                     font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
                                 );
 
                                 // Grass Density Stepper
@@ -931,24 +1110,40 @@ fn spawn_settings_menu(
                                     SettingsAction::IncGrassDensity,
                                     GrassDensityLabel,
                                     font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
+                                );
+
+                                // Connected Textures Toggle
+                                spawn_toggle_button(
+                                    col_right,
+                                    SettingsAction::ToggleConnectedTextures,
+                                    format!(
+                                        "{}: {}",
+                                        loc.t("menu.settings.connected_textures"),
+                                        if local_config.connected_textures {
+                                            loc.t("common.enabled")
+                                        } else {
+                                            loc.t("common.disabled")
+                                        }
+                                    ),
+                                    ConnectedTexturesLabel,
+                                    font_handle.as_ref(),
                                 );
                             });
                     });
 
-                    // 2-Column World & Simulation Settings Container
+                    // World & Simulation Settings Container
                     card.spawn((
-                        WorldSettingsSection,
+                        SettingsSection(SettingsTab::World),
                         Node {
+                            width: percent(100.0),
                             display: if *settings_tab == SettingsTab::World {
                                 Display::Flex
                             } else {
                                 Display::None
                             },
-                            flex_direction: FlexDirection::Row,
-                            column_gap: px(24.0),
-                            align_items: AlignItems::FlexStart,
+                            flex_direction: FlexDirection::Column,
+                            row_gap: px(16.0),
+                            align_items: AlignItems::Stretch,
                             ..default()
                         },
                     ))
@@ -959,7 +1154,7 @@ fn spawn_settings_menu(
                                 display: Display::Flex,
                                 flex_direction: FlexDirection::Column,
                                 row_gap: px(10.0),
-                                width: px(330.0),
+                                width: percent(100.0),
                                 ..default()
                             })
                             .with_children(|col_left| {
@@ -972,8 +1167,6 @@ fn spawn_settings_menu(
                                     SettingsAction::IncRenderDistance,
                                     RenderDistanceLabel,
                                     font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
                                 );
 
                                 // LOD Distance Stepper
@@ -989,8 +1182,6 @@ fn spawn_settings_menu(
                                     SettingsAction::IncLodDistance,
                                     LodDistanceLabel,
                                     font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
                                 );
 
                                 // Simulation Distance Stepper
@@ -1002,8 +1193,6 @@ fn spawn_settings_menu(
                                     SettingsAction::IncSimulationDistance,
                                     SimulationDistanceLabel,
                                     font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
                                 );
 
                                 // Mesh Upload Budget Stepper
@@ -1015,75 +1204,23 @@ fn spawn_settings_menu(
                                     SettingsAction::IncMeshUploadBudget,
                                     MeshUploadBudgetLabel,
                                     font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
                                 );
                             });
 
                         // Right Column: Camera & Environment Flow
+                        // World Time & Pause Behavior
                         columns
                             .spawn(Node {
                                 display: Display::Flex,
                                 flex_direction: FlexDirection::Column,
                                 row_gap: px(10.0),
-                                width: px(330.0),
+                                width: percent(100.0),
                                 ..default()
                             })
-                            .with_children(|col_right| {
-                                // Field of View Stepper
-                                spawn_stepper_row(
-                                    col_right,
-                                    loc.t("menu.settings.fov"),
-                                    format!("{fov}°"),
-                                    SettingsAction::DecFov,
-                                    SettingsAction::IncFov,
-                                    FovLabel,
-                                    font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
-                                );
-
-                                // Dynamic FOV / Reduced Motion Toggle Button
-                                spawn_toggle_button(
-                                    col_right,
-                                    SettingsAction::ToggleDynamicFov,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.fov_effects"),
-                                        if game_settings.dynamic_fov_enabled {
-                                            loc.t("common.normal")
-                                        } else {
-                                            loc.t("common.reduced")
-                                        }
-                                    ),
-                                    DynamicFovLabel,
-                                    font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
-                                );
-
-                                // View Bobbing Toggle Button
-                                spawn_toggle_button(
-                                    col_right,
-                                    SettingsAction::ToggleViewBobbing,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.view_bobbing"),
-                                        if game_settings.view_bobbing {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
-                                        }
-                                    ),
-                                    ViewBobbingLabel,
-                                    font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
-                                );
-
+                            .with_children(|col_world_extra| {
                                 // Time Pause Toggle Button
                                 spawn_toggle_button(
-                                    col_right,
+                                    col_world_extra,
                                     SettingsAction::ToggleTimePause,
                                     format!(
                                         "{}: {}",
@@ -1096,24 +1233,130 @@ fn spawn_settings_menu(
                                     ),
                                     TimePauseLabel,
                                     font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
+                                );
+
+                                // Menu Pause Behavior Stepper
+                                spawn_stepper_row(
+                                    col_world_extra,
+                                    loc.t("menu.settings.menu_pause"),
+                                    format_menu_pause(game_settings.menu_pause_mode, &loc),
+                                    SettingsAction::DecMenuPause,
+                                    SettingsAction::IncMenuPause,
+                                    MenuPauseLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                // Auto-Save Interval Stepper (placeholder)
+                                spawn_stepper_row(
+                                    col_world_extra,
+                                    loc.t("menu.settings.auto_save"),
+                                    format_auto_save(game_settings.auto_save_minutes, &loc),
+                                    SettingsAction::DecAutoSave,
+                                    SettingsAction::IncAutoSave,
+                                    AutoSaveLabel,
+                                    font_handle.as_ref(),
                                 );
                             });
                     });
 
-                    // 2-Column Shaders & Visual FX Settings Container
+                    // Camera Settings Container
                     card.spawn((
-                        ShadersSettingsSection,
+                        SettingsSection(SettingsTab::Camera),
                         Node {
+                            width: percent(100.0),
+                            display: if *settings_tab == SettingsTab::Camera {
+                                Display::Flex
+                            } else {
+                                Display::None
+                            },
+                            flex_direction: FlexDirection::Column,
+                            row_gap: px(10.0),
+                            align_items: AlignItems::Stretch,
+                            ..default()
+                        },
+                    ))
+                    .with_children(|col_cam| {
+                        // Field of View Stepper
+                        spawn_stepper_row(
+                            col_cam,
+                            loc.t("menu.settings.fov"),
+                            format!("{fov}°"),
+                            SettingsAction::DecFov,
+                            SettingsAction::IncFov,
+                            FovLabel,
+                            font_handle.as_ref(),
+                        );
+
+                        // Dynamic FOV / Reduced Motion Toggle Button
+                        spawn_toggle_button(
+                            col_cam,
+                            SettingsAction::ToggleDynamicFov,
+                            format!(
+                                "{}: {}",
+                                loc.t("menu.settings.fov_effects"),
+                                if game_settings.dynamic_fov_enabled {
+                                    loc.t("common.normal")
+                                } else {
+                                    loc.t("common.reduced")
+                                }
+                            ),
+                            DynamicFovLabel,
+                            font_handle.as_ref(),
+                        );
+
+                        // View Bobbing Toggle Button
+                        spawn_toggle_button(
+                            col_cam,
+                            SettingsAction::ToggleViewBobbing,
+                            format!(
+                                "{}: {}",
+                                loc.t("menu.settings.view_bobbing"),
+                                if game_settings.view_bobbing {
+                                    loc.t("common.enabled")
+                                } else {
+                                    loc.t("common.disabled")
+                                }
+                            ),
+                            ViewBobbingLabel,
+                            font_handle.as_ref(),
+                        );
+
+                        // Camera Smoothing Stepper
+                        spawn_stepper_row(
+                            col_cam,
+                            loc.t("menu.settings.camera_smoothing"),
+                            format_camera_smoothing(game_settings.camera_smoothing, &loc),
+                            SettingsAction::DecCameraSmoothing,
+                            SettingsAction::IncCameraSmoothing,
+                            CameraSmoothingLabel,
+                            font_handle.as_ref(),
+                        );
+
+                        // Third-Person Distance Stepper
+                        spawn_stepper_row(
+                            col_cam,
+                            loc.t("menu.settings.third_person_dist"),
+                            format!("{:.1}m", game_settings.third_person_distance),
+                            SettingsAction::DecThirdPersonDist,
+                            SettingsAction::IncThirdPersonDist,
+                            ThirdPersonDistLabel,
+                            font_handle.as_ref(),
+                        );
+                    });
+
+                    // Shaders & Visual FX Settings Container
+                    card.spawn((
+                        SettingsSection(SettingsTab::Shaders),
+                        Node {
+                            width: percent(100.0),
                             display: if *settings_tab == SettingsTab::Shaders {
                                 Display::Flex
                             } else {
                                 Display::None
                             },
-                            flex_direction: FlexDirection::Row,
-                            column_gap: px(24.0),
-                            align_items: AlignItems::FlexStart,
+                            flex_direction: FlexDirection::Column,
+                            row_gap: px(16.0),
+                            align_items: AlignItems::Stretch,
                             ..default()
                         },
                     ))
@@ -1124,7 +1367,7 @@ fn spawn_settings_menu(
                                 display: Display::Flex,
                                 flex_direction: FlexDirection::Column,
                                 row_gap: px(10.0),
-                                width: px(330.0),
+                                width: percent(100.0),
                                 ..default()
                             })
                             .with_children(|col_left| {
@@ -1137,8 +1380,6 @@ fn spawn_settings_menu(
                                     SettingsAction::IncCoatedTextures,
                                     CoatedTexturesLabel,
                                     font_handle.as_ref(),
-                                    &small_normal,
-                                    &small_hover,
                                 );
 
                                 // Pixelated Shadows Toggle
@@ -1156,8 +1397,6 @@ fn spawn_settings_menu(
                                     ),
                                     PixelatedShadowsLabel,
                                     font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
                                 );
 
                                 // HDR Bloom & Glow Toggle
@@ -1175,8 +1414,6 @@ fn spawn_settings_menu(
                                     ),
                                     HdrBloomLabel,
                                     font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
                                 );
                             });
 
@@ -1186,7 +1423,7 @@ fn spawn_settings_menu(
                                 display: Display::Flex,
                                 flex_direction: FlexDirection::Column,
                                 row_gap: px(10.0),
-                                width: px(330.0),
+                                width: percent(100.0),
                                 ..default()
                             })
                             .with_children(|col_right| {
@@ -1205,8 +1442,6 @@ fn spawn_settings_menu(
                                     ),
                                     WavingFoliageLabel,
                                     font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
                                 );
 
                                 // Internal Leaf Culling Toggle (Optional Optimization)
@@ -1224,8 +1459,6 @@ fn spawn_settings_menu(
                                     ),
                                     LeafCullingLabel,
                                     font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
                                 );
 
                                 // Dynamic Handheld Lighting Toggle
@@ -1243,26 +1476,23 @@ fn spawn_settings_menu(
                                     ),
                                     DynamicLightingLabel,
                                     font_handle.as_ref(),
-                                    &btn_normal,
-                                    &btn_hover,
                                 );
                             });
                     });
 
-                    // Audio Settings Container
+                    // Audio Settings Container (full width so steppers align cleanly to right edge)
                     card.spawn((
-                        AudioSettingsSection,
+                        SettingsSection(SettingsTab::Audio),
                         Node {
+                            width: percent(100.0),
                             display: if *settings_tab == SettingsTab::Audio {
                                 Display::Flex
                             } else {
                                 Display::None
                             },
                             flex_direction: FlexDirection::Column,
-                            align_items: AlignItems::Center,
-                            row_gap: px(12.0),
-                            width: px(380.0),
-                            margin: UiRect::vertical(px(20.0)),
+                            align_items: AlignItems::Stretch,
+                            row_gap: px(10.0),
                             ..default()
                         },
                     ))
@@ -1275,8 +1505,6 @@ fn spawn_settings_menu(
                             SettingsAction::IncMasterVol,
                             MasterVolLabel,
                             font_handle.as_ref(),
-                            &small_normal,
-                            &small_hover,
                         );
 
                         spawn_stepper_row(
@@ -1287,8 +1515,6 @@ fn spawn_settings_menu(
                             SettingsAction::IncMusicVol,
                             MusicVolLabel,
                             font_handle.as_ref(),
-                            &small_normal,
-                            &small_hover,
                         );
 
                         spawn_stepper_row(
@@ -1299,8 +1525,6 @@ fn spawn_settings_menu(
                             SettingsAction::IncWeatherVol,
                             WeatherVolLabel,
                             font_handle.as_ref(),
-                            &small_normal,
-                            &small_hover,
                         );
 
                         spawn_stepper_row(
@@ -1311,65 +1535,44 @@ fn spawn_settings_menu(
                             SettingsAction::IncSfxVol,
                             SfxVolLabel,
                             font_handle.as_ref(),
-                            &small_normal,
-                            &small_hover,
                         );
 
-                        spawn_stepper_row(
-                            col_audio,
-                            loc.t("menu.settings.ambient_vol"),
-                            crate::core::config::format_volume(audio_settings.ambient_volume),
-                            SettingsAction::DecAmbientVol,
-                            SettingsAction::IncAmbientVol,
-                            AmbientVolLabel,
-                            font_handle.as_ref(),
-                            &small_normal,
-                            &small_hover,
-                        );
-                    });
+                            spawn_stepper_row(
+                                col_audio,
+                                loc.t("menu.settings.ambient_vol"),
+                                crate::core::config::format_volume(audio_settings.ambient_volume),
+                                SettingsAction::DecAmbientVol,
+                                SettingsAction::IncAmbientVol,
+                                AmbientVolLabel,
+                                font_handle.as_ref(),
+                            );
 
-                    // Centered Back Button
-                    let mut back_font = TextFont {
-                        font_size: FontSize::Px(16.0),
-                        ..default()
-                    };
-                    if let Some(ref font) = font_handle {
-                        back_font.font = font.clone();
-                    }
+                            spawn_stepper_row(
+                                col_audio,
+                                loc.t("menu.settings.ui_vol"),
+                                crate::core::config::format_volume(game_settings.ui_volume),
+                                SettingsAction::DecUiVol,
+                                SettingsAction::IncUiVol,
+                                UiVolLabel,
+                                font_handle.as_ref(),
+                            );
 
-                    card.spawn((
-                        Button,
-                        Hovered::default(),
-                        SettingsAction::Back,
-                        crate::menu::MenuButtonTexture {
-                            normal: btn_normal.clone(),
-                            hover: btn_hover.clone(),
-                        },
-                        ImageNode {
-                            image: btn_normal.clone(),
-                            image_mode: NodeImageMode::Sliced(TextureSlicer {
-                                border: BorderRect::all(4.0),
-                                ..default()
-                            }),
-                            ..default()
-                        },
-                        Node {
-                            width: px(330.0),
-                            height: px(38.0),
-                            display: Display::Flex,
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            margin: UiRect::top(px(10.0)),
-                            ..default()
-                        },
-                    ))
-                    .with_children(|btn| {
-                        btn.spawn((
-                            Text::new(loc.t("menu.settings.back")),
-                            back_font,
-                            TextColor(Color::srgb(0.95, 0.95, 0.98)),
-                            text_shadow_default(),
-                        ));
+                            spawn_toggle_button(
+                                col_audio,
+                                SettingsAction::ToggleMuteUnfocus,
+                                format!(
+                                    "{}: {}",
+                                    loc.t("menu.settings.mute_on_unfocus"),
+                                    if game_settings.mute_on_unfocus {
+                                        loc.t("common.enabled")
+                                    } else {
+                                        loc.t("common.disabled")
+                                    }
+                                ),
+                                MuteUnfocusLabel,
+                                font_handle.as_ref(),
+                            );
+                        });
                     });
                 });
         });
@@ -1383,8 +1586,6 @@ fn spawn_stepper_row<T: Component>(
     inc_action: SettingsAction,
     marker: T,
     font_handle: Option<&crate::core::FontSource>,
-    small_normal: &Handle<Image>,
-    small_hover: &Handle<Image>,
 ) {
     let mut title_font = TextFont {
         font_size: FontSize::Px(15.0),
@@ -1404,9 +1605,11 @@ fn spawn_stepper_row<T: Component>(
         val_font.font = font.clone();
     }
 
+    let step_theme = crate::menu::ThemedButton::subtle();
+
     parent
         .spawn(Node {
-            width: px(330.0),
+            width: percent(100.0),
             display: Display::Flex,
             flex_direction: FlexDirection::Row,
             justify_content: JustifyContent::SpaceBetween,
@@ -1438,20 +1641,17 @@ fn spawn_stepper_row<T: Component>(
                         Button,
                         Hovered::default(),
                         dec_action,
-                        crate::menu::MenuButtonTexture {
-                            normal: small_normal.clone(),
-                            hover: small_hover.clone(),
-                        },
-                        ImageNode {
-                            image: small_normal.clone(),
-                            ..default()
-                        },
+                        step_theme,
+                        BackgroundColor(step_theme.normal_bg),
+                        BorderColor::all(step_theme.normal_border),
                         Node {
                             width: px(28.0),
                             height: px(28.0),
                             display: Display::Flex,
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
+                            border: UiRect::all(px(1.5)),
+                            border_radius: BorderRadius::all(px(4.0)),
                             ..default()
                         },
                     ))
@@ -1486,20 +1686,17 @@ fn spawn_stepper_row<T: Component>(
                         Button,
                         Hovered::default(),
                         inc_action,
-                        crate::menu::MenuButtonTexture {
-                            normal: small_normal.clone(),
-                            hover: small_hover.clone(),
-                        },
-                        ImageNode {
-                            image: small_normal.clone(),
-                            ..default()
-                        },
+                        step_theme,
+                        BackgroundColor(step_theme.normal_bg),
+                        BorderColor::all(step_theme.normal_border),
                         Node {
                             width: px(28.0),
                             height: px(28.0),
                             display: Display::Flex,
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
+                            border: UiRect::all(px(1.5)),
+                            border_radius: BorderRadius::all(px(4.0)),
                             ..default()
                         },
                     ))
@@ -1521,8 +1718,6 @@ fn spawn_toggle_button<T: Component>(
     label: String,
     marker: T,
     font_handle: Option<&crate::core::FontSource>,
-    btn_normal: &Handle<Image>,
-    btn_hover: &Handle<Image>,
 ) {
     let mut btn_font = TextFont {
         font_size: FontSize::Px(14.5),
@@ -1532,29 +1727,24 @@ fn spawn_toggle_button<T: Component>(
         btn_font.font = font.clone();
     }
 
+    let toggle_theme = crate::menu::ThemedButton::subtle();
+
     parent
         .spawn((
             Button,
             Hovered::default(),
             action,
-            crate::menu::MenuButtonTexture {
-                normal: btn_normal.clone(),
-                hover: btn_hover.clone(),
-            },
-            ImageNode {
-                image: btn_normal.clone(),
-                image_mode: NodeImageMode::Sliced(TextureSlicer {
-                    border: BorderRect::all(4.0),
-                    ..default()
-                }),
-                ..default()
-            },
+            toggle_theme,
+            BackgroundColor(toggle_theme.normal_bg),
+            BorderColor::all(toggle_theme.normal_border),
             Node {
-                width: px(330.0),
+                width: percent(100.0),
                 height: px(36.0),
                 display: Display::Flex,
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
+                border: UiRect::all(px(1.5)),
+                border_radius: BorderRadius::all(px(4.0)),
                 ..default()
             },
         ))
@@ -1575,11 +1765,11 @@ fn spawn_tab_button(
     tab: SettingsTab,
     is_active: bool,
     font_handle: Option<&crate::core::FontSource>,
-    btn_normal: &Handle<Image>,
-    btn_hover: &Handle<Image>,
 ) {
+    use crate::menu::theme::palette;
+
     let mut btn_font = TextFont {
-        font_size: FontSize::Px(14.0),
+        font_size: FontSize::Px(15.0),
         ..default()
     };
     if let Some(font) = font_handle {
@@ -1587,9 +1777,17 @@ fn spawn_tab_button(
     }
 
     let text_color = if is_active {
-        Color::srgb(1.0, 0.88, 0.45)
+        palette::TEXT_ACCENT
     } else {
-        Color::srgb(0.78, 0.78, 0.82)
+        palette::TEXT_PRIMARY
+    };
+
+    let tab_theme = crate::menu::ThemedButton {
+        normal_bg: Color::NONE,
+        normal_border: Color::NONE,
+        hover_bg: palette::NAV_ITEM_HOVER_BG,
+        hover_border: Color::NONE,
+        pressed_bg: palette::NAV_ITEM_ACTIVE_BG,
     };
 
     parent
@@ -1598,38 +1796,66 @@ fn spawn_tab_button(
             Hovered::default(),
             SettingsAction::SwitchTab(tab),
             TabButton(tab),
-            crate::menu::MenuButtonTexture {
-                normal: btn_normal.clone(),
-                hover: btn_hover.clone(),
-            },
-            ImageNode {
-                image: btn_normal.clone(),
-                image_mode: NodeImageMode::Sliced(TextureSlicer {
-                    border: BorderRect::all(4.0),
-                    ..default()
-                }),
-                ..default()
-            },
+            tab_theme,
+            BackgroundColor(if is_active {
+                palette::NAV_ITEM_ACTIVE_BG
+            } else {
+                Color::NONE
+            }),
+            BorderColor::all(Color::NONE),
             Node {
-                width: px(126.0),
-                height: px(34.0),
+                width: percent(100.0),
+                height: px(46.0),
+                padding: UiRect::new(px(24.0), px(20.0), px(0.0), px(0.0)),
                 display: Display::Flex,
-                justify_content: JustifyContent::Center,
+                flex_direction: FlexDirection::Row,
+                justify_content: JustifyContent::SpaceBetween,
                 align_items: AlignItems::Center,
                 ..default()
             },
         ))
         .with_children(|btn| {
             btn.spawn((
+                TabButtonAccent,
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: px(0.0),
+                    top: px(8.0),
+                    bottom: px(8.0),
+                    width: px(3.0),
+                    border_radius: BorderRadius::right(px(2.0)),
+                    ..default()
+                },
+                BackgroundColor(palette::ACCENT_LINE),
+                if is_active {
+                    Visibility::Visible
+                } else {
+                    Visibility::Hidden
+                },
+            ));
+
+            btn.spawn((
+                TabButtonLabel,
                 Text::new(title),
-                btn_font,
+                btn_font.clone(),
                 TextColor(text_color),
                 text_shadow_default(),
+            ));
+
+            btn.spawn((
+                Text::new(">"),
+                btn_font,
+                TextColor(palette::TEXT_MUTED),
             ));
         });
 }
 
-fn despawn_settings_menu(mut commands: Commands, query: Query<Entity, With<SettingsMenuRoot>>) {
+fn despawn_settings_menu(
+    mut commands: Commands,
+    mut detail_open: ResMut<SettingsDetailOpen>,
+    query: Query<Entity, With<SettingsMenuRoot>>,
+) {
+    detail_open.0 = false;
     for entity in &query {
         commands.entity(entity).despawn();
     }
@@ -1641,8 +1867,9 @@ fn handle_settings_buttons(
             &Hovered,
             Has<Pressed>,
             &SettingsAction,
-            &crate::menu::MenuButtonTexture,
-            &mut ImageNode,
+            &crate::menu::ThemedButton,
+            &mut BackgroundColor,
+            &mut BorderColor,
         ),
         With<Button>,
     >,
@@ -1652,9 +1879,11 @@ fn handle_settings_buttons(
     mut local_config: ResMut<LocalConfig>,
     mut audio_settings: ResMut<AudioSettings>,
     mut settings_tab: ResMut<SettingsTab>,
+    mut detail_open: ResMut<SettingsDetailOpen>,
     mut loc: ResMut<Localization>,
     mut env_state: Option<ResMut<EnvironmentState>>,
     mut dynamic_fps_settings: Option<ResMut<DynamicFpsSettings>>,
+    mut debug_hud_settings: Option<ResMut<crate::core::DebugHudSettings>>,
     menu_return_target: Res<MenuReturnTarget>,
     mut next_state: ResMut<NextState<MenuState>>,
     (mut chunk_material, mut texture_registry, mut streaming_queues, world): (
@@ -1667,19 +1896,30 @@ fn handle_settings_buttons(
 ) {
     let left_clicked = mouse.just_pressed(MouseButton::Left);
 
-    for (hovered, is_pressed, action, btn_tex, mut img) in &mut interaction_query {
+    for (hovered, is_pressed, action, theme, mut bg, mut border) in &mut interaction_query {
         let is_hovered = hovered.get();
-        if is_hovered || is_pressed {
-            img.image = btn_tex.hover.clone();
+        let (next_bg, next_border) = if let SettingsAction::SwitchTab(tab) = action {
+            if detail_open.0 && *tab == *settings_tab {
+                (crate::menu::theme::palette::NAV_ITEM_ACTIVE_BG, Color::NONE)
+            } else {
+                theme.colors(is_hovered, is_pressed)
+            }
         } else {
-            img.image = btn_tex.normal.clone();
-        }
+            theme.colors(is_hovered, is_pressed)
+        };
+        bg.0 = next_bg;
+        *border = BorderColor::all(next_border);
 
         if is_hovered && left_clicked {
             let mut sync_config = true;
             match action {
                 SettingsAction::SwitchTab(tab) => {
-                    *settings_tab = *tab;
+                    if detail_open.0 && *settings_tab == *tab {
+                        detail_open.0 = false;
+                    } else {
+                        *settings_tab = *tab;
+                        detail_open.0 = true;
+                    }
                     sync_config = false;
                 }
                 SettingsAction::DecLanguage => {
@@ -2097,6 +2337,103 @@ fn handle_settings_buttons(
                         }
                     }
                 }
+                SettingsAction::ToggleConnectedTextures => {
+                    game_settings.connected_textures = !game_settings.connected_textures;
+                    local_config.connected_textures = game_settings.connected_textures;
+                    if let Some(ref mut reg) = texture_registry {
+                        reg.connected_textures = game_settings.connected_textures;
+                    }
+                    if let Some(ref mut mat) = chunk_material {
+                        mat.texture_registry.connected_textures = game_settings.connected_textures;
+                    }
+                    if let Some(ref world) = world
+                        && let Some(ref mut queues) = streaming_queues
+                    {
+                        for (&coord, _) in world.iter_chunks() {
+                            queues.enqueue_remesh(coord);
+                        }
+                    }
+                }
+                SettingsAction::DecMenuPause => {
+                    game_settings.menu_pause_mode = game_settings.menu_pause_mode.prev();
+                    local_config.menu_pause_mode = game_settings.menu_pause_mode;
+                }
+                SettingsAction::IncMenuPause => {
+                    game_settings.menu_pause_mode = game_settings.menu_pause_mode.next();
+                    local_config.menu_pause_mode = game_settings.menu_pause_mode;
+                }
+                SettingsAction::ToggleMouseLockBorderless => {
+                    game_settings.mouse_lock_borderless = !game_settings.mouse_lock_borderless;
+                    local_config.mouse_lock_borderless = game_settings.mouse_lock_borderless;
+                }
+                SettingsAction::DecAutoSave => {
+                    let steps = [0u32, 5, 10, 15];
+                    let idx = steps
+                        .iter()
+                        .position(|&m| m == game_settings.auto_save_minutes)
+                        .unwrap_or(2);
+                    game_settings.auto_save_minutes = steps[(idx + steps.len() - 1) % steps.len()];
+                    local_config.auto_save_minutes = game_settings.auto_save_minutes;
+                }
+                SettingsAction::IncAutoSave => {
+                    let steps = [0u32, 5, 10, 15];
+                    let idx = steps
+                        .iter()
+                        .position(|&m| m == game_settings.auto_save_minutes)
+                        .unwrap_or(2);
+                    game_settings.auto_save_minutes = steps[(idx + 1) % steps.len()];
+                    local_config.auto_save_minutes = game_settings.auto_save_minutes;
+                }
+                SettingsAction::DecCameraSmoothing => {
+                    game_settings.camera_smoothing = game_settings.camera_smoothing.saturating_sub(1);
+                    local_config.camera_smoothing = game_settings.camera_smoothing;
+                }
+                SettingsAction::IncCameraSmoothing => {
+                    game_settings.camera_smoothing = (game_settings.camera_smoothing + 1).min(3);
+                    local_config.camera_smoothing = game_settings.camera_smoothing;
+                }
+                SettingsAction::DecThirdPersonDist => {
+                    game_settings.third_person_distance =
+                        (game_settings.third_person_distance - 0.5).clamp(2.5, 8.0);
+                    local_config.third_person_distance = game_settings.third_person_distance;
+                }
+                SettingsAction::IncThirdPersonDist => {
+                    game_settings.third_person_distance =
+                        (game_settings.third_person_distance + 0.5).clamp(2.5, 8.0);
+                    local_config.third_person_distance = game_settings.third_person_distance;
+                }
+                SettingsAction::DecUiVol => {
+                    game_settings.ui_volume = (game_settings.ui_volume - 0.05).clamp(0.0, 1.0);
+                    local_config.ui_volume = game_settings.ui_volume;
+                }
+                SettingsAction::IncUiVol => {
+                    game_settings.ui_volume = (game_settings.ui_volume + 0.05).clamp(0.0, 1.0);
+                    local_config.ui_volume = game_settings.ui_volume;
+                }
+                SettingsAction::ToggleMuteUnfocus => {
+                    game_settings.mute_on_unfocus = !game_settings.mute_on_unfocus;
+                    local_config.mute_on_unfocus = game_settings.mute_on_unfocus;
+                }
+                SettingsAction::DecFpsHud => {
+                    local_config.fps_hud_mode = local_config.fps_hud_mode.prev();
+                    if let Some(ref mut hud) = debug_hud_settings {
+                        hud.mode = local_config.fps_hud_mode;
+                    }
+                }
+                SettingsAction::IncFpsHud => {
+                    local_config.fps_hud_mode = local_config.fps_hud_mode.next();
+                    if let Some(ref mut hud) = debug_hud_settings {
+                        hud.mode = local_config.fps_hud_mode;
+                    }
+                }
+                SettingsAction::ToggleHighContrastCrosshair => {
+                    game_settings.high_contrast_crosshair = !game_settings.high_contrast_crosshair;
+                    local_config.high_contrast_crosshair = game_settings.high_contrast_crosshair;
+                }
+                SettingsAction::ToggleSubtitles => {
+                    game_settings.subtitles_enabled = !game_settings.subtitles_enabled;
+                    local_config.subtitles_enabled = game_settings.subtitles_enabled;
+                }
                 SettingsAction::TogglePixelatedShadows => {
                     local_config.pixelated_shadows = !local_config.pixelated_shadows;
                 }
@@ -2145,6 +2482,7 @@ fn handle_language_changed(
     local_config: Res<LocalConfig>,
     audio_settings: Res<AudioSettings>,
     settings_tab: Res<SettingsTab>,
+    detail_open: Res<SettingsDetailOpen>,
     env_state: Option<Res<EnvironmentState>>,
     app_font: Option<Res<AppFont>>,
     asset_server: Res<AssetServer>,
@@ -2163,6 +2501,7 @@ fn handle_language_changed(
         local_config,
         audio_settings,
         settings_tab,
+        detail_open,
         loc,
         env_state,
         app_font,
@@ -2218,6 +2557,8 @@ fn update_settings_labels(
             Option<&CoatedTexturesLabel>,
             Option<&WavingFoliageLabel>,
             Option<&LeafCullingLabel>,
+            Option<&ConnectedTexturesLabel>,
+            Option<&MenuPauseLabel>,
             Option<&PixelatedShadowsLabel>,
             Option<&HdrBloomLabel>,
             Option<&DynamicLightingLabel>,
@@ -2274,6 +2615,8 @@ fn update_settings_labels(
             coated_textures,
             waving_foliage,
             leaf_culling,
+            connected_textures,
+            menu_pause,
             pixelated_shadows,
             hdr_bloom,
             dynamic_lighting,
@@ -2362,6 +2705,18 @@ fn update_settings_labels(
                         loc.t("common.disabled")
                     }
                 );
+            } else if connected_textures.is_some() {
+                text.0 = format!(
+                    "{}: {}",
+                    loc.t("menu.settings.connected_textures"),
+                    if local_config.connected_textures {
+                        loc.t("common.enabled")
+                    } else {
+                        loc.t("common.disabled")
+                    }
+                );
+            } else if menu_pause.is_some() {
+                text.0 = format_menu_pause(game_settings.menu_pause_mode, &loc);
             } else if pixelated_shadows.is_some() {
                 text.0 = format!(
                     "{}: {}",
@@ -2544,128 +2899,163 @@ fn update_language_label(
 
 fn update_settings_tab_view(
     settings_tab: Res<SettingsTab>,
-    tab_buttons_query: Query<(&TabButton, &Children)>,
-    mut text_color_query: Query<&mut TextColor>,
-    mut video_section_query: Query<
-        &mut Node,
-        (
-            With<VideoSettingsSection>,
-            Without<GraphicsSettingsSection>,
-            Without<WorldSettingsSection>,
-            Without<ShadersSettingsSection>,
-            Without<AudioSettingsSection>,
-        ),
-    >,
-    mut graphics_section_query: Query<
-        &mut Node,
-        (
-            With<GraphicsSettingsSection>,
-            Without<VideoSettingsSection>,
-            Without<WorldSettingsSection>,
-            Without<ShadersSettingsSection>,
-            Without<AudioSettingsSection>,
-        ),
-    >,
-    mut world_section_query: Query<
-        &mut Node,
-        (
-            With<WorldSettingsSection>,
-            Without<VideoSettingsSection>,
-            Without<GraphicsSettingsSection>,
-            Without<ShadersSettingsSection>,
-            Without<AudioSettingsSection>,
-        ),
-    >,
-    mut shaders_section_query: Query<
-        &mut Node,
-        (
-            With<ShadersSettingsSection>,
-            Without<VideoSettingsSection>,
-            Without<GraphicsSettingsSection>,
-            Without<WorldSettingsSection>,
-            Without<AudioSettingsSection>,
-        ),
-    >,
-    mut audio_section_query: Query<
-        &mut Node,
-        (
-            With<AudioSettingsSection>,
-            Without<VideoSettingsSection>,
-            Without<GraphicsSettingsSection>,
-            Without<WorldSettingsSection>,
-            Without<ShadersSettingsSection>,
-        ),
-    >,
+    detail_open: Res<SettingsDetailOpen>,
+    tab_buttons_query: Query<(&TabButton, &Hovered, &Children)>,
+    mut text_color_query: Query<&mut TextColor, With<TabButtonLabel>>,
+    mut accent_query: Query<&mut Visibility, With<TabButtonAccent>>,
+    mut detail_panel_query: Query<&mut Node, (With<SettingsDetailPanel>, Without<SettingsSection>)>,
+    mut sections_query: Query<(&SettingsSection, &mut Node), Without<SettingsDetailPanel>>,
 ) {
-    if !settings_tab.is_changed() {
-        return;
-    }
+    use crate::menu::theme::palette;
 
-    for mut node in &mut video_section_query {
-        node.display = if *settings_tab == SettingsTab::Video {
-            Display::Flex
+    for (tab_btn, hovered, children) in &tab_buttons_query {
+        let is_active = detail_open.0 && tab_btn.0 == *settings_tab;
+        let is_highlighted = is_active || hovered.get();
+        let color = if is_highlighted {
+            palette::TEXT_ACCENT
         } else {
-            Display::None
-        };
-    }
-
-    for mut node in &mut graphics_section_query {
-        node.display = if *settings_tab == SettingsTab::Graphics {
-            Display::Flex
-        } else {
-            Display::None
-        };
-    }
-
-    for mut node in &mut world_section_query {
-        node.display = if *settings_tab == SettingsTab::World {
-            Display::Flex
-        } else {
-            Display::None
-        };
-    }
-
-    for mut node in &mut shaders_section_query {
-        node.display = if *settings_tab == SettingsTab::Shaders {
-            Display::Flex
-        } else {
-            Display::None
-        };
-    }
-
-    for mut node in &mut audio_section_query {
-        node.display = if *settings_tab == SettingsTab::Audio {
-            Display::Flex
-        } else {
-            Display::None
-        };
-    }
-
-    for (tab_btn, children) in &tab_buttons_query {
-        let is_active = tab_btn.0 == *settings_tab;
-        let color = if is_active {
-            Color::srgb(1.0, 0.88, 0.45)
-        } else {
-            Color::srgb(0.78, 0.78, 0.82)
+            palette::TEXT_PRIMARY
         };
         for child in children.iter() {
             if let Ok(mut text_color) = text_color_query.get_mut(child) {
                 text_color.0 = color;
             }
+            if let Ok(mut vis) = accent_query.get_mut(child) {
+                *vis = if is_highlighted {
+                    Visibility::Visible
+                } else {
+                    Visibility::Hidden
+                };
+            }
         }
+    }
+
+    if !settings_tab.is_changed() && !detail_open.is_changed() {
+        return;
+    }
+
+    for mut node in &mut detail_panel_query {
+        node.display = if detail_open.0 {
+            Display::Flex
+        } else {
+            Display::None
+        };
+    }
+
+    for (sec, mut node) in &mut sections_query {
+        node.display = if sec.0 == *settings_tab {
+            Display::Flex
+        } else {
+            Display::None
+        };
     }
 }
 
 fn update_settings_card_scale(
-    game_settings: Res<GameSettings>,
-    mut card_query: Query<&mut UiTransform, With<SettingsMenuCard>>,
+    _game_settings: Res<GameSettings>,
+    _card_query: Query<&mut UiTransform, With<SettingsMenuCard>>,
 ) {
-    if !game_settings.is_changed() {
+}
+
+fn update_extended_settings_labels(
+    game_settings: Res<GameSettings>,
+    local_config: Res<LocalConfig>,
+    loc: Res<Localization>,
+    mut borderless_row_q: Query<&mut Node, With<BorderlessMouseLockRow>>,
+    mut labels_q: Query<(
+        &mut Text,
+        (
+            Option<&MouseLockBorderlessLabel>,
+            Option<&AutoSaveLabel>,
+            Option<&CameraSmoothingLabel>,
+            Option<&ThirdPersonDistLabel>,
+            Option<&UiVolLabel>,
+            Option<&MuteUnfocusLabel>,
+            Option<&FpsHudLabel>,
+            Option<&HighContrastCrosshairLabel>,
+            Option<&SubtitlesLabel>,
+        ),
+    )>,
+) {
+    if !game_settings.is_changed() && !local_config.is_changed() && !loc.is_changed() {
         return;
     }
-    let factor = (game_settings.gui_scale as f32 / 4.0).clamp(0.5, 1.0);
-    for mut card_tf in &mut card_query {
-        card_tf.scale = Vec2::splat(factor);
+
+    let is_borderless = game_settings.screen_mode == ScreenMode::BorderlessFullscreen;
+    for mut node in &mut borderless_row_q {
+        node.display = if is_borderless {
+            Display::Flex
+        } else {
+            Display::None
+        };
+    }
+
+    for (
+        mut text,
+        (
+            mouse_lock,
+            auto_save,
+            cam_smooth,
+            tp_dist,
+            ui_vol,
+            mute_unfocus,
+            fps_hud,
+            crosshair,
+            subtitles,
+        ),
+    ) in &mut labels_q
+    {
+        if mouse_lock.is_some() {
+            text.0 = format!(
+                "{}: {}",
+                loc.t("menu.settings.mouse_lock_borderless"),
+                if game_settings.mouse_lock_borderless {
+                    loc.t("common.enabled")
+                } else {
+                    loc.t("common.disabled")
+                }
+            );
+        } else if auto_save.is_some() {
+            text.0 = format_auto_save(game_settings.auto_save_minutes, &loc);
+        } else if cam_smooth.is_some() {
+            text.0 = format_camera_smoothing(game_settings.camera_smoothing, &loc);
+        } else if tp_dist.is_some() {
+            text.0 = format!("{:.1}m", game_settings.third_person_distance);
+        } else if ui_vol.is_some() {
+            text.0 = crate::core::config::format_volume(game_settings.ui_volume);
+        } else if mute_unfocus.is_some() {
+            text.0 = format!(
+                "{}: {}",
+                loc.t("menu.settings.mute_on_unfocus"),
+                if game_settings.mute_on_unfocus {
+                    loc.t("common.enabled")
+                } else {
+                    loc.t("common.disabled")
+                }
+            );
+        } else if fps_hud.is_some() {
+            text.0 = format_fps_hud(local_config.fps_hud_mode, &loc);
+        } else if crosshair.is_some() {
+            text.0 = format!(
+                "{}: {}",
+                loc.t("menu.settings.high_contrast_crosshair"),
+                if game_settings.high_contrast_crosshair {
+                    loc.t("common.enabled")
+                } else {
+                    loc.t("common.disabled")
+                }
+            );
+        } else if subtitles.is_some() {
+            text.0 = format!(
+                "{}: {}",
+                loc.t("menu.settings.subtitles"),
+                if game_settings.subtitles_enabled {
+                    loc.t("common.enabled")
+                } else {
+                    loc.t("common.disabled")
+                }
+            );
+        }
     }
 }
 

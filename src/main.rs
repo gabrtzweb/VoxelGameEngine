@@ -184,6 +184,26 @@ fn main() {
 
         leaf_culling: local_config.leaf_culling,
 
+        connected_textures: local_config.connected_textures,
+
+        menu_pause_mode: local_config.menu_pause_mode,
+
+        mouse_lock_borderless: local_config.mouse_lock_borderless,
+
+        camera_smoothing: local_config.camera_smoothing,
+
+        third_person_distance: local_config.third_person_distance,
+
+        ui_volume: local_config.ui_volume,
+
+        mute_on_unfocus: local_config.mute_on_unfocus,
+
+        auto_save_minutes: local_config.auto_save_minutes,
+
+        high_contrast_crosshair: local_config.high_contrast_crosshair,
+
+        subtitles_enabled: local_config.subtitles_enabled,
+
         screen_mode,
 
         vsync_enabled: local_config.vsync_enabled,

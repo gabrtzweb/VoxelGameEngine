@@ -10,7 +10,7 @@ use crate::{
     core::{AppFont, Localization, text_shadow_default},
 };
 
-use super::{GameSettings, MenuButtonTexture, MenuReturnTarget, MenuState};
+use super::{GameSettings, MenuReturnTarget, MenuState, ThemedButton, theme::palette};
 
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum MainMenuPhase {
@@ -73,8 +73,6 @@ fn spawn_main_menu(
 ) {
     let font_handle = app_font.map(|f| f.source());
     let bg_texture = asset_server.load("textures/interfaces/main_menu_bg.png");
-    let btn_normal = asset_server.load("textures/interfaces/containers/buttons/button_large.png");
-    let btn_hover = asset_server.load("textures/interfaces/containers/buttons/button_large_hover.png");
 
     let make_font = |size: f32| {
         let mut tf = TextFont {
@@ -266,26 +264,19 @@ fn spawn_main_menu(
                             Button,
                             Hovered::default(),
                             action,
-                            MenuButtonTexture {
-                                normal: btn_normal.clone(),
-                                hover: btn_hover.clone(),
-                            },
-                            ImageNode {
-                                image: btn_normal.clone(),
-                                image_mode: NodeImageMode::Sliced(TextureSlicer {
-                                    border: BorderRect::all(4.0),
-                                    ..default()
-                                }),
-                                ..default()
-                            },
+                            ThemedButton::default(),
                             Node {
                                 width: px(384.0),
                                 height: px(56.0),
+                                border: UiRect::all(px(2.0)),
+                                border_radius: BorderRadius::all(px(4.0)),
                                 display: Display::Flex,
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
                                 ..default()
                             },
+                            BackgroundColor(palette::BTN_NORMAL_BG),
+                            BorderColor::all(palette::BTN_NORMAL_BORDER),
                         ))
                         .with_children(|btn| {
                             btn.spawn((
@@ -377,28 +368,27 @@ fn update_main_menu_button_hover(
         (
             &Hovered,
             Has<Pressed>,
-            &MenuButtonTexture,
-            &mut ImageNode,
+            &ThemedButton,
+            &mut BackgroundColor,
+            &mut BorderColor,
             &Children,
         ),
         With<Button>,
     >,
     mut labels_query: Query<&mut TextColor, With<MainMenuButtonLabel>>,
 ) {
-    for (hovered, is_pressed, btn_tex, mut image_node, children) in &mut buttons_query {
+    for (hovered, is_pressed, style, mut bg, mut border, children) in &mut buttons_query {
         let is_active = hovered.get() || is_pressed;
-        image_node.image = if is_active {
-            btn_tex.hover.clone()
-        } else {
-            btn_tex.normal.clone()
-        };
+        let (bg_col, border_col) = style.colors(hovered.get(), is_pressed);
+        bg.0 = bg_col;
+        *border = BorderColor::all(border_col);
 
         for child in children.iter() {
             if let Ok(mut text_color) = labels_query.get_mut(child) {
                 if is_active {
-                    text_color.0 = Color::srgb(1.0, 0.92, 0.45);
+                    text_color.0 = palette::TEXT_ACCENT;
                 } else {
-                    text_color.0 = Color::srgb(0.92, 0.94, 0.98);
+                    text_color.0 = palette::TEXT_PRIMARY;
                 }
             }
         }

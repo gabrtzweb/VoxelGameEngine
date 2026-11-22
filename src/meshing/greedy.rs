@@ -1793,7 +1793,8 @@ pub fn compute_block_transition(
     direction: FaceDirection,
     textures: &VoxelTextureRegistry,
 ) -> (u16, u8, u32) {
-    if direction == FaceDirection::NegativeY
+    if !textures.connected_textures
+        || direction == FaceDirection::NegativeY
         || raw_voxel.is_crystal_solid_block()
         || raw_voxel.is_crystal_cluster()
         || (raw_voxel.is_axis_aligned() && world.get_shape(world_voxel).1 != 0)

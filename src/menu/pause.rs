@@ -12,52 +12,103 @@ use crate::{
     world::{VoxelWorld, WorldModificationStore},
 };
 
-use super::{MenuReturnTarget, MenuState};
+use super::{MenuReturnTarget, MenuState, menu_bar::MENU_BAR_HEIGHT, theme::palette};
 
-pub const PAUSE_SCALE: f32 = 4.0;
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum PauseSubmenu {
+    #[default]
+    None,
+    WorldSession,
+}
 
 #[derive(Component)]
 struct PauseMenuRoot;
 
+#[derive(Component)]
+struct WorldSessionPanel;
+
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 enum PauseMenuAction {
-    Resume,    // 01
-    Settings,  // 02
-    Controls,  // 03 (WIP)
-    Stats,     // 04 (WIP)
-    Restart,   // 05
-    Quit,      // 06
+    Resume,
+    SaveWorld,
+    Settings,
+    Controls,
+    WorldSession,
+    Restart,
+    Quit,
+    ExitGame,
 }
 
 #[derive(Component)]
 struct PauseButtonLabel;
 
+#[derive(Component)]
+struct PauseButtonAccent;
+
 pub struct PauseMenuPlugin;
 
 impl Plugin for PauseMenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(MenuState::Pause), spawn_pause_menu)
-            .add_systems(OnExit(MenuState::Pause), despawn_pause_menu)
-            .add_systems(
-                Update,
-                (handle_pause_menu_buttons, update_pause_button_hover)
-                    .run_if(in_state(MenuState::Pause)),
-            );
+        app.init_resource::<PauseSubmenu>().add_systems(
+            Update,
+            (
+                sync_pause_sidebar_visibility,
+                handle_pause_menu_buttons,
+                update_pause_button_hover,
+                sync_world_session_panel,
+            ),
+        );
     }
 }
 
-fn spawn_pause_menu(
+fn sync_pause_sidebar_visibility(
     mut commands: Commands,
+    menu_state: Res<State<MenuState>>,
+    menu_return_target: Res<MenuReturnTarget>,
+    world_session: Option<Res<crate::world::WorldSession>>,
+    mut pause_submenu: ResMut<PauseSubmenu>,
+    root_query: Query<Entity, With<PauseMenuRoot>>,
     loc: Option<Res<Localization>>,
     app_font: Option<Res<AppFont>>,
-    asset_server: Res<AssetServer>,
     game_settings: Option<Res<crate::menu::GameSettings>>,
 ) {
-    let gui_scale = game_settings.as_ref().map_or(4, |s| s.gui_scale).clamp(2, 4);
-    let scale_factor = (gui_scale as f32 / 4.0).clamp(0.5, 1.0);
-    let font_handle = app_font.as_ref().map(|f| f.source());
-    let pause_texture =
-        asset_server.load("textures/interfaces/containers/pause.png");
+    let in_active_session = world_session.as_ref().map_or_else(
+        || menu_return_target.0 != MenuState::MainMenu,
+        |s| s.is_active,
+    );
+    let current = *menu_state.get();
+    let should_show = in_active_session
+        && matches!(
+            current,
+            MenuState::Pause | MenuState::Settings | MenuState::Controls
+        );
+    let existing = root_query.iter().next();
+
+    if current != MenuState::Pause && *pause_submenu != PauseSubmenu::None {
+        *pause_submenu = PauseSubmenu::None;
+    }
+
+    if should_show && existing.is_none() {
+        *pause_submenu = PauseSubmenu::None;
+        spawn_pause_sidebar(
+            &mut commands,
+            loc.as_deref(),
+            app_font.as_ref(),
+            game_settings.as_deref(),
+        );
+    } else if !should_show && let Some(entity) = existing {
+        *pause_submenu = PauseSubmenu::None;
+        commands.entity(entity).despawn();
+    }
+}
+
+fn spawn_pause_sidebar(
+    commands: &mut Commands,
+    loc: Option<&Localization>,
+    app_font: Option<&Res<AppFont>>,
+    game_settings: Option<&crate::menu::GameSettings>,
+) {
+    let font_handle = app_font.map(|f| f.source());
 
     let make_font = |size: f32| {
         let mut tf = TextFont {
@@ -70,9 +121,7 @@ fn spawn_pause_menu(
         tf
     };
 
-    let dimming_alpha = game_settings
-        .as_ref()
-        .map_or(0.75, |s| s.background_dimming.alpha());
+    let dimming_alpha = game_settings.map_or(0.65, |s| s.background_dimming.alpha());
 
     commands
         .spawn((
@@ -81,79 +130,188 @@ fn spawn_pause_menu(
             Node {
                 position_type: PositionType::Absolute,
                 left: px(0.0),
-                top: px(0.0),
+                top: px(MENU_BAR_HEIGHT),
                 right: px(0.0),
                 bottom: px(0.0),
                 display: Display::Flex,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::Stretch,
                 ..default()
             },
             BackgroundColor(Color::srgba(0.0, 0.0, 0.0, dimming_alpha)),
-            ZIndex(300),
+            ZIndex(290),
         ))
         .with_children(|backdrop| {
-            // Fullscreen container image (480x270 @ 4x = 1920x1080, modulated by gui_scale)
+            // Column 1: Left-Docked Full-Height System Drawer
             backdrop
                 .spawn((
-                    ImageNode {
-                        image: pause_texture,
-                        ..default()
-                    },
-                    UiTransform {
-                        scale: Vec2::splat(scale_factor),
-                        ..UiTransform::IDENTITY
-                    },
                     Node {
-                        width: px(1920.0),
-                        height: px(1080.0),
+                        width: px(palette::DRAWER_COL1_WIDTH),
+                        min_width: px(palette::DRAWER_COL1_WIDTH),
+                        flex_shrink: 0.0,
+                        height: percent(100.0),
+                        border: UiRect::right(px(1.5)),
+                        padding: UiRect::vertical(px(28.0)),
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Column,
+                        justify_content: JustifyContent::FlexStart,
+                        align_items: AlignItems::Stretch,
+                        row_gap: px(4.0),
                         ..default()
                     },
+                    BackgroundColor(palette::DRAWER_COL1_BG),
+                    BorderColor::all(palette::DRAWER_DIVIDER),
                 ))
-                .with_children(|container| {
-                    let resume_lbl = loc.as_ref().map_or("Resume Game", |l| l.t("menu.pause.resume"));
-                    let settings_lbl = loc.as_ref().map_or("Settings & Options", |l| l.t("menu.pause.settings"));
-                    let controls_lbl = loc.as_ref().map_or("Controls & Keybinds", |l| l.t("menu.pause.controls"));
-                    let stats_lbl = loc.as_ref().map_or("Statistics & Feats", |l| l.t("menu.pause.stats"));
-                    let restart_lbl = loc.as_ref().map_or("Restart Game", |l| l.t("menu.pause.restart"));
-                    let quit_lbl = loc.as_ref().map_or("Quit to Desktop", |l| l.t("menu.pause.quit"));
+                .with_children(|sidebar| {
+                    let resume_lbl = loc.map_or("Resume Game", |l| l.t("menu.pause.resume"));
+                    let save_lbl = loc.map_or("Save World", |l| l.t("menu.pause.save_world"));
+                    let settings_lbl =
+                        loc.map_or("Settings & Options", |l| l.t("menu.pause.settings"));
+                    let controls_lbl =
+                        loc.map_or("Controls & Keybinds", |l| l.t("menu.pause.controls"));
+                    let session_lbl =
+                        loc.map_or("World & Session", |l| l.t("menu.pause.world_session"));
+                    let restart_lbl = loc.map_or("Restart World", |l| l.t("menu.pause.restart"));
+                    let quit_lbl = loc.map_or("Return to Main Menu", |l| l.t("menu.pause.quit"));
+                    let exit_lbl = loc.map_or("Exit Game", |l| l.t("menu.pause.exit_game"));
 
-                    // 6 Buttons in column at x = 19 (76 px), w = 128 (512 px), h = 14 (56 px)
-                    let buttons = [
-                        (PauseMenuAction::Resume, resume_lbl, 40.0),
-                        (PauseMenuAction::Settings, settings_lbl, 58.0),
-                        (PauseMenuAction::Controls, controls_lbl, 76.0),
-                        (PauseMenuAction::Stats, stats_lbl, 94.0),
-                        (PauseMenuAction::Restart, restart_lbl, 112.0),
-                        (PauseMenuAction::Quit, quit_lbl, 130.0),
+                    // Block 1: Session actions
+                    for (action, label, has_submenu) in [
+                        (PauseMenuAction::Resume, resume_lbl, false),
+                        (PauseMenuAction::SaveWorld, save_lbl, false),
+                    ] {
+                        spawn_sidebar_item(sidebar, action, label, has_submenu, &make_font);
+                    }
+
+                    sidebar.spawn((
+                        Node {
+                            height: px(1.0),
+                            margin: UiRect::new(px(24.0), px(24.0), px(12.0), px(12.0)),
+                            ..default()
+                        },
+                        BackgroundColor(palette::PANEL_BORDER_SUBTLE),
+                    ));
+
+                    // Block 2: Configuration & Submenus
+                    for (action, label, has_submenu) in [
+                        (PauseMenuAction::Settings, settings_lbl, true),
+                        (PauseMenuAction::Controls, controls_lbl, true),
+                        (PauseMenuAction::WorldSession, session_lbl, true),
+                    ] {
+                        spawn_sidebar_item(sidebar, action, label, has_submenu, &make_font);
+                    }
+
+                    // Push Block 3 to the bottom of the full-height sidebar
+                    sidebar.spawn(Node {
+                        flex_grow: 1.0,
+                        ..default()
+                    });
+
+                    sidebar.spawn((
+                        Node {
+                            height: px(1.0),
+                            margin: UiRect::new(px(24.0), px(24.0), px(10.0), px(10.0)),
+                            ..default()
+                        },
+                        BackgroundColor(palette::PANEL_BORDER_SUBTLE),
+                    ));
+
+                    // Block 3: Destructive / Exit actions anchored at footer
+                    for (action, label, has_submenu) in [
+                        (PauseMenuAction::Restart, restart_lbl, false),
+                        (PauseMenuAction::Quit, quit_lbl, false),
+                        (PauseMenuAction::ExitGame, exit_lbl, false),
+                    ] {
+                        spawn_sidebar_item(sidebar, action, label, has_submenu, &make_font);
+                    }
+
+                    // Subtle version footer
+                    sidebar
+                        .spawn(Node {
+                            padding: UiRect::new(px(26.0), px(24.0), px(12.0), px(0.0)),
+                            ..default()
+                        })
+                        .with_children(|foot| {
+                            foot.spawn((
+                                Text::new("v0.3.0"),
+                                make_font(12.0),
+                                TextColor(Color::srgba(0.55, 0.59, 0.67, 0.60)),
+                            ));
+                        });
+                });
+
+            // Column 2: World & Session Submenu Drawer (placeholder multiplayer/session options)
+            backdrop
+                .spawn((
+                    WorldSessionPanel,
+                    Node {
+                        width: px(palette::DRAWER_COL2_WIDTH),
+                        min_width: px(palette::DRAWER_COL2_WIDTH),
+                        flex_shrink: 0.0,
+                        height: percent(100.0),
+                        border: UiRect::right(px(1.5)),
+                        padding: UiRect::vertical(px(28.0)),
+                        display: Display::None,
+                        flex_direction: FlexDirection::Column,
+                        justify_content: JustifyContent::FlexStart,
+                        align_items: AlignItems::Stretch,
+                        row_gap: px(4.0),
+                        ..default()
+                    },
+                    BackgroundColor(palette::DRAWER_COL2_BG),
+                    BorderColor::all(palette::DRAWER_DIVIDER),
+                ))
+                .with_children(|panel| {
+                    let session_items = [
+                        (loc.map_or("Open to LAN", |l| l.t("menu.session.open_lan")), "Soon"),
+                        (
+                            loc.map_or("Host Online Session", |l| l.t("menu.session.host_online")),
+                            "Soon",
+                        ),
+                        (
+                            loc.map_or("Invite Players", |l| l.t("menu.session.invite_players")),
+                            "Soon",
+                        ),
+                        (
+                            loc.map_or("Session Privacy", |l| l.t("menu.session.privacy")),
+                            "Solo",
+                        ),
+                        (
+                            loc.map_or("Game Mode", |l| l.t("menu.session.game_mode")),
+                            "Creative",
+                        ),
+                        (
+                            loc.map_or("Difficulty", |l| l.t("menu.session.difficulty")),
+                            "Normal",
+                        ),
                     ];
 
-                    for (action, label, y) in buttons {
-                        container
+                    for (label, badge) in session_items {
+                        panel
                             .spawn((
-                                Button,
-                                Hovered::default(),
-                                action,
                                 Node {
-                                    position_type: PositionType::Absolute,
-                                    left: px(19.0 * PAUSE_SCALE),
-                                    top: px(y * PAUSE_SCALE),
-                                    width: px(128.0 * PAUSE_SCALE),
-                                    height: px(14.0 * PAUSE_SCALE),
+                                    width: percent(100.0),
+                                    height: px(46.0),
+                                    padding: UiRect::new(px(24.0), px(20.0), px(0.0), px(0.0)),
                                     display: Display::Flex,
+                                    flex_direction: FlexDirection::Row,
                                     align_items: AlignItems::Center,
-                                    justify_content: JustifyContent::Center,
+                                    justify_content: JustifyContent::SpaceBetween,
                                     ..default()
                                 },
                                 BackgroundColor(Color::NONE),
                             ))
-                            .with_children(|btn| {
-                                btn.spawn((
-                                    PauseButtonLabel,
+                            .with_children(|row| {
+                                row.spawn((
                                     Text::new(label),
-                                    make_font(18.0),
-                                    TextColor(Color::srgb(0.90, 0.92, 0.96)),
+                                    make_font(15.0),
+                                    TextColor(palette::TEXT_MUTED),
                                     text_shadow_default(),
+                                ));
+                                row.spawn((
+                                    Text::new(badge),
+                                    make_font(12.0),
+                                    TextColor(Color::srgba(0.62, 0.66, 0.74, 0.65)),
                                 ));
                             });
                     }
@@ -161,24 +319,127 @@ fn spawn_pause_menu(
         });
 }
 
-fn despawn_pause_menu(mut commands: Commands, query: Query<Entity, With<PauseMenuRoot>>) {
-    for entity in &query {
-        commands.entity(entity).despawn();
+fn spawn_sidebar_item(
+    parent: &mut ChildSpawnerCommands,
+    action: PauseMenuAction,
+    label: &str,
+    has_submenu: bool,
+    make_font: &impl Fn(f32) -> TextFont,
+) {
+    parent
+        .spawn((
+            Button,
+            Hovered::default(),
+            action,
+            Node {
+                width: percent(100.0),
+                height: px(48.0),
+                padding: UiRect::new(px(26.0), px(22.0), px(0.0), px(0.0)),
+                display: Display::Flex,
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::SpaceBetween,
+                ..default()
+            },
+            BackgroundColor(Color::NONE),
+        ))
+        .with_children(|btn| {
+            // Left gold accent bar (visible on active / hovered)
+            btn.spawn((
+                PauseButtonAccent,
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: px(0.0),
+                    top: px(8.0),
+                    bottom: px(8.0),
+                    width: px(3.0),
+                    border_radius: BorderRadius::right(px(2.0)),
+                    ..default()
+                },
+                BackgroundColor(palette::ACCENT_LINE),
+                Visibility::Hidden,
+            ));
+
+            btn.spawn((
+                PauseButtonLabel,
+                Text::new(label),
+                make_font(16.0),
+                TextColor(palette::TEXT_PRIMARY),
+                text_shadow_default(),
+            ));
+
+            if has_submenu {
+                btn.spawn((
+                    Text::new(">"),
+                    make_font(15.0),
+                    TextColor(palette::TEXT_MUTED),
+                ));
+            }
+        });
+}
+
+fn sync_world_session_panel(
+    pause_submenu: Res<PauseSubmenu>,
+    menu_state: Res<State<MenuState>>,
+    mut panel_query: Query<&mut Node, With<WorldSessionPanel>>,
+) {
+    if !pause_submenu.is_changed() && !menu_state.is_changed() {
+        return;
+    }
+    let show = *menu_state.get() == MenuState::Pause && *pause_submenu == PauseSubmenu::WorldSession;
+    for mut node in &mut panel_query {
+        node.display = if show { Display::Flex } else { Display::None };
     }
 }
 
 fn update_pause_button_hover(
-    buttons_query: Query<(&Hovered, Has<Pressed>, &Children), With<Button>>,
+    menu_state: Res<State<MenuState>>,
+    pause_submenu: Res<PauseSubmenu>,
+    mut buttons_query: Query<
+        (
+            &Hovered,
+            Has<Pressed>,
+            &PauseMenuAction,
+            &mut BackgroundColor,
+            &Children,
+        ),
+        With<Button>,
+    >,
     mut labels_query: Query<&mut TextColor, With<PauseButtonLabel>>,
+    mut accents_query: Query<&mut Visibility, With<PauseButtonAccent>>,
 ) {
-    for (hovered, is_pressed, children) in &buttons_query {
-        let is_active = hovered.get() || is_pressed;
+    let current = *menu_state.get();
+    for (hovered, is_pressed, action, mut bg, children) in &mut buttons_query {
+        let is_selected_submenu = matches!(
+            (action, current),
+            (PauseMenuAction::Settings, MenuState::Settings)
+                | (PauseMenuAction::Controls, MenuState::Controls)
+        ) || (*action == PauseMenuAction::WorldSession
+            && current == MenuState::Pause
+            && *pause_submenu == PauseSubmenu::WorldSession);
+        let is_hovered = hovered.get() || is_pressed;
+
+        bg.0 = if is_selected_submenu {
+            palette::NAV_ITEM_ACTIVE_BG
+        } else if is_hovered {
+            palette::NAV_ITEM_HOVER_BG
+        } else {
+            Color::NONE
+        };
+
         for child in children.iter() {
             if let Ok(mut text_color) = labels_query.get_mut(child) {
-                *text_color = if is_active {
-                    TextColor(Color::srgb(1.0, 0.90, 0.40)) // Golden glow on hover
+                text_color.0 = if is_selected_submenu || is_hovered {
+                    palette::TEXT_ACCENT
                 } else {
-                    TextColor(Color::srgb(0.90, 0.92, 0.96))
+                    palette::TEXT_PRIMARY
+                };
+            }
+            if let Ok(mut vis) = accents_query.get_mut(child) {
+                *vis = if is_selected_submenu || is_hovered {
+                    Visibility::Visible
+                } else {
+                    Visibility::Hidden
                 };
             }
         }
@@ -216,8 +477,9 @@ type PauseSessionParams<'w> = (
 );
 
 fn handle_pause_menu_buttons(
-    buttons_query: Query<(&Hovered, Has<Pressed>, &PauseMenuAction), With<Button>>,
+    buttons_query: Query<(&Hovered, &PauseMenuAction), With<Button>>,
     mouse: Res<ButtonInput<MouseButton>>,
+    menu_state: Res<State<MenuState>>,
     mut next_state: ResMut<NextState<MenuState>>,
     mut menu_return_target: ResMut<MenuReturnTarget>,
     mut env_state: Option<ResMut<EnvironmentState>>,
@@ -258,25 +520,52 @@ fn handle_pause_menu_buttons(
         )>,
     >,
     mut commands: Commands,
+    mut pause_submenu: ResMut<PauseSubmenu>,
+    mut app_exit: MessageWriter<bevy::app::AppExit>,
 ) {
     let left_clicked = mouse.just_pressed(MouseButton::Left);
+    if !left_clicked {
+        return;
+    }
 
-    for (hovered, is_pressed, action) in &buttons_query {
-        if hovered.get() && (left_clicked || is_pressed) {
+    let current = *menu_state.get();
+    for (hovered, action) in &buttons_query {
+        if hovered.get() {
             match action {
                 PauseMenuAction::Resume => {
+                    *pause_submenu = PauseSubmenu::None;
                     next_state.set(MenuState::None);
                 }
+                PauseMenuAction::SaveWorld => {
+                    info!("Save World placeholder triggered.");
+                }
                 PauseMenuAction::Settings => {
+                    *pause_submenu = PauseSubmenu::None;
                     menu_return_target.0 = MenuState::Pause;
-                    next_state.set(MenuState::Settings);
+                    if current == MenuState::Settings {
+                        next_state.set(MenuState::Pause);
+                    } else {
+                        next_state.set(MenuState::Settings);
+                    }
                 }
                 PauseMenuAction::Controls => {
+                    *pause_submenu = PauseSubmenu::None;
                     menu_return_target.0 = MenuState::Pause;
-                    next_state.set(MenuState::Controls);
+                    if current == MenuState::Controls {
+                        next_state.set(MenuState::Pause);
+                    } else {
+                        next_state.set(MenuState::Controls);
+                    }
                 }
-                PauseMenuAction::Stats => {
-                    info!("Statistics & Feats tracking coming soon in Phase 2!");
+                PauseMenuAction::WorldSession => {
+                    if current != MenuState::Pause {
+                        next_state.set(MenuState::Pause);
+                        *pause_submenu = PauseSubmenu::WorldSession;
+                    } else if *pause_submenu == PauseSubmenu::WorldSession {
+                        *pause_submenu = PauseSubmenu::None;
+                    } else {
+                        *pause_submenu = PauseSubmenu::WorldSession;
+                    }
                 }
                 PauseMenuAction::Restart => {
                     // 1. Reset Environment to default Day 1 Noon
@@ -466,6 +755,9 @@ fn handle_pause_menu_buttons(
                     menu_return_target.0 = MenuState::MainMenu;
                     next_state.set(MenuState::MainMenu);
                     info!("Exited session to Main Menu: world cleared and session ended");
+                }
+                PauseMenuAction::ExitGame => {
+                    app_exit.write(bevy::app::AppExit::Success);
                 }
             }
         }

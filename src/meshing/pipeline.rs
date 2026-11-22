@@ -302,6 +302,7 @@ pub fn setup_chunk_material(
     if let Some(cfg) = &local_config {
         texture_registry.full_grass = cfg.full_grass;
         texture_registry.leaf_culling = cfg.leaf_culling;
+        texture_registry.connected_textures = cfg.connected_textures;
         texture_registry.grass_enabled = cfg.grass_enabled;
         texture_registry.grass_density = cfg.grass_density;
     }

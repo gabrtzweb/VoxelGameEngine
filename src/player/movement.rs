@@ -6,8 +6,7 @@ use super::{
     CharacterRace, GameMode, PLAYER_EYE_HEIGHT, PLAYER_HEIGHT, Player, PlayerEnvironmentStatus,
     SelectedRace,
     camera::{
-        InspectorInteraction, PlayerCamera, THIRD_PERSON_DISTANCE,
-        resolve_third_person_camera_distance,
+        InspectorInteraction, PlayerCamera, resolve_third_person_camera_distance,
     },
     collision::{has_headroom, is_grounded, move_with_collisions},
 };
@@ -429,13 +428,25 @@ pub fn creative_movement(
         + motion.bob_offset;
 
     if camera_controller.is_third_person() {
+        let max_dist = game_settings.third_person_distance.clamp(2.5, 8.0);
         let actual_distance = resolve_third_person_camera_distance(
             &world,
             eye_position,
             camera_forward,
-            THIRD_PERSON_DISTANCE,
+            max_dist,
         );
-        camera_transform.translation = eye_position - camera_forward * actual_distance;
+        let target_pos = eye_position - camera_forward * actual_distance;
+        camera_transform.translation = if game_settings.camera_smoothing > 0 {
+            let speed = match game_settings.camera_smoothing {
+                1 => 22.0,
+                2 => 14.0,
+                _ => 8.0,
+            };
+            let t = 1.0 - (-speed * delta_seconds).exp();
+            camera_transform.translation.lerp(target_pos, t)
+        } else {
+            target_pos
+        };
     } else {
         let forward_horiz = Vec3::new(
             -camera_controller.yaw.sin(),

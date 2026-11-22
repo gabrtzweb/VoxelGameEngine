@@ -43,13 +43,17 @@ Q                 Drop active hotbar item (3D item drop)
 R                 Block shape (Tap: cycle / Hold: 4-slice radial menu; locked on decorative/custom blocks)
 T                 Rotate block shape 90° clockwise (locked on non-rotatable blocks)
 
-ESC               Pause Menu & Menu Bar (Tabs: Map, Journal, Inventory, System)
-E                 Creative Catalog / Personal Inventory (unified 480x270 px base canvas with integer scaling)
-M                 World Map (Full-screen interactive map, pan & zoom, player tracking)
+ESC               System Menu & 6-Tab Top Bar (Inventory, Skills, Journal, Quests, World Map, System)
+Q / E (in menu)   Cycle between top bar menu tabs
+Tab               Personal Inventory / Creative Catalog
+H                 Skills & Character Sheet
+J                 Journal (Live World Almanac, Bestiary, Compendium, Statistics)
+K                 Quests & Objectives
+M                 World Map (Full-screen interactive map with right sidebar)
 
 F1                Toggle Inspector (bevy_egui)
 F2                Chunk debug borders
-F3                Toggle HUD (Minimal / Extended debug)
+F3                Toggle HUD (FPS Only / Compact / Full debug)
 Shift + F3        Toggle HUD visibility (Show / Hide)
 F4                Creative / Spectator
 F5                First / Third person (8-race custom voxel character rig, head tracking, 3D held items & animations)
@@ -97,7 +101,6 @@ assets/
 
 docs/
 ├── blocks_design.md
-├── interfaces_design.md
 ├── project_context.md
 └── project_roadmap.md
 
@@ -185,13 +188,17 @@ src/
 ├── menu/
 │   ├── controls.rs
 │   ├── creative_inventory.rs
+│   ├── journal.rs
 │   ├── loading.rs
 │   ├── main_menu.rs
 │   ├── menu_bar.rs
 │   ├── mod.rs
 │   ├── pause.rs
+│   ├── quests.rs
 │   ├── race_selection.rs
-│   └── settings.rs
+│   ├── settings.rs
+│   ├── skills.rs
+│   └── theme.rs
 ├── meshing/
 │   ├── shapes/
 │   │   ├── fixtures.rs

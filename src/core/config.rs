@@ -371,6 +371,33 @@ impl MenuBlurIntensity {
     }
 }
 
+/// Controls when opening in-game menus pauses the world simulation clock.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum MenuPauseMode {
+    #[default]
+    SystemOnly,
+    AllMenus,
+    Never,
+}
+
+impl MenuPauseMode {
+    pub fn next(self) -> Self {
+        match self {
+            Self::SystemOnly => Self::AllMenus,
+            Self::AllMenus => Self::Never,
+            Self::Never => Self::SystemOnly,
+        }
+    }
+
+    pub fn prev(self) -> Self {
+        match self {
+            Self::SystemOnly => Self::Never,
+            Self::AllMenus => Self::SystemOnly,
+            Self::Never => Self::AllMenus,
+        }
+    }
+}
+
 /// Menu background dimming (darkening opacity).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum BackgroundDimming {
@@ -605,6 +632,50 @@ pub struct LocalConfig {
     #[serde(default = "default_leaf_culling")]
     pub leaf_culling: bool,
 
+    /// Organic connected texture transitions between adjacent terrain blocks.
+    #[serde(default = "default_connected_textures")]
+    pub connected_textures: bool,
+
+    /// Controls when opening in-game menus pauses the world simulation.
+    #[serde(default)]
+    pub menu_pause_mode: MenuPauseMode,
+
+    /// Confine mouse cursor to the window while in Borderless Fullscreen menus.
+    #[serde(default = "default_mouse_lock_borderless")]
+    pub mouse_lock_borderless: bool,
+
+    /// Camera movement smoothing level (0 = Off, 1 = Low, 2 = Medium, 3 = High).
+    #[serde(default)]
+    pub camera_smoothing: u32,
+
+    /// Third-person camera distance in meters (2.5 ..= 8.0).
+    #[serde(default = "default_third_person_distance")]
+    pub third_person_distance: f32,
+
+    /// UI sound effects volume (0.0 ..= 1.0).
+    #[serde(default = "default_ui_volume")]
+    pub ui_volume: f32,
+
+    /// Mute all game audio when window loses focus.
+    #[serde(default)]
+    pub mute_on_unfocus: bool,
+
+    /// Auto-save interval in minutes (0 = Off, 5, 10, 15).
+    #[serde(default = "default_auto_save_minutes")]
+    pub auto_save_minutes: u32,
+
+    /// High-contrast crosshair visibility option.
+    #[serde(default)]
+    pub high_contrast_crosshair: bool,
+
+    /// Subtitles / audio cues accessibility option.
+    #[serde(default)]
+    pub subtitles_enabled: bool,
+
+    /// Performance / FPS HUD display mode.
+    #[serde(default)]
+    pub fps_hud_mode: crate::core::DebugHudMode,
+
     /// Pixelated shadows snapped to block texel grid.
     #[serde(default = "default_pixelated_shadows")]
     pub pixelated_shadows: bool,
@@ -628,6 +699,26 @@ fn default_waving_foliage() -> bool {
 
 fn default_leaf_culling() -> bool {
     false
+}
+
+fn default_connected_textures() -> bool {
+    true
+}
+
+fn default_mouse_lock_borderless() -> bool {
+    true
+}
+
+fn default_third_person_distance() -> f32 {
+    3.5
+}
+
+fn default_ui_volume() -> f32 {
+    0.8
+}
+
+fn default_auto_save_minutes() -> u32 {
+    10
 }
 
 fn default_pixelated_shadows() -> bool {
@@ -697,7 +788,7 @@ fn default_background_dimming() -> BackgroundDimming {
 }
 
 fn default_gui_scale() -> u32 {
-    4
+    3
 }
 
 fn default_backend() -> String {
@@ -881,6 +972,17 @@ impl Default for LocalConfig {
             coated_textures: default_coated_textures(),
             waving_foliage: default_waving_foliage(),
             leaf_culling: default_leaf_culling(),
+            connected_textures: default_connected_textures(),
+            menu_pause_mode: MenuPauseMode::default(),
+            mouse_lock_borderless: default_mouse_lock_borderless(),
+            camera_smoothing: 0,
+            third_person_distance: default_third_person_distance(),
+            ui_volume: default_ui_volume(),
+            mute_on_unfocus: false,
+            auto_save_minutes: default_auto_save_minutes(),
+            high_contrast_crosshair: false,
+            subtitles_enabled: false,
+            fps_hud_mode: crate::core::DebugHudMode::Minimal,
             pixelated_shadows: default_pixelated_shadows(),
             hdr_bloom: default_hdr_bloom(),
             dynamic_lighting: default_dynamic_lighting(),

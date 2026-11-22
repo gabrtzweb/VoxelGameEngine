@@ -12,7 +12,9 @@ use crate::{
     world::WorldSession,
 };
 
-use super::{GameSettings, MenuBackdrop, MenuButtonTexture, MenuReturnTarget, MenuState};
+use super::{
+    GameSettings, MenuBackdrop, MenuReturnTarget, MenuState, ThemedButton, theme::palette,
+};
 
 #[derive(Component)]
 pub struct RaceSelectionRoot;
@@ -64,9 +66,6 @@ fn spawn_race_selection_menu(
 ) {
     let font_handle = app_font.as_ref().map(|f| f.source());
     let bg_texture = asset_server.load("textures/interfaces/main_menu_bg.png");
-    let btn_normal = asset_server.load("textures/interfaces/containers/buttons/button_medium.png");
-    let btn_hover =
-        asset_server.load("textures/interfaces/containers/buttons/button_medium_hover.png");
 
     let current_race = selected_race.map_or(CharacterRace::Human, |r| r.0);
     let scale_factor = game_settings
@@ -315,29 +314,23 @@ fn spawn_race_selection_menu(
                         ];
 
                         for (action, label) in actions {
+                            let theme = ThemedButton::default();
                             bottom
                                 .spawn((
                                     Button,
                                     Hovered::default(),
                                     action,
-                                    MenuButtonTexture {
-                                        normal: btn_normal.clone(),
-                                        hover: btn_hover.clone(),
-                                    },
-                                    ImageNode {
-                                        image: btn_normal.clone(),
-                                        image_mode: NodeImageMode::Sliced(TextureSlicer {
-                                            border: BorderRect::all(4.0),
-                                            ..default()
-                                        }),
-                                        ..default()
-                                    },
+                                    theme,
+                                    BackgroundColor(theme.normal_bg),
+                                    BorderColor::all(theme.normal_border),
                                     Node {
                                         width: px(220.0 * scale_factor),
                                         height: px(48.0 * scale_factor),
                                         display: Display::Flex,
                                         align_items: AlignItems::Center,
                                         justify_content: JustifyContent::Center,
+                                        border: UiRect::all(px(2.0)),
+                                        border_radius: BorderRadius::all(px(5.0)),
                                         ..default()
                                     },
                                 ))
@@ -347,7 +340,7 @@ fn spawn_race_selection_menu(
                                         RaceActionButtonLabel,
                                         Text::new(label),
                                         make_font(18.0 * scale_factor),
-                                        TextColor(Color::srgb(0.92, 0.94, 0.98)),
+                                        TextColor(palette::TEXT_PRIMARY),
                                         text_shadow_default(),
                                     ));
                                 });
@@ -481,29 +474,28 @@ fn update_race_action_button_hover(
         (
             &Hovered,
             Has<Pressed>,
-            &MenuButtonTexture,
-            &mut ImageNode,
+            &ThemedButton,
+            &mut BackgroundColor,
+            &mut BorderColor,
             &Children,
         ),
         (With<Button>, With<RaceMenuAction>),
     >,
     mut labels_query: Query<&mut TextColor, With<RaceActionButtonLabel>>,
 ) {
-    for (hovered, is_pressed, btn_tex, mut image_node, children) in &mut buttons_query {
+    for (hovered, is_pressed, theme, mut bg, mut border, children) in &mut buttons_query {
         let is_active = hovered.get() || is_pressed;
-        image_node.image = if is_active {
-            btn_tex.hover.clone()
-        } else {
-            btn_tex.normal.clone()
-        };
+        let (next_bg, next_border) = theme.colors(hovered.get(), is_pressed);
+        bg.0 = next_bg;
+        *border = BorderColor::all(next_border);
 
         for child in children.iter() {
             if let Ok(mut text_color) = labels_query.get_mut(child) {
-                if is_active {
-                    text_color.0 = Color::srgb(1.0, 0.92, 0.45);
+                text_color.0 = if is_active {
+                    palette::TEXT_ACCENT
                 } else {
-                    text_color.0 = Color::srgb(0.92, 0.94, 0.98);
-                }
+                    palette::TEXT_PRIMARY
+                };
             }
         }
     }

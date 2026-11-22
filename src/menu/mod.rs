@@ -1,11 +1,17 @@
 pub mod controls;
 pub mod creative_inventory;
+pub mod journal;
 pub mod loading;
 pub mod main_menu;
 pub mod menu_bar;
 pub mod pause;
+pub mod quests;
 pub mod race_selection;
 pub mod settings;
+pub mod skills;
+pub mod theme;
+
+pub use theme::ThemedButton;
 
 use bevy::{
     picking::hover::Hovered,
@@ -33,6 +39,8 @@ pub enum MenuState {
     Settings,
     Controls,
     Inventory,
+    Skills,
+    Quests,
     WorldMap,
     Journal,
 }
@@ -93,7 +101,7 @@ impl ScreenMode {
     }
 }
 
-pub use crate::core::config::{BackgroundDimming, MenuBlurIntensity};
+pub use crate::core::config::{BackgroundDimming, MenuBlurIntensity, MenuPauseMode};
 
 #[derive(Component)]
 pub struct MenuBackdrop;
@@ -106,6 +114,16 @@ pub struct GameSettings {
     pub view_bobbing: bool,
     pub full_grass: bool,
     pub leaf_culling: bool,
+    pub connected_textures: bool,
+    pub menu_pause_mode: MenuPauseMode,
+    pub mouse_lock_borderless: bool,
+    pub camera_smoothing: u32,
+    pub third_person_distance: f32,
+    pub ui_volume: f32,
+    pub mute_on_unfocus: bool,
+    pub auto_save_minutes: u32,
+    pub high_contrast_crosshair: bool,
+    pub subtitles_enabled: bool,
     pub screen_mode: ScreenMode,
     pub vsync_enabled: bool,
     pub dynamic_fps_enabled: bool,
@@ -123,10 +141,20 @@ impl Default for GameSettings {
             view_bobbing: true,
             full_grass: false,
             leaf_culling: false,
+            connected_textures: true,
+            menu_pause_mode: MenuPauseMode::SystemOnly,
+            mouse_lock_borderless: true,
+            camera_smoothing: 0,
+            third_person_distance: 3.5,
+            ui_volume: 0.8,
+            mute_on_unfocus: false,
+            auto_save_minutes: 10,
+            high_contrast_crosshair: false,
+            subtitles_enabled: false,
             screen_mode: ScreenMode::Windowed,
             vsync_enabled: false,
             dynamic_fps_enabled: true,
-            gui_scale: 4,
+            gui_scale: 3,
             menu_blur_intensity: MenuBlurIntensity::High,
             background_dimming: BackgroundDimming::Dark,
         }
@@ -161,12 +189,6 @@ pub enum CursorMode {
     ResizeNwse,
     Shift,
     Busy,
-}
-
-#[derive(Component, Clone)]
-pub struct MenuButtonTexture {
-    pub normal: Handle<Image>,
-    pub hover: Handle<Image>,
 }
 
 #[derive(Resource, Clone)]
@@ -240,6 +262,9 @@ impl Plugin for MenuPlugin {
                 settings::SettingsMenuPlugin,
                 controls::ControlsMenuPlugin,
                 creative_inventory::InventoryMenuPlugin,
+                skills::SkillsMenuPlugin,
+                quests::QuestsMenuPlugin,
+                journal::JournalMenuPlugin,
                 menu_bar::MenuBarPlugin,
             ))
             .add_systems(Startup, setup_custom_cursor)
@@ -396,6 +421,8 @@ fn handle_menu_key_inputs(
     menu_return_target: Res<MenuReturnTarget>,
     mut next_state: ResMut<NextState<MenuState>>,
     search_query: Option<Res<crate::menu::creative_inventory::CreativeSearchQuery>>,
+    mut settings_detail: Option<ResMut<settings::SettingsDetailOpen>>,
+    mut controls_detail: Option<ResMut<controls::ControlsDetailOpen>>,
 ) {
     let current = *menu_state.get();
 
@@ -403,10 +430,32 @@ fn handle_menu_key_inputs(
         match current {
             MenuState::None => next_state.set(MenuState::Pause),
             MenuState::Pause => next_state.set(MenuState::None),
-            MenuState::Settings => next_state.set(menu_return_target.0),
-            MenuState::Controls => next_state.set(menu_return_target.0),
+            MenuState::Settings => {
+                if let Some(ref mut detail) = settings_detail
+                    && detail.0
+                {
+                    detail.0 = false;
+                } else {
+                    next_state.set(menu_return_target.0);
+                }
+            }
+            MenuState::Controls => {
+                if let Some(ref mut detail) = controls_detail
+                    && detail.0
+                {
+                    detail.0 = false;
+                } else {
+                    next_state.set(menu_return_target.0);
+                }
+            }
             MenuState::RaceSelection => next_state.set(MenuState::MainMenu),
             MenuState::Inventory => {
+                next_state.set(MenuState::None);
+            }
+            MenuState::Skills => {
+                next_state.set(MenuState::None);
+            }
+            MenuState::Quests => {
                 next_state.set(MenuState::None);
             }
             MenuState::WorldMap => {
@@ -420,7 +469,7 @@ fn handle_menu_key_inputs(
     }
 
     let is_inv = control_settings.as_ref().map_or(
-        keyboard.just_pressed(KeyCode::KeyI),
+        keyboard.just_pressed(KeyCode::Tab),
         |c| c.is_action_just_pressed(crate::core::InputAction::Inventory, &keyboard, &mouse),
     );
     if is_inv {
@@ -432,6 +481,36 @@ fn handle_menu_key_inputs(
             MenuState::Inventory => {
                 next_state.set(MenuState::None);
             }
+            _ => {}
+        }
+    }
+
+    let is_skills = control_settings.as_ref().map_or(
+        keyboard.just_pressed(KeyCode::KeyH),
+        |c| c.is_action_just_pressed(crate::core::InputAction::Skills, &keyboard, &mouse),
+    );
+    if is_skills {
+        if search_query.as_ref().is_some_and(|s| s.is_focused) {
+            return;
+        }
+        match current {
+            MenuState::None => next_state.set(MenuState::Skills),
+            MenuState::Skills => next_state.set(MenuState::None),
+            _ => {}
+        }
+    }
+
+    let is_quests = control_settings.as_ref().map_or(
+        keyboard.just_pressed(KeyCode::KeyK),
+        |c| c.is_action_just_pressed(crate::core::InputAction::Quests, &keyboard, &mouse),
+    );
+    if is_quests {
+        if search_query.as_ref().is_some_and(|s| s.is_focused) {
+            return;
+        }
+        match current {
+            MenuState::None => next_state.set(MenuState::Quests),
+            MenuState::Quests => next_state.set(MenuState::None),
             _ => {}
         }
     }
@@ -464,9 +543,11 @@ fn handle_menu_key_inputs(
 fn manage_cursor_grab_mode(
     menu_state: Res<State<MenuState>>,
     inspector: Res<InspectorInteraction>,
+    game_settings: Option<Res<GameSettings>>,
     cursor_options: Option<Single<&mut CursorOptions>>,
 ) {
-    if !menu_state.is_changed() && !inspector.is_changed() {
+    let settings_changed = game_settings.as_ref().is_some_and(|s| s.is_changed());
+    if !menu_state.is_changed() && !inspector.is_changed() && !settings_changed {
         return;
     }
 
@@ -475,9 +556,17 @@ fn manage_cursor_grab_mode(
     };
     let mut cursor_options = cursor_options.into_inner();
 
+    let unlock_borderless = game_settings.as_ref().is_some_and(|s| {
+        s.screen_mode == ScreenMode::BorderlessFullscreen && !s.mouse_lock_borderless
+    });
+
     let (target_visible, target_grab) = if *menu_state.get() != MenuState::None {
-        // Confine mouse to window and hide OS cursor so custom cursor draws cleanly without escaping
-        (false, CursorGrabMode::Confined)
+        let grab = if unlock_borderless {
+            CursorGrabMode::None
+        } else {
+            CursorGrabMode::Confined
+        };
+        (false, grab)
     } else if inspector.active {
         (true, CursorGrabMode::None)
     } else {
@@ -599,24 +688,37 @@ fn update_menu_backdrop_color(
 
 fn manage_menu_time_pause(
     menu_state: Res<State<MenuState>>,
+    game_settings: Option<Res<GameSettings>>,
     mut virtual_time: ResMut<Time<Virtual>>,
 ) {
-    if !menu_state.is_changed() {
+    let settings_changed = game_settings.as_ref().is_some_and(|s| s.is_changed());
+    if !menu_state.is_changed() && !settings_changed {
         return;
     }
 
+    let pause_mode = game_settings
+        .as_ref()
+        .map_or(MenuPauseMode::SystemOnly, |s| s.menu_pause_mode);
+
     match *menu_state.get() {
-        MenuState::MainMenu
-        | MenuState::RaceSelection
-        | MenuState::Loading
-        | MenuState::Pause
-        | MenuState::Settings
-        | MenuState::Controls => {
+        MenuState::MainMenu | MenuState::RaceSelection | MenuState::Loading => {
             virtual_time.pause();
         }
-        MenuState::None | MenuState::Inventory | MenuState::WorldMap | MenuState::Journal => {
+        MenuState::None => {
             virtual_time.unpause();
         }
+        MenuState::Pause | MenuState::Settings | MenuState::Controls => match pause_mode {
+            MenuPauseMode::SystemOnly | MenuPauseMode::AllMenus => virtual_time.pause(),
+            MenuPauseMode::Never => virtual_time.unpause(),
+        },
+        MenuState::Inventory
+        | MenuState::Skills
+        | MenuState::Quests
+        | MenuState::WorldMap
+        | MenuState::Journal => match pause_mode {
+            MenuPauseMode::AllMenus => virtual_time.pause(),
+            MenuPauseMode::SystemOnly | MenuPauseMode::Never => virtual_time.unpause(),
+        },
     }
 }
 

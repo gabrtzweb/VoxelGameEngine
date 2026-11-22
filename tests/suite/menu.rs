@@ -14,8 +14,6 @@ fn test_main_menu_initial_state() {
 #[test]
 fn test_main_menu_assets_exist() {
     assert!(Path::new("assets/textures/interfaces/main_menu_bg.png").exists(), "Background image must exist");
-    assert!(Path::new("assets/textures/interfaces/containers/buttons/button_large.png").exists(), "Large button texture must exist");
-    assert!(Path::new("assets/textures/interfaces/containers/buttons/button_large_hover.png").exists(), "Large button hover texture must exist");
 }
 
 #[test]

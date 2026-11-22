@@ -25,8 +25,10 @@ pub enum InputAction {
 
     // Menus & Interfaces
     Inventory,
-    WorldMap,
+    Skills,
     Journal,
+    Quests,
+    WorldMap,
     MenuTabPrev,
     MenuTabNext,
 
@@ -67,8 +69,10 @@ impl InputAction {
         InputAction::ShapeInvert,
         InputAction::Zoom,
         InputAction::Inventory,
-        InputAction::WorldMap,
+        InputAction::Skills,
         InputAction::Journal,
+        InputAction::Quests,
+        InputAction::WorldMap,
         InputAction::MenuTabPrev,
         InputAction::MenuTabNext,
         InputAction::Hotbar1,
@@ -101,8 +105,10 @@ impl InputAction {
             | Self::Zoom => ActionCategory::Gameplay,
 
             Self::Inventory
-            | Self::WorldMap
+            | Self::Skills
             | Self::Journal
+            | Self::Quests
+            | Self::WorldMap
             | Self::MenuTabPrev
             | Self::MenuTabNext => ActionCategory::Interfaces,
 
@@ -137,8 +143,10 @@ impl InputAction {
             Self::Zoom => "controls.action.zoom",
 
             Self::Inventory => "controls.action.inventory",
-            Self::WorldMap => "controls.action.world_map",
+            Self::Skills => "controls.action.skills",
             Self::Journal => "controls.action.journal",
+            Self::Quests => "controls.action.quests",
+            Self::WorldMap => "controls.action.world_map",
             Self::MenuTabPrev => "controls.action.tab_prev",
             Self::MenuTabNext => "controls.action.tab_next",
 
@@ -173,8 +181,10 @@ impl InputAction {
             Self::Zoom => "zoom",
 
             Self::Inventory => "inventory",
-            Self::WorldMap => "world_map",
+            Self::Skills => "skills",
             Self::Journal => "journal",
+            Self::Quests => "quests",
+            Self::WorldMap => "world_map",
             Self::MenuTabPrev => "menu_tab_prev",
             Self::MenuTabNext => "menu_tab_next",
 
@@ -209,8 +219,10 @@ impl InputAction {
             "zoom" => Some(Self::Zoom),
 
             "inventory" => Some(Self::Inventory),
-            "world_map" => Some(Self::WorldMap),
+            "skills" => Some(Self::Skills),
             "journal" => Some(Self::Journal),
+            "quests" => Some(Self::Quests),
+            "world_map" => Some(Self::WorldMap),
             "menu_tab_prev" => Some(Self::MenuTabPrev),
             "menu_tab_next" => Some(Self::MenuTabNext),
 
@@ -500,9 +512,11 @@ impl Default for ControlSettings {
         bindings.insert(InputAction::Zoom, InputBinding::Key(KeyCode::KeyZ));
 
         // Interfaces
-        bindings.insert(InputAction::Inventory, InputBinding::Key(KeyCode::KeyI));
-        bindings.insert(InputAction::WorldMap, InputBinding::Key(KeyCode::KeyM));
+        bindings.insert(InputAction::Inventory, InputBinding::Key(KeyCode::Tab));
+        bindings.insert(InputAction::Skills, InputBinding::Key(KeyCode::KeyH));
         bindings.insert(InputAction::Journal, InputBinding::Key(KeyCode::KeyJ));
+        bindings.insert(InputAction::Quests, InputBinding::Key(KeyCode::KeyK));
+        bindings.insert(InputAction::WorldMap, InputBinding::Key(KeyCode::KeyM));
         bindings.insert(InputAction::MenuTabPrev, InputBinding::Key(KeyCode::KeyQ));
         bindings.insert(InputAction::MenuTabNext, InputBinding::Key(KeyCode::KeyE));
 

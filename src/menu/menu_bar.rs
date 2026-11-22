@@ -10,7 +10,7 @@ use crate::{
     menu::creative_inventory::CreativeSearchQuery,
 };
 
-use super::{MenuReturnTarget, MenuState};
+use super::{MenuReturnTarget, MenuState, theme::palette};
 
 pub const MENU_BAR_HEIGHT: f32 = 80.0; // 20 px @ 4x
 pub const MENU_SCALE: f32 = 4.0;
@@ -18,21 +18,32 @@ pub const MENU_SCALE: f32 = 4.0;
 #[derive(Component)]
 pub struct MenuBarRoot;
 
-#[derive(Component)]
-pub struct MenuBarJournalOverlay;
-
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MenuBarAction {
-    PrevTab,         // [Q] (01)
-    TabInventory,    // (02)
-    TabJournal,      // (03)
-    TabWorldMap,     // (04)
-    TabSettings,     // (05)
-    NextTab,         // [E] (06)
+    PrevTab,      // [Q]
+    TabInventory, // 01
+    TabSkills,    // 02
+    TabJournal,   // 03
+    TabQuests,    // 04
+    TabWorldMap,  // 05
+    TabSettings,  // 06
+    NextTab,      // [E]
+    CloseMenu,    // [ESC]
 }
 
 #[derive(Component)]
+pub struct MenuBarClockText;
+
+#[derive(Component)]
+pub struct MenuBarClockIcon;
+
+#[derive(Component)]
 pub struct MenuBarTabLabel {
+    pub action: MenuBarAction,
+}
+
+#[derive(Component)]
+pub struct MenuBarTabUnderline {
     pub action: MenuBarAction,
 }
 
@@ -47,7 +58,7 @@ impl Plugin for MenuBarPlugin {
                 handle_menu_bar_buttons,
                 handle_menu_bar_shortcuts,
                 update_menu_bar_tab_highlights,
-                handle_journal_overlay_visibility,
+                update_menu_bar_clock,
             ),
         );
     }
@@ -88,7 +99,6 @@ fn spawn_menu_bar(
     loc: Option<&crate::core::Localization>,
 ) {
     let font_handle = app_font.map(|f| f.source());
-    let bar_texture = asset_server.load("textures/interfaces/containers/menu_bar.png");
 
     let make_tab_font = |size: f32| {
         let mut tf = TextFont {
@@ -110,158 +120,322 @@ fn spawn_menu_bar(
                 right: px(0.0),
                 top: px(0.0),
                 height: px(MENU_BAR_HEIGHT),
+                border: UiRect::bottom(px(1.5)),
+                padding: UiRect::horizontal(px(28.0)),
                 display: Display::Flex,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::FlexStart,
+                flex_direction: FlexDirection::Row,
+                justify_content: JustifyContent::SpaceBetween,
+                align_items: AlignItems::Center,
                 ..default()
             },
-            BackgroundColor(Color::srgb(0.08, 0.09, 0.10)),
+            BackgroundColor(palette::BAR_BG),
+            BorderColor::all(palette::BAR_BORDER),
             ZIndex(400), // Render above containers (300), below cursor (1000)
         ))
-        .with_children(|root| {
-            root.spawn((
-                ImageNode {
-                    image: bar_texture,
-                    rect: Some(Rect::new(0.0, 0.0, 480.0, 20.0)),
-                    ..default()
-                },
-                Node {
-                    width: px(1920.0),
-                    height: px(MENU_BAR_HEIGHT),
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Row,
-                    align_items: AlignItems::FlexStart,
-                    ..default()
-                },
-            ))
-            .with_children(|bar| {
-            // 01: [Q] Navigation Button (11, 6, 8, 8) -> 4x: (44, 24, 32, 32)
-            bar.spawn((
-                Button,
-                Hovered::default(),
-                MenuBarAction::PrevTab,
-                Node {
-                    position_type: PositionType::Absolute,
-                    left: px(11.0 * MENU_SCALE),
-                    top: px(6.0 * MENU_SCALE),
-                    width: px(8.0 * MENU_SCALE),
-                    height: px(8.0 * MENU_SCALE),
-                    display: Display::Flex,
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    ..default()
-                },
-                BackgroundColor(Color::NONE),
-            ));
-
-            // Tabs Configuration: (action, label, x, y, w, h)
-            let tab_inv = loc.map_or("INVENTORY", |l| l.t("menu.bar.inventory"));
-            let tab_journal = loc.map_or("JOURNAL", |l| l.t("menu.bar.journal"));
-            let tab_map = loc.map_or("WORLD MAP", |l| l.t("menu.bar.world_map"));
-            let tab_sys = loc.map_or("SYSTEM", |l| l.t("menu.bar.system"));
-
-            let tabs = [
-                (MenuBarAction::TabInventory, tab_inv, 27.0, 5.0, 48.0, 10.0),
-                (MenuBarAction::TabJournal, tab_journal, 87.0, 5.0, 48.0, 10.0),
-                (MenuBarAction::TabWorldMap, tab_map, 147.0, 5.0, 48.0, 10.0),
-                (MenuBarAction::TabSettings, tab_sys, 207.0, 5.0, 48.0, 10.0),
-            ];
-
-            for (action, label, x, y, w, h) in tabs {
-                bar.spawn((
+        .with_children(|bar| {
+            // Left group: [Q]  (INVENTORY   SKILLS   JOURNAL & QUESTS   WORLD MAP   SYSTEM)  [E]
+            bar.spawn(Node {
+                height: percent(100.0),
+                display: Display::Flex,
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::Center,
+                column_gap: px(24.0),
+                padding: UiRect::left(px(28.0)),
+                ..default()
+            })
+            .with_children(|nav| {
+                // [Q] Keycap Navigation Button
+                nav.spawn((
                     Button,
                     Hovered::default(),
-                    action,
+                    MenuBarAction::PrevTab,
                     Node {
-                        position_type: PositionType::Absolute,
-                        left: px(x * MENU_SCALE),
-                        top: px(y * MENU_SCALE),
-                        width: px(w * MENU_SCALE),
-                        height: px(h * MENU_SCALE),
+                        width: px(30.0),
+                        height: px(30.0),
+                        border: UiRect::all(px(1.0)),
+                        border_radius: BorderRadius::all(px(4.0)),
                         display: Display::Flex,
                         align_items: AlignItems::Center,
                         justify_content: JustifyContent::Center,
                         ..default()
                     },
-                    BackgroundColor(Color::NONE),
+                    BackgroundColor(palette::SLOT_EMPTY_BG),
+                    BorderColor::all(palette::PANEL_BORDER_SUBTLE),
                 ))
-                .with_children(|tab_btn| {
-                    tab_btn.spawn((
-                        MenuBarTabLabel { action },
-                        Text::new(label),
-                        make_tab_font(13.0),
-                        TextColor(Color::srgb(0.85, 0.86, 0.90)),
+                .with_children(|q_btn| {
+                    q_btn.spawn((
+                        Text::new("Q"),
+                        make_tab_font(12.0),
+                        TextColor(palette::TEXT_MUTED),
                         text_shadow_default(),
                     ));
                 });
-            }
 
-            // 06: [E] Navigation Button (263, 6, 8, 8) -> 4x: (1052, 24, 32, 32)
-            bar.spawn((
-                Button,
-                Hovered::default(),
-                MenuBarAction::NextTab,
-                Node {
-                    position_type: PositionType::Absolute,
-                    left: px(263.0 * MENU_SCALE),
-                    top: px(6.0 * MENU_SCALE),
-                    width: px(8.0 * MENU_SCALE),
-                    height: px(8.0 * MENU_SCALE),
-                    display: Display::Flex,
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    ..default()
-                },
-                BackgroundColor(Color::NONE),
-            ));
+                let tab_inv = loc.map_or("INVENTORY", |l| l.t("menu.bar.inventory"));
+                let tab_skills = loc.map_or("SKILLS", |l| l.t("menu.bar.skills"));
+                let tab_quests = loc.map_or("QUESTS", |l| l.t("menu.bar.quests"));
+                let tab_journal = loc.map_or("JOURNAL", |l| l.t("menu.bar.journal"));
+                let tab_map = loc.map_or("WORLD MAP", |l| l.t("menu.bar.world_map"));
+                let tab_sys = loc.map_or("SYSTEM", |l| l.t("menu.bar.system"));
 
-            // Currency 1 Text Readout (411, 5, 20, 10) -> 4x: (1644, 20, 80, 40)
-            bar.spawn((
-                Node {
-                    position_type: PositionType::Absolute,
-                    left: px(411.0 * MENU_SCALE),
-                    top: px(5.0 * MENU_SCALE),
-                    width: px(20.0 * MENU_SCALE),
-                    height: px(10.0 * MENU_SCALE),
+                let tabs = [
+                    (
+                        MenuBarAction::TabInventory,
+                        tab_inv,
+                        "textures/interfaces/icons/menu_inventory.png",
+                    ),
+                    (
+                        MenuBarAction::TabSkills,
+                        tab_skills,
+                        "textures/interfaces/icons/menu_skills.png",
+                    ),
+                    (
+                        MenuBarAction::TabJournal,
+                        tab_journal,
+                        "textures/interfaces/icons/menu_journal.png",
+                    ),
+                    (
+                        MenuBarAction::TabQuests,
+                        tab_quests,
+                        "textures/interfaces/icons/menu_quests.png",
+                    ),
+                    (
+                        MenuBarAction::TabWorldMap,
+                        tab_map,
+                        "textures/interfaces/icons/menu_map.png",
+                    ),
+                    (
+                        MenuBarAction::TabSettings,
+                        tab_sys,
+                        "textures/interfaces/icons/menu_system.png",
+                    ),
+                ];
+
+                // Inner row holding the 6 tabs with icon + label
+                nav.spawn(Node {
+                    height: percent(100.0),
                     display: Display::Flex,
+                    flex_direction: FlexDirection::Row,
                     align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
+                    column_gap: px(48.0),
                     ..default()
-                },
-            ))
-            .with_children(|well| {
-                well.spawn((
-                    Text::new("0"),
-                    make_tab_font(12.0),
-                    TextColor(Color::srgb(0.95, 0.85, 0.30)),
-                    text_shadow_default(),
-                ));
+                })
+                .with_children(|tabs_row| {
+                    for (action, label, icon_path) in tabs {
+                        let icon_handle = asset_server.load(icon_path);
+                        tabs_row
+                            .spawn((
+                                Button,
+                                Hovered::default(),
+                                action,
+                                Node {
+                                    height: percent(100.0),
+                                    padding: UiRect::horizontal(px(8.0)),
+                                    display: Display::Flex,
+                                    flex_direction: FlexDirection::Row,
+                                    align_items: AlignItems::Center,
+                                    justify_content: JustifyContent::Center,
+                                    column_gap: px(8.0),
+                                    ..default()
+                                },
+                                BackgroundColor(Color::NONE),
+                            ))
+                            .with_children(|tab_btn| {
+                                tab_btn.spawn((
+                                    ImageNode {
+                                        image: icon_handle,
+                                        ..default()
+                                    },
+                                    Node {
+                                        width: px(18.0),
+                                        height: px(18.0),
+                                        ..default()
+                                    },
+                                ));
+
+                                tab_btn.spawn((
+                                    MenuBarTabLabel { action },
+                                    Text::new(label),
+                                    make_tab_font(15.0),
+                                    TextColor(palette::TEXT_MUTED),
+                                    text_shadow_default(),
+                                ));
+
+                                tab_btn.spawn((
+                                    MenuBarTabUnderline { action },
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        left: px(6.0),
+                                        right: px(6.0),
+                                        top: px(53.0),
+                                        height: px(2.5),
+                                        border_radius: BorderRadius::all(px(2.0)),
+                                        ..default()
+                                    },
+                                    BackgroundColor(palette::ACCENT_LINE),
+                                    Visibility::Hidden,
+                                ));
+                            });
+                    }
+                });
+
+                // [E] Keycap Navigation Button
+                nav.spawn((
+                    Button,
+                    Hovered::default(),
+                    MenuBarAction::NextTab,
+                    Node {
+                        width: px(30.0),
+                        height: px(30.0),
+                        border: UiRect::all(px(1.0)),
+                        border_radius: BorderRadius::all(px(4.0)),
+                        display: Display::Flex,
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        ..default()
+                    },
+                    BackgroundColor(palette::SLOT_EMPTY_BG),
+                    BorderColor::all(palette::PANEL_BORDER_SUBTLE),
+                ))
+                .with_children(|e_btn| {
+                    e_btn.spawn((
+                        Text::new("E"),
+                        make_tab_font(12.0),
+                        TextColor(palette::TEXT_MUTED),
+                        text_shadow_default(),
+                    ));
+                });
             });
 
-            // Currency 2 Text Readout (449, 5, 20, 10) -> 4x: (1796, 20, 80, 40)
-            bar.spawn((
-                Node {
-                    position_type: PositionType::Absolute,
-                    left: px(449.0 * MENU_SCALE),
-                    top: px(5.0 * MENU_SCALE),
-                    width: px(20.0 * MENU_SCALE),
-                    height: px(10.0 * MENU_SCALE),
-                    display: Display::Flex,
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    ..default()
-                },
-            ))
-            .with_children(|well| {
-                well.spawn((
-                    Text::new("0"),
-                    make_tab_font(12.0),
-                    TextColor(Color::srgb(0.30, 0.85, 0.95)),
-                    text_shadow_default(),
-                ));
+            // Right group: [Level]   [Live Clock]   [Coins]   [ESC]
+            bar.spawn(Node {
+                display: Display::Flex,
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::Center,
+                column_gap: px(22.0),
+                padding: UiRect::right(px(8.0)),
+                ..default()
+            })
+            .with_children(|status| {
+                // Level badge
+                status
+                    .spawn(Node {
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Row,
+                        align_items: AlignItems::Center,
+                        column_gap: px(6.0),
+                        ..default()
+                    })
+                    .with_children(|lvl| {
+                        lvl.spawn((
+                            ImageNode {
+                                image: asset_server.load("textures/interfaces/icons/ui_level.png"),
+                                ..default()
+                            },
+                            Node {
+                                width: px(18.0),
+                                height: px(18.0),
+                                ..default()
+                            },
+                        ));
+                        lvl.spawn((
+                            Text::new("Lv. 1"),
+                            make_tab_font(14.0),
+                            TextColor(palette::TEXT_PRIMARY),
+                            text_shadow_default(),
+                        ));
+                    });
+
+                // Live Clock + Time-of-Day Icon
+                status
+                    .spawn(Node {
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Row,
+                        align_items: AlignItems::Center,
+                        column_gap: px(6.0),
+                        ..default()
+                    })
+                    .with_children(|clk| {
+                        clk.spawn((
+                            MenuBarClockIcon,
+                            ImageNode {
+                                image: asset_server
+                                    .load("textures/interfaces/icons/time_noon.png"),
+                                ..default()
+                            },
+                            Node {
+                                width: px(18.0),
+                                height: px(18.0),
+                                ..default()
+                            },
+                        ));
+                        clk.spawn((
+                            MenuBarClockText,
+                            Text::new("12:00"),
+                            make_tab_font(14.0),
+                            TextColor(palette::TEXT_PRIMARY),
+                            text_shadow_default(),
+                        ));
+                    });
+
+                // Gold Coins badge
+                status
+                    .spawn(Node {
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Row,
+                        align_items: AlignItems::Center,
+                        column_gap: px(6.0),
+                        ..default()
+                    })
+                    .with_children(|coins| {
+                        coins.spawn((
+                            ImageNode {
+                                image: asset_server.load("textures/interfaces/icons/ui_coin.png"),
+                                ..default()
+                            },
+                            Node {
+                                width: px(18.0),
+                                height: px(18.0),
+                                ..default()
+                            },
+                        ));
+                        coins.spawn((
+                            Text::new("0"),
+                            make_tab_font(14.0),
+                            TextColor(palette::TEXT_ACCENT),
+                            text_shadow_default(),
+                        ));
+                    });
+
+                // [ESC] Close Menu Keycap Button (matches [Q] / [E] style)
+                status
+                    .spawn((
+                        Button,
+                        Hovered::default(),
+                        MenuBarAction::CloseMenu,
+                        Node {
+                            height: px(30.0),
+                            padding: UiRect::horizontal(px(10.0)),
+                            border: UiRect::all(px(1.0)),
+                            border_radius: BorderRadius::all(px(4.0)),
+                            display: Display::Flex,
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+                            ..default()
+                        },
+                        BackgroundColor(palette::SLOT_EMPTY_BG),
+                        BorderColor::all(palette::PANEL_BORDER_SUBTLE),
+                    ))
+                    .with_children(|esc_btn| {
+                        esc_btn.spawn((
+                            Text::new("ESC"),
+                            make_tab_font(11.0),
+                            TextColor(palette::TEXT_MUTED),
+                            text_shadow_default(),
+                        ));
+                    });
             });
         });
-    });
 }
 
 fn handle_menu_bar_buttons(
@@ -290,6 +464,16 @@ fn handle_menu_bar_buttons(
                         next_state.set(MenuState::Inventory);
                     }
                 }
+                MenuBarAction::TabSkills => {
+                    if left_clicked {
+                        next_state.set(MenuState::Skills);
+                    }
+                }
+                MenuBarAction::TabQuests => {
+                    if left_clicked {
+                        next_state.set(MenuState::Quests);
+                    }
+                }
                 MenuBarAction::TabJournal => {
                     if left_clicked {
                         next_state.set(MenuState::Journal);
@@ -303,6 +487,11 @@ fn handle_menu_bar_buttons(
                 MenuBarAction::TabSettings => {
                     if left_clicked {
                         next_state.set(MenuState::Pause);
+                    }
+                }
+                MenuBarAction::CloseMenu => {
+                    if left_clicked {
+                        next_state.set(MenuState::None);
                     }
                 }
             }
@@ -353,7 +542,9 @@ fn cycle_tab(
 ) {
     let tabs = [
         MenuState::Inventory,
+        MenuState::Skills,
         MenuState::Journal,
+        MenuState::Quests,
         MenuState::WorldMap,
         MenuState::Pause,
     ];
@@ -361,9 +552,11 @@ fn cycle_tab(
     let current = *menu_state.get();
     let cur_idx = match current {
         MenuState::Inventory => 0,
-        MenuState::Journal => 1,
-        MenuState::WorldMap => 2,
-        MenuState::Pause | MenuState::Settings | MenuState::Controls => 3,
+        MenuState::Skills => 1,
+        MenuState::Journal => 2,
+        MenuState::Quests => 3,
+        MenuState::WorldMap => 4,
+        MenuState::Pause | MenuState::Settings | MenuState::Controls => 5,
         _ => 0,
     };
 
@@ -379,136 +572,94 @@ fn cycle_tab(
 fn update_menu_bar_tab_highlights(
     menu_state: Res<State<MenuState>>,
     loc: Option<Res<crate::core::Localization>>,
+    tab_buttons_query: Query<(&MenuBarAction, &Hovered, &Children), With<Button>>,
     mut labels_query: Query<(&MenuBarTabLabel, &mut TextColor, &mut Text)>,
+    mut underlines_query: Query<(&MenuBarTabUnderline, &mut Visibility)>,
 ) {
-    let loc_changed = loc.as_ref().is_some_and(|l| l.is_changed());
-    if !menu_state.is_changed() && !loc_changed {
-        return;
-    }
-
     let current = *menu_state.get();
-    for (label, mut color, mut text) in &mut labels_query {
-        let is_active = match label.action {
+
+    for (action, hovered, children) in &tab_buttons_query {
+        let is_active = match action {
             MenuBarAction::TabInventory => current == MenuState::Inventory,
+            MenuBarAction::TabSkills => current == MenuState::Skills,
+            MenuBarAction::TabQuests => current == MenuState::Quests,
             MenuBarAction::TabJournal => current == MenuState::Journal,
             MenuBarAction::TabWorldMap => current == MenuState::WorldMap,
             MenuBarAction::TabSettings => {
-                current == MenuState::Pause || current == MenuState::Settings || current == MenuState::Controls
+                current == MenuState::Pause
+                    || current == MenuState::Settings
+                    || current == MenuState::Controls
             }
-            _ => false,
+            _ => continue,
         };
 
-        if let Some(ref l) = loc {
-            let localized_str = match label.action {
-                MenuBarAction::TabInventory => l.t("menu.bar.inventory"),
-                MenuBarAction::TabJournal => l.t("menu.bar.journal"),
-                MenuBarAction::TabWorldMap => l.t("menu.bar.world_map"),
-                MenuBarAction::TabSettings => l.t("menu.bar.system"),
-                _ => "",
-            };
-            if !localized_str.is_empty() && **text != localized_str {
-                **text = localized_str.to_string();
+        for child in children.iter() {
+            if let Ok((label, mut color, mut text)) = labels_query.get_mut(child) {
+                if let Some(ref l) = loc {
+                    let localized_str = match label.action {
+                        MenuBarAction::TabInventory => l.t("menu.bar.inventory"),
+                        MenuBarAction::TabSkills => l.t("menu.bar.skills"),
+                        MenuBarAction::TabQuests => l.t("menu.bar.quests"),
+                        MenuBarAction::TabJournal => l.t("menu.bar.journal"),
+                        MenuBarAction::TabWorldMap => l.t("menu.bar.world_map"),
+                        MenuBarAction::TabSettings => l.t("menu.bar.system"),
+                        _ => "",
+                    };
+                    if !localized_str.is_empty() && **text != localized_str {
+                        **text = localized_str.to_string();
+                    }
+                }
+
+                color.0 = if is_active {
+                    palette::TEXT_ACCENT
+                } else if hovered.get() {
+                    palette::TEXT_PRIMARY
+                } else {
+                    palette::TEXT_MUTED
+                };
+            }
+
+            if let Ok((_, mut vis)) = underlines_query.get_mut(child) {
+                *vis = if is_active {
+                    Visibility::Visible
+                } else {
+                    Visibility::Hidden
+                };
             }
         }
-
-        *color = if is_active {
-            TextColor(Color::srgb(1.0, 0.90, 0.40)) // Golden active highlight
-        } else {
-            TextColor(Color::srgb(0.85, 0.86, 0.90)) // Soft slate idle
-        };
     }
 }
 
-fn handle_journal_overlay_visibility(
-    mut commands: Commands,
-    menu_state: Res<State<MenuState>>,
-    overlay_query: Query<Entity, With<MenuBarJournalOverlay>>,
-    app_font: Option<Res<AppFont>>,
-    loc: Option<Res<crate::core::Localization>>,
-    game_settings: Option<Res<crate::menu::GameSettings>>,
+fn update_menu_bar_clock(
+    env_state: Option<Res<crate::environment::EnvironmentState>>,
+    asset_server: Res<AssetServer>,
+    mut clock_text_q: Query<&mut Text, With<MenuBarClockText>>,
+    mut clock_icon_q: Query<&mut ImageNode, With<MenuBarClockIcon>>,
 ) {
-    let is_journal = *menu_state.get() == MenuState::Journal;
-    let existing = overlay_query.iter().next();
+    let Some(env) = env_state else {
+        return;
+    };
+    let total_mins = (env.time_of_day * 24.0 * 60.0) as u32 % (24 * 60);
+    let hour = total_mins / 60;
+    let time_str = format!("{:02}:{:02}", hour, total_mins % 60);
 
-    if is_journal && existing.is_none() {
-        let gui_scale = game_settings.as_ref().map_or(4, |s| s.gui_scale).clamp(2, 4);
-        let scale_factor = (gui_scale as f32 / 4.0).clamp(0.5, 1.0);
-        let font_handle = app_font.as_ref().map(|f| f.source());
-        let mut title_font = TextFont {
-            font_size: FontSize::Px(24.0),
-            ..default()
-        };
-        let mut subtitle_font = TextFont {
-            font_size: FontSize::Px(16.0),
-            ..default()
-        };
-        if let Some(font) = font_handle {
-            title_font.font = font.clone();
-            subtitle_font.font = font;
+    for mut t in &mut clock_text_q {
+        if t.0 != time_str {
+            t.0 = time_str.clone();
         }
+    }
 
-        let title_text = loc.as_ref().map_or("EXPEDITION JOURNAL", |l| l.t("menu.journal.title"));
-        let empty_text = loc.as_ref().map_or(
-            "No entries recorded yet. Quests and bestiary system coming soon.",
-            |l| l.t("menu.journal.empty"),
-        );
-
-        let dimming_alpha = game_settings
-            .as_ref()
-            .map_or(0.75, |s| s.background_dimming.alpha());
-
-        commands
-            .spawn((
-                MenuBarJournalOverlay,
-                crate::menu::MenuBackdrop,
-                Node {
-                    position_type: PositionType::Absolute,
-                    left: px(0.0),
-                    top: px(MENU_BAR_HEIGHT),
-                    right: px(0.0),
-                    bottom: px(0.0),
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    row_gap: px(12.0),
-                    ..default()
-                },
-                BackgroundColor(Color::srgba(0.0, 0.0, 0.0, dimming_alpha)),
-                ZIndex(300),
-            ))
-            .with_children(|parent| {
-                parent
-                    .spawn((
-                        UiTransform {
-                            scale: Vec2::splat(scale_factor),
-                            ..UiTransform::IDENTITY
-                        },
-                        Node {
-                            display: Display::Flex,
-                            flex_direction: FlexDirection::Column,
-                            align_items: AlignItems::Center,
-                            justify_content: JustifyContent::Center,
-                            row_gap: px(12.0),
-                            ..default()
-                        },
-                    ))
-                    .with_children(|card| {
-                        card.spawn((
-                            Text::new(title_text),
-                            title_font,
-                            TextColor(Color::srgb(0.95, 0.92, 0.80)),
-                            text_shadow_default(),
-                        ));
-                        card.spawn((
-                            Text::new(empty_text),
-                            subtitle_font,
-                            TextColor(Color::srgb(0.65, 0.68, 0.72)),
-                            text_shadow_default(),
-                        ));
-                    });
-            });
-    } else if !is_journal && let Some(entity) = existing {
-        commands.entity(entity).despawn();
+    let icon_path = match hour {
+        5..=10 => "textures/interfaces/icons/time_morning.png",
+        11..=16 => "textures/interfaces/icons/time_noon.png",
+        17..=20 => "textures/interfaces/icons/time_evening.png",
+        _ => "textures/interfaces/icons/time_night.png",
+    };
+    let handle = asset_server.load(icon_path);
+    for mut img in &mut clock_icon_q {
+        if img.image != handle {
+            img.image = handle.clone();
+        }
     }
 }
+

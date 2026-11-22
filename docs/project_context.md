@@ -40,7 +40,7 @@ This is an attempt to develop an experimental voxel engine and game, built from 
   - Calibrated to 0.50 m (50 cm) for smooth future slab stepping, requiring jumping over full 1 m blocks.
 - **Navigation & Mapping**:
   - Square gameplay Minimap HUD (North-up, compact XYZ coordinates, live player heading chevron).
-  - Full-screen interactive World Map (`M`) with pan, zoom, and player tracking.
+  - Full-screen interactive World Map (`M`) filling the viewport below the top bar with 1:1 aspect-corrected terrain rendering, percentage-locked player heading marker, pan/zoom, and a right-docked `310px` sidebar (waypoints, map tools, layers, and live coordinates).
 - **Atmosphere & Climate**:
   - 24-minute day/night astronomical clock, 28-day lunar calendar (8 moon phases), and 4 seasons.
   - Procedural color noise and climate-driven biome palettes (grass, foliage, water) with smooth 5-point cross-kernel boundary blending.
@@ -53,16 +53,15 @@ This is an attempt to develop an experimental voxel engine and game, built from 
   - Enforced in `src/core/window_aspect.rs` (`WindowAspectPlugin`) maintaining 16:9 aspect ratio in windowed mode with minimum constraints (640×360 px) and auto-disable in fullscreen.
 - **Custom Typography**:
   - Universal font asset management (`ari-w9500-condensed-display.ttf`) applied across all in-game HUDs, menus, and interfaces with drop shadow contrast styling.
-- **Standardized 480×270 Base Canvas & 9-Horizontal-Slot UI Architecture**:
-  - **Unified 480×270 (16:9) Base Canvas**: All container, HUD, and menu interfaces are mapped to a fixed 480×270 px native pixel-art canvas, scaling cleanly with integer pixel-perfect alignment up to 4× (`GUI_SCALE = 4.0`, 1920×1080) and seamless borderless / letterbox support.
-  - **In-Game Hotbar HUD (320 × 44 px)**: 9 primary item slots with 3px slot spacing, integrated health meter, exact 12px numeric font scale consistent with open inventory, 2 special readout slots (offhand and utility with Dark Iron backdrops), 4 non-clickable wing badges (`[M]`, `[J]`, `[C]`, `[T]`), and centered selection tooltips with smooth fade-out.
-  - **Dark Iron Pause Menu Bar**: Centralized top navigation bar with 4 tabs (`Map`, `Journal`, `Inventory`, `System`), allowing seamless mouse navigation between menus while automatically hiding sub-HUDs (like the minimap) on background screens.
-  - **Active Player Inventory (`inventory.png`, 480 × 270 px)**: 36 Card B storage slots (4 rows of 9), mirrored hotbar and offhand/utility slots with `inventory_slot_hover.png` feedback, action utility buttons (Sort, Trash, Options, Lock), non-clickable Card A armor placeholders and Card C crafting placeholders.
-  - **Creative Catalog (`inventory_creative.png`, 480 × 270 px)**: 11 category tabs rendering scaled 3D isometric block icons (`BlockIcons`), docking selection frame (`inventory_creative_tab_selection.png`), live search filter with cursor, vertical scroll track with draggable thumb (`inventory_creative_scroller.png`), 90-slot grid (10 rows of 9), and mirrored bottom hotbar.
-  - **Unified Dark Iron Button Suite**: Menus powered by unified dark obsidian / brushed steel buttons (`button_large.png` 96×16 px, `button_medium.png` 64×16 px, `button_small.png` 16×16 px, `button_util.png` 12×12 px) with frosted slate-blue metallic hover highlights (`#3c4552`).
+- **Pure-Code Dark Iron / Forged Obsidian UI Architecture (`src/menu/theme.rs`)**:
+  - **Texture-Free Containers & Buttons**: All menus, HUDs, drawers, slots, and buttons are rendered in pure Bevy UI code using a unified Dark Iron / Forged Obsidian palette (`palette`) and `ThemedButton` component (retaining only pixel-art icons in `assets/textures/interfaces/icons/`, cursors, and `main_menu_bg.png`).
+  - **Shared 6-Tab Top Menu Bar (`src/menu/menu_bar.rs`)**: Text-only tabs with 16×16 icons and gold active underlines (`Inventory`, `Skills`, `Journal`, `Quests`, `World Map`, `System`), `[Q]`/`[E]` tab cycling, and a live right-side status readout (Level, live Clock with time-of-day icon, Gold Coins, and clickable `[ESC]` close button).
+  - **Left-Docked 3-Column Cascading System, Settings & Controls Drawers**: Standardized `310px` full-height left drawers (`src/menu/pause.rs`, `src/menu/settings.rs`, `src/menu/controls.rs`) supporting up to 3 cascading columns (System → Categories → Detail Panel), `World & Session` submenu, direct `Exit Game`, and 6 prioritized Settings categories (`World`, `Graphics` with Display & conditional `Borderless Mouse Lock`, `Shaders & FX`, `Camera`, `Audio`, `Accessibility & UI`), including `Connected Textures`, `Menu Pause` behavior (`System Only` / `All Menus` / `Never`), and 4-tier `FPS / Debug HUD` (`Off` / `FPS Only` / `Compact` / `Full`).
+  - **Dedicated `Skills`, `Journal` & `Quests` Screens**: `Skills` (`src/menu/skills.rs`) pairs a `310px` character & race attribute sheet (with race icon) alongside 5 navigable skill tree tabs; `Journal` (`src/menu/journal.rs`) displays a live Season/Day/Clock/Weather almanac card with all 7 weather icons alongside `Bestiary`, `Compendium`, and `Statistics`; `Quests` (`src/menu/quests.rs`) provides a localized active quests list and objective tracker.
+  - **In-Game Hotbar & Inventory (`GUI Scale` 2×–4×, default 3×)**: Pure-code Dark Iron hotbar chassis (9 primary slots, offhand, utility, XP bar, gold selection frame), Player Inventory (equipment/armor placeholders, 27 storage slots, mirrored hotbar, utility buttons), and Creative Catalog (category tabs, live search bar, 81-slot scrollable grid with draggable scrollbar, and mirrored hotbar).
   - **Item Tooltips**:
-  - Centered item name readout above hotbar upon slot selection with smooth fade-out.
-  - Responsive floating hover tooltips across all inventory and catalog slots.
+    - Centered item name readout above hotbar upon slot selection with smooth fade-out.
+    - Responsive floating hover tooltips across all inventory and catalog slots.
 - **Procedural Foliage & Grass Blade System**:
   - GPU-accelerated procedural grass blades emitted on top of grass turf blocks, slabs, and stairs (`FoliagePlugin`).
   - Rendered with custom WESL PBR shader (`assets/shaders/grass_blades.wesl`) featuring dynamic wind displacement, player trail trampling and recovery, and exact color matching with the underlying voxel terrain.
@@ -77,7 +76,7 @@ This is an attempt to develop an experimental voxel engine and game, built from 
   - Direct engine startup into `MenuState::MainMenu` presenting a full-screen concept art background (`assets/textures/interfaces/main_menu_bg.png`).
   - Interactive two-phase flow:
     - **Splash Phase**: Large retro-pixel title banner ("VOXEL ENGINE"), version readout, and pulsing prompt ("Press any key to start") waiting for any key or mouse trigger.
-    - **Action Phase**: Revealing Play, Settings, Controls, and Quit buttons styled with the Dark Iron sliced button suite (`button_large.png` & hover states) with tactile UI audio.
+    - **Action Phase**: Revealing Play, Settings, Controls, and Quit buttons styled with the pure-code Dark Iron `ThemedButton` suite and tactile UI audio.
   - Seamless stack navigation via `MenuReturnTarget`, routing Settings and Controls Back buttons and Escape cleanly back to the Main Menu when opened from there, and back to Pause when in-game.
   - Smooth loading screen (`MenuState::Loading`) between Main Menu and gameplay, awaiting initial real-chunk generation and meshing with an animated progress bar, real-time chunk counter (`X / Y`), dynamic status messages, and 10 rotating tips.
   - 4 exclusive menu music tracks (`assets/sounds/music/menu/`) with Fisher-Yates non-repeating shuffle on startup, and immediate cutoff of gameplay tracks upon returning to the menu.
@@ -122,7 +121,7 @@ Camera System:
 - View Bobbing: subtle sinusoidal head bobbing during grounded movement (toggleable in Settings)
 - Camera Zoom: dynamic magnification (`Z` + Mouse Wheel up to 20x zoom) with mouse sensitivity dampening
 - First-Person Camera: true first-person body view (head hidden to prevent interior clipping, looking down reveals animated chest, arms, and legs)
-- Third-Person Camera (`F5`): orbiting camera with dynamic raycast block collision prevention to avoid clipping underground/walls, and independent head pitch/yaw tracking
+- Third-Person Camera (`F5`): orbiting camera with configurable distance (2.5 m–8.0 m), optional camera smoothing, dynamic raycast block collision prevention to avoid clipping underground/walls, and independent head pitch/yaw tracking
 
 Player Model, 8-Race Silhouettes & Held Items:
 
@@ -146,7 +145,7 @@ The engine has concluded two full 20-phase development milestones:
 
 - **Version 0.1 — Foundation Era (Phases 1–20, Completed)**: Core engine architecture, multi-chunk streaming, greedy meshing, procedural terrain, physics, fluid dynamics, celestial environments, survival interfaces, and SIMD/memory optimizations.
 - **Version 0.2 — Modernization, Worldbuilding & Deep Systems (Phases 1–20, Completed)**: Full voxel catalog and geological strata, 9-slot 480×270 Dark Iron UI, Bevy 0.20 and WESL migration, hardware profiles and FSR 1.0, wild flora and botanical systems, 6D multi-noise 44-biome generation, Main Menu and deferred loading, spatial audio, 8-race custom voxel characters, agricultural crop simulation, smooth fluid dynamics and 3D item drops, dynamic weather, AO/water/bloom/god-ray shaders, streaming and LOD performance engineering, multi-language localization, rebindable controls, GPU procedural grass, and multi-chunk world feature generation.
-- **Version 0.3 (Current, In Progress)**: Active development milestone focused on engine-wide performance optimization, world terrain polish, surface details, and atmospheric/gameplay systems.
+- **Version 0.3 (Current, In Progress)**: Active development milestone focused on engine-wide performance optimization, world terrain polish, atmospheric/gameplay particles, and pure-code UI & RPG menu systems.
 
 Individual phases and detailed milestones are tracked exclusively in `docs/project_roadmap.md`.
 

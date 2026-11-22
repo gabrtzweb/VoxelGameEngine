@@ -6,7 +6,7 @@ use crate::{
         AppFont, ControlSettings, InputAction, InputBinding, LocalConfig, Localization,
         text_shadow_default,
     },
-    menu::{GameSettings, MenuReturnTarget, MenuState},
+    menu::{GameSettings, MenuReturnTarget, MenuState, ThemedButton, theme::palette},
 };
 
 #[derive(Resource, Default, Debug, Clone, Copy, PartialEq, Eq)]
@@ -19,6 +19,9 @@ pub enum ControlsTab {
 }
 
 #[derive(Resource, Default, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ControlsDetailOpen(pub bool);
+
+#[derive(Resource, Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RebindState(pub Option<InputAction>);
 
 #[derive(Component)]
@@ -26,6 +29,15 @@ pub struct ControlsMenuRoot;
 
 #[derive(Component)]
 pub struct ControlsMenuCard;
+
+#[derive(Component)]
+struct ControlsDetailPanel;
+
+#[derive(Component)]
+struct ControlsTabLabel;
+
+#[derive(Component)]
+struct ControlsTabAccent;
 
 #[derive(Component)]
 struct MovementSection;
@@ -72,6 +84,7 @@ pub struct ControlsMenuPlugin;
 impl Plugin for ControlsMenuPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ControlsTab>()
+            .init_resource::<ControlsDetailOpen>()
             .init_resource::<RebindState>()
             .add_systems(OnEnter(MenuState::Controls), spawn_controls_menu)
             .add_systems(OnExit(MenuState::Controls), despawn_controls_menu)
@@ -92,22 +105,22 @@ impl Plugin for ControlsMenuPlugin {
 fn spawn_controls_menu(
     mut commands: Commands,
     controls: Res<ControlSettings>,
-    game_settings: Res<GameSettings>,
+    _game_settings: Res<GameSettings>,
     active_tab: Res<ControlsTab>,
+    mut detail_open: ResMut<ControlsDetailOpen>,
     rebind_state: Res<RebindState>,
     loc: Res<Localization>,
     app_font: Option<Res<AppFont>>,
     asset_server: Res<AssetServer>,
     menu_return_target: Res<MenuReturnTarget>,
 ) {
+    use crate::menu::menu_bar::MENU_BAR_HEIGHT;
+
+    detail_open.0 = false;
     let font_handle = app_font.as_ref().map(|f| f.source());
 
-    let btn_normal = asset_server.load("textures/interfaces/containers/buttons/button_medium.png");
-    let btn_hover = asset_server.load("textures/interfaces/containers/buttons/button_medium_hover.png");
-    let small_normal = asset_server.load("textures/interfaces/containers/buttons/button_small.png");
-
     let mut header_font = TextFont {
-        font_size: FontSize::Px(32.0),
+        font_size: FontSize::Px(13.0),
         ..default()
     };
     if let Some(ref font) = font_handle {
@@ -115,29 +128,33 @@ fn spawn_controls_menu(
     }
 
     let is_from_main_menu = menu_return_target.0 == MenuState::MainMenu;
-    let top_offset = if is_from_main_menu { 0.0 } else { 80.0 };
-    let bg_color = if is_from_main_menu {
-        Color::NONE
+    let top_offset = if is_from_main_menu {
+        0.0
     } else {
-        Color::srgba(0.0, 0.0, 0.0, game_settings.background_dimming.alpha())
+        MENU_BAR_HEIGHT
+    };
+    let left_offset = if is_from_main_menu {
+        0.0
+    } else {
+        palette::DRAWER_COL1_WIDTH
     };
 
     commands
         .spawn((
             ControlsMenuRoot,
-            crate::menu::MenuBackdrop,
             Node {
                 position_type: PositionType::Absolute,
-                left: px(0.0),
+                left: px(left_offset),
                 top: px(top_offset),
                 right: px(0.0),
                 bottom: px(0.0),
                 display: Display::Flex,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
+                flex_direction: FlexDirection::Row,
+                justify_content: JustifyContent::FlexStart,
+                align_items: AlignItems::Stretch,
                 ..default()
             },
-            BackgroundColor(bg_color),
+            BackgroundColor(Color::NONE),
             ZIndex(300),
         ))
         .with_children(|backdrop| {
@@ -168,116 +185,233 @@ fn spawn_controls_menu(
                         height: percent(100.0),
                         ..default()
                     },
-                    BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.35)),
+                    BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.45)),
                     ZIndex(1),
                 ));
             }
 
-            let scale_factor = (game_settings.gui_scale as f32 / 4.0).clamp(0.5, 1.0);
             backdrop
                 .spawn((
                     ControlsMenuCard,
                     ZIndex(10),
-                    UiTransform {
-                        scale: Vec2::splat(scale_factor),
-                        ..UiTransform::IDENTITY
-                    },
                     Node {
+                        height: percent(100.0),
                         display: Display::Flex,
-                        flex_direction: FlexDirection::Column,
-                        align_items: AlignItems::Center,
-                        row_gap: px(14.0),
-                        width: px(960.0),
+                        flex_direction: FlexDirection::Row,
+                        align_items: AlignItems::Stretch,
                         ..default()
                     },
                 ))
-                .with_children(|card| {
-                    // Header title
-                    card.spawn((
-                        Text::new(loc.t("menu.controls.title")),
-                        header_font,
-                        TextColor(Color::srgb(0.92, 0.92, 0.95)),
-                        text_shadow_default(),
-                    ));
-
-                    // Category Tabs
-                    card.spawn(Node {
-                        display: Display::Flex,
-                        flex_direction: FlexDirection::Row,
-                        column_gap: px(12.0),
-                        ..default()
-                    })
-                    .with_children(|tab_row| {
-                        let tabs = [
-                            (ControlsTab::Movement, "menu.controls.tab_movement"),
-                            (ControlsTab::Gameplay, "menu.controls.tab_gameplay"),
-                            (ControlsTab::Interfaces, "menu.controls.tab_interfaces"),
-                            (ControlsTab::MouseCamera, "menu.controls.tab_mouse"),
-                        ];
-
-                        for (tab, label_key) in tabs {
-                            let is_active = tab == *active_tab;
-                            let text_color = if is_active {
-                                Color::srgb(1.0, 0.88, 0.45)
-                            } else {
-                                Color::srgb(0.78, 0.78, 0.82)
-                            };
-
-                            tab_row
-                                .spawn((
-                                    Button,
-                                    Hovered::default(),
-                                    ControlsTabButton(tab),
-                                    ControlsAction::SwitchTab(tab),
-                                    Node {
-                                        width: px(170.0),
-                                        height: px(38.0),
-                                        justify_content: JustifyContent::Center,
-                                        align_items: AlignItems::Center,
-                                        ..default()
-                                    },
-                                    ImageNode {
-                                        image: if is_active {
-                                            btn_hover.clone()
-                                        } else {
-                                            btn_normal.clone()
+                .with_children(|drawers| {
+                    // Column 2: Controls Categories Drawer
+                    drawers
+                        .spawn((
+                            Node {
+                                width: px(palette::DRAWER_COL2_WIDTH),
+                                min_width: px(palette::DRAWER_COL2_WIDTH),
+                                flex_shrink: 0.0,
+                                height: percent(100.0),
+                                border: UiRect::right(px(1.5)),
+                                padding: UiRect::vertical(px(28.0)),
+                                display: Display::Flex,
+                                flex_direction: FlexDirection::Column,
+                                justify_content: JustifyContent::FlexStart,
+                                align_items: AlignItems::Stretch,
+                                row_gap: px(4.0),
+                                ..default()
+                            },
+                            BackgroundColor(palette::DRAWER_COL2_BG),
+                            BorderColor::all(palette::DRAWER_DIVIDER),
+                        ))
+                        .with_children(|cat_col| {
+                            if is_from_main_menu {
+                                let mut back_font = TextFont {
+                                    font_size: FontSize::Px(15.0),
+                                    ..default()
+                                };
+                                if let Some(ref font) = font_handle {
+                                    back_font.font = font.clone();
+                                }
+                                let back_theme = ThemedButton {
+                                    normal_bg: Color::NONE,
+                                    normal_border: Color::NONE,
+                                    hover_bg: palette::NAV_ITEM_HOVER_BG,
+                                    hover_border: Color::NONE,
+                                    pressed_bg: palette::NAV_ITEM_ACTIVE_BG,
+                                };
+                                cat_col
+                                    .spawn((
+                                        Button,
+                                        Hovered::default(),
+                                        ControlsAction::Back,
+                                        back_theme,
+                                        BackgroundColor(Color::NONE),
+                                        BorderColor::all(Color::NONE),
+                                        Node {
+                                            width: percent(100.0),
+                                            height: px(44.0),
+                                            padding: UiRect::new(px(24.0), px(20.0), px(0.0), px(0.0)),
+                                            margin: UiRect::bottom(px(8.0)),
+                                            display: Display::Flex,
+                                            flex_direction: FlexDirection::Row,
+                                            align_items: AlignItems::Center,
+                                            ..default()
                                         },
-                                        ..default()
-                                    },
-                                ))
-                                .with_children(|btn| {
+                                    ))
+                                    .with_children(|btn| {
+                                        btn.spawn((
+                                            Text::new(format!("<  {}", loc.t("menu.settings.back"))),
+                                            back_font,
+                                            TextColor(palette::TEXT_MUTED),
+                                            text_shadow_default(),
+                                        ));
+                                    });
+                            }
+
+                            let tabs = [
+                                (ControlsTab::Movement, "menu.controls.tab_movement"),
+                                (ControlsTab::Gameplay, "menu.controls.tab_gameplay"),
+                                (ControlsTab::Interfaces, "menu.controls.tab_interfaces"),
+                                (ControlsTab::MouseCamera, "menu.controls.tab_mouse"),
+                            ];
+
+                            for (tab, label_key) in tabs {
+                                cat_col
+                                    .spawn((
+                                        Button,
+                                        Hovered::default(),
+                                        ControlsTabButton(tab),
+                                        ControlsAction::SwitchTab(tab),
+                                        Node {
+                                            width: percent(100.0),
+                                            height: px(46.0),
+                                            padding: UiRect::new(
+                                                px(24.0),
+                                                px(20.0),
+                                                px(0.0),
+                                                px(0.0),
+                                            ),
+                                            display: Display::Flex,
+                                            flex_direction: FlexDirection::Row,
+                                            justify_content: JustifyContent::SpaceBetween,
+                                            align_items: AlignItems::Center,
+                                            ..default()
+                                        },
+                                        BackgroundColor(Color::NONE),
+                                        BorderColor::all(Color::NONE),
+                                    ))
+                                    .with_children(|btn| {
+                                        btn.spawn((
+                                            ControlsTabAccent,
+                                            Node {
+                                                position_type: PositionType::Absolute,
+                                                left: px(0.0),
+                                                top: px(8.0),
+                                                bottom: px(8.0),
+                                                width: px(3.0),
+                                                border_radius: BorderRadius::right(px(2.0)),
+                                                ..default()
+                                            },
+                                            BackgroundColor(palette::ACCENT_LINE),
+                                            Visibility::Hidden,
+                                        ));
+
+                                        let mut tf = TextFont {
+                                            font_size: FontSize::Px(15.0),
+                                            ..default()
+                                        };
+                                        if let Some(ref font) = font_handle {
+                                            tf.font = font.clone();
+                                        }
+                                        btn.spawn((
+                                            ControlsTabLabel,
+                                            Text::new(loc.t(label_key)),
+                                            tf.clone(),
+                                            TextColor(palette::TEXT_PRIMARY),
+                                            text_shadow_default(),
+                                        ));
+                                        btn.spawn((
+                                            Text::new(">"),
+                                            tf,
+                                            TextColor(palette::TEXT_MUTED),
+                                        ));
+                                    });
+                            }
+
+                            // Push bottom action buttons to foot of Column 2
+                            cat_col.spawn(Node {
+                                flex_grow: 1.0,
+                                ..default()
+                            });
+
+                            let action_theme = ThemedButton::subtle();
+                            cat_col
+                                .spawn(Node {
+                                    padding: UiRect::horizontal(px(20.0)),
+                                    display: Display::Flex,
+                                    flex_direction: FlexDirection::Column,
+                                    row_gap: px(8.0),
+                                    ..default()
+                                })
+                                .with_children(|footer| {
                                     let mut tf = TextFont {
-                                        font_size: FontSize::Px(16.0),
+                                        font_size: FontSize::Px(14.0),
                                         ..default()
                                     };
                                     if let Some(ref font) = font_handle {
                                         tf.font = font.clone();
                                     }
-                                    btn.spawn((
-                                        Text::new(loc.t(label_key)),
-                                        tf,
-                                        TextColor(text_color),
-                                        text_shadow_default(),
-                                    ));
-                                });
-                        }
-                    });
 
-                    // Sections Container (Fixed height with dark border background)
-                    card.spawn(Node {
-                        width: px(920.0),
-                        height: px(360.0),
-                        padding: UiRect::axes(px(20.0), px(16.0)),
-                        display: Display::Flex,
-                        flex_direction: FlexDirection::Column,
-                        justify_content: JustifyContent::FlexStart,
-                        align_items: AlignItems::Center,
-                        border: UiRect::all(px(2.0)),
-                        ..default()
-                    })
-                    .insert(BorderColor::all(Color::srgba(0.20, 0.22, 0.28, 0.80)))
-                    .insert(BackgroundColor(Color::srgba(0.06, 0.07, 0.09, 0.85)))
-                    .with_children(|sections| {
+                                    // Reset Defaults Button
+                                    footer
+                                        .spawn((
+                                            Button,
+                                            Hovered::default(),
+                                            ControlsAction::ResetDefaults,
+                                            action_theme,
+                                            BackgroundColor(action_theme.normal_bg),
+                                            BorderColor::all(action_theme.normal_border),
+                                            Node {
+                                                width: percent(100.0),
+                                                height: px(38.0),
+                                                justify_content: JustifyContent::Center,
+                                                align_items: AlignItems::Center,
+                                                border: UiRect::all(px(1.5)),
+                                                border_radius: BorderRadius::all(px(4.0)),
+                                                ..default()
+                                            },
+                                        ))
+                                        .with_children(|btn| {
+                                            btn.spawn((
+                                                Text::new(loc.t("menu.controls.reset_defaults")),
+                                                tf,
+                                                TextColor(Color::srgb(0.92, 0.65, 0.65)),
+                                                text_shadow_default(),
+                                            ));
+                                        });
+                                });
+                        });
+
+                    // Column 3: Controls Detail Panel (opens when a category in Column 2 is selected)
+                    drawers
+                        .spawn((
+                            ControlsDetailPanel,
+                            Node {
+                                width: px(palette::DRAWER_COL3_WIDTH),
+                                height: percent(100.0),
+                                border: UiRect::right(px(1.5)),
+                                padding: UiRect::all(px(24.0)),
+                                display: Display::None,
+                                flex_direction: FlexDirection::Column,
+                                justify_content: JustifyContent::FlexStart,
+                                align_items: AlignItems::Stretch,
+                                overflow: Overflow::scroll_y(),
+                                ..default()
+                            },
+                            BackgroundColor(palette::DRAWER_COL3_BG),
+                            BorderColor::all(palette::DRAWER_DIVIDER),
+                        ))
+                        .with_children(|sections| {
                         // 1. Movement section
                         sections
                             .spawn((
@@ -290,7 +424,7 @@ fn spawn_controls_menu(
                                     },
                                     flex_direction: FlexDirection::Column,
                                     row_gap: px(6.0),
-                                    width: px(880.0),
+                                    width: percent(100.0),
                                     ..default()
                                 },
                             ))
@@ -312,7 +446,6 @@ fn spawn_controls_menu(
                                         &rebind_state,
                                         &loc,
                                         font_handle.as_ref(),
-                                        &small_normal,
                                     );
                                 }
                             });
@@ -329,7 +462,7 @@ fn spawn_controls_menu(
                                     },
                                     flex_direction: FlexDirection::Column,
                                     row_gap: px(6.0),
-                                    width: px(880.0),
+                                    width: percent(100.0),
                                     ..default()
                                 },
                             ))
@@ -351,7 +484,6 @@ fn spawn_controls_menu(
                                         &rebind_state,
                                         &loc,
                                         font_handle.as_ref(),
-                                        &small_normal,
                                     );
                                 }
                             });
@@ -368,15 +500,17 @@ fn spawn_controls_menu(
                                     },
                                     flex_direction: FlexDirection::Column,
                                     row_gap: px(6.0),
-                                    width: px(880.0),
+                                    width: percent(100.0),
                                     ..default()
                                 },
                             ))
                             .with_children(|sec| {
                                 let interface_actions = [
                                     InputAction::Inventory,
-                                    InputAction::WorldMap,
+                                    InputAction::Skills,
                                     InputAction::Journal,
+                                    InputAction::Quests,
+                                    InputAction::WorldMap,
                                     InputAction::MenuTabPrev,
                                     InputAction::MenuTabNext,
                                 ];
@@ -388,7 +522,6 @@ fn spawn_controls_menu(
                                         &rebind_state,
                                         &loc,
                                         font_handle.as_ref(),
-                                        &small_normal,
                                     );
                                 }
                             });
@@ -405,7 +538,7 @@ fn spawn_controls_menu(
                                     },
                                     flex_direction: FlexDirection::Column,
                                     row_gap: px(16.0),
-                                    width: px(880.0),
+                                    width: percent(100.0),
                                     align_items: AlignItems::Center,
                                     padding: UiRect::top(px(24.0)),
                                     ..default()
@@ -418,14 +551,14 @@ fn spawn_controls_menu(
                                     flex_direction: FlexDirection::Row,
                                     justify_content: JustifyContent::SpaceBetween,
                                     align_items: AlignItems::Center,
-                                    width: px(680.0),
+                                    width: percent(100.0),
                                     height: px(40.0),
-                                    padding: UiRect::axes(px(16.0), px(4.0)),
+                                    padding: UiRect::axes(px(4.0), px(2.0)),
                                     ..default()
                                 })
                                 .with_children(|row| {
                                     let mut tf = TextFont {
-                                        font_size: FontSize::Px(18.0),
+                                        font_size: FontSize::Px(15.0),
                                         ..default()
                                     };
                                     if let Some(ref f) = font_handle {
@@ -438,37 +571,39 @@ fn spawn_controls_menu(
                                         text_shadow_default(),
                                     ));
 
-                                    // Stepper container
+                                    // Stepper container: [-] Value [+]
                                     row.spawn(Node {
                                         display: Display::Flex,
                                         flex_direction: FlexDirection::Row,
                                         align_items: AlignItems::Center,
-                                        column_gap: px(8.0),
+                                        column_gap: px(6.0),
                                         ..default()
                                     })
                                     .with_children(|st| {
                                         // Left button
+                                        let small_theme = ThemedButton::subtle();
                                         st.spawn((
                                             Button,
                                             Hovered::default(),
                                             ControlsAction::DecSensitivity,
+                                            small_theme,
+                                            BackgroundColor(small_theme.normal_bg),
+                                            BorderColor::all(small_theme.normal_border),
                                             Node {
-                                                width: px(36.0),
-                                                height: px(36.0),
+                                                width: px(28.0),
+                                                height: px(28.0),
                                                 justify_content: JustifyContent::Center,
                                                 align_items: AlignItems::Center,
-                                                ..default()
-                                            },
-                                            ImageNode {
-                                                image: small_normal.clone(),
+                                                border: UiRect::all(px(1.5)),
+                                                border_radius: BorderRadius::all(px(4.0)),
                                                 ..default()
                                             },
                                         ))
                                         .with_children(|b| {
                                             b.spawn((
-                                                Text::new("◀"),
+                                                Text::new("-"),
                                                 tf.clone(),
-                                                TextColor(Color::srgb(0.9, 0.9, 0.9)),
+                                                TextColor(Color::WHITE),
                                                 text_shadow_default(),
                                             ));
                                         });
@@ -481,8 +616,9 @@ fn spawn_controls_menu(
                                             TextColor(Color::srgb(1.0, 0.88, 0.45)),
                                             text_shadow_default(),
                                             Node {
-                                                width: px(100.0),
+                                                width: px(76.0),
                                                 justify_content: JustifyContent::Center,
+                                                align_items: AlignItems::Center,
                                                 ..default()
                                             },
                                         ));
@@ -492,23 +628,24 @@ fn spawn_controls_menu(
                                             Button,
                                             Hovered::default(),
                                             ControlsAction::IncSensitivity,
+                                            small_theme,
+                                            BackgroundColor(small_theme.normal_bg),
+                                            BorderColor::all(small_theme.normal_border),
                                             Node {
-                                                width: px(36.0),
-                                                height: px(36.0),
+                                                width: px(28.0),
+                                                height: px(28.0),
                                                 justify_content: JustifyContent::Center,
                                                 align_items: AlignItems::Center,
-                                                ..default()
-                                            },
-                                            ImageNode {
-                                                image: small_normal.clone(),
+                                                border: UiRect::all(px(1.5)),
+                                                border_radius: BorderRadius::all(px(4.0)),
                                                 ..default()
                                             },
                                         ))
                                         .with_children(|b| {
                                             b.spawn((
-                                                Text::new("▶"),
+                                                Text::new("+"),
                                                 tf.clone(),
-                                                TextColor(Color::srgb(0.9, 0.9, 0.9)),
+                                                TextColor(Color::WHITE),
                                                 text_shadow_default(),
                                             ));
                                         });
@@ -521,14 +658,14 @@ fn spawn_controls_menu(
                                     flex_direction: FlexDirection::Row,
                                     justify_content: JustifyContent::SpaceBetween,
                                     align_items: AlignItems::Center,
-                                    width: px(680.0),
+                                    width: percent(100.0),
                                     height: px(40.0),
-                                    padding: UiRect::axes(px(16.0), px(4.0)),
+                                    padding: UiRect::axes(px(4.0), px(2.0)),
                                     ..default()
                                 })
                                 .with_children(|row| {
                                     let mut tf = TextFont {
-                                        font_size: FontSize::Px(18.0),
+                                        font_size: FontSize::Px(15.0),
                                         ..default()
                                     };
                                     if let Some(ref f) = font_handle {
@@ -542,19 +679,21 @@ fn spawn_controls_menu(
                                     ));
 
                                     // Toggle button
+                                    let toggle_theme = ThemedButton::subtle();
                                     row.spawn((
                                         Button,
                                         Hovered::default(),
                                         ControlsAction::ToggleInvertY,
+                                        toggle_theme,
+                                        BackgroundColor(toggle_theme.normal_bg),
+                                        BorderColor::all(toggle_theme.normal_border),
                                         Node {
-                                            width: px(140.0),
-                                            height: px(36.0),
+                                            width: px(144.0),
+                                            height: px(34.0),
                                             justify_content: JustifyContent::Center,
                                             align_items: AlignItems::Center,
-                                            ..default()
-                                        },
-                                        ImageNode {
-                                            image: small_normal.clone(),
+                                            border: UiRect::all(px(1.5)),
+                                            border_radius: BorderRadius::all(px(4.0)),
                                             ..default()
                                         },
                                     ))
@@ -579,86 +718,6 @@ fn spawn_controls_menu(
                                 });
                             });
                     });
-
-                    // Bottom Bar (Reset to defaults & Back)
-                    card.spawn(Node {
-                        display: Display::Flex,
-                        flex_direction: FlexDirection::Row,
-                        justify_content: JustifyContent::SpaceBetween,
-                        width: px(920.0),
-                        column_gap: px(24.0),
-                        margin: UiRect::top(px(8.0)),
-                        ..default()
-                    })
-                    .with_children(|bottom| {
-                        // Reset Defaults Button
-                        bottom
-                            .spawn((
-                                Button,
-                                Hovered::default(),
-                                ControlsAction::ResetDefaults,
-                                Node {
-                                    width: px(240.0),
-                                    height: px(44.0),
-                                    justify_content: JustifyContent::Center,
-                                    align_items: AlignItems::Center,
-                                    ..default()
-                                },
-                                ImageNode {
-                                    image: btn_normal.clone(),
-                                    ..default()
-                                },
-                            ))
-                            .with_children(|btn| {
-                                let mut tf = TextFont {
-                                    font_size: FontSize::Px(18.0),
-                                    ..default()
-                                };
-                                if let Some(ref font) = font_handle {
-                                    tf.font = font.clone();
-                                }
-                                btn.spawn((
-                                    Text::new(loc.t("menu.controls.reset_defaults")),
-                                    tf,
-                                    TextColor(Color::srgb(0.92, 0.65, 0.65)),
-                                    text_shadow_default(),
-                                ));
-                            });
-
-                        // Back Button
-                        bottom
-                            .spawn((
-                                Button,
-                                Hovered::default(),
-                                ControlsAction::Back,
-                                Node {
-                                    width: px(200.0),
-                                    height: px(44.0),
-                                    justify_content: JustifyContent::Center,
-                                    align_items: AlignItems::Center,
-                                    ..default()
-                                },
-                                ImageNode {
-                                    image: btn_normal.clone(),
-                                    ..default()
-                                },
-                            ))
-                            .with_children(|btn| {
-                                let mut tf = TextFont {
-                                    font_size: FontSize::Px(20.0),
-                                    ..default()
-                                };
-                                if let Some(ref font) = font_handle {
-                                    tf.font = font.clone();
-                                }
-                                btn.spawn((
-                                    Text::new(loc.t("menu.settings.back")),
-                                    tf,
-                                    TextColor(Color::srgb(0.90, 0.92, 0.96)),
-                                    text_shadow_default(),
-                                ));
-                            });
-                    });
                 });
         });
 }
@@ -670,7 +729,6 @@ fn spawn_action_row(
     rebind_state: &RebindState,
     loc: &Localization,
     font: Option<&FontSource>,
-    btn_texture: &Handle<Image>,
 ) {
     let binding = controls.get_binding(action);
     let is_rebinding = rebind_state.0 == Some(action);
@@ -709,9 +767,9 @@ fn spawn_action_row(
             flex_direction: FlexDirection::Row,
             justify_content: JustifyContent::SpaceBetween,
             align_items: AlignItems::Center,
-            width: px(860.0),
-            height: px(38.0),
-            padding: UiRect::axes(px(16.0), px(2.0)),
+            width: percent(100.0),
+            height: px(40.0),
+            padding: UiRect::axes(px(4.0), px(2.0)),
             ..default()
         })
         .with_children(|row| {
@@ -724,20 +782,22 @@ fn spawn_action_row(
             ));
 
             // Rebind Button
+            let rebind_theme = ThemedButton::subtle();
             row.spawn((
                 Button,
                 Hovered::default(),
                 ActionBindingButton(action),
                 ControlsAction::StartRebind(action),
+                rebind_theme,
+                BackgroundColor(rebind_theme.normal_bg),
+                BorderColor::all(rebind_theme.normal_border),
                 Node {
-                    width: px(180.0),
+                    width: px(152.0),
                     height: px(34.0),
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
-                    ..default()
-                },
-                ImageNode {
-                    image: btn_texture.clone(),
+                    border: UiRect::all(px(1.5)),
+                    border_radius: BorderRadius::all(px(4.0)),
                     ..default()
                 },
             ))
@@ -760,11 +820,22 @@ fn despawn_controls_menu(mut commands: Commands, query: Query<Entity, With<Contr
 }
 
 fn handle_controls_buttons(
-    buttons_query: Query<(&Hovered, Has<Pressed>, &ControlsAction), With<Button>>,
+    mut buttons_query: Query<
+        (
+            &Hovered,
+            Has<Pressed>,
+            &ControlsAction,
+            Option<&ThemedButton>,
+            &mut BackgroundColor,
+            &mut BorderColor,
+        ),
+        With<Button>,
+    >,
     mouse: Res<ButtonInput<MouseButton>>,
     menu_return_target: Res<MenuReturnTarget>,
     mut next_state: ResMut<NextState<MenuState>>,
     mut active_tab: ResMut<ControlsTab>,
+    mut detail_open: ResMut<ControlsDetailOpen>,
     mut rebind_state: ResMut<RebindState>,
     mut controls: ResMut<ControlSettings>,
     mut local_config: ResMut<LocalConfig>,
@@ -775,11 +846,21 @@ fn handle_controls_buttons(
 
     let left_clicked = mouse.just_pressed(MouseButton::Left);
 
-    for (hovered, is_pressed, action) in &buttons_query {
-        if hovered.get() && (left_clicked || is_pressed) {
+    for (hovered, is_pressed, action, theme, mut bg, mut border) in &mut buttons_query {
+        if let Some(theme) = theme {
+            let (next_bg, next_border) = theme.colors(hovered.get(), is_pressed);
+            bg.0 = next_bg;
+            *border = BorderColor::all(next_border);
+        }
+        if hovered.get() && left_clicked {
             match action {
                 ControlsAction::SwitchTab(tab) => {
-                    *active_tab = *tab;
+                    if detail_open.0 && *active_tab == *tab {
+                        detail_open.0 = false;
+                    } else {
+                        *active_tab = *tab;
+                        detail_open.0 = true;
+                    }
                     rebind_state.0 = None;
                 }
                 ControlsAction::StartRebind(act) => {
@@ -868,65 +949,141 @@ fn capture_rebind_input(
 
 fn update_controls_tab_view(
     active_tab: Res<ControlsTab>,
-    asset_server: Res<AssetServer>,
-    mut tab_buttons_query: Query<(&ControlsTabButton, &Children, &mut ImageNode)>,
-    mut text_color_query: Query<&mut TextColor>,
-    mut movement_query: Query<&mut Node, (With<MovementSection>, Without<GameplaySection>, Without<InterfacesSection>, Without<MouseCameraSection>)>,
-    mut gameplay_query: Query<&mut Node, (With<GameplaySection>, Without<MovementSection>, Without<InterfacesSection>, Without<MouseCameraSection>)>,
-    mut interfaces_query: Query<&mut Node, (With<InterfacesSection>, Without<MovementSection>, Without<GameplaySection>, Without<MouseCameraSection>)>,
-    mut mouse_camera_query: Query<&mut Node, (With<MouseCameraSection>, Without<MovementSection>, Without<GameplaySection>, Without<InterfacesSection>)>,
+    detail_open: Res<ControlsDetailOpen>,
+    mut tab_buttons_query: Query<(
+        &ControlsTabButton,
+        &Hovered,
+        &Children,
+        &mut BackgroundColor,
+    )>,
+    mut text_color_query: Query<&mut TextColor, With<ControlsTabLabel>>,
+    mut accent_query: Query<&mut Visibility, With<ControlsTabAccent>>,
+    mut detail_panel_query: Query<
+        &mut Node,
+        (
+            With<ControlsDetailPanel>,
+            Without<MovementSection>,
+            Without<GameplaySection>,
+            Without<InterfacesSection>,
+            Without<MouseCameraSection>,
+        ),
+    >,
+    mut movement_query: Query<
+        &mut Node,
+        (
+            With<MovementSection>,
+            Without<GameplaySection>,
+            Without<InterfacesSection>,
+            Without<MouseCameraSection>,
+            Without<ControlsDetailPanel>,
+        ),
+    >,
+    mut gameplay_query: Query<
+        &mut Node,
+        (
+            With<GameplaySection>,
+            Without<MovementSection>,
+            Without<InterfacesSection>,
+            Without<MouseCameraSection>,
+            Without<ControlsDetailPanel>,
+        ),
+    >,
+    mut interfaces_query: Query<
+        &mut Node,
+        (
+            With<InterfacesSection>,
+            Without<MovementSection>,
+            Without<GameplaySection>,
+            Without<MouseCameraSection>,
+            Without<ControlsDetailPanel>,
+        ),
+    >,
+    mut mouse_camera_query: Query<
+        &mut Node,
+        (
+            With<MouseCameraSection>,
+            Without<MovementSection>,
+            Without<GameplaySection>,
+            Without<InterfacesSection>,
+            Without<ControlsDetailPanel>,
+        ),
+    >,
 ) {
-    if !active_tab.is_changed() {
-        return;
-    }
-
-    for mut n in &mut movement_query {
-        n.display = if *active_tab == ControlsTab::Movement { Display::Flex } else { Display::None };
-    }
-    for mut n in &mut gameplay_query {
-        n.display = if *active_tab == ControlsTab::Gameplay { Display::Flex } else { Display::None };
-    }
-    for mut n in &mut interfaces_query {
-        n.display = if *active_tab == ControlsTab::Interfaces { Display::Flex } else { Display::None };
-    }
-    for mut n in &mut mouse_camera_query {
-        n.display = if *active_tab == ControlsTab::MouseCamera { Display::Flex } else { Display::None };
-    }
-
-    let btn_normal: Handle<Image> = asset_server.load("textures/interfaces/containers/buttons/button_medium.png");
-    let btn_hover: Handle<Image> = asset_server.load("textures/interfaces/containers/buttons/button_medium_hover.png");
-
-    for (tab_btn, children, mut img) in &mut tab_buttons_query {
-        let is_active = tab_btn.0 == *active_tab;
-        img.image = if is_active {
-            btn_hover.clone()
+    for (tab_btn, hovered, children, mut bg) in &mut tab_buttons_query {
+        let is_active = detail_open.0 && tab_btn.0 == *active_tab;
+        let is_hovered = hovered.get();
+        bg.0 = if is_active {
+            palette::NAV_ITEM_ACTIVE_BG
+        } else if is_hovered {
+            palette::NAV_ITEM_HOVER_BG
         } else {
-            btn_normal.clone()
+            Color::NONE
         };
-        let color = if is_active {
-            Color::srgb(1.0, 0.88, 0.45)
+        let color = if is_active || is_hovered {
+            palette::TEXT_ACCENT
         } else {
-            Color::srgb(0.78, 0.78, 0.82)
+            palette::TEXT_PRIMARY
         };
         for child in children.iter() {
             if let Ok(mut text_color) = text_color_query.get_mut(child) {
                 text_color.0 = color;
             }
+            if let Ok(mut vis) = accent_query.get_mut(child) {
+                *vis = if is_active || is_hovered {
+                    Visibility::Visible
+                } else {
+                    Visibility::Hidden
+                };
+            }
         }
+    }
+
+    if !active_tab.is_changed() && !detail_open.is_changed() {
+        return;
+    }
+
+    for mut n in &mut detail_panel_query {
+        n.display = if detail_open.0 {
+            Display::Flex
+        } else {
+            Display::None
+        };
+    }
+
+    for mut n in &mut movement_query {
+        n.display = if *active_tab == ControlsTab::Movement {
+            Display::Flex
+        } else {
+            Display::None
+        };
+    }
+    for mut n in &mut gameplay_query {
+        n.display = if *active_tab == ControlsTab::Gameplay {
+            Display::Flex
+        } else {
+            Display::None
+        };
+    }
+    for mut n in &mut interfaces_query {
+        n.display = if *active_tab == ControlsTab::Interfaces {
+            Display::Flex
+        } else {
+            Display::None
+        };
+    }
+    for mut n in &mut mouse_camera_query {
+        n.display = if *active_tab == ControlsTab::MouseCamera {
+            Display::Flex
+        } else {
+            Display::None
+        };
     }
 }
 
 fn update_controls_card_scale(
-    game_settings: Res<GameSettings>,
-    mut card_query: Query<&mut UiTransform, With<ControlsMenuCard>>,
+    _game_settings: Res<GameSettings>,
+    _card_query: Query<&mut UiTransform, With<ControlsMenuCard>>,
 ) {
-    if !game_settings.is_changed() {
-        return;
-    }
-    let factor = (game_settings.gui_scale as f32 / 4.0).clamp(0.5, 1.0);
-    for mut card_tf in &mut card_query {
-        card_tf.scale = Vec2::splat(factor);
-    }
 }
 
 fn update_action_binding_labels(

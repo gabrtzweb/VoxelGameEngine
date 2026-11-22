@@ -15,12 +15,33 @@ use crate::{
 
 const STATS_UPDATE_INTERVAL: f32 = 0.25;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize, Reflect)]
 pub enum DebugHudMode {
+    Hidden,
+    FpsOnly,
     #[default]
     Minimal,
     Extended,
-    Hidden,
+}
+
+impl DebugHudMode {
+    pub fn next(self) -> Self {
+        match self {
+            Self::Hidden => Self::FpsOnly,
+            Self::FpsOnly => Self::Minimal,
+            Self::Minimal => Self::Extended,
+            Self::Extended => Self::Hidden,
+        }
+    }
+
+    pub fn prev(self) -> Self {
+        match self {
+            Self::Hidden => Self::Extended,
+            Self::FpsOnly => Self::Hidden,
+            Self::Minimal => Self::FpsOnly,
+            Self::Extended => Self::Minimal,
+        }
+    }
 }
 
 #[derive(Resource, Debug, Clone)]
@@ -41,6 +62,10 @@ impl Default for DebugHudSettings {
 impl DebugHudSettings {
     pub fn toggle_mode(&mut self) {
         match self.mode {
+            DebugHudMode::FpsOnly => {
+                self.mode = DebugHudMode::Minimal;
+                self.prev_mode = DebugHudMode::Minimal;
+            }
             DebugHudMode::Minimal => {
                 self.mode = DebugHudMode::Extended;
                 self.prev_mode = DebugHudMode::Extended;
@@ -235,6 +260,11 @@ fn update_dev_stats(
     };
 
     match mode {
+        DebugHudMode::FpsOnly => {
+            *bg_color = BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.50));
+            *border_color = BorderColor::all(Color::srgba(1.0, 1.0, 1.0, 0.14));
+            text.0 = format!("FPS: {fps:.0}");
+        }
         DebugHudMode::Minimal => {
             *bg_color = BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.55));
             *border_color = BorderColor::all(Color::srgba(1.0, 1.0, 1.0, 0.10));

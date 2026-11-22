@@ -110,16 +110,13 @@ impl Plugin for HotbarPlugin {
 
 fn setup_hotbar_ui(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
     icons: Res<BlockIcons>,
     app_font: Option<Res<AppFont>>,
 ) {
+    use crate::menu::theme::palette;
+
     let initial_hotbar = Hotbar::default();
     let font_handle = app_font.as_ref().map(|f| f.source());
-    let hotbar_texture =
-        asset_server.load("textures/interfaces/containers/hotbar.png");
-    let selection_texture =
-        asset_server.load("textures/interfaces/containers/hotbar_selection.png");
 
     let slot_size = 16.0 * HOTBAR_SCALE;
     let icon_size = 16.0 * HOTBAR_SCALE;
@@ -143,16 +140,12 @@ fn setup_hotbar_ui(
             ZIndex(150),
         ))
         .with_children(|parent| {
-            // Scaled hotbar plate texture (480x270 at 4x = 1920x1080 px)
+            // Scaled 16:9 hotbar coordinate frame (480x270 at 4x = 1920x1080 px)
             // NO mouse hover / NO mouse clicks in 3D gameplay
             parent
                 .spawn((
                     HotbarTray,
                     UiTransform::IDENTITY,
-                    ImageNode {
-                        image: hotbar_texture,
-                        ..default()
-                    },
                     Node {
                         width: px(HOTBAR_FRAME_WIDTH),
                         height: px(HOTBAR_FRAME_HEIGHT),
@@ -160,6 +153,22 @@ fn setup_hotbar_ui(
                     },
                 ))
                 .with_children(|tray| {
+                    // Pure-code Dark Iron hotbar chassis framing offhand, 9 primary slots, utility slot, and XP bar
+                    tray.spawn((
+                        Node {
+                            position_type: PositionType::Absolute,
+                            left: px(129.0 * HOTBAR_SCALE),
+                            top: px(226.0 * HOTBAR_SCALE),
+                            width: px(222.0 * HOTBAR_SCALE),
+                            height: px(28.0 * HOTBAR_SCALE),
+                            border: UiRect::all(px(2.0)),
+                            border_radius: BorderRadius::all(px(5.0)),
+                            ..default()
+                        },
+                        BackgroundColor(palette::BAR_BG),
+                        BorderColor::all(palette::BAR_BORDER),
+                    ));
+
                     // Held item name tooltip (Minecraft-style centered text floating above hotbar)
                     let mut tooltip_font = TextFont {
                         font_size: FontSize::Px(20.0),
@@ -201,40 +210,53 @@ fn setup_hotbar_ui(
                     });
 
                     // Field 1: XP Progress Bar at (156, 247), 168x3 px (inside hotbar chassis)
-                    tray.spawn(Node {
-                        position_type: PositionType::Absolute,
-                        left: px(156.0 * HOTBAR_SCALE),
-                        top: px(247.0 * HOTBAR_SCALE),
-                        width: px(168.0 * HOTBAR_SCALE),
-                        height: px(3.0 * HOTBAR_SCALE),
-                        ..default()
-                    })
+                    tray.spawn((
+                        Node {
+                            position_type: PositionType::Absolute,
+                            left: px(156.0 * HOTBAR_SCALE),
+                            top: px(247.0 * HOTBAR_SCALE),
+                            width: px(168.0 * HOTBAR_SCALE),
+                            height: px(3.0 * HOTBAR_SCALE),
+                            border: UiRect::all(px(1.0)),
+                            border_radius: BorderRadius::all(px(2.0)),
+                            ..default()
+                        },
+                        BackgroundColor(palette::SLOT_EMPTY_BG),
+                        BorderColor::all(palette::SLOT_BORDER),
+                    ))
                     .with_children(|xp_bar| {
-                        // Static 45% level fill in ambient green inside inner channel (y=248)
+                        // Static 45% level fill in ambient green inside inner channel
                         xp_bar.spawn((
                             Node {
-                                top: px(1.0 * HOTBAR_SCALE),
-                                left: px(1.0 * HOTBAR_SCALE),
+                                top: px(1.0),
+                                left: px(1.0),
                                 width: Val::Percent(45.0),
                                 height: px(1.0 * HOTBAR_SCALE),
+                                border_radius: BorderRadius::all(px(1.0)),
                                 ..default()
                             },
-                            BackgroundColor(Color::srgba(0.22, 0.78, 0.32, 0.75)),
+                            BackgroundColor(Color::srgba(0.22, 0.78, 0.32, 0.85)),
                         ));
                     });
 
                     // Field 2: Off-hand Slot display at (134, 231), 16x16 px (non-clickable visual readout)
-                    tray.spawn(Node {
-                        position_type: PositionType::Absolute,
-                        left: px(134.0 * HOTBAR_SCALE),
-                        top: px(231.0 * HOTBAR_SCALE),
-                        width: px(slot_size),
-                        height: px(slot_size),
-                        display: Display::Flex,
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        ..default()
-                    })
+                    tray.spawn((
+                        Node {
+                            position_type: PositionType::Absolute,
+                            left: px(134.0 * HOTBAR_SCALE),
+                            top: px(231.0 * HOTBAR_SCALE),
+                            width: px(slot_size),
+                            height: px(slot_size),
+                            display: Display::Flex,
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            border: UiRect::all(px(1.5)),
+                            border_radius: BorderRadius::all(px(3.0)),
+                            ..default()
+                        },
+                        BackgroundColor(palette::SLOT_EMPTY_BG),
+                        BorderColor::all(palette::SLOT_BORDER),
+                    ))
                     .with_children(|slot| {
                         slot.spawn((
                             HotbarOffhandIcon,
@@ -249,17 +271,23 @@ fn setup_hotbar_ui(
                     });
 
                     // Field 12: Quick Utility Slot display at (330, 231), 16x16 px (non-clickable visual readout)
-                    tray.spawn(Node {
-                        position_type: PositionType::Absolute,
-                        left: px(330.0 * HOTBAR_SCALE),
-                        top: px(231.0 * HOTBAR_SCALE),
-                        width: px(slot_size),
-                        height: px(slot_size),
-                        display: Display::Flex,
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        ..default()
-                    })
+                    tray.spawn((
+                        Node {
+                            position_type: PositionType::Absolute,
+                            left: px(330.0 * HOTBAR_SCALE),
+                            top: px(231.0 * HOTBAR_SCALE),
+                            width: px(slot_size),
+                            height: px(slot_size),
+                            display: Display::Flex,
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            border: UiRect::all(px(1.5)),
+                            border_radius: BorderRadius::all(px(3.0)),
+                            ..default()
+                        },
+                        BackgroundColor(palette::SLOT_EMPTY_BG),
+                        BorderColor::all(palette::SLOT_BORDER),
+                    ))
                     .with_children(|slot| {
                         slot.spawn((
                             HotbarUtilityIcon,
@@ -302,8 +330,12 @@ fn setup_hotbar_ui(
                                 display: Display::Flex,
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
+                                border: UiRect::all(px(1.5)),
+                                border_radius: BorderRadius::all(px(3.0)),
                                 ..default()
                             },
+                            BackgroundColor(palette::SLOT_BG),
+                            BorderColor::all(palette::SLOT_BORDER),
                         ))
                         .with_children(|slot| {
                             // Centered 2D item icon
@@ -338,22 +370,22 @@ fn setup_hotbar_ui(
                         });
                     }
 
-                    // Active Selection Box (20x20 px bevel frame centered over active slot)
+                    // Active Selection Box (20x20 px gold accent frame centered over active slot)
                     let active_slot_x = HOTBAR_SLOT_X_COORDS[initial_hotbar.active_slot];
                     tray.spawn((
                         HotbarSelectionBox,
-                        ImageNode {
-                            image: selection_texture,
-                            ..default()
-                        },
                         Node {
                             position_type: PositionType::Absolute,
                             left: px((active_slot_x - 2.0) * HOTBAR_SCALE),
                             top: px((HOTBAR_SLOT_Y - 2.0) * HOTBAR_SCALE),
                             width: px(selection_size),
                             height: px(selection_size),
+                            border: UiRect::all(px(3.0)),
+                            border_radius: BorderRadius::all(px(4.0)),
                             ..default()
                         },
+                        BackgroundColor(palette::SLOT_SELECTED_BG),
+                        BorderColor::all(palette::SLOT_SELECTED_BORDER),
                         ZIndex(20),
                     ));
                 });

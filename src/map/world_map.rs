@@ -57,9 +57,9 @@ pub struct WorldMapState {
     pub last_cursor_screen_pos: Option<Vec2>,
     pub terrain_image: Handle<Image>,
     pub marker_image: Handle<Image>,
-    pub background_image: Handle<Image>,
     pub last_drawn_center: Vec2,
     pub last_drawn_zoom: f32,
+    pub last_drawn_aspect: f32,
     pub last_cache_version: u64,
 }
 
@@ -74,9 +74,9 @@ impl Plugin for WorldMapPlugin {
                 Update,
                 (
                     handle_world_map_input,
+                    handle_world_map_sidebar_buttons,
                     sync_world_map_terrain,
                     update_world_map_ui,
-                    update_world_map_frame_scale,
                 )
                     .run_if(in_state(MenuState::WorldMap)),
             );
@@ -107,8 +107,6 @@ fn setup_world_map_resources(
 
     let marker_handle: Handle<Image> =
         asset_server.load("textures/interfaces/atlases/decorations/marker_red.png");
-    let bg_handle: Handle<Image> =
-        asset_server.load("textures/interfaces/containers/map.png");
 
     commands.insert_resource(WorldMapState {
         center: Vec2::ZERO,
@@ -117,11 +115,17 @@ fn setup_world_map_resources(
         last_cursor_screen_pos: None,
         terrain_image: terrain_handle,
         marker_image: marker_handle,
-        background_image: bg_handle,
         last_drawn_center: Vec2::splat(999_999.0),
         last_drawn_zoom: -1.0,
+        last_drawn_aspect: -1.0,
         last_cache_version: u64::MAX,
     });
+}
+
+#[derive(Component, Clone, Copy, PartialEq, Eq)]
+enum WorldMapAction {
+    CenterPlayer,
+    CreateWaypoint,
 }
 
 fn spawn_world_map_ui(
@@ -130,11 +134,18 @@ fn spawn_world_map_ui(
     player_query: Query<&Transform, With<Player>>,
     app_font: Option<Res<crate::core::AppFont>>,
     loc: Option<Res<crate::core::Localization>>,
-    game_settings: Option<Res<crate::menu::GameSettings>>,
+    _game_settings: Option<Res<crate::menu::GameSettings>>,
 ) {
-    let gui_scale = game_settings.as_ref().map_or(4, |s| s.gui_scale).clamp(2, 4);
-    let scale_factor = (gui_scale as f32 / 4.0).clamp(0.5, 1.0);
+    use bevy::{picking::hover::Hovered, ui_widgets::Button};
+    use crate::menu::{ThemedButton, menu_bar::MENU_BAR_HEIGHT, theme::palette};
+
     let font_handle = app_font.as_ref().map(|f| f.source()).unwrap_or_default();
+
+    let make_font = |size: f32| TextFont {
+        font: font_handle.clone(),
+        font_size: FontSize::Px(size),
+        ..default()
+    };
 
     // When opening the world map, center immediately on the player's position
     if let Ok(player_transform) = player_query.single() {
@@ -143,8 +154,6 @@ fn spawn_world_map_ui(
     }
     map_state.last_drawn_center = Vec2::splat(999_999.0); // Force redraw
 
-    let dimming_alpha = game_settings.as_ref().map_or(0.75, |s| s.background_dimming.alpha());
-
     commands
         .spawn((
             WorldMapRoot,
@@ -152,40 +161,35 @@ fn spawn_world_map_ui(
             Node {
                 position_type: PositionType::Absolute,
                 left: px(0.0),
-                top: px(0.0),
+                top: px(MENU_BAR_HEIGHT),
                 right: px(0.0),
                 bottom: px(0.0),
                 display: Display::Flex,
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::Stretch,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, dimming_alpha)),
+            BackgroundColor(palette::PANEL_INNER_BG),
             ZIndex(250),
         ))
         .with_children(|root| {
-            // Fullscreen 16:9 World Map Frame (480x270_map.png @ 4x, modulated by gui_scale)
+            // Left / Main Interactive Full-Height World Map Viewport
             root.spawn((
                 WorldMapFrame,
-                UiTransform {
-                    scale: Vec2::splat(scale_factor),
-                    ..UiTransform::IDENTITY
-                },
+                WorldMapViewport,
                 Node {
-                    width: px(WORLD_MAP_FRAME_WIDTH),
-                    height: px(WORLD_MAP_FRAME_HEIGHT),
-                    min_width: px(WORLD_MAP_FRAME_WIDTH),
-                    min_height: px(WORLD_MAP_FRAME_HEIGHT),
-                    flex_shrink: 0.0,
+                    flex_grow: 1.0,
+                    height: percent(100.0),
+                    overflow: Overflow::clip(),
                     ..default()
                 },
+                ZIndex(5),
             ))
-            .with_children(|frame| {
-                // Background map plate image filling the 1920x1080 frame
-                frame.spawn((
+            .with_children(|viewport| {
+                // Terrain Render Texture (fills viewport 100%)
+                viewport.spawn((
                     ImageNode {
-                        image: map_state.background_image.clone(),
+                        image: map_state.terrain_image.clone(),
                         image_mode: NodeImageMode::Stretch,
                         ..default()
                     },
@@ -193,140 +197,338 @@ fn spawn_world_map_ui(
                         position_type: PositionType::Absolute,
                         left: px(0.0),
                         top: px(0.0),
-                        width: px(WORLD_MAP_FRAME_WIDTH),
-                        height: px(WORLD_MAP_FRAME_HEIGHT),
+                        width: percent(100.0),
+                        height: percent(100.0),
                         ..default()
                     },
                     ZIndex(1),
                 ));
 
-                // Interactive World Map Terrain Viewport inside well (left: 60, top: 140, 1800x880)
-                frame
-                    .spawn((
-                        WorldMapViewport,
-                        Node {
-                            position_type: PositionType::Absolute,
-                            left: px(WORLD_MAP_VIEWPORT_LEFT),
-                            top: px(WORLD_MAP_VIEWPORT_TOP),
-                            width: px(WORLD_MAP_VIEWPORT_WIDTH),
-                            height: px(WORLD_MAP_VIEWPORT_HEIGHT),
-                            overflow: Overflow::clip(),
+                // Player Directional Red Marker (percentage-positioned so it stays 100% locked at every zoom)
+                let half_m = WORLD_MARKER_SIZE / 2.0;
+                viewport.spawn((
+                    WorldMapPlayerMarker,
+                    ImageNode {
+                        image: map_state.marker_image.clone(),
+                        image_mode: NodeImageMode::Stretch,
+                        ..default()
+                    },
+                    Node {
+                        position_type: PositionType::Absolute,
+                        width: px(WORLD_MARKER_SIZE),
+                        height: px(WORLD_MARKER_SIZE),
+                        left: percent(50.0),
+                        top: percent(50.0),
+                        margin: UiRect {
+                            left: px(-half_m),
+                            top: px(-half_m),
                             ..default()
                         },
-                        ZIndex(5),
+                        ..default()
+                    },
+                    UiTransform::IDENTITY,
+                    Visibility::Visible,
+                    ZIndex(30),
+                ));
+
+                // Subtle bottom-left controls hint
+                let hint_text = loc.as_ref().map_or(
+                    "LMB Drag: Pan   |   Scroll: Zoom   |   Space: Center   |   [M / ESC] Close",
+                    |l| l.t("map.controls_hint"),
+                );
+                viewport
+                    .spawn((
+                        Node {
+                            position_type: PositionType::Absolute,
+                            left: px(18.0),
+                            bottom: px(14.0),
+                            padding: UiRect::axes(px(12.0), px(6.0)),
+                            border_radius: BorderRadius::all(px(4.0)),
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgba(0.05, 0.06, 0.08, 0.78)),
+                        ZIndex(40),
                     ))
-                    .with_children(|viewport| {
-                        // Terrain Render Texture (fills viewport 100%)
-                        viewport.spawn((
-                            ImageNode {
-                                image: map_state.terrain_image.clone(),
-                                image_mode: NodeImageMode::Stretch,
-                                ..default()
-                            },
-                            Node {
-                                position_type: PositionType::Absolute,
-                                left: px(0.0),
-                                top: px(0.0),
-                                width: px(WORLD_MAP_VIEWPORT_WIDTH),
-                                height: px(WORLD_MAP_VIEWPORT_HEIGHT),
-                                ..default()
-                            },
-                            ZIndex(1),
+                    .with_children(|pill| {
+                        pill.spawn((
+                            Text::new(hint_text),
+                            make_font(13.0),
+                            TextColor(palette::TEXT_MUTED),
+                            crate::core::text_shadow_default(),
+                        ));
+                    });
+            });
+
+            // Right-Docked Full-Height Map Sidebar (standardized 310px width)
+            root.spawn((
+                Node {
+                    width: px(palette::DRAWER_COL1_WIDTH),
+                    min_width: px(palette::DRAWER_COL1_WIDTH),
+                    flex_shrink: 0.0,
+                    height: percent(100.0),
+                    border: UiRect::left(px(1.5)),
+                    padding: UiRect::all(px(22.0)),
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Column,
+                    row_gap: px(18.0),
+                    ..default()
+                },
+                BackgroundColor(palette::DRAWER_COL1_BG),
+                BorderColor::all(palette::DRAWER_DIVIDER),
+                ZIndex(10),
+            ))
+            .with_children(|sidebar| {
+                // Quick Actions
+                sidebar
+                    .spawn(Node {
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Column,
+                        row_gap: px(8.0),
+                        ..default()
+                    })
+                    .with_children(|actions| {
+                        actions.spawn((
+                            Text::new("MAP TOOLS"),
+                            make_font(12.0),
+                            TextColor(palette::TEXT_MUTED),
                         ));
 
-                        // Player Directional Red Marker
-                        let half_m = WORLD_MARKER_SIZE / 2.0;
-                        viewport.spawn((
-                            WorldMapPlayerMarker,
-                            ImageNode {
-                                image: map_state.marker_image.clone(),
-                                image_mode: NodeImageMode::Stretch,
-                                ..default()
-                            },
-                            Node {
-                                position_type: PositionType::Absolute,
-                                width: px(WORLD_MARKER_SIZE),
-                                height: px(WORLD_MARKER_SIZE),
-                                left: px(WORLD_MAP_VIEWPORT_WIDTH / 2.0 - half_m),
-                                top: px(WORLD_MAP_VIEWPORT_HEIGHT / 2.0 - half_m),
-                                ..default()
-                            },
-                            UiTransform::IDENTITY,
-                            Visibility::Visible,
-                            ZIndex(30),
-                        ));
+                        let btn_theme = ThemedButton::subtle();
 
-                        // Integrated In-Map HUD overlay in bottom checkered area
-                        viewport
+                        // + New Waypoint button
+                        actions
                             .spawn((
+                                Button,
+                                Hovered::default(),
+                                WorldMapAction::CreateWaypoint,
+                                btn_theme,
+                                BackgroundColor(btn_theme.normal_bg),
+                                BorderColor::all(palette::ACCENT_LINE),
                                 Node {
-                                    position_type: PositionType::Absolute,
-                                    left: px(20.0),
-                                    right: px(20.0),
-                                    bottom: px(14.0),
+                                    width: percent(100.0),
+                                    height: px(38.0),
+                                    border: UiRect::all(px(1.5)),
+                                    border_radius: BorderRadius::all(px(4.0)),
                                     display: Display::Flex,
-                                    flex_direction: FlexDirection::Column,
-                                    row_gap: px(4.0),
+                                    justify_content: JustifyContent::Center,
+                                    align_items: AlignItems::Center,
                                     ..default()
                                 },
-                                ZIndex(40),
                             ))
-                            .with_children(|overlay| {
-                                // Row 1: Controls Hint
-                                let hint_text = loc.as_ref().map_or(
-                                    "LMB Drag: Pan   |   Scroll: Zoom   |   Space: Center on Player   |   [M / ESC] Close",
-                                    |l| l.t("map.controls_hint"),
-                                );
-                                overlay.spawn((
-                                    Text::new(hint_text),
-                                    TextFont {
-                                        font: font_handle.clone(),
-                                        font_size: FontSize::Px(15.0),
-                                        ..default()
-                                    },
-                                    TextColor(Color::WHITE),
+                            .with_children(|btn| {
+                                btn.spawn((
+                                    Text::new("+ New Waypoint"),
+                                    make_font(14.0),
+                                    TextColor(palette::TEXT_ACCENT),
                                     crate::core::text_shadow_default(),
                                 ));
-
-                                // Row 2: Coordinates & Cursor / Zoom
-                                overlay
-                                    .spawn(Node {
-                                        display: Display::Flex,
-                                        flex_direction: FlexDirection::Row,
-                                        justify_content: JustifyContent::SpaceBetween,
-                                        align_items: AlignItems::Center,
-                                        width: percent(100.0),
-                                        ..default()
-                                    })
-                                    .with_children(|coords_row| {
-                                        coords_row.spawn((
-                                            WorldMapInfoText,
-                                            Text::new("Player: X: 0 Y: 0 Z: 0"),
-                                            TextFont {
-                                                font: font_handle.clone(),
-                                                font_size: FontSize::Px(15.0),
-                                                ..default()
-                                            },
-                                            TextColor(Color::WHITE),
-                                            crate::core::text_shadow_default(),
-                                        ));
-
-                                        coords_row.spawn((
-                                            WorldMapCursorText,
-                                            Text::new("Cursor: X: 0 Z: 0 | Zoom: 1.00x"),
-                                            TextFont {
-                                                font: font_handle,
-                                                font_size: FontSize::Px(15.0),
-                                                ..default()
-                                            },
-                                            TextColor(Color::WHITE),
-                                            crate::core::text_shadow_default(),
-                                        ));
-                                    });
                             });
+
+                        // Center on Player button
+                        actions
+                            .spawn((
+                                Button,
+                                Hovered::default(),
+                                WorldMapAction::CenterPlayer,
+                                btn_theme,
+                                BackgroundColor(btn_theme.normal_bg),
+                                BorderColor::all(btn_theme.normal_border),
+                                Node {
+                                    width: percent(100.0),
+                                    height: px(36.0),
+                                    border: UiRect::all(px(1.5)),
+                                    border_radius: BorderRadius::all(px(4.0)),
+                                    display: Display::Flex,
+                                    justify_content: JustifyContent::Center,
+                                    align_items: AlignItems::Center,
+                                    ..default()
+                                },
+                            ))
+                            .with_children(|btn| {
+                                btn.spawn((
+                                    Text::new("Center on Player"),
+                                    make_font(14.0),
+                                    TextColor(palette::TEXT_PRIMARY),
+                                    crate::core::text_shadow_default(),
+                                ));
+                            });
+                    });
+
+                // Waypoints List (placeholder)
+                sidebar
+                    .spawn(Node {
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Column,
+                        row_gap: px(8.0),
+                        ..default()
+                    })
+                    .with_children(|wps| {
+                        wps.spawn((
+                            Text::new("WAYPOINTS"),
+                            make_font(12.0),
+                            TextColor(palette::TEXT_MUTED),
+                        ));
+
+                        wps.spawn((
+                            Node {
+                                width: percent(100.0),
+                                padding: UiRect::all(px(12.0)),
+                                border: UiRect::all(px(1.0)),
+                                border_radius: BorderRadius::all(px(5.0)),
+                                display: Display::Flex,
+                                flex_direction: FlexDirection::Row,
+                                justify_content: JustifyContent::SpaceBetween,
+                                align_items: AlignItems::Center,
+                                ..default()
+                            },
+                            BackgroundColor(palette::PANEL_INNER_BG),
+                            BorderColor::all(palette::PANEL_BORDER_SUBTLE),
+                        ))
+                        .with_children(|wp| {
+                            wp.spawn((
+                                Text::new("Spawn Camp"),
+                                make_font(13.0),
+                                TextColor(palette::TEXT_PRIMARY),
+                            ));
+                            wp.spawn((
+                                Text::new("X: -10  Z: 14"),
+                                make_font(12.0),
+                                TextColor(palette::TEXT_MUTED),
+                            ));
+                        });
+                    });
+
+                // Map Layers / Filters (placeholder)
+                sidebar
+                    .spawn(Node {
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Column,
+                        row_gap: px(6.0),
+                        ..default()
+                    })
+                    .with_children(|layers| {
+                        layers.spawn((
+                            Text::new("LAYERS"),
+                            make_font(12.0),
+                            TextColor(palette::TEXT_MUTED),
+                        ));
+
+                        for (name, state) in [
+                            ("Player Marker", "ON"),
+                            ("Waypoints", "ON"),
+                            ("Biome Grid", "ON"),
+                            ("Caves / Underground", "OFF"),
+                        ] {
+                            layers
+                                .spawn(Node {
+                                    width: percent(100.0),
+                                    height: px(28.0),
+                                    padding: UiRect::horizontal(px(10.0)),
+                                    border_radius: BorderRadius::all(px(4.0)),
+                                    display: Display::Flex,
+                                    flex_direction: FlexDirection::Row,
+                                    justify_content: JustifyContent::SpaceBetween,
+                                    align_items: AlignItems::Center,
+                                    ..default()
+                                })
+                                .insert(BackgroundColor(palette::PANEL_INNER_BG))
+                                .with_children(|row| {
+                                    row.spawn((
+                                        Text::new(name),
+                                        make_font(13.0),
+                                        TextColor(palette::TEXT_MUTED),
+                                    ));
+                                    row.spawn((
+                                        Text::new(state),
+                                        make_font(12.0),
+                                        TextColor(if state == "ON" {
+                                            palette::TEXT_ACCENT
+                                        } else {
+                                            palette::TEXT_MUTED
+                                        }),
+                                    ));
+                                });
+                        }
+                    });
+
+                // Push live coordinate readouts to the bottom of the sidebar
+                sidebar.spawn(Node {
+                    flex_grow: 1.0,
+                    ..default()
+                });
+
+                sidebar
+                    .spawn((
+                        Node {
+                            width: percent(100.0),
+                            padding: UiRect::all(px(12.0)),
+                            border: UiRect::all(px(1.0)),
+                            border_radius: BorderRadius::all(px(5.0)),
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Column,
+                            row_gap: px(6.0),
+                            ..default()
+                        },
+                        BackgroundColor(palette::PANEL_INNER_BG),
+                        BorderColor::all(palette::PANEL_BORDER_SUBTLE),
+                    ))
+                    .with_children(|coords| {
+                        coords.spawn((
+                            WorldMapInfoText,
+                            Text::new("Player: X: 0 Y: 0 Z: 0"),
+                            make_font(13.0),
+                            TextColor(palette::TEXT_PRIMARY),
+                            crate::core::text_shadow_default(),
+                        ));
+                        coords.spawn((
+                            WorldMapCursorText,
+                            Text::new("Cursor: X: 0 Z: 0 | Zoom: 1.00x"),
+                            make_font(12.0),
+                            TextColor(palette::TEXT_MUTED),
+                            crate::core::text_shadow_default(),
+                        ));
                     });
             });
         });
+}
+
+fn handle_world_map_sidebar_buttons(
+    mut buttons_query: Query<
+        (
+            &bevy::picking::hover::Hovered,
+            Has<bevy::ui::Pressed>,
+            &WorldMapAction,
+            &crate::menu::ThemedButton,
+            &mut BackgroundColor,
+            &mut BorderColor,
+        ),
+        With<bevy::ui_widgets::Button>,
+    >,
+    mouse: Res<ButtonInput<MouseButton>>,
+    player_query: Query<&Transform, With<Player>>,
+    mut map_state: ResMut<WorldMapState>,
+) {
+    let clicked = mouse.just_pressed(MouseButton::Left);
+    for (hovered, is_pressed, action, theme, mut bg, mut border) in &mut buttons_query {
+        let (next_bg, next_border) = theme.colors(hovered.get(), is_pressed);
+        bg.0 = next_bg;
+        if *action != WorldMapAction::CreateWaypoint {
+            *border = BorderColor::all(next_border);
+        }
+        if hovered.get() && clicked {
+            match action {
+                WorldMapAction::CenterPlayer => {
+                    if let Ok(t) = player_query.single() {
+                        let p = t.translation;
+                        map_state.center = Vec2::new(p.x / VOXEL_SIZE, p.z / VOXEL_SIZE);
+                    }
+                }
+                WorldMapAction::CreateWaypoint => {
+                    info!("Create Waypoint placeholder triggered.");
+                }
+            }
+        }
+    }
 }
 
 fn despawn_world_map_ui(mut commands: Commands, query: Query<Entity, With<WorldMapRoot>>) {
@@ -343,7 +545,7 @@ fn handle_world_map_input(
     player_query: Query<&Transform, With<Player>>,
     mut map_state: ResMut<WorldMapState>,
     mut    cursor_mode: ResMut<CursorMode>,
-    viewport_query: Query<(&GlobalTransform, &ComputedNode), With<WorldMapViewport>>,
+    viewport_query: Query<(&UiGlobalTransform, &ComputedNode), With<WorldMapViewport>>,
 ) {
     let Some(window) = window else {
         return;
@@ -389,18 +591,21 @@ fn handle_world_map_input(
     // 4. Mouse Left Click Drag Pan
     if mouse_button.pressed(MouseButton::Left) {
         if let (Some(curr), Some(prev)) = (cursor_pos, map_state.last_cursor_screen_pos) {
-            let (in_vp, vp_scale) = if let Ok((vp_transform, computed)) = viewport_query.single() {
-                let actual_scale = vp_transform.to_scale_rotation_translation().0.x;
-                let actual_size = computed.size() * actual_scale;
-                let vp_pos = vp_transform.translation().truncate() - actual_size * 0.5;
+            let (in_vp, vp_scale_y) = if let Ok((vp_transform, computed)) = viewport_query.single() {
+                let logical_size = computed.size() * computed.inverse_scale_factor();
+                let vp_center = vp_transform.translation * computed.inverse_scale_factor();
+                let vp_pos = vp_center - logical_size * 0.5;
                 let in_x = curr.x - vp_pos.x;
                 let in_y = curr.y - vp_pos.y;
-                let is_inside = in_x >= 0.0 && in_x <= actual_size.x && in_y >= 0.0 && in_y <= actual_size.y;
-                let s = actual_size.x / (WORLD_MAP_WIDTH as f32);
-                let safe_s = if s.is_finite() && s > 0.01 { s } else { 1.0 };
-                (is_inside, safe_s)
+                let is_inside = in_x >= 0.0
+                    && in_x <= logical_size.x
+                    && in_y >= 0.0
+                    && in_y <= logical_size.y;
+                let sy = logical_size.y / (WORLD_MAP_HEIGHT as f32);
+                let safe_sy = if sy.is_finite() && sy > 0.01 { sy } else { 1.0 };
+                (is_inside, safe_sy)
             } else {
-                (curr.y >= WORLD_MAP_VIEWPORT_TOP - 20.0, 1.0)
+                (curr.y >= 80.0, 1.0)
             };
 
             if in_vp || map_state.is_dragging {
@@ -410,7 +615,7 @@ fn handle_world_map_input(
                 } else {
                     1.0
                 };
-                let denom = vp_scale * current_zoom;
+                let denom = vp_scale_y * current_zoom;
                 if denom.abs() > 0.001 {
                     let world_delta = screen_delta / denom;
                     if world_delta.x.is_finite() && world_delta.y.is_finite() {
@@ -435,18 +640,29 @@ fn sync_world_map_terrain(
     map_cache: Res<MapCache>,
     mut map_state: ResMut<WorldMapState>,
     mut images: ResMut<Assets<Image>>,
+    viewport_query: Query<&ComputedNode, With<WorldMapViewport>>,
 ) {
+    let tex_aspect = (WORLD_MAP_WIDTH as f32) / (WORLD_MAP_HEIGHT as f32);
+    let vp_aspect = viewport_query
+        .single()
+        .ok()
+        .map(|c| c.size())
+        .filter(|s| s.x > 1.0 && s.y > 1.0)
+        .map_or(tex_aspect, |s| s.x / s.y);
+
     let center_dist = (map_state.center - map_state.last_drawn_center).length();
     let zoom_diff = (map_state.zoom - map_state.last_drawn_zoom).abs();
+    let aspect_diff = (vp_aspect - map_state.last_drawn_aspect).abs();
     let cache_changed = map_cache.version != map_state.last_cache_version;
 
-    // Redraw when moved by more than 0.25 blocks, or zoom changed, or cache updated
-    if center_dist < 0.25 && zoom_diff < 0.005 && !cache_changed {
+    // Redraw when moved, zoomed, viewport resized, or cache updated
+    if center_dist < 0.25 && zoom_diff < 0.005 && aspect_diff < 0.005 && !cache_changed {
         return;
     }
 
     map_state.last_drawn_center = map_state.center;
     map_state.last_drawn_zoom = map_state.zoom;
+    map_state.last_drawn_aspect = vp_aspect;
     map_state.last_cache_version = map_cache.version;
 
     let Some(mut image) = images.get_mut(&map_state.terrain_image) else {
@@ -463,6 +679,8 @@ fn sync_world_map_terrain(
     } else {
         1.0
     };
+    let aspect_scale_x = (vp_aspect / tex_aspect).clamp(0.25, 4.0);
+    let zoom_x = zoom / aspect_scale_x;
     let center = if map_state.center.is_finite() {
         map_state.center
     } else {
@@ -490,7 +708,7 @@ fn sync_world_map_terrain(
         let mut north_chunk: Option<&crate::map::cache::MapChunk> = None;
 
         for px in 0..WORLD_MAP_WIDTH {
-            let raw_x = center.x + (px as f32 - half_w) / zoom;
+            let raw_x = center.x + (px as f32 - half_w) / zoom_x;
             let wx = if raw_x.is_finite() {
                 raw_x.clamp(-2_000_000.0, 2_000_000.0).floor() as i32
             } else {
@@ -536,7 +754,7 @@ fn update_world_map_ui(
     camera_query: Query<&Transform, (With<Camera3d>, With<PlayerCamera>)>,
     window: Option<Single<&Window, With<PrimaryWindow>>>,
     map_state: Res<WorldMapState>,
-    viewport_query: Query<(&ComputedNode, &GlobalTransform), With<WorldMapViewport>>,
+    viewport_query: Query<(&ComputedNode, &UiGlobalTransform), With<WorldMapViewport>>,
     loc: Option<Res<crate::core::Localization>>,
     mut marker_query: Query<
         (&mut Node, &mut UiTransform, &mut Visibility),
@@ -566,9 +784,10 @@ fn update_world_map_ui(
         }
     }
 
-    // 2. Position the Player Marker relative to the interactive viewport
+    // 2. Position the Player Marker relative to the interactive viewport (in logical pixels)
     let half_w = (WORLD_MAP_WIDTH as f32) / 2.0;
     let half_h = (WORLD_MAP_HEIGHT as f32) / 2.0;
+    let tex_aspect = (WORLD_MAP_WIDTH as f32) / (WORLD_MAP_HEIGHT as f32);
     let safe_zoom = if map_state.zoom.is_finite() && map_state.zoom > 0.05 {
         map_state.zoom
     } else {
@@ -580,26 +799,26 @@ fn update_world_map_ui(
         Vec2::ZERO
     };
 
-    let player_map_x = half_w + (p.x / VOXEL_SIZE - center.x) * safe_zoom;
+    let (vp_w, vp_h) = if let Ok((vp_node, _)) = viewport_query.single() {
+        let logical = vp_node.size() * vp_node.inverse_scale_factor();
+        if logical.x > 1.0 && logical.y > 1.0 {
+            (logical.x, logical.y)
+        } else {
+            (WORLD_MAP_VIEWPORT_WIDTH, WORLD_MAP_VIEWPORT_HEIGHT)
+        }
+    } else {
+        (WORLD_MAP_VIEWPORT_WIDTH, WORLD_MAP_VIEWPORT_HEIGHT)
+    };
+
+    let vp_aspect = vp_w / vp_h;
+    let aspect_scale_x = (vp_aspect / tex_aspect).clamp(0.25, 4.0);
+    let zoom_x = safe_zoom / aspect_scale_x;
+
+    let player_map_x = half_w + (p.x / VOXEL_SIZE - center.x) * zoom_x;
     let player_map_y = half_h + (p.z / VOXEL_SIZE - center.y) * safe_zoom;
 
-    let scale_x = WORLD_MAP_VIEWPORT_WIDTH / (WORLD_MAP_WIDTH as f32);
-    let scale_y = WORLD_MAP_VIEWPORT_HEIGHT / (WORLD_MAP_HEIGHT as f32);
-    let half_m = WORLD_MARKER_SIZE / 2.0;
-
-    let raw_mx = player_map_x * scale_x - half_m;
-    let marker_pos_x = if raw_mx.is_finite() {
-        raw_mx.clamp(-100.0, WORLD_MAP_VIEWPORT_WIDTH + 100.0)
-    } else {
-        WORLD_MAP_VIEWPORT_WIDTH / 2.0 - half_m
-    };
-
-    let raw_my = player_map_y * scale_y - half_m;
-    let marker_pos_y = if raw_my.is_finite() {
-        raw_my.clamp(-100.0, WORLD_MAP_VIEWPORT_HEIGHT + 100.0)
-    } else {
-        WORLD_MAP_VIEWPORT_HEIGHT / 2.0 - half_m
-    };
+    let u_pct = ((player_map_x / (WORLD_MAP_WIDTH as f32)) * 100.0).clamp(-20.0, 120.0);
+    let v_pct = ((player_map_y / (WORLD_MAP_HEIGHT as f32)) * 100.0).clamp(-20.0, 120.0);
 
     let marker_visible = player_map_x >= 0.0
         && player_map_x <= WORLD_MAP_WIDTH as f32
@@ -614,8 +833,8 @@ fn update_world_map_ui(
     };
 
     for (mut node, mut ui_transform, mut vis) in &mut marker_query {
-        node.left = px(marker_pos_x);
-        node.top = px(marker_pos_y);
+        node.left = percent(u_pct);
+        node.top = percent(v_pct);
         ui_transform.translation = Val2::ZERO;
         ui_transform.scale = Vec2::ONE;
         ui_transform.rotation = Rot2::radians(-yaw);
@@ -626,12 +845,12 @@ fn update_world_map_ui(
         };
     }
 
-    // 3. Update Cursor coordinates under mouse pointer
+    // 3. Update Cursor coordinates under mouse pointer (in logical pixels)
     if let (Some(window), Ok((vp_node, vp_transform))) = (window, viewport_query.single()) {
-        let actual_scale = vp_transform.to_scale_rotation_translation().0.truncate();
-        let vp_size = vp_node.size() * actual_scale;
+        let inv_scale = vp_node.inverse_scale_factor();
+        let vp_size = vp_node.size() * inv_scale;
         if vp_size.x > 0.0 && vp_size.y > 0.0 {
-            let vp_pos = vp_transform.translation().truncate() - vp_size / 2.0;
+            let vp_pos = vp_transform.translation * inv_scale - vp_size / 2.0;
             if let Some(cursor) = window.cursor_position() {
                 let in_vp_x = cursor.x - vp_pos.x;
                 let in_vp_y = cursor.y - vp_pos.y;
@@ -643,7 +862,7 @@ fn update_world_map_ui(
                     let tex_x = in_vp_x / scale_x;
                     let tex_y = in_vp_y / scale_y;
 
-                    let raw_cx = center.x + (tex_x - half_w) / safe_zoom;
+                    let raw_cx = center.x + (tex_x - half_w) / zoom_x;
                     let raw_cz = center.y + (tex_y - half_h) / safe_zoom;
                     let cursor_world_x = if raw_cx.is_finite() {
                         raw_cx.clamp(-2_000_000.0, 2_000_000.0).floor() as i32
@@ -686,22 +905,6 @@ fn update_world_map_ui(
         } else {
             **text = format!("Zoom: {:.2}x", safe_zoom);
         }
-    }
-}
-
-fn update_world_map_frame_scale(
-    game_settings: Option<Res<crate::menu::GameSettings>>,
-    mut frame_query: Query<&mut UiTransform, With<WorldMapFrame>>,
-) {
-    let Some(settings) = game_settings else {
-        return;
-    };
-    if !settings.is_changed() {
-        return;
-    }
-    let factor = (settings.gui_scale as f32 / 4.0).clamp(0.5, 1.0);
-    for mut tf in &mut frame_query {
-        tf.scale = Vec2::splat(factor);
     }
 }
 

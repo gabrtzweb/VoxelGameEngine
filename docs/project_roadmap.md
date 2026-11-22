@@ -87,6 +87,9 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 | **01** | **[Engine-Wide Performance Optimization & LOD Pipeline](#phase-1-engine-wide-performance-optimization--lod-pipeline-completed)** | **Completed** | Terrain/biome generation caching, LOD meshing overhaul, optional leaf culling, shader/grass/celestial optimizations, streaming & chunk cache improvements |
 | **02** | **[World Terrain Polish & Surface Detail Features](#phase-2-world-terrain-polish--surface-detail-features-completed)** | **Completed** | Universal slab/stair terrain smoothing, sculpted outcrops & boulders, ground bushes, ocean biomes & coral/reefstone formations, fallen logs & forest moss, sculpted tree canopies, campfire, toggleable lamps, geothermal vents |
 | **03** | **[Atmospheric & Gameplay Particle Engine](#phase-3-atmospheric--gameplay-particle-engine-completed)** | **Completed** | Falling canopy leaves (21 sprites, selective tint), underwater geothermal/magma bubbles + pop, footstep/landing dust, blinking night fireflies, daytime pollen, player/item water splashes, campfire smoke |
+| **04** | **[Pure-Code UI & Menu System Redesign](#phase-4-pure-code-ui--menu-system-redesign-in-progress)** | **In Progress** | Pure Bevy UI Dark Iron theme (`src/menu/theme.rs`), removal of `assets/textures/interfaces/containers/`, 6-tab top bar with icons & live status HUD, 3-column cascading System/Settings/Controls drawers, fullscreen World Map with right sidebar, Skills/Quests/Journal screens, and expanded Settings |
+| **05** | **[Races, Subraces, Attributes & Skills Redesign](#phase-5-races-subraces-attributes--skills-redesign-planned)** | **Planned** | Streamline playable races to 3 classic archetypes (Humans, Elves, Dwarves) with 2 subraces each, define race/subrace attributes (with live movement/gameplay modifiers where applicable), and design racial & core skill trees |
+| **06** | **[Main Menu Redesign](#phase-6-main-menu-redesign-planned)** | **Planned** | Complete visual and UX overhaul of the Main Menu, splash screen, world selection/creation flow, and cohesive pure-code presentation |
 
 ---
 
@@ -150,3 +153,40 @@ This second major milestone expanded the engine across 20 phases into a full-fea
   - Emitted ballistic water-tinted splash droplets whenever the player enters/wades in water or dropped 3D items hit water surfaces (`src/audio/footsteps.rs`, `src/gameplay/item_drops.rs`).
 - [x] **Campfire Smoke Plumes (`smoke*`)**:
   - Emitted rising, expanding smoke puffs strictly above lit `Campfire` blocks (`Voxel::Campfire`), excluded from torches and unlit campfires.
+
+---
+
+### Phase 4: Pure-Code UI & Menu System Redesign (In Progress)
+
+- [x] **Unified Pure-Code Dark Iron Theme (`src/menu/theme.rs`)**:
+  - Introduced a centralized Dark Iron / Forged Obsidian color palette (`palette`), standardized `310px` drawer column dimensions, and reusable `ThemedButton` component via Bevy UI `BackgroundColor`, `BorderColor`, and `BorderRadius`.
+  - Removed the legacy `MenuButtonTexture` sprite-swapping component from `src/menu/mod.rs` and deleted `assets/textures/interfaces/containers/` (retaining `main_menu_bg.png`, `cursors/`, `icons/`, and `atlases/`).
+- [x] **Shared 6-Tab Top Bar & Direct Shortcuts (`src/menu/menu_bar.rs`)**:
+  - Redesigned the top navigation bar with clean text-only tabs, gold active underline, 16×16 pixel-art icons (`Inventory`, `Skills`, `Journal`, `Quests`, `World Map`, `System`), `[Q]`/`[E]` tab cycling, and a live right-side status bar (Level, live Clock with time-of-day icon, Gold Coins, and clickable `[ESC]` close keycap).
+  - Added direct rebindable shortcuts: `Tab` (Inventory), `H` (Skills), `J` (Journal), `K` (Quests), `M` (World Map), and `Esc` (System / step-back drawer navigation).
+- [x] **Left-Docked 3-Column Cascading System, Settings & Controls Drawers**:
+  - Rebuilt `System` (`src/menu/pause.rs`), `Settings` (`src/menu/settings.rs`), and `Controls` (`src/menu/controls.rs`) into full-height left-docked cascading drawers (up to 3 columns), adding `Save World`, `World & Session` (multiplayer/difficulty placeholders), and direct `Exit Game`.
+  - Reorganized Settings into 6 prioritized categories (`World`, `Graphics` with Display at top + conditional `Borderless Mouse Lock`, `Shaders & FX`, `Camera`, `Audio`, `Accessibility & UI`), adding `Connected Textures`, `Menu Pause` (`System Only` / `All Menus` / `Never`), `Camera Smoothing`, `Third-Person Distance`, `FPS / Debug HUD` (`Off` / `FPS Only` / `Compact` / `Full`), `UI Volume`, `Mute on Unfocus`, `Auto-Save Interval`, `High-Contrast Crosshair`, and `Subtitles`.
+- [x] **Fullscreen World Map, Skills, Journal & Quests Screens**:
+  - Rebuilt the World Map (`src/map/world_map.rs`) to fill the full viewport below the top bar with 1:1 aspect-corrected terrain rendering, percentage-locked player marker, and a right-docked `310px` tools/waypoints/layers sidebar.
+  - Built dedicated `Skills` (`src/menu/skills.rs`), `Journal` (`src/menu/journal.rs` with live season/day/clock/weather almanac card + all 7 weather icons, Bestiary, Compendium, and Statistics), and localized `Quests` (`src/menu/quests.rs`) screens.
+- [ ] **Remaining UI Polish**:
+  - Inventory & Hotbar visual cohesion polish and final UX pass.
+
+---
+
+### Phase 5: Races, Subraces, Attributes & Skills Redesign (Planned)
+
+- [ ] **3 Core Playable Races × 2 Subraces Each**:
+  - Streamline playable character selection to **Humans**, **Elves**, and **Dwarves** (preserving existing Orc, Dragonborn, Tiefling, and Halfling voxel rigs for future NPC/mob reuse), with 2 distinct subraces per race featuring tailored skin tones, aesthetics, and lore.
+- [ ] **Race & Subrace Attributes**:
+  - Define distinct attribute profiles per race and subrace (health, stamina, defense, speed, mining/foraging bonuses), wiring immediately applicable gameplay modifiers (such as movement speed and camera/eye-height feel).
+- [ ] **Skill Trees & Racial Passives**:
+  - Define structured core and racial skill trees integrated into the `Skills` screen layout.
+
+---
+
+### Phase 6: Main Menu Redesign (Planned)
+
+- [ ] **Main Menu & Entry Flow Overhaul**:
+  - Redesign the title splash screen, action menu, world selection/creation flow, and race/subrace selector using the pure-code Dark Iron design language.

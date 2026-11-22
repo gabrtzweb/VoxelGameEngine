@@ -16,7 +16,7 @@ pub use config::{
     ShadowQuality, TargetFpsLimit, UpscalingFilter,
 };
 pub use controls::{ActionCategory, ControlSettings, InputAction, InputBinding};
-pub use dev_stats::DevStatsPlugin;
+pub use dev_stats::{DebugHudMode, DebugHudSettings, DevStatsPlugin};
 pub use dynamic_fps::{DynamicFpsPlugin, DynamicFpsSettings, DynamicFpsState};
 pub use font::{AppFont, FontPlugin, FontSource, text_shadow_default};
 pub use localization::{Locale, Localization, LocalizationPlugin};

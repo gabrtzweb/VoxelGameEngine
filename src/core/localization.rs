@@ -24,8 +24,8 @@ impl Locale {
 
     pub fn display_name(self) -> &'static str {
         match self {
-            Self::EnUs => "English (US)",
-            Self::PtBr => "Português (BR)",
+            Self::EnUs => "English",
+            Self::PtBr => "Português",
         }
     }
 
