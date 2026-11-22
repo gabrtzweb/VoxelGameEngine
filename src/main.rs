@@ -213,6 +213,7 @@ fn main() {
         high_contrast_crosshair: local_config.high_contrast_crosshair,
 
         dynamic_crosshair: local_config.dynamic_crosshair,
+        left_handed: local_config.left_handed,
 
         subtitles_enabled: local_config.subtitles_enabled,
 

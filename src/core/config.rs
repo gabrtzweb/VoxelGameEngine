@@ -700,6 +700,10 @@ pub struct LocalConfig {
     #[serde(default)]
     pub dynamic_crosshair: bool,
 
+    /// Left-handed mode: swaps main hand / off-hand arms and over-the-shoulder camera side.
+    #[serde(default)]
+    pub left_handed: bool,
+
     /// Subtitles / audio cues accessibility option.
     #[serde(default)]
     pub subtitles_enabled: bool,
@@ -1025,6 +1029,7 @@ impl Default for LocalConfig {
             auto_save_minutes: default_auto_save_minutes(),
             high_contrast_crosshair: false,
             dynamic_crosshair: false,
+            left_handed: false,
             subtitles_enabled: false,
             fps_hud_mode: crate::core::DebugHudMode::Minimal,
             pixelated_shadows: default_pixelated_shadows(),

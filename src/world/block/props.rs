@@ -446,9 +446,11 @@ impl Voxel {
         // 538..=628: Domestic crop stages and stems
         // 631..=650: Wild crops (except melon/pumpkin solid blocks 651, 652)
         // 653..=681: Agricultural items and seeds
+        // 700..=710: Crafting materials & tools
         (id >= 538 && id <= 628)
             || (id >= 631 && id <= 650)
             || (id >= 653 && id <= 681)
+            || (id >= 700 && id <= 710)
             || id == Voxel::ItemStick as u16
             || id == Voxel::ItemCocoaBeans as u16
             || id == Voxel::ItemCoconut as u16
@@ -460,15 +462,162 @@ impl Voxel {
         (id >= 538 && id <= 628) || (id >= 684 && id <= 689)
     }
 
-    /// Returns true for inventory-only items (drops, seeds, food slices, sticks, bone meal, etc.)
+    /// Returns true for inventory-only items (drops, seeds, food slices, sticks, crafting materials, tools)
     /// that must never be placed directly as world blocks.
     #[inline(always)]
     pub const fn is_inventory_only_item(self) -> bool {
         let id = self as u16;
         (id >= 653 && id <= 681)
+            || (id >= 700 && id <= 710)
             || id == Voxel::ItemStick as u16
             || id == Voxel::ItemCocoaBeans as u16
             || id == Voxel::ItemCoconut as u16
+    }
+
+    #[inline(always)]
+    pub const fn is_tool(self) -> bool {
+        let id = self as u16;
+        id >= Voxel::ToolFireStarter as u16 && id <= Voxel::ToolFlintShovel as u16
+    }
+
+    #[inline(always)]
+    pub const fn max_stack_size(self) -> u16 {
+        if self.is_tool() { 1 } else { 64 }
+    }
+
+    /// Returns true for ground vegetation (wildgrass, ferns, bushes, etc.) that drops Plant Fiber
+    /// unless harvested directly with Shears.
+    pub fn is_shearable_vegetation(self) -> bool {
+        let id = self.id();
+        (id.starts_with("vege_")
+            && self != Voxel::VegeCactus
+            && self != Voxel::VegeLeafLitter
+            && self != Voxel::VegeLilyPad)
+            || self == Voxel::MossCarpet
+    }
+
+    /// Base time in seconds to break this block in Survival mode with bare hands / neutral tool.
+    pub fn base_break_time_secs(self) -> f32 {
+        if self == Voxel::Mantle {
+            return f32::INFINITY;
+        }
+        let id = self.id();
+        let tex = self.texture_name().unwrap_or("");
+
+        if self.is_torch()
+            || self.is_flora_billboard()
+            || self.is_crop_billboard()
+            || self.is_carpet()
+            || self == Voxel::ElementFire
+            || self == Voxel::VegeLeafLitter
+            || self == Voxel::StickPile
+            || id.starts_with("fungi_")
+            || id.starts_with("pebble_")
+            || id.starts_with("flower_")
+        {
+            return 0.15;
+        }
+
+        if self.is_leaves_const() || tex.starts_with("frost_snow") || id.contains("snow") {
+            return 0.45;
+        }
+
+        if tex.starts_with("soil_") || id.starts_with("path_") || id.starts_with("moss_") {
+            return 1.05;
+        }
+
+        if tex.starts_with("tree_")
+            || self.is_campfire()
+            || matches!(
+                self,
+                Voxel::Barrel
+                    | Voxel::Crate
+                    | Voxel::Basket
+                    | Voxel::Bookshelf
+                    | Voxel::BookshelfEmpty
+            )
+        {
+            return 1.65;
+        }
+
+        if id.starts_with("ore_")
+            || id.starts_with("gem_")
+            || id.starts_with("crystal_")
+            || id.contains("obsidian")
+        {
+            return 3.40;
+        }
+
+        if tex.starts_with("rock_")
+            || tex.starts_with("cave_")
+            || tex.starts_with("deco_")
+            || tex.starts_with("frost_")
+            || id.starts_with("dripstone_")
+            || id.starts_with("speleothem_")
+            || id.starts_with("fossil_")
+        {
+            return 2.40;
+        }
+
+        1.0
+    }
+
+    /// Mining speed multiplier granted by the held tool against this target block.
+    pub fn tool_speed_multiplier(self, held: Option<Voxel>) -> f32 {
+        let id = self.id();
+        let tex = self.texture_name().unwrap_or("");
+
+        let is_rock_like = tex.starts_with("rock_")
+            || tex.starts_with("cave_")
+            || id.starts_with("ore_")
+            || id.starts_with("gem_")
+            || id.starts_with("crystal_")
+            || id.starts_with("dripstone_")
+            || id.starts_with("speleothem_")
+            || id.starts_with("fossil_")
+            || tex.starts_with("frost_");
+        let is_wood_like = tex.starts_with("tree_")
+            || self.is_campfire()
+            || matches!(
+                self,
+                Voxel::Barrel
+                    | Voxel::Crate
+                    | Voxel::Basket
+                    | Voxel::Bookshelf
+                    | Voxel::BookshelfEmpty
+            );
+        let is_soil_like = tex.starts_with("soil_")
+            || id.starts_with("path_")
+            || id.starts_with("moss_")
+            || id.contains("snow");
+        let is_crop_or_leaf = self.is_crop_billboard()
+            || self.is_leaves_const()
+            || id.starts_with("wild_")
+            || id.contains("melon")
+            || id.contains("pumpkin");
+        let is_organic =
+            tex.starts_with("bio_") || tex.starts_with("organic_") || tex.starts_with("nest_");
+
+        match held {
+            Some(Voxel::ToolFlintPickaxe) if is_rock_like => 3.4,
+            Some(Voxel::ToolFlintAxe) if is_wood_like => 3.4,
+            Some(Voxel::ToolFlintShovel) if is_soil_like => 2.2,
+            Some(Voxel::ToolFlintHoe) if is_crop_or_leaf => 3.4,
+            Some(Voxel::ToolFlintShears)
+                if self.is_shearable_vegetation() || self.is_leaves_const() =>
+            {
+                4.0
+            }
+            Some(Voxel::ToolFlintKnife) if is_organic || self.is_shearable_vegetation() => 3.0,
+            Some(Voxel::ToolFlintHammer) if is_rock_like || tex.starts_with("deco_") => 2.6,
+            _ => {
+                if is_rock_like {
+                    0.45
+                } else {
+                    1.0
+                }
+            }
+        }
     }
 
     #[inline(always)]

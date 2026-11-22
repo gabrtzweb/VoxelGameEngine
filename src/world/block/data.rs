@@ -1,5 +1,5 @@
 /// Static registry metadata table: (ID, Label, Texture name) for all voxel variants.
-pub(crate) static VOXEL_DATA: [(&str, &str, &str); 700] = [
+pub(crate) static VOXEL_DATA: [(&str, &str, &str); 711] = [
     ("air", "Air", ""),
     ("occupied", "Occupied", ""),
     ("water_occupied", "Waterlogged Occupied", ""),
@@ -701,4 +701,15 @@ pub(crate) static VOXEL_DATA: [(&str, &str, &str); 700] = [
     ("deco_campfire", "Campfire", "deco_campfire"),
     ("deco_campfire_unlit", "Campfire", "deco_campfire"),
     ("moss_carpet", "Moss Carpet", "soil_moss_forest"),
+    ("item_flint_shard", "Flint Shard", "flint_shard_item"),
+    ("item_plant_fiber", "Plant Fiber", "plant_fiber_item"),
+    ("item_plant_string", "Plant String", "plant_string_item"),
+    ("tool_fire_starter", "Fire Starter", "tool_fire_starter_item"),
+    ("tool_flint_axe", "Flint Axe", "tool_flint_axe_item"),
+    ("tool_flint_hammer", "Flint Hammer", "tool_flint_hammer_item"),
+    ("tool_flint_hoe", "Flint Hoe", "tool_flint_hoe_item"),
+    ("tool_flint_knife", "Flint Knife", "tool_flint_knife_item"),
+    ("tool_flint_pickaxe", "Flint Pickaxe", "tool_flint_pickaxe_item"),
+    ("tool_flint_shears", "Flint Shears", "tool_flint_shears_item"),
+    ("tool_flint_shovel", "Flint Shovel", "tool_flint_shovel_item"),
 ];

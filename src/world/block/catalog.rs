@@ -1094,6 +1094,17 @@ impl Voxel {
             Self::PebbleFlint | Self::PebbleFlintCluster | Self::BoulderFlint => [65, 70, 75, 255],
             Self::PebbleQuartz | Self::PebbleQuartzCluster | Self::BoulderQuartz => [220, 225, 230, 255],
             Self::StickPile | Self::ItemStick => [88, 68, 52, 255],
+            Self::ItemFlintShard => [78, 82, 88, 255],
+            Self::ItemPlantFiber => [102, 148, 66, 255],
+            Self::ItemPlantString => [176, 162, 118, 255],
+            Self::ToolFireStarter
+            | Self::ToolFlintAxe
+            | Self::ToolFlintHammer
+            | Self::ToolFlintHoe
+            | Self::ToolFlintKnife
+            | Self::ToolFlintPickaxe
+            | Self::ToolFlintShears
+            | Self::ToolFlintShovel => [128, 122, 112, 255],
             Self::CropCocoaStage0
             | Self::CropCocoaStage1
             | Self::CropCocoaStage2

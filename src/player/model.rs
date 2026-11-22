@@ -51,6 +51,9 @@ pub struct PlayerRightLeg;
 pub struct PlayerThirdPersonHeldItem;
 
 #[derive(Component)]
+pub struct PlayerLeftArmHeldItem;
+
+#[derive(Component)]
 pub struct PlayerFirstPersonRig;
 
 #[derive(Component)]
@@ -88,7 +91,9 @@ pub struct PlayerHandAnimState {
     pub last_voxel: Option<Voxel>,
     pub last_slot: usize,
     pub displayed_voxel: Option<Voxel>,
+    pub displayed_left_voxel: Option<Voxel>,
     pub mesh_initialized: bool,
+    pub left_mesh_initialized: bool,
 }
 
 impl Default for PlayerHandAnimState {
@@ -101,7 +106,9 @@ impl Default for PlayerHandAnimState {
             last_voxel: None,
             last_slot: 0,
             displayed_voxel: None,
+            displayed_left_voxel: None,
             mesh_initialized: false,
+            left_mesh_initialized: false,
         }
     }
 }
@@ -276,12 +283,26 @@ pub fn setup_player_model(
         .spawn((
             PlayerLeftArm,
             PlayerLimb::LeftArm,
+            NotShadowCaster,
             Mesh3d(left_arm_mesh),
             MeshMaterial3d(arms_mat.clone()),
             Transform::from_translation(Vec3::new(6.0 * PIXEL_SCALE, 12.0 * PIXEL_SCALE, 0.0)),
             Visibility::Inherited,
         ))
         .id();
+
+    let left_held_item = commands
+        .spawn((
+            PlayerLeftArmHeldItem,
+            NotShadowCaster,
+            Mesh3d(dummy_item_mesh.clone()),
+            Transform::from_translation(Vec3::new(0.0, -10.5 * PIXEL_SCALE, 2.2 * PIXEL_SCALE))
+                .with_rotation(Quat::from_euler(EulerRot::YXZ, 0.35, 0.75, 0.0))
+                .with_scale(Vec3::splat(0.72)),
+            Visibility::Hidden,
+        ))
+        .id();
+    commands.entity(left_arm).add_child(left_held_item);
 
     // Right Arm (shoulder pivot at top right of torso: local x = -6 * PIXEL_SCALE, y = 12 * PIXEL_SCALE)
     let right_arm = commands
@@ -410,46 +431,63 @@ pub fn sync_player_race_materials(
     }
 }
 
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn sync_held_item_meshes(
     mut commands: Commands,
     selected_voxel: Option<Res<SelectedVoxel>>,
     hotbar: Option<Res<Hotbar>>,
+    player_inv: Option<Res<super::PlayerInventory>>,
+    game_settings: Option<Res<crate::menu::GameSettings>>,
     chunk_material: Option<Res<ChunkMaterial>>,
     mut item_mesh_cache: Option<ResMut<VoxelItemMeshCache>>,
     mut meshes: ResMut<Assets<Mesh>>,
+    mut std_materials: ResMut<Assets<StandardMaterial>>,
     mut hand_anim: ResMut<PlayerHandAnimState>,
     mut fp_item_query: Query<
-        (
-            Entity,
-            &mut Mesh3d,
-            Option<&MeshMaterial3d<OpaqueChunkMaterial>>,
-        ),
+        (Entity, &mut Mesh3d),
         (
             With<PlayerFirstPersonHeldItem>,
             Without<PlayerThirdPersonHeldItem>,
+            Without<PlayerLeftArmHeldItem>,
         ),
     >,
     mut tp_item_query: Query<
-        (
-            Entity,
-            &mut Mesh3d,
-            Option<&MeshMaterial3d<OpaqueChunkMaterial>>,
-        ),
+        (Entity, &mut Mesh3d),
         (
             With<PlayerThirdPersonHeldItem>,
             Without<PlayerFirstPersonHeldItem>,
+            Without<PlayerLeftArmHeldItem>,
+        ),
+    >,
+    mut left_item_query: Query<
+        (Entity, &mut Mesh3d),
+        (
+            With<PlayerLeftArmHeldItem>,
+            Without<PlayerFirstPersonHeldItem>,
+            Without<PlayerThirdPersonHeldItem>,
         ),
     >,
 ) {
-    let current_voxel = selected_voxel.and_then(|s| s.0).filter(|v| !v.is_empty());
+    let main_voxel = selected_voxel.and_then(|s| s.0).filter(|v| !v.is_empty());
+    let offhand_voxel = player_inv
+        .as_ref()
+        .and_then(|inv| inv.offhand_slot)
+        .filter(|v| !v.is_empty());
+    let left_handed = game_settings.as_ref().is_some_and(|s| s.left_handed);
     let current_slot = hotbar.as_ref().map_or(0, |h| h.active_slot);
 
-    // Detect slot or item change to trigger smooth equip raise animation
-    if current_voxel != hand_anim.last_voxel || current_slot != hand_anim.last_slot {
-        hand_anim.last_voxel = current_voxel;
+    // Detect slot or main-hand item change to trigger smooth equip raise animation
+    if main_voxel != hand_anim.last_voxel || current_slot != hand_anim.last_slot {
+        hand_anim.last_voxel = main_voxel;
         hand_anim.last_slot = current_slot;
         hand_anim.equip_progress = 0.0;
     }
+
+    let (right_voxel, left_voxel) = if left_handed {
+        (offhand_voxel, main_voxel)
+    } else {
+        (main_voxel, offhand_voxel)
+    };
 
     let Some(chunk_material) = chunk_material else {
         return;
@@ -458,28 +496,80 @@ fn sync_held_item_meshes(
         return;
     };
 
-    if hand_anim.displayed_voxel != current_voxel || !hand_anim.mesh_initialized {
-        hand_anim.displayed_voxel = current_voxel;
+    if hand_anim.displayed_voxel != right_voxel || !hand_anim.mesh_initialized {
+        hand_anim.displayed_voxel = right_voxel;
         hand_anim.mesh_initialized = true;
 
-        if let Some(voxel) = current_voxel {
-            let mesh_handle = cache.get_or_create_held_mesh(voxel, &mut meshes, &chunk_material);
-            let mat_handle = chunk_material.opaque.clone();
-
-            for (entity, mut mesh3d, has_mat) in &mut fp_item_query {
-                mesh3d.0 = mesh_handle.clone();
-                if has_mat.is_none() {
+        if let Some(voxel) = right_voxel {
+            if let Some(icon_path) = crate::gameplay::voxel_item_texture_path(voxel)
+                && let Some(ext_mesh) =
+                    cache.get_or_create_extruded_held_mesh(voxel, icon_path, &mut meshes)
+            {
+                let ext_mat = cache.get_or_create_extruded_material(&mut std_materials);
+                for (entity, mut mesh3d) in &mut fp_item_query {
+                    mesh3d.0 = ext_mesh.clone();
                     commands
                         .entity(entity)
+                        .remove::<MeshMaterial3d<OpaqueChunkMaterial>>()
+                        .insert(MeshMaterial3d(ext_mat.clone()));
+                }
+                for (entity, mut mesh3d) in &mut tp_item_query {
+                    mesh3d.0 = ext_mesh.clone();
+                    commands
+                        .entity(entity)
+                        .remove::<MeshMaterial3d<OpaqueChunkMaterial>>()
+                        .insert(MeshMaterial3d(ext_mat.clone()));
+                }
+            } else {
+                let mesh_handle =
+                    cache.get_or_create_held_mesh(voxel, &mut meshes, &chunk_material);
+                let mat_handle = chunk_material.opaque.clone();
+
+                for (entity, mut mesh3d) in &mut fp_item_query {
+                    mesh3d.0 = mesh_handle.clone();
+                    commands
+                        .entity(entity)
+                        .remove::<MeshMaterial3d<StandardMaterial>>()
+                        .insert(MeshMaterial3d(mat_handle.clone()));
+                }
+
+                for (entity, mut mesh3d) in &mut tp_item_query {
+                    mesh3d.0 = mesh_handle.clone();
+                    commands
+                        .entity(entity)
+                        .remove::<MeshMaterial3d<StandardMaterial>>()
                         .insert(MeshMaterial3d(mat_handle.clone()));
                 }
             }
+        }
+    }
 
-            for (entity, mut mesh3d, has_mat) in &mut tp_item_query {
-                mesh3d.0 = mesh_handle.clone();
-                if has_mat.is_none() {
+    if hand_anim.displayed_left_voxel != left_voxel || !hand_anim.left_mesh_initialized {
+        hand_anim.displayed_left_voxel = left_voxel;
+        hand_anim.left_mesh_initialized = true;
+
+        if let Some(voxel) = left_voxel {
+            if let Some(icon_path) = crate::gameplay::voxel_item_texture_path(voxel)
+                && let Some(ext_mesh) =
+                    cache.get_or_create_extruded_held_mesh(voxel, icon_path, &mut meshes)
+            {
+                let ext_mat = cache.get_or_create_extruded_material(&mut std_materials);
+                for (entity, mut mesh3d) in &mut left_item_query {
+                    mesh3d.0 = ext_mesh.clone();
                     commands
                         .entity(entity)
+                        .remove::<MeshMaterial3d<OpaqueChunkMaterial>>()
+                        .insert(MeshMaterial3d(ext_mat.clone()));
+                }
+            } else {
+                let mesh_handle =
+                    cache.get_or_create_held_mesh(voxel, &mut meshes, &chunk_material);
+                let mat_handle = chunk_material.opaque.clone();
+                for (entity, mut mesh3d) in &mut left_item_query {
+                    mesh3d.0 = mesh_handle.clone();
+                    commands
+                        .entity(entity)
+                        .remove::<MeshMaterial3d<StandardMaterial>>()
                         .insert(MeshMaterial3d(mat_handle.clone()));
                 }
             }
@@ -520,6 +610,7 @@ pub fn update_player_model(
             Without<PlayerFirstPersonArm>,
             Without<PlayerFirstPersonHeldItem>,
             Without<PlayerThirdPersonHeldItem>,
+            Without<PlayerLeftArmHeldItem>,
         ),
     >,
     mut fp_rig_query: Query<
@@ -530,6 +621,7 @@ pub fn update_player_model(
             Without<Player>,
             Without<Camera3d>,
             Without<PlayerLimb>,
+            Without<PlayerLeftArmHeldItem>,
         ),
     >,
     mut fp_arm_query: Query<
@@ -539,6 +631,7 @@ pub fn update_player_model(
             Without<PlayerFirstPersonRig>,
             Without<PlayerFirstPersonHeldItem>,
             Without<PlayerThirdPersonHeldItem>,
+            Without<PlayerLeftArmHeldItem>,
             Without<PlayerLimb>,
             Without<PlayerModelRoot>,
             Without<Player>,
@@ -552,6 +645,7 @@ pub fn update_player_model(
             Without<PlayerFirstPersonRig>,
             Without<PlayerFirstPersonArm>,
             Without<PlayerThirdPersonHeldItem>,
+            Without<PlayerLeftArmHeldItem>,
             Without<PlayerLimb>,
             Without<PlayerModelRoot>,
             Without<Player>,
@@ -565,6 +659,21 @@ pub fn update_player_model(
             Without<PlayerFirstPersonRig>,
             Without<PlayerFirstPersonArm>,
             Without<PlayerFirstPersonHeldItem>,
+            Without<PlayerLeftArmHeldItem>,
+            Without<PlayerLimb>,
+            Without<PlayerModelRoot>,
+            Without<Player>,
+            Without<Camera3d>,
+        ),
+    >,
+    mut left_item_query: Query<
+        (&mut Transform, &mut Visibility),
+        (
+            With<PlayerLeftArmHeldItem>,
+            Without<PlayerFirstPersonRig>,
+            Without<PlayerFirstPersonArm>,
+            Without<PlayerFirstPersonHeldItem>,
+            Without<PlayerThirdPersonHeldItem>,
             Without<PlayerLimb>,
             Without<PlayerModelRoot>,
             Without<Player>,
@@ -623,7 +732,9 @@ pub fn update_player_model(
     let is_third_person = camera_controller.is_third_person();
     let is_spectator = *game_mode == GameMode::Spectator;
     let should_show_head = is_spectator || is_third_person;
-    let has_held_item = hand_anim.displayed_voxel.is_some();
+    let has_right_item = hand_anim.displayed_voxel.is_some();
+    let has_left_item = hand_anim.displayed_left_voxel.is_some();
+    let left_handed = game_settings.as_ref().is_some_and(|s| s.left_handed);
 
     if is_spectator {
         let breathe = (time.elapsed_secs() * 2.0).sin() * 0.025;
@@ -660,7 +771,7 @@ pub fn update_player_model(
                         **vis = Visibility::Inherited;
                     }
                     if motion.grounded && motion.stance == PlayerStance::Standing {
-                        let hold_offset = if has_held_item { -0.35 } else { -0.08 };
+                        let hold_offset = if has_right_item { -0.35 } else { -0.08 };
                         transform.rotation = Quat::from_rotation_x(hold_offset - breathe);
                     }
                 }
@@ -681,9 +792,9 @@ pub fn update_player_model(
         *item_vis = Visibility::Hidden;
     }
 
-    // Update the held item attached to the player's real right arm (visible in both 1st and 3rd person!)
+    // Update right-arm held item (visible in both 1st and 3rd person)
     for (mut tp_tf, mut tp_vis) in &mut tp_item_query {
-        let target = if !is_spectator && !in_pregame_menu && has_held_item {
+        let target = if !is_spectator && !in_pregame_menu && has_right_item {
             Visibility::Inherited
         } else {
             Visibility::Hidden
@@ -691,10 +802,45 @@ pub fn update_player_model(
         if *tp_vis != target {
             *tp_vis = target;
         }
-        if !is_spectator && !in_pregame_menu && has_held_item {
-            tp_tf.translation = Vec3::new(0.0, -10.2 * PIXEL_SCALE, 2.6 * PIXEL_SCALE);
-            tp_tf.rotation = Quat::from_euler(EulerRot::YXZ, 0.25, 0.55, 0.0);
-            tp_tf.scale = Vec3::splat(0.82);
+        if !is_spectator && !in_pregame_menu && has_right_item {
+            let is_extruded_item = hand_anim
+                .displayed_voxel
+                .is_some_and(|v| crate::gameplay::voxel_item_texture_path(v).is_some());
+            if is_extruded_item {
+                tp_tf.translation = Vec3::new(0.0, -10.4 * PIXEL_SCALE, 5.2 * PIXEL_SCALE);
+                tp_tf.rotation = Quat::from_euler(EulerRot::YXZ, -1.57, 0.0, -0.22);
+                tp_tf.scale = Vec3::splat(1.0);
+            } else {
+                tp_tf.translation = Vec3::new(0.0, -10.2 * PIXEL_SCALE, 2.6 * PIXEL_SCALE);
+                tp_tf.rotation = Quat::from_euler(EulerRot::YXZ, 0.25, 0.55, 0.0);
+                tp_tf.scale = Vec3::splat(0.82);
+            }
+        }
+    }
+
+    // Update left-arm held item (off-hand in right-handed mode, main hand in left-handed mode)
+    for (mut lt_tf, mut lt_vis) in &mut left_item_query {
+        let target = if !is_spectator && !in_pregame_menu && has_left_item {
+            Visibility::Inherited
+        } else {
+            Visibility::Hidden
+        };
+        if *lt_vis != target {
+            *lt_vis = target;
+        }
+        if !is_spectator && !in_pregame_menu && has_left_item {
+            let is_extruded_item = hand_anim
+                .displayed_left_voxel
+                .is_some_and(|v| crate::gameplay::voxel_item_texture_path(v).is_some());
+            if is_extruded_item {
+                lt_tf.translation = Vec3::new(0.0, -10.4 * PIXEL_SCALE, 5.2 * PIXEL_SCALE);
+                lt_tf.rotation = Quat::from_euler(EulerRot::YXZ, -1.57, 0.0, -0.22);
+                lt_tf.scale = Vec3::splat(1.0);
+            } else {
+                lt_tf.translation = Vec3::new(0.0, -10.2 * PIXEL_SCALE, 2.6 * PIXEL_SCALE);
+                lt_tf.rotation = Quat::from_euler(EulerRot::YXZ, -0.25, 0.55, 0.0);
+                lt_tf.scale = Vec3::splat(0.82);
+            }
         }
     }
 
@@ -854,39 +1000,59 @@ pub fn update_player_model(
             }
             PlayerLimb::LeftArm => {
                 transform.scale = props.arm_scale / props.torso_scale;
-                transform.translation = Vec3::new(shoulder_x / props.torso_scale.x, 12.0 * PIXEL_SCALE, 0.0);
+                transform.translation =
+                    Vec3::new(shoulder_x / props.torso_scale.x, 12.0 * PIXEL_SCALE, 0.0);
+                let equip_dip = if left_handed {
+                    (1.0 - hand_anim.equip_progress) * 0.25
+                } else {
+                    0.0
+                };
+                let hold_offset = if has_left_item {
+                    -0.38 + equip_dip
+                } else {
+                    0.0
+                };
+                let action_swing = if left_handed {
+                    -swing_phase * 1.25 - hand_anim.place_recoil * 0.45
+                } else {
+                    0.0
+                };
+
                 if is_swimming {
-                    transform.rotation = Quat::from_rotation_x(swim_stroke - 0.3)
+                    transform.rotation = Quat::from_rotation_x(swim_stroke - 0.3 + action_swing)
                         * Quat::from_rotation_z(0.35 + swim_stroke.abs() * 0.3);
                 } else if motion.stance == PlayerStance::Crawling {
                     if h_speed > 0.05 {
-                        transform.rotation = Quat::from_rotation_x(1.52 + crawl_swing)
+                        transform.rotation = Quat::from_rotation_x(1.52 + crawl_swing + action_swing)
                             * Quat::from_rotation_z(0.2);
                     } else {
-                        transform.rotation = Quat::from_rotation_x(1.4) * Quat::from_rotation_z(0.2);
+                        transform.rotation =
+                            Quat::from_rotation_x(1.4 + action_swing) * Quat::from_rotation_z(0.2);
                     }
                 } else if motion.flying {
                     if is_flying_fast {
                         transform.rotation =
-                            Quat::from_rotation_x(-2.6) * Quat::from_rotation_z(0.15);
+                            Quat::from_rotation_x(-2.6 + action_swing) * Quat::from_rotation_z(0.15);
                     } else if is_flying_up {
                         transform.rotation =
-                            Quat::from_rotation_x(-1.8) * Quat::from_rotation_z(0.25);
+                            Quat::from_rotation_x(-1.8 + action_swing) * Quat::from_rotation_z(0.25);
                     } else if is_flying_down {
                         transform.rotation =
-                            Quat::from_rotation_z(0.65) * Quat::from_rotation_x(-0.15);
+                            Quat::from_rotation_z(0.65) * Quat::from_rotation_x(-0.15 + action_swing);
                     } else {
                         transform.rotation = Quat::from_rotation_z(0.25 + hover * 0.5)
-                            * Quat::from_rotation_x(-0.1);
+                            * Quat::from_rotation_x(-0.1 + hold_offset + action_swing);
                     }
                 } else if !motion.grounded {
-                    let target = Quat::from_rotation_z(0.35) * Quat::from_rotation_x(-0.25);
+                    let target = Quat::from_rotation_z(0.35)
+                        * Quat::from_rotation_x(-0.25 + hold_offset * 0.5 + action_swing);
                     let blend = 1.0 - (-12.0 * delta_seconds).exp();
                     transform.rotation = transform.rotation.slerp(target, blend);
                 } else if h_speed > 0.05 {
-                    transform.rotation = Quat::from_rotation_x(-arm_angle);
+                    transform.rotation =
+                        Quat::from_rotation_x(-arm_angle * (if has_left_item { 0.35 } else { 1.0 }) + hold_offset + action_swing);
                 } else {
-                    let target = Quat::from_rotation_x(breathe);
+                    let target = Quat::from_rotation_x(breathe + hold_offset + action_swing);
                     let blend = 1.0 - (-10.0 * delta_seconds).exp();
                     transform.rotation = transform.rotation.slerp(target, blend);
                 }
@@ -911,10 +1077,22 @@ pub fn update_player_model(
                     0.0,
                 );
 
-                // Natural resting posture (downward at the side, slightly angled forward when carrying an item)
-                let equip_dip = (1.0 - hand_anim.equip_progress) * 0.25;
-                let hold_offset = if has_held_item { -0.35 + equip_dip } else { -0.08 };
-                let action_swing = -swing_phase * 1.25 - hand_anim.place_recoil * 0.45;
+                // Natural resting posture (dominant arm swings on action; off-hand raises gently when holding item)
+                let equip_dip = if !left_handed {
+                    (1.0 - hand_anim.equip_progress) * 0.25
+                } else {
+                    0.0
+                };
+                let hold_offset = if has_right_item {
+                    -0.38 + equip_dip
+                } else {
+                    -0.08
+                };
+                let action_swing = if !left_handed {
+                    -swing_phase * 1.25 - hand_anim.place_recoil * 0.45
+                } else {
+                    0.0
+                };
 
                 if is_swimming {
                     transform.rotation = Quat::from_rotation_x(swim_stroke - 0.3 + action_swing)

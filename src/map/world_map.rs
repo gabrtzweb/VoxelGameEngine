@@ -17,7 +17,10 @@ use bevy::{
 };
 
 use crate::{
-    core::{AppFont, Localization, text_shadow_default},
+    core::{
+        AppFont, ControlSettings, DynamicInputPrompt, InputAction, InputPromptAtlas, Localization,
+        spawn_input_prompt, text_shadow_default,
+    },
     environment::EnvironmentState,
     menu::{CursorMode, MenuState, ThemedButton, menu_bar::MENU_BAR_HEIGHT, theme::palette},
     player::{GameMode, Player, PlayerCamera, PlayerMotion},
@@ -70,6 +73,30 @@ impl WaypointKind {
             Self::Star => "textures/interfaces/atlases/decorations/wp_star.png",
         }
     }
+
+    pub fn name_loc_key(self) -> &'static str {
+        match self {
+            Self::Target => "map.wp_kind.target",
+            Self::Home => "map.wp_kind.home",
+            Self::Mark => "map.wp_kind.mark",
+            Self::Camp => "map.wp_kind.camp",
+            Self::Mine => "map.wp_kind.mine",
+            Self::Danger => "map.wp_kind.danger",
+            Self::Star => "map.wp_kind.star",
+        }
+    }
+
+    pub fn default_name(self) -> &'static str {
+        match self {
+            Self::Target => "Target",
+            Self::Home => "Home",
+            Self::Mark => "Mark",
+            Self::Camp => "Camp",
+            Self::Mine => "Mine",
+            Self::Danger => "Danger",
+            Self::Star => "Star",
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -105,15 +132,18 @@ impl Default for WorldWaypoints {
 }
 
 impl WorldWaypoints {
-    pub fn add(&mut self, prefix: &str, x: i32, z: i32) {
+    pub fn add(&mut self, loc: Option<&Localization>, x: i32, z: i32) {
         let id = self.next_id;
         self.next_id += 1;
+        let kind = self.selected_kind;
+        let kind_count = self.waypoints.iter().filter(|w| w.kind == kind).count() + 1;
+        let base_name = loc.map_or(kind.default_name(), |l| l.t(kind.name_loc_key()));
         self.waypoints.push(MapWaypoint {
             id,
-            name: format!("{prefix} #{id}"),
+            name: format!("{base_name} {kind_count}"),
             x,
             z,
-            kind: self.selected_kind,
+            kind,
         });
         self.ui_dirty = true;
     }
@@ -348,6 +378,8 @@ fn spawn_world_map_ui(
     asset_server: Res<AssetServer>,
     app_font: Option<Res<AppFont>>,
     loc: Option<Res<Localization>>,
+    input_prompts: Option<Res<InputPromptAtlas>>,
+    controls: Option<Res<ControlSettings>>,
 ) {
     let font_handle = app_font.as_ref().map(|f| f.source()).unwrap_or_default();
     let make_font = |size: f32| TextFont {
@@ -595,11 +627,11 @@ fn spawn_world_map_ui(
                         }
                     });
 
-                // Subtle bottom-left controls hint
-                let hint_text = t(
-                    "map.controls_hint",
-                    "LMB Drag: Pan  |  RMB: Actions  |  Scroll: Zoom  |  Space: Center",
-                );
+                // Subtle bottom-left controls hint with Kenney pixel-art input prompts
+                let pan_lbl = t("map.hint.pan", "Move");
+                let actions_lbl = t("map.hint.actions", "Actions");
+                let center_lbl = t("map.hint.center", "Center");
+                let close_lbl = t("map.hint.close", "Close");
                 viewport
                     .spawn((
                         Pickable::IGNORE,
@@ -609,19 +641,64 @@ fn spawn_world_map_ui(
                             bottom: px(14.0),
                             padding: UiRect::axes(px(12.0), px(6.0)),
                             border_radius: BorderRadius::all(px(4.0)),
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Row,
+                            align_items: AlignItems::Center,
+                            column_gap: px(14.0),
                             ..default()
                         },
-                        BackgroundColor(Color::srgba(0.05, 0.06, 0.08, 0.78)),
+                        BackgroundColor(Color::srgba(0.05, 0.06, 0.08, 0.82)),
                         ZIndex(40),
                     ))
                     .with_children(|pill| {
-                        pill.spawn((
-                            Pickable::IGNORE,
-                            Text::new(hint_text),
-                            make_font(13.0),
-                            TextColor(palette::TEXT_MUTED),
-                            text_shadow_default(),
-                        ));
+                        if let Some(ref atlas) = input_prompts {
+                            let items: [(DynamicInputPrompt, &str); 4] = [
+                                (DynamicInputPrompt::Mouse(MouseButton::Left), &pan_lbl),
+                                (DynamicInputPrompt::Mouse(MouseButton::Right), &actions_lbl),
+                                (DynamicInputPrompt::Key(KeyCode::Space), &center_lbl),
+                                (DynamicInputPrompt::Action(InputAction::WorldMap), &close_lbl),
+                            ];
+                            for (prompt, label) in items {
+                                pill.spawn((
+                                    Pickable::IGNORE,
+                                    Node {
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Row,
+                                        align_items: AlignItems::Center,
+                                        column_gap: px(6.0),
+                                        ..default()
+                                    },
+                                ))
+                                .with_children(|grp| {
+                                    spawn_input_prompt(
+                                        grp,
+                                        atlas,
+                                        prompt,
+                                        controls.as_deref(),
+                                        20.0,
+                                    );
+                                    grp.spawn((
+                                        Pickable::IGNORE,
+                                        Text::new(label),
+                                        make_font(13.0),
+                                        TextColor(palette::TEXT_MUTED),
+                                        text_shadow_default(),
+                                    ));
+                                });
+                            }
+                        } else {
+                            let hint_text = t(
+                                "map.controls_hint",
+                                "LMB Drag: Pan  |  RMB: Actions  |  Scroll: Zoom  |  Space: Center",
+                            );
+                            pill.spawn((
+                                Pickable::IGNORE,
+                                Text::new(hint_text),
+                                make_font(13.0),
+                                TextColor(palette::TEXT_MUTED),
+                                text_shadow_default(),
+                            ));
+                        }
                     });
             });
 
@@ -1433,8 +1510,7 @@ fn handle_context_menu_buttons(
             if hovered.get() && clicked {
                 match action {
                     MapContextAction::AddWaypoint => {
-                        let prefix = loc.as_ref().map_or("Waypoint", |l| l.t("map.wp_default"));
-                        waypoints.add(prefix, ctx_menu.world_x, ctx_menu.world_z);
+                        waypoints.add(loc.as_deref(), ctx_menu.world_x, ctx_menu.world_z);
                         ctx_menu.open = false;
                     }
                     MapContextAction::Teleport => {
@@ -1612,8 +1688,7 @@ fn handle_world_map_input(
                 let wx = (map_state.center.x + (tex_x - half_w) / zoom_x).floor() as i32;
                 let wz = (map_state.center.y + (tex_y - half_h) / safe_zoom).floor() as i32;
 
-                let prefix = loc.as_ref().map_or("Waypoint", |l| l.t("map.wp_default"));
-                waypoints.add(prefix, wx, wz);
+                waypoints.add(loc.as_deref(), wx, wz);
                 waypoints.placing_mode = false;
                 return;
             }

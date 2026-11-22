@@ -99,6 +99,7 @@ fn update_current_target(
 fn draw_current_target_highlight(
     world: Res<VoxelWorld>,
     current_target: Res<CurrentTarget>,
+    breaking: Option<Res<super::BlockBreakingState>>,
     mut gizmos: Gizmos,
 ) {
     let Some(target) = current_target.hit else {
@@ -114,13 +115,17 @@ fn draw_current_target_highlight(
     }
 
     let color = Color::srgba(1.0, 1.0, 1.0, 0.95);
+    let (shake_offset, shake_scale) = breaking
+        .as_ref()
+        .filter(|b| b.target == Some(target.hit_voxel) && b.progress > 0.01)
+        .map_or((Vec3::ZERO, 1.0), |b| (b.shake_offset, b.shake_scale));
 
     // If targeting either half of a double-tall plant, render a single unified 1x2x1 bounding box
     if voxel.is_double_tall_bottom() {
         if let Some(top_partner) = voxel.double_tall_top_partner() {
             if world.get_voxel(target.block_origin + IVec3::Y) == Some(top_partner) {
                 let origin = target.block_origin.as_vec3() * VOXEL_SIZE;
-                draw_box_outline(&mut gizmos, origin, Vec3::ZERO, Vec3::new(1.0, 2.0, 1.0), color);
+                draw_box_outline(&mut gizmos, origin, Vec3::ZERO, Vec3::new(1.0, 2.0, 1.0), shake_scale, color);
                 return;
             }
         }
@@ -128,23 +133,23 @@ fn draw_current_target_highlight(
         if let Some(bottom_partner) = voxel.double_tall_bottom_partner() {
             if world.get_voxel(target.block_origin - IVec3::Y) == Some(bottom_partner) {
                 let origin = (target.block_origin - IVec3::Y).as_vec3() * VOXEL_SIZE;
-                draw_box_outline(&mut gizmos, origin, Vec3::ZERO, Vec3::new(1.0, 2.0, 1.0), color);
+                draw_box_outline(&mut gizmos, origin, Vec3::ZERO, Vec3::new(1.0, 2.0, 1.0), shake_scale, color);
                 return;
             }
         }
     }
 
     let (shape, orientation) = world.get_shape(target.block_origin);
-    let origin = target.block_origin.as_vec3() * VOXEL_SIZE;
+    let origin = target.block_origin.as_vec3() * VOXEL_SIZE + shake_offset;
 
     let (box_a, maybe_box_b) = shape.local_boxes(orientation);
-    draw_box_outline(&mut gizmos, origin, box_a[0], box_a[1], color);
+    draw_box_outline(&mut gizmos, origin, box_a[0], box_a[1], shake_scale, color);
     if let Some(box_b) = maybe_box_b {
-        draw_box_outline(&mut gizmos, origin, box_b[0], box_b[1], color);
+        draw_box_outline(&mut gizmos, origin, box_b[0], box_b[1], shake_scale, color);
     }
     if let Some((_extra_v, extra_orient)) = world.get_extra_slab(target.block_origin) {
         let (extra_box, _) = BlockShape::Slab.local_boxes(extra_orient);
-        draw_box_outline(&mut gizmos, origin, extra_box[0], extra_box[1], color);
+        draw_box_outline(&mut gizmos, origin, extra_box[0], extra_box[1], shake_scale, color);
     }
 }
 
@@ -153,12 +158,13 @@ fn draw_box_outline(
     block_origin: Vec3,
     local_min: Vec3,
     local_max: Vec3,
+    scale_mult: f32,
     color: Color,
 ) {
     let world_min = block_origin + local_min * VOXEL_SIZE;
     let world_max = block_origin + local_max * VOXEL_SIZE;
     let center = (world_min + world_max) * 0.5;
-    let size = world_max - world_min;
+    let size = (world_max - world_min) * scale_mult;
 
     gizmos.cube(Transform::from_translation(center).with_scale(size), color);
 }

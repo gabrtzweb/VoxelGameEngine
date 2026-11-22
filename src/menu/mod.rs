@@ -126,6 +126,7 @@ pub struct GameSettings {
     pub auto_save_minutes: u32,
     pub high_contrast_crosshair: bool,
     pub dynamic_crosshair: bool,
+    pub left_handed: bool,
     pub subtitles_enabled: bool,
     pub screen_mode: ScreenMode,
     pub vsync_enabled: bool,
@@ -156,6 +157,7 @@ impl Default for GameSettings {
             auto_save_minutes: 10,
             high_contrast_crosshair: false,
             dynamic_crosshair: false,
+            left_handed: false,
             subtitles_enabled: false,
             screen_mode: ScreenMode::Windowed,
             vsync_enabled: false,
@@ -170,6 +172,7 @@ impl Default for GameSettings {
 #[derive(Resource, Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct HeldInventoryItem {
     pub voxel: Option<Voxel>,
+    pub count: u16,
 }
 
 #[derive(Component)]
@@ -177,6 +180,9 @@ pub struct CustomCursor;
 
 #[derive(Component)]
 pub struct CustomCursorHeldIcon;
+
+#[derive(Component)]
+pub struct CustomCursorHeldCount;
 
 #[derive(Resource, Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[allow(dead_code)]
@@ -330,20 +336,40 @@ fn setup_custom_cursor(mut commands: Commands, asset_server: Res<AssetServer>) {
             bevy::picking::Pickable::IGNORE,
         ))
         .with_children(|parent| {
-            parent.spawn((
-                CustomCursorHeldIcon,
-                Node {
-                    position_type: PositionType::Absolute,
-                    left: px(28.0),
-                    top: px(28.0),
-                    width: px(32.0),
-                    height: px(32.0),
-                    ..default()
-                },
-                ImageNode::default(),
-                Visibility::Hidden,
-                bevy::picking::Pickable::IGNORE,
-            ));
+            parent
+                .spawn((
+                    CustomCursorHeldIcon,
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: px(28.0),
+                        top: px(28.0),
+                        width: px(32.0),
+                        height: px(32.0),
+                        ..default()
+                    },
+                    ImageNode::default(),
+                    Visibility::Hidden,
+                    bevy::picking::Pickable::IGNORE,
+                ))
+                .with_children(|icon| {
+                    icon.spawn((
+                        CustomCursorHeldCount,
+                        Text::new(""),
+                        TextFont {
+                            font_size: FontSize::Px(13.0),
+                            ..default()
+                        },
+                        TextColor(Color::WHITE),
+                        crate::core::text_shadow_default(),
+                        Node {
+                            position_type: PositionType::Absolute,
+                            right: px(-2.0),
+                            bottom: px(-2.0),
+                            ..default()
+                        },
+                        bevy::picking::Pickable::IGNORE,
+                    ));
+                });
         });
 }
 
@@ -597,6 +623,7 @@ fn update_custom_cursor(
         (&mut ImageNode, &mut Visibility),
         (With<CustomCursorHeldIcon>, Without<CustomCursor>),
     >,
+    mut held_count_query: Query<&mut Text, With<CustomCursorHeldCount>>,
     cursor_mode: Res<CursorMode>,
     cursor_textures: Res<CursorTextures>,
     busy_animation: Res<BusyCursorAnimation>,
@@ -636,8 +663,23 @@ fn update_custom_cursor(
         if let (Some(voxel), Some(ref icons)) = (held_item.voxel, block_icons) {
             *held_vis = Visibility::Visible;
             held_icon.image = icons.get(voxel);
+            let cnt_str = if held_item.count > 1 {
+                format!("{}", held_item.count)
+            } else {
+                String::new()
+            };
+            for mut txt in &mut held_count_query {
+                if txt.0 != cnt_str {
+                    txt.0 = cnt_str.clone();
+                }
+            }
         } else {
             *held_vis = Visibility::Hidden;
+            for mut txt in &mut held_count_query {
+                if !txt.0.is_empty() {
+                    txt.0.clear();
+                }
+            }
         }
     } else {
         *cursor_vis = Visibility::Hidden;

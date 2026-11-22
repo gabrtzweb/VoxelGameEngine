@@ -416,6 +416,227 @@ fn update_debris_particles(
     }
 }
 
+#[derive(Component)]
+pub struct BlockBreakOverlay {
+    box_index: u8,
+}
+
+#[derive(Resource)]
+struct BreakOverlayMaterials([Handle<StandardMaterial>; 9]);
+
+#[derive(Resource, Default)]
+struct BreakChipTracker {
+    last_target: Option<IVec3>,
+    last_stage: usize,
+    impact_timer: f32,
+    hit_dir: Vec3,
+    seed: u64,
+}
+
+fn setup_block_break_overlay(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let paths = [
+        "textures/masks/break_stages/break_stage.png",
+        "textures/masks/break_stages/break_stage1.png",
+        "textures/masks/break_stages/break_stage2.png",
+        "textures/masks/break_stages/break_stage3.png",
+        "textures/masks/break_stages/break_stage4.png",
+        "textures/masks/break_stages/break_stage5.png",
+        "textures/masks/break_stages/break_stage6.png",
+        "textures/masks/break_stages/break_stage7.png",
+        "textures/masks/break_stages/break_stage8.png",
+    ];
+    let stage_mats = std::array::from_fn(|i| {
+        let tex: Handle<Image> = asset_server.load(paths[i]);
+        // AlphaMode::Multiply darkens the exact underlying pixel color (grass green, dirt brown, sand ochre)
+        // while keeping transparent pixels 100% untouched.
+        materials.add(StandardMaterial {
+            base_color: Color::srgba(0.42, 0.42, 0.42, 0.62),
+            base_color_texture: Some(tex),
+            alpha_mode: AlphaMode::Multiply,
+            unlit: true,
+            ..default()
+        })
+    });
+
+    let unit_mesh = meshes.add(Cuboid::from_length(1.0));
+    for box_index in 0..2u8 {
+        commands.spawn((
+            BlockBreakOverlay { box_index },
+            bevy::light::NotShadowCaster,
+            Mesh3d(unit_mesh.clone()),
+            MeshMaterial3d(stage_mats[0].clone()),
+            Transform::default(),
+            Visibility::Hidden,
+        ));
+    }
+
+    commands.insert_resource(BreakOverlayMaterials(stage_mats));
+    commands.init_resource::<BreakChipTracker>();
+}
+
+#[allow(clippy::too_many_arguments)]
+fn update_block_break_overlay(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut breaking: Option<ResMut<super::BlockBreakingState>>,
+    world: Res<VoxelWorld>,
+    chunk_material: Option<Res<ChunkMaterial>>,
+    overlay_mats: Option<Res<BreakOverlayMaterials>>,
+    mut mesh_cache: ResMut<FeedbackMeshCache>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut chip_tracker: ResMut<BreakChipTracker>,
+    mut overlay_q: Query<
+        (
+            &BlockBreakOverlay,
+            &mut Transform,
+            &mut MeshMaterial3d<StandardMaterial>,
+            &mut Visibility,
+        ),
+        With<BlockBreakOverlay>,
+    >,
+) {
+    let Some(stage_mats) = overlay_mats else {
+        return;
+    };
+
+    let active = breaking.as_ref().and_then(|b| {
+        if b.progress > 0.01 {
+            b.target.map(|pos| (pos, b.progress.clamp(0.0, 1.0)))
+        } else {
+            None
+        }
+    });
+
+    let Some((pos, progress)) = active else {
+        chip_tracker.last_target = None;
+        chip_tracker.last_stage = 0;
+        chip_tracker.impact_timer = 0.0;
+        if let Some(ref mut b) = breaking {
+            b.shake_offset = Vec3::ZERO;
+            b.shake_scale = 1.0;
+        }
+        for (_, _, _, mut vis) in &mut overlay_q {
+            if *vis != Visibility::Hidden {
+                *vis = Visibility::Hidden;
+            }
+        }
+        return;
+    };
+
+    let Some(voxel) = world.get_voxel(pos) else {
+        return;
+    };
+    if voxel.is_empty() || voxel.is_fluid() {
+        return;
+    }
+
+    let (shape, orientation) = world.get_shape(pos);
+    let (box_a, maybe_box_b) = if let Some((_, extra_orient)) = world.get_extra_slab(pos) {
+        BlockShape::Slab.local_boxes(extra_orient)
+    } else {
+        shape.local_boxes(orientation)
+    };
+
+    let stage_idx = ((progress * 9.0).floor() as usize).min(8);
+    let dt = time.delta_secs();
+    let origin = pos.as_vec3();
+    let center = origin + (box_a[0] + box_a[1]) * 0.5;
+
+    // Trigger damped hit-impact shake & 2 subtle chipped debris particles on each stage step
+    if chip_tracker.last_target != Some(pos) {
+        chip_tracker.last_target = Some(pos);
+        chip_tracker.last_stage = stage_idx;
+        chip_tracker.impact_timer = 0.12;
+        chip_tracker.hit_dir = Vec3::new(1.0, 0.3, -0.7).normalize();
+    } else if stage_idx > chip_tracker.last_stage {
+        chip_tracker.last_stage = stage_idx;
+        chip_tracker.impact_timer = 0.12;
+        if chip_tracker.seed == 0 {
+            chip_tracker.seed = 0x517C_C1B7_2722_0A95;
+        }
+        chip_tracker.seed = chip_tracker
+            .seed
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
+        let ang = ((chip_tracker.seed >> 32) as u32 as f32 / 4294967295.0) * std::f32::consts::TAU;
+        chip_tracker.hit_dir = Vec3::new(ang.cos(), 0.25, ang.sin()).normalize();
+
+        if let Some(ref cm) = chunk_material
+            && !voxel.is_water()
+        {
+            let chip_mesh = mesh_cache
+                .debris_meshes
+                .entry(voxel)
+                .or_insert_with(|| meshes.add(create_cube_mesh(0.032, voxel, cm, false)))
+                .clone();
+            for _ in 0..2 {
+                chip_tracker.seed = chip_tracker
+                    .seed
+                    .wrapping_mul(6364136223846793005)
+                    .wrapping_add(1442695040888963407);
+                let rx = ((chip_tracker.seed >> 32) as u32 as f32 / 4294967295.0) - 0.5;
+                chip_tracker.seed = chip_tracker
+                    .seed
+                    .wrapping_mul(6364136223846793005)
+                    .wrapping_add(1442695040888963407);
+                let rz = ((chip_tracker.seed >> 32) as u32 as f32 / 4294967295.0) - 0.5;
+
+                commands.spawn((
+                    Mesh3d(chip_mesh.clone()),
+                    MeshMaterial3d(cm.opaque.clone()),
+                    Transform::from_translation(center + Vec3::new(rx * 0.5, 0.20, rz * 0.5)),
+                    DebrisParticle {
+                        velocity: Vec3::new(rx * 2.6, 2.1, rz * 2.6),
+                        rot_vel: Vec3::new(rx * 12.0, 6.0, rz * 12.0),
+                        lifetime: 0.40,
+                        bounce_count: 1,
+                    },
+                ));
+            }
+        }
+    }
+
+    if chip_tracker.impact_timer > 0.0 {
+        chip_tracker.impact_timer = (chip_tracker.impact_timer - dt).max(0.0);
+    }
+
+    // Crisp damped hit-impulse recoil (jolts on each hit then settles cleanly instead of buzzing)
+    let norm = (chip_tracker.impact_timer / 0.12).clamp(0.0, 1.0);
+    let decay = norm * norm;
+    let wave = ((1.0 - norm) * std::f32::consts::TAU * 2.0).sin();
+    let shake_offset = chip_tracker.hit_dir * (wave * 0.018 * decay);
+    let shake_scale = 1.0 + 0.022 * decay;
+
+    if let Some(ref mut b) = breaking {
+        b.shake_offset = shake_offset;
+        b.shake_scale = shake_scale;
+    }
+
+    let boxes: [Option<[Vec3; 2]>; 2] = [Some(box_a), maybe_box_b];
+    for (overlay, mut tf, mut mat, mut vis) in &mut overlay_q {
+        if let Some([bmin, bmax]) = boxes[overlay.box_index as usize] {
+            let box_center = origin + (bmin + bmax) * 0.5 + shake_offset;
+            let box_size = ((bmax - bmin) + Vec3::splat(0.006)) * shake_scale;
+            tf.translation = box_center;
+            tf.scale = box_size;
+            let target_mat = &stage_mats.0[stage_idx];
+            if mat.0 != *target_mat {
+                mat.0 = target_mat.clone();
+            }
+            if *vis != Visibility::Visible {
+                *vis = Visibility::Visible;
+            }
+        } else if *vis != Visibility::Hidden {
+            *vis = Visibility::Hidden;
+        }
+    }
+}
+
 pub struct InteractionFeedbackPlugin;
 
 impl Plugin for InteractionFeedbackPlugin {
@@ -423,9 +644,14 @@ impl Plugin for InteractionFeedbackPlugin {
         app.init_resource::<FeedbackMeshCache>()
             .add_observer(handle_block_break_feedback)
             .add_observer(handle_block_place_feedback)
+            .add_systems(Startup, setup_block_break_overlay)
             .add_systems(
                 Update,
-                (update_debris_particles, update_block_placement_pops),
+                (
+                    update_debris_particles,
+                    update_block_placement_pops,
+                    update_block_break_overlay,
+                ),
             );
     }
 }

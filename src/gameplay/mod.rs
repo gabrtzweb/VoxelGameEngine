@@ -9,8 +9,8 @@ pub mod shaping;
 pub mod target_hud;
 pub mod targeting;
 
-pub use icon::{AnimatedBlockIcons, BlockIcons, setup_block_icons};
-pub use interaction::SelectedVoxel;
+pub use icon::{AnimatedBlockIcons, BlockIcons, setup_block_icons, voxel_item_texture_path};
+pub use interaction::{BlockBreakingState, SelectedVoxel};
 pub use item_drops::{
     ItemDrop, ItemDropPlugin, SpawnItemDropEvent, VoxelItemMeshCache, create_voxel_item_mesh,
     is_voxel_buoyant,

@@ -140,6 +140,12 @@ struct GameModeToastPill;
 #[derive(Component)]
 struct GameModeToastText;
 
+#[derive(Component)]
+struct MiningProgressRoot;
+
+#[derive(Component)]
+struct MiningProgressFill;
+
 pub struct SurvivalHudPlugin;
 
 impl Plugin for SurvivalHudPlugin {
@@ -153,6 +159,7 @@ impl Plugin for SurvivalHudPlugin {
                     sync_vitals_with_subrace_and_movement,
                     sync_survival_hud_scale,
                     update_survival_hud_ui,
+                    update_mining_progress_bar,
                     update_game_mode_toast,
                 ),
             );
@@ -518,6 +525,45 @@ fn spawn_survival_hud_and_toast(
                     ));
                 });
         });
+
+    // 3. Under-Crosshair Mining Progress Bar (Survival block breaking indicator)
+    commands
+        .spawn((
+            MiningProgressRoot,
+            Pickable::IGNORE,
+            Node {
+                position_type: PositionType::Absolute,
+                left: percent(50.0),
+                top: percent(50.0),
+                margin: UiRect {
+                    left: px(-32.0),
+                    top: px(18.0),
+                    ..default()
+                },
+                width: px(64.0),
+                height: px(6.0),
+                border: UiRect::all(px(1.0)),
+                border_radius: BorderRadius::all(px(2.0)),
+                overflow: Overflow::clip(),
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.05, 0.06, 0.09, 0.84)),
+            BorderColor::all(Color::srgba(0.32, 0.35, 0.44, 0.88)),
+            Visibility::Hidden,
+            ZIndex(210),
+        ))
+        .with_children(|bar| {
+            bar.spawn((
+                MiningProgressFill,
+                Pickable::IGNORE,
+                Node {
+                    width: percent(0.0),
+                    height: percent(100.0),
+                    ..default()
+                },
+                BackgroundColor(Color::srgb(0.95, 0.80, 0.34)),
+            ));
+        });
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -850,6 +896,35 @@ fn update_survival_hud_ui(
     for mut t in &mut stam_text_q {
         if t.0 != stam_str {
             t.0 = stam_str.clone();
+        }
+    }
+}
+
+fn update_mining_progress_bar(
+    breaking: Option<Res<crate::gameplay::BlockBreakingState>>,
+    mut root_q: Query<&mut Visibility, With<MiningProgressRoot>>,
+    mut fill_q: Query<&mut Node, With<MiningProgressFill>>,
+) {
+    let progress = breaking
+        .as_ref()
+        .filter(|b| b.target.is_some())
+        .map_or(0.0, |b| b.progress.clamp(0.0, 1.0));
+    let show = progress > 0.01;
+
+    for mut vis in &mut root_q {
+        let next = if show {
+            Visibility::Visible
+        } else {
+            Visibility::Hidden
+        };
+        if *vis != next {
+            *vis = next;
+        }
+    }
+
+    if show {
+        for mut n in &mut fill_q {
+            n.width = percent(progress * 100.0);
         }
     }
 }

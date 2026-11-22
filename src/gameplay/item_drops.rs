@@ -46,9 +46,59 @@ pub struct ItemDrop {
 pub struct VoxelItemMeshCache {
     drop_meshes: HashMap<Voxel, Handle<Mesh>>,
     held_meshes: HashMap<Voxel, Handle<Mesh>>,
+    extruded_drop_meshes: HashMap<Voxel, Handle<Mesh>>,
+    extruded_held_meshes: HashMap<Voxel, Handle<Mesh>>,
+    extruded_material: Option<Handle<StandardMaterial>>,
 }
 
 impl VoxelItemMeshCache {
+    pub fn get_or_create_extruded_material(
+        &mut self,
+        materials: &mut Assets<StandardMaterial>,
+    ) -> Handle<StandardMaterial> {
+        self.extruded_material
+            .get_or_insert_with(|| {
+                materials.add(StandardMaterial {
+                    base_color: Color::WHITE,
+                    perceptual_roughness: 0.78,
+                    reflectance: 0.15,
+                    cull_mode: None,
+                    ..default()
+                })
+            })
+            .clone()
+    }
+
+    pub fn get_or_create_extruded_drop_mesh(
+        &mut self,
+        voxel: Voxel,
+        image_path: &str,
+        meshes: &mut Assets<Mesh>,
+    ) -> Option<Handle<Mesh>> {
+        if let Some(h) = self.extruded_drop_meshes.get(&voxel) {
+            return Some(h.clone());
+        }
+        let mesh = create_extruded_item_mesh(image_path, DROP_HALF_EXTENT * 2.2)?;
+        let handle = meshes.add(mesh);
+        self.extruded_drop_meshes.insert(voxel, handle.clone());
+        Some(handle)
+    }
+
+    pub fn get_or_create_extruded_held_mesh(
+        &mut self,
+        voxel: Voxel,
+        image_path: &str,
+        meshes: &mut Assets<Mesh>,
+    ) -> Option<Handle<Mesh>> {
+        if let Some(h) = self.extruded_held_meshes.get(&voxel) {
+            return Some(h.clone());
+        }
+        let mesh = create_extruded_item_mesh(image_path, 0.62)?;
+        let handle = meshes.add(mesh);
+        self.extruded_held_meshes.insert(voxel, handle.clone());
+        Some(handle)
+    }
+
     pub fn get_or_create_drop_mesh(
         &mut self,
         voxel: Voxel,
@@ -84,6 +134,104 @@ impl VoxelItemMeshCache {
             })
             .clone()
     }
+}
+
+/// Builds a crisp 3D pixel-extruded voxel mesh from a 16x16 RGBA item icon texture,
+/// giving tools, torches, and 2D items real 1-pixel 3D thickness using vertex colors.
+pub fn create_extruded_item_mesh(image_path: &str, size: f32) -> Option<Mesh> {
+    let img = image::open(image_path).ok()?.to_rgba8();
+    let (w, full_h) = img.dimensions();
+    if w == 0 || full_h == 0 {
+        return None;
+    }
+    // Animated vertical strip textures (e.g. 16x128 torches) use only the first square frame
+    let h = if full_h > w { w } else { full_h };
+
+    let cell = size / w.max(h) as f32;
+    let half_w = (w as f32 * cell) * 0.5;
+    let half_h = (h as f32 * cell) * 0.5;
+    let half_d = cell * 0.5;
+
+    let mut positions: Vec<[f32; 3]> = Vec::new();
+    let mut normals: Vec<[f32; 3]> = Vec::new();
+    let mut uvs: Vec<[f32; 2]> = Vec::new();
+    let mut colors: Vec<[f32; 4]> = Vec::new();
+    let mut indices: Vec<u32> = Vec::new();
+
+    let is_solid = |x: i32, y: i32| -> bool {
+        if x < 0 || y < 0 || x >= w as i32 || y >= h as i32 {
+            return false;
+        }
+        img.get_pixel(x as u32, y as u32)[3] >= 128
+    };
+
+    let mut push_quad = |verts: [[f32; 3]; 4], normal: [f32; 3], col: [f32; 4]| {
+        let base = positions.len() as u32;
+        for v in verts {
+            positions.push(v);
+            normals.push(normal);
+            uvs.push([0.0, 0.0]);
+            colors.push(col);
+        }
+        indices.extend_from_slice(&[base, base + 1, base + 2, base, base + 2, base + 3]);
+    };
+
+    for py in 0..h {
+        for px in 0..w {
+            let p = img.get_pixel(px, py);
+            if p[3] < 128 {
+                continue;
+            }
+            let lin = Color::srgba_u8(p[0], p[1], p[2], 255)
+                .to_linear()
+                .to_f32_array();
+            let side_col = [lin[0] * 0.82, lin[1] * 0.82, lin[2] * 0.82, 1.0];
+
+            let x0 = px as f32 * cell - half_w;
+            let x1 = x0 + cell;
+            // Flip image Y so top of PNG is +Y in 3D space
+            let y1 = half_h - py as f32 * cell;
+            let y0 = y1 - cell;
+            let z0 = -half_d;
+            let z1 = half_d;
+
+            // Front (+Z) & Back (-Z)
+            push_quad([[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]], [0.0, 0.0, 1.0], lin);
+            push_quad([[x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0]], [0.0, 0.0, -1.0], lin);
+
+            // Exposed side bevels
+            let ix = px as i32;
+            let iy = py as i32;
+            if !is_solid(ix - 1, iy) {
+                push_quad([[x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0]], [-1.0, 0.0, 0.0], side_col);
+            }
+            if !is_solid(ix + 1, iy) {
+                push_quad([[x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1]], [1.0, 0.0, 0.0], side_col);
+            }
+            if !is_solid(ix, iy - 1) {
+                push_quad([[x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0]], [0.0, 1.0, 0.0], side_col);
+            }
+            if !is_solid(ix, iy + 1) {
+                push_quad([[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]], [0.0, -1.0, 0.0], side_col);
+            }
+        }
+    }
+
+    if positions.is_empty() {
+        return None;
+    }
+
+    Some(
+        Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+        )
+        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, positions)
+        .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
+        .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
+        .with_inserted_attribute(Mesh::ATTRIBUTE_COLOR, colors)
+        .with_inserted_indices(Indices::U32(indices)),
+    )
 }
 
 type CubeFaceDef = (FaceDirection, [[f32; 3]; 4], [f32; 3], [[f32; 2]; 4]);
@@ -339,6 +487,7 @@ fn handle_spawn_item_drop(
     chunk_material: Option<Res<ChunkMaterial>>,
     mut mesh_cache: ResMut<VoxelItemMeshCache>,
     mut meshes: ResMut<Assets<Mesh>>,
+    mut std_materials: ResMut<Assets<StandardMaterial>>,
     mut rng_seed: Local<u64>,
 ) {
     let Some(chunk_material) = chunk_material else {
@@ -357,6 +506,31 @@ fn handle_spawn_item_drop(
         .wrapping_add(1442695040888963407);
     let bob_phase = ((*rng_seed >> 32) as u32 as f32 / 4294967295.0) * std::f32::consts::TAU;
 
+    let drop_comp = ItemDrop {
+        voxel: event.voxel,
+        velocity: event.velocity,
+        age: 0.0,
+        pickup_delay: event.pickup_delay,
+        bob_phase,
+        base_y: event.position.y,
+        grounded: false,
+        in_fluid: false,
+    };
+
+    if let Some(icon_path) = super::voxel_item_texture_path(event.voxel)
+        && let Some(ext_mesh) =
+            mesh_cache.get_or_create_extruded_drop_mesh(event.voxel, icon_path, &mut meshes)
+    {
+        let ext_mat = mesh_cache.get_or_create_extruded_material(&mut std_materials);
+        commands.spawn((
+            Mesh3d(ext_mesh),
+            MeshMaterial3d(ext_mat),
+            Transform::from_translation(event.position),
+            drop_comp,
+        ));
+        return;
+    }
+
     let mesh_handle = mesh_cache.get_or_create_drop_mesh(event.voxel, &mut meshes, &chunk_material);
     let material_handle = chunk_material.opaque.clone();
 
@@ -364,22 +538,14 @@ fn handle_spawn_item_drop(
         Mesh3d(mesh_handle),
         MeshMaterial3d(material_handle),
         Transform::from_translation(event.position),
-        ItemDrop {
-            voxel: event.voxel,
-            velocity: event.velocity,
-            age: 0.0,
-            pickup_delay: event.pickup_delay,
-            bob_phase,
-            base_y: event.position.y,
-            grounded: false,
-            in_fluid: false,
-        },
+        drop_comp,
     ));
 }
 
 fn handle_block_break_spawn_drop(
     event: On<BlockBreakEvent>,
     mut commands: Commands,
+    selected: Option<Res<super::SelectedVoxel>>,
     mut rng_seed: Local<u64>,
 ) {
     if event.voxel.is_empty() || event.voxel.is_fluid() {
@@ -391,11 +557,18 @@ fn handle_block_break_spawn_drop(
     }
 
     // Non-crop double-tall top plants (e.g. tall grass/flowers) drop their bottom item variant
-    let drop_source_voxel = if event.voxel.is_double_tall_top() && !event.voxel.is_crop_billboard() {
-        event.voxel.double_tall_bottom_partner().unwrap_or(event.voxel)
-    } else {
-        event.voxel
-    };
+    let mut drop_source_voxel =
+        if event.voxel.is_double_tall_top() && !event.voxel.is_crop_billboard() {
+            event.voxel.double_tall_bottom_partner().unwrap_or(event.voxel)
+        } else {
+            event.voxel
+        };
+
+    // Vegetation blocks drop Plant Fiber unless harvested directly with Shears
+    let using_shears = selected.as_ref().and_then(|s| s.0) == Some(Voxel::ToolFlintShears);
+    if drop_source_voxel.is_shearable_vegetation() && !using_shears {
+        drop_source_voxel = Voxel::ItemPlantFiber;
+    }
 
     let drops = crate::gameplay::crops::evaluate_crop_break_drops(drop_source_voxel, &mut rng_seed);
     for (drop_voxel, count) in drops {
@@ -484,25 +657,27 @@ fn update_item_drops(
             let dist = to_player.length();
 
             if dist <= PICKUP_RADIUS {
-                // Collect into Hotbar or PlayerInventory without triggering hotbar change detection unless a slot changes
-                let mut collected = false;
+                let mut remaining = 1u16;
                 if let Some(ref mut hb) = hotbar {
-                    if hb.as_ref().slots.contains(&Some(drop.voxel)) {
-                        collected = true;
-                    } else if let Some(empty_idx) = hb.as_ref().slots.iter().position(|s| s.is_none()) {
-                        hb.slots[empty_idx] = Some(drop.voxel);
-                        collected = true;
-                    }
+                    remaining = hb.try_stack_existing(drop.voxel, remaining);
                 }
-                if !collected && let Some(ref mut inv) = player_inv {
-                    if inv.as_ref().slots.contains(&Some(drop.voxel)) || inv.add_item(drop.voxel) {
-                        collected = true;
-                    } else {
-                        collected = true;
-                    }
+                if remaining > 0
+                    && let Some(ref mut inv) = player_inv
+                {
+                    remaining = inv.try_stack_existing(drop.voxel, remaining);
+                }
+                if remaining > 0
+                    && let Some(ref mut hb) = hotbar
+                {
+                    remaining = hb.add_to_empty(drop.voxel, remaining);
+                }
+                if remaining > 0
+                    && let Some(ref mut inv) = player_inv
+                {
+                    remaining = inv.add_item_stack(drop.voxel, remaining);
                 }
 
-                if collected {
+                if remaining == 0 {
                     commands.entity(entity).despawn();
                     continue;
                 }

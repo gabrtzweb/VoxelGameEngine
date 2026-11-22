@@ -141,6 +141,7 @@ enum SettingsAction {
     IncFpsHud,
     ToggleHighContrastCrosshair,
     ToggleDynamicCrosshair,
+    ToggleMainHand,
     ToggleSubtitles,
     TogglePixelatedShadows,
     ToggleHdrBloom,
@@ -201,6 +202,9 @@ struct HighContrastCrosshairLabel;
 
 #[derive(Component)]
 struct DynamicCrosshairLabel;
+
+#[derive(Component)]
+struct MainHandLabel;
 
 #[derive(Component)]
 struct SubtitlesLabel;
@@ -816,6 +820,22 @@ fn spawn_settings_menu(
                                         }
                                     ),
                                     DynamicCrosshairLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                spawn_toggle_button(
+                                    col_acc,
+                                    SettingsAction::ToggleMainHand,
+                                    format!(
+                                        "{}: {}",
+                                        loc.t("menu.settings.main_hand"),
+                                        if game_settings.left_handed {
+                                            loc.t("menu.settings.hand_left")
+                                        } else {
+                                            loc.t("menu.settings.hand_right")
+                                        }
+                                    ),
+                                    MainHandLabel,
                                     font_handle.as_ref(),
                                 );
 
@@ -2506,6 +2526,10 @@ fn handle_settings_buttons(
                     game_settings.dynamic_crosshair = !game_settings.dynamic_crosshair;
                     local_config.dynamic_crosshair = game_settings.dynamic_crosshair;
                 }
+                SettingsAction::ToggleMainHand => {
+                    game_settings.left_handed = !game_settings.left_handed;
+                    local_config.left_handed = game_settings.left_handed;
+                }
                 SettingsAction::ToggleSubtitles => {
                     game_settings.subtitles_enabled = !game_settings.subtitles_enabled;
                     local_config.subtitles_enabled = game_settings.subtitles_enabled;
@@ -3052,6 +3076,7 @@ fn update_extended_settings_labels(
             Option<&FpsHudLabel>,
             Option<&HighContrastCrosshairLabel>,
             Option<&DynamicCrosshairLabel>,
+            Option<&MainHandLabel>,
             Option<&SubtitlesLabel>,
         ),
     )>,
@@ -3083,6 +3108,7 @@ fn update_extended_settings_labels(
             fps_hud,
             crosshair,
             dyn_crosshair,
+            main_hand,
             subtitles,
         ),
     ) in &mut labels_q
@@ -3155,6 +3181,16 @@ fn update_extended_settings_labels(
                     loc.t("common.enabled")
                 } else {
                     loc.t("common.disabled")
+                }
+            );
+        } else if main_hand.is_some() {
+            text.0 = format!(
+                "{}: {}",
+                loc.t("menu.settings.main_hand"),
+                if game_settings.left_handed {
+                    loc.t("menu.settings.hand_left")
+                } else {
+                    loc.t("menu.settings.hand_right")
                 }
             );
         } else if subtitles.is_some() {

@@ -512,7 +512,8 @@ pub fn creative_movement(
     if camera_controller.is_third_person() {
         let max_dist = game_settings.third_person_distance.clamp(2.5, 8.0);
         let pivot = if game_settings.third_person_over_shoulder {
-            eye_position + camera_right * 0.55 - Vec3::Y * 0.12
+            let shoulder_sign = if game_settings.left_handed { -1.0 } else { 1.0 };
+            eye_position + camera_right * (0.55 * shoulder_sign) - Vec3::Y * 0.12
         } else {
             eye_position
         };

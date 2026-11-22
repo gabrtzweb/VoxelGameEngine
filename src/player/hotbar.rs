@@ -18,14 +18,72 @@ pub const HOTBAR_FRAME_HEIGHT: f32 = 270.0 * HOTBAR_SCALE; // 1080.0 px
 #[derive(Resource, Debug, Clone)]
 pub struct Hotbar {
     pub slots: [Option<Voxel>; HOTBAR_SLOT_COUNT],
+    pub counts: [u16; HOTBAR_SLOT_COUNT],
     pub active_slot: usize,
 }
 
 impl Default for Hotbar {
     fn default() -> Self {
+        let mut slots = [None; HOTBAR_SLOT_COUNT];
+        let mut counts = [0u16; HOTBAR_SLOT_COUNT];
+        slots[0] = Some(Voxel::ToolFlintPickaxe);
+        counts[0] = 1;
+        slots[1] = Some(Voxel::ToolFlintAxe);
+        counts[1] = 1;
+        slots[2] = Some(Voxel::ToolFlintShovel);
+        counts[2] = 1;
+        slots[HOTBAR_SLOT_COUNT - 1] = Some(Voxel::EmitTorchFire);
+        counts[HOTBAR_SLOT_COUNT - 1] = 8;
         Self {
-            slots: [None; HOTBAR_SLOT_COUNT],
+            slots,
+            counts,
             active_slot: 0,
+        }
+    }
+}
+
+impl Hotbar {
+    pub fn try_stack_existing(&mut self, voxel: Voxel, mut amount: u16) -> u16 {
+        let max_stack = voxel.max_stack_size();
+        for i in 0..HOTBAR_SLOT_COUNT {
+            if amount == 0 {
+                break;
+            }
+            if self.slots[i] == Some(voxel) && self.counts[i] < max_stack {
+                let space = max_stack - self.counts[i];
+                let add = amount.min(space);
+                self.counts[i] += add;
+                amount -= add;
+            }
+        }
+        amount
+    }
+
+    pub fn add_to_empty(&mut self, voxel: Voxel, mut amount: u16) -> u16 {
+        let max_stack = voxel.max_stack_size();
+        for i in 0..HOTBAR_SLOT_COUNT {
+            if amount == 0 {
+                break;
+            }
+            if self.slots[i].is_none() {
+                let add = amount.min(max_stack);
+                self.slots[i] = Some(voxel);
+                self.counts[i] = add;
+                amount -= add;
+            }
+        }
+        amount
+    }
+
+    pub fn consume_active(&mut self, amount: u16) {
+        let active = self.active_slot % HOTBAR_SLOT_COUNT;
+        if self.slots[active].is_some() {
+            if self.counts[active] <= amount {
+                self.slots[active] = None;
+                self.counts[active] = 0;
+            } else {
+                self.counts[active] -= amount;
+            }
         }
     }
 }
@@ -46,7 +104,15 @@ pub struct HotbarSlotIcon {
 }
 
 #[derive(Component)]
+pub struct HotbarSlotCount {
+    pub index: usize,
+}
+
+#[derive(Component)]
 pub struct HotbarOffhandIcon;
+
+#[derive(Component)]
+pub struct HotbarOffhandCount;
 
 #[derive(Component)]
 pub struct HotbarUtilityIcon;
@@ -254,6 +320,20 @@ fn setup_hotbar_ui(
                             },
                             Visibility::Hidden,
                         ));
+                        slot.spawn((
+                            HotbarOffhandCount,
+                            Text::new(""),
+                            num_font.clone(),
+                            TextColor(Color::srgba(1.0, 1.0, 1.0, 0.96)),
+                            text_shadow_default(),
+                            Node {
+                                position_type: PositionType::Absolute,
+                                bottom: px(1.0 * HOTBAR_SCALE),
+                                right: px(2.0 * HOTBAR_SCALE),
+                                ..default()
+                            },
+                            ZIndex(11),
+                        ));
                     });
 
                     // Quick Utility Slot display at (363, 228), 16x16 px (beside Off-hand on the right)
@@ -352,6 +432,28 @@ fn setup_hotbar_ui(
                                     ..default()
                                 },
                                 ZIndex(10),
+                            ));
+
+                            // Stack count readout (bottom-right, visible when > 1)
+                            let init_count = initial_hotbar.counts[index];
+                            let count_str = if init_count > 1 {
+                                format!("{}", init_count)
+                            } else {
+                                String::new()
+                            };
+                            slot.spawn((
+                                HotbarSlotCount { index },
+                                Text::new(count_str),
+                                num_font.clone(),
+                                TextColor(Color::srgba(1.0, 1.0, 1.0, 0.96)),
+                                text_shadow_default(),
+                                Node {
+                                    position_type: PositionType::Absolute,
+                                    bottom: px(1.0 * HOTBAR_SCALE),
+                                    right: px(2.0 * HOTBAR_SCALE),
+                                    ..default()
+                                },
+                                ZIndex(11),
                             ));
                         });
                     }
@@ -458,7 +560,8 @@ fn handle_hotbar_input(
     );
     if is_drop {
         let active = hotbar.active_slot;
-        if let Some(dropped_voxel) = hotbar.slots[active].take() {
+        if let Some(dropped_voxel) = hotbar.slots[active] {
+            hotbar.consume_active(1);
             let spawn_pos = player_query
                 .iter()
                 .next()
@@ -490,6 +593,8 @@ fn sync_hotbar_ui(
     mut selection_query: Query<&mut Node, (With<HotbarSelectionBox>, Without<HotbarSlotUi>)>,
     mut slot_bg_query: Query<(&HotbarSlotUi, &mut BackgroundColor)>,
     mut icon_query: Query<(&HotbarSlotIcon, &mut ImageNode, &mut Visibility)>,
+    mut count_query: Query<(&HotbarSlotCount, &mut Text), Without<HotbarOffhandCount>>,
+    mut offhand_count_query: Query<&mut Text, (With<HotbarOffhandCount>, Without<HotbarSlotCount>)>,
     mut offhand_query: Query<
         (&mut ImageNode, &mut Visibility),
         (With<HotbarOffhandIcon>, Without<HotbarSlotIcon>),
@@ -536,6 +641,21 @@ fn sync_hotbar_ui(
                 }
             }
         }
+        for (cnt_ui, mut txt) in &mut count_query {
+            let count = if hotbar.slots[cnt_ui.index].is_some() {
+                hotbar.counts[cnt_ui.index]
+            } else {
+                0
+            };
+            let next = if count > 1 {
+                format!("{}", count)
+            } else {
+                String::new()
+            };
+            if txt.0 != next {
+                txt.0 = next;
+            }
+        }
     }
 
     // Sync offhand & utility slots from player inventory if changed
@@ -548,6 +668,21 @@ fn sync_hotbar_ui(
                 *offhand_vis = Visibility::Inherited;
             } else {
                 *offhand_vis = Visibility::Hidden;
+            }
+        }
+        if let Ok(mut off_txt) = offhand_count_query.single_mut() {
+            let cnt = if inv.offhand_slot.is_some() {
+                inv.offhand_count
+            } else {
+                0
+            };
+            let next = if cnt > 1 {
+                format!("{}", cnt)
+            } else {
+                String::new()
+            };
+            if off_txt.0 != next {
+                off_txt.0 = next;
             }
         }
         if let Ok((mut utility_img, mut utility_vis)) = utility_query.single_mut() {

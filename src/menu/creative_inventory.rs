@@ -39,7 +39,7 @@ pub const CREATIVE_TAB_Y_COORDS: [f32; 9] = [
     65.0, 84.0, 103.0, 122.0, 141.0, 160.0, 179.0, 198.0, 217.0,
 ];
 
-pub const AVAILABLE_BLOCKS: [Voxel; 697] = Voxel::ALL;
+pub const AVAILABLE_BLOCKS: [Voxel; 708] = Voxel::ALL;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CreativeCategory {
@@ -188,6 +188,7 @@ impl CreativeCategory {
                     || tex.starts_with("util_")
                     || tex.starts_with("liquid_")
                     || tex.starts_with("frost_")
+                    || id.starts_with("tool_")
             }
         }
     }
@@ -308,6 +309,11 @@ pub struct PlayerStorageSlotIcon {
 }
 
 #[derive(Component)]
+pub struct PlayerStorageSlotCount {
+    pub slot_index: usize,
+}
+
+#[derive(Component)]
 pub struct InventoryOffhandSlot;
 
 #[derive(Component)]
@@ -315,6 +321,9 @@ pub struct InventoryUtilitySlot;
 
 #[derive(Component)]
 pub struct InventoryOffhandIcon;
+
+#[derive(Component)]
+pub struct InventoryOffhandCount;
 
 #[derive(Component)]
 pub struct InventoryUtilityIcon;
@@ -326,6 +335,11 @@ pub struct InventoryHotbarSlot {
 
 #[derive(Component)]
 pub struct InventoryHotbarSlotIcon {
+    pub index: usize,
+}
+
+#[derive(Component)]
+pub struct InventoryHotbarSlotCount {
     pub index: usize,
 }
 
@@ -433,11 +447,16 @@ fn despawn_inventory_menu(
     mut hotbar: ResMut<Hotbar>,
     selected_voxel: Option<ResMut<crate::gameplay::SelectedVoxel>>,
 ) {
-    if let Some(held) = held_item.voxel.take()
-        && !player_inv.add_item(held)
-        && let Some(empty_idx) = hotbar.slots.iter().position(|s| s.is_none())
-    {
-        hotbar.slots[empty_idx] = Some(held);
+    if let Some(held) = held_item.voxel.take() {
+        let count = held_item.count.max(1);
+        held_item.count = 0;
+        let rem = player_inv.add_item_stack(held, count);
+        if rem > 0 {
+            let rem2 = hotbar.try_stack_existing(held, rem);
+            if rem2 > 0 {
+                hotbar.add_to_empty(held, rem2);
+            }
+        }
     }
     if let Some(mut sel) = selected_voxel {
         sel.0 = hotbar.slots[hotbar.active_slot];
@@ -781,6 +800,31 @@ fn build_inventory_ui(
                                     offhand_vis,
                                 ));
 
+                                let off_cnt = if offhand_voxel.is_some() {
+                                    player_inv.offhand_count
+                                } else {
+                                    0
+                                };
+                                slot.spawn((
+                                    InventoryMenuEntity,
+                                    InventoryOffhandCount,
+                                    Text::new(if off_cnt > 1 {
+                                        format!("{}", off_cnt)
+                                    } else {
+                                        String::new()
+                                    }),
+                                    num_font.clone(),
+                                    TextColor(Color::srgba(1.0, 1.0, 1.0, 0.96)),
+                                    text_shadow_default(),
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        bottom: px(1.0 * GUI_SCALE),
+                                        right: px(2.0 * GUI_SCALE),
+                                        ..default()
+                                    },
+                                    ZIndex(15),
+                                ));
+
                                 slot.spawn((
                                     InventoryMenuEntity,
                                     SlotHoverHighlight,
@@ -977,6 +1021,33 @@ fn build_inventory_ui(
                                             icon_vis,
                                         ));
 
+                                        let cnt = if voxel.is_some() {
+                                            player_inv.counts[slot_idx]
+                                        } else {
+                                            0
+                                        };
+                                        slot.spawn((
+                                            InventoryMenuEntity,
+                                            PlayerStorageSlotCount {
+                                                slot_index: slot_idx,
+                                            },
+                                            Text::new(if cnt > 1 {
+                                                format!("{}", cnt)
+                                            } else {
+                                                String::new()
+                                            }),
+                                            num_font.clone(),
+                                            TextColor(Color::srgba(1.0, 1.0, 1.0, 0.96)),
+                                            text_shadow_default(),
+                                            Node {
+                                                position_type: PositionType::Absolute,
+                                                bottom: px(1.0 * GUI_SCALE),
+                                                right: px(2.0 * GUI_SCALE),
+                                                ..default()
+                                            },
+                                            ZIndex(15),
+                                        ));
+
                                         slot.spawn((
                                             InventoryMenuEntity,
                                             SlotHoverHighlight,
@@ -1085,6 +1156,31 @@ fn build_inventory_ui(
                                             ..default()
                                         },
                                         ZIndex(15),
+                                    ));
+
+                                    let h_cnt = if slot_voxel.is_some() {
+                                        hotbar.counts[c]
+                                    } else {
+                                        0
+                                    };
+                                    slot.spawn((
+                                        InventoryMenuEntity,
+                                        InventoryHotbarSlotCount { index: c },
+                                        Text::new(if h_cnt > 1 {
+                                            format!("{}", h_cnt)
+                                        } else {
+                                            String::new()
+                                        }),
+                                        num_font.clone(),
+                                        TextColor(Color::srgba(1.0, 1.0, 1.0, 0.96)),
+                                        text_shadow_default(),
+                                        Node {
+                                            position_type: PositionType::Absolute,
+                                            bottom: px(1.0 * GUI_SCALE),
+                                            right: px(2.0 * GUI_SCALE),
+                                            ..default()
+                                        },
+                                        ZIndex(16),
                                     ));
                                 });
                             }
@@ -1533,6 +1629,31 @@ fn build_inventory_ui(
                                         },
                                         ZIndex(15),
                                     ));
+
+                                    let h_cnt = if slot_voxel.is_some() {
+                                        hotbar.counts[c]
+                                    } else {
+                                        0
+                                    };
+                                    slot.spawn((
+                                        InventoryMenuEntity,
+                                        InventoryHotbarSlotCount { index: c },
+                                        Text::new(if h_cnt > 1 {
+                                            format!("{}", h_cnt)
+                                        } else {
+                                            String::new()
+                                        }),
+                                        num_font.clone(),
+                                        TextColor(Color::srgba(1.0, 1.0, 1.0, 0.96)),
+                                        text_shadow_default(),
+                                        Node {
+                                            position_type: PositionType::Absolute,
+                                            bottom: px(1.0 * GUI_SCALE),
+                                            right: px(2.0 * GUI_SCALE),
+                                            ..default()
+                                        },
+                                        ZIndex(16),
+                                    ));
                                 });
                             }
                         }
@@ -1715,18 +1836,19 @@ fn handle_inventory_action_buttons(
             match action {
                 InventoryAction::Sort => {
                     let limit = player_inv.unlocked_slots.min(PLAYER_INVENTORY_SLOTS);
-                    let mut items: Vec<Voxel> =
-                        player_inv.slots[..limit].iter().filter_map(|&s| s).collect();
-                    items.sort_by_key(|v| v.id());
+                    let mut items: Vec<(Voxel, u16)> = (0..limit)
+                        .filter_map(|i| player_inv.slots[i].map(|v| (v, player_inv.counts[i].max(1))))
+                        .collect();
+                    items.sort_by_key(|(v, _)| v.id());
                     player_inv.slots = [None; PLAYER_INVENTORY_SLOTS];
-                    for (i, v) in items.into_iter().enumerate() {
-                        if i < limit {
-                            player_inv.slots[i] = Some(v);
-                        }
+                    player_inv.counts = [0; PLAYER_INVENTORY_SLOTS];
+                    for (v, cnt) in items {
+                        player_inv.add_item_stack(v, cnt);
                     }
                 }
                 InventoryAction::Trash => {
                     held_item.voxel = None;
+                    held_item.count = 0;
                 }
                 InventoryAction::Options => {}
                 InventoryAction::Lock => {}
@@ -2096,6 +2218,70 @@ struct SlotInteractionQueries<'w, 's> {
     hover_overlay_query: Query<'w, 's, &'static mut Visibility, With<SlotHoverHighlight>>,
 }
 
+fn interact_stack_slot(
+    held: &mut HeldInventoryItem,
+    slot_v: &mut Option<Voxel>,
+    slot_c: &mut u16,
+    right_click: bool,
+) {
+    if right_click {
+        if held.voxel.is_none() {
+            if let Some(v) = *slot_v {
+                let total = (*slot_c).max(1);
+                let take = total.div_ceil(2);
+                let remain = total - take;
+                held.voxel = Some(v);
+                held.count = take;
+                if remain == 0 {
+                    *slot_v = None;
+                    *slot_c = 0;
+                } else {
+                    *slot_c = remain;
+                }
+            }
+        } else if let Some(hv) = held.voxel {
+            let max_s = hv.max_stack_size();
+            if slot_v.is_none() {
+                *slot_v = Some(hv);
+                *slot_c = 1;
+                held.count = held.count.saturating_sub(1);
+                if held.count == 0 {
+                    held.voxel = None;
+                }
+            } else if *slot_v == Some(hv) && *slot_c < max_s {
+                *slot_c += 1;
+                held.count = held.count.saturating_sub(1);
+                if held.count == 0 {
+                    held.voxel = None;
+                }
+            } else {
+                std::mem::swap(&mut held.voxel, slot_v);
+                std::mem::swap(&mut held.count, slot_c);
+            }
+        }
+    } else if let Some(hv) = held.voxel
+        && *slot_v == Some(hv)
+        && *slot_c < hv.max_stack_size()
+    {
+        let space = hv.max_stack_size() - *slot_c;
+        let add = held.count.max(1).min(space);
+        *slot_c += add;
+        held.count = held.count.saturating_sub(add);
+        if held.count == 0 {
+            held.voxel = None;
+        }
+    } else {
+        std::mem::swap(&mut held.voxel, slot_v);
+        std::mem::swap(&mut held.count, slot_c);
+        if held.voxel.is_some() && held.count == 0 {
+            held.count = 1;
+        }
+        if slot_v.is_some() && *slot_c == 0 {
+            *slot_c = 1;
+        }
+    }
+}
+
 fn handle_inventory_slot_interaction(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
@@ -2177,56 +2363,54 @@ fn handle_inventory_slot_interaction(
             if let Some(h_idx) = digit_pressed {
                 any_interacted = true;
                 std::mem::swap(&mut hotbar.slots[h_idx], &mut player_inv.slots[slot_idx]);
+                std::mem::swap(&mut hotbar.counts[h_idx], &mut player_inv.counts[slot_idx]);
             } else if is_shift
                 && (left_click || (left_held && !dragged_slots.contains(&(0, slot_idx))))
             {
                 any_interacted = true;
                 dragged_slots.insert((0, slot_idx));
-                let current_item = player_inv.slots[slot_idx];
-                if let Some(item) = current_item {
-                    // Transfer to hotbar
-                    if let Some(empty_idx) = hotbar.slots.iter().position(|s| s.is_none()) {
-                        hotbar.slots[empty_idx] = Some(item);
+                if let Some(item) = player_inv.slots[slot_idx] {
+                    let count = player_inv.counts[slot_idx].max(1);
+                    let rem = hotbar.try_stack_existing(item, count);
+                    let rem2 = hotbar.add_to_empty(item, rem);
+                    if rem2 == 0 {
                         player_inv.slots[slot_idx] = None;
+                        player_inv.counts[slot_idx] = 0;
                     } else {
-                        let active = hotbar.active_slot;
-                        let displaced = hotbar.slots[active];
-                        hotbar.slots[active] = Some(item);
-                        player_inv.slots[slot_idx] = displaced;
+                        player_inv.counts[slot_idx] = rem2;
                     }
                 }
             } else if left_click {
                 any_interacted = true;
                 dragged_slots.insert((0, slot_idx));
-                let current_item = player_inv.slots[slot_idx];
-                let temp = held_item.voxel;
-                held_item.voxel = current_item;
-                player_inv.slots[slot_idx] = temp;
+                let inv = &mut *player_inv;
+                interact_stack_slot(
+                    &mut held_item,
+                    &mut inv.slots[slot_idx],
+                    &mut inv.counts[slot_idx],
+                    false,
+                );
             } else if left_released
                 && held_item.voxel.is_some()
                 && !dragged_slots.contains(&(0, slot_idx))
             {
                 any_interacted = true;
-                let current_item = player_inv.slots[slot_idx];
-                let temp = held_item.voxel;
-                held_item.voxel = current_item;
-                player_inv.slots[slot_idx] = temp;
+                let inv = &mut *player_inv;
+                interact_stack_slot(
+                    &mut held_item,
+                    &mut inv.slots[slot_idx],
+                    &mut inv.counts[slot_idx],
+                    false,
+                );
             } else if right_click {
                 any_interacted = true;
-                let current_item = player_inv.slots[slot_idx];
-                if held_item.voxel.is_none() && current_item.is_some() {
-                    held_item.voxel = current_item;
-                    player_inv.slots[slot_idx] = None;
-                } else if let Some(held) = held_item.voxel {
-                    if current_item.is_none() {
-                        player_inv.slots[slot_idx] = Some(held);
-                        held_item.voxel = None;
-                    } else {
-                        let temp = held_item.voxel;
-                        held_item.voxel = current_item;
-                        player_inv.slots[slot_idx] = temp;
-                    }
-                }
+                let inv = &mut *player_inv;
+                interact_stack_slot(
+                    &mut held_item,
+                    &mut inv.slots[slot_idx],
+                    &mut inv.counts[slot_idx],
+                    true,
+                );
             }
         }
     }
@@ -2255,11 +2439,14 @@ fn handle_inventory_slot_interaction(
             {
                 any_interacted = true;
                 dragged_slots.insert((1, h_idx));
-                let current_item = hotbar.slots[h_idx];
-                if let Some(item) = current_item {
-                    // Transfer to storage
-                    if player_inv.add_item(item) {
+                if let Some(item) = hotbar.slots[h_idx] {
+                    let count = hotbar.counts[h_idx].max(1);
+                    let rem = player_inv.add_item_stack(item, count);
+                    if rem == 0 {
                         hotbar.slots[h_idx] = None;
+                        hotbar.counts[h_idx] = 0;
+                    } else {
+                        hotbar.counts[h_idx] = rem;
                     }
                 }
             } else if is_shift
@@ -2270,38 +2457,38 @@ fn handle_inventory_slot_interaction(
                 any_interacted = true;
                 dragged_slots.insert((1, h_idx));
                 hotbar.slots[h_idx] = None;
+                hotbar.counts[h_idx] = 0;
             } else if left_click {
                 any_interacted = true;
                 dragged_slots.insert((1, h_idx));
-                let current_item = hotbar.slots[h_idx];
-                let temp = held_item.voxel;
-                held_item.voxel = current_item;
-                hotbar.slots[h_idx] = temp;
+                let hb = &mut *hotbar;
+                interact_stack_slot(
+                    &mut held_item,
+                    &mut hb.slots[h_idx],
+                    &mut hb.counts[h_idx],
+                    false,
+                );
             } else if left_released
                 && held_item.voxel.is_some()
                 && !dragged_slots.contains(&(1, h_idx))
             {
                 any_interacted = true;
-                let current_item = hotbar.slots[h_idx];
-                let temp = held_item.voxel;
-                held_item.voxel = current_item;
-                hotbar.slots[h_idx] = temp;
+                let hb = &mut *hotbar;
+                interact_stack_slot(
+                    &mut held_item,
+                    &mut hb.slots[h_idx],
+                    &mut hb.counts[h_idx],
+                    false,
+                );
             } else if right_click {
                 any_interacted = true;
-                let current_item = hotbar.slots[h_idx];
-                if held_item.voxel.is_none() && current_item.is_some() {
-                    held_item.voxel = current_item;
-                    hotbar.slots[h_idx] = None;
-                } else if let Some(held) = held_item.voxel {
-                    if current_item.is_none() {
-                        hotbar.slots[h_idx] = Some(held);
-                        held_item.voxel = None;
-                    } else {
-                        let temp = held_item.voxel;
-                        held_item.voxel = current_item;
-                        hotbar.slots[h_idx] = temp;
-                    }
-                }
+                let hb = &mut *hotbar;
+                interact_stack_slot(
+                    &mut held_item,
+                    &mut hb.slots[h_idx],
+                    &mut hb.counts[h_idx],
+                    true,
+                );
             }
         }
     }
@@ -2322,13 +2509,19 @@ fn handle_inventory_slot_interaction(
             }
         }
 
-        if is_hovered && left_click {
+        if is_hovered && (left_click || right_click) {
             any_interacted = true;
-            std::mem::swap(&mut held_item.voxel, &mut player_inv.offhand_slot);
+            let inv = &mut *player_inv;
+            interact_stack_slot(
+                &mut held_item,
+                &mut inv.offhand_slot,
+                &mut inv.offhand_count,
+                right_click,
+            );
         }
     }
 
-    // 4. Quick Utility Slot
+    // 4. Quick Utility Slot (reserved for future utility gear: backpacks, quivers, shields)
     for (hovered, children) in &mut utility_query {
         let is_hovered = hovered.get();
         for child in children.iter() {
@@ -2344,9 +2537,16 @@ fn handle_inventory_slot_interaction(
             }
         }
 
-        if is_hovered && left_click {
+        if is_hovered && left_click && held_item.voxel.is_none() && player_inv.utility_slot.is_some()
+        {
             any_interacted = true;
-            std::mem::swap(&mut held_item.voxel, &mut player_inv.utility_slot);
+            let inv = &mut *player_inv;
+            interact_stack_slot(
+                &mut held_item,
+                &mut inv.utility_slot,
+                &mut inv.utility_count,
+                false,
+            );
         }
     }
 
@@ -2372,6 +2572,7 @@ fn handle_inventory_slot_interaction(
                 any_interacted = true;
                 if let Some(voxel) = slot.voxel {
                     hotbar.slots[h_idx] = Some(voxel);
+                    hotbar.counts[h_idx] = voxel.max_stack_size();
                 }
             } else if is_shift
                 && (left_click || (left_held && !dragged_slots.contains(&(2, c_idx))))
@@ -2379,26 +2580,32 @@ fn handle_inventory_slot_interaction(
                 any_interacted = true;
                 dragged_slots.insert((2, c_idx));
                 if let Some(voxel) = slot.voxel {
+                    let stack = voxel.max_stack_size();
                     if let Some(empty_idx) = hotbar.slots.iter().position(|s| s.is_none()) {
                         hotbar.slots[empty_idx] = Some(voxel);
+                        hotbar.counts[empty_idx] = stack;
                     } else {
                         let active = hotbar.active_slot;
                         hotbar.slots[active] = Some(voxel);
+                        hotbar.counts[active] = stack;
                     }
                 }
             } else if left_click || right_click {
                 any_interacted = true;
                 if let Some(voxel) = slot.voxel {
                     held_item.voxel = Some(voxel);
+                    held_item.count = if right_click { 1 } else { voxel.max_stack_size() };
                 } else {
                     // Empty catalog slot: clicking with held item discards it
                     held_item.voxel = None;
+                    held_item.count = 0;
                 }
             } else if left_released {
                 // Releasing mouse over an empty catalog slot discards held item
                 if slot.voxel.is_none() && held_item.voxel.is_some() {
                     any_interacted = true;
                     held_item.voxel = None;
+                    held_item.count = 0;
                 }
             }
         }
@@ -2422,29 +2629,50 @@ fn handle_inventory_slot_interaction(
         let card_rect = Rect::from_corners(center - half, center + half);
         if !card_rect.contains(cursor_pos) {
             if let Some(discarded) = held_item.voxel.take() {
+                let drop_count = held_item.count.max(1);
+                held_item.count = 0;
                 let spawn_pos = player_query
                     .iter()
                     .next()
                     .map_or(Vec3::new(0.0, 20.0, 0.0), |t| t.translation + Vec3::Y * 1.38);
-                commands.trigger(crate::gameplay::SpawnItemDropEvent {
-                    position: spawn_pos + Vec3::NEG_Z * 0.45,
-                    velocity: Vec3::new(0.0, 1.8, -4.5),
-                    voxel: discarded,
-                    pickup_delay: 1.5,
-                });
+                for _ in 0..drop_count {
+                    commands.trigger(crate::gameplay::SpawnItemDropEvent {
+                        position: spawn_pos + Vec3::NEG_Z * 0.45,
+                        velocity: Vec3::new(0.0, 1.8, -4.5),
+                        voxel: discarded,
+                        pickup_delay: 1.5,
+                    });
+                }
             }
         }
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn sync_inventory_hotbar_icons(
     hotbar: Res<Hotbar>,
     player_inv: Res<PlayerInventory>,
     icons: Res<BlockIcons>,
     mut hotbar_icons: Query<(&InventoryHotbarSlotIcon, &mut ImageNode, &mut Visibility)>,
+    mut hotbar_counts: Query<
+        (&InventoryHotbarSlotCount, &mut Text),
+        (Without<PlayerStorageSlotCount>, Without<InventoryOffhandCount>),
+    >,
     mut storage_icons: Query<
         (&PlayerStorageSlotIcon, &mut ImageNode, &mut Visibility),
         Without<InventoryHotbarSlotIcon>,
+    >,
+    mut storage_counts: Query<
+        (&PlayerStorageSlotCount, &mut Text),
+        (Without<InventoryHotbarSlotCount>, Without<InventoryOffhandCount>),
+    >,
+    mut offhand_counts: Query<
+        &mut Text,
+        (
+            With<InventoryOffhandCount>,
+            Without<InventoryHotbarSlotCount>,
+            Without<PlayerStorageSlotCount>,
+        ),
     >,
     mut offhand_icons: Query<
         (&mut ImageNode, &mut Visibility),
@@ -2473,6 +2701,21 @@ fn sync_inventory_hotbar_icons(
                 *vis = Visibility::Hidden;
             }
         }
+        for (cnt_ui, mut txt) in &mut hotbar_counts {
+            let count = if hotbar.slots[cnt_ui.index].is_some() {
+                hotbar.counts[cnt_ui.index]
+            } else {
+                0
+            };
+            let next = if count > 1 {
+                format!("{}", count)
+            } else {
+                String::new()
+            };
+            if txt.0 != next {
+                txt.0 = next;
+            }
+        }
     }
 
     if player_inv.is_changed() {
@@ -2484,6 +2727,27 @@ fn sync_inventory_hotbar_icons(
                 *vis = Visibility::Hidden;
             }
         }
+        for (cnt_ui, mut txt) in &mut storage_counts {
+            let count = if player_inv
+                .slots
+                .get(cnt_ui.slot_index)
+                .copied()
+                .flatten()
+                .is_some()
+            {
+                player_inv.counts[cnt_ui.slot_index]
+            } else {
+                0
+            };
+            let next = if count > 1 {
+                format!("{}", count)
+            } else {
+                String::new()
+            };
+            if txt.0 != next {
+                txt.0 = next;
+            }
+        }
 
         for (mut img, mut vis) in &mut offhand_icons {
             if let Some(voxel) = player_inv.offhand_slot {
@@ -2491,6 +2755,21 @@ fn sync_inventory_hotbar_icons(
                 *vis = Visibility::Visible;
             } else {
                 *vis = Visibility::Hidden;
+            }
+        }
+        for mut txt in &mut offhand_counts {
+            let cnt = if player_inv.offhand_slot.is_some() {
+                player_inv.offhand_count
+            } else {
+                0
+            };
+            let next = if cnt > 1 {
+                format!("{}", cnt)
+            } else {
+                String::new()
+            };
+            if txt.0 != next {
+                txt.0 = next;
             }
         }
 

@@ -709,16 +709,27 @@ pub enum Voxel {
     Campfire = 697,
     CampfireUnlit = 698,
     MossCarpet = 699,
+    ItemFlintShard = 700,
+    ItemPlantFiber = 701,
+    ItemPlantString = 702,
+    ToolFireStarter = 703,
+    ToolFlintAxe = 704,
+    ToolFlintHammer = 705,
+    ToolFlintHoe = 706,
+    ToolFlintKnife = 707,
+    ToolFlintPickaxe = 708,
+    ToolFlintShears = 709,
+    ToolFlintShovel = 710,
 }
 impl Voxel {
-    /// Array containing all active, non-placeholder gameplay voxels (indices 3..=699).
-    pub const ALL: [Voxel; 697] = generate_all_voxels();
+    /// Array containing all active, non-placeholder gameplay voxels (indices 3..=710).
+    pub const ALL: [Voxel; 708] = generate_all_voxels();
 
     /// Safely convert a `u16` id to a `Voxel` variant.
     #[inline(always)]
     pub const fn from_u16(val: u16) -> Option<Self> {
-        if val <= 699 {
-            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 699.
+        if val <= 710 {
+            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 710.
             Some(unsafe { std::mem::transmute::<u16, Self>(val) })
         } else {
             None
@@ -959,11 +970,11 @@ impl Voxel {
     }
 }
 
-const fn generate_all_voxels() -> [Voxel; 697] {
-    let mut arr = [Voxel::Air; 697];
+const fn generate_all_voxels() -> [Voxel; 708] {
+    let mut arr = [Voxel::Air; 708];
     let mut i = 0;
-    while i < 697 {
-        // Active gameplay blocks start at discriminant 3 (indices 3..=699)
+    while i < 708 {
+        // Active gameplay blocks start at discriminant 3 (indices 3..=710)
         let id = (i + 3) as u16;
         arr[i] = unsafe { std::mem::transmute::<u16, Voxel>(id) };
         i += 1;

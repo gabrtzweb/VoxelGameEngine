@@ -39,8 +39,16 @@ pub struct SelectedVoxel(pub Option<Voxel>);
 
 impl Default for SelectedVoxel {
     fn default() -> Self {
-        Self(None)
+        Self(Some(Voxel::ToolFlintPickaxe))
     }
+}
+
+#[derive(Resource, Default, Clone, Copy, Debug)]
+pub struct BlockBreakingState {
+    pub target: Option<IVec3>,
+    pub progress: f32,
+    pub shake_offset: Vec3,
+    pub shake_scale: f32,
 }
 
 #[derive(Default)]
@@ -90,12 +98,14 @@ pub struct VoxelInteractionPlugin;
 
 impl Plugin for VoxelInteractionPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<SelectedVoxel>().add_systems(
-            Update,
-            (pick_targeted_voxel, edit_voxels)
-                .chain()
-                .after(TargetingSet::UpdateTarget),
-        );
+        app.init_resource::<SelectedVoxel>()
+            .init_resource::<BlockBreakingState>()
+            .add_systems(
+                Update,
+                (pick_targeted_voxel, edit_voxels)
+                    .chain()
+                    .after(TargetingSet::UpdateTarget),
+            );
     }
 }
 
@@ -161,6 +171,7 @@ fn pick_targeted_voxel(
                 {
                     let active = hotbar.active_slot;
                     std::mem::swap(&mut hotbar.slots[active], &mut inv.slots[inv_idx]);
+                    std::mem::swap(&mut hotbar.counts[active], &mut inv.counts[inv_idx]);
                     selected.0 = Some(pick_voxel);
                 }
             }
@@ -172,13 +183,16 @@ fn pick_targeted_voxel(
     if let Some(mut hotbar) = hotbar {
         let active = hotbar.active_slot;
         hotbar.slots[active] = Some(pick_voxel);
+        hotbar.counts[active] = pick_voxel.max_stack_size();
     }
 
     info!("Selected voxel: {}", pick_voxel.label());
 }
 
 fn edit_voxels(
-    (game_mode, selected): (Res<GameMode>, Res<SelectedVoxel>),
+    (game_mode, mut selected): (Res<GameMode>, ResMut<SelectedVoxel>),
+    mut hotbar: Option<ResMut<Hotbar>>,
+    mut player_inv: Option<ResMut<crate::player::PlayerInventory>>,
     mut commands: Commands,
     (keyboard, mouse, time, current_target): (
         Res<ButtonInput<KeyCode>>,
@@ -189,16 +203,22 @@ fn edit_voxels(
     control_settings: Option<Res<crate::core::ControlSettings>>,
     (mut world, mut modifications, mut light_registry, mut queues): WorldEditResources,
     (fluid_queue, menu_state, inspector, mut map_cache): OptionalInteractionParams,
+    mut breaking_state: ResMut<BlockBreakingState>,
+    selected_subrace: Option<Res<crate::player::SelectedSubrace>>,
     camera_query: Query<&Transform, With<PlayerCamera>>,
     mut interaction_state: Local<InteractionState>,
 ) {
     if menu_state.is_some_and(|s| *s.get() != MenuState::None)
         || inspector.is_some_and(|i| i.active)
     {
+        breaking_state.target = None;
+        breaking_state.progress = 0.0;
         return;
     }
 
     if *game_mode == GameMode::Spectator {
+        breaking_state.target = None;
+        breaking_state.progress = 0.0;
         return;
     }
 
@@ -222,11 +242,56 @@ fn edit_voxels(
         |c| c.is_action_just_pressed(crate::core::InputAction::SecondaryAction, &keyboard, &mouse),
     );
 
-    let break_action = interaction_state.break_action.update(
-        break_pressed,
-        break_just_pressed,
-        delta_seconds,
-    );
+    let break_action = if *game_mode == GameMode::Survival {
+        if break_pressed && let Some(target) = current_target.hit {
+            if let Some(hit_voxel) = world.get_voxel(target.hit_voxel)
+                && !hit_voxel.is_empty()
+                && !hit_voxel.is_fluid()
+            {
+                let base_time = hit_voxel.base_break_time_secs();
+                if base_time.is_infinite() {
+                    breaking_state.target = None;
+                    breaking_state.progress = 0.0;
+                    false
+                } else {
+                    let racial_mining = selected_subrace
+                        .as_ref()
+                        .map_or(1.0, |s| s.0.attributes().mining_speed_multiplier);
+                    let speed = (hit_voxel.tool_speed_multiplier(selected.0) * racial_mining)
+                        .max(0.1);
+                    let duration = (base_time / speed).max(0.08);
+                    if breaking_state.target != Some(target.hit_voxel) {
+                        breaking_state.target = Some(target.hit_voxel);
+                        breaking_state.progress = 0.0;
+                    }
+                    breaking_state.progress += delta_seconds / duration;
+                    if breaking_state.progress >= 1.0 {
+                        breaking_state.progress = 0.0;
+                        breaking_state.target = None;
+                        true
+                    } else {
+                        false
+                    }
+                }
+            } else {
+                breaking_state.target = None;
+                breaking_state.progress = 0.0;
+                false
+            }
+        } else {
+            breaking_state.target = None;
+            breaking_state.progress = 0.0;
+            false
+        }
+    } else {
+        breaking_state.target = None;
+        breaking_state.progress = 0.0;
+        interaction_state.break_action.update(
+            break_pressed,
+            break_just_pressed,
+            delta_seconds,
+        )
+    };
 
     let place_action = interaction_state.place_action.update(
         place_pressed,
@@ -240,6 +305,22 @@ fn edit_voxels(
 
     let Some(target) = current_target.hit else {
         return;
+    };
+
+    let offhand_voxel = player_inv.as_ref().and_then(|inv| inv.offhand_slot);
+    let main_has_rmb_action = |v: Voxel| {
+        !v.is_inventory_only_item()
+            || v == Voxel::ItemBoneMeal
+            || v == Voxel::ToolFireStarter
+            || v == Voxel::ToolFlintHoe
+            || crate::gameplay::crops::seed_to_crop(v).is_some()
+    };
+    let (active_place_voxel, using_offhand) = match selected.0 {
+        Some(v) if main_has_rmb_action(v) => (Some(v), false),
+        _ => match offhand_voxel {
+            Some(ov) if main_has_rmb_action(ov) => (Some(ov), true),
+            _ => (selected.0, false),
+        },
     };
 
     let (edited_voxels, broken_voxel, broken_orientation) = if break_action {
@@ -257,24 +338,86 @@ fn edit_voxels(
             (edited, prev_voxel)
         };
         (edited, broken, prev_orient)
-    } else if place_action && selected.0.is_none() {
-        // Empty-hand right-click: toggle lit/unlit state on lamps and campfires
-        if place_just_pressed
-            && let Some(hit_voxel) = world.get_voxel(target.hit_voxel)
-            && let Some(toggled) = hit_voxel.toggle_light_state()
-        {
-            world.set_voxel(target.hit_voxel, toggled);
-            modifications.record(target.hit_voxel, toggled);
+    } else if place_action
+        && selected.0.is_none()
+        && place_just_pressed
+        && let Some(hit_voxel) = world.get_voxel(target.hit_voxel)
+        && !(*game_mode == GameMode::Survival && hit_voxel == Voxel::CampfireUnlit)
+        && let Some(toggled) = hit_voxel.toggle_light_state()
+    {
+        // Empty-hand right-click: toggle lamps; extinguish campfires; in Creative also light campfires
+        world.set_voxel(target.hit_voxel, toggled);
+        modifications.record(target.hit_voxel, toggled);
+        commands.trigger(BlockPlaceEvent {
+            position: target.hit_voxel,
+            voxel: toggled,
+        });
+        (vec![target.hit_voxel], None, 0)
+    } else if place_action && active_place_voxel == Some(Voxel::ToolFireStarter) {
+        if !place_just_pressed {
+            return;
+        }
+        if world.get_voxel(target.hit_voxel) == Some(Voxel::CampfireUnlit) {
+            world.set_voxel(target.hit_voxel, Voxel::Campfire);
+            modifications.record(target.hit_voxel, Voxel::Campfire);
             commands.trigger(BlockPlaceEvent {
                 position: target.hit_voxel,
-                voxel: toggled,
+                voxel: Voxel::Campfire,
+            });
+            (vec![target.hit_voxel], None, 0)
+        } else if let Some(place_pos) = target.place_voxel
+            && world.get_voxel(place_pos).is_none_or(Voxel::is_empty)
+            && world
+                .get_voxel(place_pos - IVec3::Y)
+                .is_some_and(Voxel::is_solid_opaque)
+        {
+            let placed = place_block(&mut world, &mut modifications, place_pos, Voxel::ElementFire);
+            if !placed.is_empty() {
+                world.set_shape(place_pos, BlockShape::CrossBillboard, 0);
+                modifications.record_shape(place_pos, BlockShape::CrossBillboard, 0);
+            }
+            (placed, None, 0)
+        } else {
+            return;
+        }
+    } else if place_action && active_place_voxel == Some(Voxel::ToolFlintHoe) {
+        if !place_just_pressed {
+            return;
+        }
+        let above_empty = world
+            .get_voxel(target.hit_voxel + IVec3::Y)
+            .is_none_or(Voxel::is_empty);
+        if !above_empty {
+            return;
+        }
+        let tilled = match world.get_voxel(target.hit_voxel) {
+            Some(Voxel::PeatGrass | Voxel::PeatDirt) => Some(Voxel::PeatTilled),
+            Some(Voxel::SiltGrass | Voxel::SiltDirt) => Some(Voxel::SiltTilled),
+            Some(v)
+                if matches!(v, Voxel::LoamGrass | Voxel::LoamDirt)
+                    || (v.texture_name().is_some_and(|t| t.starts_with("soil_"))
+                        && !crate::gameplay::crops::is_tilled_soil(v)
+                        && !v.id().contains("sand")
+                        && !v.id().contains("gravel")
+                        && !v.id().contains("clay")) =>
+            {
+                Some(Voxel::LoamTilled)
+            }
+            _ => None,
+        };
+        if let Some(tilled_voxel) = tilled {
+            world.set_voxel(target.hit_voxel, tilled_voxel);
+            modifications.record(target.hit_voxel, tilled_voxel);
+            commands.trigger(BlockPlaceEvent {
+                position: target.hit_voxel,
+                voxel: tilled_voxel,
             });
             (vec![target.hit_voxel], None, 0)
         } else {
             return;
         }
     } else if place_action {
-        let Some(place_voxel_type) = selected.0 else {
+        let Some(place_voxel_type) = active_place_voxel else {
             return;
         };
 
@@ -781,7 +924,8 @@ fn edit_voxels(
             }
         }
     } else if place_action
-        && let (Some(place_voxel_type), Some(place_position)) = (selected.0, target.place_voxel)
+        && let (Some(place_voxel_type), Some(place_position)) =
+            (active_place_voxel, target.place_voxel)
     {
         let event_pos = if edited_voxels.contains(&target.hit_voxel)
             && !edited_voxels.contains(&place_position)
@@ -794,6 +938,22 @@ fn edit_voxels(
             position: event_pos,
             voxel: place_voxel_type,
         });
+        // Consume 1 item from active hotbar or off-hand stack in Survival (tools are not consumed)
+        if *game_mode == GameMode::Survival && !place_voxel_type.is_tool() {
+            if using_offhand {
+                if let Some(ref mut inv) = player_inv {
+                    if inv.offhand_count <= 1 {
+                        inv.offhand_slot = None;
+                        inv.offhand_count = 0;
+                    } else {
+                        inv.offhand_count -= 1;
+                    }
+                }
+            } else if let Some(ref mut hb) = hotbar {
+                hb.consume_active(1);
+                selected.0 = hb.slots[hb.active_slot];
+            }
+        }
     }
 
     if let Some(mut fq) = fluid_queue {

@@ -796,7 +796,7 @@ fn apply_silhouette_outline(canvas: &mut [u8]) {
         }
     }
 }
-fn voxel_item_texture_path(voxel: Voxel) -> Option<&'static str> {
+pub fn voxel_item_texture_path(voxel: Voxel) -> Option<&'static str> {
     match voxel {
         Voxel::EmitTorchBlue => Some("assets/textures/items/emit_blue_torch_item.png"),
         Voxel::EmitTorchGreen => Some("assets/textures/items/emit_green_torch_item.png"),
@@ -873,6 +873,17 @@ fn voxel_item_texture_path(voxel: Voxel) -> Option<&'static str> {
         | Voxel::CropCoconutStage2 => Some("assets/textures/items/coconut_item.png"),
         Voxel::VegeLeafLitter => Some("assets/textures/items/leaf_litter_item.png"),
         Voxel::Campfire | Voxel::CampfireUnlit => Some("assets/textures/items/campfire_item.png"),
+        Voxel::ItemFlintShard => Some("assets/textures/items/flint_shard_item.png"),
+        Voxel::ItemPlantFiber => Some("assets/textures/items/plant_fiber_item.png"),
+        Voxel::ItemPlantString => Some("assets/textures/items/plant_string_item.png"),
+        Voxel::ToolFireStarter => Some("assets/textures/items/tool_fire_starter_item.png"),
+        Voxel::ToolFlintAxe => Some("assets/textures/items/tool_flint_axe_item.png"),
+        Voxel::ToolFlintHammer => Some("assets/textures/items/tool_flint_hammer_item.png"),
+        Voxel::ToolFlintHoe => Some("assets/textures/items/tool_flint_hoe_item.png"),
+        Voxel::ToolFlintKnife => Some("assets/textures/items/tool_flint_knife_item.png"),
+        Voxel::ToolFlintPickaxe => Some("assets/textures/items/tool_flint_pickaxe_item.png"),
+        Voxel::ToolFlintShears => Some("assets/textures/items/tool_flint_shears_item.png"),
+        Voxel::ToolFlintShovel => Some("assets/textures/items/tool_flint_shovel_item.png"),
         _ => None,
     }
 }
