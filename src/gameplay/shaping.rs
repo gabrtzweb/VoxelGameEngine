@@ -55,7 +55,7 @@ fn handle_block_shaping(
     if menu_state
         .as_ref()
         .is_some_and(|s| *s.get() != MenuState::None)
-        || *game_mode != GameMode::Creative
+        || *game_mode == GameMode::Spectator
     {
         if radial_state.is_open {
             for entity in &radial_root_query {
@@ -207,7 +207,7 @@ fn handle_block_rotation(
     ),
     menu_state: Option<Res<State<MenuState>>>,
 ) {
-    if menu_state.is_some_and(|s| *s.get() != MenuState::None) || *game_mode != GameMode::Creative {
+    if menu_state.is_some_and(|s| *s.get() != MenuState::None) || *game_mode == GameMode::Spectator {
         return;
     }
 

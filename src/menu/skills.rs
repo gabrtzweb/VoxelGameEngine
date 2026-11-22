@@ -224,6 +224,8 @@ fn spawn_skills_menu(
     mut commands: Commands,
     active_tab: Res<SkillTreeTab>,
     selected_subrace: Option<Res<SelectedSubrace>>,
+    player_inv: Option<Res<crate::player::PlayerInventory>>,
+    vitals: Option<Res<crate::player::PlayerVitals>>,
     loc: Option<Res<Localization>>,
     asset_server: Res<AssetServer>,
     app_font: Option<Res<AppFont>>,
@@ -401,14 +403,22 @@ fn spawn_skills_menu(
                             TextColor(palette::TEXT_MUTED),
                         ));
 
+                        let cur_hp = vitals.as_ref().map_or(attrs.max_health, |v| v.health.round() as u32);
+                        let cur_stam = vitals
+                            .as_ref()
+                            .map_or(attrs.max_stamina, |v| v.stamina.round() as u32);
+                        let inv_slots = player_inv
+                            .as_ref()
+                            .map_or(attrs.carry_slots as usize, |inv| inv.unlocked_slots);
+
                         let stats = [
                             (
                                 loc.as_ref().map_or("Health", |l| l.t("attr.health")),
-                                format!("{} / {}", attrs.max_health, attrs.max_health),
+                                format!("{} / {}", cur_hp, attrs.max_health),
                             ),
                             (
                                 loc.as_ref().map_or("Stamina", |l| l.t("attr.stamina")),
-                                format!("{} / {}", attrs.max_stamina, attrs.max_stamina),
+                                format!("{} / {}", cur_stam, attrs.max_stamina),
                             ),
                             (
                                 loc.as_ref().map_or("Defense", |l| l.t("attr.defense")),
@@ -481,6 +491,11 @@ fn spawn_skills_menu(
                                     "+{}%",
                                     ((attrs.xp_gain_multiplier - 1.0) * 100.0).round() as i32
                                 ),
+                            ),
+                            (
+                                loc.as_ref()
+                                    .map_or("Inventory Slots", |l| l.t("attr.inventory_slots")),
+                                format!("{} / 36", inv_slots),
                             ),
                         ];
 

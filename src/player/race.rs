@@ -437,7 +437,7 @@ impl CharacterSubrace {
                 cold_resistance: 0.40,
                 heat_resistance: 0.00,
                 xp_gain_multiplier: 1.05,
-                carry_slots: 36,
+                carry_slots: 29,
             },
             Self::Sunlander => RaceAttributes {
                 max_health: 100,
@@ -455,7 +455,7 @@ impl CharacterSubrace {
                 cold_resistance: 0.00,
                 heat_resistance: 0.40,
                 xp_gain_multiplier: 1.12,
-                carry_slots: 36,
+                carry_slots: 29,
             },
             Self::CoastalHuman => RaceAttributes {
                 max_health: 105,
@@ -473,7 +473,7 @@ impl CharacterSubrace {
                 cold_resistance: 0.15,
                 heat_resistance: 0.15,
                 xp_gain_multiplier: 1.08,
-                carry_slots: 36,
+                carry_slots: 30,
             },
             Self::WoodElf => RaceAttributes {
                 max_health: 90,
@@ -491,7 +491,7 @@ impl CharacterSubrace {
                 cold_resistance: 0.10,
                 heat_resistance: 0.05,
                 xp_gain_multiplier: 1.00,
-                carry_slots: 36,
+                carry_slots: 27,
             },
             Self::DarkElf => RaceAttributes {
                 max_health: 90,
@@ -509,7 +509,7 @@ impl CharacterSubrace {
                 cold_resistance: 0.05,
                 heat_resistance: 0.15,
                 xp_gain_multiplier: 1.00,
-                carry_slots: 36,
+                carry_slots: 27,
             },
             Self::HighElf => RaceAttributes {
                 max_health: 95,
@@ -527,7 +527,7 @@ impl CharacterSubrace {
                 cold_resistance: 0.15,
                 heat_resistance: 0.15,
                 xp_gain_multiplier: 1.10,
-                carry_slots: 36,
+                carry_slots: 28,
             },
             Self::MountainDwarf => RaceAttributes {
                 max_health: 125,
@@ -545,7 +545,7 @@ impl CharacterSubrace {
                 cold_resistance: 0.25,
                 heat_resistance: 0.10,
                 xp_gain_multiplier: 1.00,
-                carry_slots: 36,
+                carry_slots: 31,
             },
             Self::DeepDwarf => RaceAttributes {
                 max_health: 120,
@@ -563,7 +563,7 @@ impl CharacterSubrace {
                 cold_resistance: 0.05,
                 heat_resistance: 0.45,
                 xp_gain_multiplier: 1.00,
-                carry_slots: 36,
+                carry_slots: 32,
             },
             Self::HillDwarf => RaceAttributes {
                 max_health: 120,
@@ -581,7 +581,7 @@ impl CharacterSubrace {
                 cold_resistance: 0.20,
                 heat_resistance: 0.20,
                 xp_gain_multiplier: 1.06,
-                carry_slots: 36,
+                carry_slots: 33,
             },
         }
     }

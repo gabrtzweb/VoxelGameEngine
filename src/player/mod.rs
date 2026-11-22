@@ -10,6 +10,7 @@ pub mod movement;
 pub mod race;
 pub mod spectator;
 pub mod state;
+pub mod survival_hud;
 pub mod water;
 
 use bevy::{
@@ -58,6 +59,7 @@ impl Plugin for PlayerPlugin {
             .init_resource::<PlayerInventory>()
             .add_plugins(hotbar::HotbarPlugin)
             .add_plugins(model::PlayerModelPlugin)
+            .add_plugins(survival_hud::SurvivalHudPlugin)
             .configure_sets(Update, PlayerSet::Movement)
             .add_systems(
                 Startup,
@@ -91,6 +93,11 @@ impl Plugin for PlayerPlugin {
     }
 }
 
+pub use survival_hud::PlayerVitals;
+
+#[derive(Resource, Debug, Clone, Copy)]
+pub struct WorldSpawnPoint(pub Vec3);
+
 fn spawn_player_and_camera(
     mut commands: Commands,
     terrain_generator: Option<Res<crate::generation::TerrainGenerator>>,
@@ -106,6 +113,7 @@ fn spawn_player_and_camera(
     };
 
     let player_position = Vec3::new(spawn_x, player_y, spawn_z);
+    commands.insert_resource(WorldSpawnPoint(player_position));
 
     commands.spawn((
         Player,

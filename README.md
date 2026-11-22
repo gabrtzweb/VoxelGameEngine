@@ -35,7 +35,7 @@ Z                 Camera Zoom (Hold Z + Mouse Wheel to adjust magnification)
 
 Left Mouse        Break block
 Right Mouse       Place block (3-axis directional placement for logs, bark, and pillars; 6-face for crystals & coral fans)
-Middle Mouse      Pick block
+Middle Mouse      Pick block (Creative: clone any block / Survival: pull from hotbar or inventory)
 
 1 - 9             Hotbar slot selection (9 primary slots)
 Mouse Wheel       Scroll hotbar slots (when not zooming)
@@ -55,7 +55,7 @@ F1                Toggle Inspector (bevy_egui)
 F2                Chunk debug borders
 F3                Toggle HUD (FPS Only / Compact / Full debug)
 Shift + F3        Toggle HUD visibility (Show / Hide)
-F4                Creative / Spectator
+F4                Cycle Game Mode (Survival / Creative / Spectator)
 F5                First / Third person (3-race / 9-subrace custom voxel character rig, head tracking, 3D held items & animations)
 F6                Day / Night cycle (Click: step phase / Hold: scrub time)
 F7                Weather cycle (Click: step weather / Shift+F7 or Hold: dynamic simulation)

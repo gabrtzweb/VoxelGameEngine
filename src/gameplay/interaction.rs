@@ -111,6 +111,7 @@ fn pick_targeted_voxel(
     world: Res<VoxelWorld>,
     mut selected: ResMut<SelectedVoxel>,
     hotbar: Option<ResMut<Hotbar>>,
+    mut player_inv: Option<ResMut<crate::player::PlayerInventory>>,
 ) {
     if menu_state.is_some_and(|s| *s.get() != MenuState::None)
         || inspector.is_some_and(|i| i.active)
@@ -118,7 +119,7 @@ fn pick_targeted_voxel(
         return;
     }
 
-    if *game_mode != GameMode::Creative {
+    if *game_mode == GameMode::Spectator {
         return;
     }
 
@@ -144,6 +145,28 @@ fn pick_targeted_voxel(
     }
 
     let pick_voxel = voxel.double_tall_bottom_partner().unwrap_or(voxel);
+
+    if *game_mode == GameMode::Survival {
+        if let Some(mut hotbar) = hotbar {
+            if let Some(hb_idx) = hotbar.slots.iter().position(|&s| s == Some(pick_voxel)) {
+                hotbar.active_slot = hb_idx;
+                selected.0 = Some(pick_voxel);
+            } else if let Some(ref mut inv) = player_inv {
+                let limit = inv
+                    .unlocked_slots
+                    .min(crate::player::inventory::PLAYER_INVENTORY_SLOTS);
+                if let Some(inv_idx) = inv.slots[..limit]
+                    .iter()
+                    .position(|&s| s == Some(pick_voxel))
+                {
+                    let active = hotbar.active_slot;
+                    std::mem::swap(&mut hotbar.slots[active], &mut inv.slots[inv_idx]);
+                    selected.0 = Some(pick_voxel);
+                }
+            }
+        }
+        return;
+    }
 
     selected.0 = Some(pick_voxel);
     if let Some(mut hotbar) = hotbar {

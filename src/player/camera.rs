@@ -101,7 +101,7 @@ pub fn toggle_camera_view(
         return;
     }
 
-    if *game_mode != GameMode::Creative {
+    if *game_mode == GameMode::Spectator {
         return;
     }
 

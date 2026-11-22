@@ -23,8 +23,8 @@ use voxel_game_engine::{
     core::{
 
         AdaptiveUiPlugin, DevStatsPlugin, DynamicFpsPlugin, DynamicFpsSettings, FontPlugin,
-
-        LocalConfig, LocalizationPlugin, RenderScalePlugin, WindowAspectPlugin, WindowClipPlugin,
+        InputPromptsPlugin, LocalConfig, LocalizationPlugin, RenderScalePlugin, WindowAspectPlugin,
+        WindowClipPlugin,
 
     },
 
@@ -328,6 +328,7 @@ fn main() {
         )
 
         .add_plugins(FontPlugin)
+        .add_plugins(InputPromptsPlugin)
 
         .add_plugins(LocalizationPlugin)
 

@@ -694,6 +694,12 @@ fn spawn_three_columns(
                     attrs.xp_gain_multiplier > 1.001,
                     false,
                 ),
+                (
+                    loc.map_or("Inventory Slots", |l| l.t("attr.inventory_slots")),
+                    format!("{} / 36", attrs.carry_slots),
+                    attrs.carry_slots > 27,
+                    false,
+                ),
             ];
 
             attr_sec

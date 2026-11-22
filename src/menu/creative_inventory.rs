@@ -27,7 +27,7 @@ pub const CATALOG_VISIBLE_SLOTS: usize = CATALOG_COLS * CATALOG_VISIBLE_ROWS; //
 pub const INVENTORY_SLOT_X_COORDS: [f32; 9] = [
     156.0, 175.0, 194.0, 213.0, 232.0, 251.0, 270.0, 289.0, 308.0,
 ];
-pub const INVENTORY_ROW_Y_COORDS: [f32; 3] = [168.0, 186.0, 204.0];
+pub const INVENTORY_ROW_Y_COORDS: [f32; 4] = [150.0, 168.0, 186.0, 204.0];
 pub const HOTBAR_ROW_Y: f32 = 228.0;
 
 pub const CATALOG_ROW_Y_COORDS: [f32; 9] = [
@@ -398,8 +398,11 @@ fn spawn_inventory_menu(
     loc: Option<Res<crate::core::Localization>>,
     game_settings: Option<Res<crate::menu::GameSettings>>,
 ) {
-    if game_mode.is_none_or(|m| *m == crate::player::GameMode::Creative) {
+    let is_creative = game_mode.is_none_or(|m| *m == crate::player::GameMode::Creative);
+    if is_creative {
         *tab_state = InventoryTab::Creative;
+    } else {
+        *tab_state = InventoryTab::Player;
     }
     let (gui_scale, dimming_alpha) = game_settings
         .as_ref()
@@ -411,6 +414,7 @@ fn spawn_inventory_menu(
         &player_inv,
         &icons,
         *tab_state,
+        is_creative,
         active_cat.0,
         &scroll_state,
         &search_query,
@@ -443,6 +447,7 @@ fn despawn_inventory_menu(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn build_inventory_ui(
     commands: &mut Commands,
     _asset_server: &AssetServer,
@@ -450,6 +455,7 @@ fn build_inventory_ui(
     player_inv: &PlayerInventory,
     icons: &BlockIcons,
     current_tab: InventoryTab,
+    is_creative: bool,
     active_cat: CreativeCategory,
     scroll_state: &InventoryScrollState,
     search_query: &CreativeSearchQuery,
@@ -524,7 +530,7 @@ fn build_inventory_ui(
                                 Node {
                                     position_type: PositionType::Absolute,
                                     left: px(148.0 * GUI_SCALE),
-                                    top: px(40.0 * GUI_SCALE),
+                                    top: px(30.0 * GUI_SCALE),
                                     width: px(184.0 * GUI_SCALE),
                                     height: px(94.0 * GUI_SCALE),
                                     border: UiRect::all(px(2.0)),
@@ -541,7 +547,7 @@ fn build_inventory_ui(
                                 Node {
                                     position_type: PositionType::Absolute,
                                     left: px(156.0 * GUI_SCALE),
-                                    top: px(49.0 * GUI_SCALE),
+                                    top: px(39.0 * GUI_SCALE),
                                     width: px(50.0 * GUI_SCALE),
                                     height: px(76.0 * GUI_SCALE),
                                     border: UiRect::all(px(1.5)),
@@ -552,15 +558,15 @@ fn build_inventory_ui(
                                 BorderColor::all(palette::SLOT_BORDER),
                             ));
 
-                            // Lower Inventory Storage & Hotbar Panel
+                            // Lower Inventory Storage & Hotbar Panel (4 rows x 9 + hotbar)
                             card.spawn((
                                 InventoryMenuEntity,
                                 Node {
                                     position_type: PositionType::Absolute,
                                     left: px(148.0 * GUI_SCALE),
-                                    top: px(144.0 * GUI_SCALE),
+                                    top: px(130.0 * GUI_SCALE),
                                     width: px(184.0 * GUI_SCALE),
-                                    height: px(108.0 * GUI_SCALE),
+                                    height: px(122.0 * GUI_SCALE),
                                     border: UiRect::all(px(2.0)),
                                     border_radius: BorderRadius::all(px(6.0)),
                                     ..default()
@@ -569,45 +575,47 @@ fn build_inventory_ui(
                                 BorderColor::all(palette::PANEL_BORDER),
                             ));
 
-                            // Creative Toggle Button (128, 148), 16x16 px
-                            card.spawn((
-                                InventoryMenuEntity,
-                                Button,
-                                Hovered::default(),
-                                InventoryToggleTabButton,
-                                Node {
-                                    position_type: PositionType::Absolute,
-                                    left: px(128.0 * GUI_SCALE),
-                                    top: px(148.0 * GUI_SCALE),
-                                    width: px(16.0 * GUI_SCALE),
-                                    height: px(16.0 * GUI_SCALE),
-                                    display: Display::Flex,
-                                    align_items: AlignItems::Center,
-                                    justify_content: JustifyContent::Center,
-                                    border: UiRect::all(px(2.0)),
-                                    border_radius: BorderRadius::all(px(4.0)),
-                                    ..default()
-                                },
-                                BackgroundColor(palette::TAB_IDLE_BG),
-                                BorderColor::all(palette::TAB_IDLE_BORDER),
-                            ))
-                            .with_children(|btn| {
-                                btn.spawn((
+                            // Creative Toggle Button (Creative mode only)
+                            if is_creative {
+                                card.spawn((
                                     InventoryMenuEntity,
-                                    Text::new("+"),
-                                    title_font.clone(),
-                                    TextColor(palette::TEXT_ACCENT),
-                                    text_shadow_default(),
-                                ));
-                            });
+                                    Button,
+                                    Hovered::default(),
+                                    InventoryToggleTabButton,
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        left: px(128.0 * GUI_SCALE),
+                                        top: px(134.0 * GUI_SCALE),
+                                        width: px(16.0 * GUI_SCALE),
+                                        height: px(16.0 * GUI_SCALE),
+                                        display: Display::Flex,
+                                        align_items: AlignItems::Center,
+                                        justify_content: JustifyContent::Center,
+                                        border: UiRect::all(px(2.0)),
+                                        border_radius: BorderRadius::all(px(4.0)),
+                                        ..default()
+                                    },
+                                    BackgroundColor(palette::TAB_IDLE_BG),
+                                    BorderColor::all(palette::TAB_IDLE_BORDER),
+                                ))
+                                .with_children(|btn| {
+                                    btn.spawn((
+                                        InventoryMenuEntity,
+                                        Text::new("+"),
+                                        title_font.clone(),
+                                        TextColor(palette::TEXT_ACCENT),
+                                        text_shadow_default(),
+                                    ));
+                                });
+                            }
 
-                            // Title Header Plate (156, 152), 64x8 px
+                            // Title Header Plate
                             card.spawn((
                                 InventoryMenuEntity,
                                 Node {
                                     position_type: PositionType::Absolute,
                                     left: px(156.0 * GUI_SCALE),
-                                    top: px(152.0 * GUI_SCALE),
+                                    top: px(136.0 * GUI_SCALE),
                                     width: px(64.0 * GUI_SCALE),
                                     height: px(8.0 * GUI_SCALE),
                                     display: Display::Flex,
@@ -626,12 +634,12 @@ fn build_inventory_ui(
                                 ));
                             });
 
-                            // Action Buttons (280..316, 151..152), 8x8 px
+                            // Action Buttons (280..316, 136), 8x8 px
                             let actions = [
-                                (280.0, 152.0, InventoryAction::Sort, "S"),
-                                (292.0, 151.0, InventoryAction::Trash, "X"),
-                                (304.0, 151.0, InventoryAction::Lock, "L"),
-                                (316.0, 152.0, InventoryAction::Options, "*"),
+                                (280.0, 136.0, InventoryAction::Sort, "S"),
+                                (292.0, 136.0, InventoryAction::Trash, "X"),
+                                (304.0, 136.0, InventoryAction::Lock, "L"),
+                                (316.0, 136.0, InventoryAction::Options, "*"),
                             ];
 
                             for (btn_x, btn_y, action, glyph) in actions {
@@ -687,12 +695,12 @@ fn build_inventory_ui(
 
                             // Armor / Equipment slots (16x16 px)
                             let armor_slots = [
-                                (214.0, 49.0, "HM"),
-                                (214.0, 67.0, "CH"),
-                                (214.0, 85.0, "LG"),
-                                (233.0, 49.0, "BT"),
-                                (233.0, 67.0, "GL"),
-                                (233.0, 85.0, "NK"),
+                                (214.0, 39.0, "HM"),
+                                (214.0, 57.0, "CH"),
+                                (214.0, 75.0, "LG"),
+                                (233.0, 39.0, "BT"),
+                                (233.0, 57.0, "GL"),
+                                (233.0, 75.0, "NK"),
                             ];
 
                             for (ax, ay, label) in armor_slots {
@@ -743,7 +751,7 @@ fn build_inventory_ui(
                                 Node {
                                     position_type: PositionType::Absolute,
                                     left: px(214.0 * GUI_SCALE),
-                                    top: px(109.0 * GUI_SCALE),
+                                    top: px(99.0 * GUI_SCALE),
                                     width: px(16.0 * GUI_SCALE),
                                     height: px(16.0 * GUI_SCALE),
                                     display: Display::Flex,
@@ -812,7 +820,7 @@ fn build_inventory_ui(
                                 Node {
                                     position_type: PositionType::Absolute,
                                     left: px(233.0 * GUI_SCALE),
-                                    top: px(109.0 * GUI_SCALE),
+                                    top: px(99.0 * GUI_SCALE),
                                     width: px(16.0 * GUI_SCALE),
                                     height: px(16.0 * GUI_SCALE),
                                     display: Display::Flex,
@@ -862,7 +870,7 @@ fn build_inventory_ui(
                                 ));
                             });
 
-                            // 27 Main Storage Slots (3 rows of 9)
+                            // 36 Main Storage Slots (4 rows of 9; row 4 partially/fully locked until unlocked by race, skills, or backpack)
                             for (row, &slot_y) in INVENTORY_ROW_Y_COORDS
                                 .iter()
                                 .enumerate()
@@ -874,8 +882,13 @@ fn build_inventory_ui(
                                     .take(PLAYER_INVENTORY_COLS)
                                 {
                                     let slot_idx = row * PLAYER_INVENTORY_COLS + col;
+                                    let is_unlocked = player_inv.is_slot_unlocked(slot_idx);
 
-                                    let voxel = player_inv.slots.get(slot_idx).copied().flatten();
+                                    let voxel = if is_unlocked {
+                                        player_inv.slots.get(slot_idx).copied().flatten()
+                                    } else {
+                                        None
+                                    };
                                     let icon_handle = voxel
                                         .map(|v| icons.get(v))
                                         .unwrap_or_else(|| icons.get(Voxel::Dolomite));
@@ -883,6 +896,17 @@ fn build_inventory_ui(
                                         Visibility::Visible
                                     } else {
                                         Visibility::Hidden
+                                    };
+
+                                    let slot_bg = if is_unlocked {
+                                        palette::SLOT_BG
+                                    } else {
+                                        Color::srgba(0.035, 0.04, 0.055, 0.78)
+                                    };
+                                    let slot_border = if is_unlocked {
+                                        palette::SLOT_BORDER
+                                    } else {
+                                        Color::srgba(0.16, 0.18, 0.24, 0.55)
                                     };
 
                                     card.spawn((
@@ -905,10 +929,36 @@ fn build_inventory_ui(
                                             border_radius: BorderRadius::all(px(3.0)),
                                             ..default()
                                         },
-                                        BackgroundColor(palette::SLOT_BG),
-                                        BorderColor::all(palette::SLOT_BORDER),
+                                        BackgroundColor(slot_bg),
+                                        BorderColor::all(slot_border),
                                     ))
                                     .with_children(|slot| {
+                                        if !is_unlocked {
+                                            slot.spawn((
+                                                InventoryMenuEntity,
+                                                Node {
+                                                    position_type: PositionType::Absolute,
+                                                    left: px(0.0),
+                                                    right: px(0.0),
+                                                    top: px(0.0),
+                                                    bottom: px(0.0),
+                                                    display: Display::Flex,
+                                                    justify_content: JustifyContent::Center,
+                                                    align_items: AlignItems::Center,
+                                                    ..default()
+                                                },
+                                                ZIndex(6),
+                                            ))
+                                            .with_children(|lock_overlay| {
+                                                lock_overlay.spawn((
+                                                    InventoryMenuEntity,
+                                                    Text::new("X"),
+                                                    make_font(3.2 * GUI_SCALE),
+                                                    TextColor(Color::srgba(0.38, 0.42, 0.52, 0.50)),
+                                                ));
+                                            });
+                                        }
+
                                         slot.spawn((
                                             InventoryMenuEntity,
                                             PlayerStorageSlotIcon {
@@ -1526,9 +1576,11 @@ fn build_inventory_ui(
 }
 
 
+#[allow(clippy::too_many_arguments)]
 fn handle_creative_toggle_interaction(
     mouse: Res<ButtonInput<MouseButton>>,
     mut tab_state: ResMut<InventoryTab>,
+    game_mode: Option<Res<crate::player::GameMode>>,
     mut commands: Commands,
     query: Query<Entity, With<InventoryMenuRoot>>,
     asset_server: Res<AssetServer>,
@@ -1543,6 +1595,10 @@ fn handle_creative_toggle_interaction(
     game_settings: Option<Res<crate::menu::GameSettings>>,
     toggle_query: Query<(&Hovered, Has<Pressed>), With<InventoryToggleTabButton>>,
 ) {
+    let is_creative = game_mode.is_none_or(|m| *m == crate::player::GameMode::Creative);
+    if !is_creative {
+        return;
+    }
     let (gui_scale, dimming_alpha) = game_settings
         .as_ref()
         .map_or((4, 0.75), |s| (s.gui_scale, s.background_dimming.alpha()));
@@ -1565,6 +1621,7 @@ fn handle_creative_toggle_interaction(
                 &player_inv,
                 &icons,
                 *tab_state,
+                is_creative,
                 active_cat.0,
                 &scroll_state,
                 &search_query,
@@ -1616,6 +1673,7 @@ fn handle_category_tab_interaction(
                 &player_inv,
                 &icons,
                 *tab_state,
+                true,
                 active_cat.0,
                 &scroll_state,
                 &search_query,
@@ -1656,12 +1714,13 @@ fn handle_inventory_action_buttons(
         if is_hovered && left_click {
             match action {
                 InventoryAction::Sort => {
+                    let limit = player_inv.unlocked_slots.min(PLAYER_INVENTORY_SLOTS);
                     let mut items: Vec<Voxel> =
-                        player_inv.slots.iter().filter_map(|&s| s).collect();
+                        player_inv.slots[..limit].iter().filter_map(|&s| s).collect();
                     items.sort_by_key(|v| v.id());
                     player_inv.slots = [None; PLAYER_INVENTORY_SLOTS];
                     for (i, v) in items.into_iter().enumerate() {
-                        if i < PLAYER_INVENTORY_SLOTS {
+                        if i < limit {
                             player_inv.slots[i] = Some(v);
                         }
                     }
@@ -1810,6 +1869,7 @@ fn handle_creative_search_input(
             &ui.player_inv,
             &ui.icons,
             *tab_state,
+            true,
             active_cat.0,
             &scroll_state,
             &search_query,
@@ -2095,7 +2155,9 @@ fn handle_inventory_slot_interaction(
 
     // 1. Main Player Storage Slots
     for (hovered, slot, children) in &mut storage_slot_query {
-        let is_hovered = hovered.get();
+        let slot_idx = slot.slot_index;
+        let is_unlocked = player_inv.is_slot_unlocked(slot_idx);
+        let is_hovered = is_unlocked && hovered.get();
         for child in children.iter() {
             if let Ok(mut vis) = hover_overlay_query.get_mut(child) {
                 let target = if is_hovered {
@@ -2110,7 +2172,6 @@ fn handle_inventory_slot_interaction(
         }
 
         if is_hovered {
-            let slot_idx = slot.slot_index;
 
             // Number key quick swap with hotbar
             if let Some(h_idx) = digit_pressed {

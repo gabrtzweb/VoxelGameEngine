@@ -6,7 +6,10 @@ use bevy::{
 };
 
 use crate::{
-    core::{AppFont, text_shadow_default},
+    core::{
+        AppFont, ControlSettings, DynamicInputPrompt, InputAction, InputPromptAtlas,
+        spawn_input_prompt, text_shadow_default,
+    },
     menu::creative_inventory::CreativeSearchQuery,
 };
 
@@ -73,6 +76,8 @@ fn sync_menu_bar_visibility(
     asset_server: Res<AssetServer>,
     app_font: Option<Res<AppFont>>,
     loc: Option<Res<crate::core::Localization>>,
+    input_prompts: Option<Res<InputPromptAtlas>>,
+    controls: Option<Res<ControlSettings>>,
 ) {
     let in_active_session = world_session.as_ref().map_or_else(
         || menu_return_target.0 != MenuState::MainMenu,
@@ -86,7 +91,14 @@ fn sync_menu_bar_visibility(
     let existing = menu_bar_query.iter().next();
 
     if is_in_menu && existing.is_none() {
-        spawn_menu_bar(&mut commands, &asset_server, app_font.as_ref(), loc.as_deref());
+        spawn_menu_bar(
+            &mut commands,
+            &asset_server,
+            app_font.as_ref(),
+            loc.as_deref(),
+            input_prompts.as_deref(),
+            controls.as_deref(),
+        );
     } else if !is_in_menu && let Some(entity) = existing {
         commands.entity(entity).despawn();
     }
@@ -97,6 +109,8 @@ fn spawn_menu_bar(
     asset_server: &AssetServer,
     app_font: Option<&Res<AppFont>>,
     loc: Option<&crate::core::Localization>,
+    input_prompts: Option<&InputPromptAtlas>,
+    controls: Option<&ControlSettings>,
 ) {
     let font_handle = app_font.map(|f| f.source());
 
@@ -144,31 +158,37 @@ fn spawn_menu_bar(
                 ..default()
             })
             .with_children(|nav| {
-                // [Q] Keycap Navigation Button
+                // [Q] Dynamic Keycap Navigation Button (follows MenuTabPrev keybind)
                 nav.spawn((
                     Button,
                     Hovered::default(),
                     MenuBarAction::PrevTab,
                     Node {
-                        width: px(30.0),
-                        height: px(30.0),
-                        border: UiRect::all(px(1.0)),
-                        border_radius: BorderRadius::all(px(4.0)),
+                        height: px(32.0),
                         display: Display::Flex,
                         align_items: AlignItems::Center,
                         justify_content: JustifyContent::Center,
                         ..default()
                     },
-                    BackgroundColor(palette::SLOT_EMPTY_BG),
-                    BorderColor::all(palette::PANEL_BORDER_SUBTLE),
+                    BackgroundColor(Color::NONE),
                 ))
                 .with_children(|q_btn| {
-                    q_btn.spawn((
-                        Text::new("Q"),
-                        make_tab_font(12.0),
-                        TextColor(palette::TEXT_MUTED),
-                        text_shadow_default(),
-                    ));
+                    if let Some(atlas) = input_prompts {
+                        spawn_input_prompt(
+                            q_btn,
+                            atlas,
+                            DynamicInputPrompt::Action(InputAction::MenuTabPrev),
+                            controls,
+                            30.0,
+                        );
+                    } else {
+                        q_btn.spawn((
+                            Text::new("Q"),
+                            make_tab_font(12.0),
+                            TextColor(palette::TEXT_MUTED),
+                            text_shadow_default(),
+                        ));
+                    }
                 });
 
                 let tab_inv = loc.map_or("INVENTORY", |l| l.t("menu.bar.inventory"));
@@ -279,31 +299,37 @@ fn spawn_menu_bar(
                     }
                 });
 
-                // [E] Keycap Navigation Button
+                // [E] Dynamic Keycap Navigation Button (follows MenuTabNext keybind)
                 nav.spawn((
                     Button,
                     Hovered::default(),
                     MenuBarAction::NextTab,
                     Node {
-                        width: px(30.0),
-                        height: px(30.0),
-                        border: UiRect::all(px(1.0)),
-                        border_radius: BorderRadius::all(px(4.0)),
+                        height: px(32.0),
                         display: Display::Flex,
                         align_items: AlignItems::Center,
                         justify_content: JustifyContent::Center,
                         ..default()
                     },
-                    BackgroundColor(palette::SLOT_EMPTY_BG),
-                    BorderColor::all(palette::PANEL_BORDER_SUBTLE),
+                    BackgroundColor(Color::NONE),
                 ))
                 .with_children(|e_btn| {
-                    e_btn.spawn((
-                        Text::new("E"),
-                        make_tab_font(12.0),
-                        TextColor(palette::TEXT_MUTED),
-                        text_shadow_default(),
-                    ));
+                    if let Some(atlas) = input_prompts {
+                        spawn_input_prompt(
+                            e_btn,
+                            atlas,
+                            DynamicInputPrompt::Action(InputAction::MenuTabNext),
+                            controls,
+                            30.0,
+                        );
+                    } else {
+                        e_btn.spawn((
+                            Text::new("E"),
+                            make_tab_font(12.0),
+                            TextColor(palette::TEXT_MUTED),
+                            text_shadow_default(),
+                        ));
+                    }
                 });
             });
 
@@ -407,32 +433,38 @@ fn spawn_menu_bar(
                         ));
                     });
 
-                // [ESC] Close Menu Keycap Button (matches [Q] / [E] style)
+                // [ESC] Close Menu Keycap Button
                 status
                     .spawn((
                         Button,
                         Hovered::default(),
                         MenuBarAction::CloseMenu,
                         Node {
-                            height: px(30.0),
-                            padding: UiRect::horizontal(px(10.0)),
-                            border: UiRect::all(px(1.0)),
-                            border_radius: BorderRadius::all(px(4.0)),
+                            height: px(32.0),
                             display: Display::Flex,
                             align_items: AlignItems::Center,
                             justify_content: JustifyContent::Center,
                             ..default()
                         },
-                        BackgroundColor(palette::SLOT_EMPTY_BG),
-                        BorderColor::all(palette::PANEL_BORDER_SUBTLE),
+                        BackgroundColor(Color::NONE),
                     ))
                     .with_children(|esc_btn| {
-                        esc_btn.spawn((
-                            Text::new("ESC"),
-                            make_tab_font(11.0),
-                            TextColor(palette::TEXT_MUTED),
-                            text_shadow_default(),
-                        ));
+                        if let Some(atlas) = input_prompts {
+                            spawn_input_prompt(
+                                esc_btn,
+                                atlas,
+                                DynamicInputPrompt::Key(KeyCode::Escape),
+                                controls,
+                                30.0,
+                            );
+                        } else {
+                            esc_btn.spawn((
+                                Text::new("ESC"),
+                                make_tab_font(11.0),
+                                TextColor(palette::TEXT_MUTED),
+                                text_shadow_default(),
+                            ));
+                        }
                     });
             });
         });

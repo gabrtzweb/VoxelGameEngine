@@ -37,6 +37,8 @@ pub struct JournalProgress {
     pub distance_traveled: f32,
     pub distance_swum: f32,
     pub jumps_performed: u64,
+    pub deaths: u64,
+    pub damage_taken: f32,
     pub max_altitude: Option<i32>,
     pub min_altitude: Option<i32>,
     was_grounded: bool,
@@ -1393,7 +1395,7 @@ fn spawn_journal_menu(
                                         (
                                             "deaths",
                                             t("journal.stats.deaths", "Deaths"),
-                                            "0".to_string(),
+                                            format!("{}", progress.deaths),
                                         ),
                                         (
                                             "damage_dealt",
@@ -1403,7 +1405,7 @@ fn spawn_journal_menu(
                                         (
                                             "damage_taken",
                                             t("journal.stats.damage_taken", "Damage Taken"),
-                                            "0".to_string(),
+                                            format!("{}", progress.damage_taken.round() as u64),
                                         ),
                                     ],
                                 ),

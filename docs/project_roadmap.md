@@ -91,7 +91,7 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 | **05** | **[Races, Subraces, Attributes & Skills Redesign](#phase-5-races-subraces-attributes--skills-redesign-completed)** | **Completed** | 3 classic core races × 3 subraces each (9 playable subraces) with face-portrait icons, 16-field `RaceAttributes` (live jump height, move/swim speed, footstep stealth, mining reach), 3-column Race Selection UI, and 60 localized skills (4 general trees + dynamic racial/subracial tree) with 60 bespoke pixel-art icons |
 | **06** | **[Main Menu Redesign](#phase-6-main-menu-redesign-in-progress)** | **In Progress** | Enshrouded-inspired 2-side Main Menu with character-gated `Play` flow (`CharacterReady`), right-side character showcase panel, and future world selection/creation & 3D character preview |
 | **07** | **[Dedicated Character Creator](#phase-7-dedicated-character-creator-planned)** | **Planned** | Interactive character customization (skin tone, hair style/color, beard/features, outfit palette, character naming, and live 3D voxel model preview) |
-| **08** | **[Survival Mode Core Systems](#phase-8-survival-mode-core-systems-planned)** | **Planned** | Health, stamina, hunger/thirst, fall damage, climate temperature (cold/heat resistance), tool durability, resource harvesting, and death/respawn loop |
+| **08** | **[Survival Mode Core Systems](#phase-8-survival-mode-core-systems-in-progress)** | **In Progress** | Default Survival game mode (`S → C → E`), floating GUI-scaled Vitals HUD with circular progress rings, live stamina (sprint/jump/exhaustion), drowning, racial fall damage, survival pick-block, 36-slot racial inventory unlocking, and death/respawn loop (hunger/thirst/temperature simulation, food buffs, durability & harvesting next) |
 | **09** | **[Mobs, Wildlife & Entity AI](#phase-9-mobs-wildlife--entity-ai-planned)** | **Planned** | First creatures and wildlife (passive fauna, hostile mobs, pathfinding, stealth/footstep awareness, combat, taming, and live Bestiary unlocking) |
 | **10** | **[Quests, Objectives & Progression Engine](#phase-10-quests-objectives--progression-engine-planned)** | **Planned** | Functional quest state machine, objective tracking, exploration/gathering/combat triggers, XP/leveling, skill point spending, and rewards |
 
@@ -174,8 +174,11 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 - [x] **Interactive Fullscreen World Map, Skills, Journal & Quests Screens**:
   - Rebuilt the World Map (`src/map/world_map.rs`) to fill the full viewport below the top bar with 1:1 aspect-corrected terrain rendering, UI-scale-accurate cursor projection, RMB context menu (`Add Waypoint Here` + Creative-only `Teleport Here`), 7-icon waypoint system with cursor-following placement mode and scrollable/inline-renamable sidebar list, and 5 persisted layers in `local_config.json` (`Player Marker`, `Waypoints`, subtle `16x16 Chunk Grid`, `Day / Night Lighting`, and smoothed `Elevation Contours`).
   - Built dedicated `Skills` (`src/menu/skills.rs`), fully localized scrollable `Journal` (`src/menu/journal.rs` with F6-synchronized live season/day/clock/weather almanac card, `COMPENDIUM` discovery tracking via `JournalProgress` for discovered `Biomes & Regions` across all 44 biomes with 44 unique 16×16 icons in `icons/biomes/`, `Bestiary`, subcategorized live-unlocked `Flora & Agriculture`, `Blocks & Minerals`, and `Items & Equipment` using `BlockIcons`, plus 27 categorized `Statistics` with 27 bespoke pixel-art icons and 16 live trackers), and localized `Quests` (`src/menu/quests.rs`) screens.
+- [x] **Hotbar & 36-Slot Inventory Overhaul**:
+  - Removed the placeholder XP bar from `src/player/hotbar.rs`, grouped the 2 auxiliary slots (`Off-hand` + `Quick Utility`) into a separated right-side tray, and fixed the active selection highlight to a border-only gold frame that never obscures icons or slot numbers.
+  - Expanded Personal Inventory (`src/player/inventory.rs`, `src/menu/creative_inventory.rs`) to 36 slots (4×9) with a locked 4th row partially unlocked by subrace (`carry_slots` shown as the 16th attribute in `src/menu/race_selection.rs`), and disabled/hid the Creative Catalog toggle during Survival mode.
 - [ ] **Remaining UI Polish (Final Step of Phase 4)**:
-  - Inventory & Hotbar visual cohesion polish.
+  - Personal Inventory upper character/equipment/crafting panel redesign.
 
 ---
 
@@ -209,10 +212,14 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 
 ---
 
-### Phase 8: Survival Mode Core Systems (Planned)
+### Phase 8: Survival Mode Core Systems (In Progress)
 
-- [ ] **Core Survival Loop**:
-  - Implement playable Survival Mode with Health, Stamina, Hunger/Thirst, Fall Damage (applying racial fall resistance), Climate Temperature (applying cold/heat resistance across seasons and biomes), tool durability, block harvesting rules, and death/respawn flow.
+- [x] **Survival Game Mode, HUD & Core Vitals Loop (`src/player/survival_hud.rs`, `src/player/game_mode.rs`)**:
+  - Made `GameMode::Survival` the default starting mode with `F4` cycling `Survival → Creative → Spectator` and a centered Dark Iron mode/respawn toast popup (Spectator starts in a 3rd-person offset while keeping the player model in place with idle breathing).
+  - Built the floating bottom-left Survival Vitals HUD (horizontally aligned with and dynamically scaled by `gui_scale` to match the hotbar) featuring Health, Stamina, vertical circular progress rings for Hunger/Thirst/Temperature (`assets/textures/interfaces/icons/hud/`), and a dynamic submerged Oxygen ring.
+  - Wired live stamina consumption on sprinting (ground & mid-air) and jumping with exhaustion gating, underwater oxygen drain + periodic drowning damage, fall damage mitigated by racial `fall_damage_reduction` and safe-jump height, death & respawn at `WorldSpawnPoint` with live `JournalProgress` stats (`deaths`, `damage_taken`), and Survival-accurate middle-click Pick Block (`src/gameplay/interaction.rs`).
+- [ ] **Remaining Survival Systems**:
+  - Enshrouded-style non-lethal Hunger & Thirst drain with debuffs and consumable food/drink buffs, climate/biome Temperature simulation (applying racial cold/heat resistance and campfire warmth), block harvesting/stack counts, and tool durability.
 
 ---
 

@@ -625,6 +625,51 @@ pub fn update_player_model(
     let should_show_head = is_spectator || is_third_person;
     let has_held_item = hand_anim.displayed_voxel.is_some();
 
+    if is_spectator {
+        let breathe = (time.elapsed_secs() * 2.0).sin() * 0.025;
+        let leg_height = 12.0 * PIXEL_SCALE * props.leg_scale.y;
+        let torso_base_rot = match motion.stance {
+            PlayerStance::Crouching => Quat::from_rotation_x(0.22),
+            PlayerStance::Crawling => Quat::from_rotation_x(1.52),
+            PlayerStance::Standing => Quat::IDENTITY,
+        };
+        for (limb, mut transform, mut vis) in &mut limbs_query {
+            match limb {
+                PlayerLimb::Head => {
+                    if let Some(ref mut vis) = vis
+                        && **vis != Visibility::Inherited
+                    {
+                        **vis = Visibility::Inherited;
+                    }
+                }
+                PlayerLimb::Torso => {
+                    if motion.stance == PlayerStance::Standing && !motion.flying {
+                        transform.translation = Vec3::new(0.0, leg_height, 0.0);
+                    }
+                    transform.rotation = torso_base_rot * Quat::from_rotation_x(breathe * 0.6);
+                }
+                PlayerLimb::LeftArm => {
+                    if motion.grounded && motion.stance == PlayerStance::Standing {
+                        transform.rotation = Quat::from_rotation_x(breathe);
+                    }
+                }
+                PlayerLimb::RightArm => {
+                    if let Some(ref mut vis) = vis
+                        && **vis != Visibility::Inherited
+                    {
+                        **vis = Visibility::Inherited;
+                    }
+                    if motion.grounded && motion.stance == PlayerStance::Standing {
+                        let hold_offset = if has_held_item { -0.35 } else { -0.08 };
+                        transform.rotation = Quat::from_rotation_x(hold_offset - breathe);
+                    }
+                }
+                PlayerLimb::LeftLeg | PlayerLimb::RightLeg => {}
+            }
+        }
+        return;
+    }
+
     // Unused legacy first-person rig queries remain hidden
     for (_, mut fp_vis) in &mut fp_rig_query {
         *fp_vis = Visibility::Hidden;

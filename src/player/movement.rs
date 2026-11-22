@@ -156,6 +156,7 @@ pub fn creative_movement(
         (With<Camera3d>, Without<Player>),
     >,
     env_status: Res<PlayerEnvironmentStatus>,
+    mut vitals: Option<ResMut<super::PlayerVitals>>,
     mut jump_tap: Local<JumpTapState>,
 ) {
     let is_paused = menu_state.as_ref().is_some_and(|s| {
@@ -173,7 +174,7 @@ pub fn creative_movement(
         return;
     }
 
-    if *game_mode != GameMode::Creative {
+    if *game_mode == GameMode::Spectator {
         jump_tap.since_last_press = None;
 
         return;
@@ -264,9 +265,10 @@ pub fn creative_movement(
     );
 
     if !is_in_inventory && jump_pressed {
-        let double_tap = jump_tap
-            .since_last_press
-            .is_some_and(|elapsed| elapsed <= DOUBLE_JUMP_WINDOW);
+        let double_tap = *game_mode == GameMode::Creative
+            && jump_tap
+                .since_last_press
+                .is_some_and(|elapsed| elapsed <= DOUBLE_JUMP_WINDOW);
 
         if double_tap {
             motion.flying = !motion.flying;
@@ -285,11 +287,24 @@ pub fn creative_movement(
             jump_tap.since_last_press = Some(0.0);
 
             if motion.grounded && !motion.flying && motion.stance != PlayerStance::Crawling {
-                let jump_vel = selected_subrace
-                    .as_ref()
-                    .map_or(JUMP_SPEED, |s| s.0.attributes().jump_speed(GRAVITY));
-                motion.velocity.y = jump_vel;
-                motion.grounded = false;
+                let can_jump = *game_mode != GameMode::Survival
+                    || vitals.as_ref().is_none_or(|v| v.stamina >= 5.0);
+                if can_jump {
+                    let jump_vel = selected_subrace
+                        .as_ref()
+                        .map_or(JUMP_SPEED, |s| s.0.attributes().jump_speed(GRAVITY));
+                    motion.velocity.y = jump_vel;
+                    motion.grounded = false;
+                    if *game_mode == GameMode::Survival
+                        && let Some(ref mut v) = vitals
+                    {
+                        v.stamina = (v.stamina - 12.0).max(0.0);
+                        v.stamina_regen_delay = 0.65;
+                        if v.stamina <= 0.0 {
+                            v.stamina_exhausted = true;
+                        }
+                    }
+                }
             }
         }
     }
@@ -306,11 +321,46 @@ pub fn creative_movement(
         motion.facing_yaw = yaw;
     }
 
-    let is_fast = !is_in_inventory
+    let sprint_input = !is_in_inventory
         && control_settings.as_ref().map_or(
             keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight),
             |c| c.is_action_pressed(crate::core::InputAction::Sprint, &keyboard, &mouse),
         );
+    let can_sprint = *game_mode != GameMode::Survival
+        || vitals
+            .as_ref()
+            .is_none_or(|v| !v.stamina_exhausted && v.stamina > 0.0);
+    let is_fast = sprint_input && can_sprint;
+
+    if let Some(ref mut v) = vitals {
+        let moving_key = !is_in_inventory
+            && control_settings.as_ref().map_or(
+                keyboard.pressed(KeyCode::KeyW)
+                    || keyboard.pressed(KeyCode::KeyS)
+                    || keyboard.pressed(KeyCode::KeyA)
+                    || keyboard.pressed(KeyCode::KeyD),
+                |c| {
+                    c.is_action_pressed(crate::core::InputAction::MoveForward, &keyboard, &mouse)
+                        || c.is_action_pressed(
+                            crate::core::InputAction::MoveBackward,
+                            &keyboard,
+                            &mouse,
+                        )
+                        || c.is_action_pressed(
+                            crate::core::InputAction::MoveLeft,
+                            &keyboard,
+                            &mouse,
+                        )
+                        || c.is_action_pressed(
+                            crate::core::InputAction::MoveRight,
+                            &keyboard,
+                            &mouse,
+                        )
+                },
+            );
+        v.is_sprinting =
+            *game_mode == GameMode::Survival && is_fast && moving_key && !motion.flying;
+    }
 
     let input_dirs = if is_in_inventory {
         None

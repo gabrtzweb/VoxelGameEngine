@@ -3,6 +3,7 @@ pub mod controls;
 pub mod dev_stats;
 pub mod dynamic_fps;
 pub mod font;
+pub mod input_prompts;
 pub mod localization;
 pub mod math;
 pub mod noise;
@@ -19,6 +20,10 @@ pub use controls::{ActionCategory, ControlSettings, InputAction, InputBinding};
 pub use dev_stats::{DebugHudMode, DebugHudSettings, DevStatsPlugin};
 pub use dynamic_fps::{DynamicFpsPlugin, DynamicFpsSettings, DynamicFpsState};
 pub use font::{AppFont, FontPlugin, FontSource, text_shadow_default};
+pub use input_prompts::{
+    DynamicInputPrompt, InputPromptAtlas, InputPromptDevice, InputPromptStyle, InputPromptTiles,
+    InputPromptsPlugin, spawn_input_prompt,
+};
 pub use localization::{Locale, Localization, LocalizationPlugin};
 pub use render_scale::{RenderScalePlugin, RenderScaleState, RenderScaleUiCamera};
 pub use ui_scale::AdaptiveUiPlugin;

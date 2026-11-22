@@ -321,7 +321,7 @@ fn update_dev_stats(
             let camera_position = camera.translation;
 
             let flight_text = match *game_mode {
-                GameMode::Creative => {
+                GameMode::Survival | GameMode::Creative => {
                     if player_motion.flying {
                         "On"
                     } else {
