@@ -109,7 +109,7 @@ fn test_axis_aligned_pillar_properties() {
 
 #[test]
 fn test_voxel_discriminants_continuity() {
-    for id in 0..=699u16 {
+    for id in 0..=710u16 {
         let maybe_voxel = Voxel::from_u16(id);
         assert!(
             maybe_voxel.is_some(),
@@ -117,10 +117,10 @@ fn test_voxel_discriminants_continuity() {
         );
         assert_eq!(maybe_voxel.unwrap() as u16, id);
     }
-    assert_eq!(Voxel::from_u16(700), None);
+    assert_eq!(Voxel::from_u16(711), None);
     assert_eq!(Voxel::from_u16(1000), None);
 
-    assert_eq!(Voxel::ALL.len(), 697);
+    assert_eq!(Voxel::ALL.len(), 708);
     assert_eq!(Voxel::ALL[0], Voxel::FrostBlueIce);
     assert_eq!(Voxel::ALL[443], Voxel::FungiVerdigrisCap);
     assert_eq!(Voxel::ALL[444], Voxel::VegeWildgrass);
@@ -137,6 +137,8 @@ fn test_voxel_discriminants_continuity() {
     assert_eq!(Voxel::ALL[694], Voxel::Campfire);
     assert_eq!(Voxel::ALL[695], Voxel::CampfireUnlit);
     assert_eq!(Voxel::ALL[696], Voxel::MossCarpet);
+    assert_eq!(Voxel::ALL[697], Voxel::ItemFlintShard);
+    assert_eq!(Voxel::ALL[707], Voxel::ToolFlintShovel);
 }
 
 #[test]

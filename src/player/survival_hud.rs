@@ -25,10 +25,13 @@ const BASE_HEALTH_WIDTH: f32 = 360.0;
 const BASE_HEALTH_HEIGHT: f32 = 28.0;
 const BASE_STAMINA_WIDTH: f32 = 316.0;
 const BASE_STAMINA_HEIGHT: f32 = 20.0;
+const BASE_CLIMATE_BADGE_SIZE: f32 = 38.0;
+const BASE_CLIMATE_ICON_SIZE: f32 = 22.0;
 const BASE_HUD_LEFT: f32 = 36.0;
 // Hotbar vertical center sits at (270 - 236) * 4 = 136px from bottom;
-// Health (28) + gap (10) + Stamina (20) = 58px -> bottom = 136 - 29 = 107px.
-const BASE_HUD_BOTTOM: f32 = 107.0;
+// Health (28) + gap (10) + Stamina (20) = 58px -> Stamina bottom at 107px;
+// Climate row below Stamina adds gap (10) + badge (38) = 48px -> root bottom = 59px.
+const BASE_HUD_BOTTOM: f32 = 59.0;
 
 #[derive(Resource, Debug, Clone)]
 pub struct PlayerVitals {
@@ -79,12 +82,17 @@ impl Default for PlayerVitals {
 struct VitalRingTextures {
     hunger: Handle<Image>,
     thirst: Handle<Image>,
-    temperature: Handle<Image>,
     oxygen: Handle<Image>,
     last_hunger_pct: i32,
     last_thirst_pct: i32,
-    last_temp_pct: i32,
     last_oxy_pct: i32,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ClimateBadgeKind {
+    Cold,
+    Neutral,
+    Heat,
 }
 
 #[derive(Resource, Default)]
@@ -130,6 +138,15 @@ struct StaminaBarText;
 
 #[derive(Component)]
 struct OxygenRingContainer;
+
+#[derive(Component)]
+struct HudClimateRow;
+
+#[derive(Component)]
+struct HudClimateBadge(ClimateBadgeKind);
+
+#[derive(Component)]
+struct HudClimateIcon(ClimateBadgeKind);
 
 #[derive(Component)]
 struct GameModeToastRoot;
@@ -307,17 +324,14 @@ fn spawn_survival_hud_and_toast(
 
     let hunger_ring = images.add(create_ring_image(1.0, [232, 168, 52]));
     let thirst_ring = images.add(create_ring_image(1.0, [64, 182, 242]));
-    let temp_ring = images.add(create_ring_image(0.5, [102, 206, 132]));
     let oxy_ring = images.add(create_ring_image(1.0, [82, 214, 250]));
 
     commands.insert_resource(VitalRingTextures {
         hunger: hunger_ring.clone(),
         thirst: thirst_ring.clone(),
-        temperature: temp_ring.clone(),
         oxygen: oxy_ring.clone(),
         last_hunger_pct: 100,
         last_thirst_pct: 100,
-        last_temp_pct: 50,
         last_oxy_pct: 100,
     });
 
@@ -325,9 +339,13 @@ fn spawn_survival_hud_and_toast(
         asset_server.load("textures/interfaces/icons/hud/hud_hunger.png");
     let thirst_icon: Handle<Image> =
         asset_server.load("textures/interfaces/icons/hud/hud_thirst.png");
-    let temp_icon: Handle<Image> =
-        asset_server.load("textures/interfaces/icons/hud/hud_temperature.png");
     let oxy_icon: Handle<Image> = asset_server.load("textures/interfaces/icons/hud/hud_oxygen.png");
+    let cold_icon: Handle<Image> =
+        asset_server.load("textures/interfaces/icons/hud/hud_temp_cold.png");
+    let neutral_icon: Handle<Image> =
+        asset_server.load("textures/interfaces/icons/hud/hud_temp_neutral.png");
+    let heat_icon: Handle<Image> =
+        asset_server.load("textures/interfaces/icons/hud/hud_temp_heat.png");
 
     // 1. Bottom-Left Floating Survival Vitals HUD (no container background, aligned with Hotbar & scaled with gui_scale)
     commands
@@ -379,7 +397,6 @@ fn spawn_survival_hud_and_toast(
 
                 spawn_ring_node(col, hunger_ring, hunger_icon);
                 spawn_ring_node(col, thirst_ring, thirst_icon);
-                spawn_ring_node(col, temp_ring, temp_icon);
             });
 
             // Health Bar Row (larger, crisp floating bar)
@@ -478,6 +495,59 @@ fn spawn_survival_hud_and_toast(
                     TextColor(palette::TEXT_MUTED),
                     text_shadow_default(),
                 ));
+            });
+
+            // Climate State Badges Row (Cold / Neutral / Heat) below Stamina
+            root.spawn((
+                HudClimateRow,
+                Pickable::IGNORE,
+                Node {
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Row,
+                    align_items: AlignItems::Center,
+                    column_gap: px(10.0),
+                    ..default()
+                },
+            ))
+            .with_children(|row| {
+                for (kind, icon_handle) in [
+                    (ClimateBadgeKind::Cold, cold_icon),
+                    (ClimateBadgeKind::Neutral, neutral_icon),
+                    (ClimateBadgeKind::Heat, heat_icon),
+                ] {
+                    row.spawn((
+                        HudClimateBadge(kind),
+                        Pickable::IGNORE,
+                        Node {
+                            width: px(BASE_CLIMATE_BADGE_SIZE),
+                            height: px(BASE_CLIMATE_BADGE_SIZE),
+                            border: UiRect::all(px(2.0)),
+                            border_radius: BorderRadius::all(px(BASE_CLIMATE_BADGE_SIZE * 0.5)),
+                            display: Display::Flex,
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgba(0.05, 0.06, 0.09, 0.58)),
+                        BorderColor::all(Color::srgba(0.22, 0.25, 0.32, 0.55)),
+                    ))
+                    .with_children(|badge| {
+                        badge.spawn((
+                            HudClimateIcon(kind),
+                            Pickable::IGNORE,
+                            ImageNode {
+                                image: icon_handle,
+                                color: Color::srgba(1.0, 1.0, 1.0, 0.30),
+                                ..default()
+                            },
+                            Node {
+                                width: px(BASE_CLIMATE_ICON_SIZE),
+                                height: px(BASE_CLIMATE_ICON_SIZE),
+                                ..default()
+                            },
+                        ));
+                    });
+                }
             });
         });
 
@@ -880,8 +950,9 @@ fn update_player_temperature(
     }
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn update_survival_hud_ui(
+    time: Res<Time>,
     game_mode: Res<GameMode>,
     vitals: Res<PlayerVitals>,
     menu_state: Option<Res<State<MenuState>>>,
@@ -915,6 +986,8 @@ fn update_survival_hud_ui(
     >,
     mut hp_text_q: Query<&mut Text, (With<HealthBarText>, Without<StaminaBarText>)>,
     mut stam_text_q: Query<&mut Text, (With<StaminaBarText>, Without<HealthBarText>)>,
+    mut climate_badge_q: Query<(&HudClimateBadge, &mut BackgroundColor, &mut BorderColor)>,
+    mut climate_icon_q: Query<(&HudClimateIcon, &mut ImageNode)>,
 ) {
     let show = *game_mode == GameMode::Survival
         && menu_state.is_none_or(|s| *s.get() == MenuState::None)
@@ -984,21 +1057,72 @@ fn update_survival_hud_ui(
         }
     }
 
-    let temp_i = vitals.temperature.round().clamp(0.0, 100.0) as i32;
-    if temp_i != rings.last_temp_pct {
-        rings.last_temp_pct = temp_i;
-        let rgb = if temp_i < 30 {
-            [88, 198, 248]
-        } else if temp_i > 70 {
-            [238, 104, 54]
-        } else {
-            [102, 206, 132]
-        };
-        if let Some(mut img) = images.get_mut(&rings.temperature)
-            && let Some(ref mut data) = img.data
-        {
-            write_ring_pixels(data, temp_i as f32 / 100.0, rgb);
+    // Update 3 circular Climate State badges below Stamina (active highlight + pulse on Cold/Heat)
+    let active_climate = if vitals.temperature < 30.0 {
+        ClimateBadgeKind::Cold
+    } else if vitals.temperature > 70.0 {
+        ClimateBadgeKind::Heat
+    } else {
+        ClimateBadgeKind::Neutral
+    };
+    let elapsed = time.elapsed_secs();
+    let cold_sev = ((30.0 - vitals.temperature) / 30.0).clamp(0.0, 1.0);
+    let heat_sev = ((vitals.temperature - 70.0) / 30.0).clamp(0.0, 1.0);
+    let cold_pulse = 0.5 + 0.5 * (elapsed * (3.2 + cold_sev * 3.8)).sin();
+    let heat_pulse = 0.5 + 0.5 * (elapsed * (3.2 + heat_sev * 3.8)).sin();
+
+    for (badge, mut bg, mut border) in &mut climate_badge_q {
+        if badge.0 != active_climate {
+            bg.0 = Color::srgba(0.05, 0.06, 0.09, 0.55);
+            *border = BorderColor::all(Color::srgba(0.22, 0.25, 0.32, 0.50));
+            continue;
         }
+        match badge.0 {
+            ClimateBadgeKind::Cold => {
+                bg.0 = Color::srgba(
+                    0.07 + 0.10 * cold_pulse,
+                    0.18 + 0.18 * cold_pulse,
+                    0.28 + 0.22 * cold_pulse,
+                    0.86 + 0.12 * cold_pulse,
+                );
+                *border = BorderColor::all(Color::srgba(
+                    0.34 + 0.38 * cold_pulse,
+                    0.78 + 0.20 * cold_pulse,
+                    0.99,
+                    0.76 + 0.24 * cold_pulse,
+                ));
+            }
+            ClimateBadgeKind::Neutral => {
+                bg.0 = Color::srgba(0.09, 0.22, 0.16, 0.90);
+                *border = BorderColor::all(Color::srgba(0.36, 0.84, 0.54, 0.95));
+            }
+            ClimateBadgeKind::Heat => {
+                bg.0 = Color::srgba(
+                    0.28 + 0.24 * heat_pulse,
+                    0.10 + 0.10 * heat_pulse,
+                    0.05 + 0.04 * heat_pulse,
+                    0.86 + 0.12 * heat_pulse,
+                );
+                *border = BorderColor::all(Color::srgba(
+                    0.99,
+                    0.42 + 0.34 * heat_pulse,
+                    0.16 + 0.14 * heat_pulse,
+                    0.76 + 0.24 * heat_pulse,
+                ));
+            }
+        }
+    }
+
+    for (icon, mut img) in &mut climate_icon_q {
+        img.color = if icon.0 != active_climate {
+            Color::srgba(1.0, 1.0, 1.0, 0.28)
+        } else {
+            match icon.0 {
+                ClimateBadgeKind::Cold => Color::srgba(0.92, 0.98, 1.0, 0.82 + 0.18 * cold_pulse),
+                ClimateBadgeKind::Neutral => Color::WHITE,
+                ClimateBadgeKind::Heat => Color::srgba(1.0, 0.95, 0.90, 0.82 + 0.18 * heat_pulse),
+            }
+        };
     }
 
     let oxy_i = oxy_pct.round().clamp(0.0, 100.0) as i32;
@@ -1142,6 +1266,9 @@ fn sync_survival_hud_scale(
             Without<HudRingIcon>,
             Without<HudHealthTrack>,
             Without<HudStaminaTrack>,
+            Without<HudClimateRow>,
+            Without<HudClimateBadge>,
+            Without<HudClimateIcon>,
         ),
     >,
     mut ring_col_q: Query<
@@ -1153,6 +1280,9 @@ fn sync_survival_hud_scale(
             Without<HudRingIcon>,
             Without<HudHealthTrack>,
             Without<HudStaminaTrack>,
+            Without<HudClimateRow>,
+            Without<HudClimateBadge>,
+            Without<HudClimateIcon>,
         ),
     >,
     mut ring_box_q: Query<
@@ -1164,6 +1294,9 @@ fn sync_survival_hud_scale(
             Without<HudRingIcon>,
             Without<HudHealthTrack>,
             Without<HudStaminaTrack>,
+            Without<HudClimateRow>,
+            Without<HudClimateBadge>,
+            Without<HudClimateIcon>,
         ),
     >,
     mut ring_icon_q: Query<
@@ -1175,6 +1308,9 @@ fn sync_survival_hud_scale(
             Without<HudRingBox>,
             Without<HudHealthTrack>,
             Without<HudStaminaTrack>,
+            Without<HudClimateRow>,
+            Without<HudClimateBadge>,
+            Without<HudClimateIcon>,
         ),
     >,
     mut hp_track_q: Query<
@@ -1186,6 +1322,9 @@ fn sync_survival_hud_scale(
             Without<HudRingBox>,
             Without<HudRingIcon>,
             Without<HudStaminaTrack>,
+            Without<HudClimateRow>,
+            Without<HudClimateBadge>,
+            Without<HudClimateIcon>,
         ),
     >,
     mut stam_track_q: Query<
@@ -1197,6 +1336,51 @@ fn sync_survival_hud_scale(
             Without<HudRingBox>,
             Without<HudRingIcon>,
             Without<HudHealthTrack>,
+            Without<HudClimateRow>,
+            Without<HudClimateBadge>,
+            Without<HudClimateIcon>,
+        ),
+    >,
+    mut climate_row_q: Query<
+        &mut Node,
+        (
+            With<HudClimateRow>,
+            Without<SurvivalHudRoot>,
+            Without<HudRingColumn>,
+            Without<HudRingBox>,
+            Without<HudRingIcon>,
+            Without<HudHealthTrack>,
+            Without<HudStaminaTrack>,
+            Without<HudClimateBadge>,
+            Without<HudClimateIcon>,
+        ),
+    >,
+    mut climate_badge_q: Query<
+        &mut Node,
+        (
+            With<HudClimateBadge>,
+            Without<SurvivalHudRoot>,
+            Without<HudRingColumn>,
+            Without<HudRingBox>,
+            Without<HudRingIcon>,
+            Without<HudHealthTrack>,
+            Without<HudStaminaTrack>,
+            Without<HudClimateRow>,
+            Without<HudClimateIcon>,
+        ),
+    >,
+    mut climate_icon_q: Query<
+        &mut Node,
+        (
+            With<HudClimateIcon>,
+            Without<SurvivalHudRoot>,
+            Without<HudRingColumn>,
+            Without<HudRingBox>,
+            Without<HudRingIcon>,
+            Without<HudHealthTrack>,
+            Without<HudStaminaTrack>,
+            Without<HudClimateRow>,
+            Without<HudClimateBadge>,
         ),
     >,
     mut hp_font_q: Query<&mut TextFont, (With<HealthBarText>, Without<StaminaBarText>)>,
@@ -1235,6 +1419,19 @@ fn sync_survival_hud_scale(
     for mut n in &mut stam_track_q {
         n.width = px(BASE_STAMINA_WIDTH * factor);
         n.height = px(BASE_STAMINA_HEIGHT * factor);
+    }
+    for mut n in &mut climate_row_q {
+        n.column_gap = px(10.0 * factor);
+    }
+    let badge_size = BASE_CLIMATE_BADGE_SIZE * factor;
+    for mut n in &mut climate_badge_q {
+        n.width = px(badge_size);
+        n.height = px(badge_size);
+        n.border_radius = BorderRadius::all(px(badge_size * 0.5));
+    }
+    for mut n in &mut climate_icon_q {
+        n.width = px(BASE_CLIMATE_ICON_SIZE * factor);
+        n.height = px(BASE_CLIMATE_ICON_SIZE * factor);
     }
     for mut tf in &mut hp_font_q {
         tf.font_size = FontSize::Px((19.0 * factor).max(12.0));

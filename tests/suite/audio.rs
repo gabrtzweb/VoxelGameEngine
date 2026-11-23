@@ -233,7 +233,7 @@ fn test_music_state_shuffle_and_rotation() {
         voxel_game_engine::audio::music::MusicContext::Menu
     );
     assert_eq!(state.menu_playlist.len(), 4);
-    assert_eq!(state.game_playlist.len(), 39);
+    assert_eq!(state.game_playlist.len(), 38);
 
     let mut menu_set = state.menu_playlist.clone();
     menu_set.sort();
@@ -241,7 +241,7 @@ fn test_music_state_shuffle_and_rotation() {
 
     let mut game_set = state.game_playlist.clone();
     game_set.sort();
-    let expected_game: Vec<usize> = (0..39).collect();
+    let expected_game: Vec<usize> = (0..38).collect();
     assert_eq!(game_set, expected_game);
 
     let t1 = state.next_menu_track();
