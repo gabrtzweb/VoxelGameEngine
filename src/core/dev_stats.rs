@@ -15,7 +15,9 @@ use crate::{
 
 const STATS_UPDATE_INTERVAL: f32 = 0.25;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize, Reflect)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize, Reflect,
+)]
 pub enum DebugHudMode {
     Hidden,
     FpsOnly,
@@ -283,7 +285,10 @@ fn update_dev_stats(
                     "Surface"
                 };
                 (
-                    format!(" | Culling ({status}): {}R / {}C", cs.rendered_chunks, cs.culled_chunks),
+                    format!(
+                        " | Culling ({status}): {}R / {}C",
+                        cs.rendered_chunks, cs.culled_chunks
+                    ),
                     format!(" [Culled: {}k]", cs.culled_vertices / 1000),
                 )
             } else {
@@ -446,7 +451,10 @@ fn update_dev_stats(
                 camera_position.x,
                 camera_position.y,
                 camera_position.z,
-                if culling_state.as_ref().map_or(false, |s| s.is_player_underground) {
+                if culling_state
+                    .as_ref()
+                    .is_some_and(|s| s.is_player_underground)
+                {
                     "Underground / Cavern"
                 } else {
                     "Surface / Open Air"

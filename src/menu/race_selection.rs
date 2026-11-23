@@ -11,9 +11,7 @@ use crate::{
     player::{CharacterRace, CharacterReady, CharacterSubrace, SelectedRace, SelectedSubrace},
 };
 
-use super::{
-    MenuBackdrop, MenuState, ThemedButton, main_menu::MainMenuPhase, theme::palette,
-};
+use super::{MenuBackdrop, MenuState, ThemedButton, main_menu::MainMenuPhase, theme::palette};
 
 #[derive(Component)]
 pub struct RaceSelectionRoot;
@@ -660,10 +658,7 @@ fn spawn_three_columns(
                 ),
                 (
                     loc.map_or("Fall Resistance", |l| l.t("attr.fall_resistance")),
-                    format!(
-                        "+{}%",
-                        (attrs.fall_damage_reduction * 100.0).round() as i32
-                    ),
+                    format!("+{}%", (attrs.fall_damage_reduction * 100.0).round() as i32),
                     attrs.fall_damage_reduction > 0.01,
                     false,
                 ),
@@ -946,10 +941,7 @@ fn update_core_race_card_hover(
         let is_current = btn.0 == active_race;
         let is_active = hovered.get() || is_pressed;
 
-        if is_active {
-            *border = BorderColor::all(palette::ACCENT_LINE);
-            *bg = BackgroundColor(palette::BTN_HOVER_BG);
-        } else if is_current {
+        if is_active || is_current {
             *border = BorderColor::all(palette::ACCENT_LINE);
             *bg = BackgroundColor(palette::BTN_HOVER_BG);
         } else {

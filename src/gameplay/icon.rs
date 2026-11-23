@@ -1,11 +1,11 @@
-use std::{collections::HashMap, path::Path};
+use crate::world::{BlockShape, Voxel};
 use bevy::{
     asset::RenderAssetUsages,
     image::ImageSampler,
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
 };
-use crate::world::{BlockShape, Voxel};
+use std::{collections::HashMap, path::Path};
 pub const ICON_SIZE: u32 = 48;
 #[derive(Resource, Clone, Default)]
 pub struct BlockIcons {
@@ -123,7 +123,11 @@ pub fn setup_block_icons(
             }
         }
         let mut raw_side = if let Some(side_name) = voxel.side_texture_name() {
-            load_raw_16x16_by_name(side_name, voxel.backup_texture_name(), voxel.fallback_color())
+            load_raw_16x16_by_name(
+                side_name,
+                voxel.backup_texture_name(),
+                voxel.fallback_color(),
+            )
         } else {
             load_voxel_raw_16x16(voxel)
         };
@@ -167,7 +171,11 @@ pub fn setup_block_icons(
         }
         // Flat pads, wall decals, and crossmesh billboards:
         // rendered directly as crisp, flat 2D icons instead of distorted isometric cubes.
-        if voxel.is_cross_billboard() || voxel.is_flat_pad_const() || voxel.is_wall_decal_const() || voxel == Voxel::VegeCactus {
+        if voxel.is_cross_billboard()
+            || voxel.is_flat_pad_const()
+            || voxel.is_wall_decal_const()
+            || voxel == Voxel::VegeCactus
+        {
             let side_tint = voxel.tint_color();
             let all_frames = load_voxel_all_frames_16x16(voxel);
             if let Some(frames_16x16) = all_frames.filter(|f| f.len() > 1) {
@@ -198,7 +206,11 @@ pub fn setup_block_icons(
             continue;
         }
         let raw_top = if let Some(top_name) = voxel.top_texture_name() {
-            let mut top_bytes = load_raw_16x16_by_name(top_name, voxel.backup_texture_name(), voxel.fallback_color());
+            let mut top_bytes = load_raw_16x16_by_name(
+                top_name,
+                voxel.backup_texture_name(),
+                voxel.fallback_color(),
+            );
             if let Some(overlay_name) = voxel
                 .overlay_texture_name()
                 .filter(|&o| !matches!(o, "soil_grass_side_overlay" | "rock_grass_side_overlay"))
@@ -247,7 +259,11 @@ pub fn setup_block_icons(
         };
         let top_tint = voxel.tint_color();
         let raw_front = if let Some(front_name) = voxel.front_texture_name() {
-            load_raw_16x16_by_name(front_name, voxel.backup_texture_name(), voxel.fallback_color())
+            load_raw_16x16_by_name(
+                front_name,
+                voxel.backup_texture_name(),
+                voxel.fallback_color(),
+            )
         } else {
             raw_side.clone()
         };
@@ -271,13 +287,17 @@ pub fn setup_block_icons(
             });
         } else {
             let icon_image = if voxel.default_shape() == BlockShape::Slab {
-                render_isometric_slab_icon_multi(&raw_side, &raw_top, &raw_front, side_tint, top_tint)
+                render_isometric_slab_icon_multi(
+                    &raw_side, &raw_top, &raw_front, side_tint, top_tint,
+                )
             } else if voxel.default_shape() == BlockShape::Carpet {
-                render_isometric_carpet_icon_multi(&raw_side, &raw_top, &raw_front, side_tint, top_tint)
-            } else if voxel == Voxel::VegeCactus || voxel.default_shape() == BlockShape::Cactus {
-                render_isometric_block_icon_multi(&raw_side, &raw_top, &raw_front, side_tint, top_tint)
+                render_isometric_carpet_icon_multi(
+                    &raw_side, &raw_top, &raw_front, side_tint, top_tint,
+                )
             } else {
-                render_isometric_block_icon_multi(&raw_side, &raw_top, &raw_front, side_tint, top_tint)
+                render_isometric_block_icon_multi(
+                    &raw_side, &raw_top, &raw_front, side_tint, top_tint,
+                )
             };
             let handle = images.add(icon_image);
             if fallback_image.is_none() {
@@ -348,7 +368,8 @@ pub fn render_isometric_slab_icon_multi(
     side_tint: [f32; 4],
     top_tint: [f32; 4],
 ) -> Image {
-    let canvas = render_isometric_slab_frame(side_16x16, top_16x16, front_16x16, side_tint, top_tint);
+    let canvas =
+        render_isometric_slab_frame(side_16x16, top_16x16, front_16x16, side_tint, top_tint);
     create_icon_image_from_canvas(&canvas)
 }
 pub fn render_isometric_slab_frame(
@@ -359,12 +380,8 @@ pub fn render_isometric_slab_frame(
     top_tint: [f32; 4],
 ) -> Vec<u8> {
     let mut canvas = vec![0u8; (ICON_SIZE * ICON_SIZE * 4) as usize];
-    const SUB_OFFSETS: [(f32, f32); 4] = [
-        (-0.25, -0.25),
-        (0.25, -0.25),
-        (-0.25, 0.25),
-        (0.25, 0.25),
-    ];
+    const SUB_OFFSETS: [(f32, f32); 4] =
+        [(-0.25, -0.25), (0.25, -0.25), (-0.25, 0.25), (0.25, 0.25)];
     for y in 0..ICON_SIZE {
         for x in 0..ICON_SIZE {
             let mut acc_r = 0.0f32;
@@ -407,8 +424,10 @@ pub fn render_isometric_slab_frame(
                             let a = (side_16x16[src_idx + 3] as f32 / 255.0) * side_tint[3];
                             if a > 0.01 {
                                 acc_r += (side_16x16[src_idx] as f32 / 255.0) * side_tint[0] * 0.88;
-                                acc_g += (side_16x16[src_idx + 1] as f32 / 255.0) * side_tint[1] * 0.88;
-                                acc_b += (side_16x16[src_idx + 2] as f32 / 255.0) * side_tint[2] * 0.88;
+                                acc_g +=
+                                    (side_16x16[src_idx + 1] as f32 / 255.0) * side_tint[1] * 0.88;
+                                acc_b +=
+                                    (side_16x16[src_idx + 2] as f32 / 255.0) * side_tint[2] * 0.88;
                                 acc_a += a;
                                 hits += 1;
                             }
@@ -428,9 +447,12 @@ pub fn render_isometric_slab_frame(
                         if src_idx + 3 < front_16x16.len() {
                             let a = (front_16x16[src_idx + 3] as f32 / 255.0) * side_tint[3];
                             if a > 0.01 {
-                                acc_r += (front_16x16[src_idx] as f32 / 255.0) * side_tint[0] * 0.75;
-                                acc_g += (front_16x16[src_idx + 1] as f32 / 255.0) * side_tint[1] * 0.75;
-                                acc_b += (front_16x16[src_idx + 2] as f32 / 255.0) * side_tint[2] * 0.75;
+                                acc_r +=
+                                    (front_16x16[src_idx] as f32 / 255.0) * side_tint[0] * 0.75;
+                                acc_g +=
+                                    (front_16x16[src_idx + 1] as f32 / 255.0) * side_tint[1] * 0.75;
+                                acc_b +=
+                                    (front_16x16[src_idx + 2] as f32 / 255.0) * side_tint[2] * 0.75;
                                 acc_a += a;
                                 hits += 1;
                             }
@@ -460,7 +482,7 @@ pub fn render_isometric_slab_frame(
     apply_silhouette_outline(&mut canvas);
     canvas
 }
-/// Renders a thin 2:1 pixel-art isometric carpet (Minecraft-style 1px-thick flat carpet).
+/// Renders a thin 2:1 pixel-art isometric carpet (1px-thick flat carpet).
 pub fn render_isometric_carpet_icon_multi(
     side_16x16: &[u8],
     top_16x16: &[u8],
@@ -481,12 +503,8 @@ pub fn render_isometric_carpet_frame(
     top_tint: [f32; 4],
 ) -> Vec<u8> {
     let mut canvas = vec![0u8; (ICON_SIZE * ICON_SIZE * 4) as usize];
-    const SUB_OFFSETS: [(f32, f32); 4] = [
-        (-0.25, -0.25),
-        (0.25, -0.25),
-        (-0.25, 0.25),
-        (0.25, 0.25),
-    ];
+    const SUB_OFFSETS: [(f32, f32); 4] =
+        [(-0.25, -0.25), (0.25, -0.25), (-0.25, 0.25), (0.25, 0.25)];
     const PEAK_Y: f32 = 13.0;
     const SIDE_H: f32 = 3.0;
     for y in 0..ICON_SIZE {
@@ -531,8 +549,10 @@ pub fn render_isometric_carpet_frame(
                             let a = (side_16x16[src_idx + 3] as f32 / 255.0) * side_tint[3];
                             if a > 0.01 {
                                 acc_r += (side_16x16[src_idx] as f32 / 255.0) * side_tint[0] * 0.86;
-                                acc_g += (side_16x16[src_idx + 1] as f32 / 255.0) * side_tint[1] * 0.86;
-                                acc_b += (side_16x16[src_idx + 2] as f32 / 255.0) * side_tint[2] * 0.86;
+                                acc_g +=
+                                    (side_16x16[src_idx + 1] as f32 / 255.0) * side_tint[1] * 0.86;
+                                acc_b +=
+                                    (side_16x16[src_idx + 2] as f32 / 255.0) * side_tint[2] * 0.86;
                                 acc_a += a;
                                 hits += 1;
                             }
@@ -552,9 +572,12 @@ pub fn render_isometric_carpet_frame(
                         if src_idx + 3 < front_16x16.len() {
                             let a = (front_16x16[src_idx + 3] as f32 / 255.0) * side_tint[3];
                             if a > 0.01 {
-                                acc_r += (front_16x16[src_idx] as f32 / 255.0) * side_tint[0] * 0.72;
-                                acc_g += (front_16x16[src_idx + 1] as f32 / 255.0) * side_tint[1] * 0.72;
-                                acc_b += (front_16x16[src_idx + 2] as f32 / 255.0) * side_tint[2] * 0.72;
+                                acc_r +=
+                                    (front_16x16[src_idx] as f32 / 255.0) * side_tint[0] * 0.72;
+                                acc_g +=
+                                    (front_16x16[src_idx + 1] as f32 / 255.0) * side_tint[1] * 0.72;
+                                acc_b +=
+                                    (front_16x16[src_idx + 2] as f32 / 255.0) * side_tint[2] * 0.72;
                                 acc_a += a;
                                 hits += 1;
                             }
@@ -614,12 +637,8 @@ pub fn render_isometric_frame(
     top_tint: [f32; 4],
 ) -> Vec<u8> {
     let mut canvas = vec![0u8; (ICON_SIZE * ICON_SIZE * 4) as usize];
-    const SUB_OFFSETS: [(f32, f32); 4] = [
-        (-0.25, -0.25),
-        (0.25, -0.25),
-        (-0.25, 0.25),
-        (0.25, 0.25),
-    ];
+    const SUB_OFFSETS: [(f32, f32); 4] =
+        [(-0.25, -0.25), (0.25, -0.25), (-0.25, 0.25), (0.25, 0.25)];
     for y in 0..ICON_SIZE {
         for x in 0..ICON_SIZE {
             let mut acc_r = 0.0f32;
@@ -662,8 +681,10 @@ pub fn render_isometric_frame(
                             let a = (side_16x16[src_idx + 3] as f32 / 255.0) * side_tint[3];
                             if a > 0.01 {
                                 acc_r += apply_icon_tint(side_16x16[src_idx], side_tint[0]) * 0.90;
-                                acc_g += apply_icon_tint(side_16x16[src_idx + 1], side_tint[1]) * 0.90;
-                                acc_b += apply_icon_tint(side_16x16[src_idx + 2], side_tint[2]) * 0.90;
+                                acc_g +=
+                                    apply_icon_tint(side_16x16[src_idx + 1], side_tint[1]) * 0.90;
+                                acc_b +=
+                                    apply_icon_tint(side_16x16[src_idx + 2], side_tint[2]) * 0.90;
                                 acc_a += a;
                                 hits += 1;
                             }
@@ -684,8 +705,10 @@ pub fn render_isometric_frame(
                             let a = (front_16x16[src_idx + 3] as f32 / 255.0) * side_tint[3];
                             if a > 0.01 {
                                 acc_r += apply_icon_tint(front_16x16[src_idx], side_tint[0]) * 0.80;
-                                acc_g += apply_icon_tint(front_16x16[src_idx + 1], side_tint[1]) * 0.80;
-                                acc_b += apply_icon_tint(front_16x16[src_idx + 2], side_tint[2]) * 0.80;
+                                acc_g +=
+                                    apply_icon_tint(front_16x16[src_idx + 1], side_tint[1]) * 0.80;
+                                acc_b +=
+                                    apply_icon_tint(front_16x16[src_idx + 2], side_tint[2]) * 0.80;
                                 acc_a += a;
                                 hits += 1;
                             }
@@ -723,9 +746,13 @@ pub fn render_flat_block_icon(raw_16x16: &[u8], tint: [f32; 4]) -> Image {
 pub fn render_flat_frame(raw_16x16: &[u8], tint: [f32; 4]) -> Vec<u8> {
     let mut canvas = vec![0u8; (ICON_SIZE * ICON_SIZE * 4) as usize];
     for y in 0..ICON_SIZE {
-        let ty = ((y as f32 / ICON_SIZE as f32) * 16.0).floor().clamp(0.0, 15.0) as usize;
+        let ty = ((y as f32 / ICON_SIZE as f32) * 16.0)
+            .floor()
+            .clamp(0.0, 15.0) as usize;
         for x in 0..ICON_SIZE {
-            let tx = ((x as f32 / ICON_SIZE as f32) * 16.0).floor().clamp(0.0, 15.0) as usize;
+            let tx = ((x as f32 / ICON_SIZE as f32) * 16.0)
+                .floor()
+                .clamp(0.0, 15.0) as usize;
             let src_idx = (ty * 16 + tx) * 4;
             if src_idx + 3 < raw_16x16.len() {
                 let r = raw_16x16[src_idx] as f32 / 255.0;
@@ -823,13 +850,17 @@ pub fn voxel_item_texture_path(voxel: Voxel) -> Option<&'static str> {
         Voxel::SandstoneRubble => Some("assets/textures/items/sandstone_rubble_item.png"),
         Voxel::SandstoneDuneRubble => Some("assets/textures/items/sandstone_dune_rubble_item.png"),
         Voxel::SandstoneRedRubble => Some("assets/textures/items/sandstone_red_rubble_item.png"),
-        Voxel::SandstoneWhiteRubble => Some("assets/textures/items/sandstone_white_rubble_item.png"),
+        Voxel::SandstoneWhiteRubble => {
+            Some("assets/textures/items/sandstone_white_rubble_item.png")
+        }
         Voxel::SlateRubble => Some("assets/textures/items/slate_rubble_item.png"),
         Voxel::Kelp => Some("assets/textures/blocks/vege_kelp_plant.png"),
         Voxel::SpeleothemBlueIce => Some("assets/textures/blocks/speleothem_blue_ice_up_tip.png"),
         Voxel::SpeleothemCalcite => Some("assets/textures/blocks/speleothem_calcite_up_tip.png"),
         Voxel::SpeleothemKarst => Some("assets/textures/blocks/speleothem_karst_up_tip.png"),
-        Voxel::SpeleothemSaltStraw => Some("assets/textures/blocks/speleothem_pink_salt_straw_up_top.png"),
+        Voxel::SpeleothemSaltStraw => {
+            Some("assets/textures/blocks/speleothem_pink_salt_straw_up_top.png")
+        }
         Voxel::ObsidianSpike => Some("assets/textures/blocks/speleothem_obsidian_spike_up_top.png"),
         // Agricultural Seeds & Items (Phase 12)
         Voxel::ItemWheatSeeds => Some("assets/textures/items/wheat_seeds_item.png"),
@@ -910,7 +941,13 @@ fn create_item_icon_frame(rgba: &image::RgbaImage) -> Vec<u8> {
     }
     canvas
 }
-fn extract_sub_image(rgba: &image::RgbaImage, sx: u32, sy: u32, w: u32, h: u32) -> image::RgbaImage {
+fn extract_sub_image(
+    rgba: &image::RgbaImage,
+    sx: u32,
+    sy: u32,
+    w: u32,
+    h: u32,
+) -> image::RgbaImage {
     let mut sub = image::RgbaImage::new(w, h);
     for y in 0..h {
         for x in 0..w {
@@ -931,7 +968,11 @@ fn load_voxel_all_frames_16x16(voxel: Voxel) -> Option<Vec<Vec<u8>>> {
             if ov_w == 16 && ov_h > 16 && ov_h % 16 == 0 {
                 let frame_count = (ov_h / 16) as usize;
                 let base_side = if let Some(side_name) = voxel.side_texture_name() {
-                    load_raw_16x16_by_name(side_name, voxel.backup_texture_name(), voxel.fallback_color())
+                    load_raw_16x16_by_name(
+                        side_name,
+                        voxel.backup_texture_name(),
+                        voxel.fallback_color(),
+                    )
                 } else {
                     load_voxel_raw_16x16(voxel)
                 };
@@ -950,13 +991,16 @@ fn load_voxel_all_frames_16x16(voxel: Voxel) -> Option<Vec<Vec<u8>>> {
                                 let base_b = frame[idx + 2] as f32;
                                 frame[idx] = (base_r * (1.0 - ov_a) + p[0] as f32 * ov_a)
                                     .round()
-                                    .clamp(0.0, 255.0) as u8;
+                                    .clamp(0.0, 255.0)
+                                    as u8;
                                 frame[idx + 1] = (base_g * (1.0 - ov_a) + p[1] as f32 * ov_a)
                                     .round()
-                                    .clamp(0.0, 255.0) as u8;
+                                    .clamp(0.0, 255.0)
+                                    as u8;
                                 frame[idx + 2] = (base_b * (1.0 - ov_a) + p[2] as f32 * ov_a)
                                     .round()
-                                    .clamp(0.0, 255.0) as u8;
+                                    .clamp(0.0, 255.0)
+                                    as u8;
                             }
                         }
                     }
@@ -974,7 +1018,9 @@ fn load_voxel_all_frames_16x16(voxel: Voxel) -> Option<Vec<Vec<u8>>> {
         format!("assets/textures/blocks/{name}.png"),
         format!("assets/textures/blocks/{backup}.png"),
     ];
-    let path = candidate_paths.into_iter().find(|p| Path::new(p).exists())?;
+    let path = candidate_paths
+        .into_iter()
+        .find(|p| Path::new(p).exists())?;
     let img = image::open(&path).ok()?;
     let rgba = img.into_rgba8();
     let (w, h) = rgba.dimensions();

@@ -46,7 +46,7 @@ pub fn update_foliage_uniforms(
 ) {
     let dt = time.delta_secs();
     let default_cfg = GrassConfig::default();
-    let cfg = config.as_ref().map(|c| &**c).unwrap_or(&default_cfg);
+    let cfg = config.as_deref().unwrap_or(&default_cfg);
 
     // Wind direction and scalar speed (m/s)
     let (mut wind_dir, mut wind_speed) = if let Some(w) = wind.as_ref() {
@@ -94,7 +94,7 @@ pub fn update_foliage_uniforms(
         0.0
     };
 
-    let waving_enabled = local_config.as_ref().map_or(true, |c| c.waving_foliage);
+    let waving_enabled = local_config.as_ref().is_none_or(|c| c.waving_foliage);
     let wind_intensity = if waving_enabled {
         (wind_speed / 4.0).clamp(0.0, 5.0)
     } else {

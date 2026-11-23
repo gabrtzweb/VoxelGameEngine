@@ -126,10 +126,42 @@ fn update_weather_audio_loops(
     settings: Res<AudioSettings>,
     weather: Option<Res<WeatherManager>>,
     wind: Option<Res<WindState>>,
-    mut rain_query: Query<&mut AudioSink, (With<RainAudioLoop>, Without<WindAudioLoop>, Without<SnowAudioLoop>, Without<SandstormAudioLoop>)>,
-    mut wind_query: Query<&mut AudioSink, (With<WindAudioLoop>, Without<RainAudioLoop>, Without<SnowAudioLoop>, Without<SandstormAudioLoop>)>,
-    mut snow_query: Query<&mut AudioSink, (With<SnowAudioLoop>, Without<RainAudioLoop>, Without<WindAudioLoop>, Without<SandstormAudioLoop>)>,
-    mut sand_query: Query<&mut AudioSink, (With<SandstormAudioLoop>, Without<RainAudioLoop>, Without<WindAudioLoop>, Without<SnowAudioLoop>)>,
+    mut rain_query: Query<
+        &mut AudioSink,
+        (
+            With<RainAudioLoop>,
+            Without<WindAudioLoop>,
+            Without<SnowAudioLoop>,
+            Without<SandstormAudioLoop>,
+        ),
+    >,
+    mut wind_query: Query<
+        &mut AudioSink,
+        (
+            With<WindAudioLoop>,
+            Without<RainAudioLoop>,
+            Without<SnowAudioLoop>,
+            Without<SandstormAudioLoop>,
+        ),
+    >,
+    mut snow_query: Query<
+        &mut AudioSink,
+        (
+            With<SnowAudioLoop>,
+            Without<RainAudioLoop>,
+            Without<WindAudioLoop>,
+            Without<SandstormAudioLoop>,
+        ),
+    >,
+    mut sand_query: Query<
+        &mut AudioSink,
+        (
+            With<SandstormAudioLoop>,
+            Without<RainAudioLoop>,
+            Without<WindAudioLoop>,
+            Without<SnowAudioLoop>,
+        ),
+    >,
 ) {
     let master = settings.master_volume * settings.weather_volume * 0.50;
 
@@ -139,9 +171,13 @@ fn update_weather_audio_loops(
 
     let wind_speed = wind.as_ref().map_or(0.0, |w| w.current_wind.length());
     let wind_target = ((wind_speed / 9.0).clamp(0.0, 1.0) * 0.70 * master).max(
-        weather
-            .as_ref()
-            .map_or(0.0, |w| if w.current.is_storm() { 0.45 * master } else { 0.0 }),
+        weather.as_ref().map_or(0.0, |w| {
+            if w.current.is_storm() {
+                0.45 * master
+            } else {
+                0.0
+            }
+        }),
     );
 
     let snow_target = weather

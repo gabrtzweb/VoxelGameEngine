@@ -6,7 +6,7 @@ pub mod wind;
 use bevy::prelude::*;
 
 pub use lightning::{LightningPlugin, LightningState, TriggerThunderEvent};
-pub use particles::{WeatherParticlePool, WeatherParticlePlugin};
+pub use particles::{WeatherParticlePlugin, WeatherParticlePool};
 pub use state::{WeatherManager, WeatherType};
 pub use wind::WindState;
 

@@ -272,7 +272,7 @@ fn fragment(
         mask_uv = uv;
     }
 
-    // Natural blocks pseudo-random rotation and flipping (OptiFine style)
+    // Natural blocks pseudo-random rotation and flipping
     if (rot_mode > 0 && !is_mask_face) {
         let hash = hash_block_face(block_pos, normal);
 
@@ -380,7 +380,7 @@ fn fragment(
     let is_diagonal_plane = !is_item_entity && geo_len_sq > 0.00001 && (abs(geo_norm.x) * abs(geo_norm.z) > 0.05 * geo_len_sq);
     let is_cross_mesh = (vertex_output.color.a > 3.5 && vertex_output.color.a < 6.5) || is_diagonal_plane;
 
-    // Ambient Environment modulation (Minecraft mod style):
+    // Ambient environment color variation:
     // Breaks up monotonous large expanses of grass and leaves with multi-scale noise and natural hue shifts
     var tint_color = vertex_output.color;
     if (is_mask_face) {
@@ -441,7 +441,7 @@ fn fragment(
         tex_color = vec4<f32>(tex_color.rgb * coat_factor, tex_color.a);
     }
 
-    // Directional shading floor (Minecraft standard: Top 1.0, Bottom 0.55, N/S 0.86, E/W 0.78):
+    // Directional shading floor (Top 1.0, Bottom 0.55, N/S 0.86, E/W 0.78):
     // Preserves clear geometric distinction across faces under diffuse ambient light.
     let norm = normalize(vertex_output.world_normal);
     var dir_shading = 1.0;

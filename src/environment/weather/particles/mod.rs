@@ -24,10 +24,7 @@ impl Plugin for WeatherParticlePlugin {
             .add_systems(Startup, setup_weather_renderer)
             .add_systems(
                 Update,
-                (
-                    emit_weather_particles,
-                    sync_weather_particle_mesh,
-                )
+                (emit_weather_particles, sync_weather_particle_mesh)
                     .chain()
                     .in_set(WeatherParticleSet),
             );

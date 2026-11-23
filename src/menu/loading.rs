@@ -5,10 +5,7 @@ use crate::{
     meshing::ChunkMeshingTask,
     world::{
         storage::VoxelWorld,
-        streaming::{
-            manager::ChunkGenerationTask,
-            ChunkStreamingQueues, ChunkStreamingState,
-        },
+        streaming::{ChunkStreamingQueues, ChunkStreamingState, manager::ChunkGenerationTask},
     },
 };
 
@@ -124,8 +121,12 @@ fn spawn_loading_screen(
         tf
     };
 
-    let title_str = loc.as_ref().map_or("VOXEL ENGINE", |l| l.t("menu.main.title"));
-    let version_str = loc.as_ref().map_or("Alpha 0.1.0", |l| l.t("menu.main.version"));
+    let title_str = loc
+        .as_ref()
+        .map_or("VOXEL ENGINE", |l| l.t("menu.main.title"));
+    let version_str = loc
+        .as_ref()
+        .map_or("Alpha 0.1.0", |l| l.t("menu.main.version"));
     let loading_header_str = loc
         .as_ref()
         .map_or("LOADING WORLD...", |l| l.t("menu.loading.title"));
@@ -134,11 +135,10 @@ fn spawn_loading_screen(
         .map_or("Generating terrain...", |l| l.t("menu.loading.generating"));
 
     let tip_key = format!("menu.loading.tip_{initial_tip}");
-    let tip_str = loc
-        .as_ref()
-        .map_or("Tip: No voxels were harmed during the procedural generation of this world.", |l| {
-            l.t(&tip_key)
-        });
+    let tip_str = loc.as_ref().map_or(
+        "Tip: No voxels were harmed during the procedural generation of this world.",
+        |l| l.t(&tip_key),
+    );
 
     commands
         .spawn((
@@ -252,33 +252,31 @@ fn spawn_loading_screen(
                 ));
 
                 // Status row: Status message on left, Percentage on right
-                card.spawn((
-                    Node {
-                        display: Display::Flex,
-                        flex_direction: FlexDirection::Row,
-                        justify_content: JustifyContent::SpaceBetween,
-                        align_items: AlignItems::Center,
-                        width: percent(100.0),
-                        ..default()
-                    },
-                ))
-                .with_children(|row| {
-                    row.spawn((
-                        LoadingStatusText,
-                        Text::new(initial_status_str),
-                        make_font(15.0),
-                        TextColor(Color::srgb(0.85, 0.90, 0.98)),
-                        text_shadow_default(),
-                    ));
+                card.spawn((Node {
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Row,
+                    justify_content: JustifyContent::SpaceBetween,
+                    align_items: AlignItems::Center,
+                    width: percent(100.0),
+                    ..default()
+                },))
+                    .with_children(|row| {
+                        row.spawn((
+                            LoadingStatusText,
+                            Text::new(initial_status_str),
+                            make_font(15.0),
+                            TextColor(Color::srgb(0.85, 0.90, 0.98)),
+                            text_shadow_default(),
+                        ));
 
-                    row.spawn((
-                        LoadingPercentText,
-                        Text::new("0%"),
-                        make_font(16.0),
-                        TextColor(Color::srgb(1.0, 0.88, 0.42)),
-                        text_shadow_default(),
-                    ));
-                });
+                        row.spawn((
+                            LoadingPercentText,
+                            Text::new("0%"),
+                            make_font(16.0),
+                            TextColor(Color::srgb(1.0, 0.88, 0.42)),
+                            text_shadow_default(),
+                        ));
+                    });
 
                 // Progress Bar Track
                 card.spawn((
@@ -469,10 +467,9 @@ fn animate_loading_ui(
         loc.as_ref()
             .map_or("Gerando terreno...", |l| l.t("menu.loading.generating"))
     } else if p < 0.90 {
-        loc.as_ref().map_or(
-            "Construindo blocos e malhas...",
-            |l| l.t("menu.loading.meshing"),
-        )
+        loc.as_ref().map_or("Construindo blocos e malhas...", |l| {
+            l.t("menu.loading.meshing")
+        })
     } else {
         loc.as_ref()
             .map_or("Finalizando mundo...", |l| l.t("menu.loading.finalizing"))
@@ -498,9 +495,10 @@ fn animate_loading_ui(
         for mut tip_text in &mut tip_query {
             **tip_text = loc
                 .as_ref()
-                .map_or("Tip: No voxels were harmed during the procedural generation of this world.", |l| {
-                    l.t(&tip_key)
-                })
+                .map_or(
+                    "Tip: No voxels were harmed during the procedural generation of this world.",
+                    |l| l.t(&tip_key),
+                )
                 .to_string();
         }
     }

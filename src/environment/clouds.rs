@@ -130,8 +130,13 @@ pub fn setup_clouds(
     let active_configs = &CLOUD_LAYER_CONFIGS[..active_count];
 
     for (index, config) in active_configs.iter().enumerate() {
-        let initial_mesh =
-            generate_cloud_mesh(&cloud_map, config, IVec2::ZERO, cloud_quality, cloud_distance);
+        let initial_mesh = generate_cloud_mesh(
+            &cloud_map,
+            config,
+            IVec2::ZERO,
+            cloud_quality,
+            cloud_distance,
+        );
         let mesh_handle = meshes.add(initial_mesh);
 
         let initial_visibility = if cloud_quality == crate::core::CloudQuality::Off {
@@ -221,7 +226,9 @@ pub fn sync_clouds(
         let config = &CLOUD_LAYER_CONFIGS[index];
         let layer_state = &mut layers_res.layers[index];
 
-        if layer_state.active_quality != cloud_quality || layer_state.active_distance != cloud_distance {
+        if layer_state.active_quality != cloud_quality
+            || layer_state.active_distance != cloud_distance
+        {
             layer_state.active_quality = cloud_quality;
             layer_state.active_distance = cloud_distance;
             layer_state.current_cell_center = IVec2::splat(i32::MIN);
@@ -506,13 +513,21 @@ fn generate_cloud_mesh_internal(
                 continue;
             }
 
-            let max_w = if cell_kind == 1 { dim - gx } else { (dim - gx).min(4) };
+            let max_w = if cell_kind == 1 {
+                dim - gx
+            } else {
+                (dim - gx).min(4)
+            };
             let mut w = 1;
             while w < max_w && grid[row_off + gx + w] == cell_kind && !visited[row_off + gx + w] {
                 w += 1;
             }
 
-            let max_h = if cell_kind == 1 { dim - gz } else { (dim - gz).min(4) };
+            let max_h = if cell_kind == 1 {
+                dim - gz
+            } else {
+                (dim - gz).min(4)
+            };
             let mut h = 1;
             'rows: while h < max_h {
                 let next_row = (gz + h) * dim;

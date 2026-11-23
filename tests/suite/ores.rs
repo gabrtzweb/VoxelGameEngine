@@ -1,8 +1,5 @@
 use voxel_game_engine::{
-    generation::{
-        biome::BiomeType,
-        strata::StrataGenerator,
-    },
+    generation::{biome::BiomeType, strata::StrataGenerator},
     world::Voxel,
 };
 
@@ -133,8 +130,14 @@ fn test_lava_basin_generation_and_opaque_fluid_properties() {
 
     // 4. Submerged rubble / pebble face culling: water does not render an artificial face against rubble
     assert!(!should_render_face(Voxel::LiquidWater, Voxel::BasaltRubble));
-    assert!(!should_render_face(Voxel::LiquidWater, Voxel::GraniteRubble));
-    assert!(!should_render_face(Voxel::LiquidWater, Voxel::PebbleFlintCluster));
+    assert!(!should_render_face(
+        Voxel::LiquidWater,
+        Voxel::GraniteRubble
+    ));
+    assert!(!should_render_face(
+        Voxel::LiquidWater,
+        Voxel::PebbleFlintCluster
+    ));
     assert!(Voxel::BasaltRubble.is_rubble());
     assert!(Voxel::BasaltRubble.has_custom_mesh());
 }

@@ -38,7 +38,7 @@ fn test_chunk_from_voxels() {
 fn test_voxel_ambient_occlusion_and_flipping() {
     use bevy::prelude::IVec3;
     use voxel_game_engine::meshing::greedy::{
-        compute_vertex_ao, vertex_uv_sign, FaceDirection, AO_TABLE,
+        AO_TABLE, FaceDirection, compute_vertex_ao, vertex_uv_sign,
     };
     use voxel_game_engine::world::VoxelWorld;
 
@@ -69,7 +69,10 @@ fn test_voxel_ambient_occlusion_and_flipping() {
     let pos = IVec3::new(10, 10, 10);
     for v_idx in 0..4 {
         let ao = compute_vertex_ao(&world, pos, FaceDirection::PositiveY, v_idx);
-        assert_eq!(ao, 3, "Empty space should have maximum brightness (AO level 3)");
+        assert_eq!(
+            ao, 3,
+            "Empty space should have maximum brightness (AO level 3)"
+        );
     }
 }
 
@@ -123,12 +126,17 @@ fn test_organic_river_hydrology_and_flow() {
                     assert!(
                         wl > col.terrain_height,
                         "River water level ({}) must be strictly higher than carved bed ({}) at ({}, {})",
-                        wl, col.terrain_height, x, z
+                        wl,
+                        col.terrain_height,
+                        x,
+                        z
                     );
                 }
             }
         }
     }
-    assert!(river_detected, "Sweep across 1000x1000 area must encounter organic river channels");
+    assert!(
+        river_detected,
+        "Sweep across 1000x1000 area must encounter organic river channels"
+    );
 }
-

@@ -4,7 +4,7 @@ use super::state::WeatherManager;
 use crate::{environment::time::EnvironmentState, player::PlayerCamera};
 
 /// 3D Continuous harmonic wind simulation resource.
-/// Implements Particle Rain's non-repeating dual harmonic wave formula.
+/// Implements a non-repeating dual harmonic wave formula.
 #[derive(Resource, Reflect, Debug)]
 #[reflect(Resource)]
 pub struct WindState {
@@ -40,17 +40,17 @@ impl Default for WindState {
 }
 
 impl WindState {
-    /// Harmonic dual-sine wave generator from Particle Rain:
+    /// Harmonic dual-sine wave generator:
     /// `[sin(coord * freq + time) * sin(0.5 * coord * freq + 0.5 * time)] * strength + strength`
     #[inline]
-    pub fn one_wind_please(coord: f32, freq: f32, time: f32, strength: f32) -> f32 {
+    pub fn harmonic_wind_wave(coord: f32, freq: f32, time: f32, strength: f32) -> f32 {
         let phase = coord * freq + time;
         let s1 = (phase).sin();
         let s2 = (0.5 * phase).sin();
         (s1 * s2) * strength + strength
     }
 
-    /// Elevation lapse scaling factor from Particle Rain:
+    /// Elevation lapse scaling factor:
     /// Clamps smoothly between Y = 50.0 (calm valley) and Y = 90.0 (high mountain gusts).
     #[inline]
     pub fn y_level_multiplier(y: f32) -> f32 {
@@ -58,21 +58,16 @@ impl WindState {
     }
 
     /// Evaluates the 3D wind vector at any arbitrary world coordinate and game time.
-    pub fn sample_wind(
-        &self,
-        world_pos: Vec3,
-        game_time_seconds: f64,
-        storm_factor: f32,
-    ) -> Vec3 {
+    pub fn sample_wind(&self, world_pos: Vec3, game_time_seconds: f64, storm_factor: f32) -> Vec3 {
         let t = (game_time_seconds as f32) * self.modulation_speed;
         let y_mult = Self::y_level_multiplier(world_pos.y);
 
         // Effective strength amplifies during heavy storms and blizzards
         let strength = self.base_strength * (1.0 + storm_factor * 2.2);
 
-        let wind_x = Self::one_wind_please(world_pos.x, self.gust_frequency, t, strength)
+        let wind_x = Self::harmonic_wind_wave(world_pos.x, self.gust_frequency, t, strength)
             * self.base_direction.x;
-        let wind_z = Self::one_wind_please(world_pos.z, self.gust_frequency, t, strength)
+        let wind_z = Self::harmonic_wind_wave(world_pos.z, self.gust_frequency, t, strength)
             * self.base_direction.y;
 
         Vec3::new(wind_x * y_mult, 0.0, wind_z * y_mult)

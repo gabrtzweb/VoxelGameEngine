@@ -43,7 +43,10 @@ impl WeatherType {
     }
 
     pub fn is_storm(self) -> bool {
-        matches!(self, Self::HeavyRain | Self::Thunderstorm | Self::Blizzard | Self::DustStorm)
+        matches!(
+            self,
+            Self::HeavyRain | Self::Thunderstorm | Self::Blizzard | Self::DustStorm
+        )
     }
 
     pub fn target_rain_intensity(self) -> f32 {

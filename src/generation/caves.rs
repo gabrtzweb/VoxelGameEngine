@@ -99,14 +99,20 @@ impl CaveGenerator {
     #[inline]
     pub fn is_cave_at_point(&self, fx: f32, fy: f32, fz: f32, seed: u32) -> bool {
         let sample = self.sample_noise_point(fx, fy, fz, seed);
-        (sample.worm_a.abs() < self.spaghetti_threshold && sample.worm_b.abs() < self.spaghetti_threshold)
+        (sample.worm_a.abs() < self.spaghetti_threshold
+            && sample.worm_b.abs() < self.spaghetti_threshold)
             || sample.cheese > self.cheese_threshold
     }
 
     /// Selects an authentic volcanic rock material for lava basin floors and rims.
     #[inline]
     pub fn volcanic_rock_for_basin(seed_hash: u32, x: i32, y: i32, z: i32) -> Voxel {
-        let roll = ((seed_hash ^ (x as u32).wrapping_mul(31) ^ (z as u32).wrapping_mul(73) ^ (y as u32).wrapping_mul(127)) >> 4) % 100;
+        let roll = ((seed_hash
+            ^ (x as u32).wrapping_mul(31)
+            ^ (z as u32).wrapping_mul(73)
+            ^ (y as u32).wrapping_mul(127))
+            >> 4)
+            % 100;
         if roll < 26 {
             Voxel::Obsidian
         } else if roll < 52 {
@@ -124,7 +130,7 @@ impl CaveGenerator {
     /// - `Some(Voxel::Air)` for headroom above the pool
     /// - `Some(volcanic_rock)` (Obsidian, Magma, Basalt, CobbledBasalt) for the solid basin floor and enclosing rim
     /// - `None` if outside any lava basin
-    /// Evaluates if (world_x, world_y, world_z) lies inside a complete subterranean lava pool basin.
+    ///
     /// Strictly guarantees:
     /// - Flat, horizontal lava liquid surface with zero floating blocks.
     /// - A solid volcanic rim (borda) rising 1 block above the lava, completely sealing the pool so it never leaks.
@@ -169,14 +175,24 @@ impl CaveGenerator {
                     }
 
                     let margin = 4;
-                    let center_x = cx * CELL_SIZE + ((h % (CELL_SIZE as u32 - margin * 2)) + margin) as i32;
-                    let center_z = cz * CELL_SIZE + (((h >> 8) % (CELL_SIZE as u32 - margin * 2)) + margin) as i32;
+                    let center_x =
+                        cx * CELL_SIZE + ((h % (CELL_SIZE as u32 - margin * 2)) + margin) as i32;
+                    let center_z = cz * CELL_SIZE
+                        + (((h >> 8) % (CELL_SIZE as u32 - margin * 2)) + margin) as i32;
                     let pool_surface_y = tier_y;
 
                     // Only generate pool if an actual cavern/tunnel exists at this depth
-                    if !self.is_cave_at_point(center_x as f32, pool_surface_y as f32, center_z as f32, seed)
-                        && !self.is_cave_at_point(center_x as f32, (pool_surface_y + 1) as f32, center_z as f32, seed)
-                    {
+                    if !self.is_cave_at_point(
+                        center_x as f32,
+                        pool_surface_y as f32,
+                        center_z as f32,
+                        seed,
+                    ) && !self.is_cave_at_point(
+                        center_x as f32,
+                        (pool_surface_y + 1) as f32,
+                        center_z as f32,
+                        seed,
+                    ) {
                         continue;
                     }
 
@@ -190,7 +206,8 @@ impl CaveGenerator {
                     let rim_radius = radius + 2.8; // Sturdy ~3-block thick volcanic containment rim
 
                     let dist_sq = ((world_x - center_x) * (world_x - center_x)
-                        + (world_z - center_z) * (world_z - center_z)) as f32;
+                        + (world_z - center_z) * (world_z - center_z))
+                        as f32;
 
                     if dist_sq > rim_radius * rim_radius {
                         continue;
@@ -212,14 +229,18 @@ impl CaveGenerator {
                         // Completely fills any open cavern space beneath the pool down to bedrock.
                         // It is physically impossible for the lava pool to ever float in mid-air.
                         if world_y < pool_surface_y - pool_depth {
-                            return Some(Self::volcanic_rock_for_basin(h, world_x, world_y, world_z));
+                            return Some(Self::volcanic_rock_for_basin(
+                                h, world_x, world_y, world_z,
+                            ));
                         }
                     } else {
                         // 4. Solid volcanic rim encircling the perimeter:
                         // Rises 1 block above the lava surface to contain it, and extends downward
                         // through the entire depth to solidly support and seal the basin.
                         if world_y <= pool_surface_y + 1 {
-                            return Some(Self::volcanic_rock_for_basin(h, world_x, world_y, world_z));
+                            return Some(Self::volcanic_rock_for_basin(
+                                h, world_x, world_y, world_z,
+                            ));
                         }
                     }
                 }
@@ -260,20 +281,31 @@ impl CaveGenerator {
                         continue;
                     }
                     let margin = 4;
-                    let center_x = cx * CELL_SIZE + ((h % (CELL_SIZE as u32 - margin * 2)) + margin) as i32;
-                    let center_z = cz * CELL_SIZE + (((h >> 8) % (CELL_SIZE as u32 - margin * 2)) + margin) as i32;
+                    let center_x =
+                        cx * CELL_SIZE + ((h % (CELL_SIZE as u32 - margin * 2)) + margin) as i32;
+                    let center_z = cz * CELL_SIZE
+                        + (((h >> 8) % (CELL_SIZE as u32 - margin * 2)) + margin) as i32;
                     let pool_surface_y = tier_y;
 
-                    if !self.is_cave_at_point(center_x as f32, pool_surface_y as f32, center_z as f32, seed)
-                        && !self.is_cave_at_point(center_x as f32, (pool_surface_y + 1) as f32, center_z as f32, seed)
-                    {
+                    if !self.is_cave_at_point(
+                        center_x as f32,
+                        pool_surface_y as f32,
+                        center_z as f32,
+                        seed,
+                    ) && !self.is_cave_at_point(
+                        center_x as f32,
+                        (pool_surface_y + 1) as f32,
+                        center_z as f32,
+                        seed,
+                    ) {
                         continue;
                     }
 
                     let base_radius = 6.0 + ((h >> 16) % 5) as f32;
                     let halo_radius = base_radius + 5.5;
                     let dist_sq = ((world_x - center_x) * (world_x - center_x)
-                        + (world_z - center_z) * (world_z - center_z)) as f32;
+                        + (world_z - center_z) * (world_z - center_z))
+                        as f32;
 
                     if dist_sq <= halo_radius * halo_radius {
                         return Some(Self::volcanic_rock_for_basin(h, world_x, world_y, world_z));

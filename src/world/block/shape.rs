@@ -164,7 +164,11 @@ impl BlockShape {
             Self::Stair => 8,
             Self::Column => 7,
             Self::Torch => 5,
-            Self::Pebble | Self::PebbleCluster | Self::Rubble | Self::StickPile | Self::CocoaPod => 4,
+            Self::Pebble
+            | Self::PebbleCluster
+            | Self::Rubble
+            | Self::StickPile
+            | Self::CocoaPod => 4,
         }
     }
 
@@ -370,7 +374,7 @@ impl BlockShape {
                     orientation,
                 );
                 (b, None)
-            },
+            }
             Self::StickPile => {
                 let b = rotate_aabb_y(
                     Vec3::new(2.0 / 16.0, 0.0, 2.0 / 16.0),
@@ -378,7 +382,7 @@ impl BlockShape {
                     orientation,
                 );
                 (b, None)
-            },
+            }
             Self::CocoaPod => {
                 let b = rotate_aabb_y(
                     Vec3::new(4.0 / 16.0, 3.0 / 16.0, 1.0 / 16.0),
@@ -386,11 +390,11 @@ impl BlockShape {
                     orientation,
                 );
                 (b, None)
-            },
+            }
             Self::HangingFruit => (
                 [
                     Vec3::new(5.0 / 16.0, 5.0 / 16.0, 5.0 / 16.0),
-                    Vec3::new(11.0 / 16.0, 16.0 / 16.0, 11.0 / 16.0),
+                    Vec3::new(11.0 / 16.0, 1.0, 11.0 / 16.0),
                 ],
                 None,
             ),

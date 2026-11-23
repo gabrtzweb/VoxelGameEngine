@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 
+use super::{push_shape_box, push_shape_box_with_transition};
 use crate::{
     meshing::{
-        greedy::{compute_block_transition, FaceDirection, MeshBuffers},
+        greedy::{FaceDirection, MeshBuffers, compute_block_transition},
         textures::VoxelTextureRegistry,
     },
     world::{BlockShape, Chunk, Voxel, VoxelAccess},
 };
-use super::{push_shape_box, push_shape_box_with_transition};
 
 pub fn mesh_slab(
     world: &impl VoxelAccess,
@@ -81,21 +81,12 @@ pub fn mesh_slab(
         voxel,
     );
     if let Some((extra_voxel, extra_orient)) = extra {
-        let (extra_side_layer, extra_frame_count) = textures.get_face_texture_info(
-            extra_voxel,
-            world_voxel,
-            FaceDirection::PositiveX,
-        );
-        let (extra_top_layer, _) = textures.get_face_texture_info(
-            extra_voxel,
-            world_voxel,
-            FaceDirection::PositiveY,
-        );
-        let (extra_bottom_layer, _) = textures.get_face_texture_info(
-            extra_voxel,
-            world_voxel,
-            FaceDirection::NegativeY,
-        );
+        let (extra_side_layer, extra_frame_count) =
+            textures.get_face_texture_info(extra_voxel, world_voxel, FaceDirection::PositiveX);
+        let (extra_top_layer, _) =
+            textures.get_face_texture_info(extra_voxel, world_voxel, FaceDirection::PositiveY);
+        let (extra_bottom_layer, _) =
+            textures.get_face_texture_info(extra_voxel, world_voxel, FaceDirection::NegativeY);
         let extra_frame_count_f32 = if extra_voxel.is_light() {
             -(extra_frame_count.max(1) as f32)
         } else {
@@ -140,7 +131,11 @@ pub fn mesh_slab(
             FaceDirection::PositiveY,
             textures,
         );
-        let extra_top_transition = if extra_m > 0 { Some((extra_ov, extra_m, extra_pt)) } else { None };
+        let extra_top_transition = if extra_m > 0 {
+            Some((extra_ov, extra_m, extra_pt))
+        } else {
+            None
+        };
 
         push_shape_box_with_transition(
             extra_buffers,

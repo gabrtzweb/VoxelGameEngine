@@ -136,8 +136,18 @@ fn push_lod_cross_billboard(
     let fz = cz - 0.5;
     let tip_y = base_y + height - 0.002;
     let eps = 0.005;
-    let uv_fwd = [[eps, 1.0 - eps], [eps, eps], [1.0 - eps, eps], [1.0 - eps, 1.0 - eps]];
-    let uv_rev = [[1.0 - eps, 1.0 - eps], [1.0 - eps, eps], [eps, eps], [eps, 1.0 - eps]];
+    let uv_fwd = [
+        [eps, 1.0 - eps],
+        [eps, eps],
+        [1.0 - eps, eps],
+        [1.0 - eps, 1.0 - eps],
+    ];
+    let uv_rev = [
+        [1.0 - eps, 1.0 - eps],
+        [1.0 - eps, eps],
+        [eps, eps],
+        [eps, 1.0 - eps],
+    ];
     let n_up = [0.0, 1.0, 0.0];
 
     let a00 = [fx, base_y, fz];
@@ -838,7 +848,11 @@ pub fn build_lod_mesh(
                             .get_face_texture_info(voxel, world_pos, FaceDirection::PositiveX)
                             .0 as f32;
                         let mut tint = voxel.tint_color_at(world_pos);
-                        tint[3] = if voxel == Voxel::BambooLeaves { 2.0 } else { 1.0 };
+                        tint[3] = if voxel == Voxel::BambooLeaves {
+                            2.0
+                        } else {
+                            1.0
+                        };
                         push_lod_box(
                             &mut opaque_buffers,
                             lx_center - half_width,

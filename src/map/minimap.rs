@@ -489,7 +489,10 @@ fn update_minimap_ui(
     let vz = (p.z / VOXEL_SIZE).floor() as i32;
 
     let coords_str = if let Some(ref l) = loc {
-        l.t_fmt("hud.coordinates", &[&vx.to_string(), &vy.to_string(), &vz.to_string()])
+        l.t_fmt(
+            "hud.coordinates",
+            &[&vx.to_string(), &vy.to_string(), &vz.to_string()],
+        )
     } else {
         format!("Coordinates: XYZ: {}, {}, {}", vx, vy, vz)
     };
@@ -562,7 +565,12 @@ fn update_minimap_ui(
             env.season().name().to_lowercase(),
         )
     } else {
-        (1, "06:00".to_string(), "season.spring", "spring".to_string())
+        (
+            1,
+            "06:00".to_string(),
+            "season.spring",
+            "spring".to_string(),
+        )
     };
 
     let date_str = if let Some(ref l) = loc {

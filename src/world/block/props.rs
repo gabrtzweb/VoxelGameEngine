@@ -27,7 +27,10 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
         flags |= FLAG_EMPTY;
     }
 
-    if matches!(v, Voxel::WaterOccupied | Voxel::LiquidWater | Voxel::LiquidSpringWater) {
+    if matches!(
+        v,
+        Voxel::WaterOccupied | Voxel::LiquidWater | Voxel::LiquidSpringWater
+    ) {
         flags |= FLAG_WATER;
     }
 
@@ -93,8 +96,9 @@ const fn compute_voxel_props(v: Voxel) -> VoxelProps {
     const ROCKS_END: u16 = Voxel::Slate as u16;
     const ORES_START: u16 = Voxel::GemDiamondRough as u16;
     const ORES_END: u16 = Voxel::OreUraniumRaw as u16;
-    let is_solid_opaque =
-        (matches!(id, ROCKS_START..=ROCKS_END | ORES_START..=ORES_END) && !v.is_pebble_const() && !v.is_rubble_const())
+    let is_solid_opaque = (matches!(id, ROCKS_START..=ROCKS_END | ORES_START..=ORES_END)
+        && !v.is_pebble_const()
+        && !v.is_rubble_const())
         || (!is_empty
             && !is_fluid
             && (flags & FLAG_LEAVES) == 0
@@ -261,9 +265,7 @@ impl Voxel {
     pub const fn emission_level(self) -> u8 {
         match self {
             Self::ElementFire => 15,
-            Self::TreeCharredLog
-            | Self::TreeCharredBark
-            | Self::TreeCharredPlanks => 6,
+            Self::TreeCharredLog | Self::TreeCharredBark | Self::TreeCharredPlanks => 6,
 
             Self::EmitLampWarm
             | Self::EmitLampBlue
@@ -365,10 +367,7 @@ impl Voxel {
     pub const fn is_wall_decal_const(self) -> bool {
         matches!(
             self,
-            Self::VegeVines
-                | Self::VegeLichen
-                | Self::VegeHangingMoss
-                | Self::VegeHangingRoots
+            Self::VegeVines | Self::VegeLichen | Self::VegeHangingMoss | Self::VegeHangingRoots
         )
     }
 
@@ -414,10 +413,7 @@ impl Voxel {
     pub const fn is_fluid_transparent_const(self) -> bool {
         matches!(
             self,
-            Self::LiquidWater
-                | Self::WaterOccupied
-                | Self::LiquidSpringWater
-                | Self::LiquidAcid
+            Self::LiquidWater | Self::WaterOccupied | Self::LiquidSpringWater | Self::LiquidAcid
         )
     }
 
@@ -638,54 +634,54 @@ impl Voxel {
             || matches!(
                 self,
                 Self::ElementFire
-                |                Self::CrystalAmethystCluster
-                | Self::CrystalAmethystGlinted
-                | Self::CrystalAquamarineCluster
-                | Self::CrystalAquamarineGlinted
-                | Self::CrystalCitrineCluster
-                | Self::CrystalCitrineGlinted
-                | Self::CrystalFluoriteCluster
-                | Self::CrystalFluoriteGlinted
-                | Self::CrystalPinkSaltCluster
-                | Self::CrystalPinkSaltGlinted
-                | Self::CrystalSeleniteCluster
-                | Self::CrystalSeleniteGlinted
-                | Self::BoneWorms
-                | Self::BrainCoralFan
-                | Self::BubbleCoralFan
-                | Self::DeadCoralFan
-                | Self::DyingCoralFan
-                | Self::FireCoralFan
-                | Self::HeartCoralFan
-                | Self::HornCoralFan
-                | Self::LeafCoralFan
-                | Self::ReedCoralFan
-                | Self::Seagrass
-                | Self::BullKelp
-                | Self::BullKelpPlant
-                | Self::Delesseria
-                | Self::Kelp
-                | Self::KelpPlant
-                | Self::RedAlgae
-                | Self::Sargassum
-                | Self::Seaweed
-                | Self::SpikeCoralFan
-                | Self::StaghornCoralFan
-                | Self::SunCoralFan
-                | Self::ThornCoralFan
-                | Self::TubeCoralFan
-                | Self::WaxCoralFan
-                | Self::ZigzagCoralFan
-                | Self::Cobweb
-                | Self::CobwebArch
-                | Self::CobwebHanging
-                | Self::CobwebStretched
-                | Self::FungiAmanita
-                | Self::FungiPorcini
-                | Self::FungiRussula
-                | Self::FungiShiitake
-                | Self::FungiVerdigris
-        )
+                    | Self::CrystalAmethystCluster
+                    | Self::CrystalAmethystGlinted
+                    | Self::CrystalAquamarineCluster
+                    | Self::CrystalAquamarineGlinted
+                    | Self::CrystalCitrineCluster
+                    | Self::CrystalCitrineGlinted
+                    | Self::CrystalFluoriteCluster
+                    | Self::CrystalFluoriteGlinted
+                    | Self::CrystalPinkSaltCluster
+                    | Self::CrystalPinkSaltGlinted
+                    | Self::CrystalSeleniteCluster
+                    | Self::CrystalSeleniteGlinted
+                    | Self::BoneWorms
+                    | Self::BrainCoralFan
+                    | Self::BubbleCoralFan
+                    | Self::DeadCoralFan
+                    | Self::DyingCoralFan
+                    | Self::FireCoralFan
+                    | Self::HeartCoralFan
+                    | Self::HornCoralFan
+                    | Self::LeafCoralFan
+                    | Self::ReedCoralFan
+                    | Self::Seagrass
+                    | Self::BullKelp
+                    | Self::BullKelpPlant
+                    | Self::Delesseria
+                    | Self::Kelp
+                    | Self::KelpPlant
+                    | Self::RedAlgae
+                    | Self::Sargassum
+                    | Self::Seaweed
+                    | Self::SpikeCoralFan
+                    | Self::StaghornCoralFan
+                    | Self::SunCoralFan
+                    | Self::ThornCoralFan
+                    | Self::TubeCoralFan
+                    | Self::WaxCoralFan
+                    | Self::ZigzagCoralFan
+                    | Self::Cobweb
+                    | Self::CobwebArch
+                    | Self::CobwebHanging
+                    | Self::CobwebStretched
+                    | Self::FungiAmanita
+                    | Self::FungiPorcini
+                    | Self::FungiRussula
+                    | Self::FungiShiitake
+                    | Self::FungiVerdigris
+            )
     }
 
     #[inline(always)]
@@ -714,7 +710,7 @@ impl Voxel {
                 | Self::TreeCharredLog
                 | Self::TreeCharredBark
                 | Self::TreeCharredPlanks
-                |             Self::LiquidLava
+                | Self::LiquidLava
                 | Self::LiquidCoreMagma
                 | Self::LiquidMolten
                 | Self::Magma

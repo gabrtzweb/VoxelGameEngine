@@ -166,10 +166,7 @@ fn spawn_player_and_camera(
         camera_builder.insert(bevy::pbr::ScreenSpaceTransmission::default());
     }
 
-    let hdr_bloom_active = local_config
-        .as_ref()
-        .map(|c| c.hdr_bloom)
-        .unwrap_or(true);
+    let hdr_bloom_active = local_config.as_ref().map(|c| c.hdr_bloom).unwrap_or(true);
 
     if hdr_bloom_active {
         camera_builder.insert(default_bloom_settings());
@@ -248,7 +245,9 @@ fn sync_camera_bloom(
     if let Ok(camera_entity) = camera_query.single() {
         let has_bloom = bloom_query.get(camera_entity).is_ok();
         if local_config.hdr_bloom && !has_bloom {
-            commands.entity(camera_entity).insert(default_bloom_settings());
+            commands
+                .entity(camera_entity)
+                .insert(default_bloom_settings());
         } else if !local_config.hdr_bloom && has_bloom {
             commands.entity(camera_entity).remove::<Bloom>();
         }
@@ -365,7 +364,12 @@ fn update_crosshair_visibility(
     current_target: Option<Res<crate::gameplay::CurrentTarget>>,
     mut fade_alpha: Local<f32>,
     mut crosshair_query: Query<&mut Visibility, With<CrosshairUi>>,
-    mut bars_query: Query<(&CrosshairBar, &mut Node, &mut BackgroundColor, &mut BorderColor)>,
+    mut bars_query: Query<(
+        &CrosshairBar,
+        &mut Node,
+        &mut BackgroundColor,
+        &mut BorderColor,
+    )>,
 ) {
     let hide = menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None)
         || inspector.is_some_and(|i| i.active);
@@ -376,9 +380,7 @@ fn update_crosshair_visibility(
     let dynamic = game_settings.as_ref().is_some_and(|s| s.dynamic_crosshair);
     let has_target = current_target.as_ref().is_some_and(|t| t.hit.is_some());
 
-    let target_alpha = if hide {
-        0.0
-    } else if dynamic && !has_target {
+    let target_alpha = if hide || (dynamic && !has_target) {
         0.0
     } else {
         1.0

@@ -131,10 +131,11 @@ fn pick_targeted_voxel(
         return;
     }
 
-    let is_pick = control_settings.as_ref().map_or(
-        mouse.just_pressed(MouseButton::Middle),
-        |c| c.is_action_just_pressed(crate::core::InputAction::PickBlock, &keyboard, &mouse),
-    );
+    let is_pick = control_settings
+        .as_ref()
+        .map_or(mouse.just_pressed(MouseButton::Middle), |c| {
+            c.is_action_just_pressed(crate::core::InputAction::PickBlock, &keyboard, &mouse)
+        });
 
     if !is_pick {
         return;
@@ -222,23 +223,27 @@ fn edit_voxels(
 
     let delta_seconds = time.delta_secs();
 
-    let break_pressed = control_settings.as_ref().map_or(
-        mouse.pressed(MouseButton::Left),
-        |c| c.is_action_pressed(crate::core::InputAction::PrimaryAction, &keyboard, &mouse),
-    );
-    let break_just_pressed = control_settings.as_ref().map_or(
-        mouse.just_pressed(MouseButton::Left),
-        |c| c.is_action_just_pressed(crate::core::InputAction::PrimaryAction, &keyboard, &mouse),
-    );
+    let break_pressed = control_settings
+        .as_ref()
+        .map_or(mouse.pressed(MouseButton::Left), |c| {
+            c.is_action_pressed(crate::core::InputAction::PrimaryAction, &keyboard, &mouse)
+        });
+    let break_just_pressed = control_settings
+        .as_ref()
+        .map_or(mouse.just_pressed(MouseButton::Left), |c| {
+            c.is_action_just_pressed(crate::core::InputAction::PrimaryAction, &keyboard, &mouse)
+        });
 
-    let place_pressed = control_settings.as_ref().map_or(
-        mouse.pressed(MouseButton::Right),
-        |c| c.is_action_pressed(crate::core::InputAction::SecondaryAction, &keyboard, &mouse),
-    );
-    let place_just_pressed = control_settings.as_ref().map_or(
-        mouse.just_pressed(MouseButton::Right),
-        |c| c.is_action_just_pressed(crate::core::InputAction::SecondaryAction, &keyboard, &mouse),
-    );
+    let place_pressed = control_settings
+        .as_ref()
+        .map_or(mouse.pressed(MouseButton::Right), |c| {
+            c.is_action_pressed(crate::core::InputAction::SecondaryAction, &keyboard, &mouse)
+        });
+    let place_just_pressed = control_settings
+        .as_ref()
+        .map_or(mouse.just_pressed(MouseButton::Right), |c| {
+            c.is_action_just_pressed(crate::core::InputAction::SecondaryAction, &keyboard, &mouse)
+        });
 
     let break_action = if *game_mode == GameMode::Survival {
         if break_pressed && let Some(target) = current_target.hit {
@@ -255,8 +260,8 @@ fn edit_voxels(
                     let racial_mining = selected_subrace
                         .as_ref()
                         .map_or(1.0, |s| s.0.attributes().mining_speed_multiplier);
-                    let speed = (hit_voxel.tool_speed_multiplier(selected.0) * racial_mining)
-                        .max(0.1);
+                    let speed =
+                        (hit_voxel.tool_speed_multiplier(selected.0) * racial_mining).max(0.1);
                     let duration = (base_time / speed).max(0.08);
                     if breaking_state.target != Some(target.hit_voxel) {
                         breaking_state.target = Some(target.hit_voxel);
@@ -284,18 +289,15 @@ fn edit_voxels(
     } else {
         breaking_state.target = None;
         breaking_state.progress = 0.0;
-        interaction_state.break_action.update(
-            break_pressed,
-            break_just_pressed,
-            delta_seconds,
-        )
+        interaction_state
+            .break_action
+            .update(break_pressed, break_just_pressed, delta_seconds)
     };
 
-    let place_action = interaction_state.place_action.update(
-        place_pressed,
-        place_just_pressed,
-        delta_seconds,
-    );
+    let place_action =
+        interaction_state
+            .place_action
+            .update(place_pressed, place_just_pressed, delta_seconds);
 
     if !break_action && !place_action {
         return;
@@ -369,7 +371,12 @@ fn edit_voxels(
                 .get_voxel(place_pos - IVec3::Y)
                 .is_some_and(Voxel::is_solid_opaque)
         {
-            let placed = place_block(&mut world, &mut modifications, place_pos, Voxel::ElementFire);
+            let placed = place_block(
+                &mut world,
+                &mut modifications,
+                place_pos,
+                Voxel::ElementFire,
+            );
             if !placed.is_empty() {
                 world.set_shape(place_pos, BlockShape::CrossBillboard, 0);
                 modifications.record_shape(place_pos, BlockShape::CrossBillboard, 0);
@@ -427,13 +434,13 @@ fn edit_voxels(
         let existing_voxel = world.get_voxel(target.hit_voxel);
         let existing_extra = world.get_extra_slab(target.hit_voxel);
 
-        let is_stacking_leaf_litter =
-            place_voxel_type == Voxel::VegeLeafLitter && existing_voxel == Some(Voxel::VegeLeafLitter);
+        let is_stacking_leaf_litter = place_voxel_type == Voxel::VegeLeafLitter
+            && existing_voxel == Some(Voxel::VegeLeafLitter);
 
         if place_voxel_type == Voxel::VegeLilyPad {
             // Lily pads can ONLY be placed on water surface (+Y face of a water voxel)
-            let is_on_water = target.face_normal == IVec3::Y
-                && existing_voxel.is_some_and(Voxel::is_water);
+            let is_on_water =
+                target.face_normal == IVec3::Y && existing_voxel.is_some_and(Voxel::is_water);
             if !is_on_water {
                 return;
             }
@@ -493,7 +500,11 @@ fn edit_voxels(
             }
             placed
         } else if place_voxel_type == Voxel::ItemBoneMeal {
-            if crate::gameplay::crops::advance_crop(&mut world, &mut modifications, target.hit_voxel) {
+            if crate::gameplay::crops::advance_crop(
+                &mut world,
+                &mut modifications,
+                target.hit_voxel,
+            ) {
                 commands.trigger(BlockPlaceEvent {
                     position: target.hit_voxel,
                     voxel: Voxel::ItemBoneMeal,
@@ -508,12 +519,7 @@ fn edit_voxels(
             if !can_plant {
                 return;
             }
-            let placed = place_block(
-                &mut world,
-                &mut modifications,
-                place_position,
-                crop_voxel,
-            );
+            let placed = place_block(&mut world, &mut modifications, place_position, crop_voxel);
             if !placed.is_empty() {
                 world.set_shape(place_position, BlockShape::CrossBillboard, 0);
                 modifications.record_shape(place_position, BlockShape::CrossBillboard, 0);
@@ -548,9 +554,7 @@ fn edit_voxels(
         } else if place_voxel_type == Voxel::ItemCoconut {
             // Plant Hanging Coconut underneath PalmLeaves or PalmLog
             let is_under = target.face_normal == IVec3::NEG_Y;
-            if !is_under
-                || !matches!(existing_voxel, Some(Voxel::PalmLeaves | Voxel::PalmLog))
-            {
+            if !is_under || !matches!(existing_voxel, Some(Voxel::PalmLeaves | Voxel::PalmLog)) {
                 return;
             }
             let placed = place_block(
@@ -631,7 +635,9 @@ fn edit_voxels(
                 }
                 placed
             }
-        } else if place_voxel_type == Voxel::VegeCaveVines || place_voxel_type == Voxel::VegeCaveVinesPlant {
+        } else if place_voxel_type == Voxel::VegeCaveVines
+            || place_voxel_type == Voxel::VegeCaveVinesPlant
+        {
             if target.face_normal == IVec3::Y {
                 return; // cannot place hanging vines on floor
             }
@@ -659,8 +665,10 @@ fn edit_voxels(
                 }
             }
             placed
-        } else if place_voxel_type == Voxel::Kelp || place_voxel_type == Voxel::KelpPlant
-            || place_voxel_type == Voxel::BullKelp || place_voxel_type == Voxel::BullKelpPlant
+        } else if place_voxel_type == Voxel::Kelp
+            || place_voxel_type == Voxel::KelpPlant
+            || place_voxel_type == Voxel::BullKelp
+            || place_voxel_type == Voxel::BullKelpPlant
         {
             let below_v = world.get_voxel(place_position - IVec3::Y);
             let is_kelp = place_voxel_type == Voxel::Kelp || place_voxel_type == Voxel::KelpPlant;
@@ -669,29 +677,22 @@ fn edit_voxels(
             } else {
                 (Voxel::BullKelp, Voxel::BullKelpPlant)
             };
-            let has_support = below_v.is_some_and(|v| {
-                v.is_solid_opaque() || v == tip_voxel || v == plant_voxel
-            });
+            let has_support =
+                below_v.is_some_and(|v| v.is_solid_opaque() || v == tip_voxel || v == plant_voxel);
             if !has_support {
                 return;
             }
-            let mut placed = place_block(
-                &mut world,
-                &mut modifications,
-                place_position,
-                tip_voxel,
-            );
+            let mut placed = place_block(&mut world, &mut modifications, place_position, tip_voxel);
             if !placed.is_empty() {
                 world.set_shape(place_position, BlockShape::CrossBillboard, 0);
                 modifications.record_shape(place_position, BlockShape::CrossBillboard, 0);
-                if let Some(bv) = below_v {
-                    if bv == tip_voxel {
+                if let Some(bv) = below_v
+                    && bv == tip_voxel {
                         let below_pos = place_position - IVec3::Y;
                         world.set_voxel(below_pos, plant_voxel);
                         modifications.record(below_pos, plant_voxel);
                         placed.push(below_pos);
                     }
-                }
             }
             placed
         } else if place_voxel_type.is_crystal_cluster() || place_voxel_type.is_coral_fan() {
@@ -731,9 +732,9 @@ fn edit_voxels(
             let orient = match target.face_normal {
                 IVec3::Y => 0,     // Floor
                 IVec3::NEG_Y => 1, // Ceiling
-                IVec3::Z => 2,     // Attached to South face of hit_voxel -> North wall (-Z) of place_position
+                IVec3::Z => 2, // Attached to South face of hit_voxel -> North wall (-Z) of place_position
                 IVec3::NEG_Z => 3, // Attached to North face of hit_voxel -> South wall (+Z) of place_position
-                IVec3::X => 4,     // Attached to East face of hit_voxel -> West wall (-X) of place_position
+                IVec3::X => 4, // Attached to East face of hit_voxel -> West wall (-X) of place_position
                 IVec3::NEG_X => 5, // Attached to West face of hit_voxel -> East wall (+X) of place_position
                 _ => 2,
             };
@@ -775,7 +776,9 @@ fn edit_voxels(
             );
             if !placed.is_empty() {
                 let pebble_shape = place_voxel_type.default_shape();
-                let orient = ((place_position.x.wrapping_mul(31) ^ place_position.z.wrapping_mul(17)) & 3).unsigned_abs() as u8;
+                let orient =
+                    ((place_position.x.wrapping_mul(31) ^ place_position.z.wrapping_mul(17)) & 3)
+                        .unsigned_abs() as u8;
                 world.set_shape(place_position, pebble_shape, orient);
                 modifications.record_shape(place_position, pebble_shape, orient);
             }
@@ -1000,10 +1003,16 @@ pub fn remove_voxel(
         || current_voxel.is_pebble()
         || current_voxel.is_marine_flora()
         || current_voxel.is_coral_fan())
-        && (world.get_voxel(world_voxel + IVec3::Y).is_some_and(|v| v.is_water() || v.is_marine_flora() || v.is_coral_fan())
+        && (world
+            .get_voxel(world_voxel + IVec3::Y)
+            .is_some_and(|v| v.is_water() || v.is_marine_flora() || v.is_coral_fan())
             || [IVec3::X, IVec3::NEG_X, IVec3::Z, IVec3::NEG_Z]
                 .into_iter()
-                .any(|off| world.get_voxel(world_voxel + off).is_some_and(Voxel::is_water)));
+                .any(|off| {
+                    world
+                        .get_voxel(world_voxel + off)
+                        .is_some_and(Voxel::is_water)
+                }));
 
     let replacement = if current_voxel == Voxel::WaterOccupied || is_submerged_fixture {
         Voxel::LiquidWater
@@ -1073,18 +1082,15 @@ pub fn remove_block(
     let mut removed = vec![block_pos];
 
     // If breaking the top half of a double-tall plant, also break the bottom partner
-    if let Some(tv) = target_voxel {
-        if tv.is_double_tall_top() {
+    if let Some(tv) = target_voxel
+        && tv.is_double_tall_top() {
             let bottom_pos = block_pos - IVec3::Y;
-            if let Some(bv) = world.get_voxel(bottom_pos) {
-                if tv.double_tall_bottom_partner() == Some(bv) {
-                    if remove_voxel(world, modifications, bottom_pos) {
+            if let Some(bv) = world.get_voxel(bottom_pos)
+                && tv.double_tall_bottom_partner() == Some(bv)
+                    && remove_voxel(world, modifications, bottom_pos) {
                         removed.push(bottom_pos);
                     }
-                }
-            }
         }
-    }
 
     // 1. Blocks resting on top of this block (and cascading upwards for stacks like bamboo)
     let mut check_pos = block_pos + IVec3::Y;
@@ -1117,7 +1123,11 @@ pub fn remove_block(
     // Kelp cascading upwards
     let mut kelp_up_pos = block_pos + IVec3::Y;
     while let Some(v) = world.get_voxel(kelp_up_pos) {
-        if v == Voxel::Kelp || v == Voxel::KelpPlant || v == Voxel::BullKelp || v == Voxel::BullKelpPlant {
+        if v == Voxel::Kelp
+            || v == Voxel::KelpPlant
+            || v == Voxel::BullKelp
+            || v == Voxel::BullKelpPlant
+        {
             if remove_voxel(world, modifications, kelp_up_pos) {
                 removed.push(kelp_up_pos);
                 kelp_up_pos += IVec3::Y;
@@ -1229,7 +1239,10 @@ pub fn remove_block(
         && (v.is_crystal_cluster() || v.is_coral_fan())
     {
         let (s, o) = world.get_shape(above_pos);
-        if s == BlockShape::CrossBillboard && o == 0 && remove_voxel(world, modifications, above_pos) {
+        if s == BlockShape::CrossBillboard
+            && o == 0
+            && remove_voxel(world, modifications, above_pos)
+        {
             removed.push(above_pos);
         }
     }
@@ -1240,7 +1253,10 @@ pub fn remove_block(
         && (v.is_crystal_cluster() || v.is_coral_fan())
     {
         let (s, o) = world.get_shape(below_pos);
-        if s == BlockShape::CrossBillboard && o == 1 && remove_voxel(world, modifications, below_pos) {
+        if s == BlockShape::CrossBillboard
+            && o == 1
+            && remove_voxel(world, modifications, below_pos)
+        {
             removed.push(below_pos);
         }
     }

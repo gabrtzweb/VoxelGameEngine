@@ -401,7 +401,9 @@ fn spawn_world_map_ui(
     waypoints.placing_mode = false;
     ctx_menu.open = false;
 
-    let is_creative = game_mode.as_ref().is_some_and(|m| **m == GameMode::Creative);
+    let is_creative = game_mode
+        .as_ref()
+        .is_some_and(|m| **m == GameMode::Creative);
     let on_str = t("map.state.on", "ON");
     let off_str = t("map.state.off", "OFF");
 
@@ -656,7 +658,10 @@ fn spawn_world_map_ui(
                                 (DynamicInputPrompt::Mouse(MouseButton::Left), &pan_lbl),
                                 (DynamicInputPrompt::Mouse(MouseButton::Right), &actions_lbl),
                                 (DynamicInputPrompt::Key(KeyCode::Space), &center_lbl),
-                                (DynamicInputPrompt::Action(InputAction::WorldMap), &close_lbl),
+                                (
+                                    DynamicInputPrompt::Action(InputAction::WorldMap),
+                                    &close_lbl,
+                                ),
                             ];
                             for (prompt, label) in items {
                                 pill.spawn((
@@ -1116,10 +1121,11 @@ fn rebuild_waypoint_ui_if_dirty(
     }
 
     // 2. Rebuild waypoint list in the sidebar
-    let empty_text = loc.as_ref().map_or(
-        "No waypoints yet. Right-click the map to add one.",
-        |l| l.t("map.no_waypoints"),
-    );
+    let empty_text = loc
+        .as_ref()
+        .map_or("No waypoints yet. Right-click the map to add one.", |l| {
+            l.t("map.no_waypoints")
+        });
 
     for (container, children) in &list_q {
         if let Some(children) = children {
@@ -1514,7 +1520,9 @@ fn handle_context_menu_buttons(
                         ctx_menu.open = false;
                     }
                     MapContextAction::Teleport => {
-                        if game_mode.as_ref().is_some_and(|m| **m == GameMode::Creative)
+                        if game_mode
+                            .as_ref()
+                            .is_some_and(|m| **m == GameMode::Creative)
                             && let Ok((mut tf, mut motion)) = player_q.single_mut()
                         {
                             let wx = ctx_menu.world_x;
@@ -1786,7 +1794,8 @@ fn handle_world_map_input(
     // 4. Mouse Left Click Drag Pan (disabled while context menu or placement mode is active)
     if mouse_button.pressed(MouseButton::Left) && !ctx_menu.open && !waypoints.placing_mode {
         if let (Some(curr), Some(prev)) = (cursor_pos, map_state.last_cursor_screen_pos) {
-            let (in_vp, vp_scale_y) = if let Ok((vp_transform, computed)) = viewport_query.single() {
+            let (in_vp, vp_scale_y) = if let Ok((vp_transform, computed)) = viewport_query.single()
+            {
                 let inv = computed.inverse_scale_factor();
                 let ui_cursor = curr * win_scale * inv;
                 let logical_size = computed.size() * inv;
@@ -1794,10 +1803,8 @@ fn handle_world_map_input(
                 let vp_pos = vp_center - logical_size * 0.5;
                 let in_x = ui_cursor.x - vp_pos.x;
                 let in_y = ui_cursor.y - vp_pos.y;
-                let is_inside = in_x >= 0.0
-                    && in_x <= logical_size.x
-                    && in_y >= 0.0
-                    && in_y <= logical_size.y;
+                let is_inside =
+                    in_x >= 0.0 && in_x <= logical_size.x && in_y >= 0.0 && in_y <= logical_size.y;
                 let sy = (computed.size().y / win_scale) / (WORLD_MAP_HEIGHT as f32);
                 let safe_sy = if sy.is_finite() && sy > 0.01 { sy } else { 1.0 };
                 (is_inside, safe_sy)

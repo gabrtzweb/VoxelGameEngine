@@ -165,16 +165,8 @@ pub fn mesh_shaped_voxels(
             );
             continue;
         }
-        if voxel.is_pebble()
-            || matches!(
-                shape,
-                BlockShape::Pebble | BlockShape::PebbleCluster
-            )
-        {
-            let pebble_shape = if matches!(
-                shape,
-                BlockShape::Pebble | BlockShape::PebbleCluster
-            ) {
+        if voxel.is_pebble() || matches!(shape, BlockShape::Pebble | BlockShape::PebbleCluster) {
+            let pebble_shape = if matches!(shape, BlockShape::Pebble | BlockShape::PebbleCluster) {
                 shape
             } else {
                 voxel.default_shape()
@@ -339,9 +331,7 @@ pub fn mesh_shaped_voxels(
         if voxel.is_bamboo() || shape == BlockShape::Bamboo {
             let is_neighbor_bamboo = |offset: IVec3| -> bool {
                 let neighbor_pos = world_voxel + offset;
-                world
-                    .get_voxel(neighbor_pos)
-                    .is_some_and(|v| v.is_bamboo())
+                world.get_voxel(neighbor_pos).is_some_and(|v| v.is_bamboo())
             };
             let cull_top = is_neighbor_bamboo(IVec3::Y) || is_neighbor_solid(IVec3::Y);
             let cull_bottom = is_neighbor_bamboo(IVec3::NEG_Y) || is_neighbor_solid(IVec3::NEG_Y);
@@ -378,15 +368,7 @@ pub fn mesh_shaped_voxels(
                     cull_bottom,
                 );
                 // Foliage leaves cross mesh surrounding the central stalk
-                mesh_cross_billboard(
-                    buffers,
-                    fx,
-                    fy,
-                    fz,
-                    side_layer,
-                    frame_count_f32,
-                    side_tint,
-                );
+                mesh_cross_billboard(buffers, fx, fy, fz, side_layer, frame_count_f32, side_tint);
             } else {
                 mesh_bamboo(
                     buffers,
@@ -721,14 +703,22 @@ pub fn push_shape_box_with_transition(
     }
     let eps = 0.0005;
     let (v_top, v_bot) = if align_side_uv_to_top && local_max.y <= 0.501 {
-        (eps, ((local_max.y - local_min.y).clamp(0.0, 1.0) - eps).max(eps))
+        (
+            eps,
+            ((local_max.y - local_min.y).clamp(0.0, 1.0) - eps).max(eps),
+        )
     } else {
         (
             ((1.0 - local_max.y).clamp(0.0, 1.0) + eps).min(1.0 - eps),
             ((1.0 - local_min.y).clamp(0.0, 1.0) - eps).max(eps),
         )
     };
-    let side_uvs = [[eps, v_bot], [eps, v_top], [1.0 - eps, v_top], [1.0 - eps, v_bot]];
+    let side_uvs = [
+        [eps, v_bot],
+        [eps, v_top],
+        [1.0 - eps, v_top],
+        [1.0 - eps, v_bot],
+    ];
     // +X (East, idx 0)
     if !cull[0] {
         push_quad_face_uvs(
@@ -881,9 +871,19 @@ pub fn push_quad_face_mask(
 ) {
     let eps = 0.0005;
     let uvs = if normal[1].abs() > 0.5 {
-        [[eps, eps], [eps, 1.0 - eps], [1.0 - eps, 1.0 - eps], [1.0 - eps, eps]]
+        [
+            [eps, eps],
+            [eps, 1.0 - eps],
+            [1.0 - eps, 1.0 - eps],
+            [1.0 - eps, eps],
+        ]
     } else {
-        [[eps, 1.0 - eps], [eps, eps], [1.0 - eps, eps], [1.0 - eps, 1.0 - eps]]
+        [
+            [eps, 1.0 - eps],
+            [eps, eps],
+            [1.0 - eps, eps],
+            [1.0 - eps, 1.0 - eps],
+        ]
     };
 
     let (tint, base_tinted) = if packed_tint != 0 {
@@ -932,11 +932,29 @@ pub fn push_quad_face(
 ) {
     let eps = 0.0005;
     let uvs = if normal[1].abs() > 0.5 {
-        [[eps, eps], [eps, 1.0 - eps], [1.0 - eps, 1.0 - eps], [1.0 - eps, eps]]
+        [
+            [eps, eps],
+            [eps, 1.0 - eps],
+            [1.0 - eps, 1.0 - eps],
+            [1.0 - eps, eps],
+        ]
     } else {
-        [[eps, 1.0 - eps], [eps, eps], [1.0 - eps, eps], [1.0 - eps, 1.0 - eps]]
+        [
+            [eps, 1.0 - eps],
+            [eps, eps],
+            [1.0 - eps, eps],
+            [1.0 - eps, 1.0 - eps],
+        ]
     };
-    push_quad_face_uvs(buffers, vertices, normal, texture_layer, frame_count, tint_color, uvs);
+    push_quad_face_uvs(
+        buffers,
+        vertices,
+        normal,
+        texture_layer,
+        frame_count,
+        tint_color,
+        uvs,
+    );
 }
 
 pub fn push_quad_face_uvs(
@@ -977,7 +995,15 @@ pub fn push_quad_face_with_uvs(
     tint_color: [f32; 4],
     uvs: [[f32; 2]; 4],
 ) {
-    push_quad_face_uvs(buffers, vertices, normal, texture_layer, frame_count, tint_color, uvs);
+    push_quad_face_uvs(
+        buffers,
+        vertices,
+        normal,
+        texture_layer,
+        frame_count,
+        tint_color,
+        uvs,
+    );
 }
 
 /// Determines if a partial/sub-voxel block (rubble, pebble, stick pile, slab, or stair)
@@ -1103,9 +1129,8 @@ fn mesh_waterlogged_envelope(
         );
     }
 
-    let is_exposed_lateral = |offset: IVec3| -> bool {
-        !is_submerged_boundary(offset) && !is_solid_opaque(offset)
-    };
+    let is_exposed_lateral =
+        |offset: IVec3| -> bool { !is_submerged_boundary(offset) && !is_solid_opaque(offset) };
 
     // +X (East)
     if is_exposed_lateral(IVec3::X) {

@@ -1,10 +1,7 @@
 use std::collections::HashSet;
 
 use bevy::{
-    input::mouse::AccumulatedMouseScroll,
-    picking::hover::Hovered,
-    prelude::*,
-    ui_widgets::Button,
+    input::mouse::AccumulatedMouseScroll, picking::hover::Hovered, prelude::*, ui_widgets::Button,
 };
 
 use crate::{
@@ -181,10 +178,7 @@ impl Plugin for JournalMenuPlugin {
     }
 }
 
-fn on_journal_block_break(
-    trigger: On<BlockBreakEvent>,
-    mut progress: ResMut<JournalProgress>,
-) {
+fn on_journal_block_break(trigger: On<BlockBreakEvent>, mut progress: ResMut<JournalProgress>) {
     let voxel = trigger.event().voxel;
     if voxel == Voxel::Air {
         return;
@@ -202,10 +196,7 @@ fn on_journal_block_break(
     }
 }
 
-fn on_journal_block_place(
-    trigger: On<BlockPlaceEvent>,
-    mut progress: ResMut<JournalProgress>,
-) {
+fn on_journal_block_place(trigger: On<BlockPlaceEvent>, mut progress: ResMut<JournalProgress>) {
     let voxel = trigger.event().voxel;
     if voxel == Voxel::Air {
         return;
@@ -214,10 +205,7 @@ fn on_journal_block_place(
     progress.record_voxel(voxel);
 }
 
-fn on_journal_item_drop(
-    trigger: On<SpawnItemDropEvent>,
-    mut progress: ResMut<JournalProgress>,
-) {
+fn on_journal_item_drop(trigger: On<SpawnItemDropEvent>, mut progress: ResMut<JournalProgress>) {
     let voxel = trigger.event().voxel;
     if voxel == Voxel::Air || voxel.is_fluid() {
         return;
@@ -496,11 +484,7 @@ fn spawn_nav_item(
                 text_shadow_default(),
             ));
 
-            btn.spawn((
-                Text::new(">"),
-                arrow_font,
-                TextColor(palette::TEXT_MUTED),
-            ));
+            btn.spawn((Text::new(">"), arrow_font, TextColor(palette::TEXT_MUTED)));
         });
 }
 

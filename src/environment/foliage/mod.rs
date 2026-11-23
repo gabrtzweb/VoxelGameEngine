@@ -48,7 +48,9 @@ fn sync_local_config_to_grass_config(
     local_config: Option<Res<crate::core::config::LocalConfig>>,
     mut grass_config: ResMut<GrassConfig>,
 ) {
-    let Some(local_config) = local_config else { return; };
+    let Some(local_config) = local_config else {
+        return;
+    };
     if local_config.is_changed() {
         grass_config.enabled = local_config.grass_enabled;
         grass_config.blades_per_block = local_config.grass_density;

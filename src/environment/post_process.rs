@@ -522,9 +522,9 @@ pub fn update_post_process_light_position(
             vis_cache.frame_counter = vis_cache.frame_counter.wrapping_add(1);
             let pos_moved = vis_cache.last_pos.is_nan()
                 || camera_translation.distance_squared(vis_cache.last_pos) > 0.0625; // > 0.25m
-            let dir_changed = vis_cache.last_dir.is_nan()
-                || target_dir.dot(vis_cache.last_dir) < 0.9998;
-            let should_recalculate = vis_cache.frame_counter % 4 == 0 || pos_moved || dir_changed;
+            let dir_changed =
+                vis_cache.last_dir.is_nan() || target_dir.dot(vis_cache.last_dir) < 0.9998;
+            let should_recalculate = vis_cache.frame_counter.is_multiple_of(4) || pos_moved || dir_changed;
 
             if should_recalculate {
                 vis_cache.last_pos = camera_translation;
@@ -547,7 +547,11 @@ pub fn update_post_process_light_position(
                 * (1.0 - underground_factor * 2.5).max(0.0);
 
             // Fast, smooth eye adaptation when stepping behind occluders
-            let adapt_rate = if target_exposure < settings.exposure { 20.0 } else { 12.0 };
+            let adapt_rate = if target_exposure < settings.exposure {
+                20.0
+            } else {
+                12.0
+            };
             settings.exposure += (target_exposure - settings.exposure) * (adapt_rate * dt).min(1.0);
 
             if target_exposure <= 0.0001 && settings.exposure <= 0.001 {
@@ -621,15 +625,45 @@ fn is_ray_occluded(world: &VoxelWorld, origin: Vec3, direction: Vec3, max_distan
     );
 
     let delta_distance = Vec3::new(
-        if direction.x.abs() < f32::EPSILON { f32::INFINITY } else { 1.0 / direction.x.abs() },
-        if direction.y.abs() < f32::EPSILON { f32::INFINITY } else { 1.0 / direction.y.abs() },
-        if direction.z.abs() < f32::EPSILON { f32::INFINITY } else { 1.0 / direction.z.abs() },
+        if direction.x.abs() < f32::EPSILON {
+            f32::INFINITY
+        } else {
+            1.0 / direction.x.abs()
+        },
+        if direction.y.abs() < f32::EPSILON {
+            f32::INFINITY
+        } else {
+            1.0 / direction.y.abs()
+        },
+        if direction.z.abs() < f32::EPSILON {
+            f32::INFINITY
+        } else {
+            1.0 / direction.z.abs()
+        },
     );
 
     let mut side_distance = Vec3::new(
-        if step.x > 0 { (voxel.x as f32 + 1.0 - grid_origin.x) * delta_distance.x } else if step.x < 0 { (grid_origin.x - voxel.x as f32) * delta_distance.x } else { f32::INFINITY },
-        if step.y > 0 { (voxel.y as f32 + 1.0 - grid_origin.y) * delta_distance.y } else if step.y < 0 { (grid_origin.y - voxel.y as f32) * delta_distance.y } else { f32::INFINITY },
-        if step.z > 0 { (voxel.z as f32 + 1.0 - grid_origin.z) * delta_distance.z } else if step.z < 0 { (grid_origin.z - voxel.z as f32) * delta_distance.z } else { f32::INFINITY },
+        if step.x > 0 {
+            (voxel.x as f32 + 1.0 - grid_origin.x) * delta_distance.x
+        } else if step.x < 0 {
+            (grid_origin.x - voxel.x as f32) * delta_distance.x
+        } else {
+            f32::INFINITY
+        },
+        if step.y > 0 {
+            (voxel.y as f32 + 1.0 - grid_origin.y) * delta_distance.y
+        } else if step.y < 0 {
+            (grid_origin.y - voxel.y as f32) * delta_distance.y
+        } else {
+            f32::INFINITY
+        },
+        if step.z > 0 {
+            (voxel.z as f32 + 1.0 - grid_origin.z) * delta_distance.z
+        } else if step.z < 0 {
+            (grid_origin.z - voxel.z as f32) * delta_distance.z
+        } else {
+            f32::INFINITY
+        },
     );
 
     let max_grid_distance = max_distance / VOXEL_SIZE;
@@ -638,11 +672,10 @@ fn is_ray_occluded(world: &VoxelWorld, origin: Vec3, direction: Vec3, max_distan
     let mut cached_chunk_homogeneity = ChunkHomogeneity::Mixed;
 
     // Check starting voxel in case camera origin is slightly embedded
-    if let Some(start_v) = world.get_voxel(voxel) {
-        if start_v.is_solid_opaque() {
+    if let Some(start_v) = world.get_voxel(voxel)
+        && start_v.is_solid_opaque() {
             return true;
         }
-    }
 
     while traveled_distance <= max_grid_distance {
         if side_distance.x <= side_distance.y && side_distance.x <= side_distance.z {
@@ -675,11 +708,10 @@ fn is_ray_occluded(world: &VoxelWorld, origin: Vec3, direction: Vec3, max_distan
                 }
             }
             ChunkHomogeneity::Mixed => {
-                if let Some(vox) = world.get_voxel(voxel) {
-                    if vox.is_solid_opaque() {
+                if let Some(vox) = world.get_voxel(voxel)
+                    && vox.is_solid_opaque() {
                         return true;
                     }
-                }
             }
         }
     }

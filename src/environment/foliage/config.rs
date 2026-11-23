@@ -14,7 +14,7 @@ impl GrassStyle {
     }
 }
 
-/// Runtime configuration knobs for procedural voxel foliage (Grassier Grass).
+/// Runtime configuration knobs for procedural voxel foliage.
 #[derive(Resource, Reflect, Clone, Debug, Serialize, Deserialize)]
 #[reflect(Resource)]
 pub struct GrassConfig {

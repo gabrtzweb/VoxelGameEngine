@@ -264,5 +264,3 @@ fn test_render_scale_ui_camera_properties() {
         _ => panic!("UI Camera must have ClearColorConfig::None to preserve 3D render"),
     }
 }
-
-

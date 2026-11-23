@@ -293,15 +293,15 @@ impl InputBinding {
     /// User-facing display text for the binding, with localized mouse names where appropriate.
     pub fn display_name(&self, loc: Option<&crate::core::Localization>) -> String {
         match self {
-            Self::Mouse(MouseButton::Left) => {
-                loc.map_or("Left Click", |l| l.t("controls.mouse.left")).to_string()
-            }
-            Self::Mouse(MouseButton::Right) => {
-                loc.map_or("Right Click", |l| l.t("controls.mouse.right")).to_string()
-            }
-            Self::Mouse(MouseButton::Middle) => {
-                loc.map_or("Middle Click", |l| l.t("controls.mouse.middle")).to_string()
-            }
+            Self::Mouse(MouseButton::Left) => loc
+                .map_or("Left Click", |l| l.t("controls.mouse.left"))
+                .to_string(),
+            Self::Mouse(MouseButton::Right) => loc
+                .map_or("Right Click", |l| l.t("controls.mouse.right"))
+                .to_string(),
+            Self::Mouse(MouseButton::Middle) => loc
+                .map_or("Middle Click", |l| l.t("controls.mouse.middle"))
+                .to_string(),
             Self::Mouse(MouseButton::Back) => "Mouse 4".to_string(),
             Self::Mouse(MouseButton::Forward) => "Mouse 5".to_string(),
             Self::Mouse(MouseButton::Other(n)) => format!("Mouse {n}"),
@@ -509,9 +509,18 @@ impl Default for ControlSettings {
         bindings.insert(InputAction::Sprint, InputBinding::Key(KeyCode::ShiftLeft));
 
         // Gameplay
-        bindings.insert(InputAction::PrimaryAction, InputBinding::Mouse(MouseButton::Left));
-        bindings.insert(InputAction::SecondaryAction, InputBinding::Mouse(MouseButton::Right));
-        bindings.insert(InputAction::PickBlock, InputBinding::Mouse(MouseButton::Middle));
+        bindings.insert(
+            InputAction::PrimaryAction,
+            InputBinding::Mouse(MouseButton::Left),
+        );
+        bindings.insert(
+            InputAction::SecondaryAction,
+            InputBinding::Mouse(MouseButton::Right),
+        );
+        bindings.insert(
+            InputAction::PickBlock,
+            InputBinding::Mouse(MouseButton::Middle),
+        );
         bindings.insert(InputAction::DropItem, InputBinding::Key(KeyCode::KeyQ));
         bindings.insert(InputAction::SwapHands, InputBinding::Key(KeyCode::KeyE));
         bindings.insert(InputAction::ShapeCycle, InputBinding::Key(KeyCode::KeyR));

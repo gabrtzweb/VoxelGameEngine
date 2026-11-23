@@ -195,7 +195,7 @@ pub fn sync_weather_particle_mesh(
                 )
             }
             ParticleRotationMode::Vertical => {
-                // Y-axis cylindrical billboard (Particle Rain VERTICAL mode):
+                // Y-axis cylindrical billboard (vertical mode):
                 // faces the camera horizontally while staying strictly upright.
                 let mut horiz_right = Vec3::new(cam_right.x, 0.0, cam_right.z);
                 if horiz_right.length_squared() < 0.0001 {

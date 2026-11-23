@@ -30,9 +30,11 @@ impl Plugin for EnvironmentPlugin {
         let is_paused = app
             .world()
             .get_resource::<crate::core::config::LocalConfig>()
-            .map_or(false, |c| c.is_time_paused);
-        let mut default_state = EnvironmentState::default();
-        default_state.is_time_paused = is_paused;
+            .is_some_and(|c| c.is_time_paused);
+        let default_state = EnvironmentState {
+            is_time_paused: is_paused,
+            ..Default::default()
+        };
         let initial_clear = sample_sky_color(default_state.time_of_day);
         let initial_ambient = sample_ambient_color(default_state.time_of_day);
         let initial_brightness = sample_ambient_brightness(default_state.time_of_day);
@@ -177,12 +179,11 @@ fn sync_celestial_system(
 fn configure_gpu_cluster_capacity(
     mut cluster_settings: Option<ResMut<bevy::light::cluster::GlobalClusterSettings>>,
 ) {
-    if let Some(ref mut settings) = cluster_settings {
-        if let Some(ref mut gpu) = settings.gpu_clustering {
+    if let Some(ref mut settings) = cluster_settings
+        && let Some(ref mut gpu) = settings.gpu_clustering {
             gpu.initial_z_slice_list_capacity = 8192;
             gpu.initial_index_list_capacity = 8192;
         }
-    }
 }
 
 fn sync_starfield_system(

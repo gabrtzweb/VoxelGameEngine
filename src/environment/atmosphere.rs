@@ -134,15 +134,14 @@ pub fn update_atmosphere(
         }
 
         // Full-scene instantaneous flash during lightning strikes
-        if let Some(ref l) = lightning {
-            if l.flash_intensity > 0.01 {
+        if let Some(ref l) = lightning
+            && l.flash_intensity > 0.01 {
                 let flash_col = Color::srgb(0.92, 0.95, 1.0);
                 computed_sky = flash_col;
                 computed_ambient = flash_col;
                 computed_brightness += l.flash_intensity * 8000.0;
                 computed_exposure += l.flash_intensity * 3.0;
             }
-        }
 
         // Subterranean Lighting & Atmosphere:
         // Decouple caves from surface sun/moon cycle. Deep underground, caves maintain
@@ -396,5 +395,3 @@ pub fn sample_exposure(time_of_day: f32) -> f32 {
         lerp_f32,
     )
 }
-
-

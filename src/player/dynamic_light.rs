@@ -1,9 +1,9 @@
-use bevy::prelude::*;
 use crate::{
     core::config::LocalConfig,
     gameplay::SelectedVoxel,
     player::{Player, PlayerCamera},
 };
+use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct HandheldDynamicLight;
@@ -17,10 +17,14 @@ pub fn update_player_dynamic_light(
     camera_query: Query<&Transform, With<PlayerCamera>>,
     mut light_query: Query<
         (Entity, &mut PointLight, &mut Transform),
-        (With<HandheldDynamicLight>, Without<Player>, Without<PlayerCamera>),
+        (
+            With<HandheldDynamicLight>,
+            Without<Player>,
+            Without<PlayerCamera>,
+        ),
     >,
 ) {
-    let dynamic_enabled = local_config.as_ref().map_or(true, |c| c.dynamic_lighting);
+    let dynamic_enabled = local_config.as_ref().is_none_or(|c| c.dynamic_lighting);
     let left_handed = local_config.as_ref().is_some_and(|c| c.left_handed);
     let main_light = selected_voxel
         .and_then(|s| s.0)

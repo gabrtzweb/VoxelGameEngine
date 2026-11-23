@@ -176,4 +176,3 @@ impl Plugin for LocalizationPlugin {
         app.insert_resource(Localization::new(initial_locale));
     }
 }
-

@@ -250,7 +250,12 @@ fn spawn_controls_menu(
                                         Node {
                                             width: percent(100.0),
                                             height: px(44.0),
-                                            padding: UiRect::new(px(24.0), px(20.0), px(0.0), px(0.0)),
+                                            padding: UiRect::new(
+                                                px(24.0),
+                                                px(20.0),
+                                                px(0.0),
+                                                px(0.0),
+                                            ),
                                             margin: UiRect::bottom(px(8.0)),
                                             display: Display::Flex,
                                             flex_direction: FlexDirection::Row,
@@ -260,7 +265,10 @@ fn spawn_controls_menu(
                                     ))
                                     .with_children(|btn| {
                                         btn.spawn((
-                                            Text::new(format!("<  {}", loc.t("menu.settings.back"))),
+                                            Text::new(format!(
+                                                "<  {}",
+                                                loc.t("menu.settings.back")
+                                            )),
                                             back_font,
                                             TextColor(palette::TEXT_MUTED),
                                             text_shadow_default(),
@@ -412,312 +420,319 @@ fn spawn_controls_menu(
                             BorderColor::all(palette::DRAWER_DIVIDER),
                         ))
                         .with_children(|sections| {
-                        // 1. Movement section
-                        sections
-                            .spawn((
-                                MovementSection,
-                                Node {
-                                    display: if *active_tab == ControlsTab::Movement {
-                                        Display::Flex
-                                    } else {
-                                        Display::None
-                                    },
-                                    flex_direction: FlexDirection::Column,
-                                    row_gap: px(6.0),
-                                    width: percent(100.0),
-                                    ..default()
-                                },
-                            ))
-                            .with_children(|sec| {
-                                let movement_actions = [
-                                    InputAction::MoveForward,
-                                    InputAction::MoveBackward,
-                                    InputAction::MoveLeft,
-                                    InputAction::MoveRight,
-                                    InputAction::Jump,
-                                    InputAction::Crouch,
-                                    InputAction::Sprint,
-                                ];
-                                for action in movement_actions {
-                                    spawn_action_row(
-                                        sec,
-                                        action,
-                                        &controls,
-                                        &rebind_state,
-                                        &loc,
-                                        font_handle.as_ref(),
-                                    );
-                                }
-                            });
-
-                        // 2. Gameplay section
-                        sections
-                            .spawn((
-                                GameplaySection,
-                                Node {
-                                    display: if *active_tab == ControlsTab::Gameplay {
-                                        Display::Flex
-                                    } else {
-                                        Display::None
-                                    },
-                                    flex_direction: FlexDirection::Column,
-                                    row_gap: px(6.0),
-                                    width: percent(100.0),
-                                    ..default()
-                                },
-                            ))
-                            .with_children(|sec| {
-                                let gameplay_actions = [
-                                    InputAction::PrimaryAction,
-                                    InputAction::SecondaryAction,
-                                    InputAction::PickBlock,
-                                    InputAction::DropItem,
-                                    InputAction::ShapeCycle,
-                                    InputAction::ShapeInvert,
-                                    InputAction::Zoom,
-                                ];
-                                for action in gameplay_actions {
-                                    spawn_action_row(
-                                        sec,
-                                        action,
-                                        &controls,
-                                        &rebind_state,
-                                        &loc,
-                                        font_handle.as_ref(),
-                                    );
-                                }
-                            });
-
-                        // 3. Interfaces section
-                        sections
-                            .spawn((
-                                InterfacesSection,
-                                Node {
-                                    display: if *active_tab == ControlsTab::Interfaces {
-                                        Display::Flex
-                                    } else {
-                                        Display::None
-                                    },
-                                    flex_direction: FlexDirection::Column,
-                                    row_gap: px(6.0),
-                                    width: percent(100.0),
-                                    ..default()
-                                },
-                            ))
-                            .with_children(|sec| {
-                                let interface_actions = [
-                                    InputAction::Inventory,
-                                    InputAction::Skills,
-                                    InputAction::Journal,
-                                    InputAction::Quests,
-                                    InputAction::WorldMap,
-                                    InputAction::MenuTabPrev,
-                                    InputAction::MenuTabNext,
-                                ];
-                                for action in interface_actions {
-                                    spawn_action_row(
-                                        sec,
-                                        action,
-                                        &controls,
-                                        &rebind_state,
-                                        &loc,
-                                        font_handle.as_ref(),
-                                    );
-                                }
-                            });
-
-                        // 4. Mouse & Camera section
-                        sections
-                            .spawn((
-                                MouseCameraSection,
-                                Node {
-                                    display: if *active_tab == ControlsTab::MouseCamera {
-                                        Display::Flex
-                                    } else {
-                                        Display::None
-                                    },
-                                    flex_direction: FlexDirection::Column,
-                                    row_gap: px(16.0),
-                                    width: percent(100.0),
-                                    align_items: AlignItems::Center,
-                                    padding: UiRect::top(px(24.0)),
-                                    ..default()
-                                },
-                            ))
-                            .with_children(|sec| {
-                                // Mouse sensitivity stepper row
-                                sec.spawn(Node {
-                                    display: Display::Flex,
-                                    flex_direction: FlexDirection::Row,
-                                    justify_content: JustifyContent::SpaceBetween,
-                                    align_items: AlignItems::Center,
-                                    width: percent(100.0),
-                                    height: px(40.0),
-                                    padding: UiRect::axes(px(4.0), px(2.0)),
-                                    ..default()
-                                })
-                                .with_children(|row| {
-                                    let mut tf = TextFont {
-                                        font_size: FontSize::Px(15.0),
+                            // 1. Movement section
+                            sections
+                                .spawn((
+                                    MovementSection,
+                                    Node {
+                                        display: if *active_tab == ControlsTab::Movement {
+                                            Display::Flex
+                                        } else {
+                                            Display::None
+                                        },
+                                        flex_direction: FlexDirection::Column,
+                                        row_gap: px(6.0),
+                                        width: percent(100.0),
                                         ..default()
-                                    };
-                                    if let Some(ref f) = font_handle {
-                                        tf.font = f.clone();
+                                    },
+                                ))
+                                .with_children(|sec| {
+                                    let movement_actions = [
+                                        InputAction::MoveForward,
+                                        InputAction::MoveBackward,
+                                        InputAction::MoveLeft,
+                                        InputAction::MoveRight,
+                                        InputAction::Jump,
+                                        InputAction::Crouch,
+                                        InputAction::Sprint,
+                                    ];
+                                    for action in movement_actions {
+                                        spawn_action_row(
+                                            sec,
+                                            action,
+                                            &controls,
+                                            &rebind_state,
+                                            &loc,
+                                            font_handle.as_ref(),
+                                        );
                                     }
-                                    row.spawn((
-                                        Text::new(loc.t("controls.mouse.sensitivity")),
-                                        tf.clone(),
-                                        TextColor(Color::srgb(0.88, 0.90, 0.94)),
-                                        text_shadow_default(),
-                                    ));
+                                });
 
-                                    // Stepper container: [-] Value [+]
-                                    row.spawn(Node {
+                            // 2. Gameplay section
+                            sections
+                                .spawn((
+                                    GameplaySection,
+                                    Node {
+                                        display: if *active_tab == ControlsTab::Gameplay {
+                                            Display::Flex
+                                        } else {
+                                            Display::None
+                                        },
+                                        flex_direction: FlexDirection::Column,
+                                        row_gap: px(6.0),
+                                        width: percent(100.0),
+                                        ..default()
+                                    },
+                                ))
+                                .with_children(|sec| {
+                                    let gameplay_actions = [
+                                        InputAction::PrimaryAction,
+                                        InputAction::SecondaryAction,
+                                        InputAction::PickBlock,
+                                        InputAction::DropItem,
+                                        InputAction::ShapeCycle,
+                                        InputAction::ShapeInvert,
+                                        InputAction::Zoom,
+                                    ];
+                                    for action in gameplay_actions {
+                                        spawn_action_row(
+                                            sec,
+                                            action,
+                                            &controls,
+                                            &rebind_state,
+                                            &loc,
+                                            font_handle.as_ref(),
+                                        );
+                                    }
+                                });
+
+                            // 3. Interfaces section
+                            sections
+                                .spawn((
+                                    InterfacesSection,
+                                    Node {
+                                        display: if *active_tab == ControlsTab::Interfaces {
+                                            Display::Flex
+                                        } else {
+                                            Display::None
+                                        },
+                                        flex_direction: FlexDirection::Column,
+                                        row_gap: px(6.0),
+                                        width: percent(100.0),
+                                        ..default()
+                                    },
+                                ))
+                                .with_children(|sec| {
+                                    let interface_actions = [
+                                        InputAction::Inventory,
+                                        InputAction::Skills,
+                                        InputAction::Journal,
+                                        InputAction::Quests,
+                                        InputAction::WorldMap,
+                                        InputAction::MenuTabPrev,
+                                        InputAction::MenuTabNext,
+                                    ];
+                                    for action in interface_actions {
+                                        spawn_action_row(
+                                            sec,
+                                            action,
+                                            &controls,
+                                            &rebind_state,
+                                            &loc,
+                                            font_handle.as_ref(),
+                                        );
+                                    }
+                                });
+
+                            // 4. Mouse & Camera section
+                            sections
+                                .spawn((
+                                    MouseCameraSection,
+                                    Node {
+                                        display: if *active_tab == ControlsTab::MouseCamera {
+                                            Display::Flex
+                                        } else {
+                                            Display::None
+                                        },
+                                        flex_direction: FlexDirection::Column,
+                                        row_gap: px(16.0),
+                                        width: percent(100.0),
+                                        align_items: AlignItems::Center,
+                                        padding: UiRect::top(px(24.0)),
+                                        ..default()
+                                    },
+                                ))
+                                .with_children(|sec| {
+                                    // Mouse sensitivity stepper row
+                                    sec.spawn(Node {
                                         display: Display::Flex,
                                         flex_direction: FlexDirection::Row,
+                                        justify_content: JustifyContent::SpaceBetween,
                                         align_items: AlignItems::Center,
-                                        column_gap: px(6.0),
+                                        width: percent(100.0),
+                                        height: px(40.0),
+                                        padding: UiRect::axes(px(4.0), px(2.0)),
                                         ..default()
                                     })
-                                    .with_children(|st| {
-                                        // Left button
-                                        let small_theme = ThemedButton::subtle();
-                                        st.spawn((
-                                            Button,
-                                            Hovered::default(),
-                                            ControlsAction::DecSensitivity,
-                                            small_theme,
-                                            BackgroundColor(small_theme.normal_bg),
-                                            BorderColor::all(small_theme.normal_border),
-                                            Node {
-                                                width: px(28.0),
-                                                height: px(28.0),
-                                                justify_content: JustifyContent::Center,
-                                                align_items: AlignItems::Center,
-                                                border: UiRect::all(px(1.5)),
-                                                border_radius: BorderRadius::all(px(4.0)),
-                                                ..default()
-                                            },
-                                        ))
-                                        .with_children(|b| {
-                                            b.spawn((
-                                                Text::new("-"),
-                                                tf.clone(),
-                                                TextColor(Color::WHITE),
-                                                text_shadow_default(),
-                                            ));
-                                        });
-
-                                        // Label
-                                        st.spawn((
-                                            MouseSensitivityLabel,
-                                            Text::new(format!("{:.1}x", controls.mouse_sensitivity)),
-                                            tf.clone(),
-                                            TextColor(Color::srgb(1.0, 0.88, 0.45)),
-                                            text_shadow_default(),
-                                            Node {
-                                                width: px(76.0),
-                                                justify_content: JustifyContent::Center,
-                                                align_items: AlignItems::Center,
-                                                ..default()
-                                            },
-                                        ));
-
-                                        // Right button
-                                        st.spawn((
-                                            Button,
-                                            Hovered::default(),
-                                            ControlsAction::IncSensitivity,
-                                            small_theme,
-                                            BackgroundColor(small_theme.normal_bg),
-                                            BorderColor::all(small_theme.normal_border),
-                                            Node {
-                                                width: px(28.0),
-                                                height: px(28.0),
-                                                justify_content: JustifyContent::Center,
-                                                align_items: AlignItems::Center,
-                                                border: UiRect::all(px(1.5)),
-                                                border_radius: BorderRadius::all(px(4.0)),
-                                                ..default()
-                                            },
-                                        ))
-                                        .with_children(|b| {
-                                            b.spawn((
-                                                Text::new("+"),
-                                                tf.clone(),
-                                                TextColor(Color::WHITE),
-                                                text_shadow_default(),
-                                            ));
-                                        });
-                                    });
-                                });
-
-                                // Invert Y Toggle row
-                                sec.spawn(Node {
-                                    display: Display::Flex,
-                                    flex_direction: FlexDirection::Row,
-                                    justify_content: JustifyContent::SpaceBetween,
-                                    align_items: AlignItems::Center,
-                                    width: percent(100.0),
-                                    height: px(40.0),
-                                    padding: UiRect::axes(px(4.0), px(2.0)),
-                                    ..default()
-                                })
-                                .with_children(|row| {
-                                    let mut tf = TextFont {
-                                        font_size: FontSize::Px(15.0),
-                                        ..default()
-                                    };
-                                    if let Some(ref f) = font_handle {
-                                        tf.font = f.clone();
-                                    }
-                                    row.spawn((
-                                        Text::new(loc.t("controls.mouse.invert_y")),
-                                        tf.clone(),
-                                        TextColor(Color::srgb(0.88, 0.90, 0.94)),
-                                        text_shadow_default(),
-                                    ));
-
-                                    // Toggle button
-                                    let toggle_theme = ThemedButton::subtle();
-                                    row.spawn((
-                                        Button,
-                                        Hovered::default(),
-                                        ControlsAction::ToggleInvertY,
-                                        toggle_theme,
-                                        BackgroundColor(toggle_theme.normal_bg),
-                                        BorderColor::all(toggle_theme.normal_border),
-                                        Node {
-                                            width: px(144.0),
-                                            height: px(34.0),
-                                            justify_content: JustifyContent::Center,
-                                            align_items: AlignItems::Center,
-                                            border: UiRect::all(px(1.5)),
-                                            border_radius: BorderRadius::all(px(4.0)),
+                                    .with_children(|row| {
+                                        let mut tf = TextFont {
+                                            font_size: FontSize::Px(15.0),
                                             ..default()
-                                        },
-                                    ))
-                                    .with_children(|b| {
-                                        let status_str = if controls.invert_mouse_y {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
                                         };
-                                        b.spawn((
-                                            InvertYLabel,
-                                            Text::new(status_str),
+                                        if let Some(ref f) = font_handle {
+                                            tf.font = f.clone();
+                                        }
+                                        row.spawn((
+                                            Text::new(loc.t("controls.mouse.sensitivity")),
                                             tf.clone(),
-                                            TextColor(if controls.invert_mouse_y {
-                                                Color::srgb(0.4, 0.9, 0.5)
-                                            } else {
-                                                Color::srgb(0.8, 0.8, 0.8)
-                                            }),
+                                            TextColor(Color::srgb(0.88, 0.90, 0.94)),
                                             text_shadow_default(),
                                         ));
+
+                                        // Stepper container: [-] Value [+]
+                                        row.spawn(Node {
+                                            display: Display::Flex,
+                                            flex_direction: FlexDirection::Row,
+                                            align_items: AlignItems::Center,
+                                            column_gap: px(6.0),
+                                            ..default()
+                                        })
+                                        .with_children(
+                                            |st| {
+                                                // Left button
+                                                let small_theme = ThemedButton::subtle();
+                                                st.spawn((
+                                                    Button,
+                                                    Hovered::default(),
+                                                    ControlsAction::DecSensitivity,
+                                                    small_theme,
+                                                    BackgroundColor(small_theme.normal_bg),
+                                                    BorderColor::all(small_theme.normal_border),
+                                                    Node {
+                                                        width: px(28.0),
+                                                        height: px(28.0),
+                                                        justify_content: JustifyContent::Center,
+                                                        align_items: AlignItems::Center,
+                                                        border: UiRect::all(px(1.5)),
+                                                        border_radius: BorderRadius::all(px(4.0)),
+                                                        ..default()
+                                                    },
+                                                ))
+                                                .with_children(|b| {
+                                                    b.spawn((
+                                                        Text::new("-"),
+                                                        tf.clone(),
+                                                        TextColor(Color::WHITE),
+                                                        text_shadow_default(),
+                                                    ));
+                                                });
+
+                                                // Label
+                                                st.spawn((
+                                                    MouseSensitivityLabel,
+                                                    Text::new(format!(
+                                                        "{:.1}x",
+                                                        controls.mouse_sensitivity
+                                                    )),
+                                                    tf.clone(),
+                                                    TextColor(Color::srgb(1.0, 0.88, 0.45)),
+                                                    text_shadow_default(),
+                                                    Node {
+                                                        width: px(76.0),
+                                                        justify_content: JustifyContent::Center,
+                                                        align_items: AlignItems::Center,
+                                                        ..default()
+                                                    },
+                                                ));
+
+                                                // Right button
+                                                st.spawn((
+                                                    Button,
+                                                    Hovered::default(),
+                                                    ControlsAction::IncSensitivity,
+                                                    small_theme,
+                                                    BackgroundColor(small_theme.normal_bg),
+                                                    BorderColor::all(small_theme.normal_border),
+                                                    Node {
+                                                        width: px(28.0),
+                                                        height: px(28.0),
+                                                        justify_content: JustifyContent::Center,
+                                                        align_items: AlignItems::Center,
+                                                        border: UiRect::all(px(1.5)),
+                                                        border_radius: BorderRadius::all(px(4.0)),
+                                                        ..default()
+                                                    },
+                                                ))
+                                                .with_children(|b| {
+                                                    b.spawn((
+                                                        Text::new("+"),
+                                                        tf.clone(),
+                                                        TextColor(Color::WHITE),
+                                                        text_shadow_default(),
+                                                    ));
+                                                });
+                                            },
+                                        );
+                                    });
+
+                                    // Invert Y Toggle row
+                                    sec.spawn(Node {
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Row,
+                                        justify_content: JustifyContent::SpaceBetween,
+                                        align_items: AlignItems::Center,
+                                        width: percent(100.0),
+                                        height: px(40.0),
+                                        padding: UiRect::axes(px(4.0), px(2.0)),
+                                        ..default()
+                                    })
+                                    .with_children(|row| {
+                                        let mut tf = TextFont {
+                                            font_size: FontSize::Px(15.0),
+                                            ..default()
+                                        };
+                                        if let Some(ref f) = font_handle {
+                                            tf.font = f.clone();
+                                        }
+                                        row.spawn((
+                                            Text::new(loc.t("controls.mouse.invert_y")),
+                                            tf.clone(),
+                                            TextColor(Color::srgb(0.88, 0.90, 0.94)),
+                                            text_shadow_default(),
+                                        ));
+
+                                        // Toggle button
+                                        let toggle_theme = ThemedButton::subtle();
+                                        row.spawn((
+                                            Button,
+                                            Hovered::default(),
+                                            ControlsAction::ToggleInvertY,
+                                            toggle_theme,
+                                            BackgroundColor(toggle_theme.normal_bg),
+                                            BorderColor::all(toggle_theme.normal_border),
+                                            Node {
+                                                width: px(144.0),
+                                                height: px(34.0),
+                                                justify_content: JustifyContent::Center,
+                                                align_items: AlignItems::Center,
+                                                border: UiRect::all(px(1.5)),
+                                                border_radius: BorderRadius::all(px(4.0)),
+                                                ..default()
+                                            },
+                                        ))
+                                        .with_children(
+                                            |b| {
+                                                let status_str = if controls.invert_mouse_y {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                };
+                                                b.spawn((
+                                                    InvertYLabel,
+                                                    Text::new(status_str),
+                                                    tf.clone(),
+                                                    TextColor(if controls.invert_mouse_y {
+                                                        Color::srgb(0.4, 0.9, 0.5)
+                                                    } else {
+                                                        Color::srgb(0.8, 0.8, 0.8)
+                                                    }),
+                                                    text_shadow_default(),
+                                                ));
+                                            },
+                                        );
                                     });
                                 });
-                            });
-                    });
+                        });
                 });
         });
 }
@@ -938,12 +953,11 @@ fn capture_rebind_input(
     }
 
     // Check mouse buttons
-    for m in mouse.get_just_pressed() {
+    if let Some(m) = mouse.get_just_pressed().next() {
         controls.set_binding(action, InputBinding::Mouse(*m));
         local_config.update_from_control_settings(&controls);
         let _ = local_config.save();
         rebind_state.0 = None;
-        return;
     }
 }
 
@@ -1091,8 +1105,22 @@ fn update_action_binding_labels(
     rebind_state: Res<RebindState>,
     loc: Res<Localization>,
     mut label_query: Query<(&ActionBindingLabel, &mut Text, &mut TextColor)>,
-    mut sens_query: Query<&mut Text, (With<MouseSensitivityLabel>, Without<ActionBindingLabel>, Without<InvertYLabel>)>,
-    mut invert_query: Query<(&mut Text, &mut TextColor), (With<InvertYLabel>, Without<ActionBindingLabel>, Without<MouseSensitivityLabel>)>,
+    mut sens_query: Query<
+        &mut Text,
+        (
+            With<MouseSensitivityLabel>,
+            Without<ActionBindingLabel>,
+            Without<InvertYLabel>,
+        ),
+    >,
+    mut invert_query: Query<
+        (&mut Text, &mut TextColor),
+        (
+            With<InvertYLabel>,
+            Without<ActionBindingLabel>,
+            Without<MouseSensitivityLabel>,
+        ),
+    >,
 ) {
     if !controls.is_changed() && !rebind_state.is_changed() && !loc.is_changed() {
         return;

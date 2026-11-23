@@ -114,7 +114,9 @@ pub fn get_camera_reachable_faces(
         for z in 0..CHUNK_SIZE {
             for x in 0..CHUNK_SIZE {
                 let v = chunk.get(x, y, z);
-                if v.is_solid_opaque() && (!has_shapes || chunk.get_shape(x, y, z).0 == BlockShape::Full) {
+                if v.is_solid_opaque()
+                    && (!has_shapes || chunk.get_shape(x, y, z).0 == BlockShape::Full)
+                {
                     let idx = x + z * CHUNK_SIZE + y * CHUNK_SIZE * CHUNK_SIZE;
                     visited[idx / 64] |= 1u64 << (idx % 64);
                 }
@@ -205,25 +207,23 @@ pub fn is_position_underground(cam_pos: Vec3, world: Option<&VoxelWorld>) -> boo
         return cam_chunk.y <= 0;
     };
 
-    if let Some(chunk) = w.get_chunk(cam_chunk) {
-        if chunk.is_subterranean() {
+    if let Some(chunk) = w.get_chunk(cam_chunk)
+        && chunk.is_subterranean() {
             return true;
         }
-    }
 
     // Cast a vertical ray upwards through the column to detect solid roof/ceiling
     // Check up to 96 blocks above the camera for solid opaque ground
     let mut solid_count = 0;
     for dy in 1..=96 {
         let check_coord = cam_block + IVec3::new(0, dy, 0);
-        if let Some(voxel) = w.get_voxel(check_coord) {
-            if voxel.is_solid_opaque() {
+        if let Some(voxel) = w.get_voxel(check_coord)
+            && voxel.is_solid_opaque() {
                 solid_count += 1;
                 if solid_count >= 2 {
                     return true;
                 }
             }
-        }
     }
 
     false
@@ -275,7 +275,7 @@ pub fn get_chunk_permeability(
     0
 }
 
-/// High-performance chunk graph occlusion culling system (Sodium architecture).
+/// High-performance chunk graph occlusion culling system.
 pub fn update_cave_culling_system(
     mut commands: Commands,
     camera_query: Query<&Transform, With<PlayerCamera>>,
@@ -339,8 +339,8 @@ pub fn update_cave_culling_system(
                 .abs()
                 .max((coord.z - cam_chunk.z).abs())
                 > shadow_r;
-            if was_far != is_far {
-                if let Some(ref part) = render_data.opaque
+            if was_far != is_far
+                && let Some(ref part) = render_data.opaque
                     && let Ok(mut e) = commands.get_entity(part.entity)
                 {
                     if is_far {
@@ -349,7 +349,6 @@ pub fn update_cave_culling_system(
                         e.remove::<bevy::light::NotShadowCaster>();
                     }
                 }
-            }
         }
     }
 
@@ -394,8 +393,12 @@ pub fn update_cave_culling_system(
             .map(|s| (s.render_distance + 1).min(MAX_VERTICAL_RADIUS))
             .unwrap_or(MAX_VERTICAL_RADIUS);
 
-        let cam_mask =
-            get_chunk_permeability(cam_chunk, &registry, world.as_deref(), is_player_underground);
+        let cam_mask = get_chunk_permeability(
+            cam_chunk,
+            &registry,
+            world.as_deref(),
+            is_player_underground,
+        );
         let reachable_faces =
             get_camera_reachable_faces(cam_pos, cam_chunk, cam_mask, world.as_deref());
 
@@ -446,48 +449,49 @@ pub fn update_cave_culling_system(
         }
     }
 
-    let apply_chunk_visibility = |coord: &IVec3,
-                                  is_visible_in_culling: bool,
-                                  reg: &ChunkMeshRegistry,
-                                  meshes_query: &mut Query<(&ChunkCoordinate, &mut Visibility)>| {
-        if let Some(render_data) = reg.get_render_data(coord) {
-            let target = if render_data.is_subterranean {
-                if is_visible_in_culling {
-                    Visibility::Inherited
-                } else {
-                    Visibility::Hidden
-                }
-            } else {
-                // Surface terrain is always visible to open air unless deep underground with no opening
-                if !is_player_underground || is_visible_in_culling {
-                    Visibility::Inherited
-                } else {
-                    Visibility::Hidden
-                }
-            };
-
-            // Procedural grass foliage distance culling: only render expensive blade quads within 5 chunks (80m)
-            let is_near_grass = (coord.x - cam_chunk.x).abs() <= 5 && (coord.z - cam_chunk.z).abs() <= 5;
-            let grass_target = if target == Visibility::Inherited && is_near_grass {
-                Visibility::Inherited
-            } else {
-                Visibility::Hidden
-            };
-
-            let mut apply = |part_opt: &Option<crate::meshing::pipeline::ChunkRenderPart>, vis: Visibility| {
-                if let Some(part) = part_opt {
-                    if let Ok((_, mut cur_vis)) = meshes_query.get_mut(part.entity) {
-                        if *cur_vis != vis {
-                            *cur_vis = vis;
-                        }
+    let apply_chunk_visibility =
+        |coord: &IVec3,
+         is_visible_in_culling: bool,
+         reg: &ChunkMeshRegistry,
+         meshes_query: &mut Query<(&ChunkCoordinate, &mut Visibility)>| {
+            if let Some(render_data) = reg.get_render_data(coord) {
+                let target = if render_data.is_subterranean {
+                    if is_visible_in_culling {
+                        Visibility::Inherited
+                    } else {
+                        Visibility::Hidden
                     }
-                }
-            };
-            apply(&render_data.opaque, target);
-            apply(&render_data.transparent, target);
-            apply(&render_data.grass, grass_target);
-        }
-    };
+                } else {
+                    // Surface terrain is always visible to open air unless deep underground with no opening
+                    if !is_player_underground || is_visible_in_culling {
+                        Visibility::Inherited
+                    } else {
+                        Visibility::Hidden
+                    }
+                };
+
+                // Procedural grass foliage distance culling: only render expensive blade quads within 5 chunks (80m)
+                let is_near_grass =
+                    (coord.x - cam_chunk.x).abs() <= 5 && (coord.z - cam_chunk.z).abs() <= 5;
+                let grass_target = if target == Visibility::Inherited && is_near_grass {
+                    Visibility::Inherited
+                } else {
+                    Visibility::Hidden
+                };
+
+                let mut apply = |part_opt: &Option<crate::meshing::pipeline::ChunkRenderPart>,
+                                 vis: Visibility| {
+                    if let Some(part) = part_opt
+                        && let Ok((_, mut cur_vis)) = meshes_query.get_mut(part.entity)
+                            && *cur_vis != vis {
+                                *cur_vis = vis;
+                            }
+                };
+                apply(&render_data.opaque, target);
+                apply(&render_data.transparent, target);
+                apply(&render_data.grass, grass_target);
+            }
+        };
 
     if culling_state.previously_visible_chunks.is_empty() || moved_chunk || underground_changed {
         for coord in &culling_state.visible_chunks {
@@ -525,11 +529,18 @@ pub fn update_cave_culling_system(
     for coord in &culling_state.visible_chunks {
         if let Some(render_data) = registry.get_render_data(coord) {
             rendered_count += 1;
-            let is_near_grass = (coord.x - cam_chunk.x).abs() <= 5 && (coord.z - cam_chunk.z).abs() <= 5;
+            let is_near_grass =
+                (coord.x - cam_chunk.x).abs() <= 5 && (coord.z - cam_chunk.z).abs() <= 5;
             let mut v = 0;
-            if let Some(ref p) = render_data.opaque { v += p.vertex_count; }
-            if let Some(ref p) = render_data.transparent { v += p.vertex_count; }
-            if is_near_grass && let Some(ref p) = render_data.grass { v += p.vertex_count; }
+            if let Some(ref p) = render_data.opaque {
+                v += p.vertex_count;
+            }
+            if let Some(ref p) = render_data.transparent {
+                v += p.vertex_count;
+            }
+            if is_near_grass && let Some(ref p) = render_data.grass {
+                v += p.vertex_count;
+            }
             rendered_verts += v;
         }
     }

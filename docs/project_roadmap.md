@@ -89,7 +89,7 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 | **03** | **[Atmospheric & Gameplay Particle Engine](#phase-3-atmospheric--gameplay-particle-engine-completed)** | **Completed** | Falling canopy leaves (21 sprites, selective tint), underwater geothermal/magma bubbles + pop, footstep/landing dust, blinking night fireflies, daytime pollen, player/item water splashes, campfire smoke |
 | **04** | **[Pure-Code UI & Menu System Redesign](#phase-4-pure-code-ui--menu-system-redesign-in-progress)** | **In Progress** | Pure Bevy UI Dark Iron theme (`src/menu/theme.rs`), removal of `assets/textures/interfaces/containers/`, 6-tab top bar with icons & live status HUD, 3-column cascading System/Settings/Controls drawers, fullscreen World Map with right sidebar, fully localized Journal Compendium (44 biomes with pixel-art icons), Skills/Quests screens, and expanded Settings |
 | **05** | **[Races, Subraces, Attributes & Skills Redesign](#phase-5-races-subraces-attributes--skills-redesign-completed)** | **Completed** | 3 classic core races × 3 subraces each (9 playable subraces) with face-portrait icons, 16-field `RaceAttributes` (live jump height, move/swim speed, footstep stealth, mining reach), 3-column Race Selection UI, and 60 localized skills (4 general trees + dynamic racial/subracial tree) with 60 bespoke pixel-art icons |
-| **06** | **[Main Menu Redesign](#phase-6-main-menu-redesign-in-progress)** | **In Progress** | Enshrouded-inspired 2-side Main Menu with character-gated `Play` flow (`CharacterReady`), right-side character showcase panel, and future world selection/creation & 3D character preview |
+| **06** | **[Main Menu Redesign](#phase-6-main-menu-redesign-in-progress)** | **In Progress** | 2-side Main Menu with character-gated `Play` flow (`CharacterReady`), right-side character showcase panel, and future world selection/creation & 3D character preview |
 | **07** | **[Dedicated Character Creator](#phase-7-dedicated-character-creator-planned)** | **Planned** | Interactive character customization (skin tone, hair style/color, beard/features, outfit palette, character naming, and live 3D voxel model preview) |
 | **08** | **[Survival Mode Core Systems](#phase-8-survival-mode-core-systems-in-progress)** | **In Progress** | Default Survival mode (`S → C → E`), floating GUI-scaled Vitals HUD, live stamina/drowning/fall damage/respawn, 11 flint tools & crafting materials, 64-item stacking & consumption, block durability with 9-stage crack overlay + shake, Fire Starter/Hoe/Shears actions (hunger/thirst/temperature sim, food buffs & tool durability next) |
 | **09** | **[Mobs, Wildlife & Entity AI](#phase-9-mobs-wildlife--entity-ai-planned)** | **Planned** | First creatures and wildlife (passive fauna, hostile mobs, pathfinding, stealth/footstep awareness, combat, taming, and live Bestiary unlocking) |
@@ -138,7 +138,7 @@ This second major milestone expanded the engine across 20 phases into a full-fea
   - Upgraded coral reefs into clustered multi-block 3D spires, branching trees, and reef mounds, with 6-direction wall/floor/ceiling attachment support for coral fans in both worldgen and player placement.
 - [x] **Underwater Geothermal Vents, Campfire & Toggleable Lamps**:
   - Added natural hydrothermal `GeothermalVent` chimneys and submerged `Magma` clusters in deep oceans and trenches (`src/generation/flora.rs`).
-  - Implemented 3D crossed-log `Campfire` (`Campfire` / `CampfireUnlit`) and off-state `EmitLamp*Off` blocks with empty-hand right-click toggling, alongside authentic Particle Rain fog/dust/streak textures in `weather_atlas.png`.
+  - Implemented 3D crossed-log `Campfire` (`Campfire` / `CampfireUnlit`) and off-state `EmitLamp*Off` blocks with empty-hand right-click toggling, alongside weather fog/dust/streak textures in `weather_atlas.png`.
 
 ---
 
@@ -200,7 +200,7 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 
 ### Phase 6: Main Menu Redesign (In Progress)
 
-- [x] **Enshrouded-Inspired 2-Side Main Menu & Character-Gated Play Flow**:
+- [x] **2-Side Main Menu & Character-Gated Play Flow**:
   - Redesigned `src/menu/main_menu.rs` Action Phase into a 2-side layout: Left side displays title, primary `Play` button (locked via `CharacterReady(false)` with localized hint until a character is selected, then launches directly into `MenuState::Loading`), `Settings`, `Controls`, and `Quit`; Right side displays the Dark Iron Character Panel with subrace portrait, player name, subrace title, stat summary pills, and `Create Character >` / `Change Character >` routing to `MenuState::RaceSelection`.
 - [ ] **Future Main Menu Expansions**:
   - Live 3D voxel character preview render on the Main Menu, multi-character roster slots, and multi-world selection/creation flow.
@@ -222,10 +222,10 @@ This second major milestone expanded the engine across 20 phases into a full-fea
   - Wired live stamina consumption on sprinting (ground & mid-air) and jumping with exhaustion gating, underwater oxygen drain + periodic drowning damage, fall damage mitigated by racial `fall_damage_reduction` and safe-jump height, death & respawn at `WorldSpawnPoint` with live `JournalProgress` stats (`deaths`, `damage_taken`), and Survival-accurate middle-click Pick Block (`src/gameplay/interaction.rs`).
 - [x] **Flint Tools, Block Durability, 9-Stage Crack Overlay & 64-Item Stacking (`src/world/block/props.rs`, `src/gameplay/feedback.rs`, `src/gameplay/interaction.rs`, `src/gameplay/item_drops.rs`)**:
   - Registered 11 new inventory-only crafting materials & flint tools (`ItemFlintShard`, `ItemPlantFiber`, `ItemPlantString`, `ToolFireStarter`, `ToolFlintAxe/Hammer/Hoe/Knife/Pickaxe/Shears/Shovel`) with starting hotbar kit (Pickaxe, Axe, Shovel, 8 Torches).
-  - Implemented per-material block hardness, tool speed multipliers + racial `mining_speed_multiplier`, 9-stage grayscale crack overlay (`assets/textures/masks/break_stages/`) with subtle Hytale-style block shake/pulse, and an under-crosshair mining progress bar.
+  - Implemented per-material block hardness, tool speed multipliers + racial `mining_speed_multiplier`, 9-stage grayscale crack overlay (`assets/textures/masks/break_stages/`) with subtle block shake/pulse, and an under-crosshair mining progress bar.
   - Wired tool actions (`ToolFireStarter` lights campfires & places fire, required for Survival campfires; `ToolFlintHoe` tills grass/dirt into farmland; `ToolFlintShears` harvests original vegetation instead of `ItemPlantFiber`) and full 64-item stacking (1 for tools) with Survival block consumption, merge/split, and single-item `Q` dropping.
 - [ ] **Remaining Survival Systems**:
-  - Enshrouded-style non-lethal Hunger & Thirst drain with debuffs and consumable food/drink buffs, climate/biome Temperature simulation (applying racial cold/heat resistance and campfire warmth), basic pocket/station crafting, and tool durability.
+  - Non-lethal Hunger & Thirst drain with debuffs and consumable food/drink buffs, climate/biome Temperature simulation (applying racial cold/heat resistance and campfire warmth), basic pocket/station crafting, and tool durability.
 
 ---
 

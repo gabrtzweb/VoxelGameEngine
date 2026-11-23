@@ -6,39 +6,111 @@ use voxel_game_engine::{
 
 #[test]
 fn test_sound_material_mapping() {
-    assert_eq!(SoundMaterial::from_voxel(Voxel::LoamGrass), SoundMaterial::Grass);
-    assert_eq!(SoundMaterial::from_voxel(Voxel::CalicheGrass), SoundMaterial::Grass);
-    assert_eq!(SoundMaterial::from_voxel(Voxel::MossForest), SoundMaterial::Grass);
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::LoamGrass),
+        SoundMaterial::Grass
+    );
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::CalicheGrass),
+        SoundMaterial::Grass
+    );
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::MossForest),
+        SoundMaterial::Grass
+    );
 
-    assert_eq!(SoundMaterial::from_voxel(Voxel::OakLog), SoundMaterial::Wood);
-    assert_eq!(SoundMaterial::from_voxel(Voxel::OakPlanks), SoundMaterial::Wood);
-    assert_eq!(SoundMaterial::from_voxel(Voxel::BambooStalk), SoundMaterial::Wood);
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::OakLog),
+        SoundMaterial::Wood
+    );
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::OakPlanks),
+        SoundMaterial::Wood
+    );
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::BambooStalk),
+        SoundMaterial::Wood
+    );
 
-    assert_eq!(SoundMaterial::from_voxel(Voxel::LoamDirt), SoundMaterial::Dirt);
-    assert_eq!(SoundMaterial::from_voxel(Voxel::PeatDirt), SoundMaterial::Dirt);
-    assert_eq!(SoundMaterial::from_voxel(Voxel::CalicheDirt), SoundMaterial::Dirt);
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::LoamDirt),
+        SoundMaterial::Dirt
+    );
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::PeatDirt),
+        SoundMaterial::Dirt
+    );
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::CalicheDirt),
+        SoundMaterial::Dirt
+    );
 
-    assert_eq!(SoundMaterial::from_voxel(Voxel::SandCommon), SoundMaterial::Sand);
-    assert_eq!(SoundMaterial::from_voxel(Voxel::SandRed), SoundMaterial::Sand);
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::SandCommon),
+        SoundMaterial::Sand
+    );
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::SandRed),
+        SoundMaterial::Sand
+    );
 
-    assert_eq!(SoundMaterial::from_voxel(Voxel::GravelAshy), SoundMaterial::Gravel);
-    assert_eq!(SoundMaterial::from_voxel(Voxel::GravelDirty), SoundMaterial::Gravel);
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::GravelAshy),
+        SoundMaterial::Gravel
+    );
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::GravelDirty),
+        SoundMaterial::Gravel
+    );
 
-    assert_eq!(SoundMaterial::from_voxel(Voxel::SnowBlock), SoundMaterial::Snow);
-    assert_eq!(SoundMaterial::from_voxel(Voxel::FrostIce), SoundMaterial::Snow);
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::SnowBlock),
+        SoundMaterial::Snow
+    );
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::FrostIce),
+        SoundMaterial::Snow
+    );
 
-    assert_eq!(SoundMaterial::from_voxel(Voxel::OakLeaves), SoundMaterial::Leaves);
-    assert_eq!(SoundMaterial::from_voxel(Voxel::PineLeaves), SoundMaterial::Leaves);
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::OakLeaves),
+        SoundMaterial::Leaves
+    );
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::PineLeaves),
+        SoundMaterial::Leaves
+    );
 
-    assert_eq!(SoundMaterial::from_voxel(Voxel::CrystalAmethystBlock), SoundMaterial::Glass);
-    assert_eq!(SoundMaterial::from_voxel(Voxel::CrystalSeleniteBlock), SoundMaterial::Glass);
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::CrystalAmethystBlock),
+        SoundMaterial::Glass
+    );
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::CrystalSeleniteBlock),
+        SoundMaterial::Glass
+    );
 
-    assert_eq!(SoundMaterial::from_voxel(Voxel::LiquidWater), SoundMaterial::Water);
-    assert_eq!(SoundMaterial::from_voxel(Voxel::WaterOccupied), SoundMaterial::Water);
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::LiquidWater),
+        SoundMaterial::Water
+    );
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::WaterOccupied),
+        SoundMaterial::Water
+    );
 
-    assert_eq!(SoundMaterial::from_voxel(Voxel::CobbledGranite), SoundMaterial::Stone);
-    assert_eq!(SoundMaterial::from_voxel(Voxel::Andesite), SoundMaterial::Stone);
-    assert_eq!(SoundMaterial::from_voxel(Voxel::Basalt), SoundMaterial::Stone);
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::CobbledGranite),
+        SoundMaterial::Stone
+    );
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::Andesite),
+        SoundMaterial::Stone
+    );
+    assert_eq!(
+        SoundMaterial::from_voxel(Voxel::Basalt),
+        SoundMaterial::Stone
+    );
 }
 
 #[test]
@@ -156,7 +228,10 @@ fn test_music_tracks_exist_on_disk() {
 #[test]
 fn test_music_state_shuffle_and_rotation() {
     let mut state = voxel_game_engine::audio::music::MusicState::new();
-    assert_eq!(state.context, voxel_game_engine::audio::music::MusicContext::Menu);
+    assert_eq!(
+        state.context,
+        voxel_game_engine::audio::music::MusicContext::Menu
+    );
     assert_eq!(state.menu_playlist.len(), 4);
     assert_eq!(state.game_playlist.len(), 39);
 

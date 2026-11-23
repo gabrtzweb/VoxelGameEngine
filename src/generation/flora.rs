@@ -157,11 +157,7 @@ fn matching_rubble_for(ground: Voxel) -> Voxel {
 
 /// Selects a biome-authentic wild crop for a cluster patch.
 /// Returns `(bottom_voxel, Option<top_voxel>)`.
-fn select_wild_crop(
-    biome: BiomeType,
-    is_wet_bank: bool,
-    patch_id: u32,
-) -> (Voxel, Option<Voxel>) {
+fn select_wild_crop(biome: BiomeType, is_wet_bank: bool, patch_id: u32) -> (Voxel, Option<Voxel>) {
     if is_wet_bank {
         return match patch_id % 3 {
             0 => (Voxel::WildSugarCaneBottom, Some(Voxel::WildSugarCaneTop)),
@@ -335,8 +331,8 @@ pub fn populate_chunk_flora<F>(
             }
 
             // --- 20.4: MARINE & AQUATIC SCATTER ---
-            if let Some(wl) = col.water_level {
-                if surface_y < wl {
+            if let Some(wl) = col.water_level
+                && surface_y < wl {
                     let depth = wl - surface_y;
                     populate_marine_column(
                         voxels,
@@ -355,7 +351,6 @@ pub fn populate_chunk_flora<F>(
                     );
                     continue;
                 }
-            }
 
             // --- SURFACE FEATURES (above water) ---
             let h = hash2d(wx, wz, seed ^ 0x4F1B_BCDC);
@@ -402,7 +397,7 @@ pub fn populate_chunk_flora<F>(
             let pebble_chance = surface_pebble_chance(col);
             let h_peb = hash2d(wx, wz, seed ^ 0x1337_BEEF);
             if hash_f32(h_peb) < pebble_chance {
-                let is_cluster = ((h_peb >> 8) % 4) == 0;
+                let is_cluster = (h_peb >> 8).is_multiple_of(4);
                 let pebble = match (h_peb >> 12) % 3 {
                     0 => {
                         if is_cluster {
@@ -458,7 +453,7 @@ pub fn populate_chunk_flora<F>(
                     continue;
                 }
 
-                // Clustered Minecraft-style Leaf Litter patches on temperate/deciduous woodland floors
+                // Clustered Leaf Litter patches on temperate/deciduous woodland floors
                 if matches!(
                     col.biome,
                     BiomeType::YosemiteLowlands
@@ -716,12 +711,11 @@ fn populate_marine_column(
             for (i, (dx, dz)) in [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)].iter().enumerate() {
                 let nlx = lx as i32 + dx;
                 let nlz = lz as i32 + dz;
-                if !(0..CHUNK_SIZE as i32).contains(&nlx)
-                    || !(0..CHUNK_SIZE as i32).contains(&nlz)
+                if !(0..CHUNK_SIZE as i32).contains(&nlx) || !(0..CHUNK_SIZE as i32).contains(&nlz)
                 {
                     continue;
                 }
-                if ((h_vent >> (12 + i * 2)) % 3) == 0 {
+                if (h_vent >> (12 + i * 2)).is_multiple_of(3) {
                     let accent = if ((h_vent >> (10 + i)) & 1) == 0 {
                         Voxel::Magma
                     } else {
@@ -790,7 +784,7 @@ fn populate_marine_column(
         }
         if reef_patch > threshold && reef_cluster > 0.36 && r < chance {
             // Ensure seabed directly beneath coral colonies frequently transitions to Coralstone
-            if ((h >> 3) % 4) != 0 {
+            if !(h >> 3).is_multiple_of(4) {
                 let ly = surface_y - chunk_min_y;
                 if (0..CHUNK_SIZE as i32).contains(&ly) {
                     let idx = chunk_idx(lx, ly as usize, lz);
@@ -801,7 +795,7 @@ fn populate_marine_column(
             }
             // Pick a coherent colony species per small 5x5 cell so nearby corals form lush reefs
             let colony_h = hash2d(wx.div_euclid(5), wz.div_euclid(5), seed ^ 0xC07A_5512);
-            let variant = if ((h >> 6) % 5) == 0 {
+            let variant = if (h >> 6).is_multiple_of(5) {
                 (h >> 8) % 10
             } else {
                 (colony_h >> 4) % 10
@@ -831,7 +825,8 @@ fn populate_marine_column(
                                    orient: u8| {
                 let nlx = tx - chunk_origin_x;
                 let nlz = tz - chunk_origin_z;
-                if !(0..CHUNK_SIZE as i32).contains(&nlx) || !(0..CHUNK_SIZE as i32).contains(&nlz) {
+                if !(0..CHUNK_SIZE as i32).contains(&nlx) || !(0..CHUNK_SIZE as i32).contains(&nlz)
+                {
                     return;
                 }
                 if ty >= water_level {
@@ -857,7 +852,7 @@ fn populate_marine_column(
                                         bz: i32,
                                         dh: u32| {
                 // Top fan (orientation 0: floor +Y)
-                if ((dh >> 2) % 3) != 0 {
+                if !(dh >> 2).is_multiple_of(3) {
                     try_place_coral(
                         voxels,
                         chunk_shapes,
@@ -871,12 +866,7 @@ fn populate_marine_column(
                 }
                 // Lateral wall coral fans (orientations 2..=5, identical to cave crystal clusters!)
                 // 2: +Z (North wall), 3: -Z (South wall), 4: +X (West wall), 5: -X (East wall)
-                let sides: [(i32, i32, u8); 4] = [
-                    (0, 1, 2),
-                    (0, -1, 3),
-                    (1, 0, 4),
-                    (-1, 0, 5),
-                ];
+                let sides: [(i32, i32, u8); 4] = [(0, 1, 2), (0, -1, 3), (1, 0, 4), (-1, 0, 5)];
                 for (si, &(sdx, sdz, sorient)) in sides.iter().enumerate() {
                     if ((dh >> (6 + si * 3)) % 5) < 2 {
                         try_place_coral(
@@ -941,7 +931,7 @@ fn populate_marine_column(
                         }
                         let arm_dirs = [(1, 0), (-1, 0), (0, 1), (0, -1)];
                         for (ai, &(adx, adz)) in arm_dirs.iter().enumerate() {
-                            if ((h >> (10 + ai * 2)) % 3) != 0 {
+                            if !(h >> (10 + ai * 2)).is_multiple_of(3) {
                                 let arm_y = floor_y + stem_h - 1;
                                 try_place_coral(
                                     voxels,
@@ -1006,8 +996,10 @@ fn populate_marine_column(
                             BlockShape::Full,
                             0,
                         );
-                        for (ai, &(adx, adz)) in [(1, 0), (-1, 0), (0, 1), (0, -1)].iter().enumerate() {
-                            if ((h >> (10 + ai * 2)) % 2) == 0 {
+                        for (ai, &(adx, adz)) in
+                            [(1, 0), (-1, 0), (0, 1), (0, -1)].iter().enumerate()
+                        {
+                            if (h >> (10 + ai * 2)).is_multiple_of(2) {
                                 try_place_coral(
                                     voxels,
                                     chunk_shapes,
@@ -1028,14 +1020,7 @@ fn populate_marine_column(
                                 );
                             }
                         }
-                        decorate_coral_block(
-                            voxels,
-                            chunk_shapes,
-                            wx,
-                            floor_y + 1,
-                            wz,
-                            h ^ 0x7722,
-                        );
+                        decorate_coral_block(voxels, chunk_shapes, wx, floor_y + 1, wz, h ^ 0x7722);
                     }
                 }
             } else {
@@ -1071,7 +1056,11 @@ fn populate_marine_column(
                 (Voxel::KelpPlant, Voxel::Kelp)
             };
             for dy in 0..stalk_h {
-                let v = if dy + 1 == stalk_h { tip_vox } else { plant_vox };
+                let v = if dy + 1 == stalk_h {
+                    tip_vox
+                } else {
+                    plant_vox
+                };
                 set_voxel_in_chunk(
                     voxels,
                     chunk_shapes,
@@ -1091,7 +1080,7 @@ fn populate_marine_column(
     // Lush Seagrass & Red Algae underwater meadows
     let sg_patch = patch_noise(wx, wz, 14.0, seed ^ 0x5EA6_7A55);
     if sg_patch > 0.35 && r < 0.22 {
-        let vox = if ((h >> 10) % 6) == 0 {
+        let vox = if (h >> 10).is_multiple_of(6) {
             Voxel::RedAlgae
         } else {
             Voxel::Seagrass
@@ -1233,13 +1222,22 @@ fn select_surface_flora_column(
 
     // Coastal beaches & GravelBeach: Dry Wildgrass & sparse Sea Oats on sand, plus hardy grass patches on dirty gravel
     if col.is_beach || col.biome == BiomeType::MirageIsles || col.biome == BiomeType::GravelBeach {
-        if matches!(ground, Voxel::GravelDirty | Voxel::GravelAshy) && grass_patch > 0.36 && roll < 0.095 {
+        if matches!(ground, Voxel::GravelDirty | Voxel::GravelAshy)
+            && grass_patch > 0.36
+            && roll < 0.095
+        {
             let vox = match (h >> 8) % 4 {
                 0 | 1 => Voxel::VegeWildgrass,
                 2 => Voxel::VegeDrygrass,
                 _ => Voxel::VegeBluffGrass,
             };
-            return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
+            return Some((
+                SurfaceFloraDecision::Cross {
+                    bot: vox,
+                    top: None,
+                },
+                h,
+            ));
         } else if ground.is_sandy_soil() && grass_patch > 0.60 && roll < 0.015 {
             return Some((
                 SurfaceFloraDecision::Cross {
@@ -1294,7 +1292,13 @@ fn select_surface_flora_column(
                         3 => Voxel::FlowerCactusFlower,
                         _ => Voxel::VegeDrygrass,
                     };
-                    return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
+                    return Some((
+                        SurfaceFloraDecision::Cross {
+                            bot: vox,
+                            top: None,
+                        },
+                        h,
+                    ));
                 }
             }
             None
@@ -1310,7 +1314,13 @@ fn select_surface_flora_column(
                     _ => Voxel::FlowerGlobeMallow,
                 };
                 if vox.can_be_placed_on_ground(ground) {
-                    return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
+                    return Some((
+                        SurfaceFloraDecision::Cross {
+                            bot: vox,
+                            top: None,
+                        },
+                        h,
+                    ));
                 }
             }
             None
@@ -1338,12 +1348,18 @@ fn select_surface_flora_column(
                     return Some((SurfaceFloraDecision::Cross { bot, top: top_opt }, h));
                 }
             } else if roll < 0.085 && grass_patch > 0.34 && ground.is_fertile_soil() {
-                let vox = if ((h >> 12) % 4) == 0 {
+                let vox = if (h >> 12).is_multiple_of(4) {
                     Voxel::FlowerWildflowers
                 } else {
                     Voxel::VegeWildgrass
                 };
-                return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
+                return Some((
+                    SurfaceFloraDecision::Cross {
+                        bot: vox,
+                        top: None,
+                    },
+                    h,
+                ));
             }
             None
         }
@@ -1356,7 +1372,13 @@ fn select_surface_flora_column(
                     3 => Voxel::FlowerAllium,
                     _ => Voxel::FlowerIris,
                 };
-                return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
+                return Some((
+                    SurfaceFloraDecision::Cross {
+                        bot: vox,
+                        top: None,
+                    },
+                    h,
+                ));
             } else if roll < 0.075 && grass_patch > 0.34 && ground.is_fertile_soil() {
                 return Some((
                     SurfaceFloraDecision::Cross {
@@ -1372,14 +1394,14 @@ fn select_surface_flora_column(
         // --- SAKURA GROVE ---
         BiomeType::SakuraGrove => {
             if flower_patch > 0.50 && roll < 0.060 && ground.is_fertile_soil() {
-                let vox = if ((h >> 8) % 4) == 0 {
+                let vox = if (h >> 8).is_multiple_of(4) {
                     Voxel::FlowerWhitePetals
                 } else {
                     Voxel::FlowerPinkPetals
                 };
                 return Some((SurfaceFloraDecision::FlatPad(vox), h));
             } else if roll < 0.070 && grass_patch > 0.34 && ground.is_fertile_soil() {
-                if ((h >> 12) % 3) == 0 {
+                if (h >> 12).is_multiple_of(3) {
                     return Some((SurfaceFloraDecision::FlatPad(Voxel::FlowerClover), h));
                 }
                 return Some((
@@ -1438,7 +1460,13 @@ fn select_surface_flora_column(
                     3 => Voxel::VegeMossgrass,
                     _ => Voxel::FungiVerdigris,
                 };
-                return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
+                return Some((
+                    SurfaceFloraDecision::Cross {
+                        bot: vox,
+                        top: None,
+                    },
+                    h,
+                ));
             }
             None
         }
@@ -1456,7 +1484,13 @@ fn select_surface_flora_column(
                     4 => Voxel::FungiAmanita,
                     _ => Voxel::FungiPorcini,
                 };
-                return Some((SurfaceFloraDecision::Cross { bot: vox, top: None }, h));
+                return Some((
+                    SurfaceFloraDecision::Cross {
+                        bot: vox,
+                        top: None,
+                    },
+                    h,
+                ));
             }
             None
         }
@@ -1490,7 +1524,10 @@ fn select_surface_flora_column(
                         Voxel::FlowerBlueHydrangeaBottom,
                         Some(Voxel::FlowerBlueHydrangeaTop),
                     ),
-                    _ => (Voxel::FlowerSnapdragonBottom, Some(Voxel::FlowerSnapdragonTop)),
+                    _ => (
+                        Voxel::FlowerSnapdragonBottom,
+                        Some(Voxel::FlowerSnapdragonTop),
+                    ),
                 };
                 return Some((SurfaceFloraDecision::Cross { bot, top: top_opt }, h));
             } else if grass_patch > 0.32 && roll < 0.095 {
@@ -1589,9 +1626,7 @@ pub fn sample_lod_surface_prop(
             height: height as f32,
             half_width: if is_lod1 { 0.35 } else { 0.38 },
         }),
-        SurfaceFloraDecision::FlatPad(voxel) => {
-            is_lod1.then_some(LodFloraKind::FlatCarpet(voxel))
-        }
+        SurfaceFloraDecision::FlatPad(voxel) => is_lod1.then_some(LodFloraKind::FlatCarpet(voxel)),
         SurfaceFloraDecision::Cross { bot, top } => {
             if !is_lod1 {
                 return None;
@@ -1756,7 +1791,7 @@ fn populate_cave_flora(
                         0.008
                     };
                     if r < chance {
-                        let vox = if is_mushroom_cave || ((h >> 8) % 4) == 0 {
+                        let vox = if is_mushroom_cave || (h >> 8).is_multiple_of(4) {
                             match (h >> 12) % 5 {
                                 0 => Voxel::FungiAmanita,
                                 1 => Voxel::FungiPorcini,

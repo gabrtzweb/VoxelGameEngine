@@ -1,8 +1,8 @@
-use bevy::{platform::collections::HashMap, prelude::*};
 use crate::{
     audio::{PlaySpatialSfxEvent, material::SoundMaterial},
     gameplay::feedback::{BlockBreakEvent, BlockPlaceEvent},
 };
+use bevy::{platform::collections::HashMap, prelude::*};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum BlockSoundKind {
@@ -86,9 +86,7 @@ fn handle_block_break_audio(
     // Subtle pitch variation between 0.94 and 1.06 to prevent monotonous sound
     let speed = 0.94 + rand_val * 0.12;
 
-    commands.trigger(
-        PlaySpatialSfxEvent::new(sound, world_pos, 0.90, 28.0).with_speed(speed),
-    );
+    commands.trigger(PlaySpatialSfxEvent::new(sound, world_pos, 0.90, 28.0).with_speed(speed));
 }
 
 fn handle_block_place_audio(
@@ -113,7 +111,5 @@ fn handle_block_place_audio(
     let world_pos = event.position.as_vec3() + Vec3::splat(0.5);
     let speed = 0.94 + rand_val * 0.12;
 
-    commands.trigger(
-        PlaySpatialSfxEvent::new(sound, world_pos, 0.85, 24.0).with_speed(speed),
-    );
+    commands.trigger(PlaySpatialSfxEvent::new(sound, world_pos, 0.85, 24.0).with_speed(speed));
 }

@@ -67,11 +67,10 @@ pub fn find_column_surface_y(
     min_y: i32,
 ) -> Option<i32> {
     for y in (min_y..=start_y).rev() {
-        if let Some(voxel) = voxel_world.get_voxel(IVec3::new(wx, y, wz)) {
-            if voxel != Voxel::Air && !voxel.is_empty() {
+        if let Some(voxel) = voxel_world.get_voxel(IVec3::new(wx, y, wz))
+            && voxel != Voxel::Air && !voxel.is_empty() {
                 return Some(y);
             }
-        }
     }
     None
 }
@@ -109,7 +108,10 @@ pub fn emit_weather_particles(
         cam_pos.y.floor() as i32,
         cam_pos.z.floor() as i32,
     );
-    if voxel_world.get_voxel(cam_block).is_some_and(|v| v.is_water()) {
+    if voxel_world
+        .get_voxel(cam_block)
+        .is_some_and(|v| v.is_water())
+    {
         return;
     }
 
@@ -293,11 +295,9 @@ pub fn emit_weather_particles(
 
             if let Some(roof_block_y) =
                 find_column_surface_y(&voxel_world, wx, wz, scan_start_y, scan_min_y)
-            {
-                if candidate_y <= roof_block_y as f32 + 1.0 {
+                && candidate_y <= roof_block_y as f32 + 1.0 {
                     continue;
                 }
-            }
 
             let pos = Vec3::new(lead_pos.x + offset_x, candidate_y, lead_pos.z + offset_z);
             let vel = Vec3::new(
@@ -311,17 +311,38 @@ pub fn emit_weather_particles(
             let flip_u = rng.next_f32() < 0.5;
             let flip_v = rng.next_f32() < 0.5;
             let uv = [
-                if flip_u { UV_FOG_DITHERED[2] } else { UV_FOG_DITHERED[0] },
-                if flip_v { UV_FOG_DITHERED[3] } else { UV_FOG_DITHERED[1] },
-                if flip_u { UV_FOG_DITHERED[0] } else { UV_FOG_DITHERED[2] },
-                if flip_v { UV_FOG_DITHERED[1] } else { UV_FOG_DITHERED[3] },
+                if flip_u {
+                    UV_FOG_DITHERED[2]
+                } else {
+                    UV_FOG_DITHERED[0]
+                },
+                if flip_v {
+                    UV_FOG_DITHERED[3]
+                } else {
+                    UV_FOG_DITHERED[1]
+                },
+                if flip_u {
+                    UV_FOG_DITHERED[0]
+                } else {
+                    UV_FOG_DITHERED[2]
+                },
+                if flip_v {
+                    UV_FOG_DITHERED[1]
+                } else {
+                    UV_FOG_DITHERED[3]
+                },
             ];
             let shade = 0.88 + rng.next_f32() * 0.18;
             pool.spawn(
                 pos,
                 vel,
                 Vec2::new(w_size, h_size),
-                [0.85 * shade, 0.72 * shade, 0.45 * shade, 0.24 + rng.next_f32() * 0.14],
+                [
+                    0.85 * shade,
+                    0.72 * shade,
+                    0.45 * shade,
+                    0.24 + rng.next_f32() * 0.14,
+                ],
                 uv,
                 ParticleRotationMode::CopyCamera,
                 ParticleFadeMode::InOut,
@@ -352,8 +373,8 @@ pub fn emit_weather_particles(
 
             for y in (min_y..=start_y).rev() {
                 let check_pos = IVec3::new(wx, y, wz);
-                if let Some(voxel) = voxel_world.get_voxel(check_pos) {
-                    if voxel != Voxel::Air {
+                if let Some(voxel) = voxel_world.get_voxel(check_pos)
+                    && voxel != Voxel::Air {
                         let is_water = matches!(voxel, Voxel::LiquidWater | Voxel::WaterOccupied)
                             || voxel.is_water();
                         let is_hot = matches!(
@@ -416,7 +437,6 @@ pub fn emit_weather_particles(
                         }
                         break;
                     }
-                }
             }
         }
     }
@@ -435,25 +455,53 @@ pub fn emit_weather_particles(
             let wy = (lead_pos.y + rng.next_triangle(4.0)).floor() as i32;
 
             let check_pos = IVec3::new(wx, wy, wz);
-            if let Some(voxel) = voxel_world.get_voxel(check_pos) {
-                if voxel.is_collidable() {
+            if let Some(voxel) = voxel_world.get_voxel(check_pos)
+                && voxel.is_collidable() {
                     let directions = [
-                        (IVec3::new(1, 0, 0), ParticleRotationMode::VerticalX, Vec3::new(0.505, 0.5, 0.0)),
-                        (IVec3::new(-1, 0, 0), ParticleRotationMode::VerticalX, Vec3::new(-0.505, 0.5, 0.0)),
-                        (IVec3::new(0, 0, 1), ParticleRotationMode::VerticalZ, Vec3::new(0.0, 0.5, 0.505)),
-                        (IVec3::new(0, 0, -1), ParticleRotationMode::VerticalZ, Vec3::new(0.0, 0.5, -0.505)),
+                        (
+                            IVec3::new(1, 0, 0),
+                            ParticleRotationMode::VerticalX,
+                            Vec3::new(0.505, 0.5, 0.0),
+                        ),
+                        (
+                            IVec3::new(-1, 0, 0),
+                            ParticleRotationMode::VerticalX,
+                            Vec3::new(-0.505, 0.5, 0.0),
+                        ),
+                        (
+                            IVec3::new(0, 0, 1),
+                            ParticleRotationMode::VerticalZ,
+                            Vec3::new(0.0, 0.5, 0.505),
+                        ),
+                        (
+                            IVec3::new(0, 0, -1),
+                            ParticleRotationMode::VerticalZ,
+                            Vec3::new(0.0, 0.5, -0.505),
+                        ),
                     ];
 
                     let dir_idx = (rng.next_u32() % 4) as usize;
                     let (offset_dir, rot_mode, face_offset) = directions[dir_idx];
                     let neighbor_pos = check_pos + offset_dir;
 
-                    if let Some(Voxel::Air) = voxel_world.get_voxel(neighbor_pos) {
-                        if let Some(Voxel::Air) = voxel_world.get_voxel(neighbor_pos + IVec3::Y) {
+                    if let Some(Voxel::Air) = voxel_world.get_voxel(neighbor_pos)
+                        && let Some(Voxel::Air) = voxel_world.get_voxel(neighbor_pos + IVec3::Y) {
                             let streak_pos = Vec3::new(
-                                wx as f32 + face_offset.x + (if face_offset.x == 0.0 { rng.next_triangle(0.35) } else { 0.0 }),
+                                wx as f32
+                                    + face_offset.x
+                                    + (if face_offset.x == 0.0 {
+                                        rng.next_triangle(0.35)
+                                    } else {
+                                        0.0
+                                    }),
                                 wy as f32 + face_offset.y,
-                                wz as f32 + face_offset.z + (if face_offset.z == 0.0 { rng.next_triangle(0.35) } else { 0.0 }),
+                                wz as f32
+                                    + face_offset.z
+                                    + (if face_offset.z == 0.0 {
+                                        rng.next_triangle(0.35)
+                                    } else {
+                                        0.0
+                                    }),
                             );
 
                             pool.spawn(
@@ -469,9 +517,7 @@ pub fn emit_weather_particles(
                                 WeatherParticleKind::WindowStreak,
                             );
                         }
-                    }
                 }
-            }
         }
     }
 
@@ -492,8 +538,8 @@ pub fn emit_weather_particles(
 
             for y in (min_y..=start_y).rev() {
                 let check_pos = IVec3::new(wx, y, wz);
-                if let Some(voxel) = voxel_world.get_voxel(check_pos) {
-                    if voxel != Voxel::Air {
+                if let Some(voxel) = voxel_world.get_voxel(check_pos)
+                    && voxel != Voxel::Air {
                         let dust_pos = Vec3::new(
                             wx as f32 + rng.next_f32(),
                             y as f32 + 1.06,
@@ -514,13 +560,12 @@ pub fn emit_weather_particles(
                         );
                         break;
                     }
-                }
             }
         }
     }
 
     // -------------------------------------------------------------
-    // 8. Surface FX: Particle Rain Ground & Vertical Fog
+    // 8. Surface FX: Ground & Vertical Fog
     //    - `fog_after_rain` + `vertical_fog_after_rain` (post-rain / light rain)
     //    - `fog` + `vertical_fog` (always active in wet/misty biomes: Swamp, CloudForest, Jungle, Taiga)
     // -------------------------------------------------------------
@@ -562,8 +607,8 @@ pub fn emit_weather_particles(
 
             for y in (min_y..=start_y).rev() {
                 let check_pos = IVec3::new(wx, y, wz);
-                if let Some(voxel) = voxel_world.get_voxel(check_pos) {
-                    if voxel != Voxel::Air {
+                if let Some(voxel) = voxel_world.get_voxel(check_pos)
+                    && voxel != Voxel::Air {
                         let spawn_vertical = rng.next_f32() < 0.50;
                         if spawn_vertical {
                             // `vertical_fog` / `vertical_fog_after_rain` using `horizontal_fog.png`
@@ -575,10 +620,7 @@ pub fn emit_weather_particles(
                             pool.spawn(
                                 fog_pos,
                                 Vec3::new(current_wind.x * 0.08, 0.04, current_wind.z * 0.08),
-                                Vec2::new(
-                                    3.5 + rng.next_f32() * 2.0,
-                                    2.6 + rng.next_f32() * 1.4,
-                                ),
+                                Vec2::new(3.5 + rng.next_f32() * 2.0, 2.6 + rng.next_f32() * 1.4),
                                 [0.92, 0.96, 1.0, 0.42 * fog_factor],
                                 UV_HORIZONTAL_FOG,
                                 ParticleRotationMode::Vertical,
@@ -613,7 +655,6 @@ pub fn emit_weather_particles(
                         }
                         break;
                     }
-                }
             }
         }
     }

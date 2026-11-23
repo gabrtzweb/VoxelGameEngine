@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use crate::world::{BlockShape, CHUNK_SIZE, Voxel};
+use bevy::prelude::*;
 
 /// Stub: procedural ore vein generation is temporarily bypassed to showcase pure terrain landforms.
 #[inline]

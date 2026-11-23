@@ -68,9 +68,15 @@ pub fn format_target_hud_title(
     extra_voxel: Option<Voxel>,
     loc: Option<&crate::core::Localization>,
 ) -> String {
-    let voxel_name = loc.map_or_else(|| voxel.label().to_string(), |l| l.t_block(voxel).to_string());
+    let voxel_name = loc.map_or_else(
+        || voxel.label().to_string(),
+        |l| l.t_block(voxel).to_string(),
+    );
     if let Some(extra) = extra_voxel {
-        let extra_name = loc.map_or_else(|| extra.label().to_string(), |l| l.t_block(extra).to_string());
+        let extra_name = loc.map_or_else(
+            || extra.label().to_string(),
+            |l| l.t_block(extra).to_string(),
+        );
         if let Some(l) = loc {
             return l.t_args("hud.double_slab", &[&voxel_name, &extra_name]);
         }
@@ -184,8 +190,7 @@ fn setup_target_hud(
                             col.spawn((
                                 TargetHudSubtitle,
                                 Text::new(
-                                    loc.as_ref()
-                                        .map_or("Voxel Engine", |l| l.t("hud.subtitle")),
+                                    loc.as_ref().map_or("Voxel Engine", |l| l.t("hud.subtitle")),
                                 ),
                                 subtitle_font,
                                 TextColor(Color::srgb(0.42, 0.65, 0.96)),

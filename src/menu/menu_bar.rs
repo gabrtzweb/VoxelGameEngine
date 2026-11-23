@@ -1,9 +1,4 @@
-use bevy::{
-    picking::hover::Hovered,
-    prelude::*,
-    ui::Pressed,
-    ui_widgets::Button,
-};
+use bevy::{picking::hover::Hovered, prelude::*, ui::Pressed, ui_widgets::Button};
 
 use crate::{
     core::{
@@ -385,8 +380,7 @@ fn spawn_menu_bar(
                         clk.spawn((
                             MenuBarClockIcon,
                             ImageNode {
-                                image: asset_server
-                                    .load("textures/interfaces/icons/time_noon.png"),
+                                image: asset_server.load("textures/interfaces/icons/time_noon.png"),
                                 ..default()
                             },
                             Node {
@@ -695,4 +689,3 @@ fn update_menu_bar_clock(
         }
     }
 }
-

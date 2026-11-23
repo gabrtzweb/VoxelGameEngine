@@ -1,8 +1,4 @@
-use bevy::{
-    picking::hover::Hovered,
-    prelude::*,
-    ui_widgets::Button,
-};
+use bevy::{picking::hover::Hovered, prelude::*, ui_widgets::Button};
 
 use crate::core::{AppFont, Localization, text_shadow_default};
 
@@ -92,7 +88,8 @@ fn spawn_quests_menu(
     game_settings: Option<Res<GameSettings>>,
 ) {
     let t = |key: &'static str| -> String {
-        loc.as_ref().map_or_else(|| key.to_string(), |l| l.t(key).to_string())
+        loc.as_ref()
+            .map_or_else(|| key.to_string(), |l| l.t(key).to_string())
     };
     let font_handle = app_font.as_ref().map(|f| f.source());
     let make_font = |size: f32| {

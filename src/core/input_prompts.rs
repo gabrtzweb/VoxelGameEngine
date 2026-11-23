@@ -127,9 +127,7 @@ impl InputPromptAtlas {
             KeyCode::KeyM => InputPromptTiles::Single(Self::idx(25, r(4))),
             KeyCode::Comma => InputPromptTiles::Single(Self::idx(27, r(6))),
             KeyCode::Period => InputPromptTiles::Single(Self::idx(27, r(5))),
-            KeyCode::Slash | KeyCode::NumpadDivide => {
-                InputPromptTiles::Single(Self::idx(29, r(4)))
-            }
+            KeyCode::Slash | KeyCode::NumpadDivide => InputPromptTiles::Single(Self::idx(29, r(4))),
             KeyCode::ArrowUp => InputPromptTiles::Single(Self::idx(30, r(4))),
             KeyCode::ArrowRight => InputPromptTiles::Single(Self::idx(31, r(4))),
             KeyCode::ArrowDown => InputPromptTiles::Single(Self::idx(32, r(4))),
@@ -330,11 +328,17 @@ fn sync_dynamic_input_prompts(
     prompt_q: Query<(&DynamicInputPrompt, &Children)>,
     mut primary_q: Query<
         &mut ImageNode,
-        (With<InputPromptPrimaryTile>, Without<InputPromptSecondaryTile>),
+        (
+            With<InputPromptPrimaryTile>,
+            Without<InputPromptSecondaryTile>,
+        ),
     >,
     mut secondary_q: Query<
         (&mut ImageNode, &mut Node),
-        (With<InputPromptSecondaryTile>, Without<InputPromptPrimaryTile>),
+        (
+            With<InputPromptSecondaryTile>,
+            Without<InputPromptPrimaryTile>,
+        ),
     >,
 ) {
     let Some(atlas) = atlas else {

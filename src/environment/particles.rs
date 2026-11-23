@@ -629,7 +629,11 @@ pub fn update_world_particles(
                     let freq = 1.2 + pool.next_f32() * 0.6;
                     let particle = WorldParticle {
                         kind: WorldParticleKind::CampfireSmoke,
-                        position: Vec3::new(pos.x as f32 + 0.5 + ox, pos.y as f32 + 0.72, pos.z as f32 + 0.5 + oz),
+                        position: Vec3::new(
+                            pos.x as f32 + 0.5 + ox,
+                            pos.y as f32 + 0.72,
+                            pos.z as f32 + 0.5 + oz,
+                        ),
                         velocity: Vec3::new(vx, vy, vz),
                         size,
                         grow_rate: if use_small { 0.10 } else { 0.14 },
@@ -905,7 +909,10 @@ pub fn update_world_particles(
                 let next_pos = p.position
                     + (p.velocity + Vec3::new(wander_x, wander_y, wander_z) + wind_vec * 0.08) * dt;
                 let iv = next_pos.floor().as_ivec3();
-                if voxel_world.get_voxel(iv).is_some_and(|v| v.is_collidable() || v.is_water()) {
+                if voxel_world
+                    .get_voxel(iv)
+                    .is_some_and(|v| v.is_collidable() || v.is_water())
+                {
                     p.velocity = -p.velocity;
                 } else {
                     p.position = next_pos;
@@ -973,12 +980,18 @@ pub fn update_world_particles(
             WorldParticleKind::Bubble => {
                 let light = (0.35 + 0.65 * day_light).min(1.0);
                 let a = p.base_alpha * smooth_in_out_alpha(p.age, p.max_age, 0.12, 0.4);
-                ([p.color[0] * light, p.color[1] * light, p.color[2] * light], a)
+                (
+                    [p.color[0] * light, p.color[1] * light, p.color[2] * light],
+                    a,
+                )
             }
             WorldParticleKind::BubblePop => {
                 let light = (0.35 + 0.65 * day_light).min(1.0);
                 let a = 1.0 - progress * 0.35;
-                ([p.color[0] * light, p.color[1] * light, p.color[2] * light], a)
+                (
+                    [p.color[0] * light, p.color[1] * light, p.color[2] * light],
+                    a,
+                )
             }
             WorldParticleKind::FootstepDust => {
                 let t = 1.0 - progress;
@@ -998,10 +1011,7 @@ pub fn update_world_particles(
                 let glow = 0.25 + 1.35 * blink;
                 let fade = smooth_in_out_alpha(p.age, p.max_age, 0.9, 1.4);
                 let a = fade * (0.20 + 0.80 * blink);
-                (
-                    [p.color[0] * glow, p.color[1] * glow, p.color[2] * glow],
-                    a,
-                )
+                ([p.color[0] * glow, p.color[1] * glow, p.color[2] * glow], a)
             }
             WorldParticleKind::Pollen => {
                 let a = p.base_alpha * smooth_in_out_alpha(p.age, p.max_age, 0.8, 1.4);

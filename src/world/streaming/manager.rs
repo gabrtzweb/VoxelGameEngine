@@ -1,22 +1,17 @@
 use std::collections::{HashMap, HashSet};
 
-use bevy::{
-    prelude::*,
-    tasks::Task,
-};
+use bevy::{prelude::*, tasks::Task};
 
 use crate::{
     generation::{BiomeType, CaveGenerator, ClimateGenerator, StrataGenerator, TerrainGenerator},
     meshing::{
-        ChunkLod, ChunkMeshRegistry, ChunkMeshingTask, LodMeshRegistry,
-        remove_chunk_render, remove_lod_render,
+        ChunkLod, ChunkMeshRegistry, ChunkMeshingTask, LodMeshRegistry, remove_chunk_render,
+        remove_lod_render,
     },
     player::PlayerSet,
     simulation::lighting::{VoxelLightRegistry, remove_chunk_lights},
     world::{
-        chunk::Chunk,
-        modifications::WorldModificationStore,
-        storage::VoxelWorld,
+        chunk::Chunk, modifications::WorldModificationStore, storage::VoxelWorld,
         streaming::queues::ChunkStreamingQueues,
     },
 };
@@ -140,7 +135,7 @@ impl Plugin for ChunkStreamingPlugin {
                     .chain()
                     .after(PlayerSet::Movement)
                     .run_if(|session: Option<Res<crate::world::WorldSession>>| {
-                        session.map_or(true, |s| s.is_active)
+                        session.is_none_or(|s| s.is_active)
                     }),
             );
     }

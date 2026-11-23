@@ -1,5 +1,5 @@
-use std::collections::{HashMap, HashSet};
 use bevy::prelude::*;
+use std::collections::{HashMap, HashSet};
 
 use crate::{
     generation::TerrainGenerator,
@@ -355,7 +355,9 @@ pub fn desired_chunk_coordinates_cached(
 
             let (col_min_y, col_max_y) = if horizontal_dist_sq <= 16 {
                 // Near player: load deeper for caves & ravines the player can enter
-                let min_y = (center.y - 4).min(est_min_chunk_y - 1).max(WORLD_MIN_CHUNK_Y);
+                let min_y = (center.y - 4)
+                    .min(est_min_chunk_y - 1)
+                    .max(WORLD_MIN_CHUNK_Y);
                 let max_y_col = (est_max_chunk_y + 1).max(center.y + 2).min(max_y);
                 (min_y, max_y_col)
             } else {

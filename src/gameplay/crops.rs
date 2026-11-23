@@ -65,13 +65,25 @@ pub fn advance_crop(
         Voxel::CropCarrotsStage1 => set_block(world, modifications, pos, Voxel::CropCarrotsStage2),
         Voxel::CropCarrotsStage2 => set_block(world, modifications, pos, Voxel::CropCarrotsStage3),
 
-        Voxel::CropPotatoesStage0 => set_block(world, modifications, pos, Voxel::CropPotatoesStage1),
-        Voxel::CropPotatoesStage1 => set_block(world, modifications, pos, Voxel::CropPotatoesStage2),
-        Voxel::CropPotatoesStage2 => set_block(world, modifications, pos, Voxel::CropPotatoesStage3),
+        Voxel::CropPotatoesStage0 => {
+            set_block(world, modifications, pos, Voxel::CropPotatoesStage1)
+        }
+        Voxel::CropPotatoesStage1 => {
+            set_block(world, modifications, pos, Voxel::CropPotatoesStage2)
+        }
+        Voxel::CropPotatoesStage2 => {
+            set_block(world, modifications, pos, Voxel::CropPotatoesStage3)
+        }
 
-        Voxel::CropBeetrootsStage0 => set_block(world, modifications, pos, Voxel::CropBeetrootsStage1),
-        Voxel::CropBeetrootsStage1 => set_block(world, modifications, pos, Voxel::CropBeetrootsStage2),
-        Voxel::CropBeetrootsStage2 => set_block(world, modifications, pos, Voxel::CropBeetrootsStage3),
+        Voxel::CropBeetrootsStage0 => {
+            set_block(world, modifications, pos, Voxel::CropBeetrootsStage1)
+        }
+        Voxel::CropBeetrootsStage1 => {
+            set_block(world, modifications, pos, Voxel::CropBeetrootsStage2)
+        }
+        Voxel::CropBeetrootsStage2 => {
+            set_block(world, modifications, pos, Voxel::CropBeetrootsStage3)
+        }
 
         Voxel::CropOnionsStage0 => set_block(world, modifications, pos, Voxel::CropOnionsStage1),
         Voxel::CropOnionsStage1 => set_block(world, modifications, pos, Voxel::CropOnionsStage2),
@@ -81,9 +93,15 @@ pub fn advance_crop(
         Voxel::CropGarlicStage1 => set_block(world, modifications, pos, Voxel::CropGarlicStage2),
         Voxel::CropGarlicStage2 => set_block(world, modifications, pos, Voxel::CropGarlicStage3),
 
-        Voxel::CropCabbagesStage0 => set_block(world, modifications, pos, Voxel::CropCabbagesStage1),
-        Voxel::CropCabbagesStage1 => set_block(world, modifications, pos, Voxel::CropCabbagesStage2),
-        Voxel::CropCabbagesStage2 => set_block(world, modifications, pos, Voxel::CropCabbagesStage3),
+        Voxel::CropCabbagesStage0 => {
+            set_block(world, modifications, pos, Voxel::CropCabbagesStage1)
+        }
+        Voxel::CropCabbagesStage1 => {
+            set_block(world, modifications, pos, Voxel::CropCabbagesStage2)
+        }
+        Voxel::CropCabbagesStage2 => {
+            set_block(world, modifications, pos, Voxel::CropCabbagesStage3)
+        }
 
         Voxel::CropLettuceStage0 => set_block(world, modifications, pos, Voxel::CropLettuceStage1),
         Voxel::CropLettuceStage1 => set_block(world, modifications, pos, Voxel::CropLettuceStage2),
@@ -127,9 +145,15 @@ pub fn advance_crop(
         }
 
         // Corn: budding 0..3 -> tall bottom/top 0..3
-        Voxel::CropCornBuddingStage0 => set_block(world, modifications, pos, Voxel::CropCornBuddingStage1),
-        Voxel::CropCornBuddingStage1 => set_block(world, modifications, pos, Voxel::CropCornBuddingStage2),
-        Voxel::CropCornBuddingStage2 => set_block(world, modifications, pos, Voxel::CropCornBuddingStage3),
+        Voxel::CropCornBuddingStage0 => {
+            set_block(world, modifications, pos, Voxel::CropCornBuddingStage1)
+        }
+        Voxel::CropCornBuddingStage1 => {
+            set_block(world, modifications, pos, Voxel::CropCornBuddingStage2)
+        }
+        Voxel::CropCornBuddingStage2 => {
+            set_block(world, modifications, pos, Voxel::CropCornBuddingStage3)
+        }
         Voxel::CropCornBuddingStage3 => {
             let top_pos = pos + IVec3::Y;
             if is_empty_for_plant(world, top_pos) {
@@ -145,41 +169,41 @@ pub fn advance_crop(
                 false
             }
         }
-        Voxel::CropCornBottomStage0 => {
-            set_double_tall(
-                world,
-                modifications,
-                pos,
-                Voxel::CropCornBottomStage1,
-                pos + IVec3::Y,
-                Voxel::CropCornTopStage1,
-            )
-        }
-        Voxel::CropCornBottomStage1 => {
-            set_double_tall(
-                world,
-                modifications,
-                pos,
-                Voxel::CropCornBottomStage2,
-                pos + IVec3::Y,
-                Voxel::CropCornTopStage2,
-            )
-        }
-        Voxel::CropCornBottomStage2 => {
-            set_double_tall(
-                world,
-                modifications,
-                pos,
-                Voxel::CropCornBottomStage3,
-                pos + IVec3::Y,
-                Voxel::CropCornTopStage3,
-            )
-        }
+        Voxel::CropCornBottomStage0 => set_double_tall(
+            world,
+            modifications,
+            pos,
+            Voxel::CropCornBottomStage1,
+            pos + IVec3::Y,
+            Voxel::CropCornTopStage1,
+        ),
+        Voxel::CropCornBottomStage1 => set_double_tall(
+            world,
+            modifications,
+            pos,
+            Voxel::CropCornBottomStage2,
+            pos + IVec3::Y,
+            Voxel::CropCornTopStage2,
+        ),
+        Voxel::CropCornBottomStage2 => set_double_tall(
+            world,
+            modifications,
+            pos,
+            Voxel::CropCornBottomStage3,
+            pos + IVec3::Y,
+            Voxel::CropCornTopStage3,
+        ),
 
         // Coffee: budding 0..3 -> shrub bottom/top 0..3
-        Voxel::CropCoffeeBuddingStage0 => set_block(world, modifications, pos, Voxel::CropCoffeeBuddingStage1),
-        Voxel::CropCoffeeBuddingStage1 => set_block(world, modifications, pos, Voxel::CropCoffeeBuddingStage2),
-        Voxel::CropCoffeeBuddingStage2 => set_block(world, modifications, pos, Voxel::CropCoffeeBuddingStage3),
+        Voxel::CropCoffeeBuddingStage0 => {
+            set_block(world, modifications, pos, Voxel::CropCoffeeBuddingStage1)
+        }
+        Voxel::CropCoffeeBuddingStage1 => {
+            set_block(world, modifications, pos, Voxel::CropCoffeeBuddingStage2)
+        }
+        Voxel::CropCoffeeBuddingStage2 => {
+            set_block(world, modifications, pos, Voxel::CropCoffeeBuddingStage3)
+        }
         Voxel::CropCoffeeBuddingStage3 => {
             let top_pos = pos + IVec3::Y;
             if is_empty_for_plant(world, top_pos) {
@@ -195,55 +219,53 @@ pub fn advance_crop(
                 false
             }
         }
-        Voxel::CropCoffeeBottomStage0 => {
-            set_double_tall(
-                world,
-                modifications,
-                pos,
-                Voxel::CropCoffeeBottomStage1,
-                pos + IVec3::Y,
-                Voxel::CropCoffeeTopStage1,
-            )
-        }
-        Voxel::CropCoffeeBottomStage1 => {
-            set_double_tall(
-                world,
-                modifications,
-                pos,
-                Voxel::CropCoffeeBottomStage2,
-                pos + IVec3::Y,
-                Voxel::CropCoffeeTopStage2,
-            )
-        }
-        Voxel::CropCoffeeBottomStage2 => {
-            set_double_tall(
-                world,
-                modifications,
-                pos,
-                Voxel::CropCoffeeBottomStage3,
-                pos + IVec3::Y,
-                Voxel::CropCoffeeTopStage3,
-            )
-        }
+        Voxel::CropCoffeeBottomStage0 => set_double_tall(
+            world,
+            modifications,
+            pos,
+            Voxel::CropCoffeeBottomStage1,
+            pos + IVec3::Y,
+            Voxel::CropCoffeeTopStage1,
+        ),
+        Voxel::CropCoffeeBottomStage1 => set_double_tall(
+            world,
+            modifications,
+            pos,
+            Voxel::CropCoffeeBottomStage2,
+            pos + IVec3::Y,
+            Voxel::CropCoffeeTopStage2,
+        ),
+        Voxel::CropCoffeeBottomStage2 => set_double_tall(
+            world,
+            modifications,
+            pos,
+            Voxel::CropCoffeeBottomStage3,
+            pos + IVec3::Y,
+            Voxel::CropCoffeeTopStage3,
+        ),
 
         // Tomatoes: trellis budding 0..3 -> climbing vine top 0..3
-        Voxel::CropTomatoesBuddingStage0 => set_block(world, modifications, pos, Voxel::CropTomatoesBuddingStage1),
-        Voxel::CropTomatoesBuddingStage1 => set_block(world, modifications, pos, Voxel::CropTomatoesBuddingStage2),
-        Voxel::CropTomatoesBuddingStage2 => set_block(world, modifications, pos, Voxel::CropTomatoesBuddingStage3),
+        Voxel::CropTomatoesBuddingStage0 => {
+            set_block(world, modifications, pos, Voxel::CropTomatoesBuddingStage1)
+        }
+        Voxel::CropTomatoesBuddingStage1 => {
+            set_block(world, modifications, pos, Voxel::CropTomatoesBuddingStage2)
+        }
+        Voxel::CropTomatoesBuddingStage2 => {
+            set_block(world, modifications, pos, Voxel::CropTomatoesBuddingStage3)
+        }
         Voxel::CropTomatoesBuddingStage3 => {
             let top_pos = pos + IVec3::Y;
             let top_vox = world.get_voxel(top_pos);
             match top_vox {
-                None | Some(Voxel::Air) => {
-                    set_double_tall(
-                        world,
-                        modifications,
-                        pos,
-                        Voxel::CropTomatoesBuddingStage3,
-                        top_pos,
-                        Voxel::CropTomatoesVineStage0,
-                    )
-                }
+                None | Some(Voxel::Air) => set_double_tall(
+                    world,
+                    modifications,
+                    pos,
+                    Voxel::CropTomatoesBuddingStage3,
+                    top_pos,
+                    Voxel::CropTomatoesVineStage0,
+                ),
                 Some(Voxel::CropTomatoesVineStage0) => {
                     set_block(world, modifications, top_pos, Voxel::CropTomatoesVineStage1)
                 }
@@ -293,8 +315,12 @@ pub fn advance_crop(
         }
 
         // Melon & Pumpkin Stems (stages 0 -> 1 -> 2 -> spawn fruit)
-        Voxel::CropMelonStemStage0 => set_block(world, modifications, pos, Voxel::CropMelonStemStage1),
-        Voxel::CropMelonStemStage1 => set_block(world, modifications, pos, Voxel::CropMelonStemStage2),
+        Voxel::CropMelonStemStage0 => {
+            set_block(world, modifications, pos, Voxel::CropMelonStemStage1)
+        }
+        Voxel::CropMelonStemStage1 => {
+            set_block(world, modifications, pos, Voxel::CropMelonStemStage2)
+        }
         Voxel::CropMelonStemStage2 => try_spawn_cucurbit_fruit(
             world,
             modifications,
@@ -303,8 +329,12 @@ pub fn advance_crop(
             Voxel::MelonBlock,
         ),
 
-        Voxel::CropPumpkinStemStage0 => set_block(world, modifications, pos, Voxel::CropPumpkinStemStage1),
-        Voxel::CropPumpkinStemStage1 => set_block(world, modifications, pos, Voxel::CropPumpkinStemStage2),
+        Voxel::CropPumpkinStemStage0 => {
+            set_block(world, modifications, pos, Voxel::CropPumpkinStemStage1)
+        }
+        Voxel::CropPumpkinStemStage1 => {
+            set_block(world, modifications, pos, Voxel::CropPumpkinStemStage2)
+        }
         Voxel::CropPumpkinStemStage2 => try_spawn_cucurbit_fruit(
             world,
             modifications,
@@ -316,20 +346,44 @@ pub fn advance_crop(
         // Arboreal Cocoa Pods (preserve trunk attachment orientation!)
         Voxel::CropCocoaStage0 => {
             let orient = world.get_shape(pos).1;
-            set_shaped_block(world, modifications, pos, Voxel::CropCocoaStage1, BlockShape::CocoaPod, orient)
+            set_shaped_block(
+                world,
+                modifications,
+                pos,
+                Voxel::CropCocoaStage1,
+                BlockShape::CocoaPod,
+                orient,
+            )
         }
         Voxel::CropCocoaStage1 => {
             let orient = world.get_shape(pos).1;
-            set_shaped_block(world, modifications, pos, Voxel::CropCocoaStage2, BlockShape::CocoaPod, orient)
+            set_shaped_block(
+                world,
+                modifications,
+                pos,
+                Voxel::CropCocoaStage2,
+                BlockShape::CocoaPod,
+                orient,
+            )
         }
 
         // Arboreal Hanging Coconuts
-        Voxel::CropCoconutStage0 => {
-            set_shaped_block(world, modifications, pos, Voxel::CropCoconutStage1, BlockShape::HangingFruit, 0)
-        }
-        Voxel::CropCoconutStage1 => {
-            set_shaped_block(world, modifications, pos, Voxel::CropCoconutStage2, BlockShape::HangingFruit, 0)
-        }
+        Voxel::CropCoconutStage0 => set_shaped_block(
+            world,
+            modifications,
+            pos,
+            Voxel::CropCoconutStage1,
+            BlockShape::HangingFruit,
+            0,
+        ),
+        Voxel::CropCoconutStage1 => set_shaped_block(
+            world,
+            modifications,
+            pos,
+            Voxel::CropCoconutStage2,
+            BlockShape::HangingFruit,
+            0,
+        ),
 
         _ => false,
     }
@@ -398,12 +452,18 @@ pub fn evaluate_crop_break_drops(voxel: Voxel, rng: &mut u64) -> Vec<(Voxel, u32
         Voxel::CropCoffeeBottomStage3 | Voxel::CropCoffeeTopStage3 => {
             let berries = (next_rand() % 3) + 1;
             let seeds = (next_rand() % 2) + 1;
-            vec![(Voxel::ItemCoffeeBerries, berries), (Voxel::ItemCoffeeSeeds, seeds)]
+            vec![
+                (Voxel::ItemCoffeeBerries, berries),
+                (Voxel::ItemCoffeeSeeds, seeds),
+            ]
         }
         Voxel::CropTomatoesVineStage3 | Voxel::CropTomatoesBuddingStage3 => {
             let tomatoes = (next_rand() % 3) + 1;
             let seeds = (next_rand() % 2) + 1;
-            vec![(Voxel::ItemTomato, tomatoes), (Voxel::ItemTomatoSeeds, seeds)]
+            vec![
+                (Voxel::ItemTomato, tomatoes),
+                (Voxel::ItemTomatoSeeds, seeds),
+            ]
         }
         Voxel::CropRicePaniclesStage3 => {
             let rice = (next_rand() % 3) + 2;
@@ -493,8 +553,11 @@ pub fn evaluate_crop_break_drops(voxel: Voxel, rng: &mut u64) -> Vec<(Voxel, u32
         }
         Voxel::PumpkinBlock | Voxel::WildPumpkin => {
             let slices = (next_rand() % 3) + 2; // 2..4 slices
-            let seeds = (next_rand() % 3) + 1;  // 1..3 seeds
-            vec![(Voxel::ItemPumpkinSlice, slices), (Voxel::ItemPumpkinSeeds, seeds)]
+            let seeds = (next_rand() % 3) + 1; // 1..3 seeds
+            vec![
+                (Voxel::ItemPumpkinSlice, slices),
+                (Voxel::ItemPumpkinSeeds, seeds),
+            ]
         }
 
         // Ancestral Wild Varieties
@@ -577,7 +640,14 @@ fn set_block_oriented(
     voxel: Voxel,
     orientation: u8,
 ) -> bool {
-    set_shaped_block(world, modifications, pos, voxel, BlockShape::CrossBillboard, orientation)
+    set_shaped_block(
+        world,
+        modifications,
+        pos,
+        voxel,
+        BlockShape::CrossBillboard,
+        orientation,
+    )
 }
 
 fn set_shaped_block(
@@ -615,7 +685,7 @@ fn set_double_tall(
 fn is_empty_for_plant(world: &VoxelWorld, pos: IVec3) -> bool {
     world
         .get_voxel(pos)
-        .map_or(false, |v| v.is_empty() || v.is_fluid())
+        .is_some_and(|v| v.is_empty() || v.is_fluid())
 }
 
 fn try_spawn_cucurbit_fruit(
@@ -638,9 +708,9 @@ fn try_spawn_cucurbit_fruit(
         let ground_pos = fruit_pos - IVec3::Y;
 
         let fruit_empty = is_empty_for_plant(world, fruit_pos);
-        let ground_solid = world
-            .get_voxel(ground_pos)
-            .map_or(false, |v| v.is_collidable() && !v.is_empty() && !v.is_fluid());
+        let ground_solid = world.get_voxel(ground_pos).is_some_and(|v| {
+            v.is_collidable() && !v.is_empty() && !v.is_fluid()
+        });
 
         if fruit_empty && ground_solid {
             // Place solid fruit block
@@ -654,7 +724,13 @@ fn try_spawn_cucurbit_fruit(
             modifications.record_extra_slab(fruit_pos, None);
 
             // Connect stem oriented directly toward the spawned fruit
-            set_block_oriented(world, modifications, stem_pos, attached_stem_voxel, stem_orient);
+            set_block_oriented(
+                world,
+                modifications,
+                stem_pos,
+                attached_stem_voxel,
+                stem_orient,
+            );
             return true;
         }
     }
@@ -715,30 +791,36 @@ pub fn update_crop_growth(
 
     // Sample several candidate positions near the player for natural agricultural ticks
     for _ in 0..12 {
-        *rng = rng.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        *rng = rng
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         let rx = ((*rng >> 32) as i32 % 24) - 12;
-        *rng = rng.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        *rng = rng
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         let rz = ((*rng >> 32) as i32 % 24) - 12;
-        *rng = rng.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        *rng = rng
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         let ry = ((*rng >> 32) as i32 % 8) - 4;
 
         let sample_pos = player_base + IVec3::new(rx, ry, rz);
-        if let Some(vox) = world.get_voxel(sample_pos) {
-            if vox.is_crop_stage() {
+        if let Some(vox) = world.get_voxel(sample_pos)
+            && vox.is_crop_stage() {
                 // Verify supporting block below is tilled soil
                 let floor_vox = world.get_voxel(sample_pos - IVec3::Y);
                 if floor_vox.is_some_and(is_tilled_soil) {
-                    *rng = rng.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+                    *rng = rng
+                        .wrapping_mul(6364136223846793005)
+                        .wrapping_add(1442695040888963407);
                     // 35% chance to advance stage when selected
-                    if (*rng % 100) < 35 {
-                        if advance_crop(&mut world, &mut modifications, sample_pos) {
+                    if (*rng % 100) < 35
+                        && advance_crop(&mut world, &mut modifications, sample_pos) {
                             edited_voxels.push(sample_pos);
                             edited_voxels.push(sample_pos + IVec3::Y);
                         }
-                    }
                 }
             }
-        }
     }
 
     if edited_voxels.is_empty() {

@@ -321,8 +321,10 @@ fn spawn_survival_hud_and_toast(
         last_oxy_pct: 100,
     });
 
-    let hunger_icon: Handle<Image> = asset_server.load("textures/interfaces/icons/hud/hud_hunger.png");
-    let thirst_icon: Handle<Image> = asset_server.load("textures/interfaces/icons/hud/hud_thirst.png");
+    let hunger_icon: Handle<Image> =
+        asset_server.load("textures/interfaces/icons/hud/hud_hunger.png");
+    let thirst_icon: Handle<Image> =
+        asset_server.load("textures/interfaces/icons/hud/hud_thirst.png");
     let temp_icon: Handle<Image> =
         asset_server.load("textures/interfaces/icons/hud/hud_temperature.png");
     let oxy_icon: Handle<Image> = asset_server.load("textures/interfaces/icons/hud/hud_oxygen.png");
@@ -733,10 +735,11 @@ fn sync_vitals_with_subrace_and_movement(
             vitals.fall_peak_y = None;
             vitals.was_grounded = false;
 
-            let msg = loc.as_ref().map_or(
-                "You died! Respawning at world spawn...",
-                |l| l.t("hud.survival.respawn"),
-            );
+            let msg = loc
+                .as_ref()
+                .map_or("You died! Respawning at world spawn...", |l| {
+                    l.t("hud.survival.respawn")
+                });
             toast_state.pending_custom_message = Some(msg.to_string());
         }
     }
@@ -872,7 +875,8 @@ fn update_player_temperature(
 
     if let Some(target) = *cached_target_temp {
         let blend = 1.0 - (-0.30 * dt).exp();
-        vitals.temperature = (vitals.temperature + (target - vitals.temperature) * blend).clamp(0.0, 100.0);
+        vitals.temperature =
+            (vitals.temperature + (target - vitals.temperature) * blend).clamp(0.0, 100.0);
     }
 }
 

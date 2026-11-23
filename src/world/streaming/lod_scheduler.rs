@@ -1,4 +1,7 @@
-use bevy::{prelude::*, tasks::{AsyncComputeTaskPool, futures::check_ready}};
+use bevy::{
+    prelude::*,
+    tasks::{AsyncComputeTaskPool, futures::check_ready},
+};
 
 use crate::{
     generation::TerrainGenerator,

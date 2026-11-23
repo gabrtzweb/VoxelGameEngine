@@ -17,7 +17,7 @@ On top of the voxel foundation, the project implements a **Survival-first** game
 ### Spatial & Vertical Scale
 
 - **Voxel & Chunk Geometry**:
-  - 1.0 m voxels (identical to Minecraft blocks); full 1 m³ blocks form the base unit of the world (0.5 m sub-voxels removed).
+  - 1.0 m voxels; full 1 m³ blocks form the base unit of the world (0.5 m sub-voxels removed).
   - Each chunk contains 16 × 16 × 16 voxels (4,096 voxels, 16 m × 16 m × 16 m physical section).
 - **Horizontal Streaming**: Effectively unlimited along X and Z via procedural streaming.
 - **Vertical Limits**: Chunk Y `-16` to `+16` (`-256` to `+256` blocks; 512 blocks total playable height).

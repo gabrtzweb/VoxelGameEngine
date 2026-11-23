@@ -40,12 +40,7 @@ pub struct PlaySpatialSfxEvent {
 }
 
 impl PlaySpatialSfxEvent {
-    pub fn new(
-        sound: Handle<AudioSource>,
-        position: Vec3,
-        volume: f32,
-        max_distance: f32,
-    ) -> Self {
+    pub fn new(sound: Handle<AudioSource>, position: Vec3, volume: f32, max_distance: f32) -> Self {
         Self {
             sound,
             position,
@@ -79,8 +74,9 @@ fn handle_play_sfx(
     mut commands: Commands,
 ) {
     let ev = trigger.event();
-    let final_vol = (ev.volume * settings.master_volume * settings.sfx_volume * SFX_MASTER_ATTENUATION)
-        .clamp(0.0, 1.0);
+    let final_vol =
+        (ev.volume * settings.master_volume * settings.sfx_volume * SFX_MASTER_ATTENUATION)
+            .clamp(0.0, 1.0);
     if final_vol <= 0.001 {
         return;
     }
@@ -111,13 +107,16 @@ fn handle_play_spatial_sfx(
     }
 
     let dist_factor = (1.0 - (dist / ev.max_distance)).clamp(0.0, 1.0);
-    let final_vol = (ev.volume * dist_factor * settings.master_volume * settings.sfx_volume * SFX_MASTER_ATTENUATION)
+    let final_vol = (ev.volume
+        * dist_factor
+        * settings.master_volume
+        * settings.sfx_volume
+        * SFX_MASTER_ATTENUATION)
         .clamp(0.0, 1.0);
 
     if final_vol <= 0.001 {
         return;
     }
-
 
     commands.spawn((
         AudioPlayer(ev.sound.clone()),
@@ -126,4 +125,3 @@ fn handle_play_spatial_sfx(
             .with_speed(ev.speed.clamp(0.2, 4.0)),
     ));
 }
-

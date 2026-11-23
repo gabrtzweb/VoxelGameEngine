@@ -342,7 +342,10 @@ fn check_infinite_source(
 
     // Source only when enclosed: infinite fluid sources can only form in basins or enclosed pools.
     // If any horizontal neighbor is open Air, fluid is spilling or flowing down and must NOT form an infinite source!
-    if horizontals.iter().any(|&n| world.get_voxel(n) == Some(Voxel::Air)) {
+    if horizontals
+        .iter()
+        .any(|&n| world.get_voxel(n) == Some(Voxel::Air))
+    {
         return edited;
     }
 
@@ -404,7 +407,10 @@ pub fn compute_fluid_corner_offsets(world: &impl VoxelAccess, world_voxel: IVec3
 
     // Submerged fluid blocks with fluid above have a completely flat top at Y=1.0.
     let above = world_voxel + IVec3::Y;
-    if world.get_voxel(above).is_some_and(|v| is_same_fluid_type(voxel, v)) {
+    if world
+        .get_voxel(above)
+        .is_some_and(|v| is_same_fluid_type(voxel, v))
+    {
         return [0.0; 4];
     }
 
@@ -437,7 +443,9 @@ pub fn compute_fluid_corner_offsets(world: &impl VoxelAccess, world_voxel: IVec3
         // 1. If ANY adjacent column has fluid of the same type above (Y+1), this corner is submerged by a flow from above
         let has_fluid_above = samples.iter().any(|&(dx, dz)| {
             let col = world_voxel + IVec3::new(dx, 1, dz);
-            world.get_voxel(col).is_some_and(|v| is_same_fluid_type(voxel, v))
+            world
+                .get_voxel(col)
+                .is_some_and(|v| is_same_fluid_type(voxel, v))
         });
         if has_fluid_above {
             result[c_idx] = 0.0;
@@ -461,7 +469,10 @@ pub fn compute_fluid_corner_offsets(world: &impl VoxelAccess, world_voxel: IVec3
                 } else if v == Voxel::Air {
                     // Check if air column is a waterfall drop (fluid exists below at Y-1)
                     let below_col = col - IVec3::Y;
-                    if world.get_voxel(below_col).is_some_and(|bv| is_same_fluid_type(voxel, bv)) {
+                    if world
+                        .get_voxel(below_col)
+                        .is_some_and(|bv| is_same_fluid_type(voxel, bv))
+                    {
                         sum += 0.85; // waterfall drop pulls edge downward smoothly
                         count += 1;
                     }

@@ -93,27 +93,39 @@ fn spawn_main_menu(
         tf
     };
 
-    let title_str = loc.as_ref().map_or("VOXEL ENGINE", |l| l.t("menu.main.title"));
-    let version_str = loc.as_ref().map_or("Alpha 0.3.0", |l| l.t("menu.main.version"));
+    let title_str = loc
+        .as_ref()
+        .map_or("VOXEL ENGINE", |l| l.t("menu.main.title"));
+    let version_str = loc
+        .as_ref()
+        .map_or("Alpha 0.3.0", |l| l.t("menu.main.version"));
     let press_any_str = loc
         .as_ref()
         .map_or("Press any key to start", |l| l.t("menu.main.press_any_key"));
 
     let play_str = loc.as_ref().map_or("Play", |l| l.t("menu.main.play"));
-    let settings_str = loc.as_ref().map_or("Settings", |l| l.t("menu.main.settings"));
-    let controls_str = loc.as_ref().map_or("Controls", |l| l.t("menu.main.controls"));
-    let quit_str = loc.as_ref().map_or("Quit to Desktop", |l| l.t("menu.main.quit"));
-    let create_hint_str = loc.as_ref().map_or(
-        "Create a character first to play",
-        |l| l.t("menu.main.create_character_hint"),
-    );
+    let settings_str = loc
+        .as_ref()
+        .map_or("Settings", |l| l.t("menu.main.settings"));
+    let controls_str = loc
+        .as_ref()
+        .map_or("Controls", |l| l.t("menu.main.controls"));
+    let quit_str = loc
+        .as_ref()
+        .map_or("Quit to Desktop", |l| l.t("menu.main.quit"));
+    let create_hint_str = loc
+        .as_ref()
+        .map_or("Create a character first to play", |l| {
+            l.t("menu.main.create_character_hint")
+        });
     let no_char_str = loc
         .as_ref()
         .map_or("No Character", |l| l.t("menu.main.no_character"));
-    let no_char_sub_str = loc.as_ref().map_or(
-        "Choose your race and subrace to begin",
-        |l| l.t("menu.main.no_character_sub"),
-    );
+    let no_char_sub_str = loc
+        .as_ref()
+        .map_or("Choose your race and subrace to begin", |l| {
+            l.t("menu.main.no_character_sub")
+        });
     let create_char_btn_str = loc
         .as_ref()
         .map_or("Create Character  >", |l| l.t("menu.main.create_character"));
@@ -253,7 +265,7 @@ fn spawn_main_menu(
                 ));
             });
 
-            // Action Menu Container (Enshrouded-inspired 2-side layout: Left = Title & Buttons, Right = Character Panel)
+            // Action Menu Container (2-side layout: Left = Title & Buttons, Right = Character Panel)
             let action_display = if current_phase == MainMenuPhase::ActionMenu {
                 Display::Flex
             } else {
@@ -443,7 +455,7 @@ fn spawn_main_menu(
                         }
                     });
 
-                // RIGHT SIDE: Character Showcase Panel (Enshrouded-style)
+                // RIGHT SIDE: Character Showcase Panel
                 action_root
                     .spawn((
                         Node {
@@ -555,7 +567,8 @@ fn spawn_main_menu(
                                             loc.as_ref().map_or("Spd", |l| l.t("attr.move_speed")),
                                             format!(
                                                 "{}%",
-                                                (attrs.move_speed_multiplier * 100.0).round() as i32
+                                                (attrs.move_speed_multiplier * 100.0).round()
+                                                    as i32
                                             ),
                                         ),
                                     ];
@@ -575,20 +588,22 @@ fn spawn_main_menu(
                                             },
                                             BackgroundColor(palette::PANEL_INNER_BG),
                                         ))
-                                        .with_children(|pill| {
-                                            pill.spawn((
-                                                Pickable::IGNORE,
-                                                Text::new(k),
-                                                make_font(10.0),
-                                                TextColor(palette::TEXT_MUTED),
-                                            ));
-                                            pill.spawn((
-                                                Pickable::IGNORE,
-                                                Text::new(v),
-                                                make_font(13.0),
-                                                TextColor(palette::TEXT_PRIMARY),
-                                            ));
-                                        });
+                                        .with_children(
+                                            |pill| {
+                                                pill.spawn((
+                                                    Pickable::IGNORE,
+                                                    Text::new(k),
+                                                    make_font(10.0),
+                                                    TextColor(palette::TEXT_MUTED),
+                                                ));
+                                                pill.spawn((
+                                                    Pickable::IGNORE,
+                                                    Text::new(v),
+                                                    make_font(13.0),
+                                                    TextColor(palette::TEXT_PRIMARY),
+                                                ));
+                                            },
+                                        );
                                     }
                                 });
 

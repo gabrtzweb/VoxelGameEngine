@@ -356,40 +356,94 @@ impl CharacterSubrace {
     pub fn trait_keys(&self) -> [(&'static str, &'static str); 2] {
         match self {
             Self::Nordling => [
-                ("menu.subrace.nordling.trait1.name", "menu.subrace.nordling.trait1.desc"),
-                ("menu.subrace.nordling.trait2.name", "menu.subrace.nordling.trait2.desc"),
+                (
+                    "menu.subrace.nordling.trait1.name",
+                    "menu.subrace.nordling.trait1.desc",
+                ),
+                (
+                    "menu.subrace.nordling.trait2.name",
+                    "menu.subrace.nordling.trait2.desc",
+                ),
             ],
             Self::Sunlander => [
-                ("menu.subrace.sunlander.trait1.name", "menu.subrace.sunlander.trait1.desc"),
-                ("menu.subrace.sunlander.trait2.name", "menu.subrace.sunlander.trait2.desc"),
+                (
+                    "menu.subrace.sunlander.trait1.name",
+                    "menu.subrace.sunlander.trait1.desc",
+                ),
+                (
+                    "menu.subrace.sunlander.trait2.name",
+                    "menu.subrace.sunlander.trait2.desc",
+                ),
             ],
             Self::CoastalHuman => [
-                ("menu.subrace.coastal_human.trait1.name", "menu.subrace.coastal_human.trait1.desc"),
-                ("menu.subrace.coastal_human.trait2.name", "menu.subrace.coastal_human.trait2.desc"),
+                (
+                    "menu.subrace.coastal_human.trait1.name",
+                    "menu.subrace.coastal_human.trait1.desc",
+                ),
+                (
+                    "menu.subrace.coastal_human.trait2.name",
+                    "menu.subrace.coastal_human.trait2.desc",
+                ),
             ],
             Self::WoodElf => [
-                ("menu.subrace.wood_elf.trait1.name", "menu.subrace.wood_elf.trait1.desc"),
-                ("menu.subrace.wood_elf.trait2.name", "menu.subrace.wood_elf.trait2.desc"),
+                (
+                    "menu.subrace.wood_elf.trait1.name",
+                    "menu.subrace.wood_elf.trait1.desc",
+                ),
+                (
+                    "menu.subrace.wood_elf.trait2.name",
+                    "menu.subrace.wood_elf.trait2.desc",
+                ),
             ],
             Self::DarkElf => [
-                ("menu.subrace.dark_elf.trait1.name", "menu.subrace.dark_elf.trait1.desc"),
-                ("menu.subrace.dark_elf.trait2.name", "menu.subrace.dark_elf.trait2.desc"),
+                (
+                    "menu.subrace.dark_elf.trait1.name",
+                    "menu.subrace.dark_elf.trait1.desc",
+                ),
+                (
+                    "menu.subrace.dark_elf.trait2.name",
+                    "menu.subrace.dark_elf.trait2.desc",
+                ),
             ],
             Self::HighElf => [
-                ("menu.subrace.high_elf.trait1.name", "menu.subrace.high_elf.trait1.desc"),
-                ("menu.subrace.high_elf.trait2.name", "menu.subrace.high_elf.trait2.desc"),
+                (
+                    "menu.subrace.high_elf.trait1.name",
+                    "menu.subrace.high_elf.trait1.desc",
+                ),
+                (
+                    "menu.subrace.high_elf.trait2.name",
+                    "menu.subrace.high_elf.trait2.desc",
+                ),
             ],
             Self::MountainDwarf => [
-                ("menu.subrace.mountain_dwarf.trait1.name", "menu.subrace.mountain_dwarf.trait1.desc"),
-                ("menu.subrace.mountain_dwarf.trait2.name", "menu.subrace.mountain_dwarf.trait2.desc"),
+                (
+                    "menu.subrace.mountain_dwarf.trait1.name",
+                    "menu.subrace.mountain_dwarf.trait1.desc",
+                ),
+                (
+                    "menu.subrace.mountain_dwarf.trait2.name",
+                    "menu.subrace.mountain_dwarf.trait2.desc",
+                ),
             ],
             Self::DeepDwarf => [
-                ("menu.subrace.deep_dwarf.trait1.name", "menu.subrace.deep_dwarf.trait1.desc"),
-                ("menu.subrace.deep_dwarf.trait2.name", "menu.subrace.deep_dwarf.trait2.desc"),
+                (
+                    "menu.subrace.deep_dwarf.trait1.name",
+                    "menu.subrace.deep_dwarf.trait1.desc",
+                ),
+                (
+                    "menu.subrace.deep_dwarf.trait2.name",
+                    "menu.subrace.deep_dwarf.trait2.desc",
+                ),
             ],
             Self::HillDwarf => [
-                ("menu.subrace.hill_dwarf.trait1.name", "menu.subrace.hill_dwarf.trait1.desc"),
-                ("menu.subrace.hill_dwarf.trait2.name", "menu.subrace.hill_dwarf.trait2.desc"),
+                (
+                    "menu.subrace.hill_dwarf.trait1.name",
+                    "menu.subrace.hill_dwarf.trait1.desc",
+                ),
+                (
+                    "menu.subrace.hill_dwarf.trait2.name",
+                    "menu.subrace.hill_dwarf.trait2.desc",
+                ),
             ],
         }
     }

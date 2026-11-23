@@ -175,14 +175,16 @@ fn trigger_hand_swing_on_click(
         return;
     }
 
-    let primary_just_pressed = control_settings.as_ref().map_or(
-        mouse.just_pressed(MouseButton::Left),
-        |c| c.is_action_just_pressed(crate::core::InputAction::PrimaryAction, &keyboard, &mouse),
-    );
-    let primary_held = control_settings.as_ref().map_or(
-        mouse.pressed(MouseButton::Left),
-        |c| c.is_action_pressed(crate::core::InputAction::PrimaryAction, &keyboard, &mouse),
-    );
+    let primary_just_pressed = control_settings
+        .as_ref()
+        .map_or(mouse.just_pressed(MouseButton::Left), |c| {
+            c.is_action_just_pressed(crate::core::InputAction::PrimaryAction, &keyboard, &mouse)
+        });
+    let primary_held = control_settings
+        .as_ref()
+        .map_or(mouse.pressed(MouseButton::Left), |c| {
+            c.is_action_pressed(crate::core::InputAction::PrimaryAction, &keyboard, &mouse)
+        });
 
     if primary_just_pressed || (primary_held && !hand_anim.is_swinging) {
         hand_anim.is_swinging = true;
@@ -915,7 +917,11 @@ pub fn update_player_model(
                 0.0,
             ),
             PlayerStance::Crouching => (
-                Vec3::new(0.0, 7.0 * PIXEL_SCALE * props.leg_scale.y, -2.0 * PIXEL_SCALE),
+                Vec3::new(
+                    0.0,
+                    7.0 * PIXEL_SCALE * props.leg_scale.y,
+                    -2.0 * PIXEL_SCALE,
+                ),
                 Quat::from_rotation_x(0.22),
                 7.0 * PIXEL_SCALE * props.leg_scale.y,
                 -2.0 * PIXEL_SCALE,
@@ -1002,7 +1008,8 @@ pub fn update_player_model(
                 transform.scale = props.head_scale / props.torso_scale;
                 transform.translation = Vec3::new(0.0, 12.0 * PIXEL_SCALE, 0.0);
                 if motion.flying && is_flying_fast {
-                    transform.rotation = Quat::from_rotation_x(-0.8 + camera_pitch.clamp(-0.4, 0.4));
+                    transform.rotation =
+                        Quat::from_rotation_x(-0.8 + camera_pitch.clamp(-0.4, 0.4));
                 } else {
                     let look_pitch = (-camera_pitch + base_head_pitch_offset).clamp(-1.45, 1.45);
                     transform.rotation = Quat::from_rotation_x(look_pitch);
@@ -1033,22 +1040,23 @@ pub fn update_player_model(
                         * Quat::from_rotation_z(0.35 + swim_stroke.abs() * 0.3);
                 } else if motion.stance == PlayerStance::Crawling {
                     if h_speed > 0.05 {
-                        transform.rotation = Quat::from_rotation_x(1.52 + crawl_swing + action_swing)
-                            * Quat::from_rotation_z(0.2);
+                        transform.rotation =
+                            Quat::from_rotation_x(1.52 + crawl_swing + action_swing)
+                                * Quat::from_rotation_z(0.2);
                     } else {
                         transform.rotation =
                             Quat::from_rotation_x(1.4 + action_swing) * Quat::from_rotation_z(0.2);
                     }
                 } else if motion.flying {
                     if is_flying_fast {
-                        transform.rotation =
-                            Quat::from_rotation_x(-2.6 + action_swing) * Quat::from_rotation_z(0.15);
+                        transform.rotation = Quat::from_rotation_x(-2.6 + action_swing)
+                            * Quat::from_rotation_z(0.15);
                     } else if is_flying_up {
-                        transform.rotation =
-                            Quat::from_rotation_x(-1.8 + action_swing) * Quat::from_rotation_z(0.25);
+                        transform.rotation = Quat::from_rotation_x(-1.8 + action_swing)
+                            * Quat::from_rotation_z(0.25);
                     } else if is_flying_down {
-                        transform.rotation =
-                            Quat::from_rotation_z(0.65) * Quat::from_rotation_x(-0.15 + action_swing);
+                        transform.rotation = Quat::from_rotation_z(0.65)
+                            * Quat::from_rotation_x(-0.15 + action_swing);
                     } else {
                         transform.rotation = Quat::from_rotation_z(0.25 + hover * 0.5)
                             * Quat::from_rotation_x(-0.1 + hold_offset + action_swing);
@@ -1082,11 +1090,8 @@ pub fn update_player_model(
                 }
 
                 transform.scale = props.arm_scale / props.torso_scale;
-                transform.translation = Vec3::new(
-                    -shoulder_x / props.torso_scale.x,
-                    12.0 * PIXEL_SCALE,
-                    0.0,
-                );
+                transform.translation =
+                    Vec3::new(-shoulder_x / props.torso_scale.x, 12.0 * PIXEL_SCALE, 0.0);
 
                 // Natural resting posture (dominant arm swings on action; off-hand raises gently when holding item)
                 let equip_dip = if !left_handed {
@@ -1114,8 +1119,8 @@ pub fn update_player_model(
                             Quat::from_rotation_x(1.52 - crawl_swing + action_swing)
                                 * Quat::from_rotation_z(-0.2);
                     } else {
-                        transform.rotation = Quat::from_rotation_x(1.4 + action_swing)
-                            * Quat::from_rotation_z(-0.2);
+                        transform.rotation =
+                            Quat::from_rotation_x(1.4 + action_swing) * Quat::from_rotation_z(-0.2);
                     }
                 } else if motion.flying {
                     if is_flying_fast {
@@ -1229,12 +1234,18 @@ pub(crate) fn build_head_mesh(race: CharacterRace) -> Mesh {
     let s = PIXEL_SCALE;
 
     // Base head: 8x8x8 px, pivot at neck base (y = 0.0 to 8*scale)
-    builder.add_box(Vec3::new(8.0 * s, 8.0 * s, 8.0 * s), Vec3::new(0.0, 4.0 * s, 0.0));
+    builder.add_box(
+        Vec3::new(8.0 * s, 8.0 * s, 8.0 * s),
+        Vec3::new(0.0, 4.0 * s, 0.0),
+    );
 
     match race {
         CharacterRace::Human => {
             // Subtle nose bridge & brow contour
-            builder.add_box(Vec3::new(1.5 * s, 2.0 * s, 1.0 * s), Vec3::new(0.0, 3.8 * s, 4.3 * s));
+            builder.add_box(
+                Vec3::new(1.5 * s, 2.0 * s, 1.0 * s),
+                Vec3::new(0.0, 3.8 * s, 4.3 * s),
+            );
         }
         CharacterRace::Elf => {
             // Long swept-back pointed elven ears on left (+X) and right (-X)
@@ -1255,20 +1266,44 @@ pub(crate) fn build_head_mesh(race: CharacterRace) -> Mesh {
         }
         CharacterRace::Dwarf => {
             // Heavy brow ridge
-            builder.add_box(Vec3::new(8.4 * s, 1.5 * s, 1.4 * s), Vec3::new(0.0, 5.6 * s, 4.2 * s));
+            builder.add_box(
+                Vec3::new(8.4 * s, 1.5 * s, 1.4 * s),
+                Vec3::new(0.0, 5.6 * s, 4.2 * s),
+            );
             // Prominent nose
-            builder.add_box(Vec3::new(2.2 * s, 2.2 * s, 1.5 * s), Vec3::new(0.0, 4.0 * s, 4.5 * s));
+            builder.add_box(
+                Vec3::new(2.2 * s, 2.2 * s, 1.5 * s),
+                Vec3::new(0.0, 4.0 * s, 4.5 * s),
+            );
             // Thick volumetric mustache & tiered dwarf beard cascading down over chest
-            builder.add_box(Vec3::new(7.6 * s, 2.0 * s, 2.0 * s), Vec3::new(0.0, 2.4 * s, 4.4 * s));
-            builder.add_box(Vec3::new(8.4 * s, 3.5 * s, 2.8 * s), Vec3::new(0.0, 0.5 * s, 3.8 * s));
-            builder.add_box(Vec3::new(6.8 * s, 3.5 * s, 2.4 * s), Vec3::new(0.0, -2.2 * s, 3.8 * s));
-            builder.add_box(Vec3::new(4.6 * s, 2.5 * s, 2.0 * s), Vec3::new(0.0, -4.5 * s, 3.8 * s));
+            builder.add_box(
+                Vec3::new(7.6 * s, 2.0 * s, 2.0 * s),
+                Vec3::new(0.0, 2.4 * s, 4.4 * s),
+            );
+            builder.add_box(
+                Vec3::new(8.4 * s, 3.5 * s, 2.8 * s),
+                Vec3::new(0.0, 0.5 * s, 3.8 * s),
+            );
+            builder.add_box(
+                Vec3::new(6.8 * s, 3.5 * s, 2.4 * s),
+                Vec3::new(0.0, -2.2 * s, 3.8 * s),
+            );
+            builder.add_box(
+                Vec3::new(4.6 * s, 2.5 * s, 2.0 * s),
+                Vec3::new(0.0, -4.5 * s, 3.8 * s),
+            );
         }
         CharacterRace::Orc => {
             // Heavy jutting brow ridge
-            builder.add_box(Vec3::new(8.6 * s, 1.6 * s, 1.6 * s), Vec3::new(0.0, 5.8 * s, 4.2 * s));
+            builder.add_box(
+                Vec3::new(8.6 * s, 1.6 * s, 1.6 * s),
+                Vec3::new(0.0, 5.8 * s, 4.2 * s),
+            );
             // Broad jutting lower jaw
-            builder.add_box(Vec3::new(8.6 * s, 2.8 * s, 2.2 * s), Vec3::new(0.0, 1.4 * s, 4.2 * s));
+            builder.add_box(
+                Vec3::new(8.6 * s, 2.8 * s, 2.2 * s),
+                Vec3::new(0.0, 1.4 * s, 4.2 * s),
+            );
             // Two upward-protruding tusks
             for sign in [-1.0, 1.0] {
                 builder.add_box(
@@ -1284,8 +1319,14 @@ pub(crate) fn build_head_mesh(race: CharacterRace) -> Mesh {
         }
         CharacterRace::Dragonborn => {
             // Elongated draconic snout / muzzle projecting forward (+Z)
-            builder.add_box(Vec3::new(6.2 * s, 4.2 * s, 3.6 * s), Vec3::new(0.0, 3.2 * s, 5.4 * s));
-            builder.add_box(Vec3::new(5.0 * s, 3.2 * s, 2.2 * s), Vec3::new(0.0, 2.9 * s, 7.6 * s));
+            builder.add_box(
+                Vec3::new(6.2 * s, 4.2 * s, 3.6 * s),
+                Vec3::new(0.0, 3.2 * s, 5.4 * s),
+            );
+            builder.add_box(
+                Vec3::new(5.0 * s, 3.2 * s, 2.2 * s),
+                Vec3::new(0.0, 2.9 * s, 7.6 * s),
+            );
             // Swept-back draconic horns & frills (-Z)
             for sign in [-1.0, 1.0] {
                 builder.add_box(
@@ -1298,7 +1339,10 @@ pub(crate) fn build_head_mesh(race: CharacterRace) -> Mesh {
                 );
             }
             // Central skull crest
-            builder.add_box(Vec3::new(1.4 * s, 2.0 * s, 6.0 * s), Vec3::new(0.0, 8.4 * s, -1.5 * s));
+            builder.add_box(
+                Vec3::new(1.4 * s, 2.0 * s, 6.0 * s),
+                Vec3::new(0.0, 8.4 * s, -1.5 * s),
+            );
         }
         CharacterRace::Tiefling => {
             // Pointed ears

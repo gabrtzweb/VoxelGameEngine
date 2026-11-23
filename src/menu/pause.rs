@@ -263,7 +263,10 @@ fn spawn_pause_sidebar(
                 ))
                 .with_children(|panel| {
                     let session_items = [
-                        (loc.map_or("Open to LAN", |l| l.t("menu.session.open_lan")), "Soon"),
+                        (
+                            loc.map_or("Open to LAN", |l| l.t("menu.session.open_lan")),
+                            "Soon",
+                        ),
                         (
                             loc.map_or("Host Online Session", |l| l.t("menu.session.host_online")),
                             "Soon",
@@ -386,7 +389,8 @@ fn sync_world_session_panel(
     if !pause_submenu.is_changed() && !menu_state.is_changed() {
         return;
     }
-    let show = *menu_state.get() == MenuState::Pause && *pause_submenu == PauseSubmenu::WorldSession;
+    let show =
+        *menu_state.get() == MenuState::Pause && *pause_submenu == PauseSubmenu::WorldSession;
     for mut node in &mut panel_query {
         node.display = if show { Display::Flex } else { Display::None };
     }

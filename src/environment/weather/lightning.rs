@@ -122,12 +122,11 @@ pub fn tick_lightning(
     let mut impact_y = cam_pos.y - 10.0;
 
     for y in (scan_min..=scan_start).rev() {
-        if let Some(voxel) = voxel_world.get_voxel(IVec3::new(strike_x, y, strike_z)) {
-            if voxel != Voxel::Air && !voxel.is_empty() {
+        if let Some(voxel) = voxel_world.get_voxel(IVec3::new(strike_x, y, strike_z))
+            && voxel != Voxel::Air && !voxel.is_empty() {
                 impact_y = y as f32 + 1.0;
                 break;
             }
-        }
     }
 
     let strike_target = Vec3::new(strike_x as f32 + 0.5, impact_y, strike_z as f32 + 0.5);
@@ -316,7 +315,10 @@ fn generate_fractal_bolt_mesh(origin: Vec3, target: Vec3, seed: f32) -> Mesh {
         }
     }
 
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);

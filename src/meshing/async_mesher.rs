@@ -43,18 +43,20 @@ impl Plugin for AsyncMesherPlugin {
                 Update,
                 (
                     sync_voxel_shader_settings,
-                    collect_meshing_tasks.run_if(|session: Option<Res<crate::world::WorldSession>>| {
-                        session.map_or(true, |s| s.is_active)
-                    }),
+                    collect_meshing_tasks.run_if(
+                        |session: Option<Res<crate::world::WorldSession>>| {
+                            session.is_none_or(|s| s.is_active)
+                        },
+                    ),
                 ),
             )
             .add_systems(
                 PostUpdate,
-                (collect_meshing_tasks, start_meshing_tasks)
-                    .chain()
-                    .run_if(|session: Option<Res<crate::world::WorldSession>>| {
-                        session.map_or(true, |s| s.is_active)
-                    }),
+                (collect_meshing_tasks, start_meshing_tasks).chain().run_if(
+                    |session: Option<Res<crate::world::WorldSession>>| {
+                        session.is_none_or(|s| s.is_active)
+                    },
+                ),
             );
     }
 }

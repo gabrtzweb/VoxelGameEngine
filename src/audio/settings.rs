@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use crate::core::LocalConfig;
+use bevy::prelude::*;
 
 /// Central volume settings configuration across the engine.
 #[derive(Resource, Reflect, Debug, Clone)]

@@ -1,10 +1,10 @@
-use bevy::{platform::collections::HashMap, prelude::*};
 use crate::{
     audio::{PlaySfxEvent, material::SoundMaterial},
     environment::WorldParticleBurstQueue,
     player::{Player, PlayerEnvironmentStatus, PlayerMotion, PlayerStance},
     world::{VOXEL_SIZE, Voxel, VoxelWorld},
 };
+use bevy::{platform::collections::HashMap, prelude::*};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum StepSoundCategory {
@@ -112,19 +112,17 @@ fn detect_floor_voxel(world: &VoxelWorld, player_pos: Vec3) -> Voxel {
     let probe_pos = player_pos - Vec3::new(0.0, 0.15, 0.0);
     let mut block_pos = (probe_pos / VOXEL_SIZE).floor().as_ivec3();
 
-    if let Some(v) = world.get_voxel(block_pos) {
-        if !v.is_empty() && v.is_collidable() {
+    if let Some(v) = world.get_voxel(block_pos)
+        && !v.is_empty() && v.is_collidable() {
             return v;
         }
-    }
 
     // Check one block lower in case player is standing on half-slab or top edge
     block_pos.y -= 1;
-    if let Some(v) = world.get_voxel(block_pos) {
-        if !v.is_empty() && v.is_collidable() {
+    if let Some(v) = world.get_voxel(block_pos)
+        && !v.is_empty() && v.is_collidable() {
             return v;
         }
-    }
 
     Voxel::LoamGrass
 }
@@ -170,7 +168,7 @@ fn update_player_footstep_audio(
         .map_or(1.0, |s| s.0.attributes().footstep_noise_multiplier);
 
     let submersion = env_status.as_ref().map_or(0.0, |s| s.submersion);
-    let is_cam_water = env_status.as_ref().map_or(false, |s| s.is_camera_in_water);
+    let is_cam_water = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
     let water_tint_raw = env_status
         .as_ref()
         .map_or([0.32, 0.62, 0.88, 1.0], |s| s.current_biome.water_color());
@@ -294,7 +292,8 @@ fn update_player_footstep_audio(
                 }
             } else {
                 let floor_voxel = detect_floor_voxel(&world, transform.translation);
-                if !is_crouching && !is_crawling
+                if !is_crouching
+                    && !is_crawling
                     && let Some(ref mut bursts) = particle_bursts
                 {
                     bursts.push_dust(

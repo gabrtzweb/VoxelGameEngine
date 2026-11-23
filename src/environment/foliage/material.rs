@@ -120,19 +120,16 @@ pub fn sync_grass_material_uniforms(
     let Some(handle) = grass_mat_handle else {
         return;
     };
-    if !*noise_sampler_upgraded
-        && let Some(mut noise_img) = images.get_mut(&handle.noise_texture)
-    {
-        noise_img.sampler = bevy::image::ImageSampler::Descriptor(
-            bevy::image::ImageSamplerDescriptor {
+    if !*noise_sampler_upgraded && let Some(mut noise_img) = images.get_mut(&handle.noise_texture) {
+        noise_img.sampler =
+            bevy::image::ImageSampler::Descriptor(bevy::image::ImageSamplerDescriptor {
                 address_mode_u: bevy::image::ImageAddressMode::Repeat,
                 address_mode_v: bevy::image::ImageAddressMode::Repeat,
                 mag_filter: bevy::image::ImageFilterMode::Linear,
                 min_filter: bevy::image::ImageFilterMode::Linear,
                 mipmap_filter: bevy::image::ImageFilterMode::Linear,
                 ..default()
-            },
-        );
+            });
         *noise_sampler_upgraded = true;
     }
     if let Some(mut mat) = materials.get_mut(&handle.material) {

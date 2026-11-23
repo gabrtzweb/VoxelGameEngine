@@ -250,7 +250,7 @@ impl WeatherParticlePool {
                     p.size += Vec2::splat(dt * 0.45);
                 }
                 WeatherParticleKind::GroundFog => {
-                    // Low-lying mist hovers gently over terrain (Particle Rain style)
+                    // Low-lying mist hovers gently over terrain
                     p.velocity.y = 0.03;
                     p.velocity.x = wind.x * 0.06;
                     p.velocity.z = wind.z * 0.06;

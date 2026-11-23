@@ -41,7 +41,7 @@ pub fn spawn_wind_blade_particles(
     camera_query: Query<&Transform, (With<Camera3d>, With<PlayerCamera>)>,
 ) {
     let default_cfg = GrassConfig::default();
-    let cfg = config.as_ref().map(|c| &**c).unwrap_or(&default_cfg);
+    let cfg = config.as_deref().unwrap_or(&default_cfg);
 
     if !cfg.enabled || !cfg.blade_particles {
         return;
@@ -76,7 +76,8 @@ pub fn spawn_wind_blade_particles(
     let texture = asset_server.load("textures/foliage/wind_blade.png");
 
     for i in 0..spawn_count {
-        let angle_jitter = ((i as f32) - 1.0) * 0.4 + (time.elapsed_secs() * 3.7 + i as f32).sin() * 0.3;
+        let angle_jitter =
+            ((i as f32) - 1.0) * 0.4 + (time.elapsed_secs() * 3.7 + i as f32).sin() * 0.3;
         let c = angle_jitter.cos();
         let s = angle_jitter.sin();
         let offset_dir = Vec3::new(
@@ -97,7 +98,8 @@ pub fn spawn_wind_blade_particles(
                 color: Color::srgba(0.85, 0.95, 0.8, 0.9),
                 ..default()
             },
-            Transform::from_translation(spawn_pos).with_rotation(Quat::from_rotation_z(raw_angle(i))),
+            Transform::from_translation(spawn_pos)
+                .with_rotation(Quat::from_rotation_z(raw_angle(i))),
             WindBladeParticle {
                 velocity: particle_vel,
                 lifetime_timer: Timer::from_seconds(2.5, TimerMode::Once),
@@ -144,7 +146,7 @@ pub fn update_wind_blade_particles(
 }
 
 // =========================================================================
-// Minecraft-Style Falling Canopy Leaf Particles (Batched Single Draw Call)
+// Falling Canopy Leaf Particles (Batched Single Draw Call)
 // =========================================================================
 
 const MAX_FALLING_LEAVES: usize = 768;
@@ -552,10 +554,11 @@ pub fn update_falling_leaf_particles(
                 continue;
             }
         } else {
-            let flutter = (leaf.age * leaf.flutter_freq + leaf.flutter_phase).sin() * leaf.flutter_amp;
-            let flutter_z =
-                (leaf.age * (leaf.flutter_freq * 0.83) + leaf.flutter_phase + 1.3).cos()
-                    * (leaf.flutter_amp * 0.7);
+            let flutter =
+                (leaf.age * leaf.flutter_freq + leaf.flutter_phase).sin() * leaf.flutter_amp;
+            let flutter_z = (leaf.age * (leaf.flutter_freq * 0.83) + leaf.flutter_phase + 1.3)
+                .cos()
+                * (leaf.flutter_amp * 0.7);
             let next_pos = leaf.position
                 + Vec3::new(
                     (flutter + wind_vec.x * 0.25) * dt,

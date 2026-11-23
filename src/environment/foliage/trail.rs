@@ -53,7 +53,7 @@ impl GrassTrailField {
         }
         let decay_mult = (-dt * 1.5).exp();
         let mut active = 0usize;
-        for pixel in self.pixels.chunks_exact_mut(4) {
+        for pixel in self.pixels.as_chunks_mut::<4>().0 {
             if pixel[2] == 0 {
                 continue;
             }
@@ -77,8 +77,10 @@ impl GrassTrailField {
         let enc_x = ((move_dir.x * 0.5 + 0.5) * 255.0).clamp(0.0, 255.0) as u8;
         let enc_z = ((move_dir.y * 0.5 + 0.5) * 255.0).clamp(0.0, 255.0) as u8;
 
-        let center_x = (entity_pos.x - self.origin_world_xz.x) / TRAIL_WORLD_SIZE * (TRAIL_GRID_SIZE as f32);
-        let center_z = (entity_pos.z - self.origin_world_xz.y) / TRAIL_WORLD_SIZE * (TRAIL_GRID_SIZE as f32);
+        let center_x =
+            (entity_pos.x - self.origin_world_xz.x) / TRAIL_WORLD_SIZE * (TRAIL_GRID_SIZE as f32);
+        let center_z =
+            (entity_pos.z - self.origin_world_xz.y) / TRAIL_WORLD_SIZE * (TRAIL_GRID_SIZE as f32);
         let radius = radius_m * (TRAIL_GRID_SIZE as f32 / TRAIL_WORLD_SIZE);
 
         let min_x = (center_x - radius).floor().max(0.0) as usize;
@@ -132,7 +134,8 @@ pub fn update_grass_trail_field(
 
     // Measure player movement velocity
     let move_delta = player_pos - trail.last_player_pos;
-    let horizontal_speed = (move_delta.x * move_delta.x + move_delta.z * move_delta.z).sqrt() / dt.max(0.001);
+    let horizontal_speed =
+        (move_delta.x * move_delta.x + move_delta.z * move_delta.z).sqrt() / dt.max(0.001);
     trail.last_player_pos = player_pos;
 
     let had_active = trail.active_pixels > 0;
@@ -145,7 +148,9 @@ pub fn update_grass_trail_field(
 
     // Throttle GPU image upload to ~25 Hz and copy in place without cloning Vec when active
     trail.upload_timer += dt;
-    if (horizontal_speed > 0.05 || trail.active_pixels > 0 || had_active) && trail.upload_timer >= 0.04 {
+    if (horizontal_speed > 0.05 || trail.active_pixels > 0 || had_active)
+        && trail.upload_timer >= 0.04
+    {
         trail.upload_timer = 0.0;
         if let Some(mut image) = images.get_mut(&trail.image_handle) {
             if let Some(ref mut data) = image.data

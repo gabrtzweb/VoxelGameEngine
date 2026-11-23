@@ -1,8 +1,4 @@
-use bevy::{
-    picking::hover::Hovered,
-    prelude::*,
-    ui_widgets::Button,
-};
+use bevy::{picking::hover::Hovered, prelude::*, ui_widgets::Button};
 
 use crate::{
     core::{AppFont, Localization, text_shadow_default},
@@ -81,109 +77,449 @@ impl SkillTreeTab {
     pub fn skills_for(self, subrace: CharacterSubrace) -> [SkillDef; 6] {
         match self {
             Self::Combat => [
-                SkillDef::new("steady_grip", "I", "skill.steady_grip.name", "skill.steady_grip.desc"),
-                SkillDef::new("iron_guard", "I", "skill.iron_guard.name", "skill.iron_guard.desc"),
-                SkillDef::new("precision_strike", "II", "skill.precision_strike.name", "skill.precision_strike.desc"),
-                SkillDef::new("second_wind", "II", "skill.second_wind.name", "skill.second_wind.desc"),
-                SkillDef::new("warlord_resolve", "III", "skill.warlord_resolve.name", "skill.warlord_resolve.desc"),
-                SkillDef::new("executioner", "III", "skill.executioner.name", "skill.executioner.desc"),
+                SkillDef::new(
+                    "steady_grip",
+                    "I",
+                    "skill.steady_grip.name",
+                    "skill.steady_grip.desc",
+                ),
+                SkillDef::new(
+                    "iron_guard",
+                    "I",
+                    "skill.iron_guard.name",
+                    "skill.iron_guard.desc",
+                ),
+                SkillDef::new(
+                    "precision_strike",
+                    "II",
+                    "skill.precision_strike.name",
+                    "skill.precision_strike.desc",
+                ),
+                SkillDef::new(
+                    "second_wind",
+                    "II",
+                    "skill.second_wind.name",
+                    "skill.second_wind.desc",
+                ),
+                SkillDef::new(
+                    "warlord_resolve",
+                    "III",
+                    "skill.warlord_resolve.name",
+                    "skill.warlord_resolve.desc",
+                ),
+                SkillDef::new(
+                    "executioner",
+                    "III",
+                    "skill.executioner.name",
+                    "skill.executioner.desc",
+                ),
             ],
             Self::Gathering => [
-                SkillDef::new("keen_pick", "I", "skill.keen_pick.name", "skill.keen_pick.desc"),
-                SkillDef::new("woodsman", "I", "skill.woodsman.name", "skill.woodsman.desc"),
-                SkillDef::new("green_thumb", "II", "skill.green_thumb.name", "skill.green_thumb.desc"),
-                SkillDef::new("prospector", "II", "skill.prospector.name", "skill.prospector.desc"),
-                SkillDef::new("master_harvester", "III", "skill.master_harvester.name", "skill.master_harvester.desc"),
-                SkillDef::new("deep_delver", "III", "skill.deep_delver.name", "skill.deep_delver.desc"),
+                SkillDef::new(
+                    "keen_pick",
+                    "I",
+                    "skill.keen_pick.name",
+                    "skill.keen_pick.desc",
+                ),
+                SkillDef::new(
+                    "woodsman",
+                    "I",
+                    "skill.woodsman.name",
+                    "skill.woodsman.desc",
+                ),
+                SkillDef::new(
+                    "green_thumb",
+                    "II",
+                    "skill.green_thumb.name",
+                    "skill.green_thumb.desc",
+                ),
+                SkillDef::new(
+                    "prospector",
+                    "II",
+                    "skill.prospector.name",
+                    "skill.prospector.desc",
+                ),
+                SkillDef::new(
+                    "master_harvester",
+                    "III",
+                    "skill.master_harvester.name",
+                    "skill.master_harvester.desc",
+                ),
+                SkillDef::new(
+                    "deep_delver",
+                    "III",
+                    "skill.deep_delver.name",
+                    "skill.deep_delver.desc",
+                ),
             ],
             Self::Crafting => [
-                SkillDef::new("neat_joinery", "I", "skill.neat_joinery.name", "skill.neat_joinery.desc"),
-                SkillDef::new("stonecutter", "I", "skill.stonecutter.name", "skill.stonecutter.desc"),
+                SkillDef::new(
+                    "neat_joinery",
+                    "I",
+                    "skill.neat_joinery.name",
+                    "skill.neat_joinery.desc",
+                ),
+                SkillDef::new(
+                    "stonecutter",
+                    "I",
+                    "skill.stonecutter.name",
+                    "skill.stonecutter.desc",
+                ),
                 SkillDef::new("smelter", "II", "skill.smelter.name", "skill.smelter.desc"),
                 SkillDef::new("artisan", "II", "skill.artisan.name", "skill.artisan.desc"),
-                SkillDef::new("masterwork", "III", "skill.masterwork.name", "skill.masterwork.desc"),
-                SkillDef::new("alchemist", "III", "skill.alchemist.name", "skill.alchemist.desc"),
+                SkillDef::new(
+                    "masterwork",
+                    "III",
+                    "skill.masterwork.name",
+                    "skill.masterwork.desc",
+                ),
+                SkillDef::new(
+                    "alchemist",
+                    "III",
+                    "skill.alchemist.name",
+                    "skill.alchemist.desc",
+                ),
             ],
             Self::Exploration => [
-                SkillDef::new("lightfooted", "I", "skill.lightfooted.name", "skill.lightfooted.desc"),
-                SkillDef::new("pathfinder", "I", "skill.pathfinder.name", "skill.pathfinder.desc"),
+                SkillDef::new(
+                    "lightfooted",
+                    "I",
+                    "skill.lightfooted.name",
+                    "skill.lightfooted.desc",
+                ),
+                SkillDef::new(
+                    "pathfinder",
+                    "I",
+                    "skill.pathfinder.name",
+                    "skill.pathfinder.desc",
+                ),
                 SkillDef::new("climber", "II", "skill.climber.name", "skill.climber.desc"),
-                SkillDef::new("weatherproof", "II", "skill.weatherproof.name", "skill.weatherproof.desc"),
-                SkillDef::new("wayfarer", "III", "skill.wayfarer.name", "skill.wayfarer.desc"),
-                SkillDef::new("cartographer", "III", "skill.cartographer.name", "skill.cartographer.desc"),
+                SkillDef::new(
+                    "weatherproof",
+                    "II",
+                    "skill.weatherproof.name",
+                    "skill.weatherproof.desc",
+                ),
+                SkillDef::new(
+                    "wayfarer",
+                    "III",
+                    "skill.wayfarer.name",
+                    "skill.wayfarer.desc",
+                ),
+                SkillDef::new(
+                    "cartographer",
+                    "III",
+                    "skill.cartographer.name",
+                    "skill.cartographer.desc",
+                ),
             ],
             Self::Racial => match subrace {
                 CharacterSubrace::Nordling => [
-                    SkillDef::new("versatility", "I", "skill.versatility.name", "skill.versatility.desc"),
+                    SkillDef::new(
+                        "versatility",
+                        "I",
+                        "skill.versatility.name",
+                        "skill.versatility.desc",
+                    ),
                     SkillDef::new("resolve", "I", "skill.resolve.name", "skill.resolve.desc"),
                     SkillDef::new("pioneer", "II", "skill.pioneer.name", "skill.pioneer.desc"),
-                    SkillDef::new("winter_blood", "III", "skill.winter_blood.name", "skill.winter_blood.desc"),
-                    SkillDef::new("bearhide", "III", "skill.bearhide.name", "skill.bearhide.desc"),
-                    SkillDef::new("highland_stamina", "III", "skill.highland_stamina.name", "skill.highland_stamina.desc"),
+                    SkillDef::new(
+                        "winter_blood",
+                        "III",
+                        "skill.winter_blood.name",
+                        "skill.winter_blood.desc",
+                    ),
+                    SkillDef::new(
+                        "bearhide",
+                        "III",
+                        "skill.bearhide.name",
+                        "skill.bearhide.desc",
+                    ),
+                    SkillDef::new(
+                        "highland_stamina",
+                        "III",
+                        "skill.highland_stamina.name",
+                        "skill.highland_stamina.desc",
+                    ),
                 ],
                 CharacterSubrace::Sunlander => [
-                    SkillDef::new("versatility", "I", "skill.versatility.name", "skill.versatility.desc"),
+                    SkillDef::new(
+                        "versatility",
+                        "I",
+                        "skill.versatility.name",
+                        "skill.versatility.desc",
+                    ),
                     SkillDef::new("resolve", "I", "skill.resolve.name", "skill.resolve.desc"),
                     SkillDef::new("pioneer", "II", "skill.pioneer.name", "skill.pioneer.desc"),
-                    SkillDef::new("quick_mind", "III", "skill.quick_mind.name", "skill.quick_mind.desc"),
-                    SkillDef::new("dune_stride", "III", "skill.dune_stride.name", "skill.dune_stride.desc"),
+                    SkillDef::new(
+                        "quick_mind",
+                        "III",
+                        "skill.quick_mind.name",
+                        "skill.quick_mind.desc",
+                    ),
+                    SkillDef::new(
+                        "dune_stride",
+                        "III",
+                        "skill.dune_stride.name",
+                        "skill.dune_stride.desc",
+                    ),
                     SkillDef::new("sunborn", "III", "skill.sunborn.name", "skill.sunborn.desc"),
                 ],
                 CharacterSubrace::CoastalHuman => [
-                    SkillDef::new("versatility", "I", "skill.versatility.name", "skill.versatility.desc"),
+                    SkillDef::new(
+                        "versatility",
+                        "I",
+                        "skill.versatility.name",
+                        "skill.versatility.desc",
+                    ),
                     SkillDef::new("resolve", "I", "skill.resolve.name", "skill.resolve.desc"),
                     SkillDef::new("pioneer", "II", "skill.pioneer.name", "skill.pioneer.desc"),
-                    SkillDef::new("tide_runner", "III", "skill.tide_runner.name", "skill.tide_runner.desc"),
-                    SkillDef::new("deep_breath", "III", "skill.deep_breath.name", "skill.deep_breath.desc"),
-                    SkillDef::new("mariner_fortune", "III", "skill.mariner_fortune.name", "skill.mariner_fortune.desc"),
+                    SkillDef::new(
+                        "tide_runner",
+                        "III",
+                        "skill.tide_runner.name",
+                        "skill.tide_runner.desc",
+                    ),
+                    SkillDef::new(
+                        "deep_breath",
+                        "III",
+                        "skill.deep_breath.name",
+                        "skill.deep_breath.desc",
+                    ),
+                    SkillDef::new(
+                        "mariner_fortune",
+                        "III",
+                        "skill.mariner_fortune.name",
+                        "skill.mariner_fortune.desc",
+                    ),
                 ],
                 CharacterSubrace::WoodElf => [
-                    SkillDef::new("graceful_leap", "I", "skill.graceful_leap.name", "skill.graceful_leap.desc"),
-                    SkillDef::new("silent_tread", "I", "skill.silent_tread.name", "skill.silent_tread.desc"),
-                    SkillDef::new("eagle_eye", "II", "skill.eagle_eye.name", "skill.eagle_eye.desc"),
-                    SkillDef::new("canopy_sprint", "III", "skill.canopy_sprint.name", "skill.canopy_sprint.desc"),
-                    SkillDef::new("forest_veil", "III", "skill.forest_veil.name", "skill.forest_veil.desc"),
-                    SkillDef::new("ancestral_bow", "III", "skill.ancestral_bow.name", "skill.ancestral_bow.desc"),
+                    SkillDef::new(
+                        "graceful_leap",
+                        "I",
+                        "skill.graceful_leap.name",
+                        "skill.graceful_leap.desc",
+                    ),
+                    SkillDef::new(
+                        "silent_tread",
+                        "I",
+                        "skill.silent_tread.name",
+                        "skill.silent_tread.desc",
+                    ),
+                    SkillDef::new(
+                        "eagle_eye",
+                        "II",
+                        "skill.eagle_eye.name",
+                        "skill.eagle_eye.desc",
+                    ),
+                    SkillDef::new(
+                        "canopy_sprint",
+                        "III",
+                        "skill.canopy_sprint.name",
+                        "skill.canopy_sprint.desc",
+                    ),
+                    SkillDef::new(
+                        "forest_veil",
+                        "III",
+                        "skill.forest_veil.name",
+                        "skill.forest_veil.desc",
+                    ),
+                    SkillDef::new(
+                        "ancestral_bow",
+                        "III",
+                        "skill.ancestral_bow.name",
+                        "skill.ancestral_bow.desc",
+                    ),
                 ],
                 CharacterSubrace::DarkElf => [
-                    SkillDef::new("graceful_leap", "I", "skill.graceful_leap.name", "skill.graceful_leap.desc"),
-                    SkillDef::new("silent_tread", "I", "skill.silent_tread.name", "skill.silent_tread.desc"),
-                    SkillDef::new("eagle_eye", "II", "skill.eagle_eye.name", "skill.eagle_eye.desc"),
-                    SkillDef::new("abyssal_sight", "III", "skill.abyssal_sight.name", "skill.abyssal_sight.desc"),
-                    SkillDef::new("shadow_ambush", "III", "skill.shadow_ambush.name", "skill.shadow_ambush.desc"),
-                    SkillDef::new("crystal_affinity", "III", "skill.crystal_affinity.name", "skill.crystal_affinity.desc"),
+                    SkillDef::new(
+                        "graceful_leap",
+                        "I",
+                        "skill.graceful_leap.name",
+                        "skill.graceful_leap.desc",
+                    ),
+                    SkillDef::new(
+                        "silent_tread",
+                        "I",
+                        "skill.silent_tread.name",
+                        "skill.silent_tread.desc",
+                    ),
+                    SkillDef::new(
+                        "eagle_eye",
+                        "II",
+                        "skill.eagle_eye.name",
+                        "skill.eagle_eye.desc",
+                    ),
+                    SkillDef::new(
+                        "abyssal_sight",
+                        "III",
+                        "skill.abyssal_sight.name",
+                        "skill.abyssal_sight.desc",
+                    ),
+                    SkillDef::new(
+                        "shadow_ambush",
+                        "III",
+                        "skill.shadow_ambush.name",
+                        "skill.shadow_ambush.desc",
+                    ),
+                    SkillDef::new(
+                        "crystal_affinity",
+                        "III",
+                        "skill.crystal_affinity.name",
+                        "skill.crystal_affinity.desc",
+                    ),
                 ],
                 CharacterSubrace::HighElf => [
-                    SkillDef::new("graceful_leap", "I", "skill.graceful_leap.name", "skill.graceful_leap.desc"),
-                    SkillDef::new("silent_tread", "I", "skill.silent_tread.name", "skill.silent_tread.desc"),
-                    SkillDef::new("eagle_eye", "II", "skill.eagle_eye.name", "skill.eagle_eye.desc"),
-                    SkillDef::new("arcane_resonance", "III", "skill.arcane_resonance.name", "skill.arcane_resonance.desc"),
-                    SkillDef::new("starlight_aim", "III", "skill.starlight_aim.name", "skill.starlight_aim.desc"),
-                    SkillDef::new("aether_ward", "III", "skill.aether_ward.name", "skill.aether_ward.desc"),
+                    SkillDef::new(
+                        "graceful_leap",
+                        "I",
+                        "skill.graceful_leap.name",
+                        "skill.graceful_leap.desc",
+                    ),
+                    SkillDef::new(
+                        "silent_tread",
+                        "I",
+                        "skill.silent_tread.name",
+                        "skill.silent_tread.desc",
+                    ),
+                    SkillDef::new(
+                        "eagle_eye",
+                        "II",
+                        "skill.eagle_eye.name",
+                        "skill.eagle_eye.desc",
+                    ),
+                    SkillDef::new(
+                        "arcane_resonance",
+                        "III",
+                        "skill.arcane_resonance.name",
+                        "skill.arcane_resonance.desc",
+                    ),
+                    SkillDef::new(
+                        "starlight_aim",
+                        "III",
+                        "skill.starlight_aim.name",
+                        "skill.starlight_aim.desc",
+                    ),
+                    SkillDef::new(
+                        "aether_ward",
+                        "III",
+                        "skill.aether_ward.name",
+                        "skill.aether_ward.desc",
+                    ),
                 ],
                 CharacterSubrace::MountainDwarf => [
-                    SkillDef::new("stoneborn", "I", "skill.stoneborn.name", "skill.stoneborn.desc"),
-                    SkillDef::new("stout_frame", "I", "skill.stout_frame.name", "skill.stout_frame.desc"),
-                    SkillDef::new("forge_master", "II", "skill.forge_master.name", "skill.forge_master.desc"),
-                    SkillDef::new("granite_bulwark", "III", "skill.granite_bulwark.name", "skill.granite_bulwark.desc"),
-                    SkillDef::new("seismic_blow", "III", "skill.seismic_blow.name", "skill.seismic_blow.desc"),
-                    SkillDef::new("peak_endurance", "III", "skill.peak_endurance.name", "skill.peak_endurance.desc"),
+                    SkillDef::new(
+                        "stoneborn",
+                        "I",
+                        "skill.stoneborn.name",
+                        "skill.stoneborn.desc",
+                    ),
+                    SkillDef::new(
+                        "stout_frame",
+                        "I",
+                        "skill.stout_frame.name",
+                        "skill.stout_frame.desc",
+                    ),
+                    SkillDef::new(
+                        "forge_master",
+                        "II",
+                        "skill.forge_master.name",
+                        "skill.forge_master.desc",
+                    ),
+                    SkillDef::new(
+                        "granite_bulwark",
+                        "III",
+                        "skill.granite_bulwark.name",
+                        "skill.granite_bulwark.desc",
+                    ),
+                    SkillDef::new(
+                        "seismic_blow",
+                        "III",
+                        "skill.seismic_blow.name",
+                        "skill.seismic_blow.desc",
+                    ),
+                    SkillDef::new(
+                        "peak_endurance",
+                        "III",
+                        "skill.peak_endurance.name",
+                        "skill.peak_endurance.desc",
+                    ),
                 ],
                 CharacterSubrace::DeepDwarf => [
-                    SkillDef::new("stoneborn", "I", "skill.stoneborn.name", "skill.stoneborn.desc"),
-                    SkillDef::new("stout_frame", "I", "skill.stout_frame.name", "skill.stout_frame.desc"),
-                    SkillDef::new("forge_master", "II", "skill.forge_master.name", "skill.forge_master.desc"),
-                    SkillDef::new("ore_sense", "III", "skill.ore_sense.name", "skill.ore_sense.desc"),
-                    SkillDef::new("magma_ward", "III", "skill.magma_ward.name", "skill.magma_ward.desc"),
-                    SkillDef::new("relentless_pick", "III", "skill.relentless_pick.name", "skill.relentless_pick.desc"),
+                    SkillDef::new(
+                        "stoneborn",
+                        "I",
+                        "skill.stoneborn.name",
+                        "skill.stoneborn.desc",
+                    ),
+                    SkillDef::new(
+                        "stout_frame",
+                        "I",
+                        "skill.stout_frame.name",
+                        "skill.stout_frame.desc",
+                    ),
+                    SkillDef::new(
+                        "forge_master",
+                        "II",
+                        "skill.forge_master.name",
+                        "skill.forge_master.desc",
+                    ),
+                    SkillDef::new(
+                        "ore_sense",
+                        "III",
+                        "skill.ore_sense.name",
+                        "skill.ore_sense.desc",
+                    ),
+                    SkillDef::new(
+                        "magma_ward",
+                        "III",
+                        "skill.magma_ward.name",
+                        "skill.magma_ward.desc",
+                    ),
+                    SkillDef::new(
+                        "relentless_pick",
+                        "III",
+                        "skill.relentless_pick.name",
+                        "skill.relentless_pick.desc",
+                    ),
                 ],
                 CharacterSubrace::HillDwarf => [
-                    SkillDef::new("stoneborn", "I", "skill.stoneborn.name", "skill.stoneborn.desc"),
-                    SkillDef::new("stout_frame", "I", "skill.stout_frame.name", "skill.stout_frame.desc"),
-                    SkillDef::new("forge_master", "II", "skill.forge_master.name", "skill.forge_master.desc"),
-                    SkillDef::new("golden_hammer", "III", "skill.golden_hammer.name", "skill.golden_hammer.desc"),
-                    SkillDef::new("hearty_brew", "III", "skill.hearty_brew.name", "skill.hearty_brew.desc"),
-                    SkillDef::new("rich_vein", "III", "skill.rich_vein.name", "skill.rich_vein.desc"),
+                    SkillDef::new(
+                        "stoneborn",
+                        "I",
+                        "skill.stoneborn.name",
+                        "skill.stoneborn.desc",
+                    ),
+                    SkillDef::new(
+                        "stout_frame",
+                        "I",
+                        "skill.stout_frame.name",
+                        "skill.stout_frame.desc",
+                    ),
+                    SkillDef::new(
+                        "forge_master",
+                        "II",
+                        "skill.forge_master.name",
+                        "skill.forge_master.desc",
+                    ),
+                    SkillDef::new(
+                        "golden_hammer",
+                        "III",
+                        "skill.golden_hammer.name",
+                        "skill.golden_hammer.desc",
+                    ),
+                    SkillDef::new(
+                        "hearty_brew",
+                        "III",
+                        "skill.hearty_brew.name",
+                        "skill.hearty_brew.desc",
+                    ),
+                    SkillDef::new(
+                        "rich_vein",
+                        "III",
+                        "skill.rich_vein.name",
+                        "skill.rich_vein.desc",
+                    ),
                 ],
             },
         }
@@ -252,7 +588,9 @@ fn spawn_skills_menu(
         .or_else(|_| std::env::var("USER"))
         .unwrap_or_else(|_| "Adventurer".to_string());
     let dimming_alpha = game_settings.map_or(0.65, |s| s.background_dimming.alpha());
-    let points_lbl = loc.as_ref().map_or("Skill Points", |l| l.t("skills.points"));
+    let points_lbl = loc
+        .as_ref()
+        .map_or("Skill Points", |l| l.t("skills.points"));
     let tier_lbl = loc.as_ref().map_or("Tier", |l| l.t("skills.tier"));
 
     commands
@@ -403,7 +741,9 @@ fn spawn_skills_menu(
                             TextColor(palette::TEXT_MUTED),
                         ));
 
-                        let cur_hp = vitals.as_ref().map_or(attrs.max_health, |v| v.health.round() as u32);
+                        let cur_hp = vitals
+                            .as_ref()
+                            .map_or(attrs.max_health, |v| v.health.round() as u32);
                         let cur_stam = vitals
                             .as_ref()
                             .map_or(attrs.max_stamina, |v| v.stamina.round() as u32);
@@ -425,11 +765,16 @@ fn spawn_skills_menu(
                                 format!("{}", attrs.defense),
                             ),
                             (
-                                loc.as_ref().map_or("Move Speed", |l| l.t("attr.move_speed")),
-                                format!("{}%", (attrs.move_speed_multiplier * 100.0).round() as i32),
+                                loc.as_ref()
+                                    .map_or("Move Speed", |l| l.t("attr.move_speed")),
+                                format!(
+                                    "{}%",
+                                    (attrs.move_speed_multiplier * 100.0).round() as i32
+                                ),
                             ),
                             (
-                                loc.as_ref().map_or("Jump Height", |l| l.t("attr.jump_height")),
+                                loc.as_ref()
+                                    .map_or("Jump Height", |l| l.t("attr.jump_height")),
                                 format!("{:.2}b", attrs.jump_height_blocks),
                             ),
                             (
@@ -441,8 +786,12 @@ fn spawn_skills_menu(
                                 ),
                             ),
                             (
-                                loc.as_ref().map_or("Swim Speed", |l| l.t("attr.swim_speed")),
-                                format!("{}%", (attrs.swim_speed_multiplier * 100.0).round() as i32),
+                                loc.as_ref()
+                                    .map_or("Swim Speed", |l| l.t("attr.swim_speed")),
+                                format!(
+                                    "{}%",
+                                    (attrs.swim_speed_multiplier * 100.0).round() as i32
+                                ),
                             ),
                             (
                                 loc.as_ref()
@@ -473,7 +822,10 @@ fn spawn_skills_menu(
                             (
                                 loc.as_ref()
                                     .map_or("Knockback Res.", |l| l.t("attr.knockback_res")),
-                                format!("+{}%", (attrs.knockback_resistance * 100.0).round() as i32),
+                                format!(
+                                    "+{}%",
+                                    (attrs.knockback_resistance * 100.0).round() as i32
+                                ),
                             ),
                             (
                                 loc.as_ref()
@@ -700,12 +1052,8 @@ fn spawn_skills_menu(
                     .with_children(|grid| {
                         for skill in tab.skills_for(subrace) {
                             let icon_handle = asset_server.load(skill.icon_path());
-                            let title = loc
-                                .as_ref()
-                                .map_or(skill.id, |l| l.t(skill.name_key));
-                            let desc = loc
-                                .as_ref()
-                                .map_or("", |l| l.t(skill.desc_key));
+                            let title = loc.as_ref().map_or(skill.id, |l| l.t(skill.name_key));
+                            let desc = loc.as_ref().map_or("", |l| l.t(skill.desc_key));
 
                             grid.spawn((
                                 Node {

@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use crate::world::Voxel;
+use bevy::prelude::*;
 
 /// Categorized material acoustic identity for tactile footstep and block interaction audio.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Reflect)]
@@ -25,32 +25,34 @@ impl SoundMaterial {
             return Self::Water;
         }
 
-        if voxel.is_leaves_const() || matches!(
-            voxel,
-            Voxel::BullKelp
-                | Voxel::Delesseria
-                | Voxel::Kelp
-                | Voxel::RedAlgae
-                | Voxel::Sargassum
-                | Voxel::Seaweed
-                | Voxel::Seagrass
-                | Voxel::BrainCoralFan
-                | Voxel::BubbleCoralFan
-                | Voxel::DeadCoralFan
-                | Voxel::DyingCoralFan
-                | Voxel::FireCoralFan
-                | Voxel::HeartCoralFan
-                | Voxel::HornCoralFan
-                | Voxel::LeafCoralFan
-                | Voxel::ReedCoralFan
-                | Voxel::SpikeCoralFan
-                | Voxel::StaghornCoralFan
-                | Voxel::SunCoralFan
-                | Voxel::ThornCoralFan
-                | Voxel::TubeCoralFan
-                | Voxel::WaxCoralFan
-                | Voxel::ZigzagCoralFan
-        ) {
+        if voxel.is_leaves_const()
+            || matches!(
+                voxel,
+                Voxel::BullKelp
+                    | Voxel::Delesseria
+                    | Voxel::Kelp
+                    | Voxel::RedAlgae
+                    | Voxel::Sargassum
+                    | Voxel::Seaweed
+                    | Voxel::Seagrass
+                    | Voxel::BrainCoralFan
+                    | Voxel::BubbleCoralFan
+                    | Voxel::DeadCoralFan
+                    | Voxel::DyingCoralFan
+                    | Voxel::FireCoralFan
+                    | Voxel::HeartCoralFan
+                    | Voxel::HornCoralFan
+                    | Voxel::LeafCoralFan
+                    | Voxel::ReedCoralFan
+                    | Voxel::SpikeCoralFan
+                    | Voxel::StaghornCoralFan
+                    | Voxel::SunCoralFan
+                    | Voxel::ThornCoralFan
+                    | Voxel::TubeCoralFan
+                    | Voxel::WaxCoralFan
+                    | Voxel::ZigzagCoralFan
+            )
+        {
             return Self::Leaves;
         }
 
@@ -58,22 +60,23 @@ impl SoundMaterial {
             || voxel.is_flora_billboard()
             || voxel == Voxel::VegeCactus
             || matches!(
-            voxel,
-            Voxel::MossForest
-                | Voxel::MossCarpet
-                | Voxel::FungiAmanita
-                | Voxel::FungiAmanitaCap
-                | Voxel::FungiInside
-                | Voxel::FungiPorcini
-                | Voxel::FungiPorciniCap
-                | Voxel::FungiRussula
-                | Voxel::FungiRussulaCap
-                | Voxel::FungiShiitake
-                | Voxel::FungiShiitakeCap
-                | Voxel::FungiStem
-                | Voxel::FungiVerdigris
-                | Voxel::FungiVerdigrisCap
-        ) {
+                voxel,
+                Voxel::MossForest
+                    | Voxel::MossCarpet
+                    | Voxel::FungiAmanita
+                    | Voxel::FungiAmanitaCap
+                    | Voxel::FungiInside
+                    | Voxel::FungiPorcini
+                    | Voxel::FungiPorciniCap
+                    | Voxel::FungiRussula
+                    | Voxel::FungiRussulaCap
+                    | Voxel::FungiShiitake
+                    | Voxel::FungiShiitakeCap
+                    | Voxel::FungiStem
+                    | Voxel::FungiVerdigris
+                    | Voxel::FungiVerdigrisCap
+            )
+        {
             return Self::Grass;
         }
 
@@ -206,10 +209,7 @@ impl SoundMaterial {
                 "sounds/blocks/glass/hit3.ogg",
                 "sounds/blocks/glass/hit4.ogg",
             ],
-            Self::Water => &[
-                "sounds/liquids/splash.ogg",
-                "sounds/liquids/splash2.ogg",
-            ],
+            Self::Water => &["sounds/liquids/splash.ogg", "sounds/liquids/splash2.ogg"],
         }
     }
 
@@ -299,10 +299,7 @@ impl SoundMaterial {
                 "sounds/blocks/glass/hit3.ogg",
                 "sounds/blocks/glass/hit4.ogg",
             ],
-            Self::Water => &[
-                "sounds/liquids/splash.ogg",
-                "sounds/liquids/splash2.ogg",
-            ],
+            Self::Water => &["sounds/liquids/splash.ogg", "sounds/liquids/splash2.ogg"],
         }
     }
 
@@ -543,10 +540,7 @@ impl SoundMaterial {
                 "sounds/footsteps/gravel/gravel_land1.ogg",
                 "sounds/footsteps/gravel/gravel_land2.ogg",
             ],
-            Self::Water => &[
-                "sounds/liquids/splash.ogg",
-                "sounds/liquids/splash2.ogg",
-            ],
+            Self::Water => &["sounds/liquids/splash.ogg", "sounds/liquids/splash2.ogg"],
             _ => self.run_sounds(),
         }
     }

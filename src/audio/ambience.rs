@@ -172,7 +172,7 @@ fn update_underwater_loop(
     mut state: ResMut<AmbienceState>,
     mut loop_query: Query<&mut AudioSink, With<UnderwaterAudioLoop>>,
 ) {
-    let is_camera_in_water = env_status.as_ref().map_or(false, |s| s.is_camera_in_water);
+    let is_camera_in_water = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
     let master = settings.master_volume * settings.ambient_volume * 0.50;
 
     let target_vol = if is_camera_in_water {
@@ -188,7 +188,8 @@ fn update_underwater_loop(
     } else {
         3.0
     };
-    state.current_underwater_vol += (target_vol - state.current_underwater_vol) * (speed * dt).min(1.0);
+    state.current_underwater_vol +=
+        (target_vol - state.current_underwater_vol) * (speed * dt).min(1.0);
 
     for mut sink in &mut loop_query {
         sink.set_volume(Volume::Linear(state.current_underwater_vol));
@@ -210,9 +211,11 @@ fn update_ambient_audio(
         return;
     }
 
-    let is_underground = env_status.as_ref().map_or(false, |s| s.is_underground);
-    let is_camera_water = env_status.as_ref().map_or(false, |s| s.is_camera_in_water);
-    let biome = env_status.as_ref().map_or(BiomeType::default(), |s| s.current_biome);
+    let is_underground = env_status.as_ref().is_some_and(|s| s.is_underground);
+    let is_camera_water = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
+    let biome = env_status
+        .as_ref()
+        .map_or(BiomeType::default(), |s| s.current_biome);
     let day_phase = env_state
         .as_ref()
         .map_or(DayPhase::Noon, |s| DayPhase::from_time(s.time_of_day));

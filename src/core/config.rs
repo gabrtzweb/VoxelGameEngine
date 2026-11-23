@@ -332,13 +332,7 @@ pub enum MenuBlurIntensity {
 }
 
 impl MenuBlurIntensity {
-    pub const ALL: [Self; 5] = [
-        Self::Off,
-        Self::Low,
-        Self::Medium,
-        Self::High,
-        Self::Ultra,
-    ];
+    pub const ALL: [Self; 5] = [Self::Off, Self::Low, Self::Medium, Self::High, Self::Ultra];
 
     pub fn next(self) -> Self {
         match self {
@@ -1042,16 +1036,17 @@ impl Default for LocalConfig {
 impl LocalConfig {
     /// Constructs a `ControlSettings` resource reflecting persisted bindings and mouse options.
     pub fn to_control_settings(&self) -> crate::core::ControlSettings {
-        let mut controls = crate::core::ControlSettings::default();
-        controls.mouse_sensitivity = self.mouse_sensitivity;
-        controls.invert_mouse_y = self.invert_mouse_y;
+        let mut controls = crate::core::ControlSettings {
+            mouse_sensitivity: self.mouse_sensitivity,
+            invert_mouse_y: self.invert_mouse_y,
+            ..Default::default()
+        };
 
         for (action_key, binding_str) in &self.custom_keybindings {
-            if let Some(action) = crate::core::InputAction::from_config_key(action_key) {
-                if let Some(binding) = crate::core::InputBinding::from_config_str(binding_str) {
+            if let Some(action) = crate::core::InputAction::from_config_key(action_key)
+                && let Some(binding) = crate::core::InputBinding::from_config_str(binding_str) {
                     controls.set_binding(action, binding);
                 }
-            }
         }
         controls
     }

@@ -89,7 +89,10 @@ fn test_emit_block_grass_blades_geometry() {
     assert_eq!(buffers.indices.len(), 384);
 
     let mesh = buffers.into_mesh();
-    assert!(mesh.is_some(), "into_mesh must return Some mesh for non-empty buffers");
+    assert!(
+        mesh.is_some(),
+        "into_mesh must return Some mesh for non-empty buffers"
+    );
     let mesh = mesh.unwrap();
     assert_eq!(mesh.count_vertices(), 256);
 }
@@ -97,15 +100,30 @@ fn test_emit_block_grass_blades_geometry() {
 #[test]
 fn test_emit_block_grass_blades_on_slab_and_stairs() {
     // 1. Bottom Slab (orientation 0): surface height should be 0.5 across the entire block
-    assert_eq!(block_surface_top_y(BlockShape::Slab, 0, 0.2, 0.2), Some(0.5));
-    assert_eq!(block_surface_top_y(BlockShape::Slab, 0, 0.8, 0.8), Some(0.5));
+    assert_eq!(
+        block_surface_top_y(BlockShape::Slab, 0, 0.2, 0.2),
+        Some(0.5)
+    );
+    assert_eq!(
+        block_surface_top_y(BlockShape::Slab, 0, 0.8, 0.8),
+        Some(0.5)
+    );
 
     // Top Slab (orientation 1): surface height should be 1.0
-    assert_eq!(block_surface_top_y(BlockShape::Slab, 1, 0.5, 0.5), Some(1.0));
+    assert_eq!(
+        block_surface_top_y(BlockShape::Slab, 1, 0.5, 0.5),
+        Some(1.0)
+    );
 
     // 2. Upright Stair (+X, orientation 0): lower step is x in 0.0..0.5 (y = 0.5), upper step is x in 0.5..1.0 (y = 1.0)
-    assert_eq!(block_surface_top_y(BlockShape::Stair, 0, 0.2, 0.5), Some(0.5));
-    assert_eq!(block_surface_top_y(BlockShape::Stair, 0, 0.8, 0.5), Some(1.0));
+    assert_eq!(
+        block_surface_top_y(BlockShape::Stair, 0, 0.2, 0.5),
+        Some(0.5)
+    );
+    assert_eq!(
+        block_surface_top_y(BlockShape::Stair, 0, 0.8, 0.5),
+        Some(1.0)
+    );
 
     // 3. Test blade vertex generation on a bottom slab: base vertices should sit at y = 5.5 (5 + 0.5), not 6.0!
     let mut buffers = MeshBuffers::with_capacity(32);
@@ -125,8 +143,16 @@ fn test_emit_block_grass_blades_on_slab_and_stairs() {
     assert!(!buffers.positions.is_empty());
     for pos in &buffers.positions {
         // Base vertices (h0 = 0) must be exactly at y = 5.5
-        assert!(pos[1] >= 5.5, "Grass blade vertex Y ({}) is below slab surface (5.5)", pos[1]);
-        assert!(pos[1] <= 6.0, "Grass blade vertex Y ({}) exceeds reasonable height above slab", pos[1]);
+        assert!(
+            pos[1] >= 5.5,
+            "Grass blade vertex Y ({}) is below slab surface (5.5)",
+            pos[1]
+        );
+        assert!(
+            pos[1] <= 6.0,
+            "Grass blade vertex Y ({}) exceeds reasonable height above slab",
+            pos[1]
+        );
     }
 }
 
@@ -147,8 +173,14 @@ fn test_grass_trail_field_stamping_and_decay() {
 
     // Verify center pixel has non-zero intensity
     let center_idx = (24 * 48 + 24) * 4;
-    assert!(trail.pixels[center_idx + 2] > 0, "Intensity channel (blue) must be > 0 at footprint stamp center");
-    assert!(trail.pixels[center_idx + 3] > 0, "Alpha channel must be > 0 at footprint stamp center");
+    assert!(
+        trail.pixels[center_idx + 2] > 0,
+        "Intensity channel (blue) must be > 0 at footprint stamp center"
+    );
+    assert!(
+        trail.pixels[center_idx + 3] > 0,
+        "Alpha channel must be > 0 at footprint stamp center"
+    );
 
     let initial_intensity = trail.pixels[center_idx + 2];
     let initial_alpha = trail.pixels[center_idx + 3];

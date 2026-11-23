@@ -91,7 +91,7 @@ fn select_tree_for_column(
 
     match col.biome {
         BiomeType::YosemiteLowlands | BiomeType::Shield => {
-            if ((h >> 18) % 20) == 0 {
+            if (h >> 18).is_multiple_of(20) {
                 let cap = match (h >> 12) % 4 {
                     0 => Voxel::FungiAmanitaCap,
                     1 => Voxel::FungiPorciniCap,
@@ -113,7 +113,7 @@ fn select_tree_for_column(
             Some((0.64, arch))
         }
         BiomeType::CloudForest => {
-            if ((h >> 18) % 11) == 0 {
+            if (h >> 18).is_multiple_of(11) {
                 let cap = match (h >> 12) % 4 {
                     0 => Voxel::FungiAmanitaCap,
                     1 => Voxel::FungiPorciniCap,
@@ -148,7 +148,7 @@ fn select_tree_for_column(
         }
         BiomeType::SakuraGrove => Some((0.68, TreeArchetype::Cherry)),
         BiomeType::PineHighlands | BiomeType::SiberianTaiga | BiomeType::WintryForest => {
-            if col.biome != BiomeType::WintryForest && ((h >> 18) % 20) == 0 {
+            if col.biome != BiomeType::WintryForest && (h >> 18).is_multiple_of(20) {
                 let cap = match (h >> 12) % 3 {
                     0 => Voxel::FungiAmanitaCap,
                     1 => Voxel::FungiPorciniCap,
@@ -171,7 +171,7 @@ fn select_tree_for_column(
         }
         BiomeType::DesertOasis => Some((0.62, TreeArchetype::Palm)),
         BiomeType::TropicalJungle => {
-            if ((h >> 18) % 16) == 0 {
+            if (h >> 18).is_multiple_of(16) {
                 let cap = match (h >> 12) % 3 {
                     0 => Voxel::FungiVerdigrisCap,
                     1 => Voxel::FungiShiitakeCap,
@@ -179,7 +179,7 @@ fn select_tree_for_column(
                 };
                 return Some((0.82, TreeArchetype::GiantMushroom(cap)));
             }
-            let arch = if ((h >> 8) % 5) == 0 {
+            let arch = if (h >> 8).is_multiple_of(5) {
                 TreeArchetype::Palm
             } else {
                 TreeArchetype::Mahogany
@@ -187,7 +187,7 @@ fn select_tree_for_column(
             Some((0.82, arch))
         }
         BiomeType::OrchidSwamp => {
-            if ((h >> 18) % 10) == 0 {
+            if (h >> 18).is_multiple_of(10) {
                 let cap = match (h >> 12) % 4 {
                     0 => Voxel::FungiVerdigrisCap,
                     1 => Voxel::FungiShiitakeCap,
@@ -548,7 +548,7 @@ fn stamp_leaf_cloud(
                                 BlockShape::Slab,
                                 0,
                             );
-                        } else if ((cell_h >> 6) % 5) != 0 {
+                        } else if !(cell_h >> 6).is_multiple_of(5) {
                             w.set_leaf_shaped(
                                 cx + dx,
                                 cy + dy,
@@ -571,7 +571,7 @@ fn stamp_leaf_cloud(
                                 BlockShape::Slab,
                                 1,
                             );
-                        } else if ((cell_h >> 6) % 5) != 0 {
+                        } else if !(cell_h >> 6).is_multiple_of(5) {
                             w.set_leaf_shaped(
                                 cx + dx,
                                 cy + dy,
@@ -584,7 +584,7 @@ fn stamp_leaf_cloud(
                             w.set_leaf(cx + dx, cy + dy, cz + dz, leaves);
                         }
                         continue;
-                    } else if dist_sq > 0.76 && ((cell_h >> 8) % 3) != 0 {
+                    } else if dist_sq > 0.76 && !(cell_h >> 8).is_multiple_of(3) {
                         let stair_orient = if ny >= 0.0 {
                             inward_orient
                         } else {
@@ -781,7 +781,7 @@ fn select_bush_for_column(col: TerrainColumn, h: u32) -> Option<(f32, Voxel, Vox
             (0.26, l, lf)
         }
         BiomeType::SiberianTaiga | BiomeType::WintryForest | BiomeType::ColdShrubland => {
-            let (l, lf) = if ((h >> 8) % 3) == 0 {
+            let (l, lf) = if (h >> 8).is_multiple_of(3) {
                 (Voxel::BirchLog, Voxel::BirchLeaves)
             } else {
                 (Voxel::PineLog, Voxel::PineLeaves)
@@ -902,12 +902,12 @@ where
                 }
 
                 let mineral_triple: Option<(Voxel, Voxel, Voxel)> = if is_mineral_boulder {
-                    let kind = if ((h >> 22) % 3) == 0 {
+                    let kind = if (h >> 22).is_multiple_of(3) {
                         (h >> 24) % 3
                     } else {
                         match col.biome.config().primary_stone {
                             Voxel::Granite | Voxel::Marble | Voxel::Chalk | Voxel::Limestone => 0, // Quartz
-                            Voxel::Basalt | Voxel::Gabbro | Voxel::Slate | Voxel::Argillite => 1,  // Flint
+                            Voxel::Basalt | Voxel::Gabbro | Voxel::Slate | Voxel::Argillite => 1, // Flint
                             _ => 2, // Chert
                         }
                     };
@@ -955,31 +955,17 @@ where
                     if let Some((_, peb_single, peb_cluster)) = mineral_triple {
                         let ph = hash_tree_cell(rx, rz, h ^ 0x9EB1);
                         if hash_f32(ph) < 0.65 {
-                            let (pvox, pshape) = if ((ph >> 8) % 3) == 0 {
+                            let (pvox, pshape) = if (ph >> 8).is_multiple_of(3) {
                                 (peb_cluster, BlockShape::PebbleCluster)
                             } else {
                                 (peb_single, BlockShape::Pebble)
                             };
-                            writer.set_shaped(
-                                rx,
-                                ry + 3,
-                                rz,
-                                pvox,
-                                pshape,
-                                ((ph >> 12) & 3) as u8,
-                            );
+                            writer.set_shaped(rx, ry + 3, rz, pvox, pshape, ((ph >> 12) & 3) as u8);
                         }
                     } else if moss_prob >= 0.35
                         && hash_f32(hash_tree_cell(rx, rz, h ^ 0x4055)) < 0.42
                     {
-                        writer.set_shaped(
-                            rx,
-                            ry + 3,
-                            rz,
-                            Voxel::MossCarpet,
-                            BlockShape::Carpet,
-                            0,
-                        );
+                        writer.set_shaped(rx, ry + 3, rz, Voxel::MossCarpet, BlockShape::Carpet, 0);
                     }
                 } else {
                     writer.set_leaf_shaped(rx, ry + 2, rz, pick_mat(0, 2, 0), BlockShape::Slab, 0);
@@ -1002,7 +988,7 @@ where
                     }
                     let ncol = column_at(rx + dx, rz + dz);
                     let dy_diff = ncol.terrain_height - ry;
-                    if dy_diff < -1 || dy_diff > 1 || ncol.water_level.is_some() {
+                    if !(-1..=1).contains(&dy_diff) || ncol.water_level.is_some() {
                         continue;
                     }
                     // Anchor into 1-block slope dip so side stone never floats
@@ -1013,9 +999,9 @@ where
                     let shape_roll = hash_f32(sh.rotate_right(9));
                     if shape_roll < 0.50 {
                         writer.set_leaf(rx + dx, ry + 1, rz + dz, mat);
-                        if let Some((_, peb_single, peb_cluster)) = mineral_triple {
-                            if hash_f32(sh.rotate_right(17)) < 0.38 {
-                                let (pvox, pshape) = if ((sh >> 12) % 3) == 0 {
+                        if let Some((_, peb_single, peb_cluster)) = mineral_triple
+                            && hash_f32(sh.rotate_right(17)) < 0.38 {
+                                let (pvox, pshape) = if (sh >> 12).is_multiple_of(3) {
                                     (peb_cluster, BlockShape::PebbleCluster)
                                 } else {
                                     (peb_single, BlockShape::Pebble)
@@ -1029,7 +1015,6 @@ where
                                     ((sh >> 14) & 3) as u8,
                                 );
                             }
-                        }
                     } else if shape_roll < 0.80 {
                         writer.set_leaf_shaped(rx + dx, ry + 1, rz + dz, mat, BlockShape::Slab, 0);
                     } else {
@@ -1080,7 +1065,7 @@ where
                                 if pcol.surface_shape == BlockShape::Full
                                     && pcol.water_level.is_none_or(|wl| pcol.terrain_height >= wl)
                                 {
-                                    let (pvox, pshape) = if ((ph >> 8) % 3) == 0 {
+                                    let (pvox, pshape) = if (ph >> 8).is_multiple_of(3) {
                                         (peb_cluster, BlockShape::PebbleCluster)
                                     } else {
                                         (peb_single, BlockShape::Pebble)
@@ -1153,7 +1138,7 @@ where
                 for (dx, dz) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
                     let ncol = column_at(rx + dx, rz + dz);
                     let dy_diff = ncol.terrain_height - ry;
-                    if dy_diff < -1 || dy_diff > 1 || ncol.water_level.is_some() {
+                    if !(-1..=1).contains(&dy_diff) || ncol.water_level.is_some() {
                         continue;
                     }
                     let leaf_y = if dy_diff == -1 { ry } else { ry + 1 };
@@ -1412,7 +1397,7 @@ where
                 writer.set_rock(rx, ry + 1, rz, Voxel::Reefstone);
 
                 // Sculpted top cap favoring slabs & stairs
-                if ((h >> 8) % 3) != 0 {
+                if !(h >> 8).is_multiple_of(3) {
                     let cap_roll = (h >> 10) % 10;
                     if cap_roll < 5 {
                         writer.set_rock_shaped(
@@ -1752,7 +1737,7 @@ where
                     }
 
                     // Occasional Forest Moss patch right next to the fallen log
-                    if ((mh >> 12) % 3) == 0 {
+                    if (mh >> 12).is_multiple_of(3) {
                         let side_sign = if ((mh >> 14) & 1) == 0 { 1 } else { -1 };
                         let mx = sx + dz * side_sign;
                         let mz = sz + dx * side_sign;
@@ -1969,7 +1954,7 @@ fn stamp_under_palm_beach_grass<F, G>(
             if !ground.is_sandy_soil() && !ground.is_fertile_soil() {
                 continue;
             }
-            let grass = if ((gh >> 8) % 4) == 0 {
+            let grass = if (gh >> 8).is_multiple_of(4) {
                 Voxel::VegeDrygrass
             } else {
                 Voxel::VegeWildgrass
@@ -1986,7 +1971,7 @@ fn stamp_under_palm_beach_grass<F, G>(
     }
 }
 
-/// Scatters natural Minecraft-style Leaf Litter (1..=4 quadrants, random facing) beneath deciduous canopies.
+/// Scatters natural Leaf Litter (1..=4 quadrants, random facing) beneath deciduous canopies.
 fn stamp_under_canopy_leaf_litter<F, G>(
     w: &mut ChunkWriter,
     root_x: i32,
@@ -2065,7 +2050,7 @@ fn archetype_bark(archetype: TreeArchetype) -> Voxel {
 
 fn stamp_tree(w: &mut ChunkWriter, rx: i32, ry: i32, rz: i32, archetype: TreeArchetype, h: u32) {
     // ~35% of eligible trees spawn as slender young variants using Centered Vertical Column log trunks
-    let is_slender = ((h >> 28) % 3) == 0;
+    let is_slender = (h >> 28).is_multiple_of(3);
 
     match archetype {
         TreeArchetype::Oak => {
@@ -2553,7 +2538,7 @@ fn stamp_tree(w: &mut ChunkWriter, rx: i32, ry: i32, rz: i32, archetype: TreeArc
             // Lateral Cocoa Pods attached directly to the Mahogany trunk
             const SIDES: [(i32, i32, u8); 4] = [(0, 1, 0), (-1, 0, 1), (0, -1, 2), (1, 0, 3)];
             for (i, &(dx, dz, orient)) in SIDES.iter().enumerate() {
-                if ((h >> (18 + i * 2)) % 3) == 0 {
+                if (h >> (18 + i * 2)).is_multiple_of(3) {
                     let pod_y = ry + 3 + ((h >> (12 + i)) % (height - 5).max(1) as u32) as i32;
                     let stage_vox = match (h >> (24 + i)) % 3 {
                         0 => Voxel::CropCocoaStage1,
@@ -2899,8 +2884,8 @@ fn stamp_under_giant_mushroom<F, G>(
             if hash_f32(mh) < 0.45 {
                 w.replace_ground(wx, col.terrain_height, wz, Voxel::MossForest);
             }
-            if col.surface_shape == BlockShape::Full && hash_f32(mh.rotate_right(9)) < 0.22 {
-                if ground_at(wx, col.terrain_height, wz, col).is_some() {
+            if col.surface_shape == BlockShape::Full && hash_f32(mh.rotate_right(9)) < 0.22
+                && ground_at(wx, col.terrain_height, wz, col).is_some() {
                     w.set_shaped(
                         wx,
                         col.terrain_height + 1,
@@ -2910,7 +2895,6 @@ fn stamp_under_giant_mushroom<F, G>(
                         0,
                     );
                 }
-            }
         }
     }
 }

@@ -8,8 +8,9 @@ use crate::world::Voxel;
 
 pub const HOTBAR_SLOT_COUNT: usize = 9;
 
-pub const HOTBAR_SLOT_X_COORDS: [f32; HOTBAR_SLOT_COUNT] =
-    [156.0, 175.0, 194.0, 213.0, 232.0, 251.0, 270.0, 289.0, 308.0];
+pub const HOTBAR_SLOT_X_COORDS: [f32; HOTBAR_SLOT_COUNT] = [
+    156.0, 175.0, 194.0, 213.0, 232.0, 251.0, 270.0, 289.0, 308.0,
+];
 pub const HOTBAR_SLOT_Y: f32 = 228.0;
 pub const HOTBAR_SCALE: f32 = 4.0;
 pub const HOTBAR_FRAME_WIDTH: f32 = 480.0 * HOTBAR_SCALE; // 1920.0 px
@@ -174,11 +175,7 @@ impl Plugin for HotbarPlugin {
     }
 }
 
-fn setup_hotbar_ui(
-    mut commands: Commands,
-    icons: Res<BlockIcons>,
-    app_font: Option<Res<AppFont>>,
-) {
+fn setup_hotbar_ui(mut commands: Commands, icons: Res<BlockIcons>, app_font: Option<Res<AppFont>>) {
     use crate::menu::theme::palette;
 
     let initial_hotbar = Hotbar::default();
@@ -251,7 +248,7 @@ fn setup_hotbar_ui(
                         BorderColor::all(palette::BAR_BORDER),
                     ));
 
-                    // Held item name tooltip (Minecraft-style centered text floating above hotbar)
+                    // Held item name tooltip (centered text floating above hotbar)
                     let mut tooltip_font = TextFont {
                         font_size: FontSize::Px(20.0),
                         ..default()
@@ -538,10 +535,11 @@ fn handle_hotbar_input(
     }
 
     // When holding Zoom, mouse wheel scroll adjusts zoom level instead of cycling hotbar
-    let is_zooming = control_settings.as_ref().map_or(
-        keyboard.pressed(KeyCode::KeyZ),
-        |c| c.is_action_pressed(crate::core::InputAction::Zoom, &keyboard, &mouse),
-    );
+    let is_zooming = control_settings
+        .as_ref()
+        .map_or(keyboard.pressed(KeyCode::KeyZ), |c| {
+            c.is_action_pressed(crate::core::InputAction::Zoom, &keyboard, &mouse)
+        });
 
     if !is_zooming {
         let scroll = mouse_scroll.delta.y;
@@ -555,10 +553,11 @@ fn handle_hotbar_input(
     }
 
     // Drop item key clears the active hotbar slot and tosses a 3D item drop into the world
-    let is_drop = control_settings.as_ref().map_or(
-        keyboard.just_pressed(KeyCode::KeyQ),
-        |c| c.is_action_just_pressed(crate::core::InputAction::DropItem, &keyboard, &mouse),
-    );
+    let is_drop = control_settings
+        .as_ref()
+        .map_or(keyboard.just_pressed(KeyCode::KeyQ), |c| {
+            c.is_action_just_pressed(crate::core::InputAction::DropItem, &keyboard, &mouse)
+        });
     if is_drop {
         let active = hotbar.active_slot;
         if let Some(dropped_voxel) = hotbar.slots[active] {
@@ -566,13 +565,15 @@ fn handle_hotbar_input(
             let spawn_pos = player_query
                 .iter()
                 .next()
-                .map_or(Vec3::new(0.0, 20.0, 0.0), |t| t.translation + Vec3::Y * 1.38);
+                .map_or(Vec3::new(0.0, 20.0, 0.0), |t| {
+                    t.translation + Vec3::Y * 1.38
+                });
             let forward = camera_query
                 .iter()
                 .next()
                 .map_or(Vec3::NEG_Z, |c| *c.forward());
-            let throw_dir = Vec3::new(forward.x, forward.y.max(-0.15) + 0.22, forward.z)
-                .normalize_or_zero();
+            let throw_dir =
+                Vec3::new(forward.x, forward.y.max(-0.15) + 0.22, forward.z).normalize_or_zero();
             commands.trigger(crate::gameplay::SpawnItemDropEvent {
                 position: spawn_pos + throw_dir * 0.45,
                 velocity: throw_dir * 5.8 + Vec3::Y * 1.4,
@@ -583,10 +584,11 @@ fn handle_hotbar_input(
     }
 
     // Quick-swap active main-hand slot with off-hand slot (default E in gameplay, disabled in menus)
-    let is_swap_hands = control_settings.as_ref().map_or(
-        keyboard.just_pressed(KeyCode::KeyE),
-        |c| c.is_action_just_pressed(crate::core::InputAction::SwapHands, &keyboard, &mouse),
-    );
+    let is_swap_hands = control_settings
+        .as_ref()
+        .map_or(keyboard.just_pressed(KeyCode::KeyE), |c| {
+            c.is_action_just_pressed(crate::core::InputAction::SwapHands, &keyboard, &mouse)
+        });
     if is_swap_hands && let Some(ref mut inv) = player_inv {
         let active = hotbar.active_slot;
         let hb = &mut *hotbar;

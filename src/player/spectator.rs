@@ -54,12 +54,10 @@ pub(super) fn spectator_movement(
         .map_or(keyboard.pressed(KeyCode::Space), |c| {
             c.is_action_pressed(crate::core::InputAction::Jump, &keyboard, &mouse)
         });
-    let down_pressed = control_settings
-        .as_ref()
-        .map_or(
-            keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight),
-            |c| c.is_action_pressed(crate::core::InputAction::Crouch, &keyboard, &mouse),
-        );
+    let down_pressed = control_settings.as_ref().map_or(
+        keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight),
+        |c| c.is_action_pressed(crate::core::InputAction::Crouch, &keyboard, &mouse),
+    );
 
     if fwd_pressed {
         direction += forward;
@@ -84,12 +82,10 @@ pub(super) fn spectator_movement(
         return;
     }
 
-    let is_fast = control_settings
-        .as_ref()
-        .map_or(
-            keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight),
-            |c| c.is_action_pressed(crate::core::InputAction::Sprint, &keyboard, &mouse),
-        );
+    let is_fast = control_settings.as_ref().map_or(
+        keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight),
+        |c| c.is_action_pressed(crate::core::InputAction::Sprint, &keyboard, &mouse),
+    );
 
     let speed = if is_fast {
         camera.spectator_fast_speed

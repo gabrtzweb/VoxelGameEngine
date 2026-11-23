@@ -61,7 +61,10 @@ pub(super) fn player_submersion(world: &VoxelWorld, position: Vec3) -> f32 {
             for x in min_voxel.x..=max_voxel.x {
                 let coordinate = IVec3::new(x, y, z);
 
-                if !world.get_voxel(coordinate).is_some_and(|v| v.is_water() || v.is_marine_flora() || v.is_coral_fan()) {
+                if !world
+                    .get_voxel(coordinate)
+                    .is_some_and(|v| v.is_water() || v.is_marine_flora() || v.is_coral_fan())
+                {
                     continue;
                 }
 

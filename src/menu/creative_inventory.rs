@@ -30,14 +30,12 @@ pub const INVENTORY_SLOT_X_COORDS: [f32; 9] = [
 pub const INVENTORY_ROW_Y_COORDS: [f32; 4] = [150.0, 168.0, 186.0, 204.0];
 pub const HOTBAR_ROW_Y: f32 = 228.0;
 
-pub const CATALOG_ROW_Y_COORDS: [f32; 9] = [
-    60.0, 78.0, 96.0, 114.0, 132.0, 150.0, 168.0, 186.0, 204.0,
-];
+pub const CATALOG_ROW_Y_COORDS: [f32; 9] =
+    [60.0, 78.0, 96.0, 114.0, 132.0, 150.0, 168.0, 186.0, 204.0];
 
 pub const CREATIVE_TAB_X: f32 = 128.0;
-pub const CREATIVE_TAB_Y_COORDS: [f32; 9] = [
-    65.0, 84.0, 103.0, 122.0, 141.0, 160.0, 179.0, 198.0, 217.0,
-];
+pub const CREATIVE_TAB_Y_COORDS: [f32; 9] =
+    [65.0, 84.0, 103.0, 122.0, 141.0, 160.0, 179.0, 198.0, 217.0];
 
 pub const AVAILABLE_BLOCKS: [Voxel; 708] = Voxel::ALL;
 
@@ -1327,11 +1325,9 @@ fn build_inventory_ui(
                             .with_children(|header| {
                                 header.spawn((
                                     InventoryMenuEntity,
-                                    Text::new(
-                                        loc.map_or(active_cat.title(), |l| {
-                                            l.t(active_cat.translation_key())
-                                        }),
-                                    ),
+                                    Text::new(loc.map_or(active_cat.title(), |l| {
+                                        l.t(active_cat.translation_key())
+                                    })),
                                     make_font(3.8 * GUI_SCALE),
                                     TextLayout::no_wrap(),
                                     TextColor(palette::TEXT_PRIMARY),
@@ -1365,7 +1361,8 @@ fn build_inventory_ui(
                             .with_children(|sb| {
                                 let search_font = make_font(3.8 * GUI_SCALE);
                                 let is_empty = search_query.query.is_empty();
-                                let placeholder = loc.map_or("Search...", |l| l.t("creative.search_placeholder"));
+                                let placeholder =
+                                    loc.map_or("Search...", |l| l.t("creative.search_placeholder"));
                                 let display_text = if !search_query.is_focused {
                                     if is_empty {
                                         placeholder.to_string()
@@ -1696,7 +1693,6 @@ fn build_inventory_ui(
         });
 }
 
-
 #[allow(clippy::too_many_arguments)]
 fn handle_creative_toggle_interaction(
     mouse: Res<ButtonInput<MouseButton>>,
@@ -1837,7 +1833,9 @@ fn handle_inventory_action_buttons(
                 InventoryAction::Sort => {
                     let limit = player_inv.unlocked_slots.min(PLAYER_INVENTORY_SLOTS);
                     let mut items: Vec<(Voxel, u16)> = (0..limit)
-                        .filter_map(|i| player_inv.slots[i].map(|v| (v, player_inv.counts[i].max(1))))
+                        .filter_map(|i| {
+                            player_inv.slots[i].map(|v| (v, player_inv.counts[i].max(1)))
+                        })
                         .collect();
                     items.sort_by_key(|(v, _)| v.id());
                     player_inv.slots = [None; PLAYER_INVENTORY_SLOTS];
@@ -1983,7 +1981,10 @@ fn handle_creative_search_input(
             ui.commands.entity(entity).despawn();
         }
         let gui_scale = ui.game_settings.as_ref().map_or(4, |s| s.gui_scale);
-        let dimming_alpha = ui.game_settings.as_ref().map_or(0.75, |s| s.background_dimming.alpha());
+        let dimming_alpha = ui
+            .game_settings
+            .as_ref()
+            .map_or(0.75, |s| s.background_dimming.alpha());
         build_inventory_ui(
             &mut ui.commands,
             &ui.asset_server,
@@ -2358,7 +2359,6 @@ fn handle_inventory_slot_interaction(
         }
 
         if is_hovered {
-
             // Number key quick swap with hotbar
             if let Some(h_idx) = digit_pressed {
                 any_interacted = true;
@@ -2537,7 +2537,10 @@ fn handle_inventory_slot_interaction(
             }
         }
 
-        if is_hovered && left_click && held_item.voxel.is_none() && player_inv.utility_slot.is_some()
+        if is_hovered
+            && left_click
+            && held_item.voxel.is_none()
+            && player_inv.utility_slot.is_some()
         {
             any_interacted = true;
             let inv = &mut *player_inv;
@@ -2594,7 +2597,11 @@ fn handle_inventory_slot_interaction(
                 any_interacted = true;
                 if let Some(voxel) = slot.voxel {
                     held_item.voxel = Some(voxel);
-                    held_item.count = if right_click { 1 } else { voxel.max_stack_size() };
+                    held_item.count = if right_click {
+                        1
+                    } else {
+                        voxel.max_stack_size()
+                    };
                 } else {
                     // Empty catalog slot: clicking with held item discards it
                     held_item.voxel = None;
@@ -2627,14 +2634,16 @@ fn handle_inventory_slot_interaction(
         let center = transform.translation().truncate();
         let half = computed.size() * 0.5;
         let card_rect = Rect::from_corners(center - half, center + half);
-        if !card_rect.contains(cursor_pos) {
-            if let Some(discarded) = held_item.voxel.take() {
+        if !card_rect.contains(cursor_pos)
+            && let Some(discarded) = held_item.voxel.take() {
                 let drop_count = held_item.count.max(1);
                 held_item.count = 0;
                 let spawn_pos = player_query
                     .iter()
                     .next()
-                    .map_or(Vec3::new(0.0, 20.0, 0.0), |t| t.translation + Vec3::Y * 1.38);
+                    .map_or(Vec3::new(0.0, 20.0, 0.0), |t| {
+                        t.translation + Vec3::Y * 1.38
+                    });
                 for _ in 0..drop_count {
                     commands.trigger(crate::gameplay::SpawnItemDropEvent {
                         position: spawn_pos + Vec3::NEG_Z * 0.45,
@@ -2644,7 +2653,6 @@ fn handle_inventory_slot_interaction(
                     });
                 }
             }
-        }
     }
 }
 
@@ -2656,7 +2664,10 @@ fn sync_inventory_hotbar_icons(
     mut hotbar_icons: Query<(&InventoryHotbarSlotIcon, &mut ImageNode, &mut Visibility)>,
     mut hotbar_counts: Query<
         (&InventoryHotbarSlotCount, &mut Text),
-        (Without<PlayerStorageSlotCount>, Without<InventoryOffhandCount>),
+        (
+            Without<PlayerStorageSlotCount>,
+            Without<InventoryOffhandCount>,
+        ),
     >,
     mut storage_icons: Query<
         (&PlayerStorageSlotIcon, &mut ImageNode, &mut Visibility),
@@ -2664,7 +2675,10 @@ fn sync_inventory_hotbar_icons(
     >,
     mut storage_counts: Query<
         (&PlayerStorageSlotCount, &mut Text),
-        (Without<InventoryHotbarSlotCount>, Without<InventoryOffhandCount>),
+        (
+            Without<InventoryHotbarSlotCount>,
+            Without<InventoryOffhandCount>,
+        ),
     >,
     mut offhand_counts: Query<
         &mut Text,
@@ -2911,10 +2925,22 @@ fn update_inventory_tooltip(
         for (hovered, action) in &action_btn_query {
             if hovered.get() {
                 hovered_text = Some(match action {
-                    InventoryAction::Sort => loc.as_ref().map_or("Auto-Sort Inventory", |l| l.t("inventory.action.sort")).to_string(),
-                    InventoryAction::Trash => loc.as_ref().map_or("Quick Discard Held Item", |l| l.t("inventory.action.trash")).to_string(),
-                    InventoryAction::Options => loc.as_ref().map_or("Preferences", |l| l.t("inventory.action.options")).to_string(),
-                    InventoryAction::Lock => loc.as_ref().map_or("Lock Slots", |l| l.t("inventory.action.lock")).to_string(),
+                    InventoryAction::Sort => loc
+                        .as_ref()
+                        .map_or("Auto-Sort Inventory", |l| l.t("inventory.action.sort"))
+                        .to_string(),
+                    InventoryAction::Trash => loc
+                        .as_ref()
+                        .map_or("Quick Discard Held Item", |l| l.t("inventory.action.trash"))
+                        .to_string(),
+                    InventoryAction::Options => loc
+                        .as_ref()
+                        .map_or("Preferences", |l| l.t("inventory.action.options"))
+                        .to_string(),
+                    InventoryAction::Lock => loc
+                        .as_ref()
+                        .map_or("Lock Slots", |l| l.t("inventory.action.lock"))
+                        .to_string(),
                 });
                 break;
             }

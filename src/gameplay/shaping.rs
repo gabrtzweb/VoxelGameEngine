@@ -74,15 +74,14 @@ fn handle_block_shaping(
         return;
     }
 
-    let cycle_just_pressed = control_settings.as_ref().map_or(
-        keyboard.just_pressed(KeyCode::KeyR),
-        |c| c.is_action_just_pressed(crate::core::InputAction::ShapeCycle, &keyboard, &mouse),
-    );
+    let cycle_just_pressed = control_settings
+        .as_ref()
+        .map_or(keyboard.just_pressed(KeyCode::KeyR), |c| {
+            c.is_action_just_pressed(crate::core::InputAction::ShapeCycle, &keyboard, &mouse)
+        });
 
     // Press key to initiate shaping
-    if cycle_just_pressed
-        && let Some(target) = current_target.hit
-    {
+    if cycle_just_pressed && let Some(target) = current_target.hit {
         let origin = target.block_origin;
         if let Some(voxel) = world.get_voxel(origin)
             && !voxel.is_empty()
@@ -102,10 +101,11 @@ fn handle_block_shaping(
         }
     }
 
-    let cycle_pressed = control_settings.as_ref().map_or(
-        keyboard.pressed(KeyCode::KeyR),
-        |c| c.is_action_pressed(crate::core::InputAction::ShapeCycle, &keyboard, &mouse),
-    );
+    let cycle_pressed = control_settings
+        .as_ref()
+        .map_or(keyboard.pressed(KeyCode::KeyR), |c| {
+            c.is_action_pressed(crate::core::InputAction::ShapeCycle, &keyboard, &mouse)
+        });
 
     // Hold key to open Radial Menu
     if cycle_pressed && radial_state.pressing {
@@ -144,10 +144,11 @@ fn handle_block_shaping(
         }
     }
 
-    let cycle_just_released = control_settings.as_ref().map_or(
-        keyboard.just_released(KeyCode::KeyR),
-        |c| c.is_action_just_released(crate::core::InputAction::ShapeCycle, &keyboard, &mouse),
-    );
+    let cycle_just_released = control_settings
+        .as_ref()
+        .map_or(keyboard.just_released(KeyCode::KeyR), |c| {
+            c.is_action_just_released(crate::core::InputAction::ShapeCycle, &keyboard, &mouse)
+        });
 
     // Release key to apply selection
     if cycle_just_released && radial_state.pressing {
@@ -207,14 +208,16 @@ fn handle_block_rotation(
     ),
     menu_state: Option<Res<State<MenuState>>>,
 ) {
-    if menu_state.is_some_and(|s| *s.get() != MenuState::None) || *game_mode == GameMode::Spectator {
+    if menu_state.is_some_and(|s| *s.get() != MenuState::None) || *game_mode == GameMode::Spectator
+    {
         return;
     }
 
-    let invert_just_pressed = control_settings.as_ref().map_or(
-        keyboard.just_pressed(KeyCode::KeyT),
-        |c| c.is_action_just_pressed(crate::core::InputAction::ShapeInvert, &keyboard, &mouse),
-    );
+    let invert_just_pressed = control_settings
+        .as_ref()
+        .map_or(keyboard.just_pressed(KeyCode::KeyT), |c| {
+            c.is_action_just_pressed(crate::core::InputAction::ShapeInvert, &keyboard, &mouse)
+        });
 
     if !invert_just_pressed {
         return;

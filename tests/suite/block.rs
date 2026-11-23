@@ -150,7 +150,10 @@ fn test_block_shapes_all() {
     assert_eq!(Voxel::AndesiteRubble.default_shape(), BlockShape::Rubble);
     assert!(Voxel::AndesiteRubble.is_shape_locked());
     assert!(Voxel::AndesiteRubble.requires_floor_support());
-    assert_eq!(Voxel::SpeleothemKarst.default_shape(), BlockShape::Speleothem);
+    assert_eq!(
+        Voxel::SpeleothemKarst.default_shape(),
+        BlockShape::Speleothem
+    );
     assert!(Voxel::SpeleothemKarst.is_shape_locked());
     assert_eq!(Voxel::ObsidianSpike.default_shape(), BlockShape::Speleothem);
     assert!(Voxel::ObsidianSpike.is_shape_locked());
@@ -202,11 +205,20 @@ fn test_flora_support_and_collision() {
     assert!(!Voxel::FlowerPoppy.is_collidable());
     assert!(Voxel::VegeCactus.is_collidable()); // Saguaro column is solid!
     assert!(!Voxel::VegeCactus.is_solid_opaque());
-    assert_eq!(Voxel::VegeWildgrass.default_shape(), BlockShape::CrossBillboard);
-    assert_eq!(Voxel::FlowerDandelion.default_shape(), BlockShape::CrossBillboard);
+    assert_eq!(
+        Voxel::VegeWildgrass.default_shape(),
+        BlockShape::CrossBillboard
+    );
+    assert_eq!(
+        Voxel::FlowerDandelion.default_shape(),
+        BlockShape::CrossBillboard
+    );
     assert_eq!(Voxel::VegeCactus.default_shape(), BlockShape::Cactus);
     assert_eq!(Voxel::VegeLilyPad.default_shape(), BlockShape::FlatPad);
-    assert_eq!(Voxel::FlowerWhitePetals.default_shape(), BlockShape::FlatPad);
+    assert_eq!(
+        Voxel::FlowerWhitePetals.default_shape(),
+        BlockShape::FlatPad
+    );
     assert_eq!(Voxel::VegeVines.default_shape(), BlockShape::WallDecal);
     assert!(Voxel::CrystalAmethystCluster.is_collidable());
     assert!(!Voxel::BrainCoralFan.is_collidable());
@@ -256,12 +268,13 @@ fn test_painted_blocks_and_solid_light_tint_colors() {
     }
 }
 
-
 #[test]
 fn test_speleothem_properties_and_part_determination() {
     use bevy::prelude::IVec3;
     use voxel_game_engine::{
-        meshing::shapes::fixtures::{SpeleothemDirection, SpeleothemPiece, determine_speleothem_part},
+        meshing::shapes::fixtures::{
+            SpeleothemDirection, SpeleothemPiece, determine_speleothem_part,
+        },
         world::{Chunk, VoxelWorld},
     };
 
@@ -289,14 +302,17 @@ fn test_speleothem_properties_and_part_determination() {
     // Single hanging stalactite at Y=10 attached to ceiling at Y=11
     world.set_voxel(IVec3::new(0, 11, 0), Voxel::Andesite);
     world.set_voxel(IVec3::new(0, 10, 0), Voxel::SpeleothemKarst);
-    let (dir, piece) = determine_speleothem_part(&world, IVec3::new(0, 10, 0), Voxel::SpeleothemKarst);
+    let (dir, piece) =
+        determine_speleothem_part(&world, IVec3::new(0, 10, 0), Voxel::SpeleothemKarst);
     assert_eq!(dir, SpeleothemDirection::Down);
     assert_eq!(piece, SpeleothemPiece::Tip);
 
     // 2-block hanging stalactite at Y=10 (frustum) and Y=9 (tip)
     world.set_voxel(IVec3::new(0, 9, 0), Voxel::SpeleothemKarst);
-    let (dir_top, piece_top) = determine_speleothem_part(&world, IVec3::new(0, 10, 0), Voxel::SpeleothemKarst);
-    let (dir_bot, piece_bot) = determine_speleothem_part(&world, IVec3::new(0, 9, 0), Voxel::SpeleothemKarst);
+    let (dir_top, piece_top) =
+        determine_speleothem_part(&world, IVec3::new(0, 10, 0), Voxel::SpeleothemKarst);
+    let (dir_bot, piece_bot) =
+        determine_speleothem_part(&world, IVec3::new(0, 9, 0), Voxel::SpeleothemKarst);
     assert_eq!(dir_top, SpeleothemDirection::Down);
     assert_eq!(piece_top, SpeleothemPiece::Frustum);
     assert_eq!(dir_bot, SpeleothemDirection::Down);
@@ -307,7 +323,8 @@ fn test_speleothem_properties_and_part_determination() {
     world.set_voxel(IVec3::new(0, 8, 0), Voxel::SpeleothemKarst);
     world.set_voxel(IVec3::new(0, 7, 0), Voxel::SpeleothemKarst);
 
-    let (d10, p10) = determine_speleothem_part(&world, IVec3::new(0, 10, 0), Voxel::SpeleothemKarst);
+    let (d10, p10) =
+        determine_speleothem_part(&world, IVec3::new(0, 10, 0), Voxel::SpeleothemKarst);
     let (d9, p9) = determine_speleothem_part(&world, IVec3::new(0, 9, 0), Voxel::SpeleothemKarst);
     let (d8, p8) = determine_speleothem_part(&world, IVec3::new(0, 8, 0), Voxel::SpeleothemKarst);
     let (d7, p7) = determine_speleothem_part(&world, IVec3::new(0, 7, 0), Voxel::SpeleothemKarst);

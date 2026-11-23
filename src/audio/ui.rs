@@ -1,8 +1,5 @@
+use crate::{audio::PlaySfxEvent, menu::MenuState};
 use bevy::{picking::hover::Hovered, prelude::*, ui::Pressed, ui_widgets::Button};
-use crate::{
-    audio::PlaySfxEvent,
-    menu::MenuState,
-};
 
 /// Types of user interface tactile acoustic feedback (menu button clicks only).
 #[derive(Event, Debug, Clone, Copy, PartialEq, Eq)]
@@ -36,11 +33,7 @@ impl Plugin for UiAudioPlugin {
     }
 }
 
-fn handle_play_ui_sound(
-    trigger: On<UiSound>,
-    cache: Res<UiAudioCache>,
-    mut commands: Commands,
-) {
+fn handle_play_ui_sound(trigger: On<UiSound>, cache: Res<UiAudioCache>, mut commands: Commands) {
     let UiSound::Click = *trigger.event();
     commands.trigger(PlaySfxEvent::new(cache.click.clone(), 0.85));
 }
@@ -67,4 +60,3 @@ fn detect_button_click_sound(
         }
     }
 }
-

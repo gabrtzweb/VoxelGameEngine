@@ -500,10 +500,11 @@ fn handle_menu_key_inputs(
         }
     }
 
-    let is_inv = control_settings.as_ref().map_or(
-        keyboard.just_pressed(KeyCode::Tab),
-        |c| c.is_action_just_pressed(crate::core::InputAction::Inventory, &keyboard, &mouse),
-    );
+    let is_inv = control_settings
+        .as_ref()
+        .map_or(keyboard.just_pressed(KeyCode::Tab), |c| {
+            c.is_action_just_pressed(crate::core::InputAction::Inventory, &keyboard, &mouse)
+        });
     if is_inv {
         if search_query.as_ref().is_some_and(|s| s.is_focused) {
             return;
@@ -517,10 +518,11 @@ fn handle_menu_key_inputs(
         }
     }
 
-    let is_skills = control_settings.as_ref().map_or(
-        keyboard.just_pressed(KeyCode::KeyH),
-        |c| c.is_action_just_pressed(crate::core::InputAction::Skills, &keyboard, &mouse),
-    );
+    let is_skills = control_settings
+        .as_ref()
+        .map_or(keyboard.just_pressed(KeyCode::KeyH), |c| {
+            c.is_action_just_pressed(crate::core::InputAction::Skills, &keyboard, &mouse)
+        });
     if is_skills {
         if search_query.as_ref().is_some_and(|s| s.is_focused) {
             return;
@@ -532,10 +534,11 @@ fn handle_menu_key_inputs(
         }
     }
 
-    let is_quests = control_settings.as_ref().map_or(
-        keyboard.just_pressed(KeyCode::KeyK),
-        |c| c.is_action_just_pressed(crate::core::InputAction::Quests, &keyboard, &mouse),
-    );
+    let is_quests = control_settings
+        .as_ref()
+        .map_or(keyboard.just_pressed(KeyCode::KeyK), |c| {
+            c.is_action_just_pressed(crate::core::InputAction::Quests, &keyboard, &mouse)
+        });
     if is_quests {
         if search_query.as_ref().is_some_and(|s| s.is_focused) {
             return;
@@ -547,10 +550,11 @@ fn handle_menu_key_inputs(
         }
     }
 
-    let is_map = control_settings.as_ref().map_or(
-        keyboard.just_pressed(KeyCode::KeyM),
-        |c| c.is_action_just_pressed(crate::core::InputAction::WorldMap, &keyboard, &mouse),
-    );
+    let is_map = control_settings
+        .as_ref()
+        .map_or(keyboard.just_pressed(KeyCode::KeyM), |c| {
+            c.is_action_just_pressed(crate::core::InputAction::WorldMap, &keyboard, &mouse)
+        });
     if is_map {
         match current {
             MenuState::None => next_state.set(MenuState::WorldMap),
@@ -559,10 +563,11 @@ fn handle_menu_key_inputs(
         }
     }
 
-    let is_journal = control_settings.as_ref().map_or(
-        keyboard.just_pressed(KeyCode::KeyJ),
-        |c| c.is_action_just_pressed(crate::core::InputAction::Journal, &keyboard, &mouse),
-    );
+    let is_journal = control_settings
+        .as_ref()
+        .map_or(keyboard.just_pressed(KeyCode::KeyJ), |c| {
+            c.is_action_just_pressed(crate::core::InputAction::Journal, &keyboard, &mouse)
+        });
     if is_journal {
         match current {
             MenuState::None => next_state.set(MenuState::Journal),

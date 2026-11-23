@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 
+use super::{push_quad_face_with_uvs, push_shape_box};
 use crate::{
     meshing::{greedy::MeshBuffers, textures::FaceTextureInfo},
     world::{BlockShape, Voxel, VoxelAccess},
 };
-use super::{push_quad_face_with_uvs, push_shape_box};
 
 pub fn mesh_basket(
     buffers: &mut MeshBuffers,
@@ -37,7 +37,7 @@ pub fn mesh_basket(
         bottom_tint,
         side_tint,
         is_neighbor_solid,
-    false,
+        false,
     );
     // 2. Interior cavity (rendered if the top is open, so looking inside reveals the walls and floor)
     if !is_neighbor_solid(IVec3::Y) {
@@ -846,7 +846,7 @@ pub fn mesh_flat_pad(
     stem_info: Option<FaceTextureInfo>,
 ) {
     if voxel == Voxel::VegeLeafLitter {
-        // Minecraft-style segmented Leaf Litter with slight 3D leaf-bed thickness:
+        // Segmented Leaf Litter with slight 3D leaf-bed thickness:
         // bits 0..1 = horizontal facing (0..=3), bits 2..3 = segments - 1 (1..=4 quadrants).
         // Tag color.a = 2.4 so voxel_opaque.wesl keeps alpha-cutout discard, skips wind sway,
         // and applies full biome tint to BOTH horizontal and vertical side rim faces.
@@ -858,10 +858,9 @@ pub fn mesh_flat_pad(
         const QUADS: [(f32, f32); 4] = [(0.0, 0.0), (0.5, 0.0), (0.5, 0.5), (0.0, 0.5)];
         const EDGE_STRIP: f32 = 1.0 / 16.0;
 
-        for s in 0..segments {
+        for (s, &(u0, v0)) in QUADS.iter().take(segments).enumerate() {
             let q_idx = (s + facing) & 3;
             let (qx, qz) = QUADS[q_idx];
-            let (u0, v0) = QUADS[s];
             let u1 = u0 + 0.5;
             let v1 = v0 + 0.5;
 
@@ -884,7 +883,12 @@ pub fn mesh_flat_pad(
             // Top face (+Y)
             push_quad_face_with_uvs(
                 buffers,
-                [[x0, y_top, z1], [x1, y_top, z1], [x1, y_top, z0], [x0, y_top, z0]],
+                [
+                    [x0, y_top, z1],
+                    [x1, y_top, z1],
+                    [x1, y_top, z0],
+                    [x0, y_top, z0],
+                ],
                 [0.0, 1.0, 0.0],
                 texture_layer,
                 frame_count,
@@ -894,7 +898,12 @@ pub fn mesh_flat_pad(
             // Bottom face (-Y)
             push_quad_face_with_uvs(
                 buffers,
-                [[x0, y_bot, z0], [x1, y_bot, z0], [x1, y_bot, z1], [x0, y_bot, z1]],
+                [
+                    [x0, y_bot, z0],
+                    [x1, y_bot, z0],
+                    [x1, y_bot, z1],
+                    [x0, y_bot, z1],
+                ],
                 [0.0, -1.0, 0.0],
                 texture_layer,
                 frame_count,
@@ -903,12 +912,27 @@ pub fn mesh_flat_pad(
             );
 
             // 4 thin side rims (1-texel UV strips) for crisp 3D thickness from low angles
-            let uv_side_z = [[u0, v1], [u1, v1], [u1, (v1 - EDGE_STRIP).max(v0)], [u0, (v1 - EDGE_STRIP).max(v0)]];
-            let uv_side_x = [[u0, v0 + EDGE_STRIP], [u0 + EDGE_STRIP, v0 + EDGE_STRIP], [u0 + EDGE_STRIP, v1], [u0, v1]];
+            let uv_side_z = [
+                [u0, v1],
+                [u1, v1],
+                [u1, (v1 - EDGE_STRIP).max(v0)],
+                [u0, (v1 - EDGE_STRIP).max(v0)],
+            ];
+            let uv_side_x = [
+                [u0, v0 + EDGE_STRIP],
+                [u0 + EDGE_STRIP, v0 + EDGE_STRIP],
+                [u0 + EDGE_STRIP, v1],
+                [u0, v1],
+            ];
             // South (+Z)
             push_quad_face_with_uvs(
                 buffers,
-                [[x0, y_bot, z1], [x1, y_bot, z1], [x1, y_top, z1], [x0, y_top, z1]],
+                [
+                    [x0, y_bot, z1],
+                    [x1, y_bot, z1],
+                    [x1, y_top, z1],
+                    [x0, y_top, z1],
+                ],
                 [0.0, 0.0, 1.0],
                 texture_layer,
                 frame_count,
@@ -918,7 +942,12 @@ pub fn mesh_flat_pad(
             // North (-Z)
             push_quad_face_with_uvs(
                 buffers,
-                [[x1, y_bot, z0], [x0, y_bot, z0], [x0, y_top, z0], [x1, y_top, z0]],
+                [
+                    [x1, y_bot, z0],
+                    [x0, y_bot, z0],
+                    [x0, y_top, z0],
+                    [x1, y_top, z0],
+                ],
                 [0.0, 0.0, -1.0],
                 texture_layer,
                 frame_count,
@@ -928,7 +957,12 @@ pub fn mesh_flat_pad(
             // East (+X)
             push_quad_face_with_uvs(
                 buffers,
-                [[x1, y_bot, z1], [x1, y_bot, z0], [x1, y_top, z0], [x1, y_top, z1]],
+                [
+                    [x1, y_bot, z1],
+                    [x1, y_bot, z0],
+                    [x1, y_top, z0],
+                    [x1, y_top, z1],
+                ],
                 [1.0, 0.0, 0.0],
                 texture_layer,
                 frame_count,
@@ -938,7 +972,12 @@ pub fn mesh_flat_pad(
             // West (-X)
             push_quad_face_with_uvs(
                 buffers,
-                [[x0, y_bot, z0], [x0, y_bot, z1], [x0, y_top, z1], [x0, y_top, z0]],
+                [
+                    [x0, y_bot, z0],
+                    [x0, y_bot, z1],
+                    [x0, y_top, z1],
+                    [x0, y_top, z0],
+                ],
                 [-1.0, 0.0, 0.0],
                 texture_layer,
                 frame_count,
@@ -959,8 +998,8 @@ pub fn mesh_flat_pad(
     };
 
     // If petal/clover carpet, render supporting vertical stem underneath connecting ground to pad
-    if is_petals {
-        if let Some(stem) = stem_info {
+    if is_petals
+        && let Some(stem) = stem_info {
             let stem_tint = [1.0, 1.0, 1.0, 1.0];
             let stem_layer = stem.start_layer;
             let stem_frame_count = stem.frame_count as f32;
@@ -971,17 +1010,48 @@ pub fn mesh_flat_pad(
             let a1 = [fx, stem_top, fz];
             let a2 = [fx + 1.0, stem_top, fz + 1.0];
             let a3 = [fx + 1.0, fy, fz + 1.0];
-            push_quad_face_with_uvs(buffers, [a0, a1, a2, a3], [0.707, 0.0, -0.707], stem_layer, stem_frame_count, stem_tint, uv_cross);
-            push_quad_face_with_uvs(buffers, [a3, a2, a1, a0], [-0.707, 0.0, 0.707], stem_layer, stem_frame_count, stem_tint, uv_cross);
+            push_quad_face_with_uvs(
+                buffers,
+                [a0, a1, a2, a3],
+                [0.707, 0.0, -0.707],
+                stem_layer,
+                stem_frame_count,
+                stem_tint,
+                uv_cross,
+            );
+            push_quad_face_with_uvs(
+                buffers,
+                [a3, a2, a1, a0],
+                [-0.707, 0.0, 0.707],
+                stem_layer,
+                stem_frame_count,
+                stem_tint,
+                uv_cross,
+            );
             // Diagonal quad B (front-right to back-left)
             let b0 = [fx + 1.0, fy, fz];
             let b1 = [fx + 1.0, stem_top, fz];
             let b2 = [fx, stem_top, fz + 1.0];
             let b3 = [fx, fy, fz + 1.0];
-            push_quad_face_with_uvs(buffers, [b0, b1, b2, b3], [0.707, 0.0, 0.707], stem_layer, stem_frame_count, stem_tint, uv_cross);
-            push_quad_face_with_uvs(buffers, [b3, b2, b1, b0], [-0.707, 0.0, -0.707], stem_layer, stem_frame_count, stem_tint, uv_cross);
+            push_quad_face_with_uvs(
+                buffers,
+                [b0, b1, b2, b3],
+                [0.707, 0.0, 0.707],
+                stem_layer,
+                stem_frame_count,
+                stem_tint,
+                uv_cross,
+            );
+            push_quad_face_with_uvs(
+                buffers,
+                [b3, b2, b1, b0],
+                [-0.707, 0.0, -0.707],
+                stem_layer,
+                stem_frame_count,
+                stem_tint,
+                uv_cross,
+            );
         }
-    }
 
     // Top face
     let p0 = [fx, y, fz + 1.0];
@@ -989,14 +1059,30 @@ pub fn mesh_flat_pad(
     let p2 = [fx + 1.0, y, fz];
     let p3 = [fx, y, fz];
     let uv_top = [[0.0, 1.0], [1.0, 1.0], [1.0, 0.0], [0.0, 0.0]];
-    push_quad_face_with_uvs(buffers, [p0, p1, p2, p3], [0.0, 1.0, 0.0], texture_layer, frame_count, tint_color, uv_top);
+    push_quad_face_with_uvs(
+        buffers,
+        [p0, p1, p2, p3],
+        [0.0, 1.0, 0.0],
+        texture_layer,
+        frame_count,
+        tint_color,
+        uv_top,
+    );
     // Bottom face
     let b0 = [fx, y, fz];
     let b1 = [fx + 1.0, y, fz];
     let b2 = [fx + 1.0, y, fz + 1.0];
     let b3 = [fx, y, fz + 1.0];
     let uv_bot = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
-    push_quad_face_with_uvs(buffers, [b0, b1, b2, b3], [0.0, -1.0, 0.0], texture_layer, frame_count, tint_color, uv_bot);
+    push_quad_face_with_uvs(
+        buffers,
+        [b0, b1, b2, b3],
+        [0.0, -1.0, 0.0],
+        texture_layer,
+        frame_count,
+        tint_color,
+        uv_bot,
+    );
 }
 
 pub fn mesh_wall_decal(
@@ -1017,40 +1103,196 @@ pub fn mesh_wall_decal(
             let y = fy + d;
             let uv_top = [[0.0, 1.0], [1.0, 1.0], [1.0, 0.0], [0.0, 0.0]];
             let uv_bot = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
-            push_quad_face_with_uvs(buffers, [[fx, y, fz + 1.0], [fx + 1.0, y, fz + 1.0], [fx + 1.0, y, fz], [fx, y, fz]], [0.0, 1.0, 0.0], texture_layer, frame_count, tint_color, uv_top);
-            push_quad_face_with_uvs(buffers, [[fx, y, fz], [fx + 1.0, y, fz], [fx + 1.0, y, fz + 1.0], [fx, y, fz + 1.0]], [0.0, -1.0, 0.0], texture_layer, frame_count, tint_color, uv_bot);
+            push_quad_face_with_uvs(
+                buffers,
+                [
+                    [fx, y, fz + 1.0],
+                    [fx + 1.0, y, fz + 1.0],
+                    [fx + 1.0, y, fz],
+                    [fx, y, fz],
+                ],
+                [0.0, 1.0, 0.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+                uv_top,
+            );
+            push_quad_face_with_uvs(
+                buffers,
+                [
+                    [fx, y, fz],
+                    [fx + 1.0, y, fz],
+                    [fx + 1.0, y, fz + 1.0],
+                    [fx, y, fz + 1.0],
+                ],
+                [0.0, -1.0, 0.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+                uv_bot,
+            );
         }
         1 => {
             // Ceiling flat pad
             let y = fy + 1.0 - d;
             let uv_down = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
             let uv_up = [[0.0, 1.0], [1.0, 1.0], [1.0, 0.0], [0.0, 0.0]];
-            push_quad_face_with_uvs(buffers, [[fx, y, fz], [fx + 1.0, y, fz], [fx + 1.0, y, fz + 1.0], [fx, y, fz + 1.0]], [0.0, -1.0, 0.0], texture_layer, frame_count, tint_color, uv_down);
-            push_quad_face_with_uvs(buffers, [[fx, y, fz + 1.0], [fx + 1.0, y, fz + 1.0], [fx + 1.0, y, fz], [fx, y, fz]], [0.0, 1.0, 0.0], texture_layer, frame_count, tint_color, uv_up);
+            push_quad_face_with_uvs(
+                buffers,
+                [
+                    [fx, y, fz],
+                    [fx + 1.0, y, fz],
+                    [fx + 1.0, y, fz + 1.0],
+                    [fx, y, fz + 1.0],
+                ],
+                [0.0, -1.0, 0.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+                uv_down,
+            );
+            push_quad_face_with_uvs(
+                buffers,
+                [
+                    [fx, y, fz + 1.0],
+                    [fx + 1.0, y, fz + 1.0],
+                    [fx + 1.0, y, fz],
+                    [fx, y, fz],
+                ],
+                [0.0, 1.0, 0.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+                uv_up,
+            );
         }
         2 => {
             // Attached to North face (+Z normal)
             let z = fz + d;
-            push_quad_face_with_uvs(buffers, [[fx, fy, z], [fx, fy + 1.0, z], [fx + 1.0, fy + 1.0, z], [fx + 1.0, fy, z]], [0.0, 0.0, 1.0], texture_layer, frame_count, tint_color, uv_std);
-            push_quad_face_with_uvs(buffers, [[fx + 1.0, fy, z], [fx + 1.0, fy + 1.0, z], [fx, fy + 1.0, z], [fx, fy, z]], [0.0, 0.0, -1.0], texture_layer, frame_count, tint_color, uv_std);
+            push_quad_face_with_uvs(
+                buffers,
+                [
+                    [fx, fy, z],
+                    [fx, fy + 1.0, z],
+                    [fx + 1.0, fy + 1.0, z],
+                    [fx + 1.0, fy, z],
+                ],
+                [0.0, 0.0, 1.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+                uv_std,
+            );
+            push_quad_face_with_uvs(
+                buffers,
+                [
+                    [fx + 1.0, fy, z],
+                    [fx + 1.0, fy + 1.0, z],
+                    [fx, fy + 1.0, z],
+                    [fx, fy, z],
+                ],
+                [0.0, 0.0, -1.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+                uv_std,
+            );
         }
         3 => {
             // Attached to South face (-Z normal)
             let z = fz + 1.0 - d;
-            push_quad_face_with_uvs(buffers, [[fx + 1.0, fy, z], [fx + 1.0, fy + 1.0, z], [fx, fy + 1.0, z], [fx, fy, z]], [0.0, 0.0, -1.0], texture_layer, frame_count, tint_color, uv_std);
-            push_quad_face_with_uvs(buffers, [[fx, fy, z], [fx, fy + 1.0, z], [fx + 1.0, fy + 1.0, z], [fx + 1.0, fy, z]], [0.0, 0.0, 1.0], texture_layer, frame_count, tint_color, uv_std);
+            push_quad_face_with_uvs(
+                buffers,
+                [
+                    [fx + 1.0, fy, z],
+                    [fx + 1.0, fy + 1.0, z],
+                    [fx, fy + 1.0, z],
+                    [fx, fy, z],
+                ],
+                [0.0, 0.0, -1.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+                uv_std,
+            );
+            push_quad_face_with_uvs(
+                buffers,
+                [
+                    [fx, fy, z],
+                    [fx, fy + 1.0, z],
+                    [fx + 1.0, fy + 1.0, z],
+                    [fx + 1.0, fy, z],
+                ],
+                [0.0, 0.0, 1.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+                uv_std,
+            );
         }
         4 => {
             // Attached to West face (+X normal)
             let x = fx + d;
-            push_quad_face_with_uvs(buffers, [[x, fy, fz + 1.0], [x, fy + 1.0, fz + 1.0], [x, fy + 1.0, fz], [x, fy, fz]], [1.0, 0.0, 0.0], texture_layer, frame_count, tint_color, uv_std);
-            push_quad_face_with_uvs(buffers, [[x, fy, fz], [x, fy + 1.0, fz], [x, fy + 1.0, fz + 1.0], [x, fy, fz + 1.0]], [-1.0, 0.0, 0.0], texture_layer, frame_count, tint_color, uv_std);
+            push_quad_face_with_uvs(
+                buffers,
+                [
+                    [x, fy, fz + 1.0],
+                    [x, fy + 1.0, fz + 1.0],
+                    [x, fy + 1.0, fz],
+                    [x, fy, fz],
+                ],
+                [1.0, 0.0, 0.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+                uv_std,
+            );
+            push_quad_face_with_uvs(
+                buffers,
+                [
+                    [x, fy, fz],
+                    [x, fy + 1.0, fz],
+                    [x, fy + 1.0, fz + 1.0],
+                    [x, fy, fz + 1.0],
+                ],
+                [-1.0, 0.0, 0.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+                uv_std,
+            );
         }
         _ => {
             // Attached to East face (-X normal)
             let x = fx + 1.0 - d;
-            push_quad_face_with_uvs(buffers, [[x, fy, fz], [x, fy + 1.0, fz], [x, fy + 1.0, fz + 1.0], [x, fy, fz + 1.0]], [-1.0, 0.0, 0.0], texture_layer, frame_count, tint_color, uv_std);
-            push_quad_face_with_uvs(buffers, [[x, fy, fz + 1.0], [x, fy + 1.0, fz + 1.0], [x, fy + 1.0, fz], [x, fy, fz]], [1.0, 0.0, 0.0], texture_layer, frame_count, tint_color, uv_std);
+            push_quad_face_with_uvs(
+                buffers,
+                [
+                    [x, fy, fz],
+                    [x, fy + 1.0, fz],
+                    [x, fy + 1.0, fz + 1.0],
+                    [x, fy, fz + 1.0],
+                ],
+                [-1.0, 0.0, 0.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+                uv_std,
+            );
+            push_quad_face_with_uvs(
+                buffers,
+                [
+                    [x, fy, fz + 1.0],
+                    [x, fy + 1.0, fz + 1.0],
+                    [x, fy + 1.0, fz],
+                    [x, fy, fz],
+                ],
+                [1.0, 0.0, 0.0],
+                texture_layer,
+                frame_count,
+                tint_color,
+                uv_std,
+            );
         }
     }
 }
@@ -1314,14 +1556,24 @@ pub fn mesh_cross_billboard_oriented(
     };
 
     let eps = 0.005;
-    let uv_fwd = [[eps, 1.0 - eps], [eps, eps], [1.0 - eps, eps], [1.0 - eps, 1.0 - eps]];
+    let uv_fwd = [
+        [eps, 1.0 - eps],
+        [eps, eps],
+        [1.0 - eps, eps],
+        [1.0 - eps, 1.0 - eps],
+    ];
     // Back faces must mirror U coordinates so both sides share identical world-space texture orientation
-    // (like a physical card in 3D space, identical to Minecraft flora), preventing flora billboards from
+    // (like a physical card in 3D space), preventing flora billboards from
     // unnaturally tracking camera rotation.
-    let uv_rev = [[1.0 - eps, 1.0 - eps], [1.0 - eps, eps], [eps, eps], [eps, 1.0 - eps]];
+    let uv_rev = [
+        [1.0 - eps, 1.0 - eps],
+        [1.0 - eps, eps],
+        [eps, eps],
+        [eps, 1.0 - eps],
+    ];
 
     // Upward-facing normal for cross-billboards ensures uniform sky & sunlight illumination
-    // on both sides, identical to Minecraft's flora lighting model.
+    // on both sides for consistent flora lighting.
     let n_up = [0.0, 1.0, 0.0];
     push_quad_face_with_uvs(
         buffers,
@@ -1607,12 +1859,12 @@ pub fn mesh_rubble(
         orientation,
         [3.0, 0.0, 3.0],
         [12.0, 6.0, 11.0],
-        [0.0, 0.0, 9.0, 6.0],   // north (-Z)
-        [0.0, 0.0, 8.0, 6.0],   // east (+X)
-        [0.0, 0.0, 9.0, 6.0],   // south (+Z)
-        [0.0, 0.0, 8.0, 6.0],   // west (-X)
-        [0.0, 0.0, 9.0, 8.0],   // up (+Y)
-        [0.0, 0.0, 9.0, 8.0],   // down (-Y)
+        [0.0, 0.0, 9.0, 6.0], // north (-Z)
+        [0.0, 0.0, 8.0, 6.0], // east (+X)
+        [0.0, 0.0, 9.0, 6.0], // south (+Z)
+        [0.0, 0.0, 8.0, 6.0], // west (-X)
+        [0.0, 0.0, 9.0, 8.0], // up (+Y)
+        [0.0, 0.0, 9.0, 8.0], // down (-Y)
         texture_layer,
         frame_count,
         tint_color,
@@ -1702,13 +1954,12 @@ pub fn determine_speleothem_part(
     let mut count_above = 0;
     let mut curr = world_voxel + IVec3::Y;
     while count_above < 24 {
-        if let Some(v) = world.get_voxel(curr) {
-            if v == voxel {
+        if let Some(v) = world.get_voxel(curr)
+            && v == voxel {
                 count_above += 1;
                 curr += IVec3::Y;
                 continue;
             }
-        }
         break;
     }
     let ceil_is_solid = world.get_voxel(curr).is_some_and(|v| v.is_solid_opaque());
@@ -1716,13 +1967,12 @@ pub fn determine_speleothem_part(
     let mut count_below = 0;
     let mut curr = world_voxel - IVec3::Y;
     while count_below < 24 {
-        if let Some(v) = world.get_voxel(curr) {
-            if v == voxel {
+        if let Some(v) = world.get_voxel(curr)
+            && v == voxel {
                 count_below += 1;
                 curr -= IVec3::Y;
                 continue;
             }
-        }
         break;
     }
     let floor_is_solid = world.get_voxel(curr).is_some_and(|v| v.is_solid_opaque());
@@ -1808,18 +2058,10 @@ pub fn mesh_speleothem(
     frame_count: f32,
     tint_color: [f32; 4],
 ) {
-    mesh_cross_billboard(
-        buffers,
-        fx,
-        fy,
-        fz,
-        texture_layer,
-        frame_count,
-        tint_color,
-    );
+    mesh_cross_billboard(buffers, fx, fy, fz, texture_layer, frame_count, tint_color);
 }
 
-/// Meshes a "Pile of Sticks" (Hytale-inspired ground loot) with 3 distinct geometric layouts
+/// Meshes a "Pile of Sticks" ground fixture with 3 distinct geometric layouts
 /// (3 to 4 wooden branch segments each) selected deterministically by voxel position,
 /// combined with 4-way Y rotation (`orientation % 4`) for rich visual variety across the terrain.
 pub fn mesh_stick_pile(
@@ -1835,8 +2077,7 @@ pub fn mesh_stick_pile(
     let endcap1 = [12.0, 0.0, 16.0, 4.0];
     let endcap2 = [12.0, 4.0, 16.0, 8.0];
 
-    let hash = (fx as i32)
-        .wrapping_mul(73856093)
+    let hash = (fx as i32).wrapping_mul(73856093)
         ^ (fy as i32).wrapping_mul(19349663)
         ^ (fz as i32).wrapping_mul(83492791);
     let layout = (hash.unsigned_abs() % 3) as u8;
@@ -2209,7 +2450,7 @@ pub fn mesh_hanging_coconut(
     );
 }
 
-/// Renders a Minecraft-accurate 3D Campfire:
+/// Renders a 3D Campfire:
 /// - 2 bottom horizontal logs along X (4x4x16 px)
 /// - 2 upper crossed horizontal logs along Z (4x4x16 px, glowing embers when lit)
 /// - Central ash / glowing animated coal bed (1 px high)

@@ -172,8 +172,12 @@ impl StrataGenerator {
         if block_y > self.abyssal_crust_y {
             // A. Marble Pockets (Metamorphic noble marble: depth -30 to -170)
             if (-170..=-30).contains(&block_y) {
-                let marble_noise =
-                    gradient_noise_3d(bx * 0.030, by * 0.040, bz * 0.030, seed.wrapping_add(112_358));
+                let marble_noise = gradient_noise_3d(
+                    bx * 0.030,
+                    by * 0.040,
+                    bz * 0.030,
+                    seed.wrapping_add(112_358),
+                );
                 if marble_noise > 0.60 {
                     return Voxel::Marble;
                 }
@@ -181,8 +185,12 @@ impl StrataGenerator {
 
             // B. Granite Plutons (Continental batholiths: depth -10 to -100)
             if (-100..=-10).contains(&block_y) {
-                let granite_noise =
-                    gradient_noise_3d(bx * 0.024, by * 0.032, bz * 0.024, seed.wrapping_add(271_828));
+                let granite_noise = gradient_noise_3d(
+                    bx * 0.024,
+                    by * 0.032,
+                    bz * 0.024,
+                    seed.wrapping_add(271_828),
+                );
                 if granite_noise > 0.62 {
                     return Voxel::Granite;
                 }
@@ -190,8 +198,12 @@ impl StrataGenerator {
 
             // C. Basalt Volcanic Columns / Conduits (depth -60 to -240)
             if (-240..=-60).contains(&block_y) {
-                let basalt_noise =
-                    gradient_noise_3d(bx * 0.032, by * 0.018, bz * 0.032, seed.wrapping_add(314_159));
+                let basalt_noise = gradient_noise_3d(
+                    bx * 0.032,
+                    by * 0.018,
+                    bz * 0.032,
+                    seed.wrapping_add(314_159),
+                );
                 if basalt_noise > 0.64 {
                     return Voxel::Basalt;
                 }
@@ -200,8 +212,12 @@ impl StrataGenerator {
             // D. Argillite Sedimentary Lenses (dense claystone: depth -15 to -80)
             // Smaller, discreet pockets with lower spawn frequency
             if (-80..=-15).contains(&block_y) {
-                let argillite_noise =
-                    gradient_noise_3d(bx * 0.055, by * 0.075, bz * 0.055, seed.wrapping_add(141_421));
+                let argillite_noise = gradient_noise_3d(
+                    bx * 0.055,
+                    by * 0.075,
+                    bz * 0.055,
+                    seed.wrapping_add(141_421),
+                );
                 if argillite_noise > 0.72 {
                     return Voxel::Argillite;
                 }
@@ -209,10 +225,19 @@ impl StrataGenerator {
 
             // E. Karst Caverns (Subterranean karst pockets: depth -15 to -150)
             if (-150..=-15).contains(&block_y) {
-                let karst_noise =
-                    gradient_noise_3d(bx * 0.038, by * 0.038, bz * 0.038, seed.wrapping_add(654_321));
+                let karst_noise = gradient_noise_3d(
+                    bx * 0.038,
+                    by * 0.038,
+                    bz * 0.038,
+                    seed.wrapping_add(654_321),
+                );
                 if karst_noise > 0.65 {
-                    let dither = gradient_noise_3d(bx * 0.15, by * 0.15, bz * 0.15, seed.wrapping_add(654_322));
+                    let dither = gradient_noise_3d(
+                        bx * 0.15,
+                        by * 0.15,
+                        bz * 0.15,
+                        seed.wrapping_add(654_322),
+                    );
                     return if dither > 0.35 {
                         Voxel::FracturedCaveKarst
                     } else {
@@ -223,10 +248,19 @@ impl StrataGenerator {
 
             // F. Calcite Grottos (Radiant white crystalline caverns: depth -25 to -160)
             if (-160..=-25).contains(&block_y) {
-                let calcite_noise =
-                    gradient_noise_3d(bx * 0.046, by * 0.046, bz * 0.046, seed.wrapping_add(883_211));
+                let calcite_noise = gradient_noise_3d(
+                    bx * 0.046,
+                    by * 0.046,
+                    bz * 0.046,
+                    seed.wrapping_add(883_211),
+                );
                 if calcite_noise > 0.68 {
-                    let dither = gradient_noise_3d(bx * 0.18, by * 0.18, bz * 0.18, seed.wrapping_add(883_212));
+                    let dither = gradient_noise_3d(
+                        bx * 0.18,
+                        by * 0.18,
+                        bz * 0.18,
+                        seed.wrapping_add(883_212),
+                    );
                     return if dither > 0.35 {
                         Voxel::FracturedCaveCalcite
                     } else {
@@ -237,8 +271,12 @@ impl StrataGenerator {
 
             // G. Pink Salt Caverns (Ancient Halite & evaporite deposits: depth -35 to -180)
             if (-180..=-35).contains(&block_y) {
-                let salt_noise =
-                    gradient_noise_3d(bx * 0.042, by * 0.042, bz * 0.042, seed.wrapping_add(441_992));
+                let salt_noise = gradient_noise_3d(
+                    bx * 0.042,
+                    by * 0.042,
+                    bz * 0.042,
+                    seed.wrapping_add(441_992),
+                );
                 if salt_noise > 0.70 {
                     return Voxel::CrystalPinkSaltBlock;
                 }
@@ -246,11 +284,19 @@ impl StrataGenerator {
 
             // H. Amethyst & Crystal Geode Chambers (Luminous crystal caverns: depth -45 to -210)
             if (-210..=-45).contains(&block_y) {
-                let geode_noise =
-                    gradient_noise_3d(bx * 0.048, by * 0.048, bz * 0.048, seed.wrapping_add(772_135));
+                let geode_noise = gradient_noise_3d(
+                    bx * 0.048,
+                    by * 0.048,
+                    bz * 0.048,
+                    seed.wrapping_add(772_135),
+                );
                 if geode_noise > 0.70 {
-                    let type_noise =
-                        gradient_noise_3d(bx * 0.022, by * 0.022, bz * 0.022, seed.wrapping_add(772_139));
+                    let type_noise = gradient_noise_3d(
+                        bx * 0.022,
+                        by * 0.022,
+                        bz * 0.022,
+                        seed.wrapping_add(772_139),
+                    );
                     return if type_noise > 0.45 {
                         Voxel::CrystalAmethystBlock
                     } else if type_noise > 0.15 {
@@ -268,7 +314,8 @@ impl StrataGenerator {
 
         // Subterranean Biome Overrides (Ice Caves & Mushroom Caves)
         if biome.biome_type == crate::generation::biome::BiomeType::IceCaves && logical_depth > 1 {
-            let ice_noise = gradient_noise_3d(bx * 0.12, by * 0.12, bz * 0.12, seed.wrapping_add(555_999));
+            let ice_noise =
+                gradient_noise_3d(bx * 0.12, by * 0.12, bz * 0.12, seed.wrapping_add(555_999));
             if ice_noise > 0.10 {
                 return Voxel::FrostIcePacked;
             } else if ice_noise > -0.40 {
@@ -278,8 +325,11 @@ impl StrataGenerator {
             }
         }
 
-        if biome.biome_type == crate::generation::biome::BiomeType::MushroomCaves && logical_depth > 1 {
-            let mush_noise = gradient_noise_3d(bx * 0.14, by * 0.14, bz * 0.14, seed.wrapping_add(777_888));
+        if biome.biome_type == crate::generation::biome::BiomeType::MushroomCaves
+            && logical_depth > 1
+        {
+            let mush_noise =
+                gradient_noise_3d(bx * 0.14, by * 0.14, bz * 0.14, seed.wrapping_add(777_888));
             if mush_noise > 0.55 {
                 return Voxel::FungiAmanitaCap;
             } else if mush_noise > 0.35 {
@@ -295,15 +345,23 @@ impl StrataGenerator {
 
         // 6. Geological Depth Stratification (Macro-Estratos)
         // Gentle undulating wave warping the vertical boundaries
-        let wave = gradient_noise_3d(bx * 0.012, by * 0.018, bz * 0.012, seed.wrapping_add(77_889))
-            * 10.0;
+        let wave = gradient_noise_3d(
+            bx * 0.012,
+            by * 0.018,
+            bz * 0.012,
+            seed.wrapping_add(77_889),
+        ) * 10.0;
         let eff_y = block_y as f32 + wave;
 
         // Macro-Estrato 1: Upper & Middle Crust (down to ~-110)
         // Dominated by Dolomite (the classic continental stone baseline), with stratified bands of Andesite and Limestone
         if eff_y > self.mid_crust_y as f32 {
-            let band_noise =
-                gradient_noise_3d(bx * 0.020, by * 0.045, bz * 0.020, seed.wrapping_add(55_667));
+            let band_noise = gradient_noise_3d(
+                bx * 0.020,
+                by * 0.045,
+                bz * 0.020,
+                seed.wrapping_add(55_667),
+            );
             if band_noise > 0.38 {
                 Voxel::Andesite
             } else if band_noise < -0.38 {
@@ -315,8 +373,12 @@ impl StrataGenerator {
         // Macro-Estrato 2: Deep Crust (~-110 to ~-190)
         // Dominated by Slate (metamorphic foundation) with intrusive Gabbro massifs
         else if eff_y > self.deep_crust_y as f32 {
-            let gabbro_noise =
-                gradient_noise_3d(bx * 0.024, by * 0.028, bz * 0.024, seed.wrapping_add(88_991));
+            let gabbro_noise = gradient_noise_3d(
+                bx * 0.024,
+                by * 0.028,
+                bz * 0.024,
+                seed.wrapping_add(88_991),
+            );
             if gabbro_noise > 0.22 {
                 Voxel::Gabbro
             } else {
@@ -326,8 +388,12 @@ impl StrataGenerator {
         // Macro-Estrato 3: Abyssal Geothermal Crust (~-190 down to Mantle)
         // Extreme depth: Gabbro, Slate, Volcanic Basalt, Obsidian, and Magma
         else {
-            let deep_noise =
-                gradient_noise_3d(bx * 0.025, by * 0.035, bz * 0.025, seed.wrapping_add(42_069));
+            let deep_noise = gradient_noise_3d(
+                bx * 0.025,
+                by * 0.035,
+                bz * 0.025,
+                seed.wrapping_add(42_069),
+            );
             if eff_y < -230.0 && deep_noise > 0.42 {
                 Voxel::Magma
             } else if deep_noise < -0.52 && eff_y < -210.0 {

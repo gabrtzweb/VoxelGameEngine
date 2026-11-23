@@ -7,13 +7,19 @@ use voxel_game_engine::{
 #[test]
 fn test_main_menu_initial_state() {
     assert_eq!(MenuState::default(), MenuState::MainMenu);
-    assert_eq!(MenuReturnTarget::default(), MenuReturnTarget(MenuState::Pause));
+    assert_eq!(
+        MenuReturnTarget::default(),
+        MenuReturnTarget(MenuState::Pause)
+    );
     assert_eq!(MainMenuPhase::default(), MainMenuPhase::Splash);
 }
 
 #[test]
 fn test_main_menu_assets_exist() {
-    assert!(Path::new("assets/textures/interfaces/main_menu_bg.png").exists(), "Background image must exist");
+    assert!(
+        Path::new("assets/textures/interfaces/main_menu_bg.png").exists(),
+        "Background image must exist"
+    );
 }
 
 #[test]
@@ -65,25 +71,68 @@ fn test_main_menu_localization() {
 #[test]
 fn test_menu_bar_session_visibility_rules() {
     let check_visibility = |in_session: bool, current: MenuState, target: MenuState| -> bool {
-        let in_active_session = if in_session { true } else { target != MenuState::MainMenu };
-        in_active_session && current != MenuState::None && current != MenuState::MainMenu && current != MenuState::Loading
+        let in_active_session = if in_session {
+            true
+        } else {
+            target != MenuState::MainMenu
+        };
+        in_active_session
+            && current != MenuState::None
+            && current != MenuState::MainMenu
+            && current != MenuState::Loading
     };
 
     // In MainMenu: never visible
-    assert!(!check_visibility(false, MenuState::MainMenu, MenuState::MainMenu));
-    assert!(!check_visibility(false, MenuState::Loading, MenuState::MainMenu));
-    assert!(!check_visibility(false, MenuState::Settings, MenuState::MainMenu));
-    assert!(!check_visibility(false, MenuState::Controls, MenuState::MainMenu));
+    assert!(!check_visibility(
+        false,
+        MenuState::MainMenu,
+        MenuState::MainMenu
+    ));
+    assert!(!check_visibility(
+        false,
+        MenuState::Loading,
+        MenuState::MainMenu
+    ));
+    assert!(!check_visibility(
+        false,
+        MenuState::Settings,
+        MenuState::MainMenu
+    ));
+    assert!(!check_visibility(
+        false,
+        MenuState::Controls,
+        MenuState::MainMenu
+    ));
 
     // In Active Game Session: visible during in-game menus, hidden during gameplay (None) or loading (Loading)
     assert!(!check_visibility(true, MenuState::None, MenuState::Pause));
-    assert!(!check_visibility(true, MenuState::Loading, MenuState::Pause));
-    assert!(check_visibility(true, MenuState::Inventory, MenuState::Pause));
+    assert!(!check_visibility(
+        true,
+        MenuState::Loading,
+        MenuState::Pause
+    ));
+    assert!(check_visibility(
+        true,
+        MenuState::Inventory,
+        MenuState::Pause
+    ));
     assert!(check_visibility(true, MenuState::Journal, MenuState::Pause));
-    assert!(check_visibility(true, MenuState::WorldMap, MenuState::Pause));
+    assert!(check_visibility(
+        true,
+        MenuState::WorldMap,
+        MenuState::Pause
+    ));
     assert!(check_visibility(true, MenuState::Pause, MenuState::Pause));
-    assert!(check_visibility(true, MenuState::Settings, MenuState::Pause));
-    assert!(check_visibility(true, MenuState::Controls, MenuState::Pause));
+    assert!(check_visibility(
+        true,
+        MenuState::Settings,
+        MenuState::Pause
+    ));
+    assert!(check_visibility(
+        true,
+        MenuState::Controls,
+        MenuState::Pause
+    ));
 }
 
 #[test]
@@ -110,16 +159,32 @@ fn test_race_selection_and_palettes() {
 
     for subrace in CharacterSubrace::ALL {
         let name = subrace.display_name(Some(&loc));
-        assert!(!name.is_empty(), "Display name for {:?} should not be empty", subrace);
+        assert!(
+            !name.is_empty(),
+            "Display name for {:?} should not be empty",
+            subrace
+        );
         let icon_path = format!("assets/{}", subrace.icon_asset_path());
-        assert!(Path::new(&icon_path).exists(), "Subrace icon asset {} must exist", icon_path);
+        assert!(
+            Path::new(&icon_path).exists(),
+            "Subrace icon asset {} must exist",
+            icon_path
+        );
     }
 
     for race in CharacterRace::ALL {
         let name = race.display_name(Some(&loc));
-        assert!(!name.is_empty(), "Display name for {:?} should not be empty", race);
+        assert!(
+            !name.is_empty(),
+            "Display name for {:?} should not be empty",
+            race
+        );
         let icon_path = format!("assets/{}", race.icon_asset_path());
-        assert!(Path::new(&icon_path).exists(), "Icon asset {} must exist", icon_path);
+        assert!(
+            Path::new(&icon_path).exists(),
+            "Icon asset {} must exist",
+            icon_path
+        );
 
         // Verify all limbs have distinct valid colors
         let skin = race.skin_color();
@@ -139,9 +204,18 @@ fn test_race_selection_and_palettes() {
     }
 
     // Verify distinct stature scaling across key archetypes
-    assert!(CharacterRace::Dwarf.proportions().root_scale.y < CharacterRace::Human.proportions().root_scale.y);
-    assert!(CharacterRace::Elf.proportions().root_scale.y > CharacterRace::Human.proportions().root_scale.y);
-    assert!(CharacterRace::Orc.proportions().shoulder_spread > CharacterRace::Human.proportions().shoulder_spread);
+    assert!(
+        CharacterRace::Dwarf.proportions().root_scale.y
+            < CharacterRace::Human.proportions().root_scale.y
+    );
+    assert!(
+        CharacterRace::Elf.proportions().root_scale.y
+            > CharacterRace::Human.proportions().root_scale.y
+    );
+    assert!(
+        CharacterRace::Orc.proportions().shoulder_spread
+            > CharacterRace::Human.proportions().shoulder_spread
+    );
 }
 
 #[test]
@@ -162,5 +236,3 @@ fn test_item_drop_buoyancy_and_mesh_generation() {
     assert!(!is_voxel_buoyant(Voxel::SandCommon));
     assert!(!is_voxel_buoyant(Voxel::LoamDirt));
 }
-
-

@@ -33,8 +33,6 @@ impl Voxel {
             "null_liquid"
         } else if self.is_cross_billboard() {
             "null_crossmesh"
-        } else if self.has_custom_mesh() || self.is_flat_pad_const() || self.is_wall_decal_const() {
-            "null_block"
         } else {
             "null_block"
         }
@@ -259,19 +257,16 @@ impl Voxel {
 
             Self::CalicheGrass => Some("soil_caliche_dirt"),
             Self::LateriteGrass => Some("soil_laterite_dirt"),
-            Self::LoamGrass
-            | Self::LoamSnow
-            | Self::LoamMulch
-            | Self::LoamTilled => Some("soil_loam_dirt"),
-            Self::PeatGrass
-            | Self::PeatSnow
-            | Self::PeatMulch
-            | Self::PeatTilled => Some("soil_peat_dirt"),
+            Self::LoamGrass | Self::LoamSnow | Self::LoamMulch | Self::LoamTilled => {
+                Some("soil_loam_dirt")
+            }
+            Self::PeatGrass | Self::PeatSnow | Self::PeatMulch | Self::PeatTilled => {
+                Some("soil_peat_dirt")
+            }
             Self::PermafrostGrass => Some("soil_permafrost_dirt"),
-            Self::SiltGrass
-            | Self::SiltSnow
-            | Self::SiltMulch
-            | Self::SiltTilled => Some("soil_silt_dirt"),
+            Self::SiltGrass | Self::SiltSnow | Self::SiltMulch | Self::SiltTilled => {
+                Some("soil_silt_dirt")
+            }
 
             Self::AndesiteGrass | Self::AndesiteSnow => Some("rock_andesite"),
             Self::ArgilliteGrass | Self::ArgilliteSnow => Some("rock_argillite"),
@@ -346,7 +341,10 @@ impl Voxel {
             BlockShape::Torch
         } else if self.is_basket_const() {
             BlockShape::Basket
-        } else if matches!(self, Self::PebbleChert | Self::PebbleFlint | Self::PebbleQuartz) {
+        } else if matches!(
+            self,
+            Self::PebbleChert | Self::PebbleFlint | Self::PebbleQuartz
+        ) {
             BlockShape::Pebble
         } else if matches!(
             self,
@@ -547,7 +545,11 @@ impl Voxel {
     #[inline]
     pub const fn is_wood_block(self) -> bool {
         let id = self as u16;
-        matches!(id, 139..=202) || matches!(self, Self::TreeCharredLog | Self::TreeCharredBark | Self::TreeCharredPlanks)
+        matches!(id, 139..=202)
+            || matches!(
+                self,
+                Self::TreeCharredLog | Self::TreeCharredBark | Self::TreeCharredPlanks
+            )
     }
 
     #[inline]
@@ -622,10 +624,7 @@ impl Voxel {
         // Priority 6: Gravels (Gravel spills over all Sands, Clay, Rocks, Wood)
         if matches!(
             self,
-            Self::GravelAshy
-                | Self::GravelDirty
-                | Self::GravelSandy
-                | Self::GravelSnowy
+            Self::GravelAshy | Self::GravelDirty | Self::GravelSandy | Self::GravelSnowy
         ) {
             return 6;
         }
@@ -634,21 +633,13 @@ impl Voxel {
             return 5;
         }
         // Priority 4: Other sands (spills over Clay, Rocks, Wood)
-        if matches!(
-            self,
-            Self::SandDune
-                | Self::SandRed
-                | Self::SandWhite
-        ) {
+        if matches!(self, Self::SandDune | Self::SandRed | Self::SandWhite) {
             return 4;
         }
         // Priority 3: Clays (spills over Rocks, Wood)
         if matches!(
             self,
-            Self::ClayBlue
-                | Self::ClayRed
-                | Self::ClayWhite
-                | Self::ClayYellow
+            Self::ClayBlue | Self::ClayRed | Self::ClayWhite | Self::ClayYellow
         ) {
             return 3;
         }
@@ -799,6 +790,7 @@ impl Voxel {
         NaturalRotationMode::None
     }
 
+    #[allow(clippy::approx_constant)]
     pub const PAINT_PALETTE: [[f32; 4]; 16] = [
         [0.220, 0.224, 0.235, 1.0], // 0: Black (#38393C)
         [0.275, 0.447, 0.722, 1.0], // 1: Blue (#4672B8)
@@ -984,29 +976,57 @@ impl Voxel {
             Self::MossForest | Self::MossCarpet => [60, 120, 45, 255],
 
             // Rock families (Raw, Cobbled, Bricks, Rubble, and Mossy)
-            Self::Andesite | Self::CobbledAndesite | Self::AndesiteBricks | Self::AndesiteRubble => [135, 138, 142, 255],
+            Self::Andesite
+            | Self::CobbledAndesite
+            | Self::AndesiteBricks
+            | Self::AndesiteRubble => [135, 138, 142, 255],
             Self::MossyAndesite | Self::MossyCobbledAndesite => [118, 135, 110, 255],
-            Self::Argillite | Self::CobbledArgillite | Self::ArgilliteBricks | Self::ArgilliteRubble => [125, 78, 68, 255],
+            Self::Argillite
+            | Self::CobbledArgillite
+            | Self::ArgilliteBricks
+            | Self::ArgilliteRubble => [125, 78, 68, 255],
             Self::MossyArgillite | Self::MossyCobbledArgillite => [110, 85, 70, 255],
-            Self::Basalt | Self::CobbledBasalt | Self::BasaltBricks | Self::BasaltRubble => [50, 48, 52, 255],
+            Self::Basalt | Self::CobbledBasalt | Self::BasaltBricks | Self::BasaltRubble => {
+                [50, 48, 52, 255]
+            }
             Self::MossyBasalt | Self::MossyCobbledBasalt => [48, 58, 48, 255],
-            Self::Chalk | Self::CobbledChalk | Self::ChalkBricks | Self::ChalkRubble => [230, 230, 224, 255],
+            Self::Chalk | Self::CobbledChalk | Self::ChalkBricks | Self::ChalkRubble => {
+                [230, 230, 224, 255]
+            }
             Self::MossyChalk | Self::MossyCobbledChalk => [195, 205, 180, 255],
-            Self::Dolomite | Self::CobbledDolomite | Self::DolomiteBricks | Self::DolomiteRubble => [195, 182, 172, 255],
+            Self::Dolomite
+            | Self::CobbledDolomite
+            | Self::DolomiteBricks
+            | Self::DolomiteRubble => [195, 182, 172, 255],
             Self::MossyDolomite | Self::MossyCobbledDolomite => [165, 170, 145, 255],
-            Self::Gabbro | Self::CobbledGabbro | Self::GabbroBricks | Self::GabbroRubble => [45, 52, 50, 255],
-            Self::Granite | Self::CobbledGranite | Self::GraniteBricks | Self::GraniteRubble => [175, 138, 130, 255],
+            Self::Gabbro | Self::CobbledGabbro | Self::GabbroBricks | Self::GabbroRubble => {
+                [45, 52, 50, 255]
+            }
+            Self::Granite | Self::CobbledGranite | Self::GraniteBricks | Self::GraniteRubble => {
+                [175, 138, 130, 255]
+            }
             Self::MossyGranite | Self::MossyCobbledGranite => [145, 135, 110, 255],
-            Self::Limestone | Self::CobbledLimestone | Self::LimestoneBricks | Self::LimestoneRubble => [205, 195, 165, 255],
+            Self::Limestone
+            | Self::CobbledLimestone
+            | Self::LimestoneBricks
+            | Self::LimestoneRubble => [205, 195, 165, 255],
             Self::MossyLimestone | Self::MossyCobbledLimestone => [170, 175, 135, 255],
-            Self::Marble | Self::CobbledMarble | Self::MarbleBricks | Self::MarbleRubble => [225, 228, 232, 255],
-            Self::Slate | Self::CobbledSlate | Self::SlateBricks | Self::SlateRubble => [75, 82, 92, 255],
+            Self::Marble | Self::CobbledMarble | Self::MarbleBricks | Self::MarbleRubble => {
+                [225, 228, 232, 255]
+            }
+            Self::Slate | Self::CobbledSlate | Self::SlateBricks | Self::SlateRubble => {
+                [75, 82, 92, 255]
+            }
             Self::Mantle | Self::CobbledMantle => [22, 18, 28, 255],
             Self::Obsidian | Self::ObsidianSpike | Self::FracturedCaveObsidian => [28, 22, 36, 255],
 
             // Cave speleothems & karst
-            Self::CaveCalcite | Self::FracturedCaveCalcite | Self::SpeleothemCalcite => [210, 215, 220, 255],
-            Self::CaveKarst | Self::FracturedCaveKarst | Self::SpeleothemKarst => [130, 125, 120, 255],
+            Self::CaveCalcite | Self::FracturedCaveCalcite | Self::SpeleothemCalcite => {
+                [210, 215, 220, 255]
+            }
+            Self::CaveKarst | Self::FracturedCaveKarst | Self::SpeleothemKarst => {
+                [130, 125, 120, 255]
+            }
             Self::SpeleothemSaltStraw => [235, 230, 225, 255],
             Self::SpeleothemBlueIce => [140, 190, 245, 255],
 
@@ -1077,12 +1097,24 @@ impl Voxel {
             Self::GemTopazRough => [220, 140, 40, 255],
 
             // Crystal Geodes
-            Self::CrystalAmethystBlock | Self::CrystalAmethystCluster | Self::CrystalAmethystGlinted => [160, 80, 210, 255],
-            Self::CrystalAquamarineBlock | Self::CrystalAquamarineCluster | Self::CrystalAquamarineGlinted => [110, 205, 215, 255],
-            Self::CrystalCitrineBlock | Self::CrystalCitrineCluster | Self::CrystalCitrineGlinted => [225, 175, 35, 255],
-            Self::CrystalFluoriteBlock | Self::CrystalFluoriteCluster | Self::CrystalFluoriteGlinted => [170, 90, 220, 255],
-            Self::CrystalPinkSaltBlock | Self::CrystalPinkSaltCluster | Self::CrystalPinkSaltGlinted => [225, 140, 160, 255],
-            Self::CrystalSeleniteBlock | Self::CrystalSeleniteCluster | Self::CrystalSeleniteGlinted => [210, 225, 235, 255],
+            Self::CrystalAmethystBlock
+            | Self::CrystalAmethystCluster
+            | Self::CrystalAmethystGlinted => [160, 80, 210, 255],
+            Self::CrystalAquamarineBlock
+            | Self::CrystalAquamarineCluster
+            | Self::CrystalAquamarineGlinted => [110, 205, 215, 255],
+            Self::CrystalCitrineBlock
+            | Self::CrystalCitrineCluster
+            | Self::CrystalCitrineGlinted => [225, 175, 35, 255],
+            Self::CrystalFluoriteBlock
+            | Self::CrystalFluoriteCluster
+            | Self::CrystalFluoriteGlinted => [170, 90, 220, 255],
+            Self::CrystalPinkSaltBlock
+            | Self::CrystalPinkSaltCluster
+            | Self::CrystalPinkSaltGlinted => [225, 140, 160, 255],
+            Self::CrystalSeleniteBlock
+            | Self::CrystalSeleniteCluster
+            | Self::CrystalSeleniteGlinted => [210, 225, 235, 255],
 
             // Fossils
             Self::FossilAmber => [215, 145, 30, 255],
@@ -1090,9 +1122,13 @@ impl Voxel {
             Self::FossilBones | Self::FossilMatrix => [215, 205, 185, 255],
 
             // Pebbles & Boulders
-            Self::PebbleChert | Self::PebbleChertCluster | Self::BoulderChert => [160, 145, 130, 255],
+            Self::PebbleChert | Self::PebbleChertCluster | Self::BoulderChert => {
+                [160, 145, 130, 255]
+            }
             Self::PebbleFlint | Self::PebbleFlintCluster | Self::BoulderFlint => [65, 70, 75, 255],
-            Self::PebbleQuartz | Self::PebbleQuartzCluster | Self::BoulderQuartz => [220, 225, 230, 255],
+            Self::PebbleQuartz | Self::PebbleQuartzCluster | Self::BoulderQuartz => {
+                [220, 225, 230, 255]
+            }
             Self::StickPile | Self::ItemStick => [88, 68, 52, 255],
             Self::ItemFlintShard => [78, 82, 88, 255],
             Self::ItemPlantFiber => [102, 148, 66, 255],
@@ -1115,7 +1151,9 @@ impl Voxel {
             | Self::ItemCoconut => [102, 72, 46, 255],
 
             // Containers & Storage
-            Self::Barrel | Self::Crate | Self::Basket | Self::Bookshelf | Self::BookshelfEmpty => [135, 95, 55, 255],
+            Self::Barrel | Self::Crate | Self::Basket | Self::Bookshelf | Self::BookshelfEmpty => {
+                [135, 95, 55, 255]
+            }
             Self::Bag | Self::BagRice | Self::BagSugar => [195, 175, 140, 255],
 
             // Leaves
@@ -1149,15 +1187,21 @@ impl Voxel {
 
             // Corals & Marine Flora
             Self::Coralstone | Self::Reefstone => [165, 130, 120, 255],
-            Self::DeadCoral | Self::DeadCoralFan | Self::DyingCoral | Self::DyingCoralFan => [135, 130, 125, 255],
+            Self::DeadCoral | Self::DeadCoralFan | Self::DyingCoral | Self::DyingCoralFan => {
+                [135, 130, 125, 255]
+            }
             Self::BrainCoral
             | Self::BrainCoralFan
             | Self::HornCoral
             | Self::HornCoralFan
             | Self::StaghornCoral
             | Self::StaghornCoralFan => [215, 130, 160, 255],
-            Self::BubbleCoral | Self::BubbleCoralFan | Self::SunCoral | Self::SunCoralFan => [225, 190, 55, 255],
-            Self::FireCoral | Self::FireCoralFan | Self::RedAlgae | Self::Delesseria => [185, 45, 55, 255],
+            Self::BubbleCoral | Self::BubbleCoralFan | Self::SunCoral | Self::SunCoralFan => {
+                [225, 190, 55, 255]
+            }
+            Self::FireCoral | Self::FireCoralFan | Self::RedAlgae | Self::Delesseria => {
+                [185, 45, 55, 255]
+            }
             Self::HeartCoral
             | Self::HeartCoralFan
             | Self::LeafCoral
@@ -1189,11 +1233,15 @@ impl Voxel {
             Self::FleshBlock | Self::BloodyFlesh => [165, 55, 55, 255],
             Self::HoneycombBlock | Self::BeeNest | Self::WaspNest => [225, 160, 45, 255],
             Self::SlimeBlock | Self::JellyBlock => [115, 195, 75, 255],
-            Self::AntHill | Self::AntHillOpen | Self::TermiteMound | Self::TermiteMoundOpen => [155, 105, 70, 255],
+            Self::AntHill | Self::AntHillOpen | Self::TermiteMound | Self::TermiteMoundOpen => {
+                [155, 105, 70, 255]
+            }
             Self::BirdNest | Self::HayNest => [180, 150, 85, 255],
             Self::SpiderEgg => [210, 205, 190, 255],
             Self::SilkCocoon => [230, 225, 215, 255],
-            Self::Cobweb | Self::CobwebArch | Self::CobwebHanging | Self::CobwebStretched => [225, 230, 235, 200],
+            Self::Cobweb | Self::CobwebArch | Self::CobwebHanging | Self::CobwebStretched => {
+                [225, 230, 235, 200]
+            }
             Self::PoopBlock => [85, 55, 30, 255],
             Self::DustBlock => [160, 155, 145, 255],
 
@@ -1319,7 +1367,9 @@ impl Voxel {
             Self::VegeRedShrub => [175, 60, 45, 255],
             Self::VegeLilyPad => [55, 130, 45, 255],
             Self::VegeCattailBottom | Self::VegeCattailTop => [120, 85, 50, 255],
-            Self::VegeVines | Self::VegeHangingMoss | Self::VegeHangingRoots | Self::VegeLichen => [80, 135, 55, 255],
+            Self::VegeVines | Self::VegeHangingMoss | Self::VegeHangingRoots | Self::VegeLichen => {
+                [80, 135, 55, 255]
+            }
             Self::VegeCaveGrowths
             | Self::VegeGrainyCaveGrowths
             | Self::VegeCaveHyssop
@@ -1345,12 +1395,16 @@ impl Voxel {
             | Self::FlowerLilyOfTheValley
             | Self::FlowerOxeyeDaisy
             | Self::FlowerWhitePetals => [240, 245, 250, 255],
-            Self::FlowerGlobeMallow | Self::FlowerMarigold | Self::FlowerOrangeTulip => [230, 125, 40, 255],
+            Self::FlowerGlobeMallow | Self::FlowerMarigold | Self::FlowerOrangeTulip => {
+                [230, 125, 40, 255]
+            }
             Self::FlowerHibiscus
             | Self::FlowerPoppy
             | Self::FlowerRoseBushBottom
             | Self::FlowerRoseBushTop => [220, 45, 50, 255],
-            Self::FlowerOrchid | Self::FlowerPinkPetals | Self::FlowerPinkTulip => [235, 135, 175, 255],
+            Self::FlowerOrchid | Self::FlowerPinkPetals | Self::FlowerPinkTulip => {
+                [235, 135, 175, 255]
+            }
             Self::FlowerSnapdragonBottom | Self::FlowerSnapdragonTop => [225, 165, 60, 255],
             Self::MelonBlock | Self::WildMelon => [100, 145, 45, 255],
             Self::PumpkinBlock | Self::WildPumpkin => [215, 115, 25, 255],
@@ -1367,10 +1421,9 @@ impl Voxel {
             Self::EmitLampRed | Self::EmitTorchRed => Color::srgb(1.0, 0.25, 0.25),
             Self::EmitLampGreen | Self::EmitTorchGreen => Color::srgb(0.25, 1.0, 0.25),
             Self::EmitLampBlue | Self::EmitTorchBlue => Color::srgb(0.25, 0.50, 1.0),
-            Self::LiquidLava
-            | Self::LiquidCoreMagma
-            | Self::LiquidMolten
-            | Self::Magma => Color::srgb(1.0, 0.45, 0.15),
+            Self::LiquidLava | Self::LiquidCoreMagma | Self::LiquidMolten | Self::Magma => {
+                Color::srgb(1.0, 0.45, 0.15)
+            }
             Self::GeothermalVent => Color::srgb(1.0, 0.55, 0.20),
             Self::CrystalCitrineGlinted => Color::srgb(1.0, 0.85, 0.30),
             Self::CrystalFluoriteGlinted => Color::srgb(0.70, 0.40, 0.95),

@@ -12,7 +12,7 @@ use bevy::{
 use super::{
     culling::{CaveCullingState, ChunkCoordinate, SubterraneanChunkMesh},
     greedy::{ChunkMesher, ChunkMeshes},
-    textures::{VoxelTextureRegistry, build_voxel_texture_array, build_mask_texture_array},
+    textures::{VoxelTextureRegistry, build_mask_texture_array, build_voxel_texture_array},
 };
 use crate::environment::foliage::GrassChunkMaterial;
 use crate::world::{Chunk, VoxelWorld};
@@ -183,7 +183,9 @@ impl ChunkMeshRegistry {
     }
 
     pub fn is_subterranean(&self, coordinate: &IVec3) -> bool {
-        self.entries.get(coordinate).is_some_and(|d| d.is_subterranean)
+        self.entries
+            .get(coordinate)
+            .is_some_and(|d| d.is_subterranean)
     }
 
     #[allow(dead_code)]
@@ -321,7 +323,12 @@ pub fn setup_chunk_material(
         .as_ref()
         .map_or(1.0, |cfg| if cfg.pixelated_shadows { 1.0 } else { 0.0 });
 
-    let params = Vec4::new(coat_strength, waving_foliage_flag, pixelated_shadows_flag, 0.0);
+    let params = Vec4::new(
+        coat_strength,
+        waving_foliage_flag,
+        pixelated_shadows_flag,
+        0.0,
+    );
     let anim_params = Vec4::new(0.0, 1.0, 0.44, 0.0);
 
     let opaque = opaque_materials.add(ExtendedMaterial {
@@ -502,14 +509,8 @@ pub fn apply_chunk_mesh(
         entry.is_empty()
     };
 
-    registry.total_vertices = registry
-        .total_vertices
-        .saturating_sub(old_verts)
-        + new_verts;
-    registry.total_triangles = registry
-        .total_triangles
-        .saturating_sub(old_tris)
-        + new_tris;
+    registry.total_vertices = registry.total_vertices.saturating_sub(old_verts) + new_verts;
+    registry.total_triangles = registry.total_triangles.saturating_sub(old_tris) + new_tris;
 
     if is_empty {
         if !was_empty {
@@ -737,14 +738,8 @@ pub fn apply_lod_mesh(
         entry.is_empty()
     };
 
-    registry.total_vertices = registry
-        .total_vertices
-        .saturating_sub(old_verts)
-        + new_verts;
-    registry.total_triangles = registry
-        .total_triangles
-        .saturating_sub(old_tris)
-        + new_tris;
+    registry.total_vertices = registry.total_vertices.saturating_sub(old_verts) + new_verts;
+    registry.total_triangles = registry.total_triangles.saturating_sub(old_tris) + new_tris;
 
     if is_empty {
         registry.entries.remove(&coordinate);
@@ -783,7 +778,9 @@ pub fn sync_voxel_shader_settings(
     mut opaque_materials: ResMut<Assets<OpaqueChunkMaterial>>,
     mut last_sent: Local<Option<(Vec4, f32, f32)>>,
 ) {
-    let Some(chunk_material) = chunk_material else { return };
+    let Some(chunk_material) = chunk_material else {
+        return;
+    };
 
     let target_params = if let Some(ref cfg) = local_config {
         Vec4::new(
@@ -797,7 +794,10 @@ pub fn sync_voxel_shader_settings(
     };
 
     let (wind_intensity, wind_angle) = if let Some(ref wind) = wind_state {
-        ((wind.current_speed / 4.0).clamp(0.4, 2.5), wind.current_heading)
+        (
+            (wind.current_speed / 4.0).clamp(0.4, 2.5),
+            wind.current_heading,
+        )
     } else {
         (1.0, 0.44)
     };

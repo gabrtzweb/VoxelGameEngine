@@ -1,8 +1,18 @@
 use bevy::prelude::*;
 
 #[derive(
-    Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Default,
-    Reflect, serde::Serialize, serde::Deserialize,
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    Hash,
+    PartialOrd,
+    Ord,
+    Default,
+    Reflect,
+    serde::Serialize,
+    serde::Deserialize,
 )]
 #[reflect(Default)]
 #[repr(u16)]
@@ -831,23 +841,23 @@ impl Voxel {
                 | Self::FlowerPeonyBottom
                 | Self::FlowerRoseBushBottom
                 | Self::FlowerSnapdragonBottom
-            | Self::CropBarleyBottomStage2
-            | Self::CropBarleyBottomStage3
-            | Self::CropCornBottomStage0
-            | Self::CropCornBottomStage1
-            | Self::CropCornBottomStage2
-            | Self::CropCornBottomStage3
-            | Self::CropCoffeeBottomStage0
-            | Self::CropCoffeeBottomStage1
-            | Self::CropCoffeeBottomStage2
-            | Self::CropCoffeeBottomStage3
-            | Self::CropTomatoesBuddingStage3
-            | Self::CropRiceSupporting
-            | Self::WildWheatBottom
-            | Self::WildBarleyBottom
-            | Self::WildRiceBottom
-            | Self::WildCornBottom
-            | Self::WildSugarCaneBottom
+                | Self::CropBarleyBottomStage2
+                | Self::CropBarleyBottomStage3
+                | Self::CropCornBottomStage0
+                | Self::CropCornBottomStage1
+                | Self::CropCornBottomStage2
+                | Self::CropCornBottomStage3
+                | Self::CropCoffeeBottomStage0
+                | Self::CropCoffeeBottomStage1
+                | Self::CropCoffeeBottomStage2
+                | Self::CropCoffeeBottomStage3
+                | Self::CropTomatoesBuddingStage3
+                | Self::CropRiceSupporting
+                | Self::WildWheatBottom
+                | Self::WildBarleyBottom
+                | Self::WildRiceBottom
+                | Self::WildCornBottom
+                | Self::WildSugarCaneBottom
         )
     }
 
@@ -867,29 +877,29 @@ impl Voxel {
                 | Self::FlowerPeonyTop
                 | Self::FlowerRoseBushTop
                 | Self::FlowerSnapdragonTop
-            | Self::CropBarleyTopStage2
-            | Self::CropBarleyTopStage3
-            | Self::CropCornTopStage0
-            | Self::CropCornTopStage1
-            | Self::CropCornTopStage2
-            | Self::CropCornTopStage3
-            | Self::CropCoffeeTopStage0
-            | Self::CropCoffeeTopStage1
-            | Self::CropCoffeeTopStage2
-            | Self::CropCoffeeTopStage3
-            | Self::CropTomatoesVineStage0
-            | Self::CropTomatoesVineStage1
-            | Self::CropTomatoesVineStage2
-            | Self::CropTomatoesVineStage3
-            | Self::CropRicePaniclesStage0
-            | Self::CropRicePaniclesStage1
-            | Self::CropRicePaniclesStage2
-            | Self::CropRicePaniclesStage3
-            | Self::WildWheatTop
-            | Self::WildBarleyTop
-            | Self::WildRiceTop
-            | Self::WildCornTop
-            | Self::WildSugarCaneTop
+                | Self::CropBarleyTopStage2
+                | Self::CropBarleyTopStage3
+                | Self::CropCornTopStage0
+                | Self::CropCornTopStage1
+                | Self::CropCornTopStage2
+                | Self::CropCornTopStage3
+                | Self::CropCoffeeTopStage0
+                | Self::CropCoffeeTopStage1
+                | Self::CropCoffeeTopStage2
+                | Self::CropCoffeeTopStage3
+                | Self::CropTomatoesVineStage0
+                | Self::CropTomatoesVineStage1
+                | Self::CropTomatoesVineStage2
+                | Self::CropTomatoesVineStage3
+                | Self::CropRicePaniclesStage0
+                | Self::CropRicePaniclesStage1
+                | Self::CropRicePaniclesStage2
+                | Self::CropRicePaniclesStage3
+                | Self::WildWheatTop
+                | Self::WildBarleyTop
+                | Self::WildRiceTop
+                | Self::WildCornTop
+                | Self::WildSugarCaneTop
         )
     }
 

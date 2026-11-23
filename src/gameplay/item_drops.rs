@@ -196,23 +196,47 @@ pub fn create_extruded_item_mesh(image_path: &str, size: f32) -> Option<Mesh> {
             let z1 = half_d;
 
             // Front (+Z) & Back (-Z)
-            push_quad([[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]], [0.0, 0.0, 1.0], lin);
-            push_quad([[x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0]], [0.0, 0.0, -1.0], lin);
+            push_quad(
+                [[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]],
+                [0.0, 0.0, 1.0],
+                lin,
+            );
+            push_quad(
+                [[x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0]],
+                [0.0, 0.0, -1.0],
+                lin,
+            );
 
             // Exposed side bevels
             let ix = px as i32;
             let iy = py as i32;
             if !is_solid(ix - 1, iy) {
-                push_quad([[x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0]], [-1.0, 0.0, 0.0], side_col);
+                push_quad(
+                    [[x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0]],
+                    [-1.0, 0.0, 0.0],
+                    side_col,
+                );
             }
             if !is_solid(ix + 1, iy) {
-                push_quad([[x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1]], [1.0, 0.0, 0.0], side_col);
+                push_quad(
+                    [[x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1]],
+                    [1.0, 0.0, 0.0],
+                    side_col,
+                );
             }
             if !is_solid(ix, iy - 1) {
-                push_quad([[x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0]], [0.0, 1.0, 0.0], side_col);
+                push_quad(
+                    [[x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0]],
+                    [0.0, 1.0, 0.0],
+                    side_col,
+                );
             }
             if !is_solid(ix, iy + 1) {
-                push_quad([[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]], [0.0, -1.0, 0.0], side_col);
+                push_quad(
+                    [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]],
+                    [0.0, -1.0, 0.0],
+                    side_col,
+                );
             }
         }
     }
@@ -559,7 +583,10 @@ fn handle_block_break_spawn_drop(
     // Non-crop double-tall top plants (e.g. tall grass/flowers) drop their bottom item variant
     let mut drop_source_voxel =
         if event.voxel.is_double_tall_top() && !event.voxel.is_crop_billboard() {
-            event.voxel.double_tall_bottom_partner().unwrap_or(event.voxel)
+            event
+                .voxel
+                .double_tall_bottom_partner()
+                .unwrap_or(event.voxel)
         } else {
             event.voxel
         };
@@ -725,17 +752,14 @@ fn update_item_drops(
             let buoyant = is_voxel_buoyant(drop.voxel);
 
             // Check if voxel directly above is air/non-fluid (surface equilibrium)
-            let above_is_fluid = world
-                .get_voxel(iv + IVec3::Y)
-                .is_some_and(|v| v.is_fluid());
+            let above_is_fluid = world.get_voxel(iv + IVec3::Y).is_some_and(|v| v.is_fluid());
             let surface_y = iv.y as f32 + 0.88;
 
             if buoyant {
                 if !above_is_fluid && drop.base_y >= surface_y - 0.12 {
                     // Float gently at water surface
                     let diff = surface_y - drop.base_y;
-                    drop.velocity.y =
-                        drop.velocity.y * (1.0 - 6.0 * dt).max(0.0) + diff * 8.0 * dt;
+                    drop.velocity.y = drop.velocity.y * (1.0 - 6.0 * dt).max(0.0) + diff * 8.0 * dt;
                 } else {
                     // Rise upward through water
                     drop.velocity.y = (drop.velocity.y + 12.0 * dt).min(2.6);
@@ -820,13 +844,9 @@ fn update_item_drops(
 
             let next_y = drop.base_y + drop.velocity.y * dt;
             let foot_y = next_y - DROP_HALF_EXTENT;
-            let check_y_iv = Vec3::new(
-                transform.translation.x,
-                foot_y,
-                transform.translation.z,
-            )
-            .floor()
-            .as_ivec3();
+            let check_y_iv = Vec3::new(transform.translation.x, foot_y, transform.translation.z)
+                .floor()
+                .as_ivec3();
 
             if drop.velocity.y <= 0.0
                 && world

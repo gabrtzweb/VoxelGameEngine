@@ -10,40 +10,25 @@ use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat, T
 
 use bevy::window::PrimaryWindow;
 
-
-
 use crate::core::{LocalConfig, UpscalingFilter};
 
 use crate::player::PlayerCamera;
 
-
-
 pub struct RenderScalePlugin;
 
-
-
 impl Plugin for RenderScalePlugin {
-
     fn build(&self, app: &mut App) {
-
         app.init_resource::<RenderScaleState>()
-
             .add_systems(Startup, setup_render_scale)
-
             .add_systems(PreUpdate, sync_render_scale);
-
     }
-
 }
-
-
 
 /// Runtime resource storing the off-screen scaled image handle and tracking state.
 
 #[derive(Resource)]
 
 pub struct RenderScaleState {
-
     pub scale: f32,
 
     pub upscaling_filter: UpscalingFilter,
@@ -55,17 +40,11 @@ pub struct RenderScaleState {
     pub last_applied_scale: f32,
 
     pub last_applied_filter: Option<UpscalingFilter>,
-
 }
 
-
-
 impl Default for RenderScaleState {
-
     fn default() -> Self {
-
         Self {
-
             scale: 1.0,
 
             upscaling_filter: UpscalingFilter::Bilinear,
@@ -77,14 +56,9 @@ impl Default for RenderScaleState {
             last_applied_scale: -1.0,
 
             last_applied_filter: None,
-
         }
-
     }
-
 }
-
-
 
 /// Marker component for the 2D UI Camera that renders UI and the upscaled 3D image.
 
@@ -92,18 +66,13 @@ impl Default for RenderScaleState {
 
 pub struct RenderScaleUiCamera;
 
-
-
 /// Marker component for the full-screen background node displaying the scaled 3D texture.
 
 #[derive(Component)]
 
 pub struct RenderScaleBackgroundNode;
 
-
-
 fn setup_render_scale(
-
     mut commands: Commands,
 
     mut images: ResMut<Assets<Image>>,
@@ -111,9 +80,7 @@ fn setup_render_scale(
     local_config: Res<LocalConfig>,
 
     mut state: ResMut<RenderScaleState>,
-
 ) {
-
     let initial_scale = local_config.render_scale.clamp(0.50, 1.00);
 
     let initial_filter = local_config.upscaling_filter;
@@ -128,82 +95,53 @@ fn setup_render_scale(
 
     state.last_window_size = UVec2::ZERO;
 
-
-
     let w = ((1280.0 * initial_scale).round() as u32).max(1);
 
     let h = ((720.0 * initial_scale).round() as u32).max(1);
 
-
-
     let mut image = Image::new_fill(
-
         Extent3d {
-
             width: w,
 
             height: h,
 
             depth_or_array_layers: 1,
-
         },
-
         TextureDimension::D2,
-
         &[0, 0, 0, 255],
-
         TextureFormat::Rgba8UnormSrgb,
-
         RenderAssetUsages::default(),
-
     );
 
     image.texture_descriptor.usage =
-
         TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING;
 
     image.sampler = ImageSampler::linear();
-
-
 
     let image_handle = images.add(image);
 
     state.target_image = Some(image_handle.clone());
 
-
-
     // Persistent 2D UI camera: permanently owns UI rendering at native window resolution.
 
     commands.spawn((
-
         Camera2d,
-
         Camera {
-
             order: 10,
 
             clear_color: ClearColorConfig::None,
 
             ..default()
-
         },
-
         bevy::ui::IsDefaultUiCamera,
-
         bevy_egui::PrimaryEguiContext,
-
         bevy_egui::EguiContext::default(),
-
         RenderScaleUiCamera,
-
     ));
-
-
 
     // Persistent background node: displays upscaled 3D image when scaling, hidden at 100%.
 
     commands.spawn((
-
         Node {
             position_type: PositionType::Absolute,
             left: Val::Px(0.0),
@@ -312,4 +250,3 @@ fn sync_render_scale(
         image_node.image = image_handle.clone();
     }
 }
-

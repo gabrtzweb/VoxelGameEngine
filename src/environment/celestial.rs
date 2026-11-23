@@ -345,8 +345,7 @@ pub fn sync_celestial_transforms(
 
     // Directional moonlight shining from moon towards the world (-moon_dir).
     let moon_elev = moon_dir.y.max(0.0);
-    let moon_illum =
-        moon_elev.powf(0.6) * (moon_phase_illuminance_factor * night_moon_illuminance);
+    let moon_illum = moon_elev.powf(0.6) * (moon_phase_illuminance_factor * night_moon_illuminance);
     moon_l.illuminance = moon_illum;
     moon_l.shadow_maps_enabled =
         shadows_enabled && moon_elev > 0.04 && moon_phase_illuminance_factor > 0.20;

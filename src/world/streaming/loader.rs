@@ -1,4 +1,7 @@
-use bevy::{prelude::*, tasks::{AsyncComputeTaskPool, futures::check_ready}};
+use bevy::{
+    prelude::*,
+    tasks::{AsyncComputeTaskPool, futures::check_ready},
+};
 
 use crate::{
     generation::TerrainGenerator,
@@ -10,8 +13,7 @@ use crate::{
             ChunkStreamingQueues,
             manager::{
                 ChunkGenerationTask, ChunkStreamingState, GeneratedChunk,
-                MAX_GENERATION_TASKS_IN_FLIGHT, MAX_GENERATION_TASKS_STARTED_PER_FRAME,
-                neighbors,
+                MAX_GENERATION_TASKS_IN_FLIGHT, MAX_GENERATION_TASKS_STARTED_PER_FRAME, neighbors,
             },
         },
     },
@@ -26,8 +28,16 @@ pub fn start_generation_tasks(
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
 ) {
     let is_loading = menu_state.is_some_and(|s| *s.get() == crate::menu::MenuState::Loading);
-    let max_in_flight = if is_loading { 48 } else { MAX_GENERATION_TASKS_IN_FLIGHT };
-    let max_started = if is_loading { 24 } else { MAX_GENERATION_TASKS_STARTED_PER_FRAME };
+    let max_in_flight = if is_loading {
+        48
+    } else {
+        MAX_GENERATION_TASKS_IN_FLIGHT
+    };
+    let max_started = if is_loading {
+        24
+    } else {
+        MAX_GENERATION_TASKS_STARTED_PER_FRAME
+    };
 
     let active_count = active_tasks.iter().count();
 

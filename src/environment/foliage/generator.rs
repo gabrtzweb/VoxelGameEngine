@@ -126,7 +126,7 @@ pub fn emit_block_grass_blades(
 
         let height_class: u32 = 0; // 0 = standard grass turf
 
-        let left_alpha = ((0u32 << 7) | (height_class << 5) | angle_bucket) as f32 / 255.0;
+        let left_alpha = ((height_class << 5) | angle_bucket) as f32 / 255.0;
         let right_alpha = ((1u32 << 7) | (height_class << 5) | angle_bucket) as f32 / 255.0;
 
         // Quad subdivisions: 4 (full), 2 (medium), 1 (far)
@@ -204,10 +204,30 @@ pub fn emit_block_grass_blades(
             buffers.uv_bs.push([0.0, 0.0]);
 
             // Colors: RGB = tint, A = packed side & angle
-            buffers.colors.push([blade_color_rgb[0], blade_color_rgb[1], blade_color_rgb[2], left_alpha]);
-            buffers.colors.push([blade_color_rgb[0], blade_color_rgb[1], blade_color_rgb[2], right_alpha]);
-            buffers.colors.push([blade_color_rgb[0], blade_color_rgb[1], blade_color_rgb[2], right_alpha]);
-            buffers.colors.push([blade_color_rgb[0], blade_color_rgb[1], blade_color_rgb[2], left_alpha]);
+            buffers.colors.push([
+                blade_color_rgb[0],
+                blade_color_rgb[1],
+                blade_color_rgb[2],
+                left_alpha,
+            ]);
+            buffers.colors.push([
+                blade_color_rgb[0],
+                blade_color_rgb[1],
+                blade_color_rgb[2],
+                right_alpha,
+            ]);
+            buffers.colors.push([
+                blade_color_rgb[0],
+                blade_color_rgb[1],
+                blade_color_rgb[2],
+                right_alpha,
+            ]);
+            buffers.colors.push([
+                blade_color_rgb[0],
+                blade_color_rgb[1],
+                blade_color_rgb[2],
+                left_alpha,
+            ]);
 
             // Indices (two triangles per quad)
             buffers.indices.push(v_idx_start);

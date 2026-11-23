@@ -164,10 +164,9 @@ impl BiomeType {
             | Self::CoralReef
             | Self::OceanTrench => "journal.biome_cat.coastal",
 
-            Self::ThermalCaves
-            | Self::UndergroundJungle
-            | Self::IceCaves
-            | Self::MushroomCaves => "journal.biome_cat.caves",
+            Self::ThermalCaves | Self::UndergroundJungle | Self::IceCaves | Self::MushroomCaves => {
+                "journal.biome_cat.caves"
+            }
         }
     }
 
@@ -175,16 +174,24 @@ impl BiomeType {
         match self {
             Self::AlpineHighlands => "textures/interfaces/icons/biomes/biome_alpine_highlands.png",
             Self::AncientSands => "textures/interfaces/icons/biomes/biome_ancient_sands.png",
-            Self::FracturedSavanna => "textures/interfaces/icons/biomes/biome_fractured_savanna.png",
-            Self::YosemiteLowlands => "textures/interfaces/icons/biomes/biome_yosemite_lowlands.png",
+            Self::FracturedSavanna => {
+                "textures/interfaces/icons/biomes/biome_fractured_savanna.png"
+            }
+            Self::YosemiteLowlands => {
+                "textures/interfaces/icons/biomes/biome_yosemite_lowlands.png"
+            }
             Self::CloudForest => "textures/interfaces/icons/biomes/biome_cloud_forest.png",
             Self::SiberianTaiga => "textures/interfaces/icons/biomes/biome_siberian_taiga.png",
             Self::GravelBeach => "textures/interfaces/icons/biomes/biome_gravel_beach.png",
             Self::EmeraldPeaks => "textures/interfaces/icons/biomes/biome_emerald_peaks.png",
             Self::VolcanicPeaks => "textures/interfaces/icons/biomes/biome_volcanic_peaks.png",
-            Self::PaintedMountains => "textures/interfaces/icons/biomes/biome_painted_mountains.png",
+            Self::PaintedMountains => {
+                "textures/interfaces/icons/biomes/biome_painted_mountains.png"
+            }
             Self::RockyMountains => "textures/interfaces/icons/biomes/biome_rocky_mountains.png",
-            Self::ScarletMountains => "textures/interfaces/icons/biomes/biome_scarlet_mountains.png",
+            Self::ScarletMountains => {
+                "textures/interfaces/icons/biomes/biome_scarlet_mountains.png"
+            }
             Self::BryceCanyon => "textures/interfaces/icons/biomes/biome_bryce_canyon.png",
             Self::AmethystCanyon => "textures/interfaces/icons/biomes/biome_amethyst_canyon.png",
             Self::BasaltCliffs => "textures/interfaces/icons/biomes/biome_basalt_cliffs.png",
@@ -214,7 +221,9 @@ impl BiomeType {
             Self::CoralReef => "textures/interfaces/icons/biomes/biome_coral_reef.png",
             Self::OceanTrench => "textures/interfaces/icons/biomes/biome_ocean_trench.png",
             Self::ThermalCaves => "textures/interfaces/icons/biomes/biome_thermal_caves.png",
-            Self::UndergroundJungle => "textures/interfaces/icons/biomes/biome_underground_jungle.png",
+            Self::UndergroundJungle => {
+                "textures/interfaces/icons/biomes/biome_underground_jungle.png"
+            }
             Self::IceCaves => "textures/interfaces/icons/biomes/biome_ice_caves.png",
             Self::MushroomCaves => "textures/interfaces/icons/biomes/biome_mushroom_caves.png",
         }
@@ -884,7 +893,9 @@ impl BiomeType {
             Self::GlacialChasm | Self::FrozenCliffs | Self::IceCaves => [0.30, 0.75, 0.98, 1.0],
             Self::VolcanicPeaks | Self::Caldera | Self::ThermalCaves => [0.65, 0.25, 0.15, 1.0],
             Self::BloomingValley | Self::LavenderValley => [0.22, 0.70, 0.95, 1.0],
-            Self::TropicalJungle | Self::UndergroundJungle | Self::MushroomCaves => [0.18, 0.75, 0.70, 1.0],
+            Self::TropicalJungle | Self::UndergroundJungle | Self::MushroomCaves => {
+                [0.18, 0.75, 0.70, 1.0]
+            }
             _ => [0.22, 0.60, 0.90, 1.0],
         }
     }
@@ -906,7 +917,9 @@ impl BiomeType {
             Self::SakuraGrove => [0.95, 0.65, 0.78, 1.0],
             Self::LavenderValley => [0.70, 0.55, 0.85, 1.0],
             Self::TropicalJungle => [0.12, 0.95, 0.22, 1.0],
-            Self::SiberianTaiga | Self::WintryForest | Self::PineHighlands => [0.35, 0.75, 0.55, 1.0],
+            Self::SiberianTaiga | Self::WintryForest | Self::PineHighlands => {
+                [0.35, 0.75, 0.55, 1.0]
+            }
             Self::VolcanicPeaks | Self::AshenSavanna => [0.50, 0.45, 0.35, 1.0],
             _ => self.grass_color(),
         }
@@ -941,7 +954,7 @@ pub struct BiomeConfig {
     pub cliff_material: Voxel,
 }
 
-/// A 6-dimensional climate sample replicating Minecraft/worldgen noise parameters.
+/// A 6-dimensional climate sample storing multi-noise worldgen parameters.
 #[derive(Debug, Clone, Copy, PartialEq, Reflect)]
 pub struct ClimateSample {
     pub continentalness: f32,
@@ -966,63 +979,409 @@ struct BiomePoint {
 
 static BIOME_POINTS: &[BiomePoint] = &[
     // Group A: Extreme Peaks & Mountain Ranges (Inland mountain ridges, low erosion)
-    BiomePoint { biome: BiomeType::AlpineHighlands, c: 0.35, e: -0.55, r: 0.60, t: -0.65, h: 0.10, d: 0.0 },
-    BiomePoint { biome: BiomeType::EmeraldPeaks,    c: 0.30, e: -0.50, r: 0.65, t: -0.05, h: 0.55, d: 0.0 },
-    BiomePoint { biome: BiomeType::VolcanicPeaks,   c: 0.40, e: -0.45, r: 0.75, t: 0.75,  h: -0.45, d: 0.0 },
-    BiomePoint { biome: BiomeType::PaintedMountains,c: 0.32, e: -0.40, r: 0.50, t: 0.55,  h: -0.55, d: 0.0 },
-    BiomePoint { biome: BiomeType::RockyMountains,  c: 0.36, e: -0.50, r: 0.55, t: -0.20, h: -0.15, d: 0.0 },
-    BiomePoint { biome: BiomeType::ScarletMountains,c: 0.34, e: -0.45, r: 0.60, t: 0.65,  h: -0.35, d: 0.0 },
-
+    BiomePoint {
+        biome: BiomeType::AlpineHighlands,
+        c: 0.35,
+        e: -0.55,
+        r: 0.60,
+        t: -0.65,
+        h: 0.10,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::EmeraldPeaks,
+        c: 0.30,
+        e: -0.50,
+        r: 0.65,
+        t: -0.05,
+        h: 0.55,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::VolcanicPeaks,
+        c: 0.40,
+        e: -0.45,
+        r: 0.75,
+        t: 0.75,
+        h: -0.45,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::PaintedMountains,
+        c: 0.32,
+        e: -0.40,
+        r: 0.50,
+        t: 0.55,
+        h: -0.55,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::RockyMountains,
+        c: 0.36,
+        e: -0.50,
+        r: 0.55,
+        t: -0.20,
+        h: -0.15,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::ScarletMountains,
+        c: 0.34,
+        e: -0.45,
+        r: 0.60,
+        t: 0.65,
+        h: -0.35,
+        d: 0.0,
+    },
     // Group B: Canyons & Dramatic Cliffs
-    BiomePoint { biome: BiomeType::BryceCanyon,    c: 0.28, e: 0.05,  r: 0.50, t: 0.65,  h: -0.65, d: 0.0 },
-    BiomePoint { biome: BiomeType::AmethystCanyon, c: 0.25, e: -0.10, r: -0.55,t: 0.15,  h: 0.15,  d: 0.0 },
-    BiomePoint { biome: BiomeType::BasaltCliffs,   c: 0.05, e: -0.50, r: 0.35, t: 0.40,  h: -0.10, d: 0.0 },
-    BiomePoint { biome: BiomeType::GraniteCliffs,  c: 0.25, e: -0.45, r: 0.45, t: 0.05,  h: 0.25,  d: 0.0 },
-    BiomePoint { biome: BiomeType::WhiteCliffs,    c: 0.05, e: -0.45, r: 0.25, t: 0.00,  h: 0.20,  d: 0.0 },
-    BiomePoint { biome: BiomeType::YosemiteCliffs, c: 0.30, e: -0.50, r: 0.55, t: 0.15,  h: 0.35,  d: 0.0 },
-
+    BiomePoint {
+        biome: BiomeType::BryceCanyon,
+        c: 0.28,
+        e: 0.05,
+        r: 0.50,
+        t: 0.65,
+        h: -0.65,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::AmethystCanyon,
+        c: 0.25,
+        e: -0.10,
+        r: -0.55,
+        t: 0.15,
+        h: 0.15,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::BasaltCliffs,
+        c: 0.05,
+        e: -0.50,
+        r: 0.35,
+        t: 0.40,
+        h: -0.10,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::GraniteCliffs,
+        c: 0.25,
+        e: -0.45,
+        r: 0.45,
+        t: 0.05,
+        h: 0.25,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::WhiteCliffs,
+        c: 0.05,
+        e: -0.45,
+        r: 0.25,
+        t: 0.00,
+        h: 0.20,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::YosemiteCliffs,
+        c: 0.30,
+        e: -0.50,
+        r: 0.55,
+        t: 0.15,
+        h: 0.35,
+        d: 0.0,
+    },
     // Group C: Deserts, Savannas & Arid Badlands (High temperature, low humidity)
     // Note: DesertOasis is generated exclusively as a small water-centered pocket inside deserts.
-    BiomePoint { biome: BiomeType::DesertSpires,    c: 0.30, e: -0.25, r: 0.50, t: 0.75,  h: -0.55, d: 0.0 },
-    BiomePoint { biome: BiomeType::AncientSands,    c: 0.22, e: 0.30,  r: -0.20,t: 0.65,  h: -0.55, d: 0.0 },
-    BiomePoint { biome: BiomeType::AncientSands,    c: 0.32, e: 0.10,  r: 0.00, t: 0.70,  h: -0.60, d: 0.0 },
-    BiomePoint { biome: BiomeType::FracturedSavanna,c: 0.26, e: -0.20, r: 0.35, t: 0.55,  h: -0.30, d: 0.0 },
-    BiomePoint { biome: BiomeType::SavannaBadlands, c: 0.24, e: 0.10,  r: 0.10, t: 0.55,  h: -0.45, d: 0.0 },
-    BiomePoint { biome: BiomeType::AshenSavanna,    c: 0.35, e: 0.05,  r: 0.15, t: 0.80,  h: -0.35, d: 0.0 },
-
+    BiomePoint {
+        biome: BiomeType::DesertSpires,
+        c: 0.30,
+        e: -0.25,
+        r: 0.50,
+        t: 0.75,
+        h: -0.55,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::AncientSands,
+        c: 0.22,
+        e: 0.30,
+        r: -0.20,
+        t: 0.65,
+        h: -0.55,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::AncientSands,
+        c: 0.32,
+        e: 0.10,
+        r: 0.00,
+        t: 0.70,
+        h: -0.60,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::FracturedSavanna,
+        c: 0.26,
+        e: -0.20,
+        r: 0.35,
+        t: 0.55,
+        h: -0.30,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::SavannaBadlands,
+        c: 0.24,
+        e: 0.10,
+        r: 0.10,
+        t: 0.55,
+        h: -0.45,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::AshenSavanna,
+        c: 0.35,
+        e: 0.05,
+        r: 0.15,
+        t: 0.80,
+        h: -0.35,
+        d: 0.0,
+    },
     // Group D: Forests, Lush Valleys & Plains (Temperate and subtropical core)
-    BiomePoint { biome: BiomeType::BloomingValley,  c: 0.10, e: 0.35,  r: -0.25,t: 0.10,  h: 0.30,  d: 0.0 },
-    BiomePoint { biome: BiomeType::CloudForest,     c: 0.25, e: -0.15, r: 0.30, t: 0.10,  h: 0.70,  d: 0.0 },
-    BiomePoint { biome: BiomeType::LavenderValley,  c: 0.08, e: 0.30,  r: -0.20,t: -0.05, h: 0.25,  d: 0.0 },
-    BiomePoint { biome: BiomeType::SakuraGrove,     c: 0.15, e: 0.20,  r: 0.05, t: 0.15,  h: 0.40,  d: 0.0 },
-    BiomePoint { biome: BiomeType::YosemiteLowlands,c: 0.12, e: 0.25,  r: -0.15,t: 0.05,  h: 0.15,  d: 0.0 },
-    BiomePoint { biome: BiomeType::Shield,          c: 0.18, e: 0.10,  r: 0.10, t: -0.15, h: 0.10,  d: 0.0 },
-    BiomePoint { biome: BiomeType::TropicalJungle,  c: 0.12, e: 0.15,  r: -0.10,t: 0.65,  h: 0.75,  d: 0.0 },
-    BiomePoint { biome: BiomeType::OrchidSwamp,     c: 0.03, e: 0.55,  r: -0.50,t: 0.45,  h: 0.85,  d: 0.0 },
-
+    BiomePoint {
+        biome: BiomeType::BloomingValley,
+        c: 0.10,
+        e: 0.35,
+        r: -0.25,
+        t: 0.10,
+        h: 0.30,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::CloudForest,
+        c: 0.25,
+        e: -0.15,
+        r: 0.30,
+        t: 0.10,
+        h: 0.70,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::LavenderValley,
+        c: 0.08,
+        e: 0.30,
+        r: -0.20,
+        t: -0.05,
+        h: 0.25,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::SakuraGrove,
+        c: 0.15,
+        e: 0.20,
+        r: 0.05,
+        t: 0.15,
+        h: 0.40,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::YosemiteLowlands,
+        c: 0.12,
+        e: 0.25,
+        r: -0.15,
+        t: 0.05,
+        h: 0.15,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::Shield,
+        c: 0.18,
+        e: 0.10,
+        r: 0.10,
+        t: -0.15,
+        h: 0.10,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::TropicalJungle,
+        c: 0.12,
+        e: 0.15,
+        r: -0.10,
+        t: 0.65,
+        h: 0.75,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::OrchidSwamp,
+        c: 0.03,
+        e: 0.55,
+        r: -0.50,
+        t: 0.45,
+        h: 0.85,
+        d: 0.0,
+    },
     // Group E: Glacial & Subarctic Tundra (Cold climate)
-    BiomePoint { biome: BiomeType::GlacialChasm,   c: 0.35, e: -0.50, r: -0.65,t: -0.85, h: 0.30,  d: 0.0 },
-    BiomePoint { biome: BiomeType::SiberianTaiga,  c: 0.15, e: 0.15,  r: 0.05, t: -0.55, h: 0.25,  d: 0.0 },
-    BiomePoint { biome: BiomeType::FrozenCliffs,   c: 0.05, e: -0.55, r: 0.45, t: -0.70, h: 0.10,  d: 0.0 },
-    BiomePoint { biome: BiomeType::WintryForest,   c: 0.12, e: 0.25,  r: -0.05,t: -0.65, h: 0.50,  d: 0.0 },
-    BiomePoint { biome: BiomeType::ColdShrubland,  c: 0.20, e: 0.35,  r: -0.20,t: -0.45, h: -0.25, d: 0.0 },
-
+    BiomePoint {
+        biome: BiomeType::GlacialChasm,
+        c: 0.35,
+        e: -0.50,
+        r: -0.65,
+        t: -0.85,
+        h: 0.30,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::SiberianTaiga,
+        c: 0.15,
+        e: 0.15,
+        r: 0.05,
+        t: -0.55,
+        h: 0.25,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::FrozenCliffs,
+        c: 0.05,
+        e: -0.55,
+        r: 0.45,
+        t: -0.70,
+        h: 0.10,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::WintryForest,
+        c: 0.12,
+        e: 0.25,
+        r: -0.05,
+        t: -0.65,
+        h: 0.50,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::ColdShrubland,
+        c: 0.20,
+        e: 0.35,
+        r: -0.20,
+        t: -0.45,
+        h: -0.25,
+        d: 0.0,
+    },
     // Group F: Coastal, Aquatic & Subterranean Environments
-    BiomePoint { biome: BiomeType::GravelBeach,       c: -0.08,e: 0.40,  r: -0.30,t: -0.25, h: -0.05, d: 0.0 },
-    BiomePoint { biome: BiomeType::MirageIsles,       c: -0.08,e: 0.35,  r: -0.25,t: 0.65,  h: 0.40,  d: 0.0 },
-    BiomePoint { biome: BiomeType::Caldera,           c: 0.45, e: -0.20, r: -0.75,t: 0.80,  h: 0.00,  d: 0.0 },
-    BiomePoint { biome: BiomeType::DeepWarmOcean,     c: -0.40,e: 0.00,  r: 0.00, t: 0.35,  h: 0.20,  d: 0.0 },
-    BiomePoint { biome: BiomeType::CoralReef,         c: -0.22,e: 0.20,  r: -0.20,t: 0.70,  h: 0.45,  d: 0.0 },
-    BiomePoint { biome: BiomeType::ColdOcean,         c: -0.45,e: 0.00,  r: 0.00, t: -0.65, h: 0.10,  d: 0.0 },
-    BiomePoint { biome: BiomeType::OceanTrench,       c: -0.80,e: -0.30, r: 0.20, t: -0.10, h: 0.10,  d: 0.0 },
-    BiomePoint { biome: BiomeType::ThermalCaves,      c: 0.25, e: 0.00,  r: 0.00, t: 0.70,  h: -0.50, d: -0.70 },
-    BiomePoint { biome: BiomeType::UndergroundJungle, c: 0.15, e: 0.00,  r: 0.00, t: 0.50,  h: 0.80,  d: -0.70 },
-    BiomePoint { biome: BiomeType::IceCaves,          c: 0.25, e: 0.00,  r: 0.00, t: -0.70, h: 0.20,  d: -0.75 },
-    BiomePoint { biome: BiomeType::MushroomCaves,     c: 0.10, e: 0.00,  r: 0.00, t: 0.10,  h: 0.65,  d: -0.80 },
-
+    BiomePoint {
+        biome: BiomeType::GravelBeach,
+        c: -0.08,
+        e: 0.40,
+        r: -0.30,
+        t: -0.25,
+        h: -0.05,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::MirageIsles,
+        c: -0.08,
+        e: 0.35,
+        r: -0.25,
+        t: 0.65,
+        h: 0.40,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::Caldera,
+        c: 0.45,
+        e: -0.20,
+        r: -0.75,
+        t: 0.80,
+        h: 0.00,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::DeepWarmOcean,
+        c: -0.40,
+        e: 0.00,
+        r: 0.00,
+        t: 0.35,
+        h: 0.20,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::CoralReef,
+        c: -0.22,
+        e: 0.20,
+        r: -0.20,
+        t: 0.70,
+        h: 0.45,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::ColdOcean,
+        c: -0.45,
+        e: 0.00,
+        r: 0.00,
+        t: -0.65,
+        h: 0.10,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::OceanTrench,
+        c: -0.80,
+        e: -0.30,
+        r: 0.20,
+        t: -0.10,
+        h: 0.10,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::ThermalCaves,
+        c: 0.25,
+        e: 0.00,
+        r: 0.00,
+        t: 0.70,
+        h: -0.50,
+        d: -0.70,
+    },
+    BiomePoint {
+        biome: BiomeType::UndergroundJungle,
+        c: 0.15,
+        e: 0.00,
+        r: 0.00,
+        t: 0.50,
+        h: 0.80,
+        d: -0.70,
+    },
+    BiomePoint {
+        biome: BiomeType::IceCaves,
+        c: 0.25,
+        e: 0.00,
+        r: 0.00,
+        t: -0.70,
+        h: 0.20,
+        d: -0.75,
+    },
+    BiomePoint {
+        biome: BiomeType::MushroomCaves,
+        c: 0.10,
+        e: 0.00,
+        r: 0.00,
+        t: 0.10,
+        h: 0.65,
+        d: -0.80,
+    },
     // Group G: Surface & Montane Biomes
-    BiomePoint { biome: BiomeType::DuneSea,           c: 0.38, e: 0.45,  r: 0.25, t: 0.85,  h: -0.80, d: 0.0 },
-    BiomePoint { biome: BiomeType::PineHighlands,     c: 0.28, e: -0.30, r: 0.40, t: -0.35, h: 0.20,  d: 0.0 },
+    BiomePoint {
+        biome: BiomeType::DuneSea,
+        c: 0.38,
+        e: 0.45,
+        r: 0.25,
+        t: 0.85,
+        h: -0.80,
+        d: 0.0,
+    },
+    BiomePoint {
+        biome: BiomeType::PineHighlands,
+        c: 0.28,
+        e: -0.30,
+        r: 0.40,
+        t: -0.35,
+        h: 0.20,
+        d: 0.0,
+    },
 ];
 
 /// Macro 6D climate noise generator.
@@ -1053,7 +1412,13 @@ impl Default for ClimateGenerator {
 
 impl ClimateGenerator {
     /// Samples the 6D climate at world coordinates (x, z) with depth d.
-    pub fn sample_at_depth(&self, world_x: f32, world_z: f32, depth: f32, seed: u32) -> ClimateSample {
+    pub fn sample_at_depth(
+        &self,
+        world_x: f32,
+        world_z: f32,
+        depth: f32,
+        seed: u32,
+    ) -> ClimateSample {
         let continentalness = fbm_2d(
             world_x,
             world_z,
@@ -1104,7 +1469,14 @@ impl ClimateGenerator {
             seed.wrapping_add(50_021),
         );
 
-        let biome = Self::classify_biome(continentalness, erosion, ridges, temperature, humidity, depth);
+        let biome = Self::classify_biome(
+            continentalness,
+            erosion,
+            ridges,
+            temperature,
+            humidity,
+            depth,
+        );
 
         ClimateSample {
             continentalness,

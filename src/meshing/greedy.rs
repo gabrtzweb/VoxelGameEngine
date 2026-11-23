@@ -97,33 +97,28 @@ pub fn vertex_uv_sign(direction: FaceDirection, vertex_idx: usize) -> (i32, i32)
                 _ => (1, -1),
             }
         }
-        FaceDirection::NegativeX | FaceDirection::PositiveZ => {
-            match vertex_idx {
-                0 => (1, -1),
-                1 => (1, 1),
-                2 => (-1, 1),
-                _ => (-1, -1),
-            }
-        }
-        FaceDirection::NegativeY => {
-            match vertex_idx {
-                0 => (-1, 1),
-                1 => (-1, -1),
-                2 => (1, -1),
-                _ => (1, 1),
-            }
-        }
+        FaceDirection::NegativeX | FaceDirection::PositiveZ => match vertex_idx {
+            0 => (1, -1),
+            1 => (1, 1),
+            2 => (-1, 1),
+            _ => (-1, -1),
+        },
+        FaceDirection::NegativeY => match vertex_idx {
+            0 => (-1, 1),
+            1 => (-1, -1),
+            2 => (1, -1),
+            _ => (1, 1),
+        },
     }
 }
 
 #[inline(always)]
 fn is_block_occluding(world: &impl VoxelAccess, world_coord: IVec3) -> bool {
-    if let Some(v) = world.get_voxel(world_coord) {
-        if v.is_solid_opaque() {
+    if let Some(v) = world.get_voxel(world_coord)
+        && v.is_solid_opaque() {
             let (shape, _) = world.get_shape(world_coord);
             return shape == BlockShape::Full;
         }
-    }
     false
 }
 
@@ -203,6 +198,7 @@ pub struct ChunkMeshes {
 /// - `uv`: fixed-point packed texture coordinates [0..32.0] into two `u16` values.
 /// - `material_and_flags`: texture array layer (16 bits) + animation/fluid/foliage wind flags (16 bits).
 /// - `color_tint`: 4 bytes RGBA (biome color tint and water absorption factor).
+///
 /// Total: 16 bytes per vertex (~71.4% reduction in VRAM bandwidth and mesh buffer size).
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -322,8 +318,14 @@ impl MesherScratchBuffers {
     }
 }
 
+impl Default for MesherScratchBuffers {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 std::thread_local! {
-    static THREAD_SCRATCH_BUFFERS: std::cell::RefCell<Option<MesherScratchBuffers>> = std::cell::RefCell::new(None);
+    static THREAD_SCRATCH_BUFFERS: std::cell::RefCell<Option<MesherScratchBuffers>> = const { std::cell::RefCell::new(None) };
 }
 
 pub struct MeshBuffers {
@@ -452,8 +454,6 @@ impl MeshBuffers {
             None
         };
 
-
-
         for (i, vertex) in vertices.iter().enumerate() {
             let mut pos = [
                 vertex[0] * VOXEL_SIZE,
@@ -483,8 +483,6 @@ impl MeshBuffers {
                     FaceDirection::NegativeY => {}
                 }
             }
-
-
 
             let ao_mult = AO_TABLE[key.ao[i] as usize];
             let vertex_color = if let Some(alpha) = mask_face_alpha {
@@ -571,8 +569,10 @@ impl MeshBuffers {
 
         let flip_diagonal = if key.voxel.is_fluid() && direction == FaceDirection::PositiveY {
             // Smooth Flow: choose triangulation diagonal that produces the smoothest surface gradient
-            let diff_0_2 = (key.corner_offsets_cm[0] as i16 - key.corner_offsets_cm[2] as i16).abs();
-            let diff_1_3 = (key.corner_offsets_cm[1] as i16 - key.corner_offsets_cm[3] as i16).abs();
+            let diff_0_2 =
+                (key.corner_offsets_cm[0] as i16 - key.corner_offsets_cm[2] as i16).abs();
+            let diff_1_3 =
+                (key.corner_offsets_cm[1] as i16 - key.corner_offsets_cm[3] as i16).abs();
             diff_1_3 < diff_0_2
         } else {
             (key.ao[1] as u16 + key.ao[3] as u16) > (key.ao[0] as u16 + key.ao[2] as u16)
@@ -1505,18 +1505,8 @@ mod tests {
     fn test_voxel_vertex_packed_size_and_roundtrip() {
         assert_eq!(std::mem::size_of::<VoxelVertexPacked>(), 16);
 
-        let vertex = VoxelVertexPacked::pack(
-            15,
-            12,
-            7,
-            3,
-            2,
-            1.5,
-            2.75,
-            42,
-            1,
-            [0.2, 0.4, 0.8, 1.0],
-        );
+        let vertex =
+            VoxelVertexPacked::pack(15, 12, 7, 3, 2, 1.5, 2.75, 42, 1, [0.2, 0.4, 0.8, 1.0]);
 
         let pos = vertex.unpack_position();
         assert_eq!(pos, [15.0, 12.0, 7.0]);
@@ -1547,9 +1537,6 @@ mod tests {
         assert!(scratch.opaque.positions.capacity() > 0);
     }
 }
-
-
-
 
 /// Packs an RGB tint into 21 bits (7 bits per channel). Always non-zero for a valid tint
 /// (bit 0 of red is forced when the color is pure black) so 0 can mean "untinted".
@@ -1701,10 +1688,7 @@ pub fn face_in_plane_offsets(direction: FaceDirection) -> ([IVec3; 4], [IVec3; 4
                 IVec3::new(-1, -1, 0), // Down-Left (-Y, -X)
             ],
         ),
-        FaceDirection::NegativeY => (
-            [IVec3::ZERO; 4],
-            [IVec3::ZERO; 4],
-        ),
+        FaceDirection::NegativeY => ([IVec3::ZERO; 4], [IVec3::ZERO; 4]),
     }
 }
 
@@ -1830,10 +1814,26 @@ pub fn compute_block_transition(
     // On vertical walls, neighbors also use their underlying base material if they have surface turf
     let (up_vox, right_vox, down_vox, left_vox) = if direction != FaceDirection::PositiveY {
         (
-            if raw_up_vox.has_surface_turf() { raw_up_vox.underlying_block() } else { raw_up_vox },
-            if raw_right_vox.has_surface_turf() { raw_right_vox.underlying_block() } else { raw_right_vox },
-            if raw_down_vox.has_surface_turf() { raw_down_vox.underlying_block() } else { raw_down_vox },
-            if raw_left_vox.has_surface_turf() { raw_left_vox.underlying_block() } else { raw_left_vox },
+            if raw_up_vox.has_surface_turf() {
+                raw_up_vox.underlying_block()
+            } else {
+                raw_up_vox
+            },
+            if raw_right_vox.has_surface_turf() {
+                raw_right_vox.underlying_block()
+            } else {
+                raw_right_vox
+            },
+            if raw_down_vox.has_surface_turf() {
+                raw_down_vox.underlying_block()
+            } else {
+                raw_down_vox
+            },
+            if raw_left_vox.has_surface_turf() {
+                raw_left_vox.underlying_block()
+            } else {
+                raw_left_vox
+            },
         )
     } else {
         (raw_up_vox, raw_right_vox, raw_down_vox, raw_left_vox)
@@ -1918,7 +1918,9 @@ pub fn compute_block_transition(
 
         let (overlay_layer, packed_tint) = match category {
             TransitionCategory::Grass => (
-                textures.get_face_texture_info(highest_neighbor, highest_pos, direction).0,
+                textures
+                    .get_face_texture_info(highest_neighbor, highest_pos, direction)
+                    .0,
                 if direction == FaceDirection::PositiveY || textures.full_grass {
                     pack_tint7(highest_neighbor.tint_color_at(highest_pos))
                 } else {
@@ -1926,7 +1928,9 @@ pub fn compute_block_transition(
                 },
             ),
             TransitionCategory::Sand | TransitionCategory::Rocks | TransitionCategory::Moss => (
-                textures.get_face_texture_info(highest_neighbor, highest_pos, direction).0,
+                textures
+                    .get_face_texture_info(highest_neighbor, highest_pos, direction)
+                    .0,
                 0,
             ),
             TransitionCategory::Snow => (0, 0),
@@ -1945,16 +1949,38 @@ pub fn compute_block_transition(
     let raw_down_right_vox = world.get_voxel(down_right_pos).unwrap_or(Voxel::Air);
     let raw_down_left_vox = world.get_voxel(down_left_pos).unwrap_or(Voxel::Air);
 
-    let (up_right_vox, up_left_vox, down_right_vox, down_left_vox) = if direction != FaceDirection::PositiveY {
-        (
-            if raw_up_right_vox.has_surface_turf() { raw_up_right_vox.underlying_block() } else { raw_up_right_vox },
-            if raw_up_left_vox.has_surface_turf() { raw_up_left_vox.underlying_block() } else { raw_up_left_vox },
-            if raw_down_right_vox.has_surface_turf() { raw_down_right_vox.underlying_block() } else { raw_down_right_vox },
-            if raw_down_left_vox.has_surface_turf() { raw_down_left_vox.underlying_block() } else { raw_down_left_vox },
-        )
-    } else {
-        (raw_up_right_vox, raw_up_left_vox, raw_down_right_vox, raw_down_left_vox)
-    };
+    let (up_right_vox, up_left_vox, down_right_vox, down_left_vox) =
+        if direction != FaceDirection::PositiveY {
+            (
+                if raw_up_right_vox.has_surface_turf() {
+                    raw_up_right_vox.underlying_block()
+                } else {
+                    raw_up_right_vox
+                },
+                if raw_up_left_vox.has_surface_turf() {
+                    raw_up_left_vox.underlying_block()
+                } else {
+                    raw_up_left_vox
+                },
+                if raw_down_right_vox.has_surface_turf() {
+                    raw_down_right_vox.underlying_block()
+                } else {
+                    raw_down_right_vox
+                },
+                if raw_down_left_vox.has_surface_turf() {
+                    raw_down_left_vox.underlying_block()
+                } else {
+                    raw_down_left_vox
+                },
+            )
+        } else {
+            (
+                raw_up_right_vox,
+                raw_up_left_vox,
+                raw_down_right_vox,
+                raw_down_left_vox,
+            )
+        };
 
     let up_right_r = transition_priority_rank(up_right_vox);
     let up_left_r = transition_priority_rank(up_left_vox);
@@ -1984,7 +2010,9 @@ pub fn compute_block_transition(
 
         let (overlay_layer, packed_tint) = match category {
             TransitionCategory::Grass => (
-                textures.get_face_texture_info(highest_neighbor, highest_pos, direction).0,
+                textures
+                    .get_face_texture_info(highest_neighbor, highest_pos, direction)
+                    .0,
                 if direction == FaceDirection::PositiveY || textures.full_grass {
                     pack_tint7(highest_neighbor.tint_color_at(highest_pos))
                 } else {
@@ -1992,7 +2020,9 @@ pub fn compute_block_transition(
                 },
             ),
             TransitionCategory::Sand | TransitionCategory::Rocks | TransitionCategory::Moss => (
-                textures.get_face_texture_info(highest_neighbor, highest_pos, direction).0,
+                textures
+                    .get_face_texture_info(highest_neighbor, highest_pos, direction)
+                    .0,
                 0,
             ),
             TransitionCategory::Snow => (0, 0),

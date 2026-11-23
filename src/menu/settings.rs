@@ -636,7 +636,12 @@ fn spawn_settings_menu(
                                         Node {
                                             width: percent(100.0),
                                             height: px(44.0),
-                                            padding: UiRect::new(px(24.0), px(20.0), px(0.0), px(0.0)),
+                                            padding: UiRect::new(
+                                                px(24.0),
+                                                px(20.0),
+                                                px(0.0),
+                                                px(0.0),
+                                            ),
                                             margin: UiRect::bottom(px(8.0)),
                                             border: UiRect::bottom(px(1.0)),
                                             display: Display::Flex,
@@ -648,7 +653,10 @@ fn spawn_settings_menu(
                                     ))
                                     .with_children(|btn| {
                                         btn.spawn((
-                                            Text::new(format!("<  {}", loc.t("menu.settings.back"))),
+                                            Text::new(format!(
+                                                "<  {}",
+                                                loc.t("menu.settings.back")
+                                            )),
                                             back_font,
                                             TextColor(palette::TEXT_MUTED),
                                             text_shadow_default(),
@@ -982,680 +990,698 @@ fn spawn_settings_menu(
                                         ..default()
                                     })
                                     .with_children(|col_left| {
-                                // Render Scale Stepper
-                                spawn_stepper_row(
-                                    col_left,
-                                    loc.t("menu.settings.render_scale"),
-                                    crate::core::config::format_render_scale(
-                                        local_config.render_scale,
-                                    ),
-                                    SettingsAction::DecRenderScale,
-                                    SettingsAction::IncRenderScale,
-                                    RenderScaleLabel,
-                                    font_handle.as_ref(),
-                                );
+                                        // Render Scale Stepper
+                                        spawn_stepper_row(
+                                            col_left,
+                                            loc.t("menu.settings.render_scale"),
+                                            crate::core::config::format_render_scale(
+                                                local_config.render_scale,
+                                            ),
+                                            SettingsAction::DecRenderScale,
+                                            SettingsAction::IncRenderScale,
+                                            RenderScaleLabel,
+                                            font_handle.as_ref(),
+                                        );
 
-                                // Upscaling Filter Stepper
-                                spawn_stepper_row(
-                                    col_left,
-                                    loc.t("menu.settings.upscaling_filter"),
-                                    local_config.upscaling_filter.label().to_string(),
-                                    SettingsAction::DecUpscalingFilter,
-                                    SettingsAction::IncUpscalingFilter,
-                                    UpscalingFilterLabel,
-                                    font_handle.as_ref(),
-                                );
+                                        // Upscaling Filter Stepper
+                                        spawn_stepper_row(
+                                            col_left,
+                                            loc.t("menu.settings.upscaling_filter"),
+                                            local_config.upscaling_filter.label().to_string(),
+                                            SettingsAction::DecUpscalingFilter,
+                                            SettingsAction::IncUpscalingFilter,
+                                            UpscalingFilterLabel,
+                                            font_handle.as_ref(),
+                                        );
 
-                                // Anti-Aliasing Stepper
-                                spawn_stepper_row(
-                                    col_left,
-                                    loc.t("menu.settings.anti_aliasing"),
-                                    format_anti_aliasing(local_config.anti_aliasing, &loc),
-                                    SettingsAction::DecAntiAliasing,
-                                    SettingsAction::IncAntiAliasing,
-                                    AntiAliasingLabel,
-                                    font_handle.as_ref(),
-                                );
+                                        // Anti-Aliasing Stepper
+                                        spawn_stepper_row(
+                                            col_left,
+                                            loc.t("menu.settings.anti_aliasing"),
+                                            format_anti_aliasing(local_config.anti_aliasing, &loc),
+                                            SettingsAction::DecAntiAliasing,
+                                            SettingsAction::IncAntiAliasing,
+                                            AntiAliasingLabel,
+                                            font_handle.as_ref(),
+                                        );
 
-                                // Shadow Quality Stepper
-                                spawn_stepper_row(
-                                    col_left,
-                                    loc.t("menu.settings.shadows"),
-                                    format_shadows(local_config.shadow_quality, &loc),
-                                    SettingsAction::DecShadowQuality,
-                                    SettingsAction::IncShadowQuality,
-                                    ShadowQualityLabel,
-                                    font_handle.as_ref(),
-                                );
+                                        // Shadow Quality Stepper
+                                        spawn_stepper_row(
+                                            col_left,
+                                            loc.t("menu.settings.shadows"),
+                                            format_shadows(local_config.shadow_quality, &loc),
+                                            SettingsAction::DecShadowQuality,
+                                            SettingsAction::IncShadowQuality,
+                                            ShadowQualityLabel,
+                                            font_handle.as_ref(),
+                                        );
 
-                                // Cloud Quality Stepper
-                                spawn_stepper_row(
-                                    col_left,
-                                    loc.t("menu.settings.clouds"),
-                                    format_clouds(local_config.cloud_quality, &loc),
-                                    SettingsAction::DecCloudQuality,
-                                    SettingsAction::IncCloudQuality,
-                                    CloudQualityLabel,
-                                    font_handle.as_ref(),
-                                );
+                                        // Cloud Quality Stepper
+                                        spawn_stepper_row(
+                                            col_left,
+                                            loc.t("menu.settings.clouds"),
+                                            format_clouds(local_config.cloud_quality, &loc),
+                                            SettingsAction::DecCloudQuality,
+                                            SettingsAction::IncCloudQuality,
+                                            CloudQualityLabel,
+                                            font_handle.as_ref(),
+                                        );
 
-                                // Cloud Distance Stepper (16..=128 chunks)
-                                spawn_stepper_row(
-                                    col_left,
-                                    loc.t("menu.settings.cloud_distance"),
-                                    loc.t_args(
-                                        "common.chunks",
-                                        &[&local_config.cloud_render_distance.to_string()],
-                                    ),
-                                    SettingsAction::DecCloudDistance,
-                                    SettingsAction::IncCloudDistance,
-                                    CloudDistanceLabel,
-                                    font_handle.as_ref(),
-                                );
+                                        // Cloud Distance Stepper (16..=128 chunks)
+                                        spawn_stepper_row(
+                                            col_left,
+                                            loc.t("menu.settings.cloud_distance"),
+                                            loc.t_args(
+                                                "common.chunks",
+                                                &[&local_config.cloud_render_distance.to_string()],
+                                            ),
+                                            SettingsAction::DecCloudDistance,
+                                            SettingsAction::IncCloudDistance,
+                                            CloudDistanceLabel,
+                                            font_handle.as_ref(),
+                                        );
 
-                                // Full Surface Sides Toggle Button
-                                spawn_toggle_button(
-                                    col_left,
-                                    SettingsAction::ToggleFullGrass,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.full_grass"),
-                                        if game_settings.full_grass {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
-                                        }
-                                    ),
-                                    FullGrassLabel,
-                                    font_handle.as_ref(),
-                                );
+                                        // Full Surface Sides Toggle Button
+                                        spawn_toggle_button(
+                                            col_left,
+                                            SettingsAction::ToggleFullGrass,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.full_grass"),
+                                                if game_settings.full_grass {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            FullGrassLabel,
+                                            font_handle.as_ref(),
+                                        );
+                                    });
+
+                                // Right Column: Atmosphere & Foliage Shaders
+                                columns
+                                    .spawn(Node {
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Column,
+                                        row_gap: px(10.0),
+                                        width: percent(100.0),
+                                        ..default()
+                                    })
+                                    .with_children(|col_right| {
+                                        // God Rays Toggle Button
+                                        spawn_toggle_button(
+                                            col_right,
+                                            SettingsAction::ToggleGodRays,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.god_rays"),
+                                                if local_config.god_rays_enabled {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            GodRaysLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Fog Toggle Button
+                                        spawn_toggle_button(
+                                            col_right,
+                                            SettingsAction::ToggleFog,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.fog"),
+                                                if fog_enabled {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            FogLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Transmission Toggle Button
+                                        spawn_toggle_button(
+                                            col_right,
+                                            SettingsAction::ToggleTransmission,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.transmission"),
+                                                if local_config.transmission_enabled {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            TransmissionLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Connected Textures Toggle
+                                        spawn_toggle_button(
+                                            col_right,
+                                            SettingsAction::ToggleConnectedTextures,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.connected_textures"),
+                                                if local_config.connected_textures {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            ConnectedTexturesLabel,
+                                            font_handle.as_ref(),
+                                        );
+                                    });
                             });
 
-                        // Right Column: Atmosphere & Foliage Shaders
-                        columns
-                            .spawn(Node {
-                                display: Display::Flex,
-                                flex_direction: FlexDirection::Column,
-                                row_gap: px(10.0),
-                                width: percent(100.0),
-                                ..default()
-                            })
-                            .with_children(|col_right| {
-                                // God Rays Toggle Button
-                                spawn_toggle_button(
-                                    col_right,
-                                    SettingsAction::ToggleGodRays,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.god_rays"),
-                                        if local_config.god_rays_enabled {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
-                                        }
-                                    ),
-                                    GodRaysLabel,
-                                    font_handle.as_ref(),
-                                );
-
-                                // Fog Toggle Button
-                                spawn_toggle_button(
-                                    col_right,
-                                    SettingsAction::ToggleFog,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.fog"),
-                                        if fog_enabled {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
-                                        }
-                                    ),
-                                    FogLabel,
-                                    font_handle.as_ref(),
-                                );
-
-                                // Transmission Toggle Button
-                                spawn_toggle_button(
-                                    col_right,
-                                    SettingsAction::ToggleTransmission,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.transmission"),
-                                        if local_config.transmission_enabled {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
-                                        }
-                                    ),
-                                    TransmissionLabel,
-                                    font_handle.as_ref(),
-                                );
-
-                                // Connected Textures Toggle
-                                spawn_toggle_button(
-                                    col_right,
-                                    SettingsAction::ToggleConnectedTextures,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.connected_textures"),
-                                        if local_config.connected_textures {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
-                                        }
-                                    ),
-                                    ConnectedTexturesLabel,
-                                    font_handle.as_ref(),
-                                );
-                            });
-                    });
-
-                    // World & Simulation Settings Container
-                    card.spawn((
-                        SettingsSection(SettingsTab::World),
-                        Node {
-                            width: percent(100.0),
-                            display: if *settings_tab == SettingsTab::World {
-                                Display::Flex
-                            } else {
-                                Display::None
-                            },
-                            flex_direction: FlexDirection::Column,
-                            row_gap: px(16.0),
-                            align_items: AlignItems::Stretch,
-                            ..default()
-                        },
-                    ))
-                    .with_children(|columns| {
-                        // Left Column: Streaming & Chunks
-                        columns
-                            .spawn(Node {
-                                display: Display::Flex,
-                                flex_direction: FlexDirection::Column,
-                                row_gap: px(10.0),
-                                width: percent(100.0),
-                                ..default()
-                            })
-                            .with_children(|col_left| {
-                                // Render Distance Stepper
-                                spawn_stepper_row(
-                                    col_left,
-                                    loc.t("menu.settings.render_distance"),
-                                    loc.t_args("common.chunks", &[&render_dist.to_string()]),
-                                    SettingsAction::DecRenderDistance,
-                                    SettingsAction::IncRenderDistance,
-                                    RenderDistanceLabel,
-                                    font_handle.as_ref(),
-                                );
-
-                                // LOD Distance Stepper
-                                spawn_stepper_row(
-                                    col_left,
-                                    loc.t("menu.settings.lod_distance"),
-                                    if lod_dist == 0 {
-                                        loc.t("common.disabled").to_string()
+                            // World & Simulation Settings Container
+                            card.spawn((
+                                SettingsSection(SettingsTab::World),
+                                Node {
+                                    width: percent(100.0),
+                                    display: if *settings_tab == SettingsTab::World {
+                                        Display::Flex
                                     } else {
-                                        loc.t_args("common.chunks", &[&lod_dist.to_string()])
+                                        Display::None
                                     },
-                                    SettingsAction::DecLodDistance,
-                                    SettingsAction::IncLodDistance,
-                                    LodDistanceLabel,
-                                    font_handle.as_ref(),
-                                );
+                                    flex_direction: FlexDirection::Column,
+                                    row_gap: px(16.0),
+                                    align_items: AlignItems::Stretch,
+                                    ..default()
+                                },
+                            ))
+                            .with_children(|columns| {
+                                // Left Column: Streaming & Chunks
+                                columns
+                                    .spawn(Node {
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Column,
+                                        row_gap: px(10.0),
+                                        width: percent(100.0),
+                                        ..default()
+                                    })
+                                    .with_children(|col_left| {
+                                        // Render Distance Stepper
+                                        spawn_stepper_row(
+                                            col_left,
+                                            loc.t("menu.settings.render_distance"),
+                                            loc.t_args(
+                                                "common.chunks",
+                                                &[&render_dist.to_string()],
+                                            ),
+                                            SettingsAction::DecRenderDistance,
+                                            SettingsAction::IncRenderDistance,
+                                            RenderDistanceLabel,
+                                            font_handle.as_ref(),
+                                        );
 
-                                // Simulation Distance Stepper
-                                spawn_stepper_row(
-                                    col_left,
-                                    loc.t("menu.settings.sim_distance"),
-                                    loc.t_args("common.chunks", &[&sim_dist.to_string()]),
-                                    SettingsAction::DecSimulationDistance,
-                                    SettingsAction::IncSimulationDistance,
-                                    SimulationDistanceLabel,
-                                    font_handle.as_ref(),
-                                );
+                                        // LOD Distance Stepper
+                                        spawn_stepper_row(
+                                            col_left,
+                                            loc.t("menu.settings.lod_distance"),
+                                            if lod_dist == 0 {
+                                                loc.t("common.disabled").to_string()
+                                            } else {
+                                                loc.t_args(
+                                                    "common.chunks",
+                                                    &[&lod_dist.to_string()],
+                                                )
+                                            },
+                                            SettingsAction::DecLodDistance,
+                                            SettingsAction::IncLodDistance,
+                                            LodDistanceLabel,
+                                            font_handle.as_ref(),
+                                        );
 
-                                // Mesh Upload Budget Stepper
-                                spawn_stepper_row(
-                                    col_left,
-                                    loc.t("menu.settings.mesh_uploads"),
-                                    loc.t_args("common.chunks", &[&local_config.mesh_upload_budget.to_string()]),
-                                    SettingsAction::DecMeshUploadBudget,
-                                    SettingsAction::IncMeshUploadBudget,
-                                    MeshUploadBudgetLabel,
-                                    font_handle.as_ref(),
-                                );
+                                        // Simulation Distance Stepper
+                                        spawn_stepper_row(
+                                            col_left,
+                                            loc.t("menu.settings.sim_distance"),
+                                            loc.t_args("common.chunks", &[&sim_dist.to_string()]),
+                                            SettingsAction::DecSimulationDistance,
+                                            SettingsAction::IncSimulationDistance,
+                                            SimulationDistanceLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Mesh Upload Budget Stepper
+                                        spawn_stepper_row(
+                                            col_left,
+                                            loc.t("menu.settings.mesh_uploads"),
+                                            loc.t_args(
+                                                "common.chunks",
+                                                &[&local_config.mesh_upload_budget.to_string()],
+                                            ),
+                                            SettingsAction::DecMeshUploadBudget,
+                                            SettingsAction::IncMeshUploadBudget,
+                                            MeshUploadBudgetLabel,
+                                            font_handle.as_ref(),
+                                        );
+                                    });
+
+                                // Right Column: Camera & Environment Flow
+                                // World Time & Pause Behavior
+                                columns
+                                    .spawn(Node {
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Column,
+                                        row_gap: px(10.0),
+                                        width: percent(100.0),
+                                        ..default()
+                                    })
+                                    .with_children(|col_world_extra| {
+                                        // Time Pause Toggle Button
+                                        spawn_toggle_button(
+                                            col_world_extra,
+                                            SettingsAction::ToggleTimePause,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.time_flow"),
+                                                if time_paused {
+                                                    loc.t("common.paused")
+                                                } else {
+                                                    loc.t("common.running")
+                                                }
+                                            ),
+                                            TimePauseLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Menu Pause Behavior Stepper
+                                        spawn_stepper_row(
+                                            col_world_extra,
+                                            loc.t("menu.settings.menu_pause"),
+                                            format_menu_pause(game_settings.menu_pause_mode, &loc),
+                                            SettingsAction::DecMenuPause,
+                                            SettingsAction::IncMenuPause,
+                                            MenuPauseLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Auto-Save Interval Stepper (placeholder)
+                                        spawn_stepper_row(
+                                            col_world_extra,
+                                            loc.t("menu.settings.auto_save"),
+                                            format_auto_save(game_settings.auto_save_minutes, &loc),
+                                            SettingsAction::DecAutoSave,
+                                            SettingsAction::IncAutoSave,
+                                            AutoSaveLabel,
+                                            font_handle.as_ref(),
+                                        );
+                                    });
                             });
 
-                        // Right Column: Camera & Environment Flow
-                        // World Time & Pause Behavior
-                        columns
-                            .spawn(Node {
-                                display: Display::Flex,
-                                flex_direction: FlexDirection::Column,
-                                row_gap: px(10.0),
-                                width: percent(100.0),
-                                ..default()
-                            })
-                            .with_children(|col_world_extra| {
-                                // Time Pause Toggle Button
-                                spawn_toggle_button(
-                                    col_world_extra,
-                                    SettingsAction::ToggleTimePause,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.time_flow"),
-                                        if time_paused {
-                                            loc.t("common.paused")
-                                        } else {
-                                            loc.t("common.running")
-                                        }
-                                    ),
-                                    TimePauseLabel,
-                                    font_handle.as_ref(),
-                                );
-
-                                // Menu Pause Behavior Stepper
-                                spawn_stepper_row(
-                                    col_world_extra,
-                                    loc.t("menu.settings.menu_pause"),
-                                    format_menu_pause(game_settings.menu_pause_mode, &loc),
-                                    SettingsAction::DecMenuPause,
-                                    SettingsAction::IncMenuPause,
-                                    MenuPauseLabel,
-                                    font_handle.as_ref(),
-                                );
-
-                                // Auto-Save Interval Stepper (placeholder)
-                                spawn_stepper_row(
-                                    col_world_extra,
-                                    loc.t("menu.settings.auto_save"),
-                                    format_auto_save(game_settings.auto_save_minutes, &loc),
-                                    SettingsAction::DecAutoSave,
-                                    SettingsAction::IncAutoSave,
-                                    AutoSaveLabel,
-                                    font_handle.as_ref(),
-                                );
-                            });
-                    });
-
-                    // Camera Settings Container
-                    card.spawn((
-                        SettingsSection(SettingsTab::Camera),
-                        Node {
-                            width: percent(100.0),
-                            display: if *settings_tab == SettingsTab::Camera {
-                                Display::Flex
-                            } else {
-                                Display::None
-                            },
-                            flex_direction: FlexDirection::Column,
-                            row_gap: px(10.0),
-                            align_items: AlignItems::Stretch,
-                            ..default()
-                        },
-                    ))
-                    .with_children(|col_cam| {
-                        // Field of View Stepper
-                        spawn_stepper_row(
-                            col_cam,
-                            loc.t("menu.settings.fov"),
-                            format!("{fov}°"),
-                            SettingsAction::DecFov,
-                            SettingsAction::IncFov,
-                            FovLabel,
-                            font_handle.as_ref(),
-                        );
-
-                        // Dynamic FOV / Reduced Motion Toggle Button
-                        spawn_toggle_button(
-                            col_cam,
-                            SettingsAction::ToggleDynamicFov,
-                            format!(
-                                "{}: {}",
-                                loc.t("menu.settings.fov_effects"),
-                                if game_settings.dynamic_fov_enabled {
-                                    loc.t("common.normal")
-                                } else {
-                                    loc.t("common.reduced")
-                                }
-                            ),
-                            DynamicFovLabel,
-                            font_handle.as_ref(),
-                        );
-
-                        // View Bobbing Toggle Button
-                        spawn_toggle_button(
-                            col_cam,
-                            SettingsAction::ToggleViewBobbing,
-                            format!(
-                                "{}: {}",
-                                loc.t("menu.settings.view_bobbing"),
-                                if game_settings.view_bobbing {
-                                    loc.t("common.enabled")
-                                } else {
-                                    loc.t("common.disabled")
-                                }
-                            ),
-                            ViewBobbingLabel,
-                            font_handle.as_ref(),
-                        );
-
-                        // Camera Smoothing Stepper
-                        spawn_stepper_row(
-                            col_cam,
-                            loc.t("menu.settings.camera_smoothing"),
-                            format_camera_smoothing(game_settings.camera_smoothing, &loc),
-                            SettingsAction::DecCameraSmoothing,
-                            SettingsAction::IncCameraSmoothing,
-                            CameraSmoothingLabel,
-                            font_handle.as_ref(),
-                        );
-
-                        // Third-Person Distance Stepper
-                        spawn_stepper_row(
-                            col_cam,
-                            loc.t("menu.settings.third_person_dist"),
-                            format!("{:.1}m", game_settings.third_person_distance),
-                            SettingsAction::DecThirdPersonDist,
-                            SettingsAction::IncThirdPersonDist,
-                            ThirdPersonDistLabel,
-                            font_handle.as_ref(),
-                        );
-
-                        // Third-Person Style Toggle (Centered vs Over-the-Shoulder)
-                        spawn_toggle_button(
-                            col_cam,
-                            SettingsAction::ToggleThirdPersonShoulder,
-                            format!(
-                                "{}: {}",
-                                loc.t("menu.settings.third_person_style"),
-                                if game_settings.third_person_over_shoulder {
-                                    loc.t("menu.settings.third_person_shoulder")
-                                } else {
-                                    loc.t("menu.settings.third_person_centered")
-                                }
-                            ),
-                            ThirdPersonShoulderLabel,
-                            font_handle.as_ref(),
-                        );
-
-                        // Third-Person Free 360° Orbit Toggle
-                        spawn_toggle_button(
-                            col_cam,
-                            SettingsAction::ToggleThirdPersonFreeOrbit,
-                            format!(
-                                "{}: {}",
-                                loc.t("menu.settings.third_person_free_orbit"),
-                                if game_settings.third_person_free_orbit {
-                                    loc.t("common.enabled")
-                                } else {
-                                    loc.t("common.disabled")
-                                }
-                            ),
-                            ThirdPersonFreeOrbitLabel,
-                            font_handle.as_ref(),
-                        );
-                    });
-
-                    // Shaders & Visual FX Settings Container
-                    card.spawn((
-                        SettingsSection(SettingsTab::Shaders),
-                        Node {
-                            width: percent(100.0),
-                            display: if *settings_tab == SettingsTab::Shaders {
-                                Display::Flex
-                            } else {
-                                Display::None
-                            },
-                            flex_direction: FlexDirection::Column,
-                            row_gap: px(16.0),
-                            align_items: AlignItems::Stretch,
-                            ..default()
-                        },
-                    ))
-                    .with_children(|columns| {
-                        // Left Column: Materials & Lighting
-                        columns
-                            .spawn(Node {
-                                display: Display::Flex,
-                                flex_direction: FlexDirection::Column,
-                                row_gap: px(10.0),
-                                width: percent(100.0),
-                                ..default()
-                            })
-                            .with_children(|col_left| {
-                                // Coated Textures Stepper
-                                spawn_stepper_row(
-                                    col_left,
-                                    loc.t("menu.settings.coated_textures"),
-                                    format_coated_textures(local_config.coated_textures, &loc),
-                                    SettingsAction::DecCoatedTextures,
-                                    SettingsAction::IncCoatedTextures,
-                                    CoatedTexturesLabel,
-                                    font_handle.as_ref(),
-                                );
-
-                                // Pixelated Shadows Toggle
-                                spawn_toggle_button(
-                                    col_left,
-                                    SettingsAction::TogglePixelatedShadows,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.pixelated_shadows"),
-                                        if local_config.pixelated_shadows {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
-                                        }
-                                    ),
-                                    PixelatedShadowsLabel,
-                                    font_handle.as_ref(),
-                                );
-
-                                // HDR Bloom & Glow Toggle
-                                spawn_toggle_button(
-                                    col_left,
-                                    SettingsAction::ToggleHdrBloom,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.hdr_bloom"),
-                                        if local_config.hdr_bloom {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
-                                        }
-                                    ),
-                                    HdrBloomLabel,
-                                    font_handle.as_ref(),
-                                );
-                            });
-
-                        // Right Column: Dynamic Motion & Foliage
-                        columns
-                            .spawn(Node {
-                                display: Display::Flex,
-                                flex_direction: FlexDirection::Column,
-                                row_gap: px(10.0),
-                                width: percent(100.0),
-                                ..default()
-                            })
-                            .with_children(|col_right| {
-                                // Waving Foliage & Leaves Toggle
-                                spawn_toggle_button(
-                                    col_right,
-                                    SettingsAction::ToggleWavingFoliage,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.waving_foliage"),
-                                        if local_config.waving_foliage {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
-                                        }
-                                    ),
-                                    WavingFoliageLabel,
-                                    font_handle.as_ref(),
-                                );
-
-                                // Internal Leaf Culling Toggle (Optional Optimization)
-                                spawn_toggle_button(
-                                    col_right,
-                                    SettingsAction::ToggleLeafCulling,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.leaf_culling"),
-                                        if local_config.leaf_culling {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
-                                        }
-                                    ),
-                                    LeafCullingLabel,
-                                    font_handle.as_ref(),
-                                );
-
-                                // Dynamic Handheld Lighting Toggle
-                                spawn_toggle_button(
-                                    col_right,
-                                    SettingsAction::ToggleDynamicLighting,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.dynamic_lighting"),
-                                        if local_config.dynamic_lighting {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
-                                        }
-                                    ),
-                                    DynamicLightingLabel,
-                                    font_handle.as_ref(),
-                                );
-
-                                // Procedural Grass Toggle Button (moved from Graphics to Shaders & FX)
-                                spawn_toggle_button(
-                                    col_right,
-                                    SettingsAction::ToggleProceduralGrass,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.procedural_grass"),
-                                        if local_config.grass_enabled {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
-                                        }
-                                    ),
-                                    ProceduralGrassLabel,
-                                    font_handle.as_ref(),
-                                );
-
-                                // Grass Density Stepper (moved from Graphics to Shaders & FX)
-                                spawn_stepper_row(
-                                    col_right,
-                                    loc.t("menu.settings.grass_density"),
-                                    format_grass_density(local_config.grass_density, &loc),
-                                    SettingsAction::DecGrassDensity,
-                                    SettingsAction::IncGrassDensity,
-                                    GrassDensityLabel,
-                                    font_handle.as_ref(),
-                                );
-                            });
-                    });
-
-                    // Audio Settings Container (full width so steppers align cleanly to right edge)
-                    card.spawn((
-                        SettingsSection(SettingsTab::Audio),
-                        Node {
-                            width: percent(100.0),
-                            display: if *settings_tab == SettingsTab::Audio {
-                                Display::Flex
-                            } else {
-                                Display::None
-                            },
-                            flex_direction: FlexDirection::Column,
-                            align_items: AlignItems::Stretch,
-                            row_gap: px(10.0),
-                            ..default()
-                        },
-                    ))
-                    .with_children(|col_audio| {
-                        spawn_stepper_row(
-                            col_audio,
-                            loc.t("menu.settings.master_vol"),
-                            crate::core::config::format_volume(audio_settings.master_volume),
-                            SettingsAction::DecMasterVol,
-                            SettingsAction::IncMasterVol,
-                            MasterVolLabel,
-                            font_handle.as_ref(),
-                        );
-
-                        spawn_stepper_row(
-                            col_audio,
-                            loc.t("menu.settings.music_vol"),
-                            crate::core::config::format_volume(audio_settings.music_volume),
-                            SettingsAction::DecMusicVol,
-                            SettingsAction::IncMusicVol,
-                            MusicVolLabel,
-                            font_handle.as_ref(),
-                        );
-
-                        spawn_stepper_row(
-                            col_audio,
-                            loc.t("menu.settings.weather_vol"),
-                            crate::core::config::format_volume(audio_settings.weather_volume),
-                            SettingsAction::DecWeatherVol,
-                            SettingsAction::IncWeatherVol,
-                            WeatherVolLabel,
-                            font_handle.as_ref(),
-                        );
-
-                        spawn_stepper_row(
-                            col_audio,
-                            loc.t("menu.settings.sfx_vol"),
-                            crate::core::config::format_volume(audio_settings.sfx_volume),
-                            SettingsAction::DecSfxVol,
-                            SettingsAction::IncSfxVol,
-                            SfxVolLabel,
-                            font_handle.as_ref(),
-                        );
-
-                            spawn_stepper_row(
-                                col_audio,
-                                loc.t("menu.settings.ambient_vol"),
-                                crate::core::config::format_volume(audio_settings.ambient_volume),
-                                SettingsAction::DecAmbientVol,
-                                SettingsAction::IncAmbientVol,
-                                AmbientVolLabel,
-                                font_handle.as_ref(),
-                            );
-
-                            spawn_stepper_row(
-                                col_audio,
-                                loc.t("menu.settings.ui_vol"),
-                                crate::core::config::format_volume(game_settings.ui_volume),
-                                SettingsAction::DecUiVol,
-                                SettingsAction::IncUiVol,
-                                UiVolLabel,
-                                font_handle.as_ref(),
-                            );
-
-                            spawn_toggle_button(
-                                col_audio,
-                                SettingsAction::ToggleMuteUnfocus,
-                                format!(
-                                    "{}: {}",
-                                    loc.t("menu.settings.mute_on_unfocus"),
-                                    if game_settings.mute_on_unfocus {
-                                        loc.t("common.enabled")
+                            // Camera Settings Container
+                            card.spawn((
+                                SettingsSection(SettingsTab::Camera),
+                                Node {
+                                    width: percent(100.0),
+                                    display: if *settings_tab == SettingsTab::Camera {
+                                        Display::Flex
                                     } else {
-                                        loc.t("common.disabled")
-                                    }
-                                ),
-                                MuteUnfocusLabel,
-                                font_handle.as_ref(),
-                            );
+                                        Display::None
+                                    },
+                                    flex_direction: FlexDirection::Column,
+                                    row_gap: px(10.0),
+                                    align_items: AlignItems::Stretch,
+                                    ..default()
+                                },
+                            ))
+                            .with_children(|col_cam| {
+                                // Field of View Stepper
+                                spawn_stepper_row(
+                                    col_cam,
+                                    loc.t("menu.settings.fov"),
+                                    format!("{fov}°"),
+                                    SettingsAction::DecFov,
+                                    SettingsAction::IncFov,
+                                    FovLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                // Dynamic FOV / Reduced Motion Toggle Button
+                                spawn_toggle_button(
+                                    col_cam,
+                                    SettingsAction::ToggleDynamicFov,
+                                    format!(
+                                        "{}: {}",
+                                        loc.t("menu.settings.fov_effects"),
+                                        if game_settings.dynamic_fov_enabled {
+                                            loc.t("common.normal")
+                                        } else {
+                                            loc.t("common.reduced")
+                                        }
+                                    ),
+                                    DynamicFovLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                // View Bobbing Toggle Button
+                                spawn_toggle_button(
+                                    col_cam,
+                                    SettingsAction::ToggleViewBobbing,
+                                    format!(
+                                        "{}: {}",
+                                        loc.t("menu.settings.view_bobbing"),
+                                        if game_settings.view_bobbing {
+                                            loc.t("common.enabled")
+                                        } else {
+                                            loc.t("common.disabled")
+                                        }
+                                    ),
+                                    ViewBobbingLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                // Camera Smoothing Stepper
+                                spawn_stepper_row(
+                                    col_cam,
+                                    loc.t("menu.settings.camera_smoothing"),
+                                    format_camera_smoothing(game_settings.camera_smoothing, &loc),
+                                    SettingsAction::DecCameraSmoothing,
+                                    SettingsAction::IncCameraSmoothing,
+                                    CameraSmoothingLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                // Third-Person Distance Stepper
+                                spawn_stepper_row(
+                                    col_cam,
+                                    loc.t("menu.settings.third_person_dist"),
+                                    format!("{:.1}m", game_settings.third_person_distance),
+                                    SettingsAction::DecThirdPersonDist,
+                                    SettingsAction::IncThirdPersonDist,
+                                    ThirdPersonDistLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                // Third-Person Style Toggle (Centered vs Over-the-Shoulder)
+                                spawn_toggle_button(
+                                    col_cam,
+                                    SettingsAction::ToggleThirdPersonShoulder,
+                                    format!(
+                                        "{}: {}",
+                                        loc.t("menu.settings.third_person_style"),
+                                        if game_settings.third_person_over_shoulder {
+                                            loc.t("menu.settings.third_person_shoulder")
+                                        } else {
+                                            loc.t("menu.settings.third_person_centered")
+                                        }
+                                    ),
+                                    ThirdPersonShoulderLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                // Third-Person Free 360° Orbit Toggle
+                                spawn_toggle_button(
+                                    col_cam,
+                                    SettingsAction::ToggleThirdPersonFreeOrbit,
+                                    format!(
+                                        "{}: {}",
+                                        loc.t("menu.settings.third_person_free_orbit"),
+                                        if game_settings.third_person_free_orbit {
+                                            loc.t("common.enabled")
+                                        } else {
+                                            loc.t("common.disabled")
+                                        }
+                                    ),
+                                    ThirdPersonFreeOrbitLabel,
+                                    font_handle.as_ref(),
+                                );
+                            });
+
+                            // Shaders & Visual FX Settings Container
+                            card.spawn((
+                                SettingsSection(SettingsTab::Shaders),
+                                Node {
+                                    width: percent(100.0),
+                                    display: if *settings_tab == SettingsTab::Shaders {
+                                        Display::Flex
+                                    } else {
+                                        Display::None
+                                    },
+                                    flex_direction: FlexDirection::Column,
+                                    row_gap: px(16.0),
+                                    align_items: AlignItems::Stretch,
+                                    ..default()
+                                },
+                            ))
+                            .with_children(|columns| {
+                                // Left Column: Materials & Lighting
+                                columns
+                                    .spawn(Node {
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Column,
+                                        row_gap: px(10.0),
+                                        width: percent(100.0),
+                                        ..default()
+                                    })
+                                    .with_children(|col_left| {
+                                        // Coated Textures Stepper
+                                        spawn_stepper_row(
+                                            col_left,
+                                            loc.t("menu.settings.coated_textures"),
+                                            format_coated_textures(
+                                                local_config.coated_textures,
+                                                &loc,
+                                            ),
+                                            SettingsAction::DecCoatedTextures,
+                                            SettingsAction::IncCoatedTextures,
+                                            CoatedTexturesLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Pixelated Shadows Toggle
+                                        spawn_toggle_button(
+                                            col_left,
+                                            SettingsAction::TogglePixelatedShadows,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.pixelated_shadows"),
+                                                if local_config.pixelated_shadows {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            PixelatedShadowsLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // HDR Bloom & Glow Toggle
+                                        spawn_toggle_button(
+                                            col_left,
+                                            SettingsAction::ToggleHdrBloom,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.hdr_bloom"),
+                                                if local_config.hdr_bloom {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            HdrBloomLabel,
+                                            font_handle.as_ref(),
+                                        );
+                                    });
+
+                                // Right Column: Dynamic Motion & Foliage
+                                columns
+                                    .spawn(Node {
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Column,
+                                        row_gap: px(10.0),
+                                        width: percent(100.0),
+                                        ..default()
+                                    })
+                                    .with_children(|col_right| {
+                                        // Waving Foliage & Leaves Toggle
+                                        spawn_toggle_button(
+                                            col_right,
+                                            SettingsAction::ToggleWavingFoliage,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.waving_foliage"),
+                                                if local_config.waving_foliage {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            WavingFoliageLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Internal Leaf Culling Toggle (Optional Optimization)
+                                        spawn_toggle_button(
+                                            col_right,
+                                            SettingsAction::ToggleLeafCulling,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.leaf_culling"),
+                                                if local_config.leaf_culling {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            LeafCullingLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Dynamic Handheld Lighting Toggle
+                                        spawn_toggle_button(
+                                            col_right,
+                                            SettingsAction::ToggleDynamicLighting,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.dynamic_lighting"),
+                                                if local_config.dynamic_lighting {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            DynamicLightingLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Procedural Grass Toggle Button (moved from Graphics to Shaders & FX)
+                                        spawn_toggle_button(
+                                            col_right,
+                                            SettingsAction::ToggleProceduralGrass,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.procedural_grass"),
+                                                if local_config.grass_enabled {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            ProceduralGrassLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Grass Density Stepper (moved from Graphics to Shaders & FX)
+                                        spawn_stepper_row(
+                                            col_right,
+                                            loc.t("menu.settings.grass_density"),
+                                            format_grass_density(local_config.grass_density, &loc),
+                                            SettingsAction::DecGrassDensity,
+                                            SettingsAction::IncGrassDensity,
+                                            GrassDensityLabel,
+                                            font_handle.as_ref(),
+                                        );
+                                    });
+                            });
+
+                            // Audio Settings Container (full width so steppers align cleanly to right edge)
+                            card.spawn((
+                                SettingsSection(SettingsTab::Audio),
+                                Node {
+                                    width: percent(100.0),
+                                    display: if *settings_tab == SettingsTab::Audio {
+                                        Display::Flex
+                                    } else {
+                                        Display::None
+                                    },
+                                    flex_direction: FlexDirection::Column,
+                                    align_items: AlignItems::Stretch,
+                                    row_gap: px(10.0),
+                                    ..default()
+                                },
+                            ))
+                            .with_children(|col_audio| {
+                                spawn_stepper_row(
+                                    col_audio,
+                                    loc.t("menu.settings.master_vol"),
+                                    crate::core::config::format_volume(
+                                        audio_settings.master_volume,
+                                    ),
+                                    SettingsAction::DecMasterVol,
+                                    SettingsAction::IncMasterVol,
+                                    MasterVolLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                spawn_stepper_row(
+                                    col_audio,
+                                    loc.t("menu.settings.music_vol"),
+                                    crate::core::config::format_volume(audio_settings.music_volume),
+                                    SettingsAction::DecMusicVol,
+                                    SettingsAction::IncMusicVol,
+                                    MusicVolLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                spawn_stepper_row(
+                                    col_audio,
+                                    loc.t("menu.settings.weather_vol"),
+                                    crate::core::config::format_volume(
+                                        audio_settings.weather_volume,
+                                    ),
+                                    SettingsAction::DecWeatherVol,
+                                    SettingsAction::IncWeatherVol,
+                                    WeatherVolLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                spawn_stepper_row(
+                                    col_audio,
+                                    loc.t("menu.settings.sfx_vol"),
+                                    crate::core::config::format_volume(audio_settings.sfx_volume),
+                                    SettingsAction::DecSfxVol,
+                                    SettingsAction::IncSfxVol,
+                                    SfxVolLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                spawn_stepper_row(
+                                    col_audio,
+                                    loc.t("menu.settings.ambient_vol"),
+                                    crate::core::config::format_volume(
+                                        audio_settings.ambient_volume,
+                                    ),
+                                    SettingsAction::DecAmbientVol,
+                                    SettingsAction::IncAmbientVol,
+                                    AmbientVolLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                spawn_stepper_row(
+                                    col_audio,
+                                    loc.t("menu.settings.ui_vol"),
+                                    crate::core::config::format_volume(game_settings.ui_volume),
+                                    SettingsAction::DecUiVol,
+                                    SettingsAction::IncUiVol,
+                                    UiVolLabel,
+                                    font_handle.as_ref(),
+                                );
+
+                                spawn_toggle_button(
+                                    col_audio,
+                                    SettingsAction::ToggleMuteUnfocus,
+                                    format!(
+                                        "{}: {}",
+                                        loc.t("menu.settings.mute_on_unfocus"),
+                                        if game_settings.mute_on_unfocus {
+                                            loc.t("common.enabled")
+                                        } else {
+                                            loc.t("common.disabled")
+                                        }
+                                    ),
+                                    MuteUnfocusLabel,
+                                    font_handle.as_ref(),
+                                );
+                            });
                         });
-                    });
                 });
         });
 }
@@ -1924,11 +1950,7 @@ fn spawn_tab_button(
                 text_shadow_default(),
             ));
 
-            btn.spawn((
-                Text::new(">"),
-                btn_font,
-                TextColor(palette::TEXT_MUTED),
-            ));
+            btn.spawn((Text::new(">"), btn_font, TextColor(palette::TEXT_MUTED)));
         });
 }
 
@@ -2181,13 +2203,15 @@ fn handle_settings_buttons(
                     }
                 }
                 SettingsAction::DecMeshUploadBudget => {
-                    local_config.mesh_upload_budget =
-                        crate::core::config::prev_mesh_upload_budget(local_config.mesh_upload_budget);
+                    local_config.mesh_upload_budget = crate::core::config::prev_mesh_upload_budget(
+                        local_config.mesh_upload_budget,
+                    );
                     chunk_settings.mesh_upload_budget = local_config.mesh_upload_budget;
                 }
                 SettingsAction::IncMeshUploadBudget => {
-                    local_config.mesh_upload_budget =
-                        crate::core::config::next_mesh_upload_budget(local_config.mesh_upload_budget);
+                    local_config.mesh_upload_budget = crate::core::config::next_mesh_upload_budget(
+                        local_config.mesh_upload_budget,
+                    );
                     chunk_settings.mesh_upload_budget = local_config.mesh_upload_budget;
                 }
                 SettingsAction::ToggleGodRays => {
@@ -2467,7 +2491,8 @@ fn handle_settings_buttons(
                     local_config.auto_save_minutes = game_settings.auto_save_minutes;
                 }
                 SettingsAction::DecCameraSmoothing => {
-                    game_settings.camera_smoothing = game_settings.camera_smoothing.saturating_sub(1);
+                    game_settings.camera_smoothing =
+                        game_settings.camera_smoothing.saturating_sub(1);
                     local_config.camera_smoothing = game_settings.camera_smoothing;
                 }
                 SettingsAction::IncCameraSmoothing => {
@@ -2703,14 +2728,7 @@ fn update_settings_labels(
             grass,
             time_pause,
         ),
-        (
-            gui_scale,
-            menu_blur,
-            background_dimming,
-            proc_grass,
-            grass_style,
-            grass_density,
-        ),
+        (gui_scale, menu_blur, background_dimming, proc_grass, grass_style, grass_density),
         (
             coated_textures,
             waving_foliage,
@@ -2764,7 +2782,10 @@ fn update_settings_labels(
                     }
                 );
             } else if mesh_uploads.is_some() {
-                text.0 = loc.t_args("common.chunks", &[&local_config.mesh_upload_budget.to_string()]);
+                text.0 = loc.t_args(
+                    "common.chunks",
+                    &[&local_config.mesh_upload_budget.to_string()],
+                );
             } else if proc_grass.is_some() {
                 text.0 = format!(
                     "{}: {}",
@@ -2924,17 +2945,29 @@ fn update_settings_labels(
         }
         if chunk_changed {
             if render_dist.is_some() {
-                text.0 = loc.t_args("common.chunks", &[&chunk_settings.render_distance.to_string()]);
+                text.0 = loc.t_args(
+                    "common.chunks",
+                    &[&chunk_settings.render_distance.to_string()],
+                );
             } else if lod_dist.is_some() {
                 text.0 = if chunk_settings.lod_render_distance == 0 {
                     loc.t("common.disabled").to_string()
                 } else {
-                    loc.t_args("common.chunks", &[&chunk_settings.lod_render_distance.to_string()])
+                    loc.t_args(
+                        "common.chunks",
+                        &[&chunk_settings.lod_render_distance.to_string()],
+                    )
                 };
             } else if sim_dist.is_some() {
-                text.0 = loc.t_args("common.chunks", &[&chunk_settings.simulation_distance.to_string()]);
+                text.0 = loc.t_args(
+                    "common.chunks",
+                    &[&chunk_settings.simulation_distance.to_string()],
+                );
             } else if mesh_uploads.is_some() {
-                text.0 = loc.t_args("common.chunks", &[&chunk_settings.mesh_upload_budget.to_string()]);
+                text.0 = loc.t_args(
+                    "common.chunks",
+                    &[&chunk_settings.mesh_upload_budget.to_string()],
+                );
             }
         }
         if (env_changed || time_pause.is_some()) && time_pause.is_some() {
@@ -2985,10 +3018,7 @@ fn update_audio_settings_labels(
     }
 }
 
-fn update_language_label(
-    loc: Res<Localization>,
-    mut query: Query<&mut Text, With<LanguageLabel>>,
-) {
+fn update_language_label(loc: Res<Localization>, mut query: Query<&mut Text, With<LanguageLabel>>) {
     if !loc.is_changed() {
         return;
     }
@@ -3206,4 +3236,3 @@ fn update_extended_settings_labels(
         }
     }
 }
-

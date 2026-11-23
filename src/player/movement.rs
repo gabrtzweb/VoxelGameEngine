@@ -5,9 +5,7 @@ use crate::{menu::GameSettings, world::VoxelWorld};
 use super::{
     CharacterRace, GameMode, PLAYER_EYE_HEIGHT, PLAYER_HEIGHT, Player, PlayerEnvironmentStatus,
     SelectedRace, SelectedSubrace,
-    camera::{
-        InspectorInteraction, PlayerCamera, resolve_third_person_camera_distance,
-    },
+    camera::{InspectorInteraction, PlayerCamera, resolve_third_person_camera_distance},
     collision::{has_headroom, is_grounded, move_with_collisions},
 };
 
@@ -259,10 +257,11 @@ pub fn creative_movement(
     let eye_smoothing = 1.0 - (-14.0 * delta_seconds).exp();
     motion.current_eye_height += (target_eye_height - motion.current_eye_height) * eye_smoothing;
 
-    let jump_pressed = control_settings.as_ref().map_or(
-        keyboard.just_pressed(KeyCode::Space),
-        |c| c.is_action_just_pressed(crate::core::InputAction::Jump, &keyboard, &mouse),
-    );
+    let jump_pressed = control_settings
+        .as_ref()
+        .map_or(keyboard.just_pressed(KeyCode::Space), |c| {
+            c.is_action_just_pressed(crate::core::InputAction::Jump, &keyboard, &mouse)
+        });
 
     if !is_in_inventory && jump_pressed {
         let double_tap = *game_mode == GameMode::Creative
@@ -365,21 +364,31 @@ pub fn creative_movement(
     let input_dirs = if is_in_inventory {
         None
     } else {
-        let fwd = control_settings.as_ref().map_or(keyboard.pressed(KeyCode::KeyW), |c| {
-            c.is_action_pressed(crate::core::InputAction::MoveForward, &keyboard, &mouse)
-        });
-        let back = control_settings.as_ref().map_or(keyboard.pressed(KeyCode::KeyS), |c| {
-            c.is_action_pressed(crate::core::InputAction::MoveBackward, &keyboard, &mouse)
-        });
-        let left = control_settings.as_ref().map_or(keyboard.pressed(KeyCode::KeyA), |c| {
-            c.is_action_pressed(crate::core::InputAction::MoveLeft, &keyboard, &mouse)
-        });
-        let right = control_settings.as_ref().map_or(keyboard.pressed(KeyCode::KeyD), |c| {
-            c.is_action_pressed(crate::core::InputAction::MoveRight, &keyboard, &mouse)
-        });
-        let up = control_settings.as_ref().map_or(keyboard.pressed(KeyCode::Space), |c| {
-            c.is_action_pressed(crate::core::InputAction::Jump, &keyboard, &mouse)
-        });
+        let fwd = control_settings
+            .as_ref()
+            .map_or(keyboard.pressed(KeyCode::KeyW), |c| {
+                c.is_action_pressed(crate::core::InputAction::MoveForward, &keyboard, &mouse)
+            });
+        let back = control_settings
+            .as_ref()
+            .map_or(keyboard.pressed(KeyCode::KeyS), |c| {
+                c.is_action_pressed(crate::core::InputAction::MoveBackward, &keyboard, &mouse)
+            });
+        let left = control_settings
+            .as_ref()
+            .map_or(keyboard.pressed(KeyCode::KeyA), |c| {
+                c.is_action_pressed(crate::core::InputAction::MoveLeft, &keyboard, &mouse)
+            });
+        let right = control_settings
+            .as_ref()
+            .map_or(keyboard.pressed(KeyCode::KeyD), |c| {
+                c.is_action_pressed(crate::core::InputAction::MoveRight, &keyboard, &mouse)
+            });
+        let up = control_settings
+            .as_ref()
+            .map_or(keyboard.pressed(KeyCode::Space), |c| {
+                c.is_action_pressed(crate::core::InputAction::Jump, &keyboard, &mouse)
+            });
         let down = control_settings.as_ref().map_or(
             keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight),
             |c| c.is_action_pressed(crate::core::InputAction::Crouch, &keyboard, &mouse),
@@ -388,13 +397,11 @@ pub fn creative_movement(
     };
 
     let stance_h = motion.stance_height_for_scale(race_height_scale);
-    let (move_speed_multiplier, swim_speed_multiplier) = selected_subrace.as_ref().map_or(
-        (1.0, 1.0),
-        |s| {
+    let (move_speed_multiplier, swim_speed_multiplier) =
+        selected_subrace.as_ref().map_or((1.0, 1.0), |s| {
             let a = s.0.attributes();
             (a.move_speed_multiplier, a.swim_speed_multiplier)
-        },
-    );
+        });
     if motion.flying {
         fly_movement(
             input_dirs,
@@ -517,12 +524,8 @@ pub fn creative_movement(
         } else {
             eye_position
         };
-        let actual_distance = resolve_third_person_camera_distance(
-            &world,
-            pivot,
-            camera_forward,
-            max_dist,
-        );
+        let actual_distance =
+            resolve_third_person_camera_distance(&world, pivot, camera_forward, max_dist);
         let target_pos = pivot - camera_forward * actual_distance;
         camera_transform.translation = if game_settings.camera_smoothing > 0 {
             let speed = match game_settings.camera_smoothing {

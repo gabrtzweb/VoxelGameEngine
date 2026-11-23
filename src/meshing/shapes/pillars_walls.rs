@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
+use super::{push_quad_face_uvs, push_shape_box};
 use crate::meshing::greedy::MeshBuffers;
 use crate::world::{BlockShape, Voxel, VoxelAccess};
-use super::{push_quad_face_uvs, push_shape_box};
 
 #[allow(clippy::too_many_arguments)]
 pub fn mesh_column_cocoon(
@@ -87,7 +87,10 @@ pub fn mesh_column_cocoon(
     // Horizontal axis-aligned pillars (logs, bones, basalt, etc.) in Column shape:
     // orient % 7 == 5 -> X-axis horizontal column (end caps on +X/-X, bark grain along X)
     // orient % 7 == 6 -> Z-axis horizontal column (end caps on +Z/-Z, bark grain along Z)
-    if shape == BlockShape::Column && voxel.is_axis_aligned() && (col_orient == 5 || col_orient == 6) {
+    if shape == BlockShape::Column
+        && voxel.is_axis_aligned()
+        && (col_orient == 5 || col_orient == 6)
+    {
         let min_x = fx + box_a[0].x;
         let max_x = fx + box_a[1].x;
         let min_y = fy + box_a[0].y;
@@ -146,7 +149,12 @@ pub fn mesh_column_cocoon(
                 side_layer,
                 frame_count_f32,
                 side_tint,
-                [[0.25, 1.0 - v0], [0.75, 1.0 - v0], [0.75, 1.0 - v1], [0.25, 1.0 - v1]],
+                [
+                    [0.25, 1.0 - v0],
+                    [0.75, 1.0 - v0],
+                    [0.75, 1.0 - v1],
+                    [0.25, 1.0 - v1],
+                ],
             );
             // -Y barrel
             push_quad_face_uvs(
@@ -161,7 +169,12 @@ pub fn mesh_column_cocoon(
                 side_layer,
                 frame_count_f32,
                 side_tint,
-                [[0.75, 1.0 - v0], [0.25, 1.0 - v0], [0.25, 1.0 - v1], [0.75, 1.0 - v1]],
+                [
+                    [0.75, 1.0 - v0],
+                    [0.25, 1.0 - v0],
+                    [0.25, 1.0 - v1],
+                    [0.75, 1.0 - v1],
+                ],
             );
             // +Z barrel
             push_quad_face_uvs(
@@ -176,7 +189,12 @@ pub fn mesh_column_cocoon(
                 side_layer,
                 frame_count_f32,
                 side_tint,
-                [[0.25, 1.0 - v1], [0.75, 1.0 - v1], [0.75, 1.0 - v0], [0.25, 1.0 - v0]],
+                [
+                    [0.25, 1.0 - v1],
+                    [0.75, 1.0 - v1],
+                    [0.75, 1.0 - v0],
+                    [0.25, 1.0 - v0],
+                ],
             );
             // -Z barrel
             push_quad_face_uvs(
@@ -191,7 +209,12 @@ pub fn mesh_column_cocoon(
                 side_layer,
                 frame_count_f32,
                 side_tint,
-                [[0.25, 1.0 - v0], [0.75, 1.0 - v0], [0.75, 1.0 - v1], [0.25, 1.0 - v1]],
+                [
+                    [0.25, 1.0 - v0],
+                    [0.75, 1.0 - v0],
+                    [0.75, 1.0 - v1],
+                    [0.25, 1.0 - v1],
+                ],
             );
         } else {
             let v0 = box_a[0].z;
