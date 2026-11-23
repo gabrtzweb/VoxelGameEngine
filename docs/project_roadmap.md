@@ -94,6 +94,7 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 | **08** | **[Survival Mode Core Systems](#phase-8-survival-mode-core-systems-in-progress)** | **In Progress** | Default Survival mode (`S → C → E`), floating GUI-scaled Vitals HUD, live stamina/drowning/fall damage/respawn, 11 flint tools & crafting materials, 64-item stacking & consumption, block durability with 9-stage crack overlay + shake, Fire Starter/Hoe/Shears actions (hunger/thirst/temperature sim, food buffs & tool durability next) |
 | **09** | **[Mobs, Wildlife & Entity AI](#phase-9-mobs-wildlife--entity-ai-planned)** | **Planned** | First creatures and wildlife (passive fauna, hostile mobs, pathfinding, stealth/footstep awareness, combat, taming, and live Bestiary unlocking) |
 | **10** | **[Quests, Objectives & Progression Engine](#phase-10-quests-objectives--progression-engine-planned)** | **Planned** | Functional quest state machine, objective tracking, exploration/gathering/combat triggers, XP/leveling, skill point spending, and rewards |
+| **11** | **[Subterranean Caves & Ore Generation Rework](#phase-11-subterranean-caves--ore-generation-rework-planned)** | **Planned** | Complete overhaul of underground cavern networks, subterranean microbiomes, ore vein distribution, crystal geodes, and mining progression |
 
 ---
 
@@ -239,3 +240,10 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 
 - [ ] **Functional Quests & RPG Progression**:
   - Power the `Quests` screen with real quest definitions, multi-step objectives, world/gathering/combat triggers, XP & leveling progression, spendable Skill Points across the 60-skill catalog, and quest rewards.
+
+---
+
+### Phase 11: Subterranean Caves & Ore Generation Rework (Planned)
+
+- [ ] **Complete Cave & Mineral Overhaul**:
+  - Rework 3D subterranean cavern carvers, cave microbiomes, re-enable and rebalance procedural ore veins and crystal geodes (`src/generation/ores.rs`), and tie depth-based mineral progression into Survival tool tiers.

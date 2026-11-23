@@ -316,60 +316,60 @@ fn setup_custom_cursor(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     commands.insert_resource(textures.clone());
 
+    commands.spawn((
+        CustomCursor,
+        Node {
+            position_type: PositionType::Absolute,
+            left: px(0.0),
+            top: px(0.0),
+            width: px(64.0),
+            height: px(64.0),
+            ..default()
+        },
+        ImageNode {
+            image: textures.default,
+            ..default()
+        },
+        ZIndex(1000),
+        Visibility::Hidden,
+        bevy::picking::Pickable::IGNORE,
+    ));
+
+    // Spawn held item icon as a sibling at ZIndex(995) so solid blocks never cover the mouse cursor
     commands
         .spawn((
-            CustomCursor,
+            CustomCursorHeldIcon,
             Node {
                 position_type: PositionType::Absolute,
                 left: px(0.0),
                 top: px(0.0),
-                width: px(64.0),
-                height: px(64.0),
+                width: px(52.0),
+                height: px(52.0),
                 ..default()
             },
-            ImageNode {
-                image: textures.default,
-                ..default()
-            },
-            ZIndex(1000),
+            ImageNode::default(),
             Visibility::Hidden,
+            ZIndex(995),
             bevy::picking::Pickable::IGNORE,
         ))
-        .with_children(|parent| {
-            parent
-                .spawn((
-                    CustomCursorHeldIcon,
-                    Node {
-                        position_type: PositionType::Absolute,
-                        left: px(28.0),
-                        top: px(28.0),
-                        width: px(32.0),
-                        height: px(32.0),
-                        ..default()
-                    },
-                    ImageNode::default(),
-                    Visibility::Hidden,
-                    bevy::picking::Pickable::IGNORE,
-                ))
-                .with_children(|icon| {
-                    icon.spawn((
-                        CustomCursorHeldCount,
-                        Text::new(""),
-                        TextFont {
-                            font_size: FontSize::Px(13.0),
-                            ..default()
-                        },
-                        TextColor(Color::WHITE),
-                        crate::core::text_shadow_default(),
-                        Node {
-                            position_type: PositionType::Absolute,
-                            right: px(-2.0),
-                            bottom: px(-2.0),
-                            ..default()
-                        },
-                        bevy::picking::Pickable::IGNORE,
-                    ));
-                });
+        .with_children(|icon| {
+            icon.spawn((
+                CustomCursorHeldCount,
+                Text::new(""),
+                TextFont {
+                    font_size: FontSize::Px(13.0),
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+                crate::core::text_shadow_default(),
+                Node {
+                    position_type: PositionType::Absolute,
+                    right: px(2.0),
+                    bottom: px(1.0),
+                    ..default()
+                },
+                bevy::picking::Pickable::IGNORE,
+            ));
         });
 }
 
@@ -618,19 +618,20 @@ fn update_custom_cursor(
     menu_state: Res<State<MenuState>>,
     held_item: Res<HeldInventoryItem>,
     block_icons: Option<Res<BlockIcons>>,
+    game_settings: Option<Res<GameSettings>>,
     cursor_query: Single<(&mut Node, &mut ImageNode, &mut Visibility), With<CustomCursor>>,
     held_icon_query: Single<
-        (&mut ImageNode, &mut Visibility),
+        (&mut Node, &mut ImageNode, &mut Visibility),
         (With<CustomCursorHeldIcon>, Without<CustomCursor>),
     >,
-    mut held_count_query: Query<&mut Text, With<CustomCursorHeldCount>>,
+    mut held_count_query: Query<(&mut Text, &mut TextFont), With<CustomCursorHeldCount>>,
     cursor_mode: Res<CursorMode>,
     cursor_textures: Res<CursorTextures>,
     busy_animation: Res<BusyCursorAnimation>,
     ui_scale: Option<Res<bevy::ui::UiScale>>,
 ) {
     let (mut cursor_node, mut cursor_image, mut cursor_vis) = cursor_query.into_inner();
-    let (mut held_icon, mut held_vis) = held_icon_query.into_inner();
+    let (mut held_node, mut held_icon, mut held_vis) = held_icon_query.into_inner();
 
     if *menu_state.get() == MenuState::None {
         *cursor_vis = Visibility::Hidden;
@@ -661,6 +662,14 @@ fn update_custom_cursor(
         }
 
         if let (Some(voxel), Some(ref icons)) = (held_item.voxel, block_icons) {
+            let gui_scale = game_settings.as_ref().map_or(3, |s| s.gui_scale) as f32;
+            // ~10% larger than the 16*gui_scale slot icon so lifted items feel closer to the camera
+            let icon_size = 17.6 * gui_scale;
+            held_node.width = px(icon_size);
+            held_node.height = px(icon_size);
+            held_node.left = px((pos.x / scale) - icon_size * 0.45);
+            held_node.top = px((pos.y / scale) - icon_size * 0.45);
+
             *held_vis = Visibility::Visible;
             held_icon.image = icons.get(voxel);
             let cnt_str = if held_item.count > 1 {
@@ -668,14 +677,16 @@ fn update_custom_cursor(
             } else {
                 String::new()
             };
-            for mut txt in &mut held_count_query {
+            let cnt_font_size = (3.4 * gui_scale).max(10.0);
+            for (mut txt, mut tf) in &mut held_count_query {
                 if txt.0 != cnt_str {
                     txt.0 = cnt_str.clone();
                 }
+                tf.font_size = FontSize::Px(cnt_font_size);
             }
         } else {
             *held_vis = Visibility::Hidden;
-            for mut txt in &mut held_count_query {
+            for (mut txt, _) in &mut held_count_query {
                 if !txt.0.is_empty() {
                     txt.0.clear();
                 }

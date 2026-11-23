@@ -19,6 +19,7 @@ pub enum InputAction {
     SecondaryAction,
     PickBlock,
     DropItem,
+    SwapHands,
     ShapeCycle,
     ShapeInvert,
     Zoom,
@@ -65,6 +66,7 @@ impl InputAction {
         InputAction::SecondaryAction,
         InputAction::PickBlock,
         InputAction::DropItem,
+        InputAction::SwapHands,
         InputAction::ShapeCycle,
         InputAction::ShapeInvert,
         InputAction::Zoom,
@@ -100,6 +102,7 @@ impl InputAction {
             | Self::SecondaryAction
             | Self::PickBlock
             | Self::DropItem
+            | Self::SwapHands
             | Self::ShapeCycle
             | Self::ShapeInvert
             | Self::Zoom => ActionCategory::Gameplay,
@@ -138,6 +141,7 @@ impl InputAction {
             Self::SecondaryAction => "controls.action.secondary",
             Self::PickBlock => "controls.action.pick_block",
             Self::DropItem => "controls.action.drop_item",
+            Self::SwapHands => "controls.action.swap_hands",
             Self::ShapeCycle => "controls.action.shape_cycle",
             Self::ShapeInvert => "controls.action.shape_invert",
             Self::Zoom => "controls.action.zoom",
@@ -176,6 +180,7 @@ impl InputAction {
             Self::SecondaryAction => "secondary_action",
             Self::PickBlock => "pick_block",
             Self::DropItem => "drop_item",
+            Self::SwapHands => "swap_hands",
             Self::ShapeCycle => "shape_cycle",
             Self::ShapeInvert => "shape_invert",
             Self::Zoom => "zoom",
@@ -214,6 +219,7 @@ impl InputAction {
             "secondary_action" => Some(Self::SecondaryAction),
             "pick_block" => Some(Self::PickBlock),
             "drop_item" => Some(Self::DropItem),
+            "swap_hands" => Some(Self::SwapHands),
             "shape_cycle" => Some(Self::ShapeCycle),
             "shape_invert" => Some(Self::ShapeInvert),
             "zoom" => Some(Self::Zoom),
@@ -507,6 +513,7 @@ impl Default for ControlSettings {
         bindings.insert(InputAction::SecondaryAction, InputBinding::Mouse(MouseButton::Right));
         bindings.insert(InputAction::PickBlock, InputBinding::Mouse(MouseButton::Middle));
         bindings.insert(InputAction::DropItem, InputBinding::Key(KeyCode::KeyQ));
+        bindings.insert(InputAction::SwapHands, InputBinding::Key(KeyCode::KeyE));
         bindings.insert(InputAction::ShapeCycle, InputBinding::Key(KeyCode::KeyR));
         bindings.insert(InputAction::ShapeInvert, InputBinding::Key(KeyCode::KeyT));
         bindings.insert(InputAction::Zoom, InputBinding::Key(KeyCode::KeyZ));

@@ -807,8 +807,13 @@ pub fn update_player_model(
                 .displayed_voxel
                 .is_some_and(|v| crate::gameplay::voxel_item_texture_path(v).is_some());
             if is_extruded_item {
+                let is_torch = hand_anim.displayed_voxel.is_some_and(Voxel::is_torch);
                 tp_tf.translation = Vec3::new(0.0, -10.4 * PIXEL_SCALE, 5.2 * PIXEL_SCALE);
-                tp_tf.rotation = Quat::from_euler(EulerRot::YXZ, -1.57, 0.0, -0.22);
+                tp_tf.rotation = if is_torch {
+                    Quat::from_euler(EulerRot::YXZ, 1.57, 0.0, 0.22)
+                } else {
+                    Quat::from_euler(EulerRot::YXZ, -1.57, 0.0, -0.22)
+                };
                 tp_tf.scale = Vec3::splat(1.0);
             } else {
                 tp_tf.translation = Vec3::new(0.0, -10.2 * PIXEL_SCALE, 2.6 * PIXEL_SCALE);
@@ -833,8 +838,13 @@ pub fn update_player_model(
                 .displayed_left_voxel
                 .is_some_and(|v| crate::gameplay::voxel_item_texture_path(v).is_some());
             if is_extruded_item {
+                let is_torch = hand_anim.displayed_left_voxel.is_some_and(Voxel::is_torch);
                 lt_tf.translation = Vec3::new(0.0, -10.4 * PIXEL_SCALE, 5.2 * PIXEL_SCALE);
-                lt_tf.rotation = Quat::from_euler(EulerRot::YXZ, -1.57, 0.0, -0.22);
+                lt_tf.rotation = if is_torch {
+                    Quat::from_euler(EulerRot::YXZ, 1.57, 0.0, 0.22)
+                } else {
+                    Quat::from_euler(EulerRot::YXZ, -1.57, 0.0, -0.22)
+                };
                 lt_tf.scale = Vec3::splat(1.0);
             } else {
                 lt_tf.translation = Vec3::new(0.0, -10.2 * PIXEL_SCALE, 2.6 * PIXEL_SCALE);
@@ -1049,8 +1059,9 @@ pub fn update_player_model(
                     let blend = 1.0 - (-12.0 * delta_seconds).exp();
                     transform.rotation = transform.rotation.slerp(target, blend);
                 } else if h_speed > 0.05 {
+                    let swing_mult = if has_left_item { 0.14 } else { 1.0 };
                     transform.rotation =
-                        Quat::from_rotation_x(-arm_angle * (if has_left_item { 0.35 } else { 1.0 }) + hold_offset + action_swing);
+                        Quat::from_rotation_x(-arm_angle * swing_mult + hold_offset + action_swing);
                 } else {
                     let target = Quat::from_rotation_x(breathe + hold_offset + action_swing);
                     let blend = 1.0 - (-10.0 * delta_seconds).exp();
@@ -1126,8 +1137,9 @@ pub fn update_player_model(
                     let blend = 1.0 - (-12.0 * delta_seconds).exp();
                     transform.rotation = transform.rotation.slerp(target, blend);
                 } else if h_speed > 0.05 {
+                    let swing_mult = if has_right_item { 0.14 } else { 0.75 };
                     transform.rotation =
-                        Quat::from_rotation_x(arm_angle * 0.75 + hold_offset + action_swing);
+                        Quat::from_rotation_x(arm_angle * swing_mult + hold_offset + action_swing);
                 } else {
                     let target = Quat::from_rotation_x(-breathe + hold_offset + action_swing);
                     let blend = 1.0 - (-12.0 * delta_seconds).exp();

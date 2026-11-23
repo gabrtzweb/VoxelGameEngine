@@ -47,8 +47,6 @@ impl Default for SelectedVoxel {
 pub struct BlockBreakingState {
     pub target: Option<IVec3>,
     pub progress: f32,
-    pub shake_offset: Vec3,
-    pub shake_scale: f32,
 }
 
 #[derive(Default)]

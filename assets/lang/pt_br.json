@@ -627,6 +627,7 @@
   "controls.action.secondary": "Usar Item / Colocar Bloco",
   "controls.action.pick_block": "Copiar Bloco (Pick Block)",
   "controls.action.drop_item": "Largar Item Selecionado",
+  "controls.action.swap_hands": "Trocar Mãos (Secundária)",
   "controls.action.shape_cycle": "Alternar Forma de Voxel",
   "controls.action.shape_invert": "Inverter Orientação da Forma",
   "controls.action.zoom": "Zoom Cinematográfico",

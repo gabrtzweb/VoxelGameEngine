@@ -43,6 +43,7 @@ pub fn update_atmosphere(
     mut ambient: ResMut<GlobalAmbientLight>,
     camera: CameraAtmosphereQuery,
     env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
+    selected_subrace: Option<Res<crate::player::SelectedSubrace>>,
     weather: Option<Res<super::weather::WeatherManager>>,
     lightning: Option<Res<super::weather::LightningState>>,
 ) {
@@ -184,6 +185,18 @@ pub fn update_atmosphere(
             ));
 
             computed_exposure = lerp_f32(computed_exposure, 11.0, underground_factor);
+        }
+
+        // Racial Cave Vision & Night Clarity (Dark Elf +85%, Deep Dwarf +65%, Mountain Dwarf +45%, etc.)
+        let cave_vision = selected_subrace
+            .as_ref()
+            .map_or(0.0, |s| s.0.attributes().cave_vision_bonus);
+        if cave_vision > 0.01 {
+            // Night darkness factor (0.0 at noon, 1.0 at midnight)
+            let night_factor = ((1.0 - (computed_brightness / 900.0)).clamp(0.0, 1.0)) * 0.45;
+            let vision_strength = underground_factor.max(night_factor) * cave_vision;
+            computed_brightness *= 1.0 + vision_strength * 1.15;
+            computed_exposure -= vision_strength * 0.70;
         }
 
         clear_color.0 = computed_sky;

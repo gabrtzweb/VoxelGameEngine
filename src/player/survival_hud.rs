@@ -157,6 +157,7 @@ impl Plugin for SurvivalHudPlugin {
                 Update,
                 (
                     sync_vitals_with_subrace_and_movement,
+                    update_player_temperature,
                     sync_survival_hud_scale,
                     update_survival_hud_ui,
                     update_mining_progress_bar,
@@ -738,6 +739,140 @@ fn sync_vitals_with_subrace_and_movement(
             );
             toast_state.pending_custom_message = Some(msg.to_string());
         }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn update_player_temperature(
+    time: Res<Time>,
+    game_mode: Res<GameMode>,
+    world_session: Option<Res<WorldSession>>,
+    menu_state: Option<Res<State<MenuState>>>,
+    selected_subrace: Option<Res<SelectedSubrace>>,
+    env_state: Option<Res<crate::environment::EnvironmentState>>,
+    weather: Option<Res<crate::environment::WeatherManager>>,
+    env_status: Option<Res<PlayerEnvironmentStatus>>,
+    terrain_gen: Option<Res<crate::generation::TerrainGenerator>>,
+    world: Option<Res<crate::world::VoxelWorld>>,
+    player_q: Query<&Transform, With<Player>>,
+    mut vitals: ResMut<PlayerVitals>,
+    mut sample_timer: Local<f32>,
+    mut cached_target_temp: Local<Option<f32>>,
+) {
+    let is_paused = menu_state.as_ref().is_some_and(|s| {
+        matches!(
+            *s.get(),
+            MenuState::Pause
+                | MenuState::Settings
+                | MenuState::Controls
+                | MenuState::MainMenu
+                | MenuState::RaceSelection
+                | MenuState::Loading
+        )
+    });
+    if *game_mode != GameMode::Survival
+        || !world_session.as_ref().is_some_and(|s| s.is_active)
+        || is_paused
+    {
+        return;
+    }
+
+    let dt = time.delta_secs();
+    if dt <= 0.0 {
+        return;
+    }
+
+    *sample_timer -= dt;
+    if *sample_timer <= 0.0 || cached_target_temp.is_none() {
+        *sample_timer = 0.45;
+
+        let Ok(player_tf) = player_q.single() else {
+            return;
+        };
+        let pos = player_tf.translation;
+        let ix = pos.x.floor() as i32;
+        let iy = pos.y.floor() as i32;
+        let iz = pos.z.floor() as i32;
+
+        // 1. Biome climate baseline (-1..+1 mapped around comfortable 50)
+        let biome_temp = terrain_gen
+            .as_ref()
+            .map_or(0.0, |g| g.sample_column(ix, iz).climate.temperature);
+        let mut target = 50.0 + biome_temp * 34.0;
+
+        // 2. Season & Day/Night cycle
+        if let Some(ref env) = env_state {
+            target += match env.season() {
+                crate::environment::time::Season::Winter => -12.0,
+                crate::environment::time::Season::Summer => 10.0,
+                crate::environment::time::Season::Autumn => -3.0,
+                crate::environment::time::Season::Spring => 0.0,
+            };
+            target += (env.time_of_day * TAU).sin() * 8.0 - 1.0;
+        }
+
+        // 3. Altitude cooling & subterranean moderation
+        if pos.y > 40.0 {
+            target -= ((pos.y - 40.0) * 0.22).min(22.0);
+        }
+        let underground = env_status.as_ref().map_or(0.0, |e| e.underground_factor);
+        if underground > 0.1 {
+            target = target * (1.0 - underground * 0.65) + 40.0 * (underground * 0.65);
+        }
+
+        // 4. Weather & water immersion
+        if let Some(ref w) = weather {
+            target -= w.rain_intensity * 5.0 + w.snow_intensity * 10.0;
+        }
+        if env_status.as_ref().is_some_and(|e| e.submersion > 0.25) {
+            target -= 14.0;
+        }
+
+        // 5. Nearby heat sources (lit campfires, fire, lava, magma within 4 blocks)
+        if let Some(ref w) = world {
+            let mut near_heat = 0.0f32;
+            'heat_scan: for dy in -1..=2 {
+                for dz in -4..=4 {
+                    for dx in -4..=4 {
+                        if let Some(v) = w.get_voxel(IVec3::new(ix + dx, iy + dy, iz + dz)) {
+                            let heat = match v {
+                                crate::world::Voxel::Campfire
+                                | crate::world::Voxel::ElementFire => 26.0,
+                                crate::world::Voxel::Magma => 34.0,
+                                _ if v.id().contains("lava") => 34.0,
+                                _ => 0.0,
+                            };
+                            if heat > near_heat {
+                                near_heat = heat;
+                                if near_heat >= 34.0 {
+                                    break 'heat_scan;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            target += near_heat;
+        }
+
+        // 6. Apply racial Cold / Heat Resistance toward comfortable 50.0
+        let attrs = selected_subrace
+            .map_or(super::CharacterSubrace::default(), |s| s.0)
+            .attributes();
+        if target < 50.0 {
+            let cold_delta = 50.0 - target;
+            target = 50.0 - cold_delta * (1.0 - attrs.cold_resistance.clamp(0.0, 0.9));
+        } else if target > 50.0 {
+            let heat_delta = target - 50.0;
+            target = 50.0 + heat_delta * (1.0 - attrs.heat_resistance.clamp(0.0, 0.9));
+        }
+
+        *cached_target_temp = Some(target.clamp(0.0, 100.0));
+    }
+
+    if let Some(target) = *cached_target_temp {
+        let blend = 1.0 - (-0.30 * dt).exp();
+        vitals.temperature = (vitals.temperature + (target - vitals.temperature) * blend).clamp(0.0, 100.0);
     }
 }
 

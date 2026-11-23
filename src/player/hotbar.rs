@@ -491,6 +491,7 @@ fn handle_hotbar_input(
     player_query: Query<&Transform, With<crate::player::Player>>,
     camera_query: Query<&Transform, (With<Camera3d>, Without<crate::player::Player>)>,
     mut hotbar: ResMut<Hotbar>,
+    mut player_inv: Option<ResMut<PlayerInventory>>,
     mut selected: ResMut<SelectedVoxel>,
 ) {
     if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None)
@@ -579,6 +580,19 @@ fn handle_hotbar_input(
                 pickup_delay: 1.35,
             });
         }
+    }
+
+    // Quick-swap active main-hand slot with off-hand slot (default E in gameplay, disabled in menus)
+    let is_swap_hands = control_settings.as_ref().map_or(
+        keyboard.just_pressed(KeyCode::KeyE),
+        |c| c.is_action_just_pressed(crate::core::InputAction::SwapHands, &keyboard, &mouse),
+    );
+    if is_swap_hands && let Some(ref mut inv) = player_inv {
+        let active = hotbar.active_slot;
+        let hb = &mut *hotbar;
+        let inv_ref = &mut **inv;
+        std::mem::swap(&mut hb.slots[active], &mut inv_ref.offhand_slot);
+        std::mem::swap(&mut hb.counts[active], &mut inv_ref.offhand_count);
     }
 
     let active = hotbar.active_slot;

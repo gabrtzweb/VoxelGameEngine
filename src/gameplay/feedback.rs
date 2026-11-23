@@ -428,8 +428,6 @@ struct BreakOverlayMaterials([Handle<StandardMaterial>; 9]);
 struct BreakChipTracker {
     last_target: Option<IVec3>,
     last_stage: usize,
-    impact_timer: f32,
-    hit_dir: Vec3,
     seed: u64,
 }
 
@@ -482,8 +480,7 @@ fn setup_block_break_overlay(
 #[allow(clippy::too_many_arguments)]
 fn update_block_break_overlay(
     mut commands: Commands,
-    time: Res<Time>,
-    mut breaking: Option<ResMut<super::BlockBreakingState>>,
+    breaking: Option<Res<super::BlockBreakingState>>,
     world: Res<VoxelWorld>,
     chunk_material: Option<Res<ChunkMaterial>>,
     overlay_mats: Option<Res<BreakOverlayMaterials>>,
@@ -515,11 +512,6 @@ fn update_block_break_overlay(
     let Some((pos, progress)) = active else {
         chip_tracker.last_target = None;
         chip_tracker.last_stage = 0;
-        chip_tracker.impact_timer = 0.0;
-        if let Some(ref mut b) = breaking {
-            b.shake_offset = Vec3::ZERO;
-            b.shake_scale = 1.0;
-        }
         for (_, _, _, mut vis) in &mut overlay_q {
             if *vis != Visibility::Hidden {
                 *vis = Visibility::Hidden;
@@ -543,29 +535,18 @@ fn update_block_break_overlay(
     };
 
     let stage_idx = ((progress * 9.0).floor() as usize).min(8);
-    let dt = time.delta_secs();
     let origin = pos.as_vec3();
     let center = origin + (box_a[0] + box_a[1]) * 0.5;
 
-    // Trigger damped hit-impact shake & 2 subtle chipped debris particles on each stage step
+    // Emit 2 subtle chipped debris particles whenever the crack stage advances
     if chip_tracker.last_target != Some(pos) {
         chip_tracker.last_target = Some(pos);
         chip_tracker.last_stage = stage_idx;
-        chip_tracker.impact_timer = 0.12;
-        chip_tracker.hit_dir = Vec3::new(1.0, 0.3, -0.7).normalize();
     } else if stage_idx > chip_tracker.last_stage {
         chip_tracker.last_stage = stage_idx;
-        chip_tracker.impact_timer = 0.12;
         if chip_tracker.seed == 0 {
             chip_tracker.seed = 0x517C_C1B7_2722_0A95;
         }
-        chip_tracker.seed = chip_tracker
-            .seed
-            .wrapping_mul(6364136223846793005)
-            .wrapping_add(1442695040888963407);
-        let ang = ((chip_tracker.seed >> 32) as u32 as f32 / 4294967295.0) * std::f32::consts::TAU;
-        chip_tracker.hit_dir = Vec3::new(ang.cos(), 0.25, ang.sin()).normalize();
-
         if let Some(ref cm) = chunk_material
             && !voxel.is_water()
         {
@@ -601,27 +582,11 @@ fn update_block_break_overlay(
         }
     }
 
-    if chip_tracker.impact_timer > 0.0 {
-        chip_tracker.impact_timer = (chip_tracker.impact_timer - dt).max(0.0);
-    }
-
-    // Crisp damped hit-impulse recoil (jolts on each hit then settles cleanly instead of buzzing)
-    let norm = (chip_tracker.impact_timer / 0.12).clamp(0.0, 1.0);
-    let decay = norm * norm;
-    let wave = ((1.0 - norm) * std::f32::consts::TAU * 2.0).sin();
-    let shake_offset = chip_tracker.hit_dir * (wave * 0.018 * decay);
-    let shake_scale = 1.0 + 0.022 * decay;
-
-    if let Some(ref mut b) = breaking {
-        b.shake_offset = shake_offset;
-        b.shake_scale = shake_scale;
-    }
-
     let boxes: [Option<[Vec3; 2]>; 2] = [Some(box_a), maybe_box_b];
     for (overlay, mut tf, mut mat, mut vis) in &mut overlay_q {
         if let Some([bmin, bmax]) = boxes[overlay.box_index as usize] {
-            let box_center = origin + (bmin + bmax) * 0.5 + shake_offset;
-            let box_size = ((bmax - bmin) + Vec3::splat(0.006)) * shake_scale;
+            let box_center = origin + (bmin + bmax) * 0.5;
+            let box_size = (bmax - bmin) + Vec3::splat(0.006);
             tf.translation = box_center;
             tf.scale = box_size;
             let target_mat = &stage_mats.0[stage_idx];

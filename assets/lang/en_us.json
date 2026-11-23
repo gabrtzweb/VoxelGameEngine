@@ -627,6 +627,7 @@
   "controls.action.secondary": "Use Item / Place Block",
   "controls.action.pick_block": "Pick Block",
   "controls.action.drop_item": "Drop Selected Item",
+  "controls.action.swap_hands": "Swap Hands (Off-Hand)",
   "controls.action.shape_cycle": "Cycle Voxel Shape",
   "controls.action.shape_invert": "Invert Shape Facing",
   "controls.action.zoom": "Cinematic Zoom",
