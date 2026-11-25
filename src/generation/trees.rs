@@ -71,8 +71,8 @@ fn select_tree_for_column(
     ground: Voxel,
     h: u32,
 ) -> Option<(f32, TreeArchetype)> {
-    // Gravel Beach: sparse coastal palms only (no pines on beaches!)
-    if col.biome == BiomeType::GravelBeach {
+    // Gravel Beach & Craggy Beach: sparse coastal palms only (no pines on beaches!)
+    if matches!(col.biome, BiomeType::GravelBeach | BiomeType::CraggyBeach) {
         if col.climate.temperature > -0.25 {
             let on_dirty_gravel = matches!(ground, Voxel::GravelDirty | Voxel::GravelAshy);
             let chance = if on_dirty_gravel { 0.16 } else { 0.08 };
@@ -81,16 +81,26 @@ fn select_tree_for_column(
         return None;
     }
 
-    // Coastal beaches & Mirage Isles: evenly distributed Palms across warm & temperate coastlines
-    if col.is_beach || col.biome == BiomeType::MirageIsles {
+    // Coastal beaches & Tropical/Coral Islands: evenly distributed Palms across warm & temperate coastlines
+    if col.is_beach
+        || matches!(
+            col.biome,
+            BiomeType::SandyShores
+                | BiomeType::DuneBeach
+                | BiomeType::TropicalIsland
+                | BiomeType::CoralIsland
+        )
+    {
         if col.climate.temperature > -0.25 {
-            return Some((0.16, TreeArchetype::Palm));
+            return Some((0.18, TreeArchetype::Palm));
         }
         return None;
     }
 
     match col.biome {
-        BiomeType::YosemiteLowlands | BiomeType::Shield => {
+        BiomeType::VerdantWoods
+        | BiomeType::TemperateIsland
+        | BiomeType::ShieldForest => {
             if (h >> 18).is_multiple_of(20) {
                 let cap = match (h >> 12) % 4 {
                     0 => Voxel::FungiAmanitaCap,
@@ -112,7 +122,27 @@ fn select_tree_for_column(
             };
             Some((0.64, arch))
         }
-        BiomeType::CloudForest => {
+        BiomeType::AutumnForest => {
+            if (h >> 18).is_multiple_of(18) {
+                let cap = match (h >> 12) % 3 {
+                    0 => Voxel::FungiAmanitaCap,
+                    1 => Voxel::FungiPorciniCap,
+                    _ => Voxel::FungiRussulaCap,
+                };
+                return Some((0.68, TreeArchetype::GiantMushroom(cap)));
+            }
+            let arch = match (h >> 8) % 5 {
+                0 => TreeArchetype::Birch,
+                1 => TreeArchetype::Oak,
+                _ => TreeArchetype::Maple(match (h >> 12) % 3 {
+                    0 => Voxel::MapleLeavesOrange,
+                    1 => Voxel::MapleLeavesRed,
+                    _ => Voxel::MapleLeavesYellow,
+                }),
+            };
+            Some((0.68, arch))
+        }
+        BiomeType::MistyWoods => {
             if (h >> 18).is_multiple_of(11) {
                 let cap = match (h >> 12) % 4 {
                     0 => Voxel::FungiAmanitaCap,
@@ -130,13 +160,26 @@ fn select_tree_for_column(
             };
             Some((0.76, arch))
         }
-        BiomeType::BloomingValley => {
+        BiomeType::FertileValley | BiomeType::FlowerMeadow => {
             let arch = match (h >> 8) % 4 {
                 0 | 1 => TreeArchetype::Birch,
                 2 => TreeArchetype::Oak,
                 _ => TreeArchetype::Maple(Voxel::MapleLeavesYellow),
             };
-            Some((0.44, arch))
+            let chance = if col.biome == BiomeType::FlowerMeadow {
+                0.24
+            } else {
+                0.44
+            };
+            Some((chance, arch))
+        }
+        BiomeType::Grasslands | BiomeType::RollingSteppe => {
+            let arch = if ((h >> 8) & 1) == 0 {
+                TreeArchetype::Oak
+            } else {
+                TreeArchetype::Birch
+            };
+            Some((0.12, arch))
         }
         BiomeType::LavenderValley => {
             let arch = if ((h >> 8) & 1) == 0 {
@@ -147,8 +190,16 @@ fn select_tree_for_column(
             Some((0.36, arch))
         }
         BiomeType::SakuraGrove => Some((0.68, TreeArchetype::Cherry)),
-        BiomeType::PineHighlands | BiomeType::SiberianTaiga | BiomeType::WintryForest => {
-            if col.biome != BiomeType::WintryForest && (h >> 18).is_multiple_of(20) {
+        BiomeType::PineHighlands
+        | BiomeType::BleakTaiga
+        | BiomeType::WintryForest
+        | BiomeType::FrostPinewoods
+        | BiomeType::IceboundRidge => {
+            if !matches!(
+                col.biome,
+                BiomeType::WintryForest | BiomeType::FrostPinewoods | BiomeType::IceboundRidge
+            ) && (h >> 18).is_multiple_of(20)
+            {
                 let cap = match (h >> 12) % 3 {
                     0 => Voxel::FungiAmanitaCap,
                     1 => Voxel::FungiPorciniCap,
@@ -161,16 +212,29 @@ fn select_tree_for_column(
                 1 => TreeArchetype::Yew,
                 _ => TreeArchetype::Pine,
             };
-            Some((0.72, arch))
+            let chance = if col.biome == BiomeType::IceboundRidge {
+                0.42
+            } else {
+                0.72
+            };
+            Some((chance, arch))
         }
-        BiomeType::ColdShrubland | BiomeType::AlpineHighlands | BiomeType::EmeraldPeaks => {
-            Some((0.34, TreeArchetype::Pine))
-        }
-        BiomeType::FracturedSavanna | BiomeType::SavannaBadlands => {
-            Some((0.36, TreeArchetype::Acacia))
-        }
+        BiomeType::ColdShrubland
+        | BiomeType::PermafrostSteppe
+        | BiomeType::TundraIsland
+        | BiomeType::AlpinePeaks
+        | BiomeType::JaggedPeaks
+        | BiomeType::EmeraldFoothills
+        | BiomeType::GranitePlateau
+        | BiomeType::WindyPass => Some((0.28, TreeArchetype::Pine)),
+        BiomeType::AcaciaPlains
+        | BiomeType::FracturedSavanna
+        | BiomeType::SavannaBadlands => Some((0.36, TreeArchetype::Acacia)),
         BiomeType::DesertOasis => Some((0.62, TreeArchetype::Palm)),
-        BiomeType::TropicalJungle => {
+        BiomeType::DenseRainforest
+        | BiomeType::BambooGrove
+        | BiomeType::JungleWetlands
+        | BiomeType::VolcanicJungle => {
             if (h >> 18).is_multiple_of(16) {
                 let cap = match (h >> 12) % 3 {
                     0 => Voxel::FungiVerdigrisCap,
@@ -184,9 +248,17 @@ fn select_tree_for_column(
             } else {
                 TreeArchetype::Mahogany
             };
-            Some((0.82, arch))
+            let chance = if col.biome == BiomeType::BambooGrove {
+                0.48
+            } else {
+                0.82
+            };
+            Some((chance, arch))
         }
-        BiomeType::OrchidSwamp => {
+        BiomeType::WillowMarsh
+        | BiomeType::MangroveSwamp
+        | BiomeType::OrchidSwamp
+        | BiomeType::SwampyShore => {
             if (h >> 18).is_multiple_of(10) {
                 let cap = match (h >> 12) % 4 {
                     0 => Voxel::FungiVerdigrisCap,
@@ -196,14 +268,31 @@ fn select_tree_for_column(
                 };
                 return Some((0.62, TreeArchetype::GiantMushroom(cap)));
             }
-            let arch = if ((h >> 8) & 1) == 0 {
-                TreeArchetype::Willow
-            } else {
-                TreeArchetype::Mangrove
+            let arch = match col.biome {
+                BiomeType::WillowMarsh => TreeArchetype::Willow,
+                BiomeType::MangroveSwamp => TreeArchetype::Mangrove,
+                _ => {
+                    if ((h >> 8) & 1) == 0 {
+                        TreeArchetype::Willow
+                    } else {
+                        TreeArchetype::Mangrove
+                    }
+                }
             };
             Some((0.62, arch))
         }
-        BiomeType::AshenSavanna | BiomeType::VolcanicPeaks => Some((0.24, TreeArchetype::Charred)),
+        BiomeType::WitheredWoods
+        | BiomeType::AshenWastes
+        | BiomeType::ObsidianMire
+        | BiomeType::VolcanicPeaks
+        | BiomeType::ScorchedFlats => {
+            let chance = if col.biome == BiomeType::WitheredWoods {
+                0.46
+            } else {
+                0.22
+            };
+            Some((chance, TreeArchetype::Charred))
+        }
         _ => None,
     }
 }
@@ -748,7 +837,10 @@ fn select_bush_for_column(col: TerrainColumn, h: u32) -> Option<(f32, Voxel, Vox
     }
 
     let (chance, log, leaves) = match col.biome {
-        BiomeType::YosemiteLowlands | BiomeType::Shield => {
+        BiomeType::VerdantWoods
+        | BiomeType::TemperateIsland
+        | BiomeType::ShieldForest
+        | BiomeType::Grasslands => {
             let (l, lf) = match (h >> 8) % 4 {
                 0 | 1 => (Voxel::OakLog, Voxel::OakLeaves),
                 2 => (Voxel::BirchLog, Voxel::BirchLeaves),
@@ -756,7 +848,7 @@ fn select_bush_for_column(col: TerrainColumn, h: u32) -> Option<(f32, Voxel, Vox
             };
             (0.22, l, lf)
         }
-        BiomeType::CloudForest => {
+        BiomeType::MistyWoods | BiomeType::AutumnForest => {
             let (l, lf) = match (h >> 8) % 3 {
                 0 => (Voxel::OakLog, Voxel::OakLeaves),
                 1 => (Voxel::BirchLog, Voxel::BirchLeaves),
@@ -764,7 +856,10 @@ fn select_bush_for_column(col: TerrainColumn, h: u32) -> Option<(f32, Voxel, Vox
             };
             (0.24, l, lf)
         }
-        BiomeType::BloomingValley | BiomeType::LavenderValley | BiomeType::SakuraGrove => {
+        BiomeType::FertileValley
+        | BiomeType::FlowerMeadow
+        | BiomeType::LavenderValley
+        | BiomeType::SakuraGrove => {
             let (l, lf) = match (h >> 8) % 3 {
                 0 => (Voxel::BirchLog, Voxel::BirchLeaves),
                 1 => (Voxel::OakLog, Voxel::OakLeaves),
@@ -772,7 +867,11 @@ fn select_bush_for_column(col: TerrainColumn, h: u32) -> Option<(f32, Voxel, Vox
             };
             (0.18, l, lf)
         }
-        BiomeType::TropicalJungle => {
+        BiomeType::DenseRainforest
+        | BiomeType::BambooGrove
+        | BiomeType::JungleWetlands
+        | BiomeType::VolcanicJungle
+        | BiomeType::TropicalIsland => {
             let (l, lf) = if ((h >> 8) & 1) == 0 {
                 (Voxel::MahoganyLog, Voxel::MahoganyLeaves)
             } else {
@@ -780,7 +879,12 @@ fn select_bush_for_column(col: TerrainColumn, h: u32) -> Option<(f32, Voxel, Vox
             };
             (0.26, l, lf)
         }
-        BiomeType::SiberianTaiga | BiomeType::WintryForest | BiomeType::ColdShrubland => {
+        BiomeType::BleakTaiga
+        | BiomeType::WintryForest
+        | BiomeType::FrostPinewoods
+        | BiomeType::ColdShrubland
+        | BiomeType::PermafrostSteppe
+        | BiomeType::TundraIsland => {
             let (l, lf) = if (h >> 8).is_multiple_of(3) {
                 (Voxel::BirchLog, Voxel::BirchLeaves)
             } else {
@@ -788,13 +892,19 @@ fn select_bush_for_column(col: TerrainColumn, h: u32) -> Option<(f32, Voxel, Vox
             };
             (0.20, l, lf)
         }
-        BiomeType::OrchidSwamp => (0.20, Voxel::WillowLog, Voxel::WillowLeaves),
-        BiomeType::FracturedSavanna | BiomeType::SavannaBadlands | BiomeType::DesertOasis => {
-            (0.12, Voxel::AcaciaLog, Voxel::AcaciaLeaves)
-        }
-        BiomeType::AlpineHighlands | BiomeType::EmeraldPeaks | BiomeType::ScarletMountains => {
-            (0.12, Voxel::PineLog, Voxel::PineLeaves)
-        }
+        BiomeType::WillowMarsh
+        | BiomeType::MangroveSwamp
+        | BiomeType::OrchidSwamp
+        | BiomeType::SwampyShore => (0.20, Voxel::WillowLog, Voxel::WillowLeaves),
+        BiomeType::AcaciaPlains
+        | BiomeType::FracturedSavanna
+        | BiomeType::SavannaBadlands
+        | BiomeType::DesertOasis => (0.12, Voxel::AcaciaLog, Voxel::AcaciaLeaves),
+        BiomeType::AlpinePeaks
+        | BiomeType::JaggedPeaks
+        | BiomeType::EmeraldFoothills
+        | BiomeType::GranitePlateau
+        | BiomeType::MistyCrags => (0.12, Voxel::PineLog, Voxel::PineLeaves),
         _ => return None,
     };
 
@@ -807,26 +917,44 @@ fn boulder_chance_for_biome(col: TerrainColumn) -> Option<(f32, f32)> {
         return None;
     }
     match col.biome {
-        BiomeType::YosemiteLowlands
-        | BiomeType::Shield
-        | BiomeType::SiberianTaiga
+        BiomeType::VerdantWoods
+        | BiomeType::AutumnForest
+        | BiomeType::ShieldForest
+        | BiomeType::BleakTaiga
         | BiomeType::WintryForest
-        | BiomeType::CloudForest => Some((0.18, 0.52)),
-        BiomeType::BloomingValley
+        | BiomeType::FrostPinewoods
+        | BiomeType::MistyWoods => Some((0.18, 0.52)),
+        BiomeType::FertileValley
+        | BiomeType::FlowerMeadow
+        | BiomeType::Grasslands
+        | BiomeType::RollingSteppe
         | BiomeType::LavenderValley
         | BiomeType::SakuraGrove
-        | BiomeType::ColdShrubland => Some((0.14, 0.42)),
-        BiomeType::TropicalJungle | BiomeType::OrchidSwamp => Some((0.16, 0.65)),
-        BiomeType::FracturedSavanna
+        | BiomeType::ColdShrubland
+        | BiomeType::PermafrostSteppe
+        | BiomeType::TundraIsland => Some((0.14, 0.42)),
+        BiomeType::DenseRainforest
+        | BiomeType::BambooGrove
+        | BiomeType::JungleWetlands
+        | BiomeType::VolcanicJungle
+        | BiomeType::WillowMarsh
+        | BiomeType::MangroveSwamp
+        | BiomeType::OrchidSwamp => Some((0.16, 0.65)),
+        BiomeType::AcaciaPlains
+        | BiomeType::FracturedSavanna
         | BiomeType::SavannaBadlands
-        | BiomeType::AshenSavanna
-        | BiomeType::RockyMountains
-        | BiomeType::AlpineHighlands
-        | BiomeType::EmeraldPeaks
-        | BiomeType::ScarletMountains
-        | BiomeType::BasaltCliffs
-        | BiomeType::GraniteCliffs
-        | BiomeType::YosemiteCliffs => Some((0.12, 0.25)),
+        | BiomeType::WitheredWoods
+        | BiomeType::AshenWastes
+        | BiomeType::ScorchedFlats
+        | BiomeType::JaggedPeaks
+        | BiomeType::AlpinePeaks
+        | BiomeType::EmeraldFoothills
+        | BiomeType::GranitePlateau
+        | BiomeType::MistyCrags
+        | BiomeType::MonolithCliffs
+        | BiomeType::DeepGorge
+        | BiomeType::WindyPass
+        | BiomeType::RockyIsland => Some((0.14, 0.25)),
         _ => None,
     }
 }
@@ -1201,16 +1329,18 @@ where
                 if !(3..=22).contains(&depth) {
                     continue;
                 }
-                let is_coral_zone =
-                    matches!(col.biome, BiomeType::CoralReef | BiomeType::DeepWarmOcean)
-                        || col.climate.temperature > -0.15;
+                let is_coral_zone = matches!(
+                    col.biome,
+                    BiomeType::CoralReefs | BiomeType::CoralIsland | BiomeType::WarmOcean
+                ) || col.climate.temperature > -0.15;
                 if !is_coral_zone {
                     continue;
                 }
 
-                let chance = if col.biome == BiomeType::CoralReef {
+                let chance = if matches!(col.biome, BiomeType::CoralReefs | BiomeType::CoralIsland)
+                {
                     0.46
-                } else if col.biome == BiomeType::DeepWarmOcean {
+                } else if col.biome == BiomeType::WarmOcean {
                     0.26
                 } else {
                     0.16
@@ -1355,7 +1485,16 @@ where
                 }
 
                 let is_dry_beach = (col.is_beach
-                    || matches!(col.biome, BiomeType::GravelBeach | BiomeType::MirageIsles))
+                    || matches!(
+                        col.biome,
+                        BiomeType::SandyShores
+                            | BiomeType::GravelBeach
+                            | BiomeType::DuneBeach
+                            | BiomeType::CraggyBeach
+                            | BiomeType::TidePools
+                            | BiomeType::TropicalIsland
+                            | BiomeType::CoralIsland
+                    ))
                     && col.water_level.is_none_or(|wl| ry >= wl)
                     && col.surface_shape == BlockShape::Full;
                 let is_coastal_water = col.water_level.is_some_and(|wl| ry < wl && (wl - ry) <= 8);
@@ -1757,7 +1896,10 @@ where
 /// Selects fallen log chance and biome-appropriate log species for forested biomes.
 fn select_fallen_log_for_biome(biome: BiomeType, h: u32) -> Option<(f32, Voxel)> {
     let (chance, log) = match biome {
-        BiomeType::YosemiteLowlands | BiomeType::Shield => {
+        BiomeType::VerdantWoods
+        | BiomeType::AutumnForest
+        | BiomeType::TemperateIsland
+        | BiomeType::ShieldForest => {
             let l = match (h >> 14) % 4 {
                 0 => Voxel::OakLog,
                 1 => Voxel::BirchLog,
@@ -1766,7 +1908,7 @@ fn select_fallen_log_for_biome(biome: BiomeType, h: u32) -> Option<(f32, Voxel)>
             };
             (0.30, l)
         }
-        BiomeType::CloudForest | BiomeType::PineHighlands => {
+        BiomeType::MistyWoods | BiomeType::PineHighlands => {
             let l = if ((h >> 14) & 1) == 0 {
                 Voxel::PineLog
             } else {
@@ -1774,8 +1916,10 @@ fn select_fallen_log_for_biome(biome: BiomeType, h: u32) -> Option<(f32, Voxel)>
             };
             (0.34, l)
         }
-        BiomeType::SiberianTaiga | BiomeType::WintryForest => (0.28, Voxel::PineLog),
-        BiomeType::BloomingValley | BiomeType::LavenderValley => {
+        BiomeType::BleakTaiga | BiomeType::WintryForest | BiomeType::FrostPinewoods => {
+            (0.28, Voxel::PineLog)
+        }
+        BiomeType::FertileValley | BiomeType::FlowerMeadow | BiomeType::LavenderValley => {
             let l = if ((h >> 14) & 1) == 0 {
                 Voxel::OakLog
             } else {
@@ -1784,8 +1928,14 @@ fn select_fallen_log_for_biome(biome: BiomeType, h: u32) -> Option<(f32, Voxel)>
             (0.22, l)
         }
         BiomeType::SakuraGrove => (0.24, Voxel::CherryLog),
-        BiomeType::TropicalJungle => (0.32, Voxel::MahoganyLog),
-        BiomeType::OrchidSwamp => (0.34, Voxel::WillowLog),
+        BiomeType::DenseRainforest
+        | BiomeType::BambooGrove
+        | BiomeType::JungleWetlands
+        | BiomeType::VolcanicJungle => (0.32, Voxel::MahoganyLog),
+        BiomeType::WillowMarsh
+        | BiomeType::MangroveSwamp
+        | BiomeType::OrchidSwamp
+        | BiomeType::SwampyShore => (0.34, Voxel::WillowLog),
         _ => return None,
     };
     Some((chance, log))

@@ -89,12 +89,13 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 | **03** | **[Atmospheric & Gameplay Particle Engine](#phase-3-atmospheric--gameplay-particle-engine-completed)** | **Completed** | Falling canopy leaves (21 sprites, selective tint), underwater geothermal/magma bubbles + pop, footstep/landing dust, blinking night fireflies, daytime pollen, player/item water splashes, campfire smoke |
 | **04** | **[Pure-Code UI & Menu System Redesign](#phase-4-pure-code-ui--menu-system-redesign-in-progress)** | **In Progress** | Pure Bevy UI Dark Iron theme (`src/menu/theme.rs`), removal of `assets/textures/interfaces/containers/`, 6-tab top bar with icons & live status HUD, 3-column cascading System/Settings/Controls drawers, fullscreen World Map with right sidebar, fully localized Journal Compendium (44 biomes with pixel-art icons), Skills/Quests screens, and expanded Settings |
 | **05** | **[Races, Subraces, Attributes & Skills Redesign](#phase-5-races-subraces-attributes--skills-redesign-completed)** | **Completed** | 3 classic core races × 3 subraces each (9 playable subraces) with face-portrait icons, 16-field `RaceAttributes` (live jump height, move/swim speed, footstep stealth, mining reach), 3-column Race Selection UI, and 60 localized skills (4 general trees + dynamic racial/subracial tree) with 60 bespoke pixel-art icons |
-| **06** | **[Main Menu Redesign](#phase-6-main-menu-redesign-in-progress)** | **In Progress** | 2-side Main Menu with character-gated `Play` flow (`CharacterReady`), right-side character showcase panel, and future world selection/creation & 3D character preview |
+| **06** | **[Main Menu Redesign](#phase-6-main-menu-redesign-in-progress)** | **In Progress** | 2-side Main Menu with character-gated `New Game` flow (`CharacterReady`), `Adventure Mode` vs `Sandbox World` selection screen, right-side character showcase panel, and future 3D character preview |
 | **07** | **[Dedicated Character Creator](#phase-7-dedicated-character-creator-planned)** | **Planned** | Interactive character customization (skin tone, hair style/color, beard/features, outfit palette, character naming, and live 3D voxel model preview) |
 | **08** | **[Survival Mode Core Systems](#phase-8-survival-mode-core-systems-in-progress)** | **In Progress** | Default Survival mode (`S → C → E`), floating GUI-scaled Vitals HUD, live stamina/drowning/fall damage/respawn, 11 flint tools & crafting materials, 64-item stacking & consumption, block durability with 9-stage crack overlay + shake, Fire Starter/Hoe/Shears actions (hunger/thirst/temperature sim, food buffs & tool durability next) |
 | **09** | **[Mobs, Wildlife & Entity AI](#phase-9-mobs-wildlife--entity-ai-planned)** | **Planned** | First creatures and wildlife (passive fauna, hostile mobs, pathfinding, stealth/footstep awareness, combat, taming, and live Bestiary unlocking) |
 | **10** | **[Quests, Objectives & Progression Engine](#phase-10-quests-objectives--progression-engine-planned)** | **Planned** | Functional quest state machine, objective tracking, exploration/gathering/combat triggers, XP/leveling, skill point spending, and rewards |
 | **11** | **[Subterranean Caves & Ore Generation Rework](#phase-11-subterranean-caves--ore-generation-rework-planned)** | **Planned** | Complete overhaul of underground cavern networks, subterranean microbiomes, ore vein distribution, crystal geodes, and mining progression |
+| **12** | **[Adventure Mode & Dual World-Type Architecture](#phase-12-adventure-mode--dual-world-type-architecture-planned)** | **Planned** | Handcrafted bounded Adventure Mode world format (pre-selected custom maps, borders, points of interest) alongside infinite procedural Sandbox worlds, with unified dual-mode world loading and save management |
 
 ---
 
@@ -200,10 +201,12 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 
 ### Phase 6: Main Menu Redesign (In Progress)
 
-- [x] **2-Side Main Menu & Character-Gated Play Flow**:
-  - Redesigned `src/menu/main_menu.rs` Action Phase into a 2-side layout: Left side displays title, primary `Play` button (locked via `CharacterReady(false)` with localized hint until a character is selected, then launches directly into `MenuState::Loading`), `Settings`, `Controls`, and `Quit`; Right side displays the Dark Iron Character Panel with subrace portrait, player name, subrace title, stat summary pills, and `Create Character >` / `Change Character >` routing to `MenuState::RaceSelection`.
+- [x] **2-Side Main Menu & Character-Gated New Game Flow**:
+  - Redesigned `src/menu/main_menu.rs` Action Phase into a 2-side layout: Left side displays title, primary `New Game` button (locked via `CharacterReady(false)` with localized hint until a character is selected), `Settings`, `Controls`, and `Quit`; Right side displays the Dark Iron Character Panel with subrace portrait, player name, subrace title, stat summary pills, and `Create Character >` / `Change Character >` routing to `MenuState::RaceSelection`.
+- [x] **World Mode Selection Screen (`Adventure Mode` vs `Sandbox World`)**:
+  - Added `MainMenuPhase::NewGameModeSelect` and `SelectedWorldMode` in `src/menu/main_menu.rs` with two side-by-side Dark Iron cards presenting **Adventure Mode** (bounded, handcrafted pre-selected map) and **Sandbox World** (infinite procedurally generated world), complete with EN/PT-BR localization and `ESC` / Back navigation.
 - [ ] **Future Main Menu Expansions**:
-  - Live 3D voxel character preview render on the Main Menu, multi-character roster slots, and multi-world selection/creation flow.
+  - Live 3D voxel character preview render on the Main Menu, multi-character roster slots, and saved world / Continue list.
 
 ---
 
@@ -247,3 +250,27 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 
 - [ ] **Complete Cave & Mineral Overhaul**:
   - Rework 3D subterranean cavern carvers, cave microbiomes, re-enable and rebalance procedural ore veins and crystal geodes (`src/generation/ores.rs`), and tie depth-based mineral progression into Survival tool tiers.
+
+---
+
+### Phase 12: Adventure Mode & Dual World-Type Architecture (Planned)
+
+- [ ] **Handcrafted Adventure Mode World Format & Loader**:
+  - Design and implement a bounded, pre-selected handcrafted map format (region/chunk template snapshots, fixed world boundaries/ocean border, curated landmarks, and custom spawn/POI metadata) authored in-engine or imported as world templates.
+- [ ] **Dual World-Mode Routing (`Adventure` vs `Sandbox`)**:
+  - Wire `SelectedWorldMode` (`src/menu/main_menu.rs`) into `WorldSession` and the chunk streaming/generation pipeline (`src/world/`, `src/generation/`) so **Adventure Mode** loads from the curated pre-selected map while **Sandbox World** continues using infinite seed-based procedural generation.
+- [ ] **World Creation & Save-Slot Separation**:
+  - Persist world mode metadata per save slot (Adventure vs Sandbox, custom seed input for Sandbox, map template selection for Adventure) so both modes coexist cleanly without conflicts.
+- [ ] **World Map Overlay Filters & Regional Gameplay Systems**:
+  - Load `world_continents.png`, `world_regions.png`, and `world_landmass.png` as lightweight metadata layers powering interactive World Map filters (Continents, 12 Official Regions, Coastal/Sea-Lane Navigation), HUD Region/Continent Discovery Banners, region-specific music/ambience, region weather rules (e.g., no snow in arid zones, storms in open ocean), and continental progression.
+- [ ] **Elevated Highland Lakes & Stepped Mountain Rivers**:
+  - Add per-column local `water_level(x, z)` support in terrain generation so highland lakes sit naturally at their surrounding terrain elevation and mountain rivers descend via terraces/waterfalls instead of carving canyons down to global `SEA_LEVEL`.
+
+---
+
+### Phase 13: Lore, Worldbuilding & Regional Identity (Planned)
+
+- [ ] **Official World Naming & Geography Lore**:
+  - Replace generic placeholder names (Western/Central/Eastern Continents, Southern/Volcano Archipelagos, 12 Official Regions) with official lore names, history, and flavor descriptions across `assets/lang/en_us.json`, `assets/lang/pt_br.json`, World Map tooltips, Discovery Banners, and the Journal.
+- [ ] **Landmarks, Ruins & Cultural Identity**:
+  - Define named points of interest (POIs), ancient ruins, trade routes, faction territories, and regional storytelling hooks tied directly to the Adventure Mode continents and regions.

@@ -384,6 +384,17 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
                         variant.frames.push(blended);
                     }
                 }
+            } else if ov_name.ends_with("_side_overlay") {
+                let ov_variants = load_all_variants_for(ov_name, ov_name, [0, 0, 0, 0]);
+                for (v_idx, variant) in variants.iter_mut().enumerate() {
+                    if let Some(ov_var) = ov_variants.get(v_idx % ov_variants.len())
+                        && let Some(ov_frame) = ov_var.frames.first()
+                    {
+                        for frame in &mut variant.frames {
+                            blend_single_overlay_frame(frame, ov_frame);
+                        }
+                    }
+                }
             } else if let Some(overlay_frame) = overlay.frames.first() {
                 composite_overlay(&mut variants, overlay_frame);
             }
@@ -460,7 +471,7 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
         let top_info = if let Some(top_name) = voxel.top_texture_name() {
             let top_overlay = voxel
                 .overlay_texture_name()
-                .filter(|&o| !matches!(o, "soil_grass_side_overlay" | "rock_grass_side_overlay"));
+                .filter(|&o| !o.ends_with("_side_overlay"));
 
             get_or_load_face(
                 top_name,
@@ -476,7 +487,7 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
         {
             let top_overlay = voxel
                 .overlay_texture_name()
-                .filter(|&o| !matches!(o, "soil_grass_side_overlay" | "rock_grass_side_overlay"));
+                .filter(|&o| !o.ends_with("_side_overlay"));
 
             get_or_load_face(
                 base_name,
@@ -499,9 +510,9 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
             } else if Some(bot_name) == voxel.side_texture_name() {
                 side_info
             } else {
-                let bot_overlay = voxel.overlay_texture_name().filter(|&o| {
-                    !matches!(o, "soil_grass_side_overlay" | "rock_grass_side_overlay")
-                });
+                let bot_overlay = voxel
+                    .overlay_texture_name()
+                    .filter(|&o| !o.ends_with("_side_overlay"));
 
                 get_or_load_face(
                     bot_name,
@@ -517,9 +528,9 @@ pub fn build_voxel_texture_array() -> (Image, VoxelTextureRegistry) {
             if voxel.side_texture_name() == Some(base_name) && voxel.top_texture_name().is_none() {
                 side_info
             } else {
-                let bot_overlay = voxel.overlay_texture_name().filter(|&o| {
-                    !matches!(o, "soil_grass_side_overlay" | "rock_grass_side_overlay")
-                });
+                let bot_overlay = voxel
+                    .overlay_texture_name()
+                    .filter(|&o| !o.ends_with("_side_overlay"));
 
                 get_or_load_face(
                     base_name,

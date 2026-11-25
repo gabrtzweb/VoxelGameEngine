@@ -270,33 +270,63 @@ fn update_ambient_audio(
         state.surface_timer = 12.0 + state.next_float() * 16.0;
 
         let sound_pool = match biome {
-            BiomeType::GravelBeach
-            | BiomeType::MirageIsles
-            | BiomeType::DeepWarmOcean
+            BiomeType::SandyShores
+            | BiomeType::GravelBeach
+            | BiomeType::DuneBeach
+            | BiomeType::CraggyBeach
+            | BiomeType::TidePools
+            | BiomeType::CoastalCliffs
+            | BiomeType::TropicalIsland
+            | BiomeType::TemperateIsland
+            | BiomeType::CoralIsland
+            | BiomeType::RockyIsland
+            | BiomeType::WarmOcean
             | BiomeType::ColdOcean
-            | BiomeType::CoralReef
+            | BiomeType::CoralReefs
+            | BiomeType::SeagrassMeadows
+            | BiomeType::KelpForests
             | BiomeType::OceanTrench
             | BiomeType::Caldera => &assets.waves,
 
             BiomeType::DesertSpires
             | BiomeType::AncientSands
             | BiomeType::DesertOasis
+            | BiomeType::AcaciaPlains
             | BiomeType::FracturedSavanna
             | BiomeType::SavannaBadlands
-            | BiomeType::AshenSavanna
+            | BiomeType::WitheredWoods
+            | BiomeType::AshenWastes
+            | BiomeType::ObsidianMire
+            | BiomeType::AcidPools
+            | BiomeType::SulfurVents
+            | BiomeType::ScorchedFlats
             | BiomeType::DuneSea
-            | BiomeType::BryceCanyon => &assets.desert_wind,
+            | BiomeType::RedrockCanyon
+            | BiomeType::PaintedMesas => &assets.desert_wind,
 
-            BiomeType::AlpineHighlands
-            | BiomeType::RockyMountains
+            BiomeType::AlpinePeaks
+            | BiomeType::JaggedPeaks
+            | BiomeType::MonolithCliffs
+            | BiomeType::WindyPass
             | BiomeType::GlacialChasm
-            | BiomeType::SiberianTaiga
+            | BiomeType::IceSheet
+            | BiomeType::BleakTaiga
             | BiomeType::FrozenCliffs
+            | BiomeType::FrozenIsland
+            | BiomeType::TundraIsland
             | BiomeType::WintryForest
+            | BiomeType::FrostPinewoods
+            | BiomeType::IceboundRidge
             | BiomeType::PineHighlands
-            | BiomeType::ColdShrubland => &assets.cold_wind,
+            | BiomeType::SnowyPlains
+            | BiomeType::ColdShrubland
+            | BiomeType::PermafrostSteppe => &assets.cold_wind,
 
-            BiomeType::OrchidSwamp => &assets.swamp_wind,
+            BiomeType::WillowMarsh
+            | BiomeType::MangroveSwamp
+            | BiomeType::OrchidSwamp
+            | BiomeType::SwampyShore
+            | BiomeType::Mudflats => &assets.swamp_wind,
 
             _ => {
                 let roll = state.next_float();

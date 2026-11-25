@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use super::{GameMode, InspectorInteraction, PlayerCamera};
+use super::{FastFlightState, GameMode, InspectorInteraction, PlayerCamera};
 
 pub(super) fn spectator_movement(
     keyboard: Res<ButtonInput<KeyCode>>,
@@ -8,6 +8,7 @@ pub(super) fn spectator_movement(
     control_settings: Option<Res<crate::core::ControlSettings>>,
     time: Res<Time>,
     game_mode: Res<GameMode>,
+    fast_flight: Option<Res<FastFlightState>>,
     inspector: Option<Res<InspectorInteraction>>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
     camera: Single<(&mut Transform, &PlayerCamera), With<Camera3d>>,
@@ -87,11 +88,16 @@ pub(super) fn spectator_movement(
         |c| c.is_action_pressed(crate::core::InputAction::Sprint, &keyboard, &mouse),
     );
 
+    let boost_mult = if fast_flight.as_ref().is_some_and(|f| f.0) {
+        5.0
+    } else {
+        1.0
+    };
     let speed = if is_fast {
         camera.spectator_fast_speed
     } else {
         camera.spectator_speed
-    };
+    } * boost_mult;
 
     transform.translation += direction.normalize() * speed * time.delta_secs();
 }

@@ -472,8 +472,8 @@ fn handle_menu_bar_buttons(
 ) {
     let left_clicked = mouse.just_pressed(MouseButton::Left);
 
-    for (hovered, is_pressed, action) in &buttons_query {
-        if hovered.get() && (left_clicked || is_pressed) {
+    for (hovered, _is_pressed, action) in &buttons_query {
+        if hovered.get() && left_clicked {
             match action {
                 MenuBarAction::PrevTab => {
                     if left_clicked {

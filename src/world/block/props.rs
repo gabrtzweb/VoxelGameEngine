@@ -621,10 +621,11 @@ impl Voxel {
         const FLORA_START: u16 = Voxel::VegeWildgrass as u16;
         const FLORA_END: u16 = Voxel::FlowerWildflowers as u16;
         let id = self as u16;
-        (id >= FLORA_START && id <= FLORA_END)
+        ((id >= FLORA_START && id <= FLORA_END)
             && id != (Self::VegeCactus as u16)
             && !self.is_flat_pad_const()
-            && !self.is_wall_decal_const()
+            && !self.is_wall_decal_const())
+            || matches!(self, Self::VegeArcticMoss | Self::VegeArcticGrass)
     }
 
     #[inline(always)]
@@ -913,6 +914,7 @@ impl Voxel {
         matches!(
             self,
             Self::SandCommon
+                | Self::SeagrassSand
                 | Self::SandDune
                 | Self::SandRed
                 | Self::SandWhite
@@ -938,18 +940,21 @@ impl Voxel {
                     | Self::LoamMulch
                     | Self::LoamRooted
                     | Self::LoamTilled
+                    | Self::LoamTundraMoss
                     | Self::PeatDirt
                     | Self::PeatCoarse
                     | Self::PeatMud
                     | Self::PeatMulch
                     | Self::PeatRooted
                     | Self::PeatTilled
+                    | Self::PeatTundraMoss
                     | Self::SiltDirt
                     | Self::SiltCoarse
                     | Self::SiltMud
                     | Self::SiltMulch
                     | Self::SiltRooted
                     | Self::SiltTilled
+                    | Self::SiltTundraMoss
                     | Self::LateriteDirt
                     | Self::LateriteCoarse
                     | Self::CalicheDirt
@@ -1013,6 +1018,8 @@ impl Voxel {
                 | Self::VegeWildgrass
                 | Self::VegeTallWildgrassBottom
                 | Self::VegeCattailBottom
+                | Self::VegeArcticMoss
+                | Self::VegeArcticGrass
                 | Self::FlowerGlobeMallow
                 | Self::FlowerDandelion
                 | Self::FlowerPoppy

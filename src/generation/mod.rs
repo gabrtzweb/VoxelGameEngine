@@ -1,3 +1,4 @@
+pub mod adventure_map;
 pub mod biome;
 pub mod caves;
 pub mod flora;
@@ -7,7 +8,11 @@ pub mod ores;
 pub mod strata;
 pub mod trees;
 
-pub use biome::{BiomeType, ClimateGenerator, sample_blended_biome_color};
+pub use adventure_map::{
+    AdventureOverlayMode, AdventureRegionInfo, AdventureSpawnChoice, AdventureWorldMap,
+    AdventureWorldScale, ContinentId, WorldRegionId,
+};
+pub use biome::{BiomeType, ClimateGenerator, MacroBiome, sample_blended_biome_color};
 pub use caves::CaveGenerator;
 pub use flora::populate_chunk_flora;
 pub use generator::TerrainGenerator;

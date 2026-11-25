@@ -134,6 +134,8 @@ pub struct GameSettings {
     pub gui_scale: u32,
     pub menu_blur_intensity: MenuBlurIntensity,
     pub background_dimming: BackgroundDimming,
+    pub show_undiscovered_compendium: bool,
+    pub preload_full_world_map: bool,
 }
 
 impl Default for GameSettings {
@@ -165,6 +167,8 @@ impl Default for GameSettings {
             gui_scale: 3,
             menu_blur_intensity: MenuBlurIntensity::High,
             background_dimming: BackgroundDimming::Dark,
+            show_undiscovered_compendium: false,
+            preload_full_world_map: false,
         }
     }
 }

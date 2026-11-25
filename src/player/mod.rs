@@ -57,6 +57,7 @@ impl Plugin for PlayerPlugin {
             .init_resource::<InspectorInteraction>()
             .init_resource::<PlayerEnvironmentStatus>()
             .init_resource::<PlayerInventory>()
+            .init_resource::<FastFlightState>()
             .add_plugins(hotbar::HotbarPlugin)
             .add_plugins(model::PlayerModelPlugin)
             .add_plugins(survival_hud::SurvivalHudPlugin)
@@ -76,10 +77,12 @@ impl Plugin for PlayerPlugin {
                     state::update_player_environment_status,
                     controller::toggle_inspector_interaction,
                     game_mode::toggle_game_mode,
+                    toggle_fast_flight,
                     controller::toggle_camera_view,
                     controller::camera_look,
                     controller::creative_movement,
                     spectator::spectator_movement,
+                    enforce_adventure_world_bounds,
                     water::update_underwater_effect,
                     update_crosshair_visibility,
                     sync_camera_transmission,
@@ -93,10 +96,132 @@ impl Plugin for PlayerPlugin {
     }
 }
 
-pub use survival_hud::PlayerVitals;
+pub use survival_hud::{GameModeToastState, PlayerVitals};
 
 #[derive(Resource, Debug, Clone, Copy)]
 pub struct WorldSpawnPoint(pub Vec3);
+
+#[derive(Resource, Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct FastFlightState(pub bool);
+
+/// Toggles 5x Fast Flight with the `F` key in Creative and Spectator modes only.
+fn toggle_fast_flight(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    game_mode: Res<GameMode>,
+    menu_state: Option<Res<State<crate::menu::MenuState>>>,
+    inspector: Option<Res<InspectorInteraction>>,
+    loc: Option<Res<crate::core::Localization>>,
+    mut fast_flight: ResMut<FastFlightState>,
+    mut toast: Option<ResMut<GameModeToastState>>,
+) {
+    if *game_mode == GameMode::Survival {
+        if fast_flight.0 {
+            fast_flight.0 = false;
+        }
+        return;
+    }
+
+    if menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None)
+        || inspector.is_some_and(|i| i.active)
+    {
+        return;
+    }
+
+    if keyboard.just_pressed(KeyCode::KeyF) {
+        fast_flight.0 = !fast_flight.0;
+        if let Some(ref mut toast_state) = toast {
+            let msg = if fast_flight.0 {
+                loc.as_ref()
+                    .map_or("Fast Flight: Enabled (5x)", |l| l.t("hud.fast_flight.on"))
+            } else {
+                loc.as_ref()
+                    .map_or("Fast Flight: Disabled", |l| l.t("hud.fast_flight.off"))
+            };
+            toast_state.show_message(msg);
+        }
+    }
+}
+
+/// Enforces invisible boundary walls along the edges of the bounded Adventure Mode world,
+/// preventing players (and Spectator cameras) from wandering infinitely into the outer ocean.
+fn enforce_adventure_world_bounds(
+    time: Res<Time>,
+    terrain_generator: Option<Res<crate::generation::TerrainGenerator>>,
+    loc: Option<Res<crate::core::Localization>>,
+    mut toast: Option<ResMut<GameModeToastState>>,
+    mut warn_cooldown: Local<f32>,
+    mut player_q: Query<(&mut Transform, &mut PlayerMotion), With<Player>>,
+    mut camera_q: Query<&mut Transform, (With<PlayerCamera>, Without<Player>)>,
+) {
+    let Some(ref terrain_gen) = terrain_generator else {
+        return;
+    };
+    let Some(ref map) = terrain_gen.adventure_map else {
+        return;
+    };
+
+    if *warn_cooldown > 0.0 {
+        *warn_cooldown = (*warn_cooldown - time.delta_secs()).max(0.0);
+    }
+
+    let (half_w, half_h) = map.half_extents();
+    let voxel_size = crate::world::VOXEL_SIZE;
+    let margin = 4.0 * voxel_size;
+    let max_x = (half_w * voxel_size - margin).max(16.0);
+    let max_z = (half_h * voxel_size - margin).max(16.0);
+
+    let mut hit_border = false;
+
+    for (mut tf, mut motion) in &mut player_q {
+        if tf.translation.x < -max_x {
+            tf.translation.x = -max_x;
+            motion.velocity.x = motion.velocity.x.max(0.0);
+            hit_border = true;
+        } else if tf.translation.x > max_x {
+            tf.translation.x = max_x;
+            motion.velocity.x = motion.velocity.x.min(0.0);
+            hit_border = true;
+        }
+
+        if tf.translation.z < -max_z {
+            tf.translation.z = -max_z;
+            motion.velocity.z = motion.velocity.z.max(0.0);
+            hit_border = true;
+        } else if tf.translation.z > max_z {
+            tf.translation.z = max_z;
+            motion.velocity.z = motion.velocity.z.min(0.0);
+            hit_border = true;
+        }
+    }
+
+    for mut cam_tf in &mut camera_q {
+        if cam_tf.translation.x < -max_x {
+            cam_tf.translation.x = -max_x;
+            hit_border = true;
+        } else if cam_tf.translation.x > max_x {
+            cam_tf.translation.x = max_x;
+            hit_border = true;
+        }
+        if cam_tf.translation.z < -max_z {
+            cam_tf.translation.z = -max_z;
+            hit_border = true;
+        } else if cam_tf.translation.z > max_z {
+            cam_tf.translation.z = max_z;
+            hit_border = true;
+        }
+    }
+
+    if hit_border && *warn_cooldown <= 0.0 {
+        *warn_cooldown = 2.6;
+        if let Some(ref mut toast_state) = toast {
+            let msg = loc.as_ref().map_or(
+                "You have reached the edge of the known world",
+                |l| l.t("hud.world_border.reached"),
+            );
+            toast_state.show_message(msg);
+        }
+    }
+}
 
 fn spawn_player_and_camera(
     mut commands: Commands,

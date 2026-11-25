@@ -717,6 +717,14 @@ pub struct LocalConfig {
     /// Dynamic handheld lighting from torches, lanterns, and light sources.
     #[serde(default = "default_dynamic_lighting")]
     pub dynamic_lighting: bool,
+
+    /// Show undiscovered entries dimmed in the Journal Compendium (testing / reference toggle).
+    #[serde(default)]
+    pub show_undiscovered_compendium: bool,
+
+    /// Preload the full Adventure World Map immediately on world entry without needing to explore.
+    #[serde(default)]
+    pub preload_full_world_map: bool,
 }
 
 fn default_coated_textures() -> CoatedTextureMode {
@@ -1029,6 +1037,8 @@ impl Default for LocalConfig {
             pixelated_shadows: default_pixelated_shadows(),
             hdr_bloom: default_hdr_bloom(),
             dynamic_lighting: default_dynamic_lighting(),
+            show_undiscovered_compendium: false,
+            preload_full_world_map: false,
         }
     }
 }

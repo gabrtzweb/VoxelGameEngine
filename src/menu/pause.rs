@@ -45,6 +45,18 @@ struct PauseButtonLabel;
 #[derive(Component)]
 struct PauseButtonAccent;
 
+#[derive(Component)]
+struct ToggleUndiscoveredCompendiumButton;
+
+#[derive(Component)]
+struct ToggleUndiscoveredCompendiumBadge;
+
+#[derive(Component)]
+struct TogglePreloadWorldMapButton;
+
+#[derive(Component)]
+struct TogglePreloadWorldMapBadge;
+
 pub struct PauseMenuPlugin;
 
 impl Plugin for PauseMenuPlugin {
@@ -56,6 +68,7 @@ impl Plugin for PauseMenuPlugin {
                 handle_pause_menu_buttons,
                 update_pause_button_hover,
                 sync_world_session_panel,
+                handle_session_compendium_toggle,
             ),
         );
     }
@@ -262,6 +275,115 @@ fn spawn_pause_sidebar(
                     BorderColor::all(palette::DRAWER_DIVIDER),
                 ))
                 .with_children(|panel| {
+                    let show_undiscovered = game_settings
+                        .is_some_and(|s| s.show_undiscovered_compendium);
+                    let compendium_toggle_lbl = loc.map_or("Show Undiscovered Compendium", |l| {
+                        l.t("menu.session.show_undiscovered_compendium")
+                    });
+                    let badge_str = if show_undiscovered {
+                        loc.map_or("ON", |l| l.t("map.state.on"))
+                    } else {
+                        loc.map_or("OFF", |l| l.t("map.state.off"))
+                    };
+
+                    // Functional top button: Show Undiscovered Compendium
+                    panel
+                        .spawn((
+                            Button,
+                            Hovered::default(),
+                            ToggleUndiscoveredCompendiumButton,
+                            Node {
+                                width: percent(100.0),
+                                height: px(46.0),
+                                padding: UiRect::new(px(24.0), px(20.0), px(0.0), px(0.0)),
+                                display: Display::Flex,
+                                flex_direction: FlexDirection::Row,
+                                align_items: AlignItems::Center,
+                                justify_content: JustifyContent::SpaceBetween,
+                                column_gap: px(12.0),
+                                ..default()
+                            },
+                            BackgroundColor(Color::NONE),
+                        ))
+                        .with_children(|row| {
+                            row.spawn((
+                                Text::new(compendium_toggle_lbl),
+                                make_font(14.0),
+                                TextColor(palette::TEXT_PRIMARY),
+                                text_shadow_default(),
+                            ));
+                            row.spawn((
+                                ToggleUndiscoveredCompendiumBadge,
+                                Text::new(badge_str),
+                                make_font(12.0),
+                                TextColor(if show_undiscovered {
+                                    palette::TEXT_ACCENT
+                                } else {
+                                    palette::TEXT_MUTED
+                                }),
+                                text_shadow_default(),
+                            ));
+                        });
+
+                    // Functional top button 2: Preload Full World Map
+                    let preload_map = game_settings.is_some_and(|s| s.preload_full_world_map);
+                    let preload_toggle_lbl = loc.map_or("Preload Full World Map", |l| {
+                        l.t("menu.session.preload_full_world_map")
+                    });
+                    let preload_badge_str = if preload_map {
+                        loc.map_or("ON", |l| l.t("map.state.on"))
+                    } else {
+                        loc.map_or("OFF", |l| l.t("map.state.off"))
+                    };
+
+                    panel
+                        .spawn((
+                            Button,
+                            Hovered::default(),
+                            TogglePreloadWorldMapButton,
+                            Node {
+                                width: percent(100.0),
+                                height: px(46.0),
+                                padding: UiRect::new(px(24.0), px(20.0), px(0.0), px(0.0)),
+                                display: Display::Flex,
+                                flex_direction: FlexDirection::Row,
+                                align_items: AlignItems::Center,
+                                justify_content: JustifyContent::SpaceBetween,
+                                column_gap: px(12.0),
+                                ..default()
+                            },
+                            BackgroundColor(Color::NONE),
+                        ))
+                        .with_children(|row| {
+                            row.spawn((
+                                Text::new(preload_toggle_lbl),
+                                make_font(14.0),
+                                TextColor(palette::TEXT_PRIMARY),
+                                text_shadow_default(),
+                            ));
+                            row.spawn((
+                                TogglePreloadWorldMapBadge,
+                                Text::new(preload_badge_str),
+                                make_font(12.0),
+                                TextColor(if preload_map {
+                                    palette::TEXT_ACCENT
+                                } else {
+                                    palette::TEXT_MUTED
+                                }),
+                                text_shadow_default(),
+                            ));
+                        });
+
+                    // Subtle divider below active session toggles
+                    panel.spawn((
+                        Node {
+                            height: px(1.0),
+                            margin: UiRect::new(px(20.0), px(20.0), px(6.0), px(6.0)),
+                            ..default()
+                        },
+                        BackgroundColor(palette::DRAWER_DIVIDER),
+                    ));
+
                     let session_items = [
                         (
                             loc.map_or("Open to LAN", |l| l.t("menu.session.open_lan")),
@@ -396,6 +518,107 @@ fn sync_world_session_panel(
     }
 }
 
+fn handle_session_compendium_toggle(
+    mouse: Res<ButtonInput<MouseButton>>,
+    loc: Option<Res<Localization>>,
+    mut game_settings: Option<ResMut<crate::menu::GameSettings>>,
+    mut local_config: Option<ResMut<crate::core::LocalConfig>>,
+    mut compendium_btn_q: Query<
+        (&Hovered, Has<Pressed>, &mut BackgroundColor),
+        (
+            With<Button>,
+            With<ToggleUndiscoveredCompendiumButton>,
+            Without<TogglePreloadWorldMapButton>,
+        ),
+    >,
+    mut preload_btn_q: Query<
+        (&Hovered, Has<Pressed>, &mut BackgroundColor),
+        (
+            With<Button>,
+            With<TogglePreloadWorldMapButton>,
+            Without<ToggleUndiscoveredCompendiumButton>,
+        ),
+    >,
+    mut compendium_badge_q: Query<
+        (&mut Text, &mut TextColor),
+        (
+            With<ToggleUndiscoveredCompendiumBadge>,
+            Without<TogglePreloadWorldMapBadge>,
+        ),
+    >,
+    mut preload_badge_q: Query<
+        (&mut Text, &mut TextColor),
+        (
+            With<TogglePreloadWorldMapBadge>,
+            Without<ToggleUndiscoveredCompendiumBadge>,
+        ),
+    >,
+) {
+    let Some(ref mut settings) = game_settings else {
+        return;
+    };
+
+    let clicked = mouse.just_pressed(MouseButton::Left);
+    let mut toggled = false;
+
+    for (hovered, is_pressed, mut bg) in &mut compendium_btn_q {
+        let is_hovered = hovered.get() || is_pressed;
+        bg.0 = if is_hovered {
+            palette::NAV_ITEM_HOVER_BG
+        } else {
+            Color::NONE
+        };
+        if clicked && hovered.get() {
+            settings.show_undiscovered_compendium = !settings.show_undiscovered_compendium;
+            toggled = true;
+        }
+    }
+
+    for (hovered, is_pressed, mut bg) in &mut preload_btn_q {
+        let is_hovered = hovered.get() || is_pressed;
+        bg.0 = if is_hovered {
+            palette::NAV_ITEM_HOVER_BG
+        } else {
+            Color::NONE
+        };
+        if clicked && hovered.get() {
+            settings.preload_full_world_map = !settings.preload_full_world_map;
+            toggled = true;
+        }
+    }
+
+    if toggled && let Some(ref mut cfg) = local_config {
+        cfg.show_undiscovered_compendium = settings.show_undiscovered_compendium;
+        cfg.preload_full_world_map = settings.preload_full_world_map;
+        let _ = cfg.save();
+    }
+
+    if toggled || settings.is_changed() {
+        let on_str = loc.as_deref().map_or("ON", |l| l.t("map.state.on"));
+        let off_str = loc.as_deref().map_or("OFF", |l| l.t("map.state.off"));
+
+        let comp_enabled = settings.show_undiscovered_compendium;
+        for (mut text, mut color) in &mut compendium_badge_q {
+            text.0 = if comp_enabled { on_str } else { off_str }.to_string();
+            color.0 = if comp_enabled {
+                palette::TEXT_ACCENT
+            } else {
+                palette::TEXT_MUTED
+            };
+        }
+
+        let preload_enabled = settings.preload_full_world_map;
+        for (mut text, mut color) in &mut preload_badge_q {
+            text.0 = if preload_enabled { on_str } else { off_str }.to_string();
+            color.0 = if preload_enabled {
+                palette::TEXT_ACCENT
+            } else {
+                palette::TEXT_MUTED
+            };
+        }
+    }
+}
+
 fn update_pause_button_hover(
     menu_state: Res<State<MenuState>>,
     pause_submenu: Res<PauseSubmenu>,
@@ -470,6 +693,7 @@ type PauseWeatherRestartParams<'w> = (
     Option<ResMut<'w, crate::environment::weather::WeatherParticlePool>>,
     Option<ResMut<'w, crate::audio::weather_audio::PendingThunderQueue>>,
     Option<ResMut<'w, crate::player::PlayerInventory>>,
+    Option<Res<'w, crate::player::WorldSpawnPoint>>,
 );
 
 type PauseSessionParams<'w> = (
@@ -508,6 +732,7 @@ fn handle_pause_menu_buttons(
         mut particle_pool_query,
         mut pending_thunder_query,
         mut player_inv_query,
+        world_spawn_query,
     ): PauseWeatherRestartParams,
     (
         mut world_session,
@@ -597,8 +822,10 @@ fn handle_pause_menu_buttons(
                         commands.entity(entity).despawn();
                     }
 
-                    // 3. Teleport player and camera to spawn
-                    let spawn_pos = Vec3::new(-10.0, 10.38, 14.0);
+                    // 3. Teleport player and camera to active world spawn (respects Adventure Mode chosen spawn!)
+                    let spawn_pos = world_spawn_query
+                        .as_deref()
+                        .map_or(Vec3::new(-10.0, 10.38, 14.0), |ws| ws.0);
                     for (mut transform, mut motion) in &mut player_query {
                         transform.translation = spawn_pos;
                         motion.velocity = Vec3::ZERO;
@@ -607,8 +834,9 @@ fn handle_pause_menu_buttons(
 
                     for (mut transform, mut camera) in &mut camera_query {
                         let cam_pos = spawn_pos + Vec3::Y * PLAYER_EYE_HEIGHT;
+                        let look_target = cam_pos + Vec3::new(14.0, -2.0, -10.0);
                         *transform = Transform::from_translation(cam_pos)
-                            .looking_at(Vec3::new(4.0, 3.0, 4.0), Vec3::Y);
+                            .looking_at(look_target, Vec3::Y);
                         let new_pc = PlayerCamera::from_transform(&transform);
                         *camera = new_pc;
                     }

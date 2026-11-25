@@ -81,11 +81,11 @@ impl StrataGenerator {
             return biome.surface_material;
         }
 
-        // 2b. Canyon & Badlands Geological Strata Rules (Bryce Canyon, Painted Mountains, Savanna Badlands)
+        // 2b. Canyon & Badlands Geological Strata Rules (Redrock Canyon, Painted Mesas, Savanna Badlands, Desert Spires)
         if matches!(
             biome.biome_type,
-            crate::generation::biome::BiomeType::BryceCanyon
-                | crate::generation::biome::BiomeType::PaintedMountains
+            crate::generation::biome::BiomeType::RedrockCanyon
+                | crate::generation::biome::BiomeType::PaintedMesas
                 | crate::generation::biome::BiomeType::SavannaBadlands
                 | crate::generation::biome::BiomeType::DesertSpires
         ) {
@@ -135,17 +135,20 @@ impl StrataGenerator {
                     | Voxel::PermafrostCoarse
                     | Voxel::PermafrostIcy => Voxel::Andesite,
                     Voxel::LoamGrass
+                    | Voxel::LoamTundraMoss
                     | Voxel::LoamMulch
                     | Voxel::LoamDirt
                     | Voxel::LoamCoarse
                     | Voxel::LoamRooted
                     | Voxel::LoamMud => Voxel::Granite,
                     Voxel::PeatGrass
+                    | Voxel::PeatTundraMoss
                     | Voxel::PeatDirt
                     | Voxel::PeatCoarse
                     | Voxel::PeatRooted
                     | Voxel::PeatMud => Voxel::Argillite,
                     Voxel::SiltGrass
+                    | Voxel::SiltTundraMoss
                     | Voxel::SiltSnow
                     | Voxel::SiltDirt
                     | Voxel::SiltCoarse
@@ -160,7 +163,7 @@ impl StrataGenerator {
                     Voxel::SandRed => Voxel::SandstoneRed,
                     Voxel::SandDune => Voxel::SandstoneDune,
                     Voxel::SandWhite => Voxel::SandstoneWhite,
-                    Voxel::SandCommon => Voxel::SandstoneCommon,
+                    Voxel::SandCommon | Voxel::SeagrassSand => Voxel::SandstoneCommon,
                     _ => biome.primary_stone,
                 },
             };

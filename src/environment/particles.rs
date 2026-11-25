@@ -708,16 +708,26 @@ pub fn update_world_particles(
     let is_firefly_time = matches!(day_phase, DayPhase::Evening | DayPhase::Night);
     if is_firefly_time && !status.is_underground && !status.is_camera_in_water && !is_stormy {
         let firefly_rate = match status.current_biome {
-            BiomeType::OrchidSwamp => 7.5,
-            BiomeType::YosemiteLowlands
-            | BiomeType::Shield
-            | BiomeType::CloudForest
-            | BiomeType::BloomingValley
+            BiomeType::WillowMarsh
+            | BiomeType::MangroveSwamp
+            | BiomeType::OrchidSwamp
+            | BiomeType::SwampyShore => 7.5,
+            BiomeType::VerdantWoods
+            | BiomeType::AutumnForest
+            | BiomeType::MistyWoods
+            | BiomeType::TemperateIsland
+            | BiomeType::ShieldForest
+            | BiomeType::FertileValley
+            | BiomeType::FlowerMeadow
             | BiomeType::LavenderValley
             | BiomeType::SakuraGrove
-            | BiomeType::TropicalJungle
-            | BiomeType::SiberianTaiga
-            | BiomeType::WintryForest => 4.0,
+            | BiomeType::DenseRainforest
+            | BiomeType::BambooGrove
+            | BiomeType::JungleWetlands
+            | BiomeType::VolcanicJungle
+            | BiomeType::BleakTaiga
+            | BiomeType::WintryForest
+            | BiomeType::FrostPinewoods => 4.0,
             _ => 0.0,
         };
 
@@ -785,11 +795,21 @@ pub fn update_world_particles(
     let is_pollen_time = matches!(day_phase, DayPhase::Morning | DayPhase::Noon);
     if is_pollen_time && !status.is_underground && !status.is_camera_in_water && !is_stormy {
         let pollen_rate = match status.current_biome {
-            BiomeType::BloomingValley | BiomeType::LavenderValley | BiomeType::SakuraGrove => 9.0,
-            BiomeType::YosemiteLowlands
-            | BiomeType::Shield
-            | BiomeType::CloudForest
-            | BiomeType::TropicalJungle
+            BiomeType::FlowerMeadow
+            | BiomeType::FertileValley
+            | BiomeType::LavenderValley
+            | BiomeType::SakuraGrove => 9.0,
+            BiomeType::VerdantWoods
+            | BiomeType::AutumnForest
+            | BiomeType::TemperateIsland
+            | BiomeType::Grasslands
+            | BiomeType::ShieldForest
+            | BiomeType::MistyWoods
+            | BiomeType::DenseRainforest
+            | BiomeType::BambooGrove
+            | BiomeType::JungleWetlands
+            | BiomeType::WillowMarsh
+            | BiomeType::MangroveSwamp
             | BiomeType::OrchidSwamp => 4.8,
             _ => 0.0,
         };

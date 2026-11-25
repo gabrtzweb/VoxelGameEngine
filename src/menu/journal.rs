@@ -95,13 +95,16 @@ impl JournalTab {
     }
 }
 
-const BIOME_CATEGORY_ORDER: [&str; 7] = [
-    "journal.biome_cat.peaks",
-    "journal.biome_cat.canyons",
-    "journal.biome_cat.arid",
-    "journal.biome_cat.forests",
-    "journal.biome_cat.glacial",
+const BIOME_CATEGORY_ORDER: [&str; 10] = [
+    "journal.biome_cat.islands",
+    "journal.biome_cat.aquatic",
     "journal.biome_cat.coastal",
+    "journal.biome_cat.special",
+    "journal.biome_cat.lowlands",
+    "journal.biome_cat.forests",
+    "journal.biome_cat.peaks",
+    "journal.biome_cat.arid",
+    "journal.biome_cat.glacial",
     "journal.biome_cat.caves",
 ];
 
@@ -518,7 +521,12 @@ fn spawn_journal_menu(
             .map_or_else(|| fallback.to_string(), |l| l.t(key).to_string())
     };
 
-    let dimming_alpha = game_settings.map_or(0.65, |s| s.background_dimming.alpha());
+    let dimming_alpha = game_settings
+        .as_ref()
+        .map_or(0.65, |s| s.background_dimming.alpha());
+    let show_undiscovered = game_settings
+        .as_ref()
+        .is_some_and(|s| s.show_undiscovered_compendium);
 
     let day_num = env_state.as_ref().map_or(1, |e| e.day_count);
     let season_str = t(season_loc_key(day_num), "Spring").to_uppercase();
@@ -819,7 +827,7 @@ fn spawn_journal_menu(
                                 hdr.spawn((
                                     Text::new(t(
                                         "journal.biomes.subtitle",
-                                        "44 distinct surface, aquatic, and subterranean climates across the world.",
+                                        "82 distinct surface, aquatic, and subterranean climates across the world.",
                                     )),
                                     make_font(13.0),
                                     TextColor(palette::TEXT_MUTED),
@@ -833,7 +841,8 @@ fn spawn_journal_menu(
                                     .copied()
                                     .filter(|b| {
                                         b.category_key() == cat_key
-                                            && progress.discovered_biomes.contains(b)
+                                            && (show_undiscovered
+                                                || progress.discovered_biomes.contains(b))
                                     })
                                     .collect();
                                 if cat_biomes.is_empty() {
@@ -865,10 +874,32 @@ fn spawn_journal_menu(
                                         })
                                         .with_children(|grid| {
                                             for biome in cat_biomes {
+                                                let is_discovered =
+                                                    progress.discovered_biomes.contains(&biome);
                                                 let biome_name =
                                                     t(biome.translation_key(), biome.name());
                                                 let icon_handle =
                                                     asset_server.load(biome.icon_asset_path());
+                                                let card_bg = if is_discovered {
+                                                    palette::PANEL_INNER_BG
+                                                } else {
+                                                    Color::srgba(0.08, 0.09, 0.12, 0.52)
+                                                };
+                                                let card_border = if is_discovered {
+                                                    palette::PANEL_BORDER_SUBTLE
+                                                } else {
+                                                    Color::srgba(0.32, 0.35, 0.42, 0.32)
+                                                };
+                                                let icon_tint = if is_discovered {
+                                                    Color::WHITE
+                                                } else {
+                                                    Color::srgba(0.65, 0.68, 0.75, 0.50)
+                                                };
+                                                let text_col = if is_discovered {
+                                                    palette::TEXT_PRIMARY
+                                                } else {
+                                                    Color::srgba(0.62, 0.66, 0.74, 0.58)
+                                                };
 
                                                 grid.spawn((
                                                     Node {
@@ -882,13 +913,14 @@ fn spawn_journal_menu(
                                                         column_gap: px(12.0),
                                                         ..default()
                                                     },
-                                                    BackgroundColor(palette::PANEL_INNER_BG),
-                                                    BorderColor::all(palette::PANEL_BORDER_SUBTLE),
+                                                    BackgroundColor(card_bg),
+                                                    BorderColor::all(card_border),
                                                 ))
                                                 .with_children(|card| {
                                                     card.spawn((
                                                         ImageNode {
                                                             image: icon_handle,
+                                                            color: icon_tint,
                                                             image_mode: NodeImageMode::Stretch,
                                                             ..default()
                                                         },
@@ -903,7 +935,7 @@ fn spawn_journal_menu(
                                                     card.spawn((
                                                         Text::new(biome_name),
                                                         make_font(13.0),
-                                                        TextColor(palette::TEXT_PRIMARY),
+                                                        TextColor(text_col),
                                                         text_shadow_default(),
                                                     ));
                                                 });
@@ -1042,13 +1074,30 @@ fn spawn_journal_menu(
 
                         for (tab, sub_key, sub_fallback) in catalog_tabs {
                             let tab_title = t(tab.loc_key(), tab.fallback_label());
-                            let mut discovered: Vec<Voxel> = progress
+                            let discovered_count = progress
                                 .discovered_voxels
                                 .iter()
                                 .copied()
                                 .filter(|&v| voxel_matches_journal_tab(tab, v))
-                                .collect();
-                            discovered.sort_by_key(|v| *v as u16);
+                                .count();
+
+                            let mut visible_voxels: Vec<Voxel> = if show_undiscovered {
+                                Voxel::ALL
+                                    .iter()
+                                    .copied()
+                                    .filter(|&v| {
+                                        v != Voxel::Air && voxel_matches_journal_tab(tab, v)
+                                    })
+                                    .collect()
+                            } else {
+                                progress
+                                    .discovered_voxels
+                                    .iter()
+                                    .copied()
+                                    .filter(|&v| voxel_matches_journal_tab(tab, v))
+                                    .collect()
+                            };
+                            visible_voxels.sort_by_key(|v| *v as u16);
 
                             let total_in_tab = Voxel::ALL
                                 .iter()
@@ -1096,8 +1145,7 @@ fn spawn_journal_menu(
                                         ));
                                         top.spawn((
                                             Text::new(format!(
-                                                "{discovered_lbl}: {} / {total_in_tab}",
-                                                discovered.len()
+                                                "{discovered_lbl}: {discovered_count} / {total_in_tab}"
                                             )),
                                             make_font(13.0),
                                             TextColor(palette::TEXT_ACCENT),
@@ -1110,7 +1158,7 @@ fn spawn_journal_menu(
                                     ));
                                 });
 
-                                if discovered.is_empty() {
+                                if visible_voxels.is_empty() {
                                     sec.spawn((
                                         Node {
                                             width: percent(100.0),
@@ -1131,7 +1179,7 @@ fn spawn_journal_menu(
                                     });
                                 } else {
                                     for &(cat_key, cat_fallback) in journal_subcategories_for(tab) {
-                                        let cat_voxels: Vec<Voxel> = discovered
+                                        let cat_voxels: Vec<Voxel> = visible_voxels
                                             .iter()
                                             .copied()
                                             .filter(|&v| {
@@ -1166,6 +1214,9 @@ fn spawn_journal_menu(
                                                 })
                                                 .with_children(|grid| {
                                                     for voxel in cat_voxels {
+                                                        let is_discovered = progress
+                                                            .discovered_voxels
+                                                            .contains(&voxel);
                                                         let name = loc.as_ref().map_or_else(
                                                             || voxel.label().to_string(),
                                                             |l| l.t_block(voxel).to_string(),
@@ -1173,6 +1224,26 @@ fn spawn_journal_menu(
                                                         let icon_img = block_icons
                                                             .as_ref()
                                                             .map(|b| b.get(voxel));
+                                                        let card_bg = if is_discovered {
+                                                            palette::PANEL_INNER_BG
+                                                        } else {
+                                                            Color::srgba(0.08, 0.09, 0.12, 0.52)
+                                                        };
+                                                        let card_border = if is_discovered {
+                                                            palette::PANEL_BORDER_SUBTLE
+                                                        } else {
+                                                            Color::srgba(0.32, 0.35, 0.42, 0.32)
+                                                        };
+                                                        let icon_tint = if is_discovered {
+                                                            Color::WHITE
+                                                        } else {
+                                                            Color::srgba(0.65, 0.68, 0.75, 0.50)
+                                                        };
+                                                        let text_col = if is_discovered {
+                                                            palette::TEXT_PRIMARY
+                                                        } else {
+                                                            Color::srgba(0.62, 0.66, 0.74, 0.58)
+                                                        };
 
                                                         grid.spawn((
                                                             Node {
@@ -1191,18 +1262,15 @@ fn spawn_journal_menu(
                                                                 column_gap: px(12.0),
                                                                 ..default()
                                                             },
-                                                            BackgroundColor(
-                                                                palette::PANEL_INNER_BG,
-                                                            ),
-                                                            BorderColor::all(
-                                                                palette::PANEL_BORDER_SUBTLE,
-                                                            ),
+                                                            BackgroundColor(card_bg),
+                                                            BorderColor::all(card_border),
                                                         ))
                                                         .with_children(|card| {
                                                             if let Some(handle) = icon_img {
                                                                 card.spawn((
                                                                     ImageNode {
                                                                         image: handle,
+                                                                        color: icon_tint,
                                                                         image_mode:
                                                                             NodeImageMode::Stretch,
                                                                         ..default()
@@ -1218,7 +1286,7 @@ fn spawn_journal_menu(
                                                             card.spawn((
                                                                 Text::new(name),
                                                                 make_font(13.0),
-                                                                TextColor(palette::TEXT_PRIMARY),
+                                                                TextColor(text_col),
                                                                 text_shadow_default(),
                                                             ));
                                                         });

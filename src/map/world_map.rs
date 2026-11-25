@@ -167,6 +167,7 @@ pub struct WorldMapLayers {
     pub show_chunk_grid: bool,
     pub follow_day_night: bool,
     pub show_elevation: bool,
+    pub overlay_mode: crate::generation::AdventureOverlayMode,
 }
 
 impl Default for WorldMapLayers {
@@ -177,6 +178,7 @@ impl Default for WorldMapLayers {
             show_chunk_grid: false,
             follow_day_night: true,
             show_elevation: true,
+            overlay_mode: crate::generation::AdventureOverlayMode::Terrain,
         }
     }
 }
@@ -239,6 +241,7 @@ struct WaypointDeleteButton(u32);
 
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
 enum WorldMapLayerKind {
+    OverlayMode,
     PlayerMarker,
     Waypoints,
     ChunkGrid,
@@ -268,6 +271,61 @@ enum MapContextAction {
     Cancel,
 }
 
+struct PreloadedMapBuffer {
+    fingerprint: u64,
+    width: u32,
+    height: u32,
+    /// Pre-shaded RGB (3 bytes per pixel) matching the in-game World Map terrain.
+    rgb: Vec<u8>,
+    heights: Vec<i16>,
+    is_water: Vec<u8>,
+}
+
+/// Cached full-world terrain overview rendered asynchronously when "Preload Full World Map" is ON.
+#[derive(Resource, Default)]
+pub struct PreloadedAdventureMap {
+    data: Option<PreloadedMapBuffer>,
+    in_flight_fingerprint: Option<u64>,
+    in_flight: Option<bevy::tasks::Task<PreloadedMapBuffer>>,
+    pub version: u64,
+}
+
+impl PreloadedAdventureMap {
+    #[inline]
+    fn sample(
+        &self,
+        wx: i32,
+        wz: i32,
+        adv_map: &crate::generation::AdventureWorldMap,
+        show_elevation: bool,
+    ) -> Option<[u8; 4]> {
+        let buf = self.data.as_ref()?;
+        if buf.fingerprint != adv_map.fingerprint() {
+            return None;
+        }
+        let half_w = adv_map.world_width * 0.5;
+        let half_h = adv_map.world_height * 0.5;
+        let u = ((wx as f32 + half_w) / adv_map.world_width).clamp(0.0, 0.99999);
+        let v = ((wz as f32 + half_h) / adv_map.world_height).clamp(0.0, 0.99999);
+        let px = (u * buf.width as f32) as usize;
+        let py = (v * buf.height as f32) as usize;
+        let idx = py * buf.width as usize + px;
+        let off = idx * 3;
+        let mut c = [buf.rgb[off], buf.rgb[off + 1], buf.rgb[off + 2], 255];
+
+        if show_elevation && buf.is_water[idx] == 0 && py > 0 {
+            let h = buf.heights[idx];
+            let nh = buf.heights[(py - 1) * buf.width as usize + px];
+            if (h >> 3) != (nh >> 3) {
+                c[0] = (c[0] as f32 * 0.88) as u8;
+                c[1] = (c[1] as f32 * 0.88) as u8;
+                c[2] = (c[2] as f32 * 0.88) as u8;
+            }
+        }
+        Some(c)
+    }
+}
+
 #[derive(Resource)]
 pub struct WorldMapState {
     pub center: Vec2,
@@ -280,6 +338,8 @@ pub struct WorldMapState {
     pub last_drawn_zoom: f32,
     pub last_drawn_aspect: f32,
     pub last_cache_version: u64,
+    pub last_preloaded_version: u64,
+    pub last_preload_enabled: bool,
     pub last_drawn_layers: WorldMapLayers,
     pub last_drawn_time_bucket: i32,
 }
@@ -291,7 +351,9 @@ impl Plugin for WorldMapPlugin {
         app.init_resource::<WorldWaypoints>()
             .init_resource::<WorldMapLayers>()
             .init_resource::<WorldMapContextMenu>()
+            .init_resource::<PreloadedAdventureMap>()
             .add_systems(Startup, setup_world_map_resources)
+            .add_systems(Update, sync_preloaded_adventure_map)
             .add_systems(OnEnter(MenuState::WorldMap), spawn_world_map_ui)
             .add_systems(OnExit(MenuState::WorldMap), despawn_world_map_ui)
             .add_systems(
@@ -347,9 +409,130 @@ fn setup_world_map_resources(
         last_drawn_zoom: -1.0,
         last_drawn_aspect: -1.0,
         last_cache_version: u64::MAX,
+        last_preloaded_version: u64::MAX,
+        last_preload_enabled: false,
         last_drawn_layers: WorldMapLayers::default(),
         last_drawn_time_bucket: -1,
     });
+}
+
+fn sync_preloaded_adventure_map(
+    game_settings: Option<Res<crate::menu::GameSettings>>,
+    terrain_generator: Option<Res<crate::generation::TerrainGenerator>>,
+    mut preloaded: ResMut<PreloadedAdventureMap>,
+) {
+    // Poll any in-flight background render first
+    if let Some(ref mut task) = preloaded.in_flight
+        && let Some(buf) = bevy::tasks::block_on(bevy::tasks::poll_once(task))
+    {
+        info!(
+            "Preloaded full Adventure World Map ({}x{}) ready",
+            buf.width, buf.height
+        );
+        preloaded.data = Some(buf);
+        preloaded.in_flight = None;
+        preloaded.in_flight_fingerprint = None;
+        preloaded.version = preloaded.version.wrapping_add(1);
+    }
+
+    let enabled = game_settings
+        .as_deref()
+        .is_some_and(|s| s.preload_full_world_map);
+    if !enabled {
+        return;
+    }
+
+    let Some(gen_res) = terrain_generator.as_deref() else {
+        return;
+    };
+    let Some(adv_map) = gen_res.adventure_map.as_ref() else {
+        return;
+    };
+
+    let fp = adv_map.fingerprint();
+    let already_ready = preloaded.data.as_ref().is_some_and(|d| d.fingerprint == fp);
+    let already_running = preloaded.in_flight_fingerprint == Some(fp);
+    if already_ready || already_running {
+        return;
+    }
+
+    let map_arc = adv_map.clone();
+    let seed = gen_res.seed;
+    let pool = bevy::tasks::AsyncComputeTaskPool::get();
+    let task = pool.spawn(async move {
+        const OUT_W: u32 = 1280;
+        const OUT_H: u32 = 720;
+
+        let mut terrain_gen = crate::generation::TerrainGenerator::default();
+        terrain_gen.seed = seed;
+        terrain_gen.adventure_map = Some(map_arc.clone());
+
+        let n = (OUT_W * OUT_H) as usize;
+        let mut rgb = vec![0u8; n * 3];
+        let mut heights = vec![0i16; n];
+        let mut is_water = vec![0u8; n];
+
+        for py in 0..OUT_H {
+            let v = (py as f32 + 0.5) / OUT_H as f32;
+            let wz = ((v - 0.5) * map_arc.world_height).floor() as i32;
+
+            for px in 0..OUT_W {
+                let u = (px as f32 + 0.5) / OUT_W as f32;
+                let wx = ((u - 0.5) * map_arc.world_width).floor() as i32;
+
+                let col = terrain_gen.sample_column(wx, wz);
+                let (eff_h, surface_mat) =
+                    terrain_gen.lod_surface_height_and_material(wx, wz, col);
+
+                let (base_col, height, water_flag) =
+                    if let Some(wl) = col.water_level && col.terrain_height < wl {
+                        let depth = (wl - col.terrain_height).clamp(1, 255) as u8;
+                        (
+                            crate::map::color::voxel_map_color_at(
+                                Voxel::LiquidWater,
+                                depth,
+                                wx,
+                                wz,
+                            ),
+                            wl as i16,
+                            1u8,
+                        )
+                    } else {
+                        (
+                            crate::map::color::voxel_map_color_at(surface_mat, 0, wx, wz),
+                            eff_h as i16,
+                            0u8,
+                        )
+                    };
+
+                let idx = (py * OUT_W + px) as usize;
+                heights[idx] = height;
+                is_water[idx] = water_flag;
+                let north_h = if py > 0 {
+                    Some(heights[((py - 1) * OUT_W + px) as usize])
+                } else {
+                    None
+                };
+                let shaded = apply_relief_shading(base_col, height, north_h);
+                let off = idx * 3;
+                rgb[off] = shaded[0];
+                rgb[off + 1] = shaded[1];
+                rgb[off + 2] = shaded[2];
+            }
+        }
+
+        PreloadedMapBuffer {
+            fingerprint: fp,
+            width: OUT_W,
+            height: OUT_H,
+            rgb,
+            heights,
+            is_water,
+        }
+    });
+
+    preloaded.in_flight = Some(task);
+    preloaded.in_flight_fingerprint = Some(fp);
 }
 
 fn daylight_tint(time_of_day: f32) -> [f32; 3] {
@@ -374,6 +557,7 @@ fn spawn_world_map_ui(
     mut ctx_menu: ResMut<WorldMapContextMenu>,
     layers: Res<WorldMapLayers>,
     game_mode: Option<Res<GameMode>>,
+    terrain_generator: Option<Res<crate::generation::TerrainGenerator>>,
     player_query: Query<&Transform, With<Player>>,
     asset_server: Res<AssetServer>,
     app_font: Option<Res<AppFont>>,
@@ -404,6 +588,9 @@ fn spawn_world_map_ui(
     let is_creative = game_mode
         .as_ref()
         .is_some_and(|m| **m == GameMode::Creative);
+    let is_adventure = terrain_generator
+        .as_deref()
+        .is_some_and(|g| g.adventure_map.is_some());
     let on_str = t("map.state.on", "ON");
     let off_str = t("map.state.off", "OFF");
 
@@ -929,6 +1116,54 @@ fn spawn_world_map_ui(
                             TextColor(palette::TEXT_MUTED),
                         ));
 
+                        if is_adventure {
+                            let overlay_label = t(
+                                layers.overlay_mode.loc_key(),
+                                layers.overlay_mode.fallback_label(),
+                            );
+                            let overlay_active = layers.overlay_mode
+                                != crate::generation::AdventureOverlayMode::Terrain;
+                            layer_sec
+                                .spawn((
+                                    Button,
+                                    Hovered::default(),
+                                    WorldMapLayerKind::OverlayMode,
+                                    Node {
+                                        width: percent(100.0),
+                                        height: px(32.0),
+                                        padding: UiRect::horizontal(px(10.0)),
+                                        border: UiRect::all(px(1.5)),
+                                        border_radius: BorderRadius::all(px(4.0)),
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Row,
+                                        justify_content: JustifyContent::SpaceBetween,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    BackgroundColor(palette::PANEL_INNER_BG),
+                                    BorderColor::all(palette::ACCENT_LINE),
+                                ))
+                                .with_children(|row| {
+                                    row.spawn((
+                                        Pickable::IGNORE,
+                                        Text::new(t("map.layer.overlay", "Atlas Overlay")),
+                                        make_font(12.0),
+                                        TextColor(palette::TEXT_PRIMARY),
+                                    ));
+                                    row.spawn((
+                                        Pickable::IGNORE,
+                                        LayerStateText(WorldMapLayerKind::OverlayMode),
+                                        Text::new(overlay_label),
+                                        make_font(11.0),
+                                        TextColor(if overlay_active {
+                                            palette::TEXT_ACCENT
+                                        } else {
+                                            palette::TEXT_MUTED
+                                        }),
+                                    ));
+                                });
+                        }
+
                         let layer_defs = [
                             (
                                 WorldMapLayerKind::PlayerMarker,
@@ -1008,12 +1243,15 @@ fn spawn_world_map_ui(
                     .spawn((
                         Node {
                             width: percent(100.0),
+                            height: px(96.0),
+                            flex_shrink: 0.0,
                             padding: UiRect::all(px(12.0)),
                             border: UiRect::all(px(1.0)),
                             border_radius: BorderRadius::all(px(5.0)),
                             display: Display::Flex,
                             flex_direction: FlexDirection::Column,
                             row_gap: px(6.0),
+                            overflow: Overflow::clip(),
                             ..default()
                         },
                         BackgroundColor(palette::PANEL_INNER_BG),
@@ -1433,6 +1671,9 @@ fn handle_world_map_sidebar_buttons(
         };
         if hovered.get() && clicked {
             match kind {
+                WorldMapLayerKind::OverlayMode => {
+                    layers.overlay_mode = layers.overlay_mode.next();
+                }
                 WorldMapLayerKind::PlayerMarker => {
                     layers.show_player_marker = !layers.show_player_marker
                 }
@@ -1457,7 +1698,21 @@ fn handle_world_map_sidebar_buttons(
         let on_str = loc.as_ref().map_or("ON", |l| l.t("map.state.on"));
         let off_str = loc.as_ref().map_or("OFF", |l| l.t("map.state.off"));
         for (tag, mut text, mut col) in &mut layer_text_query {
+            if tag.0 == WorldMapLayerKind::OverlayMode {
+                let label = loc.as_ref().map_or_else(
+                    || layers.overlay_mode.fallback_label().to_string(),
+                    |l| l.t(layers.overlay_mode.loc_key()).to_string(),
+                );
+                text.0 = label;
+                col.0 = if layers.overlay_mode != crate::generation::AdventureOverlayMode::Terrain {
+                    palette::TEXT_ACCENT
+                } else {
+                    palette::TEXT_MUTED
+                };
+                continue;
+            }
             let enabled = match tag.0 {
+                WorldMapLayerKind::OverlayMode => true,
                 WorldMapLayerKind::PlayerMarker => layers.show_player_marker,
                 WorldMapLayerKind::Waypoints => layers.show_waypoints,
                 WorldMapLayerKind::ChunkGrid => layers.show_chunk_grid,
@@ -1648,7 +1903,10 @@ fn handle_world_map_input(
     keyboard: Res<ButtonInput<KeyCode>>,
     window: Option<Single<&Window, With<PrimaryWindow>>>,
     player_query: Query<&Transform, With<Player>>,
-    loc: Option<Res<Localization>>,
+    (loc, terrain_generator): (
+        Option<Res<Localization>>,
+        Option<Res<crate::generation::TerrainGenerator>>,
+    ),
     mut waypoints: ResMut<WorldWaypoints>,
     mut map_state: ResMut<WorldMapState>,
     mut ctx_menu: ResMut<WorldMapContextMenu>,
@@ -1688,7 +1946,7 @@ fn handle_world_map_input(
                 let tex_aspect = (WORLD_MAP_WIDTH as f32) / (WORLD_MAP_HEIGHT as f32);
                 let vp_aspect = vp_size.x / vp_size.y.max(1.0);
                 let aspect_scale_x = (vp_aspect / tex_aspect).clamp(0.25, 4.0);
-                let safe_zoom = map_state.zoom.max(0.05);
+                let safe_zoom = map_state.zoom.max(0.02);
                 let zoom_x = safe_zoom / aspect_scale_x;
 
                 let tex_x = in_x / (vp_size.x / WORLD_MAP_WIDTH as f32);
@@ -1784,10 +2042,19 @@ fn handle_world_map_input(
     }
 
     // 3. Mouse Zoom (only when not scrolling sidebar waypoint list)
+    // Adapt minimum zoom-out to fit the entire Adventure Mode world (Medium or Full)
+    let min_zoom = terrain_generator
+        .as_deref()
+        .and_then(|g| g.adventure_map.as_ref())
+        .map_or(0.20, |m| {
+            let fit_x = (WORLD_MAP_WIDTH as f32) / (m.world_width * 1.06);
+            let fit_z = (WORLD_MAP_HEIGHT as f32) / (m.world_height * 1.06);
+            fit_x.min(fit_z).clamp(0.03, 0.20)
+        });
     let scroll_y = scroll.delta.y;
     if !scrolled_wp_list && scroll_y.abs() > 0.001 {
         let zoom_factor = if scroll_y > 0.0 { 1.15 } else { 1.0 / 1.15 };
-        map_state.zoom = (map_state.zoom * zoom_factor).clamp(0.20, 4.0);
+        map_state.zoom = (map_state.zoom * zoom_factor).clamp(min_zoom, 4.0);
         ctx_menu.open = false;
     }
 
@@ -1814,7 +2081,7 @@ fn handle_world_map_input(
 
             if in_vp || map_state.is_dragging {
                 let screen_delta = curr - prev;
-                let current_zoom = if map_state.zoom.is_finite() && map_state.zoom > 0.05 {
+                let current_zoom = if map_state.zoom.is_finite() && map_state.zoom > 0.02 {
                     map_state.zoom
                 } else {
                     1.0
@@ -1844,6 +2111,9 @@ fn sync_world_map_terrain(
     map_cache: Res<MapCache>,
     layers: Res<WorldMapLayers>,
     env_state: Option<Res<EnvironmentState>>,
+    terrain_generator: Option<Res<crate::generation::TerrainGenerator>>,
+    game_settings: Option<Res<crate::menu::GameSettings>>,
+    preloaded_map: Res<PreloadedAdventureMap>,
     mut map_state: ResMut<WorldMapState>,
     mut images: ResMut<Assets<Image>>,
     viewport_query: Query<&ComputedNode, With<WorldMapViewport>>,
@@ -1863,10 +2133,15 @@ fn sync_world_map_terrain(
         -1
     };
 
+    let preload_enabled = game_settings
+        .as_deref()
+        .is_some_and(|s| s.preload_full_world_map);
     let center_dist = (map_state.center - map_state.last_drawn_center).length();
     let zoom_diff = (map_state.zoom - map_state.last_drawn_zoom).abs();
     let aspect_diff = (vp_aspect - map_state.last_drawn_aspect).abs();
     let cache_changed = map_cache.version != map_state.last_cache_version;
+    let preloaded_changed = preloaded_map.version != map_state.last_preloaded_version
+        || preload_enabled != map_state.last_preload_enabled;
     let layers_changed = *layers != map_state.last_drawn_layers;
     let time_changed = time_bucket != map_state.last_drawn_time_bucket;
 
@@ -1874,6 +2149,7 @@ fn sync_world_map_terrain(
         && zoom_diff < 0.005
         && aspect_diff < 0.005
         && !cache_changed
+        && !preloaded_changed
         && !layers_changed
         && !time_changed
     {
@@ -1884,6 +2160,8 @@ fn sync_world_map_terrain(
     map_state.last_drawn_zoom = map_state.zoom;
     map_state.last_drawn_aspect = vp_aspect;
     map_state.last_cache_version = map_cache.version;
+    map_state.last_preloaded_version = preloaded_map.version;
+    map_state.last_preload_enabled = preload_enabled;
     map_state.last_drawn_layers = *layers;
     map_state.last_drawn_time_bucket = time_bucket;
 
@@ -1896,7 +2174,7 @@ fn sync_world_map_terrain(
 
     let half_w = (WORLD_MAP_WIDTH as f32) / 2.0;
     let half_h = (WORLD_MAP_HEIGHT as f32) / 2.0;
-    let zoom = if map_state.zoom.is_finite() && map_state.zoom > 0.05 {
+    let zoom = if map_state.zoom.is_finite() && map_state.zoom > 0.02 {
         map_state.zoom
     } else {
         1.0
@@ -1913,6 +2191,12 @@ fn sync_world_map_terrain(
     } else {
         [1.0, 1.0, 1.0]
     };
+    let adv_map = terrain_generator
+        .as_deref()
+        .and_then(|g| g.adventure_map.as_ref());
+    let adv_bounds = adv_map.map(|m| m.half_extents());
+    let use_atlas_overlay =
+        adv_map.is_some() && layers.overlay_mode != crate::generation::AdventureOverlayMode::Terrain;
 
     for py in 0..WORLD_MAP_HEIGHT {
         let raw_z = center.y + (py as f32 - half_h) / zoom;
@@ -1943,6 +2227,24 @@ fn sync_world_map_terrain(
             };
             let idx = row_offset + (px as usize) * 4;
 
+            // Fog of War outside bounded Adventure Mode world borders
+            if let Some((bw, bh)) = adv_bounds {
+                let half_bw = bw as i32;
+                let half_bh = bh as i32;
+                let dist_x = half_bw - wx.abs();
+                let dist_z = half_bh - wz.abs();
+                let edge_dist = dist_x.min(dist_z);
+                if edge_dist <= 0 {
+                    // Uncharted outer fog of war
+                    let fog = unexplored_color(wx, wz);
+                    data[idx] = (fog[0] as f32 * 0.55) as u8;
+                    data[idx + 1] = (fog[1] as f32 * 0.58) as u8;
+                    data[idx + 2] = (fog[2] as f32 * 0.65) as u8;
+                    data[idx + 3] = 255;
+                    continue;
+                }
+            }
+
             let col_x = wx >> 4;
             let lx = (wx & 15) as usize;
 
@@ -1956,7 +2258,45 @@ fn sync_world_map_terrain(
                 };
             }
 
-            let mut color = if let Some(chunk) = current_chunk {
+            let mut color = if use_atlas_overlay
+                && let Some(rgb) =
+                    adv_map.and_then(|m| m.sample_overlay_rgb(wx, wz, layers.overlay_mode))
+            {
+                let mut c = if let Some(chunk) = current_chunk {
+                    let pixel = chunk.get(lx, lz);
+                    if pixel.voxel != Voxel::Air {
+                        let north_h = north_chunk.map(|nc| nc.get(lx, north_lz).height);
+                        let shaded = apply_relief_shading(pixel.color, pixel.height, north_h);
+                        [
+                            ((rgb[0] as f32 * 0.80) + (shaded[0] as f32 * 0.20)) as u8,
+                            ((rgb[1] as f32 * 0.80) + (shaded[1] as f32 * 0.20)) as u8,
+                            ((rgb[2] as f32 * 0.80) + (shaded[2] as f32 * 0.20)) as u8,
+                            255,
+                        ]
+                    } else {
+                        [
+                            (rgb[0] as f32 * 0.86) as u8,
+                            (rgb[1] as f32 * 0.86) as u8,
+                            (rgb[2] as f32 * 0.86) as u8,
+                            255,
+                        ]
+                    }
+                } else {
+                    [
+                        (rgb[0] as f32 * 0.86) as u8,
+                        (rgb[1] as f32 * 0.86) as u8,
+                        (rgb[2] as f32 * 0.86) as u8,
+                        255,
+                    ]
+                };
+
+                if layers.show_chunk_grid && (lx == 0 || lz == 0) {
+                    c[0] = c[0].saturating_add(10);
+                    c[1] = c[1].saturating_add(10);
+                    c[2] = c[2].saturating_add(14);
+                }
+                c
+            } else if let Some(chunk) = current_chunk {
                 let pixel = chunk.get(lx, lz);
                 if pixel.voxel != Voxel::Air {
                     let north_h = north_chunk.map(|nc| nc.get(lx, north_lz).height);
@@ -1987,9 +2327,39 @@ fn sync_world_map_terrain(
                     }
 
                     c
+                } else if preload_enabled
+                    && let Some(map) = adv_map
+                    && let Some(mut c) = preloaded_map.sample(wx, wz, map, layers.show_elevation)
+                {
+                    if layers.follow_day_night {
+                        c[0] = (c[0] as f32 * tint[0]).clamp(0.0, 255.0) as u8;
+                        c[1] = (c[1] as f32 * tint[1]).clamp(0.0, 255.0) as u8;
+                        c[2] = (c[2] as f32 * tint[2]).clamp(0.0, 255.0) as u8;
+                    }
+                    if layers.show_chunk_grid && (lx == 0 || lz == 0) {
+                        c[0] = c[0].saturating_add(10);
+                        c[1] = c[1].saturating_add(10);
+                        c[2] = c[2].saturating_add(14);
+                    }
+                    c
                 } else {
                     unexplored_color(wx, wz)
                 }
+            } else if preload_enabled
+                && let Some(map) = adv_map
+                && let Some(mut c) = preloaded_map.sample(wx, wz, map, layers.show_elevation)
+            {
+                if layers.follow_day_night {
+                    c[0] = (c[0] as f32 * tint[0]).clamp(0.0, 255.0) as u8;
+                    c[1] = (c[1] as f32 * tint[1]).clamp(0.0, 255.0) as u8;
+                    c[2] = (c[2] as f32 * tint[2]).clamp(0.0, 255.0) as u8;
+                }
+                if layers.show_chunk_grid && (lx == 0 || lz == 0) {
+                    c[0] = c[0].saturating_add(10);
+                    c[1] = c[1].saturating_add(10);
+                    c[2] = c[2].saturating_add(14);
+                }
+                c
             } else {
                 unexplored_color(wx, wz)
             };
@@ -1998,6 +2368,21 @@ fn sync_world_map_terrain(
                 color[0] = color[0].saturating_add(5);
                 color[1] = color[1].saturating_add(6);
                 color[2] = color[2].saturating_add(8);
+            }
+
+            // Soft cartographic mist vignette right inside the Adventure world border
+            if let Some((bw, bh)) = adv_bounds {
+                let edge_dist = (bw as i32 - wx.abs()).min(bh as i32 - wz.abs());
+                if edge_dist < 48 {
+                    let t = (edge_dist as f32 / 48.0).clamp(0.0, 1.0);
+                    let fog = unexplored_color(wx, wz);
+                    let fr = fog[0] as f32 * 0.55;
+                    let fg = fog[1] as f32 * 0.58;
+                    let fb = fog[2] as f32 * 0.65;
+                    color[0] = (fr + (color[0] as f32 - fr) * t) as u8;
+                    color[1] = (fg + (color[1] as f32 - fg) * t) as u8;
+                    color[2] = (fb + (color[2] as f32 - fb) * t) as u8;
+                }
             }
 
             data[idx] = color[0];
@@ -2018,6 +2403,7 @@ fn update_world_map_ui(
     asset_server: Res<AssetServer>,
     viewport_query: Query<(&ComputedNode, &UiGlobalTransform), With<WorldMapViewport>>,
     loc: Option<Res<Localization>>,
+    terrain_generator: Option<Res<crate::generation::TerrainGenerator>>,
     mut marker_query: Query<
         (&mut Node, &mut UiTransform, &mut Visibility),
         (
@@ -2071,7 +2457,7 @@ fn update_world_map_ui(
     let half_w = (WORLD_MAP_WIDTH as f32) / 2.0;
     let half_h = (WORLD_MAP_HEIGHT as f32) / 2.0;
     let tex_aspect = (WORLD_MAP_WIDTH as f32) / (WORLD_MAP_HEIGHT as f32);
-    let safe_zoom = if map_state.zoom.is_finite() && map_state.zoom > 0.05 {
+    let safe_zoom = if map_state.zoom.is_finite() && map_state.zoom > 0.02 {
         map_state.zoom
     } else {
         1.0
@@ -2192,20 +2578,71 @@ fn update_world_map_ui(
                         0
                     };
 
+                    let region_suffix = terrain_generator
+                        .as_deref()
+                        .and_then(|g| g.adventure_map.as_ref())
+                        .and_then(|m| m.sample_region_info(cursor_world_x, cursor_world_z))
+                        .map(|info| {
+                            let tr = |key: &str, fallback: &str| -> String {
+                                loc.as_ref()
+                                    .map_or_else(|| fallback.to_string(), |l| l.t(key).to_string())
+                            };
+                            match layers.overlay_mode {
+                                crate::generation::AdventureOverlayMode::Continents => format!(
+                                    "\n{}  •  {}",
+                                    tr(info.continent.translation_key(), info.continent.name()),
+                                    tr(info.region.translation_key(), info.region.name()),
+                                ),
+                                crate::generation::AdventureOverlayMode::Regions => format!(
+                                    "\n{}  •  {}",
+                                    tr(info.region.translation_key(), info.region.name()),
+                                    tr(
+                                        info.macro_biome.translation_key(),
+                                        info.macro_biome.name()
+                                    ),
+                                ),
+                                crate::generation::AdventureOverlayMode::MacroBiomes => format!(
+                                    "\n{}  •  {}",
+                                    tr(
+                                        info.macro_biome.translation_key(),
+                                        info.macro_biome.name()
+                                    ),
+                                    tr(
+                                        info.micro_biome.translation_key(),
+                                        info.micro_biome.name()
+                                    ),
+                                ),
+                                crate::generation::AdventureOverlayMode::Terrain
+                                | crate::generation::AdventureOverlayMode::MicroBiomes => format!(
+                                    "\n{}  •  {}",
+                                    tr(
+                                        info.micro_biome.translation_key(),
+                                        info.micro_biome.name()
+                                    ),
+                                    tr(info.region.translation_key(), info.region.name()),
+                                ),
+                            }
+                        })
+                        .unwrap_or_default();
+
                     for mut text in &mut cursor_text_query {
                         if let Some(ref l) = loc {
-                            **text = l.t_fmt(
-                                "map.cursor_pos",
-                                &[
-                                    &cursor_world_x.to_string(),
-                                    &cursor_world_z.to_string(),
-                                    &format!("{:.2}", safe_zoom),
-                                ],
+                            **text = format!(
+                                "{}{}",
+                                l.t_fmt(
+                                    "map.cursor_pos",
+                                    &[
+                                        &cursor_world_x.to_string(),
+                                        &cursor_world_z.to_string(),
+                                        &format!("{:.2}", safe_zoom),
+                                    ],
+                                ),
+                                region_suffix
                             );
                         } else {
                             **text = format!(
-                                "Cursor: X: {} Z: {} | Zoom: {:.2}x",
-                                cursor_world_x, cursor_world_z, safe_zoom
+                                "Cursor: X: {} Z: {} | Zoom: {:.2}x{}",
+                                cursor_world_x, cursor_world_z, safe_zoom, region_suffix
                             );
                         }
                     }

@@ -269,11 +269,14 @@ pub fn emit_weather_particles(
         BiomeType::DesertSpires
             | BiomeType::AncientSands
             | BiomeType::DesertOasis
+            | BiomeType::AcaciaPlains
             | BiomeType::FracturedSavanna
             | BiomeType::SavannaBadlands
-            | BiomeType::AshenSavanna
+            | BiomeType::AshenWastes
+            | BiomeType::ScorchedFlats
             | BiomeType::DuneSea
-            | BiomeType::BryceCanyon
+            | BiomeType::RedrockCanyon
+            | BiomeType::PaintedMesas
     );
     let effective_dust = if is_arid && current_wind.length() > 5.0 {
         w.dust_intensity.max(0.40)
@@ -571,10 +574,17 @@ pub fn emit_weather_particles(
     // -------------------------------------------------------------
     let is_misty_biome = matches!(
         biome_type,
-        BiomeType::OrchidSwamp
-            | BiomeType::CloudForest
-            | BiomeType::TropicalJungle
-            | BiomeType::SiberianTaiga
+        BiomeType::WillowMarsh
+            | BiomeType::MangroveSwamp
+            | BiomeType::OrchidSwamp
+            | BiomeType::SwampyShore
+            | BiomeType::MistyWoods
+            | BiomeType::MistyCrags
+            | BiomeType::DenseRainforest
+            | BiomeType::JungleWetlands
+            | BiomeType::BleakTaiga
+            | BiomeType::WitheredWoods
+            | BiomeType::ObsidianMire
     );
     let is_snowy_weather = w.current.is_snow() || w.snow_intensity > 0.05;
     let post_rain_factor = if is_snowy_weather {

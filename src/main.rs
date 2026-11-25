@@ -104,6 +104,7 @@ fn main() {
         show_chunk_grid: local_config.map_show_chunk_grid,
         follow_day_night: local_config.map_follow_day_night,
         show_elevation: local_config.map_show_elevation,
+        overlay_mode: Default::default(),
     };
 
     let game_settings = GameSettings {
@@ -155,6 +156,9 @@ fn main() {
         menu_blur_intensity: local_config.menu_blur_intensity,
 
         background_dimming: local_config.background_dimming,
+
+        show_undiscovered_compendium: local_config.show_undiscovered_compendium,
+        preload_full_world_map: local_config.preload_full_world_map,
     };
 
     let dynamic_fps_settings = DynamicFpsSettings {

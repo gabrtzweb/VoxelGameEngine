@@ -1,5 +1,5 @@
 /// Static registry metadata table: (ID, Label, Texture name) for all voxel variants.
-pub(crate) static VOXEL_DATA: [(&str, &str, &str); 711] = [
+pub(crate) static VOXEL_DATA: [(&str, &str, &str); 717] = [
     ("air", "Air", ""),
     ("occupied", "Occupied", ""),
     ("water_occupied", "Waterlogged Occupied", ""),
@@ -1628,4 +1628,10 @@ pub(crate) static VOXEL_DATA: [(&str, &str, &str); 711] = [
         "Flint Shovel",
         "tool_flint_shovel_item",
     ),
+    ("seagrass_sand", "Seagrass Sand", "soil_sand_common"),
+    ("silt_tundra_moss", "Silt Tundra Moss", "soil_silt_dirt"),
+    ("loam_tundra_moss", "Loam Tundra Moss", "soil_loam_dirt"),
+    ("peat_tundra_moss", "Peat Tundra Moss", "soil_peat_dirt"),
+    ("vege_arctic_moss", "Arctic Moss", "vege_arctic_moss"),
+    ("vege_arctic_grass", "Arctic Grass", "vege_arctic_grass"),
 ];

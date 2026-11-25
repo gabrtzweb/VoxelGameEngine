@@ -218,7 +218,13 @@ fn push_lod_wall(
     let is_soil = surface_voxel.is_grass_soil()
         || matches!(
             surface_voxel,
-            Voxel::LoamSnow | Voxel::PeatSnow | Voxel::SiltSnow
+            Voxel::LoamSnow
+                | Voxel::PeatSnow
+                | Voxel::SiltSnow
+                | Voxel::SeagrassSand
+                | Voxel::SiltTundraMoss
+                | Voxel::LoamTundraMoss
+                | Voxel::PeatTundraMoss
         );
 
     let top_side_color = if surface_voxel.is_grass_soil() && textures.full_grass {

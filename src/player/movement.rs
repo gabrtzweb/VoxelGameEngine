@@ -143,7 +143,11 @@ pub fn creative_movement(
     mouse_scroll: Res<AccumulatedMouseScroll>,
     time: Res<Time>,
     game_mode: Res<GameMode>,
-    (selected_race, selected_subrace): (Option<Res<SelectedRace>>, Option<Res<SelectedSubrace>>),
+    (selected_race, selected_subrace, fast_flight): (
+        Option<Res<SelectedRace>>,
+        Option<Res<SelectedSubrace>>,
+        Option<Res<super::FastFlightState>>,
+    ),
     inspector_interaction: Res<InspectorInteraction>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
     game_settings: Res<GameSettings>,
@@ -403,6 +407,13 @@ pub fn creative_movement(
             (a.move_speed_multiplier, a.swim_speed_multiplier)
         });
     if motion.flying {
+        let boost_mult = if *game_mode == GameMode::Creative
+            && fast_flight.as_ref().is_some_and(|f| f.0)
+        {
+            5.0
+        } else {
+            1.0
+        };
         fly_movement(
             input_dirs,
             delta_seconds,
@@ -412,6 +423,7 @@ pub fn creative_movement(
             camera_forward,
             camera_right,
             is_fast,
+            boost_mult,
             stance_h,
         );
     } else {
@@ -570,6 +582,7 @@ fn fly_movement(
     camera_forward: Vec3,
     camera_right: Vec3,
     is_fast: bool,
+    boost_mult: f32,
     stance_height: f32,
 ) {
     let mut direction = Vec3::ZERO;
@@ -597,7 +610,7 @@ fn fly_movement(
         moving_vertically = up || down;
     }
 
-    let speed = if is_fast { FAST_FLY_SPEED } else { FLY_SPEED };
+    let speed = if is_fast { FAST_FLY_SPEED } else { FLY_SPEED } * boost_mult;
 
     let movement = if direction == Vec3::ZERO {
         Vec3::ZERO

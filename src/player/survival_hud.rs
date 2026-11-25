@@ -96,10 +96,16 @@ enum ClimateBadgeKind {
 }
 
 #[derive(Resource, Default)]
-struct GameModeToastState {
+pub struct GameModeToastState {
     timer: f32,
     last_mode: Option<GameMode>,
     pending_custom_message: Option<String>,
+}
+
+impl GameModeToastState {
+    pub fn show_message(&mut self, msg: impl Into<String>) {
+        self.pending_custom_message = Some(msg.into());
+    }
 }
 
 const TOAST_HOLD_SECS: f32 = 1.6;

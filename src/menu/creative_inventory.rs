@@ -37,7 +37,7 @@ pub const CREATIVE_TAB_X: f32 = 128.0;
 pub const CREATIVE_TAB_Y_COORDS: [f32; 9] =
     [65.0, 84.0, 103.0, 122.0, 141.0, 160.0, 179.0, 198.0, 217.0];
 
-pub const AVAILABLE_BLOCKS: [Voxel; 708] = Voxel::ALL;
+pub const AVAILABLE_BLOCKS: [Voxel; 714] = Voxel::ALL;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CreativeCategory {
@@ -1719,8 +1719,8 @@ fn handle_creative_toggle_interaction(
     let (gui_scale, dimming_alpha) = game_settings
         .as_ref()
         .map_or((4, 0.75), |s| (s.gui_scale, s.background_dimming.alpha()));
-    for (hovered, is_pressed) in &toggle_query {
-        if is_pressed || (mouse.just_pressed(MouseButton::Left) && hovered.get()) {
+    for (hovered, _is_pressed) in &toggle_query {
+        if mouse.just_pressed(MouseButton::Left) && hovered.get() {
             *tab_state = match *tab_state {
                 InventoryTab::Creative => InventoryTab::Player,
                 InventoryTab::Player => InventoryTab::Creative,

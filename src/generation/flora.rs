@@ -167,25 +167,38 @@ fn select_wild_crop(biome: BiomeType, is_wet_bank: bool, patch_id: u32) -> (Voxe
     }
 
     match biome {
-        // Cold / Alpine / Taiga
-        BiomeType::SiberianTaiga
+        // Cold / Alpine / Taiga / Tundra
+        BiomeType::BleakTaiga
         | BiomeType::WintryForest
+        | BiomeType::FrostPinewoods
+        | BiomeType::IceboundRidge
         | BiomeType::PineHighlands
         | BiomeType::ColdShrubland
-        | BiomeType::AlpineHighlands
-        | BiomeType::EmeraldPeaks => match patch_id % 4 {
+        | BiomeType::PermafrostSteppe
+        | BiomeType::SnowyPlains
+        | BiomeType::TundraIsland
+        | BiomeType::AlpinePeaks
+        | BiomeType::JaggedPeaks
+        | BiomeType::EmeraldFoothills => match patch_id % 4 {
             0 => (Voxel::WildPotatoes, None),
             1 => (Voxel::WildBeetroots, None),
             2 => (Voxel::WildGarlic, None),
             _ => (Voxel::WildBarleyBottom, Some(Voxel::WildBarleyTop)),
         },
         // Warm / Tropical / Savanna / Oasis
-        BiomeType::TropicalJungle
+        BiomeType::DenseRainforest
+        | BiomeType::BambooGrove
+        | BiomeType::JungleWetlands
+        | BiomeType::VolcanicJungle
+        | BiomeType::WillowMarsh
+        | BiomeType::MangroveSwamp
         | BiomeType::OrchidSwamp
+        | BiomeType::AcaciaPlains
         | BiomeType::FracturedSavanna
         | BiomeType::SavannaBadlands
         | BiomeType::DesertOasis
-        | BiomeType::MirageIsles => match patch_id % 5 {
+        | BiomeType::TropicalIsland
+        | BiomeType::CoralIsland => match patch_id % 5 {
             0 => (Voxel::WildCornBottom, Some(Voxel::WildCornTop)),
             1 => (Voxel::WildTomatoes, None),
             2 => (Voxel::WildPepper, None),
@@ -209,17 +222,27 @@ fn select_wild_crop(biome: BiomeType, is_wet_bank: bool, patch_id: u32) -> (Voxe
 fn is_woodland_biome(biome: BiomeType) -> bool {
     matches!(
         biome,
-        BiomeType::YosemiteLowlands
-            | BiomeType::CloudForest
+        BiomeType::VerdantWoods
+            | BiomeType::AutumnForest
+            | BiomeType::MistyWoods
+            | BiomeType::TemperateIsland
             | BiomeType::SakuraGrove
-            | BiomeType::BloomingValley
+            | BiomeType::FertileValley
             | BiomeType::LavenderValley
             | BiomeType::PineHighlands
-            | BiomeType::SiberianTaiga
+            | BiomeType::BleakTaiga
+            | BiomeType::ShieldForest
             | BiomeType::WintryForest
-            | BiomeType::TropicalJungle
+            | BiomeType::FrostPinewoods
+            | BiomeType::DenseRainforest
+            | BiomeType::BambooGrove
+            | BiomeType::JungleWetlands
+            | BiomeType::VolcanicJungle
+            | BiomeType::WillowMarsh
+            | BiomeType::MangroveSwamp
             | BiomeType::OrchidSwamp
-            | BiomeType::Shield
+            | BiomeType::WitheredWoods
+            | BiomeType::AcaciaPlains
             | BiomeType::FracturedSavanna
     )
 }
@@ -228,21 +251,29 @@ fn is_woodland_biome(biome: BiomeType) -> bool {
 fn is_rocky_biome(biome: BiomeType) -> bool {
     matches!(
         biome,
-        BiomeType::AlpineHighlands
-            | BiomeType::EmeraldPeaks
-            | BiomeType::VolcanicPeaks
-            | BiomeType::PaintedMountains
-            | BiomeType::RockyMountains
-            | BiomeType::ScarletMountains
-            | BiomeType::BryceCanyon
+        BiomeType::AlpinePeaks
+            | BiomeType::JaggedPeaks
+            | BiomeType::MonolithCliffs
+            | BiomeType::EmeraldFoothills
+            | BiomeType::GranitePlateau
+            | BiomeType::MistyCrags
             | BiomeType::AmethystCanyon
-            | BiomeType::BasaltCliffs
-            | BiomeType::GraniteCliffs
-            | BiomeType::WhiteCliffs
-            | BiomeType::YosemiteCliffs
-            | BiomeType::Caldera
+            | BiomeType::DeepGorge
+            | BiomeType::WindyPass
+            | BiomeType::RedrockCanyon
+            | BiomeType::PaintedMesas
             | BiomeType::DesertSpires
-            | BiomeType::AshenSavanna
+            | BiomeType::CoastalCliffs
+            | BiomeType::CraggyBeach
+            | BiomeType::TidePools
+            | BiomeType::RockyIsland
+            | BiomeType::VolcanicPeaks
+            | BiomeType::Caldera
+            | BiomeType::AshenWastes
+            | BiomeType::ObsidianMire
+            | BiomeType::AcidPools
+            | BiomeType::SulfurVents
+            | BiomeType::ScorchedFlats
     )
 }
 
@@ -290,24 +321,37 @@ pub fn populate_chunk_flora<F>(
                 && ground.is_grass_soil()
                 && matches!(
                     col.biome,
-                    BiomeType::YosemiteLowlands
-                        | BiomeType::CloudForest
+                    BiomeType::VerdantWoods
+                        | BiomeType::AutumnForest
+                        | BiomeType::MistyWoods
+                        | BiomeType::TemperateIsland
                         | BiomeType::SakuraGrove
-                        | BiomeType::BloomingValley
+                        | BiomeType::FertileValley
                         | BiomeType::LavenderValley
+                        | BiomeType::WillowMarsh
+                        | BiomeType::MangroveSwamp
                         | BiomeType::OrchidSwamp
-                        | BiomeType::Shield
-                        | BiomeType::TropicalJungle
+                        | BiomeType::ShieldForest
+                        | BiomeType::DenseRainforest
+                        | BiomeType::BambooGrove
+                        | BiomeType::JungleWetlands
+                        | BiomeType::VolcanicJungle
                         | BiomeType::PineHighlands
-                        | BiomeType::SiberianTaiga
+                        | BiomeType::BleakTaiga
                         | BiomeType::WintryForest
+                        | BiomeType::FrostPinewoods
                 )
             {
                 let moss_macro = patch_noise(wx, wz, 18.0, seed ^ 0x4055_A11C);
                 let moss_detail = patch_noise(wx, wz, 5.5, seed ^ 0x4055_B22D);
                 let macro_thresh = if matches!(
                     col.biome,
-                    BiomeType::OrchidSwamp | BiomeType::CloudForest | BiomeType::TropicalJungle
+                    BiomeType::WillowMarsh
+                        | BiomeType::MangroveSwamp
+                        | BiomeType::OrchidSwamp
+                        | BiomeType::MistyWoods
+                        | BiomeType::DenseRainforest
+                        | BiomeType::JungleWetlands
                 ) {
                     0.60
                 } else {
@@ -456,13 +500,19 @@ pub fn populate_chunk_flora<F>(
                 // Clustered Leaf Litter patches on temperate/deciduous woodland floors
                 if matches!(
                     col.biome,
-                    BiomeType::YosemiteLowlands
-                        | BiomeType::CloudForest
-                        | BiomeType::BloomingValley
+                    BiomeType::VerdantWoods
+                        | BiomeType::AutumnForest
+                        | BiomeType::MistyWoods
+                        | BiomeType::TemperateIsland
+                        | BiomeType::FertileValley
                         | BiomeType::LavenderValley
+                        | BiomeType::WillowMarsh
+                        | BiomeType::MangroveSwamp
                         | BiomeType::OrchidSwamp
-                        | BiomeType::Shield
-                        | BiomeType::TropicalJungle
+                        | BiomeType::ShieldForest
+                        | BiomeType::DenseRainforest
+                        | BiomeType::BambooGrove
+                        | BiomeType::JungleWetlands
                 ) {
                     let litter_patch = patch_noise(wx, wz, 14.0, seed ^ 0x1EAF_F00D);
                     if litter_patch > 0.66 {
@@ -633,7 +683,18 @@ fn populate_marine_column(
     let orient = ((wx.wrapping_mul(31) ^ wz.wrapping_mul(17)) & 3).unsigned_abs() as u8;
 
     // Floating Lily Pads on shallow calm swamp / lake / oasis water
-    if (col.is_lake || col.biome == BiomeType::OrchidSwamp || col.biome == BiomeType::DesertOasis)
+    if (col.is_lake
+        || matches!(
+            col.biome,
+            BiomeType::WillowMarsh
+                | BiomeType::MangroveSwamp
+                | BiomeType::OrchidSwamp
+                | BiomeType::SwampyShore
+                | BiomeType::CalmLake
+                | BiomeType::Estuary
+                | BiomeType::JungleWetlands
+                | BiomeType::DesertOasis
+        ))
         && depth <= 6
     {
         let lily_patch = patch_noise(wx, wz, 14.0, seed ^ 0x1117_FAD0);
@@ -665,7 +726,7 @@ fn populate_marine_column(
         let r_vent = hash_f32(h_vent);
         let should_spawn_vent = match col.biome {
             BiomeType::OceanTrench | BiomeType::Caldera => vent_patch > 0.58 && r_vent < 0.032,
-            BiomeType::DeepWarmOcean | BiomeType::ColdOcean if depth >= 8 => {
+            BiomeType::WarmOcean | BiomeType::ColdOcean if depth >= 8 => {
                 vent_patch > 0.68 && r_vent < 0.012
             }
             _ => false,
@@ -757,18 +818,21 @@ fn populate_marine_column(
     }
 
     // Vibrant Coral Reefs: dense, multi-block branching colonies with 6-face wall/top coral fans
-    let is_coral_zone = matches!(col.biome, BiomeType::CoralReef | BiomeType::DeepWarmOcean)
-        || (!col.is_river && col.climate.temperature > -0.15);
-    if is_coral_zone && depth <= 22 {
+    let is_coral_zone = matches!(
+        col.biome,
+        BiomeType::CoralReefs | BiomeType::CoralIsland | BiomeType::WarmOcean
+    ) || (!col.is_river && col.climate.temperature > -0.15);
+    if is_coral_zone && depth <= 22 && col.biome != BiomeType::SeagrassMeadows {
         let reef_patch = patch_noise(wx, wz, 20.0, seed ^ 0xC07A_1FEF);
         let reef_cluster = patch_noise(wx, wz, 7.0, seed ^ 0xC07A_8841);
-        let (threshold, chance) = if col.biome == BiomeType::CoralReef {
-            (0.30, 0.34)
-        } else if col.biome == BiomeType::DeepWarmOcean {
-            (0.44, 0.24)
-        } else {
-            (0.54, 0.18)
-        };
+        let (threshold, chance) =
+            if matches!(col.biome, BiomeType::CoralReefs | BiomeType::CoralIsland) {
+                (0.30, 0.34)
+            } else if col.biome == BiomeType::WarmOcean {
+                (0.44, 0.24)
+            } else {
+                (0.54, 0.18)
+            };
         // Organic Coralstone seabed patches underneath and around coral reef clusters
         if reef_patch > threshold - 0.04 && reef_cluster > 0.30 {
             let cs_patch = patch_noise(wx, wz, 5.5, seed ^ 0xC057_09E1);
@@ -1044,8 +1108,15 @@ fn populate_marine_column(
     // Kelp & Bull Kelp underwater forests in any deep coastal water or ocean (depth >= 4)
     if depth >= 4 && !col.is_river {
         let kelp_patch = patch_noise(wx, wz, 18.0, seed ^ 0x0E1F_4422);
-        if kelp_patch > 0.50 && r < 0.11 {
-            let is_bull = col.biome == BiomeType::ColdOcean
+        let (kelp_thresh, kelp_chance) = if col.biome == BiomeType::KelpForests {
+            (0.26, 0.28)
+        } else if col.biome == BiomeType::SeagrassMeadows {
+            (0.68, 0.04)
+        } else {
+            (0.50, 0.11)
+        };
+        if kelp_patch > kelp_thresh && r < kelp_chance {
+            let is_bull = matches!(col.biome, BiomeType::ColdOcean | BiomeType::KelpForests)
                 || col.climate.temperature < 0.1
                 || ((h >> 12) & 1) == 0;
             let max_h = (depth - 2).clamp(2, 9);
@@ -1077,10 +1148,16 @@ fn populate_marine_column(
         }
     }
 
-    // Lush Seagrass & Red Algae underwater meadows
+    // Lush Seagrass & Red Algae underwater meadows (extra dense on SeagrassMeadows & SeagrassSand!)
     let sg_patch = patch_noise(wx, wz, 14.0, seed ^ 0x5EA6_7A55);
-    if sg_patch > 0.35 && r < 0.22 {
-        let vox = if (h >> 10).is_multiple_of(6) {
+    let (sg_thresh, sg_chance) =
+        if col.biome == BiomeType::SeagrassMeadows || ground == Voxel::SeagrassSand {
+            (0.15, 0.45)
+        } else {
+            (0.35, 0.22)
+        };
+    if sg_patch > sg_thresh && r < sg_chance {
+        let vox = if (h >> 10).is_multiple_of(8) && col.biome != BiomeType::SeagrassMeadows {
             Voxel::RedAlgae
         } else {
             Voxel::Seagrass
@@ -1128,7 +1205,10 @@ fn surface_rubble_chance(col: TerrainColumn, ground: Voxel) -> f32 {
 
 #[inline(always)]
 fn surface_pebble_chance(col: TerrainColumn) -> f32 {
-    if col.biome == BiomeType::GravelBeach {
+    if matches!(
+        col.biome,
+        BiomeType::GravelBeach | BiomeType::CraggyBeach | BiomeType::TidePools
+    ) {
         0.028
     } else if col.is_beach || col.river_factor > 0.12 {
         0.012
@@ -1147,14 +1227,32 @@ fn sample_wild_crop_column(
     col: TerrainColumn,
     seed: u32,
 ) -> Option<(Voxel, Option<Voxel>)> {
-    let is_beach_surface = col.is_beach || col.biome == BiomeType::GravelBeach;
+    let is_beach_surface = col.is_beach
+        || matches!(
+            col.biome,
+            BiomeType::SandyShores
+                | BiomeType::GravelBeach
+                | BiomeType::DuneBeach
+                | BiomeType::CraggyBeach
+                | BiomeType::TidePools
+        );
     let crop_patch = patch_noise(wx, wz, 22.0, seed ^ 0xC095_F00D);
     if crop_patch > 0.78 && (!is_beach_surface || col.river_factor > 0.10) {
         let h_crop = hash2d(wx, wz, seed ^ 0x7A31_5512);
         if hash_f32(h_crop) < 0.065 {
             let is_wet_bank = col.river_factor > 0.10
                 || col.is_lake
-                || matches!(col.biome, BiomeType::OrchidSwamp | BiomeType::DesertOasis);
+                || matches!(
+                    col.biome,
+                    BiomeType::WillowMarsh
+                        | BiomeType::MangroveSwamp
+                        | BiomeType::OrchidSwamp
+                        | BiomeType::SwampyShore
+                        | BiomeType::ReedyShore
+                        | BiomeType::Mudflats
+                        | BiomeType::JungleWetlands
+                        | BiomeType::DesertOasis
+                );
             // Use coarse patch cell so nearby wild crops belong to the same species
             let species_id = hash2d(wx.div_euclid(24), wz.div_euclid(24), seed ^ 0xAA11_9922);
             let (bot, top_opt) = select_wild_crop(col.biome, is_wet_bank, species_id);
@@ -1191,7 +1289,8 @@ fn select_surface_flora_column(
             | BiomeType::AncientSands
             | BiomeType::DesertSpires
             | BiomeType::DesertOasis
-            | BiomeType::BryceCanyon
+            | BiomeType::RedrockCanyon
+            | BiomeType::PaintedMesas
             | BiomeType::AmethystCanyon => {
                 if ground.is_sandy_soil() && roll < 0.0025 {
                     let height = 1 + ((h >> 8) % 3) as i32;
@@ -1200,7 +1299,15 @@ fn select_surface_flora_column(
                     None
                 }
             }
-            BiomeType::TropicalJungle => {
+            BiomeType::BambooGrove => {
+                if ground.is_fertile_soil() && roll < 0.085 {
+                    let height = 3 + ((h >> 8) % 5) as i32;
+                    Some((SurfaceFloraDecision::Bamboo(height), h))
+                } else {
+                    None
+                }
+            }
+            BiomeType::DenseRainforest | BiomeType::JungleWetlands | BiomeType::VolcanicJungle => {
                 if ground.is_fertile_soil() {
                     let bamboo_patch = patch_noise(wx, wz, 20.0, seed ^ 0xBA3B_0000);
                     if bamboo_patch > 0.74 && roll < 0.025 {
@@ -1220,8 +1327,42 @@ fn select_surface_flora_column(
     let flower_patch = patch_noise(wx, wz, 16.0, seed ^ 0xF10E_5555);
     let grass_patch = patch_noise(wx, wz, 18.0, seed ^ 0x67A5_5111);
 
+    // Tundra Moss Ground (`SiltTundraMoss`, `LoamTundraMoss`, `PeatTundraMoss`):
+    // Always prioritize spawning the new pre-colored `VegeArcticMoss` and `VegeArcticGrass`!
+    if matches!(
+        ground,
+        Voxel::SiltTundraMoss | Voxel::LoamTundraMoss | Voxel::PeatTundraMoss
+    ) {
+        if grass_patch > 0.26 && roll < 0.12 {
+            let vox = match (h >> 8) % 6 {
+                0..=2 => Voxel::VegeArcticGrass,
+                3 | 4 => Voxel::VegeArcticMoss,
+                _ => Voxel::VegeFern,
+            };
+            return Some((
+                SurfaceFloraDecision::Cross {
+                    bot: vox,
+                    top: None,
+                },
+                h,
+            ));
+        }
+        return None;
+    }
+
     // Coastal beaches & GravelBeach: Dry Wildgrass & sparse Sea Oats on sand, plus hardy grass patches on dirty gravel
-    if col.is_beach || col.biome == BiomeType::MirageIsles || col.biome == BiomeType::GravelBeach {
+    if col.is_beach
+        || matches!(
+            col.biome,
+            BiomeType::SandyShores
+                | BiomeType::GravelBeach
+                | BiomeType::DuneBeach
+                | BiomeType::CraggyBeach
+                | BiomeType::TidePools
+                | BiomeType::TropicalIsland
+                | BiomeType::CoralIsland
+        )
+    {
         if matches!(ground, Voxel::GravelDirty | Voxel::GravelAshy)
             && grass_patch > 0.36
             && roll < 0.095
@@ -1259,8 +1400,19 @@ fn select_surface_flora_column(
     }
 
     // Riverbank / Wetland Cattails
-    if (col.river_factor > 0.14 || col.is_lake || col.biome == BiomeType::OrchidSwamp)
-        && roll < 0.024
+    if (col.river_factor > 0.14
+        || col.is_lake
+        || matches!(
+            col.biome,
+            BiomeType::WillowMarsh
+                | BiomeType::MangroveSwamp
+                | BiomeType::OrchidSwamp
+                | BiomeType::SwampyShore
+                | BiomeType::ReedyShore
+                | BiomeType::Mudflats
+                | BiomeType::Estuary
+        ))
+        && roll < 0.032
         && Voxel::VegeCattailBottom.can_be_placed_on_ground(ground)
     {
         return Some((
@@ -1278,7 +1430,8 @@ fn select_surface_flora_column(
         | BiomeType::AncientSands
         | BiomeType::DesertSpires
         | BiomeType::DesertOasis
-        | BiomeType::BryceCanyon
+        | BiomeType::RedrockCanyon
+        | BiomeType::PaintedMesas
         | BiomeType::AmethystCanyon => {
             if ground.is_sandy_soil() {
                 if roll < 0.0025 {
@@ -1304,8 +1457,14 @@ fn select_surface_flora_column(
             None
         }
 
-        // --- SAVANNAS & DRY STEPPES ---
-        BiomeType::FracturedSavanna | BiomeType::SavannaBadlands | BiomeType::AshenSavanna => {
+        // --- SAVANNAS, STEPPES & DARK FANTASY WASTES ---
+        BiomeType::AcaciaPlains
+        | BiomeType::FracturedSavanna
+        | BiomeType::SavannaBadlands
+        | BiomeType::RollingSteppe
+        | BiomeType::WitheredWoods
+        | BiomeType::AshenWastes
+        | BiomeType::ScorchedFlats => {
             if roll < 0.085 && grass_patch > 0.34 {
                 let vox = match (h >> 8) % 5 {
                     0 | 1 => Voxel::VegeDrygrass,
@@ -1326,9 +1485,19 @@ fn select_surface_flora_column(
             None
         }
 
-        // --- BLOOMING VALLEY ---
-        BiomeType::BloomingValley => {
-            if flower_patch > 0.50 && roll < 0.055 {
+        // --- FLOWER MEADOW & FERTILE VALLEY ---
+        BiomeType::FlowerMeadow | BiomeType::FertileValley => {
+            let flower_thresh = if col.biome == BiomeType::FlowerMeadow {
+                0.35
+            } else {
+                0.50
+            };
+            let flower_prob = if col.biome == BiomeType::FlowerMeadow {
+                0.085
+            } else {
+                0.055
+            };
+            if flower_patch > flower_thresh && roll < flower_prob {
                 let species = (hash2d(wx.div_euclid(8), wz.div_euclid(8), seed ^ 0xB100_0001)
                     + ((h >> 10) % 2))
                     % 10;
@@ -1415,8 +1584,32 @@ fn select_surface_flora_column(
             None
         }
 
-        // --- TROPICAL JUNGLE ---
-        BiomeType::TropicalJungle => {
+        // --- BAMBOO GROVE ---
+        BiomeType::BambooGrove => {
+            if ground.is_fertile_soil() {
+                if roll < 0.085 {
+                    let height = 3 + ((h >> 8) % 5) as i32;
+                    return Some((SurfaceFloraDecision::Bamboo(height), h));
+                } else if roll < 0.14 {
+                    let vox = if ((h >> 10) & 1) == 0 {
+                        Voxel::VegeFern
+                    } else {
+                        Voxel::VegeBush
+                    };
+                    return Some((
+                        SurfaceFloraDecision::Cross {
+                            bot: vox,
+                            top: None,
+                        },
+                        h,
+                    ));
+                }
+            }
+            None
+        }
+
+        // --- TROPICAL RAINFORESTS ---
+        BiomeType::DenseRainforest | BiomeType::JungleWetlands | BiomeType::VolcanicJungle => {
             if ground.is_fertile_soil() {
                 let bamboo_patch = patch_noise(wx, wz, 20.0, seed ^ 0xBA3B_0000);
                 if bamboo_patch > 0.74 && roll < 0.025 {
@@ -1451,8 +1644,12 @@ fn select_surface_flora_column(
             None
         }
 
-        // --- ORCHID SWAMP ---
-        BiomeType::OrchidSwamp => {
+        // --- SWAMPS & FRESHWATER SHORES ---
+        BiomeType::WillowMarsh
+        | BiomeType::MangroveSwamp
+        | BiomeType::OrchidSwamp
+        | BiomeType::SwampyShore
+        | BiomeType::ReedyShore => {
             if ground.is_fertile_soil() && roll < 0.085 {
                 let vox = match (h >> 8) % 5 {
                     0 | 1 => Voxel::FlowerBlueOrchid,
@@ -1471,17 +1668,23 @@ fn select_surface_flora_column(
             None
         }
 
-        // --- TAIGA / COLD FORESTS / PINE HIGHLANDS ---
-        BiomeType::SiberianTaiga
+        // --- TUNDRA, TAIGA & COLD FORESTS (Featuring Arctic Moss & Arctic Grass!) ---
+        BiomeType::ColdShrubland
+        | BiomeType::PermafrostSteppe
+        | BiomeType::TundraIsland
+        | BiomeType::SnowyPlains
+        | BiomeType::BleakTaiga
         | BiomeType::WintryForest
-        | BiomeType::PineHighlands
-        | BiomeType::ColdShrubland => {
-            if ground.is_fertile_soil() && roll < 0.075 {
-                let vox = match (h >> 8) % 6 {
-                    0 | 1 => Voxel::VegeFern,
-                    2 => Voxel::VegeBracken,
-                    3 => Voxel::VegeMossgrass,
-                    4 => Voxel::FungiAmanita,
+        | BiomeType::FrostPinewoods
+        | BiomeType::IceboundRidge
+        | BiomeType::PineHighlands => {
+            if ground.is_fertile_soil() && roll < 0.085 {
+                let vox = match (h >> 8) % 8 {
+                    0 | 1 => Voxel::VegeArcticGrass,
+                    2 | 3 => Voxel::VegeArcticMoss,
+                    4 => Voxel::VegeFern,
+                    5 => Voxel::VegeBracken,
+                    6 => Voxel::FungiAmanita,
                     _ => Voxel::FungiPorcini,
                 };
                 return Some((
@@ -1495,14 +1698,20 @@ fn select_surface_flora_column(
             None
         }
 
-        // --- FROZEN / GLACIAL / VOLCANIC (sparse or barren) ---
+        // --- FROZEN / GLACIAL / VOLCANIC / AQUATIC (sparse or barren) ---
         BiomeType::GlacialChasm
+        | BiomeType::IceSheet
         | BiomeType::FrozenCliffs
+        | BiomeType::FrozenIsland
         | BiomeType::VolcanicPeaks
         | BiomeType::Caldera
+        | BiomeType::AcidPools
+        | BiomeType::SulfurVents
         | BiomeType::ColdOcean
-        | BiomeType::DeepWarmOcean
-        | BiomeType::CoralReef
+        | BiomeType::WarmOcean
+        | BiomeType::CoralReefs
+        | BiomeType::SeagrassMeadows
+        | BiomeType::KelpForests
         | BiomeType::OceanTrench => None,
 
         // --- TEMPERATE FORESTS, LOWLANDS, SHIELD & MOUNTAINS (default open scatter) ---
@@ -1639,6 +1848,8 @@ pub fn sample_lod_surface_prop(
                         | Voxel::VegeDrygrass
                         | Voxel::VegeBluffGrass
                         | Voxel::VegeMossgrass
+                        | Voxel::VegeArcticGrass
+                        | Voxel::VegeArcticMoss
                 )
                 && ((h_flora >> 15) & 1) != 0
             {

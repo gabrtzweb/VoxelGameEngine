@@ -6,7 +6,7 @@ use voxel_game_engine::{
 #[test]
 fn test_subterranean_strata_depths() {
     let strata = StrataGenerator::default();
-    let config = BiomeType::AlpineHighlands.config();
+    let config = BiomeType::AlpinePeaks.config();
 
     // Bedrock floor strictly Mantle at -254
     let mantle_block = strata.solid_voxel_at(0, -254, 0, 100, &config, 12345);
@@ -42,7 +42,7 @@ fn test_surface_crust_mother_rocks() {
     let strata = StrataGenerator::default();
 
     // 1. Taiga (Permafrost subsoil -> must yield Andesite mother rock in 4-8 block surface crust, never Slate!)
-    let taiga = BiomeType::SiberianTaiga.config();
+    let taiga = BiomeType::BleakTaiga.config();
     let taiga_crust = strata.solid_voxel_at(0, 50, 0, 6, &taiga, 12345);
     assert_eq!(
         taiga_crust,
@@ -52,7 +52,7 @@ fn test_surface_crust_mother_rocks() {
     );
 
     // 2. Loam soil -> Granite mother rock
-    let plains = BiomeType::EmeraldPeaks.config();
+    let plains = BiomeType::EmeraldFoothills.config();
     let plains_crust = strata.solid_voxel_at(0, 50, 0, 6, &plains, 12345);
     assert_eq!(
         plains_crust,

@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use super::{
+    adventure_map::AdventureWorldMap,
     biome::{BiomeType, ClimateGenerator, ClimateSample},
     caves::{CaveGenerator, CaveNoiseSample},
     flora, ores,
@@ -103,6 +104,10 @@ pub struct TerrainGenerator {
     // Phase 12 procedural vegetation
     pub tree_density: f32,
 
+    // Phase 12 Adventure Mode handcrafted world map (None = infinite procedural Sandbox)
+    #[reflect(ignore)]
+    pub adventure_map: Option<std::sync::Arc<AdventureWorldMap>>,
+
     // Generation version tracker to signal runtime remeshing when tweaked in inspector
     pub version: u32,
 }
@@ -149,6 +154,8 @@ impl Default for TerrainGenerator {
 
             // Tree generation disabled for initial terrain validation
             tree_density: 0.0,
+
+            adventure_map: None,
 
             version: 0,
         }
@@ -206,6 +213,9 @@ impl TerrainGenerator {
         h ^= (self.mountain_ridge_height.to_bits() as u64).rotate_left(31);
         h ^= (self.river_frequency.to_bits() as u64).rotate_left(43);
         h ^= (self.lake_abundance.to_bits() as u64).rotate_left(53);
+        if let Some(ref map) = self.adventure_map {
+            h ^= map.fingerprint();
+        }
         h
     }
 
@@ -930,6 +940,10 @@ impl TerrainGenerator {
         world_x: i32,
         world_z: i32,
     ) -> (f32, BiomeType, bool, ClimateSample) {
+        if let Some(ref map) = self.adventure_map {
+            return map.sample_column_data(world_x, world_z, self.seed);
+        }
+
         let logical_x = world_x.div_euclid(LOGICAL_BLOCK_VOXELS);
         let logical_z = world_z.div_euclid(LOGICAL_BLOCK_VOXELS);
         let sample_x = logical_block_sample_position(logical_x);
@@ -1048,6 +1062,15 @@ impl TerrainGenerator {
         world_xs: [i32; 4],
         world_zs: [i32; 4],
     ) -> [(f32, BiomeType, bool, ClimateSample); 4] {
+        if let Some(ref map) = self.adventure_map {
+            return [
+                map.sample_column_data(world_xs[0], world_zs[0], self.seed),
+                map.sample_column_data(world_xs[1], world_zs[1], self.seed),
+                map.sample_column_data(world_xs[2], world_zs[2], self.seed),
+                map.sample_column_data(world_xs[3], world_zs[3], self.seed),
+            ];
+        }
+
         let logical_x = [
             world_xs[0].div_euclid(LOGICAL_BLOCK_VOXELS),
             world_xs[1].div_euclid(LOGICAL_BLOCK_VOXELS),
@@ -1177,50 +1200,86 @@ impl TerrainGenerator {
         let mut surface_shape = BlockShape::Full;
         let mut shape_orientation = 0u8;
 
-        let logical_x = world_x.div_euclid(LOGICAL_BLOCK_VOXELS);
-        let logical_z = world_z.div_euclid(LOGICAL_BLOCK_VOXELS);
-        let sample_x = logical_block_sample_position(logical_x);
-        let sample_z = logical_block_sample_position(logical_z);
-
-        let (mut river_factor, is_river_path, _center_dx, _center_dz) =
-            self.river_sample_with_offset(sample_x, sample_z);
-        let uncarved_height = self.natural_height_at(world_x as f32, world_z as f32, &climate);
-        let height_suppress = ((uncarved_height - 23.0) / 8.0).clamp(0.0, 1.0);
-        let mountain_suppress = ((climate.continentalness - 0.25) / 0.10).clamp(0.0, 1.0);
-        let ridge_suppress = ((climate.ridges - 0.25) / 0.15).clamp(0.0, 1.0);
-        let total_suppress =
-            (height_suppress.max(mountain_suppress).max(ridge_suppress)).clamp(0.0, 1.0);
-        river_factor *= 1.0 - total_suppress;
-
-        let is_inland = climate.continentalness >= -0.04;
-        let is_river = is_river_path && is_inland && river_factor > 0.04 && !is_underground_river;
-        let oasis_sample = self.sample_desert_oasis(world_x, world_z, raw_height, &climate);
-        let lake_sample = oasis_sample
-            .or_else(|| self.sample_organic_lake(world_x, world_z, raw_height, &climate));
-        let is_lake = lake_sample.is_some_and(|(_, _, t_dist)| t_dist <= 1.25);
-
-        let water_level = if terrain_height < sea_level {
-            Some(sea_level)
-        } else if let Some((lake_water_y, _, t_dist)) = lake_sample {
-            if t_dist < 0.90 && terrain_height < lake_water_y {
-                Some(lake_water_y)
+        let (is_river, is_lake, water_level, river_factor, lake_sample) =
+            if let Some(ref map) = self.adventure_map {
+                let is_river = matches!(final_biome, BiomeType::Rapids | BiomeType::Estuary);
+                let is_lake = final_biome == BiomeType::CalmLake;
+                let water_level = if let Some(adv_water_y) = map.sample_water_level(world_x, world_z)
+                {
+                    if terrain_height < adv_water_y {
+                        Some(adv_water_y)
+                    } else {
+                        None
+                    }
+                } else if terrain_height < sea_level {
+                    Some(sea_level)
+                } else {
+                    None
+                };
+                let river_factor = if is_river { 0.85 } else { 0.0 };
+                let lake_sample = if is_lake {
+                    water_level.map(|wy| (wy, 4.5, 0.25))
+                } else {
+                    None
+                };
+                (is_river, is_lake, water_level, river_factor, lake_sample)
             } else {
-                None
-            }
-        } else {
-            None
-        };
+                let logical_x = world_x.div_euclid(LOGICAL_BLOCK_VOXELS);
+                let logical_z = world_z.div_euclid(LOGICAL_BLOCK_VOXELS);
+                let sample_x = logical_block_sample_position(logical_x);
+                let sample_z = logical_block_sample_position(logical_z);
+
+                let (mut river_factor, is_river_path, _center_dx, _center_dz) =
+                    self.river_sample_with_offset(sample_x, sample_z);
+                let uncarved_height =
+                    self.natural_height_at(world_x as f32, world_z as f32, &climate);
+                let height_suppress = ((uncarved_height - 23.0) / 8.0).clamp(0.0, 1.0);
+                let mountain_suppress = ((climate.continentalness - 0.25) / 0.10).clamp(0.0, 1.0);
+                let ridge_suppress = ((climate.ridges - 0.25) / 0.15).clamp(0.0, 1.0);
+                let total_suppress =
+                    (height_suppress.max(mountain_suppress).max(ridge_suppress)).clamp(0.0, 1.0);
+                river_factor *= 1.0 - total_suppress;
+
+                let is_inland = climate.continentalness >= -0.04;
+                let is_river =
+                    is_river_path && is_inland && river_factor > 0.04 && !is_underground_river;
+                let oasis_sample =
+                    self.sample_desert_oasis(world_x, world_z, raw_height, &climate);
+                let lake_sample = oasis_sample
+                    .or_else(|| self.sample_organic_lake(world_x, world_z, raw_height, &climate));
+                let is_lake = lake_sample.is_some_and(|(_, _, t_dist)| t_dist <= 1.25);
+
+                let water_level = if terrain_height < sea_level {
+                    Some(sea_level)
+                } else if let Some((lake_water_y, _, t_dist)) = lake_sample {
+                    if t_dist < 0.90 && terrain_height < lake_water_y {
+                        Some(lake_water_y)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+                (is_river, is_lake, water_level, river_factor, lake_sample)
+            };
 
         // Ensure open ocean/sea bodies always resolve to an authentic ocean biome
         // (instead of reporting the nearest terrestrial surface biome on the HUD/map).
         let is_already_aquatic = matches!(
             final_biome,
-            BiomeType::DeepWarmOcean
+            BiomeType::WarmOcean
                 | BiomeType::ColdOcean
-                | BiomeType::CoralReef
+                | BiomeType::CoralReefs
+                | BiomeType::SeagrassMeadows
+                | BiomeType::KelpForests
                 | BiomeType::OceanTrench
+                | BiomeType::Rapids
+                | BiomeType::CalmLake
+                | BiomeType::Estuary
                 | BiomeType::Caldera
                 | BiomeType::GlacialChasm
+                | BiomeType::WillowMarsh
+                | BiomeType::MangroveSwamp
                 | BiomeType::OrchidSwamp
         );
         let final_biome =
@@ -1229,7 +1288,11 @@ impl TerrainGenerator {
                 if ocean_depth >= 18 {
                     BiomeType::OceanTrench
                 } else if climate.temperature < -0.15 {
-                    BiomeType::ColdOcean
+                    if ocean_depth <= 15 {
+                        BiomeType::KelpForests
+                    } else {
+                        BiomeType::ColdOcean
+                    }
                 } else {
                     let reef_noise = crate::core::noise::gradient_noise_2d(
                         world_x as f32 * 0.012,
@@ -1237,9 +1300,11 @@ impl TerrainGenerator {
                         self.seed.wrapping_add(0xC07A_1001),
                     );
                     if climate.temperature > 0.05 && ocean_depth <= 14 && reef_noise > 0.22 {
-                        BiomeType::CoralReef
+                        BiomeType::CoralReefs
+                    } else if ocean_depth <= 14 && reef_noise < -0.10 {
+                        BiomeType::SeagrassMeadows
                     } else {
-                        BiomeType::DeepWarmOcean
+                        BiomeType::WarmOcean
                     }
                 }
             } else {
@@ -1252,13 +1317,21 @@ impl TerrainGenerator {
             world_z as f32 * 0.12,
             self.seed.wrapping_add(SEED_OFFSET_BEACH_NOISE),
         );
-        let max_beach_y = sea_level + 5 + (shore_noise * 3.0).round() as i32;
+        let beach_band = if self.adventure_map.is_some() { 7 } else { 5 };
+        let max_beach_y = sea_level + beach_band + (shore_noise * 3.0).round() as i32;
 
         let is_coastal_continentalness =
             climate.continentalness >= -0.18 && climate.continentalness <= 0.05;
-        let is_coastal_zone =
-            matches!(final_biome, BiomeType::GravelBeach | BiomeType::MirageIsles)
-                || is_coastal_continentalness;
+        let is_coastal_zone = matches!(
+            final_biome,
+            BiomeType::SandyShores
+                | BiomeType::GravelBeach
+                | BiomeType::DuneBeach
+                | BiomeType::CraggyBeach
+                | BiomeType::TidePools
+                | BiomeType::TropicalIsland
+                | BiomeType::CoralIsland
+        ) || is_coastal_continentalness;
 
         let is_beach =
             is_coastal_zone && terrain_height >= sea_level - 2 && terrain_height <= max_beach_y;
@@ -1304,19 +1377,21 @@ impl TerrainGenerator {
 
             let is_cliff_biome = matches!(
                 final_biome,
-                BiomeType::BasaltCliffs
-                    | BiomeType::GraniteCliffs
-                    | BiomeType::WhiteCliffs
-                    | BiomeType::YosemiteCliffs
+                BiomeType::CoastalCliffs
+                    | BiomeType::MonolithCliffs
                     | BiomeType::FrozenCliffs
-                    | BiomeType::BryceCanyon
+                    | BiomeType::RedrockCanyon
+                    | BiomeType::PaintedMesas
                     | BiomeType::AmethystCanyon
+                    | BiomeType::DeepGorge
+                    | BiomeType::WindyPass
                     | BiomeType::DesertSpires
-                    | BiomeType::EmeraldPeaks
-                    | BiomeType::AlpineHighlands
+                    | BiomeType::EmeraldFoothills
+                    | BiomeType::GranitePlateau
+                    | BiomeType::MistyCrags
+                    | BiomeType::AlpinePeaks
+                    | BiomeType::JaggedPeaks
                     | BiomeType::VolcanicPeaks
-                    | BiomeType::RockyMountains
-                    | BiomeType::ScarletMountains
             );
 
             // Slope-Aware Surface Rules apply on dry land above water level
@@ -1808,19 +1883,20 @@ impl TerrainGenerator {
         column.climate.ridges > 0.20
             || matches!(
                 column.biome,
-                BiomeType::BasaltCliffs
-                    | BiomeType::GraniteCliffs
-                    | BiomeType::WhiteCliffs
-                    | BiomeType::YosemiteCliffs
+                BiomeType::CoastalCliffs
+                    | BiomeType::MonolithCliffs
                     | BiomeType::FrozenCliffs
                     | BiomeType::DesertSpires
-                    | BiomeType::BryceCanyon
-                    | BiomeType::EmeraldPeaks
-                    | BiomeType::AlpineHighlands
+                    | BiomeType::RedrockCanyon
+                    | BiomeType::PaintedMesas
+                    | BiomeType::EmeraldFoothills
+                    | BiomeType::GranitePlateau
+                    | BiomeType::MistyCrags
+                    | BiomeType::AlpinePeaks
+                    | BiomeType::JaggedPeaks
                     | BiomeType::VolcanicPeaks
-                    | BiomeType::RockyMountains
                     | BiomeType::FracturedSavanna
-                    | BiomeType::PaintedMountains
+                    | BiomeType::DeepGorge
             )
     }
 
@@ -1834,8 +1910,8 @@ impl TerrainGenerator {
     ) -> Voxel {
         if matches!(
             column.biome,
-            BiomeType::BryceCanyon
-                | BiomeType::PaintedMountains
+            BiomeType::RedrockCanyon
+                | BiomeType::PaintedMesas
                 | BiomeType::SavannaBadlands
                 | BiomeType::DesertSpires
         ) {
@@ -1945,17 +2021,19 @@ impl TerrainGenerator {
         let is_rugged = column.climate.ridges > 0.25
             || matches!(
                 column.biome,
-                BiomeType::BasaltCliffs
-                    | BiomeType::GraniteCliffs
-                    | BiomeType::WhiteCliffs
-                    | BiomeType::YosemiteCliffs
+                BiomeType::CoastalCliffs
+                    | BiomeType::MonolithCliffs
                     | BiomeType::FrozenCliffs
                     | BiomeType::DesertSpires
-                    | BiomeType::BryceCanyon
-                    | BiomeType::EmeraldPeaks
-                    | BiomeType::AlpineHighlands
+                    | BiomeType::RedrockCanyon
+                    | BiomeType::PaintedMesas
+                    | BiomeType::EmeraldFoothills
+                    | BiomeType::GranitePlateau
+                    | BiomeType::MistyCrags
+                    | BiomeType::AlpinePeaks
+                    | BiomeType::JaggedPeaks
                     | BiomeType::VolcanicPeaks
-                    | BiomeType::RockyMountains
+                    | BiomeType::DeepGorge
             );
 
         if !is_rugged || !(1..=6).contains(&depth) {
@@ -2041,8 +2119,8 @@ impl TerrainGenerator {
                     }
                 } else if matches!(
                     column.biome,
-                    BiomeType::BryceCanyon
-                        | BiomeType::PaintedMountains
+                    BiomeType::RedrockCanyon
+                        | BiomeType::PaintedMesas
                         | BiomeType::AncientSands
                         | BiomeType::DesertSpires
                         | BiomeType::SavannaBadlands
@@ -2106,7 +2184,22 @@ impl TerrainGenerator {
             let ocean_depth = column.water_level.map(|wl| wl - world_y).unwrap_or(0);
 
             return match column.biome {
-                BiomeType::DeepWarmOcean => {
+                BiomeType::SeagrassMeadows => {
+                    if seabed_macro > -0.28 {
+                        if seabed_pocket > 0.42 {
+                            Voxel::SandCommon
+                        } else if seabed_pocket < -0.45 {
+                            Voxel::GravelSandy
+                        } else {
+                            Voxel::SeagrassSand
+                        }
+                    } else if seabed_pocket > 0.10 {
+                        Voxel::SandCommon
+                    } else {
+                        Voxel::SeagrassSand
+                    }
+                }
+                BiomeType::WarmOcean => {
                     if seabed_macro > 0.34 {
                         if seabed_pocket > 0.15 {
                             Voxel::SandWhite
@@ -2139,7 +2232,7 @@ impl TerrainGenerator {
                         Voxel::ClayBlue
                     }
                 }
-                BiomeType::ColdOcean => {
+                BiomeType::ColdOcean | BiomeType::KelpForests => {
                     if seabed_macro > 0.28 {
                         if seabed_pocket > 0.10 {
                             Voxel::GravelSandy
@@ -2162,7 +2255,7 @@ impl TerrainGenerator {
                         Voxel::PeatMud
                     }
                 }
-                BiomeType::CoralReef => {
+                BiomeType::CoralReefs | BiomeType::CoralIsland => {
                     if seabed_macro > 0.25 {
                         if seabed_pocket > 0.10 {
                             Voxel::SandWhite
@@ -2203,10 +2296,16 @@ impl TerrainGenerator {
                     }
                 }
                 BiomeType::Caldera => Voxel::Basalt,
-                BiomeType::OrchidSwamp => Voxel::PeatMud,
-                BiomeType::GlacialChasm | BiomeType::FrozenCliffs | BiomeType::IceCaves => {
-                    Voxel::FrostIcePacked
-                }
+                BiomeType::WillowMarsh
+                | BiomeType::MangroveSwamp
+                | BiomeType::OrchidSwamp
+                | BiomeType::ObsidianMire
+                | BiomeType::Estuary => Voxel::PeatMud,
+                BiomeType::GlacialChasm
+                | BiomeType::IceSheet
+                | BiomeType::FrozenCliffs
+                | BiomeType::FrozenIsland
+                | BiomeType::IceCaves => Voxel::FrostIcePacked,
                 _ => {
                     if column.climate.temperature < -0.15 {
                         if seabed_macro > 0.15 {
@@ -2281,8 +2380,14 @@ impl TerrainGenerator {
 
             // Dedicated gravel beach biome or extreme subarctic cold coast:
             // ~70% sand with natural gravel pockets (not 99% solid gravel!)
-            let is_gravel_specialist = column.biome == BiomeType::GravelBeach
-                || (column.climate.temperature < -0.40 && column.biome != BiomeType::FrozenCliffs);
+            let is_gravel_specialist = matches!(
+                column.biome,
+                BiomeType::GravelBeach | BiomeType::CraggyBeach
+            ) || (column.climate.temperature < -0.40
+                && !matches!(
+                    column.biome,
+                    BiomeType::FrozenCliffs | BiomeType::IceSheet | BiomeType::FrozenIsland
+                ));
 
             if is_gravel_specialist {
                 return if beach_noise > 0.35 {
@@ -2299,8 +2404,8 @@ impl TerrainGenerator {
             // Red sand with gravel patches on arid canyon / badlands shores
             if matches!(
                 column.biome,
-                BiomeType::BryceCanyon
-                    | BiomeType::PaintedMountains
+                BiomeType::RedrockCanyon
+                    | BiomeType::PaintedMesas
                     | BiomeType::AncientSands
                     | BiomeType::DesertSpires
                     | BiomeType::SavannaBadlands
@@ -2336,14 +2441,26 @@ impl TerrainGenerator {
             BiomeType::DesertSpires
                 | BiomeType::AncientSands
                 | BiomeType::DesertOasis
+                | BiomeType::AcaciaPlains
                 | BiomeType::FracturedSavanna
                 | BiomeType::SavannaBadlands
-                | BiomeType::AshenSavanna
+                | BiomeType::WitheredWoods
+                | BiomeType::AshenWastes
+                | BiomeType::ObsidianMire
+                | BiomeType::AcidPools
+                | BiomeType::SulfurVents
+                | BiomeType::ScorchedFlats
                 | BiomeType::DuneSea
-                | BiomeType::BryceCanyon
+                | BiomeType::RedrockCanyon
+                | BiomeType::PaintedMesas
                 | BiomeType::VolcanicPeaks
+                | BiomeType::VolcanicJungle
+                | BiomeType::Caldera
+                | BiomeType::SandyShores
                 | BiomeType::GravelBeach
-                | BiomeType::MirageIsles
+                | BiomeType::DuneBeach
+                | BiomeType::TropicalIsland
+                | BiomeType::CoralIsland
         );
 
         if !is_warm && column.climate.temperature < 0.10 {
@@ -2387,8 +2504,8 @@ impl TerrainGenerator {
         if column.is_cliff {
             if matches!(
                 column.biome,
-                BiomeType::BryceCanyon
-                    | BiomeType::PaintedMountains
+                BiomeType::RedrockCanyon
+                    | BiomeType::PaintedMesas
                     | BiomeType::SavannaBadlands
                     | BiomeType::DesertSpires
             ) {
@@ -2397,11 +2514,15 @@ impl TerrainGenerator {
                 cfg.cliff_material
             }
         } else {
-            // Natural complementary forest floor patches:
-            // Medium-scale organic patches of Mulch, Coarse Dirt, and Dirt across woodlands
+            // Natural complementary forest & tundra floor patches:
+            // Medium-scale organic patches of Tundra Moss, Mulch, Coarse Dirt, and Dirt
             if matches!(
                 column.biome,
-                BiomeType::SiberianTaiga | BiomeType::ColdShrubland
+                BiomeType::BleakTaiga
+                    | BiomeType::ColdShrubland
+                    | BiomeType::PermafrostSteppe
+                    | BiomeType::TundraIsland
+                    | BiomeType::SnowyPlains
             ) {
                 let icy_patch = crate::core::noise::gradient_noise_2d(
                     world_x as f32 * 0.068,
@@ -2410,6 +2531,23 @@ impl TerrainGenerator {
                 ) + dither_noise * 0.22;
                 if icy_patch > 0.54 {
                     return Voxel::PermafrostIcy;
+                }
+
+                let moss_patch = crate::core::noise::gradient_noise_2d(
+                    world_x as f32 * 0.055,
+                    world_z as f32 * 0.055,
+                    self.seed.wrapping_add(0x709D_7A01),
+                ) + dither_noise * 0.18;
+                if moss_patch > 0.12 && column.biome != BiomeType::SnowyPlains {
+                    return if moss_patch > 0.45 {
+                        Voxel::LoamTundraMoss
+                    } else if moss_patch > 0.28 {
+                        Voxel::PeatTundraMoss
+                    } else {
+                        Voxel::SiltTundraMoss
+                    };
+                } else if moss_patch > 0.42 && column.biome == BiomeType::SnowyPlains {
+                    return Voxel::SiltTundraMoss;
                 }
 
                 let coarse_patch = crate::core::noise::gradient_noise_2d(
@@ -2426,18 +2564,26 @@ impl TerrainGenerator {
                 }
             } else if matches!(
                 column.biome,
-                BiomeType::CloudForest
+                BiomeType::MistyWoods
+                    | BiomeType::AutumnForest
                     | BiomeType::SakuraGrove
-                    | BiomeType::YosemiteLowlands
-                    | BiomeType::TropicalJungle
-                    | BiomeType::BloomingValley
+                    | BiomeType::VerdantWoods
+                    | BiomeType::TemperateIsland
+                    | BiomeType::DenseRainforest
+                    | BiomeType::BambooGrove
+                    | BiomeType::JungleWetlands
+                    | BiomeType::VolcanicJungle
+                    | BiomeType::FertileValley
                     | BiomeType::LavenderValley
-                    | BiomeType::Shield
+                    | BiomeType::ShieldForest
                     | BiomeType::PineHighlands
                     | BiomeType::WintryForest
+                    | BiomeType::FrostPinewoods
             ) {
                 let (dirt, coarse, mulch) = match column.biome {
-                    BiomeType::Shield | BiomeType::WintryForest => {
+                    BiomeType::ShieldForest
+                    | BiomeType::WintryForest
+                    | BiomeType::FrostPinewoods => {
                         (Voxel::PeatDirt, Voxel::PeatCoarse, Voxel::PeatMulch)
                     }
                     BiomeType::PineHighlands | BiomeType::LavenderValley => {
@@ -2469,7 +2615,9 @@ impl TerrainGenerator {
                 }
             } else if matches!(
                 column.biome,
-                BiomeType::SavannaBadlands | BiomeType::FracturedSavanna
+                BiomeType::SavannaBadlands
+                    | BiomeType::FracturedSavanna
+                    | BiomeType::AcaciaPlains
             ) && dither_noise > 0.60
             {
                 return Voxel::LateriteDirt;
@@ -2638,8 +2786,14 @@ impl TerrainGenerator {
                 self.seed.wrapping_add(SEED_OFFSET_BEACH_NOISE),
             );
 
-            let is_gravel_specialist = column.biome == BiomeType::GravelBeach
-                || (column.climate.temperature < -0.40 && column.biome != BiomeType::FrozenCliffs);
+            let is_gravel_specialist = matches!(
+                column.biome,
+                BiomeType::GravelBeach | BiomeType::CraggyBeach
+            ) || (column.climate.temperature < -0.40
+                && !matches!(
+                    column.biome,
+                    BiomeType::FrozenCliffs | BiomeType::IceSheet | BiomeType::FrozenIsland
+                ));
 
             if is_gravel_specialist {
                 return if beach_noise > 0.40 {
@@ -2651,8 +2805,8 @@ impl TerrainGenerator {
 
             if matches!(
                 column.biome,
-                BiomeType::BryceCanyon
-                    | BiomeType::PaintedMountains
+                BiomeType::RedrockCanyon
+                    | BiomeType::PaintedMesas
                     | BiomeType::AncientSands
                     | BiomeType::DesertSpires
                     | BiomeType::SavannaBadlands
