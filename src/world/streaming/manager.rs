@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use bevy::{prelude::*, tasks::Task};
 
 use crate::{
-    generation::{BiomeType, CaveGenerator, ClimateGenerator, StrataGenerator, TerrainGenerator},
+    generation::{BiomeType, ClimateGenerator, StrataGenerator, TerrainGenerator},
     meshing::{
         ChunkLod, ChunkMeshRegistry, ChunkMeshingTask, LodMeshRegistry, remove_chunk_render,
         remove_lod_render,
@@ -117,7 +117,6 @@ impl Plugin for ChunkStreamingPlugin {
             .register_type::<ChunkStreamingSettings>()
             .register_type::<TerrainGenerator>()
             .register_type::<ClimateGenerator>()
-            .register_type::<CaveGenerator>()
             .register_type::<StrataGenerator>()
             .register_type::<BiomeType>()
             .add_systems(

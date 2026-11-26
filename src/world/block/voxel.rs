@@ -731,21 +731,24 @@ pub enum Voxel {
     ToolFlintShears = 709,
     ToolFlintShovel = 710,
     SeagrassSand = 711,
-    SiltTundraMoss = 712,
-    LoamTundraMoss = 713,
-    PeatTundraMoss = 714,
+    SiltTundraGrass = 712,
+    LoamTundraGrass = 713,
+    PeatTundraGrass = 714,
     VegeArcticMoss = 715,
     VegeArcticGrass = 716,
+    PermafrostTundraGrass = 717,
+    TallSeagrassBottom = 718,
+    TallSeagrassTop = 719,
 }
 impl Voxel {
-    /// Array containing all active, non-placeholder gameplay voxels (indices 3..=716).
-    pub const ALL: [Voxel; 714] = generate_all_voxels();
+    /// Array containing all active, non-placeholder gameplay voxels (indices 3..=719).
+    pub const ALL: [Voxel; 717] = generate_all_voxels();
 
     /// Safely convert a `u16` id to a `Voxel` variant.
     #[inline(always)]
     pub const fn from_u16(val: u16) -> Option<Self> {
-        if val <= 716 {
-            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 716.
+        if val <= 719 {
+            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 719.
             Some(unsafe { std::mem::transmute::<u16, Self>(val) })
         } else {
             None
@@ -836,6 +839,7 @@ impl Voxel {
         matches!(
             self,
             Self::VegeTallWildgrassBottom
+                | Self::TallSeagrassBottom
                 | Self::VegeSeaOatsBottom
                 | Self::VegeTallFernBottom
                 | Self::VegeTallJungleFernBottom
@@ -872,6 +876,7 @@ impl Voxel {
         matches!(
             self,
             Self::VegeTallWildgrassTop
+                | Self::TallSeagrassTop
                 | Self::VegeSeaOatsTop
                 | Self::VegeTallFernTop
                 | Self::VegeTallJungleFernTop
@@ -913,6 +918,7 @@ impl Voxel {
     pub const fn double_tall_top_partner(self) -> Option<Voxel> {
         match self {
             Self::VegeTallWildgrassBottom => Some(Self::VegeTallWildgrassTop),
+            Self::TallSeagrassBottom => Some(Self::TallSeagrassTop),
             Self::VegeSeaOatsBottom => Some(Self::VegeSeaOatsTop),
             Self::VegeTallFernBottom => Some(Self::VegeTallFernTop),
             Self::VegeTallJungleFernBottom => Some(Self::VegeTallJungleFernTop),
@@ -947,6 +953,7 @@ impl Voxel {
     pub const fn double_tall_bottom_partner(self) -> Option<Voxel> {
         match self {
             Self::VegeTallWildgrassTop => Some(Self::VegeTallWildgrassBottom),
+            Self::TallSeagrassTop => Some(Self::TallSeagrassBottom),
             Self::VegeSeaOatsTop => Some(Self::VegeSeaOatsBottom),
             Self::VegeTallFernTop => Some(Self::VegeTallFernBottom),
             Self::VegeTallJungleFernTop => Some(Self::VegeTallJungleFernBottom),
@@ -986,14 +993,18 @@ impl Voxel {
     }
 }
 
-const fn generate_all_voxels() -> [Voxel; 714] {
-    let mut arr = [Voxel::Air; 714];
+const fn generate_all_voxels() -> [Voxel; 717] {
+    let mut arr = [Voxel::Air; 717];
     let mut i = 0;
-    while i < 714 {
-        // Active gameplay blocks start at discriminant 3 (indices 3..=716)
+    while i < arr.len() {
+        // Active gameplay blocks start at discriminant 3 (indices 3..=719)
         let id = (i + 3) as u16;
         arr[i] = unsafe { std::mem::transmute::<u16, Voxel>(id) };
         i += 1;
     }
     arr
 }
+
+const _: () = {
+    assert!(Voxel::ALL[Voxel::ALL.len() - 1] as u16 == 719);
+};

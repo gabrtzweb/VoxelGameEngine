@@ -47,9 +47,9 @@ ESC               System Menu & 6-Tab Top Bar (Inventory, Skills, Journal, Quest
 Q / E (in menu)   Cycle between top bar menu tabs
 Tab               Personal Inventory / Creative Catalog
 H                 Skills & Character Sheet (60 skills across 4 general trees + dynamic Racial tree)
-J                 Journal (Live World Almanac, Compendium: 44 Biomes, Bestiary, Flora, Blocks, Items, Statistics)
+J                 Journal (Live World Almanac, Compendium: 78 Biomes, Bestiary, Flora, Blocks, Items, Statistics)
 K                 Quests & Objectives
-M                 World Map (Full-screen interactive map with right sidebar)
+M                 World Map (Full-screen interactive map with right sidebar & Adventure Atlas Overlay filters)
 
 F1                Toggle Inspector (bevy_egui)
 F2                Chunk debug borders
@@ -72,6 +72,15 @@ assets/
 ├── lang/
 │   ├── en_us.json
 │   └── pt_br.json
+├── maps/
+│   └── adventure/
+│       ├── heightmap.png
+│       ├── macro_biomes.png
+│       ├── map_preview.png
+│       ├── micro_biomes.png
+│       ├── world_continents.png
+│       ├── world_landmass.png
+│       └── world_regions.png
 ├── shaders/
 │   ├── grass_blades.wesl
 │   ├── grass_plant.wesl
@@ -100,6 +109,7 @@ assets/
 └── icon.ico
 
 docs/
+├── biomes_design.md
 ├── blocks_design.md
 ├── project_context.md
 └── project_roadmap.md
@@ -171,8 +181,8 @@ src/
 │   ├── target_hud.rs
 │   └── targeting.rs
 ├── generation/
+│   ├── adventure_map.rs
 │   ├── biome.rs
-│   ├── caves.rs
 │   ├── flora.rs
 │   ├── generator.rs
 │   ├── inspector.rs

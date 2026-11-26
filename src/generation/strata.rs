@@ -131,24 +131,25 @@ impl StrataGenerator {
                 Voxel::SandCommon => Voxel::SandstoneCommon,
                 _ => match biome.surface_material {
                     Voxel::PermafrostGrass
+                    | Voxel::PermafrostTundraGrass
                     | Voxel::PermafrostDirt
                     | Voxel::PermafrostCoarse
                     | Voxel::PermafrostIcy => Voxel::Andesite,
                     Voxel::LoamGrass
-                    | Voxel::LoamTundraMoss
+                    | Voxel::LoamTundraGrass
                     | Voxel::LoamMulch
                     | Voxel::LoamDirt
                     | Voxel::LoamCoarse
                     | Voxel::LoamRooted
                     | Voxel::LoamMud => Voxel::Granite,
                     Voxel::PeatGrass
-                    | Voxel::PeatTundraMoss
+                    | Voxel::PeatTundraGrass
                     | Voxel::PeatDirt
                     | Voxel::PeatCoarse
                     | Voxel::PeatRooted
                     | Voxel::PeatMud => Voxel::Argillite,
                     Voxel::SiltGrass
-                    | Voxel::SiltTundraMoss
+                    | Voxel::SiltTundraGrass
                     | Voxel::SiltSnow
                     | Voxel::SiltDirt
                     | Voxel::SiltCoarse
@@ -312,37 +313,6 @@ impl StrataGenerator {
                         Voxel::CrystalSeleniteBlock
                     };
                 }
-            }
-        }
-
-        // Subterranean Biome Overrides (Ice Caves & Mushroom Caves)
-        if biome.biome_type == crate::generation::biome::BiomeType::IceCaves && logical_depth > 1 {
-            let ice_noise =
-                gradient_noise_3d(bx * 0.12, by * 0.12, bz * 0.12, seed.wrapping_add(555_999));
-            if ice_noise > 0.10 {
-                return Voxel::FrostIcePacked;
-            } else if ice_noise > -0.40 {
-                return Voxel::FrostBlueIce;
-            } else {
-                return Voxel::FrostIce;
-            }
-        }
-
-        if biome.biome_type == crate::generation::biome::BiomeType::MushroomCaves
-            && logical_depth > 1
-        {
-            let mush_noise =
-                gradient_noise_3d(bx * 0.14, by * 0.14, bz * 0.14, seed.wrapping_add(777_888));
-            if mush_noise > 0.55 {
-                return Voxel::FungiAmanitaCap;
-            } else if mush_noise > 0.35 {
-                return Voxel::FungiPorciniCap;
-            } else if mush_noise > 0.15 {
-                return Voxel::FungiStem;
-            } else if mush_noise > -0.30 {
-                return Voxel::PeatMud;
-            } else {
-                return Voxel::LoamRooted;
             }
         }
 

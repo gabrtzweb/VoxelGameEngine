@@ -375,8 +375,18 @@ struct RawAdventureMapBuffers {
     /// `0` = water, `1` = dry land.
     landmass_u8: Vec<u8>,
     /// `i16::MIN` = dry land; otherwise exact water surface elevation `Y` for oceans,
-    /// elevated `CalmLake` basins, stepped `Rapids` rivers, and `Estuary` channels.
+    /// flat elevated `CalmLake` basins, foothill ponds, stepped `Rapids` reaches, and `Estuary`.
     water_level_i16: Vec<i16>,
+    /// `0` = on water or far inland (`> 6 px`); `1..=6` = pixel distance on dry land to nearest
+    /// inland river/lake, paired with `bank_water_y_i16` for smooth shoreline/valley grading.
+    bank_dist_u8: Vec<u8>,
+    bank_water_y_i16: Vec<i16>,
+    /// `0` = dry land or open ocean; `1..=16` = interior BFS distance (in pixels) from dry shore
+    /// inside `RiverAndLake` water bodies so lake centers deepen smoothly into natural concave basins.
+    dist_in_water_u8: Vec<u8>,
+    /// Pre-blurred (`0..=255`) continuous `RiverAndLake` coverage mask (3-pass Gaussian blur)
+    /// that rounds off sharp 4x4-block pixel corners into silky-smooth organic shorelines.
+    water_mask_u8: Vec<u8>,
 }
 
 static RAW_MAP_CACHE: OnceLock<Result<Arc<RawAdventureMapBuffers>, String>> = OnceLock::new();
@@ -407,16 +417,25 @@ fn is_ocean_biome(b: BiomeType) -> bool {
     )
 }
 
-/// Computes per-pixel water surface elevation for oceans, estuaries, elevated `CalmLake` basins,
-/// and stepped inland `Rapids` rivers.
+/// Computes complete hydrology for Adventure Mode:
+/// 1. Retires dead-end rivers that climb too high onto mountains (`Y > 78`) back to solid terrain
+///    while preserving any high-altitude river/waterfall that bridges a lake to a lower river/fjord,
+///    and seeds small flat foothill spring ponds right below retired mountain headwaters.
+/// 2. Only forces `Estuary` to sea level if it is 4-connected to the open ocean; enclosed coastal
+///    crater/caldera lakes are promoted to elevated `CalmLake`s at their true rim elevation.
+/// 3. Assigns each `CalmLake` / foothill pond a single 100% flat elevation matching its surrounding basin.
+/// 4. Builds monotonically descending `Rapids` rivers quantized into long flat reaches (~52 blocks)
+///    on gentle slopes and crisp 3-block pool-and-drop waterfalls on steep cliffs/escarpments.
+/// 5. Precomputes dry shoreline distance (`bank_dist_u8`, `bank_water_y_i16`) AND interior water
+///    distance (`dist_in_water_u8`) for smooth block-resolution curved banks and deep concave lakes.
 fn compute_water_levels(
     width: usize,
     height: usize,
     heights_u16: &[u16],
-    macro_u8: &[u8],
-    micro_u8: &[u8],
-    landmass_u8: &[u8],
-) -> Vec<i16> {
+    macro_u8: &mut [u8],
+    micro_u8: &mut [u8],
+    landmass_u8: &mut [u8],
+) -> (Vec<i16>, Vec<u8>, Vec<i16>, Vec<u8>, Vec<u8>) {
     let n = width * height;
     let mut water_level = vec![i16::MIN; n];
 
@@ -432,28 +451,185 @@ fn compute_water_levels(
         .iter()
         .position(|&b| b == BiomeType::Estuary)
         .unwrap_or(0) as u8;
+    let foothills_idx = BiomeType::ALL
+        .iter()
+        .position(|&b| b == BiomeType::EmeraldFoothills)
+        .unwrap_or(0) as u8;
     let river_lake_macro_idx = MacroBiome::ALL
         .iter()
         .position(|&m| m == MacroBiome::RiverAndLake)
         .unwrap_or(0) as u8;
+    let highlands_macro_idx = MacroBiome::ALL
+        .iter()
+        .position(|&m| m == MacroBiome::Highlands)
+        .unwrap_or(0) as u8;
 
-    // 1. Mark open oceans, coastal seas, estuaries, and non-river water pixels at ADVENTURE_SEA_LEVEL.
+    // 1. Retire dead-end high-altitude mountain river tips (`Y > 78.0`) back to solid mountain terrain,
+    //    while PRESERVING any high-altitude river/waterfall channel that connects to a `CalmLake`
+    //    (e.g. snowy plateau outlets cascading down fjord cliffs!).
+    let mut retired_mountain = vec![false; n];
+    let mut high_visited = vec![false; n];
+    let mut queue = VecDeque::new();
+    let mut high_comp = Vec::new();
+    for start in 0..n {
+        if high_visited[start]
+            || macro_u8[start] != river_lake_macro_idx
+            || micro_u8[start] != rapids_idx
+            || raw_u16_to_y(heights_u16[start]) <= 78.0
+        {
+            continue;
+        }
+        high_visited[start] = true;
+        queue.clear();
+        high_comp.clear();
+        queue.push_back(start);
+        let mut touches_lake_or_sea = false;
+        while let Some(idx) = queue.pop_front() {
+            high_comp.push(idx);
+            let x = idx % width;
+            let y = idx / width;
+            let neighbors = [
+                (x > 0).then(|| idx - 1),
+                (x + 1 < width).then(|| idx + 1),
+                (y > 0).then(|| idx - width),
+                (y + 1 < height).then(|| idx + width),
+            ];
+            for n_idx in neighbors.into_iter().flatten() {
+                if micro_u8[n_idx] == calm_lake_idx || micro_u8[n_idx] == estuary_idx {
+                    touches_lake_or_sea = true;
+                } else if macro_u8[n_idx] == river_lake_macro_idx
+                    && micro_u8[n_idx] == rapids_idx
+                    && !high_visited[n_idx]
+                    && raw_u16_to_y(heights_u16[n_idx]) > 78.0
+                {
+                    high_visited[n_idx] = true;
+                    queue.push_back(n_idx);
+                }
+            }
+        }
+        if !touches_lake_or_sea {
+            for &idx in &high_comp {
+                retired_mountain[idx] = true;
+                landmass_u8[idx] = 1;
+            }
+        }
+    }
+    // Assign retired pixels the nearest dry neighbor's macro/micro biome
+    for i in 0..n {
+        if !retired_mountain[i] {
+            continue;
+        }
+        let x = (i % width) as i32;
+        let y = (i / width) as i32;
+        let mut found = None;
+        'search: for r in 1..=6i32 {
+            for dz in -r..=r {
+                for dx in -r..=r {
+                    let nx = x + dx;
+                    let nz = y + dz;
+                    if nx >= 0 && nx < width as i32 && nz >= 0 && nz < height as i32 {
+                        let ni = nz as usize * width + nx as usize;
+                        if landmass_u8[ni] == 1
+                            && macro_u8[ni] != river_lake_macro_idx
+                            && !retired_mountain[ni]
+                        {
+                            found = Some((macro_u8[ni], micro_u8[ni]));
+                            break 'search;
+                        }
+                    }
+                }
+            }
+        }
+        let (mac, mic) = found.unwrap_or((highlands_macro_idx, foothills_idx));
+        macro_u8[i] = mac;
+        micro_u8[i] = mic;
+    }
+
+    // Seed small Mountain Foothill Ponds (`CalmLake` radius 2 px = ~8 blocks) at retired river headwaters
+    let mut pond_seeds = Vec::new();
+    for i in 0..n {
+        if macro_u8[i] == river_lake_macro_idx && micro_u8[i] == rapids_idx {
+            let y_f = raw_u16_to_y(heights_u16[i]);
+            if (60.0..=78.0).contains(&y_f) {
+                let x = i % width;
+                let y = i / width;
+                let touches_retired = (x > 0 && retired_mountain[i - 1])
+                    || (x + 1 < width && retired_mountain[i + 1])
+                    || (y > 0 && retired_mountain[i - width])
+                    || (y + 1 < height && retired_mountain[i + width]);
+                if touches_retired {
+                    pond_seeds.push(i);
+                }
+            }
+        }
+    }
+    for seed_idx in pond_seeds {
+        let sx = (seed_idx % width) as i32;
+        let sy = (seed_idx / width) as i32;
+        for dz in -2..=2i32 {
+            for dx in -2..=2i32 {
+                if dx * dx + dz * dz > 4 {
+                    continue;
+                }
+                let nx = sx + dx;
+                let nz = sy + dz;
+                if nx >= 0 && nx < width as i32 && nz >= 0 && nz < height as i32 {
+                    let ni = nz as usize * width + nx as usize;
+                    if !retired_mountain[ni] && raw_u16_to_y(heights_u16[ni]) <= 79.0 {
+                        macro_u8[ni] = river_lake_macro_idx;
+                        micro_u8[ni] = calm_lake_idx;
+                        landmass_u8[ni] = 0;
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Mark open oceans and coastal seas at ADVENTURE_SEA_LEVEL, then flood-fill ONLY
+    //    `Estuary` pixels that are truly 4-connected to the open sea. Any enclosed coastal
+    //    `Estuary` basin (e.g. Volcano Island caldera lake) is reclassified to `CalmLake` so it
+    //    receives its true elevated rim height instead of plunging to sea level!
+    let mut is_sea = vec![false; n];
+    queue.clear();
     for i in 0..n {
         let micro = BiomeType::ALL
             .get(micro_u8[i] as usize)
             .copied()
             .unwrap_or_default();
-        if micro_u8[i] == estuary_idx
-            || is_ocean_biome(micro)
+        if is_ocean_biome(micro)
             || (landmass_u8[i] == 0 && macro_u8[i] != river_lake_macro_idx)
         {
             water_level[i] = ADVENTURE_SEA_LEVEL as i16;
+            is_sea[i] = true;
+            queue.push_back(i);
+        }
+    }
+    while let Some(idx) = queue.pop_front() {
+        let x = idx % width;
+        let y = idx / width;
+        let neighbors = [
+            (x > 0).then(|| idx - 1),
+            (x + 1 < width).then(|| idx + 1),
+            (y > 0).then(|| idx - width),
+            (y + 1 < height).then(|| idx + width),
+        ];
+        for n_idx in neighbors.into_iter().flatten() {
+            if !is_sea[n_idx] && micro_u8[n_idx] == estuary_idx {
+                is_sea[n_idx] = true;
+                water_level[n_idx] = ADVENTURE_SEA_LEVEL as i16;
+                queue.push_back(n_idx);
+            }
+        }
+    }
+    for i in 0..n {
+        if micro_u8[i] == estuary_idx && !is_sea[i] {
+            micro_u8[i] = calm_lake_idx;
+            macro_u8[i] = river_lake_macro_idx;
         }
     }
 
-    // 2. BFS flood-fill connected `CalmLake` basins to find each lake's natural rim elevation.
+    // 3. BFS flood-fill connected `CalmLake` basins (and foothill ponds) -> ONE 100% flat elevation per lake.
     let mut visited = vec![false; n];
-    let mut queue = VecDeque::new();
     let mut cluster = Vec::new();
     let mut rim_heights = Vec::new();
 
@@ -487,23 +663,28 @@ fn compute_water_levels(
                         visited[n_idx] = true;
                         queue.push_back(n_idx);
                     }
-                } else if water_level[n_idx] == ADVENTURE_SEA_LEVEL as i16 {
+                } else if is_sea[n_idx] {
                     touches_sea = true;
                 } else if landmass_u8[n_idx] == 1 && macro_u8[n_idx] != river_lake_macro_idx {
-                    let rim_y = raw_u16_to_y(heights_u16[n_idx]).floor() as i32;
+                    let rim_y = raw_u16_to_y(heights_u16[n_idx]).round() as i32;
                     rim_heights.push(rim_y);
                 }
             }
         }
 
-        let lake_y = if touches_sea || rim_heights.is_empty() {
+        let lake_y = if touches_sea {
             ADVENTURE_SEA_LEVEL
+        } else if rim_heights.is_empty() {
+            let avg_in = cluster
+                .iter()
+                .map(|&i| raw_u16_to_y(heights_u16[i]).round() as i32)
+                .sum::<i32>()
+                / (cluster.len().max(1) as i32);
+            (avg_in - 1).max(ADVENTURE_SEA_LEVEL)
         } else {
             rim_heights.sort_unstable();
-            // Use the 10th percentile rim elevation minus 1 block so the lake sits flat inside its basin
-            // without overflowing low banks or collapsing due to a single stray pixel.
-            let p10 = rim_heights[(rim_heights.len() / 10).min(rim_heights.len() - 1)];
-            (p10 - 1).max(ADVENTURE_SEA_LEVEL)
+            let p20 = rim_heights[(rim_heights.len() / 5).min(rim_heights.len() - 1)];
+            (p20 - 1).max(ADVENTURE_SEA_LEVEL)
         } as i16;
 
         for &idx in &cluster {
@@ -511,19 +692,78 @@ fn compute_water_levels(
         }
     }
 
-    // 3. Initial elevation for inland `Rapids` river pixels from surrounding dry-land banks.
-    let mut rapids_indices = Vec::new();
+    // 4. Stepped `Rapids` rivers with long flat reaches (~48–68 blocks) + cascades/waterfalls!
+    //    Compute geodesic river distance upstream from seas & lakes via BFS.
+    let mut river_dist = vec![u32::MAX; n];
+    let mut outlet_y = vec![ADVENTURE_SEA_LEVEL as i16; n];
+    let mut bfs_order = Vec::new();
+    queue.clear();
+
     for i in 0..n {
         if micro_u8[i] != rapids_idx {
             continue;
         }
-        rapids_indices.push(i);
-        let x = (i % width) as i32;
-        let y = (i / width) as i32;
+        let x = i % width;
+        let y = i / width;
+        let neighbors = [
+            (x > 0).then(|| i - 1),
+            (x + 1 < width).then(|| i + 1),
+            (y > 0).then(|| i - width),
+            (y + 1 < height).then(|| i + width),
+        ];
+        let mut min_anchor: Option<i16> = None;
+        for n_idx in neighbors.into_iter().flatten() {
+            if water_level[n_idx] != i16::MIN && micro_u8[n_idx] != rapids_idx {
+                min_anchor = Some(
+                    min_anchor.map_or(water_level[n_idx], |cur| cur.min(water_level[n_idx])),
+                );
+            }
+        }
+        if let Some(anchor) = min_anchor {
+            river_dist[i] = 1;
+            outlet_y[i] = anchor;
+            queue.push_back(i);
+        }
+    }
 
-        let mut bank_sum = 0i32;
-        let mut bank_count = 0i32;
-        let mut min_bank = i32::MAX;
+    while let Some(idx) = queue.pop_front() {
+        bfs_order.push(idx);
+        let d = river_dist[idx];
+        let out = outlet_y[idx];
+        let x = idx % width;
+        let y = idx / width;
+        let neighbors = [
+            (x > 0).then(|| idx - 1),
+            (x + 1 < width).then(|| idx + 1),
+            (y > 0).then(|| idx - width),
+            (y + 1 < height).then(|| idx + width),
+        ];
+        for n_idx in neighbors.into_iter().flatten() {
+            if micro_u8[n_idx] == rapids_idx && river_dist[n_idx] == u32::MAX {
+                river_dist[n_idx] = d + 1;
+                outlet_y[n_idx] = out;
+                queue.push_back(n_idx);
+            }
+        }
+    }
+
+    // Any disconnected inland rapids components (draining into an endorheic basin)
+    for i in 0..n {
+        if micro_u8[i] == rapids_idx && river_dist[i] == u32::MAX {
+            river_dist[i] = 1;
+            outlet_y[i] =
+                ((raw_u16_to_y(heights_u16[i]).round() as i32) - 1).max(ADVENTURE_SEA_LEVEL) as i16;
+            bfs_order.push(i);
+        }
+    }
+
+    // Raw local bank elevation for each river pixel
+    let mut river_float = vec![0.0f32; n];
+    for &idx in &bfs_order {
+        let x = (idx % width) as i32;
+        let y = (idx / width) as i32;
+        let mut sum = 0.0f32;
+        let mut cnt = 0.0f32;
         for dz in -3..=3 {
             let nz = y + dz;
             if nz < 0 || nz >= height as i32 {
@@ -534,38 +774,51 @@ fn compute_water_levels(
                 if nx < 0 || nx >= width as i32 {
                     continue;
                 }
-                let n_idx = nz as usize * width + nx as usize;
-                if landmass_u8[n_idx] == 1 && macro_u8[n_idx] != river_lake_macro_idx {
-                    let h = raw_u16_to_y(heights_u16[n_idx]).floor() as i32;
-                    bank_sum += h;
-                    bank_count += 1;
-                    min_bank = min_bank.min(h);
+                let ni = nz as usize * width + nx as usize;
+                if landmass_u8[ni] == 1 && macro_u8[ni] != river_lake_macro_idx {
+                    sum += raw_u16_to_y(heights_u16[ni]);
+                    cnt += 1.0;
                 }
             }
         }
-
-        let initial_y = if bank_count > 0 {
-            let avg = bank_sum / bank_count;
-            let blended = (min_bank * 2 + avg) / 3;
-            (blended - 1).max(ADVENTURE_SEA_LEVEL)
+        let target = if cnt > 0.0 {
+            (sum / cnt) - 1.4
         } else {
-            (raw_u16_to_y(heights_u16[i]).floor() as i32).max(ADVENTURE_SEA_LEVEL)
+            raw_u16_to_y(heights_u16[idx]) - 1.2
         };
-        water_level[i] = initial_y as i16;
+        river_float[idx] = target.max(outlet_y[idx] as f32).max(ADVENTURE_SEA_LEVEL as f32);
     }
 
-    // 4. Smooth `Rapids` river water surface across 6 relaxation passes so steps descend smoothly
-    //    into connected lakes and estuaries.
-    let mut next_rapids = vec![0i16; rapids_indices.len()];
-    for _ in 0..6 {
-        for (k, &idx) in rapids_indices.iter().enumerate() {
+    // Enforce downstream monotonicity along `bfs_order` (downstream never higher than upstream)
+    for &idx in &bfs_order {
+        let d = river_dist[idx];
+        let x = idx % width;
+        let y = idx / width;
+        let mut max_down = outlet_y[idx] as f32;
+        let neighbors = [
+            (x > 0).then(|| idx - 1),
+            (x + 1 < width).then(|| idx + 1),
+            (y > 0).then(|| idx - width),
+            (y + 1 < height).then(|| idx + width),
+        ];
+        for n_idx in neighbors.into_iter().flatten() {
+            if micro_u8[n_idx] == rapids_idx && river_dist[n_idx] < d {
+                max_down = max_down.max(river_float[n_idx]);
+            } else if water_level[n_idx] != i16::MIN && micro_u8[n_idx] != rapids_idx && d <= 2 {
+                max_down = max_down.max(water_level[n_idx] as f32);
+            }
+        }
+        river_float[idx] = river_float[idx].max(max_down);
+    }
+
+    // Smooth along-river profile over 5 passes before quantizing into flat terraced reaches
+    let mut smooth_buf = river_float.clone();
+    for _ in 0..5 {
+        for &idx in &bfs_order {
             let x = idx % width;
             let y = idx / width;
-            let cur = water_level[idx] as i32;
-            let mut min_nbr = cur;
-            let mut sum = cur;
-            let mut cnt = 1;
-
+            let mut s = river_float[idx] * 2.0;
+            let mut w_sum = 2.0;
             let neighbors = [
                 (x > 0).then(|| idx - 1),
                 (x + 1 < width).then(|| idx + 1),
@@ -573,26 +826,235 @@ fn compute_water_levels(
                 (y + 1 < height).then(|| idx + width),
             ];
             for n_idx in neighbors.into_iter().flatten() {
-                let nw = water_level[n_idx];
-                if nw != i16::MIN {
-                    let nw_i = nw as i32;
-                    min_nbr = min_nbr.min(nw_i);
-                    sum += nw_i;
-                    cnt += 1;
+                if micro_u8[n_idx] == rapids_idx {
+                    s += river_float[n_idx];
+                    w_sum += 1.0;
+                } else if water_level[n_idx] != i16::MIN {
+                    s += water_level[n_idx] as f32 * 1.5;
+                    w_sum += 1.5;
                 }
             }
-
-            let avg = sum / cnt;
-            // Clamp step height to at most +2 blocks above the lowest adjacent water pixel
-            let stepped = avg.min(min_nbr + 2).max(ADVENTURE_SEA_LEVEL);
-            next_rapids[k] = stepped as i16;
+            smooth_buf[idx] = (s / w_sum).max(outlet_y[idx] as f32);
         }
-        for (k, &idx) in rapids_indices.iter().enumerate() {
-            water_level[idx] = next_rapids[k];
+        for &idx in &bfs_order {
+            river_float[idx] = smooth_buf[idx];
         }
     }
 
-    water_level
+    // Group connected river segments into ~13-pixel (~52-block) flat reaches on gentle terrain,
+    // while allowing steeper 2-pixel waterfall steps across cliffs/escarpments!
+    let mut reach_visited = vec![false; n];
+    let mut reach_cluster = Vec::new();
+    for &start in &bfs_order {
+        if reach_visited[start] {
+            continue;
+        }
+        let reach_bucket = river_dist[start] / 13;
+        reach_visited[start] = true;
+        queue.clear();
+        reach_cluster.clear();
+        queue.push_back(start);
+
+        let mut min_f = f32::MAX;
+        let mut max_f = f32::MIN;
+        while let Some(idx) = queue.pop_front() {
+            reach_cluster.push(idx);
+            min_f = min_f.min(river_float[idx]);
+            max_f = max_f.max(river_float[idx]);
+            let x = idx % width;
+            let y = idx / width;
+            let neighbors = [
+                (x > 0).then(|| idx - 1),
+                (x + 1 < width).then(|| idx + 1),
+                (y > 0).then(|| idx - width),
+                (y + 1 < height).then(|| idx + width),
+            ];
+            for n_idx in neighbors.into_iter().flatten() {
+                if micro_u8[n_idx] == rapids_idx
+                    && !reach_visited[n_idx]
+                    && (river_dist[n_idx] / 13) == reach_bucket
+                {
+                    reach_visited[n_idx] = true;
+                    queue.push_back(n_idx);
+                }
+            }
+        }
+
+        if max_f - min_f <= 3.2 {
+            // Gentle lowland/valley gradient: make the entire ~52-block reach 100% flat!
+            let flat_y = (((min_f + max_f) * 0.5).round() as i32).max(ADVENTURE_SEA_LEVEL) as i16;
+            for &idx in &reach_cluster {
+                water_level[idx] = flat_y.max(outlet_y[idx]);
+            }
+        } else {
+            // Steep escarpment / waterfall reach: quantize into crisp 3-block pool-and-drop waterfalls!
+            for &idx in &reach_cluster {
+                let fy = river_float[idx];
+                let terraced = (((fy / 3.0).floor() * 3.0) as i32).max(ADVENTURE_SEA_LEVEL) as i16;
+                water_level[idx] = terraced.max(outlet_y[idx]);
+            }
+        }
+    }
+
+    // Re-verify cross-section flatness (adjacent river pixels at similar river_dist share flat Y)
+    for &idx in &bfs_order {
+        let d = river_dist[idx];
+        let x = idx % width;
+        let y = idx / width;
+        let mut max_down = outlet_y[idx];
+        let neighbors = [
+            (x > 0).then(|| idx - 1),
+            (x + 1 < width).then(|| idx + 1),
+            (y > 0).then(|| idx - width),
+            (y + 1 < height).then(|| idx + width),
+        ];
+        for n_idx in neighbors.into_iter().flatten() {
+            if micro_u8[n_idx] == rapids_idx && river_dist[n_idx] < d {
+                max_down = max_down.max(water_level[n_idx]);
+            }
+        }
+        if water_level[idx] < max_down {
+            water_level[idx] = max_down;
+        }
+    }
+
+    // 5. Compute `1..=6 px` shoreline bank distance & nearest water Y on dry land bordering
+    //    inland lakes & rivers for seamless valley/basin bank grading.
+    let mut bank_dist = vec![0u8; n];
+    let mut bank_water_y = vec![i16::MIN; n];
+    queue.clear();
+
+    for i in 0..n {
+        if water_level[i] != i16::MIN && !is_sea[i] {
+            bank_water_y[i] = water_level[i];
+            queue.push_back(i);
+        }
+    }
+    while let Some(idx) = queue.pop_front() {
+        let cur_d = bank_dist[idx];
+        if cur_d >= 6 {
+            continue;
+        }
+        let wy = bank_water_y[idx];
+        let x = idx % width;
+        let y = idx / width;
+        let neighbors = [
+            (x > 0).then(|| idx - 1),
+            (x + 1 < width).then(|| idx + 1),
+            (y > 0).then(|| idx - width),
+            (y + 1 < height).then(|| idx + width),
+        ];
+        for n_idx in neighbors.into_iter().flatten() {
+            if landmass_u8[n_idx] == 1 && water_level[n_idx] == i16::MIN && bank_dist[n_idx] == 0 {
+                bank_dist[n_idx] = cur_d + 1;
+                bank_water_y[n_idx] = wy;
+                queue.push_back(n_idx);
+            }
+        }
+    }
+
+    // 6. Compute interior BFS distance from dry shore inside `RiverAndLake` water bodies (`1..=16`)
+    //    so lake beds deepen organically from shallow shores down into deep concave centers.
+    let mut dist_in_water = vec![0u8; n];
+    queue.clear();
+    for i in 0..n {
+        if macro_u8[i] != river_lake_macro_idx || water_level[i] == i16::MIN {
+            continue;
+        }
+        let x = i % width;
+        let y = i / width;
+        let touches_dry = (x > 0 && landmass_u8[i - 1] == 1 && water_level[i - 1] == i16::MIN)
+            || (x + 1 < width && landmass_u8[i + 1] == 1 && water_level[i + 1] == i16::MIN)
+            || (y > 0 && landmass_u8[i - width] == 1 && water_level[i - width] == i16::MIN)
+            || (y + 1 < height && landmass_u8[i + width] == 1 && water_level[i + width] == i16::MIN);
+        if touches_dry {
+            dist_in_water[i] = 1;
+            queue.push_back(i);
+        }
+    }
+    while let Some(idx) = queue.pop_front() {
+        let cur_d = dist_in_water[idx];
+        if cur_d >= 16 {
+            continue;
+        }
+        let x = idx % width;
+        let y = idx / width;
+        let neighbors = [
+            (x > 0).then(|| idx - 1),
+            (x + 1 < width).then(|| idx + 1),
+            (y > 0).then(|| idx - width),
+            (y + 1 < height).then(|| idx + width),
+        ];
+        for n_idx in neighbors.into_iter().flatten() {
+            if macro_u8[n_idx] == river_lake_macro_idx
+                && water_level[n_idx] != i16::MIN
+                && dist_in_water[n_idx] == 0
+            {
+                dist_in_water[n_idx] = cur_d + 1;
+                queue.push_back(n_idx);
+            }
+        }
+    }
+    for i in 0..n {
+        if macro_u8[i] == river_lake_macro_idx
+            && water_level[i] != i16::MIN
+            && dist_in_water[i] == 0
+        {
+            dist_in_water[i] = 16;
+        }
+    }
+
+    // 7. Compute 3-pass separable Gaussian-blurred `water_mask_u8` (`0..=255`) for `RiverAndLake`
+    //    so all 4x4-block pixel corners and ruler-straight edges round off into organic curves.
+    let mut mask_a = vec![0u8; n];
+    for i in 0..n {
+        if macro_u8[i] == river_lake_macro_idx && water_level[i] != i16::MIN {
+            mask_a[i] = 255;
+        }
+    }
+    let mut mask_b = vec![0u8; n];
+    for _pass in 0..3 {
+        // Horizontal 3-tap [1, 2, 1] / 4 pass
+        for y in 0..height {
+            let row = y * width;
+            for x in 0..width {
+                let xm = x.saturating_sub(1);
+                let xp = (x + 1).min(width - 1);
+                let v = (mask_a[row + xm] as u16
+                    + (mask_a[row + x] as u16) * 2
+                    + mask_a[row + xp] as u16
+                    + 2)
+                    >> 2;
+                mask_b[row + x] = v as u8;
+            }
+        }
+        // Vertical 3-tap [1, 2, 1] / 4 pass
+        for y in 0..height {
+            let ym = y.saturating_sub(1) * width;
+            let yc = y * width;
+            let yp = (y + 1).min(height - 1) * width;
+            for x in 0..width {
+                let v = (mask_b[ym + x] as u16
+                    + (mask_b[yc + x] as u16) * 2
+                    + mask_b[yp + x] as u16
+                    + 2)
+                    >> 2;
+                mask_a[yc + x] = v as u8;
+            }
+        }
+    }
+    // Guarantee narrow 1-pixel `Rapids` river centerlines stay connected after blurring
+    for i in 0..n {
+        if macro_u8[i] == river_lake_macro_idx
+            && micro_u8[i] == rapids_idx
+            && water_level[i] != i16::MIN
+            && mask_a[i] < 168
+        {
+            mask_a[i] = 168;
+        }
+    }
+
+    (water_level, bank_dist, bank_water_y, dist_in_water, mask_a)
 }
 
 fn load_raw_buffers() -> Result<Arc<RawAdventureMapBuffers>, String> {
@@ -714,16 +1176,18 @@ fn load_raw_buffers() -> Result<Arc<RawAdventureMapBuffers>, String> {
             }
 
             let heights_u16 = h_img.into_raw();
-            let water_level_i16 = compute_water_levels(
-                width as usize,
-                height as usize,
-                &heights_u16,
-                &macro_u8,
-                &micro_u8,
-                &landmass_u8,
-            );
+            let (water_level_i16, bank_dist_u8, bank_water_y_i16, dist_in_water_u8, water_mask_u8) =
+                compute_water_levels(
+                    width as usize,
+                    height as usize,
+                    &heights_u16,
+                    &mut macro_u8,
+                    &mut micro_u8,
+                    &mut landmass_u8,
+                );
 
-            let mem_mb = (pixel_count * (2 + 1 + 1 + 1 + 1 + 2)) as f32 / (1024.0 * 1024.0);
+            let mem_mb =
+                (pixel_count * (2 + 1 + 1 + 1 + 1 + 2 + 1 + 2 + 1 + 1)) as f32 / (1024.0 * 1024.0);
             info!(
                 "Loaded 6-layer Adventure Mode map assets ({width}x{height}): ~{mem_mb:.1} MB"
             );
@@ -737,6 +1201,10 @@ fn load_raw_buffers() -> Result<Arc<RawAdventureMapBuffers>, String> {
                 continent_region_u8,
                 landmass_u8,
                 water_level_i16,
+                bank_dist_u8,
+                bank_water_y_i16,
+                dist_in_water_u8,
+                water_mask_u8,
             }))
         })
         .clone()
@@ -812,12 +1280,6 @@ fn synthetic_climate(biome: BiomeType, v: f32, height: f32) -> (f32, f32) {
         BiomeType::WintryForest | BiomeType::FrostPinewoods | BiomeType::IceboundRidge => {
             (-0.62, 0.10)
         }
-
-        // Subterranean fallback
-        BiomeType::ThermalCaves => (0.85, -0.40),
-        BiomeType::UndergroundJungle => (0.65, 0.90),
-        BiomeType::IceCaves => (-0.90, 0.10),
-        BiomeType::MushroomCaves => (0.10, 0.85),
     };
 
     // Subtle latitude & altitude cooling so transitions feel natural
@@ -937,6 +1399,140 @@ impl AdventureWorldMap {
             .unwrap_or_default()
     }
 
+    /// Bilinearly-interpolated, multi-octave organically domain-warped water coverage and bank
+    /// distance sample using the 3-pass Gaussian-blurred `water_mask_u8`. Used identically by
+    /// `sample_water_level` and `sample_column_data` so Adventure Mode rivers and lakes have
+    /// completely organic, meandering, non-square shorelines at 1-block resolution.
+    #[inline]
+    fn sample_water_field(
+        &self,
+        world_x: i32,
+        world_z: i32,
+        fx: f32,
+        fz: f32,
+    ) -> (f32, f32, f32, Option<i32>, BiomeType) {
+        const WATER_WARP_SEED_X: u32 = 0x5EA1_4E7D;
+        const WATER_WARP_SEED_Z: u32 = 0x9B2C_61A3;
+        const WATER_EDGE_SEED: u32 = 0x3C7E_D14B;
+
+        let wx_f = world_x as f32;
+        let wz_f = world_z as f32;
+        // Two-scale organic warp: broad natural coves/bends (~35-block wavelength, +-1.15 px)
+        // plus fine 1-2 block shoreline irregularity (~12-block wavelength, +-0.32 px).
+        let warp_x = fractal_noise_2d(wx_f, wz_f, 0.028, 2, 0.5, WATER_WARP_SEED_X) * 1.15
+            + fractal_noise_2d(wx_f + 19.1, wz_f - 11.7, 0.085, 2, 0.5, WATER_WARP_SEED_X ^ 0x55AA)
+                * 0.32;
+        let warp_z = fractal_noise_2d(wx_f + 41.3, wz_f + 23.7, 0.028, 2, 0.5, WATER_WARP_SEED_Z)
+            * 1.15
+            + fractal_noise_2d(wx_f - 13.4, wz_f + 29.9, 0.085, 2, 0.5, WATER_WARP_SEED_Z ^ 0xAA55)
+                * 0.32;
+
+        let max_x = (self.raw.width - 1) as f32;
+        let max_z = (self.raw.height - 1) as f32;
+        let wfx = (fx + warp_x).clamp(0.0, max_x);
+        let wfz = (fz + warp_z).clamp(0.0, max_z);
+
+        let w = self.raw.width as i32;
+        let h = self.raw.height as i32;
+        let x0 = (wfx.floor() as i32).clamp(0, w - 1);
+        let z0 = (wfz.floor() as i32).clamp(0, h - 1);
+        let x1 = (x0 + 1).min(w - 1);
+        let z1 = (z0 + 1).min(h - 1);
+        let tx = (wfx - x0 as f32).clamp(0.0, 1.0);
+        let tz = (wfz - z0 as f32).clamp(0.0, 1.0);
+
+        let w_u = self.raw.width as usize;
+        let corners = [
+            (z0 as usize * w_u + x0 as usize, (1.0 - tx) * (1.0 - tz)),
+            (z0 as usize * w_u + x1 as usize, tx * (1.0 - tz)),
+            (z1 as usize * w_u + x0 as usize, (1.0 - tx) * tz),
+            (z1 as usize * w_u + x1 as usize, tx * tz),
+        ];
+
+        let mut raw_mask_cov = 0.0f32;
+        let mut in_dist_sum = 0.0f32;
+        let mut in_dist_w = 0.0f32;
+        let mut bank_dist_sum = 0.0f32;
+        let mut bank_w_sum = 0.0f32;
+        let mut best_water_w = -1.0f32;
+        let mut best_water_y: Option<i32> = None;
+        let mut best_water_micro = BiomeType::CalmLake;
+        let mut best_bank_w = -1.0f32;
+        let mut best_bank_y: Option<i32> = None;
+
+        for (idx, wc) in corners {
+            raw_mask_cov += wc * (self.raw.water_mask_u8[idx] as f32 / 255.0);
+            let is_inland_water = self.sample_macro_at(idx) == MacroBiome::RiverAndLake
+                && self.raw.water_level_i16[idx] != i16::MIN;
+            if is_inland_water {
+                in_dist_sum += wc * self.raw.dist_in_water_u8[idx] as f32;
+                in_dist_w += wc;
+                if wc > best_water_w {
+                    best_water_w = wc;
+                    best_water_y = Some(self.raw.water_level_i16[idx] as i32);
+                    best_water_micro = self.sample_micro_at(idx);
+                }
+            } else if self.raw.landmass_u8[idx] == 1 {
+                let bd = self.raw.bank_dist_u8[idx];
+                if bd > 0 && self.raw.bank_water_y_i16[idx] != i16::MIN {
+                    bank_dist_sum += wc * bd as f32;
+                    bank_w_sum += wc;
+                    if wc > best_bank_w {
+                        best_bank_w = wc;
+                        best_bank_y = Some(self.raw.bank_water_y_i16[idx] as i32);
+                    }
+                } else {
+                    bank_dist_sum += wc * 6.5;
+                    bank_w_sum += wc;
+                }
+            }
+        }
+
+        // Subtle fine shoreline perturbation so no edge ever looks ruler-straight
+        let edge_jitter =
+            fractal_noise_2d(wx_f, wz_f, 0.14, 2, 0.5, WATER_EDGE_SEED) * 0.045;
+        let inland_cov = if raw_mask_cov > 0.02 {
+            (raw_mask_cov + edge_jitter).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
+
+        // If the warped cove falls slightly outside the original 4 corners, find nearest parent
+        // `RiverAndLake` pixel within radius 2 px so `water_y` and `water_micro` stay exact.
+        if inland_cov > 0.08 && best_water_y.is_none() {
+            let cx = wfx.round() as i32;
+            let cz = wfz.round() as i32;
+            'find_water: for r in 1..=2i32 {
+                for dz in -r..=r {
+                    for dx in -r..=r {
+                        let ni = self.pixel_index(cx + dx, cz + dz);
+                        if self.sample_macro_at(ni) == MacroBiome::RiverAndLake
+                            && self.raw.water_level_i16[ni] != i16::MIN
+                        {
+                            best_water_y = Some(self.raw.water_level_i16[ni] as i32);
+                            best_water_micro = self.sample_micro_at(ni);
+                            break 'find_water;
+                        }
+                    }
+                }
+            }
+        }
+
+        let in_dist = if in_dist_w > 0.001 {
+            in_dist_sum / in_dist_w
+        } else {
+            0.0
+        };
+        let bank_dist = if bank_w_sum > 0.001 {
+            bank_dist_sum / bank_w_sum
+        } else {
+            6.5
+        };
+        let water_y = best_water_y.or(best_bank_y);
+
+        (inland_cov, in_dist, bank_dist, water_y, best_water_micro)
+    }
+
     /// Returns the local water surface elevation `Y` at `(world_x, world_z)` if this column is
     /// covered by ocean, estuary, elevated `CalmLake`, or stepped `Rapids` river water.
     #[inline]
@@ -944,13 +1540,37 @@ impl AdventureWorldMap {
         let Some((fx, fz, _)) = self.world_to_pixel_f(world_x, world_z) else {
             return Some(self.sea_level);
         };
+        let (inland_cov, _, _, water_y, _) = self.sample_water_field(world_x, world_z, fx, fz);
+        if inland_cov >= 0.46 {
+            return water_y;
+        }
         let idx = self.pixel_index(fx.round() as i32, fz.round() as i32);
+        if self.sample_macro_at(idx) == MacroBiome::RiverAndLake {
+            // Outside the smooth curved shoreline of an inland river/lake -> dry bank!
+            return None;
+        }
         let wl = self.raw.water_level_i16[idx];
         if wl == i16::MIN {
             None
         } else {
             Some(wl as i32)
         }
+    }
+
+    /// Returns `Some((is_river_bank, is_lake_bank, bank_factor))` when `(world_x, world_z)` sits
+    /// on the dry shoreline transition strip (2–6 blocks wide) bordering an inland river or lake.
+    #[inline]
+    pub fn sample_inland_bank(&self, world_x: i32, world_z: i32) -> Option<(bool, bool, f32)> {
+        let (fx, fz, _) = self.world_to_pixel_f(world_x, world_z)?;
+        let (inland_cov, _, _, water_y, water_micro) =
+            self.sample_water_field(world_x, world_z, fx, fz);
+        if water_y.is_none() || inland_cov >= 0.46 || inland_cov < 0.14 {
+            return None;
+        }
+        let bank_factor = ((inland_cov - 0.14) / (0.46 - 0.14)).clamp(0.0, 1.0);
+        let is_lake = water_micro == BiomeType::CalmLake;
+        let is_river = !is_lake;
+        Some((is_river, is_lake, bank_factor))
     }
 
     /// Samples Continent, Region, Macro-Biome, and Micro-Biome metadata for World Map hover & HUD.
@@ -1022,13 +1642,40 @@ impl AdventureWorldMap {
         let base_macro = self.sample_macro_at(base_idx);
         let base_micro = self.sample_micro_at(base_idx);
         let base_land = self.raw.landmass_u8[base_idx] == 1;
-        let local_water_y = self.raw.water_level_i16[base_idx];
-        let is_river_or_lake = base_macro == MacroBiome::RiverAndLake;
+        let (inland_cov, in_dist, smooth_bank_dist, field_water_y, field_water_micro) =
+            self.sample_water_field(world_x, world_z, fx, fz);
+        let is_inland_water = inland_cov >= 0.46 && field_water_y.is_some();
+        let is_river_or_lake = is_inland_water;
 
-        // Subtle organic domain-warp (~3-5 blocks) strictly for inland dry-land micro-biome borders,
-        // keeping coastlines, oceans, lakes, and river channels razor-sharp.
-        let mut biome = base_micro;
-        if base_land && !is_river_or_lake {
+        // Subtle organic domain-warp (~3-5 blocks) for dry-land micro-biome borders,
+        // while keeping open oceans and smooth curved inland water bodies crisp.
+        let mut biome = if is_inland_water {
+            field_water_micro
+        } else if base_macro == MacroBiome::RiverAndLake {
+            // Smoothly pulled outside the curved bank of a river/lake -> inherit nearest dry biome!
+            let px_i = fx.round() as i32;
+            let pz_i = fz.round() as i32;
+            let mut dry_b = BiomeType::Grasslands;
+            'find_dry: for r in 1..=2i32 {
+                for dz in -r..=r {
+                    for dx in -r..=r {
+                        let ni = self.pixel_index(px_i + dx, pz_i + dz);
+                        if self.raw.landmass_u8[ni] == 1
+                            && self.sample_macro_at(ni) != MacroBiome::RiverAndLake
+                        {
+                            dry_b = self.sample_micro_at(ni);
+                            break 'find_dry;
+                        }
+                    }
+                }
+            }
+            dry_b
+        } else {
+            base_micro
+        };
+
+        let is_dry_land = !is_inland_water && (base_land || base_macro == MacroBiome::RiverAndLake);
+        if is_dry_land {
             let warp_px = 1.05;
             let warp_x =
                 fractal_noise_2d(wx_f, wz_f, 0.045, 2, 0.5, seed ^ 0x517C_C1B7) * warp_px;
@@ -1052,15 +1699,30 @@ impl AdventureWorldMap {
         let sea_f = self.sea_level as f32;
 
         // Gently ease the low coastal band (sea_level..sea_level+16) so beaches slope gradually
-        if base_land && !is_river_or_lake && raw_height > sea_f && raw_height < sea_f + 16.0 {
+        if is_dry_land && raw_height > sea_f && raw_height < sea_f + 16.0 {
             let t = (raw_height - sea_f) / 16.0;
             let eased = t * t * 0.65 + t * 0.35;
             raw_height = sea_f + eased * 16.0;
         }
 
-        // Controlled high-frequency micro-detail (attenuated near coasts & rivers)
+        // Continuous effective distance from curved water's edge (`0.0` at shoreline -> `6.5` inland)
+        let eff_bank_dist = if is_inland_water {
+            0.0
+        } else if inland_cov > 0.02 {
+            ((0.46 - inland_cov) / 0.46).clamp(0.0, 1.0)
+        } else {
+            (0.95 + smooth_bank_dist).min(6.5)
+        };
+
+        // Controlled high-frequency micro-detail (attenuated near coasts, lakeshores & riverbanks)
         let coast_atten = ((raw_height - sea_f).abs() / 6.5).clamp(0.0, 1.0);
-        let river_atten = if is_river_or_lake { 0.15 } else { 1.0 };
+        let bank_atten = if is_inland_water {
+            0.12
+        } else if eff_bank_dist < 6.0 && field_water_y.is_some() {
+            (eff_bank_dist / 6.0).clamp(0.18, 1.0)
+        } else {
+            1.0
+        };
         let detail_amp = match biome {
             BiomeType::AlpinePeaks
             | BiomeType::JaggedPeaks
@@ -1076,22 +1738,56 @@ impl AdventureWorldMap {
         };
         let micro_scale = (0.045 / self.scale.factor().sqrt()).min(0.11);
         let micro = fractal_noise_2d(wx_f, wz_f, micro_scale, 3, 0.5, seed ^ 0xA24B_AED4);
-        raw_height += micro * detail_amp * coast_atten * river_atten;
+        raw_height += micro * detail_amp * coast_atten * bank_atten;
 
-        // Stage 4: Carve elevated CalmLake basins, stepped Rapids rivers, and Estuaries
-        // strictly relative to their true local water surface elevation `local_water_y`.
-        if is_river_or_lake && local_water_y != i16::MIN {
-            let water_y = local_water_y as f32;
+        // Smooth curved shoreline & riverbank grading on dry land (`eff_bank_dist in 0.0..6.0`),
+        // eliminating 4x4 blocky corners and flat concrete curbs while gently sealing the bank.
+        if is_dry_land && eff_bank_dist < 6.0 {
+            if let Some(wy_i) = field_water_y {
+                let wy = wy_i as f32;
+                let shore_target = wy + 0.45 + (eff_bank_dist.min(1.0)) * 0.85;
+                let t = (eff_bank_dist / 6.0).clamp(0.0, 1.0);
+                let smooth_t = t * t * (3.0 - 2.0 * t);
+                let graded = shore_target + (raw_height - shore_target) * smooth_t;
+                raw_height = if eff_bank_dist <= 1.2 {
+                    graded.max(wy + 0.65)
+                } else {
+                    graded
+                };
+            }
+        }
+
+        // Stage 4: Carve smooth curved elevated CalmLake basins (deep concave center!), foothill
+        // ponds, stepped Rapids reaches, and Estuaries strictly relative to `field_water_y`.
+        if is_inland_water {
+            let water_y = field_water_y.unwrap_or(self.sea_level) as f32;
             let bed_noise =
-                fractal_noise_2d(wx_f, wz_f, 0.08, 2, 0.5, seed ^ 0x71B3_2C4D) * 0.85;
-            let target_bed = match base_micro {
-                BiomeType::CalmLake => water_y - 4.8 + bed_noise,
-                BiomeType::Rapids => water_y - 3.0 + bed_noise * 0.6,
-                BiomeType::Estuary => sea_f - 3.2 + bed_noise * 0.6,
-                _ => water_y - 3.5 + bed_noise * 0.6,
+                fractal_noise_2d(wx_f, wz_f, 0.075, 2, 0.5, seed ^ 0x71B3_2C4D) * 0.75;
+            // Gentle continuous ramp right from the shoreline (`edge_t = 0.0` -> shallow 1-block wading)
+            // down into the deeper channel/basin center so there is NEVER a sheer vertical cliff at the bank!
+            let edge_t = ((inland_cov - 0.46) / 0.54).clamp(0.0, 1.0);
+            let smooth_edge = edge_t * edge_t * (3.0 - 2.0 * edge_t);
+
+            let depth = match field_water_micro {
+                BiomeType::CalmLake => {
+                    // Shallow wading shore (~0.8..2.2) smoothly deepening into a deep
+                    // concave center (~8.5..11.5 blocks deep in large lakes!)
+                    let deep_t = ((in_dist - 0.85) / 5.5).clamp(0.0, 1.0);
+                    let concave = deep_t * (2.0 - deep_t);
+                    0.85 + smooth_edge * 1.65 + concave * 8.8
+                }
+                BiomeType::Rapids => {
+                    let center_t = ((in_dist - 0.65) / 2.2).clamp(0.0, 1.0);
+                    0.80 + smooth_edge * 1.55 + center_t * 1.65
+                }
+                BiomeType::Estuary => {
+                    let deep_t = ((in_dist - 0.65) / 4.0).clamp(0.0, 1.0);
+                    0.90 + smooth_edge * 1.70 + deep_t * 3.8
+                }
+                _ => 0.90 + smooth_edge * 2.0,
             };
-            raw_height = target_bed.min(water_y - 1.5);
-        } else if !base_land && raw_height >= sea_f - 0.5 {
+            raw_height = (water_y - depth + bed_noise * 0.55).min(water_y - 0.75);
+        } else if !is_dry_land && raw_height >= sea_f - 0.5 {
             // Keep open sea / coastal sea pixels safely submerged
             raw_height = sea_f - 1.8;
         }
@@ -1181,9 +1877,31 @@ mod tests {
             .count();
         println!("Elevated inland water pixels (Y > {ADVENTURE_SEA_LEVEL}): {elevated_water_pixels}");
         assert!(
-            elevated_water_pixels > 100,
-            "Expected elevated lakes/rivers above sea level"
+            elevated_water_pixels > 25_000,
+            "Expected majority of inland lakes & rivers above sea level, got {elevated_water_pixels}"
         );
+
+        // Verify the exact 5 inland lakes/rivers from user screenshots are elevated (NOT at Y=12!)
+        for (label, cx, cz, min_expected_y) in [
+            ("Plains River", -1756, 247, 26),
+            ("Oasis Lake", -1822, -175, 28),
+            ("Sulfur Lake", -3946, -2252, 54),
+            ("Jungle Lake", -2808, 642, 40),
+        ] {
+            let mut max_wl = ADVENTURE_SEA_LEVEL;
+            for dz in -80..=80 {
+                for dx in -80..=80 {
+                    if let Some(wl) = map.sample_water_level(cx + dx * 2, cz + dz * 2) {
+                        max_wl = max_wl.max(wl);
+                    }
+                }
+            }
+            println!("{label} near ({cx}, {cz}): local water_level Y = {max_wl}");
+            assert!(
+                max_wl >= min_expected_y,
+                "{label} should sit elevated >= Y={min_expected_y}, got Y={max_wl}"
+            );
+        }
     }
 
     /// Renders an authentic in-game top-down World Map preview (`1280x720`) directly from

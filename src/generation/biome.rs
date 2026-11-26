@@ -217,7 +217,7 @@ impl MacroBiome {
     }
 }
 
-/// 78 surface Micro-Biomes + 4 Subterranean Biomes (82 total).
+/// 78 surface Micro-Biomes (subterranean biomes deferred to future refactor).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Reflect, Default)]
 pub enum BiomeType {
     // I. Islands (01..=06)
@@ -316,16 +316,10 @@ pub enum BiomeType {
     WintryForest,
     FrostPinewoods,
     IceboundRidge,
-
-    // X. Subterranean (79..=82 - untouched)
-    ThermalCaves,
-    UndergroundJungle,
-    IceCaves,
-    MushroomCaves,
 }
 
 impl BiomeType {
-    pub const ALL: [BiomeType; 82] = [
+    pub const ALL: [BiomeType; 78] = [
         // I. Islands
         Self::TropicalIsland,
         Self::TemperateIsland,
@@ -413,11 +407,6 @@ impl BiomeType {
         Self::WintryForest,
         Self::FrostPinewoods,
         Self::IceboundRidge,
-        // X. Subterranean
-        Self::ThermalCaves,
-        Self::UndergroundJungle,
-        Self::IceCaves,
-        Self::MushroomCaves,
     ];
 
     pub const fn parent_macro_biome(self) -> Option<MacroBiome> {
@@ -485,10 +474,6 @@ impl BiomeType {
             Self::WintryForest | Self::FrostPinewoods | Self::IceboundRidge => {
                 Some(MacroBiome::SnowyWoods)
             }
-            Self::ThermalCaves
-            | Self::UndergroundJungle
-            | Self::IceCaves
-            | Self::MushroomCaves => None,
         }
     }
 
@@ -573,10 +558,6 @@ impl BiomeType {
             Self::WintryForest => [156, 194, 214],
             Self::FrostPinewoods => [126, 168, 190],
             Self::IceboundRidge => [180, 212, 228],
-            Self::ThermalCaves => [160, 60, 30],
-            Self::UndergroundJungle => [40, 160, 80],
-            Self::IceCaves => [120, 210, 245],
-            Self::MushroomCaves => [140, 90, 180],
         }
     }
 
@@ -752,10 +733,6 @@ impl BiomeType {
             | Self::WintryForest
             | Self::FrostPinewoods
             | Self::IceboundRidge => "journal.biome_cat.glacial",
-
-            Self::ThermalCaves | Self::UndergroundJungle | Self::IceCaves | Self::MushroomCaves => {
-                "journal.biome_cat.caves"
-            }
         }
     }
 
@@ -862,14 +839,6 @@ impl BiomeType {
             Self::WintryForest => "textures/interfaces/icons/biomes/biome_wintry_forest.png",
             Self::FrostPinewoods => "textures/interfaces/icons/biomes/biome_frost_pinewoods.png",
             Self::IceboundRidge => "textures/interfaces/icons/biomes/biome_icebound_ridge.png",
-
-            // X. Subterranean
-            Self::ThermalCaves => "textures/interfaces/icons/biomes/biome_thermal_caves.png",
-            Self::UndergroundJungle => {
-                "textures/interfaces/icons/biomes/biome_underground_jungle.png"
-            }
-            Self::IceCaves => "textures/interfaces/icons/biomes/biome_ice_caves.png",
-            Self::MushroomCaves => "textures/interfaces/icons/biomes/biome_mushroom_caves.png",
         }
     }
 
@@ -953,10 +922,6 @@ impl BiomeType {
             Self::WintryForest => "Wintry Forest",
             Self::FrostPinewoods => "Frost Pinewoods",
             Self::IceboundRidge => "Icebound Ridge",
-            Self::ThermalCaves => "Thermal Caves",
-            Self::UndergroundJungle => "Underground Jungle",
-            Self::IceCaves => "Ice Caves",
-            Self::MushroomCaves => "Mushroom Caves",
         }
     }
 
@@ -1040,10 +1005,6 @@ impl BiomeType {
             Self::WintryForest => "biome.wintry_forest",
             Self::FrostPinewoods => "biome.frost_pinewoods",
             Self::IceboundRidge => "biome.icebound_ridge",
-            Self::ThermalCaves => "biome.thermal_caves",
-            Self::UndergroundJungle => "biome.underground_jungle",
-            Self::IceCaves => "biome.ice_caves",
-            Self::MushroomCaves => "biome.mushroom_caves",
         }
     }
 
@@ -1076,7 +1037,7 @@ impl BiomeType {
             Self::TundraIsland => BiomeConfig {
                 biome_type: self,
                 name,
-                surface_material: Voxel::PeatTundraMoss,
+                surface_material: Voxel::PeatTundraGrass,
                 subsoil_material: Voxel::PermafrostDirt,
                 subsoil_depth: 3,
                 base_height_offset: 6.0,
@@ -1840,7 +1801,7 @@ impl BiomeType {
             Self::ColdShrubland => BiomeConfig {
                 biome_type: self,
                 name,
-                surface_material: Voxel::LoamTundraMoss,
+                surface_material: Voxel::LoamTundraGrass,
                 subsoil_material: Voxel::PermafrostDirt,
                 subsoil_depth: 3,
                 base_height_offset: 18.0,
@@ -1851,7 +1812,7 @@ impl BiomeType {
             Self::PermafrostSteppe => BiomeConfig {
                 biome_type: self,
                 name,
-                surface_material: Voxel::SiltTundraMoss,
+                surface_material: Voxel::PermafrostTundraGrass,
                 subsoil_material: Voxel::PermafrostCoarse,
                 subsoil_depth: 4,
                 base_height_offset: 20.0,
@@ -1924,52 +1885,6 @@ impl BiomeType {
                 amplitude_multiplier: 1.75,
                 primary_stone: Voxel::Granite,
                 cliff_material: Voxel::FrostIcePacked,
-            },
-
-            // X. Subterranean (untouched)
-            Self::ThermalCaves => BiomeConfig {
-                biome_type: self,
-                name,
-                surface_material: Voxel::Basalt,
-                subsoil_material: Voxel::Basalt,
-                subsoil_depth: 4,
-                base_height_offset: -60.0,
-                amplitude_multiplier: 1.0,
-                primary_stone: Voxel::Basalt,
-                cliff_material: Voxel::CobbledBasalt,
-            },
-            Self::UndergroundJungle => BiomeConfig {
-                biome_type: self,
-                name,
-                surface_material: Voxel::MossForest,
-                subsoil_material: Voxel::LoamRooted,
-                subsoil_depth: 3,
-                base_height_offset: -40.0,
-                amplitude_multiplier: 1.0,
-                primary_stone: Voxel::Argillite,
-                cliff_material: Voxel::ClayBlue,
-            },
-            Self::IceCaves => BiomeConfig {
-                biome_type: self,
-                name,
-                surface_material: Voxel::FrostIcePacked,
-                subsoil_material: Voxel::FrostBlueIce,
-                subsoil_depth: 6,
-                base_height_offset: -50.0,
-                amplitude_multiplier: 1.0,
-                primary_stone: Voxel::Andesite,
-                cliff_material: Voxel::FrostIcePacked,
-            },
-            Self::MushroomCaves => BiomeConfig {
-                biome_type: self,
-                name,
-                surface_material: Voxel::PeatMud,
-                subsoil_material: Voxel::LoamRooted,
-                subsoil_depth: 4,
-                base_height_offset: -45.0,
-                amplitude_multiplier: 1.0,
-                primary_stone: Voxel::Argillite,
-                cliff_material: Voxel::PeatMud,
             },
         }
     }
@@ -2051,12 +1966,6 @@ impl BiomeType {
             Self::GlacialChasm | Self::IceSheet => [0.50, 0.80, 0.90, 1.0],
             Self::FrozenCliffs => [0.45, 0.70, 0.75, 1.0],
             Self::WintryForest | Self::FrostPinewoods => [0.42, 0.72, 0.65, 1.0],
-
-            // X. Subterranean
-            Self::ThermalCaves => [0.40, 0.35, 0.30, 1.0],
-            Self::UndergroundJungle => [0.20, 0.95, 0.40, 1.0],
-            Self::IceCaves => [0.55, 0.85, 0.95, 1.0],
-            Self::MushroomCaves => [0.45, 0.65, 0.50, 1.0],
         }
     }
 
@@ -2079,18 +1988,15 @@ impl BiomeType {
             Self::GlacialChasm
             | Self::IceSheet
             | Self::FrozenCliffs
-            | Self::FrozenIsland
-            | Self::IceCaves => [0.30, 0.75, 0.98, 1.0],
-            Self::VolcanicPeaks | Self::Caldera | Self::ThermalCaves => [0.65, 0.25, 0.15, 1.0],
+            | Self::FrozenIsland => [0.30, 0.75, 0.98, 1.0],
+            Self::VolcanicPeaks | Self::Caldera => [0.65, 0.25, 0.15, 1.0],
             Self::FlowerMeadow | Self::FertileValley | Self::LavenderValley | Self::SakuraGrove => {
                 [0.22, 0.70, 0.95, 1.0]
             }
             Self::DenseRainforest
             | Self::BambooGrove
             | Self::JungleWetlands
-            | Self::VolcanicJungle
-            | Self::UndergroundJungle
-            | Self::MushroomCaves => [0.18, 0.75, 0.70, 1.0],
+            | Self::VolcanicJungle => [0.18, 0.75, 0.70, 1.0],
             _ => [0.22, 0.60, 0.90, 1.0],
         }
     }
@@ -2854,43 +2760,6 @@ static BIOME_POINTS: &[BiomePoint] = &[
         t: -0.70,
         h: 0.35,
         d: 0.0,
-    },
-    // X. Subterranean
-    BiomePoint {
-        biome: BiomeType::ThermalCaves,
-        c: 0.25,
-        e: 0.00,
-        r: 0.00,
-        t: 0.70,
-        h: -0.50,
-        d: -0.70,
-    },
-    BiomePoint {
-        biome: BiomeType::UndergroundJungle,
-        c: 0.15,
-        e: 0.00,
-        r: 0.00,
-        t: 0.50,
-        h: 0.80,
-        d: -0.70,
-    },
-    BiomePoint {
-        biome: BiomeType::IceCaves,
-        c: 0.25,
-        e: 0.00,
-        r: 0.00,
-        t: -0.70,
-        h: 0.20,
-        d: -0.75,
-    },
-    BiomePoint {
-        biome: BiomeType::MushroomCaves,
-        c: 0.10,
-        e: 0.00,
-        r: 0.00,
-        t: 0.10,
-        h: 0.65,
-        d: -0.80,
     },
 ];
 

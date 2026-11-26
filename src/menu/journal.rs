@@ -95,7 +95,7 @@ impl JournalTab {
     }
 }
 
-const BIOME_CATEGORY_ORDER: [&str; 10] = [
+const BIOME_CATEGORY_ORDER: [&str; 9] = [
     "journal.biome_cat.islands",
     "journal.biome_cat.aquatic",
     "journal.biome_cat.coastal",
@@ -105,7 +105,6 @@ const BIOME_CATEGORY_ORDER: [&str; 10] = [
     "journal.biome_cat.peaks",
     "journal.biome_cat.arid",
     "journal.biome_cat.glacial",
-    "journal.biome_cat.caves",
 ];
 
 #[derive(Component)]

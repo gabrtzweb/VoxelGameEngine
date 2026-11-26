@@ -6,7 +6,7 @@ This is an attempt to develop an experimental voxel engine and game, built from 
 
 ## Core Concepts
 
-Built from scratch in Rust on **Bevy 0.20** with custom **WESL** shaders, the engine simulates an infinite, procedurally streamed 1.0 m voxel world organized into 16 × 16 × 16 chunks. It pairs greedy meshing with custom multi-shape block geometry, directional placement, multi-layer geological strata, 6D multi-noise biome generation, dynamic fluids, procedural GPU grass, and a continuous day/night, lunar, seasonal, and dynamic weather simulation.
+Built from scratch in Rust on **Bevy 0.20** with custom **WESL** shaders, the engine simulates both a handcrafted bounded **Adventure Mode** world (`12,800 × 7,200` Full / `6,400 × 3,600` Medium loaded from 6 `3200 × 1800` map layers) and an infinite procedurally streamed **Sandbox** 1.0 m voxel world organized into 16 × 16 × 16 chunks. It pairs greedy meshing with custom multi-shape block geometry, directional placement, multi-layer solid geological strata & ores (legacy caves removed pending Phase 11 subterranean refactor), 27 Macro-Biomes / 78 surface Micro-Biomes, elevated lakes & stepped rivers, dynamic fluids, procedural GPU grass, and a continuous day/night, lunar, seasonal, and dynamic weather simulation.
 
 On top of the voxel foundation, the project implements a **Survival-first** gameplay loop (alongside Creative and Spectator modes) featuring tool-based harvesting, block durability, a 36-slot inventory and hotbar, a 3-race / 9-subrace attribute and skill system, an interactive minimap and full-screen world map, a pure-code localized UI with rebindable controls and resolution scaling, and a spatialized multi-channel audio engine.
 
@@ -19,12 +19,11 @@ On top of the voxel foundation, the project implements a **Survival-first** game
 - **Voxel & Chunk Geometry**:
   - 1.0 m voxels; full 1 m³ blocks form the base unit of the world (0.5 m sub-voxels removed).
   - Each chunk contains 16 × 16 × 16 voxels (4,096 voxels, 16 m × 16 m × 16 m physical section).
-- **Horizontal Streaming**: Effectively unlimited along X and Z via procedural streaming.
+- **Horizontal Streaming**: Effectively unlimited along X and Z in Sandbox Mode; bounded `12,800 × 7,200` (Full) or `6,400 × 3,600` (Medium) handcrafted world in Adventure Mode.
 - **Vertical Limits**: Chunk Y `-16` to `+16` (`-256` to `+256` blocks; 512 blocks total playable height).
 - **Elevation Landmarks**:
-  - Indestructible Bedrock / Mantle floor: `Y = -254`
-  - Deep subterranean lava lakes: `Y = -60`
-  - Sea level: `Y = 12` (baseline terrain elevation: `Y = 16`)
+  - Indestructible Bedrock / Mantle floor: `Y = -254` (100% solid rock & ore strata below surface; subterranean caves & underground biomes removed until the Phase 11 Subterranean Refactor)
+  - Sea level: `Y = 12` (baseline terrain elevation: `Y = 16`; Adventure Mode supports elevated highland lakes and stepped rivers above `Y = 12`)
   - Cloud layers: 2 active layers at `Y = 168.0 m` (cumulus) and `Y = 215.0 m` (altocumulus), with a 3rd configurable cirrus layer at `Y = 275.0 m`
 - **Render Distance**: Default 12 chunks (LOD chunk radius also set to 12); chunks are generated, meshed, and unloaded dynamically as the player moves.
 
@@ -96,7 +95,7 @@ The engine has concluded two full 20-phase development milestones:
 
 - **Version 0.1 — Foundation Era (Phases 1–20, Completed)**: Core engine architecture, multi-chunk streaming, greedy meshing, procedural terrain, physics, fluid dynamics, celestial environments, survival interfaces, and SIMD/memory optimizations.
 - **Version 0.2 — Modernization, Worldbuilding & Deep Systems (Phases 1–20, Completed)**: Full voxel catalog and geological strata, 9-slot 480×270 Dark Iron UI, Bevy 0.20 and WESL migration, hardware profiles and FSR 1.0, wild flora and botanical systems, 6D multi-noise 44-biome generation, Main Menu and deferred loading, spatial audio, 8-race custom voxel characters, agricultural crop simulation, smooth fluid dynamics and 3D item drops, dynamic weather, AO/water/bloom/god-ray shaders, streaming and LOD performance engineering, multi-language localization, rebindable controls, GPU procedural grass, and multi-chunk world feature generation.
-- **Version 0.3 (Current, In Progress)**: Active development milestone focused on engine-wide performance optimization, world terrain polish, atmospheric/gameplay particles, pure-code UI & Journal Compendium, the 3×3 race/subrace attribute & 60-skill system, and Main Menu modernization.
+- **Version 0.3 (Current, In Progress)**: Active development milestone delivering engine-wide performance optimization, world terrain polish, atmospheric/gameplay particles, pure-code UI & 78-biome Journal Compendium, the 3×3 race/subrace attribute & 60-skill system, Main Menu & Survival core systems, and the 6-layer `3200 × 1800` Adventure Mode world with World Map Atlas Overlays and async Full-World Preload.
 
 Individual phases and detailed milestones are tracked exclusively in `docs/project_roadmap.md`.
 

@@ -1119,7 +1119,12 @@ impl ChunkMesher {
                                 if !above.is_solid_opaque() && !above.is_fluid() {
                                     let block_local = IVec3::new(x as i32, y as i32, z as i32);
                                     let world_pos = chunk_voxel_origin + block_local;
-                                    let tint = voxel.tint_color_at(world_pos);
+                                    let tint = if voxel.is_tundra_grass() {
+                                        // Reddish/rusty tundra grass blade tint matching `soil_tundra_grass_top.png`
+                                        [0.66, 0.36, 0.16, 1.0]
+                                    } else {
+                                        voxel.tint_color_at(world_pos)
+                                    };
                                     let (shape, orientation) = chunk.get_shape(x, y, z);
                                     crate::environment::foliage::generator::emit_block_grass_blades(
                                         grass_buffers,

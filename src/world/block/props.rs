@@ -331,23 +331,35 @@ impl Voxel {
     }
 
     #[inline(always)]
-    pub const fn has_grass_turf(self) -> bool {
+    pub const fn is_tundra_grass(self) -> bool {
         matches!(
             self,
-            Self::CalicheGrass
-                | Self::LateriteGrass
-                | Self::LoamGrass
-                | Self::PeatGrass
-                | Self::PermafrostGrass
-                | Self::SiltGrass
-                | Self::AndesiteGrass
-                | Self::ArgilliteGrass
-                | Self::BasaltGrass
-                | Self::ChalkGrass
-                | Self::DolomiteGrass
-                | Self::GraniteGrass
-                | Self::LimestoneGrass
+            Self::SiltTundraGrass
+                | Self::LoamTundraGrass
+                | Self::PeatTundraGrass
+                | Self::PermafrostTundraGrass
         )
+    }
+
+    #[inline(always)]
+    pub const fn has_grass_turf(self) -> bool {
+        self.is_tundra_grass()
+            || matches!(
+                self,
+                Self::CalicheGrass
+                    | Self::LateriteGrass
+                    | Self::LoamGrass
+                    | Self::PeatGrass
+                    | Self::PermafrostGrass
+                    | Self::SiltGrass
+                    | Self::AndesiteGrass
+                    | Self::ArgilliteGrass
+                    | Self::BasaltGrass
+                    | Self::ChalkGrass
+                    | Self::DolomiteGrass
+                    | Self::GraniteGrass
+                    | Self::LimestoneGrass
+            )
     }
 
     #[inline(always)]
@@ -658,6 +670,8 @@ impl Voxel {
                     | Self::LeafCoralFan
                     | Self::ReedCoralFan
                     | Self::Seagrass
+                    | Self::TallSeagrassBottom
+                    | Self::TallSeagrassTop
                     | Self::BullKelp
                     | Self::BullKelpPlant
                     | Self::Delesseria
@@ -870,6 +884,8 @@ impl Voxel {
         matches!(
             self,
             Self::Seagrass
+                | Self::TallSeagrassBottom
+                | Self::TallSeagrassTop
                 | Self::BullKelp
                 | Self::BullKelpPlant
                 | Self::Delesseria
@@ -940,27 +956,28 @@ impl Voxel {
                     | Self::LoamMulch
                     | Self::LoamRooted
                     | Self::LoamTilled
-                    | Self::LoamTundraMoss
+                    | Self::LoamTundraGrass
                     | Self::PeatDirt
                     | Self::PeatCoarse
                     | Self::PeatMud
                     | Self::PeatMulch
                     | Self::PeatRooted
                     | Self::PeatTilled
-                    | Self::PeatTundraMoss
+                    | Self::PeatTundraGrass
                     | Self::SiltDirt
                     | Self::SiltCoarse
                     | Self::SiltMud
                     | Self::SiltMulch
                     | Self::SiltRooted
                     | Self::SiltTilled
-                    | Self::SiltTundraMoss
+                    | Self::SiltTundraGrass
                     | Self::LateriteDirt
                     | Self::LateriteCoarse
                     | Self::CalicheDirt
                     | Self::CalicheCoarse
                     | Self::PermafrostDirt
                     | Self::PermafrostCoarse
+                    | Self::PermafrostTundraGrass
                     | Self::PathDirty
                     | Self::GravelDirty
                     | Self::GravelAshy

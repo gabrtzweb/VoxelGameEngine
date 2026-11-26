@@ -150,9 +150,10 @@ impl Voxel {
             | Self::LimestoneSnow => Some("soil_snow"),
 
             Self::SeagrassSand => Some("soil_seagrass_sand"),
-            Self::SiltTundraMoss | Self::LoamTundraMoss | Self::PeatTundraMoss => {
-                Some("soil_tundra_moss_top")
-            }
+            Self::SiltTundraGrass
+            | Self::LoamTundraGrass
+            | Self::PeatTundraGrass
+            | Self::PermafrostTundraGrass => Some("soil_tundra_grass_top"),
 
             Self::LoamMulch => Some("soil_loam_mulch"),
             Self::MelonBlock | Self::WildMelon => Some("crops_melon_top"),
@@ -267,18 +268,18 @@ impl Voxel {
             | Self::LoamSnow
             | Self::LoamMulch
             | Self::LoamTilled
-            | Self::LoamTundraMoss => Some("soil_loam_dirt"),
+            | Self::LoamTundraGrass => Some("soil_loam_dirt"),
             Self::PeatGrass
             | Self::PeatSnow
             | Self::PeatMulch
             | Self::PeatTilled
-            | Self::PeatTundraMoss => Some("soil_peat_dirt"),
-            Self::PermafrostGrass => Some("soil_permafrost_dirt"),
+            | Self::PeatTundraGrass => Some("soil_peat_dirt"),
+            Self::PermafrostGrass | Self::PermafrostTundraGrass => Some("soil_permafrost_dirt"),
             Self::SiltGrass
             | Self::SiltSnow
             | Self::SiltMulch
             | Self::SiltTilled
-            | Self::SiltTundraMoss => Some("soil_silt_dirt"),
+            | Self::SiltTundraGrass => Some("soil_silt_dirt"),
 
             Self::AndesiteGrass | Self::AndesiteSnow => Some("rock_andesite"),
             Self::ArgilliteGrass | Self::ArgilliteSnow => Some("rock_argillite"),
@@ -312,9 +313,10 @@ impl Voxel {
             | Self::SiltGrass => Some("soil_grass_side_overlay"),
 
             Self::SeagrassSand => Some("soil_seagrass_side_overlay"),
-            Self::SiltTundraMoss | Self::LoamTundraMoss | Self::PeatTundraMoss => {
-                Some("soil_tundra_moss_side_overlay")
-            }
+            Self::SiltTundraGrass
+            | Self::LoamTundraGrass
+            | Self::PeatTundraGrass
+            | Self::PermafrostTundraGrass => Some("soil_tundra_grass_side_overlay"),
 
             Self::AndesiteGrass
             | Self::ArgilliteGrass
@@ -440,9 +442,10 @@ impl Voxel {
                     | Self::PeatSnow
                     | Self::SiltSnow
                     | Self::SeagrassSand
-                    | Self::SiltTundraMoss
-                    | Self::LoamTundraMoss
-                    | Self::PeatTundraMoss
+                    | Self::SiltTundraGrass
+                    | Self::LoamTundraGrass
+                    | Self::PeatTundraGrass
+                    | Self::PermafrostTundraGrass
                     | Self::AndesiteSnow
                     | Self::ArgilliteSnow
                     | Self::BasaltSnow
@@ -464,18 +467,18 @@ impl Voxel {
             | Self::LoamSnow
             | Self::LoamMulch
             | Self::LoamTilled
-            | Self::LoamTundraMoss => Self::LoamDirt,
+            | Self::LoamTundraGrass => Self::LoamDirt,
             Self::PeatGrass
             | Self::PeatSnow
             | Self::PeatMulch
             | Self::PeatTilled
-            | Self::PeatTundraMoss => Self::PeatDirt,
-            Self::PermafrostGrass => Self::PermafrostDirt,
+            | Self::PeatTundraGrass => Self::PeatDirt,
+            Self::PermafrostGrass | Self::PermafrostTundraGrass => Self::PermafrostDirt,
             Self::SiltGrass
             | Self::SiltSnow
             | Self::SiltMulch
             | Self::SiltTilled
-            | Self::SiltTundraMoss => Self::SiltDirt,
+            | Self::SiltTundraGrass => Self::SiltDirt,
             Self::AndesiteGrass | Self::AndesiteSnow => Self::Andesite,
             Self::ArgilliteGrass | Self::ArgilliteSnow => Self::Argillite,
             Self::BasaltGrass | Self::BasaltSnow => Self::Basalt,
@@ -785,9 +788,10 @@ impl Voxel {
                     | Self::PeatSnow
                     | Self::SiltSnow
                     | Self::SeagrassSand
-                    | Self::SiltTundraMoss
-                    | Self::LoamTundraMoss
-                    | Self::PeatTundraMoss
+                    | Self::SiltTundraGrass
+                    | Self::LoamTundraGrass
+                    | Self::PeatTundraGrass
+                    | Self::PermafrostTundraGrass
                     | Self::AndesiteSnow
                     | Self::ArgilliteSnow
                     | Self::BasaltSnow
@@ -1011,11 +1015,12 @@ impl Voxel {
             Self::GravelAshy => [105, 105, 105, 255],
             Self::PathStony => [145, 140, 135, 255],
 
-            // Moss
+            // Moss & Tundra Grass
             Self::MossForest | Self::MossCarpet => [60, 120, 45, 255],
-            Self::SiltTundraMoss | Self::LoamTundraMoss | Self::PeatTundraMoss => {
-                [108, 118, 62, 255]
-            }
+            Self::SiltTundraGrass
+            | Self::LoamTundraGrass
+            | Self::PeatTundraGrass
+            | Self::PermafrostTundraGrass => [135, 73, 32, 255],
             Self::VegeArcticMoss | Self::VegeArcticGrass => [118, 128, 68, 255],
 
             // Rock families (Raw, Cobbled, Bricks, Rubble, and Mossy)
@@ -1266,9 +1271,11 @@ impl Voxel {
             | Self::Kelp
             | Self::KelpPlant
             | Self::Seagrass
+            | Self::TallSeagrassBottom
+            | Self::TallSeagrassTop
             | Self::Seaweed
             | Self::Sargassum
-            | Self::BoneWorms => [55, 105, 45, 255],
+            | Self::BoneWorms => [76, 126, 44, 255],
 
             // Organic, Biological & Nests
             Self::BoneBlock | Self::BloodyBone => [215, 210, 195, 255],

@@ -32,21 +32,6 @@ fn hash2d(x: i32, z: i32, seed: u32) -> u32 {
     h
 }
 
-/// Fast deterministic 3D integer hash.
-#[inline(always)]
-fn hash3d(x: i32, y: i32, z: i32, seed: u32) -> u32 {
-    let mut h = seed
-        .wrapping_add((x as u32).wrapping_mul(0x9E37_79B1))
-        .wrapping_add((y as u32).wrapping_mul(0xC2B2_AE3D))
-        .wrapping_add((z as u32).wrapping_mul(0x85EB_CA77));
-    h ^= h >> 16;
-    h = h.wrapping_mul(0x85EB_CA6B);
-    h ^= h >> 13;
-    h = h.wrapping_mul(0xC2B2_AE35);
-    h ^= h >> 16;
-    h
-}
-
 /// Converts a hash value into a uniform float in `[0.0, 1.0)`.
 #[inline(always)]
 fn hash_f32(h: u32) -> f32 {
@@ -657,9 +642,6 @@ pub fn populate_chunk_flora<F>(
             );
         }
     }
-
-    // 2. Subterranean Cave Flora & Hanging Growths (light density)
-    populate_cave_flora(voxels, chunk_shapes, columns, chunk_origin, seed);
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -817,11 +799,27 @@ fn populate_marine_column(
         return;
     }
 
-    // Vibrant Coral Reefs: dense, multi-block branching colonies with 6-face wall/top coral fans
-    let is_coral_zone = matches!(
-        col.biome,
-        BiomeType::CoralReefs | BiomeType::CoralIsland | BiomeType::WarmOcean
-    ) || (!col.is_river && col.climate.temperature > -0.15);
+    // Strictly exclude marine corals, kelp, and red algae from freshwater lakes, rivers, estuaries, and wetlands
+    let is_freshwater = col.is_river
+        || col.is_lake
+        || matches!(
+            col.biome,
+            BiomeType::CalmLake
+                | BiomeType::Rapids
+                | BiomeType::Estuary
+                | BiomeType::WillowMarsh
+                | BiomeType::MangroveSwamp
+                | BiomeType::OrchidSwamp
+                | BiomeType::SwampyShore
+                | BiomeType::DesertOasis
+        );
+
+    // Vibrant Coral Reefs: dense, multi-block branching colonies with 6-face wall/top coral fans (ocean only)
+    let is_coral_zone = !is_freshwater
+        && (matches!(
+            col.biome,
+            BiomeType::CoralReefs | BiomeType::CoralIsland | BiomeType::WarmOcean
+        ) || col.climate.temperature > -0.15);
     if is_coral_zone && depth <= 22 && col.biome != BiomeType::SeagrassMeadows {
         let reef_patch = patch_noise(wx, wz, 20.0, seed ^ 0xC07A_1FEF);
         let reef_cluster = patch_noise(wx, wz, 7.0, seed ^ 0xC07A_8841);
@@ -1105,8 +1103,8 @@ fn populate_marine_column(
         }
     }
 
-    // Kelp & Bull Kelp underwater forests in any deep coastal water or ocean (depth >= 4)
-    if depth >= 4 && !col.is_river {
+    // Kelp & Bull Kelp underwater forests in any deep coastal water or ocean (depth >= 4, ocean only)
+    if depth >= 4 && !is_freshwater {
         let kelp_patch = patch_noise(wx, wz, 18.0, seed ^ 0x0E1F_4422);
         let (kelp_thresh, kelp_chance) = if col.biome == BiomeType::KelpForests {
             (0.26, 0.28)
@@ -1157,22 +1155,53 @@ fn populate_marine_column(
             (0.35, 0.22)
         };
     if sg_patch > sg_thresh && r < sg_chance {
-        let vox = if (h >> 10).is_multiple_of(8) && col.biome != BiomeType::SeagrassMeadows {
-            Voxel::RedAlgae
+        let can_be_tall = water_level - floor_y >= 2
+            && (col.biome == BiomeType::SeagrassMeadows || ground == Voxel::SeagrassSand)
+            && ((h >> 12) % 3 == 0);
+        if can_be_tall {
+            set_voxel_in_chunk(
+                voxels,
+                chunk_shapes,
+                chunk_min_y,
+                lx,
+                floor_y,
+                lz,
+                Voxel::TallSeagrassBottom,
+                BlockShape::CrossBillboard,
+                0,
+            );
+            set_voxel_in_chunk(
+                voxels,
+                chunk_shapes,
+                chunk_min_y,
+                lx,
+                floor_y + 1,
+                lz,
+                Voxel::TallSeagrassTop,
+                BlockShape::CrossBillboard,
+                0,
+            );
         } else {
-            Voxel::Seagrass
-        };
-        set_voxel_in_chunk(
-            voxels,
-            chunk_shapes,
-            chunk_min_y,
-            lx,
-            floor_y,
-            lz,
-            vox,
-            BlockShape::CrossBillboard,
-            0,
-        );
+            let vox = if !is_freshwater
+                && (h >> 10).is_multiple_of(8)
+                && col.biome != BiomeType::SeagrassMeadows
+            {
+                Voxel::RedAlgae
+            } else {
+                Voxel::Seagrass
+            };
+            set_voxel_in_chunk(
+                voxels,
+                chunk_shapes,
+                chunk_min_y,
+                lx,
+                floor_y,
+                lz,
+                vox,
+                BlockShape::CrossBillboard,
+                0,
+            );
+        }
     }
 }
 
@@ -1327,11 +1356,14 @@ fn select_surface_flora_column(
     let flower_patch = patch_noise(wx, wz, 16.0, seed ^ 0xF10E_5555);
     let grass_patch = patch_noise(wx, wz, 18.0, seed ^ 0x67A5_5111);
 
-    // Tundra Moss Ground (`SiltTundraMoss`, `LoamTundraMoss`, `PeatTundraMoss`):
+    // Tundra Grass Ground (`SiltTundraGrass`, `LoamTundraGrass`, `PeatTundraGrass`, `PermafrostTundraGrass`):
     // Always prioritize spawning the new pre-colored `VegeArcticMoss` and `VegeArcticGrass`!
     if matches!(
         ground,
-        Voxel::SiltTundraMoss | Voxel::LoamTundraMoss | Voxel::PeatTundraMoss
+        Voxel::SiltTundraGrass
+            | Voxel::LoamTundraGrass
+            | Voxel::PeatTundraGrass
+            | Voxel::PermafrostTundraGrass
     ) {
         if grass_patch > 0.26 && roll < 0.12 {
             let vox = match (h >> 8) % 6 {
@@ -1951,91 +1983,6 @@ fn populate_surface_flora_column(
                     BlockShape::CrossBillboard,
                     0,
                 );
-            }
-        }
-    }
-}
-
-/// Populates subterranean cave floors and ceilings with light growths, mushrooms, and hanging vines.
-fn populate_cave_flora(
-    voxels: &mut [Voxel],
-    chunk_shapes: &mut Vec<(usize, BlockShape, u8)>,
-    columns: &[TerrainColumn; CHUNK_SIZE * CHUNK_SIZE],
-    chunk_origin: IVec3,
-    seed: u32,
-) {
-    for lz in 0..CHUNK_SIZE {
-        let wz = chunk_origin.z + lz as i32;
-        for lx in 0..CHUNK_SIZE {
-            let wx = chunk_origin.x + lx as i32;
-            let col = columns[lz * CHUNK_SIZE + lx];
-            let max_cave_y = col.terrain_height - 5;
-
-            if chunk_origin.y > max_cave_y {
-                continue;
-            }
-
-            let is_mushroom_cave = col.biome == BiomeType::MushroomCaves;
-            let is_lush_cave = col.biome == BiomeType::UndergroundJungle;
-
-            for ly in 1..(CHUNK_SIZE - 1) {
-                let wy = chunk_origin.y + ly as i32;
-                if wy > max_cave_y {
-                    break;
-                }
-
-                let idx = chunk_idx(lx, ly, lz);
-                if !voxels[idx].is_empty() {
-                    continue;
-                }
-
-                let below = voxels[chunk_idx(lx, ly - 1, lz)];
-                let above = voxels[chunk_idx(lx, ly + 1, lz)];
-
-                // Cave floor growths & mushrooms
-                if below.is_solid_opaque() {
-                    let h = hash3d(wx, wy, wz, seed ^ 0xCA7E_F107);
-                    let r = hash_f32(h);
-                    let chance = if is_mushroom_cave || is_lush_cave {
-                        0.035
-                    } else {
-                        0.008
-                    };
-                    if r < chance {
-                        let vox = if is_mushroom_cave || (h >> 8).is_multiple_of(4) {
-                            match (h >> 12) % 5 {
-                                0 => Voxel::FungiAmanita,
-                                1 => Voxel::FungiPorcini,
-                                2 => Voxel::FungiRussula,
-                                3 => Voxel::FungiShiitake,
-                                _ => Voxel::FungiVerdigris,
-                            }
-                        } else {
-                            match (h >> 12) % 3 {
-                                0 => Voxel::VegeCaveGrowths,
-                                1 => Voxel::VegeGrainyCaveGrowths,
-                                _ => Voxel::VegeCaveHyssop,
-                            }
-                        };
-                        voxels[idx] = vox;
-                        chunk_shapes.push((idx, BlockShape::CrossBillboard, 0));
-                    }
-                } else if above.is_solid_opaque() {
-                    // Cave ceiling hanging moss / roots / short cave vines
-                    let h = hash3d(wx, wy, wz, seed ^ 0xCA7E_CE11);
-                    let r = hash_f32(h);
-                    let chance = if is_lush_cave { 0.045 } else { 0.009 };
-                    if r < chance {
-                        let vox = match (h >> 8) % 3 {
-                            0 => Voxel::VegeHangingMoss,
-                            1 => Voxel::VegeHangingRoots,
-                            _ => Voxel::VegeCaveVines,
-                        };
-                        voxels[idx] = vox;
-                        // Orientation 1 = Ceiling (Hanging)
-                        chunk_shapes.push((idx, BlockShape::CrossBillboard, 1));
-                    }
-                }
             }
         }
     }

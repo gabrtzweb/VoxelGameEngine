@@ -87,15 +87,15 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 | **01** | **[Engine-Wide Performance Optimization & LOD Pipeline](#phase-1-engine-wide-performance-optimization--lod-pipeline-completed)** | **Completed** | Terrain/biome generation caching, LOD meshing overhaul, optional leaf culling, shader/grass/celestial optimizations, streaming & chunk cache improvements |
 | **02** | **[World Terrain Polish & Surface Detail Features](#phase-2-world-terrain-polish--surface-detail-features-completed)** | **Completed** | Universal slab/stair terrain smoothing, sculpted outcrops & boulders, ground bushes, ocean biomes & coral/reefstone formations, fallen logs & forest moss, sculpted tree canopies, campfire, toggleable lamps, geothermal vents |
 | **03** | **[Atmospheric & Gameplay Particle Engine](#phase-3-atmospheric--gameplay-particle-engine-completed)** | **Completed** | Falling canopy leaves (21 sprites, selective tint), underwater geothermal/magma bubbles + pop, footstep/landing dust, blinking night fireflies, daytime pollen, player/item water splashes, campfire smoke |
-| **04** | **[Pure-Code UI & Menu System Redesign](#phase-4-pure-code-ui--menu-system-redesign-in-progress)** | **In Progress** | Pure Bevy UI Dark Iron theme (`src/menu/theme.rs`), removal of `assets/textures/interfaces/containers/`, 6-tab top bar with icons & live status HUD, 3-column cascading System/Settings/Controls drawers, fullscreen World Map with right sidebar, fully localized Journal Compendium (44 biomes with pixel-art icons), Skills/Quests screens, and expanded Settings |
+| **04** | **[Pure-Code UI & Menu System Redesign](#phase-4-pure-code-ui--menu-system-redesign-in-progress)** | **In Progress** | Pure Bevy UI Dark Iron theme (`src/menu/theme.rs`), removal of `assets/textures/interfaces/containers/`, 6-tab top bar with icons & live status HUD, 3-column cascading System/Settings/Controls drawers (with persisted `Show Undiscovered Compendium` & `Preload Full World Map` toggles), fullscreen World Map with right sidebar & Atlas Overlay filters, fully localized Journal Compendium (78 surface biomes with pixel-art icons), Skills/Quests screens, and expanded Settings |
 | **05** | **[Races, Subraces, Attributes & Skills Redesign](#phase-5-races-subraces-attributes--skills-redesign-completed)** | **Completed** | 3 classic core races × 3 subraces each (9 playable subraces) with face-portrait icons, 16-field `RaceAttributes` (live jump height, move/swim speed, footstep stealth, mining reach), 3-column Race Selection UI, and 60 localized skills (4 general trees + dynamic racial/subracial tree) with 60 bespoke pixel-art icons |
 | **06** | **[Main Menu Redesign](#phase-6-main-menu-redesign-in-progress)** | **In Progress** | 2-side Main Menu with character-gated `New Game` flow (`CharacterReady`), `Adventure Mode` vs `Sandbox World` selection screen, right-side character showcase panel, and future 3D character preview |
 | **07** | **[Dedicated Character Creator](#phase-7-dedicated-character-creator-planned)** | **Planned** | Interactive character customization (skin tone, hair style/color, beard/features, outfit palette, character naming, and live 3D voxel model preview) |
 | **08** | **[Survival Mode Core Systems](#phase-8-survival-mode-core-systems-in-progress)** | **In Progress** | Default Survival mode (`S → C → E`), floating GUI-scaled Vitals HUD, live stamina/drowning/fall damage/respawn, 11 flint tools & crafting materials, 64-item stacking & consumption, block durability with 9-stage crack overlay + shake, Fire Starter/Hoe/Shears actions (hunger/thirst/temperature sim, food buffs & tool durability next) |
 | **09** | **[Mobs, Wildlife & Entity AI](#phase-9-mobs-wildlife--entity-ai-planned)** | **Planned** | First creatures and wildlife (passive fauna, hostile mobs, pathfinding, stealth/footstep awareness, combat, taming, and live Bestiary unlocking) |
 | **10** | **[Quests, Objectives & Progression Engine](#phase-10-quests-objectives--progression-engine-planned)** | **Planned** | Functional quest state machine, objective tracking, exploration/gathering/combat triggers, XP/leveling, skill point spending, and rewards |
-| **11** | **[Subterranean Caves & Ore Generation Rework](#phase-11-subterranean-caves--ore-generation-rework-planned)** | **Planned** | Complete overhaul of underground cavern networks, subterranean microbiomes, ore vein distribution, crystal geodes, and mining progression |
-| **12** | **[Adventure Mode & Dual World-Type Architecture](#phase-12-adventure-mode--dual-world-type-architecture-planned)** | **Planned** | Handcrafted bounded Adventure Mode world format (pre-selected custom maps, borders, points of interest) alongside infinite procedural Sandbox worlds, with unified dual-mode world loading and save management |
+| **11** | **[Subterranean World, Caves & Underground Biomes Refactor](#phase-11-subterranean-world-caves--underground-biomes-refactor-planned)** | **Planned** | Ground-up redesign of subterranean caverns, underground biomes, surface cave entrances, crystal geodes, speleothems, subterranean fluids, and depth-based ore progression (legacy caves removed; world below surface is currently 100% solid rock & ores) |
+| **12** | **[Adventure Mode, 78-Biome Overhaul & Dual World-Type Architecture](#phase-12-adventure-mode-78-biome-overhaul--dual-world-type-architecture-in-progress)** | **In Progress** | 27 Macro-Biomes & 78 surface Micro-Biomes, 6-layer `3200×1800` Adventure Mode loader (`12,800×7,200` Full / `6,400×3,600` Medium), elevated highland lakes & stepped rivers, World Map Atlas Overlays & async Full-World Preload, new Tundra Grass & Seagrass blocks, alongside infinite Sandbox mode |
 
 ---
 
@@ -246,25 +246,34 @@ This second major milestone expanded the engine across 20 phases into a full-fea
 
 ---
 
-### Phase 11: Subterranean Caves & Ore Generation Rework (Planned)
+### Phase 11: Subterranean World, Caves & Underground Biomes Refactor (Planned)
 
-- [ ] **Complete Cave & Mineral Overhaul**:
-  - Rework 3D subterranean cavern carvers, cave microbiomes, re-enable and rebalance procedural ore veins and crystal geodes (`src/generation/ores.rs`), and tie depth-based mineral progression into Survival tool tiers.
+> [!NOTE]
+> All legacy cave carvers (`src/generation/caves.rs`), surface cave entrances, hollow geodes, speleothems, cave flora, and the 4 legacy subterranean biomes (`ThermalCaves`, `UndergroundJungle`, `IceCaves`, `MushroomCaves`) have been completely removed so the world below the surface is currently 100% solid geological strata and ores. This entire layer will be redesigned from scratch in Phase 11.
+
+- [ ] **Ground-Up Subterranean Cavern & Entrance Architecture**:
+  - Design a brand-new 3D subterranean cavern network (cheese/spaghetti/noodle chambers, deliberate surface cave entrances, underground aquifers, and structural stability without breaking rivers/lakes or floating trees).
+- [ ] **New Subterranean Biomes & Compendium Integration**:
+  - Design and register a cohesive set of subterranean biomes with bespoke surface/wall/ceiling materials, dedicated pixel-art icons, Journal Compendium category, cave flora, lighting, and spatial ambience.
+- [ ] **Ore Veins, Crystal Geodes & Mining Progression**:
+  - Rebalance procedural ore veins, reintroduce crystal geodes and speleothems tailored to the new cave architecture (`src/generation/ores.rs`), and tie depth-based mineral progression into Survival tool tiers.
 
 ---
 
-### Phase 12: Adventure Mode & Dual World-Type Architecture (Planned)
+### Phase 12: Adventure Mode, 78-Biome Overhaul & Dual World-Type Architecture (In Progress)
 
-- [ ] **Handcrafted Adventure Mode World Format & Loader**:
-  - Design and implement a bounded, pre-selected handcrafted map format (region/chunk template snapshots, fixed world boundaries/ocean border, curated landmarks, and custom spawn/POI metadata) authored in-engine or imported as world templates.
-- [ ] **Dual World-Mode Routing (`Adventure` vs `Sandbox`)**:
-  - Wire `SelectedWorldMode` (`src/menu/main_menu.rs`) into `WorldSession` and the chunk streaming/generation pipeline (`src/world/`, `src/generation/`) so **Adventure Mode** loads from the curated pre-selected map while **Sandbox World** continues using infinite seed-based procedural generation.
-- [ ] **World Creation & Save-Slot Separation**:
-  - Persist world mode metadata per save slot (Adventure vs Sandbox, custom seed input for Sandbox, map template selection for Adventure) so both modes coexist cleanly without conflicts.
-- [ ] **World Map Overlay Filters & Regional Gameplay Systems**:
-  - Load `world_continents.png`, `world_regions.png`, and `world_landmass.png` as lightweight metadata layers powering interactive World Map filters (Continents, 12 Official Regions, Coastal/Sea-Lane Navigation), HUD Region/Continent Discovery Banners, region-specific music/ambience, region weather rules (e.g., no snow in arid zones, storms in open ocean), and continental progression.
-- [ ] **Elevated Highland Lakes & Stepped Mountain Rivers**:
-  - Add per-column local `water_level(x, z)` support in terrain generation so highland lakes sit naturally at their surrounding terrain elevation and mountain rivers descend via terraces/waterfalls instead of carving canyons down to global `SEA_LEVEL`.
+- [x] **27 Macro-Biomes & 78 Surface Micro-Biomes Architecture (`src/generation/biome.rs`, `docs/biomes_design.md`)**:
+  - Replaced all legacy surface biomes with the official 27 `MacroBiome` and 78 surface `BiomeType` micro-biomes across 9 geographic categories, wired across terrain, trees, flora, strata, weather particles, ambience, 6D Sandbox Voronoi climate, EN/PT-BR localization, and 78 unique 16×16 pixel-art icons in `assets/textures/interfaces/icons/biomes/`.
+  - Added new biome-specific blocks and texture variants: `SeagrassSand`, `TallSeagrassBottom`/`Top` (15-frame animated 2-block underwater seagrass), `SiltTundraGrass`, `LoamTundraGrass`, `PeatTundraGrass`, `PermafrostTundraGrass` (with reddish GPU procedural grass blades), `VegeArcticMoss`, and `VegeArcticGrass`.
+- [x] **6-Layer `3200×1800` Handcrafted Adventure Mode Loader (`src/generation/adventure_map.rs`)**:
+  - Implemented compact `Arc`-shared loading of `heightmap.png`, `macro_biomes.png`, `micro_biomes.png`, `world_continents.png`, `world_regions.png`, and `world_landmass.png` supporting **Full (`12,800 × 7,200`)** and **Medium (`6,400 × 3,600`)** scales, synthetic biome+latitude+altitude climate, inland-only domain warping, 3 validated dry-land spawns, and an in-game top-down rendered `map_preview.png`.
+- [x] **Elevated Highland Lakes & Stepped Mountain Rivers (`src/generation/adventure_map.rs`, `src/generation/generator.rs`)**:
+  - Implemented per-pixel `water_level_i16` BFS basin flood-fill for elevated `CalmLake` basins and smoothed stepped elevations for inland `Rapids` rivers so highland water bodies sit naturally at their true terrain elevation without carving deep chasms down to `SEA_LEVEL (Y = 12)`.
+- [x] **Dual World-Mode Routing (`Adventure` vs `Sandbox`) & World Map Atlas Overlays (`src/map/world_map.rs`, `src/menu/pause.rs`)**:
+  - Wired `SelectedWorldMode` so **Adventure Mode** loads the bounded handcrafted world while **Sandbox World** uses infinite 6D procedural generation.
+  - Added interactive **Atlas Overlay** filters on the `[M]` World Map (`Terrain`, `Continents`, `Regions`, `Macro-Biomes`, `Micro-Biomes`), fixed-height hover region/biome cursor info, and persisted `Show Undiscovered Compendium` + async `Preload Full World Map` toggles in System → World & Session (`local_config.json`).
+- [ ] **Adventure Biome Visual Tuning, Regional Gameplay & Save-Slot Separation**:
+  - Fine-tune individual micro-biome surface blocks/flora/palettes in Adventure Mode, add HUD Region/Continent Discovery Banners, region-specific ambience/weather rules, and separate save-slot metadata per world mode.
 
 ---
 
