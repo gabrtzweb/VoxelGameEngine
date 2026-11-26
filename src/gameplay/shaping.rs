@@ -38,7 +38,7 @@ fn handle_block_shaping(
     mouse: Res<ButtonInput<MouseButton>>,
     control_settings: Option<Res<crate::core::ControlSettings>>,
     mouse_motion: Res<AccumulatedMouseMotion>,
-    game_mode: Res<GameMode>,
+    (game_mode, free_cam): (Res<GameMode>, Option<Res<crate::player::FreeCamState>>),
     current_target: Res<CurrentTarget>,
     mut commands: Commands,
     (mut world, mut modifications, mut light_registry, mut queues): (
@@ -56,6 +56,7 @@ fn handle_block_shaping(
         .as_ref()
         .is_some_and(|s| *s.get() != MenuState::None)
         || *game_mode == GameMode::Spectator
+        || free_cam.is_some_and(|fc| fc.0)
     {
         if radial_state.is_open {
             for entity in &radial_root_query {
@@ -197,7 +198,7 @@ fn handle_block_rotation(
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse: Res<ButtonInput<MouseButton>>,
     control_settings: Option<Res<crate::core::ControlSettings>>,
-    game_mode: Res<GameMode>,
+    (game_mode, free_cam): (Res<GameMode>, Option<Res<crate::player::FreeCamState>>),
     current_target: Res<CurrentTarget>,
     mut commands: Commands,
     (mut world, mut modifications, mut light_registry, mut queues): (
@@ -208,7 +209,9 @@ fn handle_block_rotation(
     ),
     menu_state: Option<Res<State<MenuState>>>,
 ) {
-    if menu_state.is_some_and(|s| *s.get() != MenuState::None) || *game_mode == GameMode::Spectator
+    if menu_state.is_some_and(|s| *s.get() != MenuState::None)
+        || *game_mode == GameMode::Spectator
+        || free_cam.is_some_and(|fc| fc.0)
     {
         return;
     }

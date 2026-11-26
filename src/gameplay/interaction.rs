@@ -32,6 +32,7 @@ type OptionalInteractionParams<'w> = (
     Option<Res<'w, State<MenuState>>>,
     Option<Res<'w, InspectorInteraction>>,
     Option<ResMut<'w, crate::map::MapCache>>,
+    Option<Res<'w, crate::player::FreeCamState>>,
 );
 
 #[derive(Resource, Clone, Copy, Debug, PartialEq, Eq)]
@@ -112,9 +113,10 @@ fn pick_targeted_voxel(
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse: Res<ButtonInput<MouseButton>>,
     control_settings: Option<Res<crate::core::ControlSettings>>,
-    (menu_state, inspector): (
+    (menu_state, inspector, free_cam): (
         Option<Res<State<MenuState>>>,
         Option<Res<InspectorInteraction>>,
+        Option<Res<crate::player::FreeCamState>>,
     ),
     world: Res<VoxelWorld>,
     mut selected: ResMut<SelectedVoxel>,
@@ -127,7 +129,7 @@ fn pick_targeted_voxel(
         return;
     }
 
-    if *game_mode == GameMode::Spectator {
+    if *game_mode == GameMode::Spectator || free_cam.is_some_and(|fc| fc.0) {
         return;
     }
 
@@ -201,7 +203,7 @@ fn edit_voxels(
     ),
     control_settings: Option<Res<crate::core::ControlSettings>>,
     (mut world, mut modifications, mut light_registry, mut queues): WorldEditResources,
-    (fluid_queue, menu_state, inspector, mut map_cache): OptionalInteractionParams,
+    (fluid_queue, menu_state, inspector, mut map_cache, free_cam): OptionalInteractionParams,
     mut breaking_state: ResMut<BlockBreakingState>,
     selected_subrace: Option<Res<crate::player::SelectedSubrace>>,
     camera_query: Query<&Transform, With<PlayerCamera>>,
@@ -215,7 +217,7 @@ fn edit_voxels(
         return;
     }
 
-    if *game_mode == GameMode::Spectator {
+    if *game_mode == GameMode::Spectator || free_cam.is_some_and(|fc| fc.0) {
         breaking_state.target = None;
         breaking_state.progress = 0.0;
         return;

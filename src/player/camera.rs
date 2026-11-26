@@ -12,7 +12,7 @@ use crate::{
     world::{VOXEL_SIZE, Voxel, VoxelWorld},
 };
 
-use super::GameMode;
+use super::FreeCamState;
 
 pub const THIRD_PERSON_DISTANCE: f32 = 3.5;
 
@@ -90,7 +90,7 @@ pub fn toggle_inspector_interaction(
 
 pub fn toggle_camera_view(
     keyboard: Res<ButtonInput<KeyCode>>,
-    game_mode: Res<GameMode>,
+    free_cam: Res<FreeCamState>,
     inspector_interaction: Res<InspectorInteraction>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
     camera: Single<&mut PlayerCamera, With<Camera3d>>,
@@ -101,7 +101,7 @@ pub fn toggle_camera_view(
         return;
     }
 
-    if *game_mode == GameMode::Spectator {
+    if free_cam.0 {
         return;
     }
 

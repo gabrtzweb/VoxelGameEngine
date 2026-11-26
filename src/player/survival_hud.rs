@@ -959,7 +959,7 @@ fn update_player_temperature(
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn update_survival_hud_ui(
     time: Res<Time>,
-    game_mode: Res<GameMode>,
+    (game_mode, free_cam): (Res<GameMode>, Option<Res<super::FreeCamState>>),
     vitals: Res<PlayerVitals>,
     menu_state: Option<Res<State<MenuState>>>,
     inspector: Option<Res<InspectorInteraction>>,
@@ -996,6 +996,7 @@ fn update_survival_hud_ui(
     mut climate_icon_q: Query<(&HudClimateIcon, &mut ImageNode)>,
 ) {
     let show = *game_mode == GameMode::Survival
+        && !free_cam.is_some_and(|fc| fc.0)
         && menu_state.is_none_or(|s| *s.get() == MenuState::None)
         && !inspector.is_some_and(|i| i.active);
 

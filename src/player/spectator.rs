@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 
-use super::{FastFlightState, GameMode, InspectorInteraction, PlayerCamera};
+use super::{FastFlightState, FreeCamState, InspectorInteraction, PlayerCamera};
 
 pub(super) fn spectator_movement(
     keyboard: Res<ButtonInput<KeyCode>>,
     mouse: Res<ButtonInput<MouseButton>>,
     control_settings: Option<Res<crate::core::ControlSettings>>,
     time: Res<Time>,
-    game_mode: Res<GameMode>,
+    free_cam: Res<FreeCamState>,
     fast_flight: Option<Res<FastFlightState>>,
     inspector: Option<Res<InspectorInteraction>>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
@@ -19,7 +19,7 @@ pub(super) fn spectator_movement(
         return;
     }
 
-    if *game_mode != GameMode::Spectator {
+    if !free_cam.0 {
         return;
     }
 

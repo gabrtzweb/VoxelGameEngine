@@ -59,6 +59,7 @@ F4                Cycle Game Mode (Survival / Creative / Spectator)
 F5                First / Third person (3-race / 9-subrace custom voxel character rig, head tracking, 3D held items & animations)
 F6                Day / Night cycle (Click: step phase / Hold: scrub time)
 F7                Weather cycle (Click: step weather / Shift+F7 or Hold: dynamic simulation)
+F8                Toggle Free Cam (detached noclip camera without moving player or streaming chunks)
 ```
 
 ## Current Project Structure

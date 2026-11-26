@@ -584,9 +584,10 @@ pub fn update_player_model(
     time: Res<Time>,
     env_status: Res<PlayerEnvironmentStatus>,
     game_mode: Res<GameMode>,
-    (selected_race, game_settings): (
+    (selected_race, game_settings, free_cam): (
         Option<Res<SelectedRace>>,
         Option<Res<crate::menu::GameSettings>>,
+        Option<Res<super::FreeCamState>>,
     ),
     menu_state: Option<Res<State<MenuState>>>,
     mut hand_anim: ResMut<PlayerHandAnimState>,
@@ -732,13 +733,15 @@ pub fn update_player_model(
 
     // 1. First-Person vs Third-Person Visibility:
     let is_third_person = camera_controller.is_third_person();
+    let is_free_cam = free_cam.as_ref().is_some_and(|fc| fc.0);
     let is_spectator = *game_mode == GameMode::Spectator;
-    let should_show_head = is_spectator || is_third_person;
+    let hide_held_items = is_spectator || is_free_cam;
+    let should_show_head = is_free_cam || is_third_person;
     let has_right_item = hand_anim.displayed_voxel.is_some();
     let has_left_item = hand_anim.displayed_left_voxel.is_some();
     let left_handed = game_settings.as_ref().is_some_and(|s| s.left_handed);
 
-    if is_spectator {
+    if is_free_cam {
         let breathe = (time.elapsed_secs() * 2.0).sin() * 0.025;
         let leg_height = 12.0 * PIXEL_SCALE * props.leg_scale.y;
         let torso_base_rot = match motion.stance {
@@ -796,7 +799,7 @@ pub fn update_player_model(
 
     // Update right-arm held item (visible in both 1st and 3rd person)
     for (mut tp_tf, mut tp_vis) in &mut tp_item_query {
-        let target = if !is_spectator && !in_pregame_menu && has_right_item {
+        let target = if !hide_held_items && !in_pregame_menu && has_right_item {
             Visibility::Inherited
         } else {
             Visibility::Hidden
@@ -804,7 +807,7 @@ pub fn update_player_model(
         if *tp_vis != target {
             *tp_vis = target;
         }
-        if !is_spectator && !in_pregame_menu && has_right_item {
+        if !hide_held_items && !in_pregame_menu && has_right_item {
             let is_extruded_item = hand_anim
                 .displayed_voxel
                 .is_some_and(|v| crate::gameplay::voxel_item_texture_path(v).is_some());
@@ -827,7 +830,7 @@ pub fn update_player_model(
 
     // Update left-arm held item (off-hand in right-handed mode, main hand in left-handed mode)
     for (mut lt_tf, mut lt_vis) in &mut left_item_query {
-        let target = if !is_spectator && !in_pregame_menu && has_left_item {
+        let target = if !hide_held_items && !in_pregame_menu && has_left_item {
             Visibility::Inherited
         } else {
             Visibility::Hidden
@@ -835,7 +838,7 @@ pub fn update_player_model(
         if *lt_vis != target {
             *lt_vis = target;
         }
-        if !is_spectator && !in_pregame_menu && has_left_item {
+        if !hide_held_items && !in_pregame_menu && has_left_item {
             let is_extruded_item = hand_anim
                 .displayed_left_voxel
                 .is_some_and(|v| crate::gameplay::voxel_item_texture_path(v).is_some());
@@ -1079,7 +1082,7 @@ pub fn update_player_model(
             PlayerLimb::RightArm => {
                 // Keep the player's real right arm visible in both 1st and 3rd person
                 if let Some(ref mut vis) = vis {
-                    let target_vis = if in_pregame_menu || is_spectator {
+                    let target_vis = if in_pregame_menu {
                         Visibility::Hidden
                     } else {
                         Visibility::Inherited

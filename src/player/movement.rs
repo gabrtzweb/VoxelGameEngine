@@ -143,10 +143,11 @@ pub fn creative_movement(
     mouse_scroll: Res<AccumulatedMouseScroll>,
     time: Res<Time>,
     game_mode: Res<GameMode>,
-    (selected_race, selected_subrace, fast_flight): (
+    (selected_race, selected_subrace, fast_flight, free_cam): (
         Option<Res<SelectedRace>>,
         Option<Res<SelectedSubrace>>,
         Option<Res<super::FastFlightState>>,
+        Option<Res<super::FreeCamState>>,
     ),
     inspector_interaction: Res<InspectorInteraction>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
@@ -176,7 +177,7 @@ pub fn creative_movement(
         return;
     }
 
-    if *game_mode == GameMode::Spectator {
+    if free_cam.as_ref().is_some_and(|fc| fc.0) {
         jump_tap.since_last_press = None;
 
         return;
@@ -204,7 +205,11 @@ pub fn creative_movement(
     let standing_height = PLAYER_HEIGHT * race_height_scale;
     let crouching_height = CROUCH_HEIGHT * race_height_scale;
 
-    if !motion.flying {
+    if *game_mode == GameMode::Spectator {
+        motion.flying = true;
+        motion.grounded = false;
+        motion.stance = PlayerStance::Standing;
+    } else if !motion.flying {
         motion.grounded = is_grounded(
             &world,
             player_transform.translation,
@@ -411,7 +416,7 @@ pub fn creative_movement(
             (a.move_speed_multiplier, a.swim_speed_multiplier)
         });
     if motion.flying {
-        let boost_mult = if *game_mode == GameMode::Creative
+        let boost_mult = if (*game_mode == GameMode::Creative || *game_mode == GameMode::Spectator)
             && fast_flight.as_ref().is_some_and(|f| f.0)
         {
             5.0
@@ -429,6 +434,7 @@ pub fn creative_movement(
             is_fast,
             boost_mult,
             stance_h,
+            *game_mode == GameMode::Spectator,
         );
     } else {
         grounded_or_water_movement(
@@ -540,8 +546,11 @@ pub fn creative_movement(
         } else {
             eye_position
         };
-        let actual_distance =
-            resolve_third_person_camera_distance(&world, pivot, camera_forward, max_dist);
+        let actual_distance = if *game_mode == GameMode::Spectator {
+            max_dist
+        } else {
+            resolve_third_person_camera_distance(&world, pivot, camera_forward, max_dist)
+        };
         let target_pos = pivot - camera_forward * actual_distance;
         camera_transform.translation = if game_settings.camera_smoothing > 0 {
             let speed = match game_settings.camera_smoothing {
@@ -577,6 +586,7 @@ pub fn creative_movement(
     );
 }
 
+#[allow(clippy::too_many_arguments)]
 fn fly_movement(
     input_dirs: Option<(bool, bool, bool, bool, bool, bool)>,
     delta_seconds: f32,
@@ -588,6 +598,7 @@ fn fly_movement(
     is_fast: bool,
     boost_mult: f32,
     stance_height: f32,
+    noclip: bool,
 ) {
     let mut direction = Vec3::ZERO;
     let mut moving_vertically = false;
@@ -621,6 +632,13 @@ fn fly_movement(
     } else {
         direction.normalize() * speed * delta_seconds
     };
+
+    if noclip {
+        player_transform.translation += movement;
+        motion.velocity = Vec3::ZERO;
+        motion.grounded = false;
+        return;
+    }
 
     let allow_step = !moving_vertically;
 

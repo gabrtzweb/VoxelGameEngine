@@ -815,13 +815,17 @@ fn update_hotbar_tooltip(
 
 fn manage_hotbar_visibility(
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
+    game_mode: Option<Res<super::GameMode>>,
+    free_cam: Option<Res<super::FreeCamState>>,
     mut root_query: Query<(&mut Visibility, &mut Node), With<HotbarRoot>>,
 ) {
     let Some(menu_state) = menu_state else {
         return;
     };
 
-    let hide = *menu_state.get() != crate::menu::MenuState::None;
+    let hide = *menu_state.get() != crate::menu::MenuState::None
+        || game_mode.is_some_and(|gm| *gm == super::GameMode::Spectator)
+        || free_cam.is_some_and(|fc| fc.0);
     let target_vis = if hide {
         Visibility::Hidden
     } else {

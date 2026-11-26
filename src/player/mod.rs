@@ -24,7 +24,7 @@ use bevy::{
 
 pub use controller::{InspectorInteraction, PlayerCamera, PlayerMotion, PlayerStance};
 
-pub use game_mode::GameMode;
+pub use game_mode::{FreeCamState, GameMode};
 pub use inventory::PlayerInventory;
 pub use race::{
     CharacterRace, CharacterReady, CharacterSubrace, RaceAttributes, RaceProportions, SelectedRace,
@@ -58,6 +58,7 @@ impl Plugin for PlayerPlugin {
             .init_resource::<PlayerEnvironmentStatus>()
             .init_resource::<PlayerInventory>()
             .init_resource::<FastFlightState>()
+            .init_resource::<FreeCamState>()
             .add_plugins(hotbar::HotbarPlugin)
             .add_plugins(model::PlayerModelPlugin)
             .add_plugins(survival_hud::SurvivalHudPlugin)
@@ -77,6 +78,7 @@ impl Plugin for PlayerPlugin {
                     state::update_player_environment_status,
                     controller::toggle_inspector_interaction,
                     game_mode::toggle_game_mode,
+                    game_mode::toggle_free_cam,
                     toggle_fast_flight,
                     controller::toggle_camera_view,
                     controller::camera_look,
@@ -104,17 +106,18 @@ pub struct WorldSpawnPoint(pub Vec3);
 #[derive(Resource, Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct FastFlightState(pub bool);
 
-/// Toggles 5x Fast Flight with the `F` key in Creative and Spectator modes only.
+/// Toggles 5x Fast Flight with the `F` key in Creative, Spectator, and Free Cam modes.
 fn toggle_fast_flight(
     keyboard: Res<ButtonInput<KeyCode>>,
     game_mode: Res<GameMode>,
+    free_cam: Res<FreeCamState>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
     inspector: Option<Res<InspectorInteraction>>,
     loc: Option<Res<crate::core::Localization>>,
     mut fast_flight: ResMut<FastFlightState>,
     mut toast: Option<ResMut<GameModeToastState>>,
 ) {
-    if *game_mode == GameMode::Survival {
+    if *game_mode == GameMode::Survival && !free_cam.0 {
         if fast_flight.0 {
             fast_flight.0 = false;
         }
@@ -492,6 +495,8 @@ fn spawn_crosshair(mut commands: Commands) {
 
 fn update_crosshair_visibility(
     time: Res<Time>,
+    game_mode: Res<GameMode>,
+    free_cam: Res<FreeCamState>,
     menu_state: Option<Res<State<crate::menu::MenuState>>>,
     inspector: Option<Res<InspectorInteraction>>,
     game_settings: Option<Res<crate::menu::GameSettings>>,
@@ -506,7 +511,9 @@ fn update_crosshair_visibility(
     )>,
 ) {
     let hide = menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None)
-        || inspector.is_some_and(|i| i.active);
+        || inspector.is_some_and(|i| i.active)
+        || *game_mode == GameMode::Spectator
+        || free_cam.0;
 
     let high_contrast = game_settings
         .as_ref()

@@ -318,14 +318,14 @@ fn spawn_pause_sidebar(
                         .with_children(|row| {
                             row.spawn((
                                 Text::new(compendium_toggle_lbl),
-                                make_font(14.0),
+                                make_font(15.0),
                                 TextColor(palette::TEXT_PRIMARY),
                                 text_shadow_default(),
                             ));
                             row.spawn((
                                 ToggleUndiscoveredCompendiumBadge,
                                 Text::new(badge_str),
-                                make_font(12.0),
+                                make_font(14.0),
                                 TextColor(if show_undiscovered {
                                     palette::TEXT_ACCENT
                                 } else {
@@ -367,14 +367,14 @@ fn spawn_pause_sidebar(
                         .with_children(|row| {
                             row.spawn((
                                 Text::new(preload_toggle_lbl),
-                                make_font(14.0),
+                                make_font(15.0),
                                 TextColor(palette::TEXT_PRIMARY),
                                 text_shadow_default(),
                             ));
                             row.spawn((
                                 TogglePreloadWorldMapBadge,
                                 Text::new(preload_badge_str),
-                                make_font(12.0),
+                                make_font(14.0),
                                 TextColor(if preload_map {
                                     palette::TEXT_ACCENT
                                 } else {
@@ -410,14 +410,14 @@ fn spawn_pause_sidebar(
                         .with_children(|row| {
                             row.spawn((
                                 Text::new(gm_lbl),
-                                make_font(14.0),
+                                make_font(15.0),
                                 TextColor(palette::TEXT_PRIMARY),
                                 text_shadow_default(),
                             ));
                             row.spawn((
                                 CycleGameModeBadge,
                                 Text::new(gm_badge_str),
-                                make_font(12.0),
+                                make_font(14.0),
                                 TextColor(palette::TEXT_ACCENT),
                                 text_shadow_default(),
                             ));
@@ -630,6 +630,11 @@ fn handle_session_game_mode_cycle(
             if **gm == crate::player::GameMode::Survival {
                 for mut motion in &mut player_motion_q {
                     motion.flying = false;
+                }
+            } else if **gm == crate::player::GameMode::Spectator {
+                for mut motion in &mut player_motion_q {
+                    motion.flying = true;
+                    motion.grounded = false;
                 }
             }
             changed = true;
