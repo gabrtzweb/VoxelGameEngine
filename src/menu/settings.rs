@@ -93,6 +93,8 @@ enum SettingsAction {
     IncCloudDistance,
     DecScreenMode,
     IncScreenMode,
+    DecFullscreenRes,
+    IncFullscreenRes,
     DecRenderDistance,
     IncRenderDistance,
     DecLodDistance,
@@ -172,6 +174,12 @@ struct BorderlessMouseLockRow;
 
 #[derive(Component)]
 struct MouseLockBorderlessLabel;
+
+#[derive(Component)]
+struct FullscreenResolutionRow;
+
+#[derive(Component)]
+struct FullscreenResolutionLabel;
 
 #[derive(Component)]
 struct AutoSaveLabel;
@@ -328,6 +336,39 @@ fn format_coated_textures(mode: CoatedTextureMode, loc: &Localization) -> String
         CoatedTextureMode::High => loc.t("coated_textures.high").to_string(),
         CoatedTextureMode::Ultra => loc.t("coated_textures.ultra").to_string(),
     }
+}
+
+fn available_fullscreen_resolutions(monitor: Option<&bevy::window::Monitor>) -> Vec<[u32; 2]> {
+    let (max_w, max_h) = monitor.map_or((1920, 1080), |m| {
+        let sz = m.physical_size();
+        (sz.x.max(1280), sz.y.max(720))
+    });
+    let standards: [[u32; 2]; 4] = [[1280, 720], [1920, 1080], [2560, 1440], [3840, 2160]];
+    let mut list: Vec<[u32; 2]> = standards
+        .into_iter()
+        .filter(|&[w, h]| w <= max_w && h <= max_h)
+        .collect();
+    let native = [max_w, max_h];
+    if !list.contains(&native) {
+        list.push(native);
+    }
+    list.sort_by_key(|&[w, h]| (w as u64) * (h as u64));
+    list
+}
+
+fn format_fullscreen_resolution(
+    res: [u32; 2],
+    monitor: Option<&bevy::window::Monitor>,
+    _loc: &Localization,
+) -> String {
+    let list = available_fullscreen_resolutions(monitor);
+    let native = *list.last().unwrap_or(&[1920, 1080]);
+    let active = if res[0] > 0 && res[1] > 0 && list.contains(&res) {
+        res
+    } else {
+        native
+    };
+    format!("{}x{}", active[0], active[1])
 }
 
 fn format_screen_mode(mode: ScreenMode, loc: &Localization) -> String {
@@ -491,7 +532,9 @@ fn spawn_settings_menu(
     app_font: Option<Res<AppFont>>,
     asset_server: Res<AssetServer>,
     menu_return_target: Res<MenuReturnTarget>,
+    monitor_query: Query<&bevy::window::Monitor, With<bevy::window::PrimaryMonitor>>,
 ) {
+    let primary_monitor = monitor_query.iter().next();
     let render_dist = chunk_settings.render_distance;
     let lod_dist = chunk_settings.lod_render_distance;
     let sim_dist = chunk_settings.simulation_distance;
@@ -846,22 +889,6 @@ fn spawn_settings_menu(
                                     MainHandLabel,
                                     font_handle.as_ref(),
                                 );
-
-                                spawn_toggle_button(
-                                    col_acc,
-                                    SettingsAction::ToggleSubtitles,
-                                    format!(
-                                        "{}: {}",
-                                        loc.t("menu.settings.subtitles"),
-                                        if game_settings.subtitles_enabled {
-                                            loc.t("common.enabled")
-                                        } else {
-                                            loc.t("common.disabled")
-                                        }
-                                    ),
-                                    SubtitlesLabel,
-                                    font_handle.as_ref(),
-                                );
                             });
 
                             // Graphics & Display Settings Container (Display options at top)
@@ -900,6 +927,38 @@ fn spawn_settings_menu(
                                             ScreenModeLabel,
                                             font_handle.as_ref(),
                                         );
+
+                                        // Conditional Fullscreen Resolution (shown only in Exclusive Fullscreen)
+                                        col_disp
+                                            .spawn((
+                                                FullscreenResolutionRow,
+                                                Node {
+                                                    width: percent(100.0),
+                                                    display: if game_settings.screen_mode
+                                                        == ScreenMode::ExclusiveFullscreen
+                                                    {
+                                                        Display::Flex
+                                                    } else {
+                                                        Display::None
+                                                    },
+                                                    ..default()
+                                                },
+                                            ))
+                                            .with_children(|wrap| {
+                                                spawn_stepper_row(
+                                                    wrap,
+                                                    loc.t("menu.settings.fullscreen_resolution"),
+                                                    format_fullscreen_resolution(
+                                                        game_settings.fullscreen_resolution,
+                                                        primary_monitor,
+                                                        &loc,
+                                                    ),
+                                                    SettingsAction::DecFullscreenRes,
+                                                    SettingsAction::IncFullscreenRes,
+                                                    FullscreenResolutionLabel,
+                                                    font_handle.as_ref(),
+                                                );
+                                            });
 
                                         // Conditional Borderless Mouse Lock (shown only in Borderless mode)
                                         col_disp
@@ -1996,8 +2055,12 @@ fn handle_settings_buttons(
         Option<ResMut<ChunkStreamingQueues>>,
         Option<Res<VoxelWorld>>,
     ),
-    mut window_query: Query<&mut Window, With<bevy::window::PrimaryWindow>>,
+    (mut window_query, monitor_query): (
+        Query<&mut Window, With<bevy::window::PrimaryWindow>>,
+        Query<&bevy::window::Monitor, With<bevy::window::PrimaryMonitor>>,
+    ),
 ) {
+    let primary_monitor = monitor_query.iter().next();
     let left_clicked = mouse.just_pressed(MouseButton::Left);
 
     for (hovered, is_pressed, action, theme, mut bg, mut border) in &mut interaction_query {
@@ -2256,13 +2319,59 @@ fn handle_settings_buttons(
                 SettingsAction::DecScreenMode => {
                     game_settings.screen_mode = game_settings.screen_mode.prev();
                     if let Ok(mut window) = window_query.single_mut() {
-                        window.mode = game_settings.screen_mode.to_window_mode();
+                        window.mode = game_settings.screen_mode.to_window_mode_with_resolution(
+                            game_settings.fullscreen_resolution,
+                            primary_monitor,
+                        );
                     }
                 }
                 SettingsAction::IncScreenMode => {
                     game_settings.screen_mode = game_settings.screen_mode.next();
                     if let Ok(mut window) = window_query.single_mut() {
-                        window.mode = game_settings.screen_mode.to_window_mode();
+                        window.mode = game_settings.screen_mode.to_window_mode_with_resolution(
+                            game_settings.fullscreen_resolution,
+                            primary_monitor,
+                        );
+                    }
+                }
+                SettingsAction::DecFullscreenRes => {
+                    let list = available_fullscreen_resolutions(primary_monitor);
+                    let cur = if game_settings.fullscreen_resolution[0] > 0 {
+                        list.iter()
+                            .position(|&r| r == game_settings.fullscreen_resolution)
+                            .unwrap_or(list.len().saturating_sub(1))
+                    } else {
+                        list.len().saturating_sub(1)
+                    };
+                    let next = list[(cur + list.len() - 1) % list.len()];
+                    game_settings.fullscreen_resolution = next;
+                    local_config.fullscreen_resolution = next;
+                    if game_settings.screen_mode == ScreenMode::ExclusiveFullscreen
+                        && let Ok(mut window) = window_query.single_mut()
+                    {
+                        window.mode = game_settings
+                            .screen_mode
+                            .to_window_mode_with_resolution(next, primary_monitor);
+                    }
+                }
+                SettingsAction::IncFullscreenRes => {
+                    let list = available_fullscreen_resolutions(primary_monitor);
+                    let cur = if game_settings.fullscreen_resolution[0] > 0 {
+                        list.iter()
+                            .position(|&r| r == game_settings.fullscreen_resolution)
+                            .unwrap_or(list.len().saturating_sub(1))
+                    } else {
+                        list.len().saturating_sub(1)
+                    };
+                    let next = list[(cur + 1) % list.len()];
+                    game_settings.fullscreen_resolution = next;
+                    local_config.fullscreen_resolution = next;
+                    if game_settings.screen_mode == ScreenMode::ExclusiveFullscreen
+                        && let Ok(mut window) = window_query.single_mut()
+                    {
+                        window.mode = game_settings
+                            .screen_mode
+                            .to_window_mode_with_resolution(next, primary_monitor);
                     }
                 }
                 SettingsAction::DecGuiScale => {
@@ -2612,6 +2721,7 @@ fn handle_language_changed(
     app_font: Option<Res<AppFont>>,
     asset_server: Res<AssetServer>,
     menu_return_target: Res<MenuReturnTarget>,
+    monitor_query: Query<&bevy::window::Monitor, With<bevy::window::PrimaryMonitor>>,
 ) {
     if !loc.is_changed() || loc.is_added() {
         return;
@@ -2632,6 +2742,7 @@ fn handle_language_changed(
         app_font,
         asset_server,
         menu_return_target,
+        monitor_query,
     );
 }
 
@@ -3091,11 +3202,20 @@ fn update_extended_settings_labels(
     game_settings: Res<GameSettings>,
     local_config: Res<LocalConfig>,
     loc: Res<Localization>,
-    mut borderless_row_q: Query<&mut Node, With<BorderlessMouseLockRow>>,
+    monitor_query: Query<&bevy::window::Monitor, With<bevy::window::PrimaryMonitor>>,
+    mut borderless_row_q: Query<
+        &mut Node,
+        (With<BorderlessMouseLockRow>, Without<FullscreenResolutionRow>),
+    >,
+    mut fullscreen_res_row_q: Query<
+        &mut Node,
+        (With<FullscreenResolutionRow>, Without<BorderlessMouseLockRow>),
+    >,
     mut labels_q: Query<(
         &mut Text,
         (
             Option<&MouseLockBorderlessLabel>,
+            Option<&FullscreenResolutionLabel>,
             Option<&AutoSaveLabel>,
             Option<&CameraSmoothingLabel>,
             Option<&ThirdPersonDistLabel>,
@@ -3115,9 +3235,18 @@ fn update_extended_settings_labels(
         return;
     }
 
+    let primary_monitor = monitor_query.iter().next();
     let is_borderless = game_settings.screen_mode == ScreenMode::BorderlessFullscreen;
     for mut node in &mut borderless_row_q {
         node.display = if is_borderless {
+            Display::Flex
+        } else {
+            Display::None
+        };
+    }
+    let is_exclusive = game_settings.screen_mode == ScreenMode::ExclusiveFullscreen;
+    for mut node in &mut fullscreen_res_row_q {
+        node.display = if is_exclusive {
             Display::Flex
         } else {
             Display::None
@@ -3128,6 +3257,7 @@ fn update_extended_settings_labels(
         mut text,
         (
             mouse_lock,
+            fullscreen_res,
             auto_save,
             cam_smooth,
             tp_dist,
@@ -3152,6 +3282,12 @@ fn update_extended_settings_labels(
                 } else {
                     loc.t("common.disabled")
                 }
+            );
+        } else if fullscreen_res.is_some() {
+            text.0 = format_fullscreen_resolution(
+                game_settings.fullscreen_resolution,
+                primary_monitor,
+                &loc,
             );
         } else if auto_save.is_some() {
             text.0 = format_auto_save(game_settings.auto_save_minutes, &loc);

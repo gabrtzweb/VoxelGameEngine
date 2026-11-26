@@ -163,7 +163,7 @@ fn update_weather_audio_loops(
         ),
     >,
 ) {
-    let master = settings.master_volume * settings.weather_volume * 0.50;
+    let master = settings.effective_master() * settings.weather_volume * 0.50;
 
     let rain_target = weather
         .as_ref()
@@ -233,7 +233,7 @@ fn tick_thunder_queue(
     };
 
     let dt = time.delta_secs();
-    let master = settings.master_volume * settings.weather_volume * 0.50;
+    let master = settings.effective_master() * settings.weather_volume * 0.50;
 
     queue.0.retain_mut(|thunder| {
         thunder.delay -= dt;

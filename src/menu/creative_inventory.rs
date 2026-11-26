@@ -37,7 +37,7 @@ pub const CREATIVE_TAB_X: f32 = 128.0;
 pub const CREATIVE_TAB_Y_COORDS: [f32; 9] =
     [65.0, 84.0, 103.0, 122.0, 141.0, 160.0, 179.0, 198.0, 217.0];
 
-pub const AVAILABLE_BLOCKS: [Voxel; 717] = Voxel::ALL;
+pub const AVAILABLE_BLOCKS: [Voxel; 736] = Voxel::ALL;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CreativeCategory {
@@ -192,12 +192,218 @@ impl CreativeCategory {
     }
 }
 
-pub fn filtered_creative_blocks(category: CreativeCategory, query: &str) -> Vec<Voxel> {
-    let q = query.trim().to_lowercase();
-    AVAILABLE_BLOCKS
+/// Normalizes a string for case-insensitive, accent-insensitive search & alphabetical sorting.
+fn normalize_search_key(s: &str) -> String {
+    s.chars()
+        .flat_map(|c| match c {
+            'á' | 'à' | 'â' | 'ã' | 'ä' | 'Á' | 'À' | 'Â' | 'Ã' | 'Ä' => ['a', '\0'],
+            'é' | 'è' | 'ê' | 'ë' | 'É' | 'È' | 'Ê' | 'Ë' => ['e', '\0'],
+            'í' | 'ì' | 'î' | 'ï' | 'Í' | 'Ì' | 'Î' | 'Ï' => ['i', '\0'],
+            'ó' | 'ò' | 'ô' | 'õ' | 'ö' | 'Ó' | 'Ò' | 'Ô' | 'Õ' | 'Ö' => ['o', '\0'],
+            'ú' | 'ù' | 'û' | 'ü' | 'Ú' | 'Ù' | 'Û' | 'Ü' => ['u', '\0'],
+            'ç' | 'Ç' => ['c', '\0'],
+            'ñ' | 'Ñ' => ['n', '\0'],
+            other => [other.to_ascii_lowercase(), '\0'],
+        })
+        .filter(|&c| c != '\0')
+        .collect()
+}
+
+fn primary_category_rank(v: Voxel) -> u8 {
+    if CreativeCategory::Rocks.matches(v) {
+        0
+    } else if CreativeCategory::Soils.matches(v) {
+        1
+    } else if CreativeCategory::Trees.matches(v) {
+        2
+    } else if CreativeCategory::Ores.matches(v) {
+        3
+    } else if CreativeCategory::Vegetation.matches(v) {
+        4
+    } else if CreativeCategory::Organics.matches(v) {
+        5
+    } else if CreativeCategory::Decorations.matches(v) {
+        6
+    } else if CreativeCategory::Lighting.matches(v) {
+        7
+    } else {
+        8
+    }
+}
+
+/// Groups equivalent block sub-families together within each category (e.g. Base Rocks ->
+/// Cobbled Rocks -> Mossy Rocks -> Outcrops -> Boulders -> Pebbles -> Rubble -> Speleothems),
+/// while sorting alphabetically by canonical English name inside each sub-family so slot order
+/// stays 100% consistent and memorable regardless of active UI language!
+fn sub_family_rank(v: Voxel) -> u8 {
+    let id = v.id();
+    let tex = v.texture_name().unwrap_or("");
+
+    // Rocks & Geology sub-families
+    if CreativeCategory::Rocks.matches(v) {
+        if id.ends_with("_rubble") {
+            return 8;
+        }
+        if id.starts_with("pebble_") {
+            return 7;
+        }
+        if id.ends_with("_boulder") {
+            return 6;
+        }
+        if id.starts_with("speleothem_") || id.starts_with("dripstone_") || id.starts_with("fossil_") {
+            return 9;
+        }
+        if id.starts_with("mossy_cobbled_") {
+            return 5;
+        }
+        if id.starts_with("mossy_") {
+            return 4;
+        }
+        if id.starts_with("cobbled_") {
+            return 3;
+        }
+        if id.ends_with("_snow") {
+            return 2;
+        }
+        if id.ends_with("_grass") {
+            return 1;
+        }
+        return 0;
+    }
+
+    // Soils & Terrain sub-families
+    if CreativeCategory::Soils.matches(v) {
+        if id.ends_with("_tundra_grass") {
+            return 1;
+        }
+        if id.ends_with("_grass") {
+            return 0;
+        }
+        if id.ends_with("_dirt") || id.ends_with("_coarse") || id.ends_with("_rooted") || id.ends_with("_tilled") || id.ends_with("_cracked") || id.ends_with("_hardpan") || id.ends_with("_icy") {
+            return 2;
+        }
+        if id.ends_with("_mud") || id.ends_with("_mulch") {
+            return 3;
+        }
+        if id.ends_with("_snow") || id == "snow_block" {
+            return 4;
+        }
+        if id.starts_with("sand_") || id == "seagrass_sand" {
+            return 5;
+        }
+        if id.starts_with("gravel_") || id.starts_with("path_") {
+            return 6;
+        }
+        if id.starts_with("clay_") {
+            return 7;
+        }
+        if id.contains("terracotta") {
+            return 8;
+        }
+        return 9;
+    }
+
+    // Trees & Wood sub-families
+    if CreativeCategory::Trees.matches(v) {
+        if id.ends_with("_log") || id == "bamboo_stalk" {
+            return 0;
+        }
+        if id.ends_with("_wood") || id.ends_with("_bark") {
+            return 1;
+        }
+        if id.ends_with("_planks") {
+            return 2;
+        }
+        if id.ends_with("_leaves") {
+            return 3;
+        }
+        if id.ends_with("_leaves_dead") {
+            return 4;
+        }
+        return 5;
+    }
+
+    // Ores, Gems & Crystals
+    if CreativeCategory::Ores.matches(v) {
+        if id.starts_with("ore_") {
+            return 0;
+        }
+        if id.starts_with("gem_") {
+            return 1;
+        }
+        return 2;
+    }
+
+    // Vegetation & Oceans
+    if CreativeCategory::Vegetation.matches(v) {
+        if id.starts_with("flower_") {
+            return 0;
+        }
+        if id.starts_with("fungi_") {
+            return 1;
+        }
+        if id.starts_with("vege_") {
+            return 2;
+        }
+        if id.starts_with("wild_") || id.starts_with("crop_") {
+            return 3;
+        }
+        if id.contains("coral") {
+            return 4;
+        }
+        return 5;
+    }
+
+    // Decorations
+    if CreativeCategory::Decorations.matches(v) {
+        if id.ends_with("_bricks") || id == "bricks" {
+            return 0;
+        }
+        if id.contains("plaster") {
+            return 1;
+        }
+        if id.contains("shingles") {
+            return 2;
+        }
+        if id.contains("fabric") {
+            return 3;
+        }
+        if id.contains("wool") {
+            return 4;
+        }
+        return 5;
+    }
+
+    // Lighting & Utility
+    if CreativeCategory::Lighting.matches(v) {
+        if tex.starts_with("emit_") || id == "campfire" {
+            return 0;
+        }
+        if id.starts_with("tool_") {
+            return 1;
+        }
+        if tex.starts_with("liquid_") {
+            return 2;
+        }
+        if tex.starts_with("frost_") {
+            return 3;
+        }
+        return 4;
+    }
+
+    0
+}
+
+pub fn filtered_creative_blocks(
+    category: CreativeCategory,
+    query: &str,
+    loc: Option<&crate::core::Localization>,
+) -> Vec<Voxel> {
+    let q_norm = normalize_search_key(query.trim());
+    let mut entries: Vec<(Voxel, u8, u8, String)> = AVAILABLE_BLOCKS
         .iter()
         .copied()
-        .filter(|&v| {
+        .filter_map(|v| {
             if v.is_empty()
                 || v == Voxel::Occupied
                 || v == Voxel::WaterOccupied
@@ -208,17 +414,34 @@ pub fn filtered_creative_blocks(category: CreativeCategory, query: &str) -> Vec<
                 || v.is_crop_stage()
                 || v.is_unlit_variant()
             {
-                return false;
+                return None;
             }
-            if !q.is_empty() {
-                format!("{:?}", v).to_lowercase().contains(&q)
-                    || v.label().to_lowercase().contains(&q)
-                    || v.id().to_lowercase().contains(&q)
-            } else {
-                category.matches(v)
+            if !q_norm.is_empty() {
+                // Match strictly against the active localized display name (never internal IDs!)
+                let display_name = loc.map_or_else(|| v.label(), |l| l.t_block(v));
+                if !normalize_search_key(display_name).contains(&q_norm) {
+                    return None;
+                }
+            } else if !category.matches(v) {
+                return None;
             }
+            // Canonical English alphabetical key inside each sub-family so layout is language-invariant!
+            let en_sort_key = normalize_search_key(v.label());
+            Some((v, primary_category_rank(v), sub_family_rank(v), en_sort_key))
         })
-        .collect()
+        .collect();
+
+    if category == CreativeCategory::All && q_norm.is_empty() {
+        entries.sort_by(|a, b| {
+            a.1.cmp(&b.1)
+                .then_with(|| a.2.cmp(&b.2))
+                .then_with(|| a.3.cmp(&b.3))
+        });
+    } else {
+        entries.sort_by(|a, b| a.2.cmp(&b.2).then_with(|| a.3.cmp(&b.3)));
+    }
+
+    entries.into_iter().map(|(v, _, _, _)| v).collect()
 }
 
 pub fn total_filtered_rows(filtered_count: usize) -> usize {
@@ -1397,7 +1620,7 @@ fn build_inventory_ui(
 
                             // 81 Creative Catalog Slots: 9 rows of 9 (16x16 px)
                             let filtered =
-                                filtered_creative_blocks(active_cat, &search_query.query);
+                                filtered_creative_blocks(active_cat, &search_query.query, loc);
                             let start_row = scroll_state.scroll_row;
 
                             for (row, &slot_y) in CATALOG_ROW_Y_COORDS
@@ -2020,13 +2243,15 @@ fn handle_inventory_scroll(
     mut catalog_slot_query: Query<&mut InventoryCatalogSlot>,
     mut catalog_icon_query: Query<(&InventoryCatalogSlotIcon, &mut ImageNode, &mut Visibility)>,
     ui_scale: Option<Res<bevy::ui::UiScale>>,
+    loc: Option<Res<crate::core::Localization>>,
 ) {
     if *tab_state != InventoryTab::Creative {
         return;
     }
 
     let scale = ui_scale.as_ref().map_or(1.0, |s| s.0);
-    let filtered = filtered_creative_blocks(active_cat.0, &search_query.query);
+    let filtered =
+        filtered_creative_blocks(active_cat.0, &search_query.query, loc.as_deref());
     let max_scroll = max_filtered_scroll(filtered.len());
     let mut row_changed = false;
 

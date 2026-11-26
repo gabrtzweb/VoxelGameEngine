@@ -1,4 +1,4 @@
-use crate::{audio::PlaySfxEvent, menu::MenuState};
+use crate::menu::MenuState;
 use bevy::{picking::hover::Hovered, prelude::*, ui::Pressed, ui_widgets::Button};
 
 /// Types of user interface tactile acoustic feedback (menu button clicks only).
@@ -33,9 +33,26 @@ impl Plugin for UiAudioPlugin {
     }
 }
 
-fn handle_play_ui_sound(trigger: On<UiSound>, cache: Res<UiAudioCache>, mut commands: Commands) {
+fn handle_play_ui_sound(
+    trigger: On<UiSound>,
+    cache: Res<UiAudioCache>,
+    game_settings: Option<Res<crate::menu::GameSettings>>,
+    audio_settings: Option<Res<crate::audio::AudioSettings>>,
+    mut commands: Commands,
+) {
     let UiSound::Click = *trigger.event();
-    commands.trigger(PlaySfxEvent::new(cache.click.clone(), 0.85));
+    let ui_vol = game_settings.as_deref().map_or(0.8, |s| s.ui_volume);
+    let master_vol = audio_settings
+        .as_deref()
+        .map_or(0.85, |s| s.effective_master());
+    let final_vol = (ui_vol * master_vol * 0.42).clamp(0.0, 1.0);
+    if final_vol <= 0.001 {
+        return;
+    }
+    commands.spawn((
+        AudioPlayer::new(cache.click.clone()),
+        PlaybackSettings::DESPAWN.with_volume(bevy::audio::Volume::Linear(final_vol)),
+    ));
 }
 
 fn detect_button_click_sound(

@@ -505,6 +505,10 @@ pub struct LocalConfig {
     #[serde(default = "default_screen_mode")]
     pub screen_mode: String,
 
+    /// Preferred Exclusive Fullscreen resolution `[width, height]`. `[0, 0]` = monitor native.
+    #[serde(default)]
+    pub fullscreen_resolution: [u32; 2],
+
     /// Whether screen-space transmission is enabled (disabled on Low-Spec / Medium to prevent costly framebuffer blits).
     #[serde(default = "default_transmission_enabled")]
     pub transmission_enabled: bool,
@@ -985,6 +989,7 @@ impl Default for LocalConfig {
             target_fps: default_target_fps(),
             mesh_upload_budget: default_mesh_upload_budget(),
             screen_mode: default_screen_mode(),
+            fullscreen_resolution: [0, 0],
             transmission_enabled: default_transmission_enabled(),
             shadow_quality: default_shadow_quality(),
             shadows_enabled: default_shadows_enabled(),

@@ -99,7 +99,8 @@ impl Voxel {
             Self::MelonBlock | Self::WildMelon => Some("crops_melon_side"),
             Self::PumpkinBlock | Self::WildPumpkin => Some("crops_pumpkin_side"),
             Self::BloodyFlesh | Self::FleshBlock => Some("bio_flesh_side"),
-            Self::TreeCharredLog => Some("tree_charred_bark_lit"),
+            Self::TreeCharredLog => Some("tree_charred_bark"),
+            Self::TreeCharredLogLit => Some("tree_charred_bark_lit"),
             Self::GeothermalVent => Some("aqua_geothermal_vent_side"),
             Self::Barrel => Some("util_barrel_side"),
             Self::Bookshelf | Self::BookshelfEmpty => Some("util_bookshelf_side"),
@@ -180,7 +181,8 @@ impl Voxel {
             Self::YewLog => Some("tree_yew_log"),
 
             Self::GeothermalVent => Some("aqua_geothermal_vent_top"),
-            Self::TreeCharredLog => Some("tree_charred_log_lit"),
+            Self::TreeCharredLog => Some("tree_charred_log"),
+            Self::TreeCharredLogLit => Some("tree_charred_log_lit"),
             Self::BeeNest => Some("nest_bee_nest_top"),
             Self::BirdNest => Some("nest_bird_nest_top"),
             Self::BloodyFlesh | Self::FleshBlock => Some("bio_flesh_top"),
@@ -232,7 +234,8 @@ impl Voxel {
 
             Self::GeothermalVent => Some("aqua_geothermal_vent_bot"),
             Self::VegeCactus => Some("vege_cactus_bottom"),
-            Self::TreeCharredLog => Some("tree_charred_log_lit"),
+            Self::TreeCharredLog => Some("tree_charred_log"),
+            Self::TreeCharredLogLit => Some("tree_charred_log_lit"),
             Self::MelonBlock | Self::WildMelon => Some("crops_melon_bottom"),
             Self::PumpkinBlock | Self::WildPumpkin => Some("crops_pumpkin_bottom"),
             Self::BeeNest => Some("nest_bee_nest_top"),
@@ -516,7 +519,6 @@ impl Voxel {
                 Self::VegeLeafLitter
                     | Self::OakLeaves
                     | Self::BirchLeaves
-                    | Self::PalmLeaves
                     | Self::AcaciaLeaves
                     | Self::MahoganyLeaves
                     | Self::MangroveLeaves
@@ -575,6 +577,8 @@ impl Voxel {
                 | Self::FleshBlock
                 | Self::TreeCharredLog
                 | Self::TreeCharredBark
+                | Self::TreeCharredLogLit
+                | Self::TreeCharredBarkLit
                 | Self::GeothermalVent
         )
     }
@@ -585,7 +589,12 @@ impl Voxel {
         matches!(id, 139..=202)
             || matches!(
                 self,
-                Self::TreeCharredLog | Self::TreeCharredBark | Self::TreeCharredPlanks
+                Self::TreeCharredLog
+                    | Self::TreeCharredBark
+                    | Self::TreeCharredPlanks
+                    | Self::TreeCharredLogLit
+                    | Self::TreeCharredBarkLit
+                    | Self::TreeCharredPlanksLit
             )
     }
 
@@ -670,13 +679,22 @@ impl Voxel {
             return 5;
         }
         // Priority 4: Other sands (spills over Clay, Rocks, Wood)
-        if matches!(self, Self::SandDune | Self::SandRed | Self::SandWhite) {
-            return 4;
-        }
-        // Priority 3: Clays (spills over Rocks, Wood)
         if matches!(
             self,
-            Self::ClayBlue | Self::ClayRed | Self::ClayWhite | Self::ClayYellow
+            Self::SandDune | Self::SandRed | Self::SandWhite | Self::SandPink | Self::SandBlack
+        ) {
+            return 4;
+        }
+        // Priority 3: Clays & Terracottas (spills over Rocks, Wood)
+        if matches!(
+            self,
+            Self::ClayBlue
+                | Self::ClayRed
+                | Self::ClayWhite
+                | Self::ClayYellow
+                | Self::Terracotta
+                | Self::WhiteTerracotta
+                | Self::YellowTerracotta
         ) {
             return 3;
         }
@@ -684,6 +702,9 @@ impl Voxel {
         if matches!(
             self,
             Self::Andesite
+                | Self::Geyserite
+                | Self::RedGeyserite
+                | Self::WhiteGeyserite
                 | Self::Argillite
                 | Self::Basalt
                 | Self::Chalk
@@ -702,6 +723,10 @@ impl Voxel {
                 | Self::CobbledSandstoneDune
                 | Self::CobbledSandstoneRed
                 | Self::CobbledSandstoneWhite
+                | Self::CobbledSandstonePink
+                | Self::CobbledSandstoneBlack
+                | Self::SandstonePink
+                | Self::SandstoneBlack
                 | Self::CobbledSlate
                 | Self::Dolomite
                 | Self::Gabbro
@@ -892,7 +917,6 @@ impl Voxel {
             Self::AcaciaLeaves => [0.72, 0.92, 0.28, 1.0],
             Self::MahoganyLeaves => [0.45, 1.00, 0.40, 1.0],
             Self::MangroveLeaves => [0.40, 0.95, 0.42, 1.0],
-            Self::PalmLeaves => [0.55, 1.05, 0.30, 1.0],
             Self::WillowLeaves => [0.52, 0.88, 0.48, 1.0],
             Self::YewLeaves => [0.28, 0.70, 0.38, 1.0],
             Self::CalicheGrass | Self::LateriteGrass => [0.72, 0.85, 0.30, 1.0],
@@ -975,6 +999,8 @@ impl Voxel {
             Self::SandDune => [228, 188, 120, 255],
             Self::SandRed => [194, 102, 62, 255],
             Self::SandWhite => [242, 238, 222, 255],
+            Self::SandPink => [232, 178, 176, 255],
+            Self::SandBlack => [46, 48, 52, 255],
             Self::GravelSandy | Self::PathSandy => [204, 184, 138, 255],
 
             // Sandstones
@@ -982,12 +1008,27 @@ impl Voxel {
             Self::SandstoneDune | Self::CobbledSandstoneDune => [218, 178, 112, 255],
             Self::SandstoneRed | Self::CobbledSandstoneRed => [184, 92, 54, 255],
             Self::SandstoneWhite | Self::CobbledSandstoneWhite => [232, 228, 212, 255],
+            Self::SandstonePink
+            | Self::CobbledSandstonePink
+            | Self::SandstonePinkRubble
+            | Self::SandstonePinkBricks => [222, 166, 164, 255],
+            Self::SandstoneBlack
+            | Self::CobbledSandstoneBlack
+            | Self::SandstoneBlackRubble
+            | Self::SandstoneBlackBricks => [44, 46, 52, 255],
 
-            // Clay variants
+            // Clay & Terracotta variants
             Self::ClayBlue => [120, 140, 155, 255],
             Self::ClayRed => [170, 85, 65, 255],
             Self::ClayWhite => [220, 220, 215, 255],
             Self::ClayYellow => [195, 160, 90, 255],
+            Self::Terracotta => [162, 92, 68, 255],
+            Self::WhiteTerracotta => [216, 206, 194, 255],
+            Self::YellowTerracotta => [198, 154, 72, 255],
+            // Geothermal Geyserite sinters
+            Self::Geyserite => [202, 182, 116, 255],
+            Self::RedGeyserite => [136, 62, 56, 255],
+            Self::WhiteGeyserite => [232, 228, 216, 255],
 
             // Mulch variants
             Self::LoamMulch => [65, 45, 30, 255],
@@ -1126,8 +1167,11 @@ impl Voxel {
             Self::WillowPlanks => [120, 110, 75, 255],
             Self::YewLog | Self::YewWood => [85, 50, 40, 255],
             Self::YewPlanks => [150, 90, 60, 255],
-            Self::TreeCharredLog | Self::TreeCharredBark => [35, 35, 35, 255],
-            Self::TreeCharredPlanks => [55, 55, 55, 255],
+            Self::TreeCharredLog
+            | Self::TreeCharredBark
+            | Self::TreeCharredLogLit
+            | Self::TreeCharredBarkLit => [35, 35, 35, 255],
+            Self::TreeCharredPlanks | Self::TreeCharredPlanksLit => [55, 55, 55, 255],
 
             // Raw Ores & Minerals
             Self::OreCoalRaw => [35, 35, 38, 255],

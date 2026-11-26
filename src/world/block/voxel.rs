@@ -739,16 +739,35 @@ pub enum Voxel {
     PermafrostTundraGrass = 717,
     TallSeagrassBottom = 718,
     TallSeagrassTop = 719,
+    Terracotta = 720,
+    WhiteTerracotta = 721,
+    YellowTerracotta = 722,
+    SandPink = 723,
+    SandBlack = 724,
+    Geyserite = 725,
+    RedGeyserite = 726,
+    WhiteGeyserite = 727,
+    SandstonePink = 728,
+    SandstoneBlack = 729,
+    CobbledSandstonePink = 730,
+    CobbledSandstoneBlack = 731,
+    SandstonePinkBricks = 732,
+    SandstoneBlackBricks = 733,
+    SandstonePinkRubble = 734,
+    SandstoneBlackRubble = 735,
+    TreeCharredLogLit = 736,
+    TreeCharredBarkLit = 737,
+    TreeCharredPlanksLit = 738,
 }
 impl Voxel {
-    /// Array containing all active, non-placeholder gameplay voxels (indices 3..=719).
-    pub const ALL: [Voxel; 717] = generate_all_voxels();
+    /// Array containing all active, non-placeholder gameplay voxels (indices 3..=738).
+    pub const ALL: [Voxel; 736] = generate_all_voxels();
 
     /// Safely convert a `u16` id to a `Voxel` variant.
     #[inline(always)]
     pub const fn from_u16(val: u16) -> Option<Self> {
-        if val <= 719 {
-            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 719.
+        if val <= 738 {
+            // SAFETY: Voxel is #[repr(u16)] with contiguous discriminants from 0 to 738.
             Some(unsafe { std::mem::transmute::<u16, Self>(val) })
         } else {
             None
@@ -774,10 +793,13 @@ impl Voxel {
                 | Self::EmitLampRedOff
                 | Self::EmitLampWarmOff
                 | Self::CampfireUnlit
+                | Self::TreeCharredLogLit
+                | Self::TreeCharredBarkLit
+                | Self::TreeCharredPlanksLit
         )
     }
 
-    /// Toggles between lit/on and unlit/off states for lamps and campfires (empty-hand right-click).
+    /// Toggles between lit/on and unlit/off states for lamps, campfires, and charred wood (empty-hand right-click).
     #[inline(always)]
     pub const fn toggle_light_state(self) -> Option<Self> {
         match self {
@@ -791,11 +813,17 @@ impl Voxel {
             Self::EmitLampWarmOff => Some(Self::EmitLampWarm),
             Self::Campfire => Some(Self::CampfireUnlit),
             Self::CampfireUnlit => Some(Self::Campfire),
+            Self::TreeCharredLog => Some(Self::TreeCharredLogLit),
+            Self::TreeCharredLogLit => Some(Self::TreeCharredLog),
+            Self::TreeCharredBark => Some(Self::TreeCharredBarkLit),
+            Self::TreeCharredBarkLit => Some(Self::TreeCharredBark),
+            Self::TreeCharredPlanks => Some(Self::TreeCharredPlanksLit),
+            Self::TreeCharredPlanksLit => Some(Self::TreeCharredPlanks),
             _ => None,
         }
     }
 
-    /// Normalizes off/unlit variants back to their canonical lit/on item when picked or dropped.
+    /// Normalizes secondary toggle variants back to their canonical item when picked or dropped.
     #[inline(always)]
     pub const fn canonical_item_voxel(self) -> Self {
         match self {
@@ -804,6 +832,9 @@ impl Voxel {
             Self::EmitLampRedOff => Self::EmitLampRed,
             Self::EmitLampWarmOff => Self::EmitLampWarm,
             Self::CampfireUnlit => Self::Campfire,
+            Self::TreeCharredLogLit => Self::TreeCharredLog,
+            Self::TreeCharredBarkLit => Self::TreeCharredBark,
+            Self::TreeCharredPlanksLit => Self::TreeCharredPlanks,
             _ => self,
         }
     }
@@ -993,11 +1024,11 @@ impl Voxel {
     }
 }
 
-const fn generate_all_voxels() -> [Voxel; 717] {
-    let mut arr = [Voxel::Air; 717];
+const fn generate_all_voxels() -> [Voxel; 736] {
+    let mut arr = [Voxel::Air; 736];
     let mut i = 0;
     while i < arr.len() {
-        // Active gameplay blocks start at discriminant 3 (indices 3..=719)
+        // Active gameplay blocks start at discriminant 3 (indices 3..=738)
         let id = (i + 3) as u16;
         arr[i] = unsafe { std::mem::transmute::<u16, Voxel>(id) };
         i += 1;
@@ -1006,5 +1037,5 @@ const fn generate_all_voxels() -> [Voxel; 717] {
 }
 
 const _: () = {
-    assert!(Voxel::ALL[Voxel::ALL.len() - 1] as u16 == 719);
+    assert!(Voxel::ALL[Voxel::ALL.len() - 1] as u16 == 738);
 };

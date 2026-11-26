@@ -184,7 +184,7 @@ pub fn creative_movement(
 
     let is_in_inventory = menu_state
         .as_ref()
-        .is_some_and(|s| *s.get() == crate::menu::MenuState::Inventory);
+        .is_some_and(|s| *s.get() != crate::menu::MenuState::None);
 
     let delta_seconds = time.delta_secs();
 
@@ -224,7 +224,11 @@ pub fn creative_movement(
             keyboard.pressed(KeyCode::ControlLeft) || keyboard.pressed(KeyCode::ControlRight),
             |c| c.is_action_pressed(crate::core::InputAction::Crouch, &keyboard, &mouse),
         );
-        let requested_stance = if keyboard.pressed(KeyCode::KeyC) {
+        let is_crawl = control_settings.as_ref().map_or(
+            keyboard.pressed(KeyCode::KeyC),
+            |c| c.is_action_pressed(crate::core::InputAction::Crawl, &keyboard, &mouse),
+        );
+        let requested_stance = if is_crawl {
             PlayerStance::Crawling
         } else if is_crouch {
             PlayerStance::Crouching

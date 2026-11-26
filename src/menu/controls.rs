@@ -444,6 +444,7 @@ fn spawn_controls_menu(
                                         InputAction::MoveRight,
                                         InputAction::Jump,
                                         InputAction::Crouch,
+                                        InputAction::Crawl,
                                         InputAction::Sprint,
                                     ];
                                     for action in movement_actions {

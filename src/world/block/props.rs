@@ -234,6 +234,8 @@ impl Voxel {
                 | Self::SandstoneDuneRubble
                 | Self::SandstoneRedRubble
                 | Self::SandstoneWhiteRubble
+                | Self::SandstonePinkRubble
+                | Self::SandstoneBlackRubble
                 | Self::SlateRubble
         )
     }
@@ -265,7 +267,7 @@ impl Voxel {
     pub const fn emission_level(self) -> u8 {
         match self {
             Self::ElementFire => 15,
-            Self::TreeCharredLog | Self::TreeCharredBark | Self::TreeCharredPlanks => 6,
+            Self::TreeCharredLogLit | Self::TreeCharredBarkLit | Self::TreeCharredPlanksLit => 6,
 
             Self::EmitLampWarm
             | Self::EmitLampBlue
@@ -725,6 +727,9 @@ impl Voxel {
                 | Self::TreeCharredLog
                 | Self::TreeCharredBark
                 | Self::TreeCharredPlanks
+                | Self::TreeCharredLogLit
+                | Self::TreeCharredBarkLit
+                | Self::TreeCharredPlanksLit
                 | Self::LiquidLava
                 | Self::LiquidCoreMagma
                 | Self::LiquidMolten
@@ -934,6 +939,8 @@ impl Voxel {
                 | Self::SandDune
                 | Self::SandRed
                 | Self::SandWhite
+                | Self::SandPink
+                | Self::SandBlack
                 | Self::GravelSandy
                 | Self::PathSandy
                 | Self::CalicheCracked

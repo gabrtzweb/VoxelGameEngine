@@ -156,7 +156,17 @@ fn enforce_adventure_world_bounds(
     let Some(ref terrain_gen) = terrain_generator else {
         return;
     };
-    let Some(ref map) = terrain_gen.adventure_map else {
+    let Some((half_w, half_h)) = terrain_gen
+        .adventure_map
+        .as_ref()
+        .map(|m| m.half_extents())
+        .or_else(|| {
+            terrain_gen
+                .laboratory_map
+                .as_ref()
+                .map(|l| l.half_extents())
+        })
+    else {
         return;
     };
 
@@ -164,7 +174,6 @@ fn enforce_adventure_world_bounds(
         *warn_cooldown = (*warn_cooldown - time.delta_secs()).max(0.0);
     }
 
-    let (half_w, half_h) = map.half_extents();
     let voxel_size = crate::world::VOXEL_SIZE;
     let margin = 4.0 * voxel_size;
     let max_x = (half_w * voxel_size - margin).max(16.0);

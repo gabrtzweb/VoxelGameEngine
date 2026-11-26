@@ -850,6 +850,8 @@ pub fn voxel_item_texture_path(voxel: Voxel) -> Option<&'static str> {
         Voxel::SandstoneRubble => Some("assets/textures/items/sandstone_rubble_item.png"),
         Voxel::SandstoneDuneRubble => Some("assets/textures/items/sandstone_dune_rubble_item.png"),
         Voxel::SandstoneRedRubble => Some("assets/textures/items/sandstone_red_rubble_item.png"),
+        Voxel::SandstonePinkRubble => Some("assets/textures/items/sandstone_pink_rubble_item.png"),
+        Voxel::SandstoneBlackRubble => Some("assets/textures/items/sandstone_black_rubble_item.png"),
         Voxel::SandstoneWhiteRubble => {
             Some("assets/textures/items/sandstone_white_rubble_item.png")
         }

@@ -1,5 +1,5 @@
 /// Static registry metadata table: (ID, Label, Texture name) for all voxel variants.
-pub(crate) static VOXEL_DATA: [(&str, &str, &str); 720] = [
+pub(crate) static VOXEL_DATA: [(&str, &str, &str); 739] = [
     ("air", "Air", ""),
     ("occupied", "Occupied", ""),
     ("water_occupied", "Waterlogged Occupied", ""),
@@ -985,13 +985,9 @@ pub(crate) static VOXEL_DATA: [(&str, &str, &str); 720] = [
     ),
     ("flower_white_petals", "White Petals", "flower_white_petals"),
     ("flower_wildflowers", "Yellow Petals", "flower_wildflowers"),
-    ("tree_charred_log", "Charred Log", "tree_charred_log_lit"),
-    ("tree_charred_bark", "Charred Wood", "tree_charred_bark_lit"),
-    (
-        "tree_charred_planks",
-        "Charred Planks",
-        "tree_charred_planks_lit",
-    ),
+    ("tree_charred_log", "Charred Log", "tree_charred_log"),
+    ("tree_charred_bark", "Charred Wood", "tree_charred_bark"),
+    ("tree_charred_planks", "Charred Planks", "tree_charred_planks"),
     ("element_fire", "Fire", "element_fire"),
     ("andesite_rubble", "Andesite Rubble", "rock_andesite"),
     ("argillite_rubble", "Argillite Rubble", "rock_argillite"),
@@ -1645,4 +1641,59 @@ pub(crate) static VOXEL_DATA: [(&str, &str, &str); 720] = [
         "vege_tall_seagrass_bottom",
     ),
     ("tall_seagrass_top", "Tall Seagrass Top", "vege_tall_seagrass_top"),
+    ("terracotta", "Terracotta", "soil_terracotta"),
+    ("white_terracotta", "White Terracotta", "soil_terracotta_white"),
+    ("yellow_terracotta", "Yellow Terracotta", "soil_terracotta_yellow"),
+    ("sand_pink", "Pink Sand", "soil_sand_pink"),
+    ("sand_black", "Black Sand", "soil_sand_black"),
+    ("geyserite", "Geyserite", "rock_geyserite"),
+    ("red_geyserite", "Red Geyserite", "rock_geyserite_red"),
+    ("white_geyserite", "White Geyserite", "rock_geyserite_white"),
+    ("sandstone_pink", "Pink Sandstone", "rock_sandstone_pink"),
+    ("sandstone_black", "Black Sandstone", "rock_sandstone_black"),
+    (
+        "cobbled_sandstone_pink",
+        "Cobbled Pink Sandstone",
+        "rock_sandstone_pink_cobbled",
+    ),
+    (
+        "cobbled_sandstone_black",
+        "Cobbled Black Sandstone",
+        "rock_sandstone_black_cobbled",
+    ),
+    (
+        "sandstone_pink_bricks",
+        "Pink Sandstone Bricks",
+        "deco_sandstone_pink_bricks",
+    ),
+    (
+        "sandstone_black_bricks",
+        "Black Sandstone Bricks",
+        "deco_sandstone_black_bricks",
+    ),
+    (
+        "sandstone_pink_rubble",
+        "Pink Sandstone Rubble",
+        "rock_sandstone_pink",
+    ),
+    (
+        "sandstone_black_rubble",
+        "Black Sandstone Rubble",
+        "rock_sandstone_black",
+    ),
+    (
+        "tree_charred_log_lit",
+        "Charred Log (Lit)",
+        "tree_charred_log_lit",
+    ),
+    (
+        "tree_charred_bark_lit",
+        "Charred Wood (Lit)",
+        "tree_charred_bark_lit",
+    ),
+    (
+        "tree_charred_planks_lit",
+        "Charred Planks (Lit)",
+        "tree_charred_planks_lit",
+    ),
 ];

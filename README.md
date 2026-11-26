@@ -47,7 +47,7 @@ ESC               System Menu & 6-Tab Top Bar (Inventory, Skills, Journal, Quest
 Q / E (in menu)   Cycle between top bar menu tabs
 Tab               Personal Inventory / Creative Catalog
 H                 Skills & Character Sheet (60 skills across 4 general trees + dynamic Racial tree)
-J                 Journal (Live World Almanac, Compendium: 78 Biomes, Bestiary, Flora, Blocks, Items, Statistics)
+J                 Journal (Live Almanac, Searchable Compendium: 78 Biomes, Bestiary, Flora, Blocks, Items, Statistics)
 K                 Quests & Objectives
 M                 World Map (Full-screen interactive map with right sidebar & Adventure Atlas Overlay filters)
 
@@ -99,13 +99,13 @@ assets/
 ├── textures/
 │   ├── blocks/
 │   ├── environments/
-│   ├── foliage/
 │   ├── interfaces/
 │   ├── items/
 │   ├── masks/
 │   ├── models/
 │   ├── particles/
 │   └── shaders/
+│       └── foliage/
 └── icon.ico
 
 docs/
@@ -186,6 +186,7 @@ src/
 │   ├── flora.rs
 │   ├── generator.rs
 │   ├── inspector.rs
+│   ├── laboratory_map.rs
 │   ├── mod.rs
 │   ├── ores.rs
 │   ├── strata.rs
@@ -237,6 +238,7 @@ src/
 │   ├── race.rs
 │   ├── spectator.rs
 │   ├── state.rs
+│   ├── survival_hud.rs
 │   └── water.rs
 ├── simulation/
 │   ├── crops.rs

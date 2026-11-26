@@ -134,6 +134,8 @@ fn matching_rubble_for(ground: Voxel) -> Voxel {
         Voxel::SandstoneCommon | Voxel::SandCommon => Voxel::SandstoneRubble,
         Voxel::SandstoneDune | Voxel::SandDune => Voxel::SandstoneDuneRubble,
         Voxel::SandstoneRed | Voxel::SandRed => Voxel::SandstoneRedRubble,
+        Voxel::SandstonePink | Voxel::SandPink => Voxel::SandstonePinkRubble,
+        Voxel::SandstoneBlack | Voxel::SandBlack => Voxel::SandstoneBlackRubble,
         Voxel::SandstoneWhite | Voxel::SandWhite => Voxel::SandstoneWhiteRubble,
         Voxel::Slate | Voxel::CobbledSlate => Voxel::SlateRubble,
         _ => Voxel::AndesiteRubble,

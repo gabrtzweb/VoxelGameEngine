@@ -15,6 +15,9 @@ pub struct AudioSettings {
     pub music_volume: f32,
     /// Ambient biome background murmurs and nature loops [0.0..=1.0].
     pub ambient_volume: f32,
+    /// Runtime mute flag managed by `sync_mute_on_unfocus` when window loses focus.
+    #[reflect(ignore)]
+    pub unfocused_muted: bool,
 }
 
 impl Default for AudioSettings {
@@ -25,6 +28,7 @@ impl Default for AudioSettings {
             sfx_volume: 0.85,
             music_volume: 0.50,
             ambient_volume: 0.65,
+            unfocused_muted: false,
         }
     }
 }
@@ -37,6 +41,16 @@ impl AudioSettings {
             sfx_volume: config.sfx_volume,
             music_volume: config.music_volume,
             ambient_volume: config.ambient_volume,
+            unfocused_muted: false,
+        }
+    }
+
+    #[inline]
+    pub fn effective_master(&self) -> f32 {
+        if self.unfocused_muted {
+            0.0
+        } else {
+            self.master_volume
         }
     }
 }

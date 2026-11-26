@@ -485,7 +485,7 @@ fn update_minimap_ui(
 
     let p = player_transform.translation;
     let vx = (p.x / VOXEL_SIZE).floor() as i32;
-    let vy = (p.y / VOXEL_SIZE).floor() as i32;
+    let vy = (p.y / VOXEL_SIZE + 0.05).floor() as i32;
     let vz = (p.z / VOXEL_SIZE).floor() as i32;
 
     let coords_str = if let Some(ref l) = loc {

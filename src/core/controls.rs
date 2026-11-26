@@ -12,6 +12,7 @@ pub enum InputAction {
     MoveRight,
     Jump,
     Crouch,
+    Crawl,
     Sprint,
 
     // Gameplay & Interaction
@@ -61,6 +62,7 @@ impl InputAction {
         InputAction::MoveRight,
         InputAction::Jump,
         InputAction::Crouch,
+        InputAction::Crawl,
         InputAction::Sprint,
         InputAction::PrimaryAction,
         InputAction::SecondaryAction,
@@ -96,6 +98,7 @@ impl InputAction {
             | Self::MoveRight
             | Self::Jump
             | Self::Crouch
+            | Self::Crawl
             | Self::Sprint => ActionCategory::Movement,
 
             Self::PrimaryAction
@@ -135,6 +138,7 @@ impl InputAction {
             Self::MoveRight => "controls.action.move_right",
             Self::Jump => "controls.action.jump",
             Self::Crouch => "controls.action.crouch",
+            Self::Crawl => "controls.action.crawl",
             Self::Sprint => "controls.action.sprint",
 
             Self::PrimaryAction => "controls.action.primary",
@@ -174,6 +178,7 @@ impl InputAction {
             Self::MoveRight => "move_right",
             Self::Jump => "jump",
             Self::Crouch => "crouch",
+            Self::Crawl => "crawl",
             Self::Sprint => "sprint",
 
             Self::PrimaryAction => "primary_action",
@@ -213,6 +218,7 @@ impl InputAction {
             "move_right" => Some(Self::MoveRight),
             "jump" => Some(Self::Jump),
             "crouch" => Some(Self::Crouch),
+            "crawl" => Some(Self::Crawl),
             "sprint" => Some(Self::Sprint),
 
             "primary_action" => Some(Self::PrimaryAction),
@@ -506,6 +512,7 @@ impl Default for ControlSettings {
         bindings.insert(InputAction::MoveRight, InputBinding::Key(KeyCode::KeyD));
         bindings.insert(InputAction::Jump, InputBinding::Key(KeyCode::Space));
         bindings.insert(InputAction::Crouch, InputBinding::Key(KeyCode::ControlLeft));
+        bindings.insert(InputAction::Crawl, InputBinding::Key(KeyCode::KeyC));
         bindings.insert(InputAction::Sprint, InputBinding::Key(KeyCode::ShiftLeft));
 
         // Gameplay

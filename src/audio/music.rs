@@ -208,7 +208,7 @@ fn update_gameplay_music(
     mut commands: Commands,
 ) {
     let dt = time.delta_secs();
-    let target_volume = settings.master_volume * settings.music_volume * 0.50;
+    let target_volume = settings.effective_master() * settings.music_volume * 0.50;
 
     let in_session = world_session.as_ref().is_some_and(|s| s.is_active);
     let current_menu = menu_state

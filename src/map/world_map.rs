@@ -296,17 +296,19 @@ impl PreloadedAdventureMap {
         &self,
         wx: i32,
         wz: i32,
-        adv_map: &crate::generation::AdventureWorldMap,
+        fingerprint: u64,
+        world_width: f32,
+        world_height: f32,
         show_elevation: bool,
     ) -> Option<[u8; 4]> {
         let buf = self.data.as_ref()?;
-        if buf.fingerprint != adv_map.fingerprint() {
+        if buf.fingerprint != fingerprint {
             return None;
         }
-        let half_w = adv_map.world_width * 0.5;
-        let half_h = adv_map.world_height * 0.5;
-        let u = ((wx as f32 + half_w) / adv_map.world_width).clamp(0.0, 0.99999);
-        let v = ((wz as f32 + half_h) / adv_map.world_height).clamp(0.0, 0.99999);
+        let half_w = world_width * 0.5;
+        let half_h = world_height * 0.5;
+        let u = ((wx as f32 + half_w) / world_width).clamp(0.0, 0.99999);
+        let v = ((wz as f32 + half_h) / world_height).clamp(0.0, 0.99999);
         let px = (u * buf.width as f32) as usize;
         let py = (v * buf.height as f32) as usize;
         let idx = py * buf.width as usize + px;
@@ -435,50 +437,70 @@ fn sync_preloaded_adventure_map(
         preloaded.version = preloaded.version.wrapping_add(1);
     }
 
-    let enabled = game_settings
-        .as_deref()
-        .is_some_and(|s| s.preload_full_world_map);
-    if !enabled {
-        return;
-    }
-
     let Some(gen_res) = terrain_generator.as_deref() else {
         return;
     };
-    let Some(adv_map) = gen_res.adventure_map.as_ref() else {
-        return;
-    };
 
-    let fp = adv_map.fingerprint();
+    // Laboratory Mode ALWAYS preloads the full radial disc on `[M]` automatically!
+    // Adventure Mode preloads when "Preload Full World Map" is enabled in Settings.
+    let (fp, out_w, out_h, world_w, world_h, adv_arc, lab_arc) =
+        if let Some(lab_map) = gen_res.laboratory_map.as_ref() {
+            let (ww, wh) = lab_map.world_dimensions();
+            (
+                lab_map.fingerprint(),
+                960u32,
+                960u32,
+                ww,
+                wh,
+                None,
+                Some(lab_map.clone()),
+            )
+        } else if let Some(adv_map) = gen_res.adventure_map.as_ref() {
+            let enabled = game_settings
+                .as_deref()
+                .is_some_and(|s| s.preload_full_world_map);
+            if !enabled {
+                return;
+            }
+            (
+                adv_map.fingerprint(),
+                1280u32,
+                720u32,
+                adv_map.world_width,
+                adv_map.world_height,
+                Some(adv_map.clone()),
+                None,
+            )
+        } else {
+            return;
+        };
+
     let already_ready = preloaded.data.as_ref().is_some_and(|d| d.fingerprint == fp);
     let already_running = preloaded.in_flight_fingerprint == Some(fp);
     if already_ready || already_running {
         return;
     }
 
-    let map_arc = adv_map.clone();
     let seed = gen_res.seed;
     let pool = bevy::tasks::AsyncComputeTaskPool::get();
     let task = pool.spawn(async move {
-        const OUT_W: u32 = 1280;
-        const OUT_H: u32 = 720;
-
         let mut terrain_gen = crate::generation::TerrainGenerator::default();
         terrain_gen.seed = seed;
-        terrain_gen.adventure_map = Some(map_arc.clone());
+        terrain_gen.adventure_map = adv_arc;
+        terrain_gen.laboratory_map = lab_arc;
 
-        let n = (OUT_W * OUT_H) as usize;
+        let n = (out_w * out_h) as usize;
         let mut rgb = vec![0u8; n * 3];
         let mut heights = vec![0i16; n];
         let mut is_water = vec![0u8; n];
 
-        for py in 0..OUT_H {
-            let v = (py as f32 + 0.5) / OUT_H as f32;
-            let wz = ((v - 0.5) * map_arc.world_height).floor() as i32;
+        for py in 0..out_h {
+            let v = (py as f32 + 0.5) / out_h as f32;
+            let wz = ((v - 0.5) * world_h).floor() as i32;
 
-            for px in 0..OUT_W {
-                let u = (px as f32 + 0.5) / OUT_W as f32;
-                let wx = ((u - 0.5) * map_arc.world_width).floor() as i32;
+            for px in 0..out_w {
+                let u = (px as f32 + 0.5) / out_w as f32;
+                let wx = ((u - 0.5) * world_w).floor() as i32;
 
                 let col = terrain_gen.sample_column(wx, wz);
                 let (eff_h, surface_mat) =
@@ -505,11 +527,11 @@ fn sync_preloaded_adventure_map(
                         )
                     };
 
-                let idx = (py * OUT_W + px) as usize;
+                let idx = (py * out_w + px) as usize;
                 heights[idx] = height;
                 is_water[idx] = water_flag;
                 let north_h = if py > 0 {
-                    Some(heights[((py - 1) * OUT_W + px) as usize])
+                    Some(heights[((py - 1) * out_w + px) as usize])
                 } else {
                     None
                 };
@@ -523,8 +545,8 @@ fn sync_preloaded_adventure_map(
 
         PreloadedMapBuffer {
             fingerprint: fp,
-            width: OUT_W,
-            height: OUT_H,
+            width: out_w,
+            height: out_h,
             rgb,
             heights,
             is_water,
@@ -2194,7 +2216,20 @@ fn sync_world_map_terrain(
     let adv_map = terrain_generator
         .as_deref()
         .and_then(|g| g.adventure_map.as_ref());
-    let adv_bounds = adv_map.map(|m| m.half_extents());
+    let lab_map = terrain_generator
+        .as_deref()
+        .and_then(|g| g.laboratory_map.as_ref());
+    let adv_bounds = adv_map
+        .map(|m| m.half_extents())
+        .or_else(|| lab_map.map(|l| l.half_extents()));
+    let preload_spec: Option<(u64, f32, f32)> = if let Some(lab) = lab_map {
+        let (ww, wh) = lab.world_dimensions();
+        Some((lab.fingerprint(), ww, wh))
+    } else if preload_enabled {
+        adv_map.map(|m| (m.fingerprint(), m.world_width, m.world_height))
+    } else {
+        None
+    };
     let use_atlas_overlay =
         adv_map.is_some() && layers.overlay_mode != crate::generation::AdventureOverlayMode::Terrain;
 
@@ -2327,9 +2362,8 @@ fn sync_world_map_terrain(
                     }
 
                     c
-                } else if preload_enabled
-                    && let Some(map) = adv_map
-                    && let Some(mut c) = preloaded_map.sample(wx, wz, map, layers.show_elevation)
+                } else if let Some((fp, ww, wh)) = preload_spec
+                    && let Some(mut c) = preloaded_map.sample(wx, wz, fp, ww, wh, layers.show_elevation)
                 {
                     if layers.follow_day_night {
                         c[0] = (c[0] as f32 * tint[0]).clamp(0.0, 255.0) as u8;
@@ -2345,9 +2379,8 @@ fn sync_world_map_terrain(
                 } else {
                     unexplored_color(wx, wz)
                 }
-            } else if preload_enabled
-                && let Some(map) = adv_map
-                && let Some(mut c) = preloaded_map.sample(wx, wz, map, layers.show_elevation)
+            } else if let Some((fp, ww, wh)) = preload_spec
+                && let Some(mut c) = preloaded_map.sample(wx, wz, fp, ww, wh, layers.show_elevation)
             {
                 if layers.follow_day_night {
                     c[0] = (c[0] as f32 * tint[0]).clamp(0.0, 255.0) as u8;
@@ -2436,7 +2469,7 @@ fn update_world_map_ui(
 
     let p = player_transform.translation;
     let px_block = (p.x / VOXEL_SIZE).floor() as i32;
-    let py_block = (p.y / VOXEL_SIZE).floor() as i32;
+    let py_block = (p.y / VOXEL_SIZE + 0.05).floor() as i32;
     let pz_block = (p.z / VOXEL_SIZE).floor() as i32;
 
     for mut text in &mut player_text_query {
@@ -2580,47 +2613,60 @@ fn update_world_map_ui(
 
                     let region_suffix = terrain_generator
                         .as_deref()
-                        .and_then(|g| g.adventure_map.as_ref())
-                        .and_then(|m| m.sample_region_info(cursor_world_x, cursor_world_z))
-                        .map(|info| {
+                        .and_then(|g| {
                             let tr = |key: &str, fallback: &str| -> String {
                                 loc.as_ref()
                                     .map_or_else(|| fallback.to_string(), |l| l.t(key).to_string())
                             };
-                            match layers.overlay_mode {
-                                crate::generation::AdventureOverlayMode::Continents => format!(
-                                    "\n{}  •  {}",
-                                    tr(info.continent.translation_key(), info.continent.name()),
-                                    tr(info.region.translation_key(), info.region.name()),
-                                ),
-                                crate::generation::AdventureOverlayMode::Regions => format!(
-                                    "\n{}  •  {}",
-                                    tr(info.region.translation_key(), info.region.name()),
-                                    tr(
-                                        info.macro_biome.translation_key(),
-                                        info.macro_biome.name()
+                            if let Some(m) = g.adventure_map.as_ref() {
+                                let info = m.sample_region_info(cursor_world_x, cursor_world_z)?;
+                                Some(match layers.overlay_mode {
+                                    crate::generation::AdventureOverlayMode::Continents => format!(
+                                        "\n{}  •  {}",
+                                        tr(info.continent.translation_key(), info.continent.name()),
+                                        tr(info.region.translation_key(), info.region.name()),
                                     ),
-                                ),
-                                crate::generation::AdventureOverlayMode::MacroBiomes => format!(
+                                    crate::generation::AdventureOverlayMode::Regions => format!(
+                                        "\n{}  •  {}",
+                                        tr(info.region.translation_key(), info.region.name()),
+                                        tr(
+                                            info.macro_biome.translation_key(),
+                                            info.macro_biome.name()
+                                        ),
+                                    ),
+                                    crate::generation::AdventureOverlayMode::MacroBiomes => format!(
+                                        "\n{}  •  {}",
+                                        tr(
+                                            info.macro_biome.translation_key(),
+                                            info.macro_biome.name()
+                                        ),
+                                        tr(
+                                            info.micro_biome.translation_key(),
+                                            info.micro_biome.name()
+                                        ),
+                                    ),
+                                    crate::generation::AdventureOverlayMode::Terrain
+                                    | crate::generation::AdventureOverlayMode::MicroBiomes => {
+                                        format!(
+                                            "\n{}  •  {}",
+                                            tr(
+                                                info.micro_biome.translation_key(),
+                                                info.micro_biome.name()
+                                            ),
+                                            tr(info.region.translation_key(), info.region.name()),
+                                        )
+                                    }
+                                })
+                            } else if let Some(lab) = g.laboratory_map.as_ref() {
+                                let (micro, macro_b) =
+                                    lab.sample_biome_and_macro(cursor_world_x, cursor_world_z);
+                                Some(format!(
                                     "\n{}  •  {}",
-                                    tr(
-                                        info.macro_biome.translation_key(),
-                                        info.macro_biome.name()
-                                    ),
-                                    tr(
-                                        info.micro_biome.translation_key(),
-                                        info.micro_biome.name()
-                                    ),
-                                ),
-                                crate::generation::AdventureOverlayMode::Terrain
-                                | crate::generation::AdventureOverlayMode::MicroBiomes => format!(
-                                    "\n{}  •  {}",
-                                    tr(
-                                        info.micro_biome.translation_key(),
-                                        info.micro_biome.name()
-                                    ),
-                                    tr(info.region.translation_key(), info.region.name()),
-                                ),
+                                    tr(micro.translation_key(), micro.name()),
+                                    tr(macro_b.translation_key(), macro_b.name()),
+                                ))
+                            } else {
+                                None
                             }
                         })
                         .unwrap_or_default();

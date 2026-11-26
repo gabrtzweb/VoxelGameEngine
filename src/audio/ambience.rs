@@ -173,7 +173,7 @@ fn update_underwater_loop(
     mut loop_query: Query<&mut AudioSink, With<UnderwaterAudioLoop>>,
 ) {
     let is_camera_in_water = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
-    let master = settings.master_volume * settings.ambient_volume * 0.50;
+    let master = settings.effective_master() * settings.ambient_volume * 0.50;
 
     let target_vol = if is_camera_in_water {
         0.80 * master
@@ -206,7 +206,7 @@ fn update_ambient_audio(
     mut commands: Commands,
 ) {
     let dt = time.delta_secs();
-    let master = settings.master_volume * settings.ambient_volume * 0.50;
+    let master = settings.effective_master() * settings.ambient_volume * 0.50;
     if master <= 0.001 {
         return;
     }

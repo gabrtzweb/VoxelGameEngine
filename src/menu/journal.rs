@@ -86,7 +86,7 @@ impl JournalTab {
     fn fallback_label(self) -> &'static str {
         match self {
             Self::Biomes => "Biomes & Regions",
-            Self::Bestiary => "Bestiary",
+            Self::Bestiary => "Bestiary & Races",
             Self::Flora => "Flora & Agriculture",
             Self::Blocks => "Blocks & Minerals",
             Self::Items => "Items & Equipment",
@@ -149,6 +149,93 @@ struct JournalScrollbarTrack;
 #[derive(Component)]
 struct JournalScrollbarThumb;
 
+#[derive(Component)]
+struct CompendiumExpandCard {
+    desc_entity: Entity,
+    indicator_entity: Entity,
+}
+
+#[derive(Component)]
+struct CompendiumExpandDesc;
+
+#[derive(Component)]
+struct CompendiumExpandIndicator;
+
+#[derive(Resource, Default)]
+pub struct JournalSearchQuery {
+    pub query: String,
+    pub is_focused: bool,
+}
+
+#[derive(Component)]
+struct JournalSearchBox(JournalTab);
+
+#[derive(Component)]
+struct JournalSearchText(JournalTab);
+
+#[derive(Component)]
+struct JournalCategoryContainer(JournalTab);
+
+#[derive(Component)]
+struct JournalSearchableCard {
+    tab: JournalTab,
+    norm_name: String,
+    cat_entity: Entity,
+}
+
+const SUBTLE_EXPAND_COLOR: Color = Color::srgba(0.62, 0.66, 0.74, 0.28);
+
+fn normalize_journal_search(s: &str) -> String {
+    s.chars()
+        .flat_map(|c| match c {
+            'á' | 'à' | 'â' | 'ã' | 'ä' | 'Á' | 'À' | 'Â' | 'Ã' | 'Ä' => ['a', '\0'],
+            'é' | 'è' | 'ê' | 'ë' | 'É' | 'È' | 'Ê' | 'Ë' => ['e', '\0'],
+            'í' | 'ì' | 'î' | 'ï' | 'Í' | 'Ì' | 'Î' | 'Ï' => ['i', '\0'],
+            'ó' | 'ò' | 'ô' | 'õ' | 'ö' | 'Ó' | 'Ò' | 'Ô' | 'Õ' | 'Ö' => ['o', '\0'],
+            'ú' | 'ù' | 'û' | 'ü' | 'Ú' | 'Ù' | 'Û' | 'Ü' => ['u', '\0'],
+            'ç' | 'Ç' => ['c', '\0'],
+            'ñ' | 'Ñ' => ['n', '\0'],
+            other => [other.to_ascii_lowercase(), '\0'],
+        })
+        .filter(|&c| c != '\0')
+        .collect()
+}
+
+fn spawn_journal_search_bar(
+    parent: &mut ChildSpawnerCommands,
+    tab: JournalTab,
+    placeholder: &str,
+    make_font: &impl Fn(f32) -> TextFont,
+) {
+    parent
+        .spawn((
+            Button,
+            Hovered::default(),
+            JournalSearchBox(tab),
+            Node {
+                width: px(320.0),
+                height: px(34.0),
+                padding: UiRect::axes(px(12.0), px(0.0)),
+                border: UiRect::all(px(1.5)),
+                border_radius: BorderRadius::all(px(6.0)),
+                display: Display::Flex,
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.05, 0.06, 0.09, 0.85)),
+            BorderColor::all(palette::PANEL_BORDER_SUBTLE),
+        ))
+        .with_children(|box_node| {
+            box_node.spawn((
+                JournalSearchText(tab),
+                Text::new(placeholder.to_string()),
+                make_font(12.5),
+                TextColor(Color::srgba(0.60, 0.64, 0.72, 0.60)),
+            ));
+        });
+}
+
 #[derive(Resource, Default)]
 struct JournalScrollDrag {
     dragging: bool,
@@ -161,6 +248,7 @@ impl Plugin for JournalMenuPlugin {
         app.init_resource::<JournalTab>()
             .init_resource::<JournalProgress>()
             .init_resource::<JournalScrollDrag>()
+            .init_resource::<JournalSearchQuery>()
             .add_observer(on_journal_block_break)
             .add_observer(on_journal_block_place)
             .add_observer(on_journal_item_drop)
@@ -172,7 +260,10 @@ impl Plugin for JournalMenuPlugin {
                 (
                     handle_journal_nav_clicks,
                     update_journal_tab_view,
+                    handle_journal_search_input,
+                    apply_journal_search_filter,
                     handle_journal_scroll_and_scrollbar,
+                    handle_compendium_card_expand,
                     update_journal_almanac,
                 )
                     .run_if(in_state(MenuState::Journal)),
@@ -502,6 +593,7 @@ fn spawn_journal_menu(
     asset_server: Res<AssetServer>,
     app_font: Option<Res<AppFont>>,
     game_settings: Option<Res<GameSettings>>,
+    selected_subrace: Option<Res<crate::player::SelectedSubrace>>,
 ) {
     let font_handle = app_font.as_ref().map(|f| f.source());
     let make_font = |size: f32| {
@@ -543,8 +635,9 @@ fn spawn_journal_menu(
     let weather_icon = asset_server.load(weather_icon_for(&weather_debug));
 
     let compendium_header = t("journal.compendium", "COMPENDIUM");
-    let entry_lbl = t("journal.entry", "Entry");
-    let undiscovered_lbl = t("journal.undiscovered", "Undiscovered");
+    let search_placeholder = t("journal.search.placeholder", "Search compendium...");
+    let _entry_lbl = t("journal.entry", "Entry");
+    let _undiscovered_lbl = t("journal.undiscovered", "Undiscovered");
     let discovered_lbl = t("journal.discovered", "Discovered");
     let empty_catalog_lbl = t(
         "journal.empty_catalog",
@@ -826,12 +919,19 @@ fn spawn_journal_menu(
                                 hdr.spawn((
                                     Text::new(t(
                                         "journal.biomes.subtitle",
-                                        "82 distinct surface, aquatic, and subterranean climates across the world.",
+                                        "78 distinct surface and aquatic climates across the world.",
                                     )),
                                     make_font(13.0),
                                     TextColor(palette::TEXT_MUTED),
                                 ));
                             });
+
+                            spawn_journal_search_bar(
+                                sec,
+                                JournalTab::Biomes,
+                                &search_placeholder,
+                                &make_font,
+                            );
 
                             let mut any_biome = false;
                             for cat_key in BIOME_CATEGORY_ORDER {
@@ -848,19 +948,52 @@ fn spawn_journal_menu(
                                     continue;
                                 }
                                 any_biome = true;
+                                let cat_total = BiomeType::ALL
+                                    .iter()
+                                    .filter(|b| b.category_key() == cat_key)
+                                    .count();
+                                let cat_discovered = BiomeType::ALL
+                                    .iter()
+                                    .filter(|b| {
+                                        b.category_key() == cat_key
+                                            && progress.discovered_biomes.contains(b)
+                                    })
+                                    .count();
                                 let cat_title = t(cat_key, cat_key);
-                                sec.spawn(Node {
-                                    display: Display::Flex,
-                                    flex_direction: FlexDirection::Column,
-                                    row_gap: px(10.0),
-                                    ..default()
-                                })
+                                let mut cat_entity = Entity::PLACEHOLDER;
+                                sec.spawn((
+                                    JournalCategoryContainer(JournalTab::Biomes),
+                                    Node {
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Column,
+                                        row_gap: px(10.0),
+                                        ..default()
+                                    },
+                                ))
                                 .with_children(|group| {
-                                    group.spawn((
-                                        Text::new(cat_title.to_uppercase()),
-                                        make_font(12.0),
-                                        TextColor(palette::TEXT_MUTED),
-                                    ));
+                                    cat_entity = group.target_entity();
+                                    group
+                                        .spawn(Node {
+                                            display: Display::Flex,
+                                            flex_direction: FlexDirection::Row,
+                                            align_items: AlignItems::Center,
+                                            column_gap: px(8.0),
+                                            ..default()
+                                        })
+                                        .with_children(|chdr| {
+                                            chdr.spawn((
+                                                Text::new(cat_title.to_uppercase()),
+                                                make_font(12.0),
+                                                TextColor(palette::TEXT_MUTED),
+                                            ));
+                                            chdr.spawn((
+                                                Text::new(format!(
+                                                    "({cat_discovered} / {cat_total})"
+                                                )),
+                                                make_font(11.5),
+                                                TextColor(Color::srgba(0.62, 0.66, 0.74, 0.55)),
+                                            ));
+                                        });
 
                                     group
                                         .spawn(Node {
@@ -877,6 +1010,8 @@ fn spawn_journal_menu(
                                                     progress.discovered_biomes.contains(&biome);
                                                 let biome_name =
                                                     t(biome.translation_key(), biome.name());
+                                                let norm_name =
+                                                    normalize_journal_search(&biome_name);
                                                 let icon_handle =
                                                     asset_server.load(biome.icon_asset_path());
                                                 let card_bg = if is_discovered {
@@ -901,6 +1036,11 @@ fn spawn_journal_menu(
                                                 };
 
                                                 grid.spawn((
+                                                    JournalSearchableCard {
+                                                        tab: JournalTab::Biomes,
+                                                        norm_name,
+                                                        cat_entity,
+                                                    },
                                                     Node {
                                                         width: px(235.0),
                                                         padding: UiRect::axes(px(12.0), px(10.0)),
@@ -909,33 +1049,50 @@ fn spawn_journal_menu(
                                                         display: Display::Flex,
                                                         flex_direction: FlexDirection::Row,
                                                         align_items: AlignItems::Center,
-                                                        column_gap: px(12.0),
+                                                        justify_content:
+                                                            JustifyContent::SpaceBetween,
+                                                        column_gap: px(8.0),
                                                         ..default()
                                                     },
                                                     BackgroundColor(card_bg),
                                                     BorderColor::all(card_border),
                                                 ))
                                                 .with_children(|card| {
-                                                    card.spawn((
-                                                        ImageNode {
-                                                            image: icon_handle,
-                                                            color: icon_tint,
-                                                            image_mode: NodeImageMode::Stretch,
-                                                            ..default()
-                                                        },
-                                                        Node {
-                                                            width: px(36.0),
-                                                            height: px(36.0),
-                                                            flex_shrink: 0.0,
-                                                            ..default()
-                                                        },
-                                                    ));
+                                                    card.spawn(Node {
+                                                        display: Display::Flex,
+                                                        flex_direction: FlexDirection::Row,
+                                                        align_items: AlignItems::Center,
+                                                        column_gap: px(12.0),
+                                                        ..default()
+                                                    })
+                                                    .with_children(|left| {
+                                                        left.spawn((
+                                                            ImageNode {
+                                                                image: icon_handle,
+                                                                color: icon_tint,
+                                                                image_mode: NodeImageMode::Stretch,
+                                                                ..default()
+                                                            },
+                                                            Node {
+                                                                width: px(36.0),
+                                                                height: px(36.0),
+                                                                flex_shrink: 0.0,
+                                                                ..default()
+                                                            },
+                                                        ));
+
+                                                        left.spawn((
+                                                            Text::new(biome_name),
+                                                            make_font(13.0),
+                                                            TextColor(text_col),
+                                                            text_shadow_default(),
+                                                        ));
+                                                    });
 
                                                     card.spawn((
-                                                        Text::new(biome_name),
-                                                        make_font(13.0),
-                                                        TextColor(text_col),
-                                                        text_shadow_default(),
+                                                        Text::new("+"),
+                                                        make_font(11.0),
+                                                        TextColor(SUBTLE_EXPAND_COLOR),
                                                     ));
                                                 });
                                             }
@@ -965,7 +1122,19 @@ fn spawn_journal_menu(
                             }
                         });
 
-                        // 2. Bestiary (localized subtitle + placeholder cards)
+                        // 2. Bestiary & Races (categorized, standardized 36x36 cards with click-to-expand descriptions)
+                        let active_subrace = selected_subrace
+                            .as_deref()
+                            .map_or(crate::player::CharacterSubrace::default(), |s| s.0);
+                        let native_peoples_lbl = t(
+                            "journal.bestiary.cat.native_peoples",
+                            "Native Peoples",
+                        );
+                        let visible_races: Vec<crate::player::CharacterSubrace> =
+                            crate::player::CharacterSubrace::ALL
+                                .into_iter()
+                                .filter(|&s| s == active_subrace || show_undiscovered)
+                                .collect();
                         main.spawn((
                             JournalSection(JournalTab::Bestiary),
                             Node {
@@ -976,7 +1145,8 @@ fn spawn_journal_menu(
                                     Display::None
                                 },
                                 flex_direction: FlexDirection::Column,
-                                row_gap: px(16.0),
+                                row_gap: px(20.0),
+                                padding: UiRect::bottom(px(32.0)),
                                 ..default()
                             },
                         ))
@@ -988,67 +1158,283 @@ fn spawn_journal_menu(
                                 ..default()
                             })
                             .with_children(|hdr| {
-                                hdr.spawn((
-                                    Text::new(
-                                        t("journal.tab.bestiary", "Bestiary").to_uppercase(),
-                                    ),
-                                    make_font(18.0),
-                                    TextColor(palette::TEXT_ACCENT),
-                                    text_shadow_default(),
-                                ));
+                                hdr.spawn(Node {
+                                    width: percent(100.0),
+                                    display: Display::Flex,
+                                    flex_direction: FlexDirection::Row,
+                                    justify_content: JustifyContent::SpaceBetween,
+                                    align_items: AlignItems::Center,
+                                    ..default()
+                                })
+                                .with_children(|top| {
+                                    top.spawn((
+                                        Text::new(
+                                            t("journal.tab.bestiary", "Bestiary & Races")
+                                                .to_uppercase(),
+                                        ),
+                                        make_font(18.0),
+                                        TextColor(palette::TEXT_ACCENT),
+                                        text_shadow_default(),
+                                    ));
+                                    top.spawn((
+                                        Text::new(format!(
+                                            "{discovered_lbl}: 1 / {}",
+                                            crate::player::CharacterSubrace::ALL.len()
+                                        )),
+                                        make_font(13.0),
+                                        TextColor(palette::TEXT_ACCENT),
+                                    ));
+                                });
                                 hdr.spawn((
                                     Text::new(t(
                                         "journal.bestiary.subtitle",
-                                        "Creatures tamed or defeated across the world will be unlocked and recorded here.",
+                                        "Playable peoples and creatures encountered across the world are recorded here.",
                                     )),
                                     make_font(13.0),
                                     TextColor(palette::TEXT_MUTED),
                                 ));
                             });
 
-                            sec.spawn(Node {
-                                display: Display::Flex,
-                                flex_direction: FlexDirection::Row,
-                                flex_wrap: FlexWrap::Wrap,
-                                column_gap: px(14.0),
-                                row_gap: px(14.0),
-                                ..default()
-                            })
-                            .with_children(|grid| {
-                                for idx in 1..=8 {
-                                    grid.spawn((
-                                        Node {
-                                            width: px(170.0),
-                                            height: px(110.0),
-                                            padding: UiRect::all(px(14.0)),
-                                            border: UiRect::all(px(1.5)),
-                                            border_radius: BorderRadius::all(px(6.0)),
-                                            display: Display::Flex,
-                                            flex_direction: FlexDirection::Column,
-                                            justify_content: JustifyContent::SpaceBetween,
-                                            ..default()
-                                        },
-                                        BackgroundColor(palette::PANEL_INNER_BG),
-                                        BorderColor::all(palette::PANEL_BORDER_SUBTLE),
-                                    ))
-                                    .with_children(|card| {
-                                        card.spawn((
-                                            Text::new(format!("{entry_lbl} #{idx:02}")),
-                                            make_font(11.0),
+                            // Search bar inside Bestiary & Races
+                            spawn_journal_search_bar(
+                                sec,
+                                JournalTab::Bestiary,
+                                &search_placeholder,
+                                &make_font,
+                            );
+
+                            // Category: Native Peoples
+                            let mut bestiary_cat_entity = Entity::PLACEHOLDER;
+                            sec.spawn((
+                                JournalCategoryContainer(JournalTab::Bestiary),
+                                Node {
+                                    width: percent(100.0),
+                                    display: Display::Flex,
+                                    flex_direction: FlexDirection::Column,
+                                    row_gap: px(10.0),
+                                    ..default()
+                                },
+                            ))
+                            .with_children(|cat_box| {
+                                bestiary_cat_entity = cat_box.target_entity();
+                                cat_box
+                                    .spawn(Node {
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Row,
+                                        align_items: AlignItems::Center,
+                                        column_gap: px(8.0),
+                                        ..default()
+                                    })
+                                    .with_children(|chdr| {
+                                        chdr.spawn((
+                                            Text::new(native_peoples_lbl.to_uppercase()),
+                                            make_font(12.0),
                                             TextColor(palette::TEXT_MUTED),
                                         ));
-                                        card.spawn((
-                                            Text::new("???"),
-                                            make_font(18.0),
+                                        chdr.spawn((
+                                            Text::new(format!(
+                                                "(1 / {})",
+                                                crate::player::CharacterSubrace::ALL.len()
+                                            )),
+                                            make_font(11.5),
                                             TextColor(Color::srgba(0.62, 0.66, 0.74, 0.55)),
                                         ));
-                                        card.spawn((
-                                            Text::new(undiscovered_lbl.clone()),
-                                            make_font(11.0),
-                                            TextColor(palette::TEXT_MUTED),
-                                        ));
                                     });
-                                }
+
+                                cat_box
+                                    .spawn(Node {
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Row,
+                                        flex_wrap: FlexWrap::Wrap,
+                                        align_items: AlignItems::FlexStart,
+                                        column_gap: px(12.0),
+                                        row_gap: px(12.0),
+                                        ..default()
+                                    })
+                                    .with_children(|grid| {
+                                        for subrace in visible_races {
+                                            let is_discovered = subrace == active_subrace;
+                                            let parent_race = subrace.parent_race();
+                                            let race_label = t(
+                                                match parent_race {
+                                                    crate::player::CharacterRace::Human => {
+                                                        "menu.race.human"
+                                                    }
+                                                    crate::player::CharacterRace::Elf => {
+                                                        "menu.race.elf"
+                                                    }
+                                                    crate::player::CharacterRace::Dwarf => {
+                                                        "menu.race.dwarf"
+                                                    }
+                                                    _ => "menu.race.human",
+                                                },
+                                                match parent_race {
+                                                    crate::player::CharacterRace::Human => "Human",
+                                                    crate::player::CharacterRace::Elf => "Elf",
+                                                    crate::player::CharacterRace::Dwarf => "Dwarf",
+                                                    _ => "Unknown",
+                                                },
+                                            );
+                                            let name_str =
+                                                subrace.display_name(loc.as_deref()).to_string();
+                                            let norm_name = normalize_journal_search(&name_str);
+                                            let desc_str = t(subrace.desc_key(), "");
+                                            let icon_handle: Handle<Image> =
+                                                asset_server.load(subrace.icon_asset_path());
+
+                                            let card_bg = if is_discovered {
+                                                palette::PANEL_INNER_BG
+                                            } else {
+                                                Color::srgba(0.08, 0.09, 0.12, 0.52)
+                                            };
+                                            let card_border = if is_discovered {
+                                                palette::PANEL_BORDER_SUBTLE
+                                            } else {
+                                                Color::srgba(0.32, 0.35, 0.42, 0.32)
+                                            };
+                                            let icon_tint = if is_discovered {
+                                                Color::WHITE
+                                            } else {
+                                                Color::srgba(0.65, 0.68, 0.75, 0.50)
+                                            };
+                                            let text_col = if is_discovered {
+                                                palette::TEXT_PRIMARY
+                                            } else {
+                                                Color::srgba(0.62, 0.66, 0.74, 0.58)
+                                            };
+
+                                            let mut indicator_entity = Entity::PLACEHOLDER;
+                                            let mut desc_entity = Entity::PLACEHOLDER;
+
+                                            let card_entity = grid
+                                                .spawn((
+                                                    Button,
+                                                    Hovered::default(),
+                                                    JournalSearchableCard {
+                                                        tab: JournalTab::Bestiary,
+                                                        norm_name,
+                                                        cat_entity: bestiary_cat_entity,
+                                                    },
+                                                    Node {
+                                                        width: px(235.0),
+                                                        padding: UiRect::axes(px(12.0), px(10.0)),
+                                                        border: UiRect::all(px(1.5)),
+                                                        border_radius: BorderRadius::all(px(6.0)),
+                                                        display: Display::Flex,
+                                                        flex_direction: FlexDirection::Column,
+                                                        row_gap: px(8.0),
+                                                        ..default()
+                                                    },
+                                                    BackgroundColor(card_bg),
+                                                    BorderColor::all(card_border),
+                                                ))
+                                                .with_children(|card| {
+                                                    // Standardized compact header row (36x36 icon + name + expand indicator)
+                                                    card.spawn(Node {
+                                                        width: percent(100.0),
+                                                        display: Display::Flex,
+                                                        flex_direction: FlexDirection::Row,
+                                                        align_items: AlignItems::Center,
+                                                        justify_content:
+                                                            JustifyContent::SpaceBetween,
+                                                        column_gap: px(8.0),
+                                                        ..default()
+                                                    })
+                                                    .with_children(|row| {
+                                                        row.spawn(Node {
+                                                            display: Display::Flex,
+                                                            flex_direction: FlexDirection::Row,
+                                                            align_items: AlignItems::Center,
+                                                            column_gap: px(12.0),
+                                                            ..default()
+                                                        })
+                                                        .with_children(|left| {
+                                                            left.spawn((
+                                                                ImageNode {
+                                                                    image: icon_handle,
+                                                                    color: icon_tint,
+                                                                    image_mode:
+                                                                        NodeImageMode::Stretch,
+                                                                    ..default()
+                                                                },
+                                                                Node {
+                                                                    width: px(36.0),
+                                                                    height: px(36.0),
+                                                                    flex_shrink: 0.0,
+                                                                    ..default()
+                                                                },
+                                                            ));
+                                                            left.spawn((
+                                                                Text::new(name_str),
+                                                                make_font(13.0),
+                                                                TextColor(text_col),
+                                                                text_shadow_default(),
+                                                            ));
+                                                        });
+
+                                                        indicator_entity = row
+                                                            .spawn((
+                                                                CompendiumExpandIndicator,
+                                                                Text::new("+"),
+                                                                make_font(11.0),
+                                                                TextColor(SUBTLE_EXPAND_COLOR),
+                                                            ))
+                                                            .id();
+                                                    });
+
+                                                    // Expandable description panel (fixed uniform height, hidden until clicked!)
+                                                    desc_entity = card
+                                                        .spawn((
+                                                            CompendiumExpandDesc,
+                                                            Node {
+                                                                width: percent(100.0),
+                                                                height: px(112.0),
+                                                                display: Display::None,
+                                                                flex_direction:
+                                                                    FlexDirection::Column,
+                                                                row_gap: px(4.0),
+                                                                padding: UiRect::top(px(6.0)),
+                                                                border: UiRect::top(px(1.0)),
+                                                                overflow: Overflow::clip(),
+                                                                ..default()
+                                                            },
+                                                            BorderColor::all(
+                                                                palette::PANEL_BORDER_SUBTLE,
+                                                            ),
+                                                        ))
+                                                        .with_children(|d| {
+                                                            d.spawn((
+                                                                Text::new(race_label),
+                                                                make_font(11.0),
+                                                                TextColor(palette::TEXT_ACCENT),
+                                                            ));
+                                                            d.spawn((
+                                                                Text::new(desc_str),
+                                                                make_font(11.5),
+                                                                TextColor(Color::srgba(
+                                                                    0.78,
+                                                                    0.82,
+                                                                    0.88,
+                                                                    if is_discovered {
+                                                                        0.95
+                                                                    } else {
+                                                                        0.65
+                                                                    },
+                                                                )),
+                                                            ));
+                                                        })
+                                                        .id();
+                                                })
+                                                .id();
+
+                                            grid.commands().entity(card_entity).insert(
+                                                CompendiumExpandCard {
+                                                    desc_entity,
+                                                    indicator_entity,
+                                                },
+                                            );
+                                        }
+                                    });
                             });
                         });
 
@@ -1077,7 +1463,9 @@ fn spawn_journal_menu(
                                 .discovered_voxels
                                 .iter()
                                 .copied()
-                                .filter(|&v| voxel_matches_journal_tab(tab, v))
+                                .filter(|&v| {
+                                    !v.is_unlit_variant() && voxel_matches_journal_tab(tab, v)
+                                })
                                 .count();
 
                             let mut visible_voxels: Vec<Voxel> = if show_undiscovered {
@@ -1085,7 +1473,9 @@ fn spawn_journal_menu(
                                     .iter()
                                     .copied()
                                     .filter(|&v| {
-                                        v != Voxel::Air && voxel_matches_journal_tab(tab, v)
+                                        v != Voxel::Air
+                                            && !v.is_unlit_variant()
+                                            && voxel_matches_journal_tab(tab, v)
                                     })
                                     .collect()
                             } else {
@@ -1093,7 +1483,9 @@ fn spawn_journal_menu(
                                     .discovered_voxels
                                     .iter()
                                     .copied()
-                                    .filter(|&v| voxel_matches_journal_tab(tab, v))
+                                    .filter(|&v| {
+                                        !v.is_unlit_variant() && voxel_matches_journal_tab(tab, v)
+                                    })
                                     .collect()
                             };
                             visible_voxels.sort_by_key(|v| *v as u16);
@@ -1101,7 +1493,11 @@ fn spawn_journal_menu(
                             let total_in_tab = Voxel::ALL
                                 .iter()
                                 .copied()
-                                .filter(|&v| v != Voxel::Air && voxel_matches_journal_tab(tab, v))
+                                .filter(|&v| {
+                                    v != Voxel::Air
+                                        && !v.is_unlit_variant()
+                                        && voxel_matches_journal_tab(tab, v)
+                                })
                                 .count();
 
                             main.spawn((
@@ -1157,6 +1553,13 @@ fn spawn_journal_menu(
                                     ));
                                 });
 
+                                spawn_journal_search_bar(
+                                    sec,
+                                    tab,
+                                    &search_placeholder,
+                                    &make_font,
+                                );
+
                                 if visible_voxels.is_empty() {
                                     sec.spawn((
                                         Node {
@@ -1189,18 +1592,67 @@ fn spawn_journal_menu(
                                             continue;
                                         }
 
-                                        sec.spawn(Node {
-                                            display: Display::Flex,
-                                            flex_direction: FlexDirection::Column,
-                                            row_gap: px(10.0),
-                                            ..default()
-                                        })
+                                        let cat_total = Voxel::ALL
+                                            .iter()
+                                            .copied()
+                                            .filter(|&v| {
+                                                v != Voxel::Air
+                                                    && !v.is_unlit_variant()
+                                                    && voxel_matches_journal_tab(tab, v)
+                                                    && voxel_journal_subcategory(tab, v)
+                                                        == Some(cat_key)
+                                            })
+                                            .count();
+                                        let cat_discovered = progress
+                                            .discovered_voxels
+                                            .iter()
+                                            .copied()
+                                            .filter(|&v| {
+                                                !v.is_unlit_variant()
+                                                    && voxel_matches_journal_tab(tab, v)
+                                                    && voxel_journal_subcategory(tab, v)
+                                                        == Some(cat_key)
+                                            })
+                                            .count();
+
+                                        let mut vox_cat_entity = Entity::PLACEHOLDER;
+                                        sec.spawn((
+                                            JournalCategoryContainer(tab),
+                                            Node {
+                                                display: Display::Flex,
+                                                flex_direction: FlexDirection::Column,
+                                                row_gap: px(10.0),
+                                                ..default()
+                                            },
+                                        ))
                                         .with_children(|group| {
-                                            group.spawn((
-                                                Text::new(t(cat_key, cat_fallback).to_uppercase()),
-                                                make_font(12.0),
-                                                TextColor(palette::TEXT_MUTED),
-                                            ));
+                                            vox_cat_entity = group.target_entity();
+                                            group
+                                                .spawn(Node {
+                                                    display: Display::Flex,
+                                                    flex_direction: FlexDirection::Row,
+                                                    align_items: AlignItems::Center,
+                                                    column_gap: px(8.0),
+                                                    ..default()
+                                                })
+                                                .with_children(|chdr| {
+                                                    chdr.spawn((
+                                                        Text::new(
+                                                            t(cat_key, cat_fallback).to_uppercase(),
+                                                        ),
+                                                        make_font(12.0),
+                                                        TextColor(palette::TEXT_MUTED),
+                                                    ));
+                                                    chdr.spawn((
+                                                        Text::new(format!(
+                                                            "({cat_discovered} / {cat_total})"
+                                                        )),
+                                                        make_font(11.5),
+                                                        TextColor(Color::srgba(
+                                                            0.62, 0.66, 0.74, 0.55,
+                                                        )),
+                                                    ));
+                                                });
 
                                             group
                                                 .spawn(Node {
@@ -1244,7 +1696,14 @@ fn spawn_journal_menu(
                                                             Color::srgba(0.62, 0.66, 0.74, 0.58)
                                                         };
 
+                                                        let norm_name =
+                                                            normalize_journal_search(&name);
                                                         grid.spawn((
+                                                            JournalSearchableCard {
+                                                                tab,
+                                                                norm_name,
+                                                                cat_entity: vox_cat_entity,
+                                                            },
                                                             Node {
                                                                 width: px(235.0),
                                                                 padding: UiRect::axes(
@@ -1258,35 +1717,52 @@ fn spawn_journal_menu(
                                                                 display: Display::Flex,
                                                                 flex_direction: FlexDirection::Row,
                                                                 align_items: AlignItems::Center,
-                                                                column_gap: px(12.0),
+                                                                justify_content:
+                                                                    JustifyContent::SpaceBetween,
+                                                                column_gap: px(8.0),
                                                                 ..default()
                                                             },
                                                             BackgroundColor(card_bg),
                                                             BorderColor::all(card_border),
                                                         ))
                                                         .with_children(|card| {
-                                                            if let Some(handle) = icon_img {
-                                                                card.spawn((
-                                                                    ImageNode {
-                                                                        image: handle,
-                                                                        color: icon_tint,
-                                                                        image_mode:
-                                                                            NodeImageMode::Stretch,
-                                                                        ..default()
-                                                                    },
-                                                                    Node {
-                                                                        width: px(36.0),
-                                                                        height: px(36.0),
-                                                                        flex_shrink: 0.0,
-                                                                        ..default()
-                                                                    },
+                                                            card.spawn(Node {
+                                                                display: Display::Flex,
+                                                                flex_direction: FlexDirection::Row,
+                                                                align_items: AlignItems::Center,
+                                                                column_gap: px(12.0),
+                                                                ..default()
+                                                            })
+                                                            .with_children(|left| {
+                                                                if let Some(handle) = icon_img {
+                                                                    left.spawn((
+                                                                        ImageNode {
+                                                                            image: handle,
+                                                                            color: icon_tint,
+                                                                            image_mode:
+                                                                                NodeImageMode::Stretch,
+                                                                            ..default()
+                                                                        },
+                                                                        Node {
+                                                                            width: px(36.0),
+                                                                            height: px(36.0),
+                                                                            flex_shrink: 0.0,
+                                                                            ..default()
+                                                                        },
+                                                                    ));
+                                                                }
+                                                                left.spawn((
+                                                                    Text::new(name),
+                                                                    make_font(13.0),
+                                                                    TextColor(text_col),
+                                                                    text_shadow_default(),
                                                                 ));
-                                                            }
+                                                            });
+
                                                             card.spawn((
-                                                                Text::new(name),
-                                                                make_font(13.0),
-                                                                TextColor(text_col),
-                                                                text_shadow_default(),
+                                                                Text::new("+"),
+                                                                make_font(11.0),
+                                                                TextColor(SUBTLE_EXPAND_COLOR),
                                                             ));
                                                         });
                                                     }
@@ -1297,7 +1773,7 @@ fn spawn_journal_menu(
                             });
                         }
 
-                        // 4. Live Statistics (4 categorized groups)
+                        // 4. Live Statistics (4 categorized groups, no search bar needed)
                         main.spawn((
                             JournalSection(JournalTab::Statistics),
                             Node {
@@ -1314,14 +1790,30 @@ fn spawn_journal_menu(
                             },
                         ))
                         .with_children(|sec| {
-                            sec.spawn((
-                                Text::new(
-                                    t("journal.tab.statistics", "Statistics").to_uppercase(),
-                                ),
-                                make_font(18.0),
-                                TextColor(palette::TEXT_ACCENT),
-                                text_shadow_default(),
-                            ));
+                            sec.spawn(Node {
+                                display: Display::Flex,
+                                flex_direction: FlexDirection::Column,
+                                row_gap: px(4.0),
+                                ..default()
+                            })
+                            .with_children(|hdr| {
+                                hdr.spawn((
+                                    Text::new(
+                                        t("journal.tab.statistics", "Statistics").to_uppercase(),
+                                    ),
+                                    make_font(18.0),
+                                    TextColor(palette::TEXT_ACCENT),
+                                    text_shadow_default(),
+                                ));
+                                hdr.spawn((
+                                    Text::new(t(
+                                        "journal.statistics.subtitle",
+                                        "Live records of your exploration, gathering, building, and survival milestones.",
+                                    )),
+                                    make_font(13.0),
+                                    TextColor(palette::TEXT_MUTED),
+                                ));
+                            });
 
                             let stat_groups: [(&str, &str, Vec<(&str, String, String)>); 4] = [
                                 (
@@ -1632,7 +2124,13 @@ fn spawn_journal_menu(
         });
 }
 
-fn despawn_journal_menu(mut commands: Commands, query: Query<Entity, With<JournalMenuRoot>>) {
+fn despawn_journal_menu(
+    mut commands: Commands,
+    query: Query<Entity, With<JournalMenuRoot>>,
+    mut search: ResMut<JournalSearchQuery>,
+) {
+    search.query.clear();
+    search.is_focused = false;
     for entity in &query {
         commands.entity(entity).despawn();
     }
@@ -1787,6 +2285,176 @@ fn handle_journal_scroll_and_scrollbar(
                 Color::srgba(0.55, 0.60, 0.70, 0.70)
             };
         }
+    }
+}
+
+fn handle_compendium_card_expand(
+    mouse: Res<ButtonInput<MouseButton>>,
+    cards_q: Query<(&Hovered, &CompendiumExpandCard), With<Button>>,
+    mut desc_q: Query<&mut Node, With<CompendiumExpandDesc>>,
+    mut ind_q: Query<(&mut Text, &mut TextColor), With<CompendiumExpandIndicator>>,
+) {
+    if !mouse.just_pressed(MouseButton::Left) {
+        return;
+    }
+    for (hovered, card) in &cards_q {
+        if !hovered.get() {
+            continue;
+        }
+        if let Ok(mut desc_node) = desc_q.get_mut(card.desc_entity) {
+            let expanding = desc_node.display == Display::None;
+            desc_node.display = if expanding {
+                Display::Flex
+            } else {
+                Display::None
+            };
+            if let Ok((mut ind_text, mut ind_col)) = ind_q.get_mut(card.indicator_entity) {
+                ind_text.0 = if expanding { "-" } else { "+" }.to_string();
+                ind_col.0 = if expanding {
+                    palette::TEXT_ACCENT
+                } else {
+                    SUBTLE_EXPAND_COLOR
+                };
+            }
+        }
+    }
+}
+
+fn handle_journal_search_input(
+    active_tab: Res<JournalTab>,
+    mouse: Res<ButtonInput<MouseButton>>,
+    mut key_events: MessageReader<bevy::input::keyboard::KeyboardInput>,
+    mut search: ResMut<JournalSearchQuery>,
+    loc: Option<Res<Localization>>,
+    mut boxes_q: Query<(&Hovered, &JournalSearchBox, &mut BorderColor), With<Button>>,
+    mut texts_q: Query<(&JournalSearchText, &mut Text, &mut TextColor)>,
+) {
+    if active_tab.is_changed() {
+        search.query.clear();
+        search.is_focused = false;
+    }
+
+    if mouse.just_pressed(MouseButton::Left) {
+        let mut clicked_box = false;
+        for (hovered, box_tab, _) in &boxes_q {
+            if box_tab.0 == *active_tab && hovered.get() {
+                clicked_box = true;
+                break;
+            }
+        }
+        search.is_focused = clicked_box;
+    }
+
+    if search.is_focused {
+        for ev in key_events.read() {
+            if !ev.state.is_pressed() {
+                continue;
+            }
+            match &ev.logical_key {
+                bevy::input::keyboard::Key::Backspace => {
+                    search.query.pop();
+                }
+                bevy::input::keyboard::Key::Enter | bevy::input::keyboard::Key::Escape => {
+                    search.is_focused = false;
+                }
+                bevy::input::keyboard::Key::Space => {
+                    if search.query.chars().count() < 28 {
+                        search.query.push(' ');
+                    }
+                }
+                bevy::input::keyboard::Key::Character(s) => {
+                    for ch in s.chars() {
+                        if !ch.is_control() && search.query.chars().count() < 28 {
+                            search.query.push(ch);
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    } else {
+        key_events.clear();
+    }
+
+    if search.is_changed() || active_tab.is_changed() {
+        let placeholder = loc
+            .as_deref()
+            .map_or("Search compendium...", |l| l.t("journal.search.placeholder"));
+        for (_, box_tab, mut border) in &mut boxes_q {
+            let active_focus = search.is_focused && box_tab.0 == *active_tab;
+            *border = BorderColor::all(if active_focus {
+                palette::ACCENT_LINE
+            } else {
+                palette::PANEL_BORDER_SUBTLE
+            });
+        }
+        for (txt_tab, mut text, mut color) in &mut texts_q {
+            if txt_tab.0 != *active_tab {
+                continue;
+            }
+            if search.query.is_empty() {
+                text.0 = if search.is_focused {
+                    "|".to_string()
+                } else {
+                    placeholder.to_string()
+                };
+                color.0 = if search.is_focused {
+                    palette::TEXT_PRIMARY
+                } else {
+                    Color::srgba(0.60, 0.64, 0.72, 0.60)
+                };
+            } else {
+                text.0 = if search.is_focused {
+                    format!("{}|", search.query)
+                } else {
+                    search.query.clone()
+                };
+                color.0 = palette::TEXT_PRIMARY;
+            }
+        }
+    }
+}
+
+fn apply_journal_search_filter(
+    active_tab: Res<JournalTab>,
+    search: Res<JournalSearchQuery>,
+    mut cards_q: Query<
+        (&JournalSearchableCard, &mut Node),
+        Without<JournalCategoryContainer>,
+    >,
+    mut cats_q: Query<
+        (Entity, &JournalCategoryContainer, &mut Node),
+        Without<JournalSearchableCard>,
+    >,
+) {
+    if !search.is_changed() && !active_tab.is_changed() {
+        return;
+    }
+    let q_norm = normalize_journal_search(search.query.trim());
+    let mut visible_cats: HashSet<Entity> = HashSet::new();
+
+    for (card, mut node) in &mut cards_q {
+        if card.tab != *active_tab {
+            continue;
+        }
+        let matches = q_norm.is_empty() || card.norm_name.contains(&q_norm);
+        node.display = if matches {
+            visible_cats.insert(card.cat_entity);
+            Display::Flex
+        } else {
+            Display::None
+        };
+    }
+
+    for (cat_entity, cat, mut node) in &mut cats_q {
+        if cat.0 != *active_tab {
+            continue;
+        }
+        node.display = if q_norm.is_empty() || visible_cats.contains(&cat_entity) {
+            Display::Flex
+        } else {
+            Display::None
+        };
     }
 }
 

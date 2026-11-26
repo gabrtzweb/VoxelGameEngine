@@ -73,7 +73,7 @@ pub fn spawn_wind_blade_particles(
 
     // Spawn 1-3 particles in a semi-circle upwind of the camera
     let spawn_count = ((speed / 6.0).ceil() as usize).clamp(1, 3);
-    let texture = asset_server.load("textures/foliage/wind_blade.png");
+    let texture = asset_server.load("textures/shaders/foliage/wind_blade.png");
 
     for i in 0..spawn_count {
         let angle_jitter =
@@ -403,7 +403,7 @@ fn leaf_particle_spec(voxel: Voxel) -> (usize, usize, bool) {
         Voxel::BirchLeaves => (27, 3, true),
         Voxel::MahoganyLeaves => (30, 3, true),
         Voxel::MangroveLeaves => (33, 3, true),
-        Voxel::PalmLeaves => (36, 3, true),
+        Voxel::PalmLeaves => (36, 3, false),
         Voxel::RedwoodLeaves => (39, 3, false),
         Voxel::WillowLeaves => (42, 3, true),
         Voxel::YewLeaves => (45, 3, true),

@@ -72,12 +72,54 @@ impl ScreenMode {
     }
 
     pub fn to_window_mode(self) -> bevy::window::WindowMode {
+        self.to_window_mode_with_resolution([0, 0], None)
+    }
+
+    pub fn to_window_mode_with_resolution(
+        self,
+        res: [u32; 2],
+        monitor: Option<&bevy::window::Monitor>,
+    ) -> bevy::window::WindowMode {
         match self {
             Self::Windowed => bevy::window::WindowMode::Windowed,
-            Self::ExclusiveFullscreen => bevy::window::WindowMode::Fullscreen(
-                bevy::window::MonitorSelection::Primary,
-                bevy::window::VideoModeSelection::Current,
-            ),
+            Self::ExclusiveFullscreen => {
+                if let Some(mon) = monitor {
+                    let native = mon.physical_size();
+                    let target = if res[0] > 0 && res[1] > 0 {
+                        UVec2::new(res[0], res[1])
+                    } else {
+                        native
+                    };
+                    // At native resolution, use Independent Flip (BorderlessFullscreen underneath)
+                    // so Vulkan maintains full 180Hz+ refresh rate and 250+ FPS without driver
+                    // exclusive-mode throttling, while `manage_fullscreen_unfocus_minimize` gives
+                    // true Exclusive Fullscreen Alt+Tab minimize behavior!
+                    if target == native {
+                        return bevy::window::WindowMode::BorderlessFullscreen(
+                            bevy::window::MonitorSelection::Primary,
+                        );
+                    }
+                    // For lower non-native resolutions, pick the highest refresh rate & bit depth.
+                    let selection = mon
+                        .video_modes
+                        .iter()
+                        .filter(|vm| vm.physical_size == target)
+                        .max_by_key(|vm| (vm.refresh_rate_millihertz, vm.bit_depth))
+                        .copied()
+                        .map_or(
+                            bevy::window::VideoModeSelection::Current,
+                            bevy::window::VideoModeSelection::Specific,
+                        );
+                    bevy::window::WindowMode::Fullscreen(
+                        bevy::window::MonitorSelection::Primary,
+                        selection,
+                    )
+                } else {
+                    bevy::window::WindowMode::BorderlessFullscreen(
+                        bevy::window::MonitorSelection::Primary,
+                    )
+                }
+            }
             Self::BorderlessFullscreen => bevy::window::WindowMode::BorderlessFullscreen(
                 bevy::window::MonitorSelection::Primary,
             ),
@@ -129,6 +171,7 @@ pub struct GameSettings {
     pub left_handed: bool,
     pub subtitles_enabled: bool,
     pub screen_mode: ScreenMode,
+    pub fullscreen_resolution: [u32; 2],
     pub vsync_enabled: bool,
     pub dynamic_fps_enabled: bool,
     pub gui_scale: u32,
@@ -162,6 +205,7 @@ impl Default for GameSettings {
             left_handed: false,
             subtitles_enabled: false,
             screen_mode: ScreenMode::Windowed,
+            fullscreen_resolution: [0, 0],
             vsync_enabled: false,
             dynamic_fps_enabled: true,
             gui_scale: 3,
@@ -296,6 +340,8 @@ impl Plugin for MenuPlugin {
                     manage_menu_blur,
                     manage_menu_time_pause,
                     update_menu_backdrop_color,
+                    apply_startup_fullscreen_mode,
+                    manage_fullscreen_unfocus_minimize,
                 ),
             );
     }
@@ -457,12 +503,21 @@ fn handle_menu_key_inputs(
     menu_return_target: Res<MenuReturnTarget>,
     mut next_state: ResMut<NextState<MenuState>>,
     search_query: Option<Res<crate::menu::creative_inventory::CreativeSearchQuery>>,
+    mut journal_search: Option<ResMut<crate::menu::journal::JournalSearchQuery>>,
     mut settings_detail: Option<ResMut<settings::SettingsDetailOpen>>,
     mut controls_detail: Option<ResMut<controls::ControlsDetailOpen>>,
 ) {
     let current = *menu_state.get();
+    let any_search_focused = search_query.as_ref().is_some_and(|s| s.is_focused)
+        || journal_search.as_ref().is_some_and(|s| s.is_focused);
 
     if keyboard.just_pressed(KeyCode::Escape) {
+        if let Some(ref mut js) = journal_search
+            && js.is_focused
+        {
+            js.is_focused = false;
+            return;
+        }
         match current {
             MenuState::None => next_state.set(MenuState::Pause),
             MenuState::Pause => next_state.set(MenuState::None),
@@ -510,7 +565,7 @@ fn handle_menu_key_inputs(
             c.is_action_just_pressed(crate::core::InputAction::Inventory, &keyboard, &mouse)
         });
     if is_inv {
-        if search_query.as_ref().is_some_and(|s| s.is_focused) {
+        if any_search_focused {
             return;
         }
         match current {
@@ -528,7 +583,7 @@ fn handle_menu_key_inputs(
             c.is_action_just_pressed(crate::core::InputAction::Skills, &keyboard, &mouse)
         });
     if is_skills {
-        if search_query.as_ref().is_some_and(|s| s.is_focused) {
+        if any_search_focused {
             return;
         }
         match current {
@@ -544,7 +599,7 @@ fn handle_menu_key_inputs(
             c.is_action_just_pressed(crate::core::InputAction::Quests, &keyboard, &mouse)
         });
     if is_quests {
-        if search_query.as_ref().is_some_and(|s| s.is_focused) {
+        if any_search_focused {
             return;
         }
         match current {
@@ -560,6 +615,9 @@ fn handle_menu_key_inputs(
             c.is_action_just_pressed(crate::core::InputAction::WorldMap, &keyboard, &mouse)
         });
     if is_map {
+        if any_search_focused {
+            return;
+        }
         match current {
             MenuState::None => next_state.set(MenuState::WorldMap),
             MenuState::WorldMap => next_state.set(MenuState::None),
@@ -573,6 +631,9 @@ fn handle_menu_key_inputs(
             c.is_action_just_pressed(crate::core::InputAction::Journal, &keyboard, &mouse)
         });
     if is_journal {
+        if any_search_focused {
+            return;
+        }
         match current {
             MenuState::None => next_state.set(MenuState::Journal),
             MenuState::Journal => next_state.set(MenuState::None),
@@ -792,6 +853,54 @@ fn manage_menu_time_pause(
 
 type CameraProjectionQuery<'w, 's> =
     Option<Single<'w, 's, &'static mut Projection, (With<Camera3d>, With<PlayerCamera>)>>;
+
+fn apply_startup_fullscreen_mode(
+    mut applied: Local<bool>,
+    game_settings: Option<Res<GameSettings>>,
+    mut window_q: Query<&mut Window, With<PrimaryWindow>>,
+    monitor_q: Query<&bevy::window::Monitor, With<bevy::window::PrimaryMonitor>>,
+) {
+    if *applied {
+        return;
+    }
+    let Some(settings) = game_settings else {
+        return;
+    };
+    if settings.screen_mode != ScreenMode::ExclusiveFullscreen {
+        *applied = true;
+        return;
+    }
+    let Some(monitor) = monitor_q.iter().next() else {
+        return;
+    };
+    if let Ok(mut window) = window_q.single_mut() {
+        window.mode = settings
+            .screen_mode
+            .to_window_mode_with_resolution(settings.fullscreen_resolution, Some(monitor));
+        *applied = true;
+    }
+}
+
+/// Minimizes the game window automatically when losing focus (Alt+Tab or clicking another monitor)
+/// in Exclusive Fullscreen mode, matching standard PC game fullscreen behavior.
+fn manage_fullscreen_unfocus_minimize(
+    mut was_focused: Local<bool>,
+    game_settings: Option<Res<GameSettings>>,
+    mut window_q: Query<&mut Window, With<PrimaryWindow>>,
+) {
+    let Ok(mut window) = window_q.single_mut() else {
+        return;
+    };
+    let focused = window.focused;
+    let is_exclusive = game_settings
+        .as_deref()
+        .is_some_and(|s| s.screen_mode == ScreenMode::ExclusiveFullscreen);
+
+    if *was_focused && !focused && is_exclusive {
+        window.set_minimized(true);
+    }
+    *was_focused = focused;
+}
 
 fn sync_camera_fov(settings: Res<GameSettings>, camera_projection: CameraProjectionQuery) {
     if !settings.is_changed() {

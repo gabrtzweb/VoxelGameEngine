@@ -3,8 +3,8 @@
 This master document catalogs **all blocks and items currently implemented in the Voxel Engine**, synchronized directly with `src/world/block/voxel.rs` and `src/world/block/data.rs`.
 
 > [!IMPORTANT]
-> **Project Grand Total: 699 Registry Entries (3 Internal System Markers + 696 Active Gameplay Blocks & Items in `Voxel::ALL`)**  
-> Backed by **1560** block textures in `assets/textures/blocks/` and **62** item icons in `assets/textures/items/`.
+> **Project Grand Total: 739 Registry Entries (3 Internal System Markers + 736 Active Gameplay Blocks & Items in `Voxel::ALL`)**  
+> Backed by **1626** block textures in `assets/textures/blocks/` and **75** item icons in `assets/textures/items/`.
 
 - **Stochastic variations** (suffixes `1`, `2`, `3`, e.g., `vege_leaf_litter.png`, `vege_leaf_litter1.png`, `vege_leaf_litter2.png`) are sampled per-block by `src/meshing/textures.rs` and are **not** registered as duplicate voxel IDs.
 - **Connected texture overlays** live in `assets/textures/blocks/overlays/` and are composited in the voxel shader without adding extra voxel IDs.
@@ -17,20 +17,20 @@ This master document catalogs **all blocks and items currently implemented in th
 | :---: | :--- | :---: | :--- |
 | **01** | Technical & System Markers (`systems`) | **3** | [Go to Section 01](#01-technical--system-markers-systems--3-entries) |
 | **02** | Hydrosphere & Cryology (`fluids`) | **18** | [Go to Section 02](#02-hydrosphere--cryology-fluids--18-entries) |
-| **03** | Pedology & Soils (`soils`) | **50** | [Go to Section 03](#03-pedology--soils-soils--50-entries) |
-| **04** | Geology & Rocks (`rocks`) | **83** | [Go to Section 04](#04-geology--rocks-rocks--83-entries) |
-| **05** | Trees, Forestry & Dendrology (`trees`) | **69** | [Go to Section 05](#05-trees-forestry--dendrology-trees--69-entries) |
+| **03** | Pedology & Soils (`soils`) | **60** | [Go to Section 03](#03-pedology--soils-soils--60-entries) |
+| **04** | Geology & Rocks (`rocks`) | **92** | [Go to Section 04](#04-geology--rocks-rocks--92-entries) |
+| **05** | Trees, Forestry & Dendrology (`trees`) | **72** | [Go to Section 05](#05-trees-forestry--dendrology-trees--72-entries) |
 | **06** | Ores, Minerals & Gemology (`ores`) | **13** | [Go to Section 06](#06-ores-minerals--gemology-ores--13-entries) |
 | **07** | Speleology & Crystals (`caverns`) | **33** | [Go to Section 07](#07-speleology--crystals-caverns--33-entries) |
-| **08** | Ocean & Benthic Ecosystems (`oceans`) | **45** | [Go to Section 08](#08-ocean--benthic-ecosystems-oceans--45-entries) |
+| **08** | Ocean & Benthic Ecosystems (`oceans`) | **47** | [Go to Section 08](#08-ocean--benthic-ecosystems-oceans--47-entries) |
 | **09** | Biomaterials, Fauna & Organic Matter (`organics`) | **26** | [Go to Section 09](#09-biomaterials-fauna--organic-matter-organics--26-entries) |
-| **10** | Decorations, Lighting & Architecture (`decorations`) | **127** | [Go to Section 10](#10-decorations-lighting--architecture-decorations--127-entries) |
+| **10** | Decorations, Lighting & Architecture (`decorations`) | **129** | [Go to Section 10](#10-decorations-lighting--architecture-decorations--129-entries) |
 | **11** | Mycology: Mushrooms (`mushrooms`) | **12** | [Go to Section 11](#11-mycology-mushrooms-mushrooms--12-entries) |
-| **12** | Botany: Groundcover & Herbaceous Flora (`vegetation`) | **33** | [Go to Section 12](#12-botany-groundcover--herbaceous-flora-vegetation--33-entries) |
+| **12** | Botany: Groundcover & Herbaceous Flora (`vegetation`) | **36** | [Go to Section 12](#12-botany-groundcover--herbaceous-flora-vegetation--36-entries) |
 | **13** | Botany: Flowers & Flowering Flora (`flowers`) | **34** | [Go to Section 13](#13-botany-flowers--flowering-flora-flowers--34-entries) |
 | **14** | Agriculture: Cultivated & Wild Crops (`crops`) | **121** | [Go to Section 14](#14-agriculture-cultivated--wild-crops-crops--121-entries) |
-| **15** | Harvested Items, Seeds & Materials (`items`) | **32** | [Go to Section 15](#15-harvested-items-seeds--materials-items--32-entries) |
-| **TOTAL** | **All `VOXEL_DATA` Entries (`0..=698`)** | **699** | — |
+| **15** | Harvested Items, Seeds, Materials & Tools (`items`) | **43** | [Go to Section 15](#15-harvested-items-seeds-materials--tools-items--43-entries) |
+| **TOTAL** | **All `VOXEL_DATA` Entries (`0..=738`)** | **739** | — |
 
 ---
 
@@ -73,7 +73,7 @@ Cryogenic ice variants and dynamic physical liquids (still/flow animated strips)
 
 ---
 
-## 03. Pedology & Soils (`soils`) — 50 Entries
+## 03. Pedology & Soils (`soils`) — 60 Entries
 
 Zonal agricultural soils, climatic earths, turf/grass top-soils, sands, clays, and snow covers.
 
@@ -124,15 +124,27 @@ Zonal agricultural soils, climatic earths, turf/grass top-soils, sands, clays, a
 | **43** | `silt_dirt` | Silt Dirt | **Biological** | `soil_silt_dirt.png` | 6 uniform faces |
 | **44** | `silt_grass` | Silt Grass | **Biological** | Top: `soil_grass.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_grass_side.png` | Top (biome tint) + Bottom + 4 sides (overlay `assets/textures/blocks/overlays/soil_grass_side_overlay.png`) |
 | **45** | `silt_mud` | Silt Mud | **Biological** | `soil_silt_mud.png` | 6 uniform faces |
+| **46** | `tall_seagrass_bottom` | Tall Seagrass | **Marine Flora** | `vege_tall_seagrass_bottom.png` *(15-frame animated + `1`, `2`)* | Cross-billboard cutout *(Waterlogged lower half)* |
+| **47** | `tall_seagrass_top` | Tall Seagrass Top | **Marine Flora** | `vege_tall_seagrass_top.png` *(15-frame animated + `1`, `2`)* | Cross-billboard cutout *(Waterlogged upper half)* |
 | **46** | `silt_mulch` | Silt Mulch | **Biological** | Top: `soil_silt_mulch.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_mulch_side.png` | Top + Bottom + 4 sides |
 | **47** | `silt_rooted` | Silt Rooted | **Biological** | `soil_silt_rooted.png` | 6 uniform faces |
 | **48** | `silt_snow` | Silt Snow | **Biological** | Top: `soil_snow.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_snow_side.png` | Top + Bottom + 4 sides |
 | **49** | `silt_tilled` | Silt Tilled | **Biological** | Top: `soil_silt_tilled_top.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_tilled_side.png` | Top + Bottom + 4 sides |
 | **50** | `snow_block` | Snow | **Cryosphere** | `soil_snow.png` | 6 uniform faces |
+| **51** | `seagrass_sand` | Seagrass Sand | **Marine Sand** | Top: `soil_seagrass_sand.png`<br>Bottom: `soil_sand_common.png`<br>Sides: `soil_seagrass_sand_side.png` | Top + Bottom + 4 sides *(Submerged seagrass meadow substrate)* |
+| **52** | `silt_tundra_grass` | Silt Tundra Grass | **Tundra Turf** | Top: `soil_tundra_grass_top.png`<br>Bottom: `soil_silt_dirt.png`<br>Sides: `soil_silt_dirt.png` + `soil_tundra_grass_side_overlay.png` | Top + Bottom + 4 sides *(Reddish arctic grass blades)* |
+| **53** | `loam_tundra_grass` | Loam Tundra Grass | **Tundra Turf** | Top: `soil_tundra_grass_top.png`<br>Bottom: `soil_loam_dirt.png`<br>Sides: `soil_loam_dirt.png` + `soil_tundra_grass_side_overlay.png` | Top + Bottom + 4 sides *(Reddish arctic grass blades)* |
+| **54** | `peat_tundra_grass` | Peat Tundra Grass | **Tundra Turf** | Top: `soil_tundra_grass_top.png`<br>Bottom: `soil_peat_dirt.png`<br>Sides: `soil_peat_dirt.png` + `soil_tundra_grass_side_overlay.png` | Top + Bottom + 4 sides *(Reddish arctic grass blades)* |
+| **55** | `permafrost_tundra_grass` | Permafrost Tundra Grass | **Tundra Turf** | Top: `soil_tundra_grass_top.png`<br>Bottom: `soil_permafrost_dirt.png`<br>Sides: `soil_permafrost_dirt.png` + `soil_tundra_grass_side_overlay.png` | Top + Bottom + 4 sides *(Reddish arctic grass blades)* |
+| **56** | `terracotta` | Terracotta | **Terracotta** | `soil_terracotta.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **57** | `white_terracotta` | White Terracotta | **Terracotta** | `soil_terracotta_white.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **58** | `yellow_terracotta` | Yellow Terracotta | **Terracotta** | `soil_terracotta_yellow.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **59** | `sand_pink` | Pink Sand | **Sand** | `soil_sand_pink.png` *(+ `1`, `2`)* | 6 uniform faces *(Natural coral-pink beach sand)* |
+| **60** | `sand_black` | Black Sand | **Sand** | `soil_sand_black.png` *(+ `1`, `2`)* | 6 uniform faces *(Volcanic basalt-black beach sand)* |
 
 ---
 
-## 04. Geology & Rocks (`rocks`) — 83 Entries
+## 04. Geology & Rocks (`rocks`) — 92 Entries
 
 Bedrock strata, cobbled/mossy stones, sedimentary/igneous cliffs, boulders, pebbles, and surface rubble.
 
@@ -221,10 +233,19 @@ Bedrock strata, cobbled/mossy stones, sedimentary/igneous cliffs, boulders, pebb
 | **81** | `rock_chert_boulder` | Chert Boulder | **Geology** | `rock_chert_boulder.png` *(+2 variants)* | 6 faces / Natural rock |
 | **82** | `rock_flint_boulder` | Flint Boulder | **Geology** | `rock_flint_boulder.png` *(+2 variants)* | 6 faces / Natural rock |
 | **83** | `rock_quartz_boulder` | Quartz Boulder | **Geology** | `rock_quartz_boulder.png` *(+2 variants)* | 6 faces / Natural rock |
+| **84** | `geyserite` | Geyserite | **Geothermal Sinter** | `rock_geyserite.png` *(+ `1`, `2`)* | 6 uniform faces *(Warm golden-ochre thermal mineral crust)* |
+| **85** | `red_geyserite` | Red Geyserite | **Geothermal Sinter** | `rock_geyserite_red.png` *(+ `1`, `2`)* | 6 uniform faces *(Rust-orange/terracotta thermal spring rim)* |
+| **86** | `white_geyserite` | White Geyserite | **Geothermal Sinter** | `rock_geyserite_white.png` *(+ `1`, `2`)* | 6 uniform faces *(Bleached pale silica-white geothermal crust)* |
+| **87** | `sandstone_pink` | Pink Sandstone | **Sedimentary** | `rock_sandstone_pink.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **88** | `sandstone_black` | Black Sandstone | **Sedimentary** | `rock_sandstone_black.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **89** | `cobbled_sandstone_pink` | Cobbled Pink Sandstone | **Sedimentary** | `rock_sandstone_pink_cobbled.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **90** | `cobbled_sandstone_black` | Cobbled Black Sandstone | **Sedimentary** | `rock_sandstone_black_cobbled.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **91** | `sandstone_pink_rubble` | Pink Sandstone Rubble | **Surface Rubble** | `rock_sandstone_pink.png` *(icon `items/sandstone_pink_rubble_item.png`)* | 3D scattered stone rubble (`Rubble`) |
+| **92** | `sandstone_black_rubble` | Black Sandstone Rubble | **Surface Rubble** | `rock_sandstone_black.png` *(icon `items/sandstone_black_rubble_item.png`)* | 3D scattered stone rubble (`Rubble`) |
 
 ---
 
-## 05. Trees, Forestry & Dendrology (`trees`) — 69 Entries
+## 05. Trees, Forestry & Dendrology (`trees`) — 72 Entries
 
 Logs, all-bark woods, planks, live/dead leaves, and charred timber across all tree species.
 
@@ -299,6 +320,9 @@ Logs, all-bark woods, planks, live/dead leaves, and charred timber across all tr
 | **67** | `tree_charred_log` | Charred Log | **Dendrology** | `tree_charred_log_lit.png` *(+2 variants)* | Log / Bark / Planks / Leaves |
 | **68** | `tree_charred_bark` | Charred Wood | **Dendrology** | `tree_charred_bark_lit.png` *(+2 variants)* | Log / Bark / Planks / Leaves |
 | **69** | `tree_charred_planks` | Charred Planks | **Dendrology** | `tree_charred_planks_lit.png` *(+2 variants)* | Log / Bark / Planks / Leaves |
+| **70** | `tree_charred_log_lit` | Charred Log (Lit) | **Wood (Lit)** | Top/Bottom: `tree_charred_log_lit.png`<br>Sides: `tree_charred_bark_lit.png` | Right-click toggled glowing embers *(Light level 6)* |
+| **71** | `tree_charred_bark_lit` | Charred Wood (Lit) | **Wood (Lit)** | `tree_charred_bark_lit.png` *(+ `1`, `2`)* | Right-click toggled glowing embers *(Light level 6)* |
+| **72** | `tree_charred_planks_lit` | Charred Planks (Lit) | **Planks (Lit)** | `tree_charred_planks_lit.png` *(+ `1`, `2`)* | Right-click toggled glowing embers *(Light level 6)* |
 
 ---
 
@@ -366,7 +390,7 @@ Cave strata (karst, calcite, obsidian), speleothems, geothermal vents, and cryst
 
 ---
 
-## 08. Ocean & Benthic Ecosystems (`oceans`) — 45 Entries
+## 08. Ocean & Benthic Ecosystems (`oceans`) — 47 Entries
 
 Coral blocks, coral fans, kelp/algae stalks, marine flora, and seafloor sediments.
 
@@ -455,7 +479,7 @@ Organic matter, bones, nests, hives, cocoons, cobwebs, bamboo, stick piles, and 
 
 ---
 
-## 10. Decorations, Lighting & Architecture (`decorations`) — 127 Entries
+## 10. Decorations, Lighting & Architecture (`decorations`) — 129 Entries
 
 Stone/sandstone bricks, painted architectural palettes (bricks, fabric, plaster, shingles, wool), containers, torches, and lamps.
 
@@ -588,6 +612,8 @@ Stone/sandstone bricks, painted architectural palettes (bricks, fabric, plaster,
 | **125** | `emit_lamp_warm_off` | Warm Lamp (Off) | **Lighting** | `emit_lamp_warm_top.png`<br>`emit_lamp_warm_side.png`<br>`emit_lamp_warm_bot.png` | Unlit lamp state *(hidden from Creative; empty-hand right-click toggles On)* |
 | **126** | `deco_campfire` | Campfire | **Lighting** | `deco_campfire.png`<br>`deco_campfire_lit.png`<br>`deco_campfire_fire.png`<br>*(Icon: `campfire_item.png`)* | 3D crossed logs + animated embers & flames *(empty-hand right-click toggles Unlit)* |
 | **127** | `deco_campfire_unlit` | Campfire (Unlit) | **Decoration** | `deco_campfire.png`<br>*(Icon: `campfire_item.png`)* | Unlit 3D crossed logs + ash bed *(hidden from Creative; empty-hand right-click toggles Lit)* |
+| **128** | `sandstone_pink_bricks` | Pink Sandstone Bricks | **Architecture** | `deco_sandstone_pink_bricks.png` *(+ `1`, `2`)* | 6 uniform faces |
+| **129** | `sandstone_black_bricks` | Black Sandstone Bricks | **Architecture** | `deco_sandstone_black_bricks.png` *(+ `1`, `2`)* | 6 uniform faces |
 
 ---
 
@@ -612,7 +638,7 @@ Surface and subterranean fungi caps, stalks, and cross-billboard mushrooms.
 
 ---
 
-## 12. Botany: Groundcover & Herbaceous Flora (`vegetation`) — 33 Entries
+## 12. Botany: Groundcover & Herbaceous Flora (`vegetation`) — 36 Entries
 
 Wildgrass, ferns, bushes, cacti, vines, moss, lily pads, and segmented `vege_leaf_litter`.
 
@@ -651,6 +677,9 @@ Wildgrass, ferns, bushes, cacti, vines, moss, lily pads, and segmented `vege_lea
 | **31** | `vege_cave_vines` | Cave Vines | **Cave Flora** | `vege_cave_vines.png`<br>`vege_cave_vines_plant.png` | Ceiling Hanging Multi-Block Vine (3 tip, 3 plant) |
 | **32** | `vege_cave_vines_plant` | Cave Vines (Plant) | **Vegetation** | `vege_cave_vines_plant.png` *(+2 variants)* | Cross-billboard cutout |
 | **33** | `vege_leaf_litter` | Leaf Litter | **Groundcover** | `vege_leaf_litter.png` *(+2 variants)* | Segmented 1–4 quadrant extruded `FlatPad` (biome dry-foliage tint) |
+| **34** | `moss_carpet` | Moss Carpet | **Groundcover** | `soil_moss_forest.png` | Thin carpet layer (`1/16` height) |
+| **35** | `vege_arctic_moss` | Arctic Moss | **Tundra Flora** | `vege_arctic_moss.png` *(+ `1`, `2`)* | Cross-billboard cutout |
+| **36** | `vege_arctic_grass` | Arctic Grass | **Tundra Flora** | `vege_arctic_grass.png` *(+ `1`, `2`)* | Cross-billboard cutout |
 
 ---
 
@@ -827,7 +856,7 @@ Multi-stage agricultural crops, arboreal cocoa/coconut pods, cucurbit fruits/ste
 
 ---
 
-## 15. Harvested Items, Seeds & Materials (`items`) — 32 Entries
+## 15. Harvested Items, Seeds, Materials & Tools (`items`) — 43 Entries
 
 Inventory-only harvested produce, seeds, sticks, bone meal, and raw materials.
 
@@ -865,3 +894,14 @@ Inventory-only harvested produce, seeds, sticks, bone meal, and raw materials.
 | **30** | `item_stick` | Stick | **Item** | `items/stick_item.png` | 2D inventory item icon (non-placeable or seed/plantable) |
 | **31** | `item_cocoa_beans` | Cocoa Beans | **Item** | `items/cocoa_beans_item.png` | 2D inventory item icon (non-placeable or seed/plantable) |
 | **32** | `item_coconut` | Coconut | **Item** | `items/coconut_item.png` | 2D inventory item icon (non-placeable or seed/plantable) |
+| **33** | `item_flint_shard` | Flint Shard | **Material** | `items/flint_shard_item.png` | 2D inventory item icon |
+| **34** | `item_plant_fiber` | Plant Fiber | **Material** | `items/plant_fiber_item.png` | 2D inventory item icon |
+| **35** | `item_plant_string` | Plant String | **Material** | `items/plant_string_item.png` | 2D inventory item icon |
+| **36** | `tool_fire_starter` | Fire Starter | **Tool** | `items/tool_fire_starter_item.png` | 2D inventory tool icon |
+| **37** | `tool_flint_axe` | Flint Axe | **Tool** | `items/tool_flint_axe_item.png` | 2D inventory tool icon |
+| **38** | `tool_flint_hammer` | Flint Hammer | **Tool** | `items/tool_flint_hammer_item.png` | 2D inventory tool icon |
+| **39** | `tool_flint_hoe` | Flint Hoe | **Tool** | `items/tool_flint_hoe_item.png` | 2D inventory tool icon |
+| **40** | `tool_flint_knife` | Flint Knife | **Tool** | `items/tool_flint_knife_item.png` | 2D inventory tool icon |
+| **41** | `tool_flint_pickaxe` | Flint Pickaxe | **Tool** | `items/tool_flint_pickaxe_item.png` | 2D inventory tool icon |
+| **42** | `tool_flint_shears` | Flint Shears | **Tool** | `items/tool_flint_shears_item.png` | 2D inventory tool icon |
+| **43** | `tool_flint_shovel` | Flint Shovel | **Tool** | `items/tool_flint_shovel_item.png` | 2D inventory tool icon |

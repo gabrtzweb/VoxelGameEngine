@@ -57,6 +57,12 @@ struct TogglePreloadWorldMapButton;
 #[derive(Component)]
 struct TogglePreloadWorldMapBadge;
 
+#[derive(Component)]
+struct CycleGameModeButton;
+
+#[derive(Component)]
+struct CycleGameModeBadge;
+
 pub struct PauseMenuPlugin;
 
 impl Plugin for PauseMenuPlugin {
@@ -69,6 +75,7 @@ impl Plugin for PauseMenuPlugin {
                 update_pause_button_hover,
                 sync_world_session_panel,
                 handle_session_compendium_toggle,
+                handle_session_game_mode_cycle,
             ),
         );
     }
@@ -84,6 +91,7 @@ fn sync_pause_sidebar_visibility(
     loc: Option<Res<Localization>>,
     app_font: Option<Res<AppFont>>,
     game_settings: Option<Res<crate::menu::GameSettings>>,
+    game_mode: Option<Res<crate::player::GameMode>>,
 ) {
     let in_active_session = world_session.as_ref().map_or_else(
         || menu_return_target.0 != MenuState::MainMenu,
@@ -108,6 +116,7 @@ fn sync_pause_sidebar_visibility(
             loc.as_deref(),
             app_font.as_ref(),
             game_settings.as_deref(),
+            game_mode.as_deref(),
         );
     } else if !should_show && let Some(entity) = existing {
         *pause_submenu = PauseSubmenu::None;
@@ -120,6 +129,7 @@ fn spawn_pause_sidebar(
     loc: Option<&Localization>,
     app_font: Option<&Res<AppFont>>,
     game_settings: Option<&crate::menu::GameSettings>,
+    game_mode: Option<&crate::player::GameMode>,
 ) {
     let font_handle = app_font.map(|f| f.source());
 
@@ -192,6 +202,7 @@ fn spawn_pause_sidebar(
                     for (action, label, has_submenu) in [
                         (PauseMenuAction::Resume, resume_lbl, false),
                         (PauseMenuAction::SaveWorld, save_lbl, false),
+                        (PauseMenuAction::Restart, restart_lbl, false),
                     ] {
                         spawn_sidebar_item(sidebar, action, label, has_submenu, &make_font);
                     }
@@ -231,7 +242,6 @@ fn spawn_pause_sidebar(
 
                     // Block 3: Destructive / Exit actions anchored at footer
                     for (action, label, has_submenu) in [
-                        (PauseMenuAction::Restart, restart_lbl, false),
                         (PauseMenuAction::Quit, quit_lbl, false),
                         (PauseMenuAction::ExitGame, exit_lbl, false),
                     ] {
@@ -374,72 +384,44 @@ fn spawn_pause_sidebar(
                             ));
                         });
 
-                    // Subtle divider below active session toggles
-                    panel.spawn((
-                        Node {
-                            height: px(1.0),
-                            margin: UiRect::new(px(20.0), px(20.0), px(6.0), px(6.0)),
-                            ..default()
-                        },
-                        BackgroundColor(palette::DRAWER_DIVIDER),
-                    ));
+                    // Functional top button 3: Game Mode selector (Survival / Creative / Spectator)
+                    let current_gm = game_mode.as_deref().copied().unwrap_or_default();
+                    let gm_lbl = loc.map_or("Game Mode", |l| l.t("menu.session.game_mode"));
+                    let gm_badge_str = loc.map_or(current_gm.label(), |l| l.t(current_gm.loc_key()));
 
-                    let session_items = [
-                        (
-                            loc.map_or("Open to LAN", |l| l.t("menu.session.open_lan")),
-                            "Soon",
-                        ),
-                        (
-                            loc.map_or("Host Online Session", |l| l.t("menu.session.host_online")),
-                            "Soon",
-                        ),
-                        (
-                            loc.map_or("Invite Players", |l| l.t("menu.session.invite_players")),
-                            "Soon",
-                        ),
-                        (
-                            loc.map_or("Session Privacy", |l| l.t("menu.session.privacy")),
-                            "Solo",
-                        ),
-                        (
-                            loc.map_or("Game Mode", |l| l.t("menu.session.game_mode")),
-                            "Creative",
-                        ),
-                        (
-                            loc.map_or("Difficulty", |l| l.t("menu.session.difficulty")),
-                            "Normal",
-                        ),
-                    ];
-
-                    for (label, badge) in session_items {
-                        panel
-                            .spawn((
-                                Node {
-                                    width: percent(100.0),
-                                    height: px(46.0),
-                                    padding: UiRect::new(px(24.0), px(20.0), px(0.0), px(0.0)),
-                                    display: Display::Flex,
-                                    flex_direction: FlexDirection::Row,
-                                    align_items: AlignItems::Center,
-                                    justify_content: JustifyContent::SpaceBetween,
-                                    ..default()
-                                },
-                                BackgroundColor(Color::NONE),
-                            ))
-                            .with_children(|row| {
-                                row.spawn((
-                                    Text::new(label),
-                                    make_font(15.0),
-                                    TextColor(palette::TEXT_MUTED),
-                                    text_shadow_default(),
-                                ));
-                                row.spawn((
-                                    Text::new(badge),
-                                    make_font(12.0),
-                                    TextColor(Color::srgba(0.62, 0.66, 0.74, 0.65)),
-                                ));
-                            });
-                    }
+                    panel
+                        .spawn((
+                            Button,
+                            Hovered::default(),
+                            CycleGameModeButton,
+                            Node {
+                                width: percent(100.0),
+                                height: px(46.0),
+                                padding: UiRect::new(px(24.0), px(20.0), px(0.0), px(0.0)),
+                                display: Display::Flex,
+                                flex_direction: FlexDirection::Row,
+                                align_items: AlignItems::Center,
+                                justify_content: JustifyContent::SpaceBetween,
+                                column_gap: px(12.0),
+                                ..default()
+                            },
+                            BackgroundColor(Color::NONE),
+                        ))
+                        .with_children(|row| {
+                            row.spawn((
+                                Text::new(gm_lbl),
+                                make_font(14.0),
+                                TextColor(palette::TEXT_PRIMARY),
+                                text_shadow_default(),
+                            ));
+                            row.spawn((
+                                CycleGameModeBadge,
+                                Text::new(gm_badge_str),
+                                make_font(12.0),
+                                TextColor(palette::TEXT_ACCENT),
+                                text_shadow_default(),
+                            ));
+                        });
                 });
         });
 }
@@ -615,6 +597,52 @@ fn handle_session_compendium_toggle(
             } else {
                 palette::TEXT_MUTED
             };
+        }
+    }
+}
+
+fn handle_session_game_mode_cycle(
+    mouse: Res<ButtonInput<MouseButton>>,
+    loc: Option<Res<Localization>>,
+    mut game_mode: Option<ResMut<crate::player::GameMode>>,
+    mut player_motion_q: Query<&mut crate::player::PlayerMotion, With<crate::player::Player>>,
+    mut btn_q: Query<(&Hovered, Has<Pressed>, &mut BackgroundColor), (With<Button>, With<CycleGameModeButton>)>,
+    mut badge_q: Query<&mut Text, With<CycleGameModeBadge>>,
+) {
+    let Some(ref mut gm) = game_mode else {
+        return;
+    };
+    let clicked = mouse.just_pressed(MouseButton::Left);
+    let mut changed = false;
+
+    for (hovered, is_pressed, mut bg) in &mut btn_q {
+        bg.0 = if hovered.get() || is_pressed {
+            palette::NAV_ITEM_HOVER_BG
+        } else {
+            Color::NONE
+        };
+        if clicked && hovered.get() {
+            **gm = match **gm {
+                crate::player::GameMode::Survival => crate::player::GameMode::Creative,
+                crate::player::GameMode::Creative => crate::player::GameMode::Spectator,
+                crate::player::GameMode::Spectator => crate::player::GameMode::Survival,
+            };
+            if **gm == crate::player::GameMode::Survival {
+                for mut motion in &mut player_motion_q {
+                    motion.flying = false;
+                }
+            }
+            changed = true;
+        }
+    }
+
+    if changed || gm.is_changed() {
+        let label = loc
+            .as_deref()
+            .map_or(gm.label(), |l| l.t(gm.loc_key()))
+            .to_string();
+        for mut text in &mut badge_q {
+            text.0 = label.clone();
         }
     }
 }

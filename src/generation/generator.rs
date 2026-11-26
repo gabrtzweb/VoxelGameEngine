@@ -3,7 +3,9 @@ use bevy::prelude::*;
 use super::{
     adventure_map::AdventureWorldMap,
     biome::{BiomeType, ClimateGenerator, ClimateSample},
-    flora, ores,
+    flora,
+    laboratory_map::LaboratoryWorldMap,
+    ores,
     strata::StrataGenerator,
     trees,
 };
@@ -106,6 +108,10 @@ pub struct TerrainGenerator {
     #[reflect(ignore)]
     pub adventure_map: Option<std::sync::Arc<AdventureWorldMap>>,
 
+    // Purely procedural radial Laboratory world showcasing all 78 surface biomes
+    #[reflect(ignore)]
+    pub laboratory_map: Option<std::sync::Arc<LaboratoryWorldMap>>,
+
     // Generation version tracker to signal runtime remeshing when tweaked in inspector
     pub version: u32,
 }
@@ -153,6 +159,7 @@ impl Default for TerrainGenerator {
             tree_density: 0.0,
 
             adventure_map: None,
+            laboratory_map: None,
 
             version: 0,
         }
@@ -212,6 +219,9 @@ impl TerrainGenerator {
         h ^= (self.lake_abundance.to_bits() as u64).rotate_left(53);
         if let Some(ref map) = self.adventure_map {
             h ^= map.fingerprint();
+        }
+        if let Some(ref lab) = self.laboratory_map {
+            h ^= lab.fingerprint();
         }
         h
     }
@@ -612,6 +622,60 @@ impl TerrainGenerator {
         logical_block_top(self.sea_level)
     }
 
+    /// Searches outward in expanding rings from `(start_x, start_z)` to find the nearest safe
+    /// dry-land spawn coordinate (never underwater, in an ocean, river, or lake).
+    pub fn find_safe_land_spawn(&self, start_x: i32, start_z: i32) -> (i32, i32) {
+        let sea_level = self.effective_sea_level();
+        let is_good_land = |x: i32, z: i32, allow_high: bool| -> bool {
+            let col = self.sample_column(x, z);
+            if col.water_level.is_some() || col.is_river || col.is_lake {
+                return false;
+            }
+            if col.terrain_height < sea_level + 1 {
+                return false;
+            }
+            if !allow_high && col.terrain_height > sea_level + 40 {
+                return false;
+            }
+            !matches!(
+                col.biome,
+                BiomeType::WarmOcean
+                    | BiomeType::ColdOcean
+                    | BiomeType::OceanTrench
+                    | BiomeType::CoralReefs
+                    | BiomeType::SeagrassMeadows
+                    | BiomeType::KelpForests
+                    | BiomeType::Rapids
+                    | BiomeType::CalmLake
+                    | BiomeType::Estuary
+            )
+        };
+
+        if is_good_land(start_x, start_z, false) {
+            return (start_x, start_z);
+        }
+
+        // Expanding circular spiral search up to 2048 blocks for nearest gentle dry land
+        for pass in 0..2 {
+            let allow_high = pass == 1;
+            let mut radius = 16i32;
+            while radius <= 2048 {
+                let steps = ((radius / 8).clamp(12, 48)) as usize;
+                for s in 0..steps {
+                    let angle = (s as f32 / steps as f32) * std::f32::consts::TAU;
+                    let cx = start_x + (angle.cos() * radius as f32).round() as i32;
+                    let cz = start_z + (angle.sin() * radius as f32).round() as i32;
+                    if is_good_land(cx, cz, allow_high) {
+                        return (cx, cz);
+                    }
+                }
+                radius += if radius < 128 { 16 } else if radius < 512 { 32 } else { 64 };
+            }
+        }
+
+        (start_x, start_z)
+    }
+
     pub fn continuous_height_and_biome_with_climate(
         &self,
         world_x: i32,
@@ -619,6 +683,9 @@ impl TerrainGenerator {
     ) -> (f32, BiomeType, bool, ClimateSample) {
         if let Some(ref map) = self.adventure_map {
             return map.sample_column_data(world_x, world_z, self.seed);
+        }
+        if let Some(ref lab) = self.laboratory_map {
+            return lab.sample_column_data(world_x, world_z, self.seed);
         }
 
         let logical_x = world_x.div_euclid(LOGICAL_BLOCK_VOXELS);
@@ -861,6 +928,14 @@ impl TerrainGenerator {
                 map.sample_column_data(world_xs[3], world_zs[3], self.seed),
             ];
         }
+        if let Some(ref lab) = self.laboratory_map {
+            return [
+                lab.sample_column_data(world_xs[0], world_zs[0], self.seed),
+                lab.sample_column_data(world_xs[1], world_zs[1], self.seed),
+                lab.sample_column_data(world_xs[2], world_zs[2], self.seed),
+                lab.sample_column_data(world_xs[3], world_zs[3], self.seed),
+            ];
+        }
 
         let logical_x = [
             world_xs[0].div_euclid(LOGICAL_BLOCK_VOXELS),
@@ -1033,6 +1108,39 @@ impl TerrainGenerator {
                     None
                 };
                 (is_river, is_lake, water_level, river_factor, lake_sample)
+            } else if let Some(ref lab) = self.laboratory_map {
+                let mut is_river = matches!(final_biome, BiomeType::Rapids | BiomeType::Estuary);
+                let mut is_lake = final_biome == BiomeType::CalmLake;
+                let water_level = if let Some(lab_water_y) = lab.sample_water_level(world_x, world_z)
+                {
+                    if terrain_height < lab_water_y {
+                        Some(lab_water_y)
+                    } else {
+                        None
+                    }
+                } else if terrain_height < sea_level {
+                    Some(sea_level)
+                } else {
+                    None
+                };
+                let mut river_factor = if is_river { 0.85 } else { 0.0 };
+                if water_level.is_none()
+                    && let Some((bank_river, bank_lake, bank_f)) =
+                        lab.sample_inland_bank(world_x, world_z)
+                {
+                    if bank_river {
+                        is_river = true;
+                        river_factor = bank_f;
+                    } else if bank_lake {
+                        is_lake = true;
+                    }
+                }
+                let lake_sample = if is_lake {
+                    water_level.map(|wy| (wy, 5.5, 0.25))
+                } else {
+                    None
+                };
+                (is_river, is_lake, water_level, river_factor, lake_sample)
             } else {
                 let logical_x = world_x.div_euclid(LOGICAL_BLOCK_VOXELS);
                 let logical_z = world_z.div_euclid(LOGICAL_BLOCK_VOXELS);
@@ -1174,6 +1282,11 @@ impl TerrainGenerator {
                         .adventure_map
                         .as_ref()
                         .and_then(|m| m.sample_water_level(nx, nz))
+                        .or_else(|| {
+                            self.laboratory_map
+                                .as_ref()
+                                .and_then(|l| l.sample_water_level(nx, nz))
+                        })
                         .unwrap_or(sea_level);
                     if th < local_wl && terrain_height >= local_wl {
                         return local_wl;

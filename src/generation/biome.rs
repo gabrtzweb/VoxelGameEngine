@@ -2004,7 +2004,7 @@ impl BiomeType {
     /// Foliage tint color for leaves.
     pub fn foliage_color(self, voxel: Voxel) -> [f32; 4] {
         match voxel {
-            Voxel::PalmLeaves => return [0.28, 0.88, 0.34, 1.0],
+            Voxel::PalmLeaves => return [1.0, 1.0, 1.0, 1.0],
             Voxel::PineLeaves | Voxel::YewLeaves | Voxel::RedwoodLeaves => {
                 return [0.30, 0.72, 0.44, 1.0];
             }
@@ -3177,9 +3177,8 @@ pub fn sample_blended_biome_color(voxel: Voxel, world_x: f32, world_z: f32, seed
         return [1.0, 1.0, 1.0, 1.0];
     }
 
-    // Early-out for biome-invariant foliage palettes (Palms, Conifers, Mahogany, Acacia)
+    // Early-out for biome-invariant foliage palettes (Conifers, Mahogany, Acacia)
     match voxel {
-        Voxel::PalmLeaves => return [0.28, 0.88, 0.34, 1.0],
         Voxel::PineLeaves | Voxel::YewLeaves | Voxel::RedwoodLeaves => {
             return [0.30, 0.72, 0.44, 1.0];
         }

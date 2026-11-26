@@ -311,7 +311,7 @@ pub fn setup_chunk_material(
     let texture_array = images.add(texture_array_image);
     let mask_texture_array_image = build_mask_texture_array();
     let mask_texture_array = images.add(mask_texture_array_image);
-    let noise_texture = asset_server.load("textures/shaders/noise.png");
+    let noise_texture = asset_server.load("textures/shaders/voxel_detile_noise.png");
 
     let coat_strength = local_config
         .as_ref()

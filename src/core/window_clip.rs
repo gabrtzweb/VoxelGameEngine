@@ -98,21 +98,19 @@ pub fn manage_cursor_confinement(
 
     let is_inspector = inspector.as_ref().is_some_and(|i| i.active);
 
-    let is_fullscreen_or_borderless = game_settings.as_ref().is_some_and(|s| {
-        s.screen_mode == ScreenMode::BorderlessFullscreen
-            || s.screen_mode == ScreenMode::ExclusiveFullscreen
+    let confine_in_menus = game_settings.as_ref().is_some_and(|s| {
+        s.screen_mode == ScreenMode::ExclusiveFullscreen
+            || (s.screen_mode == ScreenMode::BorderlessFullscreen && s.mouse_lock_borderless)
     });
 
-    // In borderless fullscreen or exclusive fullscreen, ALWAYS confine mouse to window so it never escapes to second monitor.
-
-    // In windowed mode during gameplay (MenuState::None), also confine so mouse look doesn't slip out.
-
+    // Confine mouse in menus only for Exclusive Fullscreen or Borderless when Mouse Lock is ON.
+    // During active gameplay (MenuState::None), always confine so FPS mouse-look doesn't escape.
     let is_gameplay = menu_state
         .as_ref()
         .is_some_and(|m| *m.get() == MenuState::None)
         && !is_inspector;
 
-    if (is_fullscreen_or_borderless && !is_inspector) || is_gameplay {
+    if (confine_in_menus && !is_inspector) || is_gameplay {
         confine_mouse_to_window(true);
     } else {
         confine_mouse_to_window(false);

@@ -74,9 +74,9 @@ pub fn setup_grass_materials(
     mut materials: ResMut<Assets<GrassChunkMaterial>>,
     _config: Option<Res<GrassConfig>>,
 ) {
-    let segmented_shape_texture = asset_server.load("textures/foliage/grass_bands.png");
-    let noise_texture = asset_server.load("textures/foliage/noise.png");
-    let grainy_texture = asset_server.load("textures/foliage/grainy.png");
+    let segmented_shape_texture = asset_server.load("textures/shaders/foliage/grass_bands.png");
+    let noise_texture = asset_server.load("textures/shaders/foliage/foliage_noise.png");
+    let grainy_texture = asset_server.load("textures/shaders/foliage/grainy.png");
 
     let trail = GrassTrailField::new(&mut images);
     let trail_handle = trail.image_handle.clone();

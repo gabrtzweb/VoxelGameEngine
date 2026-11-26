@@ -532,13 +532,16 @@ fn handle_menu_bar_shortcuts(
     menu_state: Res<State<MenuState>>,
     mut next_state: ResMut<NextState<MenuState>>,
     search_query: Option<Res<CreativeSearchQuery>>,
+    journal_search: Option<Res<crate::menu::journal::JournalSearchQuery>>,
 ) {
     if *menu_state.get() == MenuState::None || *menu_state.get() == MenuState::MainMenu {
         return;
     }
 
-    // Do not trigger tab cycling while typing in the creative search box!
-    if search_query.as_ref().is_some_and(|s| s.is_focused) {
+    // Do not trigger tab cycling while typing in any search box!
+    if search_query.as_ref().is_some_and(|s| s.is_focused)
+        || journal_search.as_ref().is_some_and(|s| s.is_focused)
+    {
         return;
     }
 

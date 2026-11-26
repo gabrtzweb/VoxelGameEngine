@@ -312,13 +312,13 @@ fn update_dev_stats(
 
             let player_block = IVec3::new(
                 player_position.x.floor() as i32,
-                player_position.y.floor() as i32,
+                (player_position.y + 0.05).floor() as i32,
                 player_position.z.floor() as i32,
             );
 
             let player_voxel = IVec3::new(
                 (player_position.x / VOXEL_SIZE).floor() as i32,
-                (player_position.y / VOXEL_SIZE).floor() as i32,
+                (player_position.y / VOXEL_SIZE + 0.05).floor() as i32,
                 (player_position.z / VOXEL_SIZE).floor() as i32,
             );
 

@@ -35,6 +35,7 @@ pub enum SelectedWorldMode {
     Adventure,
     #[default]
     Sandbox,
+    Laboratory,
 }
 
 #[derive(Component)]
@@ -66,6 +67,7 @@ pub enum MainMenuButtonAction {
     NewGame,
     StartAdventure,
     StartSandbox,
+    StartLaboratory,
     SelectAdventureSpawn(AdventureSpawnChoice),
     SelectAdventureScale(AdventureWorldScale),
     ConfirmAdventure,
@@ -179,6 +181,19 @@ fn spawn_main_menu(
     let sbx_cta_str = loc
         .as_ref()
         .map_or("Start Sandbox  >", |l| l.t("menu.main.mode.sandbox.cta"));
+    let lab_title_str = loc
+        .as_ref()
+        .map_or("Laboratory", |l| l.t("menu.main.mode.laboratory.title"));
+    let lab_tag_str = loc
+        .as_ref()
+        .map_or("BIOME ATLAS", |l| l.t("menu.main.mode.laboratory.tag"));
+    let lab_desc_str = loc.as_ref().map_or(
+        "A compact circular world showcasing all 78 biomes side-by-side in radial slices for rapid inspection.",
+        |l| l.t("menu.main.mode.laboratory.desc"),
+    );
+    let lab_cta_str = loc
+        .as_ref()
+        .map_or("Start Laboratory  >", |l| l.t("menu.main.mode.laboratory.cta"));
     let back_str = loc.as_ref().map_or("<  Back", |l| l.t("menu.main.back"));
     let adv_setup_title = loc
         .as_ref()
@@ -881,24 +896,24 @@ fn spawn_main_menu(
                     ));
                 });
 
-                // Two World Mode Cards Side-by-Side
+                // Three World Mode Cards Side-by-Side
                 ng.spawn(Node {
                     display: Display::Flex,
                     flex_direction: FlexDirection::Row,
                     align_items: AlignItems::Stretch,
                     justify_content: JustifyContent::Center,
-                    column_gap: px(24.0),
+                    column_gap: px(20.0),
                     ..default()
                 })
                 .with_children(|cards| {
                     let modes = [
                         (
-                            MainMenuButtonAction::StartAdventure,
-                            adv_tag_str,
-                            adv_title_str,
-                            adv_desc_str,
-                            adv_cta_str,
-                            Color::srgb(0.95, 0.78, 0.36),
+                            MainMenuButtonAction::StartLaboratory,
+                            lab_tag_str,
+                            lab_title_str,
+                            lab_desc_str,
+                            lab_cta_str,
+                            Color::srgb(0.44, 0.92, 0.64),
                         ),
                         (
                             MainMenuButtonAction::StartSandbox,
@@ -907,6 +922,14 @@ fn spawn_main_menu(
                             sbx_desc_str,
                             sbx_cta_str,
                             Color::srgb(0.42, 0.82, 0.95),
+                        ),
+                        (
+                            MainMenuButtonAction::StartAdventure,
+                            adv_tag_str,
+                            adv_title_str,
+                            adv_desc_str,
+                            adv_cta_str,
+                            Color::srgb(0.95, 0.78, 0.36),
                         ),
                     ];
 
@@ -918,8 +941,8 @@ fn spawn_main_menu(
                                 action,
                                 ThemedButton::default(),
                                 Node {
-                                    width: px(360.0),
-                                    min_height: px(220.0),
+                                    width: px(310.0),
+                                    min_height: px(224.0),
                                     padding: UiRect::all(px(24.0)),
                                     border: UiRect::all(px(2.0)),
                                     border_radius: BorderRadius::all(px(8.0)),
@@ -1416,6 +1439,7 @@ struct WorldLaunchParams<'w, 's> {
     player_q: Query<'w, 's, (&'static mut Transform, &'static mut PlayerMotion), With<Player>>,
     camera_q: Query<'w, 's, &'static mut Transform, (With<PlayerCamera>, Without<Player>)>,
     world_session: Option<ResMut<'w, WorldSession>>,
+    game_mode: Option<ResMut<'w, crate::player::GameMode>>,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1510,6 +1534,7 @@ fn handle_main_menu_action_buttons(
                             Ok(map) => {
                                 let (sx, sz) = map.spawn_world_xz(*launch.selected_spawn);
                                 terrain_gen.adventure_map = Some(Arc::new(map));
+                                terrain_gen.laboratory_map = None;
                                 terrain_gen.version = terrain_gen.version.wrapping_add(1);
 
                                 let col = terrain_gen.sample_column(sx, sz);
@@ -1553,15 +1578,68 @@ fn handle_main_menu_action_buttons(
                     *launch.selected_world_mode = SelectedWorldMode::Sandbox;
 
                     if let Some(ref mut terrain_gen) = launch.terrain_generator {
-                        if terrain_gen.adventure_map.is_some() {
-                            terrain_gen.adventure_map = None;
-                            terrain_gen.version = terrain_gen.version.wrapping_add(1);
-                        }
-                        let sx = -10;
-                        let sz = 14;
+                        terrain_gen.adventure_map = None;
+                        terrain_gen.laboratory_map = None;
+                        // Fresh random seed every time a new Sandbox world is created
+                        let nanos = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .map_or(0u64, |d| d.as_nanos() as u64);
+                        let mut z = nanos.wrapping_add(0x9E37_79B9_7F4A_7C15);
+                        z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+                        z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+                        terrain_gen.seed = ((z ^ (z >> 31)) as u32).max(1);
+                        terrain_gen.version = terrain_gen.version.wrapping_add(1);
+                        let (sx, sz) = terrain_gen.find_safe_land_spawn(-10, 14);
                         let col = terrain_gen.sample_column(sx, sz);
-                        let sy = ((col.terrain_height + 2) as f32 * VOXEL_SIZE).max(10.38);
-                        let spawn_pos = Vec3::new(sx as f32, sy, sz as f32);
+                        let sy = (col.terrain_height.max(terrain_gen.sea_level) + 2) as f32
+                            * VOXEL_SIZE;
+                        let spawn_pos =
+                            Vec3::new(sx as f32 * VOXEL_SIZE, sy, sz as f32 * VOXEL_SIZE);
+                        if let Some(ref mut ws) = launch.world_spawn {
+                            ws.0 = spawn_pos;
+                        }
+                        for (mut tf, mut motion) in &mut launch.player_q {
+                            tf.translation = spawn_pos;
+                            motion.velocity = Vec3::ZERO;
+                        }
+                        for mut cam_tf in &mut launch.camera_q {
+                            cam_tf.translation = spawn_pos + Vec3::Y * PLAYER_EYE_HEIGHT;
+                        }
+                    }
+
+                    if let (Some(sub), Some(race)) = (&selected_subrace, selected_race.as_mut()) {
+                        race.0 = sub.0.rig_race();
+                    }
+                    if let Some(ref mut session) = launch.world_session {
+                        session.is_active = true;
+                    }
+                    *phase = MainMenuPhase::ActionMenu;
+                    menu_return_target.0 = MenuState::Pause;
+                    next_state.set(MenuState::Loading);
+                }
+                MainMenuButtonAction::StartLaboratory => {
+                    if *phase != MainMenuPhase::NewGameModeSelect
+                        || !character_ready.as_ref().is_some_and(|r| r.0)
+                    {
+                        return;
+                    }
+                    *launch.selected_world_mode = SelectedWorldMode::Laboratory;
+                    if let Some(ref mut gm) = launch.game_mode {
+                        **gm = crate::player::GameMode::Creative;
+                    }
+
+                    if let Some(ref mut terrain_gen) = launch.terrain_generator {
+                        let lab = crate::generation::LaboratoryWorldMap::new();
+                        let (sx, sz) = lab.spawn_world_xz();
+                        terrain_gen.adventure_map = None;
+                        terrain_gen.laboratory_map = Some(Arc::new(lab));
+                        terrain_gen.version = terrain_gen.version.wrapping_add(1);
+
+                        let col = terrain_gen.sample_column(sx, sz);
+                        let sy = (col.terrain_height.max(terrain_gen.sea_level) + 2) as f32
+                            * VOXEL_SIZE;
+                        let spawn_pos =
+                            Vec3::new(sx as f32 * VOXEL_SIZE, sy, sz as f32 * VOXEL_SIZE);
                         if let Some(ref mut ws) = launch.world_spawn {
                             ws.0 = spawn_pos;
                         }

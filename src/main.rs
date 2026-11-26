@@ -80,7 +80,16 @@ fn main() {
         _ => ScreenMode::Windowed,
     };
 
-    let window_mode = screen_mode.to_window_mode();
+    // For Exclusive Fullscreen, initialize as BorderlessFullscreen on frame 0 so `winit` does
+    // not emit a "Could not find valid fullscreen video mode for Primary Current" warning before
+    // monitor video modes are enumerated; `apply_startup_fullscreen_mode` immediately switches
+    // to the exact `VideoModeSelection::Specific` on frame 1.
+    let window_mode = match screen_mode {
+        ScreenMode::ExclusiveFullscreen => {
+            bevy::window::WindowMode::BorderlessFullscreen(bevy::window::MonitorSelection::Primary)
+        }
+        other => other.to_window_mode(),
+    };
 
     let mesh_budget = local_config.mesh_upload_budget.max(1);
 
@@ -146,6 +155,7 @@ fn main() {
         subtitles_enabled: local_config.subtitles_enabled,
 
         screen_mode,
+        fullscreen_resolution: local_config.fullscreen_resolution,
 
         vsync_enabled: local_config.vsync_enabled,
 
