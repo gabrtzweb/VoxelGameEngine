@@ -6,13 +6,13 @@ use crate::{
     world::{CHUNK_SIZE, VOXEL_SIZE, streaming::ChunkStreamingSettings},
 };
 
-pub const DAY_SUN_ILLUMINANCE: f32 = 7_000.0;
-pub const DAY_AMBIENT_BRIGHTNESS: f32 = 3_950.0;
-pub const DAY_EXPOSURE_EV100: f32 = 11.2;
+pub const DAY_SUN_ILLUMINANCE: f32 = 16_500.0;
+pub const DAY_AMBIENT_BRIGHTNESS: f32 = 1_550.0;
+pub const DAY_EXPOSURE_EV100: f32 = 11.9;
 
-pub const NIGHT_MOON_ILLUMINANCE: f32 = 800.0;
-pub const NIGHT_AMBIENT_BRIGHTNESS: f32 = 120.0;
-pub const NIGHT_EXPOSURE_EV100: f32 = 9.0;
+pub const NIGHT_MOON_ILLUMINANCE: f32 = 1_100.0;
+pub const NIGHT_AMBIENT_BRIGHTNESS: f32 = 160.0;
+pub const NIGHT_EXPOSURE_EV100: f32 = 9.1;
 
 /// Subterranean ambient lighting constants:
 /// Independent of whether the sun is up or down in the sky.
@@ -23,8 +23,89 @@ pub const SUBTERRANEAN_AMBIENT_COLOR: Color = Color::srgb(0.68, 0.74, 0.86);
 pub const SUBTERRANEAN_CLEAR_COLOR: Color = Color::srgb(0.14, 0.16, 0.22);
 pub const SUBTERRANEAN_FOG_COLOR: Color = Color::srgb(0.18, 0.22, 0.28);
 
-pub const FOG_START_FACTOR: f32 = 0.50;
-pub const FOG_END_FACTOR: f32 = 0.90;
+pub const FOG_START_FACTOR: f32 = 0.72;
+pub const FOG_END_FACTOR: f32 = 0.96;
+
+#[derive(Debug, Clone, Copy)]
+pub struct BiomeFogBlend {
+    pub color_tint: LinearRgba,
+    pub tint_strength: f32,
+    pub density_mult: f32,
+    pub initialized: bool,
+}
+
+impl Default for BiomeFogBlend {
+    fn default() -> Self {
+        Self {
+            color_tint: LinearRgba::new(0.52, 0.74, 0.96, 1.0),
+            tint_strength: 0.0,
+            density_mult: 1.0,
+            initialized: false,
+        }
+    }
+}
+
+/// Returns `(target_fog_tint, tint_strength, density_multiplier)` for atmospheric biome fog.
+pub fn biome_atmosphere_fog_profile(biome: crate::generation::BiomeType) -> (LinearRgba, f32, f32) {
+    use crate::generation::BiomeType as B;
+    match biome {
+        // Misty swamps, marshes & humid wetlands
+        B::WillowMarsh | B::MangroveSwamp | B::OrchidSwamp | B::SwampyShore | B::Mudflats => {
+            (LinearRgba::new(0.42, 0.62, 0.56, 1.0), 0.42, 1.55)
+        }
+        B::MistyWoods | B::MistyCrags | B::BambooGrove => {
+            (LinearRgba::new(0.54, 0.72, 0.78, 1.0), 0.38, 1.48)
+        }
+        B::DenseRainforest | B::JungleWetlands | B::VolcanicJungle => {
+            (LinearRgba::new(0.46, 0.70, 0.64, 1.0), 0.32, 1.35)
+        }
+        // Arid deserts, dunes, canyons & savannas
+        B::DuneSea | B::AncientSands | B::DesertOasis | B::DesertSpires => {
+            (LinearRgba::new(0.92, 0.76, 0.50, 1.0), 0.40, 1.25)
+        }
+        B::RedrockCanyon
+        | B::PaintedMesas
+        | B::SavannaBadlands
+        | B::FracturedSavanna
+        | B::AcaciaPlains => (LinearRgba::new(0.88, 0.66, 0.46, 1.0), 0.34, 1.18),
+        // Frozen, glacial & polar biomes
+        B::SnowyPlains
+        | B::ColdShrubland
+        | B::PermafrostSteppe
+        | B::GlacialChasm
+        | B::IceSheet
+        | B::FrozenCliffs
+        | B::WintryForest
+        | B::FrostPinewoods
+        | B::IceboundRidge
+        | B::BleakTaiga
+        | B::FrozenIsland
+        | B::TundraIsland => (LinearRgba::new(0.70, 0.84, 0.98, 1.0), 0.34, 1.28),
+        // Volcanic, ash & dark fantasy lands
+        B::Caldera
+        | B::VolcanicPeaks
+        | B::AshenWastes
+        | B::ScorchedFlats
+        | B::ObsidianMire => (LinearRgba::new(0.46, 0.34, 0.30, 1.0), 0.55, 1.65),
+        B::AcidPools | B::SulfurVents => (LinearRgba::new(0.58, 0.64, 0.34, 1.0), 0.48, 1.55),
+        B::WitheredWoods => (LinearRgba::new(0.36, 0.34, 0.46, 1.0), 0.45, 1.45),
+        // Warm floral valleys, amethyst & sakura
+        B::SakuraGrove | B::LavenderValley | B::FlowerMeadow | B::AmethystCanyon => {
+            (LinearRgba::new(0.76, 0.74, 0.92, 1.0), 0.22, 0.95)
+        }
+        // Coastal & open oceans
+        B::WarmOcean
+        | B::ColdOcean
+        | B::OceanTrench
+        | B::CoralReefs
+        | B::SeagrassMeadows
+        | B::KelpForests
+        | B::TropicalIsland
+        | B::CoralIsland => (LinearRgba::new(0.46, 0.74, 0.96, 1.0), 0.22, 0.88),
+        // Default crisp aerial perspective
+        _ => (LinearRgba::new(0.54, 0.76, 0.96, 1.0), 0.08, 1.0),
+    }
+}
 
 type CameraAtmosphereQuery<'w, 's> = Single<
     'w,
@@ -38,6 +119,7 @@ type CameraAtmosphereQuery<'w, 's> = Single<
 >;
 
 pub fn update_atmosphere(
+    time: Res<Time>,
     state: Res<EnvironmentState>,
     mut clear_color: ResMut<ClearColor>,
     mut ambient: ResMut<GlobalAmbientLight>,
@@ -46,6 +128,11 @@ pub fn update_atmosphere(
     selected_subrace: Option<Res<crate::player::SelectedSubrace>>,
     weather: Option<Res<super::weather::WeatherManager>>,
     lightning: Option<Res<super::weather::LightningState>>,
+    (game_settings, sky_palette): (
+        Option<Res<crate::menu::GameSettings>>,
+        Option<Res<super::sky::SkyPaletteState>>,
+    ),
+    mut biome_fog: Local<BiomeFogBlend>,
 ) {
     let t = state.time_of_day;
     let (mut fog, mut exposure, camera_transform) = camera.into_inner();
@@ -198,6 +285,65 @@ pub fn update_atmosphere(
             computed_exposure -= vision_strength * 0.70;
         }
 
+        // Match horizon fog cleanly to the Sky Dome middle horizon color, then tint smoothly by biome when Atmospheric Fog is active
+        let atm_fog_enabled = game_settings
+            .as_ref()
+            .is_none_or(|gs| gs.atmospheric_fog_enabled);
+        let mut fog_lin = if let Some(ref sp) = sky_palette {
+            let sky_horizon = lerp_linear_rgba(
+                sp.middle_color,
+                sp.sunset_color,
+                (sp.sunset_strength * 0.42 * (1.0 - sp.rain_factor * 0.7)).clamp(0.0, 1.0),
+            );
+            lerp_linear_rgba(computed_fog.to_linear(), sky_horizon, 0.72)
+        } else {
+            computed_fog.to_linear()
+        };
+
+        if atm_fog_enabled && underground_factor < 0.85 {
+            let cur_biome = env_status
+                .as_ref()
+                .map_or(crate::generation::BiomeType::Grasslands, |s| s.current_biome);
+            let (target_tint, target_strength, target_density) =
+                biome_atmosphere_fog_profile(cur_biome);
+            let blend_t = if !biome_fog.initialized {
+                biome_fog.initialized = true;
+                1.0
+            } else {
+                1.0 - (-1.4 * time.delta_secs()).exp()
+            };
+            biome_fog.color_tint = lerp_linear_rgba(biome_fog.color_tint, target_tint, blend_t);
+            biome_fog.tint_strength =
+                lerp_f32(biome_fog.tint_strength, target_strength, blend_t);
+            biome_fog.density_mult = lerp_f32(biome_fog.density_mult, target_density, blend_t);
+
+            let daylight_weight = sky_palette.as_ref().map_or(1.0, |sp| 0.25 + 0.75 * sp.sun_factor);
+            let effective_tint =
+                biome_fog.tint_strength * daylight_weight * (1.0 - underground_factor);
+            fog_lin = lerp_linear_rgba(fog_lin, biome_fog.color_tint, effective_tint.clamp(0.0, 0.65));
+        }
+        computed_fog = Color::LinearRgba(fog_lin);
+
+        // Subtle 3-zone climate ambient tint (Cold -> crisp glacial blue, Warm -> gentle golden warmth)
+        if let Some(ref sp) = sky_palette {
+            let ct = sp.climate_temp;
+            if ct < -0.01 {
+                let cold_amb = LinearRgba::new(0.56, 0.82, 1.28, 1.0);
+                computed_ambient = Color::LinearRgba(lerp_linear_rgba(
+                    computed_ambient.to_linear(),
+                    cold_amb,
+                    (-ct) * 0.42 * sp.sun_factor,
+                ));
+            } else if ct > 0.01 {
+                let warm_amb = LinearRgba::new(0.96, 0.84, 0.72, 1.0);
+                computed_ambient = Color::LinearRgba(lerp_linear_rgba(
+                    computed_ambient.to_linear(),
+                    warm_amb,
+                    ct * 0.18 * sp.sun_factor,
+                ));
+            }
+        }
+
         clear_color.0 = computed_sky;
         ambient.color = computed_ambient;
         ambient.brightness = computed_brightness;
@@ -217,23 +363,20 @@ pub fn update_atmosphere(
 }
 
 pub fn sync_fog_distance(
+    time: Res<Time>,
     settings: Res<ChunkStreamingSettings>,
     game_settings: Option<Res<crate::menu::GameSettings>>,
-    camera: Single<&mut DistanceFog, (With<Camera3d>, With<PlayerCamera>)>,
+    camera: Single<(&mut DistanceFog, &GlobalTransform), (With<Camera3d>, With<PlayerCamera>)>,
     env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
     weather: Option<Res<super::weather::WeatherManager>>,
+    mut smoothed_density_mult: Local<f32>,
 ) {
-    let mut fog = camera.into_inner();
+    let (mut fog, cam_tf) = camera.into_inner();
 
-    if let Some(ref gs) = game_settings
-        && !gs.fog_enabled
-    {
-        fog.falloff = FogFalloff::Linear {
-            start: 99999.0,
-            end: 100000.0,
-        };
-        return;
-    }
+    let border_fog_enabled = game_settings.as_ref().is_none_or(|gs| gs.fog_enabled);
+    let atm_fog_enabled = game_settings
+        .as_ref()
+        .is_none_or(|gs| gs.atmospheric_fog_enabled);
 
     let is_underwater = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
     let underground_factor = env_status.as_ref().map_or(0.0, |s| s.underground_factor);
@@ -243,32 +386,117 @@ pub fn sync_fog_distance(
             start: 1.0,
             end: 22.0,
         };
+        return;
+    }
+
+    if !border_fog_enabled && !atm_fog_enabled {
+        fog.falloff = FogFalloff::Linear {
+            start: 99999.0,
+            end: 100000.0,
+        };
+        return;
+    }
+
+    let weather_mult = weather.as_ref().map_or(1.0, |w| {
+        let intensity = (w.rain_intensity * 0.35
+            + w.thunder_intensity * 0.25
+            + w.snow_intensity * 0.45
+            + w.dust_intensity * 0.55)
+            .min(0.68);
+        1.0 - intensity
+    });
+
+    let chunk_world_size = CHUNK_SIZE as f32 * VOXEL_SIZE;
+    let total_chunks = (settings.render_distance + settings.lod_render_distance.max(0)).max(1);
+    let render_radius = total_chunks as f32 * chunk_world_size;
+
+    // Smooth per-biome atmospheric fog density multiplier
+    let target_biome_density = env_status.as_ref().map_or(1.0, |s| {
+        biome_atmosphere_fog_profile(s.current_biome).2
+    });
+    if *smoothed_density_mult <= 0.001 {
+        *smoothed_density_mult = target_biome_density;
     } else {
-        let weather_mult = weather.as_ref().map_or(1.0, |w| {
-            let intensity = (w.rain_intensity * 0.35
-                + w.thunder_intensity * 0.25
-                + w.snow_intensity * 0.45
-                + w.dust_intensity * 0.55)
-                .min(0.68);
-            1.0 - intensity
-        });
+        let k = 1.0 - (-1.4 * time.delta_secs()).exp();
+        *smoothed_density_mult = lerp_f32(*smoothed_density_mult, target_biome_density, k);
+    }
 
-        let chunk_world_size = CHUNK_SIZE as f32 * VOXEL_SIZE;
-        let total_chunks = (settings.render_distance + settings.lod_render_distance.max(0)).max(1);
-        let render_radius = total_chunks as f32 * chunk_world_size;
+    // Complementary-style altitude attenuation: valleys collect soft aerial mist while mountain peaks stay crisp
+    let cam_y = cam_tf.translation().y;
+    let altitude_mult = 1.0 - ((cam_y - 48.0) / 110.0).clamp(0.0, 0.52);
 
+    if atm_fog_enabled && !border_fog_enabled {
+        // Pure Atmospheric Fog (gentle exponential aerial perspective without hard chunk-border wall)
+        let weather_boost = 1.0 + (1.0 - weather_mult) * 1.4;
+        let base_density = (0.00185 / (render_radius / 384.0).clamp(0.65, 2.2))
+            * *smoothed_density_mult
+            * altitude_mult
+            * weather_boost;
+        let cave_density = base_density * 1.25;
+        fog.falloff = FogFalloff::Exponential {
+            density: lerp_f32(base_density, cave_density, underground_factor),
+        };
+    } else if !atm_fog_enabled && border_fog_enabled {
+        // Pure Chunk Border Fog (crystal-clear interior, steep sky-matched horizon fade at chunk edge)
         let surface_start = render_radius * FOG_START_FACTOR * weather_mult;
         let surface_end = render_radius * FOG_END_FACTOR * weather_mult;
-
-        // In caverns, maintain standard render distance fog with gentle falloff
-        // so players can see the extent of large caverns and chambers clearly without blinding mist.
         let cave_start = surface_start * 0.80;
         let cave_end = surface_end * 0.95;
-
         fog.falloff = FogFalloff::Linear {
             start: lerp_f32(surface_start, cave_start, underground_factor),
             end: lerp_f32(surface_end, cave_end, underground_factor),
         };
+    } else {
+        // Both Atmospheric Fog + Chunk Border Fog:
+        // ExponentialSquared calibrated so distant valleys get rich aerial perspective AND the chunk edge dissolves smoothly into the Sky Dome
+        let weather_boost = 1.0 + (1.0 - weather_mult) * 1.35;
+        let edge_density = 1.85 / render_radius.max(64.0);
+        let density = edge_density
+            * (0.72 + 0.28 * *smoothed_density_mult)
+            * (0.78 + 0.22 * altitude_mult)
+            * weather_boost;
+        let cave_density = density * 1.15;
+        fog.falloff = FogFalloff::ExponentialSquared {
+            density: lerp_f32(density, cave_density, underground_factor),
+        };
+    }
+}
+
+/// Classifies biomes into 3 atmospheric temperature zones:
+/// `-1.0` = Cold (polar/glacial/tundra/alpine), `0.0` = Temperate, `+1.0` = Warm (desert/savanna/volcanic).
+pub fn biome_climate_zone(biome: crate::generation::BiomeType) -> f32 {
+    use crate::generation::BiomeType as B;
+    match biome {
+        B::SnowyPlains
+        | B::ColdShrubland
+        | B::PermafrostSteppe
+        | B::GlacialChasm
+        | B::IceSheet
+        | B::FrozenCliffs
+        | B::WintryForest
+        | B::FrostPinewoods
+        | B::IceboundRidge
+        | B::BleakTaiga
+        | B::FrozenIsland
+        | B::TundraIsland
+        | B::ColdOcean
+        | B::AlpinePeaks
+        | B::JaggedPeaks => -1.0,
+        B::DuneSea
+        | B::AncientSands
+        | B::DesertOasis
+        | B::DesertSpires
+        | B::RedrockCanyon
+        | B::PaintedMesas
+        | B::SavannaBadlands
+        | B::FracturedSavanna
+        | B::AcaciaPlains
+        | B::Caldera
+        | B::VolcanicPeaks
+        | B::AshenWastes
+        | B::ScorchedFlats
+        | B::SulfurVents => 1.0,
+        _ => 0.0,
     }
 }
 
@@ -281,14 +509,25 @@ pub fn sample_4stop<T: Copy>(
     lerp_fn: impl Fn(T, T, f32) -> T,
 ) -> T {
     let t = time_of_day.rem_euclid(1.0);
+    let smooth = |x: f32| {
+        let c = x.clamp(0.0, 1.0);
+        c * c * (3.0 - 2.0 * c)
+    };
     if t < 0.25 {
-        lerp_fn(morning, noon, t / 0.25)
+        // 06:00 -> 12:00 (Morning to Noon)
+        lerp_fn(morning, noon, smooth(t / 0.25))
     } else if t < 0.50 {
-        lerp_fn(noon, evening, (t - 0.25) / 0.25)
+        // 12:00 -> 18:00 (Noon to Evening, staying bright midday until ~15:00)
+        let u = ((t - 0.34) / 0.16).clamp(0.0, 1.0);
+        lerp_fn(noon, evening, smooth(u))
     } else if t < 0.75 {
-        lerp_fn(evening, night, (t - 0.50) / 0.25)
+        // 18:00 -> 00:00 (Evening to Night, reaching full dark night by ~21:00)
+        let u = ((t - 0.50) / 0.13).clamp(0.0, 1.0);
+        lerp_fn(evening, night, smooth(u))
     } else {
-        lerp_fn(night, morning, (t - 0.75) / 0.25)
+        // 00:00 -> 06:00 (Stay genuinely dark night through 00:00..04:15, then dawn rises 04:15..06:00)
+        let u = ((t - 0.925) / 0.075).clamp(0.0, 1.0);
+        lerp_fn(night, morning, smooth(u))
     }
 }
 
@@ -307,10 +546,10 @@ pub fn lerp_f32(a: f32, b: f32, factor: f32) -> f32 {
 }
 
 pub fn sample_sky_color(time_of_day: f32) -> Color {
-    let morning = LinearRgba::new(0.68, 0.48, 0.52, 1.0); // Dawn rosy peach
-    let noon = LinearRgba::new(0.38, 0.62, 0.92, 1.0); // Midday azure blue
-    let evening = LinearRgba::new(0.72, 0.36, 0.24, 1.0); // Sunset amber/crimson
-    let night = LinearRgba::new(0.020, 0.035, 0.080, 1.0); // Midnight dark indigo
+    let morning = LinearRgba::new(0.76, 0.46, 0.42, 1.0); // Dawn warm rose-gold
+    let noon = LinearRgba::new(0.24, 0.56, 0.96, 1.0); // Vibrant Complementary azure
+    let evening = LinearRgba::new(0.82, 0.34, 0.18, 1.0); // Sunset rich amber-crimson
+    let night = LinearRgba::new(0.016, 0.032, 0.082, 1.0); // Deep midnight indigo
 
     Color::LinearRgba(sample_4stop(
         time_of_day,
@@ -323,10 +562,11 @@ pub fn sample_sky_color(time_of_day: f32) -> Color {
 }
 
 pub fn sample_ambient_color(time_of_day: f32) -> Color {
-    let morning = LinearRgba::new(0.95, 0.82, 0.72, 1.0);
-    let noon = LinearRgba::new(0.88, 0.94, 1.08, 1.0);
-    let evening = LinearRgba::new(0.95, 0.72, 0.55, 1.0);
-    let night = LinearRgba::new(0.32, 0.38, 0.58, 1.0);
+    // Complementary-style cool sky-tinted shadows contrasting against warm direct sunlight
+    let morning = LinearRgba::new(0.76, 0.72, 0.88, 1.0);
+    let noon = LinearRgba::new(0.58, 0.78, 1.18, 1.0);
+    let evening = LinearRgba::new(0.82, 0.62, 0.68, 1.0);
+    let night = LinearRgba::new(0.26, 0.36, 0.62, 1.0);
 
     Color::LinearRgba(sample_4stop(
         time_of_day,
@@ -341,19 +581,19 @@ pub fn sample_ambient_color(time_of_day: f32) -> Color {
 pub fn sample_ambient_brightness(time_of_day: f32) -> f32 {
     sample_4stop(
         time_of_day,
-        2_000.0,
+        1_150.0,
         DAY_AMBIENT_BRIGHTNESS,
-        2_000.0,
+        1_100.0,
         NIGHT_AMBIENT_BRIGHTNESS,
         lerp_f32,
     )
 }
 
 pub fn sample_fog_color(time_of_day: f32) -> Color {
-    let morning = LinearRgba::new(0.75, 0.62, 0.62, 1.0);
-    let noon = LinearRgba::new(0.60, 0.72, 0.84, 1.0);
-    let evening = LinearRgba::new(0.76, 0.48, 0.38, 1.0);
-    let night = LinearRgba::new(0.045, 0.065, 0.12, 1.0);
+    let morning = LinearRgba::new(0.84, 0.58, 0.50, 1.0);
+    let noon = LinearRgba::new(0.52, 0.74, 0.96, 1.0);
+    let evening = LinearRgba::new(0.88, 0.44, 0.28, 1.0);
+    let night = LinearRgba::new(0.036, 0.060, 0.125, 1.0);
 
     Color::LinearRgba(sample_4stop(
         time_of_day,
@@ -366,10 +606,10 @@ pub fn sample_fog_color(time_of_day: f32) -> Color {
 }
 
 pub fn sample_fog_light_color(time_of_day: f32) -> Color {
-    let morning = LinearRgba::new(1.0, 0.85, 0.65, 0.18);
-    let noon = LinearRgba::new(1.0, 0.92, 0.78, 0.12);
-    let evening = LinearRgba::new(1.0, 0.62, 0.38, 0.22);
-    let night = LinearRgba::new(0.40, 0.48, 0.75, 0.06);
+    let morning = LinearRgba::new(1.0, 0.78, 0.48, 0.28);
+    let noon = LinearRgba::new(1.0, 0.90, 0.70, 0.18);
+    let evening = LinearRgba::new(1.0, 0.52, 0.26, 0.36);
+    let night = LinearRgba::new(0.38, 0.50, 0.82, 0.08);
 
     Color::LinearRgba(sample_4stop(
         time_of_day,
@@ -382,15 +622,15 @@ pub fn sample_fog_light_color(time_of_day: f32) -> Color {
 }
 
 pub fn sample_fog_light_exponent(time_of_day: f32) -> f32 {
-    sample_4stop(time_of_day, 18.0, 20.0, 16.0, 14.0, lerp_f32)
+    sample_4stop(time_of_day, 12.0, 14.0, 10.0, 14.0, lerp_f32)
 }
 
 pub fn sample_exposure(time_of_day: f32) -> f32 {
     sample_4stop(
         time_of_day,
-        10.4,
+        10.9,
         DAY_EXPOSURE_EV100,
-        10.2,
+        10.7,
         NIGHT_EXPOSURE_EV100,
         lerp_f32,
     )

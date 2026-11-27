@@ -105,6 +105,7 @@ enum SettingsAction {
     IncFov,
     ToggleDynamicFov,
     ToggleFog,
+    ToggleAtmosphericFog,
     ToggleViewBobbing,
     ToggleFullGrass,
     ToggleProceduralGrass,
@@ -148,11 +149,27 @@ enum SettingsAction {
     TogglePixelatedShadows,
     ToggleHdrBloom,
     ToggleDynamicLighting,
+    ToggleWaterReflections,
+    ToggleCloudShadows,
+    ToggleFoliageSss,
+    ToggleAuroraBorealis,
     Back,
 }
 
 #[derive(Component)]
 struct DynamicLightingLabel;
+
+#[derive(Component)]
+struct WaterReflectionsLabel;
+
+#[derive(Component)]
+struct CloudShadowsLabel;
+
+#[derive(Component)]
+struct FoliageSssLabel;
+
+#[derive(Component)]
+struct AuroraBorealisLabel;
 
 #[derive(Component)]
 struct CoatedTexturesLabel;
@@ -294,6 +311,9 @@ struct DynamicFovLabel;
 
 #[derive(Component)]
 struct FogLabel;
+
+#[derive(Component)]
+struct AtmosphericFogLabel;
 
 #[derive(Component)]
 struct ViewBobbingLabel;
@@ -540,6 +560,7 @@ fn spawn_settings_menu(
     let sim_dist = chunk_settings.simulation_distance;
     let fov = game_settings.fov_degrees as i32;
     let fog_enabled = game_settings.fog_enabled;
+    let atmospheric_fog_enabled = game_settings.atmospheric_fog_enabled;
     let time_paused = env_state
         .as_ref()
         .map_or(local_config.is_time_paused, |e| e.is_time_paused);
@@ -1165,7 +1186,7 @@ fn spawn_settings_menu(
                                             font_handle.as_ref(),
                                         );
 
-                                        // Fog Toggle Button
+                                        // Chunk Border Fog Toggle Button
                                         spawn_toggle_button(
                                             col_right,
                                             SettingsAction::ToggleFog,
@@ -1179,6 +1200,23 @@ fn spawn_settings_menu(
                                                 }
                                             ),
                                             FogLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Atmospheric Fog Toggle Button
+                                        spawn_toggle_button(
+                                            col_right,
+                                            SettingsAction::ToggleAtmosphericFog,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.atmospheric_fog"),
+                                                if atmospheric_fog_enabled {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            AtmosphericFogLabel,
                                             font_handle.as_ref(),
                                         );
 
@@ -1546,6 +1584,74 @@ fn spawn_settings_menu(
                                                 }
                                             ),
                                             HdrBloomLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Water Reflections (SSR vs Sky Only) Toggle
+                                        spawn_toggle_button(
+                                            col_left,
+                                            SettingsAction::ToggleWaterReflections,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.water_reflections"),
+                                                if local_config.water_reflections_ssr {
+                                                    loc.t("menu.settings.water_refl.ssr")
+                                                } else {
+                                                    loc.t("menu.settings.water_refl.sky")
+                                                }
+                                            ),
+                                            WaterReflectionsLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Cloud Shadows Toggle
+                                        spawn_toggle_button(
+                                            col_left,
+                                            SettingsAction::ToggleCloudShadows,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.cloud_shadows"),
+                                                if local_config.cloud_shadows {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            CloudShadowsLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Foliage Translucency (SSS) Toggle
+                                        spawn_toggle_button(
+                                            col_left,
+                                            SettingsAction::ToggleFoliageSss,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.foliage_sss"),
+                                                if local_config.foliage_sss {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            FoliageSssLabel,
+                                            font_handle.as_ref(),
+                                        );
+
+                                        // Aurora Borealis Toggle
+                                        spawn_toggle_button(
+                                            col_left,
+                                            SettingsAction::ToggleAuroraBorealis,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.aurora_borealis"),
+                                                if local_config.aurora_borealis {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            AuroraBorealisLabel,
                                             font_handle.as_ref(),
                                         );
                                     });
@@ -2429,6 +2535,9 @@ fn handle_settings_buttons(
                 SettingsAction::ToggleFog => {
                     game_settings.fog_enabled = !game_settings.fog_enabled;
                 }
+                SettingsAction::ToggleAtmosphericFog => {
+                    game_settings.atmospheric_fog_enabled = !game_settings.atmospheric_fog_enabled;
+                }
                 SettingsAction::ToggleViewBobbing => {
                     game_settings.view_bobbing = !game_settings.view_bobbing;
                 }
@@ -2677,6 +2786,18 @@ fn handle_settings_buttons(
                 SettingsAction::ToggleDynamicLighting => {
                     local_config.dynamic_lighting = !local_config.dynamic_lighting;
                 }
+                SettingsAction::ToggleWaterReflections => {
+                    local_config.water_reflections_ssr = !local_config.water_reflections_ssr;
+                }
+                SettingsAction::ToggleCloudShadows => {
+                    local_config.cloud_shadows = !local_config.cloud_shadows;
+                }
+                SettingsAction::ToggleFoliageSss => {
+                    local_config.foliage_sss = !local_config.foliage_sss;
+                }
+                SettingsAction::ToggleAuroraBorealis => {
+                    local_config.aurora_borealis = !local_config.aurora_borealis;
+                }
                 SettingsAction::Back => {
                     next_state.set(menu_return_target.0);
                     sync_config = false;
@@ -2691,6 +2812,7 @@ fn handle_settings_buttons(
                 local_config.mesh_upload_budget = chunk_settings.mesh_upload_budget;
                 local_config.fov_degrees = game_settings.fov_degrees;
                 local_config.fog_enabled = game_settings.fog_enabled;
+                local_config.atmospheric_fog_enabled = game_settings.atmospheric_fog_enabled;
                 local_config.view_bobbing = game_settings.view_bobbing;
                 local_config.full_grass = game_settings.full_grass;
                 local_config.leaf_culling = game_settings.leaf_culling;
@@ -2777,6 +2899,7 @@ fn update_settings_labels(
             Option<&CloudDistanceLabel>,
             Option<&GodRaysLabel>,
             Option<&FogLabel>,
+            Option<&AtmosphericFogLabel>,
             Option<&TransmissionLabel>,
             Option<&FullGrassLabel>,
             Option<&TimePauseLabel>,
@@ -2798,6 +2921,10 @@ fn update_settings_labels(
             Option<&PixelatedShadowsLabel>,
             Option<&HdrBloomLabel>,
             Option<&DynamicLightingLabel>,
+            Option<&WaterReflectionsLabel>,
+            Option<&CloudShadowsLabel>,
+            Option<&FoliageSssLabel>,
+            Option<&AuroraBorealisLabel>,
         ),
     )>,
 ) {
@@ -2835,6 +2962,7 @@ fn update_settings_labels(
             cloud_distance,
             god_rays,
             fog,
+            atmospheric_fog,
             transmission,
             grass,
             time_pause,
@@ -2849,6 +2977,10 @@ fn update_settings_labels(
             pixelated_shadows,
             hdr_bloom,
             dynamic_lighting,
+            water_reflections,
+            cloud_shadows,
+            foliage_sss,
+            aurora_borealis,
         ),
     ) in &mut labels_query
     {
@@ -2979,6 +3111,46 @@ fn update_settings_labels(
                         loc.t("common.disabled")
                     }
                 );
+            } else if water_reflections.is_some() {
+                text.0 = format!(
+                    "{}: {}",
+                    loc.t("menu.settings.water_reflections"),
+                    if local_config.water_reflections_ssr {
+                        loc.t("menu.settings.water_refl.ssr")
+                    } else {
+                        loc.t("menu.settings.water_refl.sky")
+                    }
+                );
+            } else if cloud_shadows.is_some() {
+                text.0 = format!(
+                    "{}: {}",
+                    loc.t("menu.settings.cloud_shadows"),
+                    if local_config.cloud_shadows {
+                        loc.t("common.enabled")
+                    } else {
+                        loc.t("common.disabled")
+                    }
+                );
+            } else if foliage_sss.is_some() {
+                text.0 = format!(
+                    "{}: {}",
+                    loc.t("menu.settings.foliage_sss"),
+                    if local_config.foliage_sss {
+                        loc.t("common.enabled")
+                    } else {
+                        loc.t("common.disabled")
+                    }
+                );
+            } else if aurora_borealis.is_some() {
+                text.0 = format!(
+                    "{}: {}",
+                    loc.t("menu.settings.aurora_borealis"),
+                    if local_config.aurora_borealis {
+                        loc.t("common.enabled")
+                    } else {
+                        loc.t("common.disabled")
+                    }
+                );
             }
         }
         if game_changed {
@@ -3007,6 +3179,16 @@ fn update_settings_labels(
                     "{}: {}",
                     loc.t("menu.settings.fog"),
                     if game_settings.fog_enabled {
+                        loc.t("common.enabled")
+                    } else {
+                        loc.t("common.disabled")
+                    }
+                );
+            } else if atmospheric_fog.is_some() {
+                text.0 = format!(
+                    "{}: {}",
+                    loc.t("menu.settings.atmospheric_fog"),
+                    if game_settings.atmospheric_fog_enabled {
                         loc.t("common.enabled")
                     } else {
                         loc.t("common.disabled")

@@ -473,9 +473,29 @@ pub struct LocalConfig {
     #[serde(default = "default_dynamic_fov_enabled")]
     pub dynamic_fov_enabled: bool,
 
-    /// Whether distance horizon fog is enabled.
+    /// Whether chunk border horizon fog is enabled.
     #[serde(default = "default_fog_enabled")]
     pub fog_enabled: bool,
+
+    /// Whether altitude-aware atmospheric & per-biome fog is enabled.
+    #[serde(default = "default_atmospheric_fog_enabled")]
+    pub atmospheric_fog_enabled: bool,
+
+    /// Whether real screen-space water reflections (SSR) are enabled (false = Sky Only).
+    #[serde(default = "default_water_reflections_ssr")]
+    pub water_reflections_ssr: bool,
+
+    /// Whether procedural cloud shadows are projected onto terrain and grass.
+    #[serde(default = "default_cloud_shadows")]
+    pub cloud_shadows: bool,
+
+    /// Whether backlit foliage & grass translucency (fake SSS) is enabled.
+    #[serde(default = "default_foliage_sss")]
+    pub foliage_sss: bool,
+
+    /// Whether procedural Aurora Borealis renders in the night sky of polar/cold biomes.
+    #[serde(default = "default_aurora_borealis")]
+    pub aurora_borealis: bool,
 
     /// Head bobbing during walking/sprinting.
     #[serde(default = "default_view_bobbing")]
@@ -865,6 +885,26 @@ fn default_fog_enabled() -> bool {
     true
 }
 
+fn default_atmospheric_fog_enabled() -> bool {
+    true
+}
+
+fn default_water_reflections_ssr() -> bool {
+    true
+}
+
+fn default_cloud_shadows() -> bool {
+    true
+}
+
+fn default_foliage_sss() -> bool {
+    true
+}
+
+fn default_aurora_borealis() -> bool {
+    true
+}
+
 fn default_view_bobbing() -> bool {
     true
 }
@@ -982,6 +1022,11 @@ impl Default for LocalConfig {
             fov_degrees: default_fov_degrees(),
             dynamic_fov_enabled: default_dynamic_fov_enabled(),
             fog_enabled: default_fog_enabled(),
+            atmospheric_fog_enabled: default_atmospheric_fog_enabled(),
+            water_reflections_ssr: default_water_reflections_ssr(),
+            cloud_shadows: default_cloud_shadows(),
+            foliage_sss: default_foliage_sss(),
+            aurora_borealis: default_aurora_borealis(),
             view_bobbing: default_view_bobbing(),
             full_grass: default_full_grass(),
             vsync_enabled: default_vsync_enabled(),

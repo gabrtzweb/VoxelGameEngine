@@ -724,9 +724,6 @@ impl Voxel {
         matches!(
             self,
             Self::ElementFire
-                | Self::TreeCharredLog
-                | Self::TreeCharredBark
-                | Self::TreeCharredPlanks
                 | Self::TreeCharredLogLit
                 | Self::TreeCharredBarkLit
                 | Self::TreeCharredPlanksLit

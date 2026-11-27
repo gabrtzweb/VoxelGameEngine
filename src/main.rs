@@ -122,6 +122,7 @@ fn main() {
         dynamic_fov_enabled: local_config.dynamic_fov_enabled,
 
         fog_enabled: local_config.fog_enabled,
+        atmospheric_fog_enabled: local_config.atmospheric_fog_enabled,
 
         view_bobbing: local_config.view_bobbing,
 

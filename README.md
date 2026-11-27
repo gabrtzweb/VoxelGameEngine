@@ -86,6 +86,7 @@ assets/
 │   ├── grass_blades.wesl
 │   ├── grass_plant.wesl
 │   ├── post_process.wesl
+│   ├── sky_dome.wesl
 │   ├── voxel_opaque.wesl
 │   ├── voxel_prepass.wesl
 │   └── voxel_transparent.wesl
@@ -167,6 +168,7 @@ src/
 │   ├── mod.rs
 │   ├── particles.rs
 │   ├── post_process.rs
+│   ├── sky.rs
 │   ├── stars.rs
 │   └── time.rs
 ├── gameplay/

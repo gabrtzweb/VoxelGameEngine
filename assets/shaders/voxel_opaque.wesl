@@ -16,6 +16,9 @@ import bevy_pbr::render::{
 @group(constants::MATERIAL_BIND_GROUP) @binding(105) var<uniform> anim_params: vec4<f32>;
 @group(constants::MATERIAL_BIND_GROUP) @binding(106) var mask_texture_array: texture_2d_array<f32>;
 @group(constants::MATERIAL_BIND_GROUP) @binding(107) var mask_sampler: sampler;
+@group(constants::MATERIAL_BIND_GROUP) @binding(108) var<uniform> sun_dir_and_factor: vec4<f32>;
+@group(constants::MATERIAL_BIND_GROUP) @binding(109) var<uniform> sun_color_and_cloud: vec4<f32>;
+@group(constants::MATERIAL_BIND_GROUP) @binding(110) var<uniform> player_push_pos: vec4<f32>;
 
 // Fast procedural noise using Dave Hoskins' sine-free hash (ultra-fast on integrated GPUs)
 fn hash2_noise(p: vec2<f32>) -> f32 {
@@ -135,6 +138,20 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
             out.world_position.x += wind_dir.x * sway - wind_dir.y * cross_sway;
             out.world_position.z += wind_dir.y * sway + wind_dir.x * cross_sway;
             out.world_position.y -= (abs(sway) * 0.15) * height;
+
+            // Gentle player parting / push when walking through cross-mesh flora & crops
+            if (player_push_pos.w > 0.5) {
+                let d_xz = pos.xz - player_push_pos.xz;
+                let dist = length(d_xz);
+                let dy = abs(pos.y - (player_push_pos.y + 0.65));
+                if (dist < 1.30 && dist > 0.001 && dy < 1.35) {
+                    let push = smoothstep(1.30, 0.12, dist) * 0.42 * height;
+                    let push_dir = d_xz / dist;
+                    out.world_position.x += push_dir.x * push;
+                    out.world_position.z += push_dir.y * push;
+                    out.world_position.y -= push * 0.28;
+                }
+            }
 
         } else if (anim_type > 3.5 && anim_type < 4.5) {
             // Type 4: Aquatic Flora (Kelp, Seagrass)
@@ -441,20 +458,20 @@ fn fragment(
         tex_color = vec4<f32>(tex_color.rgb * coat_factor, tex_color.a);
     }
 
-    // Directional shading floor (Top 1.0, Bottom 0.55, N/S 0.86, E/W 0.78):
-    // Preserves clear geometric distinction across faces under diffuse ambient light.
+    // Directional shading floor (Top 1.0, Bottom 0.65, N/S 0.90, E/W 0.84):
+    // Subtle geometric face distinction complementing real warm-sun vs. cool-ambient shadows.
     let norm = normalize(vertex_output.world_normal);
     var dir_shading = 1.0;
     if (is_cross_mesh) {
-        dir_shading = 0.82;
+        dir_shading = 0.88;
     } else if (abs(norm.y) > 0.5) {
         if (norm.y < 0.0) {
-            dir_shading = 0.55;
+            dir_shading = 0.65;
         }
     } else if (abs(norm.z) > 0.5) {
-        dir_shading = 0.86;
+        dir_shading = 0.90;
     } else {
-        dir_shading = 0.78;
+        dir_shading = 0.84;
     }
 
     if (is_painted_block) {
@@ -516,6 +533,30 @@ fn fragment(
         out.color = vec4<f32>(tex_color.rgb * vertex_output.color.rgb * 2.5, 1.0);
     } else {
         out.color = apply_pbr_lighting(pbr_input);
+
+        // Complementary-inspired backlit Subsurface Scattering (translucency) on tree leaves & flora
+        let sun_strength = sun_dir_and_factor.w;
+        if ((is_leaves_block || (is_cross_mesh && vertex_output.color.a < 5.5)) && !is_item_entity && sun_strength > 0.02) {
+            let sun_dir = normalize(sun_dir_and_factor.xyz);
+            let view_ray = normalize(-pbr_input.V);
+            let v_dot_l = max(dot(view_ray, sun_dir), 0.0);
+            let sss_peak = pow(v_dot_l, 8.0) * 0.72;
+            let sss_wrap = pow(v_dot_l, 2.0) * 0.14 + 0.06;
+            let sss_tint = pbr_input.material.base_color.rgb * sun_color_and_cloud.rgb * vec3<f32>(1.18, 1.24, 0.80);
+            out.color = vec4<f32>(out.color.rgb + sss_tint * (sss_peak + sss_wrap) * sun_strength * 0.58, out.color.a);
+        }
+
+        // Lightweight procedural cloud shadows drifting across sunlit terrain
+        let cloud_strength = sun_color_and_cloud.a;
+        if (!is_item_entity && cloud_strength > 0.005) {
+            let sun_dir = normalize(sun_dir_and_factor.xyz);
+            let proj_scale = 140.0 / max(sun_dir.y, 0.25);
+            let cloud_uv = (vertex_output.world_position.xz - sun_dir.xz * proj_scale) * 0.0085
+                + vec2<f32>(globals.time * 0.0055, globals.time * 0.0022);
+            let cn = smooth_noise2(cloud_uv) * 0.68 + smooth_noise2(cloud_uv * 2.15 + vec2<f32>(13.7, 7.3)) * 0.32;
+            let cloud_mask = smoothstep(0.47, 0.74, cn);
+            out.color = vec4<f32>(out.color.rgb * (1.0 - cloud_mask * cloud_strength), out.color.a);
+        }
     }
     out.color = main_pass_post_lighting_processing(pbr_input, out.color);
     return out;

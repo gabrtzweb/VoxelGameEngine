@@ -4,6 +4,7 @@ pub mod clouds;
 pub mod foliage;
 pub mod particles;
 pub mod post_process;
+pub mod sky;
 pub mod stars;
 pub mod time;
 pub mod weather;
@@ -44,6 +45,7 @@ impl Plugin for EnvironmentPlugin {
             .add_plugins(weather::WeatherPlugin)
             .add_plugins(foliage::FoliagePlugin)
             .add_plugins(post_process::PostProcessPlugin)
+            .add_plugins(sky::SkyDomePlugin)
             .insert_resource(GlobalAmbientLight {
                 color: initial_ambient,
                 brightness: initial_brightness,
@@ -57,6 +59,7 @@ impl Plugin for EnvironmentPlugin {
                     stars::setup_starfield,
                     clouds::setup_clouds,
                     particles::setup_world_particles,
+                    particles::setup_wind_streaks,
                     configure_gpu_cluster_capacity,
                 ),
             )
@@ -72,6 +75,7 @@ impl Plugin for EnvironmentPlugin {
                     sync_starfield_system,
                     sync_cloud_system,
                     particles::update_world_particles,
+                    particles::update_wind_streaks,
                 )
                     .chain()
                     .after(crate::player::PlayerSet::Movement),
@@ -121,10 +125,13 @@ fn sync_celestial_system(
     celestial_materials: Res<celestial::CelestialMaterials>,
     moon_textures: Res<celestial::MoonPhaseTextures>,
     materials: ResMut<Assets<StandardMaterial>>,
-    local_config: Option<Res<crate::core::config::LocalConfig>>,
-    weather: Option<Res<weather::WeatherManager>>,
-    env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
-    world: Option<Res<crate::world::VoxelWorld>>,
+    (local_config, weather, env_status, world, sky_palette): (
+        Option<Res<crate::core::config::LocalConfig>>,
+        Option<Res<weather::WeatherManager>>,
+        Option<Res<crate::player::PlayerEnvironmentStatus>>,
+        Option<Res<crate::world::VoxelWorld>>,
+        Option<Res<sky::SkyPaletteState>>,
+    ),
 ) {
     let shadows_enabled = local_config
         .as_ref()
@@ -171,6 +178,7 @@ fn sync_celestial_system(
         underground_factor,
         sun_visibility,
         moon_visibility,
+        sky_palette.as_ref().map_or(0.0, |sp| sp.climate_temp),
     );
 }
 
@@ -187,18 +195,26 @@ fn configure_gpu_cluster_capacity(
 }
 
 fn sync_starfield_system(
+    time: Res<Time>,
     state: Res<EnvironmentState>,
     camera: Single<&Transform, (With<Camera3d>, With<PlayerCamera>)>,
     starfield_root: stars::StarfieldRootQuery,
-    material_handle: Res<stars::StarfieldMaterialHandle>,
+    material_handles: Res<stars::StarfieldMaterialHandles>,
     materials: ResMut<Assets<StandardMaterial>>,
+    weather: Option<Res<weather::WeatherManager>>,
 ) {
+    let rain_factor = weather.as_ref().map_or(0.0, |w| {
+        (w.rain_intensity * 0.8 + w.thunder_intensity * 0.4 + w.snow_intensity * 0.7 + w.dust_intensity * 0.8)
+            .clamp(0.0, 1.0)
+    });
     stars::sync_starfield(
         camera,
         starfield_root,
-        material_handle,
+        material_handles,
         materials,
         state.time_of_day,
+        time.elapsed_secs(),
+        rain_factor,
     );
 }
 
@@ -211,9 +227,14 @@ fn sync_cloud_system(
     mut meshes: ResMut<Assets<Mesh>>,
     cloud_map: Res<clouds::CloudTextureMap>,
     mut layers_res: ResMut<clouds::CloudLayersResource>,
-    env_status: Option<Res<crate::player::PlayerEnvironmentStatus>>,
-    local_config: Option<Res<crate::core::config::LocalConfig>>,
-    weather: Option<Res<weather::WeatherManager>>,
+    (env_status, local_config, weather, lightning): (
+        Option<Res<crate::player::PlayerEnvironmentStatus>>,
+        Option<Res<crate::core::config::LocalConfig>>,
+        Option<Res<weather::WeatherManager>>,
+        Option<Res<weather::LightningState>>,
+    ),
+    mut cloud_drift_secs: Local<f64>,
+    mut last_in_game_secs: Local<Option<f64>>,
 ) {
     let is_underwater = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
     let cloud_quality = local_config
@@ -225,12 +246,36 @@ fn sync_cloud_system(
         .map(|c| c.cloud_render_distance)
         .unwrap_or(64);
 
-    let storm_darkening = weather.as_ref().map_or(0.0, |w| {
-        (w.rain_intensity * 0.70 + w.thunder_intensity * 0.30 + w.dust_intensity * 0.50).min(1.0)
-    });
+    let (storm_darkening, snow_i, dust_i, wind_speed_mult) = weather.as_ref().map_or(
+        (0.0, 0.0, 0.0, 1.0_f64),
+        |w| {
+            let storm = (w.rain_intensity * 0.85 + w.thunder_intensity * 0.45).min(1.0);
+            let mult = 1.0
+                + (w.rain_intensity * 0.85
+                    + w.thunder_intensity * 1.65
+                    + w.snow_intensity * 0.90
+                    + w.dust_intensity * 1.90) as f64;
+            (storm, w.snow_intensity, w.dust_intensity, mult)
+        },
+    );
+    let lightning_flash = lightning.as_ref().map_or(0.0, |l| l.flash_intensity);
+
+    let now_in_game = state.total_in_game_seconds();
+    if let Some(prev) = *last_in_game_secs {
+        let delta = now_in_game - prev;
+        if delta.abs() > 0.5 {
+            // F6 time scrub / phase jump: advance clouds directly in lockstep with time
+            *cloud_drift_secs += delta;
+        } else if delta > 0.0 {
+            *cloud_drift_secs += delta * wind_speed_mult;
+        }
+    } else {
+        *cloud_drift_secs = now_in_game;
+    }
+    *last_in_game_secs = Some(now_in_game);
 
     clouds::sync_clouds(
-        state.total_in_game_seconds(),
+        *cloud_drift_secs,
         camera,
         cloud_layers,
         material_handle,
@@ -243,5 +288,8 @@ fn sync_cloud_system(
         cloud_quality,
         cloud_render_distance,
         storm_darkening,
+        snow_i,
+        dust_i,
+        lightning_flash,
     );
 }

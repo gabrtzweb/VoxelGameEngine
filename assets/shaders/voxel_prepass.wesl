@@ -13,6 +13,7 @@ import bevy_render::globals::Globals;
 @group(constants::MATERIAL_BIND_GROUP) @binding(101) var voxel_sampler: sampler;
 @group(constants::MATERIAL_BIND_GROUP) @binding(104) var<uniform> voxel_params: vec4<f32>;
 @group(constants::MATERIAL_BIND_GROUP) @binding(105) var<uniform> anim_params: vec4<f32>;
+@group(constants::MATERIAL_BIND_GROUP) @binding(110) var<uniform> player_push_pos: vec4<f32>;
 
 @vertex
 fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
@@ -60,6 +61,20 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
             out.world_position.x += wind_dir.x * sway - wind_dir.y * cross_sway;
             out.world_position.z += wind_dir.y * sway + wind_dir.x * cross_sway;
             out.world_position.y -= (abs(sway) * 0.15) * height;
+
+            // Gentle player parting / push matching forward pass
+            if (player_push_pos.w > 0.5) {
+                let d_xz = pos.xz - player_push_pos.xz;
+                let dist = length(d_xz);
+                let dy = abs(pos.y - (player_push_pos.y + 0.65));
+                if (dist < 1.30 && dist > 0.001 && dy < 1.35) {
+                    let push = smoothstep(1.30, 0.12, dist) * 0.42 * height;
+                    let push_dir = d_xz / dist;
+                    out.world_position.x += push_dir.x * push;
+                    out.world_position.z += push_dir.y * push;
+                    out.world_position.y -= push * 0.28;
+                }
+            }
 
         } else if (anim_type > 3.5 && anim_type < 4.5) {
             // Type 4: Aquatic Flora (Kelp, Seagrass)

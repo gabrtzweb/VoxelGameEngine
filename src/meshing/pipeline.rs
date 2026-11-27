@@ -36,6 +36,12 @@ pub struct OpaqueVoxelMaterial {
     #[texture(106, dimension = "2d_array")]
     #[sampler(107)]
     pub mask_texture_array: Handle<Image>,
+    #[uniform(108)]
+    pub sun_dir_and_factor: Vec4,
+    #[uniform(109)]
+    pub sun_color_and_cloud: Vec4,
+    #[uniform(110)]
+    pub player_push_pos: Vec4,
 }
 
 impl MaterialExtension for OpaqueVoxelMaterial {
@@ -71,6 +77,14 @@ pub struct TransparentVoxelMaterial {
     #[texture(100, dimension = "2d_array")]
     #[sampler(101)]
     pub texture_array: Handle<Image>,
+    #[uniform(102)]
+    pub sky_up_color: Vec4,
+    #[uniform(103)]
+    pub sky_middle_color: Vec4,
+    #[uniform(104)]
+    pub sky_sunset_color: Vec4,
+    #[uniform(105)]
+    pub sun_dir_and_factor: Vec4,
 }
 
 impl MaterialExtension for TransparentVoxelMaterial {
@@ -344,6 +358,9 @@ pub fn setup_chunk_material(
             params,
             anim_params,
             mask_texture_array,
+            sun_dir_and_factor: Vec4::new(0.0, 1.0, 0.0, 1.0),
+            sun_color_and_cloud: Vec4::new(1.0, 0.88, 0.66, 0.22),
+            player_push_pos: Vec4::ZERO,
         },
     });
 
@@ -357,7 +374,13 @@ pub fn setup_chunk_material(
             reflectance: 0.9,
             ..default()
         },
-        extension: TransparentVoxelMaterial { texture_array },
+        extension: TransparentVoxelMaterial {
+            texture_array,
+            sky_up_color: Vec4::new(0.08, 0.32, 0.88, 1.0),
+            sky_middle_color: Vec4::new(0.44, 0.74, 1.04, 1.0),
+            sky_sunset_color: Vec4::new(1.38, 0.64, 0.28, 0.0),
+            sun_dir_and_factor: Vec4::new(0.0, 1.0, 0.0, 1.0),
+        },
     });
 
     let grass = grass_material_handle.as_ref().map(|h| h.material.clone());
@@ -773,9 +796,15 @@ pub fn remove_lod_render(
 
 pub fn sync_voxel_shader_settings(
     local_config: Option<Res<crate::core::LocalConfig>>,
-    wind_state: Option<Res<crate::environment::WindState>>,
+    (wind_state, weather, sky_palette): (
+        Option<Res<crate::environment::WindState>>,
+        Option<Res<crate::environment::WeatherManager>>,
+        Option<Res<crate::environment::sky::SkyPaletteState>>,
+    ),
+    player_query: Query<&Transform, With<crate::player::Player>>,
     chunk_material: Option<Res<ChunkMaterial>>,
     mut opaque_materials: ResMut<Assets<OpaqueChunkMaterial>>,
+    mut transparent_materials: ResMut<Assets<TransparentChunkMaterial>>,
     mut last_sent: Local<Option<(Vec4, f32, f32)>>,
 ) {
     let Some(chunk_material) = chunk_material else {
@@ -793,16 +822,53 @@ pub fn sync_voxel_shader_settings(
         Vec4::new(0.28, 1.0, 1.0, 0.0)
     };
 
+    let weather_wind_boost = weather.as_ref().map_or(1.0, |w| {
+        1.0 + w.rain_intensity * 0.42
+            + w.thunder_intensity * 0.55
+            + w.snow_intensity * 0.28
+            + w.dust_intensity * 0.65
+    });
     let (wind_intensity, wind_angle) = if let Some(ref wind) = wind_state {
         (
-            (wind.current_speed / 4.0).clamp(0.4, 2.5),
+            ((wind.current_speed / 4.0) * weather_wind_boost).clamp(0.4, 3.2),
             wind.current_heading,
         )
     } else {
-        (1.0, 0.44)
+        (1.0 * weather_wind_boost, 0.44)
     };
 
-    let needs_update = match *last_sent {
+    let player_push_pos = player_query
+        .iter()
+        .next()
+        .map_or(Vec4::ZERO, |tf| Vec4::new(tf.translation.x, tf.translation.y, tf.translation.z, 1.0));
+
+    let sp = sky_palette.as_deref().copied().unwrap_or_default();
+    let clear_sun_factor = sp.sun_factor * (1.0 - sp.rain_factor * 0.78);
+    let sss_enabled = local_config.as_ref().is_none_or(|c| c.foliage_sss);
+    let cloud_shadows_enabled = local_config.as_ref().is_none_or(|c| c.cloud_shadows);
+    let water_ssr_enabled = local_config.as_ref().is_none_or(|c| c.water_reflections_ssr);
+
+    let opaque_sun_dir_and_factor = Vec4::new(
+        sp.sun_dir.x,
+        sp.sun_dir.y,
+        sp.sun_dir.z,
+        if sss_enabled { clear_sun_factor } else { 0.0 },
+    );
+    let water_sun_dir_and_factor =
+        Vec4::new(sp.sun_dir.x, sp.sun_dir.y, sp.sun_dir.z, clear_sun_factor);
+    let cloud_shadow_strength = if cloud_shadows_enabled {
+        0.22 * clear_sun_factor * (sp.sun_dir.y.max(0.0) / 0.25).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
+    let sun_color_and_cloud = Vec4::new(
+        sp.sun_color.red,
+        sp.sun_color.green,
+        sp.sun_color.blue,
+        cloud_shadow_strength,
+    );
+
+    let needs_static_update = match *last_sent {
         None => true,
         Some((p, wi, wa)) => {
             (p - target_params).abs().max_element() > 0.005
@@ -811,13 +877,36 @@ pub fn sync_voxel_shader_settings(
         }
     };
 
-    if !needs_update {
-        return;
+    if let Some(mut mat) = opaque_materials.get_mut(&chunk_material.opaque) {
+        if needs_static_update {
+            mat.extension.params = target_params;
+            mat.extension.anim_params = Vec4::new(0.0, wind_intensity, wind_angle, 0.0);
+            *last_sent = Some((target_params, wind_intensity, wind_angle));
+        }
+        mat.extension.sun_dir_and_factor = opaque_sun_dir_and_factor;
+        mat.extension.sun_color_and_cloud = sun_color_and_cloud;
+        mat.extension.player_push_pos = player_push_pos;
     }
 
-    if let Some(mut mat) = opaque_materials.get_mut(&chunk_material.opaque) {
-        mat.extension.params = target_params;
-        mat.extension.anim_params = Vec4::new(0.0, wind_intensity, wind_angle, 0.0);
-        *last_sent = Some((target_params, wind_intensity, wind_angle));
+    if let Some(mut tmat) = transparent_materials.get_mut(&chunk_material.transparent) {
+        tmat.extension.sky_up_color = Vec4::new(
+            sp.up_color.red,
+            sp.up_color.green,
+            sp.up_color.blue,
+            sp.rain_factor,
+        );
+        tmat.extension.sky_middle_color = Vec4::new(
+            sp.middle_color.red,
+            sp.middle_color.green,
+            sp.middle_color.blue,
+            if water_ssr_enabled { 1.0 } else { 0.0 },
+        );
+        tmat.extension.sky_sunset_color = Vec4::new(
+            sp.sunset_color.red,
+            sp.sunset_color.green,
+            sp.sunset_color.blue,
+            sp.sunset_strength,
+        );
+        tmat.extension.sun_dir_and_factor = water_sun_dir_and_factor;
     }
 }

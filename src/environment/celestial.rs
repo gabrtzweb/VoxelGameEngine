@@ -137,7 +137,7 @@ pub fn setup_celestial(
     let moon_mesh = meshes.add(Rectangle::new(MOON_SIZE, MOON_SIZE));
 
     let sun_material = materials.add(StandardMaterial {
-        base_color: Color::LinearRgba(LinearRgba::new(2.2, 2.0, 1.5, 1.0)),
+        base_color: Color::LinearRgba(LinearRgba::new(2.6, 2.2, 1.45, 1.0)),
         base_color_texture: Some(sun_handle),
         unlit: true,
         alpha_mode: AlphaMode::Add,
@@ -282,6 +282,7 @@ pub fn sync_celestial_transforms(
     underground_factor: f32,
     sun_visibility: f32,
     moon_visibility: f32,
+    climate_temp: f32,
 ) {
     let camera_translation = camera.translation;
     let sun_dir = calculate_sun_direction(time_of_day);
@@ -332,11 +333,17 @@ pub fn sync_celestial_transforms(
         Visibility::Visible
     };
 
-    // Dynamic sun color: deep golden-orange at dawn/dusk, warm white at noon
-    let sun_warmth = (sun_elev / 0.40).clamp(0.0, 1.0);
-    let dawn_color = Vec3::new(1.0, 0.66, 0.32);
-    let midday_color = Vec3::new(1.0, 0.98, 0.90);
-    let current_sun_color = dawn_color.lerp(midday_color, sun_warmth.powf(0.7));
+    // Dynamic sun color: rich golden-amber at dawn/dusk, warm golden-cream sunlight at noon,
+    // modulated smoothly by climate zone (Cold -> crisp icy white, Warm -> gentle extra golden warmth)
+    let sun_warmth = (sun_elev / 0.42).clamp(0.0, 1.0);
+    let dawn_color = Vec3::new(1.0, 0.56, 0.24);
+    let base_midday = Vec3::new(1.0, 0.91, 0.74);
+    let midday_color = if climate_temp < 0.0 {
+        base_midday.lerp(Vec3::new(0.92, 0.96, 1.0), (-climate_temp).clamp(0.0, 1.0) * 0.82)
+    } else {
+        base_midday.lerp(Vec3::new(1.0, 0.87, 0.65), climate_temp.clamp(0.0, 1.0) * 0.55)
+    };
+    let current_sun_color = dawn_color.lerp(midday_color, sun_warmth.powf(0.68));
     sun_l.color = Color::srgb(
         current_sun_color.x,
         current_sun_color.y,

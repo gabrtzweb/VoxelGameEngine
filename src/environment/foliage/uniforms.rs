@@ -12,6 +12,8 @@ pub struct GrassShaderUniformsGpu {
     pub gradient_params: Vec4,
     pub trail_params2: Vec4,
     pub entity_pushers: [Vec4; 8],
+    pub sun_dir_and_factor: Vec4,
+    pub sun_color_and_cloud: Vec4,
 }
 
 /// CPU-side state tracking animated phase accumulation.
@@ -42,6 +44,8 @@ pub fn update_foliage_uniforms(
     wind: Option<Res<WindState>>,
     config: Option<Res<GrassConfig>>,
     local_config: Option<Res<crate::core::LocalConfig>>,
+    sky_palette: Option<Res<crate::environment::sky::SkyPaletteState>>,
+    weather: Option<Res<crate::environment::WeatherManager>>,
     mut anim_state: ResMut<FoliageAnimationState>,
 ) {
     let dt = time.delta_secs();
@@ -94,9 +98,25 @@ pub fn update_foliage_uniforms(
         0.0
     };
 
+    let weather_wind_boost = weather.as_ref().map_or(1.0, |w| {
+        1.0 + w.rain_intensity * 0.38
+            + w.thunder_intensity * 0.50
+            + w.snow_intensity * 0.25
+            + w.dust_intensity * 0.60
+    });
     let waving_enabled = local_config.as_ref().is_none_or(|c| c.waving_foliage);
     let wind_intensity = if waving_enabled {
-        (wind_speed / 4.0).clamp(0.0, 5.0)
+        ((wind_speed / 4.0) * weather_wind_boost).clamp(0.0, 5.0)
+    } else {
+        0.0
+    };
+
+    let sp = sky_palette.as_deref().copied().unwrap_or_default();
+    let clear_sun_factor = sp.sun_factor * (1.0 - sp.rain_factor * 0.78);
+    let sss_enabled = local_config.as_ref().is_none_or(|c| c.foliage_sss);
+    let cloud_shadows_enabled = local_config.as_ref().is_none_or(|c| c.cloud_shadows);
+    let cloud_shadow_strength = if cloud_shadows_enabled {
+        0.22 * clear_sun_factor * (sp.sun_dir.y.max(0.0) / 0.25).clamp(0.0, 1.0)
     } else {
         0.0
     };
@@ -128,6 +148,18 @@ pub fn update_foliage_uniforms(
         ),
         trail_params2: anim_state.gpu_uniforms.trail_params2,
         entity_pushers: anim_state.gpu_uniforms.entity_pushers,
+        sun_dir_and_factor: Vec4::new(
+            sp.sun_dir.x,
+            sp.sun_dir.y,
+            sp.sun_dir.z,
+            if sss_enabled { clear_sun_factor } else { 0.0 },
+        ),
+        sun_color_and_cloud: Vec4::new(
+            sp.sun_color.red,
+            sp.sun_color.green,
+            sp.sun_color.blue,
+            cloud_shadow_strength,
+        ),
     };
 
     anim_state.gpu_uniforms = gpu;

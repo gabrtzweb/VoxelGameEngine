@@ -281,8 +281,15 @@ fn spawn_player_and_camera(
                 end: 100000.0,
             },
         },
-        Exposure { ev100: 11.0 },
-        Tonemapping::AcesFitted,
+        Exposure { ev100: 11.9 },
+        Tonemapping::TonyMcMapface,
+        bevy::render::view::ColorGrading {
+            global: bevy::render::view::ColorGradingGlobal {
+                post_saturation: 1.14,
+                ..default()
+            },
+            ..default()
+        },
         crate::environment::post_process::PostProcessSettings::default(),
         Projection::Perspective(PerspectiveProjection {
             fov: CAMERA_FOV_DEGREES.to_radians(),
@@ -296,8 +303,8 @@ fn spawn_player_and_camera(
 
     let transmission_active = local_config
         .as_ref()
-        .map(|c| c.transmission_enabled)
-        .unwrap_or(false);
+        .map(|c| c.transmission_enabled || c.water_reflections_ssr)
+        .unwrap_or(true);
 
     if transmission_active {
         camera_builder.insert(bevy::pbr::ScreenSpaceTransmission::default());
@@ -347,11 +354,13 @@ fn sync_camera_transmission(
     }
     if let Ok(camera_entity) = camera_query.single() {
         let has_transmission = transmission_query.get(camera_entity).is_ok();
-        if local_config.transmission_enabled && !has_transmission {
+        let need_transmission =
+            local_config.transmission_enabled || local_config.water_reflections_ssr;
+        if need_transmission && !has_transmission {
             commands
                 .entity(camera_entity)
                 .insert(bevy::pbr::ScreenSpaceTransmission::default());
-        } else if !local_config.transmission_enabled && has_transmission {
+        } else if !need_transmission && has_transmission {
             commands
                 .entity(camera_entity)
                 .remove::<bevy::pbr::ScreenSpaceTransmission>();
@@ -361,9 +370,9 @@ fn sync_camera_transmission(
 
 pub fn default_bloom_settings() -> Bloom {
     let mut bloom = Bloom::NATURAL;
-    bloom.intensity = 0.20;
-    bloom.prefilter.threshold = 1.0;
-    bloom.prefilter.threshold_softness = 0.5;
+    bloom.intensity = 0.16;
+    bloom.prefilter.threshold = 1.05;
+    bloom.prefilter.threshold_softness = 0.45;
     bloom
 }
 

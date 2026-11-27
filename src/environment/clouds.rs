@@ -204,6 +204,9 @@ pub fn sync_clouds(
     cloud_quality: crate::core::CloudQuality,
     cloud_render_distance: i32,
     storm_darkening: f32,
+    snow_intensity: f32,
+    dust_intensity: f32,
+    lightning_flash: f32,
 ) {
     let camera_translation = camera.0.translation;
     let cloud_distance = cloud_render_distance.clamp(16, 128);
@@ -293,19 +296,35 @@ pub fn sync_clouds(
         );
     }
 
-    // Dynamic atmospheric cloud tinting across the day-night cycle.
-    let mut target_color = sample_cloud_color(time_of_day);
-    if storm_darkening > 0.0 {
-        let lin = target_color.to_linear();
-        let dark_factor = (1.0 - storm_darkening * 0.65).clamp(0.20, 1.0);
-        let storm_rgb = LinearRgba::new(
-            lin.red * dark_factor * 0.90,
-            lin.green * dark_factor * 0.92,
-            lin.blue * dark_factor,
-            (lin.alpha + storm_darkening * 0.15).min(1.0),
+    // Dynamic atmospheric cloud tinting across the day-night cycle + weather states.
+    let mut lin = sample_cloud_color(time_of_day).to_linear();
+    if storm_darkening > 0.001 {
+        let dark_factor = (1.0 - storm_darkening * 0.80).clamp(0.10, 1.0);
+        let storm_charcoal = LinearRgba::new(0.055, 0.068, 0.098, 0.97);
+        let darkened = LinearRgba::new(
+            lin.red * dark_factor * 0.86,
+            lin.green * dark_factor * 0.89,
+            lin.blue * dark_factor * 0.96,
+            (lin.alpha + storm_darkening * 0.14).min(0.98),
         );
-        target_color = Color::LinearRgba(storm_rgb);
+        lin = super::atmosphere::lerp_linear_rgba(darkened, storm_charcoal, storm_darkening * 0.58);
     }
+    if snow_intensity > 0.001 {
+        let w = snow_intensity.clamp(0.0, 1.0) * 0.60;
+        let snow_col = LinearRgba::new(0.55, 0.62, 0.74, 0.95);
+        lin = super::atmosphere::lerp_linear_rgba(lin, snow_col, w);
+    }
+    if dust_intensity > 0.001 {
+        let w = dust_intensity.clamp(0.0, 1.0) * 0.75;
+        let dust_col = LinearRgba::new(0.68, 0.48, 0.28, 0.95);
+        lin = super::atmosphere::lerp_linear_rgba(lin, dust_col, w);
+    }
+    if lightning_flash > 0.01 {
+        let f = (lightning_flash * 0.75).clamp(0.0, 1.0);
+        let flash_col = LinearRgba::new(0.85, 0.90, 1.05, 0.98);
+        lin = super::atmosphere::lerp_linear_rgba(lin, flash_col, f);
+    }
+    let target_color = Color::LinearRgba(lin);
 
     if let Some(mat) = materials.get(&material_handle.0)
         && mat.base_color != target_color
@@ -316,50 +335,20 @@ pub fn sync_clouds(
 }
 
 pub fn sample_cloud_color(time_of_day: f32) -> Color {
-    // 0.00: Morning / Dawn
-    // 0.25: Noon / Midday
-    // 0.50: Evening / Sunset
-    // 0.75: Night / Midnight
-    let t = time_of_day.rem_euclid(1.0);
+    // Uses the shared sample_4stop curve so nocturnal clouds stay genuinely dark indigo all night
+    let morning = LinearRgba::new(1.0, 0.82, 0.66, 0.94); // Dawn warm peach-gold
+    let noon = LinearRgba::new(1.0, 1.0, 1.0, 0.96); // Midday crisp sunlit white
+    let evening = LinearRgba::new(1.0, 0.58, 0.38, 0.94); // Sunset vibrant amber-rose
+    let night = LinearRgba::new(0.022, 0.032, 0.062, 0.90); // True dark nocturnal navy clouds
 
-    let (c1, c2, factor) = if t < 0.25 {
-        let f = t / 0.25;
-        (
-            LinearRgba::new(1.0, 0.92, 0.85, 0.95), // Dawn warm peach
-            LinearRgba::new(1.0, 1.0, 1.0, 0.98),   // Midday bright white
-            f,
-        )
-    } else if t < 0.50 {
-        let f = (t - 0.25) / 0.25;
-        (
-            LinearRgba::new(1.0, 1.0, 1.0, 0.98),   // Midday bright white
-            LinearRgba::new(1.0, 0.72, 0.60, 0.95), // Sunset vibrant amber/pink
-            f,
-        )
-    } else if t < 0.75 {
-        let f = (t - 0.50) / 0.25;
-        (
-            LinearRgba::new(1.0, 0.72, 0.60, 0.95), // Sunset vibrant amber/pink
-            LinearRgba::new(0.30, 0.35, 0.48, 0.85), // Midnight deep navy
-            f,
-        )
-    } else {
-        let f = (t - 0.75) / 0.25;
-        (
-            LinearRgba::new(0.30, 0.35, 0.48, 0.85), // Midnight deep navy
-            LinearRgba::new(1.0, 0.92, 0.85, 0.95),  // Dawn warm peach
-            f,
-        )
-    };
-
-    let lerped = LinearRgba::new(
-        c1.red + (c2.red - c1.red) * factor,
-        c1.green + (c2.green - c1.green) * factor,
-        c1.blue + (c2.blue - c1.blue) * factor,
-        c1.alpha + (c2.alpha - c1.alpha) * factor,
-    );
-
-    Color::LinearRgba(lerped)
+    Color::LinearRgba(super::atmosphere::sample_4stop(
+        time_of_day,
+        morning,
+        noon,
+        evening,
+        night,
+        super::atmosphere::lerp_linear_rgba,
+    ))
 }
 
 pub fn generate_cloud_mesh(

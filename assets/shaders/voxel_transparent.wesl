@@ -6,13 +6,120 @@ import bevy_pbr::{
         pbr_types,
         pbr_fragment::pbr_input_from_standard_material,
         pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
-        mesh_view_bindings::{globals, view},
+        mesh_view_bindings::{globals, view, view_transmission_texture, view_transmission_sampler},
     },
     prepass::utils as prepass_utils,
 };
 
 @group(constants::MATERIAL_BIND_GROUP) @binding(100) var voxel_texture_array: texture_2d_array<f32>;
 @group(constants::MATERIAL_BIND_GROUP) @binding(101) var voxel_sampler: sampler;
+@group(constants::MATERIAL_BIND_GROUP) @binding(102) var<uniform> sky_up_color: vec4<f32>;
+@group(constants::MATERIAL_BIND_GROUP) @binding(103) var<uniform> sky_middle_color: vec4<f32>;
+@group(constants::MATERIAL_BIND_GROUP) @binding(104) var<uniform> sky_sunset_color: vec4<f32>;
+@group(constants::MATERIAL_BIND_GROUP) @binding(105) var<uniform> sun_dir_and_factor: vec4<f32>;
+
+// Lightweight procedural sky reflection matching SkyDome (zenith, horizon, sunset ribbon, sun glare)
+fn sample_water_sky_reflection(refl_dir: vec3<f32>) -> vec3<f32> {
+    let dir = normalize(refl_dir);
+    let v_dot_u = max(dir.y, 0.0);
+    let sun_dir = normalize(sun_dir_and_factor.xyz);
+    let sun_factor = sun_dir_and_factor.w;
+    let rain_factor = sky_up_color.a;
+    let sunset_strength = sky_sunset_color.a;
+    let v_dot_s = max(dot(dir, sun_dir), 0.0);
+    let v_dot_s2 = v_dot_s * v_dot_s;
+    let v_dot_s4 = v_dot_s2 * v_dot_s2;
+
+    let horiz_t = pow(max((1.0 - v_dot_u) * (1.0 - v_dot_u), 0.0001), 1.05);
+    let mid_boost = sky_middle_color.rgb * (1.0 + v_dot_s4 * 0.28 * sun_factor);
+    var sky_col = mix(sky_up_color.rgb, mid_boost, horiz_t);
+
+    if (sunset_strength > 0.001) {
+        let band = 1.0 - abs(dir.y);
+        let band2 = band * band;
+        let sunset_mix = clamp(band2 * band2 * (0.55 + 0.45 * v_dot_s2) * sunset_strength * (1.0 - rain_factor * 0.75), 0.0, 1.0);
+        sky_col = mix(sky_col, sky_sunset_color.rgb * (1.0 + v_dot_s2 * 0.30), sunset_mix);
+    }
+
+    // Crisp sun specular sparkle reflected off wave ripples
+    let sun_spec = pow(v_dot_s, 96.0) * 2.4 * sun_factor * (1.0 - rain_factor * 0.85);
+    sky_col += mix(vec3<f32>(1.0, 0.92, 0.74), sky_sunset_color.rgb, sunset_strength * 0.6) * sun_spec;
+    return sky_col;
+}
+
+fn ssr_dither(pixel_pos: vec2<f32>) -> f32 {
+    let magic = vec3<f32>(0.06711056, 0.00583715, 52.9829189);
+    return fract(magic.z * fract(dot(pixel_pos, magic.xy)));
+}
+
+// Screen-Space Water Reflections (Complementary-inspired jittered raymarch against opaque depth prepass)
+// Returns vec4(reflected_rgb, blend_weight [0..1]); falls back seamlessly to Sky Dome on miss/screen-edge.
+fn trace_water_ssr(world_pos: vec3<f32>, refl_dir: vec3<f32>, screen_pos: vec2<f32>) -> vec4<f32> {
+    if (sky_middle_color.a < 0.5) {
+        return vec4<f32>(0.0);
+    }
+@if(DEPTH_PREPASS) {
+    let jitter = ssr_dither(screen_pos);
+    var dist: f32 = 0.45 + jitter * 0.45;
+    var step_len: f32 = 0.55;
+    var prev_pos = world_pos;
+
+    for (var i: i32 = 0; i < 20; i = i + 1) {
+        let sample_pos = world_pos + refl_dir * dist;
+        let clip = position_world_to_clip(sample_pos);
+        if (clip.w <= 0.001) {
+            break;
+        }
+        let ndc = clip.xyz / clip.w;
+        let uv = vec2<f32>(ndc.x * 0.5 + 0.5, 0.5 - ndc.y * 0.5);
+        if (uv.x < 0.002 || uv.x > 0.998 || uv.y < 0.002 || uv.y > 0.998) {
+            break;
+        }
+
+        let frag_coord = vec4<f32>(uv * view.viewport.zw + view.viewport.xy, 0.0, 0.0);
+        let scene_ndc = prepass_utils::prepass_depth(frag_coord, 0u);
+        if (scene_ndc > 0.00001) {
+            let scene_view_z = depth_ndc_to_view_z(scene_ndc);
+            let ray_view_z = position_world_to_view(sample_pos).z;
+            let depth_diff = scene_view_z - ray_view_z;
+            let thickness = max(step_len * 2.4, 1.1);
+            if (depth_diff > 0.02 && depth_diff < thickness) {
+                // Midpoint refinement for crisp terrain/tree reflections
+                let mid_pos = (prev_pos + sample_pos) * 0.5;
+                let mid_clip = position_world_to_clip(mid_pos);
+                var hit_uv = uv;
+                if (mid_clip.w > 0.001) {
+                    let mid_ndc = mid_clip.xyz / mid_clip.w;
+                    let mid_uv = vec2<f32>(mid_ndc.x * 0.5 + 0.5, 0.5 - mid_ndc.y * 0.5);
+                    if (mid_uv.x > 0.002 && mid_uv.x < 0.998 && mid_uv.y > 0.002 && mid_uv.y < 0.998) {
+                        let mid_fc = vec4<f32>(mid_uv * view.viewport.zw + view.viewport.xy, 0.0, 0.0);
+                        let mid_scene_ndc = prepass_utils::prepass_depth(mid_fc, 0u);
+                        if (mid_scene_ndc > 0.00001) {
+                            let mid_diff = depth_ndc_to_view_z(mid_scene_ndc) - position_world_to_view(mid_pos).z;
+                            if (mid_diff > 0.0) {
+                                hit_uv = mid_uv;
+                            }
+                        }
+                    }
+                }
+
+                let edge_fade = smoothstep(0.0, 0.08, hit_uv.x)
+                    * smoothstep(1.0, 0.92, hit_uv.x)
+                    * smoothstep(0.0, 0.08, hit_uv.y)
+                    * smoothstep(1.0, 0.88, hit_uv.y);
+                let dist_fade = 1.0 - smoothstep(48.0, 125.0, dist);
+                let ssr_rgb = textureSampleLevel(view_transmission_texture, view_transmission_sampler, hit_uv, 0.0).rgb;
+                return vec4<f32>(ssr_rgb, edge_fade * dist_fade);
+            }
+        }
+
+        prev_pos = sample_pos;
+        dist += step_len;
+        step_len *= 1.24;
+    }
+}
+    return vec4<f32>(0.0);
+}
 
 // ==============================================================================
 // 1. Procedural Simplex 2D Noise (Triangular Lattice - Zero Checkerboard/Grid)
@@ -95,17 +202,17 @@ fn organic_foam_noise(pos: vec2<f32>, time: f32) -> f32 {
     return clamp((n1 + n2 + n3) * 0.35 + 0.5, 0.0, 1.0);
 }
 
-// Multi-layer simplex caustic web projected onto submerged terrain
+// Multi-layer domain-rotated organic caustics web projected onto shallow submerged terrain
 fn calculate_caustics(pos_xz: vec2<f32>, time: f32) -> f32 {
-    let p1 = pos_xz * 0.45 + vec2<f32>(time * 0.28, time * 0.18);
-    let p2 = pos_xz * 0.38 - vec2<f32>(time * 0.22, -time * 0.25);
+    let p1 = (ROT_FOAM_1 * pos_xz) * 0.22 + vec2<f32>(time * 0.14, time * 0.09);
+    let p2 = (ROT_FOAM_2 * pos_xz) * 0.31 - vec2<f32>(time * 0.11, -time * 0.15);
+    let warp = simplex_noise2(pos_xz * 0.12 + vec2<f32>(time * 0.05, -time * 0.04)) * 0.45;
 
-    let n1 = simplex_noise2(p1);
-    let n2 = simplex_noise2(p2);
+    let n1 = simplex_noise2(p1 + vec2<f32>(warp, -warp));
+    let n2 = simplex_noise2(p2 - vec2<f32>(warp * 0.6, warp * 0.8));
     let c1 = 1.0 - abs(n1);
     let c2 = 1.0 - abs(n2);
-    let caustic = pow(c1 * c2, 1.8) * 2.2;
-    return caustic;
+    return pow(c1 * c2, 2.4) * 1.35;
 }
 
 // ==============================================================================
@@ -416,6 +523,8 @@ fn fragment(
 
     var final_color = base_pixel_color;
     var final_alpha = tex_color.a;
+    var water_fresnel_refl: f32 = 0.0;
+    var water_sky_refl_col = vec3<f32>(0.0);
 
     if (surface_type > 0.5 && surface_type < 1.5) {
         // --- 1. Water: Visible Pixel-Art Texture, Progressive Depth Darkening & Foam ---
@@ -459,7 +568,15 @@ fn fragment(
 
         var water_base = texture_detail * depth_darkening * depth_chroma;
 
-        // Fresnel reflection: grazing angles reflect sky and become opaque
+        // Subtle sunlit seabed caustics shimmer in very shallow water
+        if (is_front && depth_dist < 4.5 && sun_dir_and_factor.w > 0.05) {
+            let shallow_fade = smoothstep(4.5, 0.45, depth_dist) * smoothstep(0.08, 0.50, depth_dist);
+            let caustic_val = calculate_caustics(vertex_output.world_position.xz, time);
+            let caustic_tint = vec3<f32>(0.68, 0.94, 1.04) * (0.075 * caustic_val * shallow_fade * sun_dir_and_factor.w);
+            water_base += caustic_tint;
+        }
+
+        // Fresnel reflection: grazing angles reflect dynamic sky/sunset/sun and become opaque
         let cam_pos = view.world_position;
         let to_frag = vertex_output.world_position.xyz - cam_pos;
         let view_dir = normalize(to_frag);
@@ -467,19 +584,29 @@ fn fragment(
         let fresnel4 = fresnel * fresnel * fresnel * fresnel;
         var water_alpha = mix(water_alpha_base, 1.0, fresnel4 * 0.65);
 
-        // Shoreline Foam: soft white froth at water-terrain contact
+        // Organic Animated Shoreline Foam (activates organic_foam_noise)
         var foam: f32 = 0.0;
         if (orig_normal.y > 0.99 && is_front) {
-            let foam_threshold = 0.16;
-            foam = clamp((foam_threshold + y_pos_dif) / foam_threshold, 0.0, 1.0);
-            foam = foam * foam * 0.65;
+            let foam_threshold = 0.24;
+            let raw_edge = clamp((foam_threshold + y_pos_dif) / foam_threshold, 0.0, 1.0);
+            let foam_noise = organic_foam_noise(vertex_output.world_position.xz, time);
+            let organic_edge = smoothstep(0.28, 0.82, raw_edge * (0.55 + foam_noise * 0.85));
+            foam = organic_edge * 0.72;
             foam *= clamp((fract(vertex_output.world_position.y) - 0.7) * 10.0, 0.0, 1.0);
         }
         let foam_color = vec3<f32>(0.92, 0.96, 1.02);
         water_base = mix(water_base, foam_color, foam);
         water_alpha = mix(water_alpha, 0.92, foam);
 
-        if (!is_front) {
+        if (is_front) {
+            let refl_dir = reflect(view_dir, wave_normal);
+            water_sky_refl_col = sample_water_sky_reflection(refl_dir);
+            let ssr = trace_water_ssr(vertex_output.world_position.xyz, refl_dir, vertex_output.position.xy);
+            if (ssr.a > 0.001) {
+                water_sky_refl_col = mix(water_sky_refl_col, ssr.rgb, ssr.a * 0.92);
+            }
+            water_fresnel_refl = clamp(0.10 + fresnel4 * 0.76, 0.0, 0.84) * (1.0 - foam * 0.85);
+        } else {
             // Looking up at surface from underwater
             water_alpha = 0.65;
             water_base = base_pixel_color * 1.30;
@@ -487,8 +614,8 @@ fn fragment(
 
         final_color = water_base;
         final_alpha = clamp(water_alpha, 0.0, 0.98);
-        pbr_input.material.perceptual_roughness = mix(0.12, 0.38, foam);
-        pbr_input.material.reflectance = vec3<f32>(0.50);
+        pbr_input.material.perceptual_roughness = mix(0.05, 0.36, foam);
+        pbr_input.material.reflectance = vec3<f32>(0.85);
     } else if (surface_type > 1.5) {
         // --- 2. Generic Fluid ---
         // Pure vibrant liquid colors (no ocean depth tint or foam)
@@ -510,14 +637,17 @@ fn fragment(
         out.color = vec4<f32>(final_color * 2.2, final_alpha);
     } else {
         out.color = apply_pbr_lighting(pbr_input);
+        if (water_fresnel_refl > 0.001) {
+            out.color = vec4<f32>(mix(out.color.rgb, water_sky_refl_col, water_fresnel_refl), out.color.a);
+        }
     }
     out.color = main_pass_post_lighting_processing(pbr_input, out.color);
     out.color.a = final_alpha;
 
-    // Specular Highlight Ceiling for fluids / water
+    // Raised Specular Highlight Ceiling for fluids / water (allows vibrant sun glints & HDR Bloom)
     if (surface_type > 0.5) {
         let fluid_luma = dot(out.color.rgb, vec3<f32>(0.2126, 0.7152, 0.0722));
-        let max_fluid_luma: f32 = 1.10;
+        let max_fluid_luma: f32 = 3.20;
         if (fluid_luma > max_fluid_luma) {
             out.color = vec4<f32>(out.color.rgb * (max_fluid_luma / fluid_luma), out.color.a);
         }

@@ -17,6 +17,8 @@ struct GrassInfo {
     gradient_params: vec4<f32>,   // x = base multiplier, y = tip multiplier, z = curve, w = height variation scale
     trail_params2: vec4<f32>,     // xy = trail noise origin, zw = reserved
     entity_pushers: array<vec4<f32>, 8>, // pusher 0: x = trail origin x, y = trail origin z, z = inverse world size, w = trail strength
+    sun_dir_and_factor: vec4<f32>,  // xyz = sun dir, w = clear sun factor
+    sun_color_and_cloud: vec4<f32>, // rgb = sun color, a = cloud shadow strength
 };
 
 @group(constants::MATERIAL_BIND_GROUP) @binding(100) var<uniform> grass_info: GrassInfo;
@@ -518,9 +520,9 @@ fn fragment(
     let shape_texture_factor = select(0.5395, 0.5395 / 0.745, grass_info.style_params.x > 0.5);
     let shape_tex = shape.rgb * shape_texture_factor;
 
-    // Subtle blade gradient: grounding slightly at the base, gentle catching of light at the tip
-    let gradient = mix(0.96, 1.04, pow(height, 1.5));
-    let wave_mult = mix(0.96, 1.04, color_wave);
+    // Rich base-to-tip blade gradient: grounded root occlusion fading into sunlit tips
+    let gradient = mix(0.48, 1.12, pow(height, 1.25));
+    let wave_mult = mix(0.90, 1.10, color_wave);
 
     // Voxel opaque shader squares the tint color: pbr_input.base_color (which has vertex_color) * tint_color.rgb
     let block_tint = vertex_output.color.rgb * vertex_output.color.rgb;
@@ -539,6 +541,31 @@ fn fragment(
 
     var out: FragmentOutput;
     out.color = apply_pbr_lighting(pbr_input);
+
+    // Backlit Subsurface Scattering on grass blades (strongest toward thin sunlit tips)
+    let sun_strength = grass_info.sun_dir_and_factor.w;
+    if (sun_strength > 0.02) {
+        let sun_dir = normalize(grass_info.sun_dir_and_factor.xyz);
+        let view_ray = normalize(-pbr_input.V);
+        let v_dot_l = max(dot(view_ray, sun_dir), 0.0);
+        let tip_weight = pow(height, 0.75);
+        let sss = (pow(v_dot_l, 7.0) * 0.85 + pow(v_dot_l, 2.0) * 0.16 + 0.05) * tip_weight;
+        let sss_tint = blade_rgb * grass_info.sun_color_and_cloud.rgb * vec3<f32>(1.20, 1.28, 0.76);
+        out.color = vec4<f32>(out.color.rgb + sss_tint * sss * sun_strength * 0.62, out.color.a);
+    }
+
+    // Matching procedural cloud shadows across procedural grass fields
+    let cloud_strength = grass_info.sun_color_and_cloud.a;
+    if (cloud_strength > 0.005) {
+        let sun_dir = normalize(grass_info.sun_dir_and_factor.xyz);
+        let proj_scale = 140.0 / max(sun_dir.y, 0.25);
+        let cloud_uv = (vertex_output.world_position.xz - sun_dir.xz * proj_scale) * 0.0085
+            + vec2<f32>(globals.time * 0.0055, globals.time * 0.0022);
+        let cn = smooth_noise2(cloud_uv) * 0.68 + smooth_noise2(cloud_uv * 2.15 + vec2<f32>(13.7, 7.3)) * 0.32;
+        let cloud_mask = smoothstep(0.47, 0.74, cn);
+        out.color = vec4<f32>(out.color.rgb * (1.0 - cloud_mask * cloud_strength), out.color.a);
+    }
+
     out.color = main_pass_post_lighting_processing(pbr_input, out.color);
     return out;
 }

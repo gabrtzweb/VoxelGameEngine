@@ -17,6 +17,8 @@ struct GrassInfo {
     gradient_params: vec4<f32>,   // x = base multiplier, y = tip multiplier, z = curve, w = height variation scale
     trail_params2: vec4<f32>,     // xy = trail noise origin, zw = reserved
     entity_pushers: array<vec4<f32>, 8>, // pusher 0: x = trail origin x, y = trail origin z, z = inverse world size, w = trail strength
+    sun_dir_and_factor: vec4<f32>,
+    sun_color_and_cloud: vec4<f32>,
 };
 
 @group(constants::MATERIAL_BIND_GROUP) @binding(100) var<uniform> grass_info: GrassInfo;
