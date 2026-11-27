@@ -34,7 +34,7 @@ use crate::{
 
 pub const POST_PROCESS_SHADER_PATH: &str = "shaders/post_process.wesl";
 
-/// Uniform settings for screen-space crepuscular rays (god rays) and lens flare supporting Sun and Moon.
+/// Uniform settings for screen-space crepuscular rays (god rays), lens flare, and underwater volumetric shafts.
 #[derive(Component, ExtractComponent, Clone, Copy, ShaderType, Reflect, Debug)]
 #[extract_app(RenderApp)]
 pub struct PostProcessSettings {
@@ -50,6 +50,8 @@ pub struct PostProcessSettings {
     pub threshold: f32,
     pub max_radius: f32,
     pub padding: f32,
+    /// x = underwater_factor [0..1], y = elapsed_time, z = sun_elevation [0..1], w = depth_attenuation [0..1]
+    pub underwater_params: Vec4,
 }
 
 impl Default for PostProcessSettings {
@@ -67,6 +69,7 @@ impl Default for PostProcessSettings {
             threshold: 1.95,
             max_radius: 0.22,
             padding: 0.0,
+            underwater_params: Vec4::ZERO,
         }
     }
 }
@@ -234,8 +237,10 @@ fn post_process_system(
 
     let (view_target, extracted_view, settings, settings_index) = view.into_inner();
 
-    // Early exit only if rays are completely outside view or disabled
-    if settings.light_visible <= 0.0 || settings.exposure <= 0.0001 {
+    // Early exit only if neither underwater post-FX nor celestial rays are active
+    if settings.underwater_params.x <= 0.001
+        && (settings.light_visible <= 0.0 || settings.exposure <= 0.0001)
+    {
         return;
     }
 
@@ -406,13 +411,46 @@ pub fn update_post_process_light_position(
         .unwrap_or(true);
 
     let underground_factor = env_status.as_ref().map_or(0.0, |s| s.underground_factor);
+    let is_underwater = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
+    let elapsed_time = time.as_ref().map_or(0.0, |t| t.elapsed_secs());
 
-    // If game is in a menu, the inspector is open, god rays are disabled, or player is underground, disable post-process rays
+    // Update underwater post-process parameters (volumetric light shafts, refraction wobble, Snell's window)
+    let camera_translation = camera_global_transform.translation();
+    let sun_dir = calculate_sun_direction(state.time_of_day);
+    let sun_elevation = (sun_dir.y / 0.35).clamp(0.0, 1.0);
+    if is_underwater {
+        // Measure vertical water column above camera for physical depth attenuation
+        let mut water_depth_blocks = 0u32;
+        if let Some(ref w) = world {
+            let base = IVec3::new(
+                camera_translation.x.floor() as i32,
+                camera_translation.y.floor() as i32,
+                camera_translation.z.floor() as i32,
+            );
+            for dy in 1..=28 {
+                if w.get_voxel(base + IVec3::Y * dy).is_some_and(|v| v.is_water()) {
+                    water_depth_blocks += 1;
+                } else {
+                    break;
+                }
+            }
+        }
+        let depth_attenuation = (1.0 - (water_depth_blocks as f32 / 22.0)).clamp(0.0, 1.0);
+        let depth_atten_sq = depth_attenuation * depth_attenuation;
+        settings.underwater_params = Vec4::new(1.0, elapsed_time, sun_elevation, depth_atten_sq);
+    } else {
+        settings.underwater_params = Vec4::ZERO;
+    }
+
+    // If game is in a menu, the inspector is open, god rays are disabled, or player is underground, disable celestial rays
     let in_menu = menu_state.is_some_and(|s| *s.get() != crate::menu::MenuState::None);
     let inspector_active = inspector.is_some_and(|i| i.active);
     if in_menu || inspector_active || !god_rays_enabled || underground_factor >= 0.40 {
         settings.light_visible = 0.0;
         settings.exposure = 0.0;
+        if in_menu || inspector_active {
+            settings.underwater_params.x = 0.0;
+        }
         return;
     }
 
@@ -450,8 +488,6 @@ pub fn update_post_process_light_position(
         (1.0, Vec3::ONE)
     };
 
-    let camera_translation = camera_global_transform.translation();
-    let sun_dir = calculate_sun_direction(state.time_of_day);
     let moon_dir = -sun_dir;
 
     // 3. Dual celestial body targeting: Sun during day/twilight, Moon at night
@@ -464,13 +500,25 @@ pub fn update_post_process_light_position(
             let noon_tint = Vec3::new(1.04, 0.96, 0.88); // Crisp warm daylight at noon
             let base_tint = dawn_tint.lerp(noon_tint, sun_warmth);
 
-            (
-                sun_dir,
-                0.45 * day_factor * weather_exposure_mult,
-                base_tint * weather_tint_mod,
-                1.30,
-                0.25,
-            )
+            if is_underwater {
+                // Underwater god rays are now rendered as 3D world-anchored volumetric quads (`water_godray.png`)
+                // so skip screen-space radial scatter underwater (refraction wobble & vignette remain active).
+                (
+                    sun_dir,
+                    0.0,
+                    Vec3::new(0.28, 0.84, 1.05),
+                    1.95,
+                    0.22,
+                )
+            } else {
+                (
+                    sun_dir,
+                    0.45 * day_factor * weather_exposure_mult,
+                    base_tint * weather_tint_mod,
+                    1.95,
+                    0.22,
+                )
+            }
         } else if moon_dir.y > 0.0 {
             // Sun has set and Moon is active (HDR value ~1.35; threshold 0.85; radius 0.20 isolates moon disc)
             let moon_elevation_factor = (moon_dir.y / 0.15).clamp(0.0, 1.0);

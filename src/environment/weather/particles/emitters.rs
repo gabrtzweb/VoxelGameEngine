@@ -17,14 +17,12 @@ pub const UV_SNOW_A: [f32; 4] = [0.25, 0.0, 0.375, 0.125];
 pub const UV_SNOW_B: [f32; 4] = [0.375, 0.0, 0.50, 0.125];
 pub const UV_SNOW_C: [f32; 4] = [0.625, 0.0, 0.75, 0.125];
 pub const UV_SNOW_D: [f32; 4] = [0.75, 0.0, 0.875, 0.125];
-pub const UV_RIPPLE_0: [f32; 4] = [0.0, 0.125, 0.125, 0.25];
-pub const UV_RIPPLE_1: [f32; 4] = [0.125, 0.125, 0.25, 0.25];
-pub const UV_RIPPLE_2: [f32; 4] = [0.25, 0.125, 0.375, 0.25];
-pub const UV_RIPPLE_3: [f32; 4] = [0.375, 0.125, 0.50, 0.25];
 pub const UV_SPLASH: [f32; 4] = [0.50, 0.0, 0.625, 0.125];
 pub const UV_FOG: [f32; 4] = [0.0, 0.25, 0.25, 0.50]; // fog_translucent.png
 pub const UV_HORIZONTAL_FOG: [f32; 4] = [0.25, 0.25, 0.50, 0.50]; // horizontal_fog.png (vertical fog banks)
-pub const UV_FOG_DITHERED: [f32; 4] = [0.50, 0.50, 1.0, 1.0]; // fog_dithered.png (desert dust haze)
+pub const UV_SANDSTORM: [f32; 4] = [0.0, 0.50, 0.25, 0.75]; // dedicated Sandstorm sprite (RealismCraft-inspired)
+pub const UV_BLIZZARD: [f32; 4] = [0.25, 0.50, 0.50, 0.75]; // dedicated Blizzard sprite (RealismCraft-inspired)
+pub const UV_FOG_DITHERED: [f32; 4] = [0.50, 0.50, 1.0, 1.0]; // fog_dithered.png
 pub const UV_DUST: [f32; 4] = [0.50, 0.50, 1.0, 1.0];
 pub const UV_STREAK: [f32; 4] = [0.50, 0.125, 0.625, 0.25]; // streak.png
 
@@ -120,7 +118,7 @@ pub fn emit_weather_particles(
     let lead_pos = cam_pos + player_vel * 0.35;
 
     // Sample local biome climate for water tint & arid effects
-    let (biome_type, water_color) = if let Some(ref generator) = terrain_generator {
+    let (biome_type, _water_color) = if let Some(ref generator) = terrain_generator {
         let sample = generator.sample_column(lead_pos.x.floor() as i32, lead_pos.z.floor() as i32);
         (sample.biome, sample.biome.water_color())
     } else {
@@ -259,6 +257,54 @@ pub fn emit_weather_particles(
                 WeatherParticleKind::SnowflakeA,
             );
         }
+
+        // Dedicated RealismCraft-inspired swirling Blizzard gusts during heavier snowfall
+        if effective_snow > 0.35 {
+            let gust_count = ((effective_snow - 0.30) * 6.0).round() as usize;
+            for _ in 0..gust_count {
+                let ox = rng.next_triangle(22.0);
+                let oz = rng.next_triangle(22.0);
+                let oy = rng.next_f32() * 10.0 - 1.0;
+                let wx = (lead_pos.x + ox).floor() as i32;
+                let wz = (lead_pos.z + oz).floor() as i32;
+                let cy = lead_pos.y + oy;
+                if let Some(roof_y) =
+                    find_column_surface_y(&voxel_world, wx, wz, scan_start_y, scan_min_y)
+                    && cy <= roof_y as f32 + 1.0
+                {
+                    continue;
+                }
+                let flip_u = rng.next_f32() < 0.5;
+                let flip_v = rng.next_f32() < 0.5;
+                let b_uv = [
+                    if flip_u { UV_BLIZZARD[2] } else { UV_BLIZZARD[0] },
+                    if flip_v { UV_BLIZZARD[3] } else { UV_BLIZZARD[1] },
+                    if flip_u { UV_BLIZZARD[0] } else { UV_BLIZZARD[2] },
+                    if flip_v { UV_BLIZZARD[1] } else { UV_BLIZZARD[3] },
+                ];
+                let sz = 1.45 + rng.next_f32() * 1.15;
+                pool.spawn(
+                    Vec3::new(lead_pos.x + ox, cy, lead_pos.z + oz),
+                    Vec3::new(
+                        current_wind.x * 1.35 + rng.next_triangle(0.9),
+                        -0.65 - rng.next_f32() * 0.65,
+                        current_wind.z * 1.35 + rng.next_triangle(0.9),
+                    ),
+                    Vec2::splat(sz),
+                    [0.92, 0.96, 1.0, 0.26 + rng.next_f32() * 0.14],
+                    b_uv,
+                    ParticleRotationMode::CopyCamera,
+                    ParticleFadeMode::InOut,
+                    1.6 + rng.next_f32() * 1.1,
+                    -9999.0,
+                    WeatherParticleKind::DustHaze,
+                );
+                pool.set_last_rotation(
+                    rng.next_f32() * std::f32::consts::TAU,
+                    (rng.next_f32() - 0.5) * 1.8,
+                );
+            }
+        }
     }
 
     // -------------------------------------------------------------
@@ -315,24 +361,24 @@ pub fn emit_weather_particles(
             let flip_v = rng.next_f32() < 0.5;
             let uv = [
                 if flip_u {
-                    UV_FOG_DITHERED[2]
+                    UV_SANDSTORM[2]
                 } else {
-                    UV_FOG_DITHERED[0]
+                    UV_SANDSTORM[0]
                 },
                 if flip_v {
-                    UV_FOG_DITHERED[3]
+                    UV_SANDSTORM[3]
                 } else {
-                    UV_FOG_DITHERED[1]
+                    UV_SANDSTORM[1]
                 },
                 if flip_u {
-                    UV_FOG_DITHERED[0]
+                    UV_SANDSTORM[0]
                 } else {
-                    UV_FOG_DITHERED[2]
+                    UV_SANDSTORM[2]
                 },
                 if flip_v {
-                    UV_FOG_DITHERED[1]
+                    UV_SANDSTORM[1]
                 } else {
-                    UV_FOG_DITHERED[3]
+                    UV_SANDSTORM[3]
                 },
             ];
             let shade = 0.88 + rng.next_f32() * 0.18;
@@ -392,37 +438,45 @@ pub fn emit_weather_particles(
                         );
 
                         if is_water {
-                            // Spawn animated expanding water ripple quad tinted by biome water color
-                            pool.spawn(
-                                surface_pos,
-                                Vec3::ZERO,
-                                Vec2::splat(0.40 + rng.next_f32() * 0.20),
-                                [water_color[0], water_color[1], water_color[2], 0.65],
-                                UV_RIPPLE_0,
-                                ParticleRotationMode::Horizontal,
-                                ParticleFadeMode::Out,
-                                0.38,
-                                -9999.0,
-                                WeatherParticleKind::WaterRipple,
-                            );
+                            // Water raindrop ripples are now rendered directly in voxel_transparent.wesl
+                            // on the 16x16 voxel texel grid (matching Rain Puddles), alongside rain_drop splashes.
                         } else if is_hot {
-                            // Thermal steam / vaporization smoke plume rising from hot lava
+                            // Organic non-repetitive thermal steam wisps (UV_FOG only, randomized flip/rotation/size)
+                            let flip_u = rng.next_f32() < 0.5;
+                            let flip_v = rng.next_f32() < 0.5;
+                            let steam_uv = [
+                                if flip_u { UV_FOG[2] } else { UV_FOG[0] },
+                                if flip_v { UV_FOG[3] } else { UV_FOG[1] },
+                                if flip_u { UV_FOG[0] } else { UV_FOG[2] },
+                                if flip_v { UV_FOG[1] } else { UV_FOG[3] },
+                            ];
+                            let w_sz = 0.38 + rng.next_f32() * 0.38;
+                            let h_sz = w_sz * (0.82 + rng.next_f32() * 0.36);
+                            let shade = 0.88 + rng.next_f32() * 0.12;
                             pool.spawn(
-                                surface_pos,
+                                surface_pos + Vec3::new(0.0, 0.06 + rng.next_f32() * 0.12, 0.0),
                                 Vec3::new(
-                                    rng.next_triangle(0.3),
-                                    1.8 + rng.next_f32() * 0.8,
-                                    rng.next_triangle(0.3),
+                                    current_wind.x * 0.14 + rng.next_triangle(0.35),
+                                    1.40 + rng.next_f32() * 0.90,
+                                    current_wind.z * 0.14 + rng.next_triangle(0.35),
                                 ),
-                                Vec2::splat(0.45 + rng.next_f32() * 0.3),
-                                [0.92, 0.92, 0.96, 0.50],
-                                UV_FOG,
+                                Vec2::new(w_sz, h_sz),
+                                [
+                                    0.92 * shade,
+                                    0.93 * shade,
+                                    0.96 * shade,
+                                    0.28 + rng.next_f32() * 0.20,
+                                ],
+                                steam_uv,
                                 ParticleRotationMode::CopyCamera,
                                 ParticleFadeMode::InOut,
-                                1.2,
+                                0.95 + rng.next_f32() * 0.70,
                                 -9999.0,
                                 WeatherParticleKind::ThermalSmoke,
                             );
+                            let init_rot = rng.next_f32() * std::f32::consts::TAU;
+                            let spin = (rng.next_f32() - 0.5) * 1.4;
+                            pool.set_last_rotation(init_rot, spin);
                         } else if rng.next_f32() < 0.35 {
                             // Spawn ground splatter bounce droplet
                             pool.spawn(

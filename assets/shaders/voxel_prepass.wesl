@@ -123,8 +123,10 @@ fn fragment(
         let base_layer = i32(round(in.uv_b.x)) % 2048;
         var layer = base_layer;
 
-        let raw_frame_param = in.uv_b.y;
-        let actual_frame_count = floor(abs(raw_frame_param) + 0.1);
+        let raw_abs_uvb_y = abs(in.uv_b.y);
+        let abs_no_uw = select(raw_abs_uvb_y, raw_abs_uvb_y - 4096.0, raw_abs_uvb_y >= 4000.0);
+        let mask_idx = floor(abs_no_uw / 16.0 + 0.01);
+        let actual_frame_count = floor(abs_no_uw - mask_idx * 16.0 + 0.1);
         if (actual_frame_count > 1.5) {
             let fps = 8.0;
             let count = max(1, i32(round(actual_frame_count)));
@@ -153,8 +155,10 @@ fn fragment(in: VertexOutput) {
         let base_layer = i32(round(in.uv_b.x)) % 2048;
         var layer = base_layer;
 
-        let raw_frame_param = in.uv_b.y;
-        let actual_frame_count = floor(abs(raw_frame_param) + 0.1);
+        let raw_abs_uvb_y = abs(in.uv_b.y);
+        let abs_no_uw = select(raw_abs_uvb_y, raw_abs_uvb_y - 4096.0, raw_abs_uvb_y >= 4000.0);
+        let mask_idx = floor(abs_no_uw / 16.0 + 0.01);
+        let actual_frame_count = floor(abs_no_uw - mask_idx * 16.0 + 0.1);
         if (actual_frame_count > 1.5) {
             let fps = 8.0;
             let count = max(1, i32(round(actual_frame_count)));

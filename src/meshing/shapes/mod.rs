@@ -54,12 +54,24 @@ pub fn mesh_shaped_voxels(
         } else {
             voxel.natural_rotation_mode() as u8
         };
-        let frame_count_f32 = if voxel.is_light() {
+        let base_frame_count = if voxel.is_light() {
             -(frame_count.max(1) as f32)
         } else if frame_count == 1 && rot_mode > 0 {
             1.0 + (rot_mode as f32) * 0.25
         } else {
             frame_count as f32
+        };
+        let is_shape_underwater = !voxel.is_fluid()
+            && (voxel.is_marine_flora()
+                || voxel.is_coral_fan()
+                || is_submerged_fixture(world, world_voxel, voxel)
+                || world
+                    .get_voxel(world_voxel + IVec3::Y)
+                    .is_some_and(|v| v.is_water() || v.is_marine_flora() || v.is_coral_fan()));
+        let frame_count_f32 = if is_shape_underwater {
+            base_frame_count.signum() * (base_frame_count.abs() + 4096.0)
+        } else {
+            base_frame_count
         };
         let mut tint = voxel.tint_color_at(world_voxel);
         // Subtle substrate-aware tint modulation for grayscale flora:

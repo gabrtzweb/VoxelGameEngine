@@ -29,6 +29,7 @@ pub struct MoonPhaseTextures(pub [Handle<Image>; 8]);
 
 #[derive(Resource)]
 pub struct CelestialMaterials {
+    pub sun: Handle<StandardMaterial>,
     pub moon: Handle<StandardMaterial>,
 }
 
@@ -159,6 +160,7 @@ pub fn setup_celestial(
     });
 
     commands.insert_resource(CelestialMaterials {
+        sun: sun_material.clone(),
         moon: moon_material.clone(),
     });
 
@@ -283,6 +285,7 @@ pub fn sync_celestial_transforms(
     sun_visibility: f32,
     moon_visibility: f32,
     climate_temp: f32,
+    underwater_celestial_fade: f32,
 ) {
     let camera_translation = camera.translation;
     let sun_dir = calculate_sun_direction(time_of_day);
@@ -311,6 +314,15 @@ pub fn sync_celestial_transforms(
     } else {
         Visibility::Hidden
     };
+
+    // Smoothly fade sun & moon additive glow as player dives deeper underwater (no sudden pop-out)
+    let fade = underwater_celestial_fade.clamp(0.0, 1.0);
+    if let Some(mut sun_mat) = materials.get_mut(&celestial_materials.sun) {
+        sun_mat.base_color = Color::LinearRgba(LinearRgba::new(2.6 * fade, 2.2 * fade, 1.45 * fade, 1.0));
+    }
+    if let Some(mut moon_mat) = materials.get_mut(&celestial_materials.moon) {
+        moon_mat.base_color = Color::LinearRgba(LinearRgba::new(1.35 * fade, 1.45 * fade, 1.65 * fade, 1.0));
+    }
 
     // Update active moon phase texture if needed.
     let target_handle = &moon_textures.0[moon_texture_index % 8];

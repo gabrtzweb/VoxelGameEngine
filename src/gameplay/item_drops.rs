@@ -732,17 +732,20 @@ fn update_item_drops(
         );
         let iv = sample_pos.floor().as_ivec3();
         let was_in_fluid = drop.in_fluid;
-        let is_water = world.get_voxel(iv).is_some_and(Voxel::is_water);
-        let in_fluid = world.get_voxel(iv).is_some_and(|v| v.is_fluid());
+        let fluid_voxel = world.get_voxel(iv).filter(|v| v.is_fluid());
+        let in_fluid = fluid_voxel.is_some();
         if !was_in_fluid
-            && is_water
+            && let Some(fv) = fluid_voxel
             && drop.age > 0.04
             && let Some(ref mut bursts) = particle_bursts
         {
-            bursts.push_splash(
-                Vec3::new(sample_pos.x, iv.y as f32 + 0.92, sample_pos.z),
-                0.55,
-                [0.70, 0.88, 1.0],
+            let fall_speed = ((-drop.velocity.y) / 5.5).clamp(0.30, 1.35);
+            bursts.push_splash_3d(
+                Vec3::new(sample_pos.x, iv.y as f32 + 0.88, sample_pos.z),
+                0.45,
+                fall_speed,
+                fv,
+                [0.24, 0.54, 0.86],
             );
         }
         drop.in_fluid = in_fluid;

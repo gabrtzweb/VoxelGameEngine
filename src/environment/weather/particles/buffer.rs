@@ -36,7 +36,6 @@ pub enum WeatherParticleKind {
     HeavyRainDrop,
     SnowflakeA,
     SnowflakeB,
-    WaterRipple,
     GroundSplatter,
     GroundFog,
     DustHaze,
@@ -279,9 +278,6 @@ impl WeatherParticlePool {
                     p.velocity.x = p.velocity.x.lerp(wind.x * 1.6, dt * 3.5);
                     p.velocity.z = p.velocity.z.lerp(wind.z * 1.6, dt * 3.5);
                     p.position += p.velocity * dt;
-                }
-                WeatherParticleKind::WaterRipple => {
-                    // Stationary expanding quad on water surface
                 }
             }
 

@@ -5,12 +5,7 @@ use bevy::{
     render::mesh::{Indices, PrimitiveTopology},
 };
 
-use super::{
-    buffer::{
-        MAX_WEATHER_PARTICLES, ParticleRotationMode, WeatherParticleKind, WeatherParticlePool,
-    },
-    emitters::{UV_RIPPLE_0, UV_RIPPLE_1, UV_RIPPLE_2, UV_RIPPLE_3},
-};
+use super::buffer::{MAX_WEATHER_PARTICLES, ParticleRotationMode, WeatherParticlePool};
 use crate::player::PlayerCamera;
 
 #[derive(Component)]
@@ -130,18 +125,7 @@ pub fn sync_weather_particle_mesh(
 
         let color = [p.color[0], p.color[1], p.color[2], alpha];
 
-        // Animated sprite frame selection for ripples
-        let uv_rect = if p.kind == WeatherParticleKind::WaterRipple {
-            let frame = ((p.lifetime / p.max_lifetime) * 4.0).floor() as usize;
-            match frame {
-                0 => UV_RIPPLE_0,
-                1 => UV_RIPPLE_1,
-                2 => UV_RIPPLE_2,
-                _ => UV_RIPPLE_3,
-            }
-        } else {
-            p.uv_min_max
-        };
+        let uv_rect = p.uv_min_max;
 
         let half_w = p.size.x * 0.5;
         let half_h = p.size.y * 0.5;

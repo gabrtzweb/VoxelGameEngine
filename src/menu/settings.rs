@@ -153,6 +153,7 @@ enum SettingsAction {
     ToggleCloudShadows,
     ToggleFoliageSss,
     ToggleAuroraBorealis,
+    ToggleRainPuddles,
     Back,
 }
 
@@ -170,6 +171,9 @@ struct FoliageSssLabel;
 
 #[derive(Component)]
 struct AuroraBorealisLabel;
+
+#[derive(Component)]
+struct RainPuddlesLabel;
 
 #[derive(Component)]
 struct CoatedTexturesLabel;
@@ -1654,6 +1658,23 @@ fn spawn_settings_menu(
                                             AuroraBorealisLabel,
                                             font_handle.as_ref(),
                                         );
+
+                                        // Rain Puddles Toggle
+                                        spawn_toggle_button(
+                                            col_left,
+                                            SettingsAction::ToggleRainPuddles,
+                                            format!(
+                                                "{}: {}",
+                                                loc.t("menu.settings.rain_puddles"),
+                                                if local_config.rain_puddles {
+                                                    loc.t("common.enabled")
+                                                } else {
+                                                    loc.t("common.disabled")
+                                                }
+                                            ),
+                                            RainPuddlesLabel,
+                                            font_handle.as_ref(),
+                                        );
                                     });
 
                                 // Right Column: Dynamic Motion & Foliage
@@ -2798,6 +2819,9 @@ fn handle_settings_buttons(
                 SettingsAction::ToggleAuroraBorealis => {
                     local_config.aurora_borealis = !local_config.aurora_borealis;
                 }
+                SettingsAction::ToggleRainPuddles => {
+                    local_config.rain_puddles = !local_config.rain_puddles;
+                }
                 SettingsAction::Back => {
                     next_state.set(menu_return_target.0);
                     sync_config = false;
@@ -2925,6 +2949,7 @@ fn update_settings_labels(
             Option<&CloudShadowsLabel>,
             Option<&FoliageSssLabel>,
             Option<&AuroraBorealisLabel>,
+            Option<&RainPuddlesLabel>,
         ),
     )>,
 ) {
@@ -2981,6 +3006,7 @@ fn update_settings_labels(
             cloud_shadows,
             foliage_sss,
             aurora_borealis,
+            rain_puddles,
         ),
     ) in &mut labels_query
     {
@@ -3146,6 +3172,16 @@ fn update_settings_labels(
                     "{}: {}",
                     loc.t("menu.settings.aurora_borealis"),
                     if local_config.aurora_borealis {
+                        loc.t("common.enabled")
+                    } else {
+                        loc.t("common.disabled")
+                    }
+                );
+            } else if rain_puddles.is_some() {
+                text.0 = format!(
+                    "{}: {}",
+                    loc.t("menu.settings.rain_puddles"),
+                    if local_config.rain_puddles {
                         loc.t("common.enabled")
                     } else {
                         loc.t("common.disabled")

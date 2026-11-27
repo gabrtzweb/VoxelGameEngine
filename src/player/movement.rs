@@ -437,6 +437,20 @@ pub fn creative_movement(
             *game_mode == GameMode::Spectator,
         );
     } else {
+        let fluid_viscosity_mult = match env_status.submerged_fluid {
+            Some(
+                crate::world::Voxel::LiquidTar
+                | crate::world::Voxel::LiquidSludge
+                | crate::world::Voxel::LiquidOoze,
+            ) => 0.34,
+            Some(
+                crate::world::Voxel::LiquidLava
+                | crate::world::Voxel::LiquidCoreMagma
+                | crate::world::Voxel::LiquidMolten,
+            ) => 0.48,
+            Some(crate::world::Voxel::LiquidAcid | crate::world::Voxel::LiquidBlood) => 0.85,
+            _ => 1.0,
+        };
         grounded_or_water_movement(
             input_dirs,
             delta_seconds,
@@ -451,7 +465,7 @@ pub fn creative_movement(
             env_status.water_flow_velocity,
             stance_h,
             move_speed_multiplier,
-            swim_speed_multiplier,
+            swim_speed_multiplier * fluid_viscosity_mult,
         );
     }
 

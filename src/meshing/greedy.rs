@@ -165,6 +165,8 @@ pub struct FaceKey {
     pub mask_index: u8,
     /// 21-bit packed (7 bits per channel) biome tint of the overlay block (0 = untinted overlay).
     pub packed_tint: u32,
+    /// True when this opaque block face directly borders a water voxel (for projected underwater caustics).
+    pub is_underwater: bool,
 }
 
 impl FaceKey {
@@ -182,6 +184,7 @@ impl FaceKey {
             && self.overlay_layer == other.overlay_layer
             && self.mask_index == other.mask_index
             && self.packed_tint == other.packed_tint
+            && self.is_underwater == other.is_underwater
     }
 }
 
@@ -500,10 +503,15 @@ impl MeshBuffers {
             self.normals.push(direction.normal_f32());
             self.colors.push(vertex_color);
             let uv_b_x = layer + (key.overlay_layer as f32) * 2048.0;
-            let uv_b_y = if key.mask_index > 0 {
+            let base_uv_b_y = if key.mask_index > 0 {
                 (key.mask_index as f32) * 16.0 + frame_count
             } else {
                 frame_count
+            };
+            let uv_b_y = if key.is_underwater {
+                base_uv_b_y.signum() * (base_uv_b_y.abs() + 4096.0)
+            } else {
+                base_uv_b_y
             };
             self.uv_bs.push([uv_b_x, uv_b_y]);
         }
@@ -904,15 +912,18 @@ impl ChunkMesher {
 
                         if voxel.is_fluid()
                             && direction != FaceDirection::PositiveY
+                            && neighbor_opt.is_none()
+                        {
+                            // Never emit artificial fluid seam faces bordering unloaded horizontal or lower chunks.
+                            // PositiveY is intentionally excluded because unallocated sky chunks above sea level are Air.
+                            continue;
+                        }
+
+                        if voxel.is_fluid()
+                            && direction != FaceDirection::PositiveY
                             && direction != FaceDirection::NegativeY
                         {
-                            // If bordering an unloaded chunk outside render distance, do not render
-                            // an artificial waterfall cliff into the void; the water seamlessly continues into LOD.
-                            if neighbor_opt.is_none() {
-                                continue;
-                            }
-
-                            if neighbor == voxel {
+                            if neighbor == voxel || (voxel.is_water() && neighbor.is_water()) {
                                 let v_offset = (water_surface_height_offset(world, world_voxel)
                                     * 100.0)
                                     .round() as u8;
@@ -926,6 +937,13 @@ impl ChunkMesher {
                                     continue;
                                 }
                             } else if !should_render_face(voxel, neighbor) {
+                                continue;
+                            }
+                        } else if voxel.is_fluid() && direction == FaceDirection::PositiveY {
+                            // Fluids have lowered top surfaces (Smooth Flow ~0.90m), so always render their
+                            // top face unless directly submerged under the same fluid (or waterlogged marine flora).
+                            let same_fluid = neighbor == voxel || (voxel.is_water() && neighbor.is_water());
+                            if same_fluid {
                                 continue;
                             }
                         } else if neighbor_shape == BlockShape::Full
@@ -1056,6 +1074,11 @@ impl ChunkMesher {
                             overlay_layer,
                             mask_index: mask_index_val,
                             packed_tint,
+                            is_underwater: !voxel.is_fluid()
+                                && (neighbor.is_water()
+                                    || neighbor.is_marine_flora()
+                                    || neighbor.is_coral_fan()
+                                    || is_submerged_fixture(world, neighbor_coordinate, neighbor)),
                         });
                     }
                 }
@@ -1168,7 +1191,7 @@ pub fn should_render_face(voxel: Voxel, neighbor: Voxel) -> bool {
         }
         return neighbor.is_empty()
             || neighbor == Voxel::Occupied
-            || (neighbor.is_fluid() && neighbor != voxel)
+            || (neighbor.is_fluid() && neighbor != voxel && !(voxel.is_water() && neighbor.is_water()))
             || (!neighbor.is_fluid() && (neighbor.is_transparent() || neighbor.is_leaves()));
     }
 
@@ -1187,11 +1210,8 @@ pub fn should_render_face(voxel: Voxel, neighbor: Voxel) -> bool {
     }
 
     // Solid opaque blocks render against air, transparent fluids, leaves, transparent blocks, occupied cells, or custom mesh blocks.
-    // They cull against opaque fluids (e.g. stone behind lava or under tar is completely hidden).
-    if neighbor.is_fluid_opaque() {
-        return false;
-    }
-
+    // Solid opaque blocks render against air, non-solid blocks, AND all fluids (including opaque fluids
+    // like Lava/Tar/Blood) because Smooth Flow lowers fluid surfaces by 0.10m, exposing the upper rim of adjacent walls.
     neighbor.is_empty()
         || !neighbor.is_solid_opaque()
         || neighbor.has_custom_mesh()
@@ -1275,7 +1295,7 @@ pub fn greedy_merge_mask(
                 }
             }
 
-            let target_buffers = if key.voxel.is_transparent() || key.voxel.is_fluid_transparent() {
+            let target_buffers = if key.voxel.is_transparent() || key.voxel.is_fluid() {
                 &mut *transparent_buffers
             } else {
                 &mut *opaque_buffers

@@ -13,6 +13,7 @@ struct PostProcessSettings {
     threshold: f32,
     max_radius: f32,
     padding: f32,
+    underwater_params: vec4<f32>,
 };
 
 // Interleaved Gradient Noise (IGN) by Jorge Jimenez
@@ -33,6 +34,7 @@ fn interleaved_gradient_noise(pixel_pos: vec2<f32>) -> f32 {
 @fragment
 fn fragment_scatter(in: FullscreenVertexOutput) -> @location(0) vec4<f32> {
     let light_uv = scatter_settings.light_screen_uv;
+    let is_underwater = scatter_settings.underwater_params.x > 0.5;
 
     // Safety guard: skip work if celestial light is not active or exposure faded to zero
     if (scatter_settings.light_visible <= 0.0 || scatter_settings.exposure <= 0.0001) {
@@ -66,12 +68,14 @@ fn fragment_scatter(in: FullscreenVertexOutput) -> @location(0) vec4<f32> {
         let sample_dist = length(sample_aspect_delta);
 
         // Spatial Emitter Mask:
-        // Only pixels within the physical celestial disc and inner corona can emit crepuscular rays.
-        // Also smoothly fades out below the celestial quad's lower rim (sample_uv.y > light_uv.y + horizon_rim).
-        // This physically prevents water specular reflections, terrain, and shoreline from acting as light emitters.
-        let radial_mask = smoothstep(scatter_settings.max_radius, scatter_settings.max_radius * 0.55, sample_dist);
-        let horizon_rim = scatter_settings.max_radius * 0.75;
-        let vertical_mask = 1.0 - smoothstep(horizon_rim * 0.5, horizon_rim, max(0.0, sample_uv.y - light_uv.y));
+        // Above water: strictly restrict to the sun disc & tight lower rim so water glints never shoot a laser beam.
+        // Underwater: allow full radial scattering from the sunlit water surface / Snell's window around the sun.
+        let radial_mask = smoothstep(scatter_settings.max_radius, scatter_settings.max_radius * 0.50, sample_dist);
+        let vertical_mask = select(
+            1.0 - smoothstep(0.015, 0.048, max(0.0, sample_uv.y - light_uv.y)),
+            1.0,
+            is_underwater
+        );
         let emitter_mask = radial_mask * vertical_mask;
 
         if (emitter_mask > 0.001) {
@@ -142,9 +146,20 @@ fn fragment_scatter(in: FullscreenVertexOutput) -> @location(0) vec4<f32> {
 
 @fragment
 fn fragment_composite(in: FullscreenVertexOutput) -> @location(0) vec4<f32> {
-    let main_color = textureSample(comp_main_texture, comp_main_sampler, in.uv);
+    let uw_factor = comp_settings.underwater_params.x;
 
-    if (comp_settings.light_visible <= 0.0 || comp_settings.exposure <= 0.0001) {
+    // Balanced gentle underwater refraction shimmer (visibly aquatic yet comfortable for long dives)
+    var sample_uv = in.uv;
+    if (uw_factor > 0.001) {
+        let t = comp_settings.underwater_params.y;
+        let wobble_x = sin(in.uv.y * 15.0 + t * 1.35) * 0.00088 + cos(in.uv.y * 8.0 - t * 0.95) * 0.00042;
+        let wobble_y = cos(in.uv.x * 12.0 + t * 1.20) * 0.00072;
+        sample_uv = clamp(in.uv + vec2<f32>(wobble_x, wobble_y) * uw_factor, vec2<f32>(0.001), vec2<f32>(0.999));
+    }
+
+    let main_color = textureSample(comp_main_texture, comp_main_sampler, sample_uv);
+
+    if (uw_factor <= 0.001 && (comp_settings.light_visible <= 0.0 || comp_settings.exposure <= 0.0001)) {
         return main_color;
     }
 
@@ -154,12 +169,23 @@ fn fragment_composite(in: FullscreenVertexOutput) -> @location(0) vec4<f32> {
     let inv_size = 1.0 / tex_size;
     let offset = inv_size * 0.5;
 
-    let r0 = textureSample(comp_rays_texture, comp_rays_sampler, in.uv + vec2<f32>(-offset.x, -offset.y));
-    let r1 = textureSample(comp_rays_texture, comp_rays_sampler, in.uv + vec2<f32>(offset.x, -offset.y));
-    let r2 = textureSample(comp_rays_texture, comp_rays_sampler, in.uv + vec2<f32>(-offset.x, offset.y));
-    let r3 = textureSample(comp_rays_texture, comp_rays_sampler, in.uv + vec2<f32>(offset.x, offset.y));
+    let r0 = textureSample(comp_rays_texture, comp_rays_sampler, sample_uv + vec2<f32>(-offset.x, -offset.y));
+    let r1 = textureSample(comp_rays_texture, comp_rays_sampler, sample_uv + vec2<f32>(offset.x, -offset.y));
+    let r2 = textureSample(comp_rays_texture, comp_rays_sampler, sample_uv + vec2<f32>(-offset.x, offset.y));
+    let r3 = textureSample(comp_rays_texture, comp_rays_sampler, sample_uv + vec2<f32>(offset.x, offset.y));
     let rays_color = (r0 + r1 + r2 + r3) * 0.25;
 
-    let final_rgb = main_color.rgb + rays_color.rgb;
+    var final_rgb = main_color.rgb + rays_color.rgb;
+
+    if (uw_factor > 0.001) {
+        let depth_atten = comp_settings.underwater_params.w;
+
+        // Subtle deep-water peripheral vignette (deepens slightly in abyssal trenches)
+        let vig_dist = length((in.uv - vec2<f32>(0.5)) * vec2<f32>(1.15, 1.0));
+        let vig_strength = mix(0.28, 0.16, depth_atten);
+        let vignette = 1.0 - smoothstep(0.42, 0.92, vig_dist) * vig_strength * uw_factor;
+        final_rgb *= vignette;
+    }
+
     return vec4<f32>(final_rgb, main_color.a);
 }

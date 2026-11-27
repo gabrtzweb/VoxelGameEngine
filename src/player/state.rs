@@ -2,16 +2,18 @@ use bevy::prelude::*;
 
 use super::{
     Player, PlayerCamera,
-    water::{is_point_in_water, player_submersion},
+    water::{fluid_at_point, player_submersion},
 };
 use crate::{
     generation::{BiomeType, TerrainGenerator},
-    world::VoxelWorld,
+    world::{Voxel, VoxelWorld},
 };
 
 #[derive(Resource, Default, Debug, Clone, Copy)]
 pub struct PlayerEnvironmentStatus {
     pub is_camera_in_water: bool,
+    pub camera_fluid: Option<Voxel>,
+    pub submerged_fluid: Option<Voxel>,
     pub submersion: f32,
     pub current_biome: BiomeType,
     pub is_underground: bool,
@@ -38,15 +40,15 @@ pub fn update_player_environment_status(
         return;
     };
 
-    let is_camera_in_water = camera_query
+    let camera_fluid = camera_query
         .as_ref()
-        .map(|cam| is_point_in_water(&world, cam.translation()))
-        .unwrap_or(false);
+        .and_then(|cam| fluid_at_point(&world, cam.translation()));
+    let is_camera_in_water = camera_fluid.is_some_and(Voxel::is_water);
 
-    let submersion = player_query
+    let (submersion, submerged_fluid) = player_query
         .as_ref()
         .map(|player| player_submersion(&world, player.translation))
-        .unwrap_or(0.0);
+        .unwrap_or((0.0, None));
 
     let (current_biome, is_underground, depth_below_surface, has_roof, target_underground_factor) =
         if let (Some(terrain_gen), Some(pos)) = (
@@ -164,6 +166,8 @@ pub fn update_player_environment_status(
     };
 
     status.is_camera_in_water = is_camera_in_water;
+    status.camera_fluid = camera_fluid;
+    status.submerged_fluid = submerged_fluid;
     status.submersion = submersion;
     status.current_biome = current_biome;
     status.is_underground = is_underground;

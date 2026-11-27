@@ -138,6 +138,45 @@ fn permute3(x: vec3<f32>) -> vec3<f32> {
 }
 
 // Stefan Gustavson's Simplex 2D Noise: Evaluated on an equilateral triangular lattice
+fn water_hash(p: vec2<f32>) -> f32 {
+    let p3 = fract(vec3<f32>(p.xyx) * 0.1031);
+    let p4 = p3 + dot(p3, p3.yzx + 33.33);
+    return fract((p4.x + p4.y) * p4.z);
+}
+
+// Crisp 16x16 voxel-snapped non-repetitive pixel-art raindrop ripples for all liquid surfaces (visible from above & below)
+fn compute_fluid_rain_ripple(world_xz: vec2<f32>, time: f32, rain_active: f32) -> f32 {
+    if (rain_active <= 0.05) {
+        return 0.0;
+    }
+    let texel_coord = floor(world_xz * 16.0);
+    let cell_size = 8.0;
+    let cell = floor(texel_coord / cell_size);
+    let local_tx = texel_coord - cell * cell_size;
+    let h1 = water_hash(cell);
+    let raw_t = time * 1.35 + h1;
+    let cycle_id = floor(raw_t);
+    let cycle = fract(raw_t);
+    let seed = cell + vec2<f32>(cycle_id * 13.7, cycle_id * 29.3);
+    let h2 = water_hash(seed + vec2<f32>(19.7, 43.1));
+    let frame = floor(cycle * 5.0);
+    if (h2 < 0.38 && frame < 3.5) {
+        let center_tx = vec2<f32>(
+            floor(2.0 + water_hash(seed + vec2<f32>(3.1, 7.4)) * 4.0),
+            floor(2.0 + water_hash(seed + vec2<f32>(11.2, 5.8)) * 4.0)
+        );
+        let delta_tx = local_tx - center_tx;
+        let cheb_dist = max(abs(delta_tx.x), abs(delta_tx.y));
+        let manh_dist = abs(delta_tx.x) + abs(delta_tx.y);
+        let ring_r = frame;
+        let on_ring = (abs(cheb_dist - ring_r) < 0.25) && (manh_dist <= ring_r * 2.0 - select(0.0, 1.0, ring_r >= 2.0));
+        if (on_ring) {
+            return (1.0 - frame / 4.0) * rain_active;
+        }
+    }
+    return 0.0;
+}
+
 fn simplex_noise2(v: vec2<f32>) -> f32 {
     let C = vec4<f32>(
         0.211324865405187,  // (3.0 - sqrt(3.0)) / 6.0
@@ -598,7 +637,18 @@ fn fragment(
         water_base = mix(water_base, foam_color, foam);
         water_alpha = mix(water_alpha, 0.92, foam);
 
+        // Crisp 16x16 voxel-snapped pixel-art raindrop ripples on water (visible both from above and looking up underwater!)
+        let water_rain_glint = select(
+            0.0,
+            compute_fluid_rain_ripple(vertex_output.world_position.xz, time, sky_up_color.w),
+            orig_normal.y > 0.95
+        );
+
         if (is_front) {
+            if (water_rain_glint > 0.001) {
+                water_base = mix(water_base, vec3<f32>(0.84, 0.92, 0.98), water_rain_glint * 0.28);
+                water_alpha = max(water_alpha, water_rain_glint * 0.40);
+            }
             let refl_dir = reflect(view_dir, wave_normal);
             water_sky_refl_col = sample_water_sky_reflection(refl_dir);
             let ssr = trace_water_ssr(vertex_output.world_position.xyz, refl_dir, vertex_output.position.xy);
@@ -607,9 +657,15 @@ fn fragment(
             }
             water_fresnel_refl = clamp(0.10 + fresnel4 * 0.76, 0.0, 0.84) * (1.0 - foam * 0.85);
         } else {
-            // Looking up at surface from underwater
-            water_alpha = 0.65;
-            water_base = base_pixel_color * 1.30;
+            // Looking up at water surface from underwater: flip normal downward with balanced translucent pixel-art texture + visible rain ripples
+            pbr_input.N = -wave_normal;
+            pbr_input.world_normal = -wave_normal;
+            water_alpha = 0.42;
+            water_base = base_pixel_color * 1.35;
+            if (water_rain_glint > 0.001) {
+                water_base = mix(water_base, vec3<f32>(0.86, 0.94, 1.00), water_rain_glint * 0.42);
+                water_alpha = max(water_alpha, 0.56);
+            }
         }
 
         final_color = water_base;
@@ -617,10 +673,29 @@ fn fragment(
         pbr_input.material.perceptual_roughness = mix(0.05, 0.36, foam);
         pbr_input.material.reflectance = vec3<f32>(0.85);
     } else if (surface_type > 1.5) {
-        // --- 2. Generic Fluid ---
-        // Pure vibrant liquid colors (no ocean depth tint or foam)
-        final_color = base_pixel_color;
-        final_alpha = max(tex_color.a, 0.88);
+        // --- 2. Generic Fluid (Lava, CoreMagma, Molten, Acid, Tar, Blood, Sludge, Ooze) ---
+        let fluid_rain_glint = select(
+            0.0,
+            compute_fluid_rain_ripple(vertex_output.world_position.xz, time, sky_up_color.w),
+            orig_normal.y > 0.95
+        );
+        if (!is_front) {
+            // Looking up from inside non-water liquids: flip normal downward & ensure clear texture visibility
+            // even in dark/non-emissive liquids (Blood, Ooze, Sludge, Tar) and less transparent Acid
+            pbr_input.N = -orig_normal;
+            pbr_input.world_normal = -orig_normal;
+            final_color = base_pixel_color * 1.30;
+            final_alpha = 0.84;
+            if (fluid_rain_glint > 0.001) {
+                final_color = mix(final_color, final_color * 1.55 + vec3<f32>(0.18), fluid_rain_glint * 0.35);
+            }
+        } else {
+            final_color = base_pixel_color;
+            if (fluid_rain_glint > 0.001) {
+                final_color = mix(final_color, final_color * 1.45 + vec3<f32>(0.20), fluid_rain_glint * 0.30);
+            }
+            final_alpha = max(tex_color.a, 0.92);
+        }
     } else {
         // --- 0. Solid Transparent ---
         // Pure texture base color and exact texture alpha (glass, ice, black ice)
@@ -639,6 +714,14 @@ fn fragment(
         out.color = apply_pbr_lighting(pbr_input);
         if (water_fresnel_refl > 0.001) {
             out.color = vec4<f32>(mix(out.color.rgb, water_sky_refl_col, water_fresnel_refl), out.color.a);
+        }
+        // Ensure fluid undersides remain visibly textured when looking up (including water at dusk/night)
+        if (!is_front) {
+            if (surface_type > 1.5) {
+                out.color = vec4<f32>(max(out.color.rgb, final_color * 0.65), out.color.a);
+            } else if (surface_type > 0.5) {
+                out.color = vec4<f32>(max(out.color.rgb, final_color * 0.30), out.color.a);
+            }
         }
     }
     out.color = main_pass_post_lighting_processing(pbr_input, out.color);

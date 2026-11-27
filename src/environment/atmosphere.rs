@@ -137,21 +137,84 @@ pub fn update_atmosphere(
     let t = state.time_of_day;
     let (mut fog, mut exposure, camera_transform) = camera.into_inner();
 
-    let is_underwater = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
+    let camera_fluid = env_status.as_ref().and_then(|s| s.camera_fluid);
+    let is_underwater = camera_fluid.is_some_and(crate::world::Voxel::is_water);
     let underground_factor = env_status.as_ref().map_or(0.0, |s| s.underground_factor);
     let cam_y = camera_transform.translation().y;
     let deep_subterranean_factor = ((-cam_y) / 48.0).clamp(0.0, 1.0);
 
-    if is_underwater {
-        let water_fog_color = Color::srgb(0.04, 0.20, 0.35);
-        clear_color.0 = Color::srgb(0.02, 0.12, 0.24);
-        ambient.color = Color::srgb(0.15, 0.40, 0.60);
-        ambient.brightness = sample_ambient_brightness(t).max(250.0);
+    if let Some(fluid) = camera_fluid && !is_underwater {
+        // Bespoke submersion visuals for non-water liquids (Lava, Magma, Molten, Acid, Tar, Blood, Sludge, Ooze)
+        let (fog_rgb, amb_rgb, amb_bright) = match fluid {
+            crate::world::Voxel::LiquidLava
+            | crate::world::Voxel::LiquidCoreMagma
+            | crate::world::Voxel::LiquidMolten => {
+                ((0.88, 0.24, 0.02), (1.0, 0.45, 0.12), 1_400.0)
+            }
+            crate::world::Voxel::LiquidAcid => ((0.18, 0.68, 0.08), (0.35, 0.95, 0.22), 720.0),
+            crate::world::Voxel::LiquidTar => ((0.03, 0.008, 0.06), (0.14, 0.06, 0.22), 65.0),
+            crate::world::Voxel::LiquidBlood => ((0.36, 0.02, 0.03), (0.55, 0.08, 0.08), 160.0),
+            crate::world::Voxel::LiquidSludge => ((0.18, 0.12, 0.07), (0.30, 0.22, 0.14), 130.0),
+            crate::world::Voxel::LiquidOoze => ((0.20, 0.25, 0.05), (0.36, 0.42, 0.10), 175.0),
+            _ => ((0.04, 0.20, 0.35), (0.15, 0.40, 0.60), 220.0),
+        };
+        let fluid_fog_color = Color::srgb(fog_rgb.0, fog_rgb.1, fog_rgb.2);
+        clear_color.0 = Color::srgb(fog_rgb.0 * 0.65, fog_rgb.1 * 0.65, fog_rgb.2 * 0.65);
+        ambient.color = Color::srgb(amb_rgb.0, amb_rgb.1, amb_rgb.2);
+        ambient.brightness = amb_bright;
+        fog.color = fluid_fog_color;
+        fog.directional_light_color = fluid_fog_color;
+        fog.directional_light_exponent = 2.0;
+        exposure.ev100 = sample_exposure(t);
+    } else if is_underwater {
+        // Time-of-day & strong depth-aware underwater absorption fog (shallow turquoise -> dark abyssal trench)
+        let sun_dir = crate::environment::celestial::calculate_sun_direction(t);
+        let day_factor = ((sun_dir.y + 0.08) / 0.40).clamp(0.0, 1.0);
+        // Sea level is ~Y=12..16; depth_factor reaches 1.0 around Y=-32 (deep ocean trench)
+        let depth_factor = ((12.0 - cam_y) / 42.0).clamp(0.0, 1.0);
+        let abyss_curve = depth_factor * depth_factor;
+
+        let shallow_day = LinearRgba::new(0.045, 0.28, 0.46, 1.0);
+        let deep_day = LinearRgba::new(0.004, 0.022, 0.058, 1.0);
+        let night_water = LinearRgba::new(0.003, 0.012, 0.032, 1.0);
+        let day_blend = LinearRgba::new(
+            shallow_day.red + (deep_day.red - shallow_day.red) * depth_factor,
+            shallow_day.green + (deep_day.green - shallow_day.green) * depth_factor,
+            shallow_day.blue + (deep_day.blue - shallow_day.blue) * depth_factor,
+            1.0,
+        );
+        let uw_fog_lin = LinearRgba::new(
+            night_water.red + (day_blend.red - night_water.red) * day_factor,
+            night_water.green + (day_blend.green - night_water.green) * day_factor,
+            night_water.blue + (day_blend.blue - night_water.blue) * day_factor,
+            1.0,
+        );
+        let water_fog_color = Color::LinearRgba(uw_fog_lin);
+
+        clear_color.0 = Color::LinearRgba(LinearRgba::new(
+            uw_fog_lin.red * 0.55,
+            uw_fog_lin.green * 0.55,
+            uw_fog_lin.blue * 0.65,
+            1.0,
+        ));
+        let light_scale = (1.0 - depth_factor * 0.85) * (0.15 + 0.85 * day_factor);
+        ambient.color = Color::srgb(
+            0.04 + 0.16 * light_scale,
+            0.12 + 0.36 * light_scale,
+            0.22 + 0.42 * light_scale,
+        );
+        // Deep trenches drop ambient light dramatically so abyssal dives feel genuinely dark
+        let shallow_ambient = sample_ambient_brightness(t) * 0.78;
+        ambient.brightness = (shallow_ambient * (1.0 - abyss_curve * 0.90)).max(38.0);
 
         fog.color = water_fog_color;
-        fog.directional_light_color = water_fog_color;
-        fog.directional_light_exponent = 4.0;
-        exposure.ev100 = sample_exposure(t);
+        fog.directional_light_color = Color::srgb(
+            0.02 + 0.20 * light_scale,
+            0.10 + 0.48 * light_scale,
+            0.18 + 0.56 * light_scale,
+        );
+        fog.directional_light_exponent = 6.0;
+        exposure.ev100 = sample_exposure(t) + abyss_curve * 0.45;
     } else {
         let mut computed_sky = sample_sky_color(t);
         let mut computed_ambient = sample_ambient_color(t);
@@ -378,13 +441,35 @@ pub fn sync_fog_distance(
         .as_ref()
         .is_none_or(|gs| gs.atmospheric_fog_enabled);
 
-    let is_underwater = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
+    let camera_fluid = env_status.as_ref().and_then(|s| s.camera_fluid);
+    let is_underwater = camera_fluid.is_some_and(crate::world::Voxel::is_water);
     let underground_factor = env_status.as_ref().map_or(0.0, |s| s.underground_factor);
 
+    if let Some(fluid) = camera_fluid && !is_underwater {
+        let (start, end) = match fluid {
+            crate::world::Voxel::LiquidLava
+            | crate::world::Voxel::LiquidCoreMagma
+            | crate::world::Voxel::LiquidMolten => (0.4, 3.2),
+            crate::world::Voxel::LiquidTar => (0.25, 2.2),
+            crate::world::Voxel::LiquidAcid => (0.8, 7.5),
+            crate::world::Voxel::LiquidBlood => (0.6, 5.5),
+            crate::world::Voxel::LiquidSludge => (0.6, 4.8),
+            crate::world::Voxel::LiquidOoze => (0.6, 5.0),
+            _ => (1.0, 12.0),
+        };
+        fog.falloff = FogFalloff::Linear { start, end };
+        return;
+    }
+
     if is_underwater {
+        let cam_y = cam_tf.translation().y;
+        let depth_factor = ((12.0 - cam_y) / 42.0).clamp(0.0, 1.0);
+        // Clear 40m visibility in sunlit shallow coral reefs -> moody 22m abyssal visibility in deep trenches
+        let uw_end = 40.0 - depth_factor * 18.0;
+        let uw_start = 3.0 - depth_factor * 0.5;
         fog.falloff = FogFalloff::Linear {
-            start: 1.0,
-            end: 22.0,
+            start: uw_start,
+            end: uw_end,
         };
         return;
     }

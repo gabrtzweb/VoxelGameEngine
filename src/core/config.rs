@@ -497,6 +497,10 @@ pub struct LocalConfig {
     #[serde(default = "default_aurora_borealis")]
     pub aurora_borealis: bool,
 
+    /// Whether wet ground and reflective procedural rain puddles appear during and after rain.
+    #[serde(default = "default_rain_puddles")]
+    pub rain_puddles: bool,
+
     /// Head bobbing during walking/sprinting.
     #[serde(default = "default_view_bobbing")]
     pub view_bobbing: bool,
@@ -905,6 +909,10 @@ fn default_aurora_borealis() -> bool {
     true
 }
 
+fn default_rain_puddles() -> bool {
+    true
+}
+
 fn default_view_bobbing() -> bool {
     true
 }
@@ -1027,6 +1035,7 @@ impl Default for LocalConfig {
             cloud_shadows: default_cloud_shadows(),
             foliage_sss: default_foliage_sss(),
             aurora_borealis: default_aurora_borealis(),
+            rain_puddles: default_rain_puddles(),
             view_bobbing: default_view_bobbing(),
             full_grass: default_full_grass(),
             vsync_enabled: default_vsync_enabled(),

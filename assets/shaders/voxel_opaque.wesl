@@ -44,6 +44,34 @@ fn ambient_environment_noise(pos_xz: vec2<f32>) -> f32 {
     return smooth_noise2(pos_xz * 0.04);
 }
 
+// Animated Voronoi cell-ridge caustic layer for Complementary-style projected underwater light webs
+fn caustic_layer(p: vec2<f32>, t: f32) -> f32 {
+    let i = floor(p);
+    let f = fract(p);
+    var min_d1 = 8.0;
+    var min_d2 = 8.0;
+    for (var y: i32 = -1; y <= 1; y = y + 1) {
+        for (var x: i32 = -1; x <= 1; x = x + 1) {
+            let nb = vec2<f32>(f32(x), f32(y));
+            let h1 = hash2_noise(i + nb);
+            let h2 = hash2_noise(i + nb + vec2<f32>(37.2, 17.9));
+            let pt = nb + 0.5 + 0.36 * vec2<f32>(
+                sin(t * 0.95 + h1 * 6.28318),
+                cos(t * 0.85 + h2 * 6.28318)
+            ) - f;
+            let d = dot(pt, pt);
+            if (d < min_d1) {
+                min_d2 = min_d1;
+                min_d1 = d;
+            } else if (d < min_d2) {
+                min_d2 = d;
+            }
+        }
+    }
+    let edge = sqrt(min_d2) - sqrt(min_d1);
+    return smoothstep(0.22, 0.0, edge);
+}
+
 fn ambient_environment_variation(pos_xz: vec2<f32>, base_tint: vec3<f32>) -> vec3<f32> {
     let n_macro = smooth_noise2(pos_xz * 0.025);
     let n_detail = smooth_noise2(pos_xz * 0.10);
@@ -230,7 +258,9 @@ fn fragment(
     pbr_vertex.color = vec4<f32>(1.0);
     var pbr_input: pbr_types::PbrInput = pbr_input_from_standard_material(pbr_vertex, is_front);
 
-    let abs_frame_full = abs(vertex_output.uv_b.y);
+    let raw_abs_uvb_y = abs(vertex_output.uv_b.y);
+    let is_underwater_face = raw_abs_uvb_y >= 4000.0;
+    let abs_frame_full = select(raw_abs_uvb_y, raw_abs_uvb_y - 4096.0, is_underwater_face);
     let mask_index = i32(floor(abs_frame_full / 16.0 + 0.01));
     let raw_frame_param = sign(vertex_output.uv_b.y) * (abs_frame_full - f32(mask_index) * 16.0);
 
@@ -527,12 +557,113 @@ fn fragment(
         }
     }
 
+    // Rain Puddles & Wet Ground Reflections (active during and after rain, dry land only):
+    let rain_wetness = voxel_params.w;
+    let active_rain = anim_params.w;
+    var puddle_mask = 0.0;
+    var pixel_ripple_glint = 0.0;
+    if (is_solid_terrain && !is_underwater_face && !is_cross_mesh && !is_leaves_block && norm.y > 0.65 && rain_wetness > 0.01) {
+        let p_xz = vertex_output.world_position.xz;
+        let n_macro = smooth_noise2(p_xz * 0.14);
+        let n_mid = smooth_noise2(p_xz * 0.37 + vec2<f32>(17.3, 9.1));
+        let n_fine = smooth_noise2(p_xz * 0.95 + vec2<f32>(4.2, 23.8));
+        let puddle_noise = n_macro * 0.58 + n_mid * 0.30 + n_fine * 0.12;
+        let puddle_thresh = mix(0.68, 0.44, rain_wetness);
+        puddle_mask = smoothstep(puddle_thresh, puddle_thresh + 0.14, puddle_noise) * smoothstep(0.05, 0.35, rain_wetness);
+
+        // Damp porous terrain darkens slightly; puddles deepen contrast further
+        let wet_darken = mix(1.0, 0.74, rain_wetness * 0.55 + puddle_mask * 0.45);
+        pbr_input.material.base_color = vec4<f32>(pbr_input.material.base_color.rgb * wet_darken, pbr_input.material.base_color.a);
+
+        // Balanced wet PBR glossiness: soft realistic sheen without 1-pixel GGX sun laser lines at sunrise/sunset
+        let damp_roughness = mix(pbr_input.material.perceptual_roughness, 0.52, rain_wetness * 0.70);
+        pbr_input.material.perceptual_roughness = mix(damp_roughness, 0.24, puddle_mask);
+        pbr_input.material.reflectance = mix(pbr_input.material.reflectance, vec3<f32>(0.62), puddle_mask * 0.75 + rain_wetness * 0.15);
+
+        // Pixel-art texel-snapped non-repetitive raindrop ripples inside puddles while actively raining
+        if (puddle_mask > 0.15 && active_rain > 0.05) {
+            let texel_coord = floor(p_xz * 16.0);
+            let cell_size = 8.0;
+            let cell = floor(texel_coord / cell_size);
+            let local_tx = texel_coord - cell * cell_size;
+            let h1 = hash2_noise(cell);
+            let raw_t = globals.time * 1.35 + h1;
+            let cycle_id = floor(raw_t);
+            let cycle = fract(raw_t);
+            // Mix cycle_id into the seed so every drop lands at a fresh random pixel each cycle
+            let seed = cell + vec2<f32>(cycle_id * 13.7, cycle_id * 29.3);
+            let h2 = hash2_noise(seed + vec2<f32>(19.7, 43.1));
+            let frame = floor(cycle * 5.0);
+            if (h2 < 0.38 && frame < 3.5) {
+                let center_tx = vec2<f32>(
+                    floor(2.0 + hash2_noise(seed + vec2<f32>(3.1, 7.4)) * 4.0),
+                    floor(2.0 + hash2_noise(seed + vec2<f32>(11.2, 5.8)) * 4.0)
+                );
+                let delta_tx = local_tx - center_tx;
+                let cheb_dist = max(abs(delta_tx.x), abs(delta_tx.y));
+                let manh_dist = abs(delta_tx.x) + abs(delta_tx.y);
+                // Crisp 1-texel wide octagonal/square pixel ring expanding 0 -> 1 -> 2 texels
+                let ring_r = frame;
+                let on_ring = (abs(cheb_dist - ring_r) < 0.25) && (manh_dist <= ring_r * 2.0 - select(0.0, 1.0, ring_r >= 2.0));
+                if (on_ring) {
+                    let fade = (1.0 - frame / 4.0) * puddle_mask * active_rain;
+                    pixel_ripple_glint = fade * 0.22;
+                }
+            }
+        }
+    }
+
     var out: FragmentOutput;
     if (is_emissive) {
         // Light-emitting blocks are self-illuminated into HDR bloom range (> 1.0):
         out.color = vec4<f32>(tex_color.rgb * vertex_output.color.rgb * 2.5, 1.0);
     } else {
         out.color = apply_pbr_lighting(pbr_input);
+
+        // Grazing-angle sky reflection sheen & subtle pixel-art ripple glint on rain puddles
+        if (puddle_mask > 0.01) {
+            let n_dot_v = max(dot(pbr_input.N, pbr_input.V), 0.0);
+            let fresnel = 0.04 + 0.96 * pow(1.0 - n_dot_v, 4.0);
+            let sky_luma = clamp(0.18 + max(sun_dir_and_factor.y, 0.0) * 1.4, 0.14, 0.95);
+            let puddle_sky_tint = mix(vec3<f32>(0.10, 0.14, 0.22), vec3<f32>(0.42, 0.50, 0.60), sky_luma);
+            var wet_rgb = mix(out.color.rgb, puddle_sky_tint, fresnel * puddle_mask * 0.62);
+            if (pixel_ripple_glint > 0.001) {
+                wet_rgb = mix(wet_rgb, vec3<f32>(0.78, 0.85, 0.92), pixel_ripple_glint);
+            }
+            out.color = vec4<f32>(wet_rgb, out.color.a);
+        }
+
+        // Projected Pixel-Art Underwater Caustics (16x16 texel-snapped, slow organic shimmer matching voxel style)
+        let is_aquatic_flora = (vertex_output.color.a > 3.5) && (vertex_output.color.a < 4.5);
+        if ((is_underwater_face || is_aquatic_flora) && !is_item_entity) {
+            let sun_dir = normalize(sun_dir_and_factor.xyz);
+            // Physically dim caustics smoothly through late afternoon (16:00-17:30) and vanish before dusk
+            let sun_up = pow(smoothstep(0.10, 0.68, sun_dir.y), 1.85);
+            // Smoothly fade caustics from 1.0 in shallow reefs (Y >= 10) down to 0.0 in deep abyssal trenches (Y <= -34)
+            let depth_fade = smoothstep(-34.0, 10.0, vertex_output.world_position.y);
+            if (sun_up > 0.005 && depth_fade > 0.005) {
+                // Snap projected coordinates to 16x16 voxel texel grid for authentic pixel-art caustic charm
+                let raw_proj = vertex_output.world_position.xz
+                    - sun_dir.xz * (vertex_output.world_position.y / max(sun_dir.y, 0.35)) * 0.45;
+                let proj_xz = floor(raw_proj * 16.0) / 16.0;
+                let t = max(globals.time, 0.0);
+                // Rotate second Voronoi layer by ~37 deg so the web never tiles, with gentle slow motion
+                let rot_xz = vec2<f32>(
+                    proj_xz.x * 0.7986 - proj_xz.y * 0.6018,
+                    proj_xz.x * 0.6018 + proj_xz.y * 0.7986
+                );
+                let c1 = caustic_layer(proj_xz * 0.34 + vec2<f32>(t * 0.045, t * 0.028), t * 0.36);
+                let c2 = caustic_layer(rot_xz * 0.52 - vec2<f32>(t * 0.032, -t * 0.040) + vec2<f32>(11.3, 5.7), t * 0.42);
+                let caustic_web = smoothstep(0.18, 0.92, clamp(c1 * 0.65 + c2 * 0.45, 0.0, 1.15));
+                let up_weight = select(clamp(norm.y * 0.80 + 0.20, 0.10, 1.0), 0.55, is_aquatic_flora);
+                let caustic_color = vec3<f32>(0.36, 0.86, 0.98) * sun_color_and_cloud.rgb;
+                let caustic_strength = caustic_web * sun_up * up_weight * pow(depth_fade, 1.25) * 0.30;
+                out.color = vec4<f32>(
+                    out.color.rgb + caustic_color * caustic_strength * (0.25 + pbr_input.material.base_color.rgb * 0.95),
+                    out.color.a
+                );
+            }
+        }
 
         // Complementary-inspired backlit Subsurface Scattering (translucency) on tree leaves & flora
         let sun_strength = sun_dir_and_factor.w;

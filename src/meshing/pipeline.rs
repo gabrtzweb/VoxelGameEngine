@@ -795,6 +795,7 @@ pub fn remove_lod_render(
 }
 
 pub fn sync_voxel_shader_settings(
+    time: Res<Time>,
     local_config: Option<Res<crate::core::LocalConfig>>,
     (wind_state, weather, sky_palette): (
         Option<Res<crate::environment::WindState>>,
@@ -806,6 +807,7 @@ pub fn sync_voxel_shader_settings(
     mut opaque_materials: ResMut<Assets<OpaqueChunkMaterial>>,
     mut transparent_materials: ResMut<Assets<TransparentChunkMaterial>>,
     mut last_sent: Local<Option<(Vec4, f32, f32)>>,
+    mut smoothed_wetness: Local<f32>,
 ) {
     let Some(chunk_material) = chunk_material else {
         return;
@@ -821,6 +823,33 @@ pub fn sync_voxel_shader_settings(
     } else {
         Vec4::new(0.28, 1.0, 1.0, 0.0)
     };
+
+    let rain_puddles_enabled = local_config.as_ref().is_none_or(|c| c.rain_puddles);
+    let (active_rain, target_wetness) = if rain_puddles_enabled {
+        weather.as_ref().map_or((0.0, 0.0), |w| {
+            let rain = (w.rain_intensity + w.thunder_intensity * 0.45).clamp(0.0, 1.0);
+            let is_non_rain_precip = w.snow_intensity > 0.25 || w.dust_intensity > 0.25;
+            let post_rain = if is_non_rain_precip {
+                0.0
+            } else {
+                (w.after_weather_timer / 45.0).clamp(0.0, 1.0) * 0.85
+            };
+            (rain, rain.max(post_rain))
+        })
+    } else {
+        (0.0, 0.0)
+    };
+
+    let dt = time.delta_secs().min(0.1);
+    let wet_rate = if target_wetness > *smoothed_wetness {
+        0.22
+    } else {
+        0.08
+    };
+    *smoothed_wetness += (target_wetness - *smoothed_wetness) * (dt * wet_rate).min(1.0);
+    if !rain_puddles_enabled {
+        *smoothed_wetness = 0.0;
+    }
 
     let weather_wind_boost = weather.as_ref().map_or(1.0, |w| {
         1.0 + w.rain_intensity * 0.42
@@ -880,9 +909,11 @@ pub fn sync_voxel_shader_settings(
     if let Some(mut mat) = opaque_materials.get_mut(&chunk_material.opaque) {
         if needs_static_update {
             mat.extension.params = target_params;
-            mat.extension.anim_params = Vec4::new(0.0, wind_intensity, wind_angle, 0.0);
+            mat.extension.anim_params = Vec4::new(0.0, wind_intensity, wind_angle, active_rain);
             *last_sent = Some((target_params, wind_intensity, wind_angle));
         }
+        mat.extension.params.w = *smoothed_wetness;
+        mat.extension.anim_params.w = active_rain;
         mat.extension.sun_dir_and_factor = opaque_sun_dir_and_factor;
         mat.extension.sun_color_and_cloud = sun_color_and_cloud;
         mat.extension.player_push_pos = player_push_pos;

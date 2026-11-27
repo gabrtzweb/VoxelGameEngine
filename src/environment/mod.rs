@@ -60,6 +60,10 @@ impl Plugin for EnvironmentPlugin {
                     clouds::setup_clouds,
                     particles::setup_world_particles,
                     particles::setup_wind_streaks,
+                    particles::setup_water_splashes_3d,
+                    particles::setup_fluid_bubbles,
+                    particles::setup_shooting_stars,
+                    particles::setup_water_godrays_3d,
                     configure_gpu_cluster_capacity,
                 ),
             )
@@ -76,6 +80,10 @@ impl Plugin for EnvironmentPlugin {
                     sync_cloud_system,
                     particles::update_world_particles,
                     particles::update_wind_streaks,
+                    particles::update_water_splashes_3d,
+                    particles::update_fluid_bubbles,
+                    particles::update_shooting_stars,
+                    particles::update_water_godrays_3d,
                 )
                     .chain()
                     .after(crate::player::PlayerSet::Movement),
@@ -148,9 +156,23 @@ fn sync_celestial_system(
     // Shadows cast by terrain geometry block the sun naturally; fade out completely in deep caverns
     // beyond shadow cascade distance so sunlight never leaks through deep roofs.
     let sun_underground_dim = (1.0 - (underground_factor - 0.35).max(0.0) * 1.54).clamp(0.0, 1.0);
+    // Attenuate directional sunlight smoothly with water depth (bright reefs -> dark abyssal trenches)
+    let sun_underwater_dim = if env_status.as_ref().is_some_and(|s| s.is_camera_in_water) {
+        let depth_factor = ((12.0 - camera.translation.y) / 42.0).clamp(0.0, 1.0);
+        (1.0 - depth_factor * 0.94).powf(1.6) * 0.80
+    } else {
+        1.0
+    };
 
     let sun_dir = celestial::calculate_sun_direction(state.time_of_day);
     let moon_dir = -sun_dir;
+    // Smoothly fade sun/moon discs with ocean depth (1.0 near surface -> 0.0 in deep trenches, no sudden pop)
+    let underwater_celestial_fade = if env_status.as_ref().is_some_and(|s| s.is_camera_in_water) {
+        let depth_t = ((10.0 - camera.translation.y) / 38.0).clamp(0.0, 1.0);
+        (1.0 - depth_t).powf(1.5)
+    } else {
+        1.0
+    };
     let (sun_visibility, moon_visibility) = if let Some(ref w) = world {
         (
             post_process::calculate_celestial_visibility(w, camera.translation, sun_dir, 96.0),
@@ -172,13 +194,14 @@ fn sync_celestial_system(
         state.time_of_day,
         state.moon_texture_index(),
         state.moon_phase().illuminance_factor(),
-        DAY_SUN_ILLUMINANCE * weather_dim * sun_underground_dim,
-        NIGHT_MOON_ILLUMINANCE * weather_dim * sun_underground_dim,
+        DAY_SUN_ILLUMINANCE * weather_dim * sun_underground_dim * sun_underwater_dim,
+        NIGHT_MOON_ILLUMINANCE * weather_dim * sun_underground_dim * sun_underwater_dim,
         shadows_enabled,
         underground_factor,
         sun_visibility,
         moon_visibility,
         sky_palette.as_ref().map_or(0.0, |sp| sp.climate_temp),
+        underwater_celestial_fade,
     );
 }
 

@@ -38,10 +38,12 @@ const SPRITE_DUST_CLOUD_START: usize = 27;
 const SPRITE_SMOKE_SMALL_START: usize = 33;
 const SPRITE_STEAM_START: usize = 39;
 const SPRITE_RAIN_DROP_START: usize = 42;
-const SPRITE_BUTTERFLY_START: usize = 45; // 3 variants x 3 flap frames = 9 cells (45..54)
-const TOTAL_WORLD_SPRITES: usize = 54;
+const SPRITE_EMBER_START: usize = 45;
+const SPRITE_UW_DUST_START: usize = 48;
+const SPRITE_BUTTERFLY_START: usize = 51; // 3 variants x 3 flap frames = 9 cells (51..60)
+const TOTAL_WORLD_SPRITES: usize = 60;
 
-const WORLD_PARTICLE_FILES: [&str; 45] = [
+const WORLD_PARTICLE_FILES: [&str; 51] = [
     // 0..3: Bubble (colored, 8x8)
     "assets/textures/particles/water_bubble.png",
     "assets/textures/particles/water_bubble1.png",
@@ -98,6 +100,14 @@ const WORLD_PARTICLE_FILES: [&str; 45] = [
     "assets/textures/particles/rain_drop.png",
     "assets/textures/particles/rain_drop1.png",
     "assets/textures/particles/rain_drop2.png",
+    // 45..48: Glowing campfire & lava embers (8x8)
+    "assets/textures/particles/ambience_ember.png",
+    "assets/textures/particles/ambience_ember1.png",
+    "assets/textures/particles/ambience_ember2.png",
+    // 48..51: Underwater plankton / silt dust motes (8x8)
+    "assets/textures/particles/underwater_dust.png",
+    "assets/textures/particles/underwater_dust1.png",
+    "assets/textures/particles/underwater_dust2.png",
 ];
 
 const BUTTERFLY_STRIP_FILES: [&str; 3] = [
@@ -118,6 +128,13 @@ pub enum WorldParticleBurst {
     Splash {
         position: Vec3,
         intensity: f32,
+        water_tint: [f32; 3],
+    },
+    Splash3D {
+        position: Vec3,
+        width: f32,
+        speed: f32,
+        fluid: Voxel,
         water_tint: [f32; 3],
     },
 }
@@ -147,6 +164,24 @@ impl WorldParticleBurstQueue {
             water_tint,
         });
     }
+
+    #[inline]
+    pub fn push_splash_3d(
+        &mut self,
+        position: Vec3,
+        width: f32,
+        speed: f32,
+        fluid: Voxel,
+        water_tint: [f32; 3],
+    ) {
+        self.bursts.push(WorldParticleBurst::Splash3D {
+            position,
+            width,
+            speed,
+            fluid,
+            water_tint,
+        });
+    }
 }
 
 #[derive(Component)]
@@ -163,6 +198,8 @@ enum WorldParticleKind {
     WaterSplash,
     RainDrop,
     Butterfly,
+    Ember,
+    UnderwaterDust,
 }
 
 #[derive(Clone, Copy)]
@@ -478,6 +515,7 @@ pub fn update_world_particles(
     light_registry: Option<Res<VoxelLightRegistry>>,
     mut burst_queue: ResMut<WorldParticleBurstQueue>,
     mut pool: Option<ResMut<WorldParticlePool>>,
+    mut splash_3d_pool: Option<ResMut<WaterSplash3DPool>>,
     mut meshes: ResMut<Assets<Mesh>>,
     camera_query: Query<&Transform, (With<Camera3d>, With<PlayerCamera>)>,
     mut batch_query: Query<&mut Visibility, With<WorldParticleBatchMesh>>,
@@ -626,6 +664,85 @@ pub fn update_world_particles(
                     pool.spawn(particle);
                 }
             }
+            WorldParticleBurst::Splash3D {
+                position,
+                width,
+                speed,
+                fluid,
+                water_tint,
+            } => {
+                let clamped_speed = speed.clamp(0.25, 2.0);
+                let clamped_width = width.clamp(0.30, 1.80);
+                let height = clamped_speed * 0.5 + clamped_width / 3.0;
+                let (curtain_tint, foam_tint, ring_tint, ring_alpha, is_emissive) =
+                    fluid_splash_palette(fluid, water_tint);
+
+                // Spawn Particular-style 3D fluid splash wave(s)
+                if let Some(ref mut sp) = splash_3d_pool {
+                    sp.spawn_wave(
+                        position,
+                        clamped_width,
+                        height,
+                        curtain_tint,
+                        foam_tint,
+                        ring_tint,
+                        ring_alpha,
+                        is_emissive,
+                        0.0,
+                    );
+                    // Medium/strong falls trigger a taller, narrower second central plume 0.36s later
+                    if clamped_speed > 0.50 {
+                        sp.spawn_wave(
+                            position,
+                            clamped_width * 0.66,
+                            height * 2.0,
+                            curtain_tint,
+                            foam_tint,
+                            ring_tint,
+                            ring_alpha,
+                            is_emissive,
+                            0.36,
+                        );
+                    }
+                }
+
+                // Crisp pixel droplets arcing upward from the splash rim, tinted to match the fluid
+                let droplet_count = ((8.0 + clamped_speed * 10.0).round() as usize).clamp(6, 26);
+                let droplet_col = [
+                    foam_tint[0].min(1.0),
+                    foam_tint[1].min(1.0),
+                    foam_tint[2].min(1.0),
+                ];
+                for _ in 0..droplet_count {
+                    let angle = pool.next_f32() * TAU;
+                    let rim = clamped_width * (0.25 + pool.next_f32() * 0.35);
+                    let radial = (0.55 + pool.next_f32() * 1.35) * (0.65 + clamped_speed * 0.45);
+                    let vy = (2.2 + pool.next_f32() * 2.8) * (0.60 + clamped_speed * 0.55);
+                    let variant = SPRITE_SPLASH_START + (pool.next_u32() as usize % 3);
+                    let size = 0.14 + pool.next_f32() * 0.10;
+                    let max_age = 0.45 + pool.next_f32() * 0.45;
+                    let rot = pool.next_f32() * TAU;
+                    let spin = (pool.next_f32() - 0.5) * 4.0;
+                    let particle = WorldParticle {
+                        kind: WorldParticleKind::WaterSplash,
+                        position: position + Vec3::new(angle.cos() * rim, 0.12, angle.sin() * rim),
+                        velocity: Vec3::new(angle.cos() * radial, vy, angle.sin() * radial),
+                        size,
+                        grow_rate: 0.0,
+                        rotation: rot,
+                        spin,
+                        color: droplet_col,
+                        base_alpha: 0.92,
+                        phase: 0.0,
+                        freq: 0.0,
+                        base_sprite_idx: variant,
+                        age: 0.0,
+                        max_age,
+                        alive: true,
+                    };
+                    pool.spawn(particle);
+                }
+            }
         }
     }
 
@@ -648,6 +765,36 @@ pub fn update_world_particles(
                     let use_small = pool.next_f32() < 0.45;
                     let ox = (pool.next_f32() - 0.5) * 0.34;
                     let oz = (pool.next_f32() - 0.5) * 0.34;
+                    // Also spawn rising glowing embers alongside campfire smoke
+                    if pool.next_f32() < 0.55 {
+                        let ev = SPRITE_EMBER_START + (pool.next_u32() as usize % 3);
+                        let e_size = 0.08 + pool.next_f32() * 0.06;
+                        let e_age = 1.4 + pool.next_f32() * 1.4;
+                        let e_phase = pool.next_f32() * TAU;
+                        let e_freq = 2.0 + pool.next_f32() * 2.0;
+                        let ember = WorldParticle {
+                            kind: WorldParticleKind::Ember,
+                            position: center + Vec3::new(ox, 0.22, oz),
+                            velocity: Vec3::new(
+                                (pool.next_f32() - 0.5) * 0.35,
+                                0.85 + pool.next_f32() * 0.75,
+                                (pool.next_f32() - 0.5) * 0.35,
+                            ),
+                            size: e_size,
+                            grow_rate: -0.025,
+                            rotation: 0.0,
+                            spin: 0.0,
+                            color: [1.55, 0.92, 0.32],
+                            base_alpha: 1.0,
+                            phase: e_phase,
+                            freq: e_freq,
+                            base_sprite_idx: ev,
+                            age: 0.0,
+                            max_age: e_age,
+                            alive: true,
+                        };
+                        pool.spawn(ember);
+                    }
                     let vx = wind_vec.x * 0.14 + (pool.next_f32() - 0.5) * 0.14;
                     let vz = wind_vec.z * 0.14 + (pool.next_f32() - 0.5) * 0.14;
                     let vy = if use_small {
@@ -1003,8 +1150,7 @@ pub fn update_world_particles(
                 let below = IVec3::new(wx, wy - 1, wz);
                 if voxel_world.get_voxel(here) == Some(Voxel::Air)
                     && let Some(ground) = voxel_world.get_voxel(below)
-                    && ground.is_collidable()
-                    && !ground.is_water()
+                    && (ground.is_collidable() || ground.is_fluid())
                 {
                     // Quick sky-exposure check so rain splashes don't spawn under roofs/trees
                     let sheltered = (1..=12).any(|dy| {
@@ -1014,9 +1160,10 @@ pub fn update_world_particles(
                     });
                     if !sheltered {
                         let variant = SPRITE_RAIN_DROP_START + (pool.next_u32() as usize % 3);
+                        let surface_y_offset = if ground.is_fluid() { -0.08 } else { 0.04 };
                         let spawn_pos = Vec3::new(
                             wx as f32 + pool.next_f32(),
-                            wy as f32 + 0.04,
+                            wy as f32 + surface_y_offset,
                             wz as f32 + pool.next_f32(),
                         );
                         let vx = (pool.next_f32() - 0.5) * 0.45;
@@ -1044,6 +1191,101 @@ pub fn update_world_particles(
                     }
                     break;
                 }
+            }
+        }
+    }
+
+    // -------------------------------------------------------------
+    // 7. Underwater Plankton / Dust Motes (when submerged in water)
+    // -------------------------------------------------------------
+    if status.is_camera_in_water {
+        let uw_attempts = ((26.0 * dt).round() as usize).clamp(1, 5);
+        for _ in 0..uw_attempts {
+            let offset = Vec3::new(
+                (pool.next_f32() - 0.5) * 16.0,
+                (pool.next_f32() - 0.5) * 10.0,
+                (pool.next_f32() - 0.5) * 16.0,
+            );
+            let spawn_pos = cam_pos + offset;
+            if voxel_world
+                .get_voxel(spawn_pos.floor().as_ivec3())
+                .is_some_and(Voxel::is_water)
+            {
+                let variant = SPRITE_UW_DUST_START + (pool.next_u32() as usize % 3);
+                let size = 0.055 + pool.next_f32() * 0.045;
+                let max_age = 3.2 + pool.next_f32() * 2.8;
+                let phase = pool.next_f32() * TAU;
+                let freq = 0.7 + pool.next_f32() * 0.8;
+                let particle = WorldParticle {
+                    kind: WorldParticleKind::UnderwaterDust,
+                    position: spawn_pos,
+                    velocity: Vec3::new(
+                        (pool.next_f32() - 0.5) * 0.14,
+                        (pool.next_f32() - 0.45) * 0.10,
+                        (pool.next_f32() - 0.5) * 0.14,
+                    ),
+                    size,
+                    grow_rate: 0.0,
+                    rotation: 0.0,
+                    spin: 0.0,
+                    color: [0.68, 0.92, 1.0],
+                    base_alpha: 0.52,
+                    phase,
+                    freq,
+                    base_sprite_idx: variant,
+                    age: 0.0,
+                    max_age,
+                    alive: true,
+                };
+                pool.spawn(particle);
+            }
+        }
+    }
+
+    // -------------------------------------------------------------
+    // 8. Rising Embers above exposed Lava / CoreMagma / Molten
+    // -------------------------------------------------------------
+    if !status.is_camera_in_water {
+        let base_y = cam_pos.y.floor() as i32;
+        for _ in 0..10 {
+            let wx = (cam_pos.x + (pool.next_f32() - 0.5) * 28.0).floor() as i32;
+            let wz = (cam_pos.z + (pool.next_f32() - 0.5) * 28.0).floor() as i32;
+            let wy = base_y + (pool.next_u32() % 15) as i32 - 7;
+            let check = IVec3::new(wx, wy, wz);
+            if matches!(
+                voxel_world.get_voxel(check),
+                Some(Voxel::LiquidLava | Voxel::LiquidCoreMagma | Voxel::LiquidMolten)
+            ) && voxel_world.get_voxel(check + IVec3::Y) == Some(Voxel::Air)
+            {
+                let variant = SPRITE_EMBER_START + (pool.next_u32() as usize % 3);
+                let size = 0.08 + pool.next_f32() * 0.06;
+                let max_age = 1.5 + pool.next_f32() * 1.6;
+                let phase = pool.next_f32() * TAU;
+                let freq = 1.8 + pool.next_f32() * 2.0;
+                let ox = 0.15 + pool.next_f32() * 0.70;
+                let oz = 0.15 + pool.next_f32() * 0.70;
+                let ember = WorldParticle {
+                    kind: WorldParticleKind::Ember,
+                    position: Vec3::new(wx as f32 + ox, wy as f32 + 0.95, wz as f32 + oz),
+                    velocity: Vec3::new(
+                        (pool.next_f32() - 0.5) * 0.35,
+                        0.75 + pool.next_f32() * 0.85,
+                        (pool.next_f32() - 0.5) * 0.35,
+                    ),
+                    size,
+                    grow_rate: -0.02,
+                    rotation: 0.0,
+                    spin: 0.0,
+                    color: [1.65, 0.88, 0.25],
+                    base_alpha: 1.0,
+                    phase,
+                    freq,
+                    base_sprite_idx: variant,
+                    age: 0.0,
+                    max_age,
+                    alive: true,
+                };
+                pool.spawn(ember);
             }
         }
     }
@@ -1156,6 +1398,30 @@ pub fn update_world_particles(
                 p.velocity.y -= 6.8 * dt;
                 p.position += p.velocity * dt;
                 p.size += p.grow_rate * dt;
+            }
+            WorldParticleKind::Ember => {
+                let swirl_x = (p.age * p.freq + p.phase).sin() * 0.32;
+                let swirl_z = (p.age * p.freq * 0.9 + p.phase + 1.5).cos() * 0.32;
+                p.position += Vec3::new(
+                    p.velocity.x + swirl_x + wind_vec.x * 0.18,
+                    p.velocity.y,
+                    p.velocity.z + swirl_z + wind_vec.z * 0.18,
+                ) * dt;
+                p.size = (p.size + p.grow_rate * dt).max(0.03);
+            }
+            WorldParticleKind::UnderwaterDust => {
+                let drift_x = (p.age * p.freq + p.phase).sin() * 0.12;
+                let drift_y = (p.age * p.freq * 0.7 + p.phase).cos() * 0.08;
+                let drift_z = (p.age * p.freq * 0.85 + p.phase + 1.1).cos() * 0.12;
+                let next_pos = p.position + (p.velocity + Vec3::new(drift_x, drift_y, drift_z)) * dt;
+                if !voxel_world
+                    .get_voxel(next_pos.floor().as_ivec3())
+                    .is_some_and(Voxel::is_water)
+                {
+                    p.alive = false;
+                    continue;
+                }
+                p.position = next_pos;
             }
             WorldParticleKind::Butterfly => {
                 // Organic fluttering wander with gentle vertical bobbing
@@ -1300,6 +1566,30 @@ pub fn update_world_particles(
                         p.color[0] * day_light,
                         p.color[1] * day_light,
                         p.color[2] * day_light,
+                    ],
+                    a,
+                )
+            }
+            WorldParticleKind::Ember => {
+                let flicker = 0.78 + 0.35 * (p.age * 9.0 + p.phase).sin();
+                let a = p.base_alpha * smooth_in_out_alpha(p.age, p.max_age, 0.15, 0.75);
+                (
+                    [
+                        p.color[0] * flicker,
+                        p.color[1] * flicker,
+                        p.color[2] * flicker,
+                    ],
+                    a,
+                )
+            }
+            WorldParticleKind::UnderwaterDust => {
+                let uw_light = 0.25 + 0.75 * day_light;
+                let a = p.base_alpha * smooth_in_out_alpha(p.age, p.max_age, 0.6, 1.0);
+                (
+                    [
+                        p.color[0] * uw_light,
+                        p.color[1] * uw_light,
+                        p.color[2] * uw_light,
                     ],
                     a,
                 )
@@ -1669,6 +1959,1260 @@ pub fn update_wind_streaks(
         positions.extend_from_slice(&[p0.to_array(), p1.to_array(), p2.to_array(), p3.to_array()]);
         normals.extend_from_slice(&[[0.0, 1.0, 0.0]; 4]);
         uvs.extend_from_slice(&[[u0, v1], [u1, v1], [u1, v0], [u0, v0]]);
+        colors.extend_from_slice(&[col; 4]);
+        indices.extend_from_slice(&[
+            v_cursor,
+            v_cursor + 1,
+            v_cursor + 2,
+            v_cursor,
+            v_cursor + 2,
+            v_cursor + 3,
+        ]);
+        v_cursor += 4;
+    }
+
+    if positions.is_empty() {
+        if *batch_vis != Visibility::Hidden {
+            *batch_vis = Visibility::Hidden;
+        }
+        return;
+    }
+
+    if *batch_vis != Visibility::Visible {
+        *batch_vis = Visibility::Visible;
+    }
+
+    if let Some(mut mesh) = meshes.get_mut(&pool.mesh_handle) {
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
+        mesh.insert_indices(Indices::U32(indices));
+    }
+}
+
+// =============================================================================
+// PARTICULAR-INSPIRED 3D WATER SPLASHES (1-draw-call batched hollow 3D prisms)
+// =============================================================================
+
+const SPLASH_3D_FRAMES: usize = 9;
+const SPLASH_3D_ATLAS_W: usize = 144; // 9 frames x 16px
+const SPLASH_3D_ATLAS_H: usize = 80; // Row 0 (0..32): curtain, Row 1 (32..64): foam, Row 2 (64..80): ring
+const MAX_SPLASH_3D_WAVES: usize = 48;
+
+const SPLASH_3D_CURTAIN_FILES: [&str; SPLASH_3D_FRAMES] = [
+    "assets/textures/particles/fluid_splash.png",
+    "assets/textures/particles/fluid_splash1.png",
+    "assets/textures/particles/fluid_splash2.png",
+    "assets/textures/particles/fluid_splash3.png",
+    "assets/textures/particles/fluid_splash4.png",
+    "assets/textures/particles/fluid_splash5.png",
+    "assets/textures/particles/fluid_splash6.png",
+    "assets/textures/particles/fluid_splash7.png",
+    "assets/textures/particles/fluid_splash8.png",
+];
+
+const SPLASH_3D_FOAM_FILES: [&str; SPLASH_3D_FRAMES] = [
+    "assets/textures/particles/fluid_splash_foam.png",
+    "assets/textures/particles/fluid_splash_foam1.png",
+    "assets/textures/particles/fluid_splash_foam2.png",
+    "assets/textures/particles/fluid_splash_foam3.png",
+    "assets/textures/particles/fluid_splash_foam4.png",
+    "assets/textures/particles/fluid_splash_foam5.png",
+    "assets/textures/particles/fluid_splash_foam6.png",
+    "assets/textures/particles/fluid_splash_foam7.png",
+    "assets/textures/particles/fluid_splash_foam8.png",
+];
+
+const SPLASH_3D_RING_FILES: [&str; SPLASH_3D_FRAMES] = [
+    "assets/textures/particles/fluid_splash_ring.png",
+    "assets/textures/particles/fluid_splash_ring1.png",
+    "assets/textures/particles/fluid_splash_ring2.png",
+    "assets/textures/particles/fluid_splash_ring3.png",
+    "assets/textures/particles/fluid_splash_ring4.png",
+    "assets/textures/particles/fluid_splash_ring5.png",
+    "assets/textures/particles/fluid_splash_ring6.png",
+    "assets/textures/particles/fluid_splash_ring7.png",
+    "assets/textures/particles/fluid_splash_ring8.png",
+];
+
+/// Returns `(curtain_rgb, foam_rgb, ring_rgb, ring_alpha, is_emissive)` tailored to each liquid's visual palette.
+fn fluid_splash_palette(
+    fluid: Voxel,
+    biome_water_tint: [f32; 3],
+) -> ([f32; 3], [f32; 3], [f32; 3], f32, bool) {
+    match fluid {
+        Voxel::LiquidLava | Voxel::LiquidCoreMagma | Voxel::LiquidMolten => (
+            [1.65, 0.44, 0.06],
+            [2.05, 1.38, 0.28],
+            [1.35, 0.34, 0.05],
+            0.82,
+            true,
+        ),
+        Voxel::LiquidAcid => (
+            [0.22, 0.92, 0.14],
+            [0.68, 1.25, 0.36],
+            [0.24, 0.82, 0.16],
+            0.72,
+            true,
+        ),
+        Voxel::LiquidTar => (
+            [0.14, 0.04, 0.22],
+            [0.36, 0.16, 0.48],
+            [0.18, 0.06, 0.28],
+            0.80,
+            false,
+        ),
+        Voxel::LiquidBlood => (
+            [0.44, 0.04, 0.05],
+            [0.76, 0.16, 0.16],
+            [0.42, 0.05, 0.06],
+            0.76,
+            false,
+        ),
+        Voxel::LiquidSludge => (
+            // Muddy dark brown matching liquid_sludge.png
+            [0.24, 0.16, 0.10],
+            [0.40, 0.29, 0.19],
+            [0.22, 0.15, 0.09],
+            0.78,
+            false,
+        ),
+        Voxel::LiquidOoze => (
+            // Swamp olive-green matching liquid_ooze.png
+            [0.28, 0.34, 0.07],
+            [0.46, 0.52, 0.12],
+            [0.28, 0.33, 0.08],
+            0.76,
+            false,
+        ),
+        _ => (
+            // Deep, natural water tone matching our lake/ocean shader rather than washed-out cyan
+            [
+                biome_water_tint[0] * 0.56,
+                biome_water_tint[1] * 0.70,
+                biome_water_tint[2] * 0.84,
+            ],
+            [0.86, 0.93, 0.98],
+            [
+                biome_water_tint[0] * 0.48 + 0.30,
+                biome_water_tint[1] * 0.52 + 0.32,
+                biome_water_tint[2] * 0.56 + 0.34,
+            ],
+            0.52,
+            false,
+        ),
+    }
+}
+
+#[derive(Component)]
+pub struct WaterSplash3DBatchMesh;
+
+#[derive(Clone, Copy, Default)]
+struct WaterSplash3DWave {
+    position: Vec3,
+    width: f32,
+    height: f32,
+    curtain_tint: [f32; 3],
+    foam_tint: [f32; 3],
+    ring_tint: [f32; 3],
+    ring_alpha: f32,
+    is_emissive: bool,
+    age: f32,
+    delay: f32,
+    max_age: f32,
+    alive: bool,
+}
+
+#[derive(Resource)]
+pub struct WaterSplash3DPool {
+    waves: Vec<WaterSplash3DWave>,
+    cursor: usize,
+    mesh_handle: Handle<Mesh>,
+}
+
+impl WaterSplash3DPool {
+    #[allow(clippy::too_many_arguments)]
+    fn spawn_wave(
+        &mut self,
+        position: Vec3,
+        width: f32,
+        height: f32,
+        curtain_tint: [f32; 3],
+        foam_tint: [f32; 3],
+        ring_tint: [f32; 3],
+        ring_alpha: f32,
+        is_emissive: bool,
+        delay: f32,
+    ) {
+        let slot = self.cursor;
+        self.cursor = (self.cursor + 1) % MAX_SPLASH_3D_WAVES;
+        self.waves[slot] = WaterSplash3DWave {
+            position,
+            width,
+            height,
+            curtain_tint,
+            foam_tint,
+            ring_tint,
+            ring_alpha,
+            is_emissive,
+            age: 0.0,
+            delay,
+            max_age: 0.85,
+            alive: true,
+        };
+    }
+}
+
+pub fn setup_water_splashes_3d(
+    mut commands: Commands,
+    mut images: ResMut<Assets<Image>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let mut atlas_bytes = vec![0u8; SPLASH_3D_ATLAS_W * SPLASH_3D_ATLAS_H * 4];
+
+    let blit_row = |atlas: &mut [u8], files: &[&str; SPLASH_3D_FRAMES], row_y: usize, max_h: usize| {
+        for (i, path) in files.iter().enumerate() {
+            if let Ok(img) = image::open(path) {
+                let rgba = img.to_rgba8();
+                let (iw, ih) = rgba.dimensions();
+                let cw = (iw as usize).min(16);
+                let ch = (ih as usize).min(max_h);
+                let ox = i * 16;
+                for py in 0..ch {
+                    for px in 0..cw {
+                        let src = rgba.get_pixel(px as u32, py as u32).0;
+                        let dst = ((row_y + py) * SPLASH_3D_ATLAS_W + (ox + px)) * 4;
+                        atlas[dst..dst + 4].copy_from_slice(&src);
+                    }
+                }
+            }
+        }
+    };
+
+    blit_row(&mut atlas_bytes, &SPLASH_3D_CURTAIN_FILES, 0, 32);
+    blit_row(&mut atlas_bytes, &SPLASH_3D_FOAM_FILES, 32, 32);
+    blit_row(&mut atlas_bytes, &SPLASH_3D_RING_FILES, 64, 16);
+
+    let mut image = Image::new(
+        Extent3d {
+            width: SPLASH_3D_ATLAS_W as u32,
+            height: SPLASH_3D_ATLAS_H as u32,
+            depth_or_array_layers: 1,
+        },
+        TextureDimension::D2,
+        atlas_bytes,
+        TextureFormat::Rgba8UnormSrgb,
+        RenderAssetUsages::default(),
+    );
+    image.sampler = ImageSampler::nearest();
+    let tex_handle = images.add(image);
+
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0.0f32, 0.0, 0.0]; 3]);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0f32, 1.0, 0.0]; 3]);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0.0f32, 0.0]; 3]);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, vec![[0.0f32, 0.0, 0.0, 0.0]; 3]);
+    mesh.insert_indices(Indices::U32(vec![0, 1, 2]));
+    let mesh_handle = meshes.add(mesh);
+
+    let mat_handle = materials.add(StandardMaterial {
+        base_color: Color::WHITE,
+        base_color_texture: Some(tex_handle),
+        unlit: true,
+        alpha_mode: AlphaMode::Blend,
+        cull_mode: None,
+        double_sided: true,
+        ..default()
+    });
+
+    commands.spawn((
+        WaterSplash3DBatchMesh,
+        Mesh3d(mesh_handle.clone()),
+        MeshMaterial3d(mat_handle),
+        Transform::IDENTITY,
+        Visibility::Hidden,
+        NotShadowCaster,
+        NotShadowReceiver,
+        bevy::camera::visibility::NoFrustumCulling,
+    ));
+
+    commands.insert_resource(WaterSplash3DPool {
+        waves: vec![WaterSplash3DWave::default(); MAX_SPLASH_3D_WAVES],
+        cursor: 0,
+        mesh_handle,
+    });
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn update_water_splashes_3d(
+    time: Res<Time>,
+    mut pool: ResMut<WaterSplash3DPool>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    env_state: Option<Res<EnvironmentState>>,
+    mut batch_query: Query<&mut Visibility, With<WaterSplash3DBatchMesh>>,
+) {
+    let dt = time.delta_secs().min(0.05);
+    let Ok(mut batch_vis) = batch_query.single_mut() else {
+        return;
+    };
+
+    let day_light = env_state
+        .as_ref()
+        .map_or(1.0, |e| match DayPhase::from_time(e.time_of_day) {
+            DayPhase::Night => 0.35,
+            DayPhase::Evening | DayPhase::Morning => 0.85,
+            DayPhase::Noon => 1.0,
+        });
+
+    let mut positions: Vec<[f32; 3]> = Vec::new();
+    let mut normals: Vec<[f32; 3]> = Vec::new();
+    let mut uvs: Vec<[f32; 2]> = Vec::new();
+    let mut colors: Vec<[f32; 4]> = Vec::new();
+    let mut indices: Vec<u32> = Vec::new();
+    let mut v_cursor = 0u32;
+
+    let push_quad = |positions: &mut Vec<[f32; 3]>,
+                     normals: &mut Vec<[f32; 3]>,
+                     uvs: &mut Vec<[f32; 2]>,
+                     colors: &mut Vec<[f32; 4]>,
+                     indices: &mut Vec<u32>,
+                     v_cursor: &mut u32,
+                     pts: [[f32; 3]; 4],
+                     uv_rect: [f32; 4],
+                     col: [f32; 4]| {
+        positions.extend_from_slice(&pts);
+        normals.extend_from_slice(&[[0.0, 1.0, 0.0]; 4]);
+        uvs.extend_from_slice(&[
+            [uv_rect[0], uv_rect[3]],
+            [uv_rect[2], uv_rect[3]],
+            [uv_rect[2], uv_rect[1]],
+            [uv_rect[0], uv_rect[1]],
+        ]);
+        colors.extend_from_slice(&[col; 4]);
+        indices.extend_from_slice(&[
+            *v_cursor,
+            *v_cursor + 1,
+            *v_cursor + 2,
+            *v_cursor,
+            *v_cursor + 2,
+            *v_cursor + 3,
+        ]);
+        *v_cursor += 4;
+    };
+
+    for w in pool.waves.iter_mut() {
+        if !w.alive {
+            continue;
+        }
+        w.age += dt;
+        if w.age < w.delay {
+            continue;
+        }
+        let local_age = w.age - w.delay;
+        if local_age >= w.max_age {
+            w.alive = false;
+            continue;
+        }
+
+        let progress = (local_age / w.max_age).clamp(0.0, 0.999);
+        let frame = ((progress * SPLASH_3D_FRAMES as f32).floor() as usize).min(SPLASH_3D_FRAMES - 1);
+        let u0 = (frame * 16) as f32 / SPLASH_3D_ATLAS_W as f32;
+        let u1 = ((frame + 1) * 16) as f32 / SPLASH_3D_ATLAS_W as f32;
+
+        let curtain_uv = [u0, 0.0, u1, 32.0 / SPLASH_3D_ATLAS_H as f32];
+        let foam_uv = [u0, 32.0 / SPLASH_3D_ATLAS_H as f32, u1, 64.0 / SPLASH_3D_ATLAS_H as f32];
+        let ring_uv = [u0, 64.0 / SPLASH_3D_ATLAS_H as f32, u1, 1.0];
+
+        let alpha_fade = if progress > 0.78 {
+            1.0 - (progress - 0.78) / 0.22
+        } else {
+            1.0
+        };
+
+        let cx = w.position.x;
+        let cy = w.position.y;
+        let cz = w.position.z;
+        let hw = w.width * 0.5;
+        let top_y = cy + w.height;
+
+        let light_scale = if w.is_emissive { 1.0 } else { day_light };
+        let water_col = [
+            w.curtain_tint[0] * light_scale,
+            w.curtain_tint[1] * light_scale,
+            w.curtain_tint[2] * light_scale,
+            0.84 * alpha_fade,
+        ];
+        let foam_col = [
+            w.foam_tint[0] * light_scale,
+            w.foam_tint[1] * light_scale,
+            w.foam_tint[2] * light_scale,
+            0.88 * alpha_fade,
+        ];
+        let ring_col = [
+            w.ring_tint[0] * light_scale,
+            w.ring_tint[1] * light_scale,
+            w.ring_tint[2] * light_scale,
+            w.ring_alpha * alpha_fade,
+        ];
+
+        // 1. 4-sided 3D hollow prism (water-colored splash curtain)
+        let emit_prism = |positions: &mut Vec<[f32; 3]>,
+                          normals: &mut Vec<[f32; 3]>,
+                          uvs: &mut Vec<[f32; 2]>,
+                          colors: &mut Vec<[f32; 4]>,
+                          indices: &mut Vec<u32>,
+                          v_cursor: &mut u32,
+                          r: f32,
+                          uv_rect: [f32; 4],
+                          col: [f32; 4]| {
+            // North (-Z)
+            push_quad(positions, normals, uvs, colors, indices, v_cursor,
+                [[cx - r, cy, cz - r], [cx + r, cy, cz - r], [cx + r, top_y, cz - r], [cx - r, top_y, cz - r]],
+                uv_rect, col);
+            // South (+Z)
+            push_quad(positions, normals, uvs, colors, indices, v_cursor,
+                [[cx + r, cy, cz + r], [cx - r, cy, cz + r], [cx - r, top_y, cz + r], [cx + r, top_y, cz + r]],
+                uv_rect, col);
+            // East (+X)
+            push_quad(positions, normals, uvs, colors, indices, v_cursor,
+                [[cx + r, cy, cz - r], [cx + r, cy, cz + r], [cx + r, top_y, cz + r], [cx + r, top_y, cz - r]],
+                uv_rect, col);
+            // West (-X)
+            push_quad(positions, normals, uvs, colors, indices, v_cursor,
+                [[cx - r, cy, cz + r], [cx - r, cy, cz - r], [cx - r, top_y, cz - r], [cx - r, top_y, cz + r]],
+                uv_rect, col);
+        };
+
+        emit_prism(&mut positions, &mut normals, &mut uvs, &mut colors, &mut indices, &mut v_cursor, hw, curtain_uv, water_col);
+        // 2. Pure white foam overlay prism (offset outward slightly to prevent z-fighting)
+        emit_prism(&mut positions, &mut normals, &mut uvs, &mut colors, &mut indices, &mut v_cursor, hw + 0.005, foam_uv, foam_col);
+
+        // 3. Flat horizontal splash ring on the water surface
+        let rw = w.width * 0.85;
+        let ry = cy + 0.03;
+        push_quad(
+            &mut positions,
+            &mut normals,
+            &mut uvs,
+            &mut colors,
+            &mut indices,
+            &mut v_cursor,
+            [
+                [cx - rw, ry, cz - rw],
+                [cx + rw, ry, cz - rw],
+                [cx + rw, ry, cz + rw],
+                [cx - rw, ry, cz + rw],
+            ],
+            ring_uv,
+            ring_col,
+        );
+    }
+
+    if positions.is_empty() {
+        if *batch_vis != Visibility::Hidden {
+            *batch_vis = Visibility::Hidden;
+        }
+        return;
+    }
+
+    if *batch_vis != Visibility::Visible {
+        *batch_vis = Visibility::Visible;
+    }
+
+    if let Some(mut mesh) = meshes.get_mut(&pool.mesh_handle) {
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
+        mesh.insert_indices(Indices::U32(indices));
+    }
+}
+
+// =============================================================================
+// SURFACE FLUID BUBBLES (1-draw-call 10-frame animated grayscale fluid_bubble.png)
+// Active on Lava, CoreMagma, Molten, Tar, and Acid surfaces
+// =============================================================================
+
+const FLUID_BUBBLE_FRAMES: usize = 10;
+const FLUID_BUBBLE_VARIANTS: usize = 3;
+const FLUID_BUBBLE_ATLAS_W: usize = 16 * FLUID_BUBBLE_VARIANTS; // 48px
+const FLUID_BUBBLE_ATLAS_H: usize = 16 * FLUID_BUBBLE_FRAMES; // 160px
+const MAX_FLUID_BUBBLES: usize = 72;
+
+const FLUID_BUBBLE_FILES: [&str; FLUID_BUBBLE_VARIANTS] = [
+    "assets/textures/particles/fluid_bubble.png",
+    "assets/textures/particles/fluid_bubble1.png",
+    "assets/textures/particles/fluid_bubble2.png",
+];
+
+#[derive(Component)]
+pub struct FluidBubbleBatchMesh;
+
+#[derive(Clone, Copy, Default)]
+struct FluidBubble {
+    position: Vec3,
+    size: f32,
+    variant: usize,
+    color: [f32; 3],
+    is_emissive: bool,
+    age: f32,
+    max_age: f32,
+    alive: bool,
+}
+
+#[derive(Resource)]
+pub struct FluidBubblePool {
+    bubbles: Vec<FluidBubble>,
+    cursor: usize,
+    mesh_handle: Handle<Mesh>,
+    rng: u64,
+}
+
+impl FluidBubblePool {
+    #[inline]
+    fn next_u32(&mut self) -> u32 {
+        self.rng = self
+            .rng
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
+        (self.rng >> 32) as u32
+    }
+
+    #[inline]
+    fn next_f32(&mut self) -> f32 {
+        (self.next_u32() & 0x00FF_FFFF) as f32 / 16_777_216.0
+    }
+}
+
+pub fn setup_fluid_bubbles(
+    mut commands: Commands,
+    mut images: ResMut<Assets<Image>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let mut atlas_bytes = vec![0u8; FLUID_BUBBLE_ATLAS_W * FLUID_BUBBLE_ATLAS_H * 4];
+    for (v_idx, path) in FLUID_BUBBLE_FILES.iter().enumerate() {
+        if let Ok(img) = image::open(path) {
+            let rgba = img.to_rgba8();
+            let (iw, ih) = rgba.dimensions();
+            let cw = (iw as usize).min(16);
+            let ch = (ih as usize).min(FLUID_BUBBLE_ATLAS_H);
+            let ox = v_idx * 16;
+            for py in 0..ch {
+                for px in 0..cw {
+                    let src = rgba.get_pixel(px as u32, py as u32).0;
+                    let dst = (py * FLUID_BUBBLE_ATLAS_W + (ox + px)) * 4;
+                    atlas_bytes[dst..dst + 4].copy_from_slice(&src);
+                }
+            }
+        }
+    }
+
+    let mut image = Image::new(
+        Extent3d {
+            width: FLUID_BUBBLE_ATLAS_W as u32,
+            height: FLUID_BUBBLE_ATLAS_H as u32,
+            depth_or_array_layers: 1,
+        },
+        TextureDimension::D2,
+        atlas_bytes,
+        TextureFormat::Rgba8UnormSrgb,
+        RenderAssetUsages::default(),
+    );
+    image.sampler = ImageSampler::nearest();
+    let tex_handle = images.add(image);
+
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0.0f32, 0.0, 0.0]; 3]);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0f32, 1.0, 0.0]; 3]);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0.0f32, 0.0]; 3]);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, vec![[0.0f32, 0.0, 0.0, 0.0]; 3]);
+    mesh.insert_indices(Indices::U32(vec![0, 1, 2]));
+    let mesh_handle = meshes.add(mesh);
+
+    let mat_handle = materials.add(StandardMaterial {
+        base_color: Color::WHITE,
+        base_color_texture: Some(tex_handle),
+        unlit: true,
+        alpha_mode: AlphaMode::Blend,
+        cull_mode: None,
+        double_sided: true,
+        ..default()
+    });
+
+    commands.spawn((
+        FluidBubbleBatchMesh,
+        Mesh3d(mesh_handle.clone()),
+        MeshMaterial3d(mat_handle),
+        Transform::IDENTITY,
+        Visibility::Hidden,
+        NotShadowCaster,
+        NotShadowReceiver,
+        bevy::camera::visibility::NoFrustumCulling,
+    ));
+
+    commands.insert_resource(FluidBubblePool {
+        bubbles: vec![FluidBubble::default(); MAX_FLUID_BUBBLES],
+        cursor: 0,
+        mesh_handle,
+        rng: 0xB0BB_1E55_A1B2_C3D4,
+    });
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn update_fluid_bubbles(
+    time: Res<Time>,
+    mut pool: ResMut<FluidBubblePool>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    voxel_world: Option<Res<VoxelWorld>>,
+    env_state: Option<Res<EnvironmentState>>,
+    camera_query: Query<&Transform, (With<Camera3d>, With<PlayerCamera>)>,
+    mut batch_query: Query<&mut Visibility, With<FluidBubbleBatchMesh>>,
+) {
+    let dt = time.delta_secs().min(0.05);
+    let Ok(cam_tf) = camera_query.single() else {
+        return;
+    };
+    let Ok(mut batch_vis) = batch_query.single_mut() else {
+        return;
+    };
+
+    if let Some(ref world) = voxel_world {
+        let cam_pos = cam_tf.translation;
+        let base_y = cam_pos.y.floor() as i32;
+        for _ in 0..18 {
+            let wx = (cam_pos.x + (pool.next_f32() - 0.5) * 34.0).floor() as i32;
+            let wz = (cam_pos.z + (pool.next_f32() - 0.5) * 34.0).floor() as i32;
+            let wy = base_y + (pool.next_u32() % 17) as i32 - 8;
+            let pos = IVec3::new(wx, wy, wz);
+            let Some(v) = world.get_voxel(pos) else {
+                continue;
+            };
+            let bubble_style = match v {
+                Voxel::LiquidLava | Voxel::LiquidCoreMagma | Voxel::LiquidMolten => {
+                    Some(([1.65, 0.58, 0.12], true))
+                }
+                Voxel::LiquidTar => Some(([0.28, 0.10, 0.42], false)),
+                Voxel::LiquidAcid => Some(([0.34, 1.15, 0.20], true)),
+                _ => None,
+            };
+            let Some((color, is_emissive)) = bubble_style else {
+                continue;
+            };
+            // Only bubble on exposed liquid surfaces (Air directly above)
+            if world.get_voxel(pos + IVec3::Y) != Some(Voxel::Air) {
+                continue;
+            }
+            let size = 0.26 + pool.next_f32() * 0.20;
+            let max_age = 0.75 + pool.next_f32() * 0.45;
+            let variant = pool.next_u32() as usize % FLUID_BUBBLE_VARIANTS;
+            let ox = 0.15 + pool.next_f32() * 0.70;
+            let oz = 0.15 + pool.next_f32() * 0.70;
+            let slot = pool.cursor;
+            pool.cursor = (pool.cursor + 1) % MAX_FLUID_BUBBLES;
+            pool.bubbles[slot] = FluidBubble {
+                position: Vec3::new(wx as f32 + ox, wy as f32 + 0.91 + size * 0.45, wz as f32 + oz),
+                size,
+                variant,
+                color,
+                is_emissive,
+                age: 0.0,
+                max_age,
+                alive: true,
+            };
+        }
+    }
+
+    let day_light = env_state
+        .as_ref()
+        .map_or(1.0, |e| match DayPhase::from_time(e.time_of_day) {
+            DayPhase::Night => 0.35,
+            DayPhase::Evening | DayPhase::Morning => 0.85,
+            DayPhase::Noon => 1.0,
+        });
+
+    let right = cam_tf.right().as_vec3();
+    let up = Vec3::Y;
+
+    let mut positions: Vec<[f32; 3]> = Vec::new();
+    let mut normals: Vec<[f32; 3]> = Vec::new();
+    let mut uvs: Vec<[f32; 2]> = Vec::new();
+    let mut colors: Vec<[f32; 4]> = Vec::new();
+    let mut indices: Vec<u32> = Vec::new();
+    let mut v_cursor = 0u32;
+
+    for b in pool.bubbles.iter_mut() {
+        if !b.alive {
+            continue;
+        }
+        b.age += dt;
+        if b.age >= b.max_age {
+            b.alive = false;
+            continue;
+        }
+        let progress = (b.age / b.max_age).clamp(0.0, 0.999);
+        let frame = ((progress * FLUID_BUBBLE_FRAMES as f32).floor() as usize)
+            .min(FLUID_BUBBLE_FRAMES - 1);
+        let u0 = b.variant as f32 / FLUID_BUBBLE_VARIANTS as f32;
+        let u1 = (b.variant + 1) as f32 / FLUID_BUBBLE_VARIANTS as f32;
+        let v0 = frame as f32 / FLUID_BUBBLE_FRAMES as f32;
+        let v1 = (frame + 1) as f32 / FLUID_BUBBLE_FRAMES as f32;
+
+        let half = b.size * 0.5;
+        let r_vec = right * half;
+        let u_vec = up * half;
+        let p0 = b.position - r_vec - u_vec;
+        let p1 = b.position + r_vec - u_vec;
+        let p2 = b.position + r_vec + u_vec;
+        let p3 = b.position - r_vec + u_vec;
+
+        let ls = if b.is_emissive { 1.0 } else { day_light };
+        let col = [b.color[0] * ls, b.color[1] * ls, b.color[2] * ls, 0.95];
+
+        positions.extend_from_slice(&[p0.to_array(), p1.to_array(), p2.to_array(), p3.to_array()]);
+        normals.extend_from_slice(&[[0.0, 1.0, 0.0]; 4]);
+        uvs.extend_from_slice(&[[u0, v1], [u1, v1], [u1, v0], [u0, v0]]);
+        colors.extend_from_slice(&[col; 4]);
+        indices.extend_from_slice(&[
+            v_cursor,
+            v_cursor + 1,
+            v_cursor + 2,
+            v_cursor,
+            v_cursor + 2,
+            v_cursor + 3,
+        ]);
+        v_cursor += 4;
+    }
+
+    if positions.is_empty() {
+        if *batch_vis != Visibility::Hidden {
+            *batch_vis = Visibility::Hidden;
+        }
+        return;
+    }
+
+    if *batch_vis != Visibility::Visible {
+        *batch_vis = Visibility::Visible;
+    }
+
+    if let Some(mut mesh) = meshes.get_mut(&pool.mesh_handle) {
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
+        mesh.insert_indices(Indices::U32(indices));
+    }
+}
+
+// =============================================================================
+// NIGHT SKY SHOOTING STARS (1-draw-call, 3 bespoke variants shooting_star*.png)
+// =============================================================================
+
+const SHOOTING_STAR_VARIANTS: usize = 3;
+const SHOOTING_STAR_ATLAS_W: usize = 64;
+const SHOOTING_STAR_ATLAS_H: usize = 16 * SHOOTING_STAR_VARIANTS; // 48px
+const MAX_SHOOTING_STARS: usize = 6;
+
+const SHOOTING_STAR_FILES: [&str; SHOOTING_STAR_VARIANTS] = [
+    "assets/textures/particles/shooting_star.png",
+    "assets/textures/particles/shooting_star1.png",
+    "assets/textures/particles/shooting_star2.png",
+];
+
+#[derive(Component)]
+pub struct ShootingStarBatchMesh;
+
+#[derive(Clone, Copy, Default)]
+struct ShootingStar {
+    /// Unit direction on the sky sphere relative to camera
+    dir: Vec3,
+    /// Angular velocity vector tangent to the sky sphere
+    vel_dir: Vec3,
+    length: f32,
+    width: f32,
+    variant: usize,
+    age: f32,
+    max_age: f32,
+    alive: bool,
+}
+
+#[derive(Resource)]
+pub struct ShootingStarPool {
+    stars: Vec<ShootingStar>,
+    cursor: usize,
+    mesh_handle: Handle<Mesh>,
+    spawn_cooldown: f32,
+    rng: u64,
+}
+
+impl ShootingStarPool {
+    #[inline]
+    fn next_u32(&mut self) -> u32 {
+        self.rng = self
+            .rng
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
+        (self.rng >> 32) as u32
+    }
+
+    #[inline]
+    fn next_f32(&mut self) -> f32 {
+        (self.next_u32() & 0x00FF_FFFF) as f32 / 16_777_216.0
+    }
+}
+
+pub fn setup_shooting_stars(
+    mut commands: Commands,
+    mut images: ResMut<Assets<Image>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let mut atlas_bytes = vec![0u8; SHOOTING_STAR_ATLAS_W * SHOOTING_STAR_ATLAS_H * 4];
+    for (v_idx, path) in SHOOTING_STAR_FILES.iter().enumerate() {
+        if let Ok(img) = image::open(path) {
+            let rgba = img.to_rgba8();
+            let (iw, ih) = rgba.dimensions();
+            let cw = (iw as usize).min(64);
+            let ch = (ih as usize).min(16);
+            let oy = v_idx * 16;
+            for py in 0..ch {
+                for px in 0..cw {
+                    let src = rgba.get_pixel(px as u32, py as u32).0;
+                    let dst = ((oy + py) * SHOOTING_STAR_ATLAS_W + px) * 4;
+                    atlas_bytes[dst..dst + 4].copy_from_slice(&src);
+                }
+            }
+        }
+    }
+
+    let mut image = Image::new(
+        Extent3d {
+            width: SHOOTING_STAR_ATLAS_W as u32,
+            height: SHOOTING_STAR_ATLAS_H as u32,
+            depth_or_array_layers: 1,
+        },
+        TextureDimension::D2,
+        atlas_bytes,
+        TextureFormat::Rgba8UnormSrgb,
+        RenderAssetUsages::default(),
+    );
+    image.sampler = ImageSampler::nearest();
+    let tex_handle = images.add(image);
+
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0.0f32, 0.0, 0.0]; 3]);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0f32, 1.0, 0.0]; 3]);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0.0f32, 0.0]; 3]);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, vec![[0.0f32, 0.0, 0.0, 0.0]; 3]);
+    mesh.insert_indices(Indices::U32(vec![0, 1, 2]));
+    let mesh_handle = meshes.add(mesh);
+
+    let mat_handle = materials.add(StandardMaterial {
+        base_color: Color::WHITE,
+        base_color_texture: Some(tex_handle),
+        unlit: true,
+        alpha_mode: AlphaMode::Add,
+        cull_mode: None,
+        double_sided: true,
+        fog_enabled: false,
+        ..default()
+    });
+
+    commands.spawn((
+        ShootingStarBatchMesh,
+        Mesh3d(mesh_handle.clone()),
+        MeshMaterial3d(mat_handle),
+        Transform::IDENTITY,
+        Visibility::Hidden,
+        NotShadowCaster,
+        NotShadowReceiver,
+        bevy::camera::visibility::NoFrustumCulling,
+    ));
+
+    commands.insert_resource(ShootingStarPool {
+        stars: vec![ShootingStar::default(); MAX_SHOOTING_STARS],
+        cursor: 0,
+        mesh_handle,
+        spawn_cooldown: 4.0,
+        rng: 0x57A4_5400_7711_9922,
+    });
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn update_shooting_stars(
+    time: Res<Time>,
+    mut pool: ResMut<ShootingStarPool>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    env_state: Option<Res<EnvironmentState>>,
+    env_status: Option<Res<PlayerEnvironmentStatus>>,
+    weather: Option<Res<WeatherManager>>,
+    camera_query: Query<&Transform, (With<Camera3d>, With<PlayerCamera>)>,
+    mut batch_query: Query<&mut Visibility, With<ShootingStarBatchMesh>>,
+) {
+    let dt = time.delta_secs().min(0.05);
+    let Ok(cam_tf) = camera_query.single() else {
+        return;
+    };
+    let Ok(mut batch_vis) = batch_query.single_mut() else {
+        return;
+    };
+    let status = env_status.as_deref().copied().unwrap_or_default();
+    let is_night = env_state
+        .as_ref()
+        .is_some_and(|e| matches!(DayPhase::from_time(e.time_of_day), DayPhase::Night));
+    let is_clear = weather
+        .as_ref()
+        .is_none_or(|w| w.rain_intensity < 0.25 && w.snow_intensity < 0.25 && w.thunder_intensity < 0.2);
+
+    if is_night && is_clear && !status.is_underground && !status.is_camera_in_water {
+        pool.spawn_cooldown -= dt;
+        if pool.spawn_cooldown <= 0.0 {
+            pool.spawn_cooldown = 4.5 + pool.next_f32() * 7.5;
+            let az = pool.next_f32() * TAU;
+            let elev = 0.30 + pool.next_f32() * 0.55;
+            let dir = Vec3::new(az.cos() * elev.cos(), elev.sin(), az.sin() * elev.cos()).normalize();
+            let tangent = dir.cross(Vec3::Y).normalize_or(Vec3::X);
+            let down_tan = tangent.cross(dir).normalize_or(Vec3::NEG_Y);
+            let angle = (pool.next_f32() - 0.5) * 1.4;
+            let vel_dir = (tangent * angle.cos() + down_tan * (0.45 + angle.sin().abs() * 0.45)).normalize();
+            let variant = pool.next_u32() as usize % SHOOTING_STAR_VARIANTS;
+            let length = 14.0 + pool.next_f32() * 10.0;
+            let width = 1.6 + pool.next_f32() * 0.8;
+            let max_age = 0.75 + pool.next_f32() * 0.55;
+            let slot = pool.cursor;
+            pool.cursor = (pool.cursor + 1) % MAX_SHOOTING_STARS;
+            pool.stars[slot] = ShootingStar {
+                dir,
+                vel_dir,
+                length,
+                width,
+                variant,
+                age: 0.0,
+                max_age,
+                alive: true,
+            };
+        }
+    }
+
+    let cam_pos = cam_tf.translation;
+    let sky_dist = 145.0;
+
+    let mut positions: Vec<[f32; 3]> = Vec::new();
+    let mut normals: Vec<[f32; 3]> = Vec::new();
+    let mut uvs: Vec<[f32; 2]> = Vec::new();
+    let mut colors: Vec<[f32; 4]> = Vec::new();
+    let mut indices: Vec<u32> = Vec::new();
+    let mut v_cursor = 0u32;
+
+    for s in pool.stars.iter_mut() {
+        if !s.alive {
+            continue;
+        }
+        s.age += dt;
+        if s.age >= s.max_age {
+            s.alive = false;
+            continue;
+        }
+        s.dir = (s.dir + s.vel_dir * (0.48 * dt)).normalize();
+        let center = cam_pos + s.dir * sky_dist;
+        let to_cam = (cam_pos - center).normalize_or(Vec3::NEG_Y);
+        let fwd = s.vel_dir;
+        let side = fwd.cross(to_cam).normalize_or(Vec3::X);
+
+        let half_l = fwd * (s.length * 0.5);
+        let half_w = side * (s.width * 0.5);
+        let p0 = center - half_l - half_w;
+        let p1 = center + half_l - half_w;
+        let p2 = center + half_l + half_w;
+        let p3 = center - half_l + half_w;
+
+        let v0 = s.variant as f32 / SHOOTING_STAR_VARIANTS as f32;
+        let v1 = (s.variant + 1) as f32 / SHOOTING_STAR_VARIANTS as f32;
+        let fade = smooth_in_out_alpha(s.age, s.max_age, 0.14, 0.35);
+        let col = [1.45 * fade, 1.42 * fade, 1.48 * fade, fade];
+
+        positions.extend_from_slice(&[p0.to_array(), p1.to_array(), p2.to_array(), p3.to_array()]);
+        normals.extend_from_slice(&[[0.0, 1.0, 0.0]; 4]);
+        uvs.extend_from_slice(&[[0.0, v1], [1.0, v1], [1.0, v0], [0.0, v0]]);
+        colors.extend_from_slice(&[col; 4]);
+        indices.extend_from_slice(&[
+            v_cursor,
+            v_cursor + 1,
+            v_cursor + 2,
+            v_cursor,
+            v_cursor + 2,
+            v_cursor + 3,
+        ]);
+        v_cursor += 4;
+    }
+
+    if positions.is_empty() {
+        if *batch_vis != Visibility::Hidden {
+            *batch_vis = Visibility::Hidden;
+        }
+        return;
+    }
+
+    if *batch_vis != Visibility::Visible {
+        *batch_vis = Visibility::Visible;
+    }
+
+    if let Some(mut mesh) = meshes.get_mut(&pool.mesh_handle) {
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
+        mesh.insert_indices(Indices::U32(indices));
+    }
+}
+
+// =============================================================================
+// 3D WORLD-ANCHORED UNDERWATER GOD RAYS (`water_godray.png`, RealismCraft style)
+// =============================================================================
+
+const MAX_UW_GODRAYS: usize = 28;
+
+#[derive(Component)]
+pub struct WaterGodRay3DBatchMesh;
+
+#[derive(Clone, Copy, Default)]
+struct WaterGodRay3D {
+    /// Top anchor on the water surface in world space
+    surface_pos: Vec3,
+    width: f32,
+    height: f32,
+    alpha: f32,
+    age: f32,
+    max_age: f32,
+    alive: bool,
+}
+
+#[derive(Resource)]
+pub struct WaterGodRay3DPool {
+    rays: Vec<WaterGodRay3D>,
+    cursor: usize,
+    mesh_handle: Handle<Mesh>,
+    rng: u64,
+}
+
+impl WaterGodRay3DPool {
+    #[inline]
+    fn next_u32(&mut self) -> u32 {
+        self.rng = self
+            .rng
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
+        (self.rng >> 32) as u32
+    }
+
+    #[inline]
+    fn next_f32(&mut self) -> f32 {
+        (self.next_u32() & 0x00FF_FFFF) as f32 / 16_777_216.0
+    }
+}
+
+pub fn setup_water_godrays_3d(
+    mut commands: Commands,
+    mut images: ResMut<Assets<Image>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let (w, h, bytes) = if let Ok(img) = image::open("assets/textures/particles/water_godray.png") {
+        let rgba = img.to_rgba8();
+        let (iw, ih) = rgba.dimensions();
+        (iw, ih, rgba.into_raw())
+    } else {
+        (64, 64, vec![255u8; 64 * 64 * 4])
+    };
+
+    let mut image = Image::new(
+        Extent3d {
+            width: w,
+            height: h,
+            depth_or_array_layers: 1,
+        },
+        TextureDimension::D2,
+        bytes,
+        TextureFormat::Rgba8UnormSrgb,
+        RenderAssetUsages::default(),
+    );
+    image.sampler = ImageSampler::linear();
+    let tex_handle = images.add(image);
+
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0.0f32, 0.0, 0.0]; 3]);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0f32, 1.0, 0.0]; 3]);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0.0f32, 0.0]; 3]);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, vec![[0.0f32, 0.0, 0.0, 0.0]; 3]);
+    mesh.insert_indices(Indices::U32(vec![0, 1, 2]));
+    let mesh_handle = meshes.add(mesh);
+
+    let mat_handle = materials.add(StandardMaterial {
+        base_color: Color::WHITE,
+        base_color_texture: Some(tex_handle),
+        unlit: true,
+        alpha_mode: AlphaMode::Add,
+        cull_mode: None,
+        double_sided: true,
+        ..default()
+    });
+
+    commands.spawn((
+        WaterGodRay3DBatchMesh,
+        Mesh3d(mesh_handle.clone()),
+        MeshMaterial3d(mat_handle),
+        Transform::IDENTITY,
+        Visibility::Hidden,
+        NotShadowCaster,
+        NotShadowReceiver,
+        bevy::camera::visibility::NoFrustumCulling,
+    ));
+
+    commands.insert_resource(WaterGodRay3DPool {
+        rays: vec![WaterGodRay3D::default(); MAX_UW_GODRAYS],
+        cursor: 0,
+        mesh_handle,
+        rng: 0x60D4_A715_3388_1234,
+    });
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn update_water_godrays_3d(
+    time: Res<Time>,
+    mut pool: ResMut<WaterGodRay3DPool>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    voxel_world: Option<Res<VoxelWorld>>,
+    env_state: Option<Res<EnvironmentState>>,
+    env_status: Option<Res<PlayerEnvironmentStatus>>,
+    local_config: Option<Res<crate::core::config::LocalConfig>>,
+    camera_query: Query<&Transform, (With<Camera3d>, With<PlayerCamera>)>,
+    mut batch_query: Query<&mut Visibility, With<WaterGodRay3DBatchMesh>>,
+) {
+    let dt = time.delta_secs().min(0.05);
+    let Ok(cam_tf) = camera_query.single() else {
+        return;
+    };
+    let Ok(mut batch_vis) = batch_query.single_mut() else {
+        return;
+    };
+    let status = env_status.as_deref().copied().unwrap_or_default();
+    let god_rays_enabled = local_config.as_ref().is_none_or(|c| c.god_rays_enabled);
+    let sun_dir = env_state.as_ref().map_or(Vec3::new(0.4, 0.85, 0.2), |e| {
+        crate::environment::celestial::calculate_sun_direction(e.time_of_day)
+    });
+    let sun_elev = ((sun_dir.y - 0.05) / 0.35).clamp(0.0, 1.0);
+
+    if !status.is_camera_in_water || !god_rays_enabled || sun_elev <= 0.01 {
+        if *batch_vis != Visibility::Hidden {
+            *batch_vis = Visibility::Hidden;
+        }
+        return;
+    }
+
+    let cam_pos = cam_tf.translation;
+
+    // Spawn 3D world-anchored volumetric godray quads hanging from the water surface around the player
+    if let Some(ref world) = voxel_world {
+        let active_count = pool.rays.iter().filter(|r| r.alive).count();
+        if active_count < MAX_UW_GODRAYS && pool.next_f32() < (7.5 * dt).min(1.0) {
+            let angle = pool.next_f32() * TAU;
+            let dist = 4.5 + pool.next_f32() * 19.0;
+            let wx = (cam_pos.x + angle.cos() * dist).floor() as i32;
+            let wz = (cam_pos.z + angle.sin() * dist).floor() as i32;
+            let start_y = (cam_pos.y.floor() as i32).max(-10);
+            // Scan upward to find the water surface exposed to Air
+            for wy in start_y..=(start_y + 24) {
+                let p = IVec3::new(wx, wy, wz);
+                if world.get_voxel(p).is_some_and(Voxel::is_water)
+                    && world.get_voxel(p + IVec3::Y) == Some(Voxel::Air)
+                {
+                    let width = 2.6 + pool.next_f32() * 2.2;
+                    let height = 9.5 + pool.next_f32() * 7.0;
+                    let alpha = 0.20 + pool.next_f32() * 0.14;
+                    let max_age = 4.5 + pool.next_f32() * 3.5;
+                    let slot = pool.cursor;
+                    pool.cursor = (pool.cursor + 1) % MAX_UW_GODRAYS;
+                    pool.rays[slot] = WaterGodRay3D {
+                        surface_pos: Vec3::new(wx as f32 + 0.5, wy as f32 + 0.88, wz as f32 + 0.5),
+                        width,
+                        height,
+                        alpha,
+                        age: 0.0,
+                        max_age,
+                        alive: true,
+                    };
+                    break;
+                }
+            }
+        }
+    }
+
+    // Slant rays along the sun's incoming vector (clamped to a pleasing natural underwater angle)
+    let slant_dir = Vec3::new(-sun_dir.x * 0.45, -1.0, -sun_dir.z * 0.45).normalize();
+
+    let mut positions: Vec<[f32; 3]> = Vec::new();
+    let mut normals: Vec<[f32; 3]> = Vec::new();
+    let mut uvs: Vec<[f32; 2]> = Vec::new();
+    let mut colors: Vec<[f32; 4]> = Vec::new();
+    let mut indices: Vec<u32> = Vec::new();
+    let mut v_cursor = 0u32;
+
+    for r in pool.rays.iter_mut() {
+        if !r.alive {
+            continue;
+        }
+        r.age += dt;
+        if r.age >= r.max_age {
+            r.alive = false;
+            continue;
+        }
+        let dist_sq = (r.surface_pos - cam_pos).length_squared();
+        if dist_sq > 34.0 * 34.0 {
+            r.alive = false;
+            continue;
+        }
+
+        let top_c = r.surface_pos;
+        let bot_c = top_c + slant_dir * r.height;
+        let mid_c = (top_c + bot_c) * 0.5;
+
+        // Cylindrical Y-axis billboard: always faces the camera horizontally while staying 100% locked in 3D world space!
+        let to_cam = Vec3::new(cam_pos.x - mid_c.x, 0.0, cam_pos.z - mid_c.z).normalize_or(Vec3::Z);
+        let right = to_cam.cross(Vec3::Y).normalize_or(Vec3::X);
+        let half_w = right * (r.width * 0.5);
+
+        let p0 = bot_c - half_w;
+        let p1 = bot_c + half_w;
+        let p2 = top_c + half_w;
+        let p3 = top_c - half_w;
+
+        let dist = dist_sq.sqrt();
+        let near_fade = ((dist - 2.0) / 3.0).clamp(0.0, 1.0);
+        let far_fade = (1.0 - (dist - 16.0).max(0.0) / 14.0).clamp(0.0, 1.0);
+        let life_fade = smooth_in_out_alpha(r.age, r.max_age, 1.2, 1.6);
+        let a = r.alpha * sun_elev * near_fade * far_fade * life_fade;
+        if a <= 0.005 {
+            continue;
+        }
+        let col = [0.65 * a, 0.94 * a, 1.0 * a, a];
+
+        positions.extend_from_slice(&[p0.to_array(), p1.to_array(), p2.to_array(), p3.to_array()]);
+        normals.extend_from_slice(&[[0.0, 1.0, 0.0]; 4]);
+        uvs.extend_from_slice(&[[0.0, 1.0], [1.0, 1.0], [1.0, 0.0], [0.0, 0.0]]);
         colors.extend_from_slice(&[col; 4]);
         indices.extend_from_slice(&[
             v_cursor,

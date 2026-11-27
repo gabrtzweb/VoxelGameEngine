@@ -25,7 +25,7 @@ pub(super) fn spawn_underwater_overlay(mut commands: Commands) {
 
             ..default()
         },
-        BackgroundColor(Color::srgba(0.02, 0.20, 0.34, 0.16)),
+        BackgroundColor(Color::srgba(0.02, 0.20, 0.34, 0.08)),
         // Keep HUD and crosshair above the tint.
         ZIndex(-10),
         Visibility::Hidden,
@@ -34,77 +34,101 @@ pub(super) fn spawn_underwater_overlay(mut commands: Commands) {
 
 pub(super) fn update_underwater_effect(
     env_status: Res<super::PlayerEnvironmentStatus>,
-    overlay: Single<&mut Visibility, With<UnderwaterOverlay>>,
+    overlay: Single<(&mut Visibility, &mut BackgroundColor), With<UnderwaterOverlay>>,
 ) {
-    let underwater = env_status.is_camera_in_water;
-
-    let mut visibility = overlay.into_inner();
-
-    *visibility = if underwater {
-        Visibility::Visible
+    let (mut visibility, mut bg) = overlay.into_inner();
+    if let Some(fluid) = env_status.camera_fluid {
+        *visibility = Visibility::Visible;
+        bg.0 = match fluid {
+            Voxel::LiquidLava | Voxel::LiquidCoreMagma | Voxel::LiquidMolten => {
+                Color::srgba(0.88, 0.28, 0.03, 0.42)
+            }
+            Voxel::LiquidAcid => Color::srgba(0.18, 0.68, 0.08, 0.28),
+            Voxel::LiquidTar => Color::srgba(0.05, 0.01, 0.09, 0.58),
+            Voxel::LiquidBlood => Color::srgba(0.42, 0.03, 0.04, 0.38),
+            Voxel::LiquidSludge => Color::srgba(0.20, 0.14, 0.08, 0.42),
+            Voxel::LiquidOoze => Color::srgba(0.24, 0.29, 0.06, 0.38),
+            _ => Color::srgba(0.02, 0.20, 0.34, 0.08),
+        };
     } else {
-        Visibility::Hidden
-    };
+        *visibility = Visibility::Hidden;
+    }
 }
 
-pub(super) fn player_submersion(world: &VoxelWorld, position: Vec3) -> f32 {
+pub(super) fn player_submersion(world: &VoxelWorld, position: Vec3) -> (f32, Option<Voxel>) {
     let (body_min, body_max) = player_body_bounds(position);
 
     let min_voxel = world_position_to_voxel(body_min);
 
     let max_voxel = world_position_to_voxel(body_max - Vec3::splat(WATER_BOUNDS_EPSILON));
 
-    let mut water_volume = 0.0;
+    let mut fluid_volume = 0.0;
+    let mut best_fluid: Option<Voxel> = None;
+    let mut best_vol = 0.0f32;
 
     for y in min_voxel.y..=max_voxel.y {
         for z in min_voxel.z..=max_voxel.z {
             for x in min_voxel.x..=max_voxel.x {
                 let coordinate = IVec3::new(x, y, z);
 
-                if !world
-                    .get_voxel(coordinate)
-                    .is_some_and(|v| v.is_water() || v.is_marine_flora() || v.is_coral_fan())
-                {
+                let Some(voxel) = world.get_voxel(coordinate) else {
+                    continue;
+                };
+                let is_submerged_fluid =
+                    voxel.is_fluid() || voxel.is_marine_flora() || voxel.is_coral_fan();
+                if !is_submerged_fluid {
                     continue;
                 }
 
-                water_volume += overlap_volume(body_min, body_max, coordinate);
+                let vol = overlap_volume(body_min, body_max, coordinate);
+                fluid_volume += vol;
+                let normalized = if voxel.is_marine_flora() || voxel.is_coral_fan() {
+                    Voxel::LiquidWater
+                } else {
+                    voxel
+                };
+                if vol > best_vol {
+                    best_vol = vol;
+                    best_fluid = Some(normalized);
+                }
             }
         }
     }
 
     let player_volume = PLAYER_WIDTH * PLAYER_WIDTH * PLAYER_HEIGHT;
 
-    if player_volume <= 0.0 {
-        return 0.0;
+    if player_volume <= 0.0 || fluid_volume <= 0.0 {
+        return (0.0, None);
     }
 
-    (water_volume / player_volume).clamp(0.0, 1.0)
+    ((fluid_volume / player_volume).clamp(0.0, 1.0), best_fluid)
 }
 
-pub(crate) fn is_point_in_water(world: &VoxelWorld, position: Vec3) -> bool {
+pub(crate) fn fluid_at_point(world: &VoxelWorld, position: Vec3) -> Option<Voxel> {
     let coordinate = world_position_to_voxel(position);
 
-    let Some(voxel) = world.get_voxel(coordinate) else {
-        return false;
-    };
-    let is_water_or_flora = |v: Voxel| v.is_water() || v.is_marine_flora() || v.is_coral_fan();
-    if !is_water_or_flora(voxel) {
-        return false;
+    let voxel = world.get_voxel(coordinate)?;
+    let is_fluid_or_flora = |v: Voxel| v.is_fluid() || v.is_marine_flora() || v.is_coral_fan();
+    if !is_fluid_or_flora(voxel) {
+        return None;
     }
 
     let above_coordinate = coordinate + IVec3::Y;
     if !world
         .get_voxel(above_coordinate)
-        .is_some_and(is_water_or_flora)
+        .is_some_and(is_fluid_or_flora)
     {
         let surface_y = coordinate.y as f32 * VOXEL_SIZE + 0.90;
         if position.y >= surface_y {
-            return false;
+            return None;
         }
     }
 
-    true
+    if voxel.is_marine_flora() || voxel.is_coral_fan() {
+        Some(Voxel::LiquidWater)
+    } else {
+        Some(voxel)
+    }
 }
 
 fn player_body_bounds(position: Vec3) -> (Vec3, Vec3) {

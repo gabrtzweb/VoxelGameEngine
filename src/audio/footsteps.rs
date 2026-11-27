@@ -168,21 +168,28 @@ fn update_player_footstep_audio(
         .map_or(1.0, |s| s.0.attributes().footstep_noise_multiplier);
 
     let submersion = env_status.as_ref().map_or(0.0, |s| s.submersion);
-    let is_cam_water = env_status.as_ref().is_some_and(|s| s.is_camera_in_water);
+    let is_cam_fluid = env_status.as_ref().is_some_and(|s| s.camera_fluid.is_some());
+    let active_fluid = env_status
+        .as_ref()
+        .and_then(|s| s.submerged_fluid.or(s.camera_fluid))
+        .unwrap_or(Voxel::LiquidWater);
     let water_tint_raw = env_status
         .as_ref()
         .map_or([0.32, 0.62, 0.88, 1.0], |s| s.current_biome.water_color());
     let water_tint = [water_tint_raw[0], water_tint_raw[1], water_tint_raw[2]];
-    let in_water = submersion > 0.08 || is_cam_water;
+    let in_water = submersion > 0.08 || is_cam_fluid;
 
-    // 1. Water entry & exit splash detection
+    // 1. Fluid entry & exit splash detection (supports all 9 liquids!)
     if in_water != state.was_in_water {
         let category = if in_water {
             if let Some(ref mut bursts) = particle_bursts {
-                let intensity = ((-state.prev_velocity_y).clamp(1.2, 6.0) / 3.0).max(0.6);
-                bursts.push_splash(
-                    transform.translation + Vec3::new(0.0, 0.25, 0.0),
-                    intensity,
+                let fall_speed = ((-state.prev_velocity_y) / 6.5).clamp(0.35, 2.0);
+                let surface_y = detect_water_surface_y(&world, transform.translation);
+                bursts.push_splash_3d(
+                    Vec3::new(transform.translation.x, surface_y, transform.translation.z),
+                    0.95,
+                    fall_speed,
+                    active_fluid,
                     water_tint,
                 );
             }
@@ -204,9 +211,13 @@ fn update_player_footstep_audio(
         let fall_severity = ((-state.prev_velocity_y - 2.2) / 8.0).clamp(0.4, 1.0);
         let category = if in_water {
             if let Some(ref mut bursts) = particle_bursts {
-                bursts.push_splash(
-                    transform.translation + Vec3::new(0.0, 0.20, 0.0),
-                    fall_severity * 1.5,
+                let fall_speed = ((-state.prev_velocity_y) / 6.5).clamp(0.55, 2.0);
+                let surface_y = detect_water_surface_y(&world, transform.translation);
+                bursts.push_splash_3d(
+                    Vec3::new(transform.translation.x, surface_y, transform.translation.z),
+                    0.95,
+                    fall_speed,
+                    active_fluid,
                     water_tint,
                 );
             }
@@ -328,4 +339,19 @@ fn update_player_footstep_audio(
         // Decay distance accumulator slightly when stopped
         state.distance_accum = (state.distance_accum - dt * 2.0).max(0.0);
     }
+}
+
+/// Scans upward from player feet to find the exact top fluid surface Y for flush 3D splashes.
+fn detect_water_surface_y(world: &VoxelWorld, pos: Vec3) -> f32 {
+    let bx = pos.x.floor() as i32;
+    let bz = pos.z.floor() as i32;
+    let start_y = pos.y.floor() as i32;
+    let mut top_fluid_y: Option<i32> = None;
+    for dy in -1..=3 {
+        let y = start_y + dy;
+        if world.get_voxel(IVec3::new(bx, y, bz)).is_some_and(Voxel::is_fluid) {
+            top_fluid_y = Some(y);
+        }
+    }
+    top_fluid_y.map_or(pos.y + 0.15, |y| y as f32 + 0.88)
 }
