@@ -42,6 +42,10 @@ pub struct OpaqueVoxelMaterial {
     pub sun_color_and_cloud: Vec4,
     #[uniform(110)]
     pub player_push_pos: Vec4,
+    #[uniform(111)]
+    pub border_fog_color: Vec4,
+    #[uniform(112)]
+    pub border_fog_range: Vec4,
 }
 
 impl MaterialExtension for OpaqueVoxelMaterial {
@@ -85,6 +89,10 @@ pub struct TransparentVoxelMaterial {
     pub sky_sunset_color: Vec4,
     #[uniform(105)]
     pub sun_dir_and_factor: Vec4,
+    #[uniform(106)]
+    pub border_fog_color: Vec4,
+    #[uniform(107)]
+    pub border_fog_range: Vec4,
 }
 
 impl MaterialExtension for TransparentVoxelMaterial {
@@ -361,6 +369,8 @@ pub fn setup_chunk_material(
             sun_dir_and_factor: Vec4::new(0.0, 1.0, 0.0, 1.0),
             sun_color_and_cloud: Vec4::new(1.0, 0.88, 0.66, 0.22),
             player_push_pos: Vec4::ZERO,
+            border_fog_color: Vec4::ZERO,
+            border_fog_range: Vec4::new(256.0, 384.0, 0.0, 0.0),
         },
     });
 
@@ -380,6 +390,8 @@ pub fn setup_chunk_material(
             sky_middle_color: Vec4::new(0.44, 0.74, 1.04, 1.0),
             sky_sunset_color: Vec4::new(1.38, 0.64, 0.28, 0.0),
             sun_dir_and_factor: Vec4::new(0.0, 1.0, 0.0, 1.0),
+            border_fog_color: Vec4::ZERO,
+            border_fog_range: Vec4::new(256.0, 384.0, 0.0, 0.0),
         },
     });
 
@@ -802,6 +814,11 @@ pub fn sync_voxel_shader_settings(
         Option<Res<crate::environment::WeatherManager>>,
         Option<Res<crate::environment::sky::SkyPaletteState>>,
     ),
+    (game_settings, streaming, env_status): (
+        Option<Res<crate::menu::GameSettings>>,
+        Option<Res<crate::world::streaming::ChunkStreamingSettings>>,
+        Option<Res<crate::player::PlayerEnvironmentStatus>>,
+    ),
     player_query: Query<&Transform, With<crate::player::Player>>,
     chunk_material: Option<Res<ChunkMaterial>>,
     mut opaque_materials: ResMut<Assets<OpaqueChunkMaterial>>,
@@ -906,6 +923,32 @@ pub fn sync_voxel_shader_settings(
         }
     };
 
+    let border_fog_enabled = game_settings.as_ref().is_none_or(|gs| gs.fog_enabled);
+    let in_fluid = env_status.as_ref().is_some_and(|s| s.camera_fluid.is_some());
+    let underground_factor = env_status.as_ref().map_or(0.0, |s| s.underground_factor);
+    let border_fog_weight = if border_fog_enabled && !in_fluid {
+        (1.0 - underground_factor * 2.0).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
+    let sky_horizon = crate::environment::atmosphere::lerp_linear_rgba(
+        sp.middle_color,
+        sp.sunset_color,
+        (sp.sunset_strength * 0.42 * (1.0 - sp.rain_factor * 0.7)).clamp(0.0, 1.0),
+    );
+    let border_fog_color = Vec4::new(
+        sky_horizon.red,
+        sky_horizon.green,
+        sky_horizon.blue,
+        border_fog_weight,
+    );
+    let total_chunks = streaming
+        .as_ref()
+        .map_or(24, |s| (s.render_distance + s.lod_render_distance.max(0)).max(1));
+    let render_radius =
+        total_chunks as f32 * crate::world::CHUNK_SIZE as f32 * crate::world::VOXEL_SIZE;
+    let border_fog_range = Vec4::new(render_radius * 0.72, render_radius * 0.98, 0.0, 0.0);
+
     if let Some(mut mat) = opaque_materials.get_mut(&chunk_material.opaque) {
         if needs_static_update {
             mat.extension.params = target_params;
@@ -917,6 +960,8 @@ pub fn sync_voxel_shader_settings(
         mat.extension.sun_dir_and_factor = opaque_sun_dir_and_factor;
         mat.extension.sun_color_and_cloud = sun_color_and_cloud;
         mat.extension.player_push_pos = player_push_pos;
+        mat.extension.border_fog_color = border_fog_color;
+        mat.extension.border_fog_range = border_fog_range;
     }
 
     if let Some(mut tmat) = transparent_materials.get_mut(&chunk_material.transparent) {
@@ -939,5 +984,7 @@ pub fn sync_voxel_shader_settings(
             sp.sunset_strength,
         );
         tmat.extension.sun_dir_and_factor = water_sun_dir_and_factor;
+        tmat.extension.border_fog_color = border_fog_color;
+        tmat.extension.border_fog_range = border_fog_range;
     }
 }

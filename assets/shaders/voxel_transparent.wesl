@@ -17,6 +17,8 @@ import bevy_pbr::{
 @group(constants::MATERIAL_BIND_GROUP) @binding(103) var<uniform> sky_middle_color: vec4<f32>;
 @group(constants::MATERIAL_BIND_GROUP) @binding(104) var<uniform> sky_sunset_color: vec4<f32>;
 @group(constants::MATERIAL_BIND_GROUP) @binding(105) var<uniform> sun_dir_and_factor: vec4<f32>;
+@group(constants::MATERIAL_BIND_GROUP) @binding(106) var<uniform> border_fog_color: vec4<f32>;
+@group(constants::MATERIAL_BIND_GROUP) @binding(107) var<uniform> border_fog_range: vec4<f32>;
 
 // Lightweight procedural sky reflection matching SkyDome (zenith, horizon, sunset ribbon, sun glare)
 fn sample_water_sky_reflection(refl_dir: vec3<f32>) -> vec3<f32> {
@@ -734,6 +736,14 @@ fn fragment(
         if (fluid_luma > max_fluid_luma) {
             out.color = vec4<f32>(out.color.rgb * (max_fluid_luma / fluid_luma), out.color.a);
         }
+    }
+
+    // Independent Chunk Border Fog: smoothly dissolves distant water/liquids at the chunk horizon rim
+    if (border_fog_color.a > 0.001) {
+        let d_xz = length(vertex_output.world_position.xz - view.world_position.xz);
+        let bf = smoothstep(border_fog_range.x, border_fog_range.y, d_xz);
+        let bf_curve = bf * bf * border_fog_color.a;
+        out.color = vec4<f32>(mix(out.color.rgb, border_fog_color.rgb, bf_curve), out.color.a);
     }
 
     return out;

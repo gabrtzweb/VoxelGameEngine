@@ -190,6 +190,8 @@ pub fn setup_celestial(
             color: Color::srgb(1.0, 0.95, 0.85),
             illuminance: 6_500.0,
             shadow_maps_enabled: shadows_enabled,
+            shadow_depth_bias: 0.025,
+            shadow_normal_bias: 1.6,
             ..default()
         },
         build_sun_cascade_config(shadow_quality),
@@ -202,6 +204,8 @@ pub fn setup_celestial(
             color: Color::srgb(0.48, 0.56, 0.88),
             illuminance: 0.0,
             shadow_maps_enabled: shadows_enabled,
+            shadow_depth_bias: 0.025,
+            shadow_normal_bias: 1.6,
             ..default()
         },
         build_moon_cascade_config(shadow_quality),
@@ -333,12 +337,27 @@ pub fn sync_celestial_transforms(
         mat_mut.base_color_texture = Some(target_handle.clone());
     }
 
+    // Quantize shadow-casting light orientation to discrete steps (480 steps/day = 0.75 deg / ~3s per step)
+    // so the cascaded shadow-map texel grid stays rock-solid instead of shimmering/flickering every frame.
+    // The visual sun/moon discs, sky dome, and light color still use the smooth continuous `sun_dir`.
+    const SHADOW_TIME_STEPS_PER_DAY: f32 = 480.0;
+    let quantized_time =
+        (time_of_day * SHADOW_TIME_STEPS_PER_DAY).round() / SHADOW_TIME_STEPS_PER_DAY;
+    let shadow_sun_dir = calculate_sun_direction(quantized_time);
+    let shadow_moon_dir = -shadow_sun_dir;
+
     // Directional sunlight shining from sun towards the world (-sun_dir).
+    // Smooth midday overhead radiance boost (sun_elev > 0.35) leaves dawn & dusk 100% untouched.
     let sun_elev = sun_dir.y.max(0.0);
-    let sun_illum = sun_elev.powf(0.6) * day_sun_illuminance;
+    let midday_t = ((sun_elev - 0.35) / 0.57).clamp(0.0, 1.0);
+    let midday_smooth = midday_t * midday_t * (3.0 - 2.0 * midday_t);
+    let sun_illum = sun_elev.powf(0.6) * day_sun_illuminance * (1.0 + midday_smooth * 0.48);
     sun_l.illuminance = sun_illum;
     sun_l.shadow_maps_enabled = shadows_enabled && sun_elev > 0.04;
-    *sun_lt = Transform::default().looking_to(-sun_dir, Vec3::Y);
+    let target_sun_tf = Transform::default().looking_to(-shadow_sun_dir, Vec3::Y);
+    if sun_lt.rotation.dot(target_sun_tf.rotation).abs() < 0.999999 {
+        *sun_lt = target_sun_tf;
+    }
     *sun_light_vis = if sun_illum <= 0.01 {
         Visibility::Hidden
     } else {
@@ -368,7 +387,10 @@ pub fn sync_celestial_transforms(
     moon_l.illuminance = moon_illum;
     moon_l.shadow_maps_enabled =
         shadows_enabled && moon_elev > 0.04 && moon_phase_illuminance_factor > 0.20;
-    *moon_lt = Transform::default().looking_to(-moon_dir, Vec3::Y);
+    let target_moon_tf = Transform::default().looking_to(-shadow_moon_dir, Vec3::Y);
+    if moon_lt.rotation.dot(target_moon_tf.rotation).abs() < 0.999999 {
+        *moon_lt = target_moon_tf;
+    }
     *moon_light_vis = if moon_illum <= 0.01 {
         Visibility::Hidden
     } else {

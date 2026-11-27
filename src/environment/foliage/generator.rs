@@ -89,9 +89,17 @@ pub fn emit_block_grass_blades(
     let mut prng = BladePrng::new(seed);
 
     for _blade_idx in 0..blade_count {
-        // Position on the block face (slight overhang 0.08..1.08 to break grid edges)
-        let off_x = 0.08 + prng.next_f32() * 0.84;
-        let off_z = 0.08 + prng.next_f32() * 0.84;
+        // Full blocks span the exact [0.0 .. 1.0] footprint so adjacent grass blocks meet
+        // with mathematically uniform density and zero visible grid corridors between blocks.
+        // Non-full shapes (slabs/stairs) keep a tiny inset so blades don't clip through risers.
+        let (off_x, off_z) = if shape == BlockShape::Full {
+            (prng.next_f32(), prng.next_f32())
+        } else {
+            (
+                0.03 + prng.next_f32() * 0.94,
+                0.03 + prng.next_f32() * 0.94,
+            )
+        };
 
         let Some(top_y_offset) = block_surface_top_y(shape, orientation, off_x, off_z) else {
             continue;

@@ -5,7 +5,7 @@ import bevy_pbr::render::{
     pbr_types,
     pbr_fragment::pbr_input_from_standard_material,
     pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
-    mesh_view_bindings::{globals, lights},
+    mesh_view_bindings::{globals, lights, view},
 };
 
 @group(constants::MATERIAL_BIND_GROUP) @binding(100) var voxel_texture_array: texture_2d_array<f32>;
@@ -19,6 +19,8 @@ import bevy_pbr::render::{
 @group(constants::MATERIAL_BIND_GROUP) @binding(108) var<uniform> sun_dir_and_factor: vec4<f32>;
 @group(constants::MATERIAL_BIND_GROUP) @binding(109) var<uniform> sun_color_and_cloud: vec4<f32>;
 @group(constants::MATERIAL_BIND_GROUP) @binding(110) var<uniform> player_push_pos: vec4<f32>;
+@group(constants::MATERIAL_BIND_GROUP) @binding(111) var<uniform> border_fog_color: vec4<f32>;
+@group(constants::MATERIAL_BIND_GROUP) @binding(112) var<uniform> border_fog_range: vec4<f32>;
 
 // Fast procedural noise using Dave Hoskins' sine-free hash (ultra-fast on integrated GPUs)
 fn hash2_noise(p: vec2<f32>) -> f32 {
@@ -690,5 +692,14 @@ fn fragment(
         }
     }
     out.color = main_pass_post_lighting_processing(pbr_input, out.color);
+
+    // Independent Chunk Border Fog: smoothly dissolves only the distant chunk horizon rim into the Sky Dome
+    if (border_fog_color.a > 0.001 && !is_item_entity) {
+        let d_xz = length(vertex_output.world_position.xz - view.world_position.xz);
+        let bf = smoothstep(border_fog_range.x, border_fog_range.y, d_xz);
+        let bf_curve = bf * bf * border_fog_color.a;
+        out.color = vec4<f32>(mix(out.color.rgb, border_fog_color.rgb, bf_curve), out.color.a);
+    }
+
     return out;
 }

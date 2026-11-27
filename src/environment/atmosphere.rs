@@ -7,8 +7,8 @@ use crate::{
 };
 
 pub const DAY_SUN_ILLUMINANCE: f32 = 16_500.0;
-pub const DAY_AMBIENT_BRIGHTNESS: f32 = 1_550.0;
-pub const DAY_EXPOSURE_EV100: f32 = 11.9;
+pub const DAY_AMBIENT_BRIGHTNESS: f32 = 1_420.0;
+pub const DAY_EXPOSURE_EV100: f32 = 11.76;
 
 pub const NIGHT_MOON_ILLUMINANCE: f32 = 1_100.0;
 pub const NIGHT_AMBIENT_BRIGHTNESS: f32 = 160.0;
@@ -51,23 +51,23 @@ pub fn biome_atmosphere_fog_profile(biome: crate::generation::BiomeType) -> (Lin
     match biome {
         // Misty swamps, marshes & humid wetlands
         B::WillowMarsh | B::MangroveSwamp | B::OrchidSwamp | B::SwampyShore | B::Mudflats => {
-            (LinearRgba::new(0.42, 0.62, 0.56, 1.0), 0.42, 1.55)
+            (LinearRgba::new(0.44, 0.64, 0.56, 1.0), 0.45, 1.55)
         }
         B::MistyWoods | B::MistyCrags | B::BambooGrove => {
-            (LinearRgba::new(0.54, 0.72, 0.78, 1.0), 0.38, 1.48)
+            (LinearRgba::new(0.54, 0.72, 0.80, 1.0), 0.40, 1.45)
         }
         B::DenseRainforest | B::JungleWetlands | B::VolcanicJungle => {
-            (LinearRgba::new(0.46, 0.70, 0.64, 1.0), 0.32, 1.35)
+            (LinearRgba::new(0.46, 0.70, 0.64, 1.0), 0.34, 1.32)
         }
         // Arid deserts, dunes, canyons & savannas
         B::DuneSea | B::AncientSands | B::DesertOasis | B::DesertSpires => {
-            (LinearRgba::new(0.92, 0.76, 0.50, 1.0), 0.40, 1.25)
+            (LinearRgba::new(0.90, 0.76, 0.54, 1.0), 0.38, 1.22)
         }
         B::RedrockCanyon
         | B::PaintedMesas
         | B::SavannaBadlands
         | B::FracturedSavanna
-        | B::AcaciaPlains => (LinearRgba::new(0.88, 0.66, 0.46, 1.0), 0.34, 1.18),
+        | B::AcaciaPlains => (LinearRgba::new(0.86, 0.68, 0.48, 1.0), 0.34, 1.15),
         // Frozen, glacial & polar biomes
         B::SnowyPlains
         | B::ColdShrubland
@@ -80,15 +80,15 @@ pub fn biome_atmosphere_fog_profile(biome: crate::generation::BiomeType) -> (Lin
         | B::IceboundRidge
         | B::BleakTaiga
         | B::FrozenIsland
-        | B::TundraIsland => (LinearRgba::new(0.70, 0.84, 0.98, 1.0), 0.34, 1.28),
+        | B::TundraIsland => (LinearRgba::new(0.72, 0.86, 1.00, 1.0), 0.38, 1.20),
         // Volcanic, ash & dark fantasy lands
         B::Caldera
         | B::VolcanicPeaks
         | B::AshenWastes
         | B::ScorchedFlats
-        | B::ObsidianMire => (LinearRgba::new(0.46, 0.34, 0.30, 1.0), 0.55, 1.65),
-        B::AcidPools | B::SulfurVents => (LinearRgba::new(0.58, 0.64, 0.34, 1.0), 0.48, 1.55),
-        B::WitheredWoods => (LinearRgba::new(0.36, 0.34, 0.46, 1.0), 0.45, 1.45),
+        | B::ObsidianMire => (LinearRgba::new(0.46, 0.35, 0.30, 1.0), 0.52, 1.60),
+        B::AcidPools | B::SulfurVents => (LinearRgba::new(0.58, 0.64, 0.34, 1.0), 0.46, 1.50),
+        B::WitheredWoods => (LinearRgba::new(0.36, 0.34, 0.46, 1.0), 0.44, 1.40),
         // Warm floral valleys, amethyst & sakura
         B::SakuraGrove | B::LavenderValley | B::FlowerMeadow | B::AmethystCanyon => {
             (LinearRgba::new(0.76, 0.74, 0.92, 1.0), 0.22, 0.95)
@@ -103,7 +103,7 @@ pub fn biome_atmosphere_fog_profile(biome: crate::generation::BiomeType) -> (Lin
         | B::TropicalIsland
         | B::CoralIsland => (LinearRgba::new(0.46, 0.74, 0.96, 1.0), 0.22, 0.88),
         // Default crisp aerial perspective
-        _ => (LinearRgba::new(0.54, 0.76, 0.96, 1.0), 0.08, 1.0),
+        _ => (LinearRgba::new(0.54, 0.76, 0.96, 1.0), 0.08, 0.95),
     }
 }
 
@@ -373,7 +373,8 @@ pub fn update_atmosphere(
                 biome_fog.initialized = true;
                 1.0
             } else {
-                1.0 - (-1.4 * time.delta_secs()).exp()
+                // Slow, silky glide across biome borders (~3-4s) so color & mist never snap
+                1.0 - (-0.55 * time.delta_secs()).exp()
             };
             biome_fog.color_tint = lerp_linear_rgba(biome_fog.color_tint, target_tint, blend_t);
             biome_fog.tint_strength =
@@ -436,7 +437,6 @@ pub fn sync_fog_distance(
 ) {
     let (mut fog, cam_tf) = camera.into_inner();
 
-    let border_fog_enabled = game_settings.as_ref().is_none_or(|gs| gs.fog_enabled);
     let atm_fog_enabled = game_settings
         .as_ref()
         .is_none_or(|gs| gs.atmospheric_fog_enabled);
@@ -474,7 +474,9 @@ pub fn sync_fog_distance(
         return;
     }
 
-    if !border_fog_enabled && !atm_fog_enabled {
+    // Chunk Border Fog is handled independently in the voxel/water shaders (outer horizon rim only),
+    // so Bevy's DistanceFog is dedicated purely to Atmospheric Fog when above water.
+    if !atm_fog_enabled {
         fog.falloff = FogFalloff::Linear {
             start: 99999.0,
             end: 100000.0,
@@ -495,14 +497,14 @@ pub fn sync_fog_distance(
     let total_chunks = (settings.render_distance + settings.lod_render_distance.max(0)).max(1);
     let render_radius = total_chunks as f32 * chunk_world_size;
 
-    // Smooth per-biome atmospheric fog density multiplier
-    let target_biome_density = env_status.as_ref().map_or(1.0, |s| {
+    // Smooth per-biome atmospheric fog density multiplier (~3-4s glide across biome borders)
+    let target_biome_density = env_status.as_ref().map_or(0.95, |s| {
         biome_atmosphere_fog_profile(s.current_biome).2
     });
     if *smoothed_density_mult <= 0.001 {
         *smoothed_density_mult = target_biome_density;
     } else {
-        let k = 1.0 - (-1.4 * time.delta_secs()).exp();
+        let k = 1.0 - (-0.55 * time.delta_secs()).exp();
         *smoothed_density_mult = lerp_f32(*smoothed_density_mult, target_biome_density, k);
     }
 
@@ -511,38 +513,15 @@ pub fn sync_fog_distance(
     let altitude_mult = 1.0 - ((cam_y - 48.0) / 110.0).clamp(0.0, 0.52);
 
     let weather_boost = 1.0 + (1.0 - weather_mult) * 1.4;
-    let atm_density = (0.00325 / (render_radius / 384.0).clamp(0.65, 2.2))
+    let atm_density = (0.00225 / (render_radius / 384.0).clamp(0.65, 2.2))
         * *smoothed_density_mult
         * altitude_mult
         * weather_boost;
 
-    if atm_fog_enabled && !border_fog_enabled {
-        // Pure Atmospheric Fog (rich closer exponential aerial perspective without hard chunk-border wall)
-        let cave_density = atm_density * 1.25;
-        fog.falloff = FogFalloff::Exponential {
-            density: lerp_f32(atm_density, cave_density, underground_factor),
-        };
-    } else if !atm_fog_enabled && border_fog_enabled {
-        // Pure Chunk Border Fog (crystal-clear interior, steep sky-matched horizon fade at chunk edge)
-        let surface_start = render_radius * FOG_START_FACTOR * weather_mult;
-        let surface_end = render_radius * FOG_END_FACTOR * weather_mult;
-        let cave_start = surface_start * 0.80;
-        let cave_end = surface_end * 0.95;
-        fog.falloff = FogFalloff::Linear {
-            start: lerp_f32(surface_start, cave_start, underground_factor),
-            end: lerp_f32(surface_end, cave_end, underground_factor),
-        };
-    } else {
-        // Both Atmospheric Fog + Chunk Border Fog:
-        // Preserves 100% of the near/mid-distance Exponential Atmospheric Fog while guaranteeing
-        // the distant chunk border dissolves completely into the Sky Dome.
-        let border_density = (3.10 / render_radius.max(64.0)) * weather_boost;
-        let combined_density = atm_density.max(border_density) + border_density * 0.25;
-        let cave_density = combined_density * 1.20;
-        fog.falloff = FogFalloff::Exponential {
-            density: lerp_f32(combined_density, cave_density, underground_factor),
-        };
-    }
+    let cave_density = atm_density * 1.25;
+    fog.falloff = FogFalloff::Exponential {
+        density: lerp_f32(atm_density, cave_density, underground_factor),
+    };
 }
 
 /// Classifies biomes into 3 atmospheric temperature zones:

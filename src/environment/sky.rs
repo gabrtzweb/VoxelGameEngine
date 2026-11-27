@@ -161,10 +161,11 @@ fn sync_sky_dome(
     dome_transform.translation = camera.translation;
 
     // Smoothly blend climate temperature zone (-1.0 Cold, 0.0 Temperate, +1.0 Warm)
+    // Gentle ~3-4s glide across biome borders so skybox transitions never snap.
     let target_climate = env_status.as_ref().map_or(0.0, |s| {
         super::atmosphere::biome_climate_zone(s.current_biome)
     });
-    let climate_blend = 1.0 - (-1.4 * time.delta_secs()).exp();
+    let climate_blend = 1.0 - (-0.55 * time.delta_secs()).exp();
     sky_palette.climate_temp = lerp_f32(sky_palette.climate_temp, target_climate, climate_blend);
     let ct = sky_palette.climate_temp;
 
@@ -213,14 +214,15 @@ fn sync_sky_dome(
         lerp_linear_rgba,
     );
 
-    // Subtle 3-zone climate sky shift (Cold -> crisp glacial azure, Warm -> light sunlit warmth)
+    // Subtle, perceptible 3-zone climate sky shift (Cold -> crisp glacial frost-blue, Warm -> gentle sun-warmed horizon)
     if ct < -0.01 {
-        let cold_w = (-ct) * 0.32 * sun_factor;
-        up_col = lerp_linear_rgba(up_col, LinearRgba::new(0.08, 0.34, 0.94, 1.0), cold_w);
-        middle_col = lerp_linear_rgba(middle_col, LinearRgba::new(0.56, 0.80, 1.08, 1.0), cold_w);
+        let cold_w = (-ct) * 0.42 * sun_factor;
+        up_col = lerp_linear_rgba(up_col, LinearRgba::new(0.07, 0.34, 0.96, 1.0), cold_w);
+        middle_col = lerp_linear_rgba(middle_col, LinearRgba::new(0.60, 0.84, 1.12, 1.0), cold_w);
     } else if ct > 0.01 {
-        let warm_w = ct * 0.20 * sun_factor;
-        middle_col = lerp_linear_rgba(middle_col, LinearRgba::new(0.76, 0.78, 0.88, 1.0), warm_w);
+        let warm_w = ct * 0.34 * sun_factor;
+        up_col = lerp_linear_rgba(up_col, LinearRgba::new(0.13, 0.38, 0.86, 1.0), warm_w * 0.65);
+        middle_col = lerp_linear_rgba(middle_col, LinearRgba::new(0.82, 0.78, 0.72, 1.0), warm_w);
     }
 
     // Weather modulation
