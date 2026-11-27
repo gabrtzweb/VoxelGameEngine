@@ -947,9 +947,23 @@ pub fn sync_voxel_shader_settings(
         .map_or(24, |s| (s.render_distance + s.lod_render_distance.max(0)).max(1));
     let render_radius =
         total_chunks as f32 * crate::world::CHUNK_SIZE as f32 * crate::world::VOXEL_SIZE;
-    let border_fog_range = Vec4::new(render_radius * 0.72, render_radius * 0.98, 0.0, 0.0);
+    let border_start = render_radius * 0.72;
+    let border_end = render_radius * 0.98;
+    let border_fog_range = Vec4::new(border_start, border_end, border_start * border_start, 0.0);
 
-    if let Some(mut mat) = opaque_materials.get_mut(&chunk_material.opaque) {
+    let opaque_dirty = needs_static_update
+        || opaque_materials.get(&chunk_material.opaque).is_some_and(|m| {
+            let e = &m.extension;
+            (e.params.w - *smoothed_wetness).abs() > 0.001
+                || (e.anim_params.w - active_rain).abs() > 0.001
+                || (e.sun_dir_and_factor - opaque_sun_dir_and_factor).abs().max_element() > 0.001
+                || (e.sun_color_and_cloud - sun_color_and_cloud).abs().max_element() > 0.001
+                || (e.player_push_pos - player_push_pos).abs().max_element() > 0.005
+                || (e.border_fog_color - border_fog_color).abs().max_element() > 0.001
+                || (e.border_fog_range - border_fog_range).abs().max_element() > 0.1
+        });
+
+    if opaque_dirty && let Some(mut mat) = opaque_materials.get_mut(&chunk_material.opaque) {
         if needs_static_update {
             mat.extension.params = target_params;
             mat.extension.anim_params = Vec4::new(0.0, wind_intensity, wind_angle, active_rain);
@@ -964,25 +978,40 @@ pub fn sync_voxel_shader_settings(
         mat.extension.border_fog_range = border_fog_range;
     }
 
-    if let Some(mut tmat) = transparent_materials.get_mut(&chunk_material.transparent) {
-        tmat.extension.sky_up_color = Vec4::new(
-            sp.up_color.red,
-            sp.up_color.green,
-            sp.up_color.blue,
-            sp.rain_factor,
-        );
-        tmat.extension.sky_middle_color = Vec4::new(
-            sp.middle_color.red,
-            sp.middle_color.green,
-            sp.middle_color.blue,
-            if water_ssr_enabled { 1.0 } else { 0.0 },
-        );
-        tmat.extension.sky_sunset_color = Vec4::new(
-            sp.sunset_color.red,
-            sp.sunset_color.green,
-            sp.sunset_color.blue,
-            sp.sunset_strength,
-        );
+    let sky_up_v = Vec4::new(
+        sp.up_color.red,
+        sp.up_color.green,
+        sp.up_color.blue,
+        sp.rain_factor,
+    );
+    let sky_mid_v = Vec4::new(
+        sp.middle_color.red,
+        sp.middle_color.green,
+        sp.middle_color.blue,
+        if water_ssr_enabled { 1.0 } else { 0.0 },
+    );
+    let sky_sun_v = Vec4::new(
+        sp.sunset_color.red,
+        sp.sunset_color.green,
+        sp.sunset_color.blue,
+        sp.sunset_strength,
+    );
+    let transparent_dirty = transparent_materials
+        .get(&chunk_material.transparent)
+        .is_some_and(|m| {
+            let e = &m.extension;
+            (e.sky_up_color - sky_up_v).abs().max_element() > 0.001
+                || (e.sky_middle_color - sky_mid_v).abs().max_element() > 0.001
+                || (e.sky_sunset_color - sky_sun_v).abs().max_element() > 0.001
+                || (e.sun_dir_and_factor - water_sun_dir_and_factor).abs().max_element() > 0.001
+                || (e.border_fog_color - border_fog_color).abs().max_element() > 0.001
+                || (e.border_fog_range - border_fog_range).abs().max_element() > 0.1
+        });
+
+    if transparent_dirty && let Some(mut tmat) = transparent_materials.get_mut(&chunk_material.transparent) {
+        tmat.extension.sky_up_color = sky_up_v;
+        tmat.extension.sky_middle_color = sky_mid_v;
+        tmat.extension.sky_sunset_color = sky_sun_v;
         tmat.extension.sun_dir_and_factor = water_sun_dir_and_factor;
         tmat.extension.border_fog_color = border_fog_color;
         tmat.extension.border_fog_range = border_fog_range;

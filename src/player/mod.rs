@@ -301,13 +301,22 @@ fn spawn_player_and_camera(
         player_camera,
     ));
 
-    let transmission_active = local_config
+    let transmission_enabled = local_config
         .as_ref()
-        .map(|c| c.transmission_enabled || c.water_reflections_ssr)
-        .unwrap_or(true);
+        .is_some_and(|c| c.transmission_enabled);
+    let ssr_enabled = local_config
+        .as_ref()
+        .is_none_or(|c| c.water_reflections_ssr);
 
-    if transmission_active {
+    if transmission_enabled {
         camera_builder.insert(bevy::pbr::ScreenSpaceTransmission::default());
+    } else if ssr_enabled {
+        // SSR only reads mip 0 of view_transmission_texture; Low quality skips expensive multi-pass blur mips.
+        camera_builder.insert(bevy::pbr::ScreenSpaceTransmission {
+            steps: 1,
+            quality: bevy::pbr::ScreenSpaceTransmissionQuality::Low,
+            ..default()
+        });
     }
 
     let hdr_bloom_active = local_config.as_ref().map(|c| c.hdr_bloom).unwrap_or(true);
@@ -353,14 +362,25 @@ fn sync_camera_transmission(
         return;
     }
     if let Ok(camera_entity) = camera_query.single() {
-        let has_transmission = transmission_query.get(camera_entity).is_ok();
+        let existing = transmission_query.get(camera_entity).ok();
         let need_transmission =
             local_config.transmission_enabled || local_config.water_reflections_ssr;
-        if need_transmission && !has_transmission {
-            commands
-                .entity(camera_entity)
-                .insert(bevy::pbr::ScreenSpaceTransmission::default());
-        } else if !need_transmission && has_transmission {
+        if need_transmission {
+            let target_quality = if local_config.transmission_enabled {
+                bevy::pbr::ScreenSpaceTransmissionQuality::Medium
+            } else {
+                bevy::pbr::ScreenSpaceTransmissionQuality::Low
+            };
+            if existing.is_none_or(|t| t.quality != target_quality) {
+                commands
+                    .entity(camera_entity)
+                    .insert(bevy::pbr::ScreenSpaceTransmission {
+                        steps: 1,
+                        quality: target_quality,
+                        ..default()
+                    });
+            }
+        } else if existing.is_some() {
             commands
                 .entity(camera_entity)
                 .remove::<bevy::pbr::ScreenSpaceTransmission>();

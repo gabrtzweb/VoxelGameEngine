@@ -80,6 +80,14 @@ impl Material for SkyDomeMaterial {
         AlphaMode::Opaque
     }
 
+    fn enable_prepass() -> bool {
+        false
+    }
+
+    fn enable_shadows() -> bool {
+        false
+    }
+
     fn specialize(
         _pipeline: &bevy::pbr::MaterialPipeline,
         descriptor: &mut bevy::render::render_resource::RenderPipelineDescriptor,
@@ -112,7 +120,7 @@ fn setup_sky_dome(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<SkyDomeMaterial>>,
 ) {
-    let mesh = meshes.add(Sphere::new(SKY_DOME_RADIUS).mesh().ico(4).unwrap());
+    let mesh = meshes.add(Sphere::new(SKY_DOME_RADIUS).mesh().ico(2).unwrap());
     let material = materials.add(SkyDomeMaterial {
         data: SkyDomeUniform {
             up_color: Vec4::new(0.10, 0.34, 0.88, 1.0),

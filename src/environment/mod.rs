@@ -64,6 +64,8 @@ impl Plugin for EnvironmentPlugin {
                     particles::setup_fluid_bubbles,
                     particles::setup_shooting_stars,
                     particles::setup_water_godrays_3d,
+                    particles::setup_ambient_fish,
+                    particles::setup_dragonflies,
                     configure_gpu_cluster_capacity,
                 ),
             )
@@ -84,6 +86,8 @@ impl Plugin for EnvironmentPlugin {
                     particles::update_fluid_bubbles,
                     particles::update_shooting_stars,
                     particles::update_water_godrays_3d,
+                    particles::update_ambient_fish,
+                    particles::update_dragonflies,
                 )
                     .chain()
                     .after(crate::player::PlayerSet::Movement),

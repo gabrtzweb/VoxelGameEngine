@@ -210,9 +210,16 @@ pub fn sync_clouds(
 ) {
     let camera_translation = camera.0.translation;
     let cloud_distance = cloud_render_distance.clamp(16, 128);
+    // Smoothly fade clouds with water depth instead of hiding them instantaneously on submersion
+    let underwater_fade = if is_underwater {
+        let depth_t = ((10.0 - camera_translation.y) / 28.0).clamp(0.0, 1.0);
+        (1.0 - depth_t).powf(1.4)
+    } else {
+        1.0
+    };
 
     for (layer_visual, mut cloud_transform, mut visibility) in &mut cloud_layers {
-        if is_underwater || cloud_quality == crate::core::CloudQuality::Off {
+        if cloud_quality == crate::core::CloudQuality::Off || underwater_fade <= 0.01 {
             if *visibility != Visibility::Hidden {
                 *visibility = Visibility::Hidden;
             }
@@ -323,6 +330,15 @@ pub fn sync_clouds(
         let f = (lightning_flash * 0.75).clamp(0.0, 1.0);
         let flash_col = LinearRgba::new(0.85, 0.90, 1.05, 0.98);
         lin = super::atmosphere::lerp_linear_rgba(lin, flash_col, f);
+    }
+    if is_underwater {
+        // Heavily mute & tint clouds into deep watery teal-blue so they look like faint silhouettes through water
+        let water_tint = LinearRgba::new(0.08, 0.24, 0.36, 1.0);
+        lin = super::atmosphere::lerp_linear_rgba(lin, water_tint, 0.72);
+        lin.red *= 0.42 * underwater_fade;
+        lin.green *= 0.50 * underwater_fade;
+        lin.blue *= 0.58 * underwater_fade;
+        lin.alpha *= 0.28 * underwater_fade;
     }
     let target_color = Color::LinearRgba(lin);
 

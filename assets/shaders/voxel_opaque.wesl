@@ -635,16 +635,16 @@ fn fragment(
             out.color = vec4<f32>(wet_rgb, out.color.a);
         }
 
-        // Projected Pixel-Art Underwater Caustics (16x16 texel-snapped, slow organic shimmer matching voxel style)
+        // Projected Pixel-Art Underwater Caustics (16x16 texel-snapped dual Voronoi web)
         let is_aquatic_flora = (vertex_output.color.a > 3.5) && (vertex_output.color.a < 4.5);
         if ((is_underwater_face || is_aquatic_flora) && !is_item_entity) {
-            let sun_dir = normalize(sun_dir_and_factor.xyz);
+            let sun_dir = sun_dir_and_factor.xyz;
             // Physically dim caustics smoothly through late afternoon (16:00-17:30) and vanish before dusk
-            let sun_up = pow(smoothstep(0.10, 0.68, sun_dir.y), 1.85);
+            let sun_up_raw = smoothstep(0.10, 0.68, sun_dir.y);
+            let sun_up = sun_up_raw * sun_up_raw;
             // Smoothly fade caustics from 1.0 in shallow reefs (Y >= 10) down to 0.0 in deep abyssal trenches (Y <= -34)
             let depth_fade = smoothstep(-34.0, 10.0, vertex_output.world_position.y);
             if (sun_up > 0.005 && depth_fade > 0.005) {
-                // Snap projected coordinates to 16x16 voxel texel grid for authentic pixel-art caustic charm
                 let raw_proj = vertex_output.world_position.xz
                     - sun_dir.xz * (vertex_output.world_position.y / max(sun_dir.y, 0.35)) * 0.45;
                 let proj_xz = floor(raw_proj * 16.0) / 16.0;
@@ -659,7 +659,7 @@ fn fragment(
                 let caustic_web = smoothstep(0.18, 0.92, clamp(c1 * 0.65 + c2 * 0.45, 0.0, 1.15));
                 let up_weight = select(clamp(norm.y * 0.80 + 0.20, 0.10, 1.0), 0.55, is_aquatic_flora);
                 let caustic_color = vec3<f32>(0.36, 0.86, 0.98) * sun_color_and_cloud.rgb;
-                let caustic_strength = caustic_web * sun_up * up_weight * pow(depth_fade, 1.25) * 0.30;
+                let caustic_strength = caustic_web * sun_up * up_weight * (depth_fade * sqrt(depth_fade)) * 0.30;
                 out.color = vec4<f32>(
                     out.color.rgb + caustic_color * caustic_strength * (0.25 + pbr_input.material.base_color.rgb * 0.95),
                     out.color.a
@@ -667,38 +667,42 @@ fn fragment(
             }
         }
 
-        // Backlit Subsurface Scattering (translucency) on tree leaves & flora
+        // Backlit Subsurface Scattering (translucency) on tree leaves & flora (pow-free)
         let sun_strength = sun_dir_and_factor.w;
         if ((is_leaves_block || (is_cross_mesh && vertex_output.color.a < 5.5)) && !is_item_entity && sun_strength > 0.02) {
-            let sun_dir = normalize(sun_dir_and_factor.xyz);
-            let view_ray = normalize(-pbr_input.V);
-            let v_dot_l = max(dot(view_ray, sun_dir), 0.0);
-            let sss_peak = pow(v_dot_l, 8.0) * 0.72;
-            let sss_wrap = pow(v_dot_l, 2.0) * 0.14 + 0.06;
+            let sun_dir = sun_dir_and_factor.xyz;
+            let v_dot_l = max(dot(-pbr_input.V, sun_dir), 0.0);
+            let v2 = v_dot_l * v_dot_l;
+            let v4 = v2 * v2;
+            let sss_peak = (v4 * v4) * 0.72;
+            let sss_wrap = v2 * 0.14 + 0.06;
             let sss_tint = pbr_input.material.base_color.rgb * sun_color_and_cloud.rgb * vec3<f32>(1.18, 1.24, 0.80);
             out.color = vec4<f32>(out.color.rgb + sss_tint * (sss_peak + sss_wrap) * sun_strength * 0.58, out.color.a);
         }
 
-        // Lightweight procedural cloud shadows drifting across sunlit terrain
+        // Lightweight smooth 1-octave procedural cloud shadows drifting across sunlit terrain
         let cloud_strength = sun_color_and_cloud.a;
         if (!is_item_entity && cloud_strength > 0.005) {
-            let sun_dir = normalize(sun_dir_and_factor.xyz);
+            let sun_dir = sun_dir_and_factor.xyz;
             let proj_scale = 140.0 / max(sun_dir.y, 0.25);
             let cloud_uv = (vertex_output.world_position.xz - sun_dir.xz * proj_scale) * 0.0085
                 + vec2<f32>(globals.time * 0.0055, globals.time * 0.0022);
-            let cn = smooth_noise2(cloud_uv) * 0.68 + smooth_noise2(cloud_uv * 2.15 + vec2<f32>(13.7, 7.3)) * 0.32;
-            let cloud_mask = smoothstep(0.47, 0.74, cn);
+            let cn = smooth_noise2(cloud_uv);
+            let cloud_mask = smoothstep(0.46, 0.76, cn);
             out.color = vec4<f32>(out.color.rgb * (1.0 - cloud_mask * cloud_strength), out.color.a);
         }
     }
     out.color = main_pass_post_lighting_processing(pbr_input, out.color);
 
-    // Independent Chunk Border Fog: smoothly dissolves only the distant chunk horizon rim into the Sky Dome
+    // Independent Chunk Border Fog: fast squared-distance reject skips sqrt/smoothstep on ~85% of pixels
     if (border_fog_color.a > 0.001 && !is_item_entity) {
-        let d_xz = length(vertex_output.world_position.xz - view.world_position.xz);
-        let bf = smoothstep(border_fog_range.x, border_fog_range.y, d_xz);
-        let bf_curve = bf * bf * border_fog_color.a;
-        out.color = vec4<f32>(mix(out.color.rgb, border_fog_color.rgb, bf_curve), out.color.a);
+        let dxz = vertex_output.world_position.xz - view.world_position.xz;
+        let d2 = dot(dxz, dxz);
+        if (d2 > border_fog_range.z) {
+            let bf = smoothstep(border_fog_range.x, border_fog_range.y, sqrt(d2));
+            let bf_curve = bf * bf * border_fog_color.a;
+            out.color = vec4<f32>(mix(out.color.rgb, border_fog_color.rgb, bf_curve), out.color.a);
+        }
     }
 
     return out;

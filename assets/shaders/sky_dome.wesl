@@ -106,7 +106,7 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         }
     }
 
-    // 4c. Procedural Aurora Borealis curtains in polar/cold biomes at night (smooth analytic 16-layer integration)
+    // 4c. Procedural Aurora Borealis curtains in polar/cold biomes at night (smooth analytic 8-layer integration)
     let aurora_strength = sky.rainbow_params.y;
     let aurora_time = sky.rainbow_params.z;
     if (aurora_strength > 0.002 && v_dot_u > 0.06 && underwater < 0.5 && underground < 0.5) {
@@ -114,7 +114,7 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         if (horizon_fade > 0.001) {
             let sky_proj = dir.xz / max(v_dot_u, 0.10);
             var aurora_acc = vec3<f32>(0.0);
-            let STEPS: i32 = 16;
+            let STEPS: i32 = 8;
             for (var i: i32 = 0; i < STEPS; i = i + 1) {
                 let h = (f32(i) + 0.5) / f32(STEPS);
                 let plane = sky_proj * (0.75 + h * 0.95) * 1.45 + vec2<f32>(aurora_time * 0.025, aurora_time * 0.012);

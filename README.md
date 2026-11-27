@@ -162,11 +162,20 @@ src/
 │   │   ├── mod.rs
 │   │   ├── state.rs
 │   │   └── wind.rs
+│   ├── particles/
+│   │   ├── ambient_fish.rs
+│   │   ├── dragonflies.rs
+│   │   ├── fluid_bubbles.rs
+│   │   ├── fluid_splashes.rs
+│   │   ├── mod.rs
+│   │   ├── shooting_stars.rs
+│   │   ├── water_godrays.rs
+│   │   ├── wind_streaks.rs
+│   │   └── world_particles.rs
 │   ├── atmosphere.rs
 │   ├── celestial.rs
 │   ├── clouds.rs
 │   ├── mod.rs
-│   ├── particles.rs
 │   ├── post_process.rs
 │   ├── sky.rs
 │   ├── stars.rs
