@@ -52,7 +52,7 @@ fn ssr_dither(pixel_pos: vec2<f32>) -> f32 {
     return fract(magic.z * fract(dot(pixel_pos, magic.xy)));
 }
 
-// Screen-Space Water Reflections (Complementary-inspired jittered raymarch against opaque depth prepass)
+// Screen-Space Water Reflections (jittered raymarch against opaque depth prepass)
 // Returns vec4(reflected_rgb, blend_weight [0..1]); falls back seamlessly to Sky Dome on miss/screen-edge.
 fn trace_water_ssr(world_pos: vec3<f32>, refl_dir: vec3<f32>, screen_pos: vec2<f32>) -> vec4<f32> {
     if (sky_middle_color.a < 0.5) {

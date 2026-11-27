@@ -176,7 +176,7 @@ fn sync_sky_dome(
     let inv_noon = 1.0 - noon_factor;
     let sunset_strength = (inv_noon * inv_noon * sun_factor).clamp(0.0, 1.0);
 
-    // 3-zone Complementary-inspired base sky palette across 4 stops (Dawn / Noon / Sunset / Night)
+    // 3-zone procedural base sky palette across 4 stops (Dawn / Noon / Sunset / Night)
     let mut up_col = sample_4stop(
         t,
         LinearRgba::new(0.18, 0.22, 0.54, 1.0), // Dawn zenith

@@ -677,7 +677,7 @@ pub fn update_world_particles(
                 let (curtain_tint, foam_tint, ring_tint, ring_alpha, is_emissive) =
                     fluid_splash_palette(fluid, water_tint);
 
-                // Spawn Particular-style 3D fluid splash wave(s)
+                // Spawn 3D hollow-prism fluid splash wave(s)
                 if let Some(ref mut sp) = splash_3d_pool {
                     sp.spawn_wave(
                         position,
@@ -1654,7 +1654,7 @@ pub fn update_world_particles(
 }
 
 // =============================================================================
-// Animated Wind Swirl Ribbons (Naturalist-style horizontal flipbook streaks)
+// Animated Wind Swirl Ribbons (horizontal flipbook streaks)
 // =============================================================================
 
 const MAX_WIND_STREAKS: usize = 64;
@@ -1992,7 +1992,7 @@ pub fn update_wind_streaks(
 }
 
 // =============================================================================
-// PARTICULAR-INSPIRED 3D WATER SPLASHES (1-draw-call batched hollow 3D prisms)
+// 3D FLUID SPLASHES (1-draw-call batched hollow 3D prisms)
 // =============================================================================
 
 const SPLASH_3D_FRAMES: usize = 9;
@@ -2978,7 +2978,7 @@ pub fn update_shooting_stars(
 }
 
 // =============================================================================
-// 3D WORLD-ANCHORED UNDERWATER GOD RAYS (`water_godray.png`, RealismCraft style)
+// 3D WORLD-ANCHORED UNDERWATER GOD RAYS (`water_godray.png`)
 // =============================================================================
 
 const MAX_UW_GODRAYS: usize = 28;

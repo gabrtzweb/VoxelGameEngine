@@ -506,20 +506,21 @@ pub fn sync_fog_distance(
         *smoothed_density_mult = lerp_f32(*smoothed_density_mult, target_biome_density, k);
     }
 
-    // Complementary-style altitude attenuation: valleys collect soft aerial mist while mountain peaks stay crisp
+    // Altitude attenuation: valleys collect soft aerial mist while mountain peaks stay crisp
     let cam_y = cam_tf.translation().y;
     let altitude_mult = 1.0 - ((cam_y - 48.0) / 110.0).clamp(0.0, 0.52);
 
+    let weather_boost = 1.0 + (1.0 - weather_mult) * 1.4;
+    let atm_density = (0.00325 / (render_radius / 384.0).clamp(0.65, 2.2))
+        * *smoothed_density_mult
+        * altitude_mult
+        * weather_boost;
+
     if atm_fog_enabled && !border_fog_enabled {
-        // Pure Atmospheric Fog (gentle exponential aerial perspective without hard chunk-border wall)
-        let weather_boost = 1.0 + (1.0 - weather_mult) * 1.4;
-        let base_density = (0.00185 / (render_radius / 384.0).clamp(0.65, 2.2))
-            * *smoothed_density_mult
-            * altitude_mult
-            * weather_boost;
-        let cave_density = base_density * 1.25;
+        // Pure Atmospheric Fog (rich closer exponential aerial perspective without hard chunk-border wall)
+        let cave_density = atm_density * 1.25;
         fog.falloff = FogFalloff::Exponential {
-            density: lerp_f32(base_density, cave_density, underground_factor),
+            density: lerp_f32(atm_density, cave_density, underground_factor),
         };
     } else if !atm_fog_enabled && border_fog_enabled {
         // Pure Chunk Border Fog (crystal-clear interior, steep sky-matched horizon fade at chunk edge)
@@ -533,16 +534,13 @@ pub fn sync_fog_distance(
         };
     } else {
         // Both Atmospheric Fog + Chunk Border Fog:
-        // ExponentialSquared calibrated so distant valleys get rich aerial perspective AND the chunk edge dissolves smoothly into the Sky Dome
-        let weather_boost = 1.0 + (1.0 - weather_mult) * 1.35;
-        let edge_density = 1.85 / render_radius.max(64.0);
-        let density = edge_density
-            * (0.72 + 0.28 * *smoothed_density_mult)
-            * (0.78 + 0.22 * altitude_mult)
-            * weather_boost;
-        let cave_density = density * 1.15;
-        fog.falloff = FogFalloff::ExponentialSquared {
-            density: lerp_f32(density, cave_density, underground_factor),
+        // Preserves 100% of the near/mid-distance Exponential Atmospheric Fog while guaranteeing
+        // the distant chunk border dissolves completely into the Sky Dome.
+        let border_density = (3.10 / render_radius.max(64.0)) * weather_boost;
+        let combined_density = atm_density.max(border_density) + border_density * 0.25;
+        let cave_density = combined_density * 1.20;
+        fog.falloff = FogFalloff::Exponential {
+            density: lerp_f32(combined_density, cave_density, underground_factor),
         };
     }
 }
@@ -632,7 +630,7 @@ pub fn lerp_f32(a: f32, b: f32, factor: f32) -> f32 {
 
 pub fn sample_sky_color(time_of_day: f32) -> Color {
     let morning = LinearRgba::new(0.76, 0.46, 0.42, 1.0); // Dawn warm rose-gold
-    let noon = LinearRgba::new(0.24, 0.56, 0.96, 1.0); // Vibrant Complementary azure
+    let noon = LinearRgba::new(0.24, 0.56, 0.96, 1.0); // Vibrant midday azure
     let evening = LinearRgba::new(0.82, 0.34, 0.18, 1.0); // Sunset rich amber-crimson
     let night = LinearRgba::new(0.016, 0.032, 0.082, 1.0); // Deep midnight indigo
 
@@ -647,7 +645,7 @@ pub fn sample_sky_color(time_of_day: f32) -> Color {
 }
 
 pub fn sample_ambient_color(time_of_day: f32) -> Color {
-    // Complementary-style cool sky-tinted shadows contrasting against warm direct sunlight
+    // Cool sky-tinted shadows contrasting against warm direct sunlight
     let morning = LinearRgba::new(0.76, 0.72, 0.88, 1.0);
     let noon = LinearRgba::new(0.58, 0.78, 1.18, 1.0);
     let evening = LinearRgba::new(0.82, 0.62, 0.68, 1.0);

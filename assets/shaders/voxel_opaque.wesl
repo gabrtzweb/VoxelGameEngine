@@ -44,7 +44,7 @@ fn ambient_environment_noise(pos_xz: vec2<f32>) -> f32 {
     return smooth_noise2(pos_xz * 0.04);
 }
 
-// Animated Voronoi cell-ridge caustic layer for Complementary-style projected underwater light webs
+// Animated Voronoi cell-ridge caustic layer for projected underwater light webs
 fn caustic_layer(p: vec2<f32>, t: f32) -> f32 {
     let i = floor(p);
     let f = fract(p);
@@ -665,7 +665,7 @@ fn fragment(
             }
         }
 
-        // Complementary-inspired backlit Subsurface Scattering (translucency) on tree leaves & flora
+        // Backlit Subsurface Scattering (translucency) on tree leaves & flora
         let sun_strength = sun_dir_and_factor.w;
         if ((is_leaves_block || (is_cross_mesh && vertex_output.color.a < 5.5)) && !is_item_entity && sun_strength > 0.02) {
             let sun_dir = normalize(sun_dir_and_factor.xyz);

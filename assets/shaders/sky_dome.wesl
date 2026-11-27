@@ -56,7 +56,7 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let v_dot_s2 = v_dot_s_pos * v_dot_s_pos;
     let v_dot_s4 = v_dot_s2 * v_dot_s2;
 
-    // 1. Complementary-inspired 3-zone sky gradient (Zenith -> Bright Horizon -> Lower Horizon)
+    // 1. Procedural 3-zone sky gradient (Zenith -> Bright Horizon -> Lower Horizon)
     let horiz_t_raw = (1.0 - v_dot_u_pos) * (1.0 - v_dot_u_pos);
     let horiz_exp = (1.0 - v_dot_s4 * 0.35) * (1.15 - 0.15 * rain_factor * rain_factor);
     var horiz_t = pow(max(horiz_t_raw, 0.0001), horiz_exp);

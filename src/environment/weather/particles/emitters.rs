@@ -20,8 +20,8 @@ pub const UV_SNOW_D: [f32; 4] = [0.75, 0.0, 0.875, 0.125];
 pub const UV_SPLASH: [f32; 4] = [0.50, 0.0, 0.625, 0.125];
 pub const UV_FOG: [f32; 4] = [0.0, 0.25, 0.25, 0.50]; // fog_translucent.png
 pub const UV_HORIZONTAL_FOG: [f32; 4] = [0.25, 0.25, 0.50, 0.50]; // horizontal_fog.png (vertical fog banks)
-pub const UV_SANDSTORM: [f32; 4] = [0.0, 0.50, 0.25, 0.75]; // dedicated Sandstorm sprite (RealismCraft-inspired)
-pub const UV_BLIZZARD: [f32; 4] = [0.25, 0.50, 0.50, 0.75]; // dedicated Blizzard sprite (RealismCraft-inspired)
+pub const UV_SANDSTORM: [f32; 4] = [0.0, 0.50, 0.25, 0.75]; // dedicated Sandstorm sprite
+pub const UV_BLIZZARD: [f32; 4] = [0.25, 0.50, 0.50, 0.75]; // dedicated Blizzard sprite
 pub const UV_FOG_DITHERED: [f32; 4] = [0.50, 0.50, 1.0, 1.0]; // fog_dithered.png
 pub const UV_DUST: [f32; 4] = [0.50, 0.50, 1.0, 1.0];
 pub const UV_STREAK: [f32; 4] = [0.50, 0.125, 0.625, 0.25]; // streak.png
@@ -258,7 +258,7 @@ pub fn emit_weather_particles(
             );
         }
 
-        // Dedicated RealismCraft-inspired swirling Blizzard gusts during heavier snowfall
+        // Dedicated swirling Blizzard gusts during heavier snowfall
         if effective_snow > 0.35 {
             let gust_count = ((effective_snow - 0.30) * 6.0).round() as usize;
             for _ in 0..gust_count {
